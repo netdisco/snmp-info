@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Catalyst;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -36,8 +36,7 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer2;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT 
-            %MYGLOBALS %MYMIBS %MYFUNCS %MYMUNGE %MUNGE $INIT/ ;
+use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/ ;
 @SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Catalyst::EXPORT_OK = qw//;
 
@@ -47,34 +46,29 @@ $DEBUG=0;
 #       the interworkings.
 $INIT = 0;
 
-%MYMIBS = (
-          'CISCO-STACK-MIB' => 'moduleType',
-          'CISCO-VTP-MIB'   => 'vtpVlanIndex'
-          );
+%MIBS =    ( %SNMP::Info::Layer2::MIBS, 
+             'CISCO-STACK-MIB' => 'moduleType',
+             'CISCO-VTP-MIB'   => 'vtpVlanIndex'
+           );
 
-%MIBS = ( %SNMP::Info::Layer2::MIBS, 
-          %MYMIBS );
-
-%MYGLOBALS = (
+%GLOBALS = (
+            %SNMP::Info::Layer2::GLOBALS,
             # these are in CISCO-STACK-MIB
             'sysip'       => 'sysIpAddr',    
             'netmask'     => 'sysNetMask',    
             'broadcast'   => 'sysBroadcast',
-            'serial'      => 'chassisSerialNumberString',    
+            'serial'      => 'chassisSerialNumber',    
             'model'       => 'chassisModel',    
             'ps1_type'    => 'chassisPs1Type',    
             'ps1_status'  => 'chassisPs1Status',    
             'ps2_type'    => 'chassisPs2Type',    
             'ps2_status'  => 'chassisPs2Status',    
             'slots'       => 'chassisNumSlots',    
-            'fan'         => 'chassisFanStatus'
-             );
-%GLOBALS = (
-            %SNMP::Info::Layer2::GLOBALS,
-            %MYGLOBALS
-            );
+            'fan'         => 'chassisFanStatus',
+           );
 
-%MYFUNCS = (
+%FUNCS =   (
+            %SNMP::Info::Layer2::FUNCS,
             'i_type2'        => 'ifType',
             # CISCO-STACK-MIB::moduleEntry
             #   These are blades in a catalyst device
@@ -109,21 +103,12 @@ $INIT = 0;
             'v_name'    => 'vtpVlanName',
             'v_mtu'     => 'vtpVlanMtu',
            );
-%FUNCS   = (
-            %SNMP::Info::Layer2::FUNCS,
-            %MYFUNCS
-        );
 
-%MYMUNGE = (
+%MUNGE =   (
+            %SNMP::Info::Layer2::MUNGE,
             'm_ports_status' => \&munge_port_status,
             'p_duplex_admin' => \&SNMP::Info::munge_bits,
            );
-
-%MUNGE = (
-            # Inherit all the built in munging
-            %SNMP::Info::Layer2::MUNGE,
-            %MYMUNGE
-         );
 
 %PORTSTAT = (1 => 'other',
              2 => 'ok',
@@ -250,6 +235,23 @@ sub vendor {
     return 'cisco';
 }
 
+sub os {
+    return 'catalyst';
+}
+
+sub os_ver {
+    my $cat = shift;
+    my $os_ver = $cat->SUPER::os_ver();
+    return $os_ver if defined $os_ver;
+
+    my $m_swver = $cat->m_swver();
+    return undef unless defined $m_swver;
+
+    # assume .1 entry is the chassis and the sw version we want.
+    return $m_swver->{1} if defined $m_swver->{1};
+    return undef;
+}
+
 1;
 __END__
 
@@ -257,81 +259,131 @@ __END__
 
 SNMP::Info::Layer2::Catalyst - Perl5 Interface to Cisco devices running Catalyst OS 
 
-=head1 DESCRIPTION
-
-Provides abstraction to the configuration information obtainable from a 
-Catalyst device through SNMP.  Information is stored in a number of 
-MIB's such as IF-MIB, CISCO-CDP-MIB, CISCO-STACK-MIB, CISCO-VTP-MIB,
-and SWITCH-MIB.
-
 =head1 AUTHOR
 
 Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $cat = new SNMP::Info::Layer2::Catalyst(DestHost  => 'router' , 
-                              Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $cat = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-=head1 CREATING AN OBJECT
+ my $class      = $cat->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+SNMP::Info subclass to provide information for Cisco Catalyst switches running CatOS.
+
+This subclass is not for all devices that have the name Catalyst.  Note that some Catalyst
+switches run IOS, like the 2900 and 3550 families.  Cisco Catalyst 1900 switches use their
+own MIB and have a separate subclass.  Use the method above to have SNMP::Info determine the
+appropriate subclass before using this class directly.
+
+Note:  Some older Catalyst switches will only talk SNMP version 1.  Some newer ones will not
+return all their data if connected via Version 1.
+
+=head2 Inherited Classes
 
 =over
 
-=item  new SNMP::Info::Layer2::Catalyst()
-
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
-
-    my $cat = new SNMP::Info::Layer2::Catalyst(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $cat;
+=item SNMP::Info::Layer2
 
 =back
 
-=head1 GLOBAL Values
+=head2 Required MIBs
 
 =over
 
-=item $cat->netmask()
-(B<sysNetMask>)
+=item CISCO-STACK-MIB
+
+=item CISCO-VTP-MIB
+
+=item Inherited Classes' MIBs
+
+See SNMP::Info::Layer2 for its own MIB requirements.
+
+=back
+
+These MIBs are found in the standard v2 MIBs from Cisco.
+
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=over
 
 =item $cat->broadcast()
+
 (B<sysBroadcast>)
 
-=item $cat->serial()
-(B<chassisSerialNumberString>)
+=item $cat->fan()
+
+(B<chassisFanStatus>)
 
 =item $cat->model()
+
 (B<chassisModel>)
 
+=item $cat->netmask()
+
+(B<sysNetMask>)
+
+=item $cat->os()
+
+Returns 'catalyst'
+
+=item $cat->os_ver()
+
+Tries to use the value from SNMP::Info::CiscoStats->os_ver() and if it fails 
+it grabs $cat->m_swver()->{1} and uses that.
+
 =item $cat->ps1_type()
+
 (B<chassisPs1Type>)
 
 =item $cat->ps2_type()
+
 (B<chassisPs2Type>)
 
 =item $cat->ps1_status()
+
 (B<chassisPs1Status>)
 
 =item $cat->ps2_status()
+
 (B<chassisPs2Status>)
 
-=item $cat->slots()
-(B<chassisNumSlots>)
+=item $cat->serial()
 
-=item $cat->fan()
-(B<chassisFanStatus>)
+(B<chassisSerialNumberString>)
+
+=item $cat->slots()
+
+(B<chassisNumSlots>)
 
 =item $cat->vendor()
 
-    Returns 'cisco'
+Returns 'cisco'
 
 =back
 
+=head2 Globals imported from SNMP::Info::Layer2
+
+See documentation in SNMP::Info::Layer2 for details.
+
 =head1 TABLE ENTRIES
+
+These are methods that return tables of information in the form of a reference
+to a hash.
 
 =head2 Overrides
 
@@ -339,31 +391,31 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 
 =item $cat->interfaces()
 
-    Crosses p_port() with i_index() to get physical names.
+Crosses p_port() with i_index() to get physical names.
 
 =item $cat->i_physical()
 
-    Returns a map to IID for ports that are physical ports, not vlans, etc.
+Returns a map to IID for ports that are physical ports, not vlans, etc.
 
 =item $cat->i_type()
 
-    Crosses p_port() with p_type() and returns the results. 
+Crosses p_port() with p_type() and returns the results. 
 
-    Overrides with ifType if p_type() isn't available.
+Overrides with ifType if p_type() isn't available.
 
 =item $cat->i_name()
 
-    Crosses p_name with p_port and returns results.
+Crosses p_name with p_port and returns results.
 
 =item $cat->i_duplex()
 
-    Crosses p_duplex with p_port and returns results.
+Crosses p_duplex with p_port and returns results.
 
 =item $cat->i_duplex_admin()
 
-    Crosses p_duplex_admin with p_port.
+Crosses p_duplex_admin with p_port.
 
-    Munges bit_string returned from p_duplex_admin to get duplex settings.
+Munges bit_string returned from p_duplex_admin to get duplex settings.
 
 =back
 
@@ -375,47 +427,62 @@ the Catalyst device.
 =over
 
 =item $cat->m_type()
+
 (B<moduleType>)
 
 =item $cat->m_model()
+
 (B<moduleModel>)
 
 =item $cat->m_serial()
+
 (B<moduleSerialNumber>)
 
 =item $cat->m_status()
+
 (B<moduleStatus>)
 
 =item $cat->m_name()
+
 (B<moduleName>)
 
 =item $cat->m_ports()
+
 (B<moduleNumPorts>)
 
 =item $cat->m_ports_status()
- Returns a list of space separated status strings for the ports.
-   To see the status of port 4 :
-        @ports_status = split(' ', $cat->m_ports_status() );
-        $port4 = $ports_status[3];
+
+Returns a list of space separated status strings for the ports.
+
+To see the status of port 4 :
+
+    @ports_status = split(' ', $cat->m_ports_status() );
+    $port4 = $ports_status[3];
 
 (B<modulePortStatus>)
 
 =item $cat->m_ports_hwver()
+
 (B<moduleHwVersion>)
 
 =item $cat->m_ports_fwver()
+
 (B<moduleFwVersion>)
 
 =item $cat->m_ports_swver()
+
 (B<moduleSwVersion>)
 
 =item $cat->m_ports_ip()
+
 (B<moduleIPAddress>)
 
 =item $cat->m_ports_sub1()
+
 (B<moduleSubType>)
 
 =item $cat->m_ports_sub2()
+
 (B<moduleSubType2>)
 
 =back
@@ -425,12 +492,15 @@ the Catalyst device.
 =over
 
 =item $cat->m_ip()
+
 (B<moduleIPAddress>)
 
 =item $cat->m_sub1()
+
 (B<moduleSubType>)
 
 =item $cat->m_sub2()
+
 (B<moduleSubType2>)
 
 =back
@@ -440,24 +510,31 @@ the Catalyst device.
 =over
 
 =item $cat->p_name()
+
 (B<portName>)
 
 =item $cat->p_type()
+
 (B<portType>)
 
 =item $cat->p_status()
+
 (B<portOperStatus>)
 
 =item $cat->p_status2()
+
 (B<portAdditionalStatus>)
 
 =item $cat->p_speed()
+
 (B<portAdminSpeed>)
 
 =item $cat->p_duplex()
+
 (B<portDuplex>)
 
 =item $cat->p_port()
+
 (B<portIfIndex>)
 
 =back
@@ -467,9 +544,11 @@ the Catalyst device.
 =over
 
 =item $cat->p_speed_admin()
+
 (B<portCpbSpeed>)
 
 =item $cat->p_duplex_admin()
+
 (B<portCpbDuplex>)
 
 =back
@@ -479,21 +558,28 @@ the Catalyst device.
 See ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html
 for a good treaty of how to connect to the VLANs
 
-
 =over
 
 =item $cat->v_state()
+
 (B<vtpVlanState>)
 
 =item $cat->v_type()
+
 (B<vtpVlanType>)
 
 =item $cat->v_name()
+
 (B<vtpVlanName>)
 
 =item $cat->v_mtu()
+
 (B<vtpVlanMtu>)
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See documentation in SNMP::Info::Layer2 for details.
 
 =cut
