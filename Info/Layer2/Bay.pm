@@ -80,6 +80,7 @@ sub os {
 sub os_ver {
     my $bay = shift;
     my $descr = $bay->description();
+    return undef unless defined $descr;
 
     # 303 / 304
     if ($descr =~ m/Rev: \d+\.\d+\.\d+\.\d+-(\d+\.\d+\.\d+\.\d+)/){
@@ -96,6 +97,7 @@ sub os_ver {
 sub os_bin {
     my $bay = shift;
     my $descr = $bay->description();
+    return undef unless defined $descr;
 
     # 303 / 304
     if ($descr =~ m/Rev: \d+\.(\d+\.\d+\.\d+)-\d+\.\d+\.\d+\.\d+/){
