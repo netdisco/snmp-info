@@ -314,6 +314,18 @@ macsuck: yes
 device: EdgeIron 24G
 note: Bug where spanning tree stuff loops forever when polled by SNMP.
 
+device-family: IronWare
+class: Layer3::Foundry
+ver: 2
+cdp: yes
+note: FDP enabled.
+duplex: yes
+macsuck: yes
+arpnip: yes
+device:FWSX424 
+device:SI400 Router
+
+
 # HP
 device-vendor: HP
 class:  Layer2::HP

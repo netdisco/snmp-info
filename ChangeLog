@@ -2,6 +2,7 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
 version 1.0 ()
+    + Added support for Foundry IronWare and gave L3::Foundry CPR
     + Added support for Foundry EdgeIrons as new class L2::Foundry
     + Added BulkWalk and BulkRepeaters options to new()
     + Added DebugSNMP option to new()
@@ -15,6 +16,7 @@ version 1.0 ()
     * Expanded Entity.pm to cover the whole ENTITY-MIB and improved docs.
     * changed all refs to $DEBUG to $self->debug() for reentrant code
     * [ 1111284 ] Parameters not being set with AutoSpecify - fixed.
+    * Turned off BULKWALK for C1900 and C6500 classes.
 
 
 verison 0.9 (11/15/04)
