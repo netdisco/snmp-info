@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Bridge;
-$VERSION = 0.7;
+$VERSION = 0.8;
 # $Id$
 
 use strict;
@@ -45,7 +45,9 @@ $SNMP::debugging=$DEBUG;
 
 $INIT = 0;
 
-%MIBS    = ('BRIDGE-MIB' => 'dot1dBaseBridgeAddress');
+%MIBS    = ('BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',
+            'Q-BRIDGE-MIB' => 'dot1qPvid',
+           );
 
 %GLOBALS = (
             'b_mac'   => 'dot1dBaseBridgeAddress',
@@ -78,6 +80,8 @@ $INIT = 0;
           'stp_p_root'     => 'dot1dStpPortDesignatedRoot',
           'stp_p_bridge'   => 'dot1dStpPortDesignatedBridge',
           'stp_p_port'     => 'dot1dStpPortDesignatedPort',
+          # Q-BRIDGE-MIB : 
+          'qb_v_if'   => 'dot1qPvid',
           );
 
 %MUNGE = (
@@ -156,6 +160,9 @@ Max Baker (C<max@warped.org>)
 
 BRIDGE-MIB is used by most Layer 2 devices, and holds information like the MAC Forwarding Table and Spanning Tree Protocol info.
 
+Q-BRIDGE-MIB holds 802.11q information -- VLANs and Trunking.  Cisco tends not to use this MIB, but some
+proprietary ones.  HP and some nicer vendors use this.  This is from C<RFC2674_q>.  
+
 Create or use a subclass of SNMP::Info that inherits this class.  Do not use directly.
 
 For debugging you can call new() directly as you would in SNMP::Info 
@@ -171,6 +178,10 @@ None.
 =over
 
 =item BRIDGE-MIB
+
+=item Q-BRIDGE-MIB
+
+f<rfc2674_q.mib>
 
 =back
 
