@@ -159,7 +159,7 @@ Max Baker (C<max@warped.org>)
 
  foreach my $fw_index (keys %$fw_mac){
     my $mac   = $fw_mac->{$fw_index};
-    my $bp_id = $fw_mac->{$fw_index};
+    my $bp_id = $fw_port->{$fw_index};
     my $iid   = $bp_index->{$bp_id};
     my $port  = $interfaces->{$iid};
 
