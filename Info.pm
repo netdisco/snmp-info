@@ -1152,6 +1152,47 @@ sub _global{
     return $val;
 }
 
+=item $info->_set(attr,val,iid)
+
+Used internally by AUTOLOAD to run an SNMP set command for dynamic methods listed in 
+either %GLOBALS or %FUNCS.
+
+Example:  $info->set_name('dog',3) uses autoload to resolve to $info->_set('name','dog',3);
+
+=cut
+sub _set {
+    my ($self,$attr,$val,$iid) = @_;
+
+    $iid = defined $iid ? $iid : '.0';
+    # prepend dot if necessary to $iid
+    $iid = ".$iid" unless $iid =~ /^\./;
+
+
+    my $sess = $self->{sess};
+    return undef unless defined $sess;
+
+    my $funcs = $self->funcs();
+    my $globals = $self->globals(); 
+
+    my $oid = undef;
+    # Lookup oid
+    $oid = $globals->{$attr} if defined $globals->{$attr};
+    $oid = $funcs->{$attr} if defined $funcs->{$attr};
+
+    unless (defined $oid) { 
+        print "SNMP::Info::_set($attr,$val) - Failed to find $attr in \%GLOBALS or \%FUNCS \n";
+        return undef;
+    }
+
+    $oid .= $iid;
+    
+    print "SNMP::Info::_set $attr$iid ($oid) = $val\n" if $DEBUG;
+
+    my $rv = $sess->set($oid,$val);
+
+    return $rv;
+}
+
 =back
 
 =head3 Functions for SNMP Tables (%FUNCS)
@@ -1300,6 +1341,7 @@ Example :
 
 =cut
 sub AUTOLOAD {
+    my $self = shift;
     my $sub_name = $AUTOLOAD;
 
     return if $sub_name =~ /DESTROY$/;
@@ -1310,40 +1352,45 @@ sub AUTOLOAD {
     $sub_name =~ s/.*://;   
 
     my $attr = $sub_name;
-    $attr =~ s/^load_//;
-
+    $attr =~ s/^(load|set)_//;
     
     # Let's use the %GLOBALS and %FUNCS from the class that 
     #   inherited us.
-    no strict 'refs';
-    my %funcs = %{$package.'FUNCS'};
-    my %globals = %{$package.'GLOBALS'};
-
-    return unless( defined $funcs{$attr} or
-                   defined $globals{$attr} );
-    
-    my $self = shift;
-
-
-    # First check %GLOBALS and return _scalar(global)
-    if (defined $globals{$attr}) {
-        return $self->_global( $attr );
+    my (%funcs,%globals);
+    {
+        no strict 'refs';
+        %funcs = %{$package.'FUNCS'};
+        %globals = %{$package.'GLOBALS'};
     }
 
-    # Next see if we're load_ ing.
+    unless( defined $funcs{$attr} or
+            defined $globals{$attr} ) {
+        #print "$attr not found in ",join(',',keys %funcs),"\n";
+        return;
+    }
+    
+    # Check for load_ ing.
     if ($sub_name =~ /^load_/){
         $self->_load_attr( $attr,$funcs{$attr} );
         return $self->_show_attr( $attr ) if defined wantarray;
-    
-    # Otherwise we must be listed in %FUNCS 
-    } else {
+    } 
 
-        # Load data if not already cached
-        $self->_load_attr( $attr, $funcs{$attr} )
-            unless defined $self->{"_${attr}"};
-
-        return $self->_show_attr($attr);
+    if ($sub_name =~ /^set_/){
+        return $self->_set( $attr, @_);
     }
+
+    # First check %GLOBALS and return _scalar(global)
+    if (defined $globals{$attr} ){
+        return $self->_global( $attr );
+    }
+
+    # Otherwise we must be listed in %FUNCS 
+
+    # Load data if not already cached
+    $self->_load_attr( $attr, $funcs{$attr} )
+        unless defined $self->{"_${attr}"};
+
+    return $self->_show_attr($attr);
 }
 
 1;
