@@ -1,4 +1,5 @@
 # SNMP::Info - Max Baker <max@warped.org>
+# $Id$
 #
 # Copyright (c) 2002, Regents of the University of California
 # All rights reserved.  
@@ -476,8 +477,8 @@ sub device_type {
         #   Catalyst WS-C series override (2926,5xxx,6xxx)
         $objtype = 'SNMP::Info::Layer2::Catalyst' if ($desc =~ /WS-C\d{4}/);
 
-        #   HP ProCurve 
-        $objtype = 'SNMP::Info::Layer2::HP' if ($desc =~ /procurve/i); 
+        #   HP
+        $objtype = 'SNMP::Info::Layer2::HP' if ($desc =~ /hp/i); 
     
         #  Bay Switch
         $objtype = 'SNMP::Info::Layer2::Bay' if ($desc =~ /bay/i);
