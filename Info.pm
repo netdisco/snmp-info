@@ -997,6 +997,12 @@ Administrative status of the port.  Typical values are 'enabled' and 'disabled'.
 
 (B<ifAdminStatus>)
 
+=item $info->i_lastchange()
+
+The value of sysUpTime when this port last changed states (up,down).
+
+(B<IfLastChange>)
+
 =item $info->i_name()
 
 Interface Name field.  Supported by a smaller subset of devices, this fields is often 
@@ -1350,6 +1356,7 @@ These are table entries, such as the IfIndex
             'i_mac'              => 'ifPhysAddress',
             'i_up'               => 'ifOperStatus',
             'i_up_admin'         => 'ifAdminStatus',
+            'i_lastchange'       => 'ifLastChange',
             'i_name'             => 'ifName',
             'i_octet_in'         => 'ifInOctets',
             'i_octet_out'        => 'ifOutOctets',
