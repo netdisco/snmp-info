@@ -1,6 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
+version 0.10 ()
+    + Added BulkWalk and BulkRepeaters options to new()
+    * Added check for bulkwalk_no() method
+    * Added more error checking in  _load_attr() around bulkwalk code
+
 verison 0.9 (11/15/04)
     + ** Added full Nortel/Bay/BayStack support 
         by new developer Eric Miller.  
