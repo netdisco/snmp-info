@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2;
-$VERSION = 0.6;
+$VERSION = 0.7;
 # $Id$
 
 use strict;
@@ -55,8 +55,7 @@ $INIT = 0;
           %SNMP::Info::Bridge::MIBS,
           %SNMP::Info::CDP::MIBS,
           %SNMP::Info::CiscoStats::MIBS,
-          'CISCO-PRODUCTS-MIB' => 'sysName',
-          'CISCO-STACK-MIB'    => 'wsc1900sysID',
+          'CISCO-PRODUCTS-MIB' => 'sysName',    # for model()
         );
 
 %GLOBALS = (
