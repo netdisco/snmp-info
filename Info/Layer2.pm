@@ -56,6 +56,7 @@ $INIT = 0;
           %SNMP::Info::CDP::MIBS,
           %SNMP::Info::CiscoStats::MIBS,
           'CISCO-PRODUCTS-MIB' => 'sysName',    # for model()
+          'CISCO-STACK-MIB'    => 'wsc1900sysID',    # some older catalysts live here
         );
 
 %GLOBALS = (
@@ -88,7 +89,7 @@ sub model {
     my $l2 = shift;
     my $id = $l2->id();
     my $model = &SNMP::translateObj($id);
-    
+   
     # HP
     $model =~ s/^hpswitch//i;
 
