@@ -115,12 +115,13 @@ sub root_ip {
     if (defined $ospf_ip and scalar(keys %$ospf_ip)){
         foreach my $key (keys %$ospf_ip){
             my $ip = $ospf_ip->{$key};
+            next if $ip eq '0.0.0.0';
             print " SNMP::Layer3::root_ip() using $ip\n" if $DEBUG;
             return $ip;
         }
     }
 
-    return $router_ip if defined $router_ip;
+    return $router_ip if (defined $router_ip and $router_ip ne '0.0.0.0');
     return undef;
 }
 
