@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -37,10 +37,11 @@ use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
 use SNMP::Info::CDP;
+use SNMP::Info::CiscoStats;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
 
-@SNMP::Info::Layer2::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::CDP Exporter/;
+@SNMP::Info::Layer2::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::CDP SNMP::Info::CiscoStats Exporter/;
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
 
 $DEBUG=0;
@@ -53,21 +54,23 @@ $INIT = 0;
 %MIBS = ( %SNMP::Info::MIBS, 
           %SNMP::Info::Bridge::MIBS,
           %SNMP::Info::CDP::MIBS,
+          %SNMP::Info::CiscoStats::MIBS,
           'CISCO-PRODUCTS-MIB' => 'sysName',
           'CISCO-STACK-MIB'    => 'wsc1900sysID',
-#          'HP-ICF-OID'         => 'hpSwitch4000',
         );
 
 %GLOBALS = (
             %SNMP::Info::GLOBALS,
             %SNMP::Info::Bridge::GLOBALS,
             %SNMP::Info::CDP::GLOBALS,
+            %SNMP::Info::CiscoStats::GLOBALS,
             );
 
 %FUNCS   = (
             %SNMP::Info::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
             %SNMP::Info::CDP::FUNCS,
+            %SNMP::Info::CiscoStats::FUNCS,
            );
 
 %MUNGE = (
@@ -75,6 +78,7 @@ $INIT = 0;
             %SNMP::Info::MUNGE,
             %SNMP::Info::Bridge::MUNGE,
             %SNMP::Info::CDP::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
          );
 
 # Method OverRides
@@ -160,31 +164,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2 - Perl5 Interface to Layer2 network devices.
-
-=head1 DESCRIPTION
-
-Provides abstraction to the configuration information obtainable from a 
-Layer2 device through SNMP.  Information is stored in a number of MIBs.
-
-See super classes for descriptions of other available methods.
-
-Inherits from: 
-
- SNMP::Info
- SNMP::Info::Bridge
- SNMP::Info::CDP
-
-MIBS: 
-
- CISCO-PRODUCTS-MIB - Needed for ID of Cisco Products
- CISCO-STACK-MIB    - Needed for ID of Cisco Products
- ##HP-ICF-OID         - Needed for ID of HP    Products
- MIBS listed in SNMP::Info::Bridge and SNMP::Info::CDP
-
-Cisco MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
-
-HP MIBs can be found at http://www.hp.com/rnd/software
+SNMP::Info::Layer2 - Perl5 Interface to network devices serving Layer2 only.
 
 =head1 AUTHOR
 
@@ -192,35 +172,90 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $l2 = new SNMP::Info::Layer2(DestHost  => 'mybridge' , 
-                              Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $l2 = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-=head1 CREATING AN OBJECT
+ my $class      = $l2->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+ # Let's get some basic Port information
+ my $interfaces = $l2->interfaces();
+ my $i_up       = $l2->i_up();
+ my $i_speed    = $l2->i_speed();
+ foreach my $iid (keys %$interfaces) {
+    my $port  = $interfaces->{$iid};
+    my $up    = $i_up->{$iid};
+    my $speed = $i_speed->{$iid}
+    print "Port $port is $up. Port runs at $speed.\n";
+ }
+
+=head1 DESCRIPTION
+
+This class is usually used as a superclass for more specific device classes listed under 
+SNMP::Info::Layer2::*   Please read all docs under SNMP::Info first.
+
+Provides abstraction to the configuration information obtainable from a 
+Layer2 device through SNMP.  Information is stored in a number of MIBs.
+
+For speed or debugging purposes you can call the subclass directly, but not after determining
+a more specific class using the method above. 
+
+ my $l2 = new SNMP::Info::Layer2(...);
+
+=head2 Inherited Classes
 
 =over
 
-=item  new SNMP::Info::Layer2()
+=item SNMP::Info
 
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
+=item SNMP::Info::Bridge
 
-    my $l2 = new SNMP::Info::Layer2(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $l2;
+=item SNMP::Info::CDP
+
+=item SNMP::Info::CiscoStats
 
 =back
 
+=head2 Required MIBs
+
+=over
+
+=item CISCO-PRODUCTS-MIB 
+
+Needed for ID of Cisco Products
+
+=item CISCO-STACK-MIB
+
+Needed for ID of Cisco Products
+
+=item Inherited Classes
+
+MIBs required by the inherited classes listed above.
+
+=back
+
+MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
+
 =head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=head2 Overrides
 
 =over
 
 =item $l2->model()
 
 Cross references $l2->id() with product IDs in the 
-Cisco and HP specific MIBs.
+Cisco MIBs.
 
 For HP devices, removes 'hpswitch' from the name
 
@@ -228,11 +263,30 @@ For Cisco devices, removes 'sysid' from the name
 
 =item $l2->vendor()
 
-Trys to discover the vendor from $l2->model() and $l2->vendor()
+Trys to discover the vendor from $l2->model() and $l2->description()
 
 =back
 
-=head1 TABLE ENTRIES
+=head2 Globals imported from SNMP::Info
+
+See documentation in SNMP::Info for details.
+
+=head2 Globals imported from SNMP::Info::Bridge
+
+See documentation in SNMP::Info::Bridge for details.
+
+=head2 Globals imported from SNMP::Info::CDP
+
+See documentation in SNMP::Info::CDP for details.
+
+=head2 Globals imported from SNMP::Info::CiscoStats
+
+See documentation in SNMP::Info::CiscoStats for details.
+
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
 
 =head2 Overrides
 
@@ -251,5 +305,21 @@ Returns reference to hash.  Increments value of IID if port is to be ignored.
 Ignores ports with B<ifType> of loopback,propvirtual,other, and cpu
 
 =back
+
+=head2 Table Methods imported from SNMP::Info
+
+See documentation in SNMP::Info for details.
+
+=head2 Table Methods imported from SNMP::Info::Bridge
+
+See documentation in SNMP::Info::Bridge for details.
+
+=head2 Table Methods imported from SNMP::Info::CDP
+
+See documentation in SNMP::Info::CDP for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoStats
+
+See documentation in SNMP::Info::CiscoStats for details.
 
 =cut
