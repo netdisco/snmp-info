@@ -15,14 +15,12 @@ device-vendor: Asante
 device-family: Hubs
 
 device: 1012
-vendor: asante
 macsuck: no
 
 # Bay
 device-vendor: Bay Networks
 
 device-family: BayStack
-vendor: bay
 macsuck: yes
 cdp: proprietary
 note: SNMP interface does not respond after 2+ months of uptime. Reboot to fix.
