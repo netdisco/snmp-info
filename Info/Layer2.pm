@@ -1,5 +1,5 @@
 # SNMP::Info::Layer2 - SNMP Interface to Layer2 Devices 
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Copyright (c) 2004 Max Baker -- All changes from Version 0.7 on
 #
@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -47,13 +47,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
 @SNMP::Info::Layer2::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::CDP 
                               SNMP::Info::Entity SNMP::Info::CiscoStats Exporter/;
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
-
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
-
-# See SNMP::Info for the details of these data structures and 
-#       the interworkings.
-$INIT = 0;
 
 %MIBS = (   %SNMP::Info::MIBS, 
             %SNMP::Info::Bridge::MIBS,
@@ -194,7 +187,7 @@ SNMP::Info::Layer2 - Perl5 Interface to network devices serving Layer2 only.
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 

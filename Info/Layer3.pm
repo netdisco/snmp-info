@@ -1,5 +1,5 @@
 # SNMP::Info::Layer3 - SNMP Interface to Layer3 devices
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Copyright (c) 2004 Max Baker -- All changes from Version 0.7 on
 #
@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -46,11 +46,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 @SNMP::Info::Layer3::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::EtherLike
                               SNMP::Info::Entity Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
-
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
-
-$INIT = 0;
 
 %MIBS = ( %SNMP::Info::MIBS,
           %SNMP::Info::Bridge::MIBS,
@@ -107,7 +102,7 @@ sub root_ip {
         foreach my $key (keys %$ospf_ip){
             my $ip = $ospf_ip->{$key};
             next if $ip eq '0.0.0.0';
-            print " SNMP::Layer3::root_ip() using $ip\n" if $DEBUG;
+            print " SNMP::Layer3::root_ip() using $ip\n" if $l3->debug();
             return $ip;
         }
     }
@@ -157,7 +152,7 @@ sub model {
     my $id = $l3->id();
     
     unless (defined $id){
-        print " SNMP::Info::Layer3::model() - Device does not support sysObjectID\n" if $DEBUG; 
+        print " SNMP::Info::Layer3::model() - Device does not support sysObjectID\n" if $l3->debug(); 
         return undef;
     }
     
@@ -245,7 +240,7 @@ SNMP::Info::Layer3 - Perl5 Interface to network devices serving Layer3 or Layers
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 

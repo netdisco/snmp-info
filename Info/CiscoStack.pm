@@ -1,5 +1,5 @@
 # SNMP::Info::CiscoStack
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Copyright (c)2003,2004 Max Baker 
 # All rights reserved.  
@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStack;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -40,10 +40,6 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT $INIT/;
 @SNMP::Info::CiscoStack::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoStack::EXPORT_OK = qw//;
 
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
-
-$INIT    = 0;
 %MIBS    = (
             'CISCO-STACK-MIB'         => 'ciscoStackMIB',
             'CISCO-PORT-SECURITY-MIB' => 'ciscoPortSecurityMIB',
@@ -269,7 +265,7 @@ SNMP::Info::CiscoStack - Intefaces to data from CISCO-STACK-MIB and CISCO-PORT-S
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 

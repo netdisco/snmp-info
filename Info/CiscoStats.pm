@@ -1,5 +1,5 @@
 # SNMP::Info::CiscoStats
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Changes since Version 0.7 Copyright (c) 2004 Max Baker 
 # All rights reserved.  
@@ -31,7 +31,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStats;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -43,10 +43,6 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::CiscoStats::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoStats::EXPORT_OK = qw//;
 
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
-
-$INIT    = 0;
 %MIBS    = (
             'RFC1213-MIB'           => 'sysDescr',
             'CISCO-PROCESS-MIB'     => 'cpmCPUTotal5sec',
@@ -150,7 +146,7 @@ SNMP::Info::CiscoStats - Perl5 Interface to CPU and Memory stats for Cisco Devic
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 
@@ -190,6 +186,12 @@ none.
 =item CISCO-MEMORY-POOL-MIB
 
 =item RFC1213-MIB
+
+=item OLD-CISCO-SYSTEM-MIB
+
+=item CISCO-STACK-MIB
+
+=item CISCO-ENTITY-VENDORTYPE-OID-MIB
 
 =back
 

@@ -1,5 +1,5 @@
 # SNMP::Info::Entity
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
 #
@@ -42,7 +42,6 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::Entity::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::Entity::EXPORT_OK = qw//;
 
-$INIT    = 0;
 %MIBS    = ('ENTITY-MIB' => 'entPhysicalSerialNum');
 
 %GLOBALS = (
@@ -93,11 +92,11 @@ sub e_port {
 
 =head1 NAME
 
-SNMP::Info::Entity - Perl5 Interface to SNMP data stored in ENTITY-MIB.
+SNMP::Info::Entity - Perl5 Interface to SNMP data stored in ENTITY-MIB. RFC 2737
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 
@@ -117,7 +116,9 @@ Max Baker (C<max@warped.org>)
 
 =head1 DESCRIPTION
 
-ENTITY-MIB is used by some Layer 2 devices like HP Switches and Aironet Access Points
+ENTITY-MIB is used by Layer 2 devices from HP,Aironet,Foundry,Cisco and more.
+
+See RFC 2737 for full details.
 
 Create or use a device subclass that inherit this class.  Do not use directly.
 

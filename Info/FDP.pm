@@ -32,7 +32,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::FDP;
-$VERSION = 0.9;
+$VERSION = 1.0;
 
 use strict;
 
@@ -44,19 +44,11 @@ use Carp;
 @SNMP::Info::FDP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
-# Debug
-$DEBUG=1;
-$SNMP::debugging=$DEBUG;
 
-# Five data structures required by SNMP::Info
-$INIT = 0;
 %MIBS 	= ( 'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snFdpGlobalRun' );
 
-# Notice we dont inherit the default GLOBALS and FUNCS
-# only the default MUNGE.
 %GLOBALS = (
             # CDP-Compatibility
-            'cdp_run'      => 'snFdpGlobalRun',
             'cdp_interval' => 'snFdpGlobalMessageInterval',
             'cdp_holdtime' => 'snFdpGlobalHoldTime',
             'cdp_id'       => 'snFdpGlobalDeviceId',
@@ -96,6 +88,16 @@ sub munge_caps {
     
     
 }
+
+sub cdp_run {
+    my $fdp = shift;
+    my $fdp_run = $fdp->fdp_run();
+
+    # if fdp_run isn't implemented on device, assume FDP is on
+    return $fdp_run if defined $fdp_run;
+    return 1;
+}
+
 sub hasFDP {
     my $fdp = shift;
 
@@ -128,7 +130,7 @@ sub c_if {
     my $fdp_ip = $fdp->c_ip();
     unless (defined $fdp_ip){
         $fdp->{error} = "SNMP::Info::FDP:fdp_if() - Device doesn't have fdp_ip() data.  Can't fake fdp_index()";
-        $DEBUG and carp($fdp->error(1));
+        carp($fdp->error(1)) if $fdp->debug();
         return undef;
     }
 
@@ -153,7 +155,7 @@ SNMP::Info::FDP - Perl5 Interface to Foundry Discovery Protocol (FDP) using SNMP
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Bruce Rodger, Max Baker
 
 =head1 SYNOPSIS
 

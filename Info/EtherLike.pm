@@ -1,5 +1,5 @@
 # SNMP::Info::EtherLike
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
 #
@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::EtherLike;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -42,12 +42,6 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::EtherLike::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::EtherLike::EXPORT_OK = qw//;
 
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
-
-$INIT = 0;
-
-# Same info in both rfc1398 and this?
 %MIBS = ('ETHERLIKE-MIB' => 'etherMIB' );
 
 %GLOBALS = ();
@@ -83,11 +77,11 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::EtherLike - Perl5 Interface to SNMP ETHERLIKE-MIB 
+SNMP::Info::EtherLike - Perl5 Interface to SNMP ETHERLIKE-MIB RFC 1398
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 
@@ -123,6 +117,8 @@ Max Baker (C<max@warped.org>)
 
 SNMP::Info::EtherLike is a subclass of SNMP::Info that supplies 
 access to the ETHERLIKE-MIB used by some Layer 3 Devices such as Cisco routers.
+
+See RFC 1398 for more details.
 
 Use or create a subclass of SNMP::Info that inherits this one.  Do not use directly.
 

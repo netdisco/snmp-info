@@ -1,5 +1,5 @@
 # SNMP::Info::CiscoVTP
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
 #
@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoVTP;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -42,10 +42,6 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::CiscoVTP::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoVTP::EXPORT_OK = qw//;
 
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
-
-$INIT    = 0;
 %MIBS    = (
             'CISCO-VTP-MIB'                       => 'vtpVlanName',
             'CISCO-VLAN-MEMBERSHIP-MIB'           => 'vmMembershipEntry',
@@ -106,11 +102,12 @@ $INIT    = 0;
             # CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
             'v_cvi_if'    => 'cviRoutedVlanIfIndex',
 
+            # vlanTrunkPortTable
+
             # TODO Add these tables if someone wants them..
             # vtpEditControlTable
             # vtpVlanEditTable
             # vtpStatsTable
-            # vlanTrunkPortTable
            );
 
 %MUNGE   = (
@@ -150,7 +147,7 @@ SNMP::Info::CiscoVTP - Perl5 Interface to Cisco's VLAN Management MIBs
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 

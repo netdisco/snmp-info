@@ -2,7 +2,7 @@
 # Eric Miller <eric@jeneric.org>
 # $Id$
 #
-# Copyright (c) 2004 Max Baker
+# Copyright (c) 2004 Eric Miller, Max Baker
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::RapidCity;
-$VERSION = 0.9;
+$VERSION = 1.0;
 use strict;
 
 use Exporter;
@@ -39,12 +39,6 @@ use Carp;
 @SNMP::Info::RapidCity::EXPORT_OK = qw//;
 
 use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
-# Debug
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
-
-# Five data structures required by SNMP::Info
-$INIT = 0;
 
 %MIBS    = (
             'RAPID-CITY' => 'rapidCity',

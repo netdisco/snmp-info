@@ -1,5 +1,5 @@
 # SNMP::Info::CDP
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Changes since Version 0.7 Copyright (c) 2004 Max Baker 
 # All rights reserved.  
@@ -31,7 +31,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CDP;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -43,15 +43,11 @@ use Carp;
 @SNMP::Info::CDP::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CDP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MIBS_V1 %MUNGE $INIT/;
-# Debug
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
+use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
 
 # Five data structures required by SNMP::Info
-$INIT = 0;
 %MIBS    = ( 'CISCO-CDP-MIB' => 'cdpGlobalRun' );
-%MIBS_V1 = ( 'CISCO-CDP-MIB-V1SMI' => 'cdpGlobalRun' );
+
 # Notice we dont inherit the default GLOBALS and FUNCS
 # only the default MUNGE.
 %GLOBALS = (
@@ -130,7 +126,7 @@ sub c_if {
     my $c_ip = $cdp->c_ip();
     unless (defined $c_ip){
         $cdp->{error} = "SNMP::Info::CDP::c_if() - Device doesn't have c_ip() data.  Can't fake c_index()";
-        $DEBUG and carp($cdp->error(1));
+        carp($cdp->error(1)) if $cdp->debug();
         return undef;
     }
 
@@ -155,7 +151,7 @@ SNMP::Info::CDP - Perl5 Interface to Cisco Discovery Protocol (CDP) using SNMP
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 
