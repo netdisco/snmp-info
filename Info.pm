@@ -1,8 +1,8 @@
 # SNMP::Info - Max Baker
 #
-# Portions Copyright (c) 2003,2004 Max Baker 
+# Copyright (c) 2003,2004 Max Baker 
 # All rights reserved.  
-# Copyright (c) 2002-3, Regents of the University of California
+# Portions Copyright (c) 2002-3, Regents of the University of California
 # All rights reserved.  
 #
 # See COPYRIGHT at bottom
@@ -28,7 +28,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 0.8
+SNMP::Info - Version 0.9
 
 =head1 AUTHOR
 

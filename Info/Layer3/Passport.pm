@@ -1,9 +1,8 @@
 # SNMP::Info::Layer3::Passport
 # Eric Miller <eric@jeneric.org>
+# $Id$
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
-#
-# Copyright (c) 2002,2003 Regents of the University of California
+# Copyright (c) 2004 Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 

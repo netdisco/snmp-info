@@ -1,7 +1,9 @@
 # SNMP::Info::Layer3::AlteonAD
 # Eric Miller <eric@jeneric.org>
+# $Id$
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2004 Max Baker
+# All Rights Reserved
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:

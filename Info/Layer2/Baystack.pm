@@ -1,5 +1,6 @@
 # SNMP::Info::Layer2::Baystack
 # Eric Miller <eric@jeneric.org>
+# $Id$
 #
 # Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
 # All rights reserved.

@@ -1,5 +1,6 @@
 # SNMP::Info::RapidCity
 # Eric Miller <eric@jeneric.org>
+# $Id$
 #
 # Copyright (c) 2004 Max Baker
 #

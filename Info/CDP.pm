@@ -31,7 +31,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CDP;
-$VERSION = 0.8;
+$VERSION = 0.9;
 # $Id$
 
 use strict;
