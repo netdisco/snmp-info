@@ -38,33 +38,43 @@ use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CiscoStack;
+use SNMP::Info::CDP;
+use SNMP::Info::CiscoStats;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
 @SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::Layer2 SNMP::Info::CiscoStack 
-                                        SNMP::Info::CiscoVTP Exporter/;
+                                        SNMP::Info::CiscoVTP SNMP::Info::CDP SNMP::Info::CiscoStats Exporter/;
 @SNMP::Info::Layer2::Catalyst::EXPORT_OK = qw//;
 
 %MIBS =    ( %SNMP::Info::Layer2::MIBS, 
              %SNMP::Info::CiscoVTP::MIBS,
              %SNMP::Info::CiscoStack::MIBS,
+             %SNMP::Info::CiscoStats::MIBS,
+             %SNMP::Info::CDP::MIBS,
            );
 
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
             %SNMP::Info::CiscoStack::GLOBALS,
+            %SNMP::Info::CiscoStats::GLOBALS,
+            %SNMP::Info::CDP::GLOBALS,
            );
 
 %FUNCS =   (
             %SNMP::Info::Layer2::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
             %SNMP::Info::CiscoStack::FUNCS,
+            %SNMP::Info::CiscoStats::FUNCS,
+            %SNMP::Info::CDP::FUNCS,
            );
 
 %MUNGE =   (
             %SNMP::Info::Layer2::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
             %SNMP::Info::CiscoStack::MUNGE,
+            %SNMP::Info::CDP::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
            );
 
 # Overidden Methods

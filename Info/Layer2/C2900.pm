@@ -37,8 +37,11 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::CiscoVTP;
+use SNMP::Info::CDP;
+use SNMP::Info::CiscoStats;
 
-@SNMP::Info::Layer2::C2900::ISA = qw/SNMP::Info::Layer2 SNMP::Info::CiscoVTP Exporter/;
+@SNMP::Info::Layer2::C2900::ISA = qw/SNMP::Info::Layer2 SNMP::Info::CiscoVTP 
+                                     SNMP::Info::CDP SNMP::Info::CiscoStats Exporter/;
 @SNMP::Info::Layer2::C2900::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
@@ -47,10 +50,14 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
+            %SNMP::Info::CiscoStats::GLOBALS,
+            %SNMP::Info::CDP::GLOBALS,
             );
 
 %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
+            %SNMP::Info::CiscoStats::FUNCS,
+            %SNMP::Info::CDP::FUNCS,
             'i_name'               => 'ifAlias',
             # C2900PortEntry
             'c2900_p_index'        => 'c2900PortIfIndex',
@@ -61,11 +68,15 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 %MIBS    = ( %SNMP::Info::Layer2::MIBS,
              %SNMP::Info::CiscoVTP::MIBS,
+             %SNMP::Info::CiscoStats::MIBS,
+             %SNMP::Info::CDP::MIBS,
             'CISCO-C2900-MIB' => 'ciscoC2900MIB',
            );
 
 %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
+            %SNMP::Info::CDP::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
            );
 
 sub vendor {

@@ -1,7 +1,7 @@
 # SNMP::Info::Layer2 - SNMP Interface to Layer2 Devices 
 # Max Baker
 #
-# Copyright (c) 2004 Max Baker -- All changes from Version 0.7 on
+# Copyright (c) 2004,2005 Max Baker -- All changes from Version 0.7 on
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -38,28 +38,21 @@ use strict;
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
-use SNMP::Info::CDP;
-use SNMP::Info::CiscoStats;
 use SNMP::Info::Entity;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
 
-@SNMP::Info::Layer2::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::CDP 
-                              SNMP::Info::Entity SNMP::Info::CiscoStats Exporter/;
+@SNMP::Info::Layer2::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity Exporter/;
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
 
 %MIBS = (   %SNMP::Info::MIBS, 
             %SNMP::Info::Bridge::MIBS,
-            %SNMP::Info::CDP::MIBS,
-            %SNMP::Info::CiscoStats::MIBS,
             %SNMP::Info::Entity::MIBS,
         );
 
 %GLOBALS = (
             %SNMP::Info::GLOBALS,
             %SNMP::Info::Bridge::GLOBALS,
-            %SNMP::Info::CDP::GLOBALS,
-            %SNMP::Info::CiscoStats::GLOBALS,
             %SNMP::Info::Entity::GLOBALS,
             'serial1'   => '.1.3.6.1.4.1.9.3.6.3.0', # OLD-CISCO-CHASSIS-MIB::chassisId.0
             );
@@ -67,8 +60,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
 %FUNCS   = (
             %SNMP::Info::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
-            %SNMP::Info::CDP::FUNCS,
-            %SNMP::Info::CiscoStats::FUNCS,
             %SNMP::Info::Entity::FUNCS,
            );
 
@@ -76,8 +67,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
             # Inherit all the built in munging
             %SNMP::Info::MUNGE,
             %SNMP::Info::Bridge::MUNGE,
-            %SNMP::Info::CDP::MUNGE,
-            %SNMP::Info::CiscoStats::MUNGE,
             %SNMP::Info::Entity::MUNGE,
          );
 
@@ -106,7 +95,7 @@ sub vendor {
     my $model = $l2->model();
     my $descr = $l2->description();
 
-    if ($model =~ /hp/i or $descr =~ /hp/i) {
+    if ($model =~ /hp/i or $descr =~ /\bhp\b/i) {
         return 'hp';
     }
 
@@ -232,10 +221,6 @@ a more specific class using the method above.
 
 =item SNMP::Info::Bridge
 
-=item SNMP::Info::CDP
-
-=item SNMP::Info::CiscoStats
-
 =item SNMP::Info::Entity
 
 =back
@@ -283,14 +268,6 @@ See documentation in SNMP::Info for details.
 
 See documentation in SNMP::Info::Bridge for details.
 
-=head2 Globals imported from SNMP::Info::CDP
-
-See documentation in SNMP::Info::CDP for details.
-
-=head2 Globals imported from SNMP::Info::CiscoStats
-
-See documentation in SNMP::Info::CiscoStats for details.
-
 =head2 Globals imported from SNMP::Info::Entity
 
 See documentation in SNMP::Info::Entity for details.
@@ -325,14 +302,6 @@ See documentation in SNMP::Info for details.
 =head2 Table Methods imported from SNMP::Info::Bridge
 
 See documentation in SNMP::Info::Bridge for details.
-
-=head2 Table Methods imported from SNMP::Info::CDP
-
-See documentation in SNMP::Info::CDP for details.
-
-=head2 Table Methods imported from SNMP::Info::CiscoStats
-
-See documentation in SNMP::Info::CiscoStats for details.
 
 =head2 Table Methods imported from SNMP::Info::Entity
 

@@ -37,8 +37,11 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::CiscoVTP;
+use SNMP::Info::CDP;
+use SNMP::Info::CiscoStats;
 
-@SNMP::Info::Layer2::C1900::ISA = qw/SNMP::Info::Layer2 SNMP::Info::CiscoVTP Exporter/;
+@SNMP::Info::Layer2::C1900::ISA = qw/SNMP::Info::Layer2 SNMP::Info::CiscoVTP 
+                                     SNMP::Info::CDP SNMP::Info::CiscoStats Exporter/;
 @SNMP::Info::Layer2::C1900::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
@@ -47,11 +50,15 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
+            %SNMP::Info::CiscoStats::GLOBALS,
+            %SNMP::Info::CDP::GLOBALS,
             'c1900_flash_status'    => 'upgradeFlashBankStatus',
             );
 
 %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
+            %SNMP::Info::CiscoStats::FUNCS,
+            %SNMP::Info::CDP::FUNCS,
             'i_type2'              => 'ifType',
             'i_name2'              => 'ifName',
             # ESSWITCH-MIB
@@ -68,12 +75,16 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 %MIBS    = (
             %SNMP::Info::Layer2::MIBS,
              %SNMP::Info::CiscoVTP::MIBS,
+             %SNMP::Info::CiscoStats::MIBS,
+             %SNMP::Info::CDP::MIBS,
             # Also known as the ESSWITCH-MIB
             'STAND-ALONE-ETHERNET-SWITCH-MIB' =>  'series2000'
             );
 
 %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
+            %SNMP::Info::CDP::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
             );
 
 sub vendor {

@@ -16,6 +16,7 @@ version 1.0 ()
     * More error checking in  _load_attr() around bulkwalk code
     * Minor warning fix in L3::Aironet::os_ver()
     * Abstracted remaining Cisco stuff from L3 to L3::Cisco
+    * Removed all Cisco stuff from L2
     * Expanded Entity.pm to cover the whole ENTITY-MIB and improved docs.
     * changed all refs to $DEBUG to $self->debug() for reentrant code
     * [ 1111284 ] Parameters not being set with AutoSpecify - fixed.
