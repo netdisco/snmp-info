@@ -156,25 +156,20 @@ sub interfaces {
     my $l2 = shift;
     my $interfaces = $l2->i_index();
     my $i_descr    = $l2->i_description(); 
-    my $i_name     = $l2->i_name();
+    #my $i_name     = $l2->i_name();
 
     my %if;
     foreach my $iid (keys %$interfaces){
         my $port = $i_descr->{$iid};
-        my $name = $i_name->{$iid};
-        $port = $name if (defined $name and $name !~ /^\s*$/);
-        next unless defined $port;
 
-        # Cisco 1900 has a space in some of its port descr.
-        # get rid of any weird characters
-        $port =~ s/[^\d\/,()\w]+//gi;
-    
-        # Translate Cisco 2926,etc. from 1/5 to 1.5
-        $port =~ s/\//\./ if ($port =~ /^\d+\/\d+$/);
+        # what device was this good for?  bad idea.
+        #my $name = $i_name->{$iid};
+        #$port = $name if (defined $name and $name !~ /^\s*$/);
+
+        next unless defined $port;
 
         $if{$iid} = $port;
     }
-
     return \%if
 }
 
