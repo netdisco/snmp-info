@@ -90,9 +90,9 @@ sub os_ver {
     my $aironet = shift;
     my $descr = $aironet->description();
 
-    # CAP340 11.21
-    if ($descr =~ /AP\d{3}\s+(\d{2}\.\d{2})/){
-        return $1;
+    # CAP340 11.21, AP4800-E 11.21
+    if ($descr =~ /AP\d{3,4}(-\D+)?\s+(\d{2}\.\d{2})/){
+        return $2;
     }
     
     if ($descr =~ /Series\s*AP\s+(\d{2}\.\d{2})/){
