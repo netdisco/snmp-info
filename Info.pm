@@ -630,7 +630,9 @@ sub device_type {
     # if we dont have sysServices, we dont have anything else either probably.
     return undef unless (defined $layers and length($layers));
 
-    my $desc   = $info->description();
+    my $desc   = $info->description() || 'undef';
+    $desc =~ s/[\r\n\l]+/ /g;
+    $info->debug() and print "SNMP::Info::device_type() layers:$layers sysDescr: \"$desc\".\n";
 
     # Layer 3 Supported 
     #   (usually has layer2 as well, so we check for 3 first)
