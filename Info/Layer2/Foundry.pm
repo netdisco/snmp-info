@@ -158,6 +158,24 @@ sub serial {
     return $foundry->SUPER::serial();
 }
 
+sub interfaces {
+    my $foundry = shift;
+    my $i_descr = $foundry->i_description;
+    my $i_name  = $foundry->i_name;
+
+    # use ifName only if it is in portn 
+    #   format.  For EdgeIrons
+    # else use ifDescr
+    foreach my $iid (keys %$i_name){
+        my $name = $i_name->{$iid};
+        next unless defined $name;
+        $i_descr->{$iid} = $name 
+            if $name =~ /^port\d+/i;
+    }
+
+    return $i_descr;
+}
+
 sub i_ignore {
     my $foundry = shift;
     my $i_type = $foundry->i_type();

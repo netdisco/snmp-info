@@ -77,6 +77,14 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
             %SNMP::Info::CiscoStats::MUNGE,
            );
 
+# Need to specify this or it might grab the ones out of L2 instead of CiscoStack
+*SNMP::Info::Layer2::Catalyst::serial         = \&SNMP::Info::CiscoStack::serial;
+*SNMP::Info::Layer2::Catalyst::interfaces     = \&SNMP::Info::CiscoStack::interfaces;
+*SNMP::Info::Layer2::Catalyst::i_duplex       = \&SNMP::Info::CiscoStack::i_duplex;
+*SNMP::Info::Layer2::Catalyst::i_type         = \&SNMP::Info::CiscoStack::i_type;
+*SNMP::Info::Layer2::Catalyst::i_name         = \&SNMP::Info::CiscoStack::i_name;
+*SNMP::Info::Layer2::Catalyst::i_duplex_admin = \&SNMP::Info::CiscoStack::i_duplex_admin;
+
 # Overidden Methods
 
 # i_physical sets a hash entry as true if the iid is a physical port

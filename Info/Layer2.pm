@@ -140,26 +140,18 @@ sub i_ignore {
     return \%i_ignore;
 }    
 
-# By Default we'll use the description field
 sub interfaces {
     my $l2 = shift;
     my $interfaces = $l2->i_index();
     my $i_descr    = $l2->i_description(); 
-    #my $i_name     = $l2->i_name();
 
-    my %if;
-    foreach my $iid (keys %$interfaces){
+    # Replace the Index with the ifDescr field.
+    foreach my $iid (keys %$i_descr){
         my $port = $i_descr->{$iid};
-
-        # what device was this good for?  bad idea.
-        #my $name = $i_name->{$iid};
-        #$port = $name if (defined $name and $name !~ /^\s*$/);
-
         next unless defined $port;
-
-        $if{$iid} = $port;
+        $interfaces->{$iid} = $port;
     }
-    return \%if
+    return $interfaces;
 }
 
 1;
