@@ -1,7 +1,7 @@
 # SNMP::Info::MAU - Media Access Unit - RFC 2668
 # Max Baker
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2004,2005 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -133,9 +133,7 @@ sub mau_i_duplex_admin {
 
     my $interfaces   = $mau->interfaces();
     my $mau_index    = $mau->mau_index();
-    my $mau_auto     = $mau->mau_auto();
     my $mau_autostat = $mau->mau_autostat();
-    my $mau_typeadmin = $mau->mau_type_admin();
     my $mau_autosent = $mau->mau_autosent();
 
     my %mau_reverse = reverse %$mau_index;
@@ -242,6 +240,23 @@ These are methods that return scalar value from SNMP
 These are methods that return tables of information in the form of a reference
 to a hash.
 
+
+=over
+
+=item $mau->mau_i_duplex()
+
+Parses mau_index and mau_link to return the duplex information for
+interfaces.
+
+=item $mau->mau_i_duplex_admin()
+
+Parses C<mau_index>,C<mau_autostat>,C<mau_autosent> in
+order to find the admin duplex setting for all the interfaces.
+
+Returns either (auto,non,full,half).
+
+=back
+
 =head2 MAU INTERFACE TABLE ENTRIES
 
 =over
@@ -304,9 +319,17 @@ of the port from a MAU POV.
 
 (B<ifMauTypeList>)
 
+=item $mau->mau_type_admin()
+
+(C<ifMauDefaultType>)
+
 =item $mau->mau_auto() - Returns status of auto-negotiation mode for ports.
 
 (B<ifMauAutoNegAdminStatus>)
+
+=item $mau->mau_autostat()
+
+(C<ifMauAutoNegAdminStatus>)
 
 =item $mau->mau_autosent() - Returns a 32 bit bit-string representing the
 capabilities we are broadcasting on that port 
