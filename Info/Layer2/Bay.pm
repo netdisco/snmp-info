@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Bay;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 use strict;
 
@@ -72,6 +72,42 @@ $SNMP::Info::SPEED_MAP{200_000_000} = '100 Mbps';
 %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
             'i_mac2' => \&SNMP::Info::munge_mac ,
             );
+
+sub os {
+    return 'bay';
+}
+
+sub os_ver {
+    my $bay = shift;
+    my $descr = $bay->description();
+
+    # 303 / 304
+    if ($descr =~ m/Rev: \d+\.\d+\.\d+\.\d+-(\d+\.\d+\.\d+\.\d+)/){
+        return $1;
+    }
+
+    # 450
+    if ($descr =~ m/SW:v(\d+\.\d+\.\d+\.\d+)/){
+        return $1;
+    }
+    return undef;
+}
+
+sub os_bin {
+    my $bay = shift;
+    my $descr = $bay->description();
+
+    # 303 / 304
+    if ($descr =~ m/Rev: \d+\.(\d+\.\d+\.\d+)-\d+\.\d+\.\d+\.\d+/){
+        return $1;
+    }
+
+    # 450
+    if ($descr =~ m/FW:v(\d+\.\d+\.\d+\.\d+)/){
+        return $1;
+    }
+    return undef;
+}
 
 sub vendor {
     # or nortel, or synopsis?
@@ -136,6 +172,7 @@ sub c_if {
     my %c_if;
     foreach my $entry (keys %$bay_topo_port){
         my $port = $bay_topo_port->{$entry};
+        next unless defined $port;
         next if $port == 0;
         $c_if{"$port.1"} = $port;
     }
@@ -181,6 +218,7 @@ sub c_port {
     my %c_port;
     foreach my $entry (keys %$bay_topo_seg){
         my $port = $bay_topo_port->{$entry};
+        next unless defined $port;
         next if $port == 0;
 
         # For fake remotes (multiple IPs for a c_ip), use first found
@@ -224,33 +262,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Bay - SNMP Interface to old Bay Network Switches
-
-=head1 DESCRIPTION
-
-Provides abstraction to the configuration information obtainable from a 
-Bay device through SNMP. 
-
-Inherits from 
-
- SNMP::Info::Layer2
-
-Required MIBs:
-
- SYNOPTICS-ROOT-MIB
- S5-ETH-MULTISEG-TOPOLOGY-MIB
- MIBS listed in SNMP::Info::Layer2
-
-Bay MIBs can be found on the CD that came with your product.  
-
-Or, if you still have a service contract they can be downloaded at
-www.nortelnetworks.com
-
-They have also been seen at : http://www.inotech.com/mibs/vendor/baynetworks/synoptics/synoptics.asp
-
-Or http://www.oidview.com/mibs/detail.html under Synoptics.
-
-You will need at least the two listed above, and probably a few more.  
+SNMP::Info::Layer2::Bay - SNMP Interface to old Bay Network BayStack Switches
 
 =head1 AUTHOR
 
@@ -258,28 +270,64 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $bay = new SNMP::Info::Layer2::Bay(DestHost  => 'mybayswitch' , 
-                              Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $bay = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-=head1 CREATING AN OBJECT
+ my $class      = $bay->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+Provides abstraction to the configuration information obtainable from a 
+Bay device through SNMP. 
+
+For speed or debugging purposes you can call the subclass directly, but not after determining
+a more specific class using the method above. 
+
+ my $bay = new SNMP::Info::Layer2::Bay(...);
+
+=head2 Inherited Classes
 
 =over
 
-=item  new SNMP::Info::Layer2::Bay()
-
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
-
-    my $bay = new SNMP::Info::Layer2::Bay(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $bay;
+=item SNMP::Info::Layer2
 
 =back
 
+=head2 Required MIBs
+
+=over
+
+=item SYNOPTICS-ROOT-MIB
+
+=item S5-ETH-MULTISEG-TOPOLOGY-MIB
+
+=item Inherited classes
+
+MIBs required by SNMP::Info::Layer2 and its superclasses.
+
+=back
+
+Bay MIBs can be found on the CD that came with your product.
+
+Or, if you still have a service contract they can be downloaded at
+www.nortelnetworks.com
+
+They have also been seen at : http://www.inotech.com/mibs/vendor/baynetworks/synoptics/synoptics.asp
+
+Or http://www.oidview.com/mibs/detail.html under Synoptics.  Check also www.mibdepot.com
+
 =head1 GLOBALS
+
+These are methods that return scalar value from SNMP
 
 =over
 
@@ -309,7 +357,14 @@ Returns if the S5-ETH-MULTISEG-TOPOLOGY info is on for this device.
 
 =back
 
+=head2 Globals imported from SNMP::Info::Layer2
+
+See documentation in SNMP::Info::Layer2 for details.
+
 =head1 TABLE ENTRIES
+
+These are methods that return tables of information in the form of a reference
+to a hash.
 
 =head2 Overrides
 
@@ -416,5 +471,9 @@ Returns reference to hash.  Key: Table entry, Value:Boolean, if bay_topo_seg() i
 (B<s5EnMsTopNmmLocalSeg>)
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See documentation in SNMP::Info::Layer2 for details.
 
 =cut
