@@ -2295,7 +2295,7 @@ sub _load_attr {
     if ($ver == 1 and $nosuch and $errornum and $sess->{ErrorStr} =~ /nosuch/i){
         $errornum = 0; 
     } elsif ($errornum){
-        $self->error_throw("SNMP::Info::_load_atr: Varbind ".$sess->{ErrorStr}."\n");
+        $self->error_throw("SNMP::Info::_load_atrr: Varbind ".$sess->{ErrorStr}."\n");
         return undef;
     }
     my $localstore = undef;
@@ -2310,7 +2310,7 @@ sub _load_attr {
     if ($bulkwalk){
         ($vars) = $sess->bulkwalk(0, $repeaters, $var);
         if($sess->{ErrorNum}) {
-            $self->error_throw("SNMP::Info::_load_atr: BULKWALK ".$sess->{ErrorStr},"\n");
+            $self->error_throw("SNMP::Info::_load_atrr: BULKWALK ".$sess->{ErrorStr},"\n");
             return undef;
         }
     }
@@ -2341,11 +2341,11 @@ sub _load_attr {
         }
 
         if ($val eq 'NOSUCHOBJECT'){
-            $self->error_throw("SNMP::Info::_load_atr: $attr :  NOSUCHOBJECT");
+            $self->error_throw("SNMP::Info::_load_atrr: $attr :  NOSUCHOBJECT");
             next;
         }
         if ($val eq 'NOSUCHINSTANCE'){
-            $self->error_throw("SNMP::Info::_load_atr: $attr :  NOSUCHINSTANCE");
+            $self->error_throw("SNMP::Info::_load_atrr: $attr :  NOSUCHINSTANCE");
             next;
         }
 
