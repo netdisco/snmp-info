@@ -28,16 +28,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Catalyst;
-$VERSION = 0.6;
+$VERSION = 0.7;
 # $Id$
 
 use strict;
 
 use Exporter;
 use SNMP::Info::Layer2;
+use SNMP::Info::CiscoVTP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/ ;
-@SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::Layer2 SNMP::Info::CiscoVTP Exporter/;
 @SNMP::Info::Layer2::Catalyst::EXPORT_OK = qw//;
 
 $DEBUG=0;
@@ -47,12 +48,13 @@ $DEBUG=0;
 $INIT = 0;
 
 %MIBS =    ( %SNMP::Info::Layer2::MIBS, 
+             %SNMP::Info::CiscoVTP::MIBS,
              'CISCO-STACK-MIB' => 'moduleType',
-             'CISCO-VTP-MIB'   => 'vtpVlanIndex'
            );
 
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
+            %SNMP::Info::CiscoVTP::GLOBALS,
             # these are in CISCO-STACK-MIB
             'sysip'       => 'sysIpAddr',    
             'netmask'     => 'sysNetMask',    
@@ -69,6 +71,7 @@ $INIT = 0;
 
 %FUNCS =   (
             %SNMP::Info::Layer2::FUNCS,
+            %SNMP::Info::CiscoVTP::FUNCS,
             'i_type2'        => 'ifType',
             # CISCO-STACK-MIB::moduleEntry
             #   These are blades in a catalyst device
@@ -97,15 +100,11 @@ $INIT = 0;
             # CISCO-STACK-MIB::PortCpbEntry
             'p_speed_admin'  => 'portCpbSpeed',
             'p_duplex_admin' => 'portCpbDuplex',
-            # CISCO-VTP-MIB::VtpVlanEntry 
-            'v_state'   => 'vtpVlanState',
-            'v_type'    => 'vtpVlanType',
-            'v_name'    => 'vtpVlanName',
-            'v_mtu'     => 'vtpVlanMtu',
            );
 
 %MUNGE =   (
             %SNMP::Info::Layer2::MUNGE,
+            %SNMP::Info::CiscoVTP::MUNGE,
             'm_ports_status' => \&munge_port_status,
             'p_duplex_admin' => \&SNMP::Info::munge_bits,
            );
@@ -302,6 +301,8 @@ a more specific class using the method above.
 
 =item SNMP::Info::Layer2
 
+=item SNMP::Info::CiscoVTP
+
 =back
 
 =head2 Required MIBs
@@ -310,11 +311,11 @@ a more specific class using the method above.
 
 =item CISCO-STACK-MIB
 
-=item CISCO-VTP-MIB
-
 =item Inherited Classes' MIBs
 
 See SNMP::Info::Layer2 for its own MIB requirements.
+
+See SNMP::Info::CiscoVTP for its own MIB requirements.
 
 =back
 
@@ -384,6 +385,10 @@ Returns 'cisco'
 =head2 Globals imported from SNMP::Info::Layer2
 
 See documentation in SNMP::Info::Layer2 for details.
+
+=head2 Global Methods imported from SNMP::Info::CiscoVTP
+
+See documentation in SNMP::Info::CiscoVTP for details.
 
 =head1 TABLE ENTRIES
 
@@ -558,30 +563,9 @@ To see the status of port 4 :
 
 =back
 
-=head2 VLAN Entry Table
+=head2 Table Methods imported from SNMP::Info::CiscoVTP
 
-See ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html
-for a good treaty of how to connect to the VLANs
-
-=over
-
-=item $cat->v_state()
-
-(B<vtpVlanState>)
-
-=item $cat->v_type()
-
-(B<vtpVlanType>)
-
-=item $cat->v_name()
-
-(B<vtpVlanName>)
-
-=item $cat->v_mtu()
-
-(B<vtpVlanMtu>)
-
-=back
+See documentation in SNMP::Info::CiscoVTP for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 

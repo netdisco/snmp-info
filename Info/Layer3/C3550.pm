@@ -28,16 +28,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::C3550;
-$VERSION = 0.6;
+$VERSION = 0.7;
 # $Id$
 
 use strict;
 
 use Exporter;
 use SNMP::Info::Layer3;
+use SNMP::Info::CiscoVTP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/ ;
-@SNMP::Info::Layer3::C3550::ISA = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::C3550::ISA = qw/SNMP::Info::Layer3 SNMP::Info::CiscoVTP Exporter/;
 @SNMP::Info::Layer3::C3550::EXPORT_OK = qw//;
 
 $DEBUG=0;
@@ -48,12 +49,13 @@ $INIT = 0;
 
 %MIBS = (
          %SNMP::Info::Layer3::MIBS,  
+         %SNMP::Info::CiscoVTP::MIBS,
          'CISCO-STACK-MIB' => 'moduleType',
-         'CISCO-VTP-MIB'   => 'vtpVlanIndex'
         );
 
 %GLOBALS = (
             %SNMP::Info::Layer3::GLOBALS,
+            %SNMP::Info::CiscoVTP::GLOBALS,
             'ports2'      => 'ifNumber',
             # these are in CISCO-STACK-MIB
             'serial'      => 'chassisSerialNumberString',    
@@ -66,6 +68,7 @@ $INIT = 0;
 
 %FUNCS = (
             %SNMP::Info::Layer3::FUNCS,
+            %SNMP::Info::CiscoVTP::FUNCS,
             'i_type2'        => 'ifType',
             # CISCO-STACK-MIB::portEntry 
             'p_name'    => 'portName',
@@ -78,15 +81,11 @@ $INIT = 0;
             # CISCO-STACK-MIB::PortCpbEntry
             'p_speed_admin'  => 'portCpbSpeed',
             'p_duplex_admin' => 'portCpbDuplex',
-            # CISCO-VTP-MIB::VtpVlanEntry 
-            'v_state'   => 'vtpVlanState',
-            'v_type'    => 'vtpVlanType',
-            'v_name'    => 'vtpVlanName',
-            'v_mtu'     => 'vtpVlanMtu',
         );
 
 %MUNGE = (
             # Inherit all the built in munging
+            %SNMP::Info::CiscoVTP::MUNGE,
             %SNMP::Info::Layer3::MUNGE,
             'm_ports_status' => \&munge_port_status,
             'p_duplex_admin' => \&SNMP::Info::munge_bits,
@@ -248,7 +247,11 @@ a more specific class using the method above.
 
 =item CISCO-STACK-MIB
 
-=item CISCO-VTP-MIB
+=item Inherited Classes' MIBs
+
+See SNMP::Info::Layer3 for its own MIB requirements.
+
+See SNMP::Info::CiscoVTP for its own MIB requirements.
 
 =back
 
@@ -291,6 +294,10 @@ These are methods that return scalar value from SNMP
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in SNMP::Info::Layer3 for details.
+
+=head2 Global Methods imported from SNMP::Info::CiscoVTP
+
+See documentation in SNMP::Info::CiscoVTP for details.
 
 =head1 TABLE ENTRIES
 
@@ -371,33 +378,12 @@ Munges bit_string returned from p_duplex_admin to get duplex settings.
 
 =back
 
-=head2 VLAN Entry Table
-
-See ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html
-for a good treaty of how to connect to the VLANs
-
-=over
-
-=item $c3550->v_state()
-
-(B<vtpVlanState>)
-
-=item $c3550->v_type()
-
-(B<vtpVlanType>)
-
-=item $c3550->v_name()
-
-(B<vtpVlanName>)
-
-=item $c3550->v_mtu()
-
-(B<vtpVlanMtu>)
-
-=back
-
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in SNMP::Info::Layer3 for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoVTP
+
+See documentation in SNMP::Info::CiscoVTP for details.
 
 =cut

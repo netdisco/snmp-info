@@ -34,36 +34,35 @@ use strict;
 
 use Exporter;
 use SNMP::Info::Layer2;
+use SNMP::Info::CiscoVTP;
 
-@SNMP::Info::Layer2::C2900::ISA = qw/SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::C2900::ISA = qw/SNMP::Info::Layer2 SNMP::Info::CiscoVTP Exporter/;
 @SNMP::Info::Layer2::C2900::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 # Set for No CDP
 %GLOBALS = (
-            %SNMP::Info::Layer2::GLOBALS
+            %SNMP::Info::Layer2::GLOBALS,
+            %SNMP::Info::CiscoVTP::GLOBALS,
             );
 
 %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
+            %SNMP::Info::CiscoVTP::FUNCS,
             # C2900PortEntry
             'c2900_p_index'        => 'c2900PortIfIndex',
             'c2900_p_duplex'       => 'c2900PortDuplexStatus',
             'c2900_p_duplex_admin' => 'c2900PortDuplexState',
             'c2900_p_speed_admin'  => 'c2900PortAdminSpeed',
-            # CISCO-VTP-MIB::VtpVlanEntry 
-            'v_state'   => 'vtpVlanState',
-            'v_type'    => 'vtpVlanType',
-            'v_name'    => 'vtpVlanName',
-            'v_mtu'     => 'vtpVlanMtu',
            );
 
 %MIBS    = ( %SNMP::Info::Layer2::MIBS,
+             %SNMP::Info::CiscoVTP::MIBS,
             'CISCO-C2900-MIB' => 'ciscoC2900MIB',
-            'CISCO-VTP-MIB'   => 'vtpVlanIndex',
            );
 
 %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
+            %SNMP::Info::CiscoVTP::MUNGE,
            );
 
 sub vendor {
@@ -182,6 +181,8 @@ a more specific class using the method above.
 
 =item SNMP::Info::Layer2
 
+=item SNMP::Info::CiscoVTP
+
 =back
 
 =head2 Required MIBs
@@ -191,6 +192,12 @@ a more specific class using the method above.
 =item CISCO-C2900-MIB
 
 Part of the v2 MIBs from Cisco.
+
+=item Inherited Classes' MIBs
+
+See SNMP::Info::Layer2 for its own MIB requirements.
+
+See SNMP::Info::CiscoVTP for its own MIB requirements.
 
 =back
 
@@ -211,6 +218,10 @@ These are methods that return scalar value from SNMP
 =head2 Globals imported from SNMP::Info::Layer2
 
 See documentation in SNMP::Info::Layer2 for details.
+
+=head2 Global Methods imported from SNMP::Info::CiscoVTP
+
+See documentation in SNMP::Info::CiscoVTP for details.
 
 =head1 TABLE ENTRIES
 
@@ -279,33 +290,12 @@ to a hash.
 
 =back
 
-=head2 VLAN Entry Table
-
-See ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html
-for a good treaty of how to connect to the VLANs
-
-=over
-
-=item $c2900->v_state()
-
-(B<vtpVlanState>)
-
-=item $c2900->v_type()
-
-(B<vtpVlanType>)
-
-=item $c2900->v_name()
-
-(B<vtpVlanName>)
-
-=item $c2900->v_mtu()
-
-(B<vtpVlanMtu>)
-
-=back
-
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See documentation in SNMP::Info::Layer2 for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoVTP
+
+See documentation in SNMP::Info::CiscoVTP for details.
 
 =cut
