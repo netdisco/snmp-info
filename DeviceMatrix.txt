@@ -143,6 +143,7 @@ device: AS5300
 #
 device-family: Catalyst 1900
 note: !Upgrade older (pre 9.0) versions of CatOS
+note: !CatOS ver 9.00.03 through 9.00.06 have problems when trunking. Upgrade to 9.00.07 or higher.
 ver: 1
 class: Layer2::C1900
 
