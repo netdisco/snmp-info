@@ -2,13 +2,15 @@ SNMP::Info - Perl5 OO Interface to Network Devices and SNMP MIBs
 ChangeLog $Id$
 
 version 0.8 ()
-    * Added C3500XL devices to the Layer2::C2900 class
-    * Added Cisco 3750 (37xxstack) to Layer3::C6500 class
-    * Added Cisco Catalyst 4000 to Layer3::C6500 class
+    + Added C3500XL devices to the Layer2::C2900 class
+    + Added Cisco 3750 (37xxstack) to Layer3::C6500 class
+    + Added Cisco Catalyst 4000 to Layer3::C6500 class
+    * Fixed warning about uninitialized value in CiscoStats line 92
+    * Fixed warning in Layer2::Bay about non numeric port line 199
     Contributions from Dmitry Sergienko:
-    * Added Cisco Aironet BR500 and AP1200 to L2::Aironet Class
+    + Added Cisco Aironet BR500 and AP1200 to L2::Aironet Class
     * Fixed the Port name alias for Catalyst 2900 devices
-    * Added Support For ZiLEX DSLAMs and Allied Telesys Switches
+    + Added Support For ZiLEX DSLAMs and Allied Telesys Switches
 
 version 0.7 (08/14/03)
     * Added Class for Catalyst 6500 Series - Layer3::C6500
