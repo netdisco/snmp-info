@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::C6500;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -37,9 +37,12 @@ use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CiscoStack;
+use SNMP::Info::CDP;
+use SNMP::Info::CiscoStats;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-@SNMP::Info::Layer3::C6500::ISA = qw/ SNMP::Info::Layer3 SNMP::Info::CiscoStack SNMP::Info::CiscoVTP  Exporter/;
+@SNMP::Info::Layer3::C6500::ISA = qw/ SNMP::Info::Layer3 SNMP::Info::CiscoStack SNMP::Info::CiscoVTP 
+                                      SNMP::Info::CiscoStats SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer3::C6500::EXPORT_OK = qw//;
 
 $DEBUG=0;
@@ -48,29 +51,36 @@ $DEBUG=0;
 #       the interworkings.
 $INIT = 0;
 
-%MIBS = (
-         %SNMP::Info::Layer3::MIBS,  
-         %SNMP::Info::CiscoVTP::MIBS,
-         %SNMP::Info::CiscoStack::MIBS,
-        );
+%MIBS =    (
+            %SNMP::Info::Layer3::MIBS,  
+            %SNMP::Info::CiscoVTP::MIBS,
+            %SNMP::Info::CiscoStack::MIBS,
+            %SNMP::Info::CDP::MIBS,
+            %SNMP::Info::CiscoStats::MIBS,
+           );
 
 %GLOBALS = (
             %SNMP::Info::Layer3::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
             %SNMP::Info::CiscoStack::GLOBALS,
+            %SNMP::Info::CDP::GLOBALS,
+            %SNMP::Info::CiscoStats::GLOBALS,
            );
 
 %FUNCS = (
             %SNMP::Info::Layer3::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
             %SNMP::Info::CiscoStack::FUNCS,
+            %SNMP::Info::CDP::FUNCS,
+            %SNMP::Info::CiscoStats::FUNCS,
          );
 
 %MUNGE = (
-            # Inherit all the built in munging
             %SNMP::Info::Layer3::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
             %SNMP::Info::CiscoStack::MUNGE,
+            %SNMP::Info::CDP::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
          );
 
 # Pick and choose
