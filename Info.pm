@@ -89,6 +89,9 @@ SNMP::Info was created for Netdisco (www.netdisco.org) at UCSC
 
 SNMP::Info gives an object oriented interface to information obtained through SNMP.
 
+This module lives at http://snmp-info.sourceforge.net  Check for newest version and 
+documentation.
+
 This module is geared towards network devices.  Subclasses exist for a number of 
 network devices and common MIBs. 
 
