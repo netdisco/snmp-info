@@ -13,21 +13,22 @@ use lib '/usr/local/netdisco';
 use SNMP::Info;
 use Getopt::Long;
 use strict;
-use vars qw/$Class $Dev $Comm $Ver/;
+use vars qw/$Class $Dev $Comm $Ver @Dump/;
 
 # Default Values
 $Class = '';
 $Dev   = '';
 $Comm  = '';
 $Ver   = 2;
+@Dump  = ();
 
 GetOptions ('c|class=s' => \$Class,
             'd|dev=s'   => \$Dev,
             's|comm=s'  => \$Comm,
             'v|ver=i'   => \$Ver,
             'h|help'    => \&usage,
+            'p|print=s'   => \@Dump,
            );
-
 
 &usage unless ($Dev and $Comm);
 
@@ -38,6 +39,8 @@ if ($@) {
 }
 
 print "Class $Class loaded.\n";
+
+print "Dumping : ",join(',',@Dump),"\n"  if scalar @Dump;
 
 my $dev = new $Class( 'AutoSpecify' => 0,
                       'AutoVerBack' => 0,
@@ -52,7 +55,7 @@ print "Connected to $Dev.\n";
 my $layers = $dev->layers();
 
 unless (defined $layers){
-    warn "Are you sure you got the right community string and version?\nCan't fetch layers.\n";
+    die "Are you sure you got the right community string and version?\nCan't fetch layers.\n";
 }
 
 print "Fetching global info...\n\n";
@@ -67,7 +70,8 @@ foreach my $global (@globals){
 print "\nFetching interface info...\n\n";
 
 my @fns = qw/interfaces i_type i_ignore i_description i_mtu i_speed i_mac i_up
-             i_up_admin i_name i_duplex i_duplex_admin i_stp_state/;
+             i_up_admin i_name i_duplex i_duplex_admin i_stp_state
+             i_lastchange/;
 
 foreach my $fn (@fns){
     test_fn($dev,$fn);
@@ -132,6 +136,11 @@ sub test_fn {
     }
 
     printf "%-20s %d rows.\n",$method, scalar(keys %$results);
+    if (grep(/^$method$/,@Dump)) {
+        foreach my $iid (keys %$results){
+            print "  $iid : $results->{$iid}\n";
+        }
+    }
     return 1;
 }
 
@@ -143,6 +152,8 @@ test_class - Test a device against an SNMP::Info class
     -d  --dev   myswitch
     -s  --comm  public
     -v  --ver   2
+    -p  --print i_blah
+    -p  --print i_blah2
 
 end_usage
     exit;
