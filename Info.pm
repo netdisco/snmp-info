@@ -33,7 +33,7 @@ SNMP::Info - Version 0.4
 
 Max Baker (C<max@warped.org>)
 
-SNMP::Info was created for Netdisco (www.netdisco.org) at UCSC
+SNMP::Info was created at UCSC for the netdisco project (www.netdisco.org)
 
 =head1 SYNOPSIS
 
