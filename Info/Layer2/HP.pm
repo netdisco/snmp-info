@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::HP;
-$VERSION = 0.2;
+$VERSION = 0.3;
 # $Id$
 
 use strict;
@@ -69,17 +69,17 @@ $INIT = 0;
 
 %MYFUNCS = (
             'i_type2'   => 'ifType',
-            'e_map'     => 'entAliasMappingIdentifier',
-            'e_name'    => 'entPhysicalName',
             'e_class'   => 'entPhysicalClass',
-            'e_parent'  => 'entPhysicalContainedIn',
             'e_descr'   => 'entPhysicalDescr',
-            'e_type'    => 'entPhysicalVendorType',
-            'e_model'   => 'entPhysicalModelName',
-            'e_hwver'   => 'entPhysicalHardwareRev',
-            'e_swver'   => 'entPhysicalSoftwareRev',
             'e_fwver'   => 'entPhysicalFirmwareRev',
+            'e_hwver'   => 'entPhysicalHardwareRev',
+            'e_map'     => 'entAliasMappingIdentifier',
+            'e_model'   => 'entPhysicalModelName',
+            'e_name'    => 'entPhysicalName',
+            'e_parent'  => 'entPhysicalContainedIn',
             'e_serial'  => 'entPhysicalSerialNum',
+            'e_swver'   => 'entPhysicalSoftwareRev',
+            'e_type'    => 'entPhysicalVendorType',
             # RFC1271
             'l_descr'   => 'logDescription'
 
@@ -337,26 +337,6 @@ sub i_duplex_admin {
     return \%i_duplex_admin;
 }
 
-#sub i_up_admin {
-#    my $hp = shift;
-#    
-#    my $mau_index    = $hp->mau_index();
-#    my $mau_status = $hp->mau_status();
-#
-#    my %i_up_admin;
-#    foreach my $mau_port (keys %$mau_status){
-#        my $iid = $mau_index->{$mau_port};
-#        next unless defined $iid;
-#        my $status = $mau_status->{$mau_port};
-#        
-#        $i_up_admin{$iid} = ($status =~ /shutdown/i) ? 
-#                            'down' : 'up';
-#    }
-#
-#    return \%i_up_admin;  
-#
-#}
-
 1;
 __END__
 
@@ -391,6 +371,8 @@ Max Baker (C<max@warped.org>)
  my $hp = new SNMP::Info::Layer2::HP(DestHost  => 'router' , 
                               Community => 'public' ); 
 
+ See SNMP::Info and SNMP::Info::Layer2 for all the inherited methods.
+
 =head1 CREATING AN OBJECT
 
 =over
@@ -407,176 +389,126 @@ Arguments passed to new() are passed on to SNMP::Session::new()
         ) 
     die "Couldn't connect.\n" unless defined $hp;
 
-=item  $hp->session()
-
-Sets or returns the SNMP::Session object
-
-    # Get
-    my $sess = $hp->session();
-
-    # Set
-    my $newsession = new SNMP::Session(...);
-    $hp->session($newsession);
-
-=item  $hp->all(), $hp->load_all()
-
-Runs each of the HP List methods and returns a hash reference.
-
-$hp->all() will call $hp->load_all() once and then return cahced valued.  
-Use $hp->load_all() to reload from the device.
-
 =back
 
 =head1 HP Global Configuration Values
 
 =over
 
-=item $hp->name()
-(B<sysName>)
+=item $hp->log()
 
-=item $hp->ip()
-(B<sysIpAddr>)
-
-=item $hp->netmask()
-(B<sysNetMask>)
-
-=item $hp->broadcast()
-(B<sysBroadcast>)
-
-=item $hp->location()
-(B<sysLocation>)
-
-=item $hp->contact()
-(B<sysContact>)
-
-=item $hp->description()
-(B<sysDescr>)
-
-=item $hp->layers()
-(B<sysServices>)
-
-=item $hp->serial()
-(B<chassisSerialNumberString>)
+Returns all the log entries from the switch's log that are not Link up or down messages.
 
 =item $hp->model()
-(B<chassisModel>)
 
-=item $hp->ps1_type()
-(B<chassisPs1Type>)
+Returns the model number of the HP Switch.  Will translate between the HP Part number and 
+the common model number with this map :
 
-=item $hp->ps2_type()
-(B<chassisPs2Type>)
+ %MODEL_MAP = ( 
+               'J4812A' => '2512',
+               'J4819A' => '5308XL',
+               'J4813A' => '2524',
+               'J4805A' => '5304XL',
+               'J4815A' => '3324XL',
+               'J4865A' => '4108GL',
+               'J4887A' => '4104GL',
+               'J4874A' => '9315',
+              );
 
-=item $hp->ps1_status()
-(B<chassisPs1Status>)
+=item $hp->serial()
 
-=item $hp->ps2_status()
-(B<chassisPs2Status>)
+Returns serial number if available through SNMP
 
 =item $hp->slots()
-(B<chassisNumSlots>)
 
-=item $hp->fan()
-(B<chassisFanStatus>)
+Returns number of entries in $hp->e_name that have 'slot' in them.
 
-=back
+=item $hp->vendor()
 
-=head1 CATALYST TABLE ENTRIES
-
-=head2 Module table
-
-=over
-
-=item $hp->m_type(), $hp->load_m_type()
-(B<moduleType>)
-
-=item $hp->m_model(), $hp->load_m_model()
-(B<moduleModel>)
-
-=item $hp->m_serial(), $hp->load_m_serial()
-(B<moduleSerialNumber>)
-
-=item $hp->m_status(), $hp->load_m_status()
-(B<moduleStatus>)
-
-=item $hp->m_name(), $hp->load_m_name()
-(B<moduleName>)
-
-=item $hp->m_ports(), $hp->load_m_ports()
-(B<moduleNumPorts>)
-
-=item $hp->m_ports_status(), $hp->load_m_ports_status()
- Returns a list of space separated status strings for the ports.
-   To see the status of port 4 :
-        @ports_status = split(' ', $hp->m_ports_status() );
-        $port4 = $ports_status[3];
-
-(B<modulePortStatus>)
-
-=item $hp->m_ports_hwver(), $hp->load_m_ports_hwver()
-(B<moduleHwVersion>)
-
-=item $hp->m_ports_fwver(), $hp->load_m_ports_fwver()
-(B<moduleFwVersion>)
-
-=item $hp->m_ports_swver(), $hp->load_m_ports_swver()
-(B<moduleSwVersion>)
-
-=item $hp->m_ports_ip(), $hp->load_m_ports_ip()
-(B<moduleIPAddress>)
-
-=item $hp->m_ports_sub1(), $hp->load_m_ports_sub1()
-(B<moduleSubType>)
-
-=item $hp->m_ports_sub2(), $hp->load_m_ports_sub2()
-(B<moduleSubType2>)
-
+hp
 
 =back
 
-=head2 Port Entry Table
+=head1 HP Table Values
+
+=head2 Entity Table
 
 =over
 
-=item $hp->p_name(), $hp->load_p_name()
-(B<portName>)
+=item $hp->e_class()
 
-=item $hp->p_type(), $hp->load_p_type()
-(B<portType>)
+(C<entPhysicalClass>)
 
-=item $hp->p_status(), $hp->load_p_status()
-(B<portOperStatus>)
+=item $hp->e_descr()
 
-=item $hp->p_status2(), $hp->load_p_status2()
-(B<portAdditionalStatus>)
+(C<entPhysicalClass>)
 
-=item $hp->p_speed(), $hp->load_p_speed()
-(B<portAdminSpeed>)
+=item $hp->e_fwver()
 
-=item $hp->p_duplex(), $hp->load_p_duplex()
-(B<portDuplex>)
+(C<entPhysicalFirmwareRev>)
 
-=item $hp->p_port(), $hp->load_p_port()
-(B<portIfIndex>)
+=item $hp->e_hwver()
+
+(C<entPhysicalHardwareRev>)
+
+=item $hp->e_map()
+
+(C<entAliasMappingIdentifier>)
+
+=item $hp->e_model()
+
+(C<entPhysicalModelName>)
+
+=item $hp->e_name()
+
+(C<entPhysicalName>)
+
+=item $hp->e_parent()
+
+(C<entPhysicalContainedIn>)
+
+=item $hp->e_port()
+
+Maps EntityTable entries to the Interface Table (IfTable) using
+$hp->e_map()
+
+=item $hp->e_serial()
+
+(C<entPhysicalSerialNum>)
+
+=item $hp->e_swver()
+
+(C<entPhysicalSoftwareRev>)
+
+=item $hp->e_type()
+
+(C<entPhysicalVendorType>)
 
 =back
 
-=head2 VLAN Entry Table
-
-ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html
+=head2 Overriden Methods from SNMP::Info::Layer2
 
 =over
 
-=item $hp->v_state(), $hp->load_v_state()
-(B<vtpVlanState>)
+=item $hp->interfaces() 
 
-=item $hp->v_type(), $hp->load_v_type()
-(B<vtpVlanType>)
+=item $hp->i_duplex()
 
-=item $hp->v_name(), $hp->load_v_name()
-(B<vtpVlanName>)
+Maps $hp->mau_index() with $hp->mau_link().  Methods inherited from
+SNMP::Info::MAU.
 
-=item $hp->v_mtu(), $hp->load_v_mtu()
-(B<vtpVlanMtu>)
+=item $hp->i_duplex_admin()
+
+Maps $hp->mau_index() with $hp->mau_auto(), $hp->mau_autostat(),
+$hp->typeadmin(), and $mau_autosent().  Methods inherited from
+SNMP::Info::MAU.
+
+=item $hp->i_name()
+
+Crosses i_name() with $hp->e_name() using $hp->e_port() and i_alias()
+
+=item $hp->i_type()
+
+Crosses i_type() with $hp->e_descr() using $hp->e_port()
 
 =back

@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::C3550;
-$VERSION = 0.2;
+$VERSION = 0.3;
 # $Id$
 
 use strict;
@@ -217,6 +217,9 @@ Max Baker (C<max@warped.org>)
  my $c3550 = new SNMP::Info::Layer3::C3550(DestHost  => 'router' , 
                               Community => 'public' ); 
 
+
+See L<SNMP::Info> and L<SNMP::Info::Layer3> for all the inherited methods.
+
 =head1 CREATING AN OBJECT
 
 =over
@@ -232,17 +235,6 @@ Arguments passed to new() are passed on to SNMP::Session::new()
         Version => 3,...
         ) 
     die "Couldn't connect.\n" unless defined $c3550;
-
-=item  $c3550->session()
-
-Sets or returns the SNMP::Session object
-
-    # Get
-    my $sess = $c3550->session();
-
-    # Set
-    my $newsession = new SNMP::Session(...);
-    $c3550->session($newsession);
 
 =back
 

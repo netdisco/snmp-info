@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Bay;
-$VERSION = 0.2;
+$VERSION = 0.3;
 # $Id$
 use strict;
 
@@ -275,17 +275,6 @@ Arguments passed to new() are passed on to SNMP::Session::new()
         Version => 3,...
         ) 
     die "Couldn't connect.\n" unless defined $bay;
-
-=item  $bay->session()
-
-Sets or returns the SNMP::Session object
-
-    # Get
-    my $sess = $bay->session();
-
-    # Set
-    my $newsession = new SNMP::Session(...);
-    $bay->session($newsession);
 
 =back
 

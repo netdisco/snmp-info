@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CDP;
-$VERSION = 0.2;
+$VERSION = 0.3;
 # $Id$
 
 use strict;
@@ -73,11 +73,20 @@ $INIT = 0;
           );
 
 %MUNGE = (
-          'c_capabilities' => \&SNMP::Info::munge_octet2hex,
+          'c_capabilities' => \&munge_caps,
           'c_ip'           => \&SNMP::Info::munge_ip
          );
 
 
+sub munge_caps {
+    my $caps = shift;
+    return undef unless defined $caps;
+
+    my $bits = substr(unpack("B*",$caps),-7);
+    return $bits;
+    
+    
+}
 sub hasCDP {
     my $cdp = shift;
 
@@ -103,8 +112,11 @@ SNMP::Info::CDP - Perl5 Interface to Cisco Discovery Protocol (CDP) using SNMP
 
 =head1 DESCRIPTION
 
-CDP provides Layer 2 discovery of attached devices that also
-speak CDP, including switches, routers and hubs.
+SNMP::Info::CDP is a subclass of SNMP::Info that provides an object oriented 
+interface to CDP information through SNMP.
+
+CDP is a Layer 2 protocol that supplies topology information of devices that also speak CDP, 
+mostly switches and routers.
 
 =head1 AUTHOR
 
@@ -112,38 +124,19 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $cdp = new SNMP::Info::CDP( DestHost  => 'router' , 
-                          Community => 'public' );
+ my $info = new SNMP::Info ( DestHost  => 'router', 
+                             Community => 'public' 
+                           );
+
+ my $type = $info->device_type();
+
+ my $cdp  = new $type ( DestHost => 'router',
+                        Community => 'public);
+
  $hascdp = $cdp->hasCDP() ? 'yes' : 'no';
- @neighbor_ips = values( %{$cdp->ip()} );
+ @neighbor_ips = values( %{$cdp->c_ip()} );
 
-=head1 CREATING AN OBJECT
-
-=over
-
-=item new SNMP::Info::CDP()
-
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
-
-    my $cdp = new SNMP::Info::CDP(
-        DestHost => $host,
-        Community => 'public'
-        ) 
-    die "Couldn't connect.\n" unless defined $cdp;
-
-=item  $cdp->session()
-
-Sets or returns the SNMP::Session object
-
-    # Get
-    my $sess = $cdp->session();
-
-    # Set
-    my $newsession = new SNMP::Session(...);
-    $cdp->session($newsession);
-
-=back
+See L<SNMP::Info> for all inherited methods.
 
 =head2 Your Device May Vary
 
@@ -230,9 +223,33 @@ Returns remote platform id
 
 =item $cdp->c_capabilities()
 
-Returns Device Functional Capabilities bitmap.  
+Returns Device Functional Capabilities.  Results are munged into an ascii
+binary string, 7 digits long, MSB.  Each digit represents a bit from the
+table below.
 
-Anyone know where I can get info on how to decode this?
+From L<http://www.cisco.com/univercd/cc/td/doc/product/lan/trsrb/frames.htm#18843>:
+
+(Bit) - Description
+
+=over
+
+=item (0x40) - Provides level 1 functionality.
+
+=item (0x20) - The bridge or switch does not forward IGMP Report packets on nonrouter ports.
+
+=item (0x10) - Sends and receives packets for at least one network layer protocol. If the device is routing the protocol, this bit should not be set.
+
+=item (0x08) - Performs level 2 switching. The difference between this bit and bit 0x02 is that a switch does not run the Spanning-Tree Protocol. This device is assumed to be deployed in a physical loop-free topology.
+
+=item (0x04) - Performs level 2 source-route bridging. A source-route bridge would set both this bit and bit 0x02.
+
+=item (0x02) - Performs level 2 transparent bridging.
+
+=item (0x01) - Performs level 3 routing for at least one network layer protocol.
+
+=back
+
+Thanks to Martin Lorensen C<martin -at- lorensen.dk> for a pointer to this information.
 
 (B<cdpCacheCapabilities>)
 
