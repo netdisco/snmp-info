@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CDP;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -59,7 +59,7 @@ $INIT = 0;
            );
 
 %FUNCS  = (
-            'c_if'           => 'cdpCacheIfIndex',
+            'c_index'        => 'cdpCacheIfIndex',
             'c_proto'        => 'cdpCacheAddressType',
             'c_ip'           => 'cdpCacheAddress',
             'c_ver'          => 'cdpCacheVersion',
@@ -103,6 +103,34 @@ sub hasCDP {
     
     return $cdp->cdp_run();
 }
+
+sub c_if {
+    my $cdp  = shift;
+
+    # See if by some miracle Cisco implemented the cdpCacheIfIndex entry
+    my $c_index     = $cdp->c_index();
+    return $c_index if defined $c_index;
+
+    # Nope, didn't think so. Now we fake it.
+    my $c_ip = $cdp->c_ip();
+    unless (defined $c_ip){
+        $cdp->{error} = "SNMP::Info::CDP::c_if() - Device doesn't have c_ip() data.  Can't fake c_index()";
+        $DEBUG and carp($cdp->error(1));
+        return undef;
+    }
+
+    my %c_if;
+    foreach my $key (keys %$c_ip){
+      next unless defined $key;
+      my $iid = $key;
+      # Truncate .1 from cdp cache entry
+      $iid =~ s/\.\d+$//;
+      $c_if{$key} = $iid;
+    }
+
+    return \%c_if;
+}
+
 1;
 __END__
 
@@ -116,7 +144,9 @@ SNMP::Info::CDP is a subclass of SNMP::Info that provides an object oriented
 interface to CDP information through SNMP.
 
 CDP is a Layer 2 protocol that supplies topology information of devices that also speak CDP, 
-mostly switches and routers.
+mostly switches and routers.  CDP is implemented in Cisco and some HP devices.
+
+Normally you do not use this module directly, but from inside SNMP::Info
 
 =head1 AUTHOR
 
@@ -124,19 +154,34 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $info = new SNMP::Info ( DestHost  => 'router', 
-                             Community => 'public' 
+ my $cdp = new SNMP::Info ( 
+                             AutoSpecify => 1,
+                             Debug       => 1,
+                             DestHost    => 'router', 
+                             Community   => 'public',
+                             Version     => 2
                            );
+ 
+ my $class = $cdp->class();
+ print " Using device sub class : $class\n";
+ 
+ $hascdp   = $cdp->hasCDP() ? 'yes' : 'no';
+ 
+ # Print out a map of device ports with CDP neighbors:
+ my $interfaces = $cdp->interfaces();
+ my $c_if       = $cdp->c_if();
+ my $c_ip       = $cdp->c_ip();
+ my $c_port     = $cdp->c_port();
 
- my $type = $info->device_type();
+ foreach my $cdp_key (keys %$c_ip){
+    my $iid           = $c_if->{$cdp_key};
+    my $port          = $interfaces->{$iid};
+    my $neighbor      = $c_ip->{$cdp_key};
+    my $neighbor_port = $c_port->{$cdp_key};
+    print "Port : $port connected to $neighbor / $neighbor_port\n";
+ }
 
- my $cdp  = new $type ( DestHost => 'router',
-                        Community => 'public);
-
- $hascdp = $cdp->hasCDP() ? 'yes' : 'no';
- @neighbor_ips = values( %{$cdp->c_ip()} );
-
-See L<SNMP::Info> for all inherited methods.
+See L<SNMP::Info> for all other inherited methods.
 
 =head2 Your Device May Vary
 
@@ -185,42 +230,6 @@ This is the device id broadcast via CDP to other devices, and is what is retriev
 
 =over
 
-=item  $cdp->c_proto()
-
-Returns remote address type received.  Usually IP.
-
-(B<cdpCacheAddressType>)
-
-=item  $cdp->c_ip()
-
-Returns remote IP address
-
-(B<cdpCacheAddress>)
-
-=item $cdp->c_ver() 
-
-Returns remote hardware version
-
-(B<cdpCacheVersion>)
-
-=item $cdp->c_id()
-
-Returns remote device id string
-
-(B<cdpCacheDeviceId>)
-
-=item $cdp->c_port()
-
-Returns remote port ID
-
-(B<cdpDevicePort>)
-
-=item $cdp->c_platform() 
-
-Returns remote platform id 
-
-(B<cdpCachePlatform>)
-
 =item $cdp->c_capabilities()
 
 Returns Device Functional Capabilities.  Results are munged into an ascii
@@ -259,17 +268,91 @@ Returns remote VTP Management Domain as defined in CISCO-VTP-MIB::managementDoma
 
 (B<cdpCacheVTPMgmtDomain>)
 
-=item $cdp->c_vlan()
-
-Returns the remote interface native VLAN.
-
-(B<cdpCacheNativeVLAN>)
-
 =item $cdp->c_duplex() 
 
 Returns the port duplex status from remote devices.
 
 (B<cdpCacheDuplex>)
+
+=item $cdp->c_id()
+
+Returns remote device id string
+
+(B<cdpCacheDeviceId>)
+
+=item $cdp->c_if()
+
+Returns the mapping to the SNMP Interface Table.
+
+Note that a lot devices don't implement $cdp->c_index(),  So if it isn't around,
+we fake it. 
+
+In order to map the cdp table entry back to the interfaces() entry, we truncate the last number
+off of it :
+
+  # it exists, yay.
+  my $c_index     = $device->c_index();
+  return $c_index if defined $c_index;
+
+  # if not, let's fake it
+  my $c_ip       = $device->c_ip();
+    
+  my %c_if
+  foreach my $key (keys %$c_ip){
+      $iid = $key;
+      ## Truncate off .1 from cdp response
+      $iid =~ s/\.\d+$//;
+      $c_if{$key} = $iid;
+  }
+ 
+  return \%c_if;
+
+
+=item $cdp->c_index()
+
+Returns the mapping to the SNMP2 Interface table for CDP Cache Entries. 
+
+Most devices don't implement this, so you probably want to use $cdp->c_if() instead.
+
+See c_if() entry.
+
+(B<cdpCacheIfIndex>)
+
+=item  $cdp->c_ip()
+
+Returns remote IP address
+
+(B<cdpCacheAddress>)
+
+=item $cdp->c_platform() 
+
+Returns remote platform id 
+
+(B<cdpCachePlatform>)
+
+=item $cdp->c_port()
+
+Returns remote port ID
+
+(B<cdpDevicePort>)
+
+=item  $cdp->c_proto()
+
+Returns remote address type received.  Usually IP.
+
+(B<cdpCacheAddressType>)
+
+=item $cdp->c_ver() 
+
+Returns remote hardware version
+
+(B<cdpCacheVersion>)
+
+=item $cdp->c_vlan()
+
+Returns the remote interface native VLAN.
+
+(B<cdpCacheNativeVLAN>)
 
 =back
 
