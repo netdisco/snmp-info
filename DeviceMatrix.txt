@@ -7,17 +7,19 @@
 # $Id$
 
 # Allied
-device-vendor: allied
+device-vendor: Allied TeleSys
 
 # Asante
-device-vendor: asante
+device-vendor: Asante
+
+device-family: Hubs
 
 device: 1012
 vendor: asante
 macsuck: no
 
 # Bay
-device-vendor: bay
+device-vendor: Bay Networks
 
 device-family: BayStack
 vendor: bay
@@ -25,13 +27,13 @@ macsuck: yes
 cdp: proprietary
 note: SNMP interface does not respond after 2+ months of uptime. Reboot to fix.
 
-device: 303, 304
-
+device: 303
+device: 304
 device: 450
 note: Lables full duplex as 20Mbit connection.
 
 # CISCO
-device-vendor: cisco
+device-vendor: Cisco
 cdp: yes
 
 device-family: Aironet
@@ -243,12 +245,12 @@ duplex: no
 device: VG200
 
 # Foundry
-device-vendor: foundry
+device-vendor: Foundry Networks
 
 device-family: FastIron
 
 # HP
-device-vendor: hp
+device-vendor: HP
 
 device-family: ProCurve
 duplex: both
