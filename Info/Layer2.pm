@@ -134,8 +134,8 @@ sub serial {
 
     # precedence
     #   serial2,chassis parse,serial1
-    return $1 if (defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i);
     return $serial2 if (defined $serial2 and $serial2 !~ /^\s*$/);
+    return $1 if (defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i);
     return $serial1 if (defined $serial1 and $serial1 !~ /^\s*$/);
 
     return undef;
