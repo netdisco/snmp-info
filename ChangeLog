@@ -1,12 +1,15 @@
-SNMP::Info - Perl5 OO Interface to Network Devices and SNMP MIBs
+SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
 version 0.8 ()
+    + Added Q-BRIDGE-MIB support to SNMP::Info::Bridge
     + Added Aironet AP4800 to Layer3::Aironet class
     + Added C3500XL devices to the Layer2::C2900 class
     + Added Cisco 3750 (37xxstack) to Layer3::C6500 class
     + Added Cisco Catalyst 4000 to Layer3::C6500 class
     + Added Cisco Catalyst 2970 to Layer3::C6500 Class
+    * Made Cisco Commuinty string indexing a boolean method for clarification
+    * Added VLAN info for HP devices using Q-BRIDGE-MIB
     * Fixed warning about uninitialized value in CiscoStats line 92
     * Added for more serial# checking for L2 and L3
     * Fixed warning in Layer2::Bay about non numeric port line 199

@@ -93,6 +93,11 @@ sub vendor {
     return 'cisco';
 }
 
+sub cisco_comm_indexing {
+    1;
+}
+
+
 1;
 __END__
 

@@ -771,7 +771,6 @@ Usually this method is called internally from new(AutoSpecify => 1)
 
 See device_type() entry for how a subclass is chosen. 
 
-=back
 
 =cut
 sub specify {
@@ -804,6 +803,20 @@ sub specify {
     $self->debug() and print "SNMP::Info::specify() - Changed Class to $device_type.\n";
     return $sub_obj;
 }
+
+=item $info->cisco_comm_indexing()
+
+Returns 0.  Is an overridable method used for vlan indexing for
+snmp calls on certain Cisco devices. 
+
+See L<ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html>
+
+=cut
+sub cisco_comm_indexing{
+    0;
+}
+
+=back
 
 =head2 Globals (Scalar Methods)
 

@@ -110,6 +110,10 @@ sub os_ver {
     return undef;
 }
 
+sub cisco_comm_indexing {
+    1;
+}
+
 1;
 __END__
 

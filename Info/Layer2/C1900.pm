@@ -99,6 +99,10 @@ sub os_ver {
     return undef;
 }
 
+sub cisco_comm_indexing {
+    1;
+}
+
 sub interfaces {
     my $c1900 = shift;
     my $i_descr = $c1900->i_description();

@@ -72,6 +72,14 @@ sub vendor {
     return 'cisco';
 }
 
+sub os {
+    return 'catalyst';
+}
+
+sub cisco_comm_indexing {
+    1;
+}
+
 sub i_duplex {
     my $c2900 = shift;
     

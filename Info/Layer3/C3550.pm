@@ -115,6 +115,10 @@ sub ports {
     return $ports2;
 }
 
+sub cisco_comm_indexing {
+    1;
+}
+
 
 1;
 __END__
