@@ -67,6 +67,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             %SNMP::Info::EtherLike::MUNGE
             );
 
+
 sub vendor {
     # Sorry, but it's true.
     return 'cisco';
@@ -111,11 +112,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Aironet - SNMP Interface to Aironet devices. 
-
-=head1 DESCRIPTION
-
-Provides interface to SNMP Data available on an Aironet / Cisco devices.
+SNMP::Info::Layer2::Aironet - SNMP Interface to Cisco Aironet devices running IOS.
 
 =head1 AUTHOR
 
@@ -123,15 +120,60 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $aironet = new SNMP::Info::Layer2::Aironet(DestHost  => 'myaironet',
-                                               Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $aironet = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-See SNMP::Info for more information.  See SNMP::Info::Layer2, SNMP::Info, SNMP::Info::Entity
-for available methods in addition to the ones below.
+ my $class      = $aironet->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+Provides interface to SNMP Data available on an Aironet / Cisco devices.
+
+For speed or debugging purposes you can call the subclass directly, but not after determining
+a more specific class using the method above. 
+
+my $aironet = new SNMP::Info::Layer2::Aironet(...);
+
+=head2 Inherited Classes
+
+=over
+
+=item SNMP::Info::Layer2
+
+=item SNMP::Info::Entity
+
+=item SNMP::Info::EtherLike
+
+=back
+
+=head2 Required MIBs
+
+=over
+
+=item Inherited Classes
+
+MIBs required by the inherited classes listed above.
+
+=back
 
 =head1 GLOBALS
 
+These are methods that return scalar value from SNMP
+
 =over
+
+=item $aironet->discription()
+
+Adds info from method e_descr() from SNMP::Info::Entity
 
 =item $aironet->vendor()
 
@@ -139,12 +181,44 @@ for available methods in addition to the ones below.
 
 =back
 
+=head2 Globals imported from SNMP::Info::Layer2
+
+See documentation in SNMP::Info::Layer2 for details.
+
+=head2 Globals imported from SNMP::Info::Entity
+
+See documentation in SNMP::Info::Entity for details.
+
+=head2 Globals imported from SNMP::Info::EtherLike
+
+See documentation in SNMP::Info::EtherLike for details.
+
 =head1 TABLE ENTRIES
 
 =head2 Overrides
 
 =over
 
+=item $aironet->interfaces()
+
+Uses the i_description() field.
+
+=item $aironet->i_duplex()
+
+Crosses information from SNMP::Info::EtherLike to get duplex info for interfaces.
+
 =back
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See documentation in SNMP::Info::Layer2 for details.
+
+=head2 Table Methods imported from SNMP::Info::Entity
+
+See documentation in SNMP::Info::Entity for details.
+
+=head2 Table Methods imported from SNMP::Info::EtherLike
+
+See documentation in SNMP::Info::EtherLike for details.
 
 =cut
