@@ -296,14 +296,21 @@ device: VG200
 
 # Foundry
 device-vendor: Foundry Networks
-class: Layer3::Foundry
+note: CDP --> FDP.
 
 device-family: FastIron
+class: Layer3::Foundry
 ver: 1
 note: Support very limited
 
+device: FastIron 4802
+
 device-family: EdgeIron
-note: only tested against an edgeiron 24g
+ver: 2
+class: Layer2::Foundry
+cdp: yes
+duplex: yes
+macsuck: yes
 device: EdgeIron 24G
 note: Bug where spanning tree stuff loops forever when polled by SNMP.
 
