@@ -1,7 +1,7 @@
 # SNMP::Info - Max Baker <max@warped.org>
 # $Id$
 #
-# Copyright (c) 2002, Regents of the University of California
+# Copyright (c) 2002-3, Regents of the University of California
 # All rights reserved.  
 #
 # See COPYRIGHT below 
@@ -37,7 +37,7 @@ SNMP::Info was created for the Netdisco application at UCSC
 
 =head1 COPYRIGHT AND LICENCE
 
-Copyright (c) 2002, Regents of the University of California
+Copyright (c) 2002-3, Regents of the University of California
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without 
@@ -423,14 +423,15 @@ SNMP::Info is returned.
 Algorithm for SubClass Detection:
 
         Layer3 Support                     -> SNMP::Info::Layer3
-            Foundry                        -> SNMP::Info::Foundry
-            Aironet                        -> SNMP::Info::Aironet
+            Aironet                        -> SNMP::Info::Layer3::Aironet
+            Catalyst 3550                  -> SNMP::Info::Layer3::C3550
+            Foundry                        -> SNMP::Info::Layer3::Foundry
         Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2 
+            Bay Networks                   -> SNMP::Info::Layer2::Bay
             Catalyst 1900                  -> SNMP::Info::Layer2::C1900
             Catalyst 2900XL (IOS)          -> SNMP::Info::Layer2::C2900
             Catalyst WS-C (2926,5xxx,6xxx) -> SNMP::Info::Layer2::Catalyst
             HP Procurve                    -> SNMP::Info::Layer2::HP
-            Bay Networks                   -> SNMP::Info::Layer2::Bay
         Elsif Layer1 Support               -> SNMP::Info::Layer1
             Allied                         -> SNMP::Info::Layer1::Allied
             Asante                         -> SNMP::Info::Layer1::Asante
@@ -457,6 +458,7 @@ sub device_type {
 
         return $objtype unless (defined $desc and length($desc));
 
+        $objtype = 'SNMP::Info::Layer3::C3550'   if $desc =~ /C3550/ ;
         $objtype = 'SNMP::Info::Layer3::Foundry' if $desc =~ /foundry/i ;
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /cisco/i and $desc =~ /\D3[45]0\D/) ;
 
