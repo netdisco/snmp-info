@@ -32,18 +32,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::FDP;
-$VERSION = 1.0;
 
 use strict;
 
 use Exporter;
 use SNMP::Info;
-use Carp;
 
 @SNMP::Info::FDP::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::FDP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
+$VERSION = 1.0;
 
 %MIBS 	= ( 'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snFdpGlobalRun' );
 
@@ -70,7 +69,7 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             'c_capabilities' => 'snFdpCacheCapabilities',
             'c_domain'       => 'snFdpCacheVTPMgmtDomain',
             'c_vlan'         => 'snFdpCacheNativeVLAN',
-            'c_duplex'       => 'snFdpCacheDuplex'
+            'c_duplex'       => 'snFdpCacheDuplex',
           );
 
 %MUNGE = (
@@ -120,8 +119,6 @@ sub hasFDP {
 sub c_if {
     my $fdp  = shift;
 
-
-
     # See if by some miracle Cisco implemented the fdpCacheIfIndex entry
     my $fdp_index     = $fdp->fdp_index();
     return $fdp_index if defined $fdp_index;
@@ -129,8 +126,7 @@ sub c_if {
     # Nope, didn't think so. Now we fake it.
     my $fdp_ip = $fdp->c_ip();
     unless (defined $fdp_ip){
-        $fdp->{error} = "SNMP::Info::FDP:fdp_if() - Device doesn't have fdp_ip() data.  Can't fake fdp_index()";
-        carp($fdp->error(1)) if $fdp->debug();
+        $fdp->error_throw("SNMP::Info::FDP:fdp_if() - Device doesn't have fdp_ip() data.  Can't fake fdp_index()");
         return undef;
     }
 

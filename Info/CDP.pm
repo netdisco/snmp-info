@@ -38,7 +38,6 @@ use strict;
 
 use Exporter;
 use SNMP::Info;
-use Carp;
 
 @SNMP::Info::CDP::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CDP::EXPORT_OK = qw//;
@@ -125,8 +124,7 @@ sub c_if {
     # Nope, didn't think so. Now we fake it.
     my $c_ip = $cdp->c_ip();
     unless (defined $c_ip){
-        $cdp->{error} = "SNMP::Info::CDP::c_if() - Device doesn't have c_ip() data.  Can't fake c_index()";
-        carp($cdp->error(1)) if $cdp->debug();
+        $cdp->error_throw("SNMP::Info::CDP:c_if() - Device doesn't have cdp_ip() data.  Can't fake cdp_index()");
         return undef;
     }
 
