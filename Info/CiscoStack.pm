@@ -93,6 +93,10 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT $INIT/;
             'p_speed'   => 'portAdminSpeed',
             'p_duplex'  => 'portDuplex',
             'p_port'    => 'portIfIndex',
+            'p_rx_flow_control' => 'portOperRxFlowControl',
+            'p_tx_flow_control' => 'portOperTxFlowControl',
+            'p_rx_flow_control_admin' => 'portAdminRxFlowControl',
+            'p_tx_flow_control_admin' => 'portAdminTxFlowControl',
             # CISCO-STACK-MIB::PortCpbEntry
             'p_speed_admin'  => 'portCpbSpeed',
             'p_duplex_admin' => 'portCpbDuplex',
@@ -539,6 +543,50 @@ To see the status of port 4 :
 =item $stack->p_port()
 
 (B<portIfIndex>)
+
+=item $stack->p_rx_flow_control()
+
+Can be either C<on> C<off> or C<disagree>
+
+"Indicates the receive flow control operational status of the port. If the port
+could not agree with the far end on a link protocol, its operational status
+will be disagree(3)."
+
+B<portOperRxFlowControl>
+
+=item $stack->p_tx_flow_control()
+
+Can be either C<on> C<off> or C<disagree>
+
+"Indicates the transmit flow control operational status of the port. If the
+port could not agree with the far end on a link protocol, its operational
+status will be disagree(3)."
+
+B<portOperTxFlowControl>
+
+=item $stack->p_rx_flow_control_admin()
+
+Can be either C<on> C<off> or C<desired>
+
+"Indicates the receive flow control administrative status set on the port. If
+the status is set to on(1), the port will require the far end to send flow
+control. If the status is set to off(2), the port will not allow far end to
+send flow control.  If the status is set to desired(3), the port will allow the
+far end to send the flow control."
+
+B<portAdminRxFlowControl>
+
+=item $stack->p_tx_flow_control_admin()
+
+Can be either C<on> C<off> or C<desired>
+
+"Indicates the transmit flow control administrative status set on the port.  If
+the status is set to on(1), the port will send flow control to the far end.  If
+the status is set to off(2), the port will not send flow control to the far
+end. If the status is set to desired(3), the port will send flow control to the
+far end if the far end supports it."
+
+B<portAdminTxFlowControl>
 
 =back
 

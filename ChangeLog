@@ -2,6 +2,7 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
 version 1.0 ()
+    + Added Interface FlowControl status to CiscoStack (Nicolai Petri)
     + Added CiscoImage class (Matthew Tuttle)
     + Added C1200 and C350 IOS devices to L2::Aironet (Matthew Tuttle)
     + Added support for Foundry IronWare and gave L3::Foundry CPR
