@@ -650,6 +650,9 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500'   if ($desc =~ /cisco/i and $desc =~ /3750/);
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /Catalyst 4000/;
 
+        # Allied Telesyn Layer2 managed switches. They report they have L3 support
+        $objtype = 'SNMP::Info::Layer2::Allied' if ($desc =~ /Allied.*AT-80\d{2}\S*/i);
+
     # Layer 2 Supported
     } elsif ($info->has_layer(2)) {
         $objtype = 'SNMP::Info::Layer2'; 
@@ -678,13 +681,20 @@ sub device_type {
 
         #  Aironet - IOS
         $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /C1100/);
-    
+
+        # Aironet
+        $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(BR500|AP1200)\D/) ;
+	
     } elsif ($info->has_layer(1)) {
         $objtype = 'SNMP::Info::Layer1';
         #  Allied crap-o-hub
         $objtype = 'SNMP::Info::Layer1::Allied' if ($desc =~ /allied/i);
         $objtype = 'SNMP::Info::Layer1::Asante' if ($desc =~ /asante/i);
-    }
+
+    # These devices don't claim to have Layer1-3 but we like em anyways.
+    } else {
+        $objtype = 'SNMP::Info::Layer2::ZyXEL_DSLAM' if ($desc =~ /8-port .DSL Module\(Annex .\)/i);
+    }	
 
     return $objtype; 
 }
