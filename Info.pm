@@ -1903,20 +1903,37 @@ Called from $info->load_METHOD();
 =cut
 sub _load_attr {
     my $self = shift;
-    my ($attr,$leaf) = @_;
+    my ($attr,$leaf,$partial) = @_;
 
     my $ver    = $self->snmp_ver();
     my $nosuch = $self->nosuch();
     my $sess   = $self->session();
     my $store  = $self->store();
+    my $munge  = $self->munge();
     return undef unless defined $sess;
 
-    # Get the callback hash for data munging
-    my $munge = $self->munge();
+    # Deal with partial entries.
+    my $varleaf = $leaf;
+    if (defined $partial) {
+        # If we aren't supplied an OID translate
+        if ($leaf !~ /^[.\d]*$/) {
+            # VarBind will not resolve mixed OID and leaf entries like
+            #   "ipRouteMask.255.255".  So we convert to full OID
+            my $oid = &SNMP::translateObj($leaf);
+            unless (defined $oid) {
+                $self->error_throw("SNMP::Info::_load_attr: Can't translate $leaf.$partial.  Missing MIB?\n");
+                return undef;
+            }
+            $varleaf = "$oid.$partial";
+        } else {
+            $varleaf = "$leaf.$partial";
+        }
+    }
 
-    $self->debug() and print "SNMP::Info::_load_attr $attr : $leaf\n";
+    $self->debug() and print "SNMP::Info::_load_attr $attr : $leaf", 
+        defined $partial ? "($partial)" : '', "\n";
 
-    my $var = new SNMP::Varbind([$leaf]);
+    my $var = new SNMP::Varbind([$varleaf]);
 
     # So devices speaking SNMP v.1 are not supposed to give out 
     # data from SNMP2, but most do.  Net-SNMP, being very precise 
@@ -1928,11 +1945,13 @@ sub _load_attr {
     if ($ver == 1 and $nosuch and $errornum and $sess->{ErrorStr} =~ /nosuch/i){
         $errornum = 0; 
     }
+    my $localstore = undef;
+
     while (! $errornum ){
         $sess->getnext($var);
         $errornum = $sess->{ErrorNum};
+        #print "$var->[0] $var->[1] $var->[2] $var->[3]\n";
         last if $var->[0] ne $leaf;
-
         my $iid = $var->[1];
         my $val = $var->[2];
 
@@ -1940,6 +1959,13 @@ sub _load_attr {
             $self->error_throw("SNMP::Info::_load_attr: $attr not here");
             next;
         }
+
+        # Check to make sure we are still in partial land
+        if (defined $partial and $iid !~ /^$partial$/ and $iid !~ /^$partial\./){
+            #print "$iid makes us leave partial land.\n";
+            last;
+        }
+
         if ($val eq 'NOSUCHOBJECT'){
             $self->error_throw("SNMP::Info::_load_atr: $attr :  NOSUCHOBJECT");
             next;
@@ -1956,13 +1982,16 @@ sub _load_attr {
             $val = &$subref($val);
         } 
 
-        $store->{$attr}->{$iid}=$val;
+        $localstore->{$iid}=$val;
     } 
 
-    # mark data as loaded
-    $self->{"_${attr}"}++;
+    # Cache data if we are not getting partial data:
+    if (!defined $partial){
+        $self->{"_${attr}"}++;
+        $store->{$attr}=$localstore;
+    } 
 
-    return $store->{$attr};
+    return $localstore;
 }
 
 =item $info->_show_attr()
@@ -2063,9 +2092,9 @@ sub AUTOLOAD {
 
     # Otherwise we must be listed in %FUNCS 
 
-    # Load data if not already cached
-    $self->_load_attr( $attr, $funcs{$attr} )
-        unless defined $self->{"_${attr}"};
+    # Load data if it both not cached and we are not requesting partial info.
+    return $self->_load_attr( $attr, $funcs{$attr},@_ )
+        unless (defined $self->{"_${attr}"} and !scalar(@_));
 
     return $self->_show_attr($attr);
 }
