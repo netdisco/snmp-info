@@ -18,6 +18,7 @@ Info/Layer2/C1900.pm
 Info/Layer2/C2900.pm
 Info/Layer2/Catalyst.pm
 Info/Layer2/HP.pm
+Info/Layer2/ZyXEL_DSLAM.pm
 Info/Layer3.pm
 Info/Layer3/Aironet.pm
 Info/Layer3/C3550.pm
