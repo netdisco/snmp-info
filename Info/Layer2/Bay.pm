@@ -249,7 +249,7 @@ sub c_platform {
 
     my %c_platform;
     foreach my $entry (keys %$bay_topo_platform){
-        my $port = $bay_topo_port->{$entry};
+        my $port = $bay_topo_port->{$entry} || 0;
         next if $port == 0;
 
         # For fake remotes (multiple IPs for a c_ip), use first found
