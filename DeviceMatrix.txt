@@ -8,9 +8,13 @@
 
 # Allied
 device-vendor: Allied TeleSys
+class: Layer1::Allied
+ver: 1
 
 # Asante
 device-vendor: Asante
+class: Layer1::Asante
+ver: 1
 
 device-family: Hubs
 
@@ -19,6 +23,8 @@ macsuck: no
 
 # Bay
 device-vendor: Bay Networks
+class: Layer2::Bay
+ver: 1
 
 device-family: BayStack
 macsuck: yes
@@ -28,17 +34,21 @@ note: SNMP interface does not respond after 2+ months of uptime. Reboot to fix.
 device: 303
 device: 304
 device: 450
-note: Lables full duplex as 20Mbit connection.
+note: Labels full duplex as 20Mbit connection.
 
 # CISCO
 device-vendor: Cisco
 cdp: yes
+ver: 2
+note: Error in CISCO-TC-MIB. See README for how to patch.
 
 device-family: Aironet
 note: IOS and Aironet OS versions
+class: Layer3::Aironet
 
 device: AIRAP1100
 note: IOS based device
+class: Layer2::Aironet
 
 device: AP1200
 note: Aironet based device
@@ -48,10 +58,13 @@ note: Aironet based device
 
 device-family: 1000
 duplex: no
+ver: 1
+class: Layer3
 
 device: 1003
 
 device-family: 1700
+class: Layer3
 
 device: 1710
 duplex: link
@@ -60,6 +73,8 @@ device-family: 2500
 duplex: no
 macsuck: yes
 arpnip: yes
+ver: 1
+class: Layer3
 
 device: 2501
 
@@ -77,6 +92,7 @@ device-family: 2600
 duplex: link
 arpnip: yes
 macsuck: yes
+class: Layer3
 
 device:2610
 
@@ -93,6 +109,7 @@ device:2621XM
 device:2651XM
 
 device-family: 3600
+class: Layer3
 
 device: 3620
 
@@ -100,6 +117,7 @@ device: 3640
 duplex: no
 
 device-family: 7500
+class: Layer3
 
 device: 7507
 duplex: no
@@ -107,6 +125,7 @@ note: !Duplex settings are falsely reported in older IOS versions
 
 device-family: AS5000
 duplex: no
+class: Layer3
 
 device: AS5300
 
@@ -114,8 +133,9 @@ device: AS5300
 # Cisco - Catalyst
 #
 device-family: Catalyst 1900
-note: Upgrade older (pre 9.0) versions of CatOS
-note: snmp v1
+note: !Upgrade older (pre 9.0) versions of CatOS
+ver: 1
+class: Layer2::C1900
 
 device: wsc1900c
 device-family: Catalyst 1900
@@ -126,6 +146,8 @@ device-family: Catalyst 1900
 device-family: Catalyst 2900
 note: IOS
 macsuck: vlan
+class: Layer3::C2900
+portmac: yes
 note: !Pre IOS 11.2 (8) SA3 - PortMAC shows up in CAM table.
 
 device: 2908xl
@@ -134,6 +156,7 @@ note: !Pre IOS 11.2 (8.6) some features (duplex...) aren't present.
 device: 2912MfXL
 
 device: 2924MXL
+ver: 1
 portmac: yes
 
 device: 2924CXL
@@ -143,6 +166,7 @@ device: 2924CXLv
 device-family: Catalyst 3500 XL
 portmac: yes
 note: L2 only IOS devices
+class: Layer2
 
 device: 3508GXL
 
@@ -154,6 +178,7 @@ macsuck: no
 device-family: Catalyst 3550
 macsuck: vlan
 duplex: both
+class: Layer3::C3550
 note: Run IOS
 note: Has VLANs that don't accept SNMP connections.  Don't know if they are standard (by name or number).
 note: Uses CISCO-STACK-MIB like Catalyst 5000 series for serial,duplex,type but not name
@@ -173,6 +198,7 @@ note: !BRIDGE-MIB not implemented.
 device-family: Catalyst 4000
 duplex: both
 macsuck: vlan
+class: Layer2::Catalyst
 note: Comes in IOS and CatOS versions like the 6k series.
 note: CatOS versions like L2::Catalyst just fine.
 note: !Reported problems with SNMP taking up all the CPU.  Requests take significantly longer.
@@ -181,12 +207,14 @@ device: wsc4006
 
 device: 4507
 note: !IOS device -- Test against C3550 and C6000 classes
+class: Layer3
 
 device: wsc4912g
 note: Dedicated 12 port gig-e switch
 
 device-family: Catalyst 5000
 duplex: both
+class: Layer2::Catalyst
 note: Port info in CISCO-STACK-MIB
 
 device: wsc2926
@@ -208,10 +236,12 @@ device: wsc5500
 
 device: wsx5302
 arpnip: yes
+class: Layer3
 note: Router blade that runs IOS
 
 device-family: Catalyst 6500
 macsuck:vlan
+class: Layer3::C6500
 note: Runs in two possible modes, native (IOS) and hybrid (IOS with CatOS on top).
 note: Switch running Hybrid has WS-C in description field and loves L2::Catalyst class
 note: Native Mode (IOS) versions seem to have SNMP problems with L2 data.
@@ -229,26 +259,34 @@ note: !Macsuck failing even under vlan mode
 
 device: wsc6509
 duplex: both
+class: Layer2::Catalyst
 note: Hybrid Mode (Catalyst) reports L2 only
 
 device: 6kMsfc
+class: Layer3
 note: IOS portion of Hybrid mode.  VLAN and other L3 Services.
 
 device: 6kMsfc2
+class: Layer3
 note: IOS portion of Hybrid mode.  VLAN and other L3 Services.
 
 device-family: Voice Gateway
+class: Layer3
 duplex: no
 
 device: VG200
 
 # Foundry
 device-vendor: Foundry Networks
+class: Layer3::Foundry
 
 device-family: FastIron
+ver: 1
 
 # HP
 device-vendor: HP
+class:  Layer2::HP
+ver: 2
 
 device-family: ProCurve
 duplex: both
@@ -258,8 +296,10 @@ cdp: yes
 note: CDP only available with newer ROM versions. 
 
 device: 2512
+ver: 1
 
 device: 2524
+ver: 1
 
 device: 4000
 
