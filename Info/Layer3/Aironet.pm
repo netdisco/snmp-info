@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Aironet;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -81,6 +81,26 @@ $INIT = 0;
           'awc_mac'     => \&SNMP::Info::munge_mac,
           'fw_mac2'     => \&SNMP::Info::munge_mac,
          );
+
+sub os {
+    return 'aironet';
+}
+
+sub os_ver {
+    my $aironet = shift;
+    my $descr = $aironet->description();
+
+    # CAP340 11.21
+    if ($descr =~ /AP\d{3}\s+(\d{2}\.\d{2})/){
+        return $1;
+    }
+    
+    if ($descr =~ /Series\s*AP\s+(\d{2}\.\d{2})/){
+        return $1;
+    }
+
+    return undef;
+}
 
 # Override wireless port with static info
 sub bp_index {
@@ -190,11 +210,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Aironet - Perl5 Interface to Cisco Aironet Wireless Devices
-
-=head1 DESCRIPTION
-
-Inherits all methods from SNMP::Info::Layer3
+SNMP::Info::Layer3::Aironet - Perl5 Interface to Cisco Aironet Wireless Devices running Aironet software, not IOS
 
 =head1 AUTHOR
 
@@ -202,37 +218,70 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $aironet = new SNMP::Info::Layer3::Aironet(DestHost  => 'myswitch',
-                               Community => 'public');
- my $mac = $aironet->mac(); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $aironet = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-=head1 CREATING AN OBJECT
+ my $class      = $aironet->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+SNMP::Info subclass to provide access to SNMP data for an Aironet device running Aironet software,
+not cisco IOS.
+
+Note there are two classes for Aironet devices :
 
 =over
 
-=item  new SNMP::Info::Layer3::Aironet()
+=item SNMP::Info::Layer3::Aironet
 
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
+This class is for devices running Aironet software (older)
 
-    my $aironet = new SNMP::Info::Layer3::Aironet(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $aironet;
+=item SNMP::Info::Layer2::Aironet
+
+This class is for devices running Cisco IOS software (newer)
 
 =back
 
-=head1 Globals
+For speed or debugging purposes you can call the subclass directly, but not after determining
+a more specific class using the method above. 
+
+ my $aironet = new SNMP::Info::Layer3::Aironet(...);
+
+=head2 Inherited Classes
 
 =over
 
-=item $aironet->mac()
+=item SNMP::Info::Layer3
 
-Gives the MAC Address of the wireless side 
+=back
 
-B<dot11StationID.2>
+=head2 Required MIBs
+
+=over
+
+=item AWCVX-MIB
+
+=item IEEE802dot11-MIB
+
+=back
+
+These MIBs are now included in the v2.tar.gz archive available from ftp.cisco.com.  Make sure you 
+have a current version. 
+
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=over
 
 =item $aironet->awc_duplex()
 
@@ -240,47 +289,34 @@ Gives the admin duplex setting for the Ethernet Port.
 
 B<awcEtherDuplex.0>
 
+=item $aironet->mac()
+
+Gives the MAC Address of the wireless side 
+
+B<dot11StationID.2>
+
+=item $aironet->os()
+
+'aironet'
+
+=item $aironet->os_ver
+
+Tries to cull the version from the description field.
+
 =item $aironet->vendor()
 
 Returns 'cisco'.
 
 =back
 
+=head2 Globals imported from SNMP::Info::Layer3
+
+See documentation in SNMP::Info::Layer3 for details.
+
 =head1 TABLE ENTRIES
 
-=head2 Aironet specific items
-
-=over
-
-=item  $aironet->awc_default_mac()
-
-Gives the default MAC address of each interface.
-
-B<awcIfDefaultPhyAddress>
-
-=item $aironet->awc_mac()
-
-Gives the actual MAC address of each interface.
-
-B<awcIfPhyAddress>
-
-=item $aironet->awc_ip()
-
-Gives the IP Address assigned to each interface.
-
-B<awcIfIpAddress>
-
-=item $aironet->awc_netmask()
-
-Gives the NetMask for each interface.
-
-B<awcIfIpNetMask>
-
-=item $aironet->awc_msdu()
-
-B<awcIfMSDUMaxLength>
-
-=back
+These are methods that return tables of information in the form of a reference
+to a hash.
 
 =head2 Overrides
 
@@ -314,5 +350,43 @@ Overrides the values for i_mac with the value from awc_mac() if they are set.
 Ignores ports that are of type ``rptr'' and ``lo''.
 
 =back
+
+=head2 Aironet specific items
+
+=over
+
+=item $aironet->awc_default_mac()
+
+Gives the default MAC address of each interface.
+
+B<awcIfDefaultPhyAddress>
+
+=item $aironet->awc_mac()
+
+Gives the actual MAC address of each interface.
+
+B<awcIfPhyAddress>
+
+=item $aironet->awc_ip()
+
+Gives the IP Address assigned to each interface.
+
+B<awcIfIpAddress>
+
+=item $aironet->awc_netmask()
+
+Gives the NetMask for each interface.
+
+B<awcIfIpNetMask>
+
+=item $aironet->awc_msdu()
+
+B<awcIfMSDUMaxLength>
+
+=back
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See documentation in SNMP::Info::Layer3 for details.
 
 =cut
