@@ -35,11 +35,11 @@ use strict;
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
-use SNMP::Info::NortelStack;
 use SNMP::Info::SONMP;
 use SNMP::Info::RapidCity;
+use SNMP::Info::NortelStack;
 
-@SNMP::Info::Layer2::Baystack::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::NortelStack SNMP::Info::SONMP SNMP::Info::RapidCity Exporter/;
+@SNMP::Info::Layer2::Baystack::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::SONMP SNMP::Info::RapidCity SNMP::Info::NortelStack Exporter/;
 @SNMP::Info::Layer2::Baystack::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
@@ -47,25 +47,25 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 %MIBS    = (
             %SNMP::Info::MIBS,
             %SNMP::Info::Bridge::MIBS,
-            %SNMP::Info::NortelStack::MIBS,
             %SNMP::Info::SONMP::MIBS,
             %SNMP::Info::RapidCity::MIBS,
+            %SNMP::Info::NortelStack::MIBS,
            );
 
 %GLOBALS = ( 
             %SNMP::Info::GLOBALS,
             %SNMP::Info::Bridge::GLOBALS,
-            %SNMP::Info::NortelStack::GLOBALS,            
             %SNMP::Info::SONMP::GLOBALS,
             %SNMP::Info::RapidCity::GLOBALS,
+            %SNMP::Info::NortelStack::GLOBALS,            
            );
 
 %FUNCS   = (
             %SNMP::Info::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
-            %SNMP::Info::NortelStack::FUNCS,            
             %SNMP::Info::SONMP::FUNCS,
             %SNMP::Info::RapidCity::FUNCS,
+            %SNMP::Info::NortelStack::FUNCS,            
             'i_name2'    => 'ifName',
             'i_mac2'      => 'ifPhysAddress',
             );
@@ -78,9 +78,9 @@ $SNMP::Info::SPEED_MAP{2_000_000_000} = '1.0 Gbps';
 %MUNGE   = (
             %SNMP::Info::MUNGE,
             %SNMP::Info::Bridge::MUNGE,
-            %SNMP::Info::NortelStack::MUNGE,
             %SNMP::Info::SONMP::MUNGE,
             %SNMP::Info::RapidCity::MUNGE,
+            %SNMP::Info::NortelStack::MUNGE,
             'i_mac2' => \&SNMP::Info::munge_mac,
             );
 
@@ -224,7 +224,7 @@ sub index_factor {
     $op_mode = 'pure' unless defined $op_mode;
 
     my $index_factor = 32;
-    $index_factor = 64 if ((defined $model and $model =~ /(470)/) or ($os eq 'BoSS') and ($op_mode eq 'pure'));
+    $index_factor = 64 if ((defined $model and $model =~ /(470)/) or ($os eq 'boss') and ($op_mode eq 'pure'));
     
     return $index_factor;
 }
