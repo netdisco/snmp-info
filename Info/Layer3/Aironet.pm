@@ -135,7 +135,9 @@ sub fw_mac {
     }
 
     foreach my $bs (keys %$bs_mac){
-        $fw_mac->{$bs} = $bs_mac->{$bs};
+        my $entry = $bs;
+        $entry =~ s/\.0$//;
+        $fw_mac->{$entry} = $bs_mac->{$bs};
     }
 
     return $fw_mac;
@@ -149,7 +151,9 @@ sub fw_port {
 
 
     foreach my $bs (keys %$bs_port){
-        $fw_port->{$bs} = $bs_port->{$bs};
+        my $entry = $bs;
+        $entry =~ s/\.0$//;
+        $fw_port->{$entry} = $bs_port->{$bs};
     }
 
     return $fw_port;
