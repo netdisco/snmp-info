@@ -27,7 +27,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Cisco;
-$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -37,11 +36,13 @@ use SNMP::Info::Layer3;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
+use SNMP::Info::CiscoImage;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
+$VERSION = 1.0;
 @SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::Layer3 SNMP::Info::CiscoVTP 
                                      SNMP::Info::CDP    SNMP::Info::CiscoStats 
-                                     Exporter/;
+                                     SNMP::Info::CiscoImage Exporter/;
 @SNMP::Info::Layer3::Cisco::EXPORT_OK = qw//;
 
 %MIBS = (
@@ -49,6 +50,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
             %SNMP::Info::CiscoVTP::MIBS,
             %SNMP::Info::CDP::MIBS,
             %SNMP::Info::CiscoStats::MIBS,
+            %SNMP::Info::CiscoImage::MIBS,
         );
 
 %GLOBALS = (
@@ -56,6 +58,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
             %SNMP::Info::CiscoVTP::GLOBALS,
             %SNMP::Info::CDP::GLOBALS,
             %SNMP::Info::CiscoStats::GLOBALS,
+            %SNMP::Info::CiscoImage::GLOBALS,
            );
 
 %FUNCS = (
@@ -63,6 +66,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
             %SNMP::Info::CiscoVTP::FUNCS,
             %SNMP::Info::CDP::FUNCS,
             %SNMP::Info::CiscoStats::FUNCS,
+            %SNMP::Info::CiscoImage::FUNCS,
          );
 
 %MUNGE = (
@@ -70,6 +74,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
             %SNMP::Info::CiscoVTP::MUNGE,
             %SNMP::Info::CDP::MUNGE,
             %SNMP::Info::CiscoStats::MUNGE,
+            %SNMP::Info::CiscoImage::MUNGE,
          );
 
 1;
@@ -116,6 +121,8 @@ Subclass for Generic Cisco Routers running IOS
 
 =item SNMP::Info::CiscoStats
 
+=item SNMP::Info::CiscoImage
+
 =back
 
 =head2 Required MIBs
@@ -131,6 +138,8 @@ See SNMP::Info::CiscoVTP for its own MIB requirements.
 See SNMP::Info::CiscoStats for its own MIB requirements.
 
 See SNMP::Info::CDP for its own MIB requirements.
+
+See SNMP::Info::CiscoImage for its own MIB requirements.
 
 =back
 
@@ -162,6 +171,10 @@ See documentation in SNMP::Info::CDP for details.
 
 See documentation in SNMP::Info::CiscoStats for details.
 
+=head2 Globals imported from SNMP::Info::CiscoImage
+
+See documentation in SNMP::Info::CiscoImage for details.
+
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
@@ -182,5 +195,9 @@ See documentation in SNMP::Info::CDP for details.
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
 See documentation in SNMP::Info::CiscoStats for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoImage
+
+See documentation in SNMP::Info::CiscoImage for details.
 
 =cut

@@ -28,7 +28,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::C6500;
-$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -39,10 +38,13 @@ use SNMP::Info::CiscoVTP;
 use SNMP::Info::CiscoStack;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
+use SNMP::Info::CiscoImage;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
+$VERSION = 1.0;
 @SNMP::Info::Layer3::C6500::ISA = qw/ SNMP::Info::Layer3 SNMP::Info::CiscoStack SNMP::Info::CiscoVTP 
-                                      SNMP::Info::CiscoStats SNMP::Info::CDP Exporter/;
+                                      SNMP::Info::CiscoStats SNMP::Info::CDP Exporter
+                                      SNMP::Info::CiscoImage/;
 @SNMP::Info::Layer3::C6500::EXPORT_OK = qw//;
 
 %MIBS =    (
@@ -51,6 +53,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
             %SNMP::Info::CiscoStack::MIBS,
             %SNMP::Info::CDP::MIBS,
             %SNMP::Info::CiscoStats::MIBS,
+            %SNMP::Info::CiscoImage::MIBS,
            );
 
 %GLOBALS = (
@@ -59,6 +62,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
             %SNMP::Info::CiscoStack::GLOBALS,
             %SNMP::Info::CDP::GLOBALS,
             %SNMP::Info::CiscoStats::GLOBALS,
+            %SNMP::Info::CiscoImage::GLOBALS,
            );
 
 %FUNCS = (
@@ -67,6 +71,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
             %SNMP::Info::CiscoStack::FUNCS,
             %SNMP::Info::CDP::FUNCS,
             %SNMP::Info::CiscoStats::FUNCS,
+            %SNMP::Info::CiscoImage::FUNCS,
          );
 
 %MUNGE = (
@@ -75,6 +80,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
             %SNMP::Info::CiscoStack::MUNGE,
             %SNMP::Info::CDP::MUNGE,
             %SNMP::Info::CiscoStats::MUNGE,
+            %SNMP::Info::CiscoImage::MUNGE,
          );
 
 # Pick and choose
@@ -148,6 +154,8 @@ a more specific class using the method above.
 
 =item SNMP::Info::CDP
 
+=item SNMP::Info::CiscoImage
+
 =back
 
 =head2 Required MIBs
@@ -165,6 +173,8 @@ See SNMP::Info::CiscoStack for its own MIB requirements.
 See SNMP::Info::CiscoStats for its own MIB requirements.
 
 See SNMP::Info::CDP for its own MIB requirements.
+
+See SNMP::Info::CiscoImage for its own MIB requirements.
 
 =back
 
@@ -205,6 +215,10 @@ See documentation in SNMP::Info::CDP for details.
 
 See documentation in SNMP::Info::CiscoStats for details.
 
+=head2 Globals imported from SNMP::Info::CiscoImage
+
+See documentation in SNMP::Info::CiscoImage for details.
+
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
@@ -229,6 +243,10 @@ See documentation in SNMP::Info::CDP for details.
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
 See documentation in SNMP::Info::CiscoStats for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoImage
+
+See documentation in SNMP::Info::CiscoImage for details.
 
 =cut
 
