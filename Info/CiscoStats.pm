@@ -45,15 +45,20 @@ $SNMP::debugging=$DEBUG;
 
 $INIT    = 0;
 %MIBS    = (
+            'RFC1213-MIB'           => 'sysDescr',
             'CISCO-PROCESS-MIB'     => 'cpmCPUTotal5sec',
             'CISCO-MEMORY-POOL-MIB' => 'ciscoMemoryPoolUsed' 
            );
 
 %GLOBALS = (
+            'description'  => 'sysDescr',
+            # We will use the numeric OID's so that we don't require people
+            # to install v1 MIBs, which can conflict.
             # OLD-CISCO-CPU-MIB:avgBusyPer
             'ios_cpu'      => '1.3.6.1.4.1.9.2.1.56.0',
             'ios_cpu_1min' => '1.3.6.1.4.1.9.2.1.57.0',
             'ios_cpu_5min' => '1.3.6.1.4.1.9.2.1.58.0',
+            # CISCO-PROCESS-MIB
             'cat_cpu'      => 'cpmCPUTotal5sec.9',
             'cat_cpu_1min' => 'cpmCPUTotal1min.9',
             'cat_cpu_5min' => 'cpmCPUTotal5min.9',
@@ -66,9 +71,6 @@ $INIT    = 0;
            );
 
 %MUNGE   = (
-          # Inherit all the built in munging
-          %SNMP::Info::MUNGE,
-          # Add ones for our class
            );
 
 sub os {
@@ -77,6 +79,7 @@ sub os {
 
     return 'catalyst' if ($descr =~ /catalyst/i);
     return 'ios'      if ($descr =~ /IOS/);
+    return undef;
 }
 
 sub os_ver {
@@ -90,9 +93,10 @@ sub os_ver {
     }
 
     # Newer Catalysts and IOS devices
-    if ($descr =~ m/Version (\d+\.\d+\([^)]+\))/ ){
+    if ($descr =~ m/Version (\d+\.\d+\([^)]+\)[^,\s]*)(,|\s)+/ ){
         return $1;
     } 
+    return undef;
 }
 
 sub cpu {
@@ -134,20 +138,132 @@ __END__
 
 SNMP::Info::CiscoStats - Perl5 Interface to CPU and Memory stats for Cisco Devices
 
-=head1 DESCRIPTION
-
 =head1 AUTHOR
 
 Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
-To be used internally from device sub classes.  See SNMP::Info.
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $ciscostats = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-=head1 METHODS
+ my $class      = $ciscostats->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
 
-=head2 GLOBAL METHODS
+=head1 DESCRIPTION
 
-=head2 TABLE METHODS
+SNMP::Info::CiscoStats is a subclass of SNMP::Info that provides cpu, memory, os and
+version information about Cisco Devices. 
+
+Use or create in a subclass of SNMP::Info.  Do not use directly.
+
+=head2 Inherited Classes
+
+none.
+
+=head2 Required MIBs
+
+=over
+
+=item CISCO-PROCESS-MIB
+
+=item CISCO-MEMORY-POOL-MIB
+
+=item RFC1213-MIB
+
+=back
+
+MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
+
+=head1 GLOBALS
+
+=over
+
+=item $ciscostats->cpu()
+
+Returns ios_cpu() or cat_cpu(), whichever is available.
+
+=item $ciscostats->cpu_1min()
+
+Returns ios_cpu_1min() or cat_cpu1min(), whichever is available.
+
+=item $ciscostats->cpu_5min()
+
+Returns ios_cpu_5min() or cat_cpu5min(), whichever is available.
+
+=item $ciscostats->mem_total()
+
+Returns mem_free() + mem_used()
+
+=item $ciscostats->os()
+
+Trys to parse if device is running IOS or CatOS from description()
+
+=item $ciscostats->os_ver()
+
+Trys to parse device operating system version from description()
+
+=item $ciscostats->ios_cpu()
+
+Current CPU usage in percents of device.
+
+B<1.3.6.1.4.1.9.2.1.56.0> = 
+B<OLD-CISCO-CPU-MIB:avgBusyPer>
+
+=item $ciscostats->ios_cpu_1min()
+
+Average CPU Usage in percents of device over last minute.
+
+B<1.3.6.1.4.1.9.2.1.57.0>
+
+=item $ciscostats->ios_cpu_5min()
+
+Average CPU Usage in percents of device over last 5 minutes.
+
+B<1.3.6.1.4.1.9.2.1.58.0>
+
+=item $ciscostats->cat_cpu()
+
+Current CPU usage in percents of device.
+
+B<CISCO-PROCESS-MIB::cpmCPUTotal5sec.9>
+
+=item $ciscostats->cat_cpu_1min()
+
+Average CPU Usage in percents of device over last minute.
+
+B<CISCO-PROCESS-MIB::cpmCPUTotal1min.9>
+
+=item $ciscostats->cat_cpu_5min()
+
+Average CPU Usage in percents of device over last 5 minutes.
+
+B<CISCO-PROCESS-MIB::cpmCPUTotal5min.9>
+
+=item $ciscostats->mem_free()
+
+Main DRAM free in device.  In bytes.
+
+B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolFree.1>
+
+=item $ciscostats->mem_used()
+
+Main DRAM used in device.  In bytes.
+
+B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolUsed.1>
+
+=back
+
+=head1 TABLE METHODS
+
+None.
 
 =cut
