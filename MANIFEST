@@ -45,8 +45,6 @@ MANIFEST
 Makefile.PL
 README
 t/DeviceMatrix.html
-t/DeviceMatrix.png
-t/lucon.ttf
 t/make_dev_matrix.pl
 t/prereq.t
 t/test_class.pl
