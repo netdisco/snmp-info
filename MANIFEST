@@ -1,3 +1,4 @@
+ChangeLog
 COPYRIGHT
 Info.pm
 Info/Bridge.pm
@@ -15,6 +16,7 @@ Info/Layer2/HP.pm
 Info/Layer3.pm
 Info/Layer3/Aironet.pm
 Info/Layer3/Foundry.pm
+Info/Layer3/C3550.pm
 Info/MAU.pm
 MANIFEST
 Makefile.PL
