@@ -45,7 +45,8 @@ $SNMP::debugging=$DEBUG;
 
 $INIT    = 0;
 %MIBS    = (
-            'CISCO-STACK-MIB'     => 'ciscoStackMIB',
+            'CISCO-STACK-MIB'         => 'ciscoStackMIB',
+            'CISCO-PORT-SECURITY-MIB' => 'ciscoPortSecurityMIB',
            );
 
 %GLOBALS = (
@@ -61,6 +62,13 @@ $INIT    = 0;
             'ps2_status'  => 'chassisPs2Status',    
             'slots'       => 'chassisNumSlots',    
             'fan'         => 'chassisFanStatus',
+            # CISCO-PORT-SECURITY-MIB
+            'cps_clear'     => 'cpsGlobalClearSecureMacAddresses',
+            'cps_notify'    => 'cpsGlobalSNMPNotifControl',
+            'cps_rate'      => 'cpsGlobalSNMPNotifRate',
+            'cps_enable'    => 'cpsGlobalPortSecurityEnable',
+            'cps_mac_count' => 'cpsGlobalTotalSecureAddress',
+            'cps_mac_max'   => 'cpsGlobalMaxSecureAddress',
            );
 
 %FUNCS   = (
@@ -92,11 +100,47 @@ $INIT    = 0;
             # CISCO-STACK-MIB::PortCpbEntry
             'p_speed_admin'  => 'portCpbSpeed',
             'p_duplex_admin' => 'portCpbDuplex',
+            # CISCO-PORT-SECURITY-MIB::cpsIfConfigTable
+            'cps_i_limit_val'  => 'cpsIfInvalidSrcRateLimitValue',
+            'cps_i_limit'      => 'cpsIfInvalidSrcRateLimitEnable',
+            'cps_i_sticky'     => 'cpsIfStickyEnable',
+            'cps_i_clear_type' => 'cpsIfClearSecureMacAddresses',
+            'cps_i_shutdown'   => 'cpsIfShutdownTimeout',
+            'cps_i_flood'      => 'cpsIfUnicastFloodingEnable',
+            'cps_i_clear'      => 'cpsIfClearSecureAddresses',
+            'cps_i_mac'        => 'cpsIfSecureLastMacAddress',
+            'cps_i_count'      => 'cpsIfViolationCount',
+            'cps_i_action'     => 'cpsIfViolationAction',
+            'cps_i_mac_static' => 'cpsIfStaticMacAddrAgingEnable',
+            'cps_i_mac_type'   => 'cpsIfSecureMacAddrAgingType',
+            'cps_i_mac_age'    => 'cpsIfSecureMacAddrAgingTime',
+            'cps_i_mac_count'  => 'cpsIfCurrentSecureMacAddrCount',
+            'cps_i_mac_max'    => 'cpsIfMaxSecureMacAddr',
+            'cps_i_status'     => 'cpsIfPortSecurityStatus',
+            'cps_i_enable'     => 'cpsIfPortSecurityEnable',
+            # CISCO-PORT-SECURITY-MIB::cpsIfVlanTable
+            'cps_i_v_mac_count' => 'cpsIfVlanCurSecureMacAddrCount',
+            'cps_i_v_mac_max'   => 'cpsIfVlanMaxSecureMacAddr',
+            'cps_i_v'           => 'cpsIfVlanIndex',
+            # CISCO-PORT-SECURITY-MIB::cpsIfVlanSecureMacAddrTable
+            'cps_i_v_mac_status' => 'cpsIfVlanSecureMacAddrRowStatus',
+            'cps_i_v_mac_age'    => 'cpsIfVlanSecureMacAddrRemainAge',
+            'cps_i_v_mac_type'   => 'cpsIfVlanSecureMacAddrType',
+            'cps_i_v_vlan'       => 'cpsIfVlanSecureVlanIndex',
+            'cps_i_v_mac'        => 'cpsIfVlanSecureMacAddress',
+            # CISCO-PORT-SECURITY-MIB::cpsSecureMacAddressTable
+            'cps_m_status' => 'cpsSecureMacAddrRowStatus',
+            'cps_m_age' => 'cpsSecureMacAddrRemainingAge',
+            'cps_m_type' => 'cpsSecureMacAddrType',
+            'cps_m_mac' => 'cpsSecureMacAddress',
            );
 
 %MUNGE   = (
             'm_ports_status' => \&munge_port_status,
             'p_duplex_admin' => \&SNMP::Info::munge_bits,
+            'cps_i_mac'      => \&SNMP::Info::munge_mac, 
+            'cps_m_mac'      => \&SNMP::Info::munge_mac,
+            'cps_i_v_mac'    => \&SNMP::Info::munge_mac,
            );
 
 %PORTSTAT = (1 => 'other',
@@ -221,7 +265,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::CiscoStack - Perl5 Interface to CPU and Memory stats for Cisco Devices
+SNMP::Info::CiscoStack - Intefaces to data from CISCO-STACK-MIB and CISCO-PORT-SECURITY-MIB
 
 =head1 AUTHOR
 
@@ -261,9 +305,12 @@ none.
 
 =item CISCO-STACK-MIB
 
+=item CISCO-PORT-SECURITY-MIB
+
 =back
 
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
+MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz or from
+Netdisco-mib package at netdisco.org. 
 
 =head1 GLOBALS
 
@@ -308,6 +355,38 @@ MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 =item $stack->slots()
 
 (B<chassisNumSlots>)
+
+=back
+
+=head2 CISCO-PORT-SECURITY-MIB globals
+
+See CISCO-PORT-SECURITY-MIB for details.
+
+=over
+
+=item $stack->cps_clear()
+
+B<cpsGlobalClearSecureMacAddresses>
+
+=item $stack->cps_notify()
+
+B<cpsGlobalSNMPNotifControl>
+
+=item $stack->cps_rate()
+
+B<cpsGlobalSNMPNotifRate>
+
+=item $stack->cps_enable()
+
+B<cpsGlobalPortSecurityEnable>
+
+=item $stack->cps_mac_count()
+
+B<cpsGlobalTotalSecureAddress>
+
+=item $stack->cps_mac_max()
+
+B<cpsGlobalMaxSecureAddress>
 
 =back
 
@@ -478,6 +557,149 @@ To see the status of port 4 :
 =item $stack->p_duplex_admin()
 
 (B<portCpbDuplex>)
+
+=back
+
+
+=head2 CISCO-PORT-SECURITY-MIB - Interface Config Table
+
+See CISCO-PORT-SECURITY-MIB for details.
+
+=over
+
+=item $stack->cps_i_limit_val()
+
+B<cpsIfInvalidSrcRateLimitValue>
+
+=item $stack->cps_i_limit()
+
+B<cpsIfInvalidSrcRateLimitEnable>
+
+=item $stack->cps_i_sticky()
+
+B<cpsIfStickyEnable>
+
+=item $stack->cps_i_clear_type()
+
+B<cpsIfClearSecureMacAddresses>
+
+=item $stack->cps_i_shutdown()
+
+B<cpsIfShutdownTimeout>
+
+=item $stack->cps_i_flood()
+
+B<cpsIfUnicastFloodingEnable>
+
+=item $stack->cps_i_clear()
+
+B<cpsIfClearSecureAddresses>
+
+=item $stack->cps_i_mac()
+
+B<cpsIfSecureLastMacAddress>
+
+=item $stack->cps_i_count()
+
+B<cpsIfViolationCount>
+
+=item $stack->cps_i_action()
+
+B<cpsIfViolationAction>
+
+=item $stack->cps_i_mac_static()
+
+B<cpsIfStaticMacAddrAgingEnable>
+
+=item $stack->cps_i_mac_type()
+
+B<cpsIfSecureMacAddrAgingType>
+
+=item $stack->cps_i_mac_age()
+
+B<cpsIfSecureMacAddrAgingTime>
+
+=item $stack->cps_i_mac_count()
+
+B<cpsIfCurrentSecureMacAddrCount>
+
+=item $stack->cps_i_mac_max()
+
+B<cpsIfMaxSecureMacAddr>
+
+=item $stack->cps_i_status()
+
+B<cpsIfPortSecurityStatus>
+
+=item $stack->cps_i_enable()
+
+B<cpsIfPortSecurityEnable>
+
+=back
+
+=head2 CISCO-PORT-SECURITY-MIB::cpsIfVlanTable
+
+=over
+
+=item $stack->cps_i_v_mac_count()
+
+B<cpsIfVlanCurSecureMacAddrCount>
+
+=item $stack->cps_i_v_mac_max()
+
+B<cpsIfVlanMaxSecureMacAddr>
+
+=item $stack->cps_i_v()
+
+B<cpsIfVlanIndex>
+
+=back
+
+=head2 CISCO-PORT-SECURITY-MIB::cpsIfVlanSecureMacAddrTable
+
+=over
+
+=item $stack->cps_i_v_mac_status()
+
+B<cpsIfVlanSecureMacAddrRowStatus>
+
+=item $stack->cps_i_v_mac_age()
+
+B<cpsIfVlanSecureMacAddrRemainAge>
+
+=item $stack->cps_i_v_mac_type()
+
+B<cpsIfVlanSecureMacAddrType>
+
+=item $stack->cps_i_v_vlan()
+
+B<cpsIfVlanSecureVlanIndex>
+
+=item $stack->cps_i_v_mac()
+
+B<cpsIfVlanSecureMacAddress>
+
+=back
+
+=head2 CISCO-PORT-SECURITY-MIB::cpsSecureMacAddressTable
+
+=over
+
+=item $stack->cps_m_status()
+
+B<cpsSecureMacAddrRowStatus>
+
+=item $stack->cps_m_age()
+
+B<cpsSecureMacAddrRemainingAge>
+
+=item $stack->cps_m_type()
+
+B<cpsSecureMacAddrType>
+
+=item $stack->cps_m_mac()
+
+B<cpsSecureMacAddress>
 
 =back
 
