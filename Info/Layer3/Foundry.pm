@@ -203,7 +203,8 @@ sub model {
 
     $model = $1 if $desc =~ /\s+([a-z]{2}\d{4})\D/i;
     $model = $1 if $desc =~ /\b(FW[A-Z\d]+)/;
-    
+
+    $model =~ s/^sn//;
 
     return $model;
 }
