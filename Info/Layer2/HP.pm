@@ -97,7 +97,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $I
             # Inherit all the built in munging
             %SNMP::Info::Layer2::MUNGE,
             %SNMP::Info::MAU::MUNGE,
-            %SNMP::Info::Entity::MUNGE
+            %SNMP::Info::Entity::MUNGE,
             %SNMP::Info::CDP::MUNGE
          );
 
