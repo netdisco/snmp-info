@@ -1,6 +1,23 @@
 SNMP::Info - Perl5 OO Interface to Network Devices and SNMP MIBs
 ChangeLog $Id$
 
+version 0.4 (04/29/03)
+    * BIG CHANGE ! Internal Data structure has changed.  
+    * Added clear_cache() method
+    * Added NO_SUCH support for snmpget (TABLE) calls to get SNMP MIB II data 
+      from SNMP Version 1 devices.
+    * Methods load_all() and all() have changed their return value. Sorry but the API had to change.
+    * New object methods snmp_comm(), snmp_ver(), store(), class(), nosuch() to make it more OO happy.
+    * Globals are now cached
+    * Added new argument 'AutoSpecify' to new() to auto-connect with subclass 
+      detected in device_type()
+    * New method specify() returns a new subclass object
+    * Subclasses are automatically loaded when specify or autospecify is used!
+    * Added methods for Interface statistics (ifInOctets ...)
+    * Added methods for Memory and CPU statistics 
+    * Added SNMP::Info::Entity, moved out of L2-HP
+    * Added SNMP::Info::Layer2::Aironet
+
 version 0.3 (03/06/03)
     * Fixed HP model() warning
     * Added error checking for responses of NOSUCHOBJECT and NOSUCHINSTANCE in _global
