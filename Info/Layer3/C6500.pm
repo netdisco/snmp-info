@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3::C6500
-# Max Baker <max@warped.org>
+# Max Baker
 #
-# Copyright (c) 2003,2004 Max Baker
+# Copyright (c) 2003,2004,2005 Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -44,12 +44,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
 @SNMP::Info::Layer3::C6500::ISA = qw/ SNMP::Info::Layer3 SNMP::Info::CiscoStack SNMP::Info::CiscoVTP 
                                       SNMP::Info::CiscoStats SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer3::C6500::EXPORT_OK = qw//;
-
-$DEBUG=0;
-
-# See SNMP::Info for the details of these data structures and 
-#       the interworkings.
-$INIT = 0;
 
 %MIBS =    (
             %SNMP::Info::Layer3::MIBS,  
@@ -109,7 +103,7 @@ SNMP::Info::Layer3::C6500 - Perl5 Interface to Cisco Catalyst 6500 Layer 2/3 Swi
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 

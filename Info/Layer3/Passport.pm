@@ -2,7 +2,7 @@
 # Eric Miller <eric@jeneric.org>
 # $Id$
 #
-# Copyright (c) 2004 Max Baker
+# Copyright (c) 2004 Eric Miller, Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Passport;
-$VERSION = 0.9;
+$VERSION = 1.0;
 
 use strict;
 
@@ -43,13 +43,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
 @SNMP::Info::Layer3::Passport::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::SONMP SNMP::Info::RapidCity Exporter/;
 @SNMP::Info::Layer3::Passport::EXPORT_OK = qw//;
-
-$DEBUG=0;
-
-# See SNMP::Info for the details of these data structures and 
-# the interworkings.
-
-$INIT = 0;
 
 %MIBS = (
          %SNMP::Info::MIBS,
@@ -74,14 +67,14 @@ $INIT = 0;
           %SNMP::Info::RapidCity::FUNCS,
           'i_index2'            => 'ifIndex',
           'i_mac2'              => 'ifPhysAddress',
-	  'i_description2'      => 'ifDescr',
+          'i_description2'      => 'ifDescr',
           'i_name2'             => 'ifName',
           'ip_index2'           => 'ipAdEntIfIndex',
            # From RFC1213-MIB
           'at_index'    => 'ipNetToMediaIfIndex',
           'at_paddr'    => 'ipNetToMediaPhysAddress',
           'at_netaddr'  => 'ipNetToMediaNetAddress',
-	  'i_name2'	=> 'ifName'
+          'i_name2'        => 'ifName'
          );
          
 %MUNGE = (
@@ -136,8 +129,8 @@ sub i_index {
     foreach my $iid (keys %$i_index){
         my $index = $i_index->{$iid};
         next unless defined $index;
-        
-       	$if_index{$iid} = $index;
+
+        $if_index{$iid} = $index;
     }
 
     # Get VLAN Virtual Router Interfaces
@@ -182,36 +175,35 @@ sub interfaces {
         next unless defined $index;
 
         if ($index == 1) {
-        $if{$index} = 'CPU.Virtual';
+            $if{$index} = 'CPU.Virtual';
         }
 
         elsif (($index == 192) and ($model eq '8603')) {
-              $if{$index} = 'CPU3';
+            $if{$index} = 'CPU3';
         }
 
         elsif ($index == 320) {
-        $if{$index} = 'CPU5';
+            $if{$index} = 'CPU5';
         }
 
         elsif ($index == 384) {
-        $if{$index} = 'CPU6';
+            $if{$index} = 'CPU6';
         }
 
         elsif ($index > 2000) {
-        my $vlan_index = $reverse_vlan{$iid};
-        my $v_id = $vlan_id->{$vlan_index};
-        next unless defined $v_id;
-
-       	my $v_port = 'V'."$v_id";
-        $if{$index} = $v_port;
+            my $vlan_index = $reverse_vlan{$iid};
+            my $v_id = $vlan_id->{$vlan_index};
+            next unless defined $v_id;
+            my $v_port = 'V'."$v_id";
+            $if{$index} = $v_port;
         }           
 
         else {
-       	my $port = ($index % 64) + 1;
-       	my $slot = int($index / 64);
+            my $port = ($index % 64) + 1;
+            my $slot = int($index / 64);
 
-        my $slotport = "$slot.$port";
-        $if{$iid} = $slotport;
+            my $slotport = "$slot.$port";
+            $if{$iid} = $slotport;
         }
 
     }
@@ -232,7 +224,7 @@ sub i_mac {
         my $mac = $i_mac->{$iid};
         next unless defined $mac;
 
-       	$if_mac{$iid} = $mac;
+        $if_mac{$iid} = $mac;
     }
 
     # Get VLAN Virtual Router Interfaces
@@ -249,12 +241,12 @@ sub i_mac {
         my $mac = $cpu_mac->{$iid};
         next unless defined $mac;
 
-       	$if_mac{$iid} = $mac;
+        $if_mac{$iid} = $mac;
     }
 
     # Check for Virtual Mgmt Interface
     unless ($virt_ip eq '0.0.0.0'){
-	my @virt_mac = split /:/, $chassis_base_mac;
+        my @virt_mac = split /:/, $chassis_base_mac;
         $virt_mac[0] = hex($virt_mac[0]);
         $virt_mac[1] = hex($virt_mac[1]);
         $virt_mac[2] = hex($virt_mac[2]);
@@ -264,7 +256,7 @@ sub i_mac {
 
         my $mac = join(':',map { sprintf "%02x",$_ } @virt_mac);
 
-       	$if_mac{1} = $mac;
+        $if_mac{1} = $mac;
     }
 
     return \%if_mac;
@@ -281,7 +273,7 @@ sub i_description {
         my $if_descr = $i_descr->{$iid};
         next unless defined $if_descr;
 
-       	$descr{$iid} = $if_descr;
+        $descr{$iid} = $if_descr;
     }
 
     # Get VLAN Virtual Router Interfaces
@@ -308,9 +300,9 @@ sub i_name {
 
     my %i_name;
     foreach my $iid (keys %$i_index){
-	
-	if ($iid == 1) {
-	    $i_name{$iid} = 'CPU Virtual Management IP';
+        
+        if ($iid == 1) {
+            $i_name{$iid} = 'CPU Virtual Management IP';
         }
 
         elsif (($iid == 192) and ($model eq '8603')) {
@@ -318,28 +310,28 @@ sub i_name {
         }
 
         elsif ($iid == 320) {
-	    $i_name{$iid} = 'CPU 5 Ethernet Port';
+            $i_name{$iid} = 'CPU 5 Ethernet Port';
         }
 
         elsif ($iid == 384) {
-	    $i_name{$iid} = 'CPU 5 Ethernet Port';
+            $i_name{$iid} = 'CPU 5 Ethernet Port';
         }
 
         elsif ($iid > 2000) {
-	    my $vlan_index = $reverse_vlan{$iid};
-	    my $vlan_name = $v_name->{$vlan_index};
-	    next unless defined $vlan_name;
+            my $vlan_index = $reverse_vlan{$iid};
+            my $vlan_name = $v_name->{$vlan_index};
+            next unless defined $vlan_name;
 
-	    $i_name{$iid} = $vlan_name;
+            $i_name{$iid} = $vlan_name;
         }           
 
         else {
-	    my $name = $i_name2->{$iid};
-	    my $alias = $rc_alias->{$iid};
-	    $i_name{$iid} = (defined $alias and $alias !~ /^\s*$/) ?
+            my $name = $i_name2->{$iid};
+            my $alias = $rc_alias->{$iid};
+            $i_name{$iid} = (defined $alias and $alias !~ /^\s*$/) ?
                         $alias : 
                         $name;
-	}
+        }
     }
 
     return \%i_name;
@@ -356,7 +348,7 @@ sub ip_index {
         my $iid  = $ip_index->{$ip};
         next unless defined $iid;
         
-       	$ip_index{$ip} = $iid;
+        $ip_index{$ip} = $iid;
     }
 
     # Get CPU Ethernet IP
@@ -386,9 +378,9 @@ sub root_ip {
     foreach my $iid (keys %$rc_ip_type){
         my $ip_type = $rc_ip_type->{$iid};
         next unless ((defined $ip_type) and ($ip_type =~ /circuitLess/i));
-	my $ip = $rc_ip_addr->{$iid};
-	next unless defined $ip;
-		     
+        my $ip = $rc_ip_addr->{$iid};
+        next unless defined $ip;
+                     
         return $ip;
     }
 
@@ -403,7 +395,7 @@ sub root_ip {
         my $port = $sonmp_topo_port->{$entry};
         next unless $port == 0;
         my $ip = $sonmp_topo_ip->{$entry};
-	return $ip if ((defined $ip) and ($ip ne '0.0.0.0'));
+        return $ip if ((defined $ip) and ($ip ne '0.0.0.0'));
     }
     return undef;
 }

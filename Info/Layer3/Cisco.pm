@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3::Cisco
-# Max Baker <max@warped.org>
+# Max Baker
 #
-# Copyright (c) 2004 Max Baker
+# Copyright (c) 2004,2005 Max Baker
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -44,12 +44,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
                                      Exporter/;
 @SNMP::Info::Layer3::Cisco::EXPORT_OK = qw//;
 
-$DEBUG=0;
-
-# See SNMP::Info for the details of these data structures and 
-#       the interworkings.
-$INIT = 0;
-
 %MIBS = (
             %SNMP::Info::Layer3::MIBS,  
             %SNMP::Info::CiscoVTP::MIBS,
@@ -88,7 +82,7 @@ that are not covered in other classes.
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 

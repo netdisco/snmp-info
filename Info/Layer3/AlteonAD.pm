@@ -2,7 +2,7 @@
 # Eric Miller <eric@jeneric.org>
 # $Id$
 #
-# Copyright (c) 2004 Max Baker
+# Copyright (c) 2004 Eric Miller
 # All Rights Reserved
 #
 # Redistribution and use in source and binary forms, with or without 
@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::AlteonAD;
-$VERSION = 0.9;
+$VERSION = 1.0;
 
 use strict;
 
@@ -42,26 +42,20 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE /;
 @SNMP::Info::Layer3::AlteonAD::ISA = qw/SNMP::Info SNMP::Info::Bridge Exporter/;
 @SNMP::Info::Layer3::AlteonAD::EXPORT_OK = qw//;
 
-$DEBUG=0;
-
-# See SNMP::Info for the details of these data structures and 
-#       the interworkings.
-$INIT = 0;
-
 %MIBS = (
           %SNMP::Info::MIBS,
           %SNMP::Info::Bridge::MIBS,
-	  'ALTEON-TIGON-SWITCH-MIB' => 'agSoftwareVersion',
-	  'ALTEON-TS-PHYSICAL-MIB'  => 'agPortTableMaxEnt',
-	  'ALTEON-TS-NETWORK-MIB'   => 'agPortTableMaxEnt',
+          'ALTEON-TIGON-SWITCH-MIB' => 'agSoftwareVersion',
+          'ALTEON-TS-PHYSICAL-MIB'  => 'agPortTableMaxEnt',
+          'ALTEON-TS-NETWORK-MIB'   => 'agPortTableMaxEnt',
         );
 
 %GLOBALS = (
             %SNMP::Info::GLOBALS,
             %SNMP::Info::Bridge::GLOBALS,
-	    'sw_ver'	   => 'agSoftwareVersion',
-	    'tftp_action'  => 'agTftpAction',
-	    'tftp_host'    => 'agTftpServer',
+            'sw_ver'           => 'agSoftwareVersion',
+            'tftp_action'  => 'agTftpAction',
+            'tftp_host'    => 'agTftpServer',
             'tftp_file'    => 'agTftpCfgFileName',
             'tftp_result'  => 'agTftpLastActionStatus',
            );
@@ -69,8 +63,8 @@ $INIT = 0;
 %FUNCS = (
             %SNMP::Info::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
-	    'bp_index_2'  => 'dot1dBasePortIfIndex',
-	    'i_name2'    => 'ifName',
+            'bp_index_2'  => 'dot1dBasePortIfIndex',
+            'i_name2'    => 'ifName',
             # From RFC1213-MIB
             'at_index'    => 'ipNetToMediaIfIndex',
             'at_paddr'    => 'ipNetToMediaPhysAddress',
@@ -137,12 +131,12 @@ sub interfaces {
         my $desc = $descriptions->{$iid};
         next unless defined $desc;
 
-	if ($desc =~ /(^net\d+)/) {
-	    $desc  = $1;
-	}
-	elsif (($iid > 256) and ($iid < 266)) {
-	    $desc = ($iid % 256);
-	}
+        if ($desc =~ /(^net\d+)/) {
+            $desc  = $1;
+        }
+        elsif (($iid > 256) and ($iid < 266)) {
+            $desc = ($iid % 256);
+        }
         $interfaces{$iid} = $desc;
     }
     return \%interfaces;
@@ -160,9 +154,9 @@ sub i_duplex {
     
         $duplex = 'half' if $duplex =~ /half/i;
         $duplex = 'full' if $duplex =~ /full/i;
-	
-	my $idx = $if + 256;
-	
+        
+        my $idx = $if + 256;
+        
         $i_duplex{$idx}=$duplex; 
     }
     return \%i_duplex;
@@ -180,22 +174,22 @@ sub i_duplex_admin {
     foreach my $if (keys %$ag_pref){
         my $pref = $ag_pref->{$if};
         next unless defined $pref;
-	
-	my $string = 'other';	
-	if ($pref =~ /gigabit/i) {
-	    my $ge_auto = $ag_ge_auto->{$if};
-	    $string = 'full' if ($ge_auto =~ /off/i);
-	    $string = 'auto' if ($ge_auto =~ /on/i);
-	}
-	elsif ($pref =~ /fast/i) {
-	    my $fe_auto = $ag_fe_auto->{$if};
-	    my $fe_mode = $ag_fe_mode->{$if};
-	    $string = 'half' if ($fe_mode =~ /half/i and $fe_auto =~ /off/i);
+        
+        my $string = 'other';        
+        if ($pref =~ /gigabit/i) {
+            my $ge_auto = $ag_ge_auto->{$if};
+            $string = 'full' if ($ge_auto =~ /off/i);
+            $string = 'auto' if ($ge_auto =~ /on/i);
+        }
+        elsif ($pref =~ /fast/i) {
+            my $fe_auto = $ag_fe_auto->{$if};
+            my $fe_mode = $ag_fe_mode->{$if};
+            $string = 'half' if ($fe_mode =~ /half/i and $fe_auto =~ /off/i);
             $string = 'full' if ($fe_mode =~ /full/i and $fe_auto =~ /off/i);
             $string = 'auto' if $fe_auto =~ /on/i;
-	}
-	my $idx = $if + 256;
-	
+        }
+        my $idx = $if + 256;
+        
         $i_duplex_admin{$idx}=$string; 
     }
     return \%i_duplex_admin;
@@ -211,15 +205,15 @@ sub i_vlan {
     my %i_vlan;
     foreach my $if (keys %$ip_vlans){
         my $ip_vlanid = $ip_vlans->{$if};
-	next unless defined $ip_vlanid;
+        next unless defined $ip_vlanid;
         
         $i_vlan{$if}=$ip_vlanid; 
     }
     foreach my $if (keys %$ag_vlans){
         my $ag_vlanid = $ag_vlans->{$if};
-	next unless defined $ag_vlanid;
+        next unless defined $ag_vlanid;
         
-	my $idx = $if + 256;   
+        my $idx = $if + 256;   
         $i_vlan{$idx}=$ag_vlanid; 
     }
     return \%i_vlan;
@@ -232,7 +226,7 @@ sub i_name {
     my %i_name;
     foreach my $iid (keys %$p_name){
         my $name = $p_name->{$iid};
-	next unless defined $name;
+        next unless defined $name;
         my $idx = $iid + 256;
         $i_name{$idx} = $name;
     }
@@ -250,7 +244,7 @@ sub bp_index {
         next unless defined $port;
         $port = $port + 256;
 
-	$bp_index{$iid} = $port;
+        $bp_index{$iid} = $port;
     }
     return \%bp_index;
 }
@@ -259,10 +253,10 @@ sub root_ip {
     my $alteon = shift;
     my $ip_table = $alteon->ip_table();
 
-# Return First IP Address    
+    # Return First IP Address    
     foreach my $entry (keys %$ip_table){
         my $router_ip = $ip_table->{$entry};
-        print " SNMP::Layer3::AlteonAD::root_ip() using $router_ip\n" if $DEBUG;
+        print " SNMP::Layer3::AlteonAD::root_ip() using $router_ip\n" if $alteon->debug();
         next unless $router_ip;
         return $router_ip if ($router_ip ne '0.0.0.0');
     }

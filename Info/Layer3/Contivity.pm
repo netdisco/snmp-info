@@ -2,7 +2,7 @@
 # Eric Miller <eric@jeneric.org>
 # $Id$
 #
-# Copyright (c) 2004 Max Baker
+# Copyright (c) 2004 Eric Miller, Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Contivity;
-$VERSION = 0.9;
+$VERSION = 1.0;
 
 use strict;
 
@@ -41,12 +41,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
 @SNMP::Info::Layer3::Contivity::ISA = qw/SNMP::Info SNMP::Info::Entity Exporter/;
 @SNMP::Info::Layer3::Contivity::EXPORT_OK = qw//;
-
-$DEBUG=0;
-
-# See SNMP::Info for the details of these data structures and 
-# the interworkings.
-$INIT = 0;
 
 %MIBS = (
          %SNMP::Info::MIBS,
@@ -170,7 +164,7 @@ sub root_ip {
 # Return First IP Address    
     foreach my $entry (keys %$ip_table){
         my $router_ip = $ip_table->{$entry};
-        print " SNMP::Layer3::Contivity::root_ip() using $router_ip\n" if $DEBUG;
+        print " SNMP::Layer3::Contivity::root_ip() using $router_ip\n" if $contivity->debug();
         next unless $router_ip;
         return $router_ip if ($router_ip ne '0.0.0.0');
     }

@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3::Foundry - SNMP Interface to Foundry devices
-# Max Baker <max@warped.org>
+# Max Baker
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2004,2005 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Foundry;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -44,11 +44,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
 @SNMP::Info::Layer3::Foundry::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::FDP Exporter/;
 @SNMP::Info::Layer3::Foundry::EXPORT_OK = qw//;
-
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
-
-$INIT = 0;
 
 %MIBS = ( %SNMP::Info::MIBS,
           %SNMP::Info::Bridge::MIBS,
@@ -255,7 +250,7 @@ SNMP::Info::Layer3::Foundry - Perl5 Interface to Foundry FastIron Network Device
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 

@@ -2,7 +2,7 @@
 # Eric Miller <eric@jeneric.org>
 # $Id$
 #
-# Copyright (c) 2004 Max Baker
+# Copyright (c) 2004 Eric Miller, Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::BayRS;
-$VERSION = 0.9;
+$VERSION = 1.0;
 
 use strict;
 
@@ -42,19 +42,13 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP/;
 @SNMP::Info::Layer3::BayRS::ISA = qw/SNMP::Info SNMP::Info::Bridge Exporter/;
 @SNMP::Info::Layer3::BayRS::EXPORT_OK = qw//;
 
-$DEBUG=0;
-
-# See SNMP::Info for the details of these data structures and 
-# the interworkings.
-$INIT = 0;
-
 %MIBS = (
           %SNMP::Info::MIBS,
           %SNMP::Info::Bridge::MIBS,
-         'Wellfleet-HARDWARE-MIB'	 => 'wfHwBpIdOpt',
-         'Wellfleet-OSPF-MIB'		 => 'wfOspfRouterId',
-	 'Wellfleet-DOT1QTAG-CONFIG-MIB' => 'wfDot1qTagCfgVlanName',
-	 'Wellfleet-CSMACD-MIB'		 => 'wfCSMACDCct',
+          'Wellfleet-HARDWARE-MIB'        => 'wfHwBpIdOpt',
+          'Wellfleet-OSPF-MIB'            => 'wfOspfRouterId',
+          'Wellfleet-DOT1QTAG-CONFIG-MIB' => 'wfDot1qTagCfgVlanName',
+          'Wellfleet-CSMACD-MIB'          => 'wfCSMACDCct',
         );
 
 %GLOBALS = (
@@ -68,37 +62,37 @@ $INIT = 0;
 %FUNCS = (
             %SNMP::Info::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
-	    'i_name2'             => 'ifName',
+            'i_name2'             => 'ifName',
             # From RFC1213-MIB
             'at_index'    => 'ipNetToMediaIfIndex',
             'at_paddr'    => 'ipNetToMediaPhysAddress',
             'at_netaddr'  => 'ipNetToMediaNetAddress',
             # From Wellfleet-CSMACD-MIB::wfCSMACDTable
-            'wf_csmacd_cct'  	=> 'wfCSMACDCct',
+            'wf_csmacd_cct'          => 'wfCSMACDCct',
             'wf_csmacd_slot'    => 'wfCSMACDSlot',
             'wf_csmacd_conn'    => 'wfCSMACDConnector',
-            'wf_csmacd_mtu'    	=> 'wfCSMACDMtu',
-            'wf_duplex'    	=> 'wfCSMACDLineCapability',
-            'wf_csmacd_line'   	=> 'wfCSMACDLineNumber',
+            'wf_csmacd_mtu'            => 'wfCSMACDMtu',
+            'wf_duplex'            => 'wfCSMACDLineCapability',
+            'wf_csmacd_line'           => 'wfCSMACDLineNumber',
             # From Wellfleet-CSMACD-MIB::wfCSMACDAutoNegTable
-            'wf_auto'    	=> 'wfCSMACDAutoNegSpeedSelect',
+            'wf_auto'            => 'wfCSMACDAutoNegSpeedSelect',
             # From Wellfleet-DOT1QTAG-CONFIG-MIB::wfDot1qTagConfigTable
             'wf_vlan_name'        => 'wfDot1qTagCfgVlanName',
             'wf_local_vlan_id'    => 'wfDot1qTagCfgLocalVlanId',
             'wf_global_vlan_id'   => 'wfDot1qTagCfgGlobalVlanId',
-            'wf_vlan_port'	  => 'wfDot1qTagCfgPhysicalPortId',
-	    # From Wellfleet-HARDWARE-MIB::wfHwTable
+            'wf_vlan_port'          => 'wfDot1qTagCfgPhysicalPortId',
+            # From Wellfleet-HARDWARE-MIB::wfHwTable
             'wf_hw_slot'        => 'wfHwSlot',
-            'wf_hw_mod_id'	=> 'wfHwModIdOpt',
-            'wf_hw_mod_rev'	=> 'wfHwModRev',
-            'wf_hw_mod_ser'	=> 'wfHwModSerialNumber',
+            'wf_hw_mod_id'        => 'wfHwModIdOpt',
+            'wf_hw_mod_rev'        => 'wfHwModRev',
+            'wf_hw_mod_ser'        => 'wfHwModSerialNumber',
             'wf_hw_mobo_id'     => 'wfHwMotherBdIdOpt ',
             'wf_hw_mobo_rev'    => 'wfHwMotherBdRev',
-            'wf_hw_mobo_ser'	=> 'wfHwMotherBdSerialNumber',
-            'wf_hw_diag'	=> 'wfHwDiagPromRev',
-	    'wf_hw_boot'	=> 'wfHwBootPromRev',
-            'wf_hw_mobo_mem'	=> 'wfHwMotherBdMemorySize',
-            'wf_hw_cfg_time'	=> 'wfHwConfigDateAndTime ',
+            'wf_hw_mobo_ser'        => 'wfHwMotherBdSerialNumber',
+            'wf_hw_diag'        => 'wfHwDiagPromRev',
+            'wf_hw_boot'        => 'wfHwBootPromRev',
+            'wf_hw_mobo_mem'        => 'wfHwMotherBdMemorySize',
+            'wf_hw_cfg_time'        => 'wfHwConfigDateAndTime ',
          );
          
 %MUNGE = (
@@ -108,20 +102,20 @@ $INIT = 0;
          );
 
 %MODEL_MAP = ( 
-	'acefn'     => 'FN',
-	'aceln'     => 'LN',
-	'acecn'     => 'CN',
-	'afn'       => 'AFN',
-	'in'        => 'IN',
-	'an'        => 'AN',
-	'arn'       => 'ARN',
-	'sys5000'   => '5000',
-	'freln'     => 'BLN',
-	'frecn'     => 'BCN',
-	'frerbln'   => 'BLN-2',
-	'asn'       => 'ASN',
-	'asnzcable' => 'ASN-Z',
-	'asnbcable' => 'ASN-B',
+        'acefn'     => 'FN',
+        'aceln'     => 'LN',
+        'acecn'     => 'CN',
+        'afn'       => 'AFN',
+        'in'        => 'IN',
+        'an'        => 'AN',
+        'arn'       => 'ARN',
+        'sys5000'   => '5000',
+        'freln'     => 'BLN',
+        'frecn'     => 'BCN',
+        'frerbln'   => 'BLN-2',
+        'asn'       => 'ASN',
+        'asnzcable' => 'ASN-Z',
+        'asnbcable' => 'ASN-B',
              );
 
 sub model {
@@ -170,7 +164,7 @@ sub interfaces {
         my $desc = $description->{$iid};
         next unless defined $desc;
 
-	$desc  = $1 if $desc =~ /(^[A-Z]\d+)/;
+        $desc  = $1 if $desc =~ /(^[A-Z]\d+)/;
 
         $interfaces{$iid} = $desc;
     }
@@ -179,8 +173,8 @@ sub interfaces {
         next unless defined $vlan;
         my $vlan_if = $vlan_idx->{$iid};
         next unless defined $vlan_if;
-	
-	my $desc = 'V' . $vlan;
+        
+        my $desc = 'V' . $vlan;
 
         $interfaces{$vlan_if} = $desc;
     }    
@@ -203,7 +197,7 @@ sub i_name {
     # Get VLAN Virtual Router Interfaces
     foreach my $vid (keys %$v_name){
         my $v_name = $v_name->{$vid};
-	next unless defined $v_name;
+        next unless defined $v_name;
         my $vlan_if = $vlan_idx->{$vid};
         next unless defined $vlan_if;
 
@@ -227,7 +221,7 @@ sub i_duplex {
     
         my $string = 'half';
         $string = 'full' if $duplex =~ /duplex/i;
-	
+        
         $i_duplex{$idx}=$string; 
     }
     return \%i_duplex;
@@ -248,22 +242,22 @@ sub i_duplex_admin {
         next unless defined $idx;
         my $duplex = $wf_duplex->{$if};
         next unless defined $duplex; 
-	my $slot = $wf_slot->{$if};
-	my $conn = $wf_conn->{$if};
-	my $auto_idx = "$slot.$conn";
-	my $auto = $wf_auto->{$auto_idx};
-	
-	my $string = 'other';
-	if ($auto) {
-	    $string = 'half';
-	    $string = 'full' if $auto =~ /duplex/i;
-	    $string = 'auto' if $auto =~ /nway/i;
-	}
-	elsif ($duplex) {
-	    $string = 'half';	
-	    $string = 'full' if $duplex =~ /duplex/i;	
-	}
-	
+        my $slot = $wf_slot->{$if};
+        my $conn = $wf_conn->{$if};
+        my $auto_idx = "$slot.$conn";
+        my $auto = $wf_auto->{$auto_idx};
+        
+        my $string = 'other';
+        if ($auto) {
+            $string = 'half';
+            $string = 'full' if $auto =~ /duplex/i;
+            $string = 'auto' if $auto =~ /nway/i;
+        }
+        elsif ($duplex) {
+            $string = 'half';        
+            $string = 'full' if $duplex =~ /duplex/i;        
+        }
+        
         $i_duplex_admin{$idx}=$string; 
     }
     return \%i_duplex_admin;
@@ -272,41 +266,41 @@ sub i_duplex_admin {
 sub i_vlan {
     my $bayrs = shift;
 
-    my $wf_cct		= $bayrs->wf_csmacd_cct();
-    my $wf_mtu		= $bayrs->wf_csmacd_mtu();
-    my $wf_line		= $bayrs->wf_csmacd_line();
-    my $wf_local_vid	= $bayrs->wf_local_vlan_id();
-    my $wf_global_vid	= $bayrs->wf_global_vlan_id();
-    my $wf_vport	= $bayrs->wf_vlan_port();
+    my $wf_cct                = $bayrs->wf_csmacd_cct();
+    my $wf_mtu                = $bayrs->wf_csmacd_mtu();
+    my $wf_line                = $bayrs->wf_csmacd_line();
+    my $wf_local_vid        = $bayrs->wf_local_vlan_id();
+    my $wf_global_vid        = $bayrs->wf_global_vlan_id();
+    my $wf_vport        = $bayrs->wf_vlan_port();
 
     my %i_vlan;
     # Look for VLANs on Ethernet Interfaces
     foreach my $if (keys %$wf_cct){
         my $idx = $wf_cct->{$if};
-	next unless defined $idx;
-	# Check MTU size, if unable to carry VLAN tag skip.
-	my $mtu = $wf_mtu->{$if};
+        next unless defined $idx;
+        # Check MTU size, if unable to carry VLAN tag skip.
+        my $mtu = $wf_mtu->{$if};
         next if (($mtu =~ /default/i) or ($mtu < 1522));
-	my $line = $wf_line->{$if};
-	my @vlans = ();
-	foreach my $v_idx (keys %$wf_vport){
-	    my $port = $wf_vport->{$v_idx};
-	    next unless defined $port;
-	    next if ($port != $line);
-	    	    
-	    my $vlan = $wf_global_vid->{$v_idx};
-	    push(@vlans, $vlan);
-	}
-	my $vlans = join (',', @vlans);    
-	$i_vlan{$idx}=$vlans; 
+        my $line = $wf_line->{$if};
+        my @vlans = ();
+        foreach my $v_idx (keys %$wf_vport){
+            my $port = $wf_vport->{$v_idx};
+            next unless defined $port;
+            next if ($port != $line);
+                        
+            my $vlan = $wf_global_vid->{$v_idx};
+            push(@vlans, $vlan);
+        }
+        my $vlans = join (',', @vlans);    
+        $i_vlan{$idx}=$vlans; 
     }
     # Add VLAN on VLAN Interfaces
     foreach my $idx (keys %$wf_global_vid){
         my $v_if = $wf_local_vid->{$idx};
-	next unless defined $v_if;
+        next unless defined $v_if;
         my $vlan = $wf_global_vid->{$idx};
-	next unless defined $vlan;
-	
+        next unless defined $vlan;
+        
         $i_vlan{$v_if}=$vlan; 
     }
     return \%i_vlan;
@@ -315,28 +309,28 @@ sub i_vlan {
 sub root_ip {
     my $bayrs = shift;
 
-    my $ip_index	= $bayrs->ip_index();
-    my $ip_table	= $bayrs->ip_table();
+    my $ip_index        = $bayrs->ip_index();
+    my $ip_table        = $bayrs->ip_table();
     
     # Check for CLIP
     foreach my $entry (keys %$ip_index){
         my $idx = $ip_index->{$entry};
-	next unless $idx == 0;
-	my $clip = $ip_table->{$entry};
-	next unless ((defined $clip) and ($clip eq '0.0.0.0'));
-	print " SNMP::Layer3::BayRS::root_ip() using $clip\n" if $DEBUG;
-	return $clip;
+        next unless $idx == 0;
+        my $clip = $ip_table->{$entry};
+        next unless ((defined $clip) and ($clip eq '0.0.0.0'));
+        print " SNMP::Layer3::BayRS::root_ip() using $clip\n" if $bayrs->debug();
+        return $clip;
     }
     # Check for OSPF Router ID
     my $ospf_ip  = $bayrs->ospf_rtr_id();
     if ((defined $ospf_ip) and ($ospf_ip ne '0.0.0.0')) {
-	print " SNMP::Layer3::BayRS::root_ip() using $ospf_ip\n" if $DEBUG;
-	return $ospf_ip;
+        print " SNMP::Layer3::BayRS::root_ip() using $ospf_ip\n" if $bayrs->debug();
+        return $ospf_ip;
     }
     # Else Return First IP Address
     foreach my $entry (keys %$ip_table){
         my $ip = $ip_table->{$entry};
-        print " SNMP::Layer3::BayRS::root_ip() using $ip\n" if $DEBUG;
+        print " SNMP::Layer3::BayRS::root_ip() using $ip\n" if $bayrs->debug();
         next unless $ip;
         return $ip if ($ip ne '0.0.0.0');
     }
@@ -429,20 +423,20 @@ Returns the model of the BayRS router.  Will translate between the MIB model and
 the common model with this map :
 
 %MODEL_MAP = ( 
-	'acefn' => 'FN',
-	'aceln' => 'LN',
-	'acecn' => 'CN',
-	'afn' => 'AFN',
-	'in' => 'IN',
-	'an' => 'AN',
-	'arn' => 'ARN',
-	'sys5000' => '5000',
-	'freln' => 'BLN',
-	'frecn' => 'BCN',
-	'frerbln' => 'BLN-2',
-	'asn' => 'ASN',
-	'asnzcable' => 'ASN-Z',
-	'asnbcable' => 'ASN-B',
+        'acefn' => 'FN',
+        'aceln' => 'LN',
+        'acecn' => 'CN',
+        'afn' => 'AFN',
+        'in' => 'IN',
+        'an' => 'AN',
+        'arn' => 'ARN',
+        'sys5000' => '5000',
+        'freln' => 'BLN',
+        'frecn' => 'BCN',
+        'frerbln' => 'BLN-2',
+        'asn' => 'ASN',
+        'asnzcable' => 'ASN-Z',
+        'asnbcable' => 'ASN-B',
              );
 
 =item $bayrs->vendor()

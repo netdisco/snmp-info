@@ -1,5 +1,5 @@
 # SNMP::Info::Layer3::C3550
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
 # Copyright (c) 2003, Regents of the University of California
@@ -45,12 +45,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
 @SNMP::Info::Layer3::C3550::ISA = qw/SNMP::Info::Layer3     SNMP::Info::CiscoStack SNMP::Info::CiscoVTP
                                      SNMP::Info::CiscoStats SNMP::Info::CDP        Exporter            /;
 @SNMP::Info::Layer3::C3550::EXPORT_OK = qw//;
-
-$DEBUG=0;
-
-# See SNMP::Info for the details of these data structures and 
-#       the interworkings.
-$INIT = 0;
 
 %MIBS =    (
             %SNMP::Info::Layer3::MIBS,  
@@ -140,7 +134,7 @@ SNMP::Info::Layer3::C3550 - Perl5 Interface to Cisco Catalyst 3550 Layer 2/3 Swi
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 
