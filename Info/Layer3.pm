@@ -149,6 +149,12 @@ sub serial {
 sub model {
     my $l3 = shift;
     my $id = $l3->id();
+    
+    unless (defined $id){
+        print " SNMP::Info::Layer3::model() - Device does not support sysObjectID\n" if $DEBUG; 
+        return undef;
+    }
+    
     my $model = &SNMP::translateObj($id);
 
     $model =~ s/^cisco//i;
