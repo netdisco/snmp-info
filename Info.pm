@@ -49,6 +49,9 @@ SNMP::Info was created for Netdisco (www.netdisco.org) at UCSC
                             Version     => 2 
                           ) or die "Can't connect to device.\n"
 
+ my $err = $info->error();
+ die "SNMP Community or Version probably wrong connecting to device. $err\n" if defined $err;
+
  $name  = $info->name();
  $class = $info->class()
  print "SNMP::Info is using this device class : $class\n";
@@ -291,7 +294,7 @@ See SNMP::Info::Layer1::Asante for where to get MIBs required.
 
 =back
 
-=item SNMP::Info::Layer2 
+=item SNMP::Info::Layer2
 
 Generic Layer2 Device subclass.
 
@@ -393,6 +396,24 @@ SNMP::Info Specific Arguments :
 All other arguments are passed to SNMP::Session.
 
 See SNMP::Session for a list of other possible arguments.
+
+A Note about the wrong Community string or wrong SNMP Version :
+
+If a connection is using the wrong community string or the wrong SNMP version,
+the creation of the object will not fail.  The device still answers the call on the
+SNMP port, but will not return information.  Check the error() method after you create
+the device object to see if there was a problem in connecting.
+
+A note about SNMP Versions :
+
+Some older devices don't support SNMP version 2, and will not return anything when a
+connection under Version 2 is attempted.
+
+Some newer devices will support Version 1, but will not return all the data they might have
+if you had connected under Version 1 
+
+When trying to get info from a new device, you may have to try version 2 and then fallback to 
+version 1.  
 
 =cut
 sub new {
