@@ -1,6 +1,8 @@
 # SNMP::Info::CiscoVTP
 # Max Baker <max@warped.org>
 #
+# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+#
 # Copyright (c) 2003 Regents of the University of California
 # All rights reserved.
 # 
@@ -45,7 +47,8 @@ $SNMP::debugging=$DEBUG;
 
 $INIT    = 0;
 %MIBS    = (
-            'CISCO-VTP-MIB'         => 'vtpVlanName',
+            'CISCO-VTP-MIB'             => 'vtpVlanName',
+            'CISCO-VLAN-MEMBERSHIP-MIB' => 'vmMembershipEntry',
            );
 
 %GLOBALS = (
@@ -88,6 +91,16 @@ $INIT    = 0;
             'v_crf'      => 'vtpVlanIsCRFBackup',
             'v_type_ext' => 'vtpVlanTypeExt',
             'v_if'       => 'vtpVlanIfIndex',
+
+            # CISCO-VLAN-MEMBERSHIP-MIB
+            # VmMembershipTable
+            'i_vlan_type' => 'vmVlanType',
+            'i_vlan'      => 'vmVlan',
+            'i_vlan_stat' => 'vmPortStatus',
+            'i_vlan_1'    => 'vmVlans',
+            'i_vlan_2'    => 'vmVlans2k',
+            'i_vlan_3'    => 'vmVlans3k',
+            'i_vlan_4'    => 'vmVlans4k',
             # TODO Add these tables if someone wants them..
             # vtpEditControlTable
             # vtpVlanEditTable
@@ -181,6 +194,8 @@ You device will only implement a subset of these methods.
 See ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html
 for a good treaty of how to connect to the VLANs
 
+This table is from CISCO-VTP-MIB::vtpVlanTable
+
 =over
 
 =item $vtp->v_index()
@@ -254,6 +269,58 @@ C<vtpVlanTypeExt>
 =item $vtp->v_if()
 
 C<vtpVlanIfIndex>
+
+=back
+
+=head2 VLAN Interface Table
+
+This table is from CISCO-VLAN-MEMBERSHIP-MIB::VmMembershipTable
+
+=over
+
+=item $vtp->i_vlan_type()
+
+Static, Dynamic, or multiVlan.  
+
+C<vmVlanType>
+
+=item $vtp->i_vlan()
+
+The VLAN that a port is assigned to.
+
+0 for no VLAN assigned. 
+
+C<vmVlan>
+
+=item $vtp->i_vlan_stat()
+
+Inactive, active, shutdown.
+
+C<vmPortStatus>
+
+=item $vtp->i_vlan_1()
+
+Each bit represents a VLAN.  This is 0 through 1023
+
+C<vmVlans>
+
+=item $vtp->i_vlan_2()
+
+Each bit represents a VLAN.  This is 1024 through 2047
+
+C<vmVlans2k>
+
+=item $vtp->i_vlan_3()
+
+Each bit represents a VLAN.  This is 2048 through 3071
+
+C<vmVlans3k>
+
+=item $vtp->i_vlan_4()
+
+Each bit represents a VLAN.  This is 3072 through 4095
+
+C<vmVlans4k>
 
 =back
 
