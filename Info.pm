@@ -9,7 +9,7 @@
 # $Id$
 
 package SNMP::Info;
-$VERSION = '0.10';
+$VERSION = 1.0;
 use strict;
 
 use Exporter;
@@ -29,7 +29,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 0.10
+SNMP::Info - Version 1.0
 
 =head1 AUTHOR
 
@@ -550,6 +550,12 @@ Prints Lots of debugging messages
 
 (default off)
 
+=item DebugSNMP
+
+Set $SNMP::debugging  level for Net-SNMP.
+
+See L<SNMP> for more details.
+
 =item MibDirs
 
 Array ref to list of directories in which to look for MIBs.  Note this will
@@ -603,6 +609,7 @@ sub new {
     my $proto = shift;
     my $class = ref($proto) || $proto;
     my %args = @_;
+    my %sess_args = %args;
     my $new_obj = {};
     bless $new_obj,$class;
 
@@ -621,63 +628,69 @@ sub new {
     # SNMP::Info specific args :
     if (defined $args{Debug}){
         $new_obj->debug($args{Debug});
-        delete $args{Debug};
+        delete $sess_args{Debug};
     } else {
-        $new_obj->debug($DEBUG);
+        $new_obj->debug(defined $DEBUG ? $DEBUG : 0);
+    }
+
+    if (defined $args{DebugSNMP}){
+        $SNMP::debugging = $args{DebugSNMP};
+        delete $sess_args{DebugSNMP};
     }
 
     my $auto_specific = 0;
     if (defined $args{AutoSpecify}){
         $auto_specific = $args{AutoSpecify} || 0;
-        delete $args{AutoSpecify};
+        delete $sess_args{AutoSpecify};
     }
 
     if (defined $args{BulkRepeaters}){
         $new_obj->{BulkRepeaters} = $args{BulkRepeaters};
-        delete $args{BulkRepeaters};
+        delete $sess_args{BulkRepeaters};
     }
 
-    # Net-SNMP 5.1.x has a bug in BULKWALK.
-    if ($SNMP::VERSION =~ /^5\.1\.\d/) {
-        $new_obj->{BulkWalk} = 0;
-        print "SNMP::Info::new() BULKWALK disabled because of bug in Net-SNMP 5.1.x.  Upgrade Net-SNMP.\n"
-            if $new_obj->debug();
-        delete $args{BulkWalk} if exists $args{BulkWalk};
-    } elsif (defined $args{BulkWalk}){
+    if (defined $args{BulkWalk}){
         $new_obj->{BulkWalk} = $args{BulkWalk};
-        delete $args{BulkWalk};
+        delete $sess_args{BulkWalk};
     }
 
     my $sess = undef;
     if (defined $args{Session}){
         $sess = $args{Session};
-        delete $args{Session};
+        delete $sess_args{Session};
     }
     if (defined $args{BigInt}){
         $BIGINT = $args{BigInt};
-        delete $args{BigInt};
+        delete $sess_args{BigInt};
     }
     if (defined $args{MibDirs}){
         $new_obj->{mibdirs} = $args{MibDirs};
-        delete $args{MibDirs};
-    }
-
-    # Initialize mibs if not done
-    my $init_ref = $new_obj->{init};
-    unless ( $$init_ref ) {
-        $new_obj->init();
-        $$init_ref=1;    
+        delete $sess_args{MibDirs};
     }
 
     $new_obj->{nosuch} = $args{RetryNoSuch} || $NOSUCH;
 
+    # Initialize mibs if not done
+    my $init_ref = $new_obj->{init};
+    unless ( defined $$init_ref and $$init_ref ) {
+        $new_obj->init();
+        $$init_ref=1;    
+    }
+
     # Connects to device unless open session is provided.  
-    $sess = new SNMP::Session( 'UseEnums' => 1, %args , 'RetryNoSuch' => $new_obj->{nosuch}) 
+    $sess = new SNMP::Session( 'UseEnums' => 1, %sess_args , 'RetryNoSuch' => $new_obj->{nosuch}) 
         unless defined $sess;
 
+    # No session object created
     unless (defined $sess){
-        my $sess_err = $sess->{ErrorStr} || '';
-        $new_obj->error_throw("SNMP::Info::new() Failed to Create Session. $sess_err");
+        $new_obj->error_throw("SNMP::Info::new() Failed to Create Session. ");
+        return undef;
+    }
+    
+    # Session object created but SNMP connection failed.
+    my $sess_err = $sess->{ErrorStr} || '';
+    if ($sess_err){
+        $new_obj->error_throw("SNMP::Info::new() Net-SNMP session creation failed. $sess_err");
         return undef;
     }
 
@@ -853,6 +866,9 @@ sub device_type {
         return $objtype unless (defined $desc and $desc !~ /^\s*$/);
 
         # Device Type Overrides
+
+        # Foundry EdgeIron,?
+        $objtype = 'SNMP::Info::Layer2::Foundry' if ($desc =~ /foundry/i);
         
         #   Catalyst 1900 series override
         $objtype = 'SNMP::Info::Layer2::C1900' if ($desc =~ /catalyst/i and $desc =~ /\D19\d{2}/);
@@ -996,8 +1012,7 @@ sub specify {
 
     my $args    = $self->args();
     my $session = $self->session();
-    my $sub_obj = $device_type->new(%$args,'Session'=>$session);
-    $sub_obj->debug($self->debug());
+    my $sub_obj = $device_type->new(%$args,'Session'=>$session,'AutoSpecify' => 0);
 
     unless (defined $sub_obj) {
         $self->error_throw("SNMP::Info::specify() - Could not connect with new class ($device_type)");
@@ -1590,7 +1605,9 @@ that the MIB is present and has loaded correctly.
 $info->init() will throw an exception if a MIB does not load. 
 
 =cut
-%MIBS    = ('RFC1213-MIB' => 'sysName');
+%MIBS    = (
+            'RFC1213-MIB' => 'sysName',
+           );
 
 =item %MUNGE
 
@@ -1619,6 +1636,7 @@ Sample %MUNGE:
             'i_pkts_multi_out64' => \&munge_counter64,
             'i_pkts_bcast_in64'  => \&munge_counter64,
             'i_pkts_bcast_out64' => \&munge_counter64,
+            'i_up'               => \&munge_i_up,
             );
 
 =back
@@ -1929,6 +1947,26 @@ sub munge_counter64 {
     return $bigint;
 }
 
+=item munge_i_up
+
+There is a collision between data in IF-MIB and RFC-1213. 
+For devices that fully implement IF-MIB it might return 7 for 
+a port that is down.  This munges the data against the IF-MIB 
+by hand.
+
+TODO: Get the precidence of MIBs and overriding of MIB data in Net-SNMP
+figured out.  Heirarchy/precendence of MIBS in SNMP::Info.
+
+=cut
+sub munge_i_up {
+    my $i_up = shift;
+    return unless defined $i_up;
+
+    $i_up = 'down' if $i_up eq '7';
+
+    return $i_up;
+}
+
 =back
 
 =head2 Internaly Used Functions
@@ -1969,6 +2007,7 @@ sub init {
     my $mibs = $self->mibs();
     
     foreach my $mib (keys %$mibs){
+        #print "SNMP::Info::init() - Loading mib:$mib\n" if $self->debug(); 
         &SNMP::loadModules("$mib");
 
         unless (defined $SNMP::MIB{$mibs->{$mib}}){
