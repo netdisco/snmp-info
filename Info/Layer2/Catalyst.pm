@@ -291,6 +291,11 @@ appropriate subclass before using this class directly.
 Note:  Some older Catalyst switches will only talk SNMP version 1.  Some newer ones will not
 return all their data if connected via Version 1.
 
+For speed or debugging purposes you can call the subclass directly, but not after determining
+a more specific class using the method above. 
+
+ my $cat = new SNMP::Info::Layer2::Catalyst(...);
+
 =head2 Inherited Classes
 
 =over
