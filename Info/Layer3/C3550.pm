@@ -2,6 +2,7 @@
 # Max Baker <max@warped.org>
 #
 # Copyright (c) 2003, Regents of the University of California
+# Copyright (c) 2003  Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -36,9 +37,10 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::CiscoVTP;
+use SNMP::Info::CiscoStack;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/ ;
-@SNMP::Info::Layer3::C3550::ISA = qw/SNMP::Info::Layer3 SNMP::Info::CiscoVTP Exporter/;
+use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
+@SNMP::Info::Layer3::C3550::ISA = qw/ SNMP::Info::Layer3 SNMP::Info::CiscoStack SNMP::Info::CiscoVTP  Exporter/;
 @SNMP::Info::Layer3::C3550::EXPORT_OK = qw//;
 
 $DEBUG=0;
@@ -50,120 +52,37 @@ $INIT = 0;
 %MIBS = (
          %SNMP::Info::Layer3::MIBS,  
          %SNMP::Info::CiscoVTP::MIBS,
-         'CISCO-STACK-MIB' => 'moduleType',
+         %SNMP::Info::CiscoStack::MIBS,
         );
 
 %GLOBALS = (
             %SNMP::Info::Layer3::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
+            %SNMP::Info::CiscoStack::GLOBALS,
             'ports2'      => 'ifNumber',
-            # these are in CISCO-STACK-MIB
-            'serial'      => 'chassisSerialNumberString',    
-            'ps1_type'    => 'chassisPs1Type',    
-            'ps1_status'  => 'chassisPs1Status',    
-            'ps2_type'    => 'chassisPs2Type',    
-            'ps2_status'  => 'chassisPs2Status',    
-            'fan'         => 'chassisFanStatus'
-             );
+           );
 
 %FUNCS = (
             %SNMP::Info::Layer3::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
-            'i_type2'        => 'ifType',
-            # CISCO-STACK-MIB::portEntry 
-            'p_name'    => 'portName',
-            'p_type'    => 'portType',
-            'p_status'  => 'portOperStatus',
-            'p_status2' => 'portAdditionalStatus',
-            'p_speed'   => 'portAdminSpeed',
-            'p_duplex'  => 'portDuplex',
-            'p_port'    => 'portIfIndex',
-            # CISCO-STACK-MIB::PortCpbEntry
-            'p_speed_admin'  => 'portCpbSpeed',
-            'p_duplex_admin' => 'portCpbDuplex',
-        );
+            %SNMP::Info::CiscoStack::FUNCS,
+         );
 
 %MUNGE = (
             # Inherit all the built in munging
-            %SNMP::Info::CiscoVTP::MUNGE,
             %SNMP::Info::Layer3::MUNGE,
-            'm_ports_status' => \&munge_port_status,
-            'p_duplex_admin' => \&SNMP::Info::munge_bits,
+            %SNMP::Info::CiscoVTP::MUNGE,
+            %SNMP::Info::CiscoStack::MUNGE,
          );
 
-%PORTSTAT = (1 => 'other',
-             2 => 'ok',
-             3 => 'minorFault',
-             4 => 'majorFault');
+# Pick and choose
 
-# Changes binary byte describing each port into ascii, and returns
-# an ascii list separated by spaces.
-sub munge_port_status {
-    my $status = shift;
-    my @vals = map($PORTSTAT{$_},unpack('C*',$status));
-    return join(' ',@vals);
-}
-
-# Overidden Methods
-
-sub i_type {
-    my $c3550 = shift;
-
-    my $p_port = $c3550->p_port();
-    my $p_type  = $c3550->p_type();
-
-    # Get more generic port types from IF-MIB
-    my $i_type  = $c3550->i_type2();
-
-    # Now Override w/ port entries
-    foreach my $port (keys %$p_type) {
-        my $iid = $p_port->{$port};
-        $i_type->{$iid} = $p_type->{$port};  
-    }
-
-    return $i_type;
-}
-
-sub i_duplex {
-    my $c3550 = shift;
-
-    my $p_port = $c3550->p_port();
-    my $p_duplex  = $c3550->p_duplex();
-
-    my %i_duplex;
-    foreach my $port (keys %$p_duplex) {
-        my $iid = $p_port->{$port};
-        $i_duplex{$iid} = $p_duplex->{$port};
-    }
-    return \%i_duplex; 
-}
-
-sub i_duplex_admin {
-    my $c3550 = shift;
-
-    my $p_port          = $c3550->p_port();
-    my $p_duplex_admin  = $c3550->p_duplex_admin();
-
-    my %i_duplex_admin;
-    foreach my $port (keys %$p_duplex_admin) {
-        my $iid = $p_port->{$port};
-        next unless defined $iid;
-        my $duplex = $p_duplex_admin->{$port};
-        next unless defined $duplex;
-
-        my $string = 'other';
-        # see CISCO-STACK-MIB for a description of the bits
-        $string = 'half' if ($duplex =~ /001$/ or $duplex =~ /0100.$/);
-        $string = 'full' if ($duplex =~ /010$/ or $duplex =~ /100.0$/);
-        # we'll call it auto if both full and half are turned on, or if the
-        #   specifically 'auto' flag bit is set.
-        $string = 'auto' 
-            if ($duplex =~ /1..$/ or $duplex =~ /110..$/ or $duplex =~ /..011$/);
-       
-        $i_duplex_admin{$iid} = $string;
-    }
-    return \%i_duplex_admin; 
-}
+*SNMP::Info::Layer3::C3550::serial     = \&SNMP::Info::CiscoStack::serial;
+*SNMP::Info::Layer3::C3550::interfaces = \&SNMP::Info::Layer3::interfaces;
+*SNMP::Info::Layer3::C3550::i_duplex   = \&SNMP::Info::CiscoStack::i_duplex;
+*SNMP::Info::Layer3::C3550::i_duplex_admin = \&SNMP::Info::CiscoStack::i_duplex_admin;
+*SNMP::Info::Layer3::C3550::i_name     = \&SNMP::Info::Layer3::i_name;
+*SNMP::Info::Layer3::C3550::i_type     = \&SNMP::Info::CiscoStack::i_type;
 
 sub vendor {
     return 'cisco';
@@ -174,7 +93,6 @@ sub model {
     my $id = $c3550->id();
     my $model = &SNMP::translateObj($id) || $id;
     $model =~ s/^catalyst//;
-    #$model =~ s/(24|48)$//;
 
     # turn 355048 into 3550-48
     if ($model =~ /^(35\d\d)(\d\d[T]?)$/) {
@@ -191,11 +109,12 @@ sub ports {
 
     my $id = $c3550->id();
     my $model = &SNMP::translateObj($id);
-    if ($model =~ /(24|48)$/) {
+    if ($model =~ /(12|24|48)[T]?$/) {
         return $1;
     }
     return $ports2;
 }
+
 
 1;
 __END__
@@ -243,19 +162,23 @@ a more specific class using the method above.
 
 =item SNMP::Info::Layer3
 
+=item SNMP::Info::CiscoVTP
+
+=item SNMP::Info::CiscoStack
+
 =back
 
 =head2 Required MIBs
 
 =over
 
-=item CISCO-STACK-MIB
-
 =item Inherited Classes' MIBs
 
 See SNMP::Info::Layer3 for its own MIB requirements.
 
 See SNMP::Info::CiscoVTP for its own MIB requirements.
+
+See SNMP::Info::CiscoStack for its own MIB requirements.
 
 =back
 
@@ -264,30 +187,6 @@ See SNMP::Info::CiscoVTP for its own MIB requirements.
 These are methods that return scalar value from SNMP
 
 =over
-
-=item $c3550->serial()
-(B<chassisSerialNumberString>)
-
-=item $c3550->model()
-(B<chassisModel>)
-
-=item $c3550->ps1_type()
-(B<chassisPs1Type>)
-
-=item $c3550->ps2_type()
-(B<chassisPs2Type>)
-
-=item $c3550->ps1_status()
-(B<chassisPs1Status>)
-
-=item $c3550->ps2_status()
-(B<chassisPs2Status>)
-
-=item $c3550->slots()
-(B<chassisNumSlots>)
-
-=item $c3550->fan()
-(B<chassisFanStatus>)
 
 =item $c3550->vendor()
 
@@ -303,84 +202,14 @@ See documentation in SNMP::Info::Layer3 for details.
 
 See documentation in SNMP::Info::CiscoVTP for details.
 
+=head2 Global Methods imported from SNMP::Info::CiscoStack
+
+See documentation in SNMP::Info::CiscoStack for details.
+
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=head2 Overrides
-
-=over
-
-=item $c3550->i_type()
-
-Crosses p_port() with p_type() and returns the results. 
-
-Overrides with ifType if p_type() isn't available.
-
-=item $c3550->i_name()
-
-Crosses p_name with p_port and returns results.
-
-=item $c3550->i_duplex()
-
-Crosses p_duplex with p_port and returns results.
-
-=item $c3550->i_duplex_admin()
-
-Crosses p_duplex_admin with p_port.
-
-Munges bit_string returned from p_duplex_admin to get duplex settings.
-
-=back
-
-=head2 Port Entry Table (CISCO-STACK-MIB::portTable)
-
-=over
-
-=item $c3550->p_name()
-
-(B<portName>)
-
-=item $c3550->p_type()
-
-(B<portType>)
-
-=item $c3550->p_status()
-
-(B<portOperStatus>)
-
-=item $c3550->p_status2()
-
-(B<portAdditionalStatus>)
-
-=item $c3550->p_speed()
-
-(B<portAdminSpeed>)
-
-=item $c3550->p_duplex()
-
-(B<portDuplex>)
-
-=item $c3550->p_port()
-
-(B<portIfIndex>)
-
-=back
-
-=head2 Port Capability Table (CISCO-STACK-MIB::portCpbTable)
-
-=over
-
-=item $c3550->p_speed_admin()
-
-(B<portCpbSpeed>)
-
-=item $c3550->p_duplex_admin()
-
-(B<portCpbDuplex>)
-
-=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
@@ -389,5 +218,9 @@ See documentation in SNMP::Info::Layer3 for details.
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
 See documentation in SNMP::Info::CiscoVTP for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoStack
+
+See documentation in SNMP::Info::CiscoStack for details.
 
 =cut
