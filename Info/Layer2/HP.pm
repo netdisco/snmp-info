@@ -356,43 +356,55 @@ sub i_duplex_admin {
     return \%i_duplex_admin;
 }
 
-# ok we have to parse through every port listed in every vlan and return an answer.
+
+=item $hp->i_vlan()
+
+Looks in Q-BRIDGE-MIB -- see SNMP::Info::Bridge
+
+and for older devices looks in HP-VLAN.
+
+=cut
 sub i_vlan {
     my $hp = shift;
 
     my $interfaces = $hp->interfaces();
-    my $hp_v_index = $hp->hp_v_index();
-    my $hp_v_if_tag   = $hp->hp_v_if_tag();
+
+    # Newer devices use Q-BRIDGE-MIB
+    my $qb_i_vlan = $hp->qb_i_vlan();
+    my $qb_i_vlan_type = $hp->qb_i_vlan_type();
         
     my $i_vlan = {};
+
+    foreach my $if (keys %$qb_i_vlan){
+        my $vlan = $qb_i_vlan->{$if};
+        my $tagged = $qb_i_vlan_type->{$if};
+        $tagged = (defined $tagged and $tagged eq 'admitOnlyVlanTagged') ? 1 : 0;
+        next unless defined $vlan;
+        $i_vlan->{$if}= $tagged ? 'trunk' : $vlan;
+    }
 
     # HP4000 ... get it from HP-VLAN
     # the hpvlanmembertagged2 table has an entry in the form of 
     #   vlan.interface = /untagged/no/tagged/auto
-    foreach my $row (keys %$hp_v_if_tag){
-        my ($index,$if) = split(/\./,$row);
+    unless (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
+        my $hp_v_index = $hp->hp_v_index();
+        my $hp_v_if_tag   = $hp->hp_v_if_tag();
+        foreach my $row (keys %$hp_v_if_tag){
+            my ($index,$if) = split(/\./,$row);
 
-        my $tag = $hp_v_if_tag->{$row};
-        my $vlan = $hp_v_index->{$index};
-        
-        next unless defined $tag;
-        $vlan = 'Trunk' if $tag eq 'tagged';
-        $vlan = 'Auto'  if $tag eq 'auto';
-        undef $vlan if $tag eq 'no';
+            my $tag = $hp_v_if_tag->{$row};
+            my $vlan = $hp_v_index->{$index};
+            
+            next unless defined $tag;
+            $vlan = 'Trunk' if $tag eq 'tagged';
+            $vlan = 'Auto'  if $tag eq 'auto';
+            undef $vlan if $tag eq 'no';
 
-        
-        $i_vlan->{$if} = $vlan if defined $vlan;
-    }
-
-    # HP2512 ... get it from Q-BRIDGE-MIB
-    unless (defined $hp_v_if_tag and scalar(keys %$hp_v_if_tag)){
-        my $qb_v_if = $hp->qb_v_if();
-        foreach my $if (keys %$qb_v_if){
-            my $vlan = $qb_v_if->{$if};
-            next unless defined $vlan;
-            $i_vlan->{$if}=$vlan;
+            
+            $i_vlan->{$if} = $vlan if defined $vlan;
         }
     }
+
     return $i_vlan;
 }
 1;
