@@ -1,8 +1,10 @@
-ChangeLog
 COPYRIGHT
+ChangeLog
 Info.pm
 Info/Bridge.pm
 Info/CDP.pm
+Info/CiscoStats.pm
+Info/Entity.pm
 Info/EtherLike.pm
 Info/Layer1.pm
 Info/Layer1/Allied.pm
@@ -15,10 +17,10 @@ Info/Layer2/Catalyst.pm
 Info/Layer2/HP.pm
 Info/Layer3.pm
 Info/Layer3/Aironet.pm
-Info/Layer3/Foundry.pm
 Info/Layer3/C3550.pm
+Info/Layer3/Foundry.pm
 Info/MAU.pm
 MANIFEST
 Makefile.PL
 README
-test.pl
+t/prereq.t
