@@ -639,10 +639,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C3550' if ($desc =~ /C3550/);
 
         #   HP
-        $objtype = 'SNMP::Info::Layer2::HP' if ($desc =~ /hp/i); 
+        $objtype = 'SNMP::Info::Layer2::HP' if ($desc =~ /HP.*ProCurve/); 
     
         #  Bay Switch
-        $objtype = 'SNMP::Info::Layer2::Bay' if ($desc =~ /bay/i);
+        $objtype = 'SNMP::Info::Layer2::Bay' if ($desc =~ /BayStack/);
 
         #  Aironet
         $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /C1100/);
@@ -1695,7 +1695,7 @@ sub error_throw {
     $self->{error} = $error;
 
     if ($self->debug()){
-        $error .= "\n" unless $error =~ /\n$/;
+        $error =~  s/\n+$//;
         carp($error);
     }
 }
