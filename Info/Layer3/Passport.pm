@@ -388,7 +388,13 @@ sub root_ip {
     return $virt_ip if ((defined $virt_ip) and ($virt_ip ne '0.0.0.0'));
 
     # Return OSPF Router ID
-    return $router_ip if ((defined $router_ip) and ($router_ip ne '0.0.0.0'));
+    if ((defined $router_ip) and ($router_ip ne '0.0.0.0')) {
+        foreach my $iid (keys %$rc_ip_addr){
+            my $ip = $rc_ip_addr->{$iid};
+            next unless $router_ip eq $ip;
+            return $router_ip;
+        }
+    }
 
     # Otherwise Return SONMP Advertised IP Address    
     foreach my $entry (keys %$sonmp_topo_port){
