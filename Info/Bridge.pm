@@ -47,7 +47,11 @@ $INIT = 0;
 %GLOBALS = (
             'b_mac'   => 'dot1dBaseBridgeAddress',
             'b_ports' => 'dot1dBaseNumPorts',
-            'b_type'  => 'dot1dBaseType'
+            'b_type'  => 'dot1dBaseType',
+            # Spanning Tree Protocol
+            'stp_ver' => 'dot1dStpProtocolSpecification',
+            'stp_time' => 'dot1dStpTimeSinceTopologyChange',
+            'stp_root' => 'dot1dStpDesignatedRoot',
            );
 
 %FUNCS = (
@@ -63,15 +67,46 @@ $INIT = 0;
           'bs_port'   => 'dot1dStaticReceivePort',
           'bs_to'     => 'dot1dStaticAllowedToGoTo',
           'bs_status' => 'dot1dStaticStatus',
+          # Spanning Tree Protocol Table : dot1dStpPortTable
+          'stp_p_id'       => 'dot1dStpPort',
+          'stp_p_priority' => 'dot1dStpPortPriority',
+          'stp_p_state'    => 'dot1dStpPortState',
+          'stp_p_cost'     => 'dot1dStpPortPathCost',
+          'stp_p_root'     => 'dot1dStpPortDesignatedRoot',
+          'stp_p_bridge'   => 'dot1dStpPortDesignatedBridge',
+          'stp_p_port'     => 'dot1dStpPortDesignatedPort',
           );
 
 %MUNGE = (
           # Inherit all the built in munging
           %SNMP::Info::MUNGE,
           # Add ones for our class
-          'fw_mac' => \&SNMP::Info::munge_mac,
-          'bs_mac' => \&SNMP::Info::munge_mac,
+          'fw_mac'       => \&SNMP::Info::munge_mac,
+          'bs_mac'       => \&SNMP::Info::munge_mac,
+          'stp_root'     => \&SNMP::Info::munge_mac,
+          'stp_p_root'   => \&SNMP::Info::munge_mac,
+          'stp_p_bridge' => \&SNMP::Info::munge_mac,
+          'stp_p_port'   => \&SNMP::Info::munge_mac
          );
+
+
+sub i_stp_state {
+    my $bridge = shift;
+    my $bp_index = $bridge->bp_index();
+    my $stp_p_state = $bridge->stp_p_state();
+
+    my %i_stp_state;
+
+    foreach my $index (keys %$stp_p_state){
+        my $state = $stp_p_state->{$index};
+        my $iid   = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $state;
+        $i_stp_state{$iid}=$state;
+    }
+
+    return \%i_stp_state;
+}
 
 1;
 __END__
@@ -148,6 +183,24 @@ Returns the type? of the device
 
 (B<dot1dBaseType>)
 
+=item $bridge->stp_ver()
+
+Returns what version of STP the device is running.  Either decLb100 or ieee8021d.
+
+(B<dot1dStpProtocolSpecification>)
+
+=item $bridge->stp_time()
+
+Returns time since last topology change detected. (100ths/second)
+
+(B<dot1dStpTimeSinceTopologyChange>)
+
+=item $bridge->stp_root()
+
+Returns root of STP.
+
+(B<dot1dStpDesignatedRoot>)
+
 =back
 
 =head1 TABLE ENTRIES
@@ -193,4 +246,72 @@ Returns reference to hash of bridge port table entries physical port name.
 (B<dot1dBasePortCircuit>)
 
 =back
+
+=head2 Spanning Tree Protocol Table (dot1dStpPortTable)
+
+Descriptions are lifted straight from F<BRIDGE-MIB.my>
+
+=over
+
+=item $bridge->stp_p_id()
+
+"The port number of the port for which this entry contains Spanning Tree Protocol management
+information."
+
+(B<dot1dStpPort>)
+
+=item $bridge->stp_p_priority()
+
+"The value of the priority field which is contained in the first (in network byte order)
+octet of the (2 octet long) Port ID.  The other octet of the Port ID is given by the value of
+dot1dStpPort."
+
+(B<dot1dStpPortPriority>)
+
+=item $bridge->stp_p_state()
+
+"The port's current state as defined by application of the Spanning Tree Protocol.  This
+state controls what action a port takes on reception of a frame.  If the bridge has detected
+a port that is malfunctioning it will place that port into the broken(6) state.  For ports which
+are disabled (see dot1dStpPortEnable), this object will have a value of disabled(1)."
+
+ disabled(1)
+ blocking(2)
+ listening(3)
+ learning(4)
+ forwarding(5)
+ broken(6)
+
+(B<dot1dStpPortState>)
+
+=item $bridge->stp_p_cost()
+
+"The contribution of this port to the path cost of paths towards the spanning tree root which include
+this port.  802.1D-1990 recommends that the default value of this parameter be in inverse
+proportion to the speed of the attached LAN."
+
+(B<dot1dStpPortPathCost>)
+
+=item $bridge->stp_p_root()
+
+"The unique Bridge Identifier of the Bridge recorded as the Root in the Configuration BPDUs
+transmitted by the Designated Bridge for the segment to which the port is attached."
+
+(B<dot1dStpPortDesignatedRoot>)
+
+=item $bridge->stp_p_bridge()
+
+"The Bridge Identifier of the bridge which this port considers to be the Designated Bridge for
+this port's segment."
+
+(B<dot1dStpPortDesignatedBridge>)
+
+=item $bridge->stp_p_port()
+
+(B<dot1dStpPortDesignatedPort>)
+
+"The Port Identifier of the port on the Designated Bridge for this port's segment."
+
+=back
+
 =cut
