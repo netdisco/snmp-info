@@ -579,6 +579,7 @@ Algorithm for Subclass Detection:
         Layer3 Support                     -> SNMP::Info::Layer3
             Aironet (non IOS)              -> SNMP::Info::Layer3::Aironet
             Catalyst 3550                  -> SNMP::Info::Layer3::C3550
+            Catalyst 6500                  -> SNMP::Info::Layer3::C6500
             Foundry                        -> SNMP::Info::Layer3::Foundry
         Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2 
             Aironet (Cisco) AP1100         -> SNMP::Info::Layer2::Aironet
@@ -586,7 +587,7 @@ Algorithm for Subclass Detection:
             Catalyst 1900                  -> SNMP::Info::Layer2::C1900
             Catalyst 2900XL/2950(IOS)      -> SNMP::Info::Layer2::C2900
             Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
-            Catalyst WS-C (2926,5xxx,6xxx) -> SNMP::Info::Layer2::Catalyst
+            Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
             HP Procurve                    -> SNMP::Info::Layer2::HP
         Elsif Layer1 Support               -> SNMP::Info::Layer1
             Allied                         -> SNMP::Info::Layer1::Allied
@@ -616,7 +617,8 @@ sub device_type {
 
         $objtype = 'SNMP::Info::Layer3::C3550'   if $desc =~ /C3550/ ;
         $objtype = 'SNMP::Info::Layer3::Foundry' if $desc =~ /foundry/i ;
-        $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /cisco/i and $desc =~ /\D3[45]0\D/) ;
+        # Aironet - older non-IOS
+        $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(CAP340|AP340|CAP350|350|1200)\D/) ;
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /c6sup2/;
 
     # Layer 2 Supported
@@ -633,7 +635,7 @@ sub device_type {
         #   Catalyst 2900 (IOS) series override
         $objtype = 'SNMP::Info::Layer2::C2900' if ($desc =~ /(C2900XL|C2950)/ );
 
-        #   Catalyst WS-C series override (2926,5xxx,6xxx)
+        #   Catalyst WS-C series override 2926,4k,5k,6k in Hybrid
         $objtype = 'SNMP::Info::Layer2::Catalyst' if ($desc =~ /WS-C\d{4}/);
 
         #   Catalyst 3550 / 3548 Layer2 only switches
@@ -645,7 +647,7 @@ sub device_type {
         #  Bay Switch
         $objtype = 'SNMP::Info::Layer2::Bay' if ($desc =~ /BayStack/);
 
-        #  Aironet
+        #  Aironet - IOS
         $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /C1100/);
     
     } elsif ($info->has_layer(1)) {
@@ -1523,6 +1525,7 @@ Makes human friendly speed ratings using %SPEED_MAP
 %SPEED_MAP = (
                 '56000'      => '56 kbps',
                 '64000'      => '64 kbps',
+                '115000'     => '115 kpbs',
                 '1500000'    => '1.5 Mbps',
                 '1536000'    => 'T1',      
                 '1544000'    => 'T1',
