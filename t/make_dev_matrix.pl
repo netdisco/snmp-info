@@ -12,10 +12,30 @@ $matrix = parse_data($DevMatrix);
 
 # Graph it for fun
 eval "use GraphViz::Data::Structure;";
-if ($@ or 1) {
-    print "GraphViz::Data::Structure not installed.\n";
+if ($@) {
+    print "GraphViz::Data::Structure not installed. $@\n";
 } else {
-    my $gvds = GraphViz::Data::Structure->new($matrix);
+    my %graph = ();
+    foreach my $vendor (sort sort_nocase keys %$matrix){
+        $graph{$vendor} = {};
+        foreach my $family  (sort sort_nocase keys %{$matrix->{$vendor}->{families}} ){
+            my @models;
+            foreach my $mod (keys %{$matrix->{$vendor}->{families}->{$family}->{models}}){
+                push(@models,split(/\s*,\s*/,$mod));
+            }
+            if (scalar @models){
+                $graph{$vendor}->{$family}=\@models;
+            } else {
+                $graph{$vendor}->{$family}=[];
+            }
+            
+        }
+    }
+    my $gvds = GraphViz::Data::Structure->new(\%graph,Orientation=>'vertical',
+        Colors=> 'Deep',
+        graph => {label=>'SNMP::Info and Netdisco Supported Devices','fontpath'=>'/usr/local/netdisco','fontname'=>'lucon',concentrate=>'true','overlap'=>'false',spline=>'true',bgcolor=>'wheat'},
+        node  => {fontname=>'lucon'},
+        );
     $gvds->graph()->as_png($DevPNG);
 }
 
@@ -94,6 +114,7 @@ close (HTML) or die "Can't write $DevHTML. $!\n";
 #   ( defaults => { cmd => [values] } )
 sub parse_data {
     my $file = shift;
+    my %ignore = map { $_ => 1  }  @_;
     my $Matrix;
 
     my @Lines;
@@ -124,6 +145,9 @@ sub parse_data {
             next;
         }
 
+        if (exists $ignore{$cmd}){
+            print "Ignoring $cmd\n";
+        }
         # Set Class {vendor,family,device}
         if ($cmd eq 'device-vendor'){
             $vendor = $value;
@@ -225,6 +249,8 @@ sub html_tail {
 [<SPAN CLASS="family">Family Attribute</SPAN>]
 [<SPAN CLASS="vendor">Vendor Attribute</SPAN>]
 <h1>Attribute Key</h1>
+A value of <B>-</B> signifies the information is not specified and can
+be assumed working.
 <TABLE BORDER=1>
 <TR>
     <TD>Arpnip</TD>
