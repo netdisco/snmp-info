@@ -371,6 +371,11 @@ Subclass for Cisco Catalyst 3550 2/3 switches running IOS.
 
 =back
 
+=head2 Thanks
+
+Thanks for testing and coding help (in no particular order) to :
+Andy Ford, Brian Wilson, Jean-Philippe Luiggi, Dána Watanabe 
+
 =head1 USAGE
 
 =head2 Constructor
@@ -491,8 +496,8 @@ sub new {
     $new_obj->{store}     = $store;
     $new_obj->{sess}      = $sess;
     $new_obj->{args}      = \%args;
-    $new_obj->{snmp_ver}  = $args{Version};
-    $new_obj->{snmp_comm} = $args{Community};
+    $new_obj->{snmp_ver}  = $args{Version}   || 2;
+    $new_obj->{snmp_comm} = $args{Community} || 'public';
 
     return $auto_specific ?
         $new_obj->specify() : $new_obj;
