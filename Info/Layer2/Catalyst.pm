@@ -183,6 +183,7 @@ sub i_name {
     my %i_name;
     foreach my $port (keys %$p_name) {
         my $iid = $p_port->{$port};
+        next unless defined $iid;
         $i_name{$iid} = $p_name->{$port};
     }
     return \%i_name; 
