@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::C2900;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 use strict;
 
@@ -138,16 +138,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::C2900 - SNMP Interface to Cisco Catalyst 2900 Network Switches
-
-=head1 DESCRIPTION
-
-Provides abstraction to the configuration information obtainable from a 
-C2900 device through SNMP. 
-
-MIBS:  CISCO-C2900-MIB
-
-Inherits all SNMP::Info::Layer2 methods.
+SNMP::Info::Layer2::C2900 - SNMP Interface to Cisco Catalyst 2900 Switches running IOS
 
 =head1 AUTHOR
 
@@ -155,28 +146,53 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $c2900 = new SNMP::Info::Layer2::C2900(DestHost  => 'mycat2900' , 
-                              Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $c2900 = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-=head1 CREATING AN OBJECT
+ my $class      = $c2900->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+Provides abstraction to the configuration information obtainable from a 
+C2900 device through SNMP. 
+
+For speed or debugging purposes you can call the subclass directly, but not after determining
+a more specific class using the method above. 
+
+ my $c2900 = new SNMP::Info::Layer2::C2900(...);
+
+=head2 Inherited Classes
 
 =over
 
-=item  new SNMP::Info::Layer2::C2900()
+=item SNMP::Info::Layer2
 
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
+=back
 
-    my $c2900 = new SNMP::Info::Layer2::C2900(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $c2900;
+=head2 Required MIBs
+
+=over
+
+=item CISCO-C2900-MIB
+
+Part of the v2 MIBs from Cisco.
 
 =back
 
 =head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=head2 Overrides
 
 =over
 
@@ -186,7 +202,14 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 
 =back
 
+=head2 Globals imported from SNMP::Info::Layer2
+
+See documentation in SNMP::Info::Layer2 for details.
+
 =head1 TABLE ENTRIES
+
+These are methods that return tables of information in the form of a reference
+to a hash.
 
 =head2 Overrides
 
@@ -250,5 +273,8 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 
 =back
 
-=cut
+=head2 Table Methods imported from SNMP::Info::Layer2
 
+See documentation in SNMP::Info::Layer2 for details.
+
+=cut
