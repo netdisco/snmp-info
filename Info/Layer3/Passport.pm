@@ -179,22 +179,22 @@ sub interfaces {
         }
 
         elsif (($index == 192) and ($model eq '8603')) {
-            $if{$index} = 'CPU3';
+            $if{$index} = 'Cpu3';
         }
 
         elsif ($index == 320) {
-            $if{$index} = 'CPU5';
+            $if{$index} = 'Cpu5';
         }
 
         elsif ($index == 384) {
-            $if{$index} = 'CPU6';
+            $if{$index} = 'Cpu6';
         }
 
         elsif ($index > 2000) {
             my $vlan_index = $reverse_vlan{$iid};
             my $v_id = $vlan_id->{$vlan_index};
             next unless defined $v_id;
-            my $v_port = 'V'."$v_id";
+            my $v_port = 'Vlan'."$v_id";
             $if{$index} = $v_port;
         }           
 
@@ -314,7 +314,7 @@ sub i_name {
         }
 
         elsif ($iid == 384) {
-            $i_name{$iid} = 'CPU 5 Ethernet Port';
+            $i_name{$iid} = 'CPU 6 Ethernet Port';
         }
 
         elsif ($iid > 2000) {
