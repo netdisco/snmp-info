@@ -673,6 +673,9 @@ sub device_type {
         #   Catalyst 3550 / 3548 Layer2 only switches
         $objtype = 'SNMP::Info::Layer3::C3550' if ($desc =~ /C3550/);
 
+        #   Cisco 2970  
+        $objtype = 'SNMP::Info::Layer3::C6500' if ($desc =~ /C2970/);
+
         #   HP
         $objtype = 'SNMP::Info::Layer2::HP' if ($desc =~ /HP.*ProCurve/); 
     
@@ -680,10 +683,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::Bay' if ($desc =~ /BayStack/);
 
         #  Aironet - IOS
-        $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /C1100/);
+        $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /(C1100|AP1200)/);
 
-        # Aironet
-        $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(BR500|AP1200)\D/) ;
+        # Aironet - non IOS
+        $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(BR500)\D/) ;
 	
     } elsif ($info->has_layer(1)) {
         $objtype = 'SNMP::Info::Layer1';

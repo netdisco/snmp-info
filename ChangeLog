@@ -5,6 +5,7 @@ version 0.8 ()
     + Added C3500XL devices to the Layer2::C2900 class
     + Added Cisco 3750 (37xxstack) to Layer3::C6500 class
     + Added Cisco Catalyst 4000 to Layer3::C6500 class
+    + Added Cisco Catalyst 2970 to Layer3::C6500 Class
     * Fixed warning about uninitialized value in CiscoStats line 92
     * Fixed warning in Layer2::Bay about non numeric port line 199
     Contributions from Dmitry Sergienko:
