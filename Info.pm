@@ -519,12 +519,18 @@ Clears the cached data.  This includes GLOBALS data and TABLE METHOD data.
 =cut
 sub clear_cache {
     my $self = shift;
+
+    print "SNMP::Info::clear_cache() - Cache Cleared.\n" if $self->debug();
     
+    # Clear cached global values and table method flag for being cached
     foreach my $key (keys %$self){
         next unless defined $key;
         next unless $key =~ /^_/;
         delete $self->{$key};
     }
+
+    # Clear store for tables
+    $self->store({});
 }
 
 =item $info->debug(1)
@@ -1572,15 +1578,18 @@ sub session {
     return $self->{sess};
 }
 
-=item $info->store()
+=item $info->store(new_store)
 
-Returns hash store for Table functions.
+Returns or sets hash store for Table functions.
+
+Store is a hash reference in this format :
 
 $info->store = { attribute => { iid => value , iid2 => value2, ... } };
 
 =cut
 sub store {
     my $self = shift;
+    $self->{store} = $_[0] if @_;
     return $self->{store};
 }
 
