@@ -172,10 +172,14 @@ sub vendor {
 sub model {
     my $c3550 = shift;
     my $id = $c3550->id();
-    my $model = &SNMP::translateObj($id);
+    my $model = &SNMP::translateObj($id) || $id;
     $model =~ s/^catalyst//;
-    $model =~ s/(24|48)$//;
+    #$model =~ s/(24|48)$//;
 
+    # turn 355048 into 3550-48
+    if ($model =~ /^(35\d\d)(\d\d[T]?)$/) {
+        $model = "$1-$2";
+    }
     return $model;
 }
 
