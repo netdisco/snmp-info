@@ -99,9 +99,8 @@ sub os_ver {
     return undef;
 }
 
-sub cisco_comm_indexing {
-    1;
-}
+sub bulkwalk_no { 1; }
+sub cisco_comm_indexing { 1; }
 
 sub interfaces {
     my $c1900 = shift;
@@ -269,6 +268,10 @@ MIBs listed in SNMP::Info::Layer2
 These are methods that return scalar value from SNMP
 
 =over
+
+=item $c1900->bulkwalk_no
+
+Return C<1>.  Bulkwalk is turned off for this class.
 
 =item $c1900->c1900_flash_status()
 
