@@ -7,7 +7,7 @@
 # See COPYRIGHT at bottom
 
 package SNMP::Info;
-$VERSION = 0.6;
+$VERSION = 0.7;
 use strict;
 
 use Exporter;
@@ -580,6 +580,7 @@ Algorithm for Subclass Detection:
             Bay Networks                   -> SNMP::Info::Layer2::Bay
             Catalyst 1900                  -> SNMP::Info::Layer2::C1900
             Catalyst 2900XL/2950(IOS)      -> SNMP::Info::Layer2::C2900
+            Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
             Catalyst WS-C (2926,5xxx,6xxx) -> SNMP::Info::Layer2::Catalyst
             HP Procurve                    -> SNMP::Info::Layer2::HP
         Elsif Layer1 Support               -> SNMP::Info::Layer1
@@ -628,6 +629,9 @@ sub device_type {
 
         #   Catalyst WS-C series override (2926,5xxx,6xxx)
         $objtype = 'SNMP::Info::Layer2::Catalyst' if ($desc =~ /WS-C\d{4}/);
+
+        #   Catalyst 3550 / 3548 Layer2 only switches
+        $objtype = 'SNMP::Info::Layer3::C3550' if ($desc =~ /C3550/);
 
         #   HP
         $objtype = 'SNMP::Info::Layer2::HP' if ($desc =~ /hp/i); 
@@ -1481,38 +1485,44 @@ Makes human friendly speed ratings using %SPEED_MAP
  %SPEED_MAP = (
                 '64000'      => '64 kbps',
                 '1500000'    => '1.5 Mbps',
+                '1536000'    => 'T1',      
                 '1544000'    => 'T1',
                 '2000000'    => '2.0 Mbps',
                 '2048000'    => '2.048 Mbps',
+                '3072000'    => 'Dual T1',
                 '4000000'    => '4.0 Mbps',
                 '10000000'   => '10 Mbps',
                 '11000000'   => '11 Mbps',
                 '20000000'   => '20 Mbps',
                 '16000000'   => '16 Mbps',
-                '45000000'   => 'DS3',
+                '44736000'   => 'T3',
+                '45000000'   => '45 Mbps',
                 '45045000'   => 'DS3',
                 '64000000'   => '64 Mbps',
                 '100000000'  => '100 Mbps',
-                '149760000'  => 'OC-1'
-                '155000000'  => 'OC-1'
+                '149760000'  => 'OC-1',
+                '155000000'  => 'OC-1',
                 '400000000'  => '400 Mbps',
                 '622000000'  => 'OC-12',
                 '599040000'  => 'OC-12', 
                 '1000000000' => '1.0 Gbps',
-             );
+             )
 
 =cut
 %SPEED_MAP = (
                 '64000'      => '64 kbps',
                 '1500000'    => '1.5 Mbps',
+                '1536000'    => 'T1',      
                 '1544000'    => 'T1',
                 '2000000'    => '2.0 Mbps',
                 '2048000'    => '2.048 Mbps',
+                '3072000'    => 'Dual T1',
                 '4000000'    => '4.0 Mbps',
                 '10000000'   => '10 Mbps',
                 '11000000'   => '11 Mbps',
                 '20000000'   => '20 Mbps',
                 '16000000'   => '16 Mbps',
+                '44736000'   => 'T3',
                 '45000000'   => '45 Mbps',
                 '45045000'   => 'DS3',
                 '64000000'   => '64 Mbps',
