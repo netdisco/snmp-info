@@ -29,7 +29,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 0.9
+SNMP::Info - Version 0.10
 
 =head1 AUTHOR
 
@@ -534,6 +534,8 @@ Return Math::BigInt objects for 64 bit counters.  Sets on a global scope, not ob
 
 Set to C<0> to turn off BULKWALK commands for SNMPv2 connections.
 
+Note that BULKWALK is turned off for Net-SNMP versions 5.1.x because of a bug.
+
 (default on)
 
 =item BulkRepeaters
@@ -617,6 +619,13 @@ sub new {
     }
 
     # SNMP::Info specific args :
+    if (defined $args{Debug}){
+        $new_obj->debug($args{Debug});
+        delete $args{Debug};
+    } else {
+        $new_obj->debug($DEBUG);
+    }
+
     my $auto_specific = 0;
     if (defined $args{AutoSpecify}){
         $auto_specific = $args{AutoSpecify} || 0;
@@ -628,17 +637,17 @@ sub new {
         delete $args{BulkRepeaters};
     }
 
-    if (defined $args{BulkWalk}){
+    # Net-SNMP 5.1.x has a bug in BULKWALK.
+    if ($SNMP::VERSION =~ /^5\.1\.\d/) {
+        $new_obj->{BulkWalk} = 0;
+        print "SNMP::Info::new() BULKWALK disabled because of bug in Net-SNMP 5.1.x.  Upgrade Net-SNMP.\n"
+            if $new_obj->debug();
+        delete $args{BulkWalk} if exists $args{BulkWalk};
+    } elsif (defined $args{BulkWalk}){
         $new_obj->{BulkWalk} = $args{BulkWalk};
         delete $args{BulkWalk};
     }
 
-    if (defined $args{Debug}){
-        $new_obj->debug($args{Debug});
-        delete $args{Debug};
-    } else {
-        $new_obj->debug($DEBUG);
-    }
     my $sess = undef;
     if (defined $args{Session}){
         $sess = $args{Session};
@@ -2302,7 +2311,8 @@ sub _load_attr {
 
     my $vars = [];
     my $bulkwalk_no  = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
-    my $can_bulkwalk = (!$bulkwalk_no || 0)  && ($self->{BulkWalk} || 1);
+    my $bulkwalk_on  = defined $self->{BulkWalk} ? $self->{BulkWalk} : 1;
+    my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
     my $repeaters    = $self->{BulkRepeaters} || $REPEATERS;
     my $bulkwalk     = $can_bulkwalk && $ver != 1;
 

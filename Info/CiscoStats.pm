@@ -50,7 +50,11 @@ $INIT    = 0;
 %MIBS    = (
             'RFC1213-MIB'           => 'sysDescr',
             'CISCO-PROCESS-MIB'     => 'cpmCPUTotal5sec',
-            'CISCO-MEMORY-POOL-MIB' => 'ciscoMemoryPoolUsed' 
+            'CISCO-MEMORY-POOL-MIB' => 'ciscoMemoryPoolUsed',
+            'OLD-CISCO-SYSTEM-MIB'  => 'writeMem',
+            'CISCO-PRODUCTS-MIB'    => 'sysName',
+            'CISCO-STACK-MIB'       => 'wsc1900sysID',    # some older catalysts live here
+            'CISCO-ENTITY-VENDORTYPE-OID-MIB' => 'cevChassis',
            );
 
 %GLOBALS = (
@@ -68,6 +72,8 @@ $INIT    = 0;
             # CISCO-MEMORY-POOL-MIB
             'mem_free'     => 'ciscoMemoryPoolFree.1',
             'mem_used'     => 'ciscoMemoryPoolUsed.1',
+            # OLD-CISCO-SYSTEM-MIB
+            'write_mem'    => 'writeMem',
            );
 
 %FUNCS   = (
@@ -176,6 +182,8 @@ none.
 =head2 Required MIBs
 
 =over
+
+=item CISCO-PRODUCTS-MIB
 
 =item CISCO-PROCESS-MIB
 

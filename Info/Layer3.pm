@@ -37,15 +37,14 @@ use strict;
 
 use Exporter;
 use SNMP::Info;
-use SNMP::Info::CDP;
-use SNMP::Info::CiscoStats;
 use SNMP::Info::Bridge;
 use SNMP::Info::EtherLike;
+use SNMP::Info::Entity;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-@SNMP::Info::Layer3::ISA = qw/SNMP::Info SNMP::Info::CDP SNMP::Info::Bridge 
-                              SNMP::Info::EtherLike SNMP::Info::CiscoStats Exporter/;
+@SNMP::Info::Layer3::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::EtherLike
+                              SNMP::Info::Entity Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
 
 $DEBUG=0;
@@ -55,21 +54,18 @@ $INIT = 0;
 
 %MIBS = ( %SNMP::Info::MIBS,
           %SNMP::Info::Bridge::MIBS,
-          %SNMP::Info::CDP::MIBS,
-          %SNMP::Info::CiscoStats::MIBS,
           %SNMP::Info::EtherLike::MIBS,
+          %SNMP::Info::Entity::MIBS,
           'ENTITY-MIB'         => 'entPhysicalName',
-          'CISCO-PRODUCTS-MIB' => 'sysName',
           'OSPF-MIB'           => 'ospfRouterId',
         );
 
 %GLOBALS = (
             # Inherit the super class ones
             %SNMP::Info::GLOBALS,
-            %SNMP::Info::CDP::GLOBALS,
-            %SNMP::Info::CiscoStats::GLOBALS,
             %SNMP::Info::Bridge::GLOBALS,
             %SNMP::Info::EtherLike::GLOBALS,
+            %SNMP::Info::Entity::GLOBALS,
             'mac'       => 'ifPhysAddress.1',
             'serial1'   => '.1.3.6.1.4.1.9.3.6.3.0', # OLD-CISCO-CHASSIS-MIB::chassisId.0
             'router_ip' => 'ospfRouterId.0',
@@ -77,10 +73,9 @@ $INIT = 0;
 
 %FUNCS   = (
             %SNMP::Info::FUNCS,
-            %SNMP::Info::CDP::FUNCS,
-            %SNMP::Info::CiscoStats::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
             %SNMP::Info::EtherLike::FUNCS,
+            %SNMP::Info::Entity::FUNCS,
             # IFMIB
             'i_name2'    => 'ifName',
             # Address Translation Table (ARP Cache)
@@ -88,17 +83,14 @@ $INIT = 0;
             'at_paddr'   => 'atPhysAddress',
             'at_netaddr' => 'atNetAddress',
             'ospf_ip'    => 'ospfHostIpAddress',
-            'ent_serial' => 'entPhysicalSerialNum',
-            'ent_chassis'=> 'entPhysicalDescr',
            );
 
 %MUNGE = (
             # Inherit all the built in munging
             %SNMP::Info::MUNGE,
-            %SNMP::Info::CDP::MUNGE,
-            %SNMP::Info::CiscoStats::MUNGE,
             %SNMP::Info::Bridge::MUNGE,
             %SNMP::Info::EtherLike::MUNGE,
+            %SNMP::Info::Entity::MUNGE,
             'at_paddr' => \&SNMP::Info::munge_mac,
          );
 
@@ -133,7 +125,7 @@ sub i_ignore {
     my %i_ignore;
     foreach my $if (keys %$interfaces) {
         # lo -> cisco aironet 350 loopback
-        if ($interfaces->{$if} =~ /(tunnel|loopback|lo|null)/i){
+        if ($interfaces->{$if} =~ /(tunnel|loopback|\blo\b|null)/i){
             $i_ignore{$if}++;
         }
     }
@@ -144,11 +136,11 @@ sub serial {
     my $l3 = shift;
     
     my $serial1     = $l3->serial1();
-    my $ent_chassis = $l3->ent_chassis() || {};
-    my $ent_serial  = $l3->ent_serial() || {};
+    my $e_descr     = $l3->e_descr()  || {};
+    my $e_serial    = $l3->e_serial() || {};
     
-    my $serial2 = $ent_serial->{1}  || undef;
-    my $chassis = $ent_chassis->{1} || undef;
+    my $serial2     = $e_serial->{1}  || undef;
+    my $chassis     = $e_descr->{1}   || undef;
     
     # precedence
     #   serial2,chassis parse,serial1
@@ -241,7 +233,7 @@ sub vendor {
 
     my $descr = $l3->description();
 
-    return 'cisco' if ($descr =~ /(cisco|ios)/i);
+    return 'cisco' if ($descr =~ /(cisco|\bios\b)/i);
     return 'foundry' if ($descr =~ /foundry/i);
 
 }
@@ -304,9 +296,7 @@ a more specific class using the method above.
 
 =item SNMP::Info::Bridge
 
-=item SNMP::Info::CDP
-
-=item SNMP::Info::CiscoStats
+For L2/L3 devices.
 
 =item SNMP::Info::EtherLike
 
@@ -315,8 +305,6 @@ a more specific class using the method above.
 =head2 Required MIBs
 
 =over
-
-=item CISCO-PRODUCTS-MIB
 
 =item ENTITY-MIB
 
@@ -328,7 +316,7 @@ MIBs required by the inherited classes listed above.
 
 =back
 
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
+MIBs can be found in the netdisco-mibs package.
 
 =head1 GLOBALS
 
@@ -382,17 +370,13 @@ See documentation in SNMP::Info for details.
 
 See documentation in SNMP::Info::Bridge for details.
 
-=head2 Globals imported from SNMP::Info::CDP
-
-See documentation in SNMP::Info::CDP for details.
-
-=head2 Globals imported from SNMP::Info::CiscoStats
-
-See documentation in SNMP::Info::CiscoStats for details.
-
 =head2 Globals imported from SNMP::Info::EtherLike
 
 See documentation in SNMP::Info::EtherLike for details.
+
+=head2 Globals imported from SNMP::Info::Entity
+
+See documentation in SNMP::Info::Entity for details.
 
 =head1 TABLE ENTRIES
 
@@ -464,16 +448,12 @@ See documentation in SNMP::Info for details.
 
 See documentation in SNMP::Info::Bridge for details.
 
-=head2 Table Methods imported from SNMP::Info::CDP
-
-See documentation in SNMP::Info::CDP for details.
-
-=head2 Table Methods imported from SNMP::Info::CiscoStats
-
-See documentation in SNMP::Info::CiscoStats for details.
-
 =head2 Table Methods imported from SNMP::Info::EtherLike
 
 See documentation in SNMP::Info::EtherLike for details.
+
+=head2 Table Methods imported from SNMP::Info::Entity
+
+See documentation in SNMP::Info::Entity for details.
 
 =cut

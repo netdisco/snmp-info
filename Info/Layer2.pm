@@ -40,10 +40,12 @@ use SNMP::Info;
 use SNMP::Info::Bridge;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
+use SNMP::Info::Entity;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
 
-@SNMP::Info::Layer2::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::CDP SNMP::Info::CiscoStats Exporter/;
+@SNMP::Info::Layer2::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::CDP 
+                              SNMP::Info::Entity SNMP::Info::CiscoStats Exporter/;
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
 
 $DEBUG=0;
@@ -53,13 +55,11 @@ $SNMP::debugging=$DEBUG;
 #       the interworkings.
 $INIT = 0;
 
-%MIBS = ( %SNMP::Info::MIBS, 
-          %SNMP::Info::Bridge::MIBS,
-          %SNMP::Info::CDP::MIBS,
-          %SNMP::Info::CiscoStats::MIBS,
-          'CISCO-PRODUCTS-MIB' => 'sysName',    # for model()
-          'CISCO-STACK-MIB'    => 'wsc1900sysID',    # some older catalysts live here
-          'ENTITY-MIB'         => 'entPhysicalName', # for serial stuff
+%MIBS = (   %SNMP::Info::MIBS, 
+            %SNMP::Info::Bridge::MIBS,
+            %SNMP::Info::CDP::MIBS,
+            %SNMP::Info::CiscoStats::MIBS,
+            %SNMP::Info::Entity::MIBS,
         );
 
 %GLOBALS = (
@@ -67,6 +67,7 @@ $INIT = 0;
             %SNMP::Info::Bridge::GLOBALS,
             %SNMP::Info::CDP::GLOBALS,
             %SNMP::Info::CiscoStats::GLOBALS,
+            %SNMP::Info::Entity::GLOBALS,
             'serial1'   => '.1.3.6.1.4.1.9.3.6.3.0', # OLD-CISCO-CHASSIS-MIB::chassisId.0
             );
 
@@ -75,8 +76,7 @@ $INIT = 0;
             %SNMP::Info::Bridge::FUNCS,
             %SNMP::Info::CDP::FUNCS,
             %SNMP::Info::CiscoStats::FUNCS,
-            'ent_serial' => 'entPhysicalSerialNum',
-            'ent_chassis'=> 'entPhysicalDescr',
+            %SNMP::Info::Entity::FUNCS,
            );
 
 %MUNGE = (
@@ -85,6 +85,7 @@ $INIT = 0;
             %SNMP::Info::Bridge::MUNGE,
             %SNMP::Info::CDP::MUNGE,
             %SNMP::Info::CiscoStats::MUNGE,
+            %SNMP::Info::Entity::MUNGE,
          );
 
 # Method OverRides
@@ -125,12 +126,12 @@ sub vendor {
 sub serial {
     my $l2 = shift;
     
-    my $serial1     = $l2->serial1();
-    my $ent_chassis = $l2->ent_chassis() || {};
-    my $ent_serial  = $l2->ent_serial() || {};
+    my $serial1   = $l2->serial1();
+    my $e_descr   = $l2->e_descr()  || {};
+    my $e_serial  = $l2->e_serial() || {};
     
-    my $serial2 = $ent_serial->{1}  || undef;
-    my $chassis = $ent_chassis->{1} || undef;
+    my $serial2   = $e_serial->{1}  || undef;
+    my $chassis   = $e_descr->{1}   || undef;
 
     # precedence
     #   serial2,chassis parse,serial1
@@ -247,19 +248,13 @@ a more specific class using the method above.
 
 =item SNMP::Info::CiscoStats
 
+=item SNMP::Info::Entity
+
 =back
 
 =head2 Required MIBs
 
 =over
-
-=item CISCO-PRODUCTS-MIB 
-
-Needed for ID of Cisco Products
-
-=item CISCO-STACK-MIB
-
-Needed for ID of Cisco Products
 
 =item Inherited Classes
 
@@ -267,7 +262,7 @@ MIBs required by the inherited classes listed above.
 
 =back
 
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
+MIBs can be found in netdisco-mibs package.
 
 =head1 GLOBALS
 
@@ -308,6 +303,10 @@ See documentation in SNMP::Info::CDP for details.
 
 See documentation in SNMP::Info::CiscoStats for details.
 
+=head2 Globals imported from SNMP::Info::Entity
+
+See documentation in SNMP::Info::Entity for details.
+
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
@@ -346,5 +345,9 @@ See documentation in SNMP::Info::CDP for details.
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
 See documentation in SNMP::Info::CiscoStats for details.
+
+=head2 Table Methods imported from SNMP::Info::Entity
+
+See documentation in SNMP::Info::Entity for details.
 
 =cut

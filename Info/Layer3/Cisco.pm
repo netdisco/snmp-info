@@ -35,9 +35,13 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::CiscoVTP;
+use SNMP::Info::CDP;
+use SNMP::Info::CiscoStats;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-@SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::Layer3 SNMP::Info::CiscoVTP Exporter/;
+@SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::Layer3 SNMP::Info::CiscoVTP 
+                                     SNMP::Info::CDP    SNMP::Info::CiscoStats 
+                                     Exporter/;
 @SNMP::Info::Layer3::Cisco::EXPORT_OK = qw//;
 
 $DEBUG=0;
@@ -47,33 +51,40 @@ $DEBUG=0;
 $INIT = 0;
 
 %MIBS = (
-         %SNMP::Info::Layer3::MIBS,  
-         %SNMP::Info::CiscoVTP::MIBS,
+            %SNMP::Info::Layer3::MIBS,  
+            %SNMP::Info::CiscoVTP::MIBS,
+            %SNMP::Info::CDP::MIBS,
+            %SNMP::Info::CiscoStats::MIBS,
         );
 
 %GLOBALS = (
             %SNMP::Info::Layer3::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
+            %SNMP::Info::CDP::GLOBALS,
+            %SNMP::Info::CiscoStats::GLOBALS,
            );
 
 %FUNCS = (
             %SNMP::Info::Layer3::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
+            %SNMP::Info::CDP::FUNCS,
+            %SNMP::Info::CiscoStats::FUNCS,
          );
 
 %MUNGE = (
-            # Inherit all the built in munging
             %SNMP::Info::Layer3::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
+            %SNMP::Info::CDP::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
          );
-
 
 1;
 __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Cisco - Perl5 Interface to Generic L3 Cisco Device
+SNMP::Info::Layer3::Cisco - Perl5 Interface to L3 and L2+L3 IOS Cisco Device
+that are not covered in other classes.
 
 =head1 AUTHOR
 
@@ -106,6 +117,10 @@ Subclass for Generic Cisco Routers running IOS
 =item SNMP::Info::Layer3
 
 =item SNMP::Info::CiscoVTP
+
+=item SNMP::Info::CDP
+
+=item SNMP::Info::CiscoStats
 
 =back
 
@@ -141,6 +156,13 @@ See documentation in SNMP::Info::Layer3 for details.
 
 See documentation in SNMP::Info::CiscoVTP for details.
 
+=head2 Globals imported from SNMP::Info::CDP
+
+See documentation in SNMP::Info::CDP for details.
+
+=head2 Globals imported from SNMP::Info::CiscoStats
+
+See documentation in SNMP::Info::CiscoStats for details.
 
 =head1 TABLE ENTRIES
 
@@ -154,5 +176,13 @@ See documentation in SNMP::Info::Layer3 for details.
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
 See documentation in SNMP::Info::CiscoVTP for details.
+
+=head2 Table Methods imported from SNMP::Info::CDP
+
+See documentation in SNMP::Info::CDP for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoStats
+
+See documentation in SNMP::Info::CiscoStats for details.
 
 =cut
