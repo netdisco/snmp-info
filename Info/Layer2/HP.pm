@@ -1,5 +1,6 @@
 # SNMP::Info::Layer2::HP - SNMP Interface to HP ProCurve Switches
 # Max Baker <max@warped.org>
+# $Id$
 #
 # Copyright (c) 2002, Regents of the University of California
 # All rights reserved.
@@ -36,7 +37,7 @@ use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::MAU;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT 
+use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP 
             %MYGLOBALS %MYMIBS %MYFUNCS %MYMUNGE %MUNGE $INIT/ ;
 @SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer2 SNMP::Info::MAU Exporter/;
 @SNMP::Info::Layer2::HP::EXPORT_OK = qw//;
@@ -99,8 +100,29 @@ $INIT = 0;
             %MYMUNGE
          );
 
+%MODEL_MAP = ( 
+               'J4812A' => '2512',
+               'J4819A' => '5308XL',
+               'J4813A' => '2524',
+               'J4805A' => '5304XL',
+               'J4815A' => '3324XL',
+               'J4865A' => '4108GL',
+               'J4887A' => '4104GL',
+               'J4874A' => '9315',
+             );
 
 # Method Overrides
+
+# Lookup model number, and translate the part number to the common number
+sub model {
+    my $hp = shift;
+    my $id = $hp->id();
+    my $model = &SNMP::translateObj($id);
+    
+    $model =~ s/^hpswitch//i;
+
+    return defined $MODEL_MAP{$model} ? $MODEL_MAP{$model} : $model;
+}
 
 # Some have the serial num in entity mib, some dont.
 sub serial {
@@ -346,6 +368,18 @@ SNMP::Info::Layer2::HP - SNMP Interface to HP Procurve Switches
 Provides abstraction to the configuration information obtainable from a 
 HP device through SNMP.  Information is stored in a number of 
 MIB's such as IF-MIB, ENTITY-MIB, RFC1271-MIB, HP-ICF-OID, MAU-MIB
+
+MIBs required:
+
+=over
+
+=item RFC1271-MIB
+
+=item HP-ICF-OID
+
+=back
+
+HP MIBs can be found at http://www.hp.com/rnd/software
 
 =head1 AUTHOR
 
