@@ -650,6 +650,7 @@ sub device_type {
         # Next two untested. Reported working by DA
         $objtype = 'SNMP::Info::Layer3::C6500'   if ($desc =~ /cisco/i and $desc =~ /3750/);
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /Catalyst 4000/;
+        $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /s72033_rp/;
 
         # Allied Telesyn Layer2 managed switches. They report they have L3 support
         $objtype = 'SNMP::Info::Layer2::Allied' if ($desc =~ /Allied.*AT-80\d{2}\S*/i);
