@@ -85,6 +85,11 @@ SNMP::Info was created at UCSC for the netdisco project (www.netdisco.org)
 
  }
 
+=head1 SUPPORT
+
+Please direct all support, help, and bug requests to the snmp-info-users Mailing List
+at L<http://lists.sourceforge.net/lists/listinfo/snmp-info-users>
+
 =head1 DESCRIPTION 
 
 SNMP::Info gives an object oriented interface to information obtained through SNMP.
