@@ -38,10 +38,11 @@ use strict;
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
+use SNMP::Info::FDP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-@SNMP::Info::Layer3::Foundry::ISA = qw/SNMP::Info SNMP::Info::Bridge Exporter/;
+@SNMP::Info::Layer3::Foundry::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::FDP Exporter/;
 @SNMP::Info::Layer3::Foundry::EXPORT_OK = qw//;
 
 $DEBUG=0;
@@ -51,6 +52,7 @@ $INIT = 0;
 
 %MIBS = ( %SNMP::Info::MIBS,
           %SNMP::Info::Bridge::MIBS,
+          %SNMP::Info::FDP::MIBS,
           'FOUNDRY-SN-ROOT-MIB' => 'foundry',
           # IP-FORWARD-MIB
           # ETHERLIKE-MIB
@@ -63,6 +65,7 @@ $INIT = 0;
             # Inherit the super class ones
             %SNMP::Info::GLOBALS,
             %SNMP::Info::Bridge::GLOBALS,
+            %SNMP::Info::FDP::GLOBALS,
             'mac'        => 'ifPhysAddress.1',
             'chassis'    => 'entPhysicalDescr.1',
             'serial'     => 'snChasSerNum',
@@ -80,6 +83,7 @@ $INIT = 0;
 %FUNCS   = (
             %SNMP::Info::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
+            %SNMP::Info::FDP::FUNCS,
             'i_name2'    => 'ifName',
             # From RFC1213-MIB
             'at_index'    => 'ipNetToMediaIfIndex',
@@ -97,6 +101,7 @@ $INIT = 0;
             # Inherit all the built in munging
             %SNMP::Info::MUNGE,
             %SNMP::Info::Bridge::MUNGE,
+            %SNMP::Info::FDP::MUNGE,
             'at_paddr' => \&SNMP::Info::munge_mac,
          );
 
@@ -200,6 +205,28 @@ sub model {
 
     return $model;
 }
+
+sub os {
+    my $foundry = shift;
+    my $descr = $foundry->description();
+    if ($descr =~ m/IronWare/i) {
+        return 'IronWare';
+    }
+
+    return 'foundry';
+}
+sub os_ver {
+    my $foundry = shift;
+    my $os_version = $foundry->os_version();
+    return $os_version if defined $os_version;
+    # Some older ones don't have this value,so we cull it from the description
+    my $descr = $foundry->description();
+    if ($descr =~ m/Version (\d\S*)/) {
+        return $1;
+    }
+    return undef;
+}
+
 
 # $foundry->interfaces() - Map the Interfaces to their physical names
 sub interfaces {
