@@ -131,6 +131,7 @@ sub serial {
     # procurve 2xxx have this
     my $serial = $hp->serial1();
 
+    return undef unless defined $serial;
     # 4xxx dont
     return undef if $serial =~ /nosuchobject/i;
 
