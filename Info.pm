@@ -9,7 +9,7 @@
 # See COPYRIGHT at bottom
 
 package SNMP::Info;
-$VERSION = 0.7;
+$VERSION = 0.8;
 use strict;
 
 use Exporter;
@@ -29,7 +29,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 0.7
+SNMP::Info - Version 0.8
 
 =head1 AUTHOR
 
@@ -348,7 +348,7 @@ Subclass for Cisco Catalyst 1900 and 1900c Devices running CatOS.
 
 =item SNMP::Info::Layer2::C2900
 
-Subclass for Cisco Catalyst 2900 devices running IOS.
+Subclass for Cisco Catalyst 2900 and 3500XL devices running IOS.
 
 =item SNMP::Info::Layer2::Catalyst
 
@@ -611,6 +611,7 @@ Algorithm for Subclass Detection:
             Bay Networks                   -> SNMP::Info::Layer2::Bay
             Catalyst 1900                  -> SNMP::Info::Layer2::C1900
             Catalyst 2900XL/2950(IOS)      -> SNMP::Info::Layer2::C2900
+            Catalyst 3500XL (3548) IOS     -> SNMP::Info::Layer2::C2900
             Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
             Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
             HP Procurve                    -> SNMP::Info::Layer2::HP
@@ -657,8 +658,8 @@ sub device_type {
         #   Catalyst 1900 series override
         $objtype = 'SNMP::Info::Layer2::C1900' if ($desc =~ /catalyst/i and $desc =~ /\D19\d{2}/);
 
-        #   Catalyst 2900 (IOS) series override
-        $objtype = 'SNMP::Info::Layer2::C2900' if ($desc =~ /(C2900XL|C2950)/ );
+        #   Catalyst 2900 and 3500XL (IOS) series override
+        $objtype = 'SNMP::Info::Layer2::C2900' if ($desc =~ /(C2900XL|C2950|C3500XL)/ );
 
         #   Catalyst WS-C series override 2926,4k,5k,6k in Hybrid
         $objtype = 'SNMP::Info::Layer2::Catalyst' if ($desc =~ /WS-C\d{4}/);

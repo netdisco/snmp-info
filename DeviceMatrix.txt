@@ -174,7 +174,8 @@ device: 2924CXLv
 
 device-family: Catalyst 3500 XL
 portmac: yes
-note: L2 only IOS devices
+macsuck: vlan
+note: L2 only IOS devices - Just like Catalyst 2900 series from SNMP
 class: Layer2
 
 device: 3508GXL
@@ -182,7 +183,6 @@ device: 3508GXL
 device: 3524XL
 
 device: 3548XL
-macsuck: no
 
 device-family: Catalyst 3550
 macsuck: vlan
