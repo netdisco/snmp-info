@@ -2366,6 +2366,12 @@ sub _load_attr {
             last;
         }
 
+        # Check if last element, V2 devices may report ENDOFMIBVIEW even if
+        # instance or object doesn't exist.
+        if ($val eq 'ENDOFMIBVIEW'){
+            last;
+        }
+
         if ($val eq 'NOSUCHOBJECT'){
             $self->error_throw("SNMP::Info::_load_attr: $attr :  NOSUCHOBJECT");
             next;
