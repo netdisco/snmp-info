@@ -2091,10 +2091,24 @@ sub _load_attr {
     }
     my $localstore = undef;
 
-    while (! $errornum ){
-        $sess->getnext($var);
+    # Use BULKWALK if we can because its faster
+    my $vars;
+    if ($ver != 1 && !$errornum) {
+        ($vars) = $sess->bulkwalk(0, 20, $var);
         $errornum = $sess->{ErrorNum};
-        #print "$var->[0] $var->[1] $var->[2] $var->[3]\n";
+    }
+
+    while (! $errornum ){
+        # SNMP v1 use GETNEXT instead of BULKWALK
+        if ($ver == 1) {
+            $sess->getnext($var);
+            $errornum = $sess->{ErrorNum};
+        } else {
+            $var = shift @$vars;
+            last unless $var;
+        }
+
+        # Check if we've left the requested subtree
         last if $var->[0] ne $leaf;
         my $iid = $var->[1];
         my $val = $var->[2];

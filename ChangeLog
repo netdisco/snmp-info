@@ -3,6 +3,8 @@ ChangeLog $Id$
 
 verison 0.9 ()
     + Added i_lastchange() per suggestion of Nicolai Petri
+    + Added BULKWALK patch by Bradley Baetz - This should
+          greatly speed up requests on SNMPv2c devices.
 
 version 0.8 (03/21/04)
     + Added Q-BRIDGE-MIB support to SNMP::Info::Bridge
