@@ -54,13 +54,16 @@ $INIT = 0;
            );
 
 %GLOBALS = (
-            'b_mac'   => 'dot1dBaseBridgeAddress',
-            'b_ports' => 'dot1dBaseNumPorts',
-            'b_type'  => 'dot1dBaseType',
+            'b_mac'    => 'dot1dBaseBridgeAddress',
+            'b_ports'  => 'dot1dBaseNumPorts',
+            'b_type'   => 'dot1dBaseType',
             # Spanning Tree Protocol
-            'stp_ver' => 'dot1dStpProtocolSpecification',
+            'stp_ver'  => 'dot1dStpProtocolSpecification',
             'stp_time' => 'dot1dStpTimeSinceTopologyChange',
             'stp_root' => 'dot1dStpDesignatedRoot',
+            # Q-BRIDGE-MIB
+            'qb_vlans_max'  => 'dot1qMaxSupportedVlans',
+            'qb_vlans'      => 'dot1qNumVlans',
            );
 
 %FUNCS = (
@@ -85,7 +88,10 @@ $INIT = 0;
           'stp_p_bridge'   => 'dot1dStpPortDesignatedBridge',
           'stp_p_port'     => 'dot1dStpPortDesignatedPort',
           # Q-BRIDGE-MIB : 
-          'qb_v_if'   => 'dot1qPvid',
+          'qb_i_vlan'      => 'dot1qPvid',
+          'qb_i_vlan_type' => 'dot1qPortAcceptableFrameTypes',
+          'qb_v_name'      => 'dot1qVlanStaticName',
+          'qb_v_stat'      => 'dot1qVlanStaticRowStatus',
           );
 
 %MUNGE = (
@@ -233,6 +239,16 @@ Returns root of STP.
 
 (B<dot1dStpDesignatedRoot>)
 
+=item $bridge->qb_vlans_max()
+
+(B<dot1qMaxSupportedVlans>)
+
+=item $bridge->qb_vlans() 
+
+Number of VLANS on this device.
+
+(B<dot1qNumVlans>)
+
 =back
 
 =head1 TABLE METHODS
@@ -346,6 +362,37 @@ this port's segment."
 (B<dot1dStpPortDesignatedPort>)
 
 "The Port Identifier of the port on the Designated Bridge for this port's segment."
+
+=back
+
+=head2 Q-BRIDGE Data
+
+=over
+
+=item $bridge->qb_i_vlan()
+
+Gives the vlan used by interfaces
+
+(B<dot1qPvid>)
+
+=item $bridge->qb_i_vlan_type()
+
+Either C<admitAll> or C<admitOnlyVlanTagged>.  This is a good spot to find
+trunk ports.
+
+(B<dot1qPortAcceptableFrameTypes>)
+
+=item $bridge->qb_v_name()
+
+Human-entered name for vlans.
+
+(B<dot1qVlanStaticName>)
+
+=item $bridge->qb_v_stat()
+
+uhh. C<active> !
+
+(B<dot1qVlanStaticRowStatus>)
 
 =back
 
