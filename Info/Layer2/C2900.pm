@@ -72,10 +72,6 @@ sub vendor {
     return 'cisco';
 }
 
-sub os {
-    return 'catalyst';
-}
-
 sub cisco_comm_indexing {
     1;
 }
