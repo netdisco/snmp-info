@@ -666,7 +666,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::C1900' if ($desc =~ /catalyst/i and $desc =~ /\D19\d{2}/);
 
         #   Catalyst 2900 and 3500XL (IOS) series override
-        $objtype = 'SNMP::Info::Layer2::C2900' if ($desc =~ /(C2900XL|C2950|C3500XL)/ );
+        $objtype = 'SNMP::Info::Layer2::C2900' if ($desc =~ /(C2900XL|C2950|C3500XL)/i );
 
         #   Catalyst WS-C series override 2926,4k,5k,6k in Hybrid
         $objtype = 'SNMP::Info::Layer2::Catalyst' if ($desc =~ /WS-C\d{4}/);
@@ -1548,6 +1548,7 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '11000000'   => '11 Mbps',
                 '20000000'   => '20 Mbps',
                 '16000000'   => '16 Mbps',
+                '44210000'   => 'T3',
                 '44736000'   => 'T3',
                 '45000000'   => '45 Mbps',
                 '45045000'   => 'DS3',
@@ -1581,6 +1582,7 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '11000000'   => '11 Mbps',
                 '20000000'   => '20 Mbps',
                 '16000000'   => '16 Mbps',
+                '44210000'   => 'T3',
                 '44736000'   => 'T3',
                 '45000000'   => '45 Mbps',
                 '45045000'   => 'DS3',
