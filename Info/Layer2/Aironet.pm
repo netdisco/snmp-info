@@ -136,7 +136,21 @@ Max Baker (C<max@warped.org>)
 
 =head1 DESCRIPTION
 
-Provides interface to SNMP Data available on an Aironet / Cisco devices.
+Provides interface to SNMP Data available on newer Aironet devices running Cisco IOS.
+
+Note there are two classes for Aironet devices :
+
+=over
+
+=item SNMP::Info::Layer3::Aironet
+
+This class is for devices running Aironet software (older)
+
+=item SNMP::Info::Layer2::Aironet
+
+This class is for devices running Cisco IOS software (newer)
+
+=back
 
 For speed or debugging purposes you can call the subclass directly, but not after determining
 a more specific class using the method above. 
