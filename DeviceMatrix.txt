@@ -4,7 +4,7 @@
 # This file is meant to detail the cababilities
 # of network devices to supply data via SNMP.  
 
-# $Id$
+# $Id: DeviceMatrix.txt,Modified by Eric Miller 10/17/2004
 
 # Allied
 device-vendor: Allied Telesyn
@@ -37,19 +37,8 @@ duplex: no
 device: 1012
 
 # Bay
-device-vendor: Bay Networks
-class: Layer2::Bay
-ver: 1
-
-device-family: BayStack
-macsuck: yes
-cdp: proprietary
-note: SNMP interface does not respond after 2+ months of uptime. Reboot to fix.
-
-device: 303
-device: 304
-device: 450
-note: Labels full duplex as 20Mbit connection.
+device-vendor: Bay
+note: See Nortel
 
 # CISCO
 device-vendor: Cisco
@@ -339,6 +328,163 @@ duplex: link
 device: 4108GL,8000,2626,2650,8000
 note: VLAN info in Q-BRIDGE-MIB
 
+# NORTEL
+device-vendor: Nortel Networks
+
+device-family: BayStack Hub
+macsuck: yes
+duplex: both
+cdp: proprietary
+ver: 1
+class: Layer1::Bayhub
+note: !Uses proprietary MIBs to provide MAC to port mapping.
+
+device: 102
+
+device-family: Baystack Switch
+macsuck: yes
+duplex: both
+cdp: proprietary
+class: Layer2::Baystack
+
+device: 303,304
+
+device: 350
+
+device: 380
+
+device: 410
+
+device: 420
+
+device: 450
+note: !Some versions > 4.X in stacked configuration have SNMP timeout issues. 
+note: Labels full duplex as 20Mbit connection.
+
+device: 460,470
+
+device: 5510,5520
+
+device: BPS
+
+device-family: Centillion
+macsuck: yes
+duplex: both
+cdp: proprietary
+class: Layer2::Centillion
+note: !Must be on version 4.x or 5.x (VLAN based) software.
+
+device: 5000BH
+
+device: 5005BH
+
+device: C100
+
+device: C50
+
+device-family: AP222x
+macsuck: yes
+duplex: both
+cdp: proprietary
+class: Layer2::NAP222x
+note: !Upgrade to version 1.3 or higher.
+note: Sends out topology packets if enabled but does not build neighbor table.
+
+device: AP-2220
+
+device: AP-2221
+
+device: AP-2225
+
+device-family: Alteon AD
+arpnip: yes
+macsuck: yes
+duplex: both
+cdp: no
+class: Layer3::AlteonAD
+note: !Some versions have issues with continuous SNMP polling. Upgrade to 10.0.30.7 or higher.
+
+device: AD2
+
+device: AD3
+
+device: AD4
+
+device: 180
+
+device: 183
+
+device: 184
+
+device-family: BayRS
+arpnip: yes
+macsuck: yes
+portmac: yes
+duplex: both
+cdp: no
+class: Layer3::BayRS
+
+device: AN
+
+device: ARN
+
+device: ASN
+
+device: BLN
+
+device: Passport 2430
+
+device: Passport 5430
+
+device-family: Contivity
+arpnip: yes
+macsuck: no
+portmac: yes
+duplex: no
+cdp: no
+class: Layer3::Contivity
+
+device: 100,400,600
+
+device: 1000,1010,1050
+
+device: 1500,1600,1700,1740
+
+device: 2500,2600,2700
+
+device: 4500,4600,5000
+
+
+device-family: Passport LAN
+arpnip: yes
+macsuck: yes
+portmac: yes
+duplex: both
+cdp: proprietary
+class: Layer3::Passport
+note: !Code versions < 3.2 vlan based mac-suck and are unsupported.  Upgrade code.
+note: !3.2 code versions < 3.2.2.2 have Bridge MIB loop.  Upgrade code.
+
+device: 8603,8606,8610
+
+device: 8610co
+
+# Proxim
+device-vendor: Proxim
+
+device-family: Orinoco
+macsuck: yes
+duplex: no
+cdp: no
+class: Layer2::Orinoco
+
+device: AP-1000
+
+device: AP-2000
+
+device: WavePOINT-II
+
+# Zyxel
 device-vendor: Zyxel
 class: Layer2::ZyXEL_DSLAM
 note: Doesn't report sysServices (layers)

@@ -2,10 +2,24 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
 verison 0.9 ()
+    + ** Added full Nortel/Bay/BayStack support 
+        by new developer Eric Miller.  
+        L2::Bay now depricated.
+    + Added Alteon Ace support (Eric Miller)
+    + Added Nortel Cotivity support (Eric Miller)
+    + Added Nortel BayRS support (Eric Miller)
+    + Added Nortel Centillion support (Eric Miller)
+    + Added Nortel AP 222x support (Eric Miller)
+    + Added Orinco AP support (Eric Miller) 
     + Added i_lastchange() per suggestion of Nicolai Petri
     + Added BULKWALK patch by Bradley Baetz - This should
           greatly speed up requests on SNMPv2c devices.
     * Added C3560s to the C3550 class. Thanks to Nicolai.
+    * Fixed Bug where older Cisco's would append nulls to certain
+      CDP information.  Would come up a 'DBD::Pg parser' error in Netdisco
+    * Changed so a failed _global() call is cached so it won't retry
+      an error over and over again if the same global is used.
+    + Added MibDirs option to new() to allow specifying non-system MIB directories.
 
 version 0.8 (03/21/04)
     + Added Q-BRIDGE-MIB support to SNMP::Info::Bridge

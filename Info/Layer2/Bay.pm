@@ -1,5 +1,6 @@
 # SNMP::Info::Layer2::Bay
 # Max Baker <max@warped.org>
+# This module depricated.  See Layer2::BayStack
 #
 # Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
 #
@@ -276,19 +277,7 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
- my $bay = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
-                          DestHost    => 'myswitch',
-                          Community   => 'public',
-                          Version     => 2
-                        ) 
-    or die "Can't connect to DestHost.\n";
-
- my $class      = $bay->class();
- print "SNMP::Info determined this device to fall under subclass : $class\n";
+This module is Depricated.  Please use Layer2::BayStack instead.
 
 =head1 DESCRIPTION
 
