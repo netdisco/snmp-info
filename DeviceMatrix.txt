@@ -7,19 +7,28 @@
 # $Id$
 
 # Allied
-device-vendor: Allied TeleSys
+device-vendor: Allied Telesyn
+
+device-family: Hubs
 class: Layer1::Allied
 ver: 1
+arpnip: no
+macsuck: no
+duplex: no
+
+device: AT-3624T
 
 # Asante
 device-vendor: Asante
-class: Layer1::Asante
-ver: 1
 
 device-family: Hubs
+class: Layer1::Asante
+ver: 1
+arpnip: no
+macsuck: no
+duplex: no
 
 device: 1012
-macsuck: no
 
 # Bay
 device-vendor: Bay Networks
@@ -226,7 +235,7 @@ device: wsc2980g
 note: !Macsuck not working?
 
 device: wsc5000
-note: Has nasty tendency to not give you all SNMP data ,flaky for some older Catalyst versions.
+note: !Has nasty tendency to not give you all SNMP data ,flaky for some older Catalyst versions.
 
 device: wsc5505
 
