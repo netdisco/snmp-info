@@ -33,8 +33,6 @@ SNMP::Info - Version 0.9
 
 =head1 AUTHOR
 
-Max Baker
-
 SNMP::Info was created at UCSC for the netdisco project (www.netdisco.org)
 and is written and maintained by Max Baker.
 
@@ -91,7 +89,7 @@ and is written and maintained by Max Baker.
 =head1 SUPPORT
 
 Please direct all support, help, and bug requests to the snmp-info-users Mailing List
-at L<http://lists.sourceforge.net/lists/listinfo/snmp-info-users>
+at <http://lists.sourceforge.net/lists/listinfo/snmp-info-users>.
 
 =head1 DESCRIPTION 
 
@@ -137,16 +135,27 @@ of the net-snmp distribution.
 
 Net-SNMP can be found at http://net-snmp.sourceforge.net
 
-Version 5.0.2 or greater is recommended.  Various version 4's will work, and 5.0.1 is kinda flaky
-on the Perl side.  5.1.x isn't tested but should work fine.
+Version 5.1.2 or greater is recommended.
+
+Various version 4's and 5.0 and 5.1 series will work. 5.0.1 is kinda flaky
+on the Perl side.
+
+B<Redhat Users>: Certain versions that comes with certain versions of Redhat/Fedora doesn't have
+the Perl library installed.  Uninstall the RPM and install by hand.
 
 =item 2. MIBS
 
-SNMP::Info operates on textual descriptors found in MIBs. MIBs are text databases that
-are freely and easily obtainable on the Net.
+SNMP::Info operates on textual descriptors found in MIBs.
+
+If you are using SNMP::Info separate from Netdisco, 
+download the Netdisco-MIB package at
+
+ http://sourceforge.net/project/showfiles.php?group_id=80033&package_id=135517
 
 Make sure that your snmp.conf is updated to point to your MIB directory
 and that the MIBs are world-readable.
+
+B<To do it by hand>:
 
 Then run C<snmpconf> and setup that directory as default.  Move F<snmp.conf>
 into F</usr/local/share/snmp> when you are done.
@@ -188,28 +197,6 @@ by running
  mkdir -p /usr/local/share/snmp/mibs
  cd /usr/local/share/snmp/mibs
  tar xvfz /path/to/v1.tar.gz BRIDGE-MIB.my SNMP-REPEATER-MIB.my ESSWITCH-MIB.my TOKEN-RING-RMON-MIB.my
-
-=item Fix CISCO-TC-MIB
-
-There is a problem with the Cisco file F<CISCO-TC.my> which 
-is included from lots of other MIBs.   Make the following changes
-if you run into errors about C<Unsigned32> in this file.
-
-Edit F</usr/local/share/snmp/mibs/CISCO-TC.my>
-
-Comment out line 192 that says C<SMI Unsigned32> with two dashes.
-
-    -- SMI Unsigned32
-
-Add C<Unsigned32> to the imports after line 19:
-
-    IMPORTS
-        MODULE-IDENTITY,
-        Gauge32,
-        Integer32,
-        Counter64,
-        Unsigned32,
-            FROM SNMPv2-SMI
 
 =item More Specific MIBs
 
@@ -266,7 +253,9 @@ Required MIBs not included in the install instructions above are noted here.
 =head3 MIB Subclasses
 
 These subclasses implement method to access one or more MIBs.  These are not 
-used directly, but rather inherited from device subclasses. 
+used directly, but rather inherited from device subclasses.
+
+For more info run C<perldoc> on any of the following module names.
 
 =over
 
@@ -280,12 +269,16 @@ CISCO-CDP-MIB.  Cisco Discovery Protocol (CDP) Support.  Inherited by devices se
 
 =item SNMP::Info::CiscoStack
 
-CISCO-STACK-MIB.
+CISCO-STACK-MIB and CISCO-PORT-SECURITY-MIB
 
 =item SNMP::Info::CiscoStats
 
 Provides common interfaces for memory, cpu, and os statistics for Cisco devices.  Provides methods for 
 information in : OLD-CISCO-CPU-MIB, CISCO-PROCESS-MIB and CISCO-MEMORY-POOL-MIB
+
+=item SNMP::Info::CiscoVTP
+
+CISCO-VTP-MIB, CISCO-VLAN-MEMBERSHIP-MIB, CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
 
 =item SNMP::Info::Entity
 
@@ -295,6 +288,10 @@ ENTITY-MIB.  Used for device info in Cisco and other vendors.
 
 ETHERLIKE-MIB (RFC1398) - Some Layer3 devices implement this MIB, as well as some Aironet Layer 2 devices (non Cisco).
 
+=item SNMP::Info::FDP
+
+Foundry Discovery Protocol.  FOUNDRY-SN-SWITCH-GROUP-MIB
+
 =item SNMP::Info::MAU
 
 MAU-MIB (RFC2668).  Some Layer2 devices use this for extended Ethernet (Media Access Unit) interface information.
@@ -303,27 +300,23 @@ MAU-MIB (RFC2668).  Some Layer2 devices use this for extended Ethernet (Media Ac
 
 S5-AGENT-MIB, S5-CHASSIS-MIB.
 
-See SNMP::Info::NortelStack for where to get MIBs required.
-
 =item SNMP::Info::RapidCity
 
 RAPID-CITY.  Inhertited by Nortel Networks switches for duplex and VLAN information.
-
-See SNMP::Info::RapidCity for where to get MIBs required.
 
 =item SNMP::Info::SONMP
 
 SYNOPTICS-ROOT-MIB, S5-ETH-MULTISEG-TOPOLOGY-MIB.  Provides translation from Nortel Networks Topology
 Table information to CDP.  Inherited by Nortel/Bay switches and hubs.
 
-See SNMP::Info::SONMP for where to get MIBs required.
-
 =back
 
 =head3 Device Subclasses
 
-These subclasses inherit from one or more classes to provide a common interface to data obtainable
-from network devices. 
+These subclasses inherit from one or more classes to provide a common interface
+to data obtainable from network devices. 
+
+All the required MIB files are included in the netdisco-mib package.  (See Above).
 
 =over
 
@@ -372,6 +365,10 @@ Layer3::Aironet for Aironet devices that don't run IOS.
 =item SNMP::Info::Layer2::Allied
 
 Allied Telesys switches.
+
+=item SNMP::Info::Layer2::Bay
+
+Depricated.  Use BayStack.
 
 =item SNMP::Info::Layer2::Baystack
 
@@ -462,6 +459,10 @@ Subclass for Cisco Catalyst 3550,3540,3560 2/3 switches running IOS.
 This class covers Catalyst 6500s in native mode, hybrid mode.  Catalyst 4000's, 3750's, 2970's
 and probably others.
 
+=item SNMP::Info::Layer3::Cisco
+
+This is a simple wrapper around Layer3 for IOS devices.  It adds on CiscoVTP.
+
 =item SNMP::Info::Layer3::Contivity
 
 Subclass for Nortel Networks' Contivity VPN concentrators.  
@@ -481,7 +482,7 @@ See SNMP::Info::Layer3::Foundry for more info.
 Subclass for Nortel Networks' Passport 8600 series switches.
 
 See SNMP::Info::Layer3::Passport for where to get MIBs required.
- 
+
 =back
 
 =back
@@ -1393,7 +1394,7 @@ for set operations to work.
 
 NOTE: This will only set data listed in %FUNCS and %GLOBALS.  For data acquired from
 overriden methods (subroutines) specific set_METHOD() subroutines will need to be
-added.
+added if they haven't been already.
 
 =head2 Quiet Mode
 
@@ -1556,7 +1557,8 @@ Sample %MUNGE:
 
 =head2 Sample Subclass
 
-Let's make a sample Layer 2 Device subclass :
+Let's make a sample Layer 2 Device subclass.  This class
+will inherit the Cisco Vlan module as an example.
 
 ----------------------- snip --------------------------------
 
@@ -1570,23 +1572,28 @@ Let's make a sample Layer 2 Device subclass :
 
  use Exporter;
  use SNMP::Info::Layer2;
+ use SNMP::Info::CiscoVTP;
 
- @SNMP::Info::Layer2::Sample::ISA = qw/SNMP::Info::Layer2 Exporter/;
+ @SNMP::Info::Layer2::Sample::ISA = qw/SNMP::Info::Layer2
+                                       SNMP::Info::CiscoVTP Exporter/;
  @SNMP::Info::Layer2::Sample::EXPORT_OK = qw//;
 
  use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
  %MIBS    = (%SNMP::Info::Layer2::MIBS,
+             %SNMP::Info::CiscoVTP::MIBS,
              'SUPER-DOOPER-MIB'  => 'supermibobject'
             );
 
  %GLOBALS = (%SNMP::Info::Layer2::GLOBALS,
+             %SNMP::Info::CiscoVTP::GLOBALS,
              'name'              => 'supermib_supername',
              'favorite_color'    => 'supermib_fav_color_object',
              'favorite_movie'    => 'supermib_fav_movie_val'
              );
 
  %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
+             %SNMP::Info::CiscoVTP::FUNCS,
              # Super Dooper MIB - Super Hero Table
              'super_hero_index'  => 'SuperHeroIfIndex',
              'super_hero_name'   => 'SuperHeroIfName',
@@ -1595,6 +1602,7 @@ Let's make a sample Layer 2 Device subclass :
 
 
  %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
+             %SNMP::Info::CiscoVTP::MUNGE,
              'super_hero_powers' => \&munge_powers
             );
 
@@ -1605,7 +1613,7 @@ Let's make a sample Layer 2 Device subclass :
      my $name   = $sample->name();
 
      # this is silly but you get the idea
-     return '600' if defined $name ; 
+     return '600' if defined $name ;
  }
 
  # Create our own munge function
