@@ -940,7 +940,7 @@ sub munge_ip {
 
 =item munge_mac()
 
-Takes an octet stream and returns a colon separated ASCII hex string.
+Takes an octet stream (HEX-STRING) and returns a colon separated ASCII hex string.
 
 =cut
 sub munge_mac {
