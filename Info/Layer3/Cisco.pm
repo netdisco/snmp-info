@@ -134,6 +134,10 @@ See SNMP::Info::Layer3 for its own MIB requirements.
 
 See SNMP::Info::CiscoVTP for its own MIB requirements.
 
+See SNMP::Info::CiscoStats for its own MIB requirements.
+
+See SNMP::Info::CDP for its own MIB requirements.
+
 =back
 
 =head1 GLOBALS

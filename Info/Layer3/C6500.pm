@@ -92,13 +92,6 @@ $INIT = 0;
 *SNMP::Info::Layer3::C6500::i_name     = \&SNMP::Info::Layer3::i_name;
 *SNMP::Info::Layer3::C6500::i_type     = \&SNMP::Info::CiscoStack::i_type;
 
-sub model {
-    my $c6500 = shift;
-    my $model1 = $c6500->model1();
-    return $model1 if defined $model1;
-    return $c6500->SUPER::model();
-}
-
 sub vendor {
     return 'cisco';
 }
@@ -106,7 +99,6 @@ sub vendor {
 sub cisco_comm_indexing {
     1;
 }
-
 
 1;
 __END__
@@ -158,6 +150,10 @@ a more specific class using the method above.
 
 =item SNMP::Info::CiscoStack
 
+=item SNMP::Info::CiscoStats
+
+=item SNMP::Info::CDP
+
 =back
 
 =head2 Required MIBs
@@ -171,6 +167,10 @@ See SNMP::Info::Layer3 for its own MIB requirements.
 See SNMP::Info::CiscoVTP for its own MIB requirements.
 
 See SNMP::Info::CiscoStack for its own MIB requirements.
+
+See SNMP::Info::CiscoStats for its own MIB requirements.
+
+See SNMP::Info::CDP for its own MIB requirements.
 
 =back
 
@@ -198,6 +198,14 @@ See documentation in SNMP::Info::CiscoVTP for details.
 
 See documentation in SNMP::Info::CiscoStack for details.
 
+=head2 Globals imported from SNMP::Info::CDP
+
+See documentation in SNMP::Info::CDP for details.
+
+=head2 Globals imported from SNMP::Info::CiscoStats
+
+See documentation in SNMP::Info::CiscoStats for details.
+
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
@@ -214,6 +222,14 @@ See documentation in SNMP::Info::CiscoVTP for details.
 =head2 Table Methods imported from SNMP::Info::CiscoStack
 
 See documentation in SNMP::Info::CiscoStack for details.
+
+=head2 Table Methods imported from SNMP::Info::CDP
+
+See documentation in SNMP::Info::CDP for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoStats
+
+See documentation in SNMP::Info::CiscoStats for details.
 
 =cut
 

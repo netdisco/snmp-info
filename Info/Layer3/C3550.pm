@@ -106,7 +106,7 @@ sub model {
     $model =~ s/^catalyst//;
 
     # turn 355048 into 3550-48
-    if ($model =~ /^(35\d\d)(\d\d[T]?)$/) {
+    if ($model =~ /^(35\d\d)(\d\d(T|G)?)$/) {
         $model = "$1-$2";
     }
     return $model;
@@ -181,6 +181,10 @@ a more specific class using the method above.
 
 =item SNMP::Info::CiscoStack
 
+=item SNMP::Info::CDP
+
+=item SNMP::Info::CiscoStats
+
 =back
 
 =head2 Required MIBs
@@ -195,6 +199,10 @@ See SNMP::Info::CiscoVTP for its own MIB requirements.
 
 See SNMP::Info::CiscoStack for its own MIB requirements.
 
+See SNMP::Info::CiscoStats for its own MIB requirements.
+
+See SNMP::Info::CDP for its own MIB requirements.
+
 =back
 
 =head1 GLOBALS
@@ -206,6 +214,17 @@ These are methods that return scalar value from SNMP
 =item $c3550->vendor()
 
     Returns 'cisco'
+
+=item $c3550->model()
+
+Will take the translated model number and try to format it better.
+
+ 355048 -> 3550-48
+ 355012G -> 3550-12G
+
+=item $c3550->ports()
+
+Trys to cull the number of ports from the model number.
 
 =back
 
@@ -220,6 +239,14 @@ See documentation in SNMP::Info::CiscoVTP for details.
 =head2 Global Methods imported from SNMP::Info::CiscoStack
 
 See documentation in SNMP::Info::CiscoStack for details.
+
+=head2 Globals imported from SNMP::Info::CDP
+
+See documentation in SNMP::Info::CDP for details.
+
+=head2 Globals imported from SNMP::Info::CiscoStats
+
+See documentation in SNMP::Info::CiscoStats for details.
 
 =head1 TABLE ENTRIES
 
@@ -237,5 +264,13 @@ See documentation in SNMP::Info::CiscoVTP for details.
 =head2 Table Methods imported from SNMP::Info::CiscoStack
 
 See documentation in SNMP::Info::CiscoStack for details.
+
+=head2 Table Methods imported from SNMP::Info::CDP
+
+See documentation in SNMP::Info::CDP for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoStats
+
+See documentation in SNMP::Info::CiscoStats for details.
 
 =cut
