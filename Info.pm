@@ -2197,10 +2197,10 @@ sub AUTOLOAD {
 
 =head1 COPYRIGHT AND LICENCE
 
-Portions
-Copyright (c) 2003 Max Baker - All rights reserved.
+Changes from SNMP::Info Version 0.7 and on are:
+Copyright (c)2003, 2004 Max Baker - All rights reserved.
 
-Original Code
+Original Code is:
 Copyright (c) 2002-3, Regents of the University of California
 All rights reserved.
 

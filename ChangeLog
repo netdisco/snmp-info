@@ -8,6 +8,7 @@ version 0.8 ()
     + Added Cisco Catalyst 4000 to Layer3::C6500 class
     + Added Cisco Catalyst 2970 to Layer3::C6500 Class
     * Fixed warning about uninitialized value in CiscoStats line 92
+    * Added for more serial# checking for L2 and L3
     * Fixed warning in Layer2::Bay about non numeric port line 199
     Contributions from Dmitry Sergienko:
     + Added Cisco Aironet BR500 and AP1200 to L2::Aironet Class

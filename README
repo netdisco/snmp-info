@@ -5,7 +5,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 0.7
+    SNMP::Info - Version 0.8
 
 AUTHOR
 
@@ -68,7 +68,7 @@ SUPPORT
 
     Please direct all support, help, and bug requests to the snmp-info-users
     Mailing List at
-    http://lists.sourceforge.net/lists/listinfo/snmp-info-users
+    <http://lists.sourceforge.net/lists/listinfo/snmp-info-users>
 
 DESCRIPTION
 
@@ -154,6 +154,7 @@ DESCRIPTION
             BRIDGE-MIB
             SNMP-REPEATER-MIB
             STAND-ALONE-ETHERNET-SWITCH-MIB (ESSWITCH-MIB)
+
             by running
 
              mkdir -p /usr/local/share/snmp/mibs
@@ -190,13 +191,14 @@ DESCRIPTION
   Design Goals
 
     1. Use of textual MIB leaf identifier and enumerated values
+
         * All values are retrieved via MIB Leaf node names
             For example SNMP::Info has an entry in its %GLOBALS hash for
             ``sysName'' instead of 1.3.6.1.2.1.1.5.
 
         * Data returned is in the enumerated value form.
             For Example instead of looking up 1.3.6.1.2.1.2.2.1.3 and
-            getting back "23"
+            getting back 23
 
             SNMP::Info will ask for "RFC1213-MIB::ifType" and will get back
             "ppp".
@@ -287,7 +289,7 @@ DESCRIPTION
             CatOS.
 
         SNMP::Info::Layer2::C2900
-            Subclass for Cisco Catalyst 2900 devices running IOS.
+            Subclass for Cisco Catalyst 2900 and 3500XL devices running IOS.
 
         SNMP::Info::Layer2::Catalyst
             Subclass for Cisco Catalyst switches running CatOS. These
@@ -426,6 +428,7 @@ USAGE
                     Bay Networks                   -> SNMP::Info::Layer2::Bay
                     Catalyst 1900                  -> SNMP::Info::Layer2::C1900
                     Catalyst 2900XL/2950(IOS)      -> SNMP::Info::Layer2::C2900
+                    Catalyst 3500XL (3548) IOS     -> SNMP::Info::Layer2::C2900
                     Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
                     Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
                     HP Procurve                    -> SNMP::Info::Layer2::HP
@@ -528,7 +531,7 @@ USAGE
 
         $local_routes = $info->ipr_route('192.168.0');
 
-    This will only fetch entries in the table that start with "192.168.0",
+    This will only fetch entries in the table that start with 192.168.0,
     which in this case are routes on the local network.
 
     Remember that you must supply the partial IID (a numeric OID).
@@ -1030,6 +1033,7 @@ SNMP::INFO INTERNALS
                         '11000000'   => '11 Mbps',
                         '20000000'   => '20 Mbps',
                         '16000000'   => '16 Mbps',
+                        '44210000'   => 'T3',
                         '44736000'   => 'T3',
                         '45000000'   => '45 Mbps',
                         '45045000'   => 'DS3',
@@ -1169,6 +1173,7 @@ SNMP::INFO INTERNALS
     3. Method is in %FUNCS
     4. Run $info->_load_attr(method) if not cached
     5. Return $info->_show_attr(method).
+
     Override any dynamic method listed in one of these hashes by creating a
     subroutine with the same name.
 
@@ -1177,9 +1182,10 @@ SNMP::INFO INTERNALS
 
 COPYRIGHT AND LICENCE
 
-    Portions Copyright (c) 2003 Max Baker - All rights reserved.
+    Changes from SNMP::Info Version 0.7 and on are: Copyright (c)2003, 2004
+    Max Baker - All rights reserved.
 
-    Original Code Copyright (c) 2002-3, Regents of the University of
+    Original Code is: Copyright (c) 2002-3, Regents of the University of
     California All rights reserved.
 
     Redistribution and use in source and binary forms, with or without

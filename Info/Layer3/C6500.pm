@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3::C6500
 # Max Baker <max@warped.org>
 #
-# Copyright (c) 2003  Max Baker
+# Copyright (c) 2003,2004 Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::C6500;
-$VERSION = 0.7;
+$VERSION = 0.8;
 # $Id$
 
 use strict;

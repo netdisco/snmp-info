@@ -1,9 +1,9 @@
 # SNMP::Info::CiscoStack
 # Max Baker <max@warped.org>
 #
-# Copyright (c) 2003 Max Baker
-# All rights reserved.
-# 
+# Copyright (c)2003,2004 Max Baker 
+# All rights reserved.  
+#
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStack;
-$VERSION = 0.7;
+$VERSION = 0.8;
 # $Id$
 
 use strict;

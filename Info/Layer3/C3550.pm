@@ -1,8 +1,8 @@
 # SNMP::Info::Layer3::C3550
 # Max Baker <max@warped.org>
 #
+# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
 # Copyright (c) 2003, Regents of the University of California
-# Copyright (c) 2003  Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::C3550;
-$VERSION = 0.7;
+$VERSION = 0.8;
 # $Id$
 
 use strict;

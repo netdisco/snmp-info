@@ -1,6 +1,9 @@
 # SNMP::Info::CiscoStats
 # Max Baker <max@warped.org>
 #
+# Changes since Version 0.7 Copyright (c) 2004 Max Baker 
+# All rights reserved.  
+#
 # Copyright (c) 2003 Regents of the University of California
 # All rights reserved.
 # 
@@ -28,7 +31,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStats;
-$VERSION = 0.7;
+$VERSION = 0.8;
 # $Id$
 
 use strict;

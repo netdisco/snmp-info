@@ -1,6 +1,8 @@
 # SNMP::Info::Layer2::C1900
 # Max Baker <max@warped.org>
 #
+# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+#
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
 # 
@@ -28,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::C1900;
-$VERSION = 0.7;
+$VERSION = 0.8;
 # $Id$
 use strict;
 
