@@ -1,0 +1,31 @@
+SNMP::Info - Perl5 OO Interface to Network Devices and SNMP MIBs
+ChangeLog $Id$
+
+version 0.2 ()
+    * Added put_() methods and support for SNMP put commands
+    * Added SNMP::Info::Layer3::C3550 class for Cisco Catalyst 3550
+    * Fixed HP Detection in device_type()
+    * Added Spanning Tree Protocol (STP) methods to SNMP::Info::Bridge
+    * Removed HP Specific MIBS in SNMP::Info::Layer2 and cleaned up model()
+    * Added poke for Bay 450 Switches 
+    * Mapped HP Part Numbers to model numbers J4812A => 2512 in SNMP::Info::Layer2::HP
+     
+version 0.1 (12/30/02)
+    * Initial Release
+    * SubClasses Included:
+        * SNMP::Info::Bridge
+        * SNMP::Info::CDP
+        * SNMP::Info::EtherLike
+        * SNMP::Info::MAU
+        * SNMP::Info::Layer1
+              o SNMP::Info::Layer1::Allied
+              o SNMP::Info::Layer1::Asante 
+        * SNMP::Info::Layer2
+              o SNMP::Info::Layer2::Bay
+              o SNMP::Info::Layer2::C1900
+              o SNMP::Info::Layer2::C2900
+              o SNMP::Info::Layer2::Catalyst
+              o SNMP::Info::Layer2::HP 
+        * SNMP::Info::Layer3
+              o SNMP::Info::Layer3::Aironet
+              o SNMP::Info::Layer3::Foundry
