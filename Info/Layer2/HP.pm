@@ -358,14 +358,6 @@ sub i_duplex_admin {
     return \%i_duplex_admin;
 }
 
-
-=item $hp->i_vlan()
-
-Looks in Q-BRIDGE-MIB -- see SNMP::Info::Bridge
-
-and for older devices looks in HP-VLAN.
-
-=cut
 sub i_vlan {
     my $hp = shift;
 
@@ -605,6 +597,12 @@ Crosses i_name() with $hp->e_name() using $hp->e_port() and i_alias()
 =item $hp->i_type()
 
 Crosses i_type() with $hp->e_descr() using $hp->e_port()
+
+=item $hp->i_vlan()
+
+Looks in Q-BRIDGE-MIB -- see SNMP::Info::Bridge
+
+and for older devices looks in HP-VLAN.
 
 =back
 
