@@ -208,7 +208,7 @@ Asante device through SNMP.
 
 Download from http://www.mibdepot.com
 
-=items MIBs listed in SNMP::Info::Layer1
+=item MIBs listed in SNMP::Info::Layer1
 
 =back
 
