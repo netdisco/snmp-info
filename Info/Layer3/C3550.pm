@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::C3550;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -201,44 +201,60 @@ __END__
 
 SNMP::Info::Layer3::C3550 - Perl5 Interface to Cisco Catalyst 3550 Layer 2/3 Switches running IOS
 
-=head1 DESCRIPTION
-
-Abstraction subclass for Cisco Catalyst 3550 Layer 2/3 Switches.  These devices run
-IOS but have some of the same charactersitics as the Catalyst WS-C family (5xxx,6xxx). 
-For example, forwarding tables are held in VLANs, and extened interface information
-is gleened from CISCO-SWITCH-MIB.
-
 =head1 AUTHOR
 
 Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $c3550 = new SNMP::Info::Layer3::C3550(DestHost  => 'router' , 
-                              Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $c3550 = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
+ my $class      = $c3550->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
 
-See L<SNMP::Info> and L<SNMP::Info::Layer3> for all the inherited methods.
+=head1 DESCRIPTION
 
-=head1 CREATING AN OBJECT
+Abstraction subclass for Cisco Catalyst 3550 Layer 2/3 Switches.  
+
+These devices run IOS but have some of the same charactersitics as the Catalyst WS-C family (5xxx,6xxx). 
+For example, forwarding tables are held in VLANs, and extened interface information
+is gleened from CISCO-SWITCH-MIB.
+
+For speed or debugging purposes you can call the subclass directly, but not after determining
+a more specific class using the method above. 
+
+ my $c3550 = new SNMP::Info::Layer3::C3550(...);
+
+=head2 Inherited Classes
 
 =over
 
-=item  new SNMP::Info::Layer3::C3550()
-
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
-
-    my $c3550 = new SNMP::Info::Layer3::C3550(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $c3550;
+=item SNMP::Info::Layer3
 
 =back
 
-=head1 GLOBAL Values
+=head2 Required MIBs
+
+=over
+
+=item CISCO-STACK-MIB
+
+=item CISCO-VTP-MIB
+
+=back
+
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
 
 =over
 
@@ -272,7 +288,14 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 
 =back
 
+=head2 Globals imported from SNMP::Info::Layer3
+
+See documentation in SNMP::Info::Layer3 for details.
+
 =head1 TABLE ENTRIES
+
+These are methods that return tables of information in the form of a reference
+to a hash.
 
 =head2 Overrides
 
@@ -280,23 +303,23 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 
 =item $c3550->i_type()
 
-    Crosses p_port() with p_type() and returns the results. 
+Crosses p_port() with p_type() and returns the results. 
 
-    Overrides with ifType if p_type() isn't available.
+Overrides with ifType if p_type() isn't available.
 
 =item $c3550->i_name()
 
-    Crosses p_name with p_port and returns results.
+Crosses p_name with p_port and returns results.
 
 =item $c3550->i_duplex()
 
-    Crosses p_duplex with p_port and returns results.
+Crosses p_duplex with p_port and returns results.
 
 =item $c3550->i_duplex_admin()
 
-    Crosses p_duplex_admin with p_port.
+Crosses p_duplex_admin with p_port.
 
-    Munges bit_string returned from p_duplex_admin to get duplex settings.
+Munges bit_string returned from p_duplex_admin to get duplex settings.
 
 =back
 
@@ -305,24 +328,31 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 =over
 
 =item $c3550->p_name()
+
 (B<portName>)
 
 =item $c3550->p_type()
+
 (B<portType>)
 
 =item $c3550->p_status()
+
 (B<portOperStatus>)
 
 =item $c3550->p_status2()
+
 (B<portAdditionalStatus>)
 
 =item $c3550->p_speed()
+
 (B<portAdminSpeed>)
 
 =item $c3550->p_duplex()
+
 (B<portDuplex>)
 
 =item $c3550->p_port()
+
 (B<portIfIndex>)
 
 =back
@@ -332,9 +362,11 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 =over
 
 =item $c3550->p_speed_admin()
+
 (B<portCpbSpeed>)
 
 =item $c3550->p_duplex_admin()
+
 (B<portCpbDuplex>)
 
 =back
@@ -344,22 +376,28 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 See ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html
 for a good treaty of how to connect to the VLANs
 
-
 =over
 
 =item $c3550->v_state()
+
 (B<vtpVlanState>)
 
 =item $c3550->v_type()
+
 (B<vtpVlanType>)
 
 =item $c3550->v_name()
+
 (B<vtpVlanName>)
 
 =item $c3550->v_mtu()
+
 (B<vtpVlanMtu>)
 
 =back
 
-=cut
+=head2 Table Methods imported from SNMP::Info::Layer3
 
+See documentation in SNMP::Info::Layer3 for details.
+
+=cut
