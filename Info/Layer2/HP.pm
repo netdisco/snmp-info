@@ -86,15 +86,31 @@ $INIT = 0;
          );
 
 %MODEL_MAP = ( 
-               'J4812A' => '2512',
-               'J4819A' => '5308XL',
-               'J4813A' => '2524',
-               'J4805A' => '5304XL',
-               'J4815A' => '3324XL',
-               'J4865A' => '4108GL',
-               'J4887A' => '4104GL',
-               'J4874A' => '9315',
-             );
+                'J4093A' => '2424M',
+                'J4110A' => '8000M',
+                'J4120A' => '1600M',
+                'J4121A' => '4000M',
+                'J4122A' => '2400M',
+                'J4138A' => '9308M',
+                'J4139A' => '9304M',
+                'J4812A' => '2512',
+                'J4813A' => '2524',
+                'J4819A' => '5308XL',
+                'J4840A' => '6308M-SX',
+                'J4841A' => '6208M-SX',
+                'J4850A' => '5304XL',
+                'J4865A' => '4108GL',
+                'J4874A' => '9315M',
+                'J4887A' => '4104GL',
+                'J4899A' => '2650',
+                'J4902A' => '6108',
+                'J4903A' => '2824',
+                'J4904A' => '2848',
+                'J8130A' => 'WAP-420-NA',
+                'J8131A' => 'WAP-420-WW',
+                'J8164A' => '2626-PWR',
+                'J8165A' => '2650-PWR',
+           );
 
 # Method Overrides
 
@@ -395,7 +411,8 @@ Included in V2 mibs from Cisco
 
 =back
 
-The last three MIBs listed are from HP and can be found at http://www.hp.com/rnd/software
+The last three MIBs listed are from HP and can be found at L<http://www.hp.com/rnd/software>
+or L<http://www.hp.com/rnd/software/MIBs.htm>
 
 =head1 ChangeLog
 
