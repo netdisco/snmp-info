@@ -5,7 +5,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 0.4
+    SNMP::Info - Version 0.5
 
 AUTHOR
 
@@ -63,6 +63,12 @@ SYNOPSIS
         print "\n";
 
      }
+
+SUPPORT
+
+    Please direct all support, help, and bug requests to the snmp-info-users
+    Mailing List at
+    http://lists.sourceforge.net/lists/listinfo/snmp-info-users
 
 DESCRIPTION
 
@@ -477,11 +483,29 @@ USAGE
     Each of these methods returns a hash_reference to a hash keyed on the
     interface index in SNMP.
 
-    Example : $info->interfaces() might return { '1.12' => 'FastEthernet/0',
-    '2.15' => 'FastEthernet/1', '9.99' => 'FastEthernet/2' }
+    Example : $info->interfaces() might return
+
+        { '1.12' => 'FastEthernet/0',
+          '2.15' => 'FastEthernet/1',
+          '9.99' => 'FastEthernet/2'
+        }
 
     The key is what you would see if you were to do an snmpwalk, and in some
     cases changes between reboots of the network device.
+
+  Partial Table Fetches
+
+    If you want to get only a part of an SNMP table and you know the IID for
+    the part of the table that you want, you can specify it in the call:
+
+        $local_routes = $info->ipr_route('192.168.0');
+
+    This will only fetch entries in the table that start with "192.168.0",
+    which in this case are routes on the local network.
+
+    Remember that you must supply the partial IID (a numeric OID).
+
+    Partial table results are not cached.
 
    Interface Information
 
@@ -637,6 +661,122 @@ USAGE
         Gives broadcast address for IP table entry.
 
         (ipAdEntBcastAddr)
+
+   IP Routing Table
+
+    $info->ipr_route()
+        The route in question. A value of 0.0.0.0 is the default gateway
+        route.
+
+        ("ipRouteDest")
+
+    $info->ipr_if()
+        The interface (IID) that the route is on. Use interfaces() to map.
+
+        ("ipRouteIfIndex")
+
+    $info->ipr_1()
+        Primary routing metric for this route.
+
+        ("ipRouteMetric1")
+
+    $info->ipr_2()
+        If metrics are not used, they should be set to -1
+
+        ("ipRouteMetric2")
+
+    $info->ipr_3()
+        ("ipRouteMetric3")
+
+    $info->ipr_4()
+        ("ipRouteMetric4")
+
+    $info->ipr_5()
+        ("ipRouteMetric5")
+
+    $info->ipr_dest()
+        From RFC1213:
+
+          "The IP address of the next hop of this route.
+          (In the case of a route bound to an interface
+          which is realized via a broadcast media, the value
+          of this field is the agent's IP address on that
+          interface.)"
+
+        ("ipRouteNextHop")
+
+    $info->ipr_type()
+        From RFC1213:
+
+            other(1),        -- none of the following
+            invalid(2),      -- an invalidated route
+                             -- route to directly
+            direct(3),       -- connected (sub-)network
+                             -- route to a non-local
+            indirect(4)      -- host/network/sub-network
+
+              "The type of route.  Note that the values
+              direct(3) and indirect(4) refer to the notion of
+              direct and indirect routing in the IP
+              architecture.
+
+              Setting this object to the value invalid(2) has
+              the effect of invalidating the corresponding entry
+              in the ipRouteTable object.  That is, it
+              effectively disassociates the destination
+              identified with said entry from the route
+              identified with said entry.  It is an
+              implementation-specific matter as to whether the
+              agent removes an invalidated entry from the table.
+              Accordingly, management stations must be prepared
+              to receive tabular information from agents that
+              corresponds to entries not currently in use.
+              Proper interpretation of such entries requires
+              examination of the relevant ipRouteType object."
+
+        ("ipRouteType")
+
+    $info->ipr_proto()
+        From RFC1213:
+
+            other(1),       -- none of the following
+                            -- non-protocol information,
+                            -- e.g., manually configured
+            local(2),       -- entries
+                            -- set via a network
+            netmgmt(3),     -- management protocol
+                            -- obtained via ICMP,
+            icmp(4),        -- e.g., Redirect
+                            -- the remaining values are
+                            -- all gateway routing
+                            -- protocols
+            egp(5),
+            ggp(6),
+            hello(7),
+            rip(8),
+            is-is(9),
+            es-is(10),
+            ciscoIgrp(11),
+            bbnSpfIgp(12),
+            ospf(13),
+            bgp(14)
+
+        ("ipRouteProto")
+
+    $info->ipr_age()
+        Seconds since route was last updated or validated.
+
+        ("ipRouteAge")
+
+    $info->ipr_mask()
+        Subnet Mask of route. 0.0.0.0 for default gateway.
+
+        ("ipRouteMask")
+
+    $info->ipr_info()
+        Reference to MIB definition specific to routing protocol.
+
+        ("ipRouteInfo")
 
   Setting data via SNMP
 

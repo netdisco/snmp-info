@@ -7,7 +7,7 @@
 # See COPYRIGHT at bottom
 
 package SNMP::Info;
-$VERSION = 0.4;
+$VERSION = 0.5;
 use strict;
 
 use Exporter;
@@ -27,7 +27,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 0.4
+SNMP::Info - Version 0.5
 
 =head1 AUTHOR
 
@@ -804,6 +804,7 @@ correspond with the number of physical ports
 Each of these methods returns a hash_reference to a hash keyed on the interface index in SNMP.
 
 Example : $info->interfaces() might return  
+
     { '1.12' => 'FastEthernet/0',
       '2.15' => 'FastEthernet/1',
       '9.99' => 'FastEthernet/2'
@@ -811,6 +812,20 @@ Example : $info->interfaces() might return
 
 The key is what you would see if you were to do an snmpwalk, and in some cases changes between reboots of
 the network device.
+
+=head2 Partial Table Fetches
+
+If you want to get only a part of an SNMP table and you know the IID for the part of the table that you
+want, you can specify it in the call:
+
+    $local_routes = $info->ipr_route('192.168.0');
+
+This will only fetch entries in the table that start with C<192.168.0>, which in this case are routes on the local
+network. 
+
+Remember that you must supply the partial IID (a numeric OID).
+
+Partial table results are not cached.
 
 =head3 Interface Information
 

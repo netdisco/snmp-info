@@ -1,11 +1,12 @@
 SNMP::Info - Perl5 OO Interface to Network Devices and SNMP MIBs
 ChangeLog $Id$
 
-version 0.5 ()
+version 0.5 (06/10/03)
     * Added ability to get paritial tables.  For example to get the
       IP routing table for 128.114.*  you can do 
       $ipr = $dev->ipr_dest('128.114');
     * Added IP Routing Table entries from RFC1213 to SNMP::Info
+    * minor bug fixes
 
 version 0.4 (04/29/03)
     * BIG CHANGE ! Internal Data structure has changed.  
