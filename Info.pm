@@ -216,6 +216,10 @@ BRIDGE-MIB (RFC1286).  QBRIDGE-MIB. Inherited by devices with Layer2 support.
 
 CISCO-CDP-MIB.  Cisco Discovery Protocol (CDP) Support.  Inherited by devices serving Layer2 or Layer3.
 
+=item SNMP::Info::CiscoImage
+
+CISCO-IMAGE-MIB. A collection of OIDs providing IOS image characteristics.
+
 =item SNMP::Info::CiscoStack
 
 CISCO-STACK-MIB and CISCO-PORT-SECURITY-MIB
