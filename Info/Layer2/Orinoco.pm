@@ -95,7 +95,7 @@ sub os_bin {
 }
 
 sub vendor {
-    return 'Proxim';
+    return 'proxim';
 }
 
 sub model {
