@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::C1900;
-$VERSION = 0.5;
+$VERSION = 0.6;
 # $Id$
 use strict;
 
@@ -189,6 +189,8 @@ sub i_name {
     
     return $i_name;
 }
+
+1;
 __END__
 
 =head1 NAME

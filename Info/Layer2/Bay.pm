@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Bay;
-$VERSION = 0.5;
+$VERSION = 0.6;
 # $Id$
 use strict;
 
@@ -261,7 +261,7 @@ sub c_platform {
     return \%c_platform;
 }
 
-
+1;
 __END__
 
 =head1 NAME
