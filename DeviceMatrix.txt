@@ -1,0 +1,271 @@
+# SNMP Device Compatibility Matrix
+# SNMP::Info - Max Baker
+
+# This file is meant to detail the cababilities
+# of network devices to supply data via SNMP.  
+
+# $Id$
+
+# Allied
+device-vendor: allied
+
+# Asante
+device-vendor: asante
+
+device: 1012
+vendor: asante
+macsuck: no
+
+# Bay
+device-vendor: bay
+
+device-family: BayStack
+vendor: bay
+macsuck: yes
+cdp: proprietary
+note: SNMP interface does not respond after 2+ months of uptime. Reboot to fix.
+
+device: 303, 304
+
+device: 450
+note: Lables full duplex as 20Mbit connection.
+
+# CISCO
+device-vendor: cisco
+cdp: yes
+
+device-family: Aironet
+note: IOS and Aironet OS versions
+
+device: AIRAP1100
+note: IOS based device
+
+device: AP1200
+note: Aironet based device
+
+device: AP350, AP340
+note: Aironet based device
+
+device-family: 1000
+duplex: no
+
+device: 1003
+
+device-family: 1700
+
+device: 1710
+duplex: link
+
+device-family: 2500
+duplex: no
+macsuck: yes
+arpnip: yes
+
+device: 2501
+
+device: 2503
+
+device: AS2509RJ
+
+device: AS2511RJ
+
+device: 2511
+
+device: 2514
+
+device-family: 2600
+duplex: link
+arpnip: yes
+macsuck: yes
+
+device:2610
+
+device:2611
+
+device:2620
+
+device:2620XM
+
+device:2621
+
+device:2621XM
+
+device:2651XM
+
+device-family: 3600
+
+device: 3620
+
+device: 3640
+duplex: no
+
+device-family: 7500
+
+device: 7507
+duplex: no
+note: !Duplex settings are falsely reported in older IOS versions
+
+device-family: AS5000
+duplex: no
+
+device: AS5300
+
+#
+# Cisco - Catalyst
+#
+device-family: Catalyst 1900
+note: Upgrade older (pre 9.0) versions of CatOS
+note: snmp v1
+
+device: wsc1900c
+device-family: Catalyst 1900
+
+device: wsc1900
+device-family: Catalyst 1900
+
+device-family: Catalyst 2900
+note: IOS
+macsuck: vlan
+note: !Pre IOS 11.2 (8) SA3 - PortMAC shows up in CAM table.
+
+device: 2908xl
+note: !Pre IOS 11.2 (8.6) some features (duplex...) aren't present.
+
+device: 2912MfXL
+
+device: 2924MXL
+portmac: yes
+
+device: 2924CXL
+
+device: 2924CXLv
+
+device-family: Catalyst 3500 XL
+portmac: yes
+note: L2 only IOS devices
+
+device: 3508GXL
+
+device: 3524XL
+
+device: 3548XL
+macsuck: no
+
+device-family: Catalyst 3550
+macsuck: vlan
+duplex: both
+note: Run IOS
+note: Has VLANs that don't accept SNMP connections.  Don't know if they are standard (by name or number).
+note: Uses CISCO-STACK-MIB like Catalyst 5000 series for serial,duplex,type but not name
+note: Comes in flavors that support L2, L3 or combo.
+
+device: 3550-12T
+
+device: 3550
+note: L2/L3 Switch
+arpnip: yes
+
+device: 3550-24, 3550-48
+note: L2 only switch
+macsuck: no
+note: !BRIDGE-MIB not implemented.
+
+device-family: Catalyst 4000
+duplex: both
+macsuck: vlan
+note: Comes in IOS and CatOS versions like the 6k series.
+note: CatOS versions like L2::Catalyst just fine.
+note: !Reported problems with SNMP taking up all the CPU.  Requests take significantly longer.
+
+device: wsc4006
+
+device: 4507
+note: !IOS device -- Test against C3550 and C6000 classes
+
+device: wsc4912g
+note: Dedicated 12 port gig-e switch
+
+device-family: Catalyst 5000
+duplex: both
+note: Port info in CISCO-STACK-MIB
+
+device: wsc2926
+note: !Can give false information over SNMP at times.
+
+device: wsc2948g
+
+device: wsc2980g
+note: !Macsuck not working?
+
+device: wsc5000
+note: Has nasty tendency to not give you all SNMP data ,flaky for some older Catalyst versions.
+
+device: wsc5505
+
+device: wsc5509
+
+device: wsc5500
+
+device: wsx5302
+arpnip: yes
+note: Router blade that runs IOS
+
+device-family: Catalyst 6500
+macsuck:vlan
+note: Runs in two possible modes, native (IOS) and hybrid (IOS with CatOS on top).
+note: Switch running Hybrid has WS-C in description field and loves L2::Catalyst class
+note: Native Mode (IOS) versions seem to have SNMP problems with L2 data.
+
+device: 6503
+macsuck:no
+note: !Macsuck failing even under vlan mode
+note: Native mode (IOS) reports L2+L3
+
+device: 6509
+duplex: link
+macsuck:no
+note: Native mode (IOS) reports L2+L3
+note: !Macsuck failing even under vlan mode
+
+device: wsc6509
+duplex: both
+note: Hybrid Mode (Catalyst) reports L2 only
+
+device: 6kMsfc
+note: IOS portion of Hybrid mode.  VLAN and other L3 Services.
+
+device: 6kMsfc2
+note: IOS portion of Hybrid mode.  VLAN and other L3 Services.
+
+device-family: Voice Gateway
+duplex: no
+
+device: VG200
+
+# Foundry
+device-vendor: foundry
+
+device-family: FastIron
+
+# HP
+device-vendor: hp
+
+device-family: ProCurve
+duplex: both
+macsuck: yes
+arpnip: no
+cdp: yes
+note: CDP only available with newer ROM versions. 
+
+device: 2512
+
+device: 2524
+
+device: 4000
+
+device: 4104GL
+duplex: link
+
+device: 4108GL
+
+device: 8000
