@@ -21,5 +21,6 @@ WriteMakefile(
 
 sub MY::postamble { "
 .PHONY: readme
-readme:
+readme: README
+README: Info.pm
 	pod2text -l Info.pm > README" }

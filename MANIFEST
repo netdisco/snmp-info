@@ -4,12 +4,15 @@ Info.pm
 Info/Bridge.pm
 Info/CDP.pm
 Info/CiscoStats.pm
+Info/CiscoStack.pm
+Info/CiscoVTP.pm
 Info/Entity.pm
 Info/EtherLike.pm
 Info/Layer1.pm
 Info/Layer1/Allied.pm
 Info/Layer1/Asante.pm
 Info/Layer2.pm
+Info/Layer2/Aironet.pm
 Info/Layer2/Bay.pm
 Info/Layer2/C1900.pm
 Info/Layer2/C2900.pm
@@ -18,6 +21,7 @@ Info/Layer2/HP.pm
 Info/Layer3.pm
 Info/Layer3/Aironet.pm
 Info/Layer3/C3550.pm
+Info/Layer3/C6500.pm
 Info/Layer3/Foundry.pm
 Info/MAU.pm
 MANIFEST
@@ -25,3 +29,5 @@ Makefile.PL
 README
 t/prereq.t
 t/test_class.pl
+t/make_dev_matrix.pl
+DeviceMatrix.txt

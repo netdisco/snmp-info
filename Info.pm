@@ -1,6 +1,8 @@
 # SNMP::Info - Max Baker <max@warped.org>
 # $Id$
 #
+# Portions Copyright (c) 2003 Max Baker 
+# All rights reserved.  
 # Copyright (c) 2002-3, Regents of the University of California
 # All rights reserved.  
 #
@@ -27,13 +29,14 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 0.6
+SNMP::Info - Version 0.7
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 SNMP::Info was created at UCSC for the netdisco project (www.netdisco.org)
+and is now maintained by Max Baker.
 
 =head1 SYNOPSIS
 
@@ -185,6 +188,28 @@ by running
  mkdir -p /usr/local/share/snmp/mibs
  cd /usr/local/share/snmp/mibs
  tar xvfz /path/to/v1.tar.gz BRIDGE-MIB.my SNMP-REPEATER-MIB.my ESSWITCH-MIB.my
+
+=item Fix CISCO-TC-MIB
+
+There is a problem with the Cisco file F<CISCO-TC.my> which 
+is included from lots of other MIBs.   Make the following changes
+if you run into errors about C<Unsigned32> in this file.
+
+Edit F</usr/local/share/snmp/mibs/CISCO-TC.my>
+
+Comment out line 192 that says C<SMI Unsigned32> with two dashes.
+
+    -- SMI Unsigned32
+
+Add C<Unsigned32> to the imports after line 19:
+
+    IMPORTS
+        MODULE-IDENTITY,
+        Gauge32,
+        Integer32,
+        Counter64,
+        Unsigned32,
+            FROM SNMPv2-SMI
 
 =item More Specific MIBs
 
@@ -2151,6 +2176,10 @@ sub AUTOLOAD {
 
 =head1 COPYRIGHT AND LICENCE
 
+Portions
+Copyright (c) 2003 Max Baker - All rights reserved.
+
+Original Code
 Copyright (c) 2002-3, Regents of the University of California
 All rights reserved.
 

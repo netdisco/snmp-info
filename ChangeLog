@@ -1,7 +1,7 @@
 SNMP::Info - Perl5 OO Interface to Network Devices and SNMP MIBs
 ChangeLog $Id$
 
-version 0.7 ()
+version 0.7 (08/14/03)
     * Added Class for Catalyst 6500 Series - Layer3::C6500
     * Added CiscoVTP support to 3550,2900, and Catalyst classes
     * Extracted VLAN stuff from Layer2::Catalyst to SNMP::Info::CiscoVTP
