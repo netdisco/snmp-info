@@ -1,6 +1,8 @@
 # SNMP::Info::Layer3 - SNMP Interface to Layer3 devices
 # Max Baker <max@warped.org>
 #
+# Copyright (c) 2004 Max Baker -- All changes from Version 0.7 on
+#
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
 # 
@@ -28,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3;
-$VERSION = 0.7;
+$VERSION = 0.8;
 # $Id$
 
 use strict;
@@ -69,7 +71,7 @@ $INIT = 0;
             %SNMP::Info::Bridge::GLOBALS,
             %SNMP::Info::EtherLike::GLOBALS,
             'mac'       => 'ifPhysAddress.1',
-            'chassis'   => 'entPhysicalDescr.1',
+            'serial1'   => '.1.3.6.1.4.1.9.3.6.3.0', # OLD-CISCO-CHASSIS-MIB::chassisId.0
             'router_ip' => 'ospfRouterId.0',
            );
 
@@ -85,7 +87,9 @@ $INIT = 0;
             'at_index'   => 'atIfIndex',
             'at_paddr'   => 'atPhysAddress',
             'at_netaddr' => 'atNetAddress',
-            'ospf_ip'    => 'ospfHostIpAddress'
+            'ospf_ip'    => 'ospfHostIpAddress',
+            'ent_serial' => 'entPhysicalSerialNum',
+            'ent_chassis'=> 'entPhysicalDescr',
            );
 
 %MUNGE = (
@@ -138,10 +142,20 @@ sub i_ignore {
 sub serial {
     my $l3 = shift;
     
-    my $chassis = $l3->chassis();
+    my $serial1     = $l3->serial1();
+    my $ent_chassis = $l3->ent_chassis() || {};
+    my $ent_serial  = $l3->ent_serial() || {};
     
+    my $serial2 = $ent_serial->{1}  || undef;
+    my $chassis = $ent_chassis->{1} || undef;
+    
+    # precedence
+    #   serial2,chassis parse,serial1
     return $1 if (defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i);
+    return $serial2 if (defined $serial2 and $serial2 !~ /^\s*$/);
+    return $serial1 if (defined $serial1 and $serial1 !~ /^\s*$/);
 
+    return undef;
 }
 
 # $l3->model() - the sysObjectID returns an IID to an entry in 
