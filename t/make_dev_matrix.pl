@@ -31,9 +31,10 @@ if ($@) {
             
         }
     }
+    my $now = scalar localtime;
     my $gvds = GraphViz::Data::Structure->new(\%graph,Orientation=>'vertical',
         Colors=> 'Deep',
-        graph => {label=>'SNMP::Info and Netdisco Supported Devices','fontpath'=>'/usr/local/netdisco','fontname'=>'lucon',concentrate=>'true','overlap'=>'false',spline=>'true',bgcolor=>'wheat'},
+        graph => {label=>"SNMP::Info and Netdisco Supported Devices \n $now",'fontpath'=>'/usr/local/netdisco','fontname'=>'lucon',concentrate=>'true','overlap'=>'false',spline=>'true',bgcolor=>'wheat'},
         node  => {fontname=>'lucon'},
         );
     $gvds->graph()->as_png($DevPNG);
