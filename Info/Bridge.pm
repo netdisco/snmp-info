@@ -1,5 +1,5 @@
 # SNMP::Info::Bridge
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Changes since Version 0.7 Copyright (c) 2004 Max Baker 
 # All rights reserved.  
@@ -32,7 +32,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Bridge;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -43,11 +43,6 @@ use SNMP::Info;
 use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::Bridge::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::Bridge::EXPORT_OK = qw//;
-
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
-
-$INIT = 0;
 
 %MIBS    = ('BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',
             'Q-BRIDGE-MIB' => 'dot1qPvid',
@@ -107,6 +102,22 @@ $INIT = 0;
           'stp_p_port'   => \&SNMP::Info::munge_mac
          );
 
+sub qb_i_vlan_t {
+    my $bridge = shift;
+
+    my $qb_i_vlan      = $bridge->qb_i_vlan();
+    my $qb_i_vlan_type = $bridge->qb_i_vlan_type();
+        
+    my $i_vlan = {};
+
+    foreach my $if (keys %$qb_i_vlan){
+        my $vlan   = $qb_i_vlan->{$if};
+        my $tagged = $qb_i_vlan_type->{$if} || '';
+        next unless defined $vlan;
+        $i_vlan->{$if} = $tagged eq 'admitOnlyVlanTagged' ? 'trunk' : $vlan;
+    }
+    return $i_vlan;
+}
 
 sub i_stp_state {
     my $bridge = shift;
@@ -136,7 +147,7 @@ SNMP::Info::Bridge - Perl5 Interface to SNMP data available through the BRIDGE-M
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 
