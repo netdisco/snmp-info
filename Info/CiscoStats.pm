@@ -89,12 +89,12 @@ sub os_ver {
     my $descr = $l2->description();
     
     # Older Catalysts
-    if ($os eq 'catalyst' and $descr =~ m/V(\d{1}\.\d{2}\.\d{2})/){
+    if (defined $os and $os eq 'catalyst' and defined $descr and $descr =~ m/V(\d{1}\.\d{2}\.\d{2})/){
         return $1;
     }
-
+    
     # Newer Catalysts and IOS devices
-    if ($descr =~ m/Version (\d+\.\d+\([^)]+\)[^,\s]*)(,|\s)+/ ){
+    if (defined $descr and $descr =~ m/Version (\d+\.\d+\([^)]+\)[^,\s]*)(,|\s)+/ ){
         return $1;
     } 
     return undef;
