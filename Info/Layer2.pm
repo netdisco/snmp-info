@@ -1,5 +1,6 @@
 # SNMP::Info::Layer2 - SNMP Interface to Layer2 Devices 
 # Max Baker <max@warped.org>
+# $Id$
 #
 # Copyright (c) 2002, Regents of the University of California
 # All rights reserved.
@@ -54,7 +55,7 @@ $INIT = 0;
           %SNMP::Info::CDP::MIBS,
           'CISCO-PRODUCTS-MIB' => 'sysName',
           'CISCO-STACK-MIB'    => 'wsc1900sysID',
-          'HP-ICF-OID'         => 'hpSwitch4000',
+#          'HP-ICF-OID'         => 'hpSwitch4000',
         );
 
 %GLOBALS = (
@@ -176,7 +177,7 @@ MIBS:
 
  CISCO-PRODUCTS-MIB - Needed for ID of Cisco Products
  CISCO-STACK-MIB    - Needed for ID of Cisco Products
- HP-ICF-OID         - Needed for ID of HP    Products
+ ##HP-ICF-OID         - Needed for ID of HP    Products
  MIBS listed in SNMP::Info::Bridge and SNMP::Info::CDP
 
 Cisco MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
