@@ -1505,11 +1505,14 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '45045000'   => 'DS3',
                 '64000000'   => '64 Mbps',
                 '100000000'  => '100 Mbps',
-                '149760000'  => 'OC-1',
-                '155000000'  => 'OC-1',
+                '149760000'  => 'ATM on OC-3',
+                '155000000'  => 'OC-3',
+                '155519000'  => 'OC-3',
+                '155520000'  => 'OC-3',
                 '400000000'  => '400 Mbps',
+                '599040000'  => 'ATM on OC-12', 
                 '622000000'  => 'OC-12',
-                '599040000'  => 'OC-12', 
+                '622080000'  => 'OC-12',
                 '1000000000' => '1.0 Gbps',
              )
 
@@ -1530,19 +1533,26 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '44736000'   => 'T3',
                 '45000000'   => '45 Mbps',
                 '45045000'   => 'DS3',
+                '51850000'   => 'OC-1',
                 '64000000'   => '64 Mbps',
                 '100000000'  => '100 Mbps',
-                '149760000'  => 'OC-1',
-                '155000000'  => 'OC-1',
+                '149760000'  => 'ATM on OC-3',
+                '155000000'  => 'OC-3',
+                '155519000'  => 'OC-3',
+                '155520000'  => 'OC-3',
                 '400000000'  => '400 Mbps',
+                '599040000'  => 'ATM on OC-12', 
                 '622000000'  => 'OC-12',
-                '599040000'  => 'OC-12', 
+                '622080000'  => 'OC-12',
                 '1000000000' => '1.0 Gbps',
              );
 
 sub munge_speed {
     my $speed = shift;
-    return defined $SPEED_MAP{$speed} ? $SPEED_MAP{$speed} : $speed;
+    my $map   = $SPEED_MAP{$speed};
+
+    #print "  $speed -> $map  " if (defined $map); 
+    return $map || $speed;
 }
 
 =item munge_ip() 
