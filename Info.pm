@@ -2302,7 +2302,7 @@ sub _load_attr {
 
     my $vars = [];
     my $bulkwalk_no  = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
-    my $can_bulkwalk = $bulkwalk_no || $self->{BulkWalk} || 1;
+    my $can_bulkwalk = (!$bulkwalk_no || 0)  && ($self->{BulkWalk} || 1);
     my $repeaters    = $self->{BulkRepeaters} || $REPEATERS;
     my $bulkwalk     = $can_bulkwalk && $ver != 1;
 
