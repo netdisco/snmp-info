@@ -1,7 +1,7 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
-version 0.8 ()
+version 0.8 (03/21/04)
     + Added Q-BRIDGE-MIB support to SNMP::Info::Bridge
     + Added Aironet AP4800 to Layer3::Aironet class
     + Added C3500XL devices to the Layer2::C2900 class
