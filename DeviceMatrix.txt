@@ -328,6 +328,17 @@ duplex: link
 device: 4108GL,8000,2626,2650,8000
 note: VLAN info in Q-BRIDGE-MIB
 
+# Net-SNMP
+device-vendor: Net-SNMP
+class: Layer3
+ver: 2
+
+device-family: Linux
+note: net-snmp 4.x agent and 5.x agent.
+
+device-family: BSD
+
+
 # NORTEL
 device-vendor: Nortel Networks
 
