@@ -73,6 +73,12 @@ foreach my $fn (@fns){
     test_fn($dev,$fn);
 }
 
+print "\nTesting Misc...\n\n";
+my @misc = qw/v_name v_port/;
+foreach my $fn (@misc){
+    test_fn($dev,$fn);
+}
+
 #--------------------------------
 sub test_global {
     my $dev    = shift;
