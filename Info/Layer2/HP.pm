@@ -39,15 +39,18 @@ use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::MAU;
 use SNMP::Info::Entity;
+use SNMP::Info::CDP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $INIT/ ;
 
-@SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer2 SNMP::Info::MAU SNMP::Info::Entity Exporter/;
+@SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer2 SNMP::Info::MAU SNMP::Info::Entity i
+                                  SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::HP::EXPORT_OK = qw//;
 
 %MIBS = ( %SNMP::Info::Layer2::MIBS,
           %SNMP::Info::MAU::MIBS,
           %SNMP::Info::Entity::MIBS,
+          %SNMP::Info::CDP::MIBS,
           'RFC1271-MIB' => 'logDescription',
           'HP-ICF-OID'  => 'hpSwitch4000',
           'HP-VLAN'     => 'hpVlanMemberIndex',
@@ -59,6 +62,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $I
             %SNMP::Info::Layer2::GLOBALS,
             %SNMP::Info::MAU::GLOBALS,
             %SNMP::Info::Entity::GLOBALS,
+            %SNMP::Info::CDP::GLOBALS,
             'serial1'      => 'entPhysicalSerialNum.1',
             'hp_cpu'       => 'hpSwitchCpuStat.0',
             'hp_mem_total' => 'hpGlobalMemTotalBytes.1',
@@ -74,6 +78,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $I
             %SNMP::Info::Layer2::FUNCS,
             %SNMP::Info::MAU::FUNCS,
             %SNMP::Info::Entity::FUNCS,
+            %SNMP::Info::CDP::FUNCS,
             'i_type2'   => 'ifType',
             # RFC1271
             'l_descr'   => 'logDescription',
@@ -93,6 +98,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $I
             %SNMP::Info::Layer2::MUNGE,
             %SNMP::Info::MAU::MUNGE,
             %SNMP::Info::Entity::MUNGE
+            %SNMP::Info::CDP::MUNGE
          );
 
 %MODEL_MAP = ( 
