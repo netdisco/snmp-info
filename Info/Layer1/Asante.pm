@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Asante;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 use strict;
 
@@ -80,6 +80,19 @@ sub interfaces {
     return \%interfaces;
 }
 
+sub os {
+    return 'asante';
+}
+
+sub os_ver {
+    my $asante = shift;
+    my $descr = $asante->description();
+    
+    if ($descr =~ /software v(\d+\.\d+)/){
+        return $1;
+    }
+}
+    
 sub vendor {
     return 'asante';
 }
@@ -154,52 +167,64 @@ __END__
 
 SNMP::Info::Layer1::Asante - SNMP Interface to old Asante 1012 Hubs
 
-=head1 DESCRIPTION
-
-Provides abstraction to the configuration information obtainable from a 
-Asante device through SNMP. See inherited classes' documentation for 
-inherited methods.
-
-Inherits from:
-
- SNMP::Info::Layer1
-
-Required MIBs:
-
-ASANTE-HUB1012-MIB - Download from http://www.mibdepot.com
-
- MIBs listed in SNMP::Info::Layer1
-
 =head1 AUTHOR
 
 Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $asante = new SNMP::Info::Layer1::Asante(DestHost  => 'mycat1900' , 
-                              Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $asante = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-=head1 CREATING AN OBJECT
+ my $class      = $asante->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+Provides abstraction to the configuration information obtainable from a 
+Asante device through SNMP.
+
+=head2 Inherited Classes
 
 =over
 
-=item  new SNMP::Info::Layer1::Asante()
+=item SNMP::Info::Layer1
 
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
+=back
 
-    my $asante = new SNMP::Info::Layer1::Asante(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $asante;
+=head2 Required MIBs
+
+=over
+
+=item ASANTE-HUB1012-MIB
+
+Download from http://www.mibdepot.com
+
+=items MIBs listed in SNMP::Info::Layer1
 
 =back
 
 =head1 GLOBALS
 
+=head2 Overrides
+
 =over
+
+=item $asante->os()
+
+Returns 'asante'
+
+=item $asante->os_ver()
+
+Culls software version from description()
 
 =item $asante->vendor()
 
@@ -216,6 +241,10 @@ Returns IP Address of Managed Hub.
 Trys to cull out AT-nnnnX out of the description field.
 
 =back
+
+=head2 Globals inherited from SNMP::Info::Layer1
+
+See documentation in SNMP::Info::Layer1 for details.
 
 =head1 TABLE ENTRIES
 
@@ -247,5 +276,9 @@ the values of ati_up() to 'up' and 'down'.
 (B<linkTestLED>)
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::Layer1
+
+See documentation in SNMP::Info::Layer1 for details.
 
 =cut
