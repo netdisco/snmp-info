@@ -5,8 +5,12 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'               => 'SNMP::Info',
     'VERSION_FROM'       => 'Info.pm',
-# SNMP not available on CPAN -- not installable by CPAN
-#    'PREREQ_PM'          => {'SNMP' => '4'},
+    'PREREQ_PM'          => {
+                                'Math::BigInt' => 0
+                                # SNMP not available on CPAN . 
+                                # Install with net-snmp.sourceforge.net
+                                # 'SNMP' => '4'
+                            },
     ($] >= 5.005 ?    
           (ABSTRACT_FROM => 'Info.pm', 
            AUTHOR        => 'Max Baker <max@warped.org>')
