@@ -1,6 +1,17 @@
 SNMP::Info - Perl5 OO Interface to Network Devices and SNMP MIBs
 ChangeLog $Id$
 
+version 0.7 ()
+    * Added Class for Catalyst 6500 Series - Layer3::C6500
+    * Added CiscoVTP support to 3550,2900, and Catalyst classes
+    * Extracted VLAN stuff from Layer2::Catalyst to SNMP::Info::CiscoVTP
+    * Extracted CISCO-STACK-MIB from Layer2::Catalyst to SNMP::Info::CiscoStack
+    * Added 2950's to the Layer2::C2900 class
+    * Added 3548's and 350x's to the Layer3::C3550 class
+    * Broke out 3550's into separate device types (3550-24, 3550-48)
+    * Added T1,dual T1, and T3 , ATM over OC-12 ... to the SPEED_MAP
+    * Fixed speed map -- OC-1 -> OC-3
+
 version 0.6 (06/18/03)
     * Minor Bug Fix.  SNMP::Info::Layer2::Bay and SNMP::Info::Layer2::C1900
       didn't return 1 and failed to load on some versions of Perl.
