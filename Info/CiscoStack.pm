@@ -54,7 +54,7 @@ $INIT    = 0;
             'broadcast'   => 'sysBroadcast',
             'serial1'     => 'chassisSerialNumber',    
             'serial2'     => 'chassisSerialNumberString',
-            'model'       => 'chassisModel',    
+            'model1'      => 'chassisModel',    
             'ps1_type'    => 'chassisPs1Type',    
             'ps1_status'  => 'chassisPs1Status',    
             'ps2_type'    => 'chassisPs2Type',    
@@ -112,6 +112,16 @@ sub munge_port_status {
     return join(' ',@vals);
 }
 
+sub serial {
+    my $stack = shift;
+    my $serial1 = $stack->serial1();
+    my $serial2 = $stack->serial2();
+
+    return $serial1 if defined $serial1;
+    return $serial2 if defined $serial2;
+    return undef;
+}
+
 sub i_type {
     my $stack = shift;
 
@@ -150,15 +160,16 @@ sub i_name {
 sub i_duplex {
     my $stack = shift;
 
+    #my $i_duplex = $stack->SUPER::i_duplex();
     my $p_port = $stack->p_port();
     my $p_duplex  = $stack->p_duplex();
 
-    my %i_duplex;
+    my $i_duplex = {};
     foreach my $port (keys %$p_duplex) {
         my $iid = $p_port->{$port};
-        $i_duplex{$iid} = $p_duplex->{$port};
+        $i_duplex->{$iid} = $p_duplex->{$port};
     }
-    return \%i_duplex; 
+    return $i_duplex; 
 }
 
 sub i_duplex_admin {
@@ -191,14 +202,15 @@ sub i_duplex_admin {
 # $stack->interfaces() - Maps the ifIndex table to a physical port
 sub interfaces {
     my $self = shift;
-    my $interfaces = $self->i_index();
+    my $i_index    = $self->i_index();
     my $portnames  = $self->p_port();
-    my %portmap = reverse %$portnames;
+    my %portmap    = reverse %$portnames;
 
     my %interfaces = ();
-    foreach my $iid (keys %$interfaces) {
-        my $if = $interfaces->{$iid};
-        $interfaces{$if} = $portmap{$iid};
+    foreach my $iid (keys %$i_index) {
+        my $if   = $i_index->{$iid};
+        my $port = $portmap{$iid};
+        $interfaces{$iid} = $port || $if;
     }
 
     return \%interfaces;
