@@ -232,8 +232,8 @@ note: !Reported problems with SNMP taking up all the CPU.  Requests take signifi
 device: wsc4006
 
 device: 4507
-note: !IOS device -- Test against C3550 and C6000 classes
-class: Layer3
+class: Layer3::C6500
+note: !Has serious slowdown/timeout problems with SNMP
 
 device: wsc4912g
 note: Dedicated 12 port gig-e switch
@@ -271,6 +271,7 @@ class: Layer3::C6500
 note: Runs in two possible modes, native (IOS) and hybrid (IOS with CatOS on top).
 note: Switch running Hybrid has WS-C in description field and loves L2::Catalyst class
 note: Native Mode (IOS) versions seem to have SNMP problems with L2 data.
+note: !Problem with IOS 12.2.17d-SXB ... upgrade to -SXB1 or higher.
 
 device: 6503
 macsuck:no
