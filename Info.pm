@@ -9,7 +9,7 @@
 # $Id$
 
 package SNMP::Info;
-$VERSION = 0.9;
+$VERSION = 0.10;
 use strict;
 
 use Exporter;
@@ -21,7 +21,7 @@ use Math::BigInt;
 @SNMP::Info::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP 
-            $NOSUCH $BIGINT/;
+            $NOSUCH $BIGINT $REPEATERS/;
 
 =head1 NAME
 
@@ -505,7 +505,9 @@ Creates a new object and connects via SNMP::Session.
 
  my $info = new SNMP::Info( 'Debug'       => 1,
                             'AutoSpecify' => 1,
-                            'BigInt'      => 1
+                            'BigInt'      => 1,
+                            'BulkWalk'    => 1,
+                            'BulkRepeaters'=> 20,
                             'DestHost'    => 'myrouter',
                             'Community'   => 'public',
                             'Version'     => 2,
@@ -514,28 +516,74 @@ Creates a new object and connects via SNMP::Session.
 
 SNMP::Info Specific Arguments :
 
- AutoSpecify = Returns an object of a more specific device class
-               *See specify() entry*
- BigInt      = Return Math::BigInt objects for 64 bit counters.  Sets on a global scope, not object.
- Debug       = Prints Lots of debugging messages
- MibDirs     = Array ref to list of directories in which to look for MIBs.  Note this will
-               be in addition to the ones setup in snmp.conf at the system level.
- RetryNoSuch = When using SNMP Version 1, try reading values even if they come back
-               as "no such variable in this MIB".  Defaults to true, set to false if
-               so desired.  This feature lets you read SNMPv2 data from an SNMP version
-               1 connection, and should probably be left on.
- Session     = SNMP::Session object to use instead of connecting on own.
+=over
+
+=item AutoSpecify
+
+Returns an object of a more specific device class
+
+(default on)
+
+=item BigInt
+
+Return Math::BigInt objects for 64 bit counters.  Sets on a global scope, not object.
+
+(default off)
+
+=item BulkWalk
+
+Set to C<0> to turn off BULKWALK commands for SNMPv2 connections.
+
+(default on)
+
+=item BulkRepeaters
+
+Set number of MaxRepeaters for BULKWALK operation.  See C<perldoc SNMP> -> bulkwalk() for more info.
+
+(default 20)
+
+=item Debug
+
+Prints Lots of debugging messages
+
+(default off)
+
+=item MibDirs
+
+Array ref to list of directories in which to look for MIBs.  Note this will
+be in addition to the ones setup in snmp.conf at the system level.
+
+(default use net-snmp settings only)
+
+=item RetryNoSuch
+
+When using SNMP Version 1, try reading values even if they come back as "no
+such variable in this MIB".  Set to false if so desired.  This feature lets you
+read SNMPv2 data from an SNMP version 1 connection, and should probably be left
+on.
+
+(default true)
+
+=item Session
+
+SNMP::Session object to use instead of connecting on own.
+
+(default creates session automatically)
+
+=item OTHER
 
 All other arguments are passed to SNMP::Session.
 
 See SNMP::Session for a list of other possible arguments.
 
-A Note about the wrong Community string or wrong SNMP Version :
+=back
+
+A Note about the wrong Community string or wrong SNMP Version:
 
 If a connection is using the wrong community string or the wrong SNMP version,
-the creation of the object will not fail.  The device still answers the call on the
-SNMP port, but will not return information.  Check the error() method after you create
-the device object to see if there was a problem in connecting.
+the creation of the object will not fail.  The device still answers the call on
+the SNMP port, but will not return information.  Check the error() method after
+you create the device object to see if there was a problem in connecting.
 
 A note about SNMP Versions :
 
@@ -546,7 +594,7 @@ Some newer devices will support Version 1, but will not return all the data they
 if you had connected under Version 1 
 
 When trying to get info from a new device, you may have to try version 2 and then fallback to 
-version 1.  
+version 1.
 
 =cut
 sub new {
@@ -574,6 +622,17 @@ sub new {
         $auto_specific = $args{AutoSpecify} || 0;
         delete $args{AutoSpecify};
     }
+
+    if (defined $args{BulkRepeaters}){
+        $new_obj->{BulkRepeaters} = $args{BulkRepeaters};
+        delete $args{BulkRepeaters};
+    }
+
+    if (defined $args{BulkWalk}){
+        $new_obj->{BulkWalk} = $args{BulkWalk};
+        delete $args{BulkWalk};
+    }
+
     if (defined $args{Debug}){
         $new_obj->debug($args{Debug});
         delete $args{Debug};
@@ -1689,6 +1748,14 @@ to do it on an object scope.
 =cut
 $NOSUCH = 1;
 
+=item $REPEATERS
+
+Default 20.  MaxRepeaters for BULKWALK operations.  See C<perldoc SNMP> for more info.  Can change
+by passing L<BulkRepeaters> option in new()
+
+=cut
+$REPEATERS = 20;
+
 =back
 
 =head2 Data Munging Callback Subroutines
@@ -2227,24 +2294,34 @@ sub _load_attr {
     my $errornum = $sess->{ErrorNum};
     if ($ver == 1 and $nosuch and $errornum and $sess->{ErrorStr} =~ /nosuch/i){
         $errornum = 0; 
+    } elsif ($errornum){
+        $self->error_throw("SNMP::Info::_load_atr: Varbind ".$sess->{ErrorStr}."\n");
+        return undef;
     }
     my $localstore = undef;
 
+    my $vars = [];
+    my $bulkwalk_no  = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
+    my $can_bulkwalk = $bulkwalk_no || $self->{BulkWalk} || 1;
+    my $repeaters    = $self->{BulkRepeaters} || $REPEATERS;
+    my $bulkwalk     = $can_bulkwalk && $ver != 1;
+
     # Use BULKWALK if we can because its faster
-    my $vars;
-    if ($ver != 1 && !$errornum) {
-        ($vars) = $sess->bulkwalk(0, 20, $var);
-        $errornum = $sess->{ErrorNum};
+    if ($bulkwalk){
+        ($vars) = $sess->bulkwalk(0, $repeaters, $var);
+        if($sess->{ErrorNum}) {
+            $self->error_throw("SNMP::Info::_load_atr: BULKWALK ".$sess->{ErrorStr},"\n");
+            return undef;
+        }
     }
 
     while (! $errornum ){
-        # SNMP v1 use GETNEXT instead of BULKWALK
-        if ($ver == 1) {
+        if ($bulkwalk){
+            $var = shift @$vars or last;
+        } else {
+            # GETNEXT instead of BULKWALK
             $sess->getnext($var);
             $errornum = $sess->{ErrorNum};
-        } else {
-            $var = shift @$vars;
-            last unless $var;
         }
 
         # Check if we've left the requested subtree
