@@ -7,7 +7,7 @@
 # See COPYRIGHT below 
 
 package SNMP::Info;
-$VERSION = 0.2;
+$VERSION = 0.3;
 use strict;
 
 use Exporter;
@@ -27,7 +27,7 @@ SNMP::Info - Perl5 Interface to Network devices through SNMP.
 
 =head1 VERSION
 
-SNMP::Info - Version 0.2
+SNMP::Info - Version 0.3
 
 =head1 AUTHOR
 
@@ -82,7 +82,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  # Find out the Duplex status for the ports
  my $interfaces = $more_specific_device->interfaces();
  my $i_duplex   = $more_specific_device->i_duplex();
- 
+
+ # Get CDP Neighbor info
+ my $c_ip       = $more_specific_device->c_ip();
+ my $c_port     = $more_specific_device->c_port();
+
  foreach my $iid (keys %$interfaces){
  
     my $duplex = $i_duplex->{$iid};
@@ -90,8 +94,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     # Print out physical port name, not snmp iid
     my $port  = $interfaces->{$iid};
  
-    print "$port : $duplex\n";
- 
+    my $neighbor_ip   = $c_ip->{$iid};
+    my $neighbor_port = $c_port->{$iid};
+
+    print "$port: Duplex $duplex\n";
+    print "       Neighbor : $neighbor_ip \@ $neighbor_port\n";
+
  }
 
 =head1 REQUIREMENTS
@@ -1156,6 +1164,11 @@ sub _global{
         $DEBUG and print "SNMP::Info::_global($attr) NOSUCHOBJECT\n";
         return undef;
     }
+
+    if (defined $val and $val eq 'NOSUCHINSTANCE'){
+        $DEBUG and print "SNMP::Info::_global($attr) NOSUCHINSTANCE\n";
+        return undef;
+    }
     # Get the callback hash for data munging
     my $munge = $self->munge();
 
@@ -1291,6 +1304,15 @@ sub _load_attr {
 
         unless (defined $iid){
             $DEBUG and print "SNMP::Info::_load_attr: $attr not here\n";
+            next;
+        }
+
+        if ($val eq 'NOSUCHOBJECT'){
+            $DEBUG and print "SNMP::Info::_load_atr: $attr :  NOSUCHOBJECT\n" ;
+            next;
+        }
+        if ($val eq 'NOSUCHINSTANCE'){
+            $DEBUG and print "SNMP::Info::_load_atr: $attr :  NOSUCHINSTANCE\n" ;
             next;
         }
 

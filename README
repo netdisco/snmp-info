@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 0.2
+    SNMP::Info - Version 0.3
 
 AUTHOR
 
@@ -61,7 +61,11 @@ SYNOPSIS
      # Find out the Duplex status for the ports
      my $interfaces = $more_specific_device->interfaces();
      my $i_duplex   = $more_specific_device->i_duplex();
- 
+
+     # Get CDP Neighbor info
+     my $c_ip       = $more_specific_device->c_ip();
+     my $c_port     = $more_specific_device->c_port();
+
      foreach my $iid (keys %$interfaces){
  
         my $duplex = $i_duplex->{$iid};
@@ -69,8 +73,12 @@ SYNOPSIS
         # Print out physical port name, not snmp iid
         my $port  = $interfaces->{$iid};
  
-        print "$port : $duplex\n";
- 
+        my $neighbor_ip   = $c_ip->{$iid};
+        my $neighbor_port = $c_port->{$iid};
+
+        print "$port: Duplex $duplex\n";
+        print "       Neighbor : $neighbor_ip \@ $neighbor_port\n";
+
      }
 
 REQUIREMENTS
