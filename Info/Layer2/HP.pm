@@ -43,7 +43,7 @@ use SNMP::Info::CDP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $INIT/ ;
 
-@SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer2 SNMP::Info::MAU SNMP::Info::Entity i
+@SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer2 SNMP::Info::MAU SNMP::Info::Entity
                                   SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::HP::EXPORT_OK = qw//;
 
