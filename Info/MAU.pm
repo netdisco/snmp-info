@@ -1,5 +1,5 @@
-# SNMP::Info::MAU - Media Access Unit - RFC2668
-# Max Baker <max@warped.org>
+# SNMP::Info::MAU - Media Access Unit - RFC 2668
+# Max Baker
 #
 # Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
 #
@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::MAU;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -41,11 +41,6 @@ use SNMP::Info;
 use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::MAU::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::MAU::EXPORT_OK = qw//;
-
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
-
-$INIT = 0;
 
 %MIBS = ('MAU-MIB' => 'mauMod');
 
@@ -105,17 +100,92 @@ sub _ishalfduplex{
     return 0;
 }
 
+sub mau_i_duplex {
+    my $mau = shift;
+
+    my $mau_index = $mau->mau_index();
+    my $mau_link = $mau->mau_link();
+
+    my %i_duplex;
+    foreach my $mau_port (keys %$mau_link){
+        my $iid = $mau_index->{$mau_port};
+        next unless defined $iid;
+
+        my $linkoid = $mau_link->{$mau_port};
+        my $link = &SNMP::translateObj($linkoid);
+        next unless defined $link;
+
+        my $duplex = undef;
+
+        if ($link =~ /fd$/i) {
+            $duplex = 'full';
+        } elsif ($link =~ /hd$/i){
+            $duplex = 'half';
+        }
+
+        $i_duplex{$iid} = $duplex if defined $duplex;
+    }
+    return \%i_duplex;
+}
+
+sub mau_i_duplex_admin {
+    my $mau = shift;
+
+    my $interfaces   = $mau->interfaces();
+    my $mau_index    = $mau->mau_index();
+    my $mau_auto     = $mau->mau_auto();
+    my $mau_autostat = $mau->mau_autostat();
+    my $mau_typeadmin = $mau->mau_type_admin();
+    my $mau_autosent = $mau->mau_autosent();
+
+    my %mau_reverse = reverse %$mau_index;
+
+    my %i_duplex_admin;
+    foreach my $iid (keys %$interfaces){
+        my $mau_index = $mau_reverse{$iid};
+        next unless defined $mau_index;
+
+        my $autostat = $mau_autostat->{$mau_index};
+        
+        # HP25xx has this value
+        if (defined $autostat and $autostat =~ /enabled/i){
+            $i_duplex_admin{$iid} = 'auto';
+            next;
+        } 
+        
+        my $type = $mau_autosent->{$mau_index};
+    
+        next unless defined $type;
+
+        if ($type == 0) {
+            $i_duplex_admin{$iid} = 'none';
+            next;
+        }
+
+        my $full = $mau->_isfullduplex($type);
+        my $half = $mau->_ishalfduplex($type);
+
+        if ($full and !$half){
+            $i_duplex_admin{$iid} = 'full';
+        } elsif ($half) {
+            $i_duplex_admin{$iid} = 'half';
+        } 
+    } 
+    
+    return \%i_duplex_admin;
+}
+
 1;
 __END__
 
 
 =head1 NAME
 
-SNMP::Info::MAU - Perl5 Interface to Medium Access Unit (MAU) MIB (RFC2668) via SNMP
+SNMP::Info::MAU - Perl5 Interface to Medium Access Unit (MAU) MIB (RFC 2668) via SNMP
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 
@@ -133,7 +203,7 @@ Max Baker (C<max@warped.org>)
 =head1 DESCRIPTION
 
 SNMP::Info::MAU is a sublcass of SNMP::Info that supplies access to the
-MAU-MIB (RFC2668). This MIB is sometimes implemented on Layer 2 network devices like HP Switches.
+MAU-MIB (RFC 2668). This MIB is sometimes implemented on Layer 2 network devices like HP Switches.
 MAU = Media Access Unit.
 
 The MAU table contains link and duplex info for the port itself and the device
