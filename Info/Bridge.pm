@@ -29,6 +29,7 @@
 
 package SNMP::Info::Bridge;
 $VERSION = 0.1;
+# $Id$
 
 use strict;
 
