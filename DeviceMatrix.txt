@@ -8,6 +8,7 @@
 
 # Allied
 device-vendor: Allied Telesyn
+cdp:no
 
 device-family: Hubs
 class: Layer1::Allied
@@ -17,6 +18,11 @@ macsuck: no
 duplex: no
 
 device: AT-3624T
+
+device-family: AT-80nn Switches
+class: Layer2::Allied
+ver: 2
+macsuck: yes
 
 # Asante
 device-vendor: Asante
@@ -55,11 +61,11 @@ device-family: Aironet
 note: IOS and Aironet OS versions
 class: Layer3::Aironet
 
-device: AIRAP1100
+device: AIRAP1100, AP1200, C1100
 note: IOS based device
 class: Layer2::Aironet
 
-device: AP1200
+device: BR500
 note: Aironet based device
 
 device: AP350, AP340
@@ -200,14 +206,15 @@ note: L2/L3 Switch
 arpnip: yes
 
 device: 3550-24, 3550-48
-note: L2 only switch
-macsuck: no
-note: !BRIDGE-MIB not implemented.
+macsuck: vlan
+
+device-family: Catalyst 3750
+class: Layer3::C6500
 
 device-family: Catalyst 4000
 duplex: both
 macsuck: vlan
-class: Layer2::Catalyst
+class: Layer3::C6500
 note: Comes in IOS and CatOS versions like the 6k series.
 note: CatOS versions like L2::Catalyst just fine.
 note: !Reported problems with SNMP taking up all the CPU.  Requests take significantly longer.
@@ -318,3 +325,11 @@ duplex: link
 device: 4108GL
 
 device: 8000
+
+device-vendor: Zyxel
+class: Layer2::ZyXEL_DSLAM
+note: Doesn't report sysServices (layers)
+
+device-family: DSLAM
+
+device:AAM10008-61, AAM1008-63
