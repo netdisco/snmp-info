@@ -68,7 +68,7 @@ class: Layer2::Aironet
 device: BR500
 note: Aironet based device
 
-device: AP350, AP340
+device: AP350, AP340, AP4800-E
 note: Aironet based device
 
 device-family: 1000
@@ -178,11 +178,18 @@ device: 2924CXL
 
 device: 2924CXLv
 
+device-family: Catalyst 2970
+macsuck:vlan
+note: Acts just like IOS Catalyst 6000 series
+class: Layer3::C6500
+
+device: 2970G-24T-E
+
 device-family: Catalyst 3500 XL
 portmac: yes
 macsuck: vlan
 note: L2 only IOS devices - Just like Catalyst 2900 series from SNMP
-class: Layer2
+class: Layer2::C2900
 
 device: 3508GXL
 
