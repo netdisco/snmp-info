@@ -240,6 +240,13 @@ sub html_tail {
     </TD>
 </TR>
 <TR>
+    <TD>Class</TD>
+    <TD>SNMP::Info Class the the device currently uses.  Devices using more generic
+        interfaces like <tt>Layer2</tt> or <tt>Layer3</tt> may eventually get their
+        own subclass.
+    </TD>
+</TR>
+<TR>
     <TD>Duplex</TD>
     <TD>Ability to cull duplex settings from device.<BR>
         <UL>
@@ -265,6 +272,10 @@ sub html_tail {
     <TD>Whether the device will list the MAC address of the switch port on each
         switch port when doing a Macsuck.
     </TD>
+</TR>
+<TR>
+    <TD>Ver</TD>
+    <TD>SNMP Protocol Version the device has to use.</TD>
 </TR>
 </TABLE>
 </BODY>
