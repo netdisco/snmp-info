@@ -1152,6 +1152,10 @@ sub _global{
         return undef;
     }
 
+    if (defined $val and $val eq 'NOSUCHOBJECT'){
+        $DEBUG and print "SNMP::Info::_global($attr) NOSUCHOBJECT\n";
+        return undef;
+    }
     # Get the callback hash for data munging
     my $munge = $self->munge();
 
