@@ -77,9 +77,21 @@ $INIT = 0;
 
 %MUNGE = (
           'c_capabilities' => \&munge_caps,
+          'c_platform'     => \&munge_null,
+          'c_domain'       => \&munge_null,
+          'c_port'         => \&munge_null,
+          'c_id'           => \&munge_null,
+          'c_ver'          => \&munge_null,
           'c_ip'           => \&SNMP::Info::munge_ip
          );
 
+# munge_null() - removes nulls (\0)
+sub munge_null {
+    my $text = shift || return;
+    
+    $text =~ s/\0//g;
+    return $text;
+}
 
 sub munge_caps {
     my $caps = shift;
