@@ -13,13 +13,12 @@ use strict;
 use Exporter;
 use SNMP;
 use Carp;
+use Math::BigInt;
 
 @SNMP::Info::ISA = qw/Exporter/;
 @SNMP::Info::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP/;
-
-$DEBUG=0;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP $BIGINT/;
 
 =head1 NAME
 
@@ -65,27 +64,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =head1 SYNOPSIS
 
- # Connect with generic Info object
+ use SNMP::Info
  
- my $info = new SNMP::Info( DestHost  => 'router' , 
-                             Community => 'public' );
+ my $info = new SNMP::Info( 
+                            # Auto Discover more specific Device Class
+                            AutoSpecify => 1,
+                            Debug       => 1,
+                            # The rest is passed to SNMP::Session
+                            DestHost    => 'router',
+                            Community   => 'public',
+                            Version     => 2 )
+                or die;
  
  $name = $info->name();
  
- # Try and find a more specific subclass of SNMP::Info
- my $object_class = $info->device_type();
- 
- my $more_specific_device = new $object_class(
-                                  'Desthost' => 'mydevice',
-                                  'Community' => 'public');
+ # Let's see what sub-class it picked for us
+ print "Device is of type : ",  $info->class(), "\n";
  
  # Find out the Duplex status for the ports
- my $interfaces = $more_specific_device->interfaces();
- my $i_duplex   = $more_specific_device->i_duplex();
+ my $interfaces = $info->interfaces();
+ my $i_duplex   = $info->i_duplex();
 
  # Get CDP Neighbor info
- my $c_ip       = $more_specific_device->c_ip();
- my $c_port     = $more_specific_device->c_port();
+ my $c_ip       = $info->c_ip();
+ my $c_port     = $info->c_port();
 
  foreach my $iid (keys %$interfaces){
  
@@ -349,11 +351,30 @@ probably available for any network device that speaks SNMP.
 
 Creates a new object and connects via SNMP::Session. 
 
-Arguments given are passed to SNMP::Session and can be used to overide defaults.
+ my $info = new SNMP::Info( 'Debug'       => 1,
+                            'AutoSpecify' => 1,
+                            'BigInt'      => 1
+                            'DestHost'    => 'myrouter',
+                            'Community'   => 'public',
+                            'Version'     => 2
+                          ) or die;
+
+Arguments :
+
+ AutoSpecify = Returns an object of a more specific device class
+               *See specify() entry*
+ Debug       = Prints Lots of debugging messages
+ Session     = SNMP::Session object to use instead of connecting on own.
+ BigInt      = Return Math::BigInt objects for 64 bit counters.
+
+All other arguments are passed to SNMP::Session.
+
+See SNMP::Session for a list of other possible arguments.
 
 =cut
 sub new {
-    my $class = shift;
+    my $proto = shift;
+    my $class = ref($proto) || $proto;
     my %args = @_;
     my $new_obj = {};
     bless $new_obj,$class;
@@ -380,18 +401,36 @@ sub new {
         $$init_ref=1;    
     }
 
-    # These session defaults can be overwritten with @_
-    my $sess = new SNMP::Session(
-                    #'Version'  => 2,
-                    'UseEnums' => 1,
-                    %args
-                    );
+    # SNMP::Info specific args :
+    my $auto_specific = 0;
+    if (defined $args{AutoSpecify}){
+        $auto_specific = $args{AutoSpecify} || 0;
+        delete $args{AutoSpecify};
+    }
+    if (defined $args{Debug}){
+        $DEBUG = $args{Debug};
+        delete $args{Debug};
+    }
+    my $sess = undef;
+    if (defined $args{Session}){
+        $sess = $args{Session};
+        delete $args{Session};
+    }
+    if (defined $args{BigInt}){
+        $BIGINT = $args{BigInt};
+        delete $args{BigInt};
+    }
+
+    # Save Args for later
+    $new_obj->{_args} = \%args;
+
+    # Connects to device unless open session is provided.  
+    $sess = new SNMP::Session( 'UseEnums' => 1,
+                                   %args 
+                                ) unless defined $sess;
     
     unless (defined $sess){
-        # How do i get error messages back from SNMP?
-        #print $SNMP::ErrorStr;
-        print "SNMP::Info::new() $sess->{ErrorStr}\n" 
-            if ($DEBUG and $sess->{ErrorStr});
+        $DEBUG and carp("SNMP::Info::new() Failed to Create Session. ", defined $sess->{ErrorStr} ? $sess->{ErrorStr} : '', "\n");
         return undef;
     }
 
@@ -400,7 +439,8 @@ sub new {
     my $store = {};
     $new_obj->{store} = $store;
 
-    return $new_obj;
+    return $auto_specific ?
+        $new_obj->specify() : $new_obj;
 }
 
 =back
@@ -442,6 +482,7 @@ Algorithm for SubClass Detection:
             Catalyst 3550                  -> SNMP::Info::Layer3::C3550
             Foundry                        -> SNMP::Info::Layer3::Foundry
         Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2 
+            Aironet (Cisco) AP1100         -> SNMP::Info::Layer2::Aironet
             Bay Networks                   -> SNMP::Info::Layer2::Bay
             Catalyst 1900                  -> SNMP::Info::Layer2::C1900
             Catalyst 2900XL (IOS)          -> SNMP::Info::Layer2::C2900
@@ -499,6 +540,9 @@ sub device_type {
     
         #  Bay Switch
         $objtype = 'SNMP::Info::Layer2::Bay' if ($desc =~ /bay/i);
+
+        #  Aironet
+        $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /C1100/);
     
     } elsif ($info->has_layer(1)) {
         $objtype = 'SNMP::Info::Layer1';
@@ -508,6 +552,47 @@ sub device_type {
     }
 
     return $objtype; 
+}
+
+=item $info->specify()
+
+Returns an object of a more-specific subclass.  
+
+ my $info = new SNMP::Info(...);
+ # Returns more specific object type
+ $info = $info->specific();
+
+See device_type() entry for how a sub class is chosen. 
+
+=cut
+sub specify {
+    my $self = shift;
+
+    my $device_type = $self->device_type();
+    unless (defined $device_type) {
+        carp("SNMP::Info::specify() - Could not get info from device.\n");
+        return $self;
+    }
+    return $self if $device_type eq 'SNMP::Info';
+
+    # Load Sub Class
+    # By evaling a string the contents of device_type now becomes a bareword. 
+    eval "require $device_type;";
+    if ($@) {
+        print "SNMP::Info::specify() Loading $device_type Failed. $@\n";
+    }
+
+    my $args = $self->args();
+    my $session = $self->session();
+    my $sub_obj = $device_type->new(%$args,'Session'=>$session);
+
+    unless (defined $sub_obj) {
+        carp("SNMP::Info::specify() - Could not connect with new class ($device_type).\n");
+        return $self;
+    }
+
+    $DEBUG and print "SNMP::Info::specify() - Changed Class to $device_type.\n";
+    return $sub_obj;
 }
 
 =item $info->has_layer(3)
@@ -573,7 +658,7 @@ Each of these methods returns a hash_reference to a hash keyed on the interface 
  Example : $cdp->c_ip() returns 
             { '304' => '123.123.231.12' }
 
-=head3 Interfaces 
+=head3 Interface Information
 
 =over
 
@@ -672,6 +757,74 @@ set field like i_name().
 
 =back
 
+=head3 Interface Statistics
+
+=over
+
+=item $info->i_octet_in(), $info->i_octets_out(),
+$info->i_octet_in64(), $info->i_octets_out64()
+
+Bandwidth.
+
+Number of octets sent/received on the interface including framing characters.
+
+64 bit version may not exist on all devices. 
+
+NOTE: To manipulate 64 bit counters you need to use Math::BigInt, since the values
+are too large for a normal Perl scalar.   Set the global $SNMP::Info::BIGINT to 1 , or
+pass the BigInt value to new() if you want SNMP::Info to do it for you.
+
+
+(B<ifInOctets>) (B<ifOutOctets>)
+(B<ifHCInOctets>) (B<ifHCOutOctets>)
+
+=item $info->i_errors_in(), $info->i_errors_out()
+
+Number of packets that contained an error prventing delivery.  See IF-MIB for more info.
+
+(B<ifInErrors>) (B<ifOutErrors>)
+
+=item $info->i_pkts_ucast_in(), $info->i_pkts_ucast_out(),
+$info->i_pkts_ucast_in64(), $info->i_pkts_ucast_out64()
+
+Number of packets not sent to a multicast or broadcast address.
+
+64 bit version may not exist on all devices. 
+
+(B<ifInUcastPkts>) (B<ifOutUcastPkts>)
+(B<ifHCInUcastPkts>) (B<ifHCOutUcastPkts>)
+
+=item $info->i_pkts_nucast_in(), $info->i_pkts_nucast_out(),
+
+Number of packets sent to a multicast or broadcast address.
+
+These methods are depricated by i_pkts_multi_in() and i_pkts_bcast_in()
+according to IF-MIB.  Actual device usage may vary.
+
+(B<ifInNUcastPkts>) (B<ifOutNUcastPkts>)
+
+=item $info->i_pkts_multi_in() $info->i_pkts_multi_out(),
+$info->i_pkts_multi_in64(), $info->i_pkts_multi_out64()
+
+Number of packets sent to a multicast address.
+
+64 bit version may not exist on all devices. 
+
+(B<ifInMulticastPkts>) (B<ifOutMulticastPkts>)
+(B<ifHCInMulticastPkts>) (B<ifHCOutMulticastPkts>)
+
+=item $info->i_pkts_bcast_in() $info->i_pkts_bcast_out(),
+$info->i_pkts_bcast_in64() $info->i_pkts_bcast_out64()
+
+Number of packets sent to a broadcast address on an interface.
+
+64 bit version may not exist on all devices. 
+
+(B<ifInBroadcastPkts>) (B<ifOutBroadcastPkts>)
+(B<ifHCInBroadcastPkts>) (B<ifHCOutBroadcastPkts>)
+
+=back
+
 =head3 IP Address Table
 
 Each entry in this table is an IP address in use on this device.  Usually 
@@ -763,23 +916,44 @@ These are table entries, such as the IfIndex
 
 =cut
 %FUNCS   = (
-            'interfaces'    => 'ifIndex',
+            'interfaces'         => 'ifIndex',
             # from SNMPv2-MIB
-            'i_index'       => 'ifIndex',
-            'i_description' => 'ifDescr',
-            'i_type'        => 'ifType',
-            'i_mtu'         => 'ifMtu',
-            'i_speed'       => 'ifSpeed',
-            'i_mac'         => 'ifPhysAddress',
-            'i_up'          => 'ifOperStatus',
-            'i_up_admin'    => 'ifAdminStatus',
-            'i_name'        => 'ifName',
-            'i_alias'       => 'ifAlias',
+            'i_index'            => 'ifIndex',
+            'i_description'      => 'ifDescr',
+            'i_type'             => 'ifType',
+            'i_mtu'              => 'ifMtu',
+            'i_speed'            => 'ifSpeed',
+            'i_mac'              => 'ifPhysAddress',
+            'i_up'               => 'ifOperStatus',
+            'i_up_admin'         => 'ifAdminStatus',
+            'i_name'             => 'ifName',
+            'i_octet_in'         => 'ifInOctets',
+            'i_octet_out'        => 'ifOutOctets',
+            'i_errors_in'        => 'ifInErrors',
+            'i_errors_out'       => 'ifOutErrors',
+            'i_pkts_ucast_in'    => 'ifInUcastPkts',
+            'i_pkts_ucast_out'   => 'ifOutUcastPkts',
+            'i_pkts_nucast_in'   => 'ifInNUcastPkts',
+            'i_pkts_nucast_out'  => 'ifOutNUcastPkts',
             # IP Address Table
-            'ip_index'      => 'ipAdEntIfIndex',
-            'ip_table'      => 'ipAdEntAddr',
-            'ip_netmask'    => 'ipAdEntNetMask',
-            'ip_broadcast'  => 'ipAdEntBcastAddr',
+            'ip_index'           => 'ipAdEntIfIndex',
+            'ip_table'           => 'ipAdEntAddr',
+            'ip_netmask'         => 'ipAdEntNetMask',
+            'ip_broadcast'       => 'ipAdEntBcastAddr',
+            # ifXTable - Extension Table
+            'i_pkts_multi_in'    => 'ifInMulticastPkts',
+            'i_pkts_multi_out'   => 'ifOutMulticastPkts',
+            'i_pkts_bcast_in'    => 'ifInBroadcastPkts',
+            'i_pkts_bcast_out'   => 'ifOutBroadcastPkts',
+            'i_octet_in64'       => 'ifHCInOctets',
+            'i_octet_out64'      => 'ifHCOutOctets',
+            'i_pkts_ucast_in64'  => 'ifHCInUcastPkts',
+            'i_pkts_ucast_out64' => 'ifHCOutUcastPkts',
+            'i_pkts_multi_in64'  => 'ifHCInMulticastPkts',
+            'i_pkts_multi_out64' => 'ifHCOutMulticastPkts',
+            'i_pkts_bcast_in64'  => 'ifHCInBroadcastPkts',
+            'i_pkts_bcast_out64' => 'ifHCOutBroadcastPkts',
+            'i_alias'            => 'ifAlias'
            );
 
 =item %MIBS
@@ -804,11 +978,19 @@ it should return that same data in a more human friendly format.
 
 
 =cut
-%MUNGE   = ('ip'     => \&munge_ip,
-            'mac'    => \&munge_mac,
-            'i_mac'  => \&munge_mac,
-            'layers' => \&munge_dec2bin,
-            'i_speed'=> \&munge_speed
+%MUNGE   = ('ip'                 => \&munge_ip,
+            'mac'                => \&munge_mac,
+            'i_mac'              => \&munge_mac,
+            'layers'             => \&munge_dec2bin,
+            'i_speed'            => \&munge_speed,
+            'i_octet_in64'       => \&munge_counter64,
+            'i_octet_out64'      => \&munge_counter64,
+            'i_pkts_ucast_in64'  => \&munge_counter64,
+            'i_pkts_ucast_out64' => \&munge_counter64,
+            'i_pkts_mutli_in64'  => \&munge_counter64,
+            'i_pkts_multi_out64' => \&munge_counter64,
+            'i_pkts_bcast_in64'  => \&munge_counter64,
+            'i_pkts_bcast_out64' => \&munge_counter64,
             );
 
 =back
@@ -882,6 +1064,31 @@ Let's make a sample Layer 2 Device subclass :
 
 Be sure and send the debugged version to snmp@warped.org to be 
 included in the next version of SNMP::Info.
+
+=head2 Package Globals
+
+These are variables that get set by methods, or arguments passed to new()
+Avoid modifying them directly 
+
+=over
+
+=item $DEBUG
+
+Default 0.  Sends copious debug info to stdout.  Set with Debug argument in new() or with the
+debug() method on an object.
+
+=cut
+$DEBUG = 0;
+
+=item $BIGINT
+
+Default 0.   Set to true to have 64 bit counters return Math::BigInt objects instead of scalar
+string values.  See note under Interface Statistics about 64 bit values.
+
+=cut
+$BIGINT = 0; 
+
+=back
 
 =head2 Data Munging Callback Subs
 
@@ -1003,6 +1210,21 @@ sub munge_bits {
     return unpack("b*",$bits);
 }
 
+
+=item munge_counter64
+
+If $BIGINT is set to true, then a Math::BigInt object is returned.
+See Math::BigInt for details.
+
+=cut
+sub munge_counter64 {
+    my $counter = shift;
+    return unless defined $counter;
+    return $counter unless $BIGINT;
+    my $bigint = Math::BigInt->new($counter);
+    return $bigint;
+}
+
 =back
 
 =head2 Internaly Used Functions
@@ -1060,6 +1282,16 @@ sub debug {
     $DEBUG=$debug;
     $SNMP::debugging=$debug;
 
+}
+
+=item $info->args()
+
+Returns a reference to the argument hash supplied to SNMP::Session
+
+=cut
+sub args {
+    my $self = shift;
+    return $self->{_args};
 }
 
 =item $info->class() 
@@ -1177,6 +1409,9 @@ sub _global{
         my $subref = $munge->{$attr};
         $val = &$subref($val);
     } 
+
+    # Save Cached Value
+    $self->{"__$attr"} = $val;
 
     return $val;
 }
@@ -1422,6 +1657,9 @@ sub AUTOLOAD {
 
     # First check %GLOBALS and return _scalar(global)
     if (defined $globals{$attr} ){
+        # Return Cached Value if exists
+        return $self->{"__${attr}"} if defined $self->{"__${attr}"};
+        # Fetch New Value
         return $self->_global( $attr );
     }
 
