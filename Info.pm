@@ -646,6 +646,9 @@ sub device_type {
         # Aironet - older non-IOS
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(CAP340|AP340|CAP350|350|1200)\D/) ;
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /c6sup2/;
+        # Next two untested. Reported working by DA
+        $objtype = 'SNMP::Info::Layer3::C6500'   if ($desc =~ /cisco/i and $desc =~ /3750/);
+        $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /Catalyst 4000/;
 
     # Layer 2 Supported
     } elsif ($info->has_layer(2)) {

@@ -3,6 +3,8 @@ ChangeLog $Id$
 
 version 0.8 ()
     * Added C3500XL devices to the Layer2::C2900 class
+    * Added Cisco 3750 (37xxstack) to Layer3::C6500 class
+    * Added Cisco Catalyst 4000 to Layer3::C6500 class
 
 version 0.7 (08/14/03)
     * Added Class for Catalyst 6500 Series - Layer3::C6500
