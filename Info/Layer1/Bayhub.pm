@@ -2,11 +2,8 @@
 # Eric Miller <eric@jeneric.org>
 # $Id$
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2004 Eric Miller, Max Baker
 #
-# Copyright (c) 2002,2003 Regents of the University of California
-# All rights reserved.
-# 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
@@ -31,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Bayhub;
-$VERSION = 0.9;
+$VERSION = 1.0;
 use strict;
 
 use Exporter;
@@ -46,12 +43,12 @@ use SNMP::Info::SONMP;
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 %MIBS    = (
-	    %SNMP::Info::MIBS,
+            %SNMP::Info::MIBS,
             %SNMP::Info::Bridge::MIBS,
-            %SNMP::Info::NortelStack::MIBS,	    
+            %SNMP::Info::NortelStack::MIBS,            
             %SNMP::Info::SONMP::MIBS,
-            'S5-ETHERNET-COMMON-MIB'	=> 's5EnPortTable',
-            'S5-COMMON-STATS-MIB'	=> 's5CmStat',
+            'S5-ETHERNET-COMMON-MIB'     => 's5EnPortTable',
+            'S5-COMMON-STATS-MIB'        => 's5CmStat',
             );
 
 %GLOBALS = (
@@ -59,7 +56,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             %SNMP::Info::Bridge::GLOBALS,
             %SNMP::Info::NortelStack::GLOBALS,
             %SNMP::Info::SONMP::GLOBALS,
-	    );
+            );
 
 %FUNCS   = (
             %SNMP::Info::FUNCS,
@@ -67,14 +64,14 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             %SNMP::Info::NortelStack::FUNCS,
             %SNMP::Info::SONMP::FUNCS,
             # S5-ETHERNET-COMMON-MIB::s5EnPortTable
-            'bayhub_pb_index'	=> 's5EnPortBrdIndx',
-            'bayhub_pp_index'	=> 's5EnPortIndx',
-            'bayhub_up_admin'	=> 's5EnPortPartStatus',
-            'bayhub_up'		=> 's5EnPortLinkStatus',
-	    # S5-COMMON-STATS-MIB::s5CmSNodeTable
-            'bayhub_nb_index'	=> 's5CmSNodeBrdIndx',
-            'bayhub_np_index'	=> 's5CmSNodePortIndx',
-            'fw_mac'		=> 's5CmSNodeMacAddr',
+            'bayhub_pb_index'        => 's5EnPortBrdIndx',
+            'bayhub_pp_index'        => 's5EnPortIndx',
+            'bayhub_up_admin'        => 's5EnPortPartStatus',
+            'bayhub_up'              => 's5EnPortLinkStatus',
+            # S5-COMMON-STATS-MIB::s5CmSNodeTable
+            'bayhub_nb_index'        => 's5CmSNodeBrdIndx',
+            'bayhub_np_index'        => 's5CmSNodePortIndx',
+            'fw_mac'                 => 's5CmSNodeMacAddr',
             );
 
 %MUNGE   = (
@@ -137,9 +134,9 @@ sub i_index {
                }
           }
 
-	my $index = ($board*256)+$port;
+        my $index = ($board*256)+$port;
 
-	$i_index{$iid} = $index;
+        $i_index{$iid} = $index;
     }
     return \%i_index;
 }
@@ -153,8 +150,8 @@ sub interfaces {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-	# Index numbers are deterministic slot * 256 + port
-	my $port = $index % 256;
+        # Index numbers are deterministic slot * 256 + port
+        my $port = $index % 256;
         my $slot = int($index / 256);
 
         my $slotport = "$slot.$port";
@@ -220,8 +217,8 @@ sub i_up {
         my $index = $port_index->{$iid};
         next unless defined $index;
         my $link_stat = $link_stat->{$iid};
-	next unless defined $link_stat;
-	
+        next unless defined $link_stat;
+        
         $link_stat = 'up' if $link_stat =~ /on/i;
         $link_stat = 'down' if $link_stat =~ /off/i;
              
@@ -237,10 +234,10 @@ sub i_up_admin {
  
     my %i_up_admin;
     foreach my $iid (keys %$i_index){
-    	my $index = $i_index->{$iid};
-    	next unless defined $index;
+            my $index = $i_index->{$iid};
+            next unless defined $index;
         my $link_stat = $link_stat->{$iid};
-	next unless defined $link_stat;
+        next unless defined $link_stat;
  
         $i_up_admin{$index}=$link_stat; 
     }
@@ -258,7 +255,7 @@ sub bp_index {
         my $board = $b_index->{$iid};
         next unless defined $board;
         my $port = $p_index->{$iid}||0;
-		
+                
         if ($model eq 'Baystack Hub') {
             my $comidx = $board;
                if (! ($comidx % 5)) {
@@ -272,9 +269,9 @@ sub bp_index {
                }
           }
 
-	my $index = ($board*256)+$port;
+        my $index = ($board*256)+$port;
 
-	$bp_index{$index} = $index;
+        $bp_index{$index} = $index;
     }
     return \%bp_index;
 }
@@ -303,8 +300,8 @@ sub fw_port {
                 $port = 26;          
              }
        }
-	
-	my $index = ($board*256)+$port;
+        
+        my $index = ($board*256)+$port;
 
       $fw_port{$iid} = $index;
     }

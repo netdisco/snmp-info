@@ -1,5 +1,5 @@
 # SNMP::Info::Layer1::Asante
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
 #
@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Asante;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 use strict;
 
@@ -171,7 +171,7 @@ SNMP::Info::Layer1::Asante - SNMP Interface to old Asante 1012 Hubs
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 
