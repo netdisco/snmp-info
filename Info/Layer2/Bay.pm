@@ -152,7 +152,9 @@ sub i_mac {
 sub model {
     my $bay = shift;
     my $id = $bay->id();
+    return undef unless defined $id;
     my $model = &SNMP::translateObj($id);
+    return $id unless defined $model;
     $model =~ s/^sreg-//i;
 
     my $descr = $bay->description();
