@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Baystack;
-$VERSION = 0.9;
+$VERSION = 1.0;
 use strict;
 
 use Exporter;
@@ -238,7 +238,6 @@ SNMP::Info::Layer2::Baystack - SNMP Interface to Nortel Networks' Baystack Switc
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>),
 Eric Miller (C<eric@jeneric.org>)
 
 =head1 SYNOPSIS

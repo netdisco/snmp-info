@@ -2,7 +2,7 @@
 # Eric Miller <eric@jeneric.org>
 # $Id$
 #
-# Copyright (c) 2004 Max Baker
+# Copyright (c) 2004 Eric Miller
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Orinoco;
-$VERSION = 0.9;
+$VERSION = 1.0;
 use strict;
 
 use Exporter;

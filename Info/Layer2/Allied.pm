@@ -1,5 +1,5 @@
 # SNMP::Info::Layer2::Allied
-# Max Baker <max@warped.org>, Dmitry Sergienko <dmitry@trifle.net>
+# Max Baker, Dmitry Sergienko <dmitry@trifle.net>
 #
 # Copyright (c) 2004 Max Baker
 # All rights reserved.
@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Allied;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 use strict;
 
@@ -138,7 +138,7 @@ SNMP::Info::Layer2::Allied - SNMP Interface to Allied Telesyn switches
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker, Dmitry Sergienko <dmitry@trifle.net>
 
 =head1 SYNOPSIS
 

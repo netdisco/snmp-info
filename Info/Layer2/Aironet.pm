@@ -1,5 +1,5 @@
 # SNMP::Info::Layer2::Aironet
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
 #
@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Aironet;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 use strict;
 
@@ -124,7 +124,7 @@ SNMP::Info::Layer2::Aironet - SNMP Interface to Cisco Aironet devices running IO
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 

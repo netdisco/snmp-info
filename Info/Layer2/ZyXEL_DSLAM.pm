@@ -1,7 +1,7 @@
 # SNMP::Info::Layer2::ZyXEL_DSLAM
 # Dmitry Sergienko <dmitry@trifle.net>
 #
-# Copyright (c) 2004 Max Baker <max@warped.org>
+# Copyright (c) 2004 Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::ZyXEL_DSLAM;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 use strict;
 

@@ -1,5 +1,5 @@
 # SNMP::Info::Layer2::Catalyst
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # Copyright (c) 2003,2004 Max Baker changes from version 0.8 and beyond
@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Catalyst;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -40,15 +40,9 @@ use SNMP::Info::CiscoVTP;
 use SNMP::Info::CiscoStack;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-@SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::CiscoStack SNMP::Info::Layer2 
+@SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::Layer2 SNMP::Info::CiscoStack 
                                         SNMP::Info::CiscoVTP Exporter/;
 @SNMP::Info::Layer2::Catalyst::EXPORT_OK = qw//;
-
-$DEBUG=0;
-
-# See SNMP::Info for the details of these data structures and 
-#       the interworkings.
-$INIT = 0;
 
 %MIBS =    ( %SNMP::Info::Layer2::MIBS, 
              %SNMP::Info::CiscoVTP::MIBS,
@@ -119,11 +113,11 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Catalyst - Perl5 Interface to Cisco Catalyst 5000 series devices.
+SNMP::Info::Layer2::Catalyst - Perl5 Interface to Cisco Catalyst devices running Catalyst OS.
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 
@@ -143,15 +137,16 @@ Max Baker (C<max@warped.org>)
 
 =head1 DESCRIPTION
 
-SNMP::Info subclass to provide information for Cisco Catalyst 5000 series switches running CatOS.
+SNMP::Info subclass to provide information for Cisco Catalyst series switches running CatOS.
+
+This class includes the Catalyst 2920, 4000, 5000, 6000 (hybrid mode) families.
 
 This subclass is not for all devices that have the name Catalyst.  Note that some Catalyst
 switches run IOS, like the 2900 and 3550 families.  Cisco Catalyst 1900 switches use their
 own MIB and have a separate subclass.  Use the method above to have SNMP::Info determine the
 appropriate subclass before using this class directly.
 
-This class includes the Catalyst 2950 series devices, which fall under the 
-Catalyst 5000 family.
+See SNMP::Info::device_type() for specifics.
 
 Note:  Some older Catalyst switches will only talk SNMP version 1.  Some newer ones will not
 return all their data if connected via Version 1.
