@@ -85,7 +85,7 @@ sub test_global {
     
     if ($@){
         my $err = $@;
-        $err =~ s/\n/ /g;
+        $err =~ s/[[:cntrl:]]+/ /g;
         printf "%-20s Blew up. $err\n",$method;
         return 0;
     }
@@ -94,7 +94,7 @@ sub test_global {
         printf "%-20s Does not exist.\n",$method;
         return 0;
     }
-    $value =~ s/\n/ /g;
+    $value =~ s/[[:cntrl:]]+/ /g;
     if (length $value > 60) {
         $value = substr($value,0,60);
         $value .= '...';
