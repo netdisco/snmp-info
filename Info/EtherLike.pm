@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::EtherLike;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -52,8 +52,25 @@ $INIT = 0;
 
 %FUNCS = (
           # EtherLike StatsTable
-          'el_index'  => 'dot3StatsIndex',
-          'el_duplex' => 'dot3StatsDuplexStatus',
+          'el_chipset'         => 'dot3StatsEtherChipSet',
+          'el_coll_excess'     => 'dot3StatsExcessiveCollisions',
+          'el_coll_late'       => 'dot3StatsLateCollisions',
+          'el_coll_mult'       => 'dot3StatsMultipleCollisionFrames',
+          'el_coll_single'     => 'dot3StatsSingleCollisionFrames',
+          'el_duplex'          => 'dot3StatsDuplexStatus',
+          'el_error_alignment' => 'dot3StatsAlignmentErrors',
+          'el_error_fcs'       => 'dot3StatsFCSErrors',
+          'el_error_cs'        => 'dot3StatsCarrierSenseErrors',
+          'el_error_frame'     => 'dot3StatsFrameTooLongs',
+          'el_error_mac_rec'   => 'dot3StatsInternalMacReceiveErrors',
+          'el_error_mac_xmit'  => 'dot3StatsInternalMacTransmitErrors',
+          'el_error_sqe'       => 'dot3StatsSQETestErrors',
+          'el_error_symbol'    => 'dot3StatsSymbolErrors',
+          'el_index'           => 'dot3StatsIndex',
+          'el_xmit_defer'      => 'dot3StatsDeferredTransmissions',
+          # Ethernet-like Collision Statistics Group
+          'el_coll_count'      => 'dot3CollCount',
+          'el_coll_freq'       => 'dot3CollFrequencies'
           );
 
 %MUNGE = ( %SNMP::Info::MUNGE );
@@ -66,44 +83,64 @@ __END__
 
 SNMP::Info::EtherLike - Perl5 Interface to SNMP ETHERLIKE-MIB 
 
-=head1 DESCRIPTION
-
-SNMP::Info::EtherLike is a subclass of SNMP::Info that supplies 
-access to the ETHERLIKE-MIB used by some Layer 3 Devices such as Cisco routers.
-
-Use SNMP::Info directly, or create a subclass that inherits this one.
-
 =head1 AUTHOR
 
 Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $el = new SNMP::Info::EtherLike(DestHost  => 'myrouter',
-                                    Community => 'public');
+ my $el = new SNMP::Info ( 
+                             AutoSpecify => 1,
+                             Debug       => 1,
+                             DestHost    => 'router', 
+                             Community   => 'public',
+                             Version     => 2
+                           );
+ 
+ my $class = $cdp->class();
+ print " Using device sub class : $class\n";
 
- my $el_decoder = $el->el_index();
- my $el_duplex = $el->el_duplex(); 
+ # Find the duplex setting for a port on a device that implements ETHERLIKE-MIB
+ my $interfaces = $el->interfaces();
+ my $el_index   = $el->el_index();
+ my $el_duplex  = $el->el_duplex(); 
 
-=head1 CREATING AN OBJECT
+ foreach my $el_port (keys %$el_duplex){
+    my $duplex = $el_duplex->{$el_port};
+    my $iid    = $el_index->{$el_port};
+    my $port   = $interfaces->{$iid};
+
+    $duplex = 'half' if $duplex =~/half/i;
+    $duplex = 'full' if $duplex =~/full/i;
+    $duplex = 'auto' if $duplex =~/auto/i;
+
+    print "PORT:$port set to duplex:$duplex\n";
+ }
+
+=head1 DESCRIPTION
+
+SNMP::Info::EtherLike is a subclass of SNMP::Info that supplies 
+access to the ETHERLIKE-MIB used by some Layer 3 Devices such as Cisco routers.
+
+Use or create a subclass of SNMP::Info that inherits this one.  Do not use directly.
+
+=head2 Inherited Classes
+
+None.  
+
+=head2 Required MIBs
 
 =over
 
-=item  new SNMP::Info::EtherLike()
-
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
-
-    my $el = new SNMP::Info::EtherLike(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $el;
+=item ETHERLIKE-MIB
 
 =back
 
+MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
+
 =head1 GLOBALS
+
+These are methods that return scalar values from SNMP
 
 =over
 
@@ -111,7 +148,12 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 
 =back
 
-=head1 ETHERLIKE STATS TABLE (dot3StatsTable)
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=head2 ETHERLIKE STATS TABLE (dot3StatsTable)
 
 =over
 
@@ -126,6 +168,70 @@ Returns reference to hash. Indexes Stats Table to the interface index (iid).
 Returns reference to hash.  Indexes Stats Table to Duplex Status of port.
 
 (B<dot3StatsDuplexStatus>)
+
+=item $el->el_chipset()
+
+(B<dot3StatsEtherChipSet>)
+
+=item $el->el_coll_excess()
+
+(B<dot3StatsExcessiveCollisions>)
+
+=item $el->el_coll_late()
+
+(B<dot3StatsLateCollisions>)
+
+=item $el->el_coll_mult()
+
+(B<dot3StatsMultipleCollisionFrames>)
+
+=item $el->el_coll_single()
+
+(B<dot3StatsSingleCollisionFrames>)
+
+=item $el->el_error_alignment()
+
+(B<dot3StatsAlignmentErrors>)
+
+=item $el->el_error_fcs()
+
+(B<dot3StatsFCSErrors>)
+
+=item $el->el_error_cs()
+
+(B<dot3StatsCarrierSenseErrors>)
+
+=item $el->el_error_frame()
+
+(B<dot3StatsFrameTooLongs>)
+
+=item $el->el_error_mac_rec()
+
+(B<dot3StatsInternalMacReceiveErrors>)
+
+=item $el->el_error_mac_xmit()
+
+(B<dot3StatsInternalMacTransmitErrors>)
+
+=item $el->el_error_sqe()
+
+(B<dot3StatsSQETestErrors>)
+
+=item $el->el_error_symbol()
+
+(B<dot3StatsSymbolErrors>)
+
+=item $el->el_xmit_defer()
+
+(B<dot3StatsDeferredTransmissions>)
+
+=item $el->el_coll_count()
+
+(B<dot3CollCount>)
+
+=item $el->el_coll_freq()
+
+(B<dot3CollFrequencies>)
 
 =back
 
