@@ -7,7 +7,7 @@
 # See COPYRIGHT below 
 
 package SNMP::Info;
-$VERSION = 0.3;
+$VERSION = 0.4;
 use strict;
 
 use Exporter;
@@ -26,7 +26,7 @@ SNMP::Info - Perl5 Interface to Network devices through SNMP.
 
 =head1 VERSION
 
-SNMP::Info - Version 0.3
+SNMP::Info - Version 0.4
 
 =head1 AUTHOR
 
@@ -359,7 +359,7 @@ Creates a new object and connects via SNMP::Session.
                             'Version'     => 2
                           ) or die;
 
-Arguments :
+SNMP::Info Specific Arguments :
 
  AutoSpecify = Returns an object of a more specific device class
                *See specify() entry*
@@ -379,23 +379,20 @@ sub new {
     my $new_obj = {};
     bless $new_obj,$class;
     
-    $new_obj->{_class} = $class;
+    $new_obj->{class} = $class;
 
     # load references to all the subclass data structures
     {
         no strict 'refs';
-        $new_obj->{_init}    = \${$class . '::INIT'};
-        $new_obj->{_mibs}    = \%{$class . '::MIBS'};
-        $new_obj->{_globals} = \%{$class . '::GLOBALS'};
-        $new_obj->{_funcs}   = \%{$class . '::FUNCS'};
-        $new_obj->{_munge}   = \%{$class . '::MUNGE'};
+        $new_obj->{init}    = \${$class . '::INIT'};
+        $new_obj->{mibs}    = \%{$class . '::MIBS'};
+        $new_obj->{globals} = \%{$class . '::GLOBALS'};
+        $new_obj->{funcs}   = \%{$class . '::FUNCS'};
+        $new_obj->{munge}   = \%{$class . '::MUNGE'};
     }
-    # SNMP version
-    $new_obj->{_version} = $args{Version};
-    $new_obj->{_community} = $args{Community};
 
     # Initialize mibs if not done
-    my $init_ref = $new_obj->{_init};
+    my $init_ref = $new_obj->{init};
     unless ( $$init_ref ) {
         $new_obj->init();
         $$init_ref=1;    
@@ -421,23 +418,26 @@ sub new {
         delete $args{BigInt};
     }
 
-    # Save Args for later
-    $new_obj->{_args} = \%args;
-
     # Connects to device unless open session is provided.  
-    $sess = new SNMP::Session( 'UseEnums' => 1,
-                                   %args 
-                                ) unless defined $sess;
-    
+    $sess = new SNMP::Session( 'UseEnums' => 1, %args ) 
+        unless defined $sess;
+
     unless (defined $sess){
-        $DEBUG and carp("SNMP::Info::new() Failed to Create Session. ", defined $sess->{ErrorStr} ? $sess->{ErrorStr} : '', "\n");
+        $new_obj->{error} = "SNMP::Info::new() Failed to Create Session. ". 
+            $sess->{ErrorStr} || '';
+        $DEBUG and carp($new_obj->error());
         return undef;
     }
 
-    $new_obj->{sess} = $sess;
-
+    # Table function store
     my $store = {};
-    $new_obj->{store} = $store;
+
+    # Save Args for later
+    $new_obj->{store}     = $store;
+    $new_obj->{sess}      = $sess;
+    $new_obj->{args}      = \%args;
+    $new_obj->{snmp_ver}  = $args{Version};
+    $new_obj->{snmp_comm} = $args{Community};
 
     return $auto_specific ?
         $new_obj->specify() : $new_obj;
@@ -562,6 +562,8 @@ Returns an object of a more-specific subclass.
  # Returns more specific object type
  $info = $info->specific();
 
+Usually this method is called internally from new(AutoSpecify => 1)
+
 See device_type() entry for how a sub class is chosen. 
 
 =cut
@@ -570,8 +572,9 @@ sub specify {
 
     my $device_type = $self->device_type();
     unless (defined $device_type) {
-        carp("SNMP::Info::specify() - Could not get info from device.\n");
-        return $self;
+        $self->{error} = "SNMP::Info::specify() - Could not get info from device";
+        $DEBUG and print $self->error();
+        return undef;
     }
     return $self if $device_type eq 'SNMP::Info';
 
@@ -579,15 +582,16 @@ sub specify {
     # By evaling a string the contents of device_type now becomes a bareword. 
     eval "require $device_type;";
     if ($@) {
-        print "SNMP::Info::specify() Loading $device_type Failed. $@\n";
+        croak "SNMP::Info::specify() Loading $device_type Failed. $@\n";
     }
 
-    my $args = $self->args();
+    my $args    = $self->args();
     my $session = $self->session();
     my $sub_obj = $device_type->new(%$args,'Session'=>$session);
 
     unless (defined $sub_obj) {
-        carp("SNMP::Info::specify() - Could not connect with new class ($device_type).\n");
+        $self->{error} = "SNMP::Info::specify() - Could not connect with new class ($device_type).";
+        carp($self->error() );
         return $self;
     }
 
@@ -1239,11 +1243,6 @@ Used internally.  Loads all entries in %MIBS.
 sub init {
     my $self = shift;
 
-    my $ver = $self->{_version};
-
-    if (defined $ver and $ver == 1){
-        # do nothing
-    }
     &SNMP::initMib;
     
     my $version = $SNMP::VERSION;
@@ -1264,7 +1263,7 @@ sub init {
         &SNMP::loadModules("$mib");
 
         unless (defined $SNMP::MIB{$mibs->{$mib}}){
-            croak "The $mib did not load. See README for $self->{_class}\n";
+            croak "The $mib did not load. See README for $self->{class}\n";
         }    
     }
 
@@ -1291,7 +1290,7 @@ Returns a reference to the argument hash supplied to SNMP::Session
 =cut
 sub args {
     my $self = shift;
-    return $self->{_args};
+    return $self->{args};
 }
 
 =item $info->class() 
@@ -1301,7 +1300,28 @@ Returns the class name of the object.
 =cut
 sub class {
     my $self=shift;
-    return $self->{_class};
+    return $self->{class};
+}
+
+=item $info->error(no_new_line)
+
+Returns Error message if error, or undef if not.
+
+Pass a 1 as the first argument if you don't want a new line.
+
+=cut
+sub error {
+    my $self = shift;
+    my $no_nl = shift;
+    my $err = $self->{error};
+    if (defined $no_nl and $no_nl and $err =~ /\n$/)  {
+        $err =~ s/\n$//;
+        return $err;
+    }
+    if ($err !~ /\n$/) {
+        $err .= "\n";
+    } 
+    return $err;
 }
 
 =item $info->funcs()  
@@ -1311,17 +1331,7 @@ Returns a reference to the %FUNCS hash.
 =cut
 sub funcs {
     my $self=shift;
-    return $self->{_funcs};
-}
-
-=item $info->mibs() 
-
-Returns a reference to the %MIBS hash.
-
-=cut
-sub mibs {
-    my $self=shift;
-    return $self->{_mibs};
+    return $self->{funcs};
 }
 
 =item $info->globals()  
@@ -1331,8 +1341,18 @@ Returns a reference to the %GLOBALS hash.
 =cut
 sub globals {
     my $self=shift;
-    return $self->{_globals};
+    return $self->{globals};
 
+}
+
+=item $info->mibs() 
+
+Returns a reference to the %MIBS hash.
+
+=cut
+sub mibs {
+    my $self=shift;
+    return $self->{mibs};
 }
 
 =item $info->munge()   
@@ -1342,7 +1362,7 @@ Returns a reference ot the %MUNGE hash.
 =cut
 sub munge {
     my $self=shift;
-    return $self->{_munge};
+    return $self->{munge};
 }
 
 =item $info->session()  
@@ -1354,6 +1374,39 @@ sub session {
     my $self = shift;
     $self->{sess} = $_[0] if @_;
     return $self->{sess};
+}
+
+
+=item $info->snmp_comm()
+
+Returns SNMP Community string used in conncetion
+
+=cut
+sub snmp_comm {
+    my $self = shift;
+    return $self->{snmp_comm};
+}
+
+=item $info->snmp_ver()
+
+Returns SNMP Version used for this connection
+
+=cut
+sub snmp_ver {
+    my $self = shift;
+    return $self->{snmp_ver};
+} 
+
+=item $info->store()
+
+Returns hash store for Table functions.
+
+$info->store = { attribute => { iid => value , iid2 => value2, ... } };
+
+=cut
+sub store {
+    my $self = shift;
+    return $self->{store};
 }
 
 =back
@@ -1372,7 +1425,7 @@ Example: $info->name() calls autoload which calls $info->_global('name').
 sub _global{
     my $self = shift;
     my $attr = shift;
-    my $sess = $self->{sess};
+    my $sess = $self->session();
     return undef unless defined $sess;
     
     my $globals = $self->globals(); 
@@ -1388,17 +1441,20 @@ sub _global{
     my $val = $sess->get($oid); 
 
     if ($sess->{ErrorStr} ){
-        $DEBUG and print "SNMP::Info::_global($attr) $sess->{ErrorStr}\n";
+        $self->{error} = "SNMP::Info::_global($attr) $sess->{ErrorStr}";
+        $DEBUG and print $self->error();
         return undef;
     }
 
     if (defined $val and $val eq 'NOSUCHOBJECT'){
-        $DEBUG and print "SNMP::Info::_global($attr) NOSUCHOBJECT\n";
+        $self->{error} = "SNMP::Info::_global($attr) NOSUCHOBJECT";
+        $DEBUG and print $self->error(); 
         return undef;
     }
 
     if (defined $val and $val eq 'NOSUCHINSTANCE'){
-        $DEBUG and print "SNMP::Info::_global($attr) NOSUCHINSTANCE\n";
+        $self->{error} = "SNMP::Info::_global($attr) NOSUCHINSTANCE";
+        $DEBUG and print $self->error();
         return undef;
     }
     # Get the callback hash for data munging
@@ -1411,7 +1467,7 @@ sub _global{
     } 
 
     # Save Cached Value
-    $self->{"__$attr"} = $val;
+    $self->{"_$attr"} = $val;
 
     return $val;
 }
@@ -1432,7 +1488,7 @@ sub _set {
     $iid = ".$iid" unless $iid =~ /^\./;
 
 
-    my $sess = $self->{sess};
+    my $sess = $self->session();
     return undef unless defined $sess;
 
     my $funcs = $self->funcs();
@@ -1444,18 +1500,21 @@ sub _set {
     $oid = $funcs->{$attr} if defined $funcs->{$attr};
 
     unless (defined $oid) { 
-        print "SNMP::Info::_set($attr,$val) - Failed to find $attr in \%GLOBALS or \%FUNCS \n";
+        $self->{error} = "SNMP::Info::_set($attr,$val) - Failed to find $attr in \%GLOBALS or \%FUNCS";
+        carp($self->error());
         return undef;
     }
 
     $oid .= $iid;
     
-    print "SNMP::Info::_set $attr$iid ($oid) = $val\n" if $DEBUG;
+    $DEBUG and print "SNMP::Info::_set $attr$iid ($oid) = $val\n";
 
     my $rv = $sess->set($oid,$val);
 
-    print "SNMP::Info::_set $attr$iid $sess->{ErrorStr}\n"
-        if ($DEBUG and $sess->{ErrorStr});
+    if ($sess->{ErrorStr}){
+        $self->{error} = "SNMP::Info::_set $attr$iid $sess->{ErrorStr}";
+        $DEBUG and print $self->error();
+    }
 
     return $rv;
 }
@@ -1468,15 +1527,18 @@ sub _set {
 
 =item $info->load_all()
 
-Runs $info->load_METHOD() for each entry in %FUNCS.
+Loads all possible function data for this class. 
 
-Returns { iid => values_hash } where value_hash is in the format:
-    { attribute => value }  
+Runs $info->load_METHOD() for each entry in $info->funcs();
+
+Returns $info->store() -- See store() entry.
+
+Note return value has changed since version 0.3
 
 =cut
 sub load_all {
     my $self = shift;
-    my $sess = $self->{sess};
+    my $sess = $self->session();
     return undef unless defined $sess;
 
     my $funcs = $self->funcs();
@@ -1488,24 +1550,26 @@ sub load_all {
 
     $self->{_all}++;
 
-    return $self->{store} if defined wantarray;
+    return $self->store() if defined wantarray;
 }
 
 =item $info->all()
 
-Runs $info->load_all() once then returns the cached data.  
+Runs $info->load_all() once then returns $info->store();
 
 Use $info->load_all() to reload the data.
+
+Note return value has changed since version 0.3
 
 =cut
 sub all {
     my $self = shift;
-    my $sess = $self->{sess};
+    my $sess = $self->session();
     return undef unless defined $sess;
 
     $self->load_all() unless defined $self->{_all};
 
-    return $self->{store};    
+    return $self->store();    
 }
 
 
@@ -1520,8 +1584,8 @@ sub _load_attr {
     my $self = shift;
     my ($attr,$leaf) = @_;
 
-    my $sess = $self->{sess};
-    my $store = $self->{store};
+    my $sess = $self->session();
+    my $store = $self->store();
     return undef unless defined $sess;
 
     # Get the callback hash for data munging
@@ -1558,7 +1622,7 @@ sub _load_attr {
             $val = &$subref($val);
         } 
 
-        $store->{$iid}->{$attr}=$val;
+        $store->{$attr}->{$iid}=$val;
     } 
 
     # mark data as loaded
@@ -1580,20 +1644,9 @@ sub _show_attr {
     my $self = shift;
     my $attr = shift;
 
-    my $store = $self->{store};
-    return undef unless (scalar keys %$store);
+    my $store = $self->store();
     
-    my %ret_hash;
-
-    foreach my $iid (keys %$store){
-        next unless (defined $store->{$iid}->{$attr});
-        
-        my $val = $store->{$iid}->{$attr};
-
-        $ret_hash{$iid}= $val;
-    }
-    
-    return \%ret_hash;
+    return $store->{$attr};
 }
 
 =back
@@ -1641,7 +1694,8 @@ sub AUTOLOAD {
 
     unless( defined $funcs{$attr} or
             defined $globals{$attr} ) {
-        #print "$attr not found in ",join(',',keys %funcs),"\n";
+        $self->{error} = "SNMP::Info::AUTOLOAD($attr) Attribute not found in this device class.";
+        $DEBUG and print($self->error());
         return;
     }
     
@@ -1658,7 +1712,7 @@ sub AUTOLOAD {
     # First check %GLOBALS and return _scalar(global)
     if (defined $globals{$attr} ){
         # Return Cached Value if exists
-        return $self->{"__${attr}"} if defined $self->{"__${attr}"};
+        return $self->{"_${attr}"} if defined $self->{"_${attr}"};
         # Fetch New Value
         return $self->_global( $attr );
     }
