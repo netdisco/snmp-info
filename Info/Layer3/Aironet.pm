@@ -110,6 +110,7 @@ sub fw_mac {
     # remove port 0 forwarding table entries, only port 0 static entries
     foreach my $fw (keys %$fw_mac){
         my $port = $fw_port->{$fw};
+        next unless defined $port;
         delete $fw_mac->{$fw} if $port == 0;
     }
 
