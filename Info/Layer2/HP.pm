@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::HP;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -36,68 +36,44 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::MAU;
+use SNMP::Info::Entity;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP 
-            %MYGLOBALS %MYMIBS %MYFUNCS %MYMUNGE %MUNGE $INIT/ ;
-@SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer2 SNMP::Info::MAU Exporter/;
+use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $INIT/ ;
+
+@SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer2 SNMP::Info::MAU SNMP::Info::Entity Exporter/;
 @SNMP::Info::Layer2::HP::EXPORT_OK = qw//;
 
-$DEBUG=0;
-$SNMP::debugging=$DEBUG;
-
-# See SNMP::Info for the details of these data structures and 
-#       the interworkings.
+# See SNMP::Info for the details of these data structures and interworkings.
 $INIT = 0;
-
-%MYMIBS = ( 'ENTITY-MIB'  => 'entPhysicalSerialNum',
-            'RFC1271-MIB' => 'logDescription',
-            'HP-ICF-OID'  => 'hpSwitch4000',
-          );
 
 %MIBS = ( %SNMP::Info::Layer2::MIBS,
           %SNMP::Info::MAU::MIBS,
-          %MYMIBS );
+          %SNMP::Info::Entity::MIBS,
+          'RFC1271-MIB' => 'logDescription',
+          'HP-ICF-OID'  => 'hpSwitch4000',
+        );
 
-%MYGLOBALS = ('serial1' => 'entPhysicalSerialNum.1',
-#              'model'  => 'entPhysicalModelName.1',
-             );
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
             %SNMP::Info::MAU::GLOBALS,
-            %MYGLOBALS
-            );
-
-%MYFUNCS = (
-            'i_type2'   => 'ifType',
-            'e_class'   => 'entPhysicalClass',
-            'e_descr'   => 'entPhysicalDescr',
-            'e_fwver'   => 'entPhysicalFirmwareRev',
-            'e_hwver'   => 'entPhysicalHardwareRev',
-            'e_map'     => 'entAliasMappingIdentifier',
-            'e_model'   => 'entPhysicalModelName',
-            'e_name'    => 'entPhysicalName',
-            'e_parent'  => 'entPhysicalContainedIn',
-            'e_serial'  => 'entPhysicalSerialNum',
-            'e_swver'   => 'entPhysicalSoftwareRev',
-            'e_type'    => 'entPhysicalVendorType',
-            # RFC1271
-            'l_descr'   => 'logDescription'
-
+            %SNMP::Info::Entity::GLOBALS,
+            'serial1' => 'entPhysicalSerialNum.1',
            );
+
 %FUNCS   = (
             %SNMP::Info::Layer2::FUNCS,
             %SNMP::Info::MAU::FUNCS,
-            %MYFUNCS
-        );
-
-%MYMUNGE = (
+            %SNMP::Info::Entity::FUNCS,
+            'i_type2'   => 'ifType',
+            # RFC1271
+            'l_descr'   => 'logDescription'
            );
 
 %MUNGE = (
             # Inherit all the built in munging
             %SNMP::Info::Layer2::MUNGE,
             %SNMP::Info::MAU::MUNGE,
-            %MYMUNGE
+            %SNMP::Info::Entity::MUNGE
          );
 
 %MODEL_MAP = ( 
@@ -147,32 +123,11 @@ sub interfaces {
     foreach my $iid (keys %$interfaces){
         my $descr = $i_descr->{$iid};
         next unless defined $descr;
-        #$if{$iid} = $iid;
         $if{$iid} = $descr if (defined $descr and length $descr);
     }
 
     return \%if
 
-}
-
-# e_port maps EntityTable entries to IfTable
-sub e_port {
-    my $hp = shift;
-    my $e_map = $hp->e_map();
-
-    my %e_port;
-
-    foreach my $e_id (keys %$e_map) {
-        my $id = $e_id;
-        $id =~ s/\.0$//;
-
-        my $iid = $e_map->{$e_id};
-        $iid =~ s/.*\.//;
-
-        $e_port{$id} = $iid;
-    }
-
-    return \%e_port;
 }
 
 sub i_type {
@@ -358,6 +313,8 @@ MIBs required:
 
 =item HP-ICF-OID
 
+=item ENTITY-MIB
+
 =back
 
 HP MIBs can be found at http://www.hp.com/rnd/software
@@ -369,7 +326,7 @@ Max Baker (C<max@warped.org>)
 =head1 SYNOPSIS
 
  my $hp = new SNMP::Info::Layer2::HP(DestHost  => 'router' , 
-                              Community => 'public' ); 
+                                     Community => 'public' ); 
 
  See SNMP::Info and SNMP::Info::Layer2 for all the inherited methods.
 
@@ -390,6 +347,11 @@ Arguments passed to new() are passed on to SNMP::Session::new()
     die "Couldn't connect.\n" unless defined $hp;
 
 =back
+
+=head1 ChangeLog
+
+Version 0.4 - Removed ENTITY-MIB e_*() methods to separate sub-class
+
 
 =head1 HP Global Configuration Values
 
@@ -429,64 +391,7 @@ hp
 
 =back
 
-=head1 HP Table Values
-
-=head2 Entity Table
-
-=over
-
-=item $hp->e_class()
-
-(C<entPhysicalClass>)
-
-=item $hp->e_descr()
-
-(C<entPhysicalClass>)
-
-=item $hp->e_fwver()
-
-(C<entPhysicalFirmwareRev>)
-
-=item $hp->e_hwver()
-
-(C<entPhysicalHardwareRev>)
-
-=item $hp->e_map()
-
-(C<entAliasMappingIdentifier>)
-
-=item $hp->e_model()
-
-(C<entPhysicalModelName>)
-
-=item $hp->e_name()
-
-(C<entPhysicalName>)
-
-=item $hp->e_parent()
-
-(C<entPhysicalContainedIn>)
-
-=item $hp->e_port()
-
-Maps EntityTable entries to the Interface Table (IfTable) using
-$hp->e_map()
-
-=item $hp->e_serial()
-
-(C<entPhysicalSerialNum>)
-
-=item $hp->e_swver()
-
-(C<entPhysicalSoftwareRev>)
-
-=item $hp->e_type()
-
-(C<entPhysicalVendorType>)
-
-=back
-
-=head2 Overriden Methods from SNMP::Info::Layer2
+=head1 Overriden Methods from SNMP::Info::Layer2
 
 =over
 
