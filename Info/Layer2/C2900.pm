@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::C2900;
-$VERSION = 0.6;
+$VERSION = 0.7;
 # $Id$
 use strict;
 
@@ -47,19 +47,24 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
             # C2900PortEntry
-            'c2900_p_index' => 'c2900PortIfIndex',
-            'c2900_p_duplex'   => 'c2900PortDuplexStatus',
-            'c2900_p_duplex_admin'   => 'c2900PortDuplexState',
-            'c2900_p_speed_admin'   => 'c2900PortAdminSpeed',
-            );
+            'c2900_p_index'        => 'c2900PortIfIndex',
+            'c2900_p_duplex'       => 'c2900PortDuplexStatus',
+            'c2900_p_duplex_admin' => 'c2900PortDuplexState',
+            'c2900_p_speed_admin'  => 'c2900PortAdminSpeed',
+            # CISCO-VTP-MIB::VtpVlanEntry 
+            'v_state'   => 'vtpVlanState',
+            'v_type'    => 'vtpVlanType',
+            'v_name'    => 'vtpVlanName',
+            'v_mtu'     => 'vtpVlanMtu',
+           );
 
-%MIBS    = (
-            %SNMP::Info::Layer2::MIBS,
-            'CISCO-C2900-MIB' =>  'ciscoC2900MIB'
-            );
+%MIBS    = ( %SNMP::Info::Layer2::MIBS,
+            'CISCO-C2900-MIB' => 'ciscoC2900MIB',
+            'CISCO-VTP-MIB'   => 'vtpVlanIndex',
+           );
 
 %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
-            );
+           );
 
 sub vendor {
     return 'cisco';
@@ -271,6 +276,31 @@ to a hash.
     Gives Admin speed of port 
 
     B<c2900PortAdminSpeed>
+
+=back
+
+=head2 VLAN Entry Table
+
+See ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html
+for a good treaty of how to connect to the VLANs
+
+=over
+
+=item $c2900->v_state()
+
+(B<vtpVlanState>)
+
+=item $c2900->v_type()
+
+(B<vtpVlanType>)
+
+=item $c2900->v_name()
+
+(B<vtpVlanName>)
+
+=item $c2900->v_mtu()
+
+(B<vtpVlanMtu>)
 
 =back
 
