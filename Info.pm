@@ -1488,6 +1488,7 @@ $NOSUCH = 1;
 Makes human friendly speed ratings using %SPEED_MAP
 
  %SPEED_MAP = (
+                '56000'      => '56 kbps',
                 '64000'      => '64 kbps',
                 '1500000'    => '1.5 Mbps',
                 '1536000'    => 'T1',      
@@ -1518,6 +1519,7 @@ Makes human friendly speed ratings using %SPEED_MAP
 
 =cut
 %SPEED_MAP = (
+                '56000'      => '56 kbps',
                 '64000'      => '64 kbps',
                 '1500000'    => '1.5 Mbps',
                 '1536000'    => 'T1',      
