@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Bridge;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -44,7 +44,9 @@ $DEBUG=0;
 $SNMP::debugging=$DEBUG;
 
 $INIT = 0;
-%MIBS = ('BRIDGE-MIB' => 'dot1dBaseBridgeAddress');
+
+%MIBS    = ('BRIDGE-MIB' => 'dot1dBaseBridgeAddress');
+
 %GLOBALS = (
             'b_mac'   => 'dot1dBaseBridgeAddress',
             'b_ports' => 'dot1dBaseNumPorts',
@@ -82,6 +84,7 @@ $INIT = 0;
           # Inherit all the built in munging
           %SNMP::Info::MUNGE,
           # Add ones for our class
+          'b_mac'        => \&SNMP::Info::munge_mac,
           'fw_mac'       => \&SNMP::Info::munge_mac,
           'bs_mac'       => \&SNMP::Info::munge_mac,
           'stp_root'     => \&SNMP::Info::munge_mac,
@@ -115,13 +118,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Bridge - Perl5 Interface to BRIDGE-MIB 
-
-=head1 DESCRIPTION
-
-BRIDGE-MIB is used by most Layer 2 devices like Switches 
-
-Inherits all methods from SNMP::Info
+SNMP::Info::Bridge - Perl5 Interface to SNMP data available through the BRIDGE-MIB (RFC1493)
 
 =head1 AUTHOR
 
@@ -129,40 +126,59 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $bridge = new SNMP::Info::Bridge(DestHost  => 'myswitch',
-                               Community => 'public');
- my $mac = $bridge->mac(); 
+ my $bridge = new SNMP::Info ( 
+                             AutoSpecify => 1,
+                             Debug       => 1,
+                             DestHost    => 'switch', 
+                             Community   => 'public',
+                             Version     => 2
+                             );
 
-=head1 CREATING AN OBJECT
+ my $class = $cdp->class();
+ print " Using device sub class : $class\n";
+
+ # Grab Forwarding Tables
+ my $interfaces = $bridge->interfaces();
+ my $fw_mac     = $bridge->fw_mac();
+ my $fw_port    = $bridge->fw_port();
+ my $bp_index   = $bridge->bp_index();
+
+ foreach my $fw_index (keys %$fw_mac){
+    my $mac   = $fw_mac->{$fw_index};
+    my $bp_id = $fw_mac->{$fw_index};
+    my $iid   = $bp_index->{$bp_id};
+    my $port  = $interfaces->{$iid};
+
+    print "Port:$port forwarding to $mac\n";
+ } 
+
+=head1 DESCRIPTION
+
+BRIDGE-MIB is used by most Layer 2 devices, and holds information like the MAC Forwarding Table and Spanning Tree Protocol info.
+
+Create or use a subclass of SNMP::Info that inherits this class.  Do not use directly.
+
+For debugging you can call new() directly as you would in SNMP::Info 
+
+ my $bridge = new SNMP::Info::Bridge(...);
+
+=head2 Inherited Classes
+
+None.
+
+=head2 Required MIBs
 
 =over
 
-=item  new SNMP::Info::Bridge()
-
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
-
-    my $bridge = new SNMP::Info::Bridge(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $bridge;
-
-=item  $bridge->session()
-
-Sets or returns the SNMP::Session object
-
-    # Get
-    my $sess = $bridge->session();
-
-    # Set
-    my $newsession = new SNMP::Session(...);
-    $bridge->session($newsession);
+=item BRIDGE-MIB
 
 =back
 
-=head1 Bridge Global Configuration Values
+BRIDGE-MIB needs to be extracted from ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
+
+=head1 GLOBAL METHODS
+
+These are methods that return scalar values from SNMP
 
 =over
 
@@ -204,7 +220,10 @@ Returns root of STP.
 
 =back
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
 
 =head2 Forwarding Table (dot1dTpFdbEntry)
 
