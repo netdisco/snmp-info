@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::C1900;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 use strict;
 
@@ -42,11 +42,13 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 # Set for No CDP
 %GLOBALS = (
-            %SNMP::Info::Layer2::GLOBALS
+            %SNMP::Info::Layer2::GLOBALS,
+            'c1900_flash_status'    => 'upgradeFlashBankStatus',
             );
 
 %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
             'i_type2'              => 'ifType',
+            'i_name2'              => 'ifName',
             # ESSWITCH-MIB
             'c1900_p_index'        => 'swPortIndex',
             'c1900_p_ifindex'      => 'swPortIfIndex',
@@ -69,6 +71,35 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 sub vendor {
     return 'cisco';
+}
+sub os {
+    return 'catalyst';
+}
+
+sub os_ver {
+    my $c1900 = shift;
+
+    # Check for superclass one
+    my $os_ver = $c1900->SUPER::os_ver();
+    return $os_ver if defined $os_ver;
+    
+    my $c1900_flash_status = $c1900->c1900_flash_status();
+    return undef unless defined $c1900_flash_status;
+
+    if ($c1900_flash_status =~ m/V(\d+\.\d+(\.\d+)?)/){
+        return $1;
+    }  
+    return undef;
+}
+
+sub interfaces {
+    my $c1900 = shift;
+    my $i_descr = $c1900->i_description();
+
+    foreach my $iid (keys %$i_descr){
+        $i_descr->{$iid} =~ s/\s*$//;
+    }
+    return $i_descr;
 }
 
 sub i_duplex {
@@ -143,29 +174,26 @@ sub i_type {
 
     return $i_type;
 }
+
+sub i_name {
+    my $c1900 = shift;
+    my $i_name = $c1900->i_name2();
+    my $c1900_p_name = $c1900->c1900_p_name();
+    
+    foreach my $port (keys %$c1900_p_name){
+        my $name = $c1900_p_name->{$port};
+        next unless defined $name;
+        next unless $name !~ /^\s*$/;
+        $i_name->{$port} = $name;
+    }
+    
+    return $i_name;
+}
 __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::C1900 - SNMP Interface to old C1900 Network Switches
-
-=head1 DESCRIPTION
-
-Provides abstraction to the configuration information obtainable from a 
-C1900 device through SNMP. See inherited classes' documentation for 
-inherited methods.
-
-Inherits from:
-
- SNMP::Info::Layer2
-
-Required MIBs:
-
- STAND-ALONE-ETHERNET-SWITCH-MIB (ESSWITCH-MIB)
- MIBs listed in SNMP::Info::Layer2
-
-ESSWITCH-MIB is included in the Version 1 MIBS from Cisco.
-They can be found at ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
+SNMP::Info::Layer2::C1900 - Perl5 Interface to SNMP data from Cisco Catlyst 1900 Network Switches running CatOS
 
 =head1 AUTHOR
 
@@ -173,36 +201,89 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $c1900 = new SNMP::Info::Layer2::C1900(DestHost  => 'mycat1900' , 
-                              Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $c1900 = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 1
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-=head1 CREATING AN OBJECT
+ my $class      = $c1900->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+Provides abstraction to the configuration information obtainable from a Catalyst 1900 device through SNMP. 
+See SNMP::Info for full documentation
+
+Note that most of these devices only talk SNMP version 1, but not all.
+
+For speed or debugging purposes you can call the subclass directly, but not after determining
+a more specific class using the method above. 
+
+ my $c1900 = new SNMP::Info::Layer2::C1900(...);
+
+=head2 Inherited classes
 
 =over
 
-=item  new SNMP::Info::Layer2::C1900()
+=item SNMP::Info::Layer2
 
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
+=back
 
-    my $c1900 = new SNMP::Info::Layer2::C1900(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $c1900;
+=head2 Required MIBs
+
+=over
+
+=item STAND-ALONE-ETHERNET-SWITCH-MIB (ESSWITCH-MIB)
+
+ESSWITCH-MIB is included in the Version 1 MIBS from Cisco.
+
+They can be found at ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
+
+=item Inherited Classes' MIBs
+
+MIBs listed in SNMP::Info::Layer2
 
 =back
 
 =head1 GLOBALS
 
+These are methods that return scalar value from SNMP
+
 =over
+
+=item $c1900->c1900_flash_status()
+
+Usually contains the version of the software loaded in flash.
+Used by os_ver()
+
+B<STAND-ALONE-ETHERNET-SWITCH-MIB::upgradeFlashBankStatus>
+
+=item $c1900->os()
+
+Returns 'catalyst'
+
+=item $c1900->os_ver()
+
+Returns CatOS version if obtainable.  First tries to use 
+SNMP::Info::CiscoStats->os_ver() .  If that fails then it 
+checks for the presence of $c1900->c1900_flash_status() and culls
+the version from there.
 
 =item $c1900->vendor()
 
 Returns 'cisco' :)
 
 =back
+
+=head2 Globals imported from SNMP::Info::Layer2
+
+See documentation in SNMP::Info::Layer2 for details.
 
 =head1 TABLE ENTRIES
 
@@ -221,6 +302,10 @@ Crosses $c1900->c1900_p_index() with $c1900->c1900_p_duplex;
 Returns reference to hash of IIDs to admin duplex setting
 
 Crosses $c1900->c1900_p_index() with $c1900->c1900_p_duplex_admin;
+
+=item $c1900->i_name()
+
+Crosses ifName with c1900_p_name() and returns the human set port name if exists.
 
 =item $c1900->i_type()
 
@@ -279,5 +364,9 @@ Gives the media of the port , ie "fiber-sc"
 B<swPortConnectorType>
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See documentation in SNMP::Info::Layer2 for details.
 
 =cut
