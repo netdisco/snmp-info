@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::EtherLike;
-$VERSION = 0.2;
+$VERSION = 0.3;
 # $Id$
 
 use strict;
@@ -68,9 +68,10 @@ SNMP::Info::EtherLike - Perl5 Interface to SNMP ETHERLIKE-MIB
 
 =head1 DESCRIPTION
 
-ETHERLIKE-MIB is used by some Layer 3 Devices such as Cisco routers.
+SNMP::Info::EtherLike is a subclass of SNMP::Info that supplies 
+access to the ETHERLIKE-MIB used by some Layer 3 Devices such as Cisco routers.
 
-Inherits all methods from SNMP::Info
+Use SNMP::Info directly, or create a subclass that inherits this one.
 
 =head1 AUTHOR
 
@@ -99,17 +100,6 @@ Arguments passed to new() are passed on to SNMP::Session::new()
         Version => 3,...
         ) 
     die "Couldn't connect.\n" unless defined $el;
-
-=item  $el->session()
-
-Sets or returns the SNMP::Session object
-
-    # Get
-    my $sess = $el->session();
-
-    # Set
-    my $newsession = new SNMP::Session(...);
-    $el->session($newsession);
 
 =back
 

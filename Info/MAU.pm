@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::MAU;
-$VERSION = 0.2;
+$VERSION = 0.3;
 # $Id$
 
 use strict;
@@ -143,24 +143,6 @@ Arguments passed to new() are passed on to SNMP::Session::new()
         Version => 3,...
         ) 
     die "Couldn't connect.\n" unless defined $mau;
-
-=item  $mau->session()
-
-Sets or returns the SNMP::Session object
-
-    # Get
-    my $sess = $mau->session();
-
-    # Set
-    my $newsession = new SNMP::Session(...);
-    $mau->session($newsession);
-
-=item  $mau->all(), $mau->load_all()
-
-Queries each of the methods listed in %FUNCS and returns a hash reference.
-
-$mau->all() will call $mau->load_all() once and then return cahced valued.  
-Use $mau->load_all() to reload from the device.
 
 =back
 
