@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Foundry;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -222,16 +222,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Foundry - Perl5 Interface to Foundry Network Devices
-
-=head1 DESCRIPTION
-
-This module provides limited functionality from older Foundry devices.
-Specifically designed for a FI4802
-
-Data comes RFC1213 and FOUNDRY-SN-ROOT-MIB
-
-Inherits all methods from both SNMP::Info and SNMP::Info::Bridge
+SNMP::Info::Layer3::Foundry - Perl5 Interface to Foundry FastIron Network Devices
 
 =head1 AUTHOR
 
@@ -239,87 +230,128 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $foundry = new SNMP::Info::Layer3::Foundry(DestHost  => 'switch' , 
-                              Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $foundry = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 1
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-See L<SNMP::Info> and L<SNMP::Info::Layer3> for all inherited methods.
+ my $class      = $foundry->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
 
-=head1 CREATING AN OBJECT
+=head1 DESCRIPTION
+
+This subclass no longer supported.
+
+This module provides limited functionality from older Foundry devices.
+
+Specifically designed for a FI4802.
+
+For speed or debugging purposes you can call the subclass directly, but not after determining
+a more specific class using the method above.  Turn off the AutoSpecify flag.
+
+ my $foundry = new SNMP::Info::Layer3::Foundry(...);
+
+=head2 Inherited Classes
 
 =over
 
-=item  new SNMP::Info::Layer3::Foundry()
+=item SNMP::Info
 
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
-
-    my $foundry = new SNMP::Info::Layer3::Foundry(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $foundry;
+=item SNMP::Info::Bridge
 
 =back
 
-=head1 GLOBAL VALUES
+=head2 Required MIBs
+
+=over
+
+=item FOUNDRY-SN-ROOT-MIB
+
+=item Inherited Classes' MIBs
+
+See classes listed above for their required MIBs.
+
+=back
+
+The Foundry MIBS can be downloaded from www.mibdepot.com and ??
+
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
 
 =over
 
 =item $foundry->model()
 
-    Returns model type.  Checks $foundry->id() against the 
-    FOUNDRY-SN-ROOT-MIB and then parses out xxNNNN
+Returns model type.  Checks $foundry->id() against the 
+FOUNDRY-SN-ROOT-MIB and then parses out xxNNNN
 
 =item $foundry->vendor()
 
-    Returns 'foundry' :)
+Returns 'foundry' :)
 
 =item $foundry->mac()
 
-    Returns MAC Address of root port.
+Returns MAC Address of root port.
 
-    (B<ifPhysAddress.1>)
+(B<ifPhysAddress.1>)
 
 =item $foundry->chassis()
 
-    Returns Chassis type.
+Returns Chassis type.
 
-    (B<entPhysicalDescr.1>)
+(B<entPhysicalDescr.1>)
 
 =item $foundry->serial()
 
-    Returns serial number of device.
+Returns serial number of device.
 
-    (B<snChasSerNum>)
+(B<snChasSerNum>)
 
 =item $foundry->temp()
 
-    Returns the chassis temperature
+Returns the chassis temperature
 
-    (B<snChasActualTemperature>)
+(B<snChasActualTemperature>)
 
 =item $foundry->ps1_type()
 
-    Returns the Description for the power supply
+Returns the Description for the power supply
 
-    (B<snChasPwrSupplyDescription.1>)
+(B<snChasPwrSupplyDescription.1>)
 
 =item $foundry->ps1_status()
 
-    Returns the status of the power supply.
+Returns the status of the power supply.
 
-    (B<snChasPwrSupplyOperStatus.1>)
+(B<snChasPwrSupplyOperStatus.1>)
 
 =item $foundry->fan()
 
-    Returns the status of the chassis fan.
+Returns the status of the chassis fan.
 
-    (B<snChasFanOperStatus.1>)
+(B<snChasFanOperStatus.1>)
 
 =back
 
+=head2 Globals imported from SNMP::Info
+
+See documentation in SNMP::Info for details.
+
+=head2 Globals imported from SNMP::Info::Bridge
+
+See documentation in SNMP::Info::Bridge for details.
+
 =head1 TABLE ENTRIES
+
+These are methods that return tables of information in the form of a reference
+to a hash.
 
 =head2 Overrides
 
@@ -327,39 +359,39 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 
 =item $foundry->interfaces()
 
-    Returns reference to hash of interface names to iids.
+Returns reference to hash of interface names to iids.
 
-    Uses B<ifDescr>.
+Uses B<ifDescr>.
 
 =item $foundry->i_name()
 
-   Returns reference to hash of interface names.  
-   Trys for B<ifAlias> and Defaults to B<ifName>
+Returns reference to hash of interface names.  
+Trys for B<ifAlias> and Defaults to B<ifName>
 
 =item $foundry->i_ignore()
 
-   Returns reference to hash of interfaces to be ignored.
+Returns reference to hash of interfaces to be ignored.
 
-   Ignores interfaces with descriptions of  tunnel,loopback,null 
+Ignores interfaces with descriptions of  tunnel,loopback,null 
 
 =item $foundry->i_duplex()
 
-    Returns reference to hash of interface link duplex status. 
+Returns reference to hash of interface link duplex status. 
 
-    Crosses $foundry->sw_duplex() with $foundry->sw_index()
+Crosses $foundry->sw_duplex() with $foundry->sw_index()
 
 =item $foundry->i_type()
 
-    Returns reference to hash of interface types.
-    
-    Crosses $foundry->sw_type() with $foundry->sw_index()
+Returns reference to hash of interface types.
+
+Crosses $foundry->sw_type() with $foundry->sw_index()
 
 =item $foundry->i_speed()
 
-    Returns reference to hash of interface speeds .
+Returns reference to hash of interface speeds .
 
-    Crosses $foundry->sw_speeD() with $foundry->sw_index() and 
-    does a little munging.
+Crosses $foundry->sw_speeD() with $foundry->sw_index() and 
+does a little munging.
 
 =back
 
@@ -369,21 +401,21 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 
 =item $foundry->at_index()
 
-    Returns reference to hash.  Maps ARP table entries to Interface IIDs 
+Returns reference to hash.  Maps ARP table entries to Interface IIDs 
 
-    (B<ipNetToMediaIfIndex>)
+(B<ipNetToMediaIfIndex>)
 
 =item $foundry->at_paddr()
 
-   Returns reference to hash.  Maps ARP table entries to MAC addresses. 
+Returns reference to hash.  Maps ARP table entries to MAC addresses. 
 
-    (B<ipNetToMediaPhysAddress>)
+(B<ipNetToMediaPhysAddress>)
 
 =item $foundry->at_netaddr()
 
-   Returns reference to hash.  Maps ARP table entries to IPs 
+Returns reference to hash.  Maps ARP table entries to IPs 
 
-    (B<ipNetToMediaNetAddress>)
+(B<ipNetToMediaNetAddress>)
 
 =back
 
@@ -393,28 +425,36 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 
 =item $foundry->sw_index()
 
-    Returns reference to hash.  Maps Table to Interface IID. 
+Returns reference to hash.  Maps Table to Interface IID. 
 
-    (B<snSwPortIfIndex>)
+(B<snSwPortIfIndex>)
 
 =item $foundry->sw_duplex()
 
-   Returns reference to hash.   Current duplex status for switch ports. 
+Returns reference to hash.   Current duplex status for switch ports. 
 
-    (B<snSwPortInfoChnMode>)
+(B<snSwPortInfoChnMode>)
 
 =item $foundry->sw_type()
 
-    Returns reference to hash.  Current Port Type .
+Returns reference to hash.  Current Port Type .
 
-    (B<snSwPortInfoMediaType>)
+(B<snSwPortInfoMediaType>)
 
 =item $foundry->sw_speed()
 
-   Returns reference to hash.  Current Port Speed. 
+Returns reference to hash.  Current Port Speed. 
 
-    (B<snSwPortInfoSpeed>)
+(B<snSwPortInfoSpeed>)
 
 =back
+
+=head2 Table Methods imported from SNMP::Info
+
+See documentation in SNMP::Info for details.
+
+=head2 Table Methods imported from SNMP::Info::Bridge
+
+See documentation in SNMP::Info::Bridge for details.
 
 =cut
