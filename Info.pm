@@ -7,7 +7,7 @@
 # See COPYRIGHT at bottom
 
 package SNMP::Info;
-$VERSION = 0.5;
+$VERSION = 0.6;
 use strict;
 
 use Exporter;
@@ -27,7 +27,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 0.5
+SNMP::Info - Version 0.6
 
 =head1 AUTHOR
 
@@ -1420,6 +1420,7 @@ Let's make a sample Layer 2 Device subclass :
  =head2 Overrides
  =cut
 
+ 1; # don't forget this line
 ----------------------- snip --------------------------------
 
 Be sure and send the debugged version to snmp@warped.org to be 

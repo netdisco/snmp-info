@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3;
-$VERSION = 0.5;
+$VERSION = 0.6;
 # $Id$
 
 use strict;

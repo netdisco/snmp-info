@@ -5,7 +5,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 0.5
+    SNMP::Info - Version 0.6
 
 AUTHOR
 
@@ -946,6 +946,7 @@ EXTENDING SNMP::INFO
      =head2 Overrides
      =cut
 
+     1; # don't forget this line
     ----------------------- snip --------------------------------
 
     Be sure and send the debugged version to snmp@warped.org to be included
