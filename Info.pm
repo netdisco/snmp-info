@@ -115,7 +115,7 @@ Adding support for your own device is easy, and takes little SNMP knowledge.
 The module is not limited to network devices. Any MIB or device can be given an objected oriented
 front-end by making a module that consists of a couple hashes.  See EXTENDING SNMP::INFO.
 
-=head2 Requirements
+=head1 REQUIREMENTS
 
 =over
 
@@ -208,7 +208,7 @@ Check below under each subclass for requirements.
 
 =back
 
-=head2 Design Goals
+=head1 DESIGN GOALS
 
 =over
 
@@ -244,13 +244,13 @@ version.
 
 =back
 
-=head2 Subclasses
+=head1 SUBCLASSES
 
 These are the subclasses that implement MIBs and support devices:
 
 Required MIBs not included in the install instructions above are noted here.
 
-=head3 MIB Subclasses
+=head2 MIB Subclasses
 
 These subclasses implement method to access one or more MIBs.  These are not 
 used directly, but rather inherited from device subclasses.
@@ -311,7 +311,7 @@ Table information to CDP.  Inherited by Nortel/Bay switches and hubs.
 
 =back
 
-=head3 Device Subclasses
+=head2 Device Subclasses
 
 These subclasses inherit from one or more classes to provide a common interface
 to data obtainable from network devices. 
@@ -487,7 +487,7 @@ See SNMP::Info::Layer3::Passport for where to get MIBs required.
 
 =back
 
-=head2 Thanks
+=head1 Thanks
 
 Thanks for testing and coding help (in no particular order) to :
 Andy Ford, Brian Wilson, Jean-Philippe Luiggi, Dána Watanabe, Bradley Baetz,
@@ -1034,7 +1034,7 @@ Remember that you must supply the partial IID (a numeric OID).
 
 Partial table results are not cached.
 
-=head3 Interface Information
+=head2 Interface Information
 
 =over
 
@@ -1128,7 +1128,7 @@ For others it is a human set field like i_name().
 
 =back
 
-=head3 Interface Statistics
+=head2 Interface Statistics
 
 =over
 
@@ -1196,7 +1196,7 @@ Number of packets sent to a broadcast address on an interface.
 
 =back
 
-=head3 IP Address Table
+=head2 IP Address Table
 
 Each entry in this table is an IP address in use on this device.  Usually 
 this is implemented in Layer3 Devices.
@@ -1229,7 +1229,7 @@ Gives broadcast address for IP table entry.
 
 =back
 
-=head3 IP Routing Table
+=head2 IP Routing Table
 
 =over
 
@@ -1362,7 +1362,7 @@ Reference to MIB definition specific to routing protocol.
 
 =back
 
-=head2 Setting data via SNMP
+=head1 SETTING DATA VIA SNMP
 
 This section explains how to use SNMP::Info to do SNMP Set operations.
 
@@ -1396,7 +1396,7 @@ NOTE: This will only set data listed in %FUNCS and %GLOBALS.  For data acquired 
 overriden methods (subroutines) specific set_METHOD() subroutines will need to be
 added if they haven't been already.
 
-=head2 Quiet Mode
+=head1 Quiet Mode
 
 SNMP::Info will not chirp anything to STDOUT unless there is a serious error (in which case it will probably
 die).
