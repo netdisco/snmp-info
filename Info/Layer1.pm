@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -163,22 +163,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer1 - Perl5 Interface to Layer1 network devices.
-
-=head1 DESCRIPTION
-
-Provides abstraction to the configuration information obtainable from a 
-Layer1 device through SNMP.  Information is stored in a number of MIBs.
-
-Inherits from: 
-
- SNMP::Info
-
-MIBS: 
-
- MIBS listed in SNMP::Info
-
-Cisco MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
+SNMP::Info::Layer1 - Perl5 Interface to network devices serving Layer1 only.
 
 =head1 AUTHOR
 
@@ -186,40 +171,88 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $l1 = new SNMP::Info::Layer1(DestHost  => 'mybridge' , 
-                              Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $l1 = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 1
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-=head1 CREATING AN OBJECT
+ my $class      = $l1->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+ # Let's get some basic Port information
+ my $interfaces = $l1->interfaces();
+ my $i_up       = $l1->i_up();
+ my $i_speed    = $l1->i_speed();
+
+ foreach my $iid (keys %$interfaces) {
+    my $port  = $interfaces->{$iid};
+    my $up    = $i_up->{$iid};
+    my $speed = $i_speed->{$iid}
+    print "Port $port is $up. Port runs at $speed.\n";
+ }
+
+=head1 DESCRIPTION
+
+This class is usually used as a superclass for more specific device classes listed under 
+SNMP::Info::Layer1::*   Please read all docs under SNMP::Info first.
+
+Provides abstraction to the configuration information obtainable from a 
+Layer1 device through SNMP.  Information is stored in a number of MIBs.
+
+For speed or debugging purposes you can call the subclass directly, but not after determining
+a more specific class using the method above. 
+
+ my $l1 = new SNMP::Info::Layer1(...);
+
+=head2 Inherited Classes 
 
 =over
 
-=item  new SNMP::Info::Layer1()
-
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
-
-    my $l1 = new SNMP::Info::Layer1(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $l1;
+=item SNMP::Info
 
 =back
 
-=head1 GLOBALS
+=head2 Required MIBs 
 
 =over
 
-=item $l1->vendor()
+=item SNMP-REPEATER-MIB
 
-Trys to discover the vendor from $l1->model() and $l1->vendor()
+=item Inherited Classes
+
+MIBs required for SNMP::Info
+
+=back
+
+SNMP-REPEATER-MIB needs to be extracted from ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
+
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=over
 
 =item $l1->ports_managed()
 
 Gets the number of ports under the interface mib 
 
 (B<ifNumber>)
+
+=back
+
+=head2 Overrides
+
+=over
+
+=item $l1->vendor()
+
+Trys to discover the vendor from $l1->model() and $l1->vendor()
 
 =item $l1->ports()
 
@@ -233,7 +266,14 @@ Number of 'groups' in the Repeater MIB
 
 =back
 
+=head2 Globals imported from SNMP::Info
+
+See documentation in SNMP::Info for details.
+
 =head1 TABLE ENTRIES
+
+These are methods that return tables of information in the form of a reference
+to a hash.
 
 =head2 Overrides
 
@@ -278,5 +318,9 @@ Group (slot) Number for given port.
 (B<rptrPortOperStatus>)
 
 =back
+
+=head2 Table Methods imported from SNMP::Info
+
+See documentation in SNMP::Info for details.
 
 =cut

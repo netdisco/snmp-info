@@ -138,16 +138,6 @@ __END__
 
 SNMP::Info::CDP - Perl5 Interface to Cisco Discovery Protocol (CDP) using SNMP
 
-=head1 DESCRIPTION
-
-SNMP::Info::CDP is a subclass of SNMP::Info that provides an object oriented 
-interface to CDP information through SNMP.
-
-CDP is a Layer 2 protocol that supplies topology information of devices that also speak CDP, 
-mostly switches and routers.  CDP is implemented in Cisco and some HP devices.
-
-Normally you do not use this module directly, but from inside SNMP::Info
-
 =head1 AUTHOR
 
 Max Baker (C<max@warped.org>)
@@ -161,12 +151,12 @@ Max Baker (C<max@warped.org>)
                              Community   => 'public',
                              Version     => 2
                            );
- 
+
  my $class = $cdp->class();
  print " Using device sub class : $class\n";
- 
+
  $hascdp   = $cdp->hasCDP() ? 'yes' : 'no';
- 
+
  # Print out a map of device ports with CDP neighbors:
  my $interfaces = $cdp->interfaces();
  my $c_if       = $cdp->c_if();
@@ -181,14 +171,36 @@ Max Baker (C<max@warped.org>)
     print "Port : $port connected to $neighbor / $neighbor_port\n";
  }
 
-See L<SNMP::Info> for all other inherited methods.
+=head1 DESCRIPTION
 
-=head2 Your Device May Vary
+SNMP::Info::CDP is a subclass of SNMP::Info that provides an object oriented 
+interface to CDP information through SNMP.
+
+CDP is a Layer 2 protocol that supplies topology information of devices that also speak CDP, 
+mostly switches and routers.  CDP is implemented in Cisco and some HP devices.
+
+Create or use a device subclass that inherits this class.  Do not use directly.
 
 Each device implements a subset of the global and cache entries. 
 Check the return value to see if that data is held by the device.
 
-=head1 CDP GLOBAL VALUES
+=head2 Inherited Classes
+
+None.
+
+=head2 Required MIBs
+
+=over
+
+=item CISCO-CDP-MIB
+
+=back
+
+MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
+
+=head1 GLOBAL METHODS
+
+These are methods that return scalar values from SNMP
 
 =over
 
@@ -200,7 +212,8 @@ Accounts for SNMP version 1 devices which may have CDP but not cdp_run()
 
 =item $cdp->cdp_run()
 
-Is CDP enabled on this device?
+Is CDP enabled on this device?  Note that a lot of Cisco devices that implement
+CDP don't implement this value. @#%$!
 
 (B<cdpGlobalRun>)
 
@@ -226,7 +239,12 @@ This is the device id broadcast via CDP to other devices, and is what is retriev
 
 =back
 
-=head1 CDP CACHE ENTRIES
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=head2 CDP CACHE ENTRIES
 
 =over
 
