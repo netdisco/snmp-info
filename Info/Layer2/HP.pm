@@ -1,7 +1,7 @@
 # SNMP::Info::Layer2::HP - SNMP Interface to HP ProCurve Switches
-# Max Baker <max@warped.org>
+# Max Baker
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2004,2005 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::HP;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -44,9 +44,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $I
 
 @SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer2 SNMP::Info::MAU SNMP::Info::Entity Exporter/;
 @SNMP::Info::Layer2::HP::EXPORT_OK = qw//;
-
-# See SNMP::Info for the details of these data structures and interworkings.
-$INIT = 0;
 
 %MIBS = ( %SNMP::Info::Layer2::MIBS,
           %SNMP::Info::MAU::MIBS,
@@ -127,6 +124,9 @@ $INIT = 0;
            );
 
 # Method Overrides
+
+*SNMP::Info::Layer2::HP::i_duplex       = \&SNMP::Info::MAU::mau_i_duplex;
+*SNMP::Info::Layer2::HP::i_duplex_admin = \&SNMP::Info::MAU::mau_i_duplex_admin;
 
 sub cpu {
     my $hp = shift;
@@ -282,121 +282,37 @@ sub slots {
 #
 #}
 
-sub i_duplex {
-    my $hp = shift;
-
-    my $mau_index = $hp->mau_index();
-    my $mau_link = $hp->mau_link();
-
-    my %i_duplex;
-    foreach my $mau_port (keys %$mau_link){
-        my $iid = $mau_index->{$mau_port};
-        next unless defined $iid;
-
-        my $linkoid = $mau_link->{$mau_port};
-        my $link = &SNMP::translateObj($linkoid);
-        next unless defined $link;
-
-        my $duplex = undef;
-
-        if ($link =~ /fd$/i) {
-            $duplex = 'full';
-        } elsif ($link =~ /hd$/i){
-            $duplex = 'half';
-        }
-
-        $i_duplex{$iid} = $duplex if defined $duplex;
-    }
-    return \%i_duplex;
-}
 
 
-sub i_duplex_admin {
-    my $hp = shift;
-
-    my $interfaces   = $hp->interfaces();
-    my $mau_index    = $hp->mau_index();
-    my $mau_auto     = $hp->mau_auto();
-    my $mau_autostat = $hp->mau_autostat();
-    my $mau_typeadmin = $hp->mau_type_admin();
-    my $mau_autosent = $hp->mau_autosent();
-
-    my %mau_reverse = reverse %$mau_index;
-
-    my %i_duplex_admin;
-    foreach my $iid (keys %$interfaces){
-        my $mau_index = $mau_reverse{$iid};
-        next unless defined $mau_index;
-
-        my $autostat = $mau_autostat->{$mau_index};
-        
-        # HP25xx has this value
-        if (defined $autostat and $autostat =~ /enabled/i){
-            $i_duplex_admin{$iid} = 'auto';
-            next;
-        } 
-        
-        my $type = $mau_autosent->{$mau_index};
-    
-        next unless defined $type;
-
-        if ($type == 0) {
-            $i_duplex_admin{$iid} = 'none';
-            next;
-        }
-
-        my $full = $hp->_isfullduplex($type);
-        my $half = $hp->_ishalfduplex($type);
-
-        if ($full and !$half){
-            $i_duplex_admin{$iid} = 'full';
-        } elsif ($half) {
-            $i_duplex_admin{$iid} = 'half';
-        } 
-    } 
-    
-    return \%i_duplex_admin;
-}
 
 sub i_vlan {
     my $hp = shift;
 
-    my $interfaces = $hp->interfaces();
-
     # Newer devices use Q-BRIDGE-MIB
-    my $qb_i_vlan = $hp->qb_i_vlan();
-    my $qb_i_vlan_type = $hp->qb_i_vlan_type();
-        
-    my $i_vlan = {};
-
-    foreach my $if (keys %$qb_i_vlan){
-        my $vlan = $qb_i_vlan->{$if};
-        my $tagged = $qb_i_vlan_type->{$if};
-        $tagged = (defined $tagged and $tagged eq 'admitOnlyVlanTagged') ? 1 : 0;
-        next unless defined $vlan;
-        $i_vlan->{$if}= $tagged ? 'trunk' : $vlan;
+    my $qb_i_vlan = $hp->qb_i_vlan_t();
+    if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
+        return $qb_i_vlan;
     }
 
     # HP4000 ... get it from HP-VLAN
     # the hpvlanmembertagged2 table has an entry in the form of 
     #   vlan.interface = /untagged/no/tagged/auto
-    unless (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
-        my $hp_v_index = $hp->hp_v_index();
-        my $hp_v_if_tag   = $hp->hp_v_if_tag();
-        foreach my $row (keys %$hp_v_if_tag){
-            my ($index,$if) = split(/\./,$row);
+    my $i_vlan      = {};
+    my $hp_v_index  = $hp->hp_v_index();
+    my $hp_v_if_tag = $hp->hp_v_if_tag();
+    foreach my $row (keys %$hp_v_if_tag){
+        my ($index,$if) = split(/\./,$row);
 
-            my $tag = $hp_v_if_tag->{$row};
-            my $vlan = $hp_v_index->{$index};
-            
-            next unless defined $tag;
-            $vlan = 'Trunk' if $tag eq 'tagged';
-            $vlan = 'Auto'  if $tag eq 'auto';
-            undef $vlan if $tag eq 'no';
+        my $tag = $hp_v_if_tag->{$row};
+        my $vlan = $hp_v_index->{$index};
+        
+        next unless defined $tag;
+        $vlan = 'Trunk' if $tag eq 'tagged';
+        $vlan = 'Auto'  if $tag eq 'auto';
+        undef $vlan if $tag eq 'no';
 
-            
-            $i_vlan->{$if} = $vlan if defined $vlan;
-        }
+        
+        $i_vlan->{$if} = $vlan if defined $vlan;
     }
 
     return $i_vlan;
@@ -410,7 +326,7 @@ SNMP::Info::Layer2::HP - SNMP Interface to HP Procurve Switches
 
 =head1 AUTHOR
 
-Max Baker (C<max@warped.org>)
+Max Baker
 
 =head1 SYNOPSIS
 
