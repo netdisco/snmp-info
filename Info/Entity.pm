@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Entity;
-$VERSION = 0.9;
+$VERSION = 1.0;
 # $Id$
 
 use strict;
@@ -49,17 +49,23 @@ $INIT    = 0;
            );
 
 %FUNCS   = (
+            'e_index'   => 'entPhysicalIndex',
+            'e_alias'   => 'entPhysicalAlias',
             'e_class'   => 'entPhysicalClass',
             'e_descr'   => 'entPhysicalDescr',
             'e_fwver'   => 'entPhysicalFirmwareRev',
+            'e_fru'     => 'entPhysicalIsFRU',
             'e_hwver'   => 'entPhysicalHardwareRev',
+            'e_id'      => 'entPhysicalAssetID',
             'e_map'     => 'entAliasMappingIdentifier',
             'e_model'   => 'entPhysicalModelName',
             'e_name'    => 'entPhysicalName',
             'e_parent'  => 'entPhysicalContainedIn',
+            'e_pos'     => 'entParentRelPos',
             'e_serial'  => 'entPhysicalSerialNum',
             'e_swver'   => 'entPhysicalSoftwareRev',
             'e_type'    => 'entPhysicalVendorType',
+            'e_vendor'  => 'entPhysicalMfgName',
            );
 
 %MUNGE   = (
@@ -146,11 +152,27 @@ to a hash.
 
 =over
 
+=item $entity->e_index()
+
+Not normally implemented
+
+(C<entPhysicalIndex>)
+
+=item $entity->e_alias()
+
+Human entered, not usually used.
+
+(C<entPhysicalAlias>)
+
 =item $entity->e_class()
+
+Stack, Module, Container, Port ...
 
 (C<entPhysicalClass>)
 
 =item $entity->e_descr()
+
+Human Friendly
 
 (C<entPhysicalClass>)
 
@@ -158,23 +180,43 @@ to a hash.
 
 (C<entPhysicalFirmwareRev>)
 
+=item $entity->e_fru()
+
+BOOLEAN. Field Replaceable unit?
+
+(C<entPhysicalFRU>)
+
 =item $entity->e_hwver()
 
 (C<entPhysicalHardwareRev>)
 
+=item $entity->e_id()
+
+This is human entered and not normally used.
+
+(C<entPhysicalAssetID>)
+
 =item $entity->e_map()
+
+See MIB.
 
 (C<entAliasMappingIdentifier>)
 
 =item $entity->e_model()
 
+Model Name of Entity.
+
 (C<entPhysicalModelName>)
 
 =item $entity->e_name()
 
+More computer friendly name of entity.  Parse me.
+
 (C<entPhysicalName>)
 
 =item $entity->e_parent()
+
+0 if root.
 
 (C<entPhysicalContainedIn>)
 
@@ -193,7 +235,15 @@ $entity->e_map()
 
 =item $entity->e_type()
 
+This is an OID.
+
 (C<entPhysicalVendorType>)
+
+=item $entity->e_vendor()
+
+Vendor of Module.
+
+(C<entPhysicalMfgName>)
 
 =back
 
