@@ -9,7 +9,7 @@
 # $Id$
 
 package SNMP::Info;
-$VERSION = 0.10;
+$VERSION = '0.10';
 use strict;
 
 use Exporter;
