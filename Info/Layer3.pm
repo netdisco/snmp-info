@@ -171,6 +171,8 @@ sub model {
     
     my $model = &SNMP::translateObj($id);
 
+    return $id unless defined $model;
+
     $model =~ s/^cisco//i;
     $model =~ s/^catalyst//;
     $model =~ s/^cat//;
