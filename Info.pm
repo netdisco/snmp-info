@@ -1001,6 +1001,139 @@ Gives broadcast address for IP table entry.
 
 =back
 
+=head3 IP Routing Table
+
+=over
+
+=item $info->ipr_route()
+
+The route in question.  A value of 0.0.0.0 is the default gateway route.
+
+(C<ipRouteDest>)
+
+=item $info->ipr_if()
+
+The interface (IID) that the route is on.  Use interfaces() to map.
+
+(C<ipRouteIfIndex>)
+
+=item $info->ipr_1()
+
+Primary routing metric for this route. 
+
+(C<ipRouteMetric1>)
+
+=item $info->ipr_2()
+
+If metrics are not used, they should be set to -1
+
+(C<ipRouteMetric2>)
+
+=item $info->ipr_3()
+
+(C<ipRouteMetric3>)
+
+=item $info->ipr_4()
+
+(C<ipRouteMetric4>)
+
+=item $info->ipr_5()
+
+(C<ipRouteMetric5>)
+
+=item $info->ipr_dest()
+
+From RFC1213:
+
+  "The IP address of the next hop of this route.
+  (In the case of a route bound to an interface
+  which is realized via a broadcast media, the value
+  of this field is the agent's IP address on that
+  interface.)"
+
+(C<ipRouteNextHop>)
+
+=item $info->ipr_type()
+
+From RFC1213:
+
+    other(1),        -- none of the following
+    invalid(2),      -- an invalidated route
+                     -- route to directly
+    direct(3),       -- connected (sub-)network
+                     -- route to a non-local
+    indirect(4)      -- host/network/sub-network
+
+
+      "The type of route.  Note that the values
+      direct(3) and indirect(4) refer to the notion of
+      direct and indirect routing in the IP
+      architecture.
+
+      Setting this object to the value invalid(2) has
+      the effect of invalidating the corresponding entry
+      in the ipRouteTable object.  That is, it
+      effectively disassociates the destination
+      identified with said entry from the route
+      identified with said entry.  It is an
+      implementation-specific matter as to whether the
+      agent removes an invalidated entry from the table.
+      Accordingly, management stations must be prepared
+      to receive tabular information from agents that
+      corresponds to entries not currently in use.
+      Proper interpretation of such entries requires
+      examination of the relevant ipRouteType object."
+
+(C<ipRouteType>)
+
+=item $info->ipr_proto()
+
+From RFC1213:
+
+    other(1),       -- none of the following
+                    -- non-protocol information,
+                    -- e.g., manually configured
+    local(2),       -- entries
+                    -- set via a network
+    netmgmt(3),     -- management protocol
+                    -- obtained via ICMP,
+    icmp(4),        -- e.g., Redirect
+                    -- the remaining values are
+                    -- all gateway routing
+                    -- protocols
+    egp(5),
+    ggp(6),
+    hello(7),
+    rip(8),
+    is-is(9),
+    es-is(10),
+    ciscoIgrp(11),
+    bbnSpfIgp(12),
+    ospf(13),
+    bgp(14)
+
+(C<ipRouteProto>)
+
+=item $info->ipr_age()
+
+Seconds since route was last updated or validated.
+
+(C<ipRouteAge>)
+
+=item $info->ipr_mask()
+
+Subnet Mask of route. 0.0.0.0 for default gateway.
+
+(C<ipRouteMask>)
+
+=item $info->ipr_info()
+
+Reference to MIB definition specific to routing protocol.
+
+(C<ipRouteInfo>)
+
+=back
+
 =head2 Setting data via SNMP
 
 This section explains how to use SNMP::Info to do SNMP Set operations.
@@ -1131,7 +1264,21 @@ These are table entries, such as the IfIndex
             'i_pkts_multi_out64' => 'ifHCOutMulticastPkts',
             'i_pkts_bcast_in64'  => 'ifHCInBroadcastPkts',
             'i_pkts_bcast_out64' => 'ifHCOutBroadcastPkts',
-            'i_alias'            => 'ifAlias'
+            'i_alias'            => 'ifAlias',
+            # IP Routing Table
+            'ipr_route'=> 'ipRouteDest',
+            'ipr_if'   => 'ipRouteIfIndex',
+            'ipr_1'    => 'ipRouteMetric1',
+            'ipr_2'    => 'ipRouteMetric2',
+            'ipr_3'    => 'ipRouteMetric3',
+            'ipr_4'    => 'ipRouteMetric4',
+            'ipr_5'    => 'ipRouteMetric5',
+            'ipr_dest' => 'ipRouteNextHop',
+            'ipr_type' => 'ipRouteType',
+            'ipr_proto'=> 'ipRouteProto',
+            'ipr_age'  => 'ipRouteAge',
+            'ipr_mask' => 'ipRouteMask',
+            'ipr_info' => 'ipRouteInfo',
            );
 
 =item %MIBS
