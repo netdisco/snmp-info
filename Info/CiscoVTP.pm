@@ -47,8 +47,9 @@ $SNMP::debugging=$DEBUG;
 
 $INIT    = 0;
 %MIBS    = (
-            'CISCO-VTP-MIB'             => 'vtpVlanName',
-            'CISCO-VLAN-MEMBERSHIP-MIB' => 'vmMembershipEntry',
+            'CISCO-VTP-MIB'                       => 'vtpVlanName',
+            'CISCO-VLAN-MEMBERSHIP-MIB'           => 'vmMembershipEntry',
+            'CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB' => 'cviRoutedVlanIfIndex',
            );
 
 %GLOBALS = (
@@ -95,12 +96,16 @@ $INIT    = 0;
             # CISCO-VLAN-MEMBERSHIP-MIB
             # VmMembershipTable
             'i_vlan_type' => 'vmVlanType',
-            'i_vlan'      => 'vmVlan',
+            'i_vlan2'     => 'vmVlan',
             'i_vlan_stat' => 'vmPortStatus',
             'i_vlan_1'    => 'vmVlans',
             'i_vlan_2'    => 'vmVlans2k',
             'i_vlan_3'    => 'vmVlans3k',
             'i_vlan_4'    => 'vmVlans4k',
+
+            # CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
+            'v_cvi_if'    => 'cviRoutedVlanIfIndex',
+
             # TODO Add these tables if someone wants them..
             # vtpEditControlTable
             # vtpVlanEditTable
@@ -111,12 +116,37 @@ $INIT    = 0;
 %MUNGE   = (
            );
 
+
+sub i_vlan {
+    my $vtp = shift;
+
+    # Check for CISCO-VLAN-MIB
+    my $i_vlan = $vtp->i_vlan2();
+    return $i_vlan if defined $i_vlan;
+
+    # Check in CISCO-VLAN-IFTABLE-RELATION-MIB
+    my $v_cvi_if = $vtp->v_cvi_if();
+    return undef unless defined $v_cvi_if;
+
+    # Translate vlan.physical_interface -> iid
+    #       to iid -> vlan
+    $i_vlan = {};
+    foreach my $i (keys %$v_cvi_if){
+        my ($vlan,$phys) = split(/\./,$i);
+        my $iid = $v_cvi_if->{$i};
+
+        $i_vlan->{$iid}=$vlan;
+    }
+
+    return $i_vlan;
+}
+
 1;
 __END__
 
 =head1 NAME
 
-SNMP::Info::CiscoVTP - Perl5 Interface to Cisco's VLAN Management MIB - CISCO-VTP-MIB
+SNMP::Info::CiscoVTP - Perl5 Interface to Cisco's VLAN Management MIBs
 
 =head1 AUTHOR
 
@@ -141,7 +171,7 @@ Max Baker (C<max@warped.org>)
 =head1 DESCRIPTION
 
 SNMP::Info::CiscoVTP is a subclass of SNMP::Info that provides 
-information about a switch's VLANs.
+information about a cisco device's VLAN and VTP Domain memebership.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
@@ -154,6 +184,10 @@ none.
 =over
 
 =item CISCO-VTP-MIB
+
+=item CISCO-VLAN-MEMBERSHIP-MIB
+
+=item CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
 
 =back
 
