@@ -704,12 +704,13 @@ Algorithm for Subclass Detection:
                      AP4800... All Non IOS
             Catalyst 3550,3548,3560        -> SNMP::Info::Layer3::C3550
             Catalyst 6500, 4000, 3750      -> SNMP::Info::Layer3::C6500
+            Cisco Generic L3 IOS device    -> SNMP::Info::Layer3::Cisco
             Foundry                        -> SNMP::Info::Layer3::Foundry
             Nortel Passport LAN            -> SNMP::Info::Layer3::Passport
             Alteon Ace Director            -> SNMP::Info::Layer3::AlteonAD
-            Nortel Contivity               -> SNMP::Info::Layer3::Contivity         
+            Nortel Contivity               -> SNMP::Info::Layer3::Contivity
             Nortel BayRS Router            -> SNMP::Info::Layer3::BayRS
-        Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2 
+        Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2
             Aironet - IOS Devices          -> SNMP::Info::Layer2::Aironet
             Catalyst 1900                  -> SNMP::Info::Layer2::C1900
             Catalyst 2900XL,2950,3500XL    -> SNMP::Info::Layer2::C2900
@@ -724,7 +725,7 @@ Algorithm for Subclass Detection:
         Elsif Layer1 Support               -> SNMP::Info::Layer1
             Allied                         -> SNMP::Info::Layer1::Allied
             Asante                         -> SNMP::Info::Layer1::Asante
-            Nortel/Bay Hub                 -> SNMP::Info::Layer1::Bayhub   
+            Nortel/Bay Hub                 -> SNMP::Info::Layer1::Bayhub
         Else                               -> SNMP::Info
             ZyXEL_DSLAM                    -> SNMP::Info::Layer2::ZyXEL_DSLAM
 
@@ -772,6 +773,9 @@ sub device_type {
 
         # Allied Telesyn Layer2 managed switches. They report they have L3 support
         $objtype = 'SNMP::Info::Layer2::Allied' if ($desc =~ /Allied.*AT-80\d{2}\S*/i);
+
+        # Default generic cisco
+        $objtype = 'SNMP::Info::Layer3::Cisco' if ($objtype eq 'SNMP::Info::Layer3' and $desc =~ /\bIOS\b/);
 
     # Layer 2 Supported
     } elsif ($info->has_layer(2)) {
@@ -1379,7 +1383,7 @@ Returns undef if failed, or the return value from SNMP::Session::set() (snmp_err
 
  # Disable a port administratively
  my %if_map = reverse %{$info->interfaces()}
- $info->set_i_up_admin('down', $if_map{'FastEthernet0/0') 
+ $info->set_i_up_admin('down', $if_map{'FastEthernet0/0'}) 
     or die "Couldn't disable the port. ",$info->error(1);
 
 =back
@@ -2085,13 +2089,20 @@ sub _set {
     my $funcs = $self->funcs();
     my $globals = $self->globals(); 
 
-    my $oid = undef;
+    # Check if this method is from a sub or from the tables.
+    if ($self->can($attr)){
+        $self->error_throw("SNMP::Info::_set($attr,$val) - Failed. $attr is generated in a sub(). set_$attr sub required.");
+        # if sub set_attr() existed, we wouldn't have gotten this far.
+        return undef;
+    }
+
     # Lookup oid
+    my $oid = undef;
     $oid = $globals->{$attr} if defined $globals->{$attr};
     $oid = $funcs->{$attr} if defined $funcs->{$attr};
 
     unless (defined $oid) { 
-        $self->error_throw("SNMP::Info::_set($attr,$val) - Failed to find $attr in \%GLOBALS or \%FUNCS");
+        $self->error_throw("SNMP::Info::_set($attr,$val) - Failed to find $attr in \%GLOBALS or \%FUNCS.");
         return undef;
     }
 
