@@ -822,7 +822,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /Catalyst 4000/;
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /s72033_rp/;
         # Nortel Passport 8600
-        $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport/;
+        $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-86/;
         # Nortel Alteon AD Series
         $objtype = 'SNMP::Info::Layer3::AlteonAD' if $desc =~ /Alteon\s[1A][8D]/;
         # Nortel Contivity
