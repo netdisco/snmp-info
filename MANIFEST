@@ -24,3 +24,4 @@ MANIFEST
 Makefile.PL
 README
 t/prereq.t
+t/test_class.pl
