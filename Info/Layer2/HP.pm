@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::HP;
-$VERSION = 0.7;
+$VERSION = 0.8;
 # $Id$
 
 use strict;
@@ -51,22 +51,24 @@ $INIT = 0;
           %SNMP::Info::Entity::MIBS,
           'RFC1271-MIB' => 'logDescription',
           'HP-ICF-OID'  => 'hpSwitch4000',
+          'HP-VLAN'     => 'hpVlanMemberIndex',
           'STATISTICS-MIB' => 'hpSwitchCpuStat',
-          'NETSWITCH-MIB'  => 'hpMsgBufFree'
+          'NETSWITCH-MIB'  => 'hpMsgBufFree',   
         );
 
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
             %SNMP::Info::MAU::GLOBALS,
             %SNMP::Info::Entity::GLOBALS,
-            'serial1'   => 'entPhysicalSerialNum.1',
-            'hp_cpu'    => 'hpSwitchCpuStat.0',
+            'serial1'      => 'entPhysicalSerialNum.1',
+            'hp_cpu'       => 'hpSwitchCpuStat.0',
             'hp_mem_total' => 'hpGlobalMemTotalBytes.1',
-            'mem_free'  => 'hpGlobalMemFreeBytes.1',
-            'mem_used'  => 'hpGlobalMemAllocBytes.1',
-            'os_version' => 'hpSwitchOsVersion.0',
-            'os_bin'    => 'hpSwitchRomVersion.0',
-            'mac'       => 'hpSwitchBaseMACAddress.0'
+            'mem_free'     => 'hpGlobalMemFreeBytes.1',
+            'mem_used'     => 'hpGlobalMemAllocBytes.1',
+            'os_version'   => 'hpSwitchOsVersion.0',
+            'os_bin'       => 'hpSwitchRomVersion.0',
+            'mac'          => 'hpSwitchBaseMACAddress.0',
+            'hp_vlans'     => 'hpVlanNumber',
            );
 
 %FUNCS   = (
@@ -75,7 +77,16 @@ $INIT = 0;
             %SNMP::Info::Entity::FUNCS,
             'i_type2'   => 'ifType',
             # RFC1271
-            'l_descr'   => 'logDescription'
+            'l_descr'   => 'logDescription',
+            # HP-VLAN-MIB
+            'hp_v_index'   => 'hpVlanDot1QID',
+            'hp_v_name'    => 'hpVlanIdentName',
+            'hp_v_state'   => 'hpVlanIdentState',
+            'hp_v_type'    => 'hpVlanIdentType',
+            'hp_v_status'  => 'hpVlanIdentStatus',
+            'hp_v_mac'     => 'hpVlanAddrPhysAddress',
+            'hp_v_if_index'=> 'hpVlanMemberIndex',
+            'hp_v_if_tag'  => 'hpVlanMemberTagged2',
            );
 
 %MUNGE = (
@@ -103,6 +114,7 @@ $INIT = 0;
                 'J4874A' => '9315M',
                 'J4887A' => '4104GL',
                 'J4899A' => '2650',
+                'J4900A' => '2626',
                 'J4902A' => '6108',
                 'J4903A' => '2824',
                 'J4904A' => '2848',
@@ -342,6 +354,45 @@ sub i_duplex_admin {
     return \%i_duplex_admin;
 }
 
+# ok we have to parse through every port listed in every vlan and return an answer.
+sub i_vlan {
+    my $hp = shift;
+
+    my $interfaces = $hp->interfaces();
+    my $hp_v_index = $hp->hp_v_index();
+    my $hp_v_if_tag   = $hp->hp_v_if_tag();
+        
+    my $i_vlan = {};
+
+    # HP4000 ... get it from HP-VLAN
+    # the hpvlanmembertagged2 table has an entry in the form of 
+    #   vlan.interface = /untagged/no/tagged/auto
+    foreach my $row (keys %$hp_v_if_tag){
+        my ($index,$if) = split(/\./,$row);
+
+        my $tag = $hp_v_if_tag->{$row};
+        my $vlan = $hp_v_index->{$index};
+        
+        next unless defined $tag;
+        $vlan = 'Trunk' if $tag eq 'tagged';
+        $vlan = 'Auto'  if $tag eq 'auto';
+        undef $vlan if $tag eq 'no';
+
+        
+        $i_vlan->{$if} = $vlan if defined $vlan;
+    }
+
+    # HP2512 ... get it from Q-BRIDGE-MIB
+    unless (defined $hp_v_if_tag and scalar(keys %$hp_v_if_tag)){
+        my $qb_v_if = $hp->qb_v_if();
+        foreach my $if (keys %$qb_v_if){
+            my $vlan = $qb_v_if->{$if};
+            next unless defined $vlan;
+            $i_vlan->{$if}=$vlan;
+        }
+    }
+    return $i_vlan;
+}
 1;
 __END__
 
@@ -404,6 +455,10 @@ a more specific class using the method above.
 Included in V2 mibs from Cisco
 
 =item HP-ICF-OID
+
+=item HP-VLAN
+
+(this MIB new with SNMP::Info 0.8)
 
 =item STATISTICS-MIB
 
