@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -36,12 +36,14 @@ use strict;
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::CDP;
+use SNMP::Info::CiscoStats;
 use SNMP::Info::Bridge;
 use SNMP::Info::EtherLike;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-@SNMP::Info::Layer3::ISA = qw/SNMP::Info SNMP::Info::CDP SNMP::Info::Bridge SNMP::Info::EtherLike Exporter/;
+@SNMP::Info::Layer3::ISA = qw/SNMP::Info SNMP::Info::CDP SNMP::Info::Bridge 
+                              SNMP::Info::EtherLike SNMP::Info::CiscoStats Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
 
 $DEBUG=0;
@@ -50,11 +52,11 @@ $SNMP::debugging=$DEBUG;
 $INIT = 0;
 
 %MIBS = ( %SNMP::Info::MIBS,
-          %SNMP::Info::CDP::MIBS,
           %SNMP::Info::Bridge::MIBS,
+          %SNMP::Info::CDP::MIBS,
+          %SNMP::Info::CiscoStats::MIBS,
           %SNMP::Info::EtherLike::MIBS,
           'ENTITY-MIB'         => 'entPhysicalName',
-          'HP-ICF-OID'         => 'hpSwitch4000',
           'CISCO-PRODUCTS-MIB' => 'sysName',
           'OSPF-MIB'           => 'ospfRouterId',
         );
@@ -63,6 +65,7 @@ $INIT = 0;
             # Inherit the super class ones
             %SNMP::Info::GLOBALS,
             %SNMP::Info::CDP::GLOBALS,
+            %SNMP::Info::CiscoStats::GLOBALS,
             %SNMP::Info::Bridge::GLOBALS,
             %SNMP::Info::EtherLike::GLOBALS,
             'mac'       => 'ifPhysAddress.1',
@@ -73,6 +76,7 @@ $INIT = 0;
 %FUNCS   = (
             %SNMP::Info::FUNCS,
             %SNMP::Info::CDP::FUNCS,
+            %SNMP::Info::CiscoStats::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
             %SNMP::Info::EtherLike::FUNCS,
             # IFMIB
@@ -88,6 +92,7 @@ $INIT = 0;
             # Inherit all the built in munging
             %SNMP::Info::MUNGE,
             %SNMP::Info::CDP::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
             %SNMP::Info::Bridge::MUNGE,
             %SNMP::Info::EtherLike::MUNGE,
             'at_paddr' => \&SNMP::Info::munge_mac,
@@ -222,31 +227,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3 - Perl5 Interface to network devices using Layer3
-
-=head1 DESCRIPTION
-
-Provides generic methods for accessing SNMP data for Layer 3 network devices. 
-Includes support for Layer2+3 devices. See super classes for other inherited
-methods.
-
-Inherits from:
-
- SNMP::Info
- SNMP::Info::Bridge
- SNMP::Info::CDP
- SNMP::Info::EtherLike
-
-Required MIBs:
-
- ENTITY-MIB         - For model identification
- CISCO-PRODUCTS-MIB - For model identification
- HP-ICF-OID         - For model identification
- MIBS listed in SNMP::Info::CDP, SNMP::Info::Bridge, and SNMP::Info::Etherlike
-
-Cisco MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
-
-HP MIBs can be found at http://www.hp.com/rnd/software
+SNMP::Info::Layer3 - Perl5 Interface to network devices serving Layer3 or Layers 2 & 3
 
 =head1 AUTHOR
 
@@ -254,36 +235,83 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $l3 = new SNMP::Info::Layer3(DestHost  => 'router' , 
-                              Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $l3 = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-=head1 CREATING AN OBJECT
+ my $class      = $l3->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+ # Let's get some basic Port information
+ my $interfaces = $l3->interfaces();
+ my $i_up       = $l3->i_up();
+ my $i_speed    = $l3->i_speed();
+ foreach my $iid (keys %$interfaces) {
+    my $port  = $interfaces->{$iid};
+    my $up    = $i_up->{$iid};
+    my $speed = $i_speed->{$iid}
+    print "Port $port is $up. Port runs at $speed.\n";
+ }
+
+=head1 DESCRIPTION
+
+This class is usually used as a superclass for more specific device classes listed under 
+SNMP::Info::Layer3::*   Please read all docs under SNMP::Info first.
+
+Provides generic methods for accessing SNMP data for Layer 3 network devices. 
+Includes support for Layer2+3 devices. 
+
+For speed or debugging purposes you can call the subclass directly, but not after determining
+a more specific class using the method above. 
+
+ my $l3 = new SNMP::Info::Layer3(...);
+
+=head2 Inherited Classes
 
 =over
 
-=item  new SNMP::Info::Layer3()
+=item SNMP::Info
 
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
+=item SNMP::Info::Bridge
 
-    my $l3 = new SNMP::Info::Layer3(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $l3;
+=item SNMP::Info::CDP
+
+=item SNMP::Info::CiscoStats
+
+=item SNMP::Info::EtherLike
 
 =back
 
-=head1 GLOBALS
+=head2 Required MIBs
 
 =over
 
-=item $l3->mac()
+=item CISCO-PRODUCTS-MIB
 
-Returns root port mac address
+=item ENTITY-MIB
 
-(B<ifPhysAddress.1>)
+=item OSPF-MIB
+
+=item Inherited Classes
+
+MIBs required by the inherited classes listed above.
+
+=back
+
+MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
+
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=over
 
 =item $l3->chassis()
 
@@ -291,9 +319,21 @@ Returns Chassis type (model).
 
 (B<entPhysicalDescr.1>)
 
-=item $l3->serial()
+=item $l3->mac()
 
-Trys to cull a serial number from $l3->chassis()
+Returns root port mac address
+
+(B<ifPhysAddress.1>)
+
+=item $l3->router_ip()
+
+(B<ospfRouterId.0>)
+
+=back
+
+=head2 Overrides
+
+=over
 
 =item $l3->model()
 
@@ -301,13 +341,40 @@ Trys to reference $l3->id() to one of the product MIBs listed above
 
 Removes 'cisco'  from cisco devices for readability.
 
+=item $l3->serial()
+
+Trys to cull a serial number from $l3->chassis()
+
 =item $l3->vendor()
 
 Trys to cull a Vendor name from B<sysDescr>
 
 =back
 
+=head2 Globals imported from SNMP::Info
+
+See documentation in SNMP::Info for details.
+
+=head2 Globals imported from SNMP::Info::Bridge
+
+See documentation in SNMP::Info::Bridge for details.
+
+=head2 Globals imported from SNMP::Info::CDP
+
+See documentation in SNMP::Info::CDP for details.
+
+=head2 Globals imported from SNMP::Info::CiscoStats
+
+See documentation in SNMP::Info::CiscoStats for details.
+
+=head2 Globals imported from SNMP::Info::EtherLike
+
+See documentation in SNMP::Info::EtherLike for details.
+
 =head1 TABLE ENTRIES
+
+These are methods that return tables of information in the form of a reference
+to a hash.
 
 =head2 Overrides
 
@@ -365,5 +432,25 @@ Returns reference to hash of Arp Cache Entries to IP Address
 (B<atNetAddress>)
 
 =back
+
+=head2 Table Methods imported from SNMP::Info
+
+See documentation in SNMP::Info for details.
+
+=head2 Table Methods imported from SNMP::Info::Bridge
+
+See documentation in SNMP::Info::Bridge for details.
+
+=head2 Table Methods imported from SNMP::Info::CDP
+
+See documentation in SNMP::Info::CDP for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoStats
+
+See documentation in SNMP::Info::CiscoStats for details.
+
+=head2 Table Methods imported from SNMP::Info::EtherLike
+
+See documentation in SNMP::Info::EtherLike for details.
 
 =cut
