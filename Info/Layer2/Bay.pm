@@ -1,5 +1,7 @@
+# SNMP::Info::Layer2::Bay
+# Max Baker <max@warped.org>
 #
-# Copyright (c) 2002, Regents of the University of California
+# Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -24,11 +26,10 @@
 # ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# SNMP::Info::Layer2::Bay
-# Max Baker <max@warped.org>
 
 package SNMP::Info::Layer2::Bay;
 $VERSION = 0.1;
+# $Id$
 use strict;
 
 use Exporter;
@@ -122,6 +123,7 @@ sub model {
 
     return '303' if ($descr =~ /\D303\D/);
     return '304' if ($descr =~ /\D304\D/);
+    return '450' if ($model =~ /BayStack450/);
     return $model;
 }
 
