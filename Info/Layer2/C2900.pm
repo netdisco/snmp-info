@@ -49,6 +49,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
+            'i_name'               => 'ifAlias',
             # C2900PortEntry
             'c2900_p_index'        => 'c2900PortIfIndex',
             'c2900_p_duplex'       => 'c2900PortDuplexStatus',
