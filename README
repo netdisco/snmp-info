@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 0.1
+    SNMP::Info - Version 0.2
 
 AUTHOR
 
@@ -14,7 +14,7 @@ AUTHOR
 
 COPYRIGHT AND LICENCE
 
-    Copyright (c) 2002, Regents of the University of California All rights
+    Copyright (c) 2002-3, Regents of the University of California All rights
     reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -162,6 +162,7 @@ Sub Classes
     SNMP::Info::Layer2::HP
     SNMP::Info::Layer3::Aironet
     SNMP::Info::Layer3::Foundry
+    SNMP::Info::Layer3::C3550
   Details
 
     * SNMP::Info::Bridge - BRIDGE-MIB - RFC1286 Support
@@ -250,6 +251,7 @@ Sub Classes
          AWCVX-MIB        - Aironet Specific MIB values
          IEEE802dot11-MIB - IEEE 802.11 Specific MIB (currently draft)
 
+    * SNMP::Info::Layer3::C3550 - Cisco Catalyst 3550 Layer2/3 Switch
     * SNMP::Info::Layer3::Foundry - Older Foundry Networks Devices Support
         Inherits SNMP::Info::Bridge
 
@@ -299,14 +301,15 @@ METHODS
         Algorithm for SubClass Detection:
 
                 Layer3 Support                     -> SNMP::Info::Layer3
-                    Foundry                        -> SNMP::Info::Foundry
-                    Aironet                        -> SNMP::Info::Aironet
+                    Aironet                        -> SNMP::Info::Layer3::Aironet
+                    Catalyst 3550                  -> SNMP::Info::Layer3::C3550
+                    Foundry                        -> SNMP::Info::Layer3::Foundry
                 Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2 
+                    Bay Networks                   -> SNMP::Info::Layer2::Bay
                     Catalyst 1900                  -> SNMP::Info::Layer2::C1900
                     Catalyst 2900XL (IOS)          -> SNMP::Info::Layer2::C2900
                     Catalyst WS-C (2926,5xxx,6xxx) -> SNMP::Info::Layer2::Catalyst
                     HP Procurve                    -> SNMP::Info::Layer2::HP
-                    Bay Networks                   -> SNMP::Info::Layer2::Bay
                 Elsif Layer1 Support               -> SNMP::Info::Layer1
                     Allied                         -> SNMP::Info::Layer1::Allied
                     Asante                         -> SNMP::Info::Layer1::Asante
@@ -611,8 +614,8 @@ CREATING SUBCLASSES
         Takes a binary IP and makes it dotted ASCII
 
     munge_mac()
-        Takes an octet stream and returns a colon separated ASCII hex
-        string.
+        Takes an octet stream (HEX-STRING) and returns a colon separated
+        ASCII hex string.
 
     munge_octet2hex()
         Takes a binary octet stream and returns an ASCII hex string
@@ -656,6 +659,13 @@ CREATING SUBCLASSES
 
         Example: $info->name() calls autoload which calls
         $info->_global('name').
+
+    $info->_set(attr,val,iid)
+        Used internally by AUTOLOAD to run an SNMP set command for dynamic
+        methods listed in either %GLOBALS or %FUNCS.
+
+        Example: $info->set_name('dog',3) uses autoload to resolve to
+        $info->_set('name','dog',3);
 
    Functions for SNMP Tables (%FUNCS)
 
