@@ -56,7 +56,6 @@ $INIT = 0;
           %SNMP::Info::Bridge::MIBS,
           %SNMP::Info::EtherLike::MIBS,
           %SNMP::Info::Entity::MIBS,
-          'ENTITY-MIB'         => 'entPhysicalName',
           'OSPF-MIB'           => 'ospfRouterId',
         );
 
@@ -306,8 +305,6 @@ For L2/L3 devices.
 
 =over
 
-=item ENTITY-MIB
-
 =item OSPF-MIB
 
 =item Inherited Classes
@@ -323,12 +320,6 @@ MIBs can be found in the netdisco-mibs package.
 These are methods that return scalar value from SNMP
 
 =over
-
-=item $l3->chassis()
-
-Returns Chassis type (model).
-
-(B<entPhysicalDescr.1>)
 
 =item $l3->mac()
 
@@ -354,7 +345,7 @@ Removes 'cisco'  from cisco devices for readability.
 
 =item $l3->serial()
 
-Trys to cull a serial number from $l3->chassis()
+Trys to cull a serial number from ENTITY-MIB, description, and OLD-CISCO-... mib
 
 =item $l3->vendor()
 
