@@ -300,6 +300,12 @@ class: Layer3::Foundry
 
 device-family: FastIron
 ver: 1
+note: Support very limited
+
+device-family: EdgeIron
+note: only tested against an edgeiron 24g
+device: EdgeIron 24G
+note: Bug where spanning tree stuff loops forever when polled by SNMP.
 
 # HP
 device-vendor: HP

@@ -1,14 +1,20 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
-version 0.10 ()
+version 1.0 ()
+    + Added support for Foundry EdgeIrons as new class L2::Foundry
     + Added BulkWalk and BulkRepeaters options to new()
-    * Added check for bulkwalk_no() method
-    * Added more error checking in  _load_attr() around bulkwalk code
+    + Added DebugSNMP option to new()
+    + Added CISCO-ENTITY-VENDORTYPE-OID-MIB,CISCO-PRODUCTS-MIB,CISCO-STACK-MIB to CiscoStats.pm for model()
+    + Check for bulkwalk_no() method
+    + Added Entity.pm to L3 and L2 classes per N. Petri's suggestion.
+
+    * More error checking in  _load_attr() around bulkwalk code
     * Minor warning fix in L3::Aironet::os_ver()
     * Abstracted remaining Cisco stuff from L3 to L3::Cisco
-    * Added CISCO-ENTITY-VENDORTYPE-OID-MIB,CISCO-PRODUCTS-MIB,CISCO-STACK-MIB to CiscoStats.pm for model()
-    * Added Entity.pm to L3 and L2 classes per N. Petri's suggestion.
+    * Expanded Entity.pm to cover the whole ENTITY-MIB and improved docs.
+    * changed all refs to $DEBUG to $self->debug() for reentrant code
+    * [ 1111284 ] Parameters not being set with AutoSpecify - fixed.
 
 
 verison 0.9 (11/15/04)

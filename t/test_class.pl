@@ -4,7 +4,7 @@
 #
 #   Test a device class in SNMP::Info against a device.
 #
-# Max Baker <max@warped.org>
+# Max Baker
 #
 # $Id$
 #
