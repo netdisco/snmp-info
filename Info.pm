@@ -617,6 +617,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C3550'   if $desc =~ /C3550/ ;
         $objtype = 'SNMP::Info::Layer3::Foundry' if $desc =~ /foundry/i ;
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /cisco/i and $desc =~ /\D3[45]0\D/) ;
+        $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /c6sup2/;
 
     # Layer 2 Supported
     } elsif ($info->has_layer(2)) {
@@ -1496,6 +1497,7 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '2000000'    => '2.0 Mbps',
                 '2048000'    => '2.048 Mbps',
                 '3072000'    => 'Dual T1',
+                '3088000'    => 'Dual T1',   
                 '4000000'    => '4.0 Mbps',
                 '10000000'   => '10 Mbps',
                 '11000000'   => '11 Mbps',
@@ -1527,6 +1529,7 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '2000000'    => '2.0 Mbps',
                 '2048000'    => '2.048 Mbps',
                 '3072000'    => 'Dual T1',
+                '3088000'    => 'Dual T1',   
                 '4000000'    => '4.0 Mbps',
                 '10000000'   => '10 Mbps',
                 '11000000'   => '11 Mbps',
