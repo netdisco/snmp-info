@@ -16,7 +16,7 @@ version 0.8 (03/21/04)
     Contributions from Dmitry Sergienko:
     + Added Cisco Aironet BR500 and AP1200 to L2::Aironet Class
     * Fixed the Port name alias for Catalyst 2900 devices
-    + Added Support For ZiLEX DSLAMs and Allied Telesys Switches
+    + Added Support For ZyXEL DSLAMs and Allied Telesys Switches
 
 version 0.7 (08/14/03)
     * Added Class for Catalyst 6500 Series - Layer3::C6500
