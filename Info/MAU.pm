@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::MAU;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 
 use strict;
@@ -109,15 +109,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::MAU - Perl5 Interface to SNMP Medium Access Unit (MAU) MIB (RFC2668) 
-
-=head1 DESCRIPTION
-
-MAU-MIB is used by Layer 2 devices like HP Switches . The MAU table
-contains link and duplex info for the port itself and the device
-connected to that port.
-
-Inherits all methods from SNMP::Info
+SNMP::Info::MAU - Perl5 Interface to Medium Access Unit (MAU) MIB (RFC2668) via SNMP
 
 =head1 AUTHOR
 
@@ -125,28 +117,47 @@ Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $mau = new SNMP::Info::MAU(      DestHost  => 'myswitch',
-                               Community => 'public');
+ my $mau = new SNMP::Info ( 
+                             AutoSpecify => 1,
+                             Debug       => 1,
+                             DestHost    => 'hpswitch', 
+                             Community   => 'public',
+                             Version     => 2
+                           );
+ 
+ my $class = $mau->class();
+ print " Using device sub class : $class\n";
 
-=head1 CREATING AN OBJECT
+=head1 DESCRIPTION
+
+SNMP::Info::MAU is a sublcass of SNMP::Info that supplies access to the
+MAU-MIB (RFC2668). This MIB is sometimes implemented on Layer 2 network devices like HP Switches.
+MAU = Media Access Unit.
+
+The MAU table contains link and duplex info for the port itself and the device
+connected to that port.
+
+Normally you use or create a subclass of SNMP::Info that inherits this one.  Do not use directly.
+
+For debugging purposes call the class directly as you would SNMP::Info
+
+ my $mau = new SNMP::Info::MAU(...);
+
+=head2 Inherited Classes
+
+None.
+
+=head2 Required MIBs
 
 =over
 
-=item  new SNMP::Info::MAU()
-
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
-
-    my $mau = new SNMP::Info::MAU(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $mau;
+=item MAU-MIB
 
 =back
 
-=head1 MAU Global Configuration Values
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
 
 =over
 
@@ -154,7 +165,12 @@ Arguments passed to new() are passed on to SNMP::Session::new()
 
 =back
 
-=head1 MAU INTERFACE TABLE ENTRIES
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=head2 MAU INTERFACE TABLE ENTRIES
 
 =over
 
@@ -254,4 +270,5 @@ capabilities of the device on the other end.
     high.  Currently bits 10,12,15,17,19.
 
 =back
+
 =cut
