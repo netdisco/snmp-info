@@ -229,6 +229,7 @@ class: Layer3::C6500
 note: Comes in IOS and CatOS versions like the 6k series.
 note: CatOS versions like L2::Catalyst just fine.
 note: !Reported problems with SNMP taking up all the CPU.  Requests take significantly longer.
+note: !IOS Version 12.1.8a reported not to respond to BRIDGE-MIB calls.
 
 device: wsc4006
 
