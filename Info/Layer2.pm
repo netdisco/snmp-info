@@ -1,6 +1,5 @@
 # SNMP::Info::Layer2 - SNMP Interface to Layer2 Devices 
 # Max Baker <max@warped.org>
-# $Id$
 #
 # Copyright (c) 2002, Regents of the University of California
 # All rights reserved.
@@ -30,6 +29,7 @@
 
 package SNMP::Info::Layer2;
 $VERSION = 0.1;
+# $Id$
 
 use strict;
 
@@ -91,6 +91,8 @@ sub model {
 
     # Cisco
     $model =~ s/sysid$//i;
+    $model =~ s/^(cisco|catalyst)//i;
+    $model =~ s/^cat//i;
 
     return $model;
 }

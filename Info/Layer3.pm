@@ -29,6 +29,7 @@
 
 package SNMP::Info::Layer3;
 $VERSION = 0.1;
+# $Id$
 
 use strict;
 
@@ -146,6 +147,8 @@ sub model {
     my $model = &SNMP::translateObj($id);
 
     $model =~ s/^cisco//i;
+    $model =~ s/^catalyst//;
+    $model =~ s/^cat//;
     return $model;
 }
 
