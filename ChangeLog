@@ -1,6 +1,12 @@
 SNMP::Info - Perl5 OO Interface to Network Devices and SNMP MIBs
 ChangeLog $Id$
 
+version 0.5 ()
+    * Added ability to get paritial tables.  For example to get the
+      IP routing table for 128.114.*  you can do 
+      $ipr = $dev->ipr_dest('128.114');
+    * Added IP Routing Table entries from RFC1213 to SNMP::Info
+
 version 0.4 (04/29/03)
     * BIG CHANGE ! Internal Data structure has changed.  
     * Added clear_cache() method
@@ -24,11 +30,11 @@ version 0.3 (03/06/03)
       and _load_attr
     * Added more debugging
     * Added info and munging for c_capabilities in SNMP::Info::CD
-      Thanks to Martin Lorensen <martin@lorensen.dk>
+      Thanks to Martin Lorensen <martin /at- lorensen.dk>
     * Removed requirement for SNMP in the Makefile.PL and moved it to t/prereq.t
       so that the Module will install via CPAN without trying to install the old
       4.2.0 version of SNMP on CPAN.  Will now fail in the test phase. 
-      Thanks again to Martin Lorensen <martin@lorensen.dk>
+      Thanks again to Martin Lorensen <martin /at- lorensen.dk>
     * Moved tests from test.pl to t/*
 
 version 0.2 (02/19/03)
