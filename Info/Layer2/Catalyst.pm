@@ -2,6 +2,7 @@
 # Max Baker <max@warped.org>
 #
 # Copyright (c) 2002,2003 Regents of the University of California
+# Copyright (c) 2003      Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -36,9 +37,11 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::CiscoVTP;
+use SNMP::Info::CiscoStack;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/ ;
-@SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::Layer2 SNMP::Info::CiscoVTP Exporter/;
+use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
+@SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::CiscoStack SNMP::Info::Layer2 
+                                        SNMP::Info::CiscoVTP Exporter/;
 @SNMP::Info::Layer2::Catalyst::EXPORT_OK = qw//;
 
 $DEBUG=0;
@@ -49,78 +52,26 @@ $INIT = 0;
 
 %MIBS =    ( %SNMP::Info::Layer2::MIBS, 
              %SNMP::Info::CiscoVTP::MIBS,
-             'CISCO-STACK-MIB' => 'moduleType',
+             %SNMP::Info::CiscoStack::MIBS,
            );
 
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
-            # these are in CISCO-STACK-MIB
-            'sysip'       => 'sysIpAddr',    
-            'netmask'     => 'sysNetMask',    
-            'broadcast'   => 'sysBroadcast',
-            'serial'      => 'chassisSerialNumber',    
-            'model'       => 'chassisModel',    
-            'ps1_type'    => 'chassisPs1Type',    
-            'ps1_status'  => 'chassisPs1Status',    
-            'ps2_type'    => 'chassisPs2Type',    
-            'ps2_status'  => 'chassisPs2Status',    
-            'slots'       => 'chassisNumSlots',    
-            'fan'         => 'chassisFanStatus',
+            %SNMP::Info::CiscoStack::GLOBALS,
            );
 
 %FUNCS =   (
             %SNMP::Info::Layer2::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
-            'i_type2'        => 'ifType',
-            # CISCO-STACK-MIB::moduleEntry
-            #   These are blades in a catalyst device
-            'm_type'         => 'moduleType',
-            'm_model'        => 'moduleModel',
-            'm_serial'       => 'moduleSerialNumber',
-            'm_status'       => 'moduleStatus',
-            'm_name'         => 'moduleName',
-            'm_ports'        => 'moduleNumPorts',
-            'm_ports_status' => 'modulePortStatus',
-            'm_hwver'        => 'moduleHwVersion',
-            'm_fwver'        => 'moduleFwVersion',
-            'm_swver'        => 'moduleSwVersion',
-            # Router Blades :
-            'm_ip'           => 'moduleIPAddress',
-            'm_sub1'         => 'moduleSubType',
-            'm_sub2'         => 'moduleSubType2',
-            # CISCO-STACK-MIB::portEntry 
-            'p_name'    => 'portName',
-            'p_type'    => 'portType',
-            'p_status'  => 'portOperStatus',
-            'p_status2' => 'portAdditionalStatus',
-            'p_speed'   => 'portAdminSpeed',
-            'p_duplex'  => 'portDuplex',
-            'p_port'    => 'portIfIndex',
-            # CISCO-STACK-MIB::PortCpbEntry
-            'p_speed_admin'  => 'portCpbSpeed',
-            'p_duplex_admin' => 'portCpbDuplex',
+            %SNMP::Info::CiscoStack::FUNCS,
            );
 
 %MUNGE =   (
             %SNMP::Info::Layer2::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
-            'm_ports_status' => \&munge_port_status,
-            'p_duplex_admin' => \&SNMP::Info::munge_bits,
+            %SNMP::Info::CiscoStack::MUNGE,
            );
-
-%PORTSTAT = (1 => 'other',
-             2 => 'ok',
-             3 => 'minorFault',
-             4 => 'majorFault');
-
-# Changes binary byte describing each port into ascii, and returns
-# an ascii list separated by spaces.
-sub munge_port_status {
-    my $status = shift;
-    my @vals = map($PORTSTAT{$_},unpack('C*',$status));
-    return join(' ',@vals);
-}
 
 # Overidden Methods
 
@@ -136,98 +87,6 @@ sub i_physical {
         $i_physical{$iid} = 1;  
     }
     return \%i_physical;
-}
-
-sub i_type {
-    my $cat = shift;
-
-    my $p_port = $cat->p_port();
-    my $p_type  = $cat->p_type();
-
-    # Get more generic port types from IF-MIB
-    my $i_type  = $cat->i_type2();
-
-    # Now Override w/ port entries
-    foreach my $port (keys %$p_type) {
-        my $iid = $p_port->{$port};
-        $i_type->{$iid} = $p_type->{$port};  
-    }
-
-    return $i_type;
-}
-
-# p_* functions are indexed to physical port.  let's index these
-#   to snmp iid
-sub i_name {
-    my $cat = shift;
-
-    my $p_port = $cat->p_port();
-    my $p_name  = $cat->p_name();
-
-    my %i_name;
-    foreach my $port (keys %$p_name) {
-        my $iid = $p_port->{$port};
-        next unless defined $iid;
-        $i_name{$iid} = $p_name->{$port};
-    }
-    return \%i_name; 
-}
-
-sub i_duplex {
-    my $cat = shift;
-
-    my $p_port = $cat->p_port();
-    my $p_duplex  = $cat->p_duplex();
-
-    my %i_duplex;
-    foreach my $port (keys %$p_duplex) {
-        my $iid = $p_port->{$port};
-        $i_duplex{$iid} = $p_duplex->{$port};
-    }
-    return \%i_duplex; 
-}
-
-sub i_duplex_admin {
-    my $cat = shift;
-
-    my $p_port          = $cat->p_port();
-    my $p_duplex_admin  = $cat->p_duplex_admin();
-
-    my %i_duplex_admin;
-    foreach my $port (keys %$p_duplex_admin) {
-        my $iid = $p_port->{$port};
-        next unless defined $iid;
-        my $duplex = $p_duplex_admin->{$port};
-        next unless defined $duplex;
-
-        my $string = 'other';
-        # see CISCO-STACK-MIB for a description of the bits
-        $string = 'half' if ($duplex =~ /001$/ or $duplex =~ /0100.$/);
-        $string = 'full' if ($duplex =~ /010$/ or $duplex =~ /100.0$/);
-        # we'll call it auto if both full and half are turned on, or if the
-        #   specifically 'auto' flag bit is set.
-        $string = 'auto' 
-            if ($duplex =~ /1..$/ or $duplex =~ /110..$/ or $duplex =~ /..011$/);
-       
-        $i_duplex_admin{$iid} = $string;
-    }
-    return \%i_duplex_admin; 
-}
-
-# $cat->interfaces() - Maps the ifIndex table to a physical port
-sub interfaces {
-    my $self = shift;
-    my $interfaces = $self->i_index();
-    my $portnames  = $self->p_port();
-    my %portmap = reverse %$portnames;
-
-    my %interfaces = ();
-    foreach my $iid (keys %$interfaces) {
-        my $if = $interfaces->{$iid};
-        $interfaces{$if} = $portmap{$iid};
-    }
-
-    return \%interfaces;
 }
 
 sub vendor {
@@ -256,7 +115,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Catalyst - Perl5 Interface to Cisco devices running Catalyst OS 
+SNMP::Info::Layer2::Catalyst - Perl5 Interface to Cisco Catalyst 5000 series devices.
 
 =head1 AUTHOR
 
@@ -280,12 +139,15 @@ Max Baker (C<max@warped.org>)
 
 =head1 DESCRIPTION
 
-SNMP::Info subclass to provide information for Cisco Catalyst switches running CatOS.
+SNMP::Info subclass to provide information for Cisco Catalyst 5000 series switches running CatOS.
 
 This subclass is not for all devices that have the name Catalyst.  Note that some Catalyst
 switches run IOS, like the 2900 and 3550 families.  Cisco Catalyst 1900 switches use their
 own MIB and have a separate subclass.  Use the method above to have SNMP::Info determine the
 appropriate subclass before using this class directly.
+
+This class includes the Catalyst 2950 series devices, which fall under the 
+Catalyst 5000 family.
 
 Note:  Some older Catalyst switches will only talk SNMP version 1.  Some newer ones will not
 return all their data if connected via Version 1.
@@ -303,19 +165,21 @@ a more specific class using the method above.
 
 =item SNMP::Info::CiscoVTP
 
+=item SNMP::Info::CiscoStack
+
 =back
 
 =head2 Required MIBs
 
 =over
 
-=item CISCO-STACK-MIB
-
 =item Inherited Classes' MIBs
 
 See SNMP::Info::Layer2 for its own MIB requirements.
 
 See SNMP::Info::CiscoVTP for its own MIB requirements.
+
+See SNMP::Info::CiscoStack for its own MIB requirements.
 
 =back
 
@@ -327,22 +191,6 @@ These are methods that return scalar value from SNMP
 
 =over
 
-=item $cat->broadcast()
-
-(B<sysBroadcast>)
-
-=item $cat->fan()
-
-(B<chassisFanStatus>)
-
-=item $cat->model()
-
-(B<chassisModel>)
-
-=item $cat->netmask()
-
-(B<sysNetMask>)
-
 =item $cat->os()
 
 Returns 'catalyst'
@@ -351,30 +199,6 @@ Returns 'catalyst'
 
 Tries to use the value from SNMP::Info::CiscoStats->os_ver() and if it fails 
 it grabs $cat->m_swver()->{1} and uses that.
-
-=item $cat->ps1_type()
-
-(B<chassisPs1Type>)
-
-=item $cat->ps2_type()
-
-(B<chassisPs2Type>)
-
-=item $cat->ps1_status()
-
-(B<chassisPs1Status>)
-
-=item $cat->ps2_status()
-
-(B<chassisPs2Status>)
-
-=item $cat->serial()
-
-(B<chassisSerialNumberString>)
-
-=item $cat->slots()
-
-(B<chassisNumSlots>)
 
 =item $cat->vendor()
 
@@ -390,178 +214,14 @@ See documentation in SNMP::Info::Layer2 for details.
 
 See documentation in SNMP::Info::CiscoVTP for details.
 
+=head2 Global Methods imported from SNMP::Info::CiscoStack
+
+See documentation in SNMP::Info::CiscoStack for details.
+
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=head2 Overrides
-
-=over
-
-=item $cat->interfaces()
-
-Crosses p_port() with i_index() to get physical names.
-
-=item $cat->i_physical()
-
-Returns a map to IID for ports that are physical ports, not vlans, etc.
-
-=item $cat->i_type()
-
-Crosses p_port() with p_type() and returns the results. 
-
-Overrides with ifType if p_type() isn't available.
-
-=item $cat->i_name()
-
-Crosses p_name with p_port and returns results.
-
-=item $cat->i_duplex()
-
-Crosses p_duplex with p_port and returns results.
-
-=item $cat->i_duplex_admin()
-
-Crosses p_duplex_admin with p_port.
-
-Munges bit_string returned from p_duplex_admin to get duplex settings.
-
-=back
-
-=head2 Module table
-
-This table holds configuration information for each of the blades installed in
-the Catalyst device.
-
-=over
-
-=item $cat->m_type()
-
-(B<moduleType>)
-
-=item $cat->m_model()
-
-(B<moduleModel>)
-
-=item $cat->m_serial()
-
-(B<moduleSerialNumber>)
-
-=item $cat->m_status()
-
-(B<moduleStatus>)
-
-=item $cat->m_name()
-
-(B<moduleName>)
-
-=item $cat->m_ports()
-
-(B<moduleNumPorts>)
-
-=item $cat->m_ports_status()
-
-Returns a list of space separated status strings for the ports.
-
-To see the status of port 4 :
-
-    @ports_status = split(' ', $cat->m_ports_status() );
-    $port4 = $ports_status[3];
-
-(B<modulePortStatus>)
-
-=item $cat->m_ports_hwver()
-
-(B<moduleHwVersion>)
-
-=item $cat->m_ports_fwver()
-
-(B<moduleFwVersion>)
-
-=item $cat->m_ports_swver()
-
-(B<moduleSwVersion>)
-
-=item $cat->m_ports_ip()
-
-(B<moduleIPAddress>)
-
-=item $cat->m_ports_sub1()
-
-(B<moduleSubType>)
-
-=item $cat->m_ports_sub2()
-
-(B<moduleSubType2>)
-
-=back
-
-=head2 Modules - Router Blades
-
-=over
-
-=item $cat->m_ip()
-
-(B<moduleIPAddress>)
-
-=item $cat->m_sub1()
-
-(B<moduleSubType>)
-
-=item $cat->m_sub2()
-
-(B<moduleSubType2>)
-
-=back
-
-=head2 Port Entry Table (CISCO-STACK-MIB::portTable)
-
-=over
-
-=item $cat->p_name()
-
-(B<portName>)
-
-=item $cat->p_type()
-
-(B<portType>)
-
-=item $cat->p_status()
-
-(B<portOperStatus>)
-
-=item $cat->p_status2()
-
-(B<portAdditionalStatus>)
-
-=item $cat->p_speed()
-
-(B<portAdminSpeed>)
-
-=item $cat->p_duplex()
-
-(B<portDuplex>)
-
-=item $cat->p_port()
-
-(B<portIfIndex>)
-
-=back
-
-=head2 Port Capability Table (CISCO-STACK-MIB::portCpbTable)
-
-=over
-
-=item $cat->p_speed_admin()
-
-(B<portCpbSpeed>)
-
-=item $cat->p_duplex_admin()
-
-(B<portCpbDuplex>)
-
-=back
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
@@ -570,5 +230,9 @@ See documentation in SNMP::Info::CiscoVTP for details.
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See documentation in SNMP::Info::Layer2 for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer2::CiscoSTack
+
+See documentation in SNMP::Info::Layer2::CiscoStack for details.
 
 =cut
