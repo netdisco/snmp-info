@@ -77,8 +77,9 @@ sub os {
     my $l2 = shift;
     my $descr = $l2->description();
 
-    return 'catalyst' if ($descr =~ /catalyst/i);
+    # order here matters - there are Catalysts that run IOS and have catalyst in their description field.
     return 'ios'      if ($descr =~ /IOS/);
+    return 'catalyst' if ($descr =~ /catalyst/i);
     return undef;
 }
 
