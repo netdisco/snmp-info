@@ -1,7 +1,7 @@
 # SNMP::Info::Bridge
 # Max Baker <max@warped.org>
 #
-# Copyright (c) 2002, Regents of the University of California
+# Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Bridge;
-$VERSION = 0.1;
+$VERSION = 0.2;
 # $Id$
 
 use strict;
