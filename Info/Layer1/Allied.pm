@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Allied;
-$VERSION = 0.3;
+$VERSION = 0.4;
 # $Id$
 use strict;
 
@@ -62,6 +62,19 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 sub vendor {
     return 'allied';
+}
+
+sub os {
+    return 'allied';
+}
+
+sub os_ver {
+    my $allied = shift;
+    my $descr = $allied->description();
+    
+    if ($descr =~ m/version (\d+\.\d+)/){
+        return $1;
+    }
 }
 
 sub model {
@@ -111,56 +124,73 @@ __END__
 
 SNMP::Info::Layer1::Allied - SNMP Interface to old Allied Hubs
 
-=head1 DESCRIPTION
-
-Provides abstraction to the configuration information obtainable from a 
-Allied device through SNMP. See inherited classes' documentation for 
-inherited methods.
-
-Inherits from:
-
- SNMP::Info::Layer1
-
-Required MIBs:
-
- ATI-MIB - Download for your device from http://www.allied-telesyn.com/allied/support/
-
- MIBs listed in SNMP::Info::Layer1
-
 =head1 AUTHOR
 
 Max Baker (C<max@warped.org>)
 
 =head1 SYNOPSIS
 
- my $allied = new SNMP::Info::Layer1::Allied(DestHost  => 'mycat1900' , 
-                              Community => 'public' ); 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $allied = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myhub',
+                          Community   => 'public',
+                          Version     => 1
+                        ) 
+    or die "Can't connect to DestHost.\n";
 
-=head1 CREATING AN OBJECT
+ my $class      = $l1->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+Provides abstraction to the configuration information obtainable from a 
+Allied device through SNMP. See inherited classes' documentation for 
+inherited methods.
+
+=head2 Inherited Classes
 
 =over
 
-=item  new SNMP::Info::Layer1::Allied()
+=item SNMP::Info::Layer1
 
-Arguments passed to new() are passed on to SNMP::Session::new()
-    
+=back
 
-    my $allied = new SNMP::Info::Layer1::Allied(
-        DestHost => $host,
-        Community => 'public',
-        Version => 3,...
-        ) 
-    die "Couldn't connect.\n" unless defined $allied;
+=head2 Required MIBs
+
+=over
+
+=item ATI-MIB 
+
+Download for your device from http://www.allied-telesyn.com/allied/support/
+
+=item Inherited Classes
+
+MIBs listed in SNMP::Info::Layer1 and its inherited classes.
 
 =back
 
 =head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=head2 Overrides
 
 =over
 
 =item $allied->vendor()
 
 Returns 'allied' :)
+
+=item $allied->os()
+
+Returns 'allied' 
+
+=item $allied->os_ver()
+
+Culls Version from description()
 
 =item $allied->root_ip()
 
@@ -173,6 +203,10 @@ Returns IP Address of Managed Hub.
 Trys to cull out AT-nnnnX out of the description field.
 
 =back
+
+=head2 Global Methods imported from SNMP::Info::Layer1
+
+See documentation in SNMP::Info::Layer1 for details.
 
 =head1 TABLE ENTRIES
 
@@ -204,5 +238,9 @@ the values of ati_up() to 'up' and 'down'.
 (B<linkTestLED>)
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::Layer1
+
+See documentation in SNMP::Info::Layer1 for details.
 
 =cut
