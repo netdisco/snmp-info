@@ -174,7 +174,7 @@ sub interfaces {
         my $vlan_if = $vlan_idx->{$iid};
         next unless defined $vlan_if;
         
-        my $desc = 'V' . $vlan;
+        my $desc = 'Vlan' . $vlan;
 
         $interfaces{$vlan_if} = $desc;
     }    
