@@ -40,27 +40,6 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::Entity::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::Entity::EXPORT_OK = qw//;
 
-=head1 NAME
-
-SNMP::Info::Entity - Perl5 Interface to ENTITY-MIB 
-
-=head1 DESCRIPTION
-
-ENTITY-MIB is used by Layer 2 devices like HP Switches and Aironet Access Points
-
-Inherits all methods from SNMP::Info
-
-Use this module from another device subclass, not directly.
-
-=head1 AUTHOR
-
-Max Baker (C<max@warped.org>)
-
-=head1 SYNOPSIS
-
-See SNMP::Info
-
-=cut
 $INIT    = 0;
 %MIBS    = ('ENTITY-MIB' => 'entPhysicalSerialNum');
 
@@ -84,48 +63,6 @@ $INIT    = 0;
 %MUNGE   = (
            );
 
-=head2 Entity Table
-
-=over
-
-=item $hp->e_class()
-
-(C<entPhysicalClass>)
-
-=item $hp->e_descr()
-
-(C<entPhysicalClass>)
-
-=item $hp->e_fwver()
-
-(C<entPhysicalFirmwareRev>)
-
-=item $hp->e_hwver()
-
-(C<entPhysicalHardwareRev>)
-
-=item $hp->e_map()
-
-(C<entAliasMappingIdentifier>)
-
-=item $hp->e_model()
-
-(C<entPhysicalModelName>)
-
-=item $hp->e_name()
-
-(C<entPhysicalName>)
-
-=item $hp->e_parent()
-
-(C<entPhysicalContainedIn>)
-
-=item $hp->e_port()
-
-Maps EntityTable entries to the Interface Table (IfTable) using
-$hp->e_map()
-
-=cut
 sub e_port {
     my $entity = shift;
     my $e_map  = $entity->e_map();
@@ -144,21 +81,118 @@ sub e_port {
 
     return \%e_port;
 }
+1;
 
-=item $hp->e_serial()
+=head1 NAME
+
+SNMP::Info::Entity - Perl5 Interface to SNMP data stored in ENTITY-MIB.
+
+=head1 AUTHOR
+
+Max Baker (C<max@warped.org>)
+
+=head1 SYNOPSIS
+
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $entity = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          # These arguments are passed directly on to SNMP::Session
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
+
+ my $class      = $entity->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+ENTITY-MIB is used by some Layer 2 devices like HP Switches and Aironet Access Points
+
+Create or use a device subclass that inherit this class.  Do not use directly.
+
+For debugging purposes you can call this class directly as you would SNMP::Info
+
+ my $entity = new SNMP::Info::Entity (...);
+
+=head2 Inherited Classes
+
+none.
+
+=head2 Required MIBs
+
+=over
+
+=item ENTITY-MIB
+
+=back
+
+MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
+
+=head1 GLOBALS
+
+none.
+
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=head2 Entity Table
+
+=over
+
+=item $entity->e_class()
+
+(C<entPhysicalClass>)
+
+=item $entity->e_descr()
+
+(C<entPhysicalClass>)
+
+=item $entity->e_fwver()
+
+(C<entPhysicalFirmwareRev>)
+
+=item $entity->e_hwver()
+
+(C<entPhysicalHardwareRev>)
+
+=item $entity->e_map()
+
+(C<entAliasMappingIdentifier>)
+
+=item $entity->e_model()
+
+(C<entPhysicalModelName>)
+
+=item $entity->e_name()
+
+(C<entPhysicalName>)
+
+=item $entity->e_parent()
+
+(C<entPhysicalContainedIn>)
+
+=item $entity->e_port()
+
+Maps EntityTable entries to the Interface Table (IfTable) using
+$entity->e_map()
+
+=item $entity->e_serial()
 
 (C<entPhysicalSerialNum>)
 
-=item $hp->e_swver()
+=item $entity->e_swver()
 
 (C<entPhysicalSoftwareRev>)
 
-=item $hp->e_type()
+=item $entity->e_type()
 
 (C<entPhysicalVendorType>)
 
 =back
 
 =cut
-
-1;
