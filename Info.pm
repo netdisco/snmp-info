@@ -409,7 +409,7 @@ See SNMP::Info::Layer3::Foundry for more info.
 
 =item SNMP::Info::Layer3::C3550
 
-Subclass for Cisco Catalyst 3550,354 2/3 switches running IOS.
+Subclass for Cisco Catalyst 3550,3540,3560 2/3 switches running IOS.
 
 =item SNMP::Info::Layer3::C6500
 
@@ -629,7 +629,7 @@ Algorithm for Subclass Detection:
         Layer3 Support                     -> SNMP::Info::Layer3
             Aironet (BR500,AP340,350,1200) -> SNMP::Info::Layer3::Aironet
                      AP4800... All Non IOS
-            Catalyst 3550,3548             -> SNMP::Info::Layer3::C3550
+            Catalyst 3550,3548,3560        -> SNMP::Info::Layer3::C3550
             Catalyst 6500, 4000, 3750      -> SNMP::Info::Layer3::C6500
             Foundry                        -> SNMP::Info::Layer3::Foundry
         Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2 
@@ -670,7 +670,7 @@ sub device_type {
 
         return $objtype unless (defined $desc and length($desc));
 
-        $objtype = 'SNMP::Info::Layer3::C3550'   if $desc =~ /C3550/ ;
+        $objtype = 'SNMP::Info::Layer3::C3550'   if $desc =~ /(C3550|C3560)/ ;
         $objtype = 'SNMP::Info::Layer3::Foundry' if $desc =~ /foundry/i ;
         # Aironet - older non-IOS
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(CAP340|AP340|CAP350|350|1200)\D/) ;
