@@ -157,7 +157,9 @@ sub os_ver {
 sub model {
     my $hp = shift;
     my $id = $hp->id();
+    return undef unless defined $id;
     my $model = &SNMP::translateObj($id);
+    return $id unless defined $model;
     
     $model =~ s/^hpswitch//i;
 
