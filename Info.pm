@@ -27,7 +27,7 @@ SNMP::Info - Perl5 Interface to Network devices through SNMP.
 
 =head1 VERSION
 
-SNMP::Info - Version 0.1
+SNMP::Info - Version 0.2
 
 =head1 AUTHOR
 
@@ -209,6 +209,8 @@ back to the developers at snmp@warped.org for inclusion in the next version.
 
 =item SNMP::Info::Layer3::Foundry
 
+=item SNMP::Info::Layer3::C3550
+
 =back
 
 =head2 Details
@@ -314,6 +316,9 @@ Required MIBs:
  AWCVX-MIB        - Aironet Specific MIB values
  IEEE802dot11-MIB - IEEE 802.11 Specific MIB (currently draft)
 
+
+=item * SNMP::Info::Layer3::C3550 - Cisco Catalyst 3550 Layer2/3 Switch
+
 =item * SNMP::Info::Layer3::Foundry - Older Foundry Networks Devices Support
 
 Inherits SNMP::Info::Bridge
@@ -377,6 +382,8 @@ sub new {
     unless (defined $sess){
         # How do i get error messages back from SNMP?
         #print $SNMP::ErrorStr;
+        print "SNMP::Info::new() $sess->{ErrorStr}\n" 
+            if ($DEBUG and $sess->{ErrorStr});
         return undef;
     }
 
@@ -444,10 +451,10 @@ sub device_type {
     my $objtype = "SNMP::Info";
 
     my $layers = $info->layers();
-    my $desc   = $info->description();
-
     # if we dont have sysServices, we dont have anything else either probably.
     return undef unless (defined $layers and length($layers));
+
+    my $desc   = $info->description();
 
     # Layer 3 Supported 
     #   (usually has layer2 as well, so we check for 3 first)
@@ -1140,6 +1147,11 @@ sub _global{
     $DEBUG and print "SNMP::Info::_global $attr : $oid\n";
     my $val = $sess->get($oid); 
 
+    if ($sess->{ErrorStr} ){
+        $DEBUG and print "SNMP::Info::_global($attr) $sess->{ErrorStr}\n";
+        return undef;
+    }
+
     # Get the callback hash for data munging
     my $munge = $self->munge();
 
@@ -1189,6 +1201,9 @@ sub _set {
     print "SNMP::Info::_set $attr$iid ($oid) = $val\n" if $DEBUG;
 
     my $rv = $sess->set($oid,$val);
+
+    print "SNMP::Info::_set $attr$iid $sess->{ErrorStr}\n"
+        if ($DEBUG and $sess->{ErrorStr});
 
     return $rv;
 }
