@@ -70,11 +70,11 @@ sub layers {
 }
 
 sub vendor {
-    return 'ZyXEL';
+    return 'zyxel';
 }
 
 sub os {
-    return 'ZyXEL';
+    return 'zyxel';
 }
 
 sub os_ver {
