@@ -155,57 +155,6 @@ download the Netdisco-MIB package at
 Make sure that your snmp.conf is updated to point to your MIB directory
 and that the MIBs are world-readable.
 
-B<To do it by hand>:
-
-Then run C<snmpconf> and setup that directory as default.  Move F<snmp.conf>
-into F</usr/local/share/snmp> when you are done.
-
-=over
-
-=item Basic MIBs
-
-A minimum amount of MIBs to have are the Version 2 MIBs from Cisco, found at
-
-ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
-
-To install them : 
-
- mkdir -p /usr/local/share/snmp/mibs && cd /usr/local/share/snmp/mibs && tar xvfz /path/to/v2.tar.gz 
-
-=item Version 1 MIBs
-
-You will also need to install some of the version one MIBs from Cisco :
-
-ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
-
-Extract 
-
-=over
-
-=item BRIDGE-MIB
-
-=item SNMP-REPEATER-MIB
-
-=item STAND-ALONE-ETHERNET-SWITCH-MIB (ESSWITCH-MIB)
-
-=item TOKEN-RING-RMON-MIB
-
-=back
-
-by running 
-
- mkdir -p /usr/local/share/snmp/mibs
- cd /usr/local/share/snmp/mibs
- tar xvfz /path/to/v1.tar.gz BRIDGE-MIB.my SNMP-REPEATER-MIB.my ESSWITCH-MIB.my TOKEN-RING-RMON-MIB.my
-
-=item More Specific MIBs
-
-Some non-cisco subclasses will need MIBs other than the basic one available from Cisco.
-
-Check below under each subclass for requirements.
-
-=back
-
 =back
 
 =head1 DESIGN GOALS
@@ -397,6 +346,12 @@ does not support everything that has the name Catalyst.
 Subclass for Nortel/Bay Centillion and 5000BH ATM switches.
 
 See SNMP::Info::Layer2::Centillion for where to get MIBs required.
+
+=item SNMP::Info::Layer2::Foundry
+
+Subclass for Foundry Switches.  Tested on EdgeIron 24G.
+
+See SNMP::Info::Layer2::Foundry for where to get MIBs required.
 
 =item SNMP::Info::Layer2::HP
 
@@ -759,11 +714,28 @@ sub debug {
 
     if (defined $debug){
         $self->{debug} = $debug;
-#        $SNMP::debugging=$debug;
     }
     
     return $self->{debug};
 }
+
+=item $info->bulkwalk([1|0])
+
+Returns if bulkwalk is currently turned on for this object.
+
+Optionally sets the bulkwalk parameter.
+
+=cut
+sub bulkwalk {
+    my $self = shift;
+    my $bw   = shift;
+
+    if (defined $bw){
+        $self->{BulkWalk} = $bw;
+    }   
+    return $self->{BulkWalk};
+}
+    
 
 =item $info->device_type()
 
@@ -799,6 +771,7 @@ Algorithm for Subclass Detection:
             Catalyst 2970                  -> SNMP::Info::Layer3::C6500
             Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
             Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
+            Foundry (EdgeIron,????)        -> SNMP::Info::Layer2::Foundry
             HP Procurve                    -> SNMP::Info::Layer2::HP
             Nortel/Bay Centillion ATM      -> SNMP::Info::Layer2::Centillion
             Nortel/Bay Baystack            -> SNMP::Info::Layer2::Baystack
@@ -904,7 +877,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::Orinoco' if ($desc =~ /AP-\d{3}|WavePOINT/);
 
         #  Aironet - IOS
-        $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /(C1100|AP1200)/);
+        $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /\b(C1100|AP1200|C350|C1200)\b/  and $desc =~ /\bIOS\b/);
 
         # Aironet - non IOS
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(BR500)\D/) ;
@@ -1606,7 +1579,7 @@ $info->init() will throw an exception if a MIB does not load.
 
 =cut
 %MIBS    = (
-            'RFC1213-MIB' => 'sysName',
+            # The "main" MIBs are automagically loaded in Net-SNMP now.
            );
 
 =item %MUNGE
@@ -2343,7 +2316,7 @@ sub _load_attr {
     if ($ver == 1 and $nosuch and $errornum and $sess->{ErrorStr} =~ /nosuch/i){
         $errornum = 0; 
     } elsif ($errornum){
-        $self->error_throw("SNMP::Info::_load_atrr: Varbind ".$sess->{ErrorStr}."\n");
+        $self->error_throw("SNMP::Info::_load_attr: Varbind $varleaf ".$sess->{ErrorStr}."\n");
         return undef;
     }
     my $localstore = undef;
@@ -2390,11 +2363,11 @@ sub _load_attr {
         }
 
         if ($val eq 'NOSUCHOBJECT'){
-            $self->error_throw("SNMP::Info::_load_atrr: $attr :  NOSUCHOBJECT");
+            $self->error_throw("SNMP::Info::_load_attr: $attr :  NOSUCHOBJECT");
             next;
         }
         if ($val eq 'NOSUCHINSTANCE'){
-            $self->error_throw("SNMP::Info::_load_atrr: $attr :  NOSUCHINSTANCE");
+            $self->error_throw("SNMP::Info::_load_attr: $attr :  NOSUCHINSTANCE");
             next;
         }
 
