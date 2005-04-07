@@ -4,7 +4,7 @@
 # This file is meant to detail the cababilities
 # of network devices to supply data via SNMP.  
 
-# $Id: DeviceMatrix.txt,Modified by Eric Miller 10/17/2004
+# $Id$
 
 # Allied
 device-vendor: Allied Telesyn
@@ -491,19 +491,21 @@ device: 2500,2600,2700
 device: 4500,4600,5000
 
 
-device-family: Passport LAN
+device-family: Passport/Accelar LAN
 arpnip: yes
 macsuck: yes
 portmac: yes
 duplex: both
 cdp: proprietary
 class: Layer3::Passport
-note: !Code versions < 3.2 vlan based mac-suck and are unsupported.  Upgrade code.
-note: !3.2 code versions < 3.2.2.2 have Bridge MIB loop.  Upgrade code.
+note: !8600 Code versions < 3.2 vlan based mac-suck and are unsupported.  Upgrade code.
+note: !8600 3.2 code versions < 3.2.2.2 have Bridge MIB loop.  Upgrade code.
 
 device: 8603,8606,8610
 
 device: 8610co
+
+device: 1050,1100,1150,1200
 
 # Proxim
 device-vendor: Proxim

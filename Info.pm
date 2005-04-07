@@ -438,7 +438,7 @@ See SNMP::Info::Layer3::Foundry for more info.
 
 =item SNMP::Info::Layer3::Passport
 
-Subclass for Nortel Networks' Passport 8600 series switches.
+Subclass for Nortel Networks' Passport 8600 and Accelar series switches.
 
 See SNMP::Info::Layer3::Passport for where to get MIBs required.
 
@@ -764,7 +764,7 @@ Algorithm for Subclass Detection:
             Catalyst 6500, 4000, 3750      -> SNMP::Info::Layer3::C6500
             Cisco Generic L3 IOS device    -> SNMP::Info::Layer3::Cisco
             Foundry                        -> SNMP::Info::Layer3::Foundry
-            Nortel Passport LAN            -> SNMP::Info::Layer3::Passport
+            Nortel Passport/Accelar LAN    -> SNMP::Info::Layer3::Passport
             Alteon Ace Director            -> SNMP::Info::Layer3::AlteonAD
             Nortel Contivity               -> SNMP::Info::Layer3::Contivity
             Nortel BayRS Router            -> SNMP::Info::Layer3::BayRS
@@ -821,8 +821,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500'   if ($desc =~ /cisco/i and $desc =~ /3750/);
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /Catalyst 4000/;
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /s72033_rp/;
-        # Nortel Passport 8600
+        # Nortel Passport 8600, 1100, 1200 Series
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-86/;
+        $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-[1][012]/;
+        $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Accelar-1/;
         # Nortel Alteon AD Series
         $objtype = 'SNMP::Info::Layer3::AlteonAD' if $desc =~ /Alteon\s[1A][8D]/;
         # Nortel Contivity
