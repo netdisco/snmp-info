@@ -88,15 +88,19 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
 sub model {
     my $passport = shift;
-    my $desc = $passport->description();
-    return undef unless defined $desc;
-
-    return '8603' if ($desc =~ /8603/);
-    return '8606' if ($desc =~ /8606/);
-    return '8610co' if ($desc =~ /8610co/);
-    return '8610' if ($desc =~ /8610/);
+    my $id = $passport->id();
     
-    return $desc;
+    unless (defined $id){
+        print " SNMP::Info::Layer3::Passport::model() - Device does not support sysObjectID\n" if $passport->debug(); 
+        return undef;
+    }
+    
+    my $model = &SNMP::translateObj($id);
+
+    return $id unless defined $model;
+
+    $model =~ s/^rcA//i;
+    return $model;
 }
 
 sub vendor {
@@ -112,14 +116,21 @@ sub os_ver {
     my $descr = $passport->description();
     return undef unless defined $descr;
 
+    #Passport
     if ($descr =~ m/(\d+\.\d+\.\d+\.\d+)/){
         return $1;
     }
+    #Accelar
+    if ($descr =~ m/(\d+\.\d+\.\d+)/){
+        return $1;
+    }
+
     return undef;
 }
 
 sub i_index {
     my $passport = shift;
+    my $model   = $passport->model();
     my $i_index = $passport->i_index2();
     my $vlan_index = $passport->rc_vlan_if();
     my $cpu_index = $passport->rc_cpu_ifindex();
@@ -142,19 +153,22 @@ sub i_index {
         $if_index{$v_index} = $v_index;
     }
 
-    # Get CPU Ethernet Interfaces
-    foreach my $cid (keys %$cpu_index){
-        my $c_index = $cpu_index->{$cid};
-        next unless defined $c_index;
-        next if $c_index == 0;
+    if (defined $model and $model =~ /(86)/) {
 
-        $if_index{$c_index} = $c_index;
-    }
+        # Get CPU Ethernet Interfaces
+        foreach my $cid (keys %$cpu_index){
+            my $c_index = $cpu_index->{$cid};
+            next unless defined $c_index;
+            next if $c_index == 0;
 
-    # Check for Virtual Mgmt Interface
-    unless ($virt_ip eq '0.0.0.0') {
-        # Make up an index number, 1 is not reserved AFAIK
-        $if_index{1} = 1;
+            $if_index{$c_index} = $c_index;
+        }
+
+        # Check for Virtual Mgmt Interface
+        unless ($virt_ip eq '0.0.0.0') {
+            # Make up an index number, 1 is not reserved AFAIK
+            $if_index{1} = 1;
+        }
     }
 
     return \%if_index;
@@ -162,10 +176,12 @@ sub i_index {
 
 sub interfaces {
     my $passport = shift;
+    my $model   = $passport->model();
+    my $index_factor = $passport->index_factor();
+    my $port_offset = $passport->port_offset();
     my $i_index = $passport->i_index();
     my $vlan_id = $passport->rc_vlan_id();
     my $vlan_index = $passport->rc_vlan_if();
-    my $model = $passport->model();
 
     my %reverse_vlan = reverse %$vlan_index;
     
@@ -174,7 +190,7 @@ sub interfaces {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index == 1) {
+        if (($index == 1) and ($model =~ /(86)/)) {
             $if{$index} = 'CPU.Virtual';
         }
 
@@ -182,25 +198,26 @@ sub interfaces {
             $if{$index} = 'Cpu3';
         }
 
-        elsif ($index == 320) {
+        elsif (($index == 320) and ($model =~ /(8606|8610|8610co)/)) {
             $if{$index} = 'Cpu5';
         }
 
-        elsif ($index == 384) {
+        elsif (($index == 384) and ($model =~ /(8606|8610|8610co)/)) {
             $if{$index} = 'Cpu6';
         }
 
-        elsif ($index > 2000) {
-            my $vlan_index = $reverse_vlan{$iid};
-            my $v_id = $vlan_id->{$vlan_index};
-            next unless defined $v_id;
-            my $v_port = 'Vlan'."$v_id";
-            $if{$index} = $v_port;
+        elsif (($index > 2000 and $model =~ /(86)/) or
+               ($index > 256  and $model =~ /(105|11|12)/)) {
+                my $vlan_index = $reverse_vlan{$iid};
+                my $v_id = $vlan_id->{$vlan_index};
+                next unless defined $v_id;
+                my $v_port = 'Vlan'."$v_id";
+                $if{$index} = $v_port;
         }           
 
         else {
-            my $port = ($index % 64) + 1;
-            my $slot = int($index / 64);
+            my $port = ($index % $index_factor) + $port_offset;
+            my $slot = int($index / $index_factor);
 
             my $slotport = "$slot.$port";
             $if{$iid} = $slotport;
@@ -212,6 +229,7 @@ sub interfaces {
 
 sub i_mac {
     my $passport = shift;
+    my $model   = $passport->model();
     my $i_mac = $passport->i_mac2();
     my $vlan_mac = $passport->rc_vlan_mac();
     my $vlan_index = $passport->rc_vlan_if();
@@ -235,28 +253,30 @@ sub i_mac {
 
         $if_mac{$v_id} = $v_mac;
     }
+    
+    if (defined $model and $model =~ /(86)/) {
+        # Get CPU Ethernet Interfaces
+        foreach my $iid (keys %$cpu_mac){
+            my $mac = $cpu_mac->{$iid};
+            next unless defined $mac;
 
-    # Get CPU Ethernet Interfaces
-    foreach my $iid (keys %$cpu_mac){
-        my $mac = $cpu_mac->{$iid};
-        next unless defined $mac;
+            $if_mac{$iid} = $mac;
+        }
 
-        $if_mac{$iid} = $mac;
-    }
+        # Check for Virtual Mgmt Interface
+        unless ($virt_ip eq '0.0.0.0'){
+            my @virt_mac = split /:/, $chassis_base_mac;
+            $virt_mac[0] = hex($virt_mac[0]);
+            $virt_mac[1] = hex($virt_mac[1]);
+            $virt_mac[2] = hex($virt_mac[2]);
+            $virt_mac[3] = hex($virt_mac[3]);
+            $virt_mac[4] = hex($virt_mac[4]) + 0x03;
+            $virt_mac[5] = hex($virt_mac[5]) + 0xF8;
 
-    # Check for Virtual Mgmt Interface
-    unless ($virt_ip eq '0.0.0.0'){
-        my @virt_mac = split /:/, $chassis_base_mac;
-        $virt_mac[0] = hex($virt_mac[0]);
-        $virt_mac[1] = hex($virt_mac[1]);
-        $virt_mac[2] = hex($virt_mac[2]);
-        $virt_mac[3] = hex($virt_mac[3]);
-        $virt_mac[4] = hex($virt_mac[4]) + 0x03;
-        $virt_mac[5] = hex($virt_mac[5]) + 0xF8;
+            my $mac = join(':',map { sprintf "%02x",$_ } @virt_mac);
 
-        my $mac = join(':',map { sprintf "%02x",$_ } @virt_mac);
-
-        $if_mac{1} = $mac;
+            $if_mac{1} = $mac;
+        }
     }
 
     return \%if_mac;
@@ -289,19 +309,20 @@ sub i_description {
     
 sub i_name {
     my $passport = shift;
+    my $model   = $passport->model();
     my $i_index = $passport->i_index();
     my $rc_alias = $passport->rc_alias();
     my $i_name2  = $passport->i_name2();
     my $v_name = $passport->rc_vlan_name();
     my $vlan_index = $passport->rc_vlan_if();
-    my $model = $passport->model();
+
     
     my %reverse_vlan = reverse %$vlan_index;
 
     my %i_name;
     foreach my $iid (keys %$i_index){
-        
-        if ($iid == 1) {
+ 
+        if (($iid == 1) and ($model =~ /(86)/)) {
             $i_name{$iid} = 'CPU Virtual Management IP';
         }
 
@@ -309,21 +330,22 @@ sub i_name {
             $i_name{$iid} = 'CPU 3 Ethernet Port';
         }
 
-        elsif ($iid == 320) {
+        elsif (($iid == 320) and ($model =~ /(8606|8610|8610co)/)) {
             $i_name{$iid} = 'CPU 5 Ethernet Port';
         }
 
-        elsif ($iid == 384) {
+        elsif (($iid == 384) and ($model =~ /(8606|8610|8610co)/)) {
             $i_name{$iid} = 'CPU 6 Ethernet Port';
         }
 
-        elsif ($iid > 2000) {
+        elsif (($iid > 2000 and defined $model and $model =~ /(86)/) or
+                ($iid > 256 and defined $model and $model =~ /(105|11|12)/)) {
             my $vlan_index = $reverse_vlan{$iid};
             my $vlan_name = $v_name->{$vlan_index};
             next unless defined $vlan_name;
 
             $i_name{$iid} = $vlan_name;
-        }           
+        }
 
         else {
             my $name = $i_name2->{$iid};
@@ -339,6 +361,7 @@ sub i_name {
 
 sub ip_index {
     my $passport = shift;
+    my $model   = $passport->model();
     my $ip_index = $passport->ip_index2();
     my $cpu_ip = $passport->rc_cpu_ip();
     my $virt_ip = $passport->rc_virt_ip();
@@ -351,22 +374,26 @@ sub ip_index {
         $ip_index{$ip} = $iid;
     }
 
-    # Get CPU Ethernet IP
-    foreach my $cid (keys %$cpu_ip){
-        my $c_ip = $cpu_ip->{$cid};
-        next unless defined $c_ip;
+    # Only 8600 has CPU and Virtual Management IP
+    if (defined $model and $model =~ /(86)/) {
+        # Get CPU Ethernet IP
+        foreach my $cid (keys %$cpu_ip){
+            my $c_ip = $cpu_ip->{$cid};
+            next unless defined $c_ip;
 
-        $ip_index{$c_ip} = $cid;
+            $ip_index{$c_ip} = $cid;
+        }
+
+        # Get Virtual Mgmt IP
+        $ip_index{$virt_ip} = 1;
     }
-
-    # Get Virtual Mgmt IP
-    $ip_index{$virt_ip} = 1;
     
     return \%ip_index;
 }
 
 sub root_ip {
     my $passport = shift;
+    my $model   = $passport->model();
     my $rc_ip_addr = $passport->rc_ip_addr();
     my $rc_ip_type = $passport->rc_ip_type();
     my $virt_ip = $passport->rc_virt_ip();
@@ -374,18 +401,21 @@ sub root_ip {
     my $sonmp_topo_port = $passport->sonmp_topo_port();
     my $sonmp_topo_ip = $passport->sonmp_topo_ip();
 
-    # Return CLIP (CircuitLess IP)
-    foreach my $iid (keys %$rc_ip_type){
-        my $ip_type = $rc_ip_type->{$iid};
-        next unless ((defined $ip_type) and ($ip_type =~ /circuitLess/i));
-        my $ip = $rc_ip_addr->{$iid};
-        next unless defined $ip;
+    # Only 8600 has CLIP or Management Virtual IP
+    if (defined $model and $model =~ /(86)/) {
+        # Return CLIP (CircuitLess IP)
+        foreach my $iid (keys %$rc_ip_type){
+            my $ip_type = $rc_ip_type->{$iid};
+            next unless ((defined $ip_type) and ($ip_type =~ /circuitLess/i));
+            my $ip = $rc_ip_addr->{$iid};
+            next unless defined $ip;
                      
-        return $ip;
-    }
+            return $ip;
+        }
 
-    # Return Management Virtual IP address
-    return $virt_ip if ((defined $virt_ip) and ($virt_ip ne '0.0.0.0'));
+        # Return Management Virtual IP address
+        return $virt_ip if ((defined $virt_ip) and ($virt_ip ne '0.0.0.0'));
+    }
 
     # Return OSPF Router ID
     if ((defined $router_ip) and ($router_ip ne '0.0.0.0')) {
@@ -408,7 +438,12 @@ sub root_ip {
 
 # Required for SNMP::Info::SONMP
 sub index_factor {
-    return 64;
+    my $passport   = shift;
+    my $model   = $passport->model();
+    my $index_factor = 64;
+    # Older Accelar models use base 16 instead of 64
+    $index_factor = 16  if (defined $model and $model =~ /(105|11|12)/);
+    return $index_factor;
 }
 
 sub slot_offset {
@@ -425,7 +460,7 @@ __END__
 =head1 NAME
 
 SNMP::Info::Layer3::Passport - Perl5 Interface to Nortel Networks' Passport
-8600 Series Switches
+8600 and Accelar Series Switches
 
 =head1 AUTHOR
 
@@ -449,7 +484,7 @@ Eric Miller (C<eric@jeneric.org>)
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Nortel Networks' Passport 8600 Series Switches.  
+Abstraction subclass for Nortel Networks' Passport 8600 and Accelar Series Switches.  
 
 These devices run Passport OS but have some of the same charactersitics as the Baystack family. 
 For example, extended interface information is gleened from RAPID-CITY.
@@ -533,7 +568,7 @@ OSPF Router ID (B<ospfRouterId>), SONMP Advertised IP Address.
 
 =item $passport->index_factor()
 
-Required by SNMP::Info::SONMP.  Returns 64.
+Required by SNMP::Info::SONMP.  Returns 64 for 8600, 16 for Accelar.
 
 =item $passport->port_offset()
 
@@ -581,10 +616,10 @@ to ensure the virtual router ports are captured.
 Returns reference to the map between IID and physical Port.
 
 Slot and port numbers on the Passport switches are determined by the formula:
-port = (ifIndex % 64) + 1, slot = int(ifIndex / 64).
+port = (ifIndex % index_factor) + port_offset, slot = int(ifIndex / index_factor).
 
 The physical port name is returned as slot.port.  CPU Ethernet ports are prefixed
-with CPU and VLAN interfaces are returned as the VLAN ID prefixed with V.
+with CPU and VLAN interfaces are returned as the VLAN ID prefixed with Vlan.
 
 =item $passport->i_mac()
 
