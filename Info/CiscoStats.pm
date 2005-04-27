@@ -80,7 +80,7 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 
 sub os {
     my $l2 = shift;
-    my $descr = $l2->description();
+    my $descr = $l2->description() || '';
 
     # order here matters - there are Catalysts that run IOS and have catalyst in their description field.
     return 'ios'      if ($descr =~ /IOS/);
