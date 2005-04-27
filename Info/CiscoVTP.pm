@@ -138,6 +138,18 @@ sub i_vlan {
     return $i_vlan;
 }
 
+sub set_i_vlan {
+    my $vtp = shift;
+
+    # Check for CISCO-VLAN-MIB
+    my $i_vlan = $vtp->i_vlan2();
+    if (defined $i_vlan) {
+        return $vtp->set_i_vlan2(@_);
+    }
+    # only support the first case for now.
+    return undef;
+}
+
 1;
 __END__
 
