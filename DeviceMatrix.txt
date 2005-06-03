@@ -505,7 +505,19 @@ device: 8603,8606,8610
 
 device: 8610co
 
+device: 8106,8110
+
 device: 1050,1100,1150,1200
+
+device-family: Passport 1600
+arpnip: yes
+macsuck: yes
+portmac: yes
+duplex: both
+cdp: proprietary
+class: Layer3::N1600
+
+device: 1624,1648
 
 # Proxim
 device-vendor: Proxim
