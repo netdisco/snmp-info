@@ -57,7 +57,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             %SNMP::Info::Bridge::GLOBALS,
             %SNMP::Info::SONMP::GLOBALS,
             %SNMP::Info::RapidCity::GLOBALS,
-            %SNMP::Info::NortelStack::GLOBALS,            
+            %SNMP::Info::NortelStack::GLOBALS,
            );
 
 %FUNCS   = (
@@ -65,7 +65,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             %SNMP::Info::Bridge::FUNCS,
             %SNMP::Info::SONMP::FUNCS,
             %SNMP::Info::RapidCity::FUNCS,
-            %SNMP::Info::NortelStack::FUNCS,            
+            %SNMP::Info::NortelStack::FUNCS,
             'i_name2'    => 'ifName',
             'i_mac2'      => 'ifPhysAddress',
             );
@@ -173,8 +173,8 @@ sub interfaces {
         # Ignore cascade ports
         next if $index > 513;
 
-	my $port = ($index % $index_factor);
-	my $slot = (int($index / $index_factor)) + $slot_offset;
+        my $port = ($index % $index_factor);
+        my $slot = (int($index / $index_factor)) + $slot_offset;
 
         my $slotport = "$slot.$port";
         $if{$iid} = $slotport;
@@ -234,7 +234,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Baystack - SNMP Interface to Nortel Networks' Baystack Switches
+SNMP::Info::Layer2::Baystack - SNMP Interface to Nortel Baystack Switches
 
 =head1 AUTHOR
 
@@ -258,7 +258,7 @@ Eric Miller (C<eric@jeneric.org>)
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a Nortel Networks' 
+Provides abstraction to the configuration information obtainable from a Nortel 
 Baystack device through SNMP. 
 
 For speed or debugging purposes you can call the subclass directly, but not after determining
@@ -308,7 +308,7 @@ These are methods that return scalar value from SNMP
 
 =item $baystack->vendor()
 
-Returns 'Nortel'
+Returns 'nortel'
 
 =item $baystack->model()
 
@@ -320,7 +320,7 @@ Removes sreg- from the model name
 
 =item $baystack->os()
 
-Returns 'Baystack' or 'BoSS' depending on software version.
+Returns 'baystack' or 'boss' depending on software version.
 
 =item $baystack->os_bin()
 
