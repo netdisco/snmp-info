@@ -223,7 +223,7 @@ sub c_port {
         else {
             # Segment id is (256 * remote slot_num) + (remote_port)
             my $remote_port = $seg % 256;
-	    my $remote_slot = int($seg / 256);
+            my $remote_slot = int($seg / 256);
     
            $c_port{"$index.1"} = "$remote_slot.$remote_port";
         }
@@ -282,8 +282,10 @@ sub mac {
         my $port = $sonmp_topo_port->{$entry};
         next unless $port == 0;
         my $mac = $sonmp_topo_mac->{$entry};
-	return $mac;
+        return $mac;
     }
+    # Topology turned off, not supported.
+    return undef;
 }
 
 1;
