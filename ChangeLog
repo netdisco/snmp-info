@@ -13,6 +13,8 @@ version 1.0 ()
     + Check for bulkwalk_no() method
     + Added Entity.pm to L3 and L2 classes per N. Petri's suggestion.
     + Added support for Passport/Accelar 1100 and 1200 series in L3::Passport (Eric Miller)
+    + Added support for Passport/Accelar 8100 series in L3::Passport (Eric Miller)
+    + Added support for Passport 1600 series as new class, L3::N1600 (Eric Miller)
 
     * More error checking in  _load_attr() around bulkwalk code
     * Minor warning fix in L3::Aironet::os_ver()
@@ -23,7 +25,8 @@ version 1.0 ()
     * [ 1111284 ] Parameters not being set with AutoSpecify - fixed.
     * Turned off BULKWALK for C1900 and C6500 classes.
     * Added exception handling for V2 ENDOFMIBVIEW (Eric Miller)
-
+    * Fix in SONMP when topology not enabled (Eric Miller)
+    * Fix in L3::Passport root_ip() (Eric Miller)
 
 verison 0.9 (11/15/04)
     + ** Added full Nortel/Bay/BayStack support 
