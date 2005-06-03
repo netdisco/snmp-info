@@ -56,7 +56,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
             %SNMP::Info::GLOBALS,
             %SNMP::Info::Bridge::GLOBALS,
             %SNMP::Info::SONMP::GLOBALS,
-            %SNMP::Info::RapidCity::GLOBALS,            
+            %SNMP::Info::RapidCity::GLOBALS,
             'router_ip' => 'ospfRouterId'
            );
 
@@ -74,7 +74,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
           'at_index'    => 'ipNetToMediaIfIndex',
           'at_paddr'    => 'ipNetToMediaPhysAddress',
           'at_netaddr'  => 'ipNetToMediaNetAddress',
-          'i_name2'        => 'ifName'
+          'i_name2'     => 'ifName'
          );
          
 %MUNGE = (
@@ -191,22 +191,22 @@ sub interfaces {
         next unless defined $index;
 
         if (($index == 1) and ($model =~ /(86)/)) {
-            $if{$index} = 'CPU.Virtual';
+            $if{$index} = 'Cpu.Virtual';
         }
 
         elsif (($index == 192) and ($model eq '8603')) {
-            $if{$index} = 'Cpu3';
+            $if{$index} = 'Cpu.3';
         }
 
         elsif (($index == 320) and ($model =~ /(8606|8610|8610co)/)) {
-            $if{$index} = 'Cpu5';
+            $if{$index} = 'Cpu.5';
         }
 
         elsif (($index == 384) and ($model =~ /(8606|8610|8610co)/)) {
-            $if{$index} = 'Cpu6';
+            $if{$index} = 'Cpu.6';
         }
 
-        elsif (($index > 2000 and $model =~ /(86)/) or
+        elsif (($index > 2000 and $model =~ /(86|81)/) or
                ($index > 256  and $model =~ /(105|11|12)/)) {
                 my $vlan_index = $reverse_vlan{$iid};
                 my $v_id = $vlan_id->{$vlan_index};
@@ -338,7 +338,7 @@ sub i_name {
             $i_name{$iid} = 'CPU 6 Ethernet Port';
         }
 
-        elsif (($iid > 2000 and defined $model and $model =~ /(86)/) or
+        elsif (($iid > 2000 and defined $model and $model =~ /(86|81)/) or
                 ($iid > 256 and defined $model and $model =~ /(105|11|12)/)) {
             my $vlan_index = $reverse_vlan{$iid};
             my $vlan_name = $v_name->{$vlan_index};
@@ -459,8 +459,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Passport - Perl5 Interface to Nortel Networks' Passport
-8600 and Accelar Series Switches
+SNMP::Info::Layer3::Passport - Perl5 Interface to Nortel's Passport
+and Accelar Series Switches
 
 =head1 AUTHOR
 
@@ -484,7 +484,7 @@ Eric Miller (C<eric@jeneric.org>)
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Nortel Networks' Passport 8600 and Accelar Series Switches.  
+Abstraction subclass for Nortel's Passport 8600 and Accelar Series Switches.  
 
 These devices run Passport OS but have some of the same charactersitics as the Baystack family. 
 For example, extended interface information is gleened from RAPID-CITY.
@@ -536,15 +536,16 @@ These are methods that return scalar value from SNMP
 
 =item $passport->model()
 
-Returns the model extracted from B<sysDescr>
+Returns model type.  Checks $passport->id() against the 
+RAPID-CITY-MIB and then parses out rcA.
 
 =item $passport->vendor()
 
-Returns 'Nortel'
+Returns 'nortel'
 
 =item $passport->os()
 
-Returns 'Passport'
+Returns 'passport'
 
 =item $passport->os_ver()
 
