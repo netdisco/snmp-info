@@ -146,29 +146,15 @@ sub i_name {
     
     my %i_name;
     foreach my $iid (keys %$i_name2){
-	my $name = $i_name2->{$iid};
-       #Skip everything except Ethernet interfaces
-	next unless (defined $name and $name =~ /fe/i);
-	
-	$name = $1 if $name =~ /(fei\.\d+\.\d+)/;
-	
-	$i_name{$iid} = $name;
+        my $name = $i_name2->{$iid};
+        #Skip everything except Ethernet interfaces
+        next unless (defined $name and $name =~ /fe/i);
+
+        $name = $1 if $name =~ /(fei\.\d+\.\d+)/;
+
+        $i_name{$iid} = $name;
      }
      return \%i_name;
-}
-
-sub root_ip {
-    my $contivity = shift;
-    my $ip_table = $contivity->ip_table();
-
-# Return First IP Address    
-    foreach my $entry (keys %$ip_table){
-        my $router_ip = $ip_table->{$entry};
-        print " SNMP::Layer3::Contivity::root_ip() using $router_ip\n" if $contivity->debug();
-        next unless $router_ip;
-        return $router_ip if ($router_ip ne '0.0.0.0');
-    }
-    return undef;
 }
 
 1;
@@ -263,11 +249,6 @@ Returns the chassis serial number.
 =item $contivity->mac()
 
 Returns the MAC address of the first Ethernet Interface.
-
-=item $contivity->root_ip()
-
-Returns the primary IP used to communicate with the router.  Returns the first
-IP interface.
 
 =back
 
