@@ -428,6 +428,12 @@ Subclass for Nortel Networks' Contivity VPN concentrators.
 
 See SNMP::Info::Layer3::Contivity for where to get MIBs required.
 
+=item SNMP::Info::Layer3::Extreme
+
+Subclass for Extreme Networks switches.
+
+See SNMP::Info::Layer3::Extreme for more info.
+
 =item SNMP::Info::Layer3::Foundry
 
 Subclass for older Foundry Network devices.  Outdated, but being updated for newer devices.
@@ -769,6 +775,7 @@ Algorithm for Subclass Detection:
             Catalyst 3550,3548,3560        -> SNMP::Info::Layer3::C3550
             Catalyst 6500, 4000, 3750      -> SNMP::Info::Layer3::C6500
             Cisco Generic L3 IOS device    -> SNMP::Info::Layer3::Cisco
+            Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
             Nortel Passport/Accelar LAN    -> SNMP::Info::Layer3::Passport
             Alteon Ace Director            -> SNMP::Info::Layer3::AlteonAD
@@ -781,6 +788,7 @@ Algorithm for Subclass Detection:
             Catalyst 2970                  -> SNMP::Info::Layer3::C6500
             Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
             Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
+            Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry (EdgeIron,????)        -> SNMP::Info::Layer2::Foundry
             HP Procurve                    -> SNMP::Info::Layer2::HP
             Nortel/Bay Centillion ATM      -> SNMP::Info::Layer2::Centillion
@@ -828,6 +836,9 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500'   if ($desc =~ /cisco/i and $desc =~ /3750/);
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /Catalyst 4000/;
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /s72033_rp/;
+        # Extreme Networks
+        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Alpine38/;
+        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Summit\d/;
         # Nortel Passport 8600, 1600, 1100, 1200 Series
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-86/;
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-[1][012]/;
@@ -871,6 +882,10 @@ sub device_type {
 
         #   Cisco 2970  
         $objtype = 'SNMP::Info::Layer3::C6500' if ($desc =~ /C2970/);
+
+        # Extreme Networks
+        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Alpine38/;
+        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Summit\d/;
 
         #   HP
         $objtype = 'SNMP::Info::Layer2::HP' if ($desc =~ /HP.*ProCurve/); 
