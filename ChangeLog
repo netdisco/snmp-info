@@ -15,6 +15,7 @@ version 1.0 ()
     + Added support for Passport/Accelar 1100 and 1200 series in L3::Passport (Eric Miller)
     + Added support for Passport/Accelar 8100 series in L3::Passport (Eric Miller)
     + Added support for Passport 1600 series as new class, L3::N1600 (Eric Miller)
+    + Added support for Extreme Alpine and Summit switches (Mike Hunter and Eric Miller)
 
     * More error checking in  _load_attr() around bulkwalk code
     * Minor warning fix in L3::Aironet::os_ver()
