@@ -454,6 +454,18 @@ sub port_offset {
     return 1;
 }
 
+# Bridge MIB does not map Bridge Port to ifIndex correctly
+sub bp_index {
+    my $passport = shift;
+    my $if_index = $passport->i_index();
+
+    my %bp_index;
+    foreach my $iid (keys %$if_index){
+        $bp_index{$iid} = $iid;
+    }
+    return \%bp_index;
+}
+
 1;
 __END__
 
