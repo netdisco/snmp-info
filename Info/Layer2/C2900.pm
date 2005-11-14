@@ -332,9 +332,9 @@ to a hash.
     utilize port ifIndex.
 
     Example:
-    my %if_map = reverse %{$info->interfaces()};
-    $info->set_i_up_admin('auto', $if_map{'FastEthernet0/1'}) 
-        or die "Couldn't change port speed. ",$info->error(1);
+    my %if_map = reverse %{$c2900->interfaces()};
+    $c2900->set_i_up_admin('auto', $if_map{'FastEthernet0/1'}) 
+        or die "Couldn't change port speed. ",$c2900->error(1);
 
 =item $c2900->set_i_duplex_admin(duplex, ifIndex)
 
@@ -346,9 +346,9 @@ to a hash.
     utilize port ifIndex.
 
     Example:
-    my %if_map = reverse %{$info->interfaces()};
-    $info->set_i_up_admin('auto', $if_map{'FastEthernet0/1'}) 
-        or die "Couldn't change port duplex. ",$info->error(1);
+    my %if_map = reverse %{$c2900->interfaces()};
+    $c2900->set_i_up_admin('auto', $if_map{'FastEthernet0/1'}) 
+        or die "Couldn't change port duplex. ",$c2900->error(1);
 
 =back
 
