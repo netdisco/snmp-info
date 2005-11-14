@@ -2236,7 +2236,8 @@ sub _set {
     }
 
     $oid .= $iid;
-    
+    $oid = &SNMP::translateObj($oid);
+
     $self->debug() and print "SNMP::Info::_set $attr$iid ($oid) = $val\n";
 
     my $rv = $sess->set($oid,$val);
