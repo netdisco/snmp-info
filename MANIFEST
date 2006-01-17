@@ -2,8 +2,10 @@ COPYRIGHT
 ChangeLog
 DeviceMatrix.txt
 Info.pm
+Info/Airespace.pm
 Info/Bridge.pm
 Info/CDP.pm
+Info/CiscoImage.pm
 Info/CiscoStack.pm
 Info/CiscoStats.pm
 Info/CiscoVTP.pm
@@ -17,13 +19,16 @@ Info/Layer1/Bayhub.pm
 Info/Layer2.pm
 Info/Layer2/Aironet.pm
 Info/Layer2/Allied.pm
+Info/Layer2/Aruba.pm
 Info/Layer2/Bay.pm
 Info/Layer2/Baystack.pm
 Info/Layer2/C1900.pm
 Info/Layer2/C2900.pm
 Info/Layer2/Catalyst.pm
 Info/Layer2/Centillion.pm
+Info/Layer2/Foundry.pm
 Info/Layer2/HP.pm
+Info/Layer2/N2270.pm
 Info/Layer2/NAP222x.pm
 Info/Layer2/Orinoco.pm
 Info/Layer2/ZyXEL_DSLAM.pm
@@ -35,7 +40,9 @@ Info/Layer3/C3550.pm
 Info/Layer3/C6500.pm
 Info/Layer3/Cisco.pm
 Info/Layer3/Contivity.pm
+Info/Layer3/Extreme.pm
 Info/Layer3/Foundry.pm
+Info/Layer3/N1600.pm
 Info/Layer3/Passport.pm
 Info/MAU.pm
 Info/NortelStack.pm
@@ -44,7 +51,6 @@ Info/SONMP.pm
 MANIFEST
 Makefile.PL
 README
-t/DeviceMatrix.html
 t/make_dev_matrix.pl
 t/prereq.t
 t/test_class.pl
