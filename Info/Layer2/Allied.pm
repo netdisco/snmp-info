@@ -119,10 +119,10 @@ sub i_up {
     my $allied = shift;
 
     my $i_up  = SNMP::Info::Layer1::i_up($allied);
-    my $i_up2 = $allied->i_up2();
+    #my $i_up2 = $allied->i_up2() || {};
 
-    foreach my $port (keys %$ati_up){
-        my $up = $ati_up->{$port};
+    foreach my $port (keys %$i_up){
+        my $up = $i_up->{$port};
         $i_up->{$port} = 'down' if $up eq 'linktesterror';
         $i_up->{$port} = 'up' if $up eq 'nolinktesterror';
     }
