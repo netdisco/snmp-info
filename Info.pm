@@ -208,6 +208,11 @@ For more info run C<perldoc> on any of the following module names.
 
 =over
 
+=item SNMP::Info::Airespace
+
+AIRESPACE-WIRELESS-MIB and AIRESPACE-SWITCHING-MIB.  Inherited by devices based
+on the Airespace wireless platform.
+
 =item SNMP::Info::Bridge
 
 BRIDGE-MIB (RFC1286).  QBRIDGE-MIB. Inherited by devices with Layer2 support.
@@ -285,22 +290,16 @@ Subclass for Allied Telesys Repeaters / Hubs.
 
 Requires ATI-MIB
 
-See SNMP::Info::Layer1::Allied for where to get MIBs required.
-
 =item SNMP::Info::Layer1::Asante
 
 Subclass for Asante 1012 Hubs. 
 
 Requires ASANTE-HUB1012-MIB
 
-See SNMP::Info::Layer1::Asante for where to get MIBs required.
-
 =item SNMP::Info::Layer1::Bayhub
 
 Subclass for Nortel/Bay hubs.  This includes System 5000, 100 series,
 200 series, and probably more.
-
-See SNMP::Info::Layer1::Bayhub for where to get MIBs required.
 
 =back
 
@@ -333,8 +332,6 @@ Subclass for Nortel/Bay Baystack switches.  This includes 303, 304, 350, 380,
 410, 420, 425, 450, 460, 470, 5510, 5520, Business Policy Switch (BPS) and
 probably others.
 
-See SNMP::Info::Layer2::Baystack for where to get MIBs required.
-
 =item SNMP::Info::Layer2::C1900
 
 Subclass for Cisco Catalyst 1900 and 1900c Devices running CatOS.
@@ -353,13 +350,9 @@ does not support everything that has the name Catalyst.
 
 Subclass for Nortel/Bay Centillion and 5000BH ATM switches.
 
-See SNMP::Info::Layer2::Centillion for where to get MIBs required.
-
 =item SNMP::Info::Layer2::Foundry
 
 Subclass for Foundry Switches.  Tested on EdgeIron 24G.
-
-See SNMP::Info::Layer2::Foundry for where to get MIBs required.
 
 =item SNMP::Info::Layer2::HP
 
@@ -369,11 +362,13 @@ Requires HP-ICF-OID and ENTITY-MIB downloaded from HP.
 
 See SNMP::Info::Layer2::HP for more info.
 
+=item SNMP::Info::Layer2::N2270
+
+Subclass for Nortel 2270 wireless switches.
+
 =item SNMP::Info::Layer2::NAP222x
 
-Subclass for Nortel Networks' 222x series wireless access points.
-
-See SNMP::Info::Layer2::NAP222x for where to get MIBs required.
+Subclass for Nortel 222x series wireless access points.
 
 =item SNMP::Info::Layer2::Orinoco
 
@@ -404,14 +399,10 @@ Note Layer2::Aironet
 
 Subclass for Nortel Networks' Alteon Ace Director series L2-7 switches.
 
-See SNMP::Info::Layer3::AlteonAD for where to get MIBs required.
-
 =item SNMP::Info::Layer3::BayRS
 
 Subclass for Nortel Networks' BayRS routers.  This includes BCN, BLN, ASN, ARN,
 and AN routers.
-
-See SNMP::Info::Layer3::BayRS for where to get MIBs required.
 
 =item SNMP::Info::Layer3::C3550
 
@@ -429,8 +420,6 @@ This is a simple wrapper around Layer3 for IOS devices.  It adds on CiscoVTP.
 =item SNMP::Info::Layer3::Contivity
 
 Subclass for Nortel Networks' Contivity VPN concentrators.  
-
-See SNMP::Info::Layer3::Contivity for where to get MIBs required.
 
 =item SNMP::Info::Layer3::Extreme
 
@@ -450,13 +439,9 @@ See SNMP::Info::Layer3::Foundry for more info.
 
 Subclass for Nortel Passport 8000 series and Accelar series switches.
 
-See SNMP::Info::Layer3::Passport for where to get MIBs required.
-
 =item SNMP::Info::Layer3::N1600
 
 Subclass for Nortel 1600 series switches.
-
-See SNMP::Info::Layer3::N1600 for where to get MIBs required.
 
 =back
 
@@ -580,6 +565,7 @@ When trying to get info from a new device, you may have to try version 2 and the
 version 1.
 
 =cut
+
 sub new {
     my $proto = shift;
     my $class = ref($proto) || $proto;
@@ -707,6 +693,7 @@ from SNMP.
 Clears the cached data.  This includes GLOBALS data and TABLE METHOD data.
 
 =cut
+
 sub clear_cache {
     my $self = shift;
 
@@ -728,6 +715,7 @@ sub clear_cache {
 Returns current debug status, and optionally toggles debugging info for this object.
 
 =cut
+
 sub debug {
     my $self = shift;
     my $debug = shift;
@@ -746,6 +734,7 @@ Returns if bulkwalk is currently turned on for this object.
 Optionally sets the bulkwalk parameter.
 
 =cut
+
 sub bulkwalk {
     my $self = shift;
     my $bw   = shift;
@@ -810,6 +799,7 @@ Algorithm for Subclass Detection:
             Aruba wireless                 -> SNMP::Info::Layer2::Aruba
 
 =cut
+
 sub device_type {
     my $info = shift;
 
@@ -950,6 +940,7 @@ Returns Error message if there is an error, or undef if there is not.
 Reading the error will clear the error unless you set the no_clear flag.
 
 =cut
+
 sub error {
     my $self     = shift;
     my $no_clear = shift;
@@ -966,6 +957,7 @@ Returns non-zero if the device has the supplied layer in the OSI Model
 Returns C<undef> if the device doesn't support the layers() call.
 
 =cut
+
 sub has_layer {
     my $self = shift;
     my $check_for = shift;
@@ -981,6 +973,7 @@ sub has_layer {
 Returns SNMP Community string used in connection.
 
 =cut
+
 sub snmp_comm {
     my $self = shift;
     return $self->{snmp_comm};
@@ -991,6 +984,7 @@ sub snmp_comm {
 Returns SNMP Version used for this connection
 
 =cut
+
 sub snmp_ver {
     my $self = shift;
     return $self->{snmp_ver};
@@ -1010,6 +1004,7 @@ See device_type() entry for how a subclass is chosen.
 
 
 =cut
+
 sub specify {
     my $self = shift;
 
@@ -1048,6 +1043,7 @@ snmp calls on certain Cisco devices.
 See L<ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html>
 
 =cut
+
 sub cisco_comm_indexing{
     0;
 }
@@ -1152,6 +1148,7 @@ Ignored interfaces are ones that are usually not physical ports or Virtual Lans 
 or the CPU interface. 
 
 =cut
+
 sub if_ignore {
     my %nothing;
     return \%nothing;
@@ -1523,6 +1520,7 @@ structures :
 Used to flag if the MIBs have been loaded yet.
 
 =cut
+
 $INIT    = 0;
 
 =item %GLOBALS
@@ -1536,6 +1534,7 @@ choose a prefix for methods that will give it's own name space inside
 the SNMP::Info methods.
 
 =cut
+
 %GLOBALS = (
             # from SNMPv2-MIB
             'id'          => 'sysObjectID',
@@ -1554,6 +1553,7 @@ Contains a hash in the form ( method_name => SNMP iid)
 These are table entries, such as the IfIndex
 
 =cut
+
 %FUNCS   = (
             'interfaces'         => 'ifIndex',
             # from SNMPv2-MIB
@@ -1622,6 +1622,7 @@ that the MIB is present and has loaded correctly.
 $info->init() will throw an exception if a MIB does not load. 
 
 =cut
+
 %MIBS    = (
             # The "main" MIBs are automagically loaded in Net-SNMP now.
            );
@@ -1640,6 +1641,7 @@ Sample %MUNGE:
  )
 
 =cut
+
 %MUNGE   = ('ip'                 => \&munge_ip,
             'mac'                => \&munge_mac,
             'i_mac'              => \&munge_mac,
@@ -1774,6 +1776,7 @@ in new() unless 'Debug' argument passed in new().  Change objects' debug status 
 $info->debug().
 
 =cut
+
 $DEBUG = 0;
 
 =item $BIGINT
@@ -1782,6 +1785,7 @@ Default 0.   Set to true to have 64 bit counters return Math::BigInt objects ins
 string values.  See note under Interface Statistics about 64 bit values.
 
 =cut
+
 $BIGINT = 0; 
 
 =item $NOSUCH
@@ -1790,6 +1794,7 @@ Default 1.  Set to false to disable RetryNoSuch option for SNMP::Session.  Or se
 to do it on an object scope.
 
 =cut
+
 $NOSUCH = 1;
 
 =item $REPEATERS
@@ -1798,6 +1803,7 @@ Default 20.  MaxRepeaters for BULKWALK operations.  See C<perldoc SNMP> for more
 by passing L<BulkRepeaters> option in new()
 
 =cut
+
 $REPEATERS = 20;
 
 =back
@@ -1845,6 +1851,7 @@ Makes human friendly speed ratings using %SPEED_MAP
              )
 
 =cut
+
 %SPEED_MAP = (
                 '56000'      => '56 kbps',
                 '64000'      => '64 kbps',
@@ -1894,6 +1901,7 @@ sub munge_speed {
 Takes a binary IP and makes it dotted ASCII
 
 =cut
+
 sub munge_ip {
     my $ip = shift;
     return join('.',unpack('C4',$ip));
@@ -1904,6 +1912,7 @@ sub munge_ip {
 Takes an octet stream (HEX-STRING) and returns a colon separated ASCII hex string.
 
 =cut
+
 sub munge_mac {
     my $mac = shift;
     return undef unless defined $mac;
@@ -1916,6 +1925,7 @@ sub munge_mac {
 Takes a binary octet stream and returns an ASCII hex string
 
 =cut
+
 sub munge_octet2hex {
     my $oct = shift;
     return join('',map {sprintf "%x",$_} unpack('C*',$oct));
@@ -1926,6 +1936,7 @@ sub munge_octet2hex {
 Takes a binary char and returns its ASCII binary representation
 
 =cut
+
 sub munge_dec2bin {
     my $num = shift;
     return undef unless defined $num;
@@ -1942,6 +1953,7 @@ sub munge_dec2bin {
 Takes a SNMP2 'BITS' field and returns the ASCII bit string
 
 =cut
+
 sub munge_bits {
     my $bits = shift;
     return undef unless defined $bits;
@@ -1949,13 +1961,13 @@ sub munge_bits {
     return unpack("b*",$bits);
 }
 
-
 =item munge_counter64
 
 If $BIGINT is set to true, then a Math::BigInt object is returned.
 See Math::BigInt for details.
 
 =cut
+
 sub munge_counter64 {
     my $counter = shift;
     return unless defined $counter;
@@ -1975,6 +1987,7 @@ TODO: Get the precidence of MIBs and overriding of MIB data in Net-SNMP
 figured out.  Heirarchy/precendence of MIBS in SNMP::Info.
 
 =cut
+
 sub munge_i_up {
     my $i_up = shift;
     return unless defined $i_up;
@@ -1995,6 +2008,7 @@ sub munge_i_up {
 Used internally.  Loads all entries in %MIBS.
 
 =cut
+
 sub init {
     my $self = shift;
 
@@ -2038,6 +2052,7 @@ sub init {
 Returns a reference to the argument hash supplied to SNMP::Session
 
 =cut
+
 sub args {
     my $self = shift;
     return $self->{args};
@@ -2048,11 +2063,11 @@ sub args {
 Returns the class name of the object.
 
 =cut
+
 sub class {
     my $self=shift;
     return $self->{class};
 }
-
 
 =item $info->error_throw(error message)
 
@@ -2061,6 +2076,7 @@ Stores the error message for use by $info->error()
 If $info->debug() is true, then the error message is carped too.
 
 =cut
+
 sub error_throw {
     my $self = shift;
     my $error = shift;
@@ -2079,6 +2095,7 @@ sub error_throw {
 Returns a reference to the %FUNCS hash.
 
 =cut
+
 sub funcs {
     my $self=shift;
     return $self->{funcs};
@@ -2089,6 +2106,7 @@ sub funcs {
 Returns a reference to the %GLOBALS hash.
 
 =cut
+
 sub globals {
     my $self=shift;
     return $self->{globals};
@@ -2099,6 +2117,7 @@ sub globals {
 Returns a reference to the %MIBS hash.
 
 =cut
+
 sub mibs {
     my $self=shift;
     return $self->{mibs};
@@ -2109,6 +2128,7 @@ sub mibs {
 Returns a reference ot the %MUNGE hash.
 
 =cut
+
 sub munge {
     my $self=shift;
     return $self->{munge};
@@ -2119,6 +2139,7 @@ sub munge {
 Returns NoSuch value set or not in new()
 
 =cut
+
 sub nosuch {
     my $self = shift;
     return $self->{nosuch};
@@ -2129,6 +2150,7 @@ sub nosuch {
 Gets or Sets the SNMP::Session object.
 
 =cut
+
 sub session {
     my $self = shift;
     $self->{sess} = $_[0] if @_;
@@ -2144,12 +2166,12 @@ Store is a hash reference in this format :
 $info->store = { attribute => { iid => value , iid2 => value2, ... } };
 
 =cut
+
 sub store {
     my $self = shift;
     $self->{store} = $_[0] if @_;
     return $self->{store};
 }
-
 
 =item $info->_global()
 
@@ -2158,6 +2180,7 @@ Used internally by AUTOLOAD to load dynamic methods from %GLOBALS.
 Example: $info->name() calls autoload which calls $info->_global('name').
 
 =cut
+
 sub _global{
     my $self = shift;
     my $attr = shift;
@@ -2216,6 +2239,7 @@ either %GLOBALS or %FUNCS.
 Example:  $info->set_name('dog',3) uses autoload to resolve to $info->_set('name','dog',3);
 
 =cut
+
 sub _set {
     my ($self,$attr,$val,$iid) = @_;
 
@@ -2273,6 +2297,7 @@ Returns $info->store() -- See store() entry.
 Note return value has changed since version 0.3
 
 =cut
+
 sub load_all {
     my $self = shift;
     my $sess = $self->session();
@@ -2299,6 +2324,7 @@ Use $info->load_all() to reload the data.
 Note return value has changed since version 0.3
 
 =cut
+
 sub all {
     my $self = shift;
     my $sess = $self->session();
@@ -2309,7 +2335,6 @@ sub all {
     return $self->store();    
 }
 
-
 =item $info->_load_attr()
 
 Used internally by AUTOLOAD to fetch data called from methods listed in %FUNCS.
@@ -2317,6 +2342,7 @@ Used internally by AUTOLOAD to fetch data called from methods listed in %FUNCS.
 Called from $info->load_METHOD();
 
 =cut
+
 sub _load_attr {
     my $self = shift;
     my ($attr,$leaf,$partial) = @_;
@@ -2451,6 +2477,7 @@ The first time ran, it will call $info->load_METHOD().
 Every time after it will return cached data.
 
 =cut
+
 sub _show_attr {
     my $self = shift;
     my $attr = shift;
@@ -2490,6 +2517,7 @@ the same name.
 For example to override $info->name() create `` sub name {...}'' in your subclass.
 
 =cut
+
 sub AUTOLOAD {
     my $self = shift;
     my $sub_name = $AUTOLOAD;
