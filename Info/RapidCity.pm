@@ -1,8 +1,7 @@
 # SNMP::Info::RapidCity
-# Eric Miller <eric@jeneric.org>
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller, Max Baker
+# Copyright (c) 2004-6 Eric Miller, Max Baker
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -64,7 +63,7 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             'rc_duplex_admin'   => 'rcPortAdminDuplex',
             'rc_speed_admin'    => 'rcPortAdminSpeed',
             'rc_auto'           => 'rcPortAutoNegotiate',
-            'rc_alias'	    => 'rcPortName',
+            'rc_alias'          => 'rcPortName',
             # From RAPID-CITY::rc2kCpuEthernetPortTable
             'rc_cpu_ifindex'        => 'rc2kCpuEthernetPortIfIndex',
             'rc_cpu_admin'         => 'rc2kCpuEthernetPortAdminStatus',
@@ -188,7 +187,7 @@ sub i_duplex_admin {
         next unless defined $duplex;
         my $auto = $rc_auto->{$if}||'false';
         
-	my $string = 'other';
+        my $string = 'other';
         $string = 'half' if ($duplex =~ /half/i and $auto =~ /false/i);
         $string = 'full' if ($duplex =~ /full/i and $auto =~ /false/i);
         $string = 'auto' if $auto =~ /true/i;    
@@ -251,11 +250,11 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::RapidCity - SNMP Interface to Nortel Networks' RapidCity MIB
+SNMP::Info::Layer2::RapidCity - SNMP Interface to the Nortel RapidCity MIB
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 
@@ -276,8 +275,9 @@ Eric Miller (C<eric@jeneric.org>)
 =head1 DESCRIPTION
 
 SNMP::Info::RapidCity is a subclass of SNMP::Info that provides an interface
-to the C<RAPID-CITY> MIB.  This MIB is used across the Nortel Networks' Passport
-LAN, as well as, the BayStack and Acclear families.
+to the C<RAPID-CITY> MIB.  This MIB is used across the Nortel Ethernet Routing
+Switch and Ethernet Switch product lines (Formerly known as Passport,
+BayStack, and Acclear).
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
@@ -292,19 +292,6 @@ None.
 =item RAPID-CITY
 
 =back
-
-MIBs can be found on the CD that came with your product.
-
-Or, they can be downloaded directly from Nortel Networks regardless of support
-contract status.
-
-Go to http://www.nortelnetworks.com Techninal Support, Browse Technical Support,
-Select by product, Java Device Manager, Software.  Download the latest version.
-After installation, all mibs are located under the install directory under mibs
-and the repspective product line.
-
-Note:  Required version of RAPID-CITY, rapid_city.mib, must be from the Passport
-8600 version 3.3 or higher (located in JDM\mibs\passport8k\).
 
 =head1 GLOBAL METHODS
 
