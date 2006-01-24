@@ -796,6 +796,7 @@ Algorithm for Subclass Detection:
             Nortel Passport/Accelar 8100   -> SNMP::Info::Layer3::Passport
             Nortel AP 222x                 -> SNMP::Info::Layer2::NAP222x
             Orinco AP                      -> SNMP::Info::Layer2::Orinoco
+            Nortel 2270 WSS                -> SNMP::Info::Layer2::N2270
         Elsif Layer1 Support               -> SNMP::Info::Layer1
             Allied                         -> SNMP::Info::Layer1::Allied
             Asante                         -> SNMP::Info::Layer1::Asante
@@ -914,7 +915,10 @@ sub device_type {
 
         # Aironet - non IOS
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(BR500)\D/) ;
-   
+
+        #Nortel 2270
+        $objtype = 'SNMP::Info::Layer2::N2270' if ($desc =~ /Nortel\s+Networks\s+WLAN\s+-\s+Security\s+Switch/) ;
+
     } elsif ($info->has_layer(1)) {
         $objtype = 'SNMP::Info::Layer1';
         #  Allied crap-o-hub
