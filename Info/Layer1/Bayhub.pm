@@ -1,8 +1,8 @@
 # SNMP::Info::Layer1::Bayhub
-# Eric Miller <eric@jeneric.org>
+# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller, Max Baker
+# Copyright (c) 2004-6 Eric Miller, Max Baker
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -243,6 +243,26 @@ sub i_up_admin {
     }
     return \%i_up_admin;
 }
+
+sub set_i_up_admin {
+    # map setting to those the hub will understand
+    my %setting = qw/up 2 down 3/;
+
+    my $bayhub = shift;
+    my ($setting, $iid) = @_;
+
+    my $i_index  = $bayhub->i_index();
+    my %reverse_i_index = reverse %$i_index;
+
+    $setting = lc($setting);
+
+    return 0 unless defined $setting{$setting};
+
+    $iid = $reverse_i_index{$iid};
+
+    return $bayhub->set_bayhub_up_admin($setting{$setting}, $iid);
+}
+
 # Hubs do not support the standard Bridge MIB
 sub bp_index {
    my $bayhub = shift;
@@ -325,7 +345,7 @@ SNMP::Info::Layer1::Bayhub - SNMP Interface to Bay / Nortel Hubs
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 
@@ -389,13 +409,6 @@ See SNMP::Info::SONMP for its own MIB requirements.
 
 =back
 
-MIBs can be found on the CD that came with your product.
-
-Or, they can be downloaded directly from Nortel Networks regardless of support
-contract status.  Go to http://www.nortelnetworks.com Technical Support, Browse Technical Support,
-Select by Product Families, BayStack, BayStack: Hubs - 150 Series, 10BASE-T,
-Software.  Filter on mibs and download the latest version's archive.
-
 =head1 GLOBALS
 
 These are methods that return scalar value from SNMP
@@ -404,11 +417,11 @@ These are methods that return scalar value from SNMP
 
 =item $bayhub->vendor()
 
-Returns 'Nortel'
+Returns 'nortel'
 
 =item $bayhub->os()
 
-Returns 'Bay Hub'
+Returns 'bay_hub'
 
 =item $bayhub->model()
 
@@ -494,6 +507,17 @@ Returns (B<s5EnPortLinkStatus>) for each port.  Translates on/off to up/down.
 =item $bayhub->i_up_admin()
 
 Returns (B<s5EnPortPartStatus>) for each port.
+
+=item $bayhub->set_i_up_admin(state, ifIndex)
+
+Sets port state, must be supplied with state and port ifIndex
+
+State choices are 'up'or 'down'
+
+Example:
+  my %if_map = reverse %{$bayhub->interfaces()};
+  $bayhub->set_i_up_admin('down', $if_map{'1.1'}) 
+      or die "Couldn't change port state. ",$bayhub->error(1);
 
 =item $bayhub->bp_index()
 
