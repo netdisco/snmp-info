@@ -319,9 +319,13 @@ Layer3::Aironet for Aironet devices that don't run IOS.
 
 Allied Telesys switches.
 
+=item SNMP::Info::Layer2::Aruba
+
+Subclass for Aruba wireless switches.
+
 =item SNMP::Info::Layer2::Bay
 
-Depricated.  Use BayStack.
+Depreciated.  Use BayStack.
 
 =item SNMP::Info::Layer2::Baystack
 
@@ -803,6 +807,7 @@ Algorithm for Subclass Detection:
             Nortel/Bay Hub                 -> SNMP::Info::Layer1::Bayhub
         Else                               -> SNMP::Info
             ZyXEL_DSLAM                    -> SNMP::Info::Layer2::ZyXEL_DSLAM
+            Aruba wireless                 -> SNMP::Info::Layer2::Aruba
 
 =cut
 sub device_type {
@@ -931,6 +936,8 @@ sub device_type {
     # These devices don't claim to have Layer1-3 but we like em anyways.
     } else {
         $objtype = 'SNMP::Info::Layer2::ZyXEL_DSLAM' if ($desc =~ /8-port .DSL Module\(Annex .\)/i);
+        # Aruba wireless switches
+        $objtype = 'SNMP::Info::Layer2::Aruba' if ($desc =~ /AirOS/);
     }   
 
     return $objtype; 
