@@ -836,10 +836,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Alpine38/;
         $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Summit\s*\d/;
         # Nortel Passport 8600, 1600, 1100, 1200 Series
-        $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-86/;
+        $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /(Passport|Ethernet\s+Routing\s+Switch)-86/i;
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-[1][012]/;
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Accelar-1/;
-        $objtype = 'SNMP::Info::Layer3::N1600'  if $desc =~ /Passport-16/;
+        $objtype = 'SNMP::Info::Layer3::N1600'  if $desc =~ /(Passport|Ethernet\s+Routing\s+Switch)-16/i;
         # Nortel Alteon AD Series
         $objtype = 'SNMP::Info::Layer3::AlteonAD' if $desc =~ /Alteon\s[1A][8D]/;
         # Nortel Contivity
@@ -893,7 +893,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::Baystack' if ($desc =~ /Business\sPolicy\sSwitch/i);
 
         #  BayStack Numbered
-        $objtype = 'SNMP::Info::Layer2::Baystack' if ($desc =~ /BayStack\s[345]\d/);
+        $objtype = 'SNMP::Info::Layer2::Baystack' if ($desc =~ /(BayStack|Ethernet\s+(Routing\s+)??Switch)\s[345]\d/i);
 
         # Accelar/Passport 8100
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-81/;
@@ -912,7 +912,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(BR500)\D/) ;
 
         #Nortel 2270
-        $objtype = 'SNMP::Info::Layer2::N2270' if ($desc =~ /Nortel\s+Networks\s+WLAN\s+-\s+Security\s+Switch/) ;
+        $objtype = 'SNMP::Info::Layer2::N2270' if ($desc =~ /Nortel\s+(Networks\s+)??WLAN\s+-\s+Security\s+Switch/) ;
 
     } elsif ($info->has_layer(1)) {
         $objtype = 'SNMP::Info::Layer1';
