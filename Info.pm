@@ -834,7 +834,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /s72033_rp/;
         # Extreme Networks
         $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Alpine38/;
-        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Summit\d/;
+        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Summit\s*\d/;
         # Nortel Passport 8600, 1600, 1100, 1200 Series
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-86/;
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-[1][012]/;
@@ -881,7 +881,7 @@ sub device_type {
 
         # Extreme Networks
         $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Alpine38/;
-        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Summit\d/;
+        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Summit\s*\d/;
 
         #   HP
         $objtype = 'SNMP::Info::Layer2::HP' if ($desc =~ /HP.*ProCurve/); 
