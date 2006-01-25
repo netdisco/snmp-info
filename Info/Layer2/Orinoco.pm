@@ -1,8 +1,8 @@
 # SNMP::Info::Layer2::Orinoco
-# Eric Miller <eric@jeneric.org>
+# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller
+# Copyright (c) 2004-6 Eric Miller
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -103,8 +103,7 @@ sub model {
     my $descr = $orinoco->description();
     return undef unless defined $descr;
 
-    return 'AP-1000' if ($descr =~ /AP-1000/);
-    return 'AP-2000' if ($descr =~ /AP-2000/);
+    return $1 if ($descr =~ /(AP-\d+)/);
     return 'WavePOINT-II' if ($descr =~ /WavePOINT-II/);
     return undef;
 }
@@ -158,7 +157,7 @@ SNMP::Info::Layer2::Orinoco - SNMP Interface to Orinoco Series Access Points
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 
