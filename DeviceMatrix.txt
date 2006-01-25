@@ -24,6 +24,19 @@ class: Layer2::Allied
 ver: 2
 macsuck: yes
 
+# Aruba
+device-vendor: Aruba
+
+device-family: Aruba Wireless Controllers
+arpnip: no
+macsuck: yes
+portmac: yes
+duplex: no
+class: Layer2::Aruba
+note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+
+device: 5000
+
 # Asante
 device-vendor: Asante
 
@@ -294,6 +307,20 @@ duplex: no
 
 device: VG200
 
+# Extreme
+device-vendor: Extreme Networks
+
+device-family: Alpine and Summit
+arpnip: yes
+macsuck: yes
+duplex: both
+cdp: no
+class: Layer3::Extreme
+note: !You may have to *enable* access to the standard bridge mib (enable snmp dot1dTpFdbTable).
+
+device: Alpine 3808
+device: Summit 7i, 48si
+
 # Foundry
 device-vendor: Foundry Networks
 note: CDP --> FDP.
@@ -365,7 +392,7 @@ device-family: BSD
 
 
 # NORTEL
-device-vendor: Nortel Networks
+device-vendor: Nortel
 
 device-family: BayStack Hub
 macsuck: yes
@@ -430,8 +457,6 @@ device: AP-2220
 
 device: AP-2221
 
-device: AP-2225
-
 device-family: Alteon AD
 arpnip: yes
 macsuck: yes
@@ -490,7 +515,6 @@ device: 2500,2600,2700
 
 device: 4500,4600,5000
 
-
 device-family: Passport/Accelar LAN
 arpnip: yes
 macsuck: yes
@@ -518,6 +542,17 @@ cdp: proprietary
 class: Layer3::N1600
 
 device: 1624,1648
+
+device-family: Wireless Switch 2270
+arpnip: no
+macsuck: yes
+portmac: yes
+duplex: both
+cdp: proprietary
+class: Layer2::N2270
+note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+
+device: 2270
 
 # Proxim
 device-vendor: Proxim
