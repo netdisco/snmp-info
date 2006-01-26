@@ -771,6 +771,7 @@ Algorithm for Subclass Detection:
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
             Nortel Passport/Accelar LAN    -> SNMP::Info::Layer3::Passport
+            Nortel/Bay Baystack            -> SNMP::Info::Layer2::Baystack
             Alteon Ace Director            -> SNMP::Info::Layer3::AlteonAD
             Nortel Contivity               -> SNMP::Info::Layer3::Contivity
             Nortel BayRS Router            -> SNMP::Info::Layer3::BayRS
@@ -840,6 +841,8 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-[1][012]/;
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Accelar-1/;
         $objtype = 'SNMP::Info::Layer3::N1600'  if $desc =~ /(Passport|Ethernet\s+Routing\s+Switch)-16/i;
+        #  ERS - BayStack Numbered 
+        $objtype = 'SNMP::Info::Layer2::Baystack' if ($desc =~ /(BayStack|Ethernet\s+Routing\s+Switch)\s[345]\d/i);
         # Nortel Alteon AD Series
         $objtype = 'SNMP::Info::Layer3::AlteonAD' if $desc =~ /Alteon\s[1A][8D]/;
         # Nortel Contivity
