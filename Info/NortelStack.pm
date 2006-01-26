@@ -1,8 +1,8 @@
 # SNMP::Info::NortelStack
-# Eric Miller <eric@jeneric.org>
+# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller, Max Baker
+# Copyright (c) 2004-6 Eric Miller, Max Baker
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -125,7 +125,7 @@ SNMP::Info::NortelStack - Perl5 Interface to Nortel Stack information using SNMP
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 
@@ -140,15 +140,15 @@ Eric Miller (C<eric@jeneric.org>)
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $stack->class();
+ my $class = $stack->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
 
 SNMP::Info::NortelStack is a subclass of SNMP::Info that provides an interface
 to C<S5-AGENT-MIB> and C<S5-CHASSIS-MIB>.  These MIBs are used across the
-Nortel BayStack family, as well as, older Nortel devices such as the Centillion
-family of ATM switches.
+Nortel Stackable Ethernet Switches (BayStack), as well as, older Nortel devices
+such as the Centillion family of ATM switches.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
@@ -167,20 +167,6 @@ None.
 =item S5-ROOT-MIB and S5-TCS-MIB are required by the other MIBs.
 
 =back
-
-MIBs can be found on the CD that came with your product.
-
-Or, they can be downloaded directly from Nortel Networks regardless of support
-contract status.
-
-Go to http://www.nortelnetworks.com Techninal Support, Browse Technical Support,
-Select by product, Java Device Manager, Software.  Download the latest version.
-After installation, all mibs are located under the install directory under mibs
-and the repspective product line.
-
-Note:  Recommend versions (located in JDM\mibs\bps2000\v3100.zip)
-S5-AGENT-MIB    s5age154.mib
-S5-CHASSIS-MIB  s5cha135.mib
 
 =head1 GLOBAL METHODS
 

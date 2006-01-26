@@ -1,8 +1,8 @@
 # SNMP::Info::Layer3::Passport
-# Eric Miller <eric@jeneric.org>
+# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller, Max Baker
+# Copyright (c) 2004-6 Eric Miller, Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -471,12 +471,12 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Passport - Perl5 Interface to Nortel's Passport
-and Accelar Series Switches
+SNMP::Info::Layer3::Passport - Perl5 Interface to modular Nortel Ethernet Routing
+Switches (formerly Passport / Accelar)
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 
@@ -491,18 +491,20 @@ Eric Miller (C<eric@jeneric.org>)
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $passport->class();
+ my $class = $passport->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Nortel's Passport 8600 and Accelar Series Switches.  
+Abstraction subclass for modular Nortel Ethernet Routing Switches (formerly
+Passport and Accelar Series Switches).
 
-These devices run Passport OS but have some of the same charactersitics as the Baystack family. 
-For example, extended interface information is gleened from RAPID-CITY.
+These devices have some of the same charactersitics as the stackable Nortel 
+Ethernet Switches (Baystack).  For example, extended interface information is 
+gleened from RAPID-CITY.
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not after
+determining a more specific class using the method above. 
 
  my $passport = new SNMP::Info::Layer3::Passport(...);
 
