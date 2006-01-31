@@ -930,7 +930,7 @@ sub device_type {
     } else {
         $objtype = 'SNMP::Info::Layer2::ZyXEL_DSLAM' if ($desc =~ /8-port .DSL Module\(Annex .\)/i);
         # Aruba wireless switches
-        $objtype = 'SNMP::Info::Layer2::Aruba' if ($desc =~ /AirOS/);
+        $objtype = 'SNMP::Info::Layer2::Aruba' if ($desc =~ /(ArubaOS|AirOS)/);
     }   
 
     return $objtype; 
