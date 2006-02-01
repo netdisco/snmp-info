@@ -924,7 +924,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer1::Asante' if ($desc =~ /asante/i);
 
         #  Bay Hub
-        $objtype = 'SNMP::Info::Layer1::Bayhub' if ($desc =~ /NMM.*Agent/);
+        $objtype = 'SNMP::Info::Layer1::Bayhub' if ($desc =~ /Bay.*NMM.*Agent/);
+
+        #  Synoptics Hub
+        $objtype = 'SNMP::Info::Layer1::S3000' if ($desc =~ /synoptics/i);
 
     # These devices don't claim to have Layer1-3 but we like em anyways.
     } else {
