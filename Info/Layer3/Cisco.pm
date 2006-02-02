@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3::Cisco
 # Max Baker
 #
-# Copyright (c) 2004,2005 Max Baker
+# Copyright (c) 2004-6 Max Baker
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -37,12 +37,15 @@ use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoImage;
+use SNMP::Info::CiscoRTT;
+use SNMP::Info::CiscoQOS;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
 $VERSION = 1.0;
 @SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::Layer3 SNMP::Info::CiscoVTP 
                                      SNMP::Info::CDP    SNMP::Info::CiscoStats 
-                                     SNMP::Info::CiscoImage Exporter/;
+                                     SNMP::Info::CiscoImage SNMP::Info::CiscoRTT
+                                     SNMP::Info::CiscoQOS Exporter/;
 @SNMP::Info::Layer3::Cisco::EXPORT_OK = qw//;
 
 %MIBS = (
@@ -51,6 +54,8 @@ $VERSION = 1.0;
             %SNMP::Info::CDP::MIBS,
             %SNMP::Info::CiscoStats::MIBS,
             %SNMP::Info::CiscoImage::MIBS,
+            %SNMP::Info::CiscoRTT::MIBS,
+            %SNMP::Info::CiscoQOS::MIBS,
         );
 
 %GLOBALS = (
@@ -59,6 +64,8 @@ $VERSION = 1.0;
             %SNMP::Info::CDP::GLOBALS,
             %SNMP::Info::CiscoStats::GLOBALS,
             %SNMP::Info::CiscoImage::GLOBALS,
+            %SNMP::Info::CiscoRTT::GLOBALS,
+            %SNMP::Info::CiscoQOS::GLOBALS,
            );
 
 %FUNCS = (
@@ -67,6 +74,8 @@ $VERSION = 1.0;
             %SNMP::Info::CDP::FUNCS,
             %SNMP::Info::CiscoStats::FUNCS,
             %SNMP::Info::CiscoImage::FUNCS,
+            %SNMP::Info::CiscoRTT::FUNCS,
+            %SNMP::Info::CiscoQOS::FUNCS,
          );
 
 %MUNGE = (
@@ -75,6 +84,8 @@ $VERSION = 1.0;
             %SNMP::Info::CDP::MUNGE,
             %SNMP::Info::CiscoStats::MUNGE,
             %SNMP::Info::CiscoImage::MUNGE,
+            %SNMP::Info::CiscoRTT::MUNGE,
+            %SNMP::Info::CiscoQOS::MUNGE,
          );
 
 1;
