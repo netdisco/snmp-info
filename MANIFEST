@@ -6,6 +6,8 @@ Info/Airespace.pm
 Info/Bridge.pm
 Info/CDP.pm
 Info/CiscoImage.pm
+Info/CiscoQOS.pm
+Info/CiscoRTT.pm
 Info/CiscoStack.pm
 Info/CiscoStats.pm
 Info/CiscoVTP.pm
@@ -16,6 +18,7 @@ Info/Layer1.pm
 Info/Layer1/Allied.pm
 Info/Layer1/Asante.pm
 Info/Layer1/Bayhub.pm
+Info/Layer1/S3000.pm
 Info/Layer2.pm
 Info/Layer2/Aironet.pm
 Info/Layer2/Allied.pm
