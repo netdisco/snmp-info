@@ -18,6 +18,8 @@ version 1.0 ()
     + Added support for Extreme Alpine and Summit switches (Mike Hunter and Eric Miller)
     + Added support for Aruba wireless switches (Eric Miller and Brian Chow)
     + Added support for Nortel 2700 series (Airespace) wireless switches (Eric Miller)
+    + Added support for Synoptics hubs as new class L1:S3000 (Eric Miller)
+    + Added Cisco QOS and RTT classes (Alexander Hartmaier)
 
     * More error checking in  _load_attr() around bulkwalk code
     * Minor warning fix in L3::Aironet::os_ver()
