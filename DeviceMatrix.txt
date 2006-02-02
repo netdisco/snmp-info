@@ -401,10 +401,14 @@ cdp: proprietary
 ver: 1
 class: Layer1::Bayhub
 note: !Uses proprietary MIBs to provide MAC to port mapping.
+note: !Requires Advanced or Advanced Analyzer NMM
 
 device: 102
 
+device: System 5000
+
 device-family: Baystack Switch
+arpnip: yes
 macsuck: yes
 duplex: both
 cdp: proprietary
@@ -418,7 +422,7 @@ device: 380
 
 device: 410
 
-device: 420
+device: 420,425
 
 device: 450
 note: !Some versions > 4.X in stacked configuration have SNMP timeout issues. 
@@ -426,7 +430,9 @@ note: Labels full duplex as 20Mbit connection.
 
 device: 460,470
 
-device: 5510,5520
+device: 3510
+
+device: 5510,5520,5530
 
 device: BPS
 
@@ -541,7 +547,20 @@ duplex: both
 cdp: proprietary
 class: Layer3::N1600
 
-device: 1624,1648
+device: 1612,1624,1648
+
+device-family: Synoptics
+macsuck: yes
+duplex: both
+cdp: proprietary
+ver: 1
+class: Layer1::S3000
+note: !Uses proprietary MIBs to provide MAC to port mapping.
+note: !Requires Advanced or Advanced Analyzer NMM
+
+device: 281X
+
+device: System 3000
 
 device-family: Wireless Switch 2270
 arpnip: no
@@ -567,7 +586,13 @@ device: AP-1000
 
 device: AP-2000
 
+device: AP-4000
+
 device: WavePOINT-II
+
+# Synoptics
+device-vendor: Synoptics
+note: See Nortel
 
 # Zyxel
 device-vendor: Zyxel
