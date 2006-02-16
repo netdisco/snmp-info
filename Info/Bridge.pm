@@ -137,7 +137,60 @@ sub i_stp_state {
     return \%i_stp_state;
 }
 
+
+sub i_stp_port {
+    my $bridge = shift;    
+    my $bp_index = $bridge->bp_index();
+    my $stp_p_port = $bridge->stp_p_port();
+    
+    my %i_stp_port;
+
+    foreach my $index (keys %$stp_p_port){
+       my $bridge = $stp_p_port->{$index};
+       my $iid   = $bp_index->{$index};
+       next unless defined $iid;
+       next unless defined $bridge;
+       $i_stp_port{$iid}=$bridge;
+    }
+    return \%i_stp_port;
+}
+
+sub i_stp_id {
+    my $bridge = shift;
+    my $bp_index = $bridge->bp_index();
+    my $stp_p_id = $bridge->stp_p_id();
+
+    my %i_stp_id;
+
+    foreach my $index (keys %$stp_p_id){
+        my $bridge = $stp_p_id->{$index};
+        my $iid   = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $bridge;
+        $i_stp_id{$iid}=$bridge;
+    }
+    return \%i_stp_id;
+}
+
+sub i_stp_bridge {
+    my $bridge = shift;
+    my $bp_index = $bridge->bp_index();
+    my $stp_p_bridge = $bridge->stp_p_bridge();
+
+    my %i_stp_bridge;
+
+    foreach my $index (keys %$stp_p_bridge){
+        my $bridge = $stp_p_bridge->{$index};
+        my $iid   = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $bridge;
+        $i_stp_bridge{$iid}=$bridge;
+    }
+    return \%i_stp_bridge;
+}
+
 1;
+
 __END__
 
 
@@ -202,7 +255,7 @@ None.
 
 =item Q-BRIDGE-MIB
 
-f<rfc2674_q.mib>
+F<rfc2674_q.mib>
 
 =back
 
@@ -373,6 +426,18 @@ this port's segment."
 (B<dot1dStpPortDesignatedPort>)
 
 "The Port Identifier of the port on the Designated Bridge for this port's segment."
+
+=item $bridge->i_stp_port()
+
+Returns the mapping of (B<dot1dStpPortDesignatedPort>) to the interface index (iid).
+
+=item $bridge->i_stp_id()
+
+Returns the mapping of (B<dot1dStpPort>) to the interface index (iid).
+
+=item $bridge->i_stp_bridge()
+
+Returns the mapping of (B<dot1dStpPortDesignatedBridge>) to the interface index (iid).
 
 =back
 
