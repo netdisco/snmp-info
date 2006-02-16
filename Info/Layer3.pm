@@ -51,7 +51,8 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
           %SNMP::Info::Bridge::MIBS,
           %SNMP::Info::EtherLike::MIBS,
           %SNMP::Info::Entity::MIBS,
-          'OSPF-MIB'           => 'ospfRouterId',
+          'OSPF-MIB'    => 'ospfRouterId',
+          'BGP4-MIB'    => 'bgpIdentifier',
         );
 
 %GLOBALS = (
@@ -60,9 +61,11 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
             %SNMP::Info::Bridge::GLOBALS,
             %SNMP::Info::EtherLike::GLOBALS,
             %SNMP::Info::Entity::GLOBALS,
-            'mac'       => 'ifPhysAddress.1',
-            'serial1'   => '.1.3.6.1.4.1.9.3.6.3.0', # OLD-CISCO-CHASSIS-MIB::chassisId.0
-            'router_ip' => 'ospfRouterId.0',
+            'mac'          => 'ifPhysAddress.1',
+            'serial1'      => '.1.3.6.1.4.1.9.3.6.3.0', # OLD-CISCO-CHASSIS-MIB::chassisId.0
+            'router_ip'    => 'ospfRouterId.0',
+            'bgp_id'       => 'bgpIdentifier.0',
+            'bgp_local_as' => 'bgpLocalAs.0',
            );
 
 %FUNCS   = (
@@ -77,6 +80,18 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
             'at_paddr'   => 'atPhysAddress',
             'at_netaddr' => 'atNetAddress',
             'ospf_ip'    => 'ospfHostIpAddress',
+            # BGP Peer Table
+            'bgp_peers'               => 'bgpPeerLocalAddr',
+            'bgp_peer_id'             => 'bgpPeerIdentifier',
+            'bgp_peer_state'          => 'bgpPeerState',
+            'bgp_peer_as'             => 'bgpPeerRemoteAs',
+            'bgp_peer_addr'           => 'bgpPeerRemoteAddr',
+            'bgp_peer_fsm_est_trans'  => 'bgpPeerFsmEstablishedTransitions',
+            'bgp_peer_in_tot_msgs'    => 'bgpPeerInTotalMessages',
+            'bgp_peer_in_upd_el_time' => 'bgpPeerInUpdateElapsedTime',
+            'bgp_peer_in_upd'         => 'bgpPeerInUpdates', 
+            'bgp_peer_out_tot_msgs'   => 'bgpPeerOutTotalMessages',
+            'bgp_peer_out_upd'        => 'bgpPeerOutUpdates',
            );
 
 %MUNGE = (
@@ -231,7 +246,9 @@ sub vendor {
     return 'foundry' if ($descr =~ /foundry/i);
 
 }
+
 1;
+
 __END__
 
 =head1 NAME
@@ -302,6 +319,8 @@ For L2/L3 devices.
 
 =item OSPF-MIB
 
+=item BGP4-MIB
+
 =item Inherited Classes
 
 MIBs required by the inherited classes listed above.
@@ -325,6 +344,18 @@ Returns root port mac address
 =item $l3->router_ip()
 
 (B<ospfRouterId.0>)
+
+=item $l3->bgp_id()
+
+(B<bgpIdentifier.0>)
+
+Returns the BGP identifier of the local system
+
+=item $l3->bgp_local_as()
+
+Returns the local autonomous system number 
+
+(B<bgpLocalAs.0>)
 
 =back
 
@@ -423,6 +454,84 @@ Returns reference to hash of Arp Cache Entries to MAC address
 Returns reference to hash of Arp Cache Entries to IP Address
 
 (B<atNetAddress>)
+
+=back
+
+=head2 BGP Peer Table
+
+=over
+
+=item $l3->bgp_peers()
+
+Returns reference to hash of BGP peer to local IP address
+
+(B<bgpPeerLocalAddr>)
+
+=item $l3->bgp_peer_id()
+
+Returns reference to hash of BGP peer to BGP peer identifier
+
+(B<bgpPeerIdentifier>)
+
+=item $l3->bgp_peer_state()
+
+Returns reference to hash of BGP peer to BGP peer state
+
+(B<bgpPeerState>)
+
+=item $l3->bgp_peer_as()
+
+Returns reference to hash of BGP peer to BGP peer autonomous system number
+
+(B<bgpPeerRemoteAs>)
+
+=item $l3->bgp_peer_addr()
+
+Returns reference to hash of BGP peer to BGP peer IP address
+
+(B<bgpPeerRemoteAddr>)
+
+=item $l3->bgp_peer_fsm_est_trans()
+
+Returns reference to hash of BGP peer to the total number of times the BGP FSM
+transitioned into the established state
+
+(B<bgpPeerFsmEstablishedTransitions>)
+
+=item $l3->bgp_peer_in_tot_msgs()
+
+Returns reference to hash of BGP peer to the total number of messages received
+from the remote peer on this connection
+
+(B<bgpPeerInTotalMessages>)
+
+=item $l3->bgp_peer_in_upd_el_time()
+
+Returns reference to hash of BGP peer to the elapsed time in seconds since
+the last BGP UPDATE message was received from the peer.
+
+(B<bgpPeerInUpdateElapsedTime>)
+
+=item $l3->bgp_peer_in_upd()
+
+Returns reference to hash of BGP peer to the number of BGP UPDATE messages
+received on this connection
+
+(B<bgpPeerInUpdates>)
+
+=item $l3->bgp_peer_out_tot_msgs()
+
+Returns reference to hash of BGP peer to the total number of messages transmitted
+to the remote peer on this connection
+
+(B<bgpPeerOutTotalMessages>)
+
+=item $l3->bgp_peer_out_upd()
+
+Returns reference to hash of BGP peer to the number of BGP UPDATE messages
+transmitted on this connection
+
+(B<bgpPeerOutUpdates>)
 
 =back
 
