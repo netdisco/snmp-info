@@ -225,6 +225,14 @@ CISCO-CDP-MIB.  Cisco Discovery Protocol (CDP) Support.  Inherited by devices se
 
 CISCO-IMAGE-MIB. A collection of OIDs providing IOS image characteristics.
 
+=item SNMP::Info::CiscoQOS
+
+CISCO-CLASS-BASED-QOS-MIB. A collection of OIDs providing information about a Cisco device's QOS config.
+
+=item SNMP::Info::CiscoRTT
+
+CISCO-RTTMON-MIB. A collection of OIDs providing information about a Cisco device's RTT values.
+
 =item SNMP::Info::CiscoStack
 
 CISCO-STACK-MIB and CISCO-PORT-SECURITY-MIB
@@ -260,12 +268,12 @@ S5-AGENT-MIB, S5-CHASSIS-MIB.
 
 =item SNMP::Info::RapidCity
 
-RAPID-CITY.  Inhertited by Nortel Networks switches for duplex and VLAN information.
+RAPID-CITY.  Inhertited by Nortel switches for duplex and VLAN information.
 
 =item SNMP::Info::SONMP
 
-SYNOPTICS-ROOT-MIB, S5-ETH-MULTISEG-TOPOLOGY-MIB.  Provides translation from Nortel Networks Topology
-Table information to CDP.  Inherited by Nortel/Bay switches and hubs.
+SYNOPTICS-ROOT-MIB, S5-ETH-MULTISEG-TOPOLOGY-MIB.  Provides translation from Nortel Topology
+Table information to CDP.  Inherited by Nortel/Bay/Synoptics switches and hubs.
 
 =back
 
@@ -301,6 +309,11 @@ Requires ASANTE-HUB1012-MIB
 Subclass for Nortel/Bay hubs.  This includes System 5000, 100 series,
 200 series, and probably more.
 
+=item SNMP::Info::Layer1::S3000
+
+Subclass for Bay/Synoptics hubs.  This includes System 3000, 281X, and
+probably more.
+
 =back
 
 =item SNMP::Info::Layer2
@@ -329,7 +342,7 @@ Depreciated.  Use BayStack.
 =item SNMP::Info::Layer2::Baystack
 
 Subclass for Nortel/Bay Baystack switches.  This includes 303, 304, 350, 380,
-410, 420, 425, 450, 460, 470, 5510, 5520, Business Policy Switch (BPS) and
+410, 420, 425, 450, 460, 470, 5510, 5520, 5530, Business Policy Switch (BPS) and
 probably others.
 
 =item SNMP::Info::Layer2::C1900
@@ -372,7 +385,7 @@ Subclass for Nortel 222x series wireless access points.
 
 =item SNMP::Info::Layer2::Orinoco
 
-Subclass for Orinoco wireless access points.
+Subclass for Orinoco/Proxim wireless access points.
 
 =item SNMP::Info::Layer2::ZyXEL_DSLAM
 
@@ -397,11 +410,11 @@ Note Layer2::Aironet
 
 =item SNMP::Info::Layer3::AlteonAD
 
-Subclass for Nortel Networks' Alteon Ace Director series L2-7 switches.
+Subclass for Nortel Alteon Ace Director series L2-7 switches.
 
 =item SNMP::Info::Layer3::BayRS
 
-Subclass for Nortel Networks' BayRS routers.  This includes BCN, BLN, ASN, ARN,
+Subclass for Nortel BayRS routers.  This includes BCN, BLN, ASN, ARN,
 and AN routers.
 
 =item SNMP::Info::Layer3::C3550
@@ -419,7 +432,7 @@ This is a simple wrapper around Layer3 for IOS devices.  It adds on CiscoVTP.
 
 =item SNMP::Info::Layer3::Contivity
 
-Subclass for Nortel Networks' Contivity VPN concentrators.  
+Subclass for Nortel Contivity VPN concentrators.  
 
 =item SNMP::Info::Layer3::Extreme
 
@@ -795,6 +808,7 @@ Algorithm for Subclass Detection:
             Allied                         -> SNMP::Info::Layer1::Allied
             Asante                         -> SNMP::Info::Layer1::Asante
             Nortel/Bay Hub                 -> SNMP::Info::Layer1::Bayhub
+            Bay/Synoptics Hub              -> SNMP::Info::Layer1::S3000
         Else                               -> SNMP::Info
             ZyXEL_DSLAM                    -> SNMP::Info::Layer2::ZyXEL_DSLAM
             Aruba wireless                 -> SNMP::Info::Layer2::Aruba
@@ -924,10 +938,11 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer1::Asante' if ($desc =~ /asante/i);
 
         #  Bay Hub
-        $objtype = 'SNMP::Info::Layer1::Bayhub' if ($desc =~ /Bay.*NMM.*Agent/);
+        $objtype = 'SNMP::Info::Layer1::Bayhub' if ($desc =~ /\bNMM.*Agent/);
 
         #  Synoptics Hub
-        $objtype = 'SNMP::Info::Layer1::S3000' if ($desc =~ /synoptics/i);
+        #  This will override Bay Hub only for specific devices supported by this class
+        $objtype = 'SNMP::Info::Layer1::S3000' if ($desc =~ /\bNMM\s+(281|3000|3030)/i);
 
     # These devices don't claim to have Layer1-3 but we like em anyways.
     } else {
@@ -1105,6 +1120,14 @@ Not too useful as the number of SNMP interfaces usually does not
 correspond with the number of physical ports
 
 (B<ifNumber>)
+
+=item $info->ipforwarding()
+
+The indication of whether the entity is acting as an IP gateway
+
+Returns either forwarding or not-forwarding
+
+(B<ipForwarding>)
 
 =back
 
@@ -1543,14 +1566,15 @@ the SNMP::Info methods.
 
 %GLOBALS = (
             # from SNMPv2-MIB
-            'id'          => 'sysObjectID',
-            'description' => 'sysDescr',
-            'uptime'      => 'sysUpTime',
-            'contact'     => 'sysContact',
-            'name'        => 'sysName',
-            'location'    => 'sysLocation',
-            'layers'      => 'sysServices',
-            'ports'       => 'ifNumber',
+            'id'           => 'sysObjectID',
+            'description'  => 'sysDescr',
+            'uptime'       => 'sysUpTime',
+            'contact'      => 'sysContact',
+            'name'         => 'sysName',
+            'location'     => 'sysLocation',
+            'layers'       => 'sysServices',
+            'ports'        => 'ifNumber',
+            'ipforwarding' => 'ipForwarding',
             );
 
 =item %FUNCS
