@@ -1,5 +1,5 @@
 # SNMP::Info::Layer2::N2270
-# Eric Miller <eric@jeneric.org>
+# Eric Miller
 # $Id$
 #
 # Copyright (c) 2005 Eric Miller
@@ -106,7 +106,7 @@ SNMP::Info::Layer2::N2270 - SNMP Interface to Nortel 2270 Series Wireless Switch
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 

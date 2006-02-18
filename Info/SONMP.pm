@@ -1,5 +1,5 @@
 # SNMP::Info::SONMP
-# Eric Miller <eric@jeneric.org>
+# Eric Miller
 # $Id$
 #
 # Copyright (c) 2004 Eric Miller, Max Baker
@@ -297,7 +297,7 @@ SNMP::Info::SONMP - Perl5 Interface to SynOptics Network Management Protocol (SO
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 

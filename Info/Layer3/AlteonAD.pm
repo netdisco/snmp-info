@@ -1,5 +1,5 @@
 # SNMP::Info::Layer3::AlteonAD
-# Eric Miller <eric@jeneric.org>
+# Eric Miller
 # $Id$
 #
 # Copyright (c) 2004 Eric Miller
@@ -274,7 +274,7 @@ Director Series Layer 2-7 Switches.
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 

@@ -1,5 +1,5 @@
 # SNMP::Info::Layer2::NAP222x
-# Eric Miller <eric@jeneric.org>
+# Eric Miller
 # $Id$
 #
 # Copyright (c) 2004 Eric Miller
@@ -284,7 +284,7 @@ SNMP::Info::Layer2::nap222x - SNMP Interface to Nortel 2220 Series Access Points
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 

@@ -1,5 +1,5 @@
 # SNMP::Info::Layer2::Aruba
-# Eric Miller <eric@jeneric.org>
+# Eric Miller
 # $Id$
 #
 # Copyright (c) 2005 Eric Miller
@@ -262,7 +262,7 @@ SNMP::Info::Layer2::Aruba - SNMP Interface to Aruba wireless switches
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 

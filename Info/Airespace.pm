@@ -1,5 +1,5 @@
 # SNMP::Info::Airespace
-# Eric Miller <eric@jeneric.org>
+# Eric Miller
 # $Id$
 #
 # Copyright (c) 2005 Eric Miller
@@ -266,7 +266,7 @@ SNMP::Info::Airespace - SNMP Interface to Airespace wireless switches
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 

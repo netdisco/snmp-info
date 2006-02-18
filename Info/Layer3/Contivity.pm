@@ -1,5 +1,5 @@
 # SNMP::Info::Layer3::Contivity
-# Eric Miller <eric@jeneric.org>
+# Eric Miller
 # $Id$
 #
 # Copyright (c) 2004 Eric Miller, Max Baker
@@ -167,7 +167,7 @@ Extranet Switches (CES).
 
 =head1 AUTHOR
 
-Eric Miller (C<eric@jeneric.org>)
+Eric Miller
 
 =head1 SYNOPSIS
 
