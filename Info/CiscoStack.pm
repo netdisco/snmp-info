@@ -97,6 +97,7 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT $INIT/;
             'p_tx_flow_control' => 'portOperTxFlowControl',
             'p_rx_flow_control_admin' => 'portAdminRxFlowControl',
             'p_tx_flow_control_admin' => 'portAdminTxFlowControl',
+            'p_oidx'    => 'portCrossIndex',
             # CISCO-STACK-MIB::PortCpbEntry
             'p_speed_admin'  => 'portCpbSpeed',
             'p_duplex_admin' => 'portCpbDuplex',
@@ -242,6 +243,43 @@ sub i_duplex_admin {
     }
     return \%i_duplex_admin; 
 }
+
+sub set_i_speed_admin {
+    # map speeds to those the switch will understand
+    my %speeds = qw/auto 1 10 10000000 100 100000000 1000 1000000000/;
+
+    my $stack = shift;
+    my ($speed, $iid) = @_;
+    my $p_port  = $stack->p_port();
+    my %reverse_p_port = reverse %$p_port;
+
+    $speed = lc($speed);
+
+    return 0 unless defined $speeds{$speed};
+
+    $iid = $reverse_p_port{$iid};
+
+    return $stack->set_p_speed($speeds{$speed}, $iid);
+}
+
+sub set_i_duplex_admin {
+    # map a textual duplex to an integer one the switch understands
+    my %duplexes = qw/half 1 full 2 auto 4/;
+
+    my $stack = shift;
+    my ($duplex, $iid) = @_;
+    my $p_port  = $stack->p_port();
+    my %reverse_p_port = reverse %$p_port;
+
+    $duplex = lc($duplex);
+
+    return 0 unless defined $duplexes{$duplex};
+
+    $iid = $reverse_p_port{$iid};
+
+    return $stack->set_p_duplex($duplexes{$duplex}, $iid);
+}
+
 
 # $stack->interfaces() - Maps the ifIndex table to a physical port
 sub interfaces {
@@ -423,6 +461,34 @@ Crosses p_duplex with p_port and returns results.
 Crosses p_duplex_admin with p_port.
 
 Munges bit_string returned from p_duplex_admin to get duplex settings.
+
+=item $stack->set_i_speed_admin(speed, ifIndex)
+
+    Sets port speed, must be supplied with speed and port ifIndex
+
+    Speed choices are 'auto', '10', '100', '1000'
+
+    Crosses $stack->p_port() with $stack->p_duplex() to
+    utilize port ifIndex.
+
+    Example:
+    my %if_map = reverse %{$stack->interfaces()};
+    $stack->set_i_speed_admin('auto', $if_map{'FastEthernet0/1'}) 
+        or die "Couldn't change port speed. ",$stack->error(1);
+
+=item $stack->set_i_duplex_admin(duplex, ifIndex)
+
+    Sets port duplex, must be supplied with duplex and port ifIndex
+
+    Speed choices are 'auto', 'half', 'full'
+
+    Crosses $stack->p_port() with $stack->p_duplex() to
+    utilize port ifIndex.
+
+    Example:
+    my %if_map = reverse %{$stack->interfaces()};
+    $stack->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'}) 
+        or die "Couldn't change port duplex. ",$stack->error(1);
 
 =back
 
