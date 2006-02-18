@@ -656,6 +656,13 @@ name if exists.
 Maps the IP Table to the IID.  Extends (B<ipAdEntIfIndex>) by adding the index of
 the CPU virtual management IP (if present) and each CPU Ethernet port.
 
+=item $stack->bp_index()
+
+Returns reference to hash of bridge port table entries map back to interface identifier (iid)
+
+Returns (B<ifIndex>) for both key and value since some devices seem to have
+problems with BRIDGE-MIB
+
 =back
 
 =head2 RFC1213 Arp Cache Table (B<ipNetToMediaTable>)
