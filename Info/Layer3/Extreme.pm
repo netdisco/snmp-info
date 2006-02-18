@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3::Extreme - SNMP Interface to Extreme devices
 # Eric Miller
 #
-# Copyright (c) 2004,2005 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2005 Eric Miller
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -36,21 +36,25 @@ use strict;
 
 use Exporter;
 use SNMP::Info::Layer3;
+use SNMP::Info::MAU;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
 $VERSION = 1.0;
 
-@SNMP::Info::Layer3::Extreme::ISA = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Extreme::ISA = qw/SNMP::Info::Layer3 SNMP::Info::MAU Exporter/;
 @SNMP::Info::Layer3::Extreme::EXPORT_OK = qw//;
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS,
+          %SNMP::Info::MAU::MIBS,
           'EXTREME-BASE-MIB'   => 'extremeAgent',
           'EXTREME-SYSTEM-MIB' => 'extremeSystem',
+          'EXTREME-FDB-MIB'    => 'extremeSystem',
         );
 
 %GLOBALS = (
             %SNMP::Info::Layer3::GLOBALS,
+            %SNMP::Info::MAU::GLOBALS,
             'serial'     => 'extremeSystemID',
             'temp'       => 'extremeCurrentTemperature',
             'ps1_status' => 'extremePowerSupplyStatus.1',
@@ -60,11 +64,17 @@ $VERSION = 1.0;
 
 %FUNCS   = (
             %SNMP::Info::Layer3::FUNCS,
+            %SNMP::Info::MAU::FUNCS,
+            # EXTREME-FDB-MIB:extremeFdbMacFdbTable
+            'fw_mac'     => 'extremeFdbMacFdbMacAddress',
+            'fw_port'    => 'extremeFdbMacFdbPortIfIndex',
+            'fw_status'  => 'extremeFdbMacFdbStatus',
            );
 
 %MUNGE = (
             # Inherit all the built in munging
             %SNMP::Info::Layer3::MUNGE,
+            %SNMP::Info::MAU::MUNGE,
          );
 
 # Method OverRides
@@ -110,6 +120,18 @@ sub os_ver {
     return undef;
 }
 
+# We're not using BRIDGE-MIB
+sub bp_index {
+    my $extreme = shift;
+    my $if_index = $extreme->i_index();
+
+    my %bp_index;
+    foreach my $iid (keys %$if_index){
+        $bp_index{$iid} = $iid;
+    }
+    return \%bp_index;
+}
+
 # Index values in the Q-BRIDGE-MIB are the same
 # as in the BRIDGE-MIB and do not match ifIndex.
 sub i_vlan {
@@ -120,7 +142,7 @@ sub i_vlan {
     my %i_vlan;
     foreach my $v_index (keys %$qb_i_vlan){
         my $vlan = $qb_i_vlan->{$v_index};
-        my $iid  = $bp_index->{v_index};
+        my $iid  = $bp_index->{$v_index};
 
         unless (defined $iid) {
             print "  Port $v_index has no bp_index mapping. Skipping\n"
@@ -176,6 +198,8 @@ my $extreme = new SNMP::Info::Layer3::Extreme(...);
 
 =item SNMP::Info::Layer3
 
+=item SNMP::Info::MAU
+
 =back
 
 =head2 Required MIBs
@@ -186,14 +210,13 @@ my $extreme = new SNMP::Info::Layer3::Extreme(...);
 
 =item EXTREME-SYSTEM-MIB
 
+=item EXTREME-FDB-MIB
+
 =item Inherited Classes' MIBs
 
 See classes listed above for their required MIBs.
 
 =back
-
-MIBs can be downloaded directly from Extreme regardless of support
-contract status.
 
 =head1 GLOBALS
 
@@ -259,6 +282,10 @@ Returns base mac
 
 See documentation in SNMP::Info::Layer3 for details.
 
+=head2 Globals imported from SNMP::Info::MAU
+
+See documentation in SNMP::Info::MAU for details.
+
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
@@ -268,17 +295,28 @@ to a hash.
 
 =over
 
-=item  $extreme->i_vlan()
+=item $extreme->fw_mac()
+
+(B<extremeFdbMacFdbMacAddress>)
+
+=item $extreme->fw_port()
+
+(B<extremeFdbMacFdbPortIfIndex>)
+
+=item $extreme->fw_status()
+
+(B<extremeFdbMacFdbStatus>)
+
+=item $extreme->i_vlan()
 
 Returns a mapping between ifIndex and the VLAN.
 
-=item $extreme->i_duplex()
+=item $stack->bp_index()
 
-Returns reference to hash of interface operational link duplex status. 
+Returns reference to hash of bridge port table entries map back to interface identifier (iid)
 
-=item $extreme->i_duplex_admin()
-
-Returns reference to hash of interface administrative link duplex status. 
+Returns (B<ifIndex>) for both key and value since we're using EXTREME-FDB-MIB
+rather than BRIDGE-MIB.
 
 =back
 
@@ -286,8 +324,8 @@ Returns reference to hash of interface administrative link duplex status.
 
 See documentation in SNMP::Info::Layer3 for details.
 
-=head2 Table Methods imported from SNMP::Info::SONMP
+=head2 Table Methods imported from SNMP::Info::MAU
 
-See documentation in SNMP::Info::SONMP for details.
+See documentation in SNMP::Info::MAU for details.
 
 =cut
