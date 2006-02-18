@@ -122,6 +122,23 @@ sub os_ver {
     return undef;
 }
 
+# Workaround for incomplete bp_index
+sub bp_index {
+   my $cat = shift;
+    my $p_index = $cat->p_port();
+    my $b_index = $cat->p_oidx();
+
+    my %bp_index;
+    foreach my $iid (keys %$p_index){
+        my $ifidx = $p_index->{$iid};
+        next unless defined $ifidx;
+        my $bpidx = $b_index->{$iid}||0;
+
+        $bp_index{$bpidx} = $ifidx;
+    }
+    return \%bp_index;
+}
+
 sub cisco_comm_indexing {
     1;
 }
@@ -240,6 +257,19 @@ See documentation in SNMP::Info::CiscoStack for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
+=head2 Overrides
+
+=over
+
+=item $cat->bp_index()
+
+Returns reference to hash of bridge port table entries map back to interface identifier (iid)
+
+Crosses (B<portCrossIndex>) to (B<portIfIndex>) since some devices seem to have
+problems with BRIDGE-MIB
+
+=back
+
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
 See documentation in SNMP::Info::CiscoVTP for details.
@@ -248,7 +278,7 @@ See documentation in SNMP::Info::CiscoVTP for details.
 
 See documentation in SNMP::Info::Layer2 for details.
 
-=head2 Table Methods imported from SNMP::Info::Layer2::CiscoSTack
+=head2 Table Methods imported from SNMP::Info::Layer2::CiscoStack
 
 See documentation in SNMP::Info::Layer2::CiscoStack for details.
 
