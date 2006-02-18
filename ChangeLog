@@ -9,17 +9,25 @@ version 1.0 ()
     + Added support for Foundry EdgeIrons as new class L2::Foundry
     + Added BulkWalk and BulkRepeaters options to new()
     + Added DebugSNMP option to new()
-    + Added CISCO-ENTITY-VENDORTYPE-OID-MIB,CISCO-PRODUCTS-MIB,CISCO-STACK-MIB to CiscoStats.pm for model()
+    + Added CISCO-ENTITY-VENDORTYPE-OID-MIB,CISCO-PRODUCTS-MIB,CISCO-STACK-MIB
+      to CiscoStats.pm for model()
     + Check for bulkwalk_no() method
     + Added Entity.pm to L3 and L2 classes per N. Petri's suggestion.
-    + Added support for Passport/Accelar 1100 and 1200 series in L3::Passport (Eric Miller)
-    + Added support for Passport/Accelar 8100 series in L3::Passport (Eric Miller)
-    + Added support for Passport 1600 series as new class, L3::N1600 (Eric Miller)
-    + Added support for Extreme Alpine and Summit switches (Mike Hunter and Eric Miller)
+    + Added support for Passport/Accelar 1100 and 1200 series in L3::Passport
+    + Added support for Passport/Accelar 8100 series in L3::Passport
+    + Added support for Passport 1600 series as new class, L3::N1600
+    + Added support for Extreme Alpine and Summit switches as new class
+      L3:Extreme (Mike Hunter and Eric Miller)
     + Added support for Aruba wireless switches (Eric Miller and Brian Chow)
-    + Added support for Nortel 2700 series (Airespace) wireless switches (Eric Miller)
-    + Added support for Synoptics hubs as new class L1:S3000 (Eric Miller)
+    + Added support for Nortel 2700 series (Airespace) wireless switches
+    + Added support for Synoptics hubs as new class L1:S3000
     + Added Cisco QOS and RTT classes (Alexander Hartmaier)
+    + Added BGP Peer Table to L3 class (Carlos Vicente)
+    + Added ipforwarding status to Info base class (Carlos Vicente)
+    + Added STP port state to Bridge class (Alexander Barthel)
+    + Added L3 support (arpnip) to Baystack class for routing capable switches
+    + Added set_i_duplex_admin() and set_i_speed_admin() to C2900 class (Justin Hunter)
+    + Added set_i_duplex_admin() and set_i_speed_admin() to CiscoStack class
 
     * More error checking in  _load_attr() around bulkwalk code
     * Minor warning fix in L3::Aironet::os_ver()
@@ -29,11 +37,16 @@ version 1.0 ()
     * changed all refs to $DEBUG to $self->debug() for reentrant code
     * [ 1111284 ] Parameters not being set with AutoSpecify - fixed.
     * Turned off BULKWALK for C1900 and C6500 classes.
-    * Added exception handling for V2 ENDOFMIBVIEW (Eric Miller)
-    * Fix in SONMP when topology not enabled (Eric Miller)
-    * Fix in L3::Passport root_ip() (Eric Miller)
+    * Added exception handling for V2 ENDOFMIBVIEW
+    * Fix in SONMP when topology not enabled
+    * Fix in L3::Passport root_ip()
     * Fix in L3::Passport bp_index() some devices not returning complete index.
-
+    * Enable set_i_up_admin() in Bayhub
+    * Recognize new Nortel model names in Baystack and Passport classes
+    * Orinoco class should now recognize more models
+    * Cleanup model recognition in Baystack class, recognize more models
+    * Modify Catalyst class to use CISCO-STACK-MIB for brige port index mapping
+      some devices having problems returning complete index from BRIDGE-MIB
 
 verison 0.9 (11/15/04)
     + ** Added full Nortel/Bay/BayStack support 
@@ -56,7 +69,7 @@ verison 0.9 (11/15/04)
     * Changed so a failed _global() call is cached so it won't retry
       an error over and over again if the same global is used.
     * Added check in _set() to see if data came from sub or FUNCS/GLOBALS
-        Fails if came from sub.
+      Fails if came from sub.
 
 version 0.8 (03/21/04)
     + Added Q-BRIDGE-MIB support to SNMP::Info::Bridge
