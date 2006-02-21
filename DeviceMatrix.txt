@@ -147,6 +147,8 @@ device-family: Catalyst 1900
 note: !Upgrade older (pre 9.0) versions of CatOS
 note: !CatOS ver 9.00.03 through 9.00.06 have problems when trunking. Upgrade to 9.00.07 or higher.
 ver: 1
+duplex: both
+vlan: write
 class: Layer2::C1900
 
 device: wsc1900c
@@ -158,7 +160,9 @@ device-family: Catalyst 1900
 device-family: Catalyst 2900
 note: IOS
 macsuck: vlan
-class: Layer3::C2900
+duplex: write
+vlan: write
+class: Layer2::C2900
 portmac: yes
 note: !Pre IOS 11.2 (8) SA3 - PortMAC shows up in CAM table.
 
@@ -175,16 +179,30 @@ device: 2924CXL
 
 device: 2924CXLv
 
-device-family: Catlayst 2940
+device-family: Catalyst 2940
+note: IOS
+macsuck: vlan
+duplex: write
+vlan: write
+class: Layer2::C2900
+portmac: yes
 
 device: 2940-8TT
 
 device-family: Catalyst 2950
+note: IOS
+macsuck: vlan
+duplex: write
+vlan: write
+class: Layer2::C2900
+portmac: yes
 
 device: 2950-t24
 
 device-family: Catalyst 2970
 macsuck:vlan
+duplex: write
+vlan: write
 note: Acts just like IOS Catalyst 6500 series
 class: Layer3::C6500
 
@@ -193,6 +211,8 @@ device: 2970G-24T-E
 device-family: Catalyst 3500 XL
 portmac: yes
 macsuck: vlan
+duplex: write
+vlan: write
 note: L2 only IOS devices - Just like Catalyst 2900 series from SNMP
 note: IOS Version 12.0(5)XP is buggy and doesn't do VLAN Community indexing correctly.
 class: Layer2::C2900
@@ -206,6 +226,7 @@ device: 3548XL
 device-family: Catalyst 3550
 macsuck: vlan
 duplex: both
+vlan: write
 class: Layer3::C3550
 note: Run IOS
 note: Has VLANs that don't accept SNMP connections.  Don't know if they are standard (by name or number).
@@ -227,6 +248,7 @@ class: Layer3::C6500
 device-family: Catalyst 4000
 duplex: both
 macsuck: vlan
+vlan: write
 class: Layer3::C6500
 note: Comes in IOS and CatOS versions like the 6k series.
 note: CatOS versions like L2::Catalyst just fine.
@@ -243,7 +265,8 @@ device: wsc4912g
 note: Dedicated 12 port gig-e switch
 
 device-family: Catalyst 5000
-duplex: both
+duplex: write
+vlan: write
 class: Layer2::Catalyst
 note: Port info in CISCO-STACK-MIB
 
@@ -271,6 +294,8 @@ note: Router blade that runs IOS
 
 device-family: Catalyst 6500
 macsuck:vlan
+duplex: write
+vlan: write
 class: Layer3::C6500
 note: Runs in two possible modes, native (IOS) and hybrid (IOS with CatOS on top).
 note: Switch running Hybrid has WS-C in description field and loves L2::Catalyst class
@@ -289,16 +314,20 @@ note: Native mode (IOS) reports L2+L3
 note: !Macsuck failing even under vlan mode
 
 device: wsc6509
-duplex: both
+duplex: write
 class: Layer2::Catalyst
 note: Hybrid Mode (Catalyst) reports L2 only
 
 device: 6kMsfc
 class: Layer3
+duplex: no
+vlan: no
 note: IOS portion of Hybrid mode.  VLAN and other L3 Services.
 
 device: 6kMsfc2
 class: Layer3
+duplex: no
+vlan: no
 note: IOS portion of Hybrid mode.  VLAN and other L3 Services.
 
 device-family: Voice Gateway
@@ -314,9 +343,9 @@ device-family: Alpine and Summit
 arpnip: yes
 macsuck: yes
 duplex: both
+vlan: yes
 cdp: no
 class: Layer3::Extreme
-note: !You may have to *enable* access to the standard bridge mib (enable snmp dot1dTpFdbTable).
 
 device: Alpine 3808
 device: Summit 7i, 48si
@@ -363,6 +392,7 @@ duplex: both
 macsuck: yes
 arpnip: no
 cdp: yes
+vlan: yes
 note: CDP only available with newer ROM versions. 
 
 device: 2512
@@ -393,6 +423,7 @@ device-family: BSD
 
 # NORTEL
 device-vendor: Nortel
+note: CDP --> SONMP.
 
 device-family: BayStack Hub
 macsuck: yes
@@ -408,9 +439,10 @@ device: 102
 device: System 5000
 
 device-family: Baystack Switch
-arpnip: yes
+arpnip: no
 macsuck: yes
 duplex: both
+vlan: yes
 cdp: proprietary
 class: Layer2::Baystack
 
@@ -431,8 +463,10 @@ note: Labels full duplex as 20Mbit connection.
 device: 460,470
 
 device: 3510
+arpnip: yes
 
 device: 5510,5520,5530
+arpnip: yes
 
 device: BPS
 
@@ -440,6 +474,7 @@ device-family: Centillion
 macsuck: yes
 duplex: both
 cdp: proprietary
+vlan: yes
 class: Layer2::Centillion
 note: !Must be on version 4.x or 5.x (VLAN based) software.
 
@@ -468,6 +503,7 @@ arpnip: yes
 macsuck: yes
 duplex: both
 cdp: no
+vlan: yes
 class: Layer3::AlteonAD
 note: !Some versions have issues with continuous SNMP polling. Upgrade to 10.0.30.7 or higher.
 
@@ -489,6 +525,7 @@ macsuck: yes
 portmac: yes
 duplex: both
 cdp: no
+vlan: yes
 class: Layer3::BayRS
 
 device: AN
@@ -527,6 +564,7 @@ macsuck: yes
 portmac: yes
 duplex: both
 cdp: proprietary
+vlan: yes
 class: Layer3::Passport
 note: !8600 Code versions < 3.2 vlan based mac-suck and are unsupported.  Upgrade code.
 note: !8600 3.2 code versions < 3.2.2.2 have Bridge MIB loop.  Upgrade code.
@@ -545,6 +583,7 @@ macsuck: yes
 portmac: yes
 duplex: both
 cdp: proprietary
+vlan: yes
 class: Layer3::N1600
 
 device: 1612,1624,1648
