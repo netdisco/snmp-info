@@ -137,7 +137,7 @@ sub model {
     return '303' if (defined $descr and $descr =~ /\D303\D/);
     return '304' if (defined $descr and $descr =~ /\D304\D/);
     return 'BPS' if ($model =~ /BPS2000/i);
-    return $2 if ($model =~ /(BayStack|EthernetRoutingSwitch|EthernetSwitch)(\d+)/);
+    return $2 if ($model =~ /(ES|ERS|BayStack|EthernetRoutingSwitch|EthernetSwitch)(\d+)/);
     
     return $model;
 }
