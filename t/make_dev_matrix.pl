@@ -280,6 +280,7 @@ be assumed working.
             <LI><tt>no</tt> - Can't recover current or admin setting.
             <LI><tt>link</tt> - Can get current setting only.
             <LI><tt>both</tt> - Can get admin and link setting.
+            <LI><tt>write</tt> - Can get admin and link setting and perform sets.
         </UL>
     </TD>
 </TR>
@@ -303,6 +304,16 @@ be assumed working.
 <TR>
     <TD>Ver</TD>
     <TD>SNMP Protocol Version the device has to use.</TD>
+</TR>
+<TR>
+    <TD>Vlan</TD>
+    <TD>Ability to get VLAN port assignments.<BR>
+        <UL>
+            <LI><TT>no</TT> - Have not found an SNMP method to get data yet.
+            <LI><TT>yes</TT> - Can read information.
+            <LI><TT>write</TT> - Can read and write (set).
+        </UL>
+    </TD>
 </TR>
 </TABLE>
 </BODY>
