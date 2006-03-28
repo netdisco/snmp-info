@@ -421,6 +421,10 @@ and AN routers.
 
 Subclass for Cisco Catalyst 3550,3540,3560 2/3 switches running IOS.
 
+=item SNMP::Info::Layer3::C4000
+
+This class covers Catalyst 4000s and 4500s.
+
 =item SNMP::Info::Layer3::C6500
 
 This class covers Catalyst 6500s in native mode, hybrid mode.  Catalyst 4000's, 3750's, 2970's
@@ -779,7 +783,8 @@ Algorithm for Subclass Detection:
             Aironet (BR500,AP340,350,1200) -> SNMP::Info::Layer3::Aironet
                      AP4800... All Non IOS
             Catalyst 3550,3548,3560        -> SNMP::Info::Layer3::C3550
-            Catalyst 6500, 4000, 3750      -> SNMP::Info::Layer3::C6500
+            Catalyst 4000,4500             -> SNMP::Info::Layer3::C4000
+            Catalyst 6500, 3750            -> SNMP::Info::Layer3::C6500
             Cisco Generic L3 IOS device    -> SNMP::Info::Layer3::Cisco
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
@@ -838,14 +843,14 @@ sub device_type {
         return $objtype unless (defined $desc and length($desc));
 
         $objtype = 'SNMP::Info::Layer3::C3550'   if $desc =~ /(C3550|C3560)/ ;
+        $objtype = 'SNMP::Info::Layer3::C4000'   if $desc =~ /Catalyst 4[05]00/;
         $objtype = 'SNMP::Info::Layer3::Foundry' if $desc =~ /foundry/i ;
         # Aironet - older non-IOS
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(CAP340|AP340|CAP350|350|1200)\D/) ;
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Aironet/ and $desc =~ /\D(AP4800)\D/) ;
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /(c6sup2|c6sup1)/;
-        # Next two untested. Reported working by DA
+        # Next one untested. Reported working by DA
         $objtype = 'SNMP::Info::Layer3::C6500'   if ($desc =~ /cisco/i and $desc =~ /3750/);
-        $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /Catalyst 4000/;
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /s72033_rp/;
         # Extreme Networks
         $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Alpine38/;
