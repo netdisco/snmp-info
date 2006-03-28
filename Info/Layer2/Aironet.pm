@@ -38,20 +38,23 @@ use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::Entity;
 use SNMP::Info::EtherLike;
+use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoVTP;
+use SNMP::Info::CDP;
 
 @SNMP::Info::Layer2::Aironet::ISA = qw/SNMP::Info::Layer2 SNMP::Info::Entity SNMP::Info::EtherLike 
-                                       SNMP::Info::CiscoVTP Exporter/;
+                                       SNMP::Info::CiscoStats SNMP::Info::CiscoVTP SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::Aironet::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
-# Set for No CDP
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
             %SNMP::Info::Entity::GLOBALS,
             %SNMP::Info::EtherLike::GLOBALS,
+            %SNMP::Info::CiscoStats::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
+            %SNMP::Info::CDP::GLOBALS,
             'serial' => 'entPhysicalSerialNum.1',
             'descr'  => 'sysDescr'
             );
@@ -59,20 +62,26 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
             %SNMP::Info::Entity::FUNCS,
             %SNMP::Info::EtherLike::FUNCS,
+            %SNMP::Info::CiscoStats::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
+            %SNMP::Info::CDP::FUNCS,
             );
 
 %MIBS    = (
             %SNMP::Info::Layer2::MIBS,
             %SNMP::Info::Entity::MIBS,
             %SNMP::Info::EtherLike::MIBS,
+            %SNMP::Info::CiscoStats::MIBS,
             %SNMP::Info::CiscoVTP::MIBS,
+            %SNMP::Info::CDP::MIBS,
             );
 
 %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
             %SNMP::Info::Entity::MUNGE,
             %SNMP::Info::EtherLike::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
+            %SNMP::Info::CDP::MUNGE,
             );
 
 
