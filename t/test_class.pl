@@ -13,7 +13,7 @@ use lib '/usr/local/netdisco';
 use SNMP::Info;
 use Getopt::Long;
 use strict;
-use vars qw/$Class $Dev $Comm $Ver @Dump/;
+use vars qw/$Class $Dev $Comm $Ver @Dump %Dumped/;
 
 # Default Values
 $Class = '';
@@ -51,6 +51,7 @@ my $dev = new $Class( 'AutoSpecify' => 0,
                     ) or die "\n"; 
 
 print "Connected to $Dev.\n";
+print "It's a ", $dev->device_type(), ".\n";
     
 my $layers = $dev->layers();
 
@@ -81,6 +82,10 @@ print "\nTesting Misc...\n\n";
 my @misc = qw/v_name v_port/;
 foreach my $fn (@misc){
     test_fn($dev,$fn);
+}
+
+foreach my $fn (@Dump) {
+    test_fn($dev,$fn) unless $Dumped{$fn};
 }
 
 #--------------------------------
@@ -137,6 +142,7 @@ sub test_fn {
 
     printf "%-20s %d rows.\n",$method, scalar(keys %$results);
     if (grep(/^$method$/,@Dump)) {
+        $Dumped{$method} = 1;
         foreach my $iid (keys %$results){
             print "  $iid : $results->{$iid}\n";
         }
