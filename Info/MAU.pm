@@ -131,9 +131,50 @@ sub mau_i_duplex {
 sub mau_i_duplex_admin {
     my $mau = shift;
 
-    my $interfaces   = $mau->interfaces();
-    my $mau_index    = $mau->mau_index();
+    my $mau_index = $mau->mau_index();
     my $mau_autostat = $mau->mau_autostat();
+    my $mau_type_admin = $mau->mau_type_admin();
+
+    # Older HP4000's don't implement ifMauDefaultType, but we can
+    # figure out from ifMauAutoNegCapAdvertised what we'd like.
+    if (!defined($mau_type_admin)) {
+        return mau_i_duplex_admin_old($mau,$mau_index,$mau_autostat);
+    }
+
+    my %i_duplex_admin;
+    foreach my $mau_port (keys %$mau_type_admin){
+        my $iid = $mau_index->{$mau_port};
+        next unless defined $iid;
+
+        my $autostat = $mau_autostat->{$mau_port};
+        if (defined $autostat and $autostat =~ /enabled/i){
+            $i_duplex_admin{$iid} = 'auto';
+            next;
+        } 
+
+        my $type_adminoid = $mau_type_admin->{$mau_port};
+        my $type_admin = &SNMP::translateObj($type_adminoid);
+        next unless defined $type_admin;
+
+        my $duplex = undef;
+
+        if ($type_admin =~ /fd$/i) {
+            $duplex = 'full';
+        } elsif ($type_admin =~ /hd$/i){
+            $duplex = 'half';
+        }
+
+        $i_duplex_admin{$iid} = $duplex if defined $duplex;
+    }
+    return \%i_duplex_admin;
+}
+
+sub mau_i_duplex_admin_old {
+    my $mau = shift;
+    my $mau_index = shift;
+    my $mau_autostat = shift;
+
+    my $interfaces   = $mau->interfaces();
     my $mau_autosent = $mau->mau_autosent();
 
     my %mau_reverse = reverse %$mau_index;
@@ -250,10 +291,18 @@ interfaces.
 
 =item $mau->mau_i_duplex_admin()
 
+Parses C<mac_index>,C<mau_autostat>,C<mau_type_admin> in
+order to find the admin duplex setting for all the interfaces.
+
+Returns either (auto,full,half).
+
+=item $mau->mau_i_duplex_admin_old()
+
+Called by mau_i_duplex_admin() if C<mau_type_admin> is empty.
 Parses C<mau_index>,C<mau_autostat>,C<mau_autosent> in
 order to find the admin duplex setting for all the interfaces.
 
-Returns either (auto,non,full,half).
+Returns either (auto,none,full,half).
 
 =back
 
