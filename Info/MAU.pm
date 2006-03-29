@@ -100,6 +100,37 @@ sub _ishalfduplex{
     return 0;
 }
 
+my %_mau_i_speed_map = (
+ '10' => '10 Mbps',
+ '100' => '100 Mbps',
+ '1000' => '1.0 Gbps',
+ '10Gig' => '10 Gbps',
+);
+
+sub mau_i_speed_admin {
+    my $mau = shift;
+
+    my $mau_index = $mau->mau_index();
+    my $mau_type_admin = $mau->mau_type_admin();
+
+    my %i_speed_admin;
+    foreach my $mau_port (keys %$mau_type_admin){
+        my $iid = $mau_index->{$mau_port};
+        next unless defined $iid;
+
+        my $type_adminoid = $mau_type_admin->{$mau_port};
+        my $type_admin = &SNMP::translateObj($type_adminoid);
+        next unless defined $type_admin;
+
+	if ($type_adminoid eq '.0.0') {
+		$i_speed_admin{$iid} = 'auto';
+	} elsif ($type_admin =~ /^dot3MauType(.*)Base/ && $_mau_i_speed_map{$1}) {
+		$i_speed_admin{$iid} = $_mau_i_speed_map{$1};
+	}
+    }
+    return \%i_speed_admin;
+}
+
 sub mau_i_duplex {
     my $mau = shift;
 
