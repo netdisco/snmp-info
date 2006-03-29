@@ -44,7 +44,7 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::CiscoStats::EXPORT_OK = qw//;
 
 %MIBS    = (
-            'RFC1213-MIB'           => 'sysDescr',
+            'SNMPv2-MIB'            => 'sysDescr',
             'CISCO-PROCESS-MIB'     => 'cpmCPUTotal5sec',
             'CISCO-MEMORY-POOL-MIB' => 'ciscoMemoryPoolUsed',
             'OLD-CISCO-SYSTEM-MIB'  => 'writeMem',
@@ -185,7 +185,7 @@ none.
 
 =item CISCO-MEMORY-POOL-MIB
 
-=item RFC1213-MIB
+=item SNMPv2-MIB
 
 =item OLD-CISCO-SYSTEM-MIB
 
