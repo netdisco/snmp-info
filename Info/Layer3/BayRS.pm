@@ -317,23 +317,17 @@ sub root_ip {
         my $idx = $ip_index->{$entry};
         next unless $idx == 0;
         my $clip = $ip_table->{$entry};
-        next unless ((defined $clip) and ($clip eq '0.0.0.0'));
+        next unless ( (defined $clip) and ($clip eq '0.0.0.0') and ($bayrs->_snmp_connect_ip($clip)) );
         print " SNMP::Layer3::BayRS::root_ip() using $clip\n" if $bayrs->debug();
         return $clip;
     }
     # Check for OSPF Router ID
     my $ospf_ip  = $bayrs->ospf_rtr_id();
-    if ((defined $ospf_ip) and ($ospf_ip ne '0.0.0.0')) {
+    if ((defined $ospf_ip) and ($ospf_ip ne '0.0.0.0') and ($bayrs->_snmp_connect_ip($ospf_ip)) ) {
         print " SNMP::Layer3::BayRS::root_ip() using $ospf_ip\n" if $bayrs->debug();
         return $ospf_ip;
     }
-    # Else Return First IP Address
-    foreach my $entry (keys %$ip_table){
-        my $ip = $ip_table->{$entry};
-        print " SNMP::Layer3::BayRS::root_ip() using $ip\n" if $bayrs->debug();
-        next unless $ip;
-        return $ip if ($ip ne '0.0.0.0');
-    }
+
     return undef;
 }
 
@@ -459,8 +453,7 @@ Returns (B<wfHwBpSerialNumber>) after conversion to ASCII decimal
 
 Returns the primary IP used to communicate with the router.
 
-Returns the first found:  CLIP (CircuitLess IP), (B<wfOspfRouterId>), or the first
-IP interface.
+Returns the first found:  CLIP (CircuitLess IP), (B<wfOspfRouterId>), or undefined.
 
 =back
 
