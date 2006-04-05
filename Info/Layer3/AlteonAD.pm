@@ -249,21 +249,6 @@ sub bp_index {
     return \%bp_index;
 }
 
-sub root_ip {
-    my $alteon = shift;
-    my $ip_table = $alteon->ip_table();
-
-    # Return First IP Address    
-    foreach my $entry (keys %$ip_table){
-        my $router_ip = $ip_table->{$entry};
-        print " SNMP::Layer3::AlteonAD::root_ip() using $router_ip\n" if $alteon->debug();
-        next unless $router_ip;
-        return $router_ip if ($router_ip ne '0.0.0.0');
-    }
-    return undef;
-}
-
-
 1;
 __END__
 
@@ -350,20 +335,15 @@ Returns the model extracted from B<sysDescr>
 
 =item $alteon->vendor()
 
-Returns 'Nortel'
+Returns 'nortel'
 
 =item $alteon->os()
 
-Returns 'WebOS'
+Returns 'webos'
 
 =item $alteon->os_ver()
 
 Returns the software version reported by B<agSoftwareVersion>
-
-=item $alteon->root_ip()
-
-Returns the primary IP used to communicate with the device.  Currently returns
-the first interfaces IP.
 
 =item $alteon->tftp_action()
 
