@@ -232,12 +232,6 @@ Culls software version from description()
 
 Returns 'asante' :)
 
-=item $asante->root_ip()
-
-Returns IP Address of Managed Hub.
-
-(B<actualIpAddr>)
-
 =item $asante->model()
 
 Trys to cull out AT-nnnnX out of the description field.
