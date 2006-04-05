@@ -65,6 +65,9 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             %SNMP::Info::CiscoStats::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
             %SNMP::Info::CDP::FUNCS,
+            'i_ssidlist' => 'cd11IfAuxSsid',
+            'i_ssidbcast' => 'cd11IfAuxSsidBroadcastSsid',
+            'i_80211channel' => 'cd11IfPhyDsssCurrentChannel',
             );
 
 %MIBS    = (
@@ -74,6 +77,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             %SNMP::Info::CiscoStats::MIBS,
             %SNMP::Info::CiscoVTP::MIBS,
             %SNMP::Info::CDP::MIBS,
+            'CISCO-DOT11-IF-MIB' => 'cd11IfAuxSsid',
             );
 
 %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
