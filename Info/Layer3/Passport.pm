@@ -2,7 +2,7 @@
 # Eric Miller
 # $Id$
 #
-# Copyright (c) 2004-6 Eric Miller, Max Baker
+# Copyright (c) 2004 Eric Miller, Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -409,12 +409,14 @@ sub root_ip {
             next unless ((defined $ip_type) and ($ip_type =~ /circuitLess/i));
             my $ip = $rc_ip_addr->{$iid};
             next unless defined $ip;
-                     
-            return $ip;
+            
+            return $ip if $passport->_snmp_connect_ip($ip);
         }
 
         # Return Management Virtual IP address
-        return $virt_ip if ((defined $virt_ip) and ($virt_ip ne '0.0.0.0'));
+        if ( (defined $virt_ip) and ($virt_ip ne '0.0.0.0') ) {
+            return $virt_ip if $passport->_snmp_connect_ip($virt_ip);
+        }
     }
 
     # Return OSPF Router ID
@@ -422,7 +424,7 @@ sub root_ip {
         foreach my $iid (keys %$rc_ip_addr){
             my $ip = $rc_ip_addr->{$iid};
             next unless $router_ip eq $ip;
-            return $router_ip;
+            return $router_ip if $passport->_snmp_connect_ip($router_ip);
         }
     }
 
@@ -431,7 +433,7 @@ sub root_ip {
         my $port = $sonmp_topo_port->{$entry};
         next unless $port == 0;
         my $ip = $sonmp_topo_ip->{$entry};
-        return $ip if ((defined $ip) and ($ip ne '0.0.0.0'));
+        return $ip if ( (defined $ip) and ($ip ne '0.0.0.0') and ($passport->_snmp_connect_ip($ip)) );
     }
     return undef;
 }
