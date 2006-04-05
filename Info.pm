@@ -2606,6 +2606,7 @@ sub AUTOLOAD {
 
     my $attr = $sub_name;
     $attr =~ s/^(load|set)_//;
+    $attr =~ s/^orig_//;
     
     # Let's use the %GLOBALS and %FUNCS from the class that 
     #   inherited us.
