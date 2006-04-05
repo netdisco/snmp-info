@@ -79,6 +79,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $I
             %SNMP::Info::MAU::FUNCS,
             %SNMP::Info::Entity::FUNCS,
             %SNMP::Info::CDP::FUNCS,
+            'bp_index2' => 'dot1dBasePortIfIndex',
             'i_type2'   => 'ifType',
             # RFC1271
             'l_descr'   => 'logDescription',
@@ -299,9 +300,6 @@ sub slots {
 #
 #}
 
-
-
-
 sub i_vlan {
     my $hp = shift;
 
@@ -334,6 +332,25 @@ sub i_vlan {
 
     return $i_vlan;
 }
+
+# Bridge MIB does not map Bridge Port to ifIndex correctly on all models
+sub bp_index {
+    my $hp = shift;
+    my $if_index = $hp->i_index();
+    my $model = $hp->model();
+    my $bp_index = $hp->bp_index2();
+    
+    unless (defined $model and $model =~ /(1600|2424|4000|8000)/) {
+        return $bp_index;
+    }
+
+    my %mod_bp_index;
+    foreach my $iid (keys %$if_index){
+        $mod_bp_index{$iid} = $iid;
+    }
+    return \%mod_bp_index;
+}
+
 1;
 __END__
 
@@ -446,14 +463,43 @@ Returns the model number of the HP Switch.  Will translate between the HP Part n
 the common model number with this map :
 
  %MODEL_MAP = ( 
-               'J4812A' => '2512',
-               'J4819A' => '5308XL',
-               'J4813A' => '2524',
-               'J4805A' => '5304XL',
-               'J4815A' => '3324XL',
-               'J4865A' => '4108GL',
-               'J4887A' => '4104GL',
-               'J4874A' => '9315',
+                'J4093A' => '2424M',
+                'J4110A' => '8000M',
+                'J4120A' => '1600M',
+                'J4121A' => '4000M',
+                'J4122A' => '2400M',
+                'J4138A' => '9308M',
+                'J4139A' => '9304M',
+                'J4812A' => '2512',
+                'J4813A' => '2524',
+                'J4815A' => '3324XL',
+                'J4819A' => '5308XL',
+                'J4840A' => '6308M-SX',
+                'J4841A' => '6208M-SX',
+                'J4850A' => '5304XL',
+                'J4851A' => '3124',
+                'J4865A' => '4108GL',
+                'J4874A' => '9315M',
+                'J4887A' => '4104GL',
+                'J4899A' => '2650',
+                'J4899B' => '2650-CR',
+                'J4900A' => '2626',
+                'J4900B' => '2626-CR',
+                'J4902A' => '6108',
+                'J4903A' => '2824',
+                'J4904A' => '2848',
+                'J4905A' => '3400cl-24G',
+                'J4906A' => '3400cl-48G',
+                'J8130A' => 'WAP-420-NA',
+                'J8131A' => 'WAP-420-WW',
+                'J8133A' => 'AP520WL',
+                'J8164A' => '2626-PWR',
+                'J8165A' => '2650-PWR',
+                'J8433A' => 'CX4-6400cl-6XG',
+                'J8474A' => 'MF-6400cl-6XG',
+                'J8718A' => '5404yl',
+                'J8719A' => '5408yl',
+
               );
 
 =item $hp->os()
@@ -536,6 +582,13 @@ Crosses i_type() with $hp->e_descr() using $hp->e_port()
 Looks in Q-BRIDGE-MIB -- see SNMP::Info::Bridge
 
 and for older devices looks in HP-VLAN.
+
+=item $hp->bp_index()
+
+Returns reference to hash of bridge port table entries map back to interface identifier (iid)
+
+Returns (B<ifIndex>) for both key and value for 1600, 2424, 4000, and 8000 models
+since they seem to have problems with BRIDGE-MIB
 
 =back
 
