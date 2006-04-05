@@ -69,7 +69,18 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
           'el_coll_freq'       => 'dot3CollFrequencies'
           );
 
-%MUNGE = ( %SNMP::Info::MUNGE );
+%MUNGE = ( %SNMP::Info::MUNGE,
+           'el_duplex' => \&munge_el_duplex,
+         );
+
+sub munge_el_duplex {
+    my $duplex = shift;
+    return unless defined $duplex;
+
+    $duplex =~ s/Duplex$//;
+    return $duplex;
+}
+
 
 1;
 __END__
@@ -105,10 +116,6 @@ Max Baker
     my $duplex = $el_duplex->{$el_port};
     my $iid    = $el_index->{$el_port};
     my $port   = $interfaces->{$iid};
-
-    $duplex = 'half' if $duplex =~/half/i;
-    $duplex = 'full' if $duplex =~/full/i;
-    $duplex = 'auto' if $duplex =~/auto/i;
 
     print "PORT:$port set to duplex:$duplex\n";
  }
