@@ -29,6 +29,7 @@ version 1.0 ()
     + Added set_i_duplex_admin() and set_i_speed_admin() to C2900 class (Justin Hunter)
     + Added set_i_duplex_admin() and set_i_speed_admin() to CiscoStack class
     + CDP added to Aironet class
+    + Added Juniper class
 
     * More error checking in  _load_attr() around bulkwalk code
     * Minor warning fix in L3::Aironet::os_ver()

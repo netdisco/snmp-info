@@ -875,6 +875,9 @@ sub device_type {
         # Default generic cisco
         $objtype = 'SNMP::Info::Layer3::Cisco' if ($objtype eq 'SNMP::Info::Layer3' and $desc =~ /\bIOS\b/);
 
+        # Default generic Juniper
+        $objtype = 'SNMP::Info::Layer3::Juniper' if ($objtype eq 'SNMP::Info::Layer3' and $desc =~ /\bJUNOS\b/);
+
     # Layer 2 Supported
     } elsif ($info->has_layer(2)) {
         $objtype = 'SNMP::Info::Layer2'; 
