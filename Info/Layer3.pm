@@ -112,17 +112,18 @@ sub root_ip {
     my $router_ip  = $l3->router_ip();
     my $ospf_ip    = $l3->ospf_ip();
 
-    # return the first one found here (should be only)
+    # return the first one found here (should be only one)
     if (defined $ospf_ip and scalar(keys %$ospf_ip)){
         foreach my $key (keys %$ospf_ip){
             my $ip = $ospf_ip->{$key};
             next if $ip eq '0.0.0.0';
+            next unless $l3->_snmp_connect_ip($ip);
             print " SNMP::Layer3::root_ip() using $ip\n" if $l3->debug();
             return $ip;
         }
     }
 
-    return $router_ip if (defined $router_ip and $router_ip ne '0.0.0.0');
+    return $router_ip if ( (defined $router_ip) and ($router_ip ne '0.0.0.0') and ($l3->_snmp_connect_ip($router_ip)) );
     return undef;
 }
 
