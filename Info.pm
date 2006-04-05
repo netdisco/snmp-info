@@ -2522,6 +2522,46 @@ sub _show_attr {
     return $store->{$attr};
 }
 
+=item _snmp_connect_ip() 
+
+Returns true or false based upon snmp connectivity to an IP.
+
+=cut
+
+sub _snmp_connect_ip {
+    my $self = shift;
+    my $ip = shift;
+    my $ver = $self->snmp_ver();
+    my $comm = $self->snmp_comm();
+    
+    return undef if ($ip eq '0.0.0.0') or ($ip =~ /^127\./);
+    
+    # Create session object
+    my $snmp_test = new SNMP::Session( 'DestHost' => $ip, 'Community' => $comm, 'Version' => $ver);
+
+    # No session object created
+    unless (defined $snmp_test){
+        return undef;
+    }
+    
+    # Session object created but SNMP connection failed.
+    my $sess_err = $snmp_test->{ErrorStr} || '';
+    if ($sess_err){
+        return undef;
+    }
+    
+    # Try to get some data from IP
+    my $layers = $snmp_test->get('sysServices.0');
+    
+    $sess_err = $snmp_test->{ErrorStr} || '';
+    if ($sess_err){
+        return undef;
+    }    
+
+    return 1;
+
+}
+
 =back
 
 =head2 AUTOLOAD
