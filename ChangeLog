@@ -47,6 +47,7 @@ version 1.0 ()
     * Cleanup model recognition in Baystack class, recognize more models
     * Modify Catalyst class to use CISCO-STACK-MIB for brige port index mapping
       some devices having problems returning complete index from BRIDGE-MIB
+    * Check root ip for reachability before assignment
 
 verison 0.9 (11/15/04)
     + ** Added full Nortel/Bay/BayStack support 
