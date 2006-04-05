@@ -95,8 +95,9 @@ $VERSION = 1.0;
             %SNMP::Info::MAU::MUNGE,
          );
 
-# use MAU-MIB for admin. duplex
+# use MAU-MIB for admin. duplex and admin. speed
 *SNMP::Info::Layer3::C4000::i_duplex_admin = \&SNMP::Info::MAU::mau_i_duplex_admin;
+*SNMP::Info::Layer3::C4000::i_speed_admin = \&SNMP::Info::MAU::mau_i_speed_admin;
 
 sub fan {
     my $c4000 = shift;
@@ -145,10 +146,6 @@ Bill Fenner
 
 Abstraction subclass for Cisco Catalyst 4000 Layer 2/3 Switches.  
 
-These devices run IOS but have some of the same charactersitics as the Catalyst WS-C family (5xxx). 
-For example, forwarding tables are held in VLANs, and extended interface information
-is gleened from CISCO-SWITCH-MIB.
-
 For speed or debugging purposes you can call the subclass directly, but not after determining
 a more specific class using the method above. 
 
@@ -170,6 +167,8 @@ a more specific class using the method above.
 
 =item SNMP::Info::CiscoImage
 
+=item SNMP::Info::MAU
+
 =back
 
 =head2 Required MIBs
@@ -189,6 +188,8 @@ See SNMP::Info::CiscoStats for its own MIB requirements.
 See SNMP::Info::CDP for its own MIB requirements.
 
 See SNMP::Info::CiscoImage for its own MIB requirements.
+
+See SNMP::Info::MAU for its own MIB requirements.
 
 =back
 
@@ -220,6 +221,10 @@ See documentation in SNMP::Info::CiscoStats for details.
 
 See documentation in SNMP::Info::CiscoImage for details.
 
+=head2 Globals imported from SNMP::Info::MAU
+
+See documentation in SNMP::Info::MAU for details.
+
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
@@ -248,6 +253,10 @@ See documentation in SNMP::Info::CiscoStats for details.
 =head2 Table Methods imported from SNMP::Info::CiscoImage
 
 See documentation in SNMP::Info::CiscoImage for details.
+
+=head2 Table Methods imported from SNMP::Info::MAU
+
+See documentation in SNMP::Info::MAU for details.
 
 =cut
 
