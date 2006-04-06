@@ -42,7 +42,7 @@ use SNMP::Info::Layer3;
 
 %GLOBALS = (
             %SNMP::Info::Layer3::GLOBALS,
-	    'serial' => 'jnxBoxSerialNo',
+	    'serial' => 'jnxBoxSerialNo.0',
 	   );
 
 %FUNCS = (

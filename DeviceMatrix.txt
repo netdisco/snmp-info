@@ -420,6 +420,11 @@ note: net-snmp 4.x agent and 5.x agent.
 
 device-family: BSD
 
+# Juniper
+device-vendor: Juniper
+
+device-family: M-series router
+arpnip: yes
 
 # NORTEL
 device-vendor: Nortel
