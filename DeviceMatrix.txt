@@ -173,7 +173,6 @@ device: 2912MfXL
 
 device: 2924MXL
 ver: 1
-portmac: yes
 
 device: 2924CXL
 
@@ -225,7 +224,7 @@ device: 3548XL
 
 device-family: Catalyst 3550
 macsuck: vlan
-duplex: both
+duplex: write
 vlan: write
 class: Layer3::C3550
 note: Run IOS
@@ -301,6 +300,7 @@ note: Runs in two possible modes, native (IOS) and hybrid (IOS with CatOS on top
 note: Switch running Hybrid has WS-C in description field and loves L2::Catalyst class
 note: Native Mode (IOS) versions seem to have SNMP problems with L2 data.
 note: !Problem with IOS 12.2.17d-SXB ... upgrade to -SXB1 or higher.
+note: !Sup720-3B and NativeIOS 12.2 (17d)SXB10 may report 127.0.0.51 as CDP neighbor address.
 
 device: 6503
 macsuck:no
@@ -431,14 +431,14 @@ duplex: both
 cdp: proprietary
 ver: 1
 class: Layer1::Bayhub
-note: !Uses proprietary MIBs to provide MAC to port mapping.
+note: Uses proprietary MIBs to provide MAC to port mapping.
 note: !Requires Advanced or Advanced Analyzer NMM
 
 device: 102
 
 device: System 5000
 
-device-family: Baystack Switch
+device-family: Ethernet Switch/Baystack Switch
 arpnip: no
 macsuck: yes
 duplex: both
@@ -462,13 +462,19 @@ note: Labels full duplex as 20Mbit connection.
 
 device: 460,470
 
-device: 3510
+device: BPS
+
+device-family: Ethernet Routing Switch/Baystack Switch
 arpnip: yes
+macsuck: yes
+duplex: both
+vlan: yes
+cdp: proprietary
+class: Layer2::Baystack
+
+device: 3510
 
 device: 5510,5520,5530
-arpnip: yes
-
-device: BPS
 
 device-family: Centillion
 macsuck: yes
@@ -519,7 +525,7 @@ device: 183
 
 device: 184
 
-device-family: BayRS
+device-family: Multiprotocol Router/BayRS
 arpnip: yes
 macsuck: yes
 portmac: yes
@@ -540,7 +546,7 @@ device: Passport 2430
 
 device: Passport 5430
 
-device-family: Contivity
+device-family: VPN Router/Contivity
 arpnip: yes
 macsuck: no
 portmac: yes
@@ -558,7 +564,7 @@ device: 2500,2600,2700
 
 device: 4500,4600,5000
 
-device-family: Passport/Accelar LAN
+device-family: Ethernet Routing Switch/Passport/Accelar LAN
 arpnip: yes
 macsuck: yes
 portmac: yes
@@ -577,7 +583,7 @@ device: 8106,8110
 
 device: 1050,1100,1150,1200
 
-device-family: Passport 1600
+device-family: Ethernet Routing Switch/Passport 1600
 arpnip: yes
 macsuck: yes
 portmac: yes
@@ -594,7 +600,7 @@ duplex: both
 cdp: proprietary
 ver: 1
 class: Layer1::S3000
-note: !Uses proprietary MIBs to provide MAC to port mapping.
+note: Uses proprietary MIBs to provide MAC to port mapping.
 note: !Requires Advanced or Advanced Analyzer NMM
 
 device: 281X
