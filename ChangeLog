@@ -30,6 +30,10 @@ version 1.0 ()
     + Added set_i_duplex_admin() and set_i_speed_admin() to CiscoStack class
     + CDP added to Aironet class
     + Added Juniper class
+    + Added support for Catalyst 4000 and 4500, get admin. duplex
+      and speed properly
+    + Added i_speed_high(), which i_speed() uses if needed to support
+      interfaces >4Gbps
 
     * More error checking in  _load_attr() around bulkwalk code
     * Minor warning fix in L3::Aironet::os_ver()
@@ -52,6 +56,8 @@ version 1.0 ()
     * Check root ip for reachability before assignment
     * HP class should recognize more models
     * Fix in HP class for models not returning full bp_index
+    * [ 1436103 ] L2::Aironet devices weren't getting their model
+      translated properly
 
 verison 0.9 (11/15/04)
     + ** Added full Nortel/Bay/BayStack support 

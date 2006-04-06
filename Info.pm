@@ -1220,7 +1220,30 @@ INTEGER. Interface MTU value.
 
 Speed of the link, human format.  See munge_speed() later in document for details.
 
-(B<ifSpeed>)
+(B<ifSpeed>, B<ifHighSpeed> if necessary)
+
+=cut
+
+sub i_speed {
+    my $l3 = shift;
+    my $i_speed = $l3->orig_i_speed();
+    my $i_speed_high = undef;
+    foreach my $i (keys %$i_speed) {
+	if ($i_speed->{$i} eq "4294967295") {
+	    $i_speed_high = $l3->i_speed_high() unless defined($i_speed_high);
+	    $i_speed->{$i} = $i_speed_high->{$i} if ($i_speed_high->{$i});
+	}
+    }
+    return $i_speed;
+}
+
+=item $info->i_speed_high()
+
+Speed of a high-speed link, human format.  See munge_highspeed() later in
+document for details.  You should not need to call this directly, as
+i_speed() will call it if it needs to.
+
+(B<ifHighSpeed>)
 
 =item $info->i_mac() 
 
@@ -1244,7 +1267,7 @@ Administrative status of the port.  Typical values are 'enabled' and 'disabled'.
 
 The value of sysUpTime when this port last changed states (up,down).
 
-(B<IfLastChange>)
+(B<ifLastChange>)
 
 =item $info->i_name()
 
@@ -1619,6 +1642,7 @@ These are table entries, such as the IfIndex
             'ip_netmask'         => 'ipAdEntNetMask',
             'ip_broadcast'       => 'ipAdEntBcastAddr',
             # ifXTable - Extension Table
+            'i_speed_high'       => 'ifHighSpeed',
             'i_pkts_multi_in'    => 'ifInMulticastPkts',
             'i_pkts_multi_out'   => 'ifOutMulticastPkts',
             'i_pkts_bcast_in'    => 'ifInBroadcastPkts',
@@ -1685,6 +1709,7 @@ Sample %MUNGE:
             'i_mac'              => \&munge_mac,
             'layers'             => \&munge_dec2bin,
             'i_speed'            => \&munge_speed,
+            'i_speed_high'       => \&munge_highspeed,
             'i_octet_in64'       => \&munge_counter64,
             'i_octet_out64'      => \&munge_counter64,
             'i_pkts_ucast_in64'  => \&munge_counter64,
@@ -1857,6 +1882,7 @@ Makes human friendly speed ratings using %SPEED_MAP
  %SPEED_MAP = (
                 '56000'      => '56 kbps',
                 '64000'      => '64 kbps',
+                '115000'     => '115 kpbs',
                 '1500000'    => '1.5 Mbps',
                 '1536000'    => 'T1',      
                 '1544000'    => 'T1',
@@ -1875,6 +1901,8 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '45000000'   => '45 Mbps',
                 '45045000'   => 'DS3',
                 '46359642'   => 'DS3',
+                '51850000'   => 'OC-1',
+                '54000000'   => '54 Mbps',
                 '64000000'   => '64 Mbps',
                 '100000000'  => '100 Mbps',
                 '149760000'  => 'ATM on OC-3',
@@ -1913,6 +1941,7 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '45045000'   => 'DS3',
                 '46359642'   => 'DS3',
                 '51850000'   => 'OC-1',
+                '54000000'   => '54 Mbps',
                 '64000000'   => '64 Mbps',
                 '100000000'  => '100 Mbps',
                 '149760000'  => 'ATM on OC-3',
@@ -1932,6 +1961,32 @@ sub munge_speed {
 
     #print "  $speed -> $map  " if (defined $map); 
     return $map || $speed;
+}
+
+=item munge_highspeed()
+
+Makes human friendly speed ratings for ifHighSpeed
+
+=cut
+
+sub munge_highspeed {
+    my $speed = shift;
+    my $fmt = "%d Mbps";
+
+    if ($speed > 9999999) {
+        $fmt = "%d Tbps";
+	$speed /= 1000000;
+    } elsif ($speed > 999999) {
+        $fmt = "%.1f Tbps";
+        $speed /= 1000000.0;
+    } elsif ($speed > 9999) {
+        $fmt = "%d Gbps";
+	$speed /= 1000;
+    } elsif ($speed > 999) {
+	$fmt = "%.1f Gbps";
+	$speed /= 1000.0;
+    }
+    return sprintf($fmt, $speed);
 }
 
 =item munge_ip() 
