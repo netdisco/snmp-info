@@ -658,7 +658,7 @@ name if exists.
 Maps the IP Table to the IID.  Extends (B<ipAdEntIfIndex>) by adding the index of
 the CPU virtual management IP (if present) and each CPU Ethernet port.
 
-=item $stack->bp_index()
+=item $passport->bp_index()
 
 Returns reference to hash of bridge port table entries map back to interface identifier (iid)
 
