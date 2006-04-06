@@ -40,11 +40,13 @@ Info/Layer3/Aironet.pm
 Info/Layer3/AlteonAD.pm
 Info/Layer3/BayRS.pm
 Info/Layer3/C3550.pm
+Info/Layer3/C4000.pm
 Info/Layer3/C6500.pm
 Info/Layer3/Cisco.pm
 Info/Layer3/Contivity.pm
 Info/Layer3/Extreme.pm
 Info/Layer3/Foundry.pm
+Info/Layer3/Juniper.pm
 Info/Layer3/N1600.pm
 Info/Layer3/Passport.pm
 Info/MAU.pm
