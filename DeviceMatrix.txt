@@ -249,7 +249,7 @@ device-family: Catalyst 4000
 duplex: both
 macsuck: vlan
 vlan: write
-class: Layer3::C6500
+class: Layer3::C4000
 note: Comes in IOS and CatOS versions like the 6k series.
 note: CatOS versions like L2::Catalyst just fine.
 note: !Reported problems with SNMP taking up all the CPU.  Requests take significantly longer.
