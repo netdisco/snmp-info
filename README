@@ -1,15 +1,22 @@
 NAME
+
     SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs
     through SNMP.
 
 VERSION
+
     SNMP::Info - Version 1.0
 
 AUTHOR
+
     SNMP::Info was created at UCSC for the netdisco project
-    (www.netdisco.org) and is written and maintained by Max Baker.
+    (www.netdisco.org) and was orginally written by Max Baker.
+
+    Currently being maintained by team of Open Source authors headed by Eric
+    Miller and Bill Fenner.
 
 SYNOPSIS
+
      use SNMP::Info;
 
      my $info = new SNMP::Info( 
@@ -44,26 +51,34 @@ SYNOPSIS
         # Print out physical port name, not snmp iid
         my $port  = $interfaces->{$iid};
 
+        print "$port: ";
+        print "$duplex duplex" if defined $duplex;
+
         # The CDP Table has table entries different than the interface tables.
         # So we use c_if to get the map from cdp table to interface table.
 
         my %c_map = reverse %$c_if; 
         my $c_key = $c_map{$iid};
+        unless (defined $c_key) {
+             print "\n\n";
+             next;
+         }
         my $neighbor_ip   = $c_ip->{$c_key};
         my $neighbor_port = $c_port->{$c_key};
 
-        print "$port: $duplex duplex";
-        print " connected to $neighbor_ip / $neighbor_port\n" if defined $remote_ip;
+        print " connected to $neighbor_ip / $neighbor_port\n" if defined $neighbor_ip;
         print "\n";
 
      }
 
 SUPPORT
+
     Please direct all support, help, and bug requests to the snmp-info-users
     Mailing List at
     <http://lists.sourceforge.net/lists/listinfo/snmp-info-users>.
 
 DESCRIPTION
+
     SNMP::Info gives an object oriented interface to information obtained
     through SNMP.
 
@@ -93,6 +108,7 @@ DESCRIPTION
     a couple hashes. See EXTENDING SNMP::INFO.
 
 REQUIREMENTS
+
     1. Net-SNMP
         To use this module, you must have Net-SNMP installed on your system.
         More specifically you need the Perl modules that come with it.
@@ -130,6 +146,7 @@ REQUIREMENTS
         directory and that the MIBs are world-readable.
 
 DESIGN GOALS
+
     1. Use of textual MIB leaf identifier and enumerated values
 
         * All values are retrieved via MIB Leaf node names
@@ -157,12 +174,14 @@ DESIGN GOALS
         inclusion in the next version.
 
 SUBCLASSES
+
     These are the subclasses that implement MIBs and support devices:
 
     Required MIBs not included in the install instructions above are noted
     here.
 
   MIB Subclasses
+
     These subclasses implement method to access one or more MIBs. These are
     not used directly, but rather inherited from device subclasses.
 
@@ -178,7 +197,7 @@ SUBCLASSES
 
     SNMP::Info::CDP
         CISCO-CDP-MIB. Cisco Discovery Protocol (CDP) Support. Inherited by
-        devices serving Layer2 or Layer3.
+        Cisco and HP devices.
 
     SNMP::Info::CiscoImage
         CISCO-IMAGE-MIB. A collection of OIDs providing IOS image
@@ -231,6 +250,7 @@ SUBCLASSES
         by Nortel/Bay/Synoptics switches and hubs.
 
   Device Subclasses
+
     These subclasses inherit from one or more classes to provide a common
     interface to data obtainable from network devices.
 
@@ -275,9 +295,9 @@ SUBCLASSES
             Depreciated. Use BayStack.
 
         SNMP::Info::Layer2::Baystack
-            Subclass for Nortel/Bay Baystack switches. This includes 303,
-            304, 350, 380, 410, 420, 425, 450, 460, 470, 5510, 5520, 5530,
-            Business Policy Switch (BPS) and probably others.
+            Subclass for Nortel/Bay Ethernet Switch/Baystack switches. This
+            includes 303, 304, 350, 380, 410, 420, 425, 450, 460, 470, 5510,
+            5520, 5530, Business Policy Switch (BPS) and probably others.
 
         SNMP::Info::Layer2::C1900
             Subclass for Cisco Catalyst 1900 and 1900c Devices running
@@ -334,12 +354,15 @@ SUBCLASSES
             Subclass for Nortel Alteon Ace Director series L2-7 switches.
 
         SNMP::Info::Layer3::BayRS
-            Subclass for Nortel BayRS routers. This includes BCN, BLN, ASN,
-            ARN, and AN routers.
+            Subclass for Nortel Multiprotocol/BayRS routers. This includes
+            BCN, BLN, ASN, ARN, AN, 2430, and 5430 routers.
 
         SNMP::Info::Layer3::C3550
             Subclass for Cisco Catalyst 3550,3540,3560 2/3 switches running
             IOS.
+
+        SNMP::Info::Layer3::C4000
+            This class covers Catalyst 4000s and 4500s.
 
         SNMP::Info::Layer3::C6500
             This class covers Catalyst 6500s in native mode, hybrid mode.
@@ -350,7 +373,7 @@ SUBCLASSES
             on CiscoVTP.
 
         SNMP::Info::Layer3::Contivity
-            Subclass for Nortel Contivity VPN concentrators.
+            Subclass for Nortel Contivity/VPN Routers.
 
         SNMP::Info::Layer3::Extreme
             Subclass for Extreme Networks switches.
@@ -365,20 +388,27 @@ SUBCLASSES
 
             See SNMP::Info::Layer3::Foundry for more info.
 
-        SNMP::Info::Layer3::Passport
-            Subclass for Nortel Passport 8000 series and Accelar series
-            switches.
+        SNMP::Info::Layer3::Juniper
+            Subclass for Juniper devices.
 
         SNMP::Info::Layer3::N1600
-            Subclass for Nortel 1600 series switches.
+            Subclass for Nortel Ethernet Routing Switch 1600 series.
+
+        SNMP::Info::Layer3::Passport
+            Subclass for Nortel Ethernet Routing Switch/Passport 8000 series
+            and Accelar series switches.
 
 Thanks
+
     Thanks for testing and coding help (in no particular order) to : Andy
     Ford, Brian Wilson, Jean-Philippe Luiggi, Dána Watanabe, Bradley Baetz,
-    Eric Miller, and people listed on the Netdisco README!
+    Mike Hunter, Justin Hunter, Brian Chow and people listed on the Netdisco
+    README!
 
 USAGE
+
   Constructor
+
     new()
         Creates a new object and connects via SNMP::Session.
 
@@ -475,6 +505,7 @@ USAGE
         version 2 and then fallback to version 1.
 
   Data is Cached
+
     Methods and subroutines requesting data from a device will only load the
     data once, and then return cached versions of that data.
 
@@ -485,6 +516,7 @@ USAGE
     globals and table methods.
 
   Object Scalar Methods
+
     These are for package related data, not direcly supplied from SNMP.
 
     $info->clear_cache()
@@ -519,16 +551,18 @@ USAGE
                     Aironet (BR500,AP340,350,1200) -> SNMP::Info::Layer3::Aironet
                              AP4800... All Non IOS
                     Catalyst 3550,3548,3560        -> SNMP::Info::Layer3::C3550
-                    Catalyst 6500, 4000, 3750      -> SNMP::Info::Layer3::C6500
+                    Catalyst 4000,4500             -> SNMP::Info::Layer3::C4000
+                    Catalyst 6500, 3750            -> SNMP::Info::Layer3::C6500
                     Cisco Generic L3 IOS device    -> SNMP::Info::Layer3::Cisco
                     Extreme                        -> SNMP::Info::Layer3::Extreme
                     Foundry                        -> SNMP::Info::Layer3::Foundry
+                    Juniper                        -> SNMP::Info::Layer3::Juniper
                     Nortel Passport/Accelar LAN    -> SNMP::Info::Layer3::Passport
                     Nortel/Bay Baystack            -> SNMP::Info::Layer2::Baystack
                     Alteon Ace Director            -> SNMP::Info::Layer3::AlteonAD
                     Nortel Contivity               -> SNMP::Info::Layer3::Contivity
                     Nortel BayRS Router            -> SNMP::Info::Layer3::BayRS
-                Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2
+                 Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2
                     Aironet - IOS Devices          -> SNMP::Info::Layer2::Aironet
                     Catalyst 1900                  -> SNMP::Info::Layer2::C1900
                     Catalyst 2900XL,2950,3500XL    -> SNMP::Info::Layer2::C2900
@@ -592,6 +626,7 @@ USAGE
         Indexing.html>
 
   Globals (Scalar Methods)
+
     These are methods to return scalar data from RFC1213.
 
     Some subset of these is probably available for any network device that
@@ -640,6 +675,7 @@ USAGE
         (ipForwarding)
 
   Table Methods
+
     Each of these methods returns a hash_reference to a hash keyed on the
     interface index in SNMP.
 
@@ -654,6 +690,7 @@ USAGE
     cases changes between reboots of the network device.
 
   Partial Table Fetches
+
     If you want to get only a part of an SNMP table and you know the IID for
     the part of the table that you want, you can specify it in the call:
 
@@ -667,6 +704,7 @@ USAGE
     Partial table results are not cached.
 
   Interface Information
+
     $info->interfaces()
         This methods is overriden in each subclass to provide a mapping
         between the Interface Table Index (iid) and the physical port name.
@@ -704,7 +742,14 @@ USAGE
         Speed of the link, human format. See munge_speed() later in document
         for details.
 
-        (ifSpeed)
+        (ifSpeed, ifHighSpeed if necessary)
+
+    $info->i_speed_high()
+        Speed of a high-speed link, human format. See munge_highspeed()
+        later in document for details. You should not need to call this
+        directly, as i_speed() will call it if it needs to.
+
+        (ifHighSpeed)
 
     $info->i_mac()
         MAC address of the interface. Note this is just the MAC of the port,
@@ -726,7 +771,7 @@ USAGE
     $info->i_lastchange()
         The value of sysUpTime when this port last changed states (up,down).
 
-        (IfLastChange)
+        (ifLastChange)
 
     $info->i_name()
         Interface Name field. Supported by a smaller subset of devices, this
@@ -742,6 +787,7 @@ USAGE
         (ifAlias)
 
   Interface Statistics
+
     $info->i_octet_in(), $info->i_octets_out(), $info->i_octet_in64(),
     $info->i_octets_out64()
         Bandwidth.
@@ -800,6 +846,7 @@ USAGE
         (ifHCOutBroadcastPkts)
 
   IP Address Table
+
     Each entry in this table is an IP address in use on this device. Usually
     this is implemented in Layer3 Devices.
 
@@ -824,6 +871,7 @@ USAGE
         (ipAdEntBcastAddr)
 
   IP Routing Table
+
     $info->ipr_route()
         The route in question. A value of 0.0.0.0 is the default gateway
         route.
@@ -939,6 +987,7 @@ USAGE
         ("ipRouteInfo")
 
 SETTING DATA VIA SNMP
+
     This section explains how to use SNMP::Info to do SNMP Set operations.
 
     $info->set_METHOD($value)
@@ -968,6 +1017,7 @@ SETTING DATA VIA SNMP
     subroutines will need to be added if they haven't been already.
 
 Quiet Mode
+
     SNMP::Info will not chirp anything to STDOUT unless there is a serious
     error (in which case it will probably die).
 
@@ -982,7 +1032,9 @@ Quiet Mode
      my $name = $info->name() or die "Couldn't get sysName!" . $name->error();
 
 EXTENDING SNMP::INFO
+
   Data Structures required in new Subclass
+
     A class inheriting this class must implement these data structures :
 
     $INIT
@@ -1025,6 +1077,7 @@ EXTENDING SNMP::INFO
          )
 
   Sample Subclass
+
     Let's make a sample Layer 2 Device subclass. This class will inherit the
     Cisco Vlan module as an example.
 
@@ -1116,7 +1169,9 @@ EXTENDING SNMP::INFO
     of SNMP::Info.
 
 SNMP::INFO INTERNALS
+
   Object Namespace
+
     Internal data is stored with bareword keys. For example $info->{debug}
 
     SNMP Data is stored or marked cached with keys starting with an
@@ -1126,6 +1181,7 @@ SNMP::INFO INTERNALS
     above.
 
   Package Globals
+
     These set the default value for an object upon creation.
 
     $DEBUG
@@ -1147,12 +1203,14 @@ SNMP::INFO INTERNALS
         for more info. Can change by passing BulkRepeaters option in new()
 
   Data Munging Callback Subroutines
+
     munge_speed()
         Makes human friendly speed ratings using %SPEED_MAP
 
          %SPEED_MAP = (
                         '56000'      => '56 kbps',
                         '64000'      => '64 kbps',
+                        '115000'     => '115 kpbs',
                         '1500000'    => '1.5 Mbps',
                         '1536000'    => 'T1',      
                         '1544000'    => 'T1',
@@ -1171,6 +1229,8 @@ SNMP::INFO INTERNALS
                         '45000000'   => '45 Mbps',
                         '45045000'   => 'DS3',
                         '46359642'   => 'DS3',
+                        '51850000'   => 'OC-1',
+                        '54000000'   => '54 Mbps',
                         '64000000'   => '64 Mbps',
                         '100000000'  => '100 Mbps',
                         '149760000'  => 'ATM on OC-3',
@@ -1183,6 +1243,9 @@ SNMP::INFO INTERNALS
                         '622080000'  => 'OC-12',
                         '1000000000' => '1.0 Gbps',
                      )
+
+    munge_highspeed()
+        Makes human friendly speed ratings for ifHighSpeed
 
     munge_ip()
         Takes a binary IP and makes it dotted ASCII
@@ -1213,6 +1276,7 @@ SNMP::INFO INTERNALS
         Net-SNMP figured out. Heirarchy/precendence of MIBS in SNMP::Info.
 
   Internaly Used Functions
+
     $info->init()
         Used internally. Loads all entries in %MIBS.
 
@@ -1298,7 +1362,11 @@ SNMP::INFO INTERNALS
         The first time ran, it will call $info->load_METHOD(). Every time
         after it will return cached data.
 
+    $info->snmp_connect_ip()
+        Returns true or false based upon snmp connectivity to an IP.
+
   AUTOLOAD
+
     Each entry in either %FUNCS or %GLOBALS is used by AUTOLOAD() to create
     dynamic methods.
 
@@ -1321,6 +1389,7 @@ SNMP::INFO INTERNALS
     subclass.
 
 COPYRIGHT AND LICENCE
+
     Changes from SNMP::Info Version 0.7 and on are: Copyright (c)2003, 2004
     Max Baker - All rights reserved.
 
