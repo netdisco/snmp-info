@@ -266,11 +266,11 @@ sub i_duplex_admin {
 sub i_vlan {
     my $bayrs = shift;
 
-    my $wf_cct                = $bayrs->wf_csmacd_cct();
-    my $wf_mtu                = $bayrs->wf_csmacd_mtu();
-    my $wf_line                = $bayrs->wf_csmacd_line();
-    my $wf_local_vid        = $bayrs->wf_local_vlan_id();
-    my $wf_global_vid        = $bayrs->wf_global_vlan_id();
+    my $wf_cct          = $bayrs->wf_csmacd_cct();
+    my $wf_mtu          = $bayrs->wf_csmacd_mtu();
+    my $wf_line         = $bayrs->wf_csmacd_line();
+    my $wf_local_vid    = $bayrs->wf_local_vlan_id();
+    my $wf_global_vid   = $bayrs->wf_global_vlan_id();
     my $wf_vport        = $bayrs->wf_vlan_port();
 
     my %i_vlan;
@@ -317,13 +317,13 @@ sub root_ip {
         my $idx = $ip_index->{$entry};
         next unless $idx == 0;
         my $clip = $ip_table->{$entry};
-        next unless ( (defined $clip) and ($clip eq '0.0.0.0') and ($bayrs->_snmp_connect_ip($clip)) );
+        next unless ( (defined $clip) and ($clip ne '0.0.0.0') and ($bayrs->snmp_connect_ip($clip)) );
         print " SNMP::Layer3::BayRS::root_ip() using $clip\n" if $bayrs->debug();
         return $clip;
     }
     # Check for OSPF Router ID
     my $ospf_ip  = $bayrs->ospf_rtr_id();
-    if ((defined $ospf_ip) and ($ospf_ip ne '0.0.0.0') and ($bayrs->_snmp_connect_ip($ospf_ip)) ) {
+    if ((defined $ospf_ip) and ($ospf_ip ne '0.0.0.0') and ($bayrs->snmp_connect_ip($ospf_ip)) ) {
         print " SNMP::Layer3::BayRS::root_ip() using $ospf_ip\n" if $bayrs->debug();
         return $ospf_ip;
     }
@@ -336,7 +336,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::BayRS - Perl5 Interface to Nortel Networks' routers running BayRS.
+SNMP::Info::Layer3::BayRS - Perl5 Interface to Nortel routers running BayRS.
 
 =head1 AUTHOR
 
@@ -360,7 +360,7 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Abstraction subclass for routers running Nortel Networks' BayRS.  
+Abstraction subclass for routers running Nortel BayRS.  
 
 For speed or debugging purposes you can call the subclass directly, but not after determining
 a more specific class using the method above. 
@@ -395,14 +395,6 @@ See SNMP::Info for its own MIB requirements.
 
 See SNMP::Info::Bridge for its own MIB requirements.
 
-MIBs can be found on the CD that came with your product.
-
-Or, they can be downloaded directly from Nortel Networks regardless of support
-contract status.  Go to http://www.nortelnetworks.com Techninal Support, Browse
-Technical Support, Select by Product Families, BayRS Router Software,
-Router Software v 15.x, Software.  Filter on mibs and download the latest
-version's archive.
-
 =back
 
 =head1 GLOBALS
@@ -435,11 +427,11 @@ the common model with this map :
 
 =item $bayrs->vendor()
 
-Returns 'Nortel'
+Returns 'nortel'
 
 =item $bayrs->os()
 
-Returns 'BayRS'
+Returns 'bayrs'
 
 =item $bayrs->os_ver()
 
