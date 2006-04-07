@@ -34,8 +34,11 @@ SNMP::Info - Version 1.0
 =head1 AUTHOR
 
 SNMP::Info was created at UCSC for the netdisco project (www.netdisco.org)
-and is written and maintained by Max Baker.
+and was orginally written by Max Baker.
 
+Currently being maintained by team of Open Source authors headed by Eric Miller
+and Bill Fenner. 
+ 
 =head1 SYNOPSIS
 
  use SNMP::Info;
@@ -72,16 +75,22 @@ and is written and maintained by Max Baker.
     # Print out physical port name, not snmp iid
     my $port  = $interfaces->{$iid};
 
+    print "$port: ";
+    print "$duplex duplex" if defined $duplex;
+
     # The CDP Table has table entries different than the interface tables.
     # So we use c_if to get the map from cdp table to interface table.
 
     my %c_map = reverse %$c_if; 
     my $c_key = $c_map{$iid};
+    unless (defined $c_key) {
+         print "\n\n";
+         next;
+     }
     my $neighbor_ip   = $c_ip->{$c_key};
     my $neighbor_port = $c_port->{$c_key};
 
-    print "$port: $duplex duplex";
-    print " connected to $neighbor_ip / $neighbor_port\n" if defined $remote_ip;
+    print " connected to $neighbor_ip / $neighbor_port\n" if defined $neighbor_ip;
     print "\n";
 
  }
@@ -219,7 +228,7 @@ BRIDGE-MIB (RFC1286).  QBRIDGE-MIB. Inherited by devices with Layer2 support.
 
 =item SNMP::Info::CDP
 
-CISCO-CDP-MIB.  Cisco Discovery Protocol (CDP) Support.  Inherited by devices serving Layer2 or Layer3.
+CISCO-CDP-MIB.  Cisco Discovery Protocol (CDP) Support.  Inherited by Cisco and HP devices.
 
 =item SNMP::Info::CiscoImage
 
@@ -341,9 +350,9 @@ Depreciated.  Use BayStack.
 
 =item SNMP::Info::Layer2::Baystack
 
-Subclass for Nortel/Bay Baystack switches.  This includes 303, 304, 350, 380,
-410, 420, 425, 450, 460, 470, 5510, 5520, 5530, Business Policy Switch (BPS) and
-probably others.
+Subclass for Nortel/Bay Ethernet Switch/Baystack switches.  This includes 303,
+304, 350, 380, 410, 420, 425, 450, 460, 470, 5510, 5520, 5530, Business Policy
+Switch (BPS) and probably others.
 
 =item SNMP::Info::Layer2::C1900
 
@@ -414,8 +423,8 @@ Subclass for Nortel Alteon Ace Director series L2-7 switches.
 
 =item SNMP::Info::Layer3::BayRS
 
-Subclass for Nortel BayRS routers.  This includes BCN, BLN, ASN, ARN,
-and AN routers.
+Subclass for Nortel Multiprotocol/BayRS routers.  This includes BCN, BLN, ASN,
+ARN, AN, 2430, and 5430 routers.
 
 =item SNMP::Info::Layer3::C3550
 
@@ -436,7 +445,7 @@ This is a simple wrapper around Layer3 for IOS devices.  It adds on CiscoVTP.
 
 =item SNMP::Info::Layer3::Contivity
 
-Subclass for Nortel Contivity VPN concentrators.  
+Subclass for Nortel Contivity/VPN Routers.  
 
 =item SNMP::Info::Layer3::Extreme
 
@@ -452,13 +461,18 @@ Requires FOUNDRY-SN-ROOT-MIB.
 
 See SNMP::Info::Layer3::Foundry for more info.
 
-=item SNMP::Info::Layer3::Passport
+=item SNMP::Info::Layer3::Juniper
 
-Subclass for Nortel Passport 8000 series and Accelar series switches.
+Subclass for Juniper devices.
 
 =item SNMP::Info::Layer3::N1600
 
-Subclass for Nortel 1600 series switches.
+Subclass for Nortel Ethernet Routing Switch 1600 series.
+
+=item SNMP::Info::Layer3::Passport
+
+Subclass for Nortel Ethernet Routing Switch/Passport 8000 series and Accelar
+series switches.
 
 =back
 
@@ -468,7 +482,7 @@ Subclass for Nortel 1600 series switches.
 
 Thanks for testing and coding help (in no particular order) to :
 Andy Ford, Brian Wilson, Jean-Philippe Luiggi, Dána Watanabe, Bradley Baetz,
-Eric Miller, and people listed on the Netdisco README!
+Mike Hunter, Justin Hunter, Brian Chow and people listed on the Netdisco README!
 
 =head1 USAGE
 
@@ -788,12 +802,13 @@ Algorithm for Subclass Detection:
             Cisco Generic L3 IOS device    -> SNMP::Info::Layer3::Cisco
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
+            Juniper                        -> SNMP::Info::Layer3::Juniper
             Nortel Passport/Accelar LAN    -> SNMP::Info::Layer3::Passport
             Nortel/Bay Baystack            -> SNMP::Info::Layer2::Baystack
             Alteon Ace Director            -> SNMP::Info::Layer3::AlteonAD
             Nortel Contivity               -> SNMP::Info::Layer3::Contivity
             Nortel BayRS Router            -> SNMP::Info::Layer3::BayRS
-        Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2
+         Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2
             Aironet - IOS Devices          -> SNMP::Info::Layer2::Aironet
             Catalyst 1900                  -> SNMP::Info::Layer2::C1900
             Catalyst 2900XL,2950,3500XL    -> SNMP::Info::Layer2::C2900
@@ -2580,13 +2595,13 @@ sub _show_attr {
     return $store->{$attr};
 }
 
-=item _snmp_connect_ip() 
+=item $info->snmp_connect_ip() 
 
 Returns true or false based upon snmp connectivity to an IP.
 
 =cut
 
-sub _snmp_connect_ip {
+sub snmp_connect_ip {
     my $self = shift;
     my $ip = shift;
     my $ver = $self->snmp_ver();
