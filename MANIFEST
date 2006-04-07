@@ -1,5 +1,5 @@
-COPYRIGHT
 ChangeLog
+COPYRIGHT
 DeviceMatrix.txt
 Info.pm
 Info/Airespace.pm
@@ -53,8 +53,8 @@ Info/MAU.pm
 Info/NortelStack.pm
 Info/RapidCity.pm
 Info/SONMP.pm
-MANIFEST
 Makefile.PL
+MANIFEST			This list of files
 README
 t/make_dev_matrix.pl
 t/prereq.t
