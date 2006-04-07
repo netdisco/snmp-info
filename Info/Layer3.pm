@@ -117,13 +117,13 @@ sub root_ip {
         foreach my $key (keys %$ospf_ip){
             my $ip = $ospf_ip->{$key};
             next if $ip eq '0.0.0.0';
-            next unless $l3->_snmp_connect_ip($ip);
+            next unless $l3->snmp_connect_ip($ip);
             print " SNMP::Layer3::root_ip() using $ip\n" if $l3->debug();
             return $ip;
         }
     }
 
-    return $router_ip if ( (defined $router_ip) and ($router_ip ne '0.0.0.0') and ($l3->_snmp_connect_ip($router_ip)) );
+    return $router_ip if ( (defined $router_ip) and ($router_ip ne '0.0.0.0') and ($l3->snmp_connect_ip($router_ip)) );
     return undef;
 }
 

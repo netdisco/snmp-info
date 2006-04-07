@@ -410,12 +410,12 @@ sub root_ip {
             my $ip = $rc_ip_addr->{$iid};
             next unless defined $ip;
             
-            return $ip if $passport->_snmp_connect_ip($ip);
+            return $ip if $passport->snmp_connect_ip($ip);
         }
 
         # Return Management Virtual IP address
         if ( (defined $virt_ip) and ($virt_ip ne '0.0.0.0') ) {
-            return $virt_ip if $passport->_snmp_connect_ip($virt_ip);
+            return $virt_ip if $passport->snmp_connect_ip($virt_ip);
         }
     }
 
@@ -424,7 +424,7 @@ sub root_ip {
         foreach my $iid (keys %$rc_ip_addr){
             my $ip = $rc_ip_addr->{$iid};
             next unless $router_ip eq $ip;
-            return $router_ip if $passport->_snmp_connect_ip($router_ip);
+            return $router_ip if $passport->snmp_connect_ip($router_ip);
         }
     }
 
@@ -433,7 +433,7 @@ sub root_ip {
         my $port = $sonmp_topo_port->{$entry};
         next unless $port == 0;
         my $ip = $sonmp_topo_ip->{$entry};
-        return $ip if ( (defined $ip) and ($ip ne '0.0.0.0') and ($passport->_snmp_connect_ip($ip)) );
+        return $ip if ( (defined $ip) and ($ip ne '0.0.0.0') and ($passport->snmp_connect_ip($ip)) );
     }
     return undef;
 }
