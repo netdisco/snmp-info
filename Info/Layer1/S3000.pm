@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::S3000;
-$VERSION = 1.0;
+$VERSION = '1.01';
 use strict;
 
 use Exporter;

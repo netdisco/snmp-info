@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Contivity;
-$VERSION = 1.0;
+$VERSION = '1.01';
 
 use strict;
 

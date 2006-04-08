@@ -40,7 +40,7 @@ use SNMP::Info::MAU;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-$VERSION = 1.0;
+$VERSION = '1.01';
 
 @SNMP::Info::Layer3::Extreme::ISA = qw/SNMP::Info::Layer3 SNMP::Info::MAU Exporter/;
 @SNMP::Info::Layer3::Extreme::EXPORT_OK = qw//;
