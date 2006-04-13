@@ -62,6 +62,7 @@ version 1.0 (04/07/06) - CVS only. No official release
     * Fix in HP class for models not returning full bp_index
     * [ 1436103 ] L2::Aironet devices weren't getting their model
       translated properly
+    * Use ipNetToMedia table instead of atTable for ARP
 
 verison 0.9 (11/15/04)
     + ** Added full Nortel/Bay/BayStack support 

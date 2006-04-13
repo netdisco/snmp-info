@@ -51,6 +51,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
           %SNMP::Info::Bridge::MIBS,
           %SNMP::Info::EtherLike::MIBS,
           %SNMP::Info::Entity::MIBS,
+          'IP-MIB'      => 'ipNetToMediaIfIndex',
           'OSPF-MIB'    => 'ospfRouterId',
           'BGP4-MIB'    => 'bgpIdentifier',
         );
@@ -75,10 +76,15 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
             %SNMP::Info::Entity::FUNCS,
             # IFMIB
             'i_name2'    => 'ifName',
-            # Address Translation Table (ARP Cache)
-            'at_index'   => 'atIfIndex',
-            'at_paddr'   => 'atPhysAddress',
-            'at_netaddr' => 'atNetAddress',
+            # Obsolete Address Translation Table (ARP Cache)
+            'old_at_index'   => 'atIfIndex',
+            'old_at_paddr'   => 'atPhysAddress',
+            'old_at_netaddr' => 'atNetAddress',
+            # IP-MIB IP Net to Media Table (ARP Cache)
+            'at_index'    => 'ipNetToMediaIfIndex',
+            'at_paddr'    => 'ipNetToMediaPhysAddress',
+            'at_netaddr'  => 'ipNetToMediaNetAddress',
+            # OSPF
             'ospf_ip'    => 'ospfHostIpAddress',
             # BGP Peer Table
             'bgp_peers'               => 'bgpPeerLocalAddr',
@@ -100,6 +106,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
             %SNMP::Info::Bridge::MUNGE,
             %SNMP::Info::EtherLike::MUNGE,
             %SNMP::Info::Entity::MUNGE,
+            'old_at_paddr' => \&SNMP::Info::munge_mac,
             'at_paddr' => \&SNMP::Info::munge_mac,
          );
 
@@ -247,6 +254,25 @@ sub vendor {
     return 'foundry' if ($descr =~ /foundry/i);
 
 }
+
+sub at_index {
+    my $l3 = shift;
+
+    return $l3->orig_at_index() || $l3->old_at_index();
+}
+
+sub at_paddr {
+    my $l3 = shift;
+
+    return $l3->orig_at_paddr() || $l3->old_at_paddr();
+}
+
+sub at_netaddr {
+    my $l3 = shift;
+
+    return $l3->orig_at_netaddr() || $l3->old_at_netaddr();
+}
+
 
 1;
 
@@ -434,23 +460,59 @@ see SNMP::Info::Etherlike for the el_index() and el_duplex() methods.
 
 =back
 
-=head2 ARP Cache Entries
+=head2 IP-MIB Arp Cache Table (B<ipNetToMediaTable>)
 
 =over
 
 =item $l3->at_index()
 
+Returns reference to hash.  Maps ARP table entries to Interface IIDs 
+
+(B<ipNetToMediaIfIndex>)
+
+If the device doesn't support B<ipNetToMediaIfIndex>, this will try
+the deprecated B<atIfIndex>.
+
+=item $l3->at_paddr()
+
+Returns reference to hash.  Maps ARP table entries to MAC addresses. 
+
+(B<ipNetToMediaPhysAddress>)
+
+If the device doesn't support B<ipNetToMediaPhysAddress>, this will try
+the deprecated B<atPhysAddress>.
+
+=item $l3->at_netaddr()
+
+Returns reference to hash.  Maps ARP table entries to IPs 
+
+(B<ipNetToMediaNetAddress>)
+
+If the device doesn't support B<ipNetToMediaNetAddress>, this will try
+the deprecated B<atNetAddress>.
+
+=back
+
+=head2 ARP Cache Entries
+
+The B<atTable> has been deprecated since 1991.  You should never need
+to use these methods.  See B<ipNetToMediaTable> above.
+
+=over
+
+=item $l3->old_at_index()
+
 Returns reference to map of IID to Arp Cache Entry
 
 (B<atIfIndex>)
 
-=item $l3->at_paddr()
+=item $l3->old_at_paddr()
 
 Returns reference to hash of Arp Cache Entries to MAC address
 
 (B<atPhysAddress>)
 
-=item $l3->at_netaddr()
+=item $l3->old_at_netaddr()
 
 Returns reference to hash of Arp Cache Entries to IP Address
 
