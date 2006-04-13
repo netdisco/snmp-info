@@ -169,7 +169,11 @@ sub mau_i_duplex_admin {
     # Older HP4000's don't implement ifMauDefaultType, but we can
     # figure out from ifMauAutoNegCapAdvertised what we'd like.
     if (!defined($mau_type_admin)) {
-        return mau_i_duplex_admin_old($mau,$mau_index,$mau_autostat);
+        if (defined($mau_index)) {
+            return mau_i_duplex_admin_old($mau,$mau_index,$mau_autostat);
+        } else {
+            return undef;
+        }
     }
 
     my %i_duplex_admin;
