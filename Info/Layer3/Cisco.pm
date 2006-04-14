@@ -41,7 +41,7 @@ use SNMP::Info::CiscoRTT;
 use SNMP::Info::CiscoQOS;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.01';
+$VERSION = '1.03';
 @SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::Layer3 SNMP::Info::CiscoVTP 
                                      SNMP::Info::CDP    SNMP::Info::CiscoStats 
                                      SNMP::Info::CiscoImage SNMP::Info::CiscoRTT

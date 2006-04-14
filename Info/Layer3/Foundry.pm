@@ -40,7 +40,7 @@ use SNMP::Info::FDP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-$VERSION = '1.01';
+$VERSION = '1.03';
 
 @SNMP::Info::Layer3::Foundry::ISA = qw/SNMP::Info::Layer3 SNMP::Info::FDP Exporter/;
 @SNMP::Info::Layer3::Foundry::EXPORT_OK = qw//;
