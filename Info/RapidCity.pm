@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::RapidCity;
-$VERSION = '1.01';
+$VERSION = '1.03';
 use strict;
 
 use Exporter;
