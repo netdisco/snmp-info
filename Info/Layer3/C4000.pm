@@ -35,14 +35,13 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::CiscoVTP;
-use SNMP::Info::CiscoStack;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoImage;
 use SNMP::Info::MAU;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.01';
+$VERSION = '1.03';
 @SNMP::Info::Layer3::C4000::ISA = qw/ SNMP::Info::Layer3 SNMP::Info::CiscoStack SNMP::Info::CiscoVTP 
                                       SNMP::Info::CiscoStats SNMP::Info::CDP
                                       SNMP::Info::CiscoImage SNMP::Info::MAU Exporter/;
@@ -51,7 +50,6 @@ $VERSION = '1.01';
 %MIBS =    (
             %SNMP::Info::Layer3::MIBS,  
             %SNMP::Info::CiscoVTP::MIBS,
-            %SNMP::Info::CiscoStack::MIBS,
             %SNMP::Info::CDP::MIBS,
             %SNMP::Info::CiscoStats::MIBS,
             %SNMP::Info::CiscoImage::MIBS,
@@ -62,7 +60,6 @@ $VERSION = '1.01';
 %GLOBALS = (
             %SNMP::Info::Layer3::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
-            %SNMP::Info::CiscoStack::GLOBALS,
             %SNMP::Info::CDP::GLOBALS,
             %SNMP::Info::CiscoStats::GLOBALS,
             %SNMP::Info::CiscoImage::GLOBALS,
@@ -76,7 +73,6 @@ $VERSION = '1.01';
 %FUNCS = (
             %SNMP::Info::Layer3::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
-            %SNMP::Info::CiscoStack::FUNCS,
             %SNMP::Info::CDP::FUNCS,
             %SNMP::Info::CiscoStats::FUNCS,
             %SNMP::Info::CiscoImage::FUNCS,
@@ -88,7 +84,6 @@ $VERSION = '1.01';
 %MUNGE = (
             %SNMP::Info::Layer3::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
-            %SNMP::Info::CiscoStack::MUNGE,
             %SNMP::Info::CDP::MUNGE,
             %SNMP::Info::CiscoStats::MUNGE,
             %SNMP::Info::CiscoImage::MUNGE,
@@ -159,8 +154,6 @@ a more specific class using the method above.
 
 =item SNMP::Info::CiscoVTP
 
-=item SNMP::Info::CiscoStack
-
 =item SNMP::Info::CiscoStats
 
 =item SNMP::Info::CDP
@@ -180,8 +173,6 @@ a more specific class using the method above.
 See SNMP::Info::Layer3 for its own MIB requirements.
 
 See SNMP::Info::CiscoVTP for its own MIB requirements.
-
-See SNMP::Info::CiscoStack for its own MIB requirements.
 
 See SNMP::Info::CiscoStats for its own MIB requirements.
 
@@ -204,10 +195,6 @@ See documentation in SNMP::Info::Layer3 for details.
 =head2 Global Methods imported from SNMP::Info::CiscoVTP
 
 See documentation in SNMP::Info::CiscoVTP for details.
-
-=head2 Global Methods imported from SNMP::Info::CiscoStack
-
-See documentation in SNMP::Info::CiscoStack for details.
 
 =head2 Globals imported from SNMP::Info::CDP
 
@@ -237,10 +224,6 @@ See documentation in SNMP::Info::Layer3 for details.
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
 See documentation in SNMP::Info::CiscoVTP for details.
-
-=head2 Table Methods imported from SNMP::Info::CiscoStack
-
-See documentation in SNMP::Info::CiscoStack for details.
 
 =head2 Table Methods imported from SNMP::Info::CDP
 
