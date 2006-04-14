@@ -1,6 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
+version 1.03 (04/14/06) - Beta/developer release
+    * Use ipNetToMedia table instead of atTable for ARP
+    * Remove CiscoStack from Layer3::C4000
+    * Fixed bug in MAU class when polling devices without MAU-MIB support 
+
 version 1.01 (04/08/06) - Beta/developer release
     + Change version numbers to X.XX format.  Odd releases are beta
       or developer only releases.  Even are official releases.
@@ -62,7 +67,6 @@ version 1.0 (04/07/06) - CVS only. No official release
     * Fix in HP class for models not returning full bp_index
     * [ 1436103 ] L2::Aironet devices weren't getting their model
       translated properly
-    * Use ipNetToMedia table instead of atTable for ARP
 
 verison 0.9 (11/15/04)
     + ** Added full Nortel/Bay/BayStack support 
