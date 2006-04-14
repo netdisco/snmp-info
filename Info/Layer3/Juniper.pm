@@ -31,6 +31,8 @@ package SNMP::Info::Layer3::Juniper;
 use Exporter;
 use SNMP::Info::Layer3;
 
+use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
+$VERSION = '1.03';
 @SNMP::Info::Layer3::Juniper::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Juniper::EXPORT_OK = qw//;
 
