@@ -244,24 +244,37 @@ macsuck: vlan
 device-family: Catalyst 3750
 class: Layer3::C6500
 
+device: 3750
+
 device-family: Catalyst 4000
-duplex: both
+duplex: write
 macsuck: vlan
 vlan: write
-class: Layer3::C4000
+class: Layer2::Catalyst
 note: Comes in IOS and CatOS versions like the 6k series.
 note: CatOS versions like L2::Catalyst just fine.
 note: !Reported problems with SNMP taking up all the CPU.  Requests take significantly longer.
 note: !IOS Version 12.1.8a reported not to respond to BRIDGE-MIB calls.
 
-device: wsc4006
+device: wsc4003, wsc4006
 
-device: 4507
-class: Layer3::C6500
-note: !Has serious slowdown/timeout problems with SNMP
+device: wsc4503, wsc4506
 
 device: wsc4912g
 note: Dedicated 12 port gig-e switch
+
+device: 4006
+duplex: both
+class: Layer3::C4000
+note: !Has serious slowdown/timeout problems with SNMP
+note: !IOS Software Release 12.2(20)EW or higher required for duplex support
+
+device: 4503, 4506, 4507, 4510
+duplex: both
+class: Layer3::C4000
+note: !Has serious slowdown/timeout problems with SNMP
+note: !IOS Software Release 12.2(20)EW or higher required for duplex support
+
 
 device-family: Catalyst 5000
 duplex: write
