@@ -42,7 +42,7 @@ use SNMP::Info::MAU;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
 $VERSION = '1.03';
-@SNMP::Info::Layer3::C4000::ISA = qw/ SNMP::Info::Layer3 SNMP::Info::CiscoStack SNMP::Info::CiscoVTP 
+@SNMP::Info::Layer3::C4000::ISA = qw/ SNMP::Info::Layer3 SNMP::Info::CiscoVTP 
                                       SNMP::Info::CiscoStats SNMP::Info::CDP
                                       SNMP::Info::CiscoImage SNMP::Info::MAU Exporter/;
 @SNMP::Info::Layer3::C4000::EXPORT_OK = qw//;
