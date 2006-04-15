@@ -13,7 +13,7 @@ use lib '/usr/local/netdisco';
 use SNMP::Info;
 use Getopt::Long;
 use strict;
-use vars qw/$Class $Dev $Comm $Ver @Dump %Dumped/;
+use vars qw/$Class $Dev $Comm $Ver @Dump %Dumped $Debug/;
 
 # Default Values
 $Class = '';
@@ -21,6 +21,7 @@ $Dev   = '';
 $Comm  = '';
 $Ver   = 2;
 @Dump  = ();
+$Debug = 0;
 
 GetOptions ('c|class=s' => \$Class,
             'd|dev=s'   => \$Dev,
@@ -28,6 +29,7 @@ GetOptions ('c|class=s' => \$Class,
             'v|ver=i'   => \$Ver,
             'h|help'    => \&usage,
             'p|print=s'   => \@Dump,
+            'x|debug'   => \$Debug,
            );
 
 &usage unless ($Dev and $Comm);
@@ -45,7 +47,7 @@ print "Dumping : ",join(',',@Dump),"\n"  if scalar @Dump;
 my $dev = new $Class( 'AutoSpecify' => 0,
                       'AutoVerBack' => 0,
                       'Version'     => $Ver,
-                      'Debug'       => 0,
+                      'Debug'       => $Debug,
                       'DestHost'    => $Dev,
                       'Community'   => $Comm
                     ) or die "\n"; 
