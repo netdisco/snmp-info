@@ -852,7 +852,9 @@ sub device_type {
 
     my $desc   = $info->description() || 'undef';
     $desc =~ s/[\r\n\l]+/ /g;
-    $info->debug() and print "SNMP::Info::device_type() layers:$layers sysDescr: \"$desc\".\n";
+    my $id     = $info->id() || 'undef';
+
+    $info->debug() and print "SNMP::Info::device_type() layers:$layers id:$id sysDescr:\"$desc\"\n";
 
     # Layer 3 Supported 
     #   (usually has layer2 as well, so we check for 3 first)
