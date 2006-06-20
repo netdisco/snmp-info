@@ -866,7 +866,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /(c6sup2|c6sup1)/;
         # Next one untested. Reported working by DA
         $objtype = 'SNMP::Info::Layer3::C6500'   if ($desc =~ /cisco/i and $desc =~ /3750/);
-        $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /s72033_rp/;
+        $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /(s72033_rp|s3223_rp|s222_rp)/;
         # Extreme Networks
         $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Alpine38/;
         $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Summit\s*\d/;
@@ -917,7 +917,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C3550' if ($desc =~ /C3550/);
 
         #   Cisco 2970  
-        $objtype = 'SNMP::Info::Layer3::C6500' if ($desc =~ /C2970/);
+        $objtype = 'SNMP::Info::Layer3::C6500' if ($desc =~ /(C2970|C2960)/);
 
         # Extreme Networks
         $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Alpine38/;
@@ -946,7 +946,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::Orinoco' if ($desc =~ /AP-\d{3}|WavePOINT/);
 
         #  Aironet - IOS
-        $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /\b(C1100|AP1200|C350|C1200)\b/  and $desc =~ /\bIOS\b/);
+        $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /\b(C1100|C1130|AP1200|C350|C1200|C1240)\b/  and $desc =~ /\bIOS\b/);
 
         # Aironet - non IOS
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(BR500)\D/) ;
