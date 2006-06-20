@@ -916,7 +916,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::C1900' if ($desc =~ /catalyst/i and $desc =~ /\D19\d{2}/);
 
         #   Catalyst 2900 and 3500XL (IOS) series override
-        $objtype = 'SNMP::Info::Layer2::C2900' if ($desc =~ /(C2900XL|C2950|C3500XL)/i );
+        $objtype = 'SNMP::Info::Layer2::C2900' if ($desc =~ /(C2900XL|C2950|C3500XL|C2940)/i );
 
         #   Catalyst WS-C series override 2926,4k,5k,6k in Hybrid
         $objtype = 'SNMP::Info::Layer2::Catalyst' if ($desc =~ /WS-C\d{4}/);
@@ -951,7 +951,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::NAP222x' if ($desc =~ /Access\s+Point\s+222/);
 
         #  Orinco
-        $objtype = 'SNMP::Info::Layer2::Orinoco' if ($desc =~ /AP-\d{3}|WavePOINT/);
+        $objtype = 'SNMP::Info::Layer2::Orinoco' if ($desc =~ /(AP-\d{3}|WavePOINT)/);
 
         #  Aironet - IOS
         $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /\b(C1100|C1130|AP1200|C350|C1200|C1240)\b/  and $desc =~ /\bIOS\b/);
