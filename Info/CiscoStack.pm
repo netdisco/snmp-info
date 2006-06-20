@@ -1,7 +1,7 @@
 # SNMP::Info::CiscoStack
 # Max Baker
 #
-# Copyright (c)2003,2004 Max Baker 
+# Copyright (c)2003,2004,2006 Max Baker 
 # All rights reserved.  
 #
 # Redistribution and use in source and binary forms, with or without 
@@ -170,15 +170,16 @@ sub serial {
 sub i_type {
     my $stack = shift;
 
-    my $p_port = $stack->p_port();
-    my $p_type  = $stack->p_type();
+    my $p_port = $stack->p_port() || {};
+    my $p_type = $stack->p_type() || {};
 
     # Get more generic port types from IF-MIB
-    my $i_type  = $stack->i_type2();
+    my $i_type  = $stack->i_type2() || {};
 
     # Now Override w/ port entries
     foreach my $port (keys %$p_type) {
         my $iid = $p_port->{$port};
+        next unless defined $iid;
         $i_type->{$iid} = $p_type->{$port};  
     }
 
@@ -190,8 +191,8 @@ sub i_type {
 sub i_name {
     my $stack = shift;
 
-    my $p_port = $stack->p_port();
-    my $p_name  = $stack->p_name();
+    my $p_port = $stack->p_port() || {};
+    my $p_name = $stack->p_name() || {};
 
     my %i_name;
     foreach my $port (keys %$p_name) {
@@ -206,12 +207,13 @@ sub i_duplex {
     my $stack = shift;
 
     #my $i_duplex = $stack->SUPER::i_duplex();
-    my $p_port = $stack->p_port();
-    my $p_duplex  = $stack->p_duplex();
+    my $p_port   = $stack->p_port()   || {};
+    my $p_duplex = $stack->p_duplex() || {};
 
     my $i_duplex = {};
     foreach my $port (keys %$p_duplex) {
         my $iid = $p_port->{$port};
+        next unless defined $iid;
         $i_duplex->{$iid} = $p_duplex->{$port};
     }
     return $i_duplex; 
@@ -220,8 +222,8 @@ sub i_duplex {
 sub i_duplex_admin {
     my $stack = shift;
 
-    my $p_port          = $stack->p_port();
-    my $p_duplex_admin  = $stack->p_duplex_admin();
+    my $p_port         = $stack->p_port()         || {};
+    my $p_duplex_admin = $stack->p_duplex_admin() || {};
 
     my %i_duplex_admin;
     foreach my $port (keys %$p_duplex_admin) {
@@ -250,7 +252,7 @@ sub set_i_speed_admin {
 
     my $stack = shift;
     my ($speed, $iid) = @_;
-    my $p_port  = $stack->p_port();
+    my $p_port  = $stack->p_port() || {};
     my %reverse_p_port = reverse %$p_port;
 
     $speed = lc($speed);
@@ -268,7 +270,7 @@ sub set_i_duplex_admin {
 
     my $stack = shift;
     my ($duplex, $iid) = @_;
-    my $p_port  = $stack->p_port();
+    my $p_port  = $stack->p_port() || {};
     my %reverse_p_port = reverse %$p_port;
 
     $duplex = lc($duplex);
@@ -285,11 +287,12 @@ sub set_i_duplex_admin {
 sub interfaces {
     my $self = shift;
     my $i_index    = $self->i_index();
-    my $portnames  = $self->p_port();
+    my $portnames  = $self->p_port() || {};
     my %portmap    = reverse %$portnames;
 
     my %interfaces = ();
     foreach my $iid (keys %$i_index) {
+        next unless defined $iid;
         my $if   = $i_index->{$iid};
         my $port = $portmap{$iid};
         $interfaces{$iid} = $port || $if;

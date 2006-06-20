@@ -38,7 +38,7 @@ and was orginally written by Max Baker.
 
 Currently being maintained by team of Open Source authors headed by Eric Miller
 and Bill Fenner. 
- 
+
 =head1 SYNOPSIS
 
  use SNMP::Info;
@@ -371,6 +371,11 @@ does not support everything that has the name Catalyst.
 =item SNMP::Info::Layer2::Centillion
 
 Subclass for Nortel/Bay Centillion and 5000BH ATM switches.
+
+=item SNMP::Info::Layer2::Cisco
+
+Generic Cisco subclass for layer2 devices that are not yet supported
+in more specific subclasses.
 
 =item SNMP::Info::Layer2::Foundry
 
@@ -815,6 +820,7 @@ Algorithm for Subclass Detection:
             Catalyst 2970                  -> SNMP::Info::Layer3::C6500
             Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
             Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
+            Cisco (not covered by above)   -> SNMP::Info::Layer2::Cisco
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry (EdgeIron,????)        -> SNMP::Info::Layer2::Foundry
             HP Procurve                    -> SNMP::Info::Layer2::HP
@@ -953,6 +959,9 @@ sub device_type {
 
         #Nortel 2270
         $objtype = 'SNMP::Info::Layer2::N2270' if ($desc =~ /Nortel\s+(Networks\s+)??WLAN\s+-\s+Security\s+Switch/) ;
+
+        # Default generic cisco
+        $objtype = 'SNMP::Info::Layer2::Cisco' if ($objtype eq 'SNMP::Info::Layer2' and $desc =~ /\bCisco\b/);
 
     } elsif ($info->has_layer(1)) {
         $objtype = 'SNMP::Info::Layer1';
