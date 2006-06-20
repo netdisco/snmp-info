@@ -930,7 +930,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Summit\s*\d/;
 
         #   HP
-        $objtype = 'SNMP::Info::Layer2::HP' if ($desc =~ /HP.*ProCurve/); 
+        $objtype = 'SNMP::Info::Layer2::HP' if ($desc =~ /\bProCurve\b/); 
     
         #  Centillion ATM
         $objtype = 'SNMP::Info::Layer2::Centillion' if ($desc =~ /MCP/);

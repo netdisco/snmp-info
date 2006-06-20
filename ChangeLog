@@ -7,6 +7,7 @@ version 1.04
     +  Added generic L2::Cisco Class
     *  Corrected detection for Cisco Supervisor Engine 2 and 32 (IOS).  
     *  Fixed warnings in CiscoStack
+    *  Updated ProCurve HP device detection for newer firmwares
 
 version 1.03 (04/14/06) - Beta/developer release
     * Use ipNetToMedia table instead of atTable for ARP
