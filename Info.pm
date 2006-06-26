@@ -819,6 +819,7 @@ Algorithm for Subclass Detection:
             Catalyst 2900XL,2950,3500XL    -> SNMP::Info::Layer2::C2900
             Catalyst 2970                  -> SNMP::Info::Layer3::C6500
             Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
+            Cisco 3400 w/ MetroBase        -> SNMP::Info::Layer3::C3550
             Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
             Cisco (not covered by above)   -> SNMP::Info::Layer2::Cisco
             Extreme                        -> SNMP::Info::Layer3::Extreme
@@ -922,7 +923,8 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::Catalyst' if ($desc =~ /WS-C\d{4}/);
 
         #   Catalyst 3550 / 3548 Layer2 only switches
-        $objtype = 'SNMP::Info::Layer3::C3550' if ($desc =~ /C3550/);
+        #   Cisco 3400 w/ MetroBase Image
+        $objtype = 'SNMP::Info::Layer3::C3550' if ($desc =~ /(C3550|ME340x)/);
 
         #   Cisco 2970  
         $objtype = 'SNMP::Info::Layer3::C6500' if ($desc =~ /(C2970|C2960)/);

@@ -3,7 +3,7 @@ ChangeLog $Id$
 
 version 1.04
     +  Added C1130 and C1240 to L2::Aironet (Ralf Gross)
-    +  Added detection for Cisco 2960, 2940.
+    +  Added detection for Cisco 2960, 2940, 3400 w/ MetroBase
     +  Added generic L2::Cisco Class
     *  Corrected detection for Cisco Supervisor Engine 2 and 32 (IOS).  
     *  Fixed warnings in CiscoStack
