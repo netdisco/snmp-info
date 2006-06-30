@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::BayRS;
-$VERSION = '1.03';
+$VERSION = '1.04';
 
 use strict;
 
@@ -138,7 +138,7 @@ sub os_ver {
     my $descr = $bayrs->description();
     return undef unless defined $descr;
 
-    if ($descr =~ m/rel\/(\d+\.\d+\.\d+\.\d+)/){
+    if ($descr =~ m/^\s*Image:\s+re[lv]\/((\d+\.){1,3}\d+)/){
         return $1;
     }
     return undef;
