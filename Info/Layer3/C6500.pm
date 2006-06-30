@@ -41,7 +41,7 @@ use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoImage;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.03';
+$VERSION = '1.04';
 @SNMP::Info::Layer3::C6500::ISA = qw/ SNMP::Info::Layer3 SNMP::Info::CiscoStack SNMP::Info::CiscoVTP 
                                       SNMP::Info::CiscoStats SNMP::Info::CDP Exporter
                                       SNMP::Info::CiscoImage/;

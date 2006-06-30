@@ -32,7 +32,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Bridge;
-$VERSION = '1.03';
+$VERSION = '1.04';
 # $Id$
 
 use strict;

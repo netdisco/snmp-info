@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Airespace;
-$VERSION = '1.03';
+$VERSION = '1.04';
 use strict;
 
 use Exporter;

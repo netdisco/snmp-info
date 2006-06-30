@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::ZyXEL_DSLAM;
-$VERSION = '1.03';
+$VERSION = '1.04';
 # $Id$
 use strict;
 
