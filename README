@@ -5,7 +5,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 1.03
+    SNMP::Info - Version 1.04
 
 AUTHOR
 
@@ -316,6 +316,10 @@ SUBCLASSES
         SNMP::Info::Layer2::Centillion
             Subclass for Nortel/Bay Centillion and 5000BH ATM switches.
 
+        SNMP::Info::Layer2::Cisco
+            Generic Cisco subclass for layer2 devices that are not yet
+            supported in more specific subclasses.
+
         SNMP::Info::Layer2::Foundry
             Subclass for Foundry Switches. Tested on EdgeIron 24G.
 
@@ -565,10 +569,13 @@ USAGE
                  Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2
                     Aironet - IOS Devices          -> SNMP::Info::Layer2::Aironet
                     Catalyst 1900                  -> SNMP::Info::Layer2::C1900
-                    Catalyst 2900XL,2950,3500XL    -> SNMP::Info::Layer2::C2900
-                    Catalyst 2970                  -> SNMP::Info::Layer3::C6500
+                    Catalyst 2900XL,2940,2950,
+                             3500XL                -> SNMP::Info::Layer2::C2900
+                    Catalyst 2960, 2970            -> SNMP::Info::Layer3::C6500
                     Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
+                    Cisco 3400 w/ MetroBase        -> SNMP::Info::Layer3::C3550
                     Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
+                    Cisco (not covered by above)   -> SNMP::Info::Layer2::Cisco
                     Extreme                        -> SNMP::Info::Layer3::Extreme
                     Foundry (EdgeIron,????)        -> SNMP::Info::Layer2::Foundry
                     HP Procurve                    -> SNMP::Info::Layer2::HP
