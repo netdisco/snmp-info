@@ -70,18 +70,18 @@ class: Layer2::Aironet
 device: BR500
 note: Aironet based device
 
-device: AP350, AP340, CAP350, CAP340, 1200, AP4800
+device: AP350, AP340, CAP350, CAP340, 1200, AP4800, C1130, C1240
 note: Aironet based device
 
 device-family: 1000
 duplex: no
 ver: 1
-class: Layer3
+class: Layer3::Cisco
 
 device: 1003
 
 device-family: 1700
-class: Layer3
+class: Layer3::Cisco
 
 device: 1710
 duplex: link
@@ -91,7 +91,7 @@ duplex: no
 macsuck: yes
 arpnip: yes
 ver: 1
-class: Layer3
+class: Layer3::Cisco
 
 device: 2501
 
@@ -109,7 +109,7 @@ device-family: 2600
 duplex: link
 arpnip: yes
 macsuck: yes
-class: Layer3
+class: Layer3::Cisco
 
 device:2610,2610XM,2611,2620,2620XM,2621
 
@@ -120,7 +120,7 @@ device:2651XM
 device:2691
 
 device-family: 3600
-class: Layer3
+class: Layer3::Cisco
 
 device: 3620
 
@@ -128,7 +128,7 @@ device: 3640
 duplex: no
 
 device-family: 7500
-class: Layer3
+class: Layer3::Cisco
 
 device: 7507
 duplex: no
@@ -136,7 +136,7 @@ note: !Duplex settings are falsely reported in older IOS versions
 
 device-family: AS5000
 duplex: no
-class: Layer3
+class: Layer3::Cisco
 
 device: AS5300
 
@@ -205,7 +205,7 @@ vlan: write
 note: Acts just like IOS Catalyst 6500 series
 class: Layer3::C6500
 
-device: 2970G-24T-E
+device: 2960, 2970G-24T-E
 
 device-family: Catalyst 3500 XL
 portmac: yes
@@ -233,6 +233,8 @@ note: Uses CISCO-STACK-MIB like Catalyst 5000 series for serial,duplex,type but 
 note: Comes in flavors that support L2, L3 or combo.
 
 device: 3550-12T
+
+device: 3400 w/ MetroBase Image
 
 device: 3550
 note: L2/L3 Switch
