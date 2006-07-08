@@ -29,6 +29,7 @@ Info/Layer2/C1900.pm
 Info/Layer2/C2900.pm
 Info/Layer2/Catalyst.pm
 Info/Layer2/Centillion.pm
+Info/Layer2/Cisco.pm
 Info/Layer2/Foundry.pm
 Info/Layer2/HP.pm
 Info/Layer2/N2270.pm
