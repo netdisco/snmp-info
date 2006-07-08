@@ -29,7 +29,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 1.03
+SNMP::Info - Version 1.04
 
 =head1 AUTHOR
 
@@ -816,8 +816,9 @@ Algorithm for Subclass Detection:
          Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2
             Aironet - IOS Devices          -> SNMP::Info::Layer2::Aironet
             Catalyst 1900                  -> SNMP::Info::Layer2::C1900
-            Catalyst 2900XL,2950,3500XL    -> SNMP::Info::Layer2::C2900
-            Catalyst 2970                  -> SNMP::Info::Layer3::C6500
+            Catalyst 2900XL,2940,2950,
+                     3500XL                -> SNMP::Info::Layer2::C2900
+            Catalyst 2960, 2970            -> SNMP::Info::Layer3::C6500
             Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
             Cisco 3400 w/ MetroBase        -> SNMP::Info::Layer3::C3550
             Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
