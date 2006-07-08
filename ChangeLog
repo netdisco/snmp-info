@@ -1,7 +1,7 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
-version 1.04
+version 1.04 (07/08/06)
     +  Added C1130 and C1240 to L2::Aironet (Ralf Gross)
     +  Added detection for Cisco 2960, 2940, 3400 w/ MetroBase
     +  Added generic L2::Cisco Class
