@@ -63,14 +63,14 @@ device-family: Aironet
 note: IOS and Aironet OS versions
 class: Layer3::Aironet
 
-device: AIRAP1100, AP1200, C1100
+device: AIRAP1100, AP1200, C1100, C1130, C1240
 note: IOS based device
 class: Layer2::Aironet
 
 device: BR500
 note: Aironet based device
 
-device: AP350, AP340, CAP350, CAP340, 1200, AP4800, C1130, C1240
+device: AP350, AP340, CAP350, CAP340, 1200, AP4800
 note: Aironet based device
 
 device-family: 1000
