@@ -9,7 +9,7 @@
 # $Id$
 
 package SNMP::Info;
-$VERSION = '1.03';
+$VERSION = '1.04';
 use strict;
 
 use Exporter;
@@ -891,7 +891,7 @@ sub device_type {
         # Nortel Contivity
         $objtype = 'SNMP::Info::Layer3::Contivity' if $desc =~ /\bCES\b/;
         # Nortel BayRS
-        $objtype = 'SNMP::Info::Layer3::BayRS'   if $desc =~ /^\s*Image:\s+rel\//;
+        $objtype = 'SNMP::Info::Layer3::BayRS'   if $desc =~ /^\s*Image:\s+re[lv]\/(\d+\.){1,3}\d+\//;
 
         # Allied Telesyn Layer2 managed switches. They report they have L3 support
         $objtype = 'SNMP::Info::Layer2::Allied' if ($desc =~ /Allied.*AT-80\d{2}\S*/i);
