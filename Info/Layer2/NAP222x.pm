@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::NAP222x;
-$VERSION = '1.04';
+$VERSION = '1.05';
 use strict;
 
 use Exporter;
@@ -280,7 +280,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::nap222x - SNMP Interface to Nortel 2220 Series Access Points
+SNMP::Info::Layer2::NAP222x - SNMP Interface to Nortel 2220 Series Access Points
 
 =head1 AUTHOR
 
@@ -310,7 +310,7 @@ Provides abstraction to the configuration information obtainable from a Nortel
 For speed or debugging purposes you can call the subclass directly, but not after determining
 a more specific class using the method above. 
 
- my $nap222x = new SNMP::Info::Layer2::nap222x(...);
+ my $nap222x = new SNMP::Info::Layer2::NAP222x(...);
 
 =head2 Inherited Classes
 
