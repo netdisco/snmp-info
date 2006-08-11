@@ -9,7 +9,7 @@
 # $Id$
 
 package SNMP::Info;
-$VERSION = '1.04';
+$VERSION = '1.05';
 use strict;
 
 use Exporter;
@@ -29,7 +29,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 1.04
+SNMP::Info - Version 1.05
 
 =head1 AUTHOR
 
@@ -452,6 +452,10 @@ This is a simple wrapper around Layer3 for IOS devices.  It adds on CiscoVTP.
 
 Subclass for Nortel Contivity/VPN Routers.  
 
+=item SNMP::Info::Layer3::Dell
+
+Subclass for Dell PowerConnect switches.  
+
 =item SNMP::Info::Layer3::Extreme
 
 Subclass for Extreme Networks switches.
@@ -788,7 +792,7 @@ Returns the Subclass name for this device.  C<SNMP::Info> is returned if no more
 specific class is available.
 
 First the device is checked for Layer 3 support and a specific subclass,
-then Layer 2 support and subclasses are checked for.
+then Layer 2 support and subclasses are checked.
 
 This means that Layer 2 / 3  switches and routers will fall under the
 SNMP::Info::Layer3 subclasses.
@@ -803,8 +807,9 @@ Algorithm for Subclass Detection:
                      AP4800... All Non IOS
             Catalyst 3550,3548,3560        -> SNMP::Info::Layer3::C3550
             Catalyst 4000,4500             -> SNMP::Info::Layer3::C4000
-            Catalyst 6500, 3750            -> SNMP::Info::Layer3::C6500
+            Catalyst 6500,3750             -> SNMP::Info::Layer3::C6500
             Cisco Generic L3 IOS device    -> SNMP::Info::Layer3::Cisco
+            Dell PowerConnect              -> SNMP::Info::Layer3::Dell
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
             Juniper                        -> SNMP::Info::Layer3::Juniper
@@ -813,7 +818,7 @@ Algorithm for Subclass Detection:
             Alteon Ace Director            -> SNMP::Info::Layer3::AlteonAD
             Nortel Contivity               -> SNMP::Info::Layer3::Contivity
             Nortel BayRS Router            -> SNMP::Info::Layer3::BayRS
-         Elsif Layer2 (no Layer3)           -> SNMP::Info::Layer2
+         Elsif Layer2 (no Layer3)          -> SNMP::Info::Layer2
             Aironet - IOS Devices          -> SNMP::Info::Layer2::Aironet
             Catalyst 1900                  -> SNMP::Info::Layer2::C1900
             Catalyst 2900XL,2940,2950,
@@ -823,6 +828,7 @@ Algorithm for Subclass Detection:
             Cisco 3400 w/ MetroBase        -> SNMP::Info::Layer3::C3550
             Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
             Cisco (not covered by above)   -> SNMP::Info::Layer2::Cisco
+            Dell PowerConnect              -> SNMP::Info::Layer3::Dell
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry (EdgeIron,????)        -> SNMP::Info::Layer2::Foundry
             HP Procurve                    -> SNMP::Info::Layer2::HP
@@ -858,6 +864,30 @@ sub device_type {
 
     $info->debug() and print "SNMP::Info::device_type() layers:$layers id:$id sysDescr:\"$desc\"\n";
 
+    # Hash for generic fallback to a device class if unable to determine using
+    # the sysDescr regex.
+    my %l3sysoidmap = (
+                      9     => 'SNMP::Info::Layer3::Cisco',
+                      11    => 'SNMP::Info::Layer2::HP',
+                      18    => 'SNMP::Info::Layer3::BayRS',
+                      674   => 'SNMP::Info::Layer3::Dell',
+                      1916  => 'SNMP::Info::Layer3::Extreme',
+                      1991  => 'SNMP::Info::Layer3::Foundry',
+                      2636  => 'SNMP::Info::Layer3::Juniper',
+                    );
+
+    my %l2sysoidmap = (
+                      9     => 'SNMP::Info::Layer2::Cisco',
+                      11    => 'SNMP::Info::Layer2::HP',
+                      674   => 'SNMP::Info::Layer3::Dell',
+                      1916  => 'SNMP::Info::Layer3::Extreme',
+                      1991  => 'SNMP::Info::Layer2::Foundry',
+                      14823 => 'SNMP::Info::Layer2::Aruba',
+                    );
+
+    # Get just the enterprise number for generic mapping
+    $id = $1 if (defined($id) && $id =~ /^\.1\.3\.6\.1\.4\.1\.(\d+)/);
+    
     # Layer 3 Supported 
     #   (usually has layer2 as well, so we check for 3 first)
     if ($info->has_layer(3)) {
@@ -877,9 +907,6 @@ sub device_type {
         # Next one untested. Reported working by DA
         $objtype = 'SNMP::Info::Layer3::C6500'   if ($desc =~ /cisco/i and $desc =~ /3750/);
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /(s72033_rp|s3223_rp|s222_rp)/;
-        # Extreme Networks
-        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Alpine38/;
-        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Summit\s*\d/;
         # Nortel Passport 8600, 1600, 1100, 1200 Series
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /(Passport|Ethernet\s+Routing\s+Switch)-86/i;
         $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-[1][012]/;
@@ -891,17 +918,14 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::AlteonAD' if $desc =~ /Alteon\s[1A][8D]/;
         # Nortel Contivity
         $objtype = 'SNMP::Info::Layer3::Contivity' if $desc =~ /\bCES\b/;
-        # Nortel BayRS
-        $objtype = 'SNMP::Info::Layer3::BayRS'   if $desc =~ /^\s*Image:\s+re[lv]\/(\d+\.){1,3}\d+\//;
 
         # Allied Telesyn Layer2 managed switches. They report they have L3 support
         $objtype = 'SNMP::Info::Layer2::Allied' if ($desc =~ /Allied.*AT-80\d{2}\S*/i);
 
-        # Default generic cisco
-        $objtype = 'SNMP::Info::Layer3::Cisco' if ($objtype eq 'SNMP::Info::Layer3' and $desc =~ /\bIOS\b/);
-
-        # Default generic Juniper
-        $objtype = 'SNMP::Info::Layer3::Juniper' if ($objtype eq 'SNMP::Info::Layer3' and $desc =~ /\bJUNOS\b/);
+        # Generic device classification based upon sysObjectID
+        if (($objtype eq 'SNMP::Info::Layer3') and (defined($id)) and (exists($l3sysoidmap{$id}))) {
+            $objtype = $l3sysoidmap{$id};
+        }
 
     # Layer 2 Supported
     } elsif ($info->has_layer(2)) {
@@ -911,9 +935,6 @@ sub device_type {
 
         # Device Type Overrides
 
-        # Foundry EdgeIron,?
-        $objtype = 'SNMP::Info::Layer2::Foundry' if ($desc =~ /foundry/i);
-        
         #   Catalyst 1900 series override
         $objtype = 'SNMP::Info::Layer2::C1900' if ($desc =~ /catalyst/i and $desc =~ /\D19\d{2}/);
 
@@ -930,13 +951,6 @@ sub device_type {
         #   Cisco 2970  
         $objtype = 'SNMP::Info::Layer3::C6500' if ($desc =~ /(C2970|C2960)/);
 
-        # Extreme Networks
-        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Alpine38/;
-        $objtype = 'SNMP::Info::Layer3::Extreme'  if $desc =~ /Summit\s*\d/;
-
-        #   HP
-        $objtype = 'SNMP::Info::Layer2::HP' if ($desc =~ /\bProCurve\b/); 
-    
         #  Centillion ATM
         $objtype = 'SNMP::Info::Layer2::Centillion' if ($desc =~ /MCP/);
   
@@ -965,8 +979,10 @@ sub device_type {
         #Nortel 2270
         $objtype = 'SNMP::Info::Layer2::N2270' if ($desc =~ /Nortel\s+(Networks\s+)??WLAN\s+-\s+Security\s+Switch/) ;
 
-        # Default generic cisco
-        $objtype = 'SNMP::Info::Layer2::Cisco' if ($objtype eq 'SNMP::Info::Layer2' and $desc =~ /\bCisco\b/);
+        # Generic device classification based upon sysObjectID
+        if (($objtype eq 'SNMP::Info::Layer2') and (defined($id)) and (exists($l2sysoidmap{$id}))) {
+            $objtype = $l2sysoidmap{$id};
+        }
 
     } elsif ($info->has_layer(1)) {
         $objtype = 'SNMP::Info::Layer1';
