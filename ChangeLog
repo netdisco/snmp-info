@@ -1,6 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
+version 1.05
+    + Added support for Dell PowerConnect switches as new class L3::Dell
+    + Added generic device type detection using IANA assigned enterpise
+      number extracted from sysObjectID
+
 version 1.04 (07/08/06)
     +  Added C1130 and C1240 to L2::Aironet (Ralf Gross)
     +  Added detection for Cisco 2960, 2940, 3400 w/ MetroBase
