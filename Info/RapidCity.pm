@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::RapidCity;
-$VERSION = '1.04';
+$VERSION = '1.05';
 use strict;
 
 use Exporter;
@@ -90,7 +90,9 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             'rc_vlan_stg'     => 'rcVlanStgId',
             'rc_vlan_type'    => 'rcVlanType',
             'rc_vlan_members' => 'rcVlanPortMembers',
+            'rc_vlan_no_join' => 'rcVlanNotAllowToJoin',
             'rc_vlan_mac'     => 'rcVlanMacAddress',
+            'rc_vlan_rstatus' => 'rcVlanRowStatus',
             # From RAPID-CITY::rcIpAddrTable
             'rc_ip_index'  => 'rcIpAdEntIfIndex',
             'rc_ip_addr'   => 'rcIpAdEntAddr',
@@ -212,36 +214,260 @@ sub i_duplex_admin {
     return \%i_duplex_admin;
 }
 
+sub set_i_duplex_admin {
+    my $rapidcity = shift;
+    my ($duplex, $iid) = @_;
+
+    $duplex = lc($duplex);
+    return undef unless ($duplex =~ /(half|full|auto)/ and $iid =~ /\d+/);
+
+    # map a textual duplex to an integer one the switch understands
+    my %duplexes = qw/full 2 half 1/;
+    my $i_auto = $rapidcity->rc_auto($iid);
+
+    if ($duplex eq "auto") {
+        return $rapidcity->set_rc_auto('1', $iid);
+    }
+    elsif (($duplex ne "auto") and ($i_auto->{$iid} eq "1")) {
+        return undef unless ($rapidcity->set_rc_auto('2', $iid));
+        return $rapidcity->set_rc_duplex_admin($duplexes{$duplex}, $iid);
+    }
+    else {
+        return $rapidcity->set_rc_duplex_admin($duplexes{$duplex}, $iid);
+    }
+    return undef;
+}
+
+sub set_i_speed_admin {
+    my $rapidcity = shift;
+    my ($speed, $iid) = @_;
+
+    return undef unless ($speed =~ /(10|100|1000|auto)/i and $iid =~ /\d+/);
+    
+    # map a textual duplex to an integer one the switch understands
+    my %speeds = qw/10 1 100 2 1000 3/;  
+    my $i_auto = $rapidcity->rc_auto($iid);
+
+    if ($speed eq "auto") {
+        return $rapidcity->set_rc_auto('1', $iid);
+    }
+    elsif (($speed ne "auto") and ($i_auto->{$iid} eq "1")) {
+        return undef unless ($rapidcity->set_rc_auto('2', $iid));
+        return $rapidcity->set_rc_speed_admin($speeds{$speed}, $iid);
+    }
+    else {
+        return $rapidcity->set_rc_speed_admin($speeds{$speed}, $iid);
+    }        
+    return undef;
+}
+
 sub i_vlan {
     my $rapidcity = shift;
 
-    my $rc_vlans  = $rapidcity->rc_i_vlan();
-    my $rc_vlan_id  = $rapidcity->rc_vlan_id();
-    my $rc_vlan_if  = $rapidcity->rc_vlan_if();
+    my $i_pvid = $rapidcity->rc_i_vlan_pvid() || {};
     
-    my %i_vlan;
-        foreach my $if (keys %$rc_vlans){
-            my $rc_vlanid = $rc_vlans->{$if};
-            next unless defined $rc_vlanid;
-            my @vlanids = map { sprintf "%02x",$_ } unpack('C*',$rc_vlanid);
+    return $i_pvid;
+}
 
-            my @vlans = ();
+sub i_vlan_membership {
+    my $rapidcity = shift;
 
-            while($#vlanids > 0) {
-                my $h = join('', splice(@vlanids,0,2));
-                push(@vlans, hex($h));
-            }
-        my $vlans = join (',', @vlans);
-        $i_vlan{$if}=$vlans; 
+    my $rc_v_ports = $rapidcity->rc_vlan_members();
+
+    my $i_vlan_membership = {};
+    foreach my $vlan (keys %$rc_v_ports) {
+        my $portlist = [split(//, unpack("B*", $rc_v_ports->{$vlan}))];
+        my $ret = [];
+
+        # Convert portlist bit array to ifIndex array
+        for (my $i = 0; $i <= scalar(@$portlist); $i++) {
+	    push(@{$ret}, $i) if (@$portlist[$i]);
+        }
+
+        #Create HoA ifIndex -> VLAN array
+        foreach my $port (@{$ret}) {
+	    push(@{$i_vlan_membership->{$port}}, $vlan);
+        }
     }
-        foreach my $if (keys %$rc_vlan_if){
-            my $vlan_if = $rc_vlan_if->{$if};
-            next unless defined $vlan_if;
-            my $vlan = $rc_vlan_id->{$if};
+    return $i_vlan_membership;
+}
 
-        $i_vlan{$vlan_if}=$vlan; 
+sub set_i_pvid {
+    my $rapidcity = shift;
+    my ($vlan_id, $ifindex) = @_; 
+    return undef unless ($vlan_id =~ /\d+/ and $ifindex =~ /\d+/);
+
+    my $pvid_rv = $rapidcity->set_rc_i_vlan_pvid($vlan_id, $ifindex);
+    unless ($pvid_rv) {
+        print "Error: Unable to change PVID to $vlan_id on IfIndex: $ifindex\n" if $rapidcity->debug();
+        return undef;
     }
-    return \%i_vlan;
+    return 1;
+}
+
+sub set_i_vlan {
+    my $rapidcity = shift;
+    my ($new_vlan_id, $ifindex) = @_;
+    return undef unless ($new_vlan_id =~ /\d+/ and $ifindex =~ /\d+/);
+
+    my $i_pvid = $rapidcity->rc_i_vlan_pvid($ifindex);
+
+    # Store current untagged VLAN to remove it from the port list later
+    my $old_vlan_id = $i_pvid->{$ifindex};
+    print "Changing VLAN: $old_vlan_id to $new_vlan_id on IfIndex: $ifindex\n" if $rapidcity->debug();
+
+    # Check if port in forbidden list for the VLAN, haven't seen this used, but we'll check anyway
+    return undef unless ($rapidcity->check_forbidden_ports($new_vlan_id, $ifindex));
+
+    # Add port to egress list for VLAN
+    return undef unless ($rapidcity->add_to_egress_portlist($new_vlan_id, $ifindex));
+
+    # Remove port from old VLAN from egress list
+    return undef unless ($rapidcity->remove_from_egress_portlist($old_vlan_id, $ifindex));
+
+    # Set new untagged / native VLAN
+    # Some models/versions do this for us also, so check to see if we need to set
+    $i_pvid = $rapidcity->rc_i_vlan_pvid($ifindex);
+
+    my $cur_i_pvid = $i_pvid->{$ifindex};
+    print "Current PVID: $cur_i_pvid\n" if $rapidcity->debug();
+    unless ($cur_i_pvid ne $old_vlan_id) {
+        return undef unless (set_i_pvid($old_vlan_id, $ifindex));
+    }
+
+    print "Successfully changed VLAN: $old_vlan_id to $new_vlan_id on IfIndex: $ifindex\n" if $rapidcity->debug();
+    return 1;
+}
+
+sub set_add_i_vlan_tagged {
+    my $rapidcity = shift;
+    my ($vlan_id, $ifindex) = @_;
+    return undef unless ($vlan_id =~ /\d+/ and $ifindex =~ /\d+/);
+
+    print "Adding VLAN: $vlan_id to IfIndex: $ifindex\n" if $rapidcity->debug();
+
+    # Check if port in forbidden list for the VLAN, haven't seen this used, but we'll check anyway
+    return undef unless ($rapidcity->check_forbidden_ports($vlan_id, $ifindex));
+
+    # Add port to egress list for VLAN
+    return undef unless ($rapidcity->add_to_egress_portlist($vlan_id, $ifindex));
+
+    print "Successfully added IfIndex: $ifindex to VLAN: $vlan_id egress list\n" if $rapidcity->debug();
+    return 1;
+}
+
+sub set_remove_i_vlan_tagged {
+    my $rapidcity = shift;
+    my ($vlan_id, $ifindex) = @_;
+    return undef unless ($vlan_id =~ /\d+/ and $ifindex =~ /\d+/);
+
+    print "Removing VLAN: $vlan_id from IfIndex: $ifindex\n" if $rapidcity->debug();
+
+    # Remove port from egress list for VLAN
+    return undef unless ($rapidcity->remove_from_egress_portlist($vlan_id, $ifindex));
+
+    print "Successfully removed IfIndex: $ifindex from VLAN: $vlan_id egress list\n" if $rapidcity->debug();
+    return 1;
+}
+
+#
+# Need to be able to construct a single set with multiple oids 
+#
+#sub set_create_vlan {
+#    my $rapidcity = shift;
+#    my ($name, $vlan_id) = @_;
+#    return undef unless ($vlan_id =~ /\d+/);
+#
+#    my $activate_rv = $rapidcity->set_rc_vlan_rstatus(4, $vlan_id);
+#    unless ($activate_rv) {
+#        print "Error: Unable to activate VLAN: $vlan_id\n" if $rapidcity->debug();
+#        return undef;
+#    }
+#    my $rv = $rapidcity->set_rc_vlan_name($name, $vlan_id);
+#    unless ($rv) {
+#        print "Error: Unable to create VLAN: $vlan_id\n" if $rapidcity->debug();
+#        return undef;
+#    }
+#    return 1;
+#}
+
+sub set_delete_vlan {
+    my $rapidcity = shift;
+    my ($vlan_id) = shift;
+    return undef unless ($vlan_id =~ /\d+/);
+
+    my $rv = $rapidcity->set_rc_vlan_rstatus('6', $vlan_id);
+    unless ($rv) {
+        print "Error: Unable to delete VLAN: $vlan_id\n" if $rapidcity->debug();
+        return undef;
+    }
+    return 1;
+}
+
+sub check_forbidden_ports {
+    my $rapidcity = shift;
+    my ($vlan_id, $ifindex) = @_;
+    return undef unless ($vlan_id =~ /\d+/ and $ifindex =~ /\d+/);
+
+    my $iv_forbidden = $rapidcity->rc_vlan_no_join($vlan_id);
+
+    my @forbidden_ports = split(//, unpack("B*", $iv_forbidden->{$vlan_id}));
+    print "Forbidden ports: @forbidden_ports\n" if $rapidcity->debug();
+    if ( defined($forbidden_ports[$ifindex]) and ($forbidden_ports[$ifindex] eq "1")) {
+        print "Error: IfIndex: $ifindex in forbidden list for VLAN: $vlan_id unable to add\n" if $rapidcity->debug();
+        return undef;
+    }
+    return 1;
+}
+
+sub add_to_egress_portlist {
+    my $rapidcity = shift;
+    my ($vlan_id, $ifindex) = @_;
+    return undef unless ($vlan_id =~ /\d+/ and $ifindex =~ /\d+/);
+
+    my $iv_members   = $rapidcity->rc_vlan_members($vlan_id);
+
+    my @egress_list = split(//, unpack("B*", $iv_members->{$vlan_id}));
+    print "Original egress list for VLAN: $vlan_id: @egress_list \n" if $rapidcity->debug();
+    $egress_list[$ifindex] = '1';
+    # Some devices do not populate the portlist with all possible ports.
+    # If we have lengthened the list fill all undefined elements with zero.
+    foreach my $item (@egress_list) {
+        $item = '0' unless (defined($item));
+    }
+    print "Modified egress list for VLAN: $vlan_id: @egress_list \n" if $rapidcity->debug();
+    my $new_egress = pack("B*", join('', @egress_list));
+
+    my $egress_rv = $rapidcity->set_rc_vlan_members($new_egress, $vlan_id);
+    unless ($egress_rv) {
+        print "Error: Unable to add VLAN: $vlan_id to IfIndex: $ifindex egress list\n" if $rapidcity->debug();
+        return undef;
+    }
+    return 1;
+}
+
+sub remove_from_egress_portlist {
+    my $rapidcity = shift;
+    my ($vlan_id, $ifindex) = @_;
+    return undef unless ($vlan_id =~ /\d+/ and $ifindex =~ /\d+/);
+
+    my $iv_members   = $rapidcity->rc_vlan_members($vlan_id);
+
+    my @egress_list = split(//, unpack("B*", $iv_members->{$vlan_id}));
+    print "Original egress list for VLAN: $vlan_id: @egress_list \n" if $rapidcity->debug();
+    # Some devices may remove automatically, so check state before set
+    if ( defined($egress_list[$ifindex]) and ($egress_list[$ifindex] eq "1")) {
+        $egress_list[$ifindex] = '0';
+        print "Modified egress list for VLAN: $vlan_id: @egress_list \n" if $rapidcity->debug();
+        my $new_egress = pack("B*", join('', @egress_list));
+
+        my $egress_rv = $rapidcity->set_rc_vlan_members($new_egress, $vlan_id);
+        unless ($egress_rv) {
+            print "Warning: Unable to remove IfIndex: $ifindex from VLAN: $vlan_id egress list\n" if $rapidcity->debug();
+            return undef;
+        }  
+    }
+    return 1;
 }
 
 1;
@@ -250,7 +476,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::RapidCity - SNMP Interface to the Nortel RapidCity MIB
+SNMP::Info::RapidCity - SNMP Interface to the Nortel RapidCity MIB
 
 =head1 AUTHOR
 
