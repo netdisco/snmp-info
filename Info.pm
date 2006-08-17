@@ -2537,8 +2537,22 @@ sub _load_attr {
     my $repeaters    = $self->{BulkRepeaters} || $REPEATERS;
     my $bulkwalk     = $can_bulkwalk && $ver != 1;
 
+    if ($partial) {
+	# Try a GET, in case the partial is a leaf OID.
+	# Would like to only do this if we know the OID is
+	# long enough; implementing that would require a
+	# lot of MIB mucking.
+	my $try = $sess->get($var);
+	$errornum = $sess->{ErrorNum};
+	if (defined($try) && $errornum == 0 && $try !~ /^NOSUCH/) {
+	    $var->[2] = $try;
+	    $vars = [ $var ];
+	    $bulkwalk = 1;	# fake a bulkwalk return
+	}
+    }
+
     # Use BULKWALK if we can because its faster
-    if ($bulkwalk){
+    if ($bulkwalk && @$vars == 0){
         ($vars) = $sess->bulkwalk(0, $repeaters, $var);
         if($sess->{ErrorNum}) {
             $self->error_throw("SNMP::Info::_load_atrr: BULKWALK ".$sess->{ErrorStr},"\n");
