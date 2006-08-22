@@ -2543,8 +2543,8 @@ sub _load_attr {
 	# long enough; implementing that would require a
 	# lot of MIB mucking.
 	my $try = $sess->get($var);
-	$errornum = $sess->{ErrorNum};
-	if (defined($try) && $errornum == 0 && $try !~ /^NOSUCH/) {
+	my $errorno = $sess->{ErrorNum};
+	if (defined($try) && $errorno == 0 && $try !~ /^NOSUCH/) {
 	    $var->[2] = $try;
 	    $vars = [ $var ];
 	    $bulkwalk = 1;	# fake a bulkwalk return
