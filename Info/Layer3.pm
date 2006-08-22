@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -74,8 +74,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
             %SNMP::Info::Bridge::FUNCS,
             %SNMP::Info::EtherLike::FUNCS,
             %SNMP::Info::Entity::FUNCS,
-            # IFMIB
-            'i_name2'    => 'ifName',
             # Obsolete Address Translation Table (ARP Cache)
             'old_at_index'   => 'atIfIndex',
             'old_at_paddr'   => 'atPhysAddress',
@@ -191,9 +189,11 @@ sub model {
 
 sub i_name {
     my $l3 = shift;
-    my $i_index = $l3->i_index();
-    my $i_alias = $l3->i_alias();
-    my $i_name2  = $l3->i_name2();
+    my $partial = shift;
+    
+    my $i_index = $l3->i_index($partial);
+    my $i_alias = $l3->i_alias($partial);
+    my $i_name2  = $l3->orig_i_name($partial);
 
     my %i_name;
     foreach my $iid (keys %$i_name2){
@@ -209,9 +209,10 @@ sub i_name {
 
 sub i_duplex {
     my $l3 = shift;
-
-    my $el_index = $l3->el_index();
-    my $el_duplex = $l3->el_duplex();
+    my $partial = shift;
+    
+    my $el_index = $l3->el_index($partial);
+    my $el_duplex = $l3->el_duplex($partial);
     
     my %i_index;
     foreach my $el_port (keys %$el_duplex){
@@ -231,8 +232,10 @@ sub i_duplex {
 # $l3->interfaces() - Map the Interfaces to their physical names
 sub interfaces {
     my $l3 = shift;
-    my $interfaces = $l3->i_index();
-    my $descriptions = $l3->i_description();
+    my $partial = shift;
+
+    my $interfaces = $l3->i_index($partial);
+    my $descriptions = $l3->i_description($partial);
 
     my %interfaces = ();
     foreach my $iid (keys %$interfaces){
@@ -257,20 +260,23 @@ sub vendor {
 
 sub at_index {
     my $l3 = shift;
+    my $partial = shift;
 
-    return $l3->orig_at_index() || $l3->old_at_index();
+    return $l3->orig_at_index($partial) || $l3->old_at_index($partial);
 }
 
 sub at_paddr {
     my $l3 = shift;
+    my $partial = shift;
 
-    return $l3->orig_at_paddr() || $l3->old_at_paddr();
+    return $l3->orig_at_paddr($partial) || $l3->old_at_paddr($partial);
 }
 
 sub at_netaddr {
     my $l3 = shift;
+    my $partial = shift;
 
-    return $l3->orig_at_netaddr() || $l3->old_at_netaddr();
+    return $l3->orig_at_netaddr($partial) || $l3->old_at_netaddr($partial);
 }
 
 
