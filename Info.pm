@@ -870,6 +870,7 @@ sub device_type {
                       9     => 'SNMP::Info::Layer3::Cisco',
                       11    => 'SNMP::Info::Layer2::HP',
                       18    => 'SNMP::Info::Layer3::BayRS',
+                      42    => 'SNMP::Info::Layer3::Sun',
                       674   => 'SNMP::Info::Layer3::Dell',
                       1916  => 'SNMP::Info::Layer3::Extreme',
                       1991  => 'SNMP::Info::Layer3::Foundry',
