@@ -29,61 +29,42 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Passport;
-$VERSION = '1.04';
+$VERSION = '1.05';
 
 use strict;
 
 use Exporter;
-use SNMP::Info;
-use SNMP::Info::Bridge;
 use SNMP::Info::SONMP;
 use SNMP::Info::RapidCity;
+use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-@SNMP::Info::Layer3::Passport::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::SONMP SNMP::Info::RapidCity Exporter/;
+@SNMP::Info::Layer3::Passport::ISA = qw/SNMP::Info::SONMP SNMP::Info::RapidCity SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Passport::EXPORT_OK = qw//;
 
 %MIBS = (
-         %SNMP::Info::MIBS,
-         %SNMP::Info::Bridge::MIBS,
-         %SNMP::Info::SONMP::MIBS,
+         %SNMP::Info::Layer3::MIBS,
          %SNMP::Info::RapidCity::MIBS,
-         'OSPF-MIB'     => 'ospfRouterId',
+         %SNMP::Info::SONMP::MIBS,
         );
 
 %GLOBALS = (
-            %SNMP::Info::GLOBALS,
-            %SNMP::Info::Bridge::GLOBALS,
-            %SNMP::Info::SONMP::GLOBALS,
+            %SNMP::Info::Layer3::GLOBALS,
             %SNMP::Info::RapidCity::GLOBALS,
-            'router_ip' => 'ospfRouterId'
+            %SNMP::Info::SONMP::GLOBALS,
            );
 
 %FUNCS = (
-          %SNMP::Info::FUNCS,
-          %SNMP::Info::Bridge::FUNCS,
-          %SNMP::Info::SONMP::FUNCS,
+          %SNMP::Info::Layer3::FUNCS,
           %SNMP::Info::RapidCity::FUNCS,
-          'i_index2'            => 'ifIndex',
-          'i_mac2'              => 'ifPhysAddress',
-          'i_description2'      => 'ifDescr',
-          'i_name2'             => 'ifName',
-          'ip_index2'           => 'ipAdEntIfIndex',
-           # From RFC1213-MIB
-          'at_index'    => 'ipNetToMediaIfIndex',
-          'at_paddr'    => 'ipNetToMediaPhysAddress',
-          'at_netaddr'  => 'ipNetToMediaNetAddress',
-          'i_name2'     => 'ifName'
+          %SNMP::Info::SONMP::FUNCS,
          );
          
 %MUNGE = (
-            %SNMP::Info::MUNGE,
-            %SNMP::Info::Bridge::MUNGE,
-            %SNMP::Info::SONMP::MUNGE,
-            %SNMP::Info::RapidCity::MUNGE,
-            'i_mac2' => \&SNMP::Info::munge_mac,
-            'at_paddr' => \&SNMP::Info::munge_mac,
+          %SNMP::Info::Layer3::MUNGE,
+          %SNMP::Info::RapidCity::MUNGE,
+          %SNMP::Info::SONMP::MUNGE,
          );
 
 sub model {
@@ -124,18 +105,16 @@ sub os_ver {
     if ($descr =~ m/(\d+\.\d+\.\d+)/){
         return $1;
     }
-
     return undef;
 }
 
 sub i_index {
     my $passport = shift;
+    my $partial = shift;
+
+    my $i_index = $passport->orig_i_index($partial);
     my $model   = $passport->model();
-    my $i_index = $passport->i_index2();
-    my $vlan_index = $passport->rc_vlan_if();
-    my $cpu_index = $passport->rc_cpu_ifindex();
-    my $virt_ip = $passport->rc_virt_ip();
-    
+
     my %if_index;
     foreach my $iid (keys %$i_index){
         my $index = $i_index->{$iid};
@@ -145,16 +124,27 @@ sub i_index {
     }
 
     # Get VLAN Virtual Router Interfaces
-    foreach my $vid (keys %$vlan_index){
-        my $v_index = $vlan_index->{$vid};
-        next unless defined $v_index;
-        next if $v_index == 0;
+    if (!defined $partial or (defined $model and
+        (($partial > 2000 and $model =~ /(86|83|81)/) or
+        ($partial > 256  and $model =~ /(105|11|12)/)))) {
+        
+        my $vlan_index = $passport->rc_vlan_if() || {};
+        
+        foreach my $vid (keys %$vlan_index){
+            my $v_index = $vlan_index->{$vid};
+            next unless defined $v_index;
+            next if $v_index == 0;
+            next if (defined $partial and $v_index !~ /^$partial$/);
 
-        $if_index{$v_index} = $v_index;
+            $if_index{$v_index} = $v_index;
+        }
     }
 
     if (defined $model and $model =~ /(86)/) {
 
+        my $cpu_index = $passport->rc_cpu_ifindex($partial) || {};
+        my $virt_ip = $passport->rc_virt_ip();
+        
         # Get CPU Ethernet Interfaces
         foreach my $cid (keys %$cpu_index){
             my $c_index = $cpu_index->{$cid};
@@ -170,21 +160,29 @@ sub i_index {
             $if_index{1} = 1;
         }
     }
-
     return \%if_index;
 }
 
 sub interfaces {
     my $passport = shift;
+    my $partial = shift;
+
+    my $i_index = $passport->i_index($partial);
     my $model   = $passport->model();
     my $index_factor = $passport->index_factor();
     my $port_offset = $passport->port_offset();
-    my $i_index = $passport->i_index();
-    my $vlan_id = $passport->rc_vlan_id();
-    my $vlan_index = $passport->rc_vlan_if();
-
-    my %reverse_vlan = reverse %$vlan_index;
+    my $vlan_index = {};
+    my %reverse_vlan;
+    my $vlan_id = {};
     
+    if (!defined $partial or (defined $model and
+        (($partial > 2000 and $model =~ /(86|83|81)/) or
+        ($partial > 256  and $model =~ /(105|11|12)/)))) {
+            $vlan_index = $passport->rc_vlan_if(); 
+            %reverse_vlan = reverse %$vlan_index;
+            $vlan_id = $passport->rc_vlan_id();
+    }
+   
     my %if;
     foreach my $iid (keys %$i_index){
         my $index = $i_index->{$iid};
@@ -208,8 +206,9 @@ sub interfaces {
 
         elsif (($index > 2000 and $model =~ /(86|81)/) or
                ($index > 256  and $model =~ /(105|11|12)/)) {
-                my $vlan_index = $reverse_vlan{$iid};
-                my $v_id = $vlan_id->{$vlan_index};
+
+                my $v_index = $reverse_vlan{$iid};
+                my $v_id = $vlan_id->{$v_index};
                 next unless defined $v_id;
                 my $v_port = 'Vlan'."$v_id";
                 $if{$index} = $v_port;
@@ -224,18 +223,16 @@ sub interfaces {
         }
 
     }
+
     return \%if;
 }
 
 sub i_mac {
     my $passport = shift;
+    my $partial = shift;
+
+    my $i_mac = $passport->orig_i_mac($partial) || {};
     my $model   = $passport->model();
-    my $i_mac = $passport->i_mac2();
-    my $vlan_mac = $passport->rc_vlan_mac();
-    my $vlan_index = $passport->rc_vlan_if();
-    my $cpu_mac = $passport->rc_cpu_mac();
-    my $chassis_base_mac = $passport->rc_base_mac();
-    my $virt_ip = $passport->rc_virt_ip();
 
     my %if_mac;
     foreach my $iid (keys %$i_mac){
@@ -246,15 +243,29 @@ sub i_mac {
     }
 
     # Get VLAN Virtual Router Interfaces
-    foreach my $iid (keys %$vlan_mac){
-        my $v_mac = $vlan_mac->{$iid};
-        my $v_id  = $vlan_index->{$iid};
-        next unless defined $v_mac;
+    if (!defined $partial or (defined $model and
+        (($partial > 2000 and $model =~ /(86|83|81)/) or
+        ($partial > 256  and $model =~ /(105|11|12)/)))) {
 
-        $if_mac{$v_id} = $v_mac;
+        my $vlan_index = $passport->rc_vlan_if() || {};
+        my $vlan_mac = $passport->rc_vlan_mac() || {};
+
+        foreach my $iid (keys %$vlan_mac){
+            my $v_mac = $vlan_mac->{$iid};
+            next unless defined $v_mac;
+            my $v_id  = $vlan_index->{$iid};
+            next unless defined $v_id;
+            next if (defined $partial and $v_id !~ /^$partial$/);
+
+            $if_mac{$v_id} = $v_mac;
+        }
     }
     
     if (defined $model and $model =~ /(86)/) {
+
+        my $cpu_mac = $passport->rc_cpu_mac($partial);
+        my $virt_ip = $passport->rc_virt_ip();
+
         # Get CPU Ethernet Interfaces
         foreach my $iid (keys %$cpu_mac){
             my $mac = $cpu_mac->{$iid};
@@ -264,7 +275,8 @@ sub i_mac {
         }
 
         # Check for Virtual Mgmt Interface
-        unless ($virt_ip eq '0.0.0.0'){
+        unless (($virt_ip eq '0.0.0.0') or (defined $partial and $partial ne "1")) {
+            my $chassis_base_mac = $passport->rc_base_mac();
             my @virt_mac = split /:/, $chassis_base_mac;
             $virt_mac[0] = hex($virt_mac[0]);
             $virt_mac[1] = hex($virt_mac[1]);
@@ -278,15 +290,15 @@ sub i_mac {
             $if_mac{1} = $mac;
         }
     }
-
     return \%if_mac;
 }
 
 sub i_description {
     my $passport = shift;
-    my $i_descr = $passport->i_description2();
-    my $v_descr = $passport->rc_vlan_name();
-    my $vlan_index = $passport->rc_vlan_if();
+    my $partial = shift;
+
+    my $i_descr = $passport->orig_i_description($partial) || {};
+    my $model   = $passport->model();
 
     my %descr;
     foreach my $iid (keys %$i_descr){
@@ -297,27 +309,45 @@ sub i_description {
     }
 
     # Get VLAN Virtual Router Interfaces
-    foreach my $vid (keys %$v_descr){
-        my $vl_descr = $v_descr->{$vid};
-        my $v_id  = $vlan_index->{$vid};
-        next unless defined $vl_descr;
+    if (!defined $partial or (defined $model and
+        (($partial > 2000 and $model =~ /(86|83|81)/) or
+        ($partial > 256  and $model =~ /(105|11|12)/)))) {
 
-        $descr{$v_id} = $vl_descr;
+        my $v_descr = $passport->rc_vlan_name();
+        my $vlan_index = $passport->rc_vlan_if();
+
+        foreach my $vid (keys %$v_descr){
+            my $vl_descr = $v_descr->{$vid};
+            next unless defined $vl_descr;
+            my $v_id  = $vlan_index->{$vid};
+            next unless defined $v_id;
+            next if (defined $partial and $v_id !~ /^$partial$/);
+
+            $descr{$v_id} = $vl_descr;
+        }
     }
     return \%descr;
 }
     
 sub i_name {
     my $passport = shift;
-    my $model   = $passport->model();
-    my $i_index = $passport->i_index();
-    my $rc_alias = $passport->rc_alias();
-    my $i_name2  = $passport->i_name2();
-    my $v_name = $passport->rc_vlan_name();
-    my $vlan_index = $passport->rc_vlan_if();
+    my $partial = shift;
 
-    
-    my %reverse_vlan = reverse %$vlan_index;
+    my $model   = $passport->model();
+    my $i_index = $passport->i_index($partial) || {};
+    my $rc_alias = $passport->rc_alias($partial) || {};
+    my $i_name2  = $passport->orig_i_name($partial) || {};
+    my $v_name = {};
+    my $vlan_index = {};
+    my %reverse_vlan;
+
+    if (!defined $partial or (defined $model and
+        (($partial > 2000 and $model =~ /(86|83|81)/) or
+        ($partial > 256  and $model =~ /(105|11|12)/)))) {
+            $v_name = $passport->rc_vlan_name() || {};
+            $vlan_index = $passport->rc_vlan_if() || {};
+            %reverse_vlan = reverse %$vlan_index;
+    }    
 
     my %i_name;
     foreach my $iid (keys %$i_index){
@@ -361,10 +391,10 @@ sub i_name {
 
 sub ip_index {
     my $passport = shift;
+    my $partial = shift;
+
     my $model   = $passport->model();
-    my $ip_index = $passport->ip_index2();
-    my $cpu_ip = $passport->rc_cpu_ip();
-    my $virt_ip = $passport->rc_virt_ip();
+    my $ip_index = $passport->orig_ip_index($partial) || {};
 
     my %ip_index;
     foreach my $ip (keys %$ip_index){
@@ -376,6 +406,10 @@ sub ip_index {
 
     # Only 8600 has CPU and Virtual Management IP
     if (defined $model and $model =~ /(86)/) {
+
+    my $cpu_ip = $passport->rc_cpu_ip($partial) || {};
+    my $virt_ip = $passport->rc_virt_ip($partial) || {};
+
         # Get CPU Ethernet IP
         foreach my $cid (keys %$cpu_ip){
             my $c_ip = $cpu_ip->{$cid};
@@ -459,7 +493,9 @@ sub port_offset {
 # Bridge MIB does not map Bridge Port to ifIndex correctly
 sub bp_index {
     my $passport = shift;
-    my $if_index = $passport->i_index();
+    my $partial = shift;
+
+    my $if_index = $passport->i_index($partial) || {};
 
     my %bp_index;
     foreach my $iid (keys %$if_index){
@@ -514,13 +550,11 @@ determining a more specific class using the method above.
 
 =over
 
-=item SNMP::Info
-
-=item SNMP::Info::Bridge
-
 =item SNMP::Info::SONMP
 
 =item SNMP::Info::RapidCity
+
+=item SNMP::Info::Layer3
 
 =back
 
@@ -528,19 +562,13 @@ determining a more specific class using the method above.
 
 =over
 
-=item OSPF-MIB
-
 =item Inherited Classes' MIBs
-
-See SNMP::Info for its own MIB requirements.
-
-See SNMP::Info::Bridge for its own MIB requirements.
 
 See SNMP::Info::SONMP for its own MIB requirements.
 
 See SNMP::Info::RapidCity for its own MIB requirements.
 
-OSPF-MIB is included in the archive at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
+See SNMP::Info::Layer3 for its own MIB requirements.
 
 =back
 
@@ -597,14 +625,6 @@ Required by SNMP::Info::SONMP.  Returns 0.
 
 =back
 
-=head2 Globals imported from SNMP::Info
-
-See documentation in SNMP::Info for details.
-
-=head2 Globals imported from SNMP::Info::Bridge
-
-See documentation in SNMP::Info::Bridge for details.
-
 =head2 Global Methods imported from SNMP::Info::SONMP
 
 See documentation in SNMP::Info::SONMP for details.
@@ -612,6 +632,10 @@ See documentation in SNMP::Info::SONMP for details.
 =head2 Global Methods imported from SNMP::Info::RapidCity
 
 See documentation in SNMP::Info::RapidCity for details.
+
+=head2 Globals imported from SNMP::Info::Layer3
+
+See documentation in SNMP::Info::Layer3 for details.
 
 =head1 TABLE ENTRIES
 
@@ -667,38 +691,6 @@ problems with BRIDGE-MIB
 
 =back
 
-=head2 RFC1213 Arp Cache Table (B<ipNetToMediaTable>)
-
-=over
-
-=item $passport->at_index()
-
-Returns reference to hash.  Maps ARP table entries to Interface IIDs 
-
-(B<ipNetToMediaIfIndex>)
-
-=item $passport->at_paddr()
-
-Returns reference to hash.  Maps ARP table entries to MAC addresses. 
-
-(B<ipNetToMediaPhysAddress>)
-
-=item $passport->at_netaddr()
-
-Returns reference to hash.  Maps ARP table entries to IPs 
-
-(B<ipNetToMediaNetAddress>)
-
-=back
-
-=head2 Table Methods imported from SNMP::Info
-
-See documentation in SNMP::Info for details.
-
-=head2 Table Methods imported from SNMP::Info::Bridge
-
-See documentation in SNMP::Info::Bridge for details.
-
 =head2 Table Methods imported from SNMP::Info::SONMP
 
 See documentation in SNMP::Info::SONMP for details.
@@ -706,5 +698,9 @@ See documentation in SNMP::Info::SONMP for details.
 =head2 Table Methods imported from SNMP::Info::RapidCity
 
 See documentation in SNMP::Info::RapidCity for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See documentation in SNMP::Info::Layer3 for details.
 
 =cut
