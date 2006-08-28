@@ -28,28 +28,25 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::S3000;
-$VERSION = '1.04';
+$VERSION = '1.05';
 use strict;
 
 use Exporter;
-use SNMP::Info::Layer1;
-use SNMP::Info::Bridge;
+use SNMP::Info::Layer2;
 
-@SNMP::Info::Layer1::S3000::ISA = qw/SNMP::Info::Layer1 SNMP::Info::Bridge/;
+@SNMP::Info::Layer1::S3000::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer1::S3000::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 %MIBS    = (
-            %SNMP::Info::Layer1::MIBS,
-            %SNMP::Info::Bridge::MIBS,
+            %SNMP::Info::Layer2::MIBS,
             'SYNOPTICS-ETHERNET-MIB'     => 's3EnetPortTable',
             'SYNOPTICS-COMMON-MIB'       => 's3AgentType',
             );
 
 %GLOBALS = (
-            %SNMP::Info::Layer1::GLOBALS,
-            %SNMP::Info::Bridge::GLOBALS,
+            %SNMP::Info::Layer2::GLOBALS,
             # From SYNOPTICS-COMMON-MIB
             'os_bin'            => 's3AgentFwVer',
             's3000_major_ver'   => 's3AgentSwMajorVer',
@@ -58,8 +55,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             );
 
 %FUNCS   = (
-            %SNMP::Info::Layer1::FUNCS,
-            %SNMP::Info::Bridge::FUNCS,
+            %SNMP::Info::Layer2::FUNCS,
             # SYNOPTICS-ETHERNET-MIB::s3EnetPortTable
             's3000_pb_index'        => 's3EnetPortBoardIndex',
             's3000_pp_index'        => 's3EnetPortIndex',
@@ -75,8 +71,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             );
 
 %MUNGE   = (
-            %SNMP::Info::Layer1::MUNGE,
-            %SNMP::Info::Bridge::MUNGE,
+            %SNMP::Info::Layer2::MUNGE,
             's3000_topo_mac'        => \&SNMP::Info::munge_mac
             );
 
@@ -130,11 +125,14 @@ sub mac {
 }
 
 # Hubs do not support ifMIB requirements for get MAC
-# and port status 
+# and port status
+
 sub i_index {
     my $s3000 = shift;
-    my $b_index = $s3000->s3000_pb_index();
-    my $p_index = $s3000->s3000_pp_index();
+    my $partial = shift;
+
+    my $b_index = $s3000->s3000_pb_index($partial) || {};
+    my $p_index = $s3000->s3000_pp_index($partial) || {};
 
     my %i_index;
     foreach my $iid (keys %$b_index){
@@ -150,14 +148,20 @@ sub i_index {
     return \%i_index;
 }
 
+# Partials don't really help in this class, but implemented
+# for consistency
+
 sub interfaces {
     my $s3000 = shift;
-    my $i_index = $s3000->i_index();
+    my $partial = shift;
+
+    my $i_index = $s3000->i_index() || {};
 
     my %if;
     foreach my $iid (keys %$i_index){
         my $index = $i_index->{$iid};
         next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
 
         # Index numbers are deterministic slot * 256 + port - see i_index()
         my $port = $index % 256;
@@ -173,12 +177,15 @@ sub interfaces {
 
 sub i_duplex {
     my $s3000 = shift;
-    my $port_index  = $s3000->i_index();
+    my $partial = shift;
+
+    my $port_index  = $s3000->i_index() || {};
 
     my %i_duplex;
     foreach my $iid (keys %$port_index){
         my $index = $port_index->{$iid};
         next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
 
         # Hubs only function half duplex
         my $duplex = 'half';
@@ -189,12 +196,15 @@ sub i_duplex {
 
 sub i_duplex_admin {
     my $s3000 = shift;
-    my $port_index  = $s3000->i_index();
+    my $partial = shift;
+
+    my $port_index  = $s3000->i_index() || {};
 
     my %i_duplex_admin;
     foreach my $iid (keys %$port_index){
         my $index = $port_index->{$iid};
         next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
 
         # Hubs only function half duplex    
         my $duplex = 'half';
@@ -205,12 +215,15 @@ sub i_duplex_admin {
 
 sub i_speed {
     my $s3000 = shift;
-    my $port_index  = $s3000->i_index();
+    my $partial = shift;
+
+    my $port_index  = $s3000->i_index() || {};
 
     my %i_speed;
     foreach my $iid (keys %$port_index){
         my $index = $port_index->{$iid};
         next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
 
         # These hubs only support 10Mbs      
         my $speed = '10000000';
@@ -221,13 +234,16 @@ sub i_speed {
 
 sub i_up {
     my $s3000 = shift;
-    my $port_index = $s3000->i_index();
-    my $link_stat = $s3000->s3000_up();
+    my $partial = shift;
+
+    my $port_index = $s3000->i_index() || {};
+    my $link_stat = $s3000->s3000_up() || {};
    
     my %i_up;
     foreach my $iid (keys %$port_index){
         my $index = $port_index->{$iid};
         next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
         my $link_stat = $link_stat->{$iid};
         next unless defined $link_stat;
         
@@ -241,13 +257,16 @@ sub i_up {
 
 sub i_up_admin {
     my $s3000 = shift;
-    my $i_index = $s3000->i_index();
-    my $link_stat = $s3000->s3000_up_admin();
+    my $partial = shift;
+
+    my $i_index = $s3000->i_index() || {};
+    my $link_stat = $s3000->s3000_up_admin() || {};
  
     my %i_up_admin;
     foreach my $iid (keys %$i_index){
-            my $index = $i_index->{$iid};
-            next unless defined $index;
+        my $index = $i_index->{$iid};
+        next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
         my $link_stat = $link_stat->{$iid};
         next unless defined $link_stat;
  
@@ -263,7 +282,7 @@ sub set_i_up_admin {
     my $s3000 = shift;
     my ($setting, $iid) = @_;
 
-    my $i_index  = $s3000->i_index();
+    my $i_index  = $s3000->i_index() || {};
     my %reverse_i_index = reverse %$i_index;
 
     $setting = lc($setting);
@@ -277,9 +296,11 @@ sub set_i_up_admin {
 
 # Hubs do not support the standard Bridge MIB
 sub bp_index {
-   my $s3000 = shift;
-    my $b_index = $s3000->s3000_nb_index();
-    my $p_index = $s3000->s3000_np_index();
+    my $s3000 = shift;
+    my $partial = shift;
+
+    my $b_index = $s3000->s3000_nb_index() || {};
+    my $p_index = $s3000->s3000_np_index() || {};
     my $model = $s3000->model();
 
     my %bp_index;
@@ -289,6 +310,7 @@ sub bp_index {
         my $port = $p_index->{$iid}||0;
                 
         my $index = ($board*256)+$port;
+        next if (defined $partial and $index !~ /^$partial$/);
 
         $bp_index{$index} = $index;
     }
@@ -297,8 +319,10 @@ sub bp_index {
 
 sub fw_port {
     my $s3000 = shift;
-    my $b_index = $s3000->s3000_nb_index();
-    my $p_index = $s3000->s3000_np_index();
+    my $partial = shift;
+
+    my $b_index = $s3000->s3000_nb_index($partial) || {};
+    my $p_index = $s3000->s3000_np_index($partial) || {};
     my $model = $s3000->model();
 
     my %fw_port;
@@ -346,7 +370,7 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a 
-Bayhub device through SNMP.  Also provides device MAC to port mapping through the propietary MIB. 
+Bayhub device through SNMP.  Also provides device MAC to port mapping through the proprietary MIB.
 
 For speed or debugging purposes you can call the subclass directly, but not after determining
 a more specific class using the method above. 
@@ -357,9 +381,7 @@ my $s3000 = new SNMP::Info::Layer1::S3000(...);
 
 =over
 
-=item SNMP::Info::Layer1
-
-=item SNMP::Info::Bridge
+=item SNMP::Info::Layer2
 
 =back
 
@@ -373,9 +395,7 @@ my $s3000 = new SNMP::Info::Layer1::S3000(...);
 
 =item Inherited Classes' MIBs
 
-See SNMP::Info::Layer1 for its own MIB requirements.
-
-See SNMP::Info::Bridge for its own MIB requirements.
+See L<SNMP::Info::Layer2/"Required MIBs"> and its inherited classes.
 
 =back
 
@@ -426,13 +446,9 @@ Returns 00000011.  Class emulates Layer 2 functionality through proprietary MIBs
 
 =back
 
-=head2 Globals imported from SNMP::Info::Layer1
+=head2 Globals imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer1 for details.
-
-=head2 Globals imported from SNMP::Info::Bridge
-
-See documentation in SNMP::Info::Bridge for details.
+See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -513,12 +529,8 @@ Returns reference to hash.  Key: Table entry, Value:Remote MAC address
 
 =back
 
-=head2 Table Methods imported from SNMP::Info::Layer1
+=head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer1 for details.
-
-=head2 Table Methods imported from SNMP::Info::Bridge
-
-See documentation in SNMP::Info::Bridge for details.
+See L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
 =cut

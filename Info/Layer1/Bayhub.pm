@@ -2,7 +2,7 @@
 # Eric Miller
 # $Id$
 #
-# Copyright (c) 2004-6 Eric Miller, Max Baker
+# Copyright (c) 2004 Eric Miller, Max Baker
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,23 +28,21 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Bayhub;
-$VERSION = '1.04';
+$VERSION = '1.05';
 use strict;
 
 use Exporter;
-use SNMP::Info;
-use SNMP::Info::Bridge;
-use SNMP::Info::NortelStack;
 use SNMP::Info::SONMP;
+use SNMP::Info::NortelStack;
+use SNMP::Info::Layer2;
 
-@SNMP::Info::Layer1::Bayhub::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::NortelStack SNMP::Info::SONMP Exporter/;
+@SNMP::Info::Layer1::Bayhub::ISA = qw/SNMP::Info::SONMP SNMP::Info::NortelStack  SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer1::Bayhub::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 %MIBS    = (
-            %SNMP::Info::MIBS,
-            %SNMP::Info::Bridge::MIBS,
+            %SNMP::Info::Layer2::MIBS,
             %SNMP::Info::NortelStack::MIBS,            
             %SNMP::Info::SONMP::MIBS,
             'S5-ETHERNET-COMMON-MIB'     => 's5EnPortTable',
@@ -52,15 +50,13 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             );
 
 %GLOBALS = (
-            %SNMP::Info::GLOBALS,
-            %SNMP::Info::Bridge::GLOBALS,
+            %SNMP::Info::Layer2::GLOBALS,
             %SNMP::Info::NortelStack::GLOBALS,
             %SNMP::Info::SONMP::GLOBALS,
             );
 
 %FUNCS   = (
-            %SNMP::Info::FUNCS,
-            %SNMP::Info::Bridge::FUNCS,
+            %SNMP::Info::Layer2::FUNCS,
             %SNMP::Info::NortelStack::FUNCS,
             %SNMP::Info::SONMP::FUNCS,
             # S5-ETHERNET-COMMON-MIB::s5EnPortTable
@@ -75,8 +71,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             );
 
 %MUNGE   = (
-            %SNMP::Info::MUNGE,
-            %SNMP::Info::Bridge::MUNGE,
+            %SNMP::Info::Layer2::MUNGE,
             %SNMP::Info::NortelStack::MUNGE,
             %SNMP::Info::SONMP::MUNGE,
             );
@@ -108,11 +103,14 @@ sub model {
 }
 
 # Hubs do not support ifMIB requirements for get MAC
-# and port status 
+# and port status
+
 sub i_index {
     my $bayhub = shift;
-    my $b_index = $bayhub->bayhub_pb_index();
-    my $p_index = $bayhub->bayhub_pp_index();
+    my $partial = shift;
+
+    my $b_index = $bayhub->bayhub_pb_index($partial) || {};
+    my $p_index = $bayhub->bayhub_pp_index($partial) || {};
     my $model = $bayhub->model();
 
     my %i_index;
@@ -141,14 +139,20 @@ sub i_index {
     return \%i_index;
 }
 
+# Partials don't really help in this class, but implemented
+# for consistency
+
 sub interfaces {
     my $bayhub = shift;
-    my $i_index = $bayhub->i_index();
+    my $partial = shift;
+
+    my $i_index = $bayhub->i_index() || {};
 
     my %if;
     foreach my $iid (keys %$i_index){
         my $index = $i_index->{$iid};
         next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
 
         # Index numbers are deterministic slot * 256 + port
         my $port = $index % 256;
@@ -164,12 +168,15 @@ sub interfaces {
 
 sub i_duplex {
     my $bayhub = shift;
-    my $port_index  = $bayhub->i_index();
+    my $partial = shift;
+
+    my $port_index  = $bayhub->i_index() || {};
 
     my %i_duplex;
     foreach my $iid (keys %$port_index){
         my $index = $port_index->{$iid};
         next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
     
         my $duplex = 'half';
         $i_duplex{$index}=$duplex; 
@@ -179,12 +186,15 @@ sub i_duplex {
 
 sub i_duplex_admin {
     my $bayhub = shift;
-    my $port_index  = $bayhub->i_index();
+    my $partial = shift;
+
+    my $port_index  = $bayhub->i_index() || {};
 
     my %i_duplex_admin;
     foreach my $iid (keys %$port_index){
         my $index = $port_index->{$iid};
         next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
     
         my $duplex = 'half';
         $i_duplex_admin{$index}=$duplex; 
@@ -194,12 +204,15 @@ sub i_duplex_admin {
 
 sub i_speed {
     my $bayhub = shift;
-    my $port_index  = $bayhub->i_index();
+    my $partial = shift;
+
+    my $port_index  = $bayhub->i_index() || {};
 
     my %i_speed;
     foreach my $iid (keys %$port_index){
         my $index = $port_index->{$iid};
         next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
     
         my $speed = '10 Mbps';
         $i_speed{$index}=$speed; 
@@ -209,13 +222,16 @@ sub i_speed {
 
 sub i_up {
     my $bayhub = shift;
-    my $port_index = $bayhub->i_index();
-    my $link_stat = $bayhub->bayhub_up();
+    my $partial = shift;
+
+    my $port_index = $bayhub->i_index() || {};
+    my $link_stat = $bayhub->bayhub_up() || {};
    
     my %i_up;
     foreach my $iid (keys %$port_index){
         my $index = $port_index->{$iid};
         next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
         my $link_stat = $link_stat->{$iid};
         next unless defined $link_stat;
         
@@ -229,13 +245,16 @@ sub i_up {
 
 sub i_up_admin {
     my $bayhub = shift;
-    my $i_index = $bayhub->i_index();
-    my $link_stat = $bayhub->bayhub_up_admin();
+    my $partial = shift;
+
+    my $i_index = $bayhub->i_index() || {};
+    my $link_stat = $bayhub->bayhub_up_admin() || {};
  
     my %i_up_admin;
     foreach my $iid (keys %$i_index){
-            my $index = $i_index->{$iid};
-            next unless defined $index;
+        my $index = $i_index->{$iid};
+        next unless defined $index;
+        next if (defined $partial and $index !~ /^$partial$/);
         my $link_stat = $link_stat->{$iid};
         next unless defined $link_stat;
  
@@ -265,9 +284,11 @@ sub set_i_up_admin {
 
 # Hubs do not support the standard Bridge MIB
 sub bp_index {
-   my $bayhub = shift;
-    my $b_index = $bayhub->bayhub_nb_index();
-    my $p_index = $bayhub->bayhub_np_index();
+    my $bayhub = shift;
+    my $partial = shift;
+
+    my $b_index = $bayhub->bayhub_nb_index() || {};
+    my $p_index = $bayhub->bayhub_np_index() || {};
     my $model = $bayhub->model();
 
     my %bp_index;
@@ -290,6 +311,7 @@ sub bp_index {
           }
 
         my $index = ($board*256)+$port;
+        next if (defined $partial and $index !~ /^$partial$/);
 
         $bp_index{$index} = $index;
     }
@@ -298,8 +320,10 @@ sub bp_index {
 
 sub fw_port {
     my $bayhub = shift;
-    my $b_index = $bayhub->bayhub_nb_index();
-    my $p_index = $bayhub->bayhub_np_index();
+    my $partial = shift;
+
+    my $b_index = $bayhub->bayhub_nb_index($partial) || {};
+    my $p_index = $bayhub->bayhub_np_index($partial) || {};
     my $model = $bayhub->model();
 
     my %fw_port;
@@ -368,7 +392,7 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a 
-Bayhub device through SNMP.  Also provides device MAC to port mapping through the propietary MIB. 
+Bayhub device through SNMP.  Also provides device MAC to port mapping through the proprietary MIB. 
 
 For speed or debugging purposes you can call the subclass directly, but not after determining
 a more specific class using the method above. 
@@ -379,9 +403,7 @@ my $bayhub = new SNMP::Info::Layer1::Bayhub(...);
 
 =over
 
-=item SNMP::Info
-
-=item SNMP::Info::Bridge
+=item SNMP::Info::Layer2
 
 =item SNMP::Info::NortelStack
 
@@ -397,15 +419,13 @@ my $bayhub = new SNMP::Info::Layer1::Bayhub(...);
 
 =item S5-COMMON-STATS-MIB
 
-=item Inherited Classes' MIBs
+=item Inherited Classes
 
-See SNMP::Info for its own MIB requirements.
+See L<SNMP::Info::Layer2/"Required MIBs"> and its inherited classes.
 
-See SNMP::Info::Bridge for its own MIB requirements.
+See L<SNMP::Info::NortelStack/"Required MIBs"> for its MIB requirements.
 
-See SNMP::Info::NortelStack for its own MIB requirements.
-
-See SNMP::Info::SONMP for its own MIB requirements.
+See L<SNMP::Info::SONMP/"Required MIBs"> for its MIB requirements.
 
 =back
 
@@ -452,21 +472,17 @@ start at 0.  Returns 0.
 
 =back
 
-=head2 Globals imported from SNMP::Info
+=head2 Globals imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info for details.
-
-=head2 Globals imported from SNMP::Info::Bridge
-
-See documentation in SNMP::Info::Bridge for details.
+See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::NortelStack
 
-See documentation in SNMP::Info::NortelStack for details.
+See L<SNMP::Info::NortelStack/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::SONMP
 
-See documentation in SNMP::Info::SONMP for details.
+See L<SNMP::Info::SONMP/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -535,20 +551,16 @@ to the Interface index.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info
+=head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info for details.
-
-=head2 Table Methods imported from SNMP::Info::Bridge
-
-See documentation in SNMP::Info::Bridge for details.
+See L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::NortelStack
 
-See documentation in SNMP::Info::NortelStack for details.
+See L<SNMP::Info::NortelStack/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::SONMP
 
-See documentation in SNMP::Info::SONMP for details.
+See L<SNMP::Info::SONMP/"TABLE ENTRIES"> for details.
 
 =cut
