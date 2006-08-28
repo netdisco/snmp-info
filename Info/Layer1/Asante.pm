@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Asante;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 use strict;
 
@@ -48,10 +48,6 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             );
 
 %FUNCS   = (%SNMP::Info::Layer1::FUNCS,
-            'i_speed2'     => 'ifSpeed',
-            'i_mac2'       => 'ifPhysAddress',
-            'i_descr2'     => 'ifDescr',
-            'i_name2'      => 'ifName',
             'asante_port'  => 'ePortIndex',
             'asante_group' => 'ePortGrpIndex',
             'i_type'       => 'ePortStateType',
@@ -63,15 +59,15 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             'ASANTE-HUB1012-MIB' => 'asante'
             );
 
-%MUNGE   = (%SNMP::Info::Layer1::MUNGE,
-            'i_mac2' => \&SNMP::Info::munge_mac,
-            'i_speed2' => \&SNMP::Info::munge_speed,
+%MUNGE   = (
+            %SNMP::Info::Layer1::MUNGE,
             );
 
 sub interfaces {
     my $asante = shift;
+    my $partial = shift;
 
-    my $rptr_port = $asante->rptr_port();
+    my $rptr_port = $asante->rptr_port($partial) || {};
 
     my %interfaces;
 
@@ -110,8 +106,9 @@ sub model {
 
 sub i_up {
     my $asante = shift;
+    my $partial = shift;
 
-    my $asante_up = $asante->asante_up();
+    my $asante_up = $asante->asante_up($partial) || {};
 
     my $i_up = {};
     foreach my $port (keys %$asante_up){
@@ -125,8 +122,9 @@ sub i_up {
 
 sub i_speed {
     my $asante = shift;
+    my $partial = shift;
 
-    my $i_speed = $asante->i_speed2();
+    my $i_speed = $asante->orig_i_speed($partial) || {};
 
     my %i_speed;
 
@@ -137,8 +135,9 @@ sub i_speed {
 
 sub i_mac {
     my $asante = shift;
+    my $partial = shift;
 
-    my $i_mac = $asante->i_mac2();
+    my $i_mac = $asante->orig_i_mac($partial) || {};
 
     my %i_mac;
 
@@ -153,8 +152,9 @@ sub i_description {
 
 sub i_name {
     my $asante = shift;
+    my $partial = shift;
 
-    my $i_name = $asante->i_descr2();
+    my $i_name = $asante->orig_i_descr($partial) || {};
 
     my %i_name;
 
@@ -186,7 +186,7 @@ Max Baker
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $asante->class();
+ my $class = $asante->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
@@ -210,7 +210,9 @@ Asante device through SNMP.
 
 Download from http://www.mibdepot.com
 
-=item MIBs listed in SNMP::Info::Layer1
+=item Inherited Classes
+
+See L<SNMP::Info::Layer1/"Required MIBs"> and its inherited classes.
 
 =back
 
@@ -234,13 +236,14 @@ Returns 'asante' :)
 
 =item $asante->model()
 
-Trys to cull out AT-nnnnX out of the description field.
+Cross references $asante->id() to the ASANTE-HUB1012-MIB and returns
+the results.
 
 =back
 
-=head2 Globals inherited from SNMP::Info::Layer1
+=head2 Global Methods imported from SNMP::Info::Layer1
 
-See documentation in SNMP::Info::Layer1 for details.
+See L<SNMP::Info::Layer1/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -255,7 +258,7 @@ Returns reference to map of IIDs to human-set port name.
 =item $asante->i_up()
 
 Returns reference to map of IIDs to link status.  Changes
-the values of ati_up() to 'up' and 'down'.
+the values of asante_up() to 'up' and 'down'.
 
 =back
 
@@ -275,6 +278,6 @@ the values of ati_up() to 'up' and 'down'.
 
 =head2 Table Methods imported from SNMP::Info::Layer1
 
-See documentation in SNMP::Info::Layer1 for details.
+See L<SNMP::Info::Layer1/"TABLE ENTRIES"> for details.
 
 =cut

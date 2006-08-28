@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Allied;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 use strict;
 
@@ -49,7 +49,6 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             );
 
 %FUNCS   = (%SNMP::Info::Layer1::FUNCS,
-            'i_name2'    => 'ifName',
             'ati_p_name' => 'portName',
             'ati_up'     => 'linkTestLED',
             );
@@ -92,10 +91,10 @@ sub model {
 
 sub i_name{
     my $allied = shift;
+    my $partial = shift;
 
-    my $i_name = $allied->i_name2();
-
-    my $ati_p_name = $allied->ati_p_name();
+    my $i_name = $allied->orig_i_name($partial) || {};
+    my $ati_p_name = $allied->ati_p_name($partial) || {};
 
     foreach my $port (keys %$ati_p_name){
         my $name = $ati_p_name->{$port};
@@ -107,9 +106,10 @@ sub i_name{
 
 sub i_up {
     my $allied = shift;
+    my $partial = shift;
 
-    my $i_up = SNMP::Info::Layer1::i_up($allied);
-    my $ati_up = $allied->ati_up();
+    my $i_up = SNMP::Info::Layer1::i_up($allied, $partial);
+    my $ati_up = $allied->ati_up($partial) || {};
 
     foreach my $port (keys %$ati_up){
         my $up = $ati_up->{$port};
@@ -143,7 +143,7 @@ Max Baker
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $l1->class();
+ my $class = $allied->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
@@ -170,7 +170,7 @@ Download for your device from http://www.allied-telesyn.com/allied/support/
 
 =item Inherited Classes
 
-MIBs listed in SNMP::Info::Layer1 and its inherited classes.
+See L<SNMP::Info::Layer1/"Required MIBs"> and its inherited classes.
 
 =back
 
@@ -208,7 +208,7 @@ Trys to cull out AT-nnnnX out of the description field.
 
 =head2 Global Methods imported from SNMP::Info::Layer1
 
-See documentation in SNMP::Info::Layer1 for details.
+See L<SNMP::Info::Layer1/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -243,6 +243,6 @@ the values of ati_up() to 'up' and 'down'.
 
 =head2 Table Methods imported from SNMP::Info::Layer1
 
-See documentation in SNMP::Info::Layer1 for details.
+See L<SNMP::Info::Layer1/"TABLE ENTRIES"> for details.
 
 =cut
