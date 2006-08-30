@@ -28,41 +28,39 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Aruba;
-$VERSION = '1.04';
+$VERSION = '1.05';
 use strict;
 
 use Exporter;
-use SNMP::Info;
-use SNMP::Info::Bridge;
+use SNMP::Info::Layer2;
 
-@SNMP::Info::Layer2::Aruba::ISA = qw/SNMP::Info SNMP::Info::Bridge Exporter/;
+@SNMP::Info::Layer2::Aruba::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Aruba::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 %MIBS    = (
-            %SNMP::Info::MIBS,
-            %SNMP::Info::Bridge::MIBS,            
+            %SNMP::Info::Layer2::MIBS,           
             'WLSX-SWITCH-MIB'  => 'wlsxHostname',
+            'WLSR-AP-MIB'      => 'wlsrHideSSID',
             );
 
 %GLOBALS = (
-            %SNMP::Info::GLOBALS,
-            %SNMP::Info::Bridge::GLOBALS,
+            %SNMP::Info::Layer2::GLOBALS,
             );
 
 %FUNCS   = (
-            %SNMP::Info::FUNCS,
-            %SNMP::Info::Bridge::FUNCS,
-            'i_index2'            => 'ifIndex',
-            'i_name2'             => 'ifName',
+            %SNMP::Info::Layer2::FUNCS,
             # WLSX-SWITCH-MIB::wlsxSwitchAccessPointTable
             # Table index leafs do not return information
-            # therefore unable to use apESSID.  We extract
+            # therefore unable to use apBSSID.  We extract
             # the information from the IID instead.
-            #'aruba_ap_essid'      => 'apESSID',
-            'aruba_ap_name'       => 'apLocation',
-            'aruba_ap_ip'         => 'apIpAddress',
+            'aruba_ap_name'      => 'apLocation',
+            'aruba_ap_ip'        => 'apIpAddress',
+            'aruba_ap_essid'     => 'apESSID',
+            'aruba_ap_ssidbcast' => 'wlsrHideSSID',
+            # WLSR-AP-MIB::wlsrConfigTable
+            'aruba_ap_channel'   => 'apCurrentChannel',
             # WLSX-SWITCH-MIB::wlsxSwitchStationMgmtTable
             # Table index leafs do not return information
             # therefore unable to use staAccessPointBSSID
@@ -74,8 +72,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             );
 
 %MUNGE   = (
-          %SNMP::Info::MUNGE,
-          %SNMP::Info::Bridge::MUNGE,
+           %SNMP::Info::Layer2::MUNGE,
             );
 
 sub layers {
@@ -116,8 +113,10 @@ sub model {
 
 sub i_index {
     my $aruba = shift;
-    my $i_index   = $aruba->i_index2();
-    my $ap_index  = $aruba->aruba_ap_name();
+    my $partial = shift;
+
+    my $i_index   = $aruba->orig_i_index($partial) || {};
+    my $ap_index  = $aruba->aruba_ap_name($partial) || {};
     
     my %if_index;
     foreach my $iid (keys %$i_index){
@@ -139,8 +138,10 @@ sub i_index {
 
 sub interfaces {
     my $aruba  = shift;
-    my $i_index    = $aruba->i_index();
-    my $i_descr    = $aruba->i_description();
+    my $partial = shift;
+
+    my $i_index    = $aruba->i_index($partial) || {};
+    my $i_descr    = $aruba->i_description($partial) || {};
 
     my %if;
     foreach my $iid (keys %$i_index){
@@ -167,9 +168,11 @@ sub interfaces {
 
 sub i_name {
     my $aruba  = shift;
-    my $i_index    = $aruba->i_index();
-    my $i_name2    = $aruba->i_name2();
-    my $ap_name    = $aruba->aruba_ap_name();
+    my $partial = shift;
+
+    my $i_index    = $aruba->i_index($partial) || {};
+    my $i_name2    = $aruba->orig_i_name($partial) || {};
+    my $ap_name    = $aruba->aruba_ap_name($partial) || {};
     
     my %i_name;
     foreach my $iid (keys %$i_index){
@@ -193,12 +196,88 @@ sub i_name {
     }
   return \%i_name;
 }
-  
+
+sub i_ssidlist {
+    my $aruba  = shift;
+    my $partial = shift;
+
+    my $i_index    = $aruba->i_index($partial) || {};
+    my $ap_ssid    = $aruba->aruba_ap_essid($partial) || {};
+    
+    my %i_ssid;
+    foreach my $iid (keys %$i_index){
+        my $index = $i_index->{$iid};
+        next unless defined $index;
+
+        if ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
+          my $ssid = $ap_ssid->{$iid};
+          next unless defined $ssid;
+          $i_ssid{$index} = $ssid;
+        }           
+        else {
+            next;
+        }
+    }
+  return \%i_ssid;
+}
+
+sub i_80211channel {
+    my $aruba  = shift;
+    my $partial = shift;
+
+    my $i_index  = $aruba->i_index($partial) || {};
+    my $ap_ch    = $aruba->aruba_ap_channel($partial) || {};
+    
+    my %i_ch;
+    foreach my $iid (keys %$i_index){
+        my $index = $i_index->{$iid};
+        next unless defined $index;
+
+        if ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
+          my $ch = $ap_ch->{$iid};
+          next unless defined $ch;
+          $i_ch{$index} = $ch;
+        }           
+        else {
+            next;
+        }
+    }
+  return \%i_ch;
+}
+
+sub i_ssidbcast {
+    my $aruba  = shift;
+    my $partial = shift;
+
+    my $i_index  = $aruba->i_index($partial) || {};
+    my $ap_bc    = $aruba->aruba_ap_ssidbcast($partial) || {};
+    
+    my %i_bc;
+    foreach my $iid (keys %$i_index){
+        my $index = $i_index->{$iid};
+        next unless defined $index;
+
+        if ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
+          my $bc = $ap_bc->{$iid};
+          next unless defined $bc;
+          $bc = ($bc ? 0 : 1);
+          $i_bc{$index} = $bc;
+        }           
+        else {
+            next;
+        }
+    }
+  return \%i_bc;
+}
+
+
 # Wireless switches do not support the standard Bridge MIB
 sub bp_index {
     my $aruba = shift;
-    my $i_index   = $aruba->i_index2();
-    my $ap_index  = $aruba->aruba_ap_name();
+    my $partial = shift;
+
+    my $i_index   = $aruba->orig_i_index($partial) || {};
+    my $ap_index  = $aruba->aruba_ap_name($partial) || {};
     
     my %bp_index;
     foreach my $iid (keys %$i_index){
@@ -220,7 +299,9 @@ sub bp_index {
 
 sub fw_port {
     my $aruba = shift;
-    my $fw_idx = $aruba->fw_user();
+    my $partial = shift;
+
+    my $fw_idx = $aruba->fw_user($partial) || {};
 
     my %fw_port;
     foreach my $iid (keys %$fw_idx){
@@ -237,7 +318,9 @@ sub fw_port {
 
 sub fw_mac {
     my $aruba = shift;
-    my $fw_idx = $aruba->fw_user();
+    my $partial = shift;
+
+    my $fw_idx = $aruba->fw_user($partial) || {};
 
     my %fw_mac;
     foreach my $iid (keys %$fw_idx){
@@ -299,9 +382,7 @@ determining a more specific class using the method above.
 
 =over
 
-=item SNMP::Info
-
-=item SNMP::Info::Bridge
+=item SNMP::Info::Layer2
 
 =back
 
@@ -311,13 +392,13 @@ determining a more specific class using the method above.
 
 =item WLSX-SWITCH-MIB
 
-=item Inherited Classes' MIBs
-
-See SNMP::Info for its own MIB requirements.
-
-See SNMP::Info::Bridge for its own MIB requirements.
+=item WLSR-AP-MIB
 
 =back
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -354,6 +435,10 @@ Returns 00000011.  Class emulates Layer 2 functionality for Thin APs through
 proprietary MIBs.
 
 =back
+
+=head2 Globals imported from SNMP::Info::Layer2
+
+See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -393,6 +478,25 @@ both the keys and values.
 
 (B<staPhyAddress>) as extracted from the IID.
 
+=item $aruba->i_ssidlist()
+
+Returns reference to hash.  SSID's recognized by the radio interface.
+
+(B<apESSID>)
+
+=item $aruba->i_ssidbcast()
+
+Returns reference to hash.  Indicates whether the SSID is broadcast, true or false.
+
+(B<wlsrHideSSID>)
+
+=item $aruba->i_80211channel()
+
+Returns reference to hash.  Current operating frequency channel of the radio
+interface.
+
+(B<apCurrentChannel>)
+
 =back
 
 =head2 Aruba Switch AP Table  (B<wlsxSwitchAccessPointTable>)
@@ -407,6 +511,14 @@ both the keys and values.
 
 (B<apIpAddress>)
 
+=item $aruba->aruba_ap_essid()
+
+(B<apESSID>)
+
+=item $aruba->aruba_ap_ssidbcast()
+
+(B<wlsrHideSSID>)
+
 =back
 
 =head2 Aruba Switch Station Management Table (B<wlsxSwitchStationMgmtTable>)
@@ -416,5 +528,21 @@ both the keys and values.
 =item $aruba->fw_user()
 
 (B<staUserName>)
+
+=back
+
+=head2 Aruba Wireless AP Configuration Table (B<wlsrConfigTable>)
+
+=over
+
+=item $aruba->aruba_ap_channel()
+
+(B<apCurrentChannel>)
+
+=back
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
 =cut
