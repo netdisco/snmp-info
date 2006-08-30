@@ -397,6 +397,10 @@ Subclass for Nortel 2270 wireless switches.
 
 Subclass for Nortel 222x series wireless access points.
 
+=item SNMP::Info::Layer3::Netscreen
+
+Subclass for Juniper NetScreen.
+
 =item SNMP::Info::Layer2::Orinoco
 
 Subclass for Orinoco/Proxim wireless access points.
@@ -846,6 +850,7 @@ Algorithm for Subclass Detection:
         Else                               -> SNMP::Info
             ZyXEL_DSLAM                    -> SNMP::Info::Layer2::ZyXEL_DSLAM
             Aruba wireless                 -> SNMP::Info::Layer2::Aruba
+            Juniper NetScreen              -> SNMP::Info::Layer3::Netscreen
 
 =cut
 
@@ -1003,6 +1008,8 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::ZyXEL_DSLAM' if ($desc =~ /8-port .DSL Module\(Annex .\)/i);
         # Aruba wireless switches
         $objtype = 'SNMP::Info::Layer2::Aruba' if ($desc =~ /(ArubaOS|AirOS)/);
+        #Juniper NetScreen
+        $objtype = 'SNMP::Info::Layer3::Netscreen' if ($desc =~ /NetScreen/i);
     }   
 
     return $objtype; 
