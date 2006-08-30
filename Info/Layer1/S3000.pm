@@ -393,11 +393,11 @@ my $s3000 = new SNMP::Info::Layer1::S3000(...);
 
 =item SYNOPTICS-ETHERNET-MIB
 
-=item Inherited Classes' MIBs
-
-See L<SNMP::Info::Layer2/"Required MIBs"> and its inherited classes.
-
 =back
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 

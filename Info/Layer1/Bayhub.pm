@@ -419,15 +419,15 @@ my $bayhub = new SNMP::Info::Layer1::Bayhub(...);
 
 =item S5-COMMON-STATS-MIB
 
-=item Inherited Classes
+=back
 
-See L<SNMP::Info::Layer2/"Required MIBs"> and its inherited classes.
+=head2 Inherited MIBs
+
+See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::NortelStack/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::SONMP/"Required MIBs"> for its MIB requirements.
-
-=back
 
 =head1 GLOBALS
 

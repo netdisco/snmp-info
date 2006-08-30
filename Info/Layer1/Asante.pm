@@ -210,11 +210,11 @@ Asante device through SNMP.
 
 Download from http://www.mibdepot.com
 
-=item Inherited Classes
-
-See L<SNMP::Info::Layer1/"Required MIBs"> and its inherited classes.
-
 =back
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info::Layer1/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
