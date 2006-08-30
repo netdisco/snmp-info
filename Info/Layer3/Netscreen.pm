@@ -137,7 +137,7 @@ my $netscreen = new SNMP::Info::Layer3::Netscreen(...);
 
 =over
 
-=item SNMP::Info::Layer2
+=item SNMP::Info::Layer3
 
 =back
 
@@ -189,11 +189,12 @@ Returns serial number..
 
 =item $netscreen->layers()
 
-Returns 00000011.  Class emulates Layer 2 functionality through proprietary MIBs.
+Returns 01001100.  Device doesn't report layers properly, modified to reflect 
+Layer3 functionality.
 
 =back
 
-=head2 Globals imported from SNMP::Info::Layer2
+=head2 Globals imported from SNMP::Info::Layer3
 
 See L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
@@ -202,7 +203,7 @@ See L<SNMP::Info::Layer3/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2 Table Methods imported from SNMP::Info::Layer2
+=head2 Table Methods imported from SNMP::Info::Layer3
 
 See L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
 
