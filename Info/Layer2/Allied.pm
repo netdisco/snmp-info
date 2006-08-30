@@ -28,13 +28,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Allied;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 use strict;
 
 use Exporter;
 use SNMP::Info::Layer2;
-use SNMP::Info::Layer1;
 
 @SNMP::Info::Layer2::Allied::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Allied::EXPORT_OK = qw//;
@@ -45,11 +44,10 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             %SNMP::Info::Layer2::GLOBALS
            );
 
-%FUNCS   = (%SNMP::Info::Layer2::FUNCS,
+%FUNCS   = (
+            %SNMP::Info::Layer2::FUNCS,
             'ip_adresses'=> 'atNetAddress',
             'ip_mac'     => 'atPhysAddress',
-            'i_name'     => 'ifName',
-            'i_up2'	     => 'ifOperStatus',
            );
 
 %MIBS    = (
@@ -58,7 +56,8 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             'AtiStackInfo-MIB' => 'atiswitchEnhancedStacking',
            );
 
-%MUNGE   = (%SNMP::Info::Layer2::MUNGE,
+%MUNGE   = (
+            %SNMP::Info::Layer2::MUNGE,
            );
 
 sub vendor {
@@ -89,7 +88,7 @@ sub model {
     return undef;
 }
 
-sub ip {
+sub root_ip {
     my $allied = shift;
     my $ip_hash = $allied->ip_addresses();
     my $ip;
@@ -117,9 +116,9 @@ sub mac{
 
 sub i_up {
     my $allied = shift;
+    my $partial = shift;
 
-    my $i_up  = SNMP::Info::Layer1::i_up($allied);
-    #my $i_up2 = $allied->i_up2() || {};
+    my $i_up  = SNMP::Info::Layer1::i_up($allied, $partial);
 
     foreach my $port (keys %$i_up){
         my $up = $i_up->{$port};
@@ -153,7 +152,7 @@ Max Baker, Dmitry Sergienko <dmitry@trifle.net>
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $l1->class();
+ my $class = $allied->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
@@ -166,7 +165,7 @@ inherited methods.
 
 =over
 
-=item SNMP::Info::Layer1
+=item SNMP::Info::Layer2
 
 =back
 
@@ -178,11 +177,11 @@ inherited methods.
 
 Download for your device from http://www.allied-telesyn.com/allied/support/
 
-=item Inherited Classes
-
-MIBs listed in SNMP::Info::Layer1 and its inherited classes.
-
 =back
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -206,7 +205,7 @@ Culls Version from description()
 
 =item $allied->root_ip()
 
-Returns IP Address of Managed Hub.
+Returns IP Address of Managed Device.
 
 (B<actualIpAddr>)
 
@@ -216,19 +215,15 @@ Trys to cull out AT-nnnnX out of the description field.
 
 =back
 
-=head2 Global Methods imported from SNMP::Info::Layer1
+=head2 Globals imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer1 for details.
+See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
 =head2 Overrides
 
 =over
-
-=item $allied->i_name()
-
-Returns reference to map of IIDs to human-set port name.
 
 =item $allied->i_up()
 
@@ -237,10 +232,8 @@ the values of ati_up() to 'up' and 'down'.
 
 =back
 
-=head2 Allied MIB
+=head2 Table Methods imported from SNMP::Info::Layer2
 
-=over
-
-=back
+See L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
 =cut
