@@ -29,49 +29,39 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Baystack;
-$VERSION = '1.04';
+$VERSION = '1.05';
 use strict;
 
 use Exporter;
-use SNMP::Info;
-use SNMP::Info::Bridge;
 use SNMP::Info::SONMP;
-use SNMP::Info::RapidCity;
 use SNMP::Info::NortelStack;
+use SNMP::Info::RapidCity;
+use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer2::Baystack::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::SONMP SNMP::Info::RapidCity SNMP::Info::NortelStack Exporter/;
+@SNMP::Info::Layer2::Baystack::ISA = qw/SNMP::Info::SONMP SNMP::Info::NortelStack SNMP::Info::RapidCity SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer2::Baystack::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 %MIBS    = (
-            %SNMP::Info::MIBS,
-            %SNMP::Info::Bridge::MIBS,
-            %SNMP::Info::SONMP::MIBS,
+            %SNMP::Info::Layer3::MIBS,
             %SNMP::Info::RapidCity::MIBS,
             %SNMP::Info::NortelStack::MIBS,
+            %SNMP::Info::SONMP::MIBS,
            );
 
 %GLOBALS = ( 
-            %SNMP::Info::GLOBALS,
-            %SNMP::Info::Bridge::GLOBALS,
-            %SNMP::Info::SONMP::GLOBALS,
+            %SNMP::Info::Layer3::GLOBALS,
             %SNMP::Info::RapidCity::GLOBALS,
             %SNMP::Info::NortelStack::GLOBALS,
+            %SNMP::Info::SONMP::GLOBALS,
            );
 
 %FUNCS   = (
-            %SNMP::Info::FUNCS,
-            %SNMP::Info::Bridge::FUNCS,
-            %SNMP::Info::SONMP::FUNCS,
+            %SNMP::Info::Layer3::FUNCS,
             %SNMP::Info::RapidCity::FUNCS,
             %SNMP::Info::NortelStack::FUNCS,
-            'i_name2'    => 'ifName',
-            'i_mac2'      => 'ifPhysAddress',
-            # From RFC1213-MIB
-            'at_index'    => 'ipNetToMediaIfIndex',
-            'at_paddr'    => 'ipNetToMediaPhysAddress',
-            'at_netaddr'  => 'ipNetToMediaNetAddress',
+            %SNMP::Info::SONMP::FUNCS,
             );
 
 # 450's report full duplex as speed = 20mbps?!
@@ -80,13 +70,10 @@ $SNMP::Info::SPEED_MAP{200_000_000} = '100 Mbps';
 $SNMP::Info::SPEED_MAP{2_000_000_000} = '1.0 Gbps';
 
 %MUNGE   = (
-            %SNMP::Info::MUNGE,
-            %SNMP::Info::Bridge::MUNGE,
-            %SNMP::Info::SONMP::MUNGE,
+            %SNMP::Info::Layer3::MUNGE,
             %SNMP::Info::RapidCity::MUNGE,
             %SNMP::Info::NortelStack::MUNGE,
-            'i_mac2' => \&SNMP::Info::munge_mac,
-            'at_paddr' => \&SNMP::Info::munge_mac,
+            %SNMP::Info::SONMP::MUNGE,
             );
 
 sub os {
@@ -157,7 +144,9 @@ sub i_ignore {
 
 sub interfaces {
     my $baystack = shift;
-    my $i_index = $baystack->i_index();
+    my $partial = shift;
+
+    my $i_index = $baystack->i_index($partial) || {};
     my $index_factor = $baystack->index_factor();
     my $slot_offset = $baystack->slot_offset();
     
@@ -179,7 +168,9 @@ sub interfaces {
 
 sub i_mac { 
     my $baystack = shift;
-    my $i_mac = $baystack->i_mac2();
+    my $partial = shift;
+
+    my $i_mac = $baystack->orig_i_mac($partial) || {};
 
     my %i_mac;
     # Baystack 303's with a hw rev < 2.11.4.5 report the mac as all zeros
@@ -194,9 +185,11 @@ sub i_mac {
 
 sub i_name {
     my $baystack = shift;
-    my $i_index = $baystack->i_index();
-    my $i_alias = $baystack->i_alias();
-    my $i_name2  = $baystack->i_name2();
+    my $partial = shift;
+
+    my $i_index = $baystack->i_index($partial) || {};
+    my $i_alias = $baystack->i_alias($partial) || {};
+    my $i_name2  = $baystack->orig_i_name($partial) || {};
 
     my %i_name;
     foreach my $iid (keys %$i_name2){
@@ -225,6 +218,7 @@ sub index_factor {
 }
 
 1;
+
 __END__
 
 =head1 NAME
@@ -265,15 +259,13 @@ my $baystack = new SNMP::Info::Layer2::Baystack(...);
 
 =over
 
-=item SNMP::Info
-
-=item SNMP::Info::Bridge
+=item SNMP::Info::SONMP
 
 =item SNMP::Info::NortelStack
 
-=item SNMP::Info::SONMP
-
 =item SNMP::Info::RapidCity
+
+=item SNMP::Info::Layer3
 
 =back
 
@@ -281,19 +273,17 @@ my $baystack = new SNMP::Info::Layer2::Baystack(...);
 
 =over
 
-=item Inherited Classes' MIBs
-
-See SNMP::Info for its own MIB requirements.
-
-See SNMP::Info::Bridge for its own MIB requirements.
-
-See SNMP::Info::NortelStack for its own MIB requirements.
-
-See SNMP::Info::SONMP for its own MIB requirements.
-
-See SNMP::Info::RapidCity for its own MIB requirements.
-
 =back
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info::SONMP/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::NortelStack/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::RapidCity/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::Layer3/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -343,25 +333,21 @@ Returns either 32 or 64 based upon the formula.
 
 =back
 
-=head2 Globals imported from SNMP::Info
+=head2 Global Methods imported from SNMP::Info::SONMP
 
-See documentation in SNMP::Info for details.
-
-=head2 Globals imported from SNMP::Info::Bridge
-
-See documentation in SNMP::Info::Bridge for details.
+See L<SNMP::Info::SONMP/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::NortelStack
 
-See documentation in SNMP::Info::NortelStack for details.
-
-=head2 Global Methods imported from SNMP::Info::SONMP
-
-See documentation in SNMP::Info::SONMP for details.
+See L<SNMP::Info::NortelStack/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::RapidCity
 
-See documentation in SNMP::Info::RapidCity for details.
+See L<SNMP::Info::RapidCity/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::Layer3
+
+See L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -400,48 +386,20 @@ Crosses ifName with ifAlias and returns the human set port name if exists.
 
 =back
 
-=head2 RFC1213 Arp Cache Table (B<ipNetToMediaTable>)
+=head2 Table Methods imported from SNMP::Info::SONMP
 
-=over
-
-=item $baystack->at_index()
-
-Returns reference to hash.  Maps ARP table entries to Interface IIDs 
-
-(B<ipNetToMediaIfIndex>)
-
-=item $baystack->at_paddr()
-
-Returns reference to hash.  Maps ARP table entries to MAC addresses. 
-
-(B<ipNetToMediaPhysAddress>)
-
-=item $baystack->at_netaddr()
-
-Returns reference to hash.  Maps ARP table entries to IPs 
-
-(B<ipNetToMediaNetAddress>)
-
-=back
-
-=head2 Table Methods imported from SNMP::Info
-
-See documentation in SNMP::Info for details.
-
-=head2 Table Methods imported from SNMP::Info::Bridge
-
-See documentation in SNMP::Info::Bridge for details.
+See L<SNMP::Info::SONMP/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::NortelStack
 
-See documentation in SNMP::Info::NortelStack for details.
-
-=head2 Table Methods imported from SNMP::Info::SONMP
-
-See documentation in SNMP::Info::SONMP for details.
+See L<SNMP::Info::NortelStack/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::RapidCity
 
-See documentation in SNMP::Info::RapidCity for details.
+See L<SNMP::Info::RapidCity/"TABLE ENTRIES"> for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
 
 =cut
