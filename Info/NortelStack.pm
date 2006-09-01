@@ -2,7 +2,7 @@
 # Eric Miller
 # $Id$
 #
-# Copyright (c) 2004-6 Eric Miller, Max Baker
+# Copyright (c) 2004 Eric Miller, Max Baker
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::NortelStack;
-$VERSION = '1.04'; 
+$VERSION = '1.05'; 
 
 use strict;
 
@@ -57,7 +57,7 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             'tftp_result'  => 's5AgInfoFileStatus',
             'vlan'         => 's5AgSysManagementVlanId',
             # From S5-CHASSIS-MIB
-            'serial'       => 's5ChasSerNum',
+            'ns_serial'    => 's5ChasSerNum',
             'ns_cfg_chg'   => 's5ChasGblConfChngs',
             'ns_cfg_time'  => 's5ChasGblConfLstChng',
             );
@@ -89,8 +89,9 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
          );
 
 sub os_ver {
-    my $bayhub = shift;
-    my $ver = $bayhub->ns_ag_ver();
+    my $stack = shift;
+
+    my $ver = $stack->ns_ag_ver();
     return undef unless defined $ver;
 
     if ($ver =~ m/(\d+\.\d+\.\d+\.\d+)/){
@@ -103,8 +104,9 @@ sub os_ver {
 }
 
 sub os_bin {
-    my $bayhub = shift;
-    my $ver = $bayhub->ns_ag_ver();
+    my $stack = shift;
+
+    my $ver = $stack->ns_ag_ver();
     return undef unless defined $ver;
 
     if ($ver =~ m/(\d+\.\d+\.\d+\.\d+)/i){
@@ -116,12 +118,23 @@ sub os_bin {
    return undef;
 }
 
+# Need to override here since overridden in Layer2 and Layer3 classes
+sub serial {
+    my $stack = shift;
+
+    my $ver = $stack->ns_serial();
+    return $ver unless !defined $ver;
+    
+    return undef;
+}
+
 1;
+
 __END__
 
 =head1 NAME
 
-SNMP::Info::NortelStack - Perl5 Interface to Nortel Stack information using SNMP
+SNMP::Info::NortelStack - SNMP Interface to the Nortel S5-AGENT-MIB and S5-CHASSIS-MIB
 
 =head1 AUTHOR
 
@@ -174,10 +187,6 @@ These are methods that return scalar values from SNMP
 
 =over
 
-=item $baystack->serial()
-
-Returns (B<s5ChasSerNum>)
-
 =item $stack->os_ver()
 
 Returns the software version extracted from (B<s5AgInfoVer>)
@@ -185,6 +194,12 @@ Returns the software version extracted from (B<s5AgInfoVer>)
 =item $stack->os_bin()
 
 Returns the firmware version extracted from (B<s5AgInfoVer>)
+
+=item  $stack->serial()
+
+Returns serial number of the chassis
+
+(B<s5ChasSerNum>)
 
 =item $stack->ns_ag_ver()
 
@@ -380,7 +395,5 @@ Returns reference to hash.  Key: Table entry, Value: Size
 Returns reference to hash.  Key: Table entry, Value: Version
 
 (B<s5ChasStoreCntntVer>)
-
-=back
 
 =cut
