@@ -44,7 +44,7 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             );
 
 %GLOBALS = (
-            'serial'       => 'rcChasSerialNumber',
+            'rc_serial'    => 'rcChasSerialNumber',
             'chassis'      => 'rcChasType',
             'slots'        => 'rcChasNumSlots',
             'tftp_host'    => 'rcTftpHost',
@@ -143,17 +143,25 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             'rc_cpu_mac' => \&SNMP::Info::munge_mac,         
          );
 
+# Need to override here since overridden in Layer2 and Layer3 classes
+sub serial {
+    my $rapidcity = shift;
+
+    my $ver = $rapidcity->rc_serial();
+    return $ver unless !defined $ver;
+    
+    return undef;
+}
 
 sub i_duplex {
     my $rapidcity = shift;
+    my $partial = shift;
     
-    my $interfaces   = $rapidcity->interfaces();
-    my $rc_index  = $rapidcity->rc_index();
-    my $rc_duplex = $rapidcity->rc_duplex();
-    my $rc_cpu_duplex = $rapidcity->rc_cpu_duplex();
+    my $rc_duplex = $rapidcity->rc_duplex($partial) || {};
+    my $rc_cpu_duplex = $rapidcity->rc_cpu_duplex($partial) || {};
 
     my %i_duplex;
-    foreach my $if (keys %$interfaces){
+    foreach my $if (keys %$rc_duplex){
         my $duplex = $rc_duplex->{$if};
         next unless defined $duplex; 
     
@@ -175,16 +183,15 @@ sub i_duplex {
 
 sub i_duplex_admin {
     my $rapidcity = shift;
+    my $partial = shift;
 
-    my $interfaces  = $rapidcity->interfaces();
-    my $rc_index = $rapidcity->rc_index();
-    my $rc_duplex_admin = $rapidcity->rc_duplex_admin();
-    my $rc_auto = $rapidcity->rc_auto();
-    my $rc_cpu_auto = $rapidcity->rc_cpu_auto();
-    my $rc_cpu_duplex_admin = $rapidcity->rc_cpu_duplex_admin();
+    my $rc_duplex_admin = $rapidcity->rc_duplex_admin() || {};
+    my $rc_auto = $rapidcity->rc_auto($partial) || {};
+    my $rc_cpu_auto = $rapidcity->rc_cpu_auto($partial) || {};
+    my $rc_cpu_duplex_admin = $rapidcity->rc_cpu_duplex_admin($partial) || {};
  
     my %i_duplex_admin;
-    foreach my $if (keys %$interfaces){
+    foreach my $if (keys %$rc_duplex_admin){
         my $duplex = $rc_duplex_admin->{$if};
         next unless defined $duplex;
         my $auto = $rc_auto->{$if}||'false';
@@ -263,8 +270,9 @@ sub set_i_speed_admin {
 
 sub i_vlan {
     my $rapidcity = shift;
+    my $partial = shift;
 
-    my $i_pvid = $rapidcity->rc_i_vlan_pvid() || {};
+    my $i_pvid = $rapidcity->rc_i_vlan_pvid($partial) || {};
     
     return $i_pvid;
 }
@@ -404,6 +412,9 @@ sub set_delete_vlan {
     return 1;
 }
 
+#
+# These are internal methods and are not documented.  Do not use directly. 
+#
 sub check_forbidden_ports {
     my $rapidcity = shift;
     my ($vlan_id, $ifindex) = @_;
@@ -495,7 +506,7 @@ Eric Miller
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $rapidcity->class();
+ my $class = $rapidcity->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
@@ -525,11 +536,11 @@ These are methods that return scalar values from SNMP
 
 =over
 
-=item  $rapidcity->chassis_base_mac()
+=item  $rapidcity->rc_base_mac()
 
 (B<rc2kChassisBaseMacAddr>)
 
-=item  $rapidcity->ch_serial()
+=item  $rapidcity->rc_serial()
 
 (B<rcChasSerialNumber>)
 
@@ -567,6 +578,16 @@ These are methods that return scalar values from SNMP
 
 =back
 
+=head2 Overrides
+
+=over
+
+=item  $rapidcity->serial()
+
+Returns serial number of the chassis
+
+=back
+
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
@@ -584,7 +605,22 @@ Returns reference to hash of IIDs to admin duplex setting.
 
 =item $rapidcity->i_vlan()
 
-Returns a mapping between ifIndex and the VLAN.
+Returns a mapping between ifIndex and the PVID or default VLAN.
+
+=item $rapidcity->i_vlan_membership()
+
+Returns reference to hash of arrays: key = ifIndex, value = array of VLAN IDs.
+These are the VLANs which are members of the egress list for the port.
+
+  Example:
+  my $interfaces = $rapidcity->interfaces();
+  my $vlans      = $rapidcity->i_vlan_membership();
+  
+  foreach my $iid (sort keys %$interfaces) {
+    my $port = $interfaces->{$iid};
+    my $vlan = join(',', sort(@{$vlans->{$iid}}));
+    print "Port: $port VLAN: $vlan\n";
+  }
 
 =back
 
@@ -911,5 +947,81 @@ Returns a mapping between ifIndex and the VLAN.
 =item $rapidcity->rc2k_mda_dev()
 
 (B<rc2kMdaCardDeviations>)
+
+=back
+
+=head1 SET METHODS
+
+These are methods that provide SNMP set functionality for overridden methods or
+provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set operations. 
+
+=over
+
+=item $rapidcity->set_i_speed_admin(speed, ifIndex)
+
+Sets port speed, must be supplied with speed and port ifIndex.  Speed choices
+are 'auto', '10', '100', '1000'.
+
+ Example:
+ my %if_map = reverse %{$rapidcity->interfaces()};
+ $rapidcity->set_i_speed_admin('auto', $if_map{'1.1'}) 
+    or die "Couldn't change port speed. ",$rapidcity->error(1);
+
+=item $rapidcity->set_i_duplex_admin(duplex, ifIndex)
+
+Sets port duplex, must be supplied with duplex and port ifIndex.  Speed choices
+are 'auto', 'half', 'full'.
+
+  Example:
+  my %if_map = reverse %{$rapidcity->interfaces()};
+  $rapidcity->set_i_duplex_admin('auto', $if_map{'1.1'}) 
+    or die "Couldn't change port duplex. ",$rapidcity->error(1);
+
+=item $rapidcity->set_i_vlan(vlan, ifIndex)
+
+Changes an access (untagged) port VLAN, must be supplied with the numeric VLAN ID
+and port ifIndex.  This method will modify the port's VLAN membership and PVID
+(default VLAN).  This method should only be used on end station (non-trunk) ports.
+
+  Example:
+  my %if_map = reverse %{$rapidcity->interfaces()};
+  $rapidcity->set_i_vlan('2', $if_map{'1.1'}) 
+    or die "Couldn't change port VLAN. ",$rapidcity->error(1);
+
+=item $rapidcity->set_i_pvid(pvid, ifIndex)
+
+Sets port PVID or default VLAN, must be supplied with the numeric VLAN ID and
+port ifIndex.  This method only changes the PVID, to modify an access (untagged)
+port use set_i_vlan() instead.
+
+  Example:
+  my %if_map = reverse %{$rapidcity->interfaces()};
+  $rapidcity->set_i_pvid('2', $if_map{'1.1'}) 
+    or die "Couldn't change port PVID. ",$rapidcity->error(1);
+
+=item $rapidcity->set_add_i_vlan_tagged(vlan, ifIndex)
+
+Adds the port to the egress list of the VLAN, must be supplied with the numeric
+VLAN ID and port ifIndex.
+
+  Example:
+  my %if_map = reverse %{$rapidcity->interfaces()};
+  $rapidcity->set_add_i_vlan_tagged('2', $if_map{'1.1'}) 
+    or die "Couldn't add port to egress list. ",$rapidcity->error(1);
+
+=item $rapidcity->set_remove_i_vlan_tagged(vlan, ifIndex)
+
+Removes the port from the egress list of the VLAN, must be supplied with the
+numeric VLAN ID and port ifIndex.
+
+  Example:
+  my %if_map = reverse %{$rapidcity->interfaces()};
+  $rapidcity->set_remove_i_vlan_tagged('2', $if_map{'1.1'}) 
+    or die "Couldn't add port to egress list. ",$rapidcity->error(1);
+
+=item $rapidcity->set_delete_vlan(vlan)
+
+Deletes the specified VLAN from the device.
 
 =cut
