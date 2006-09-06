@@ -326,7 +326,11 @@ sub i_vlan {
         $vlan = 'Auto'  if $tag eq 'auto';
         undef $vlan if $tag eq 'no';
 
-        
+        # HP4000 issue reported by Michael Robbert 5/25/06:
+        # if we're already listed as a trunk port, don't 
+        #   overwrite this with the untagged vlan number
+        next if defined $i_vlan->{$if} and $i_vlan->{$if} !~ /trunk/i;
+
         $i_vlan->{$if} = $vlan if defined $vlan;
     }
 
