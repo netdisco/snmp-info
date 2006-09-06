@@ -5,6 +5,8 @@ version 1.05
     + Added support for Dell PowerConnect switches as new class L3::Dell
     + Added generic device type detection using IANA assigned enterpise
       number extracted from sysObjectID
+    + Added ifDiscards and other missing entries from IF-MIB::ifEntry (Greg King)
+    * Fixed vlan trunk port handling bug in L2:HP (Michael Robbert)
 
 version 1.04 (07/08/06)
     +  Added C1130 and C1240 to L2::Aironet (Ralf Gross)
