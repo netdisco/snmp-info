@@ -6,6 +6,7 @@ version 1.05
     + Added generic device type detection using IANA assigned enterpise
       number extracted from sysObjectID
     + Added ifDiscards and other missing entries from IF-MIB::ifEntry (Greg King)
+    + Added CGESM devices to L2::C2900 class (Alexander Hartmaier)
     * Fixed vlan trunk port handling bug in L2:HP (Michael Robbert)
 
 version 1.04 (07/08/06)
