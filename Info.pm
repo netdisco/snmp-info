@@ -1404,6 +1404,39 @@ Number of packets sent to a broadcast address on an interface.
 (B<ifInBroadcastPkts>) (B<ifOutBroadcastPkts>)
 (B<ifHCInBroadcastPkts>) (B<ifHCOutBroadcastPkts>)
 
+=item $info->i_discards_in() $info->i_discards_out()
+
+"The number of inbound packets which were chosen to be discarded even though
+no errors had been detected to prevent their being deliverable to a
+higher-layer protocol.  One possible reason for discarding such a packet could
+be to free up buffer space."  (IF-MIB)
+
+(B<ifInDiscards>) (B<ifOutDiscards>)
+
+=item $info->i_bad_proto_in()
+
+"For packet-oriented interfaces, the number of packets received via the
+interface which were discarded because of an unknown or unsupported protocol.
+For character-oriented or fixed-length interfaces that support protocol
+multiplexing the number of transmission units received via the interface which
+were discarded because of an unknown or unsupported protocol.  For any
+interface that does not support protocol multiplexing, this counter will always
+be 0."
+
+(B<ifInUnknownProtos>)
+
+=item $info->i_qlen_out()
+
+"The length of the output packet queue (in packets)."
+
+(B<ifOutQLen>)
+
+=item $info->i_specific()
+
+See IF-MIB for full description
+
+(B<ifSpecific>)
+
 =back
 
 =head2 IP Address Table
@@ -1670,25 +1703,30 @@ These are table entries, such as the IfIndex
 
 %FUNCS   = (
             'interfaces'         => 'ifIndex',
-            # from SNMPv2-MIB
+            'i_name'             => 'ifName',
+            # IF-MIB::IfEntry
             'i_index'            => 'ifIndex',
             'i_description'      => 'ifDescr',
             'i_type'             => 'ifType',
             'i_mtu'              => 'ifMtu',
             'i_speed'            => 'ifSpeed',
             'i_mac'              => 'ifPhysAddress',
-            'i_up'               => 'ifOperStatus',
             'i_up_admin'         => 'ifAdminStatus',
+            'i_up'               => 'ifOperStatus',
             'i_lastchange'       => 'ifLastChange',
-            'i_name'             => 'ifName',
             'i_octet_in'         => 'ifInOctets',
-            'i_octet_out'        => 'ifOutOctets',
-            'i_errors_in'        => 'ifInErrors',
-            'i_errors_out'       => 'ifOutErrors',
             'i_pkts_ucast_in'    => 'ifInUcastPkts',
-            'i_pkts_ucast_out'   => 'ifOutUcastPkts',
             'i_pkts_nucast_in'   => 'ifInNUcastPkts',
+            'i_discards_in'      => 'ifInDiscards',
+            'i_errors_in'        => 'ifInErrors',
+            'i_bad_proto_in'     => 'ifInUnknownProtos',
+            'i_octet_out'        => 'ifOutOctets',
+            'i_pkts_ucast_out'   => 'ifOutUcastPkts',
             'i_pkts_nucast_out'  => 'ifOutNUcastPkts',
+            'i_discards_out'     => 'ifOutDiscards',
+            'i_errors_out'       => 'ifOutErrors',
+            'i_qlen_out'         => 'ifOutQLen',
+            'i_specific'         => 'ifSpecific',
             # IP Address Table
             'ip_index'           => 'ipAdEntIfIndex',
             'ip_table'           => 'ipAdEntAddr',
