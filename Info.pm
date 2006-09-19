@@ -879,6 +879,7 @@ sub device_type {
                       674   => 'SNMP::Info::Layer3::Dell',
                       1916  => 'SNMP::Info::Layer3::Extreme',
                       1991  => 'SNMP::Info::Layer3::Foundry',
+                      2272  => 'SNMP::Info::Layer3::Passport', 
                       2636  => 'SNMP::Info::Layer3::Juniper',
                     );
 
@@ -888,6 +889,7 @@ sub device_type {
                       674   => 'SNMP::Info::Layer3::Dell',
                       1916  => 'SNMP::Info::Layer3::Extreme',
                       1991  => 'SNMP::Info::Layer2::Foundry',
+                      2272  => 'SNMP::Info::Layer3::Passport',
                       14823 => 'SNMP::Info::Layer2::Aruba',
                     );
 
@@ -913,11 +915,8 @@ sub device_type {
         # Next one untested. Reported working by DA
         $objtype = 'SNMP::Info::Layer3::C6500'   if ($desc =~ /cisco/i and $desc =~ /3750/);
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /(s72033_rp|s3223_rp|s222_rp)/;
-        # Nortel Passport 8600, 1600, 1100, 1200 Series
-        $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /(Passport|Ethernet\s+Routing\s+Switch)-86/i;
-        $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-[1][012]/;
-        $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Accelar-1/;
-        $objtype = 'SNMP::Info::Layer3::N1600'  if $desc =~ /(Passport|Ethernet\s+Routing\s+Switch)-16/i;
+        # Nortel ERS (Passport) 1600 Series
+        $objtype = 'SNMP::Info::Layer3::N1600'  if $desc =~ /(Passport|Ethernet\s+Routing\s+Switch|ERS)-16/i;
         #  ERS - BayStack Numbered 
         $objtype = 'SNMP::Info::Layer2::Baystack' if ($desc =~ /(BayStack|Ethernet\s+Routing\s+Switch)\s[345]\d/i);
         # Nortel Alteon AD Series
@@ -965,10 +964,6 @@ sub device_type {
 
         #  BayStack Numbered
         $objtype = 'SNMP::Info::Layer2::Baystack' if ($desc =~ /(BayStack|Ethernet\s+(Routing\s+)??Switch)\s[345]\d/i);
-
-        # Accelar/Passport 8100
-        $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Passport-81/;
-        $objtype = 'SNMP::Info::Layer3::Passport'  if $desc =~ /Accelar-81/;
 
         #  Nortel AP 222X
         $objtype = 'SNMP::Info::Layer2::NAP222x' if ($desc =~ /Access\s+Point\s+222/);
