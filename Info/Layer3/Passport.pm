@@ -97,7 +97,7 @@ sub os_ver {
     my $descr = $passport->description();
     return undef unless defined $descr;
 
-    #Passport
+    #ERS / Passport
     if ($descr =~ m/(\d+\.\d+\.\d+\.\d+)/){
         return $1;
     }
@@ -125,7 +125,7 @@ sub i_index {
 
     # Get VLAN Virtual Router Interfaces
     if (!defined $partial or (defined $model and
-        (($partial > 2000 and $model =~ /(86|83|81)/) or
+        (($partial > 2000 and $model =~ /(86|83|81|16)/) or
         ($partial > 256  and $model =~ /(105|11|12)/)))) {
         
         my $vlan_index = $passport->rc_vlan_if() || {};
@@ -176,7 +176,7 @@ sub interfaces {
     my $vlan_id = {};
     
     if (!defined $partial or (defined $model and
-        (($partial > 2000 and $model =~ /(86|83|81)/) or
+        (($partial > 2000 and $model =~ /(86|83|81|16)/) or
         ($partial > 256  and $model =~ /(105|11|12)/)))) {
             $vlan_index = $passport->rc_vlan_if(); 
             %reverse_vlan = reverse %$vlan_index;
@@ -204,7 +204,7 @@ sub interfaces {
             $if{$index} = 'Cpu.6';
         }
 
-        elsif (($index > 2000 and $model =~ /(86|81)/) or
+        elsif (($index > 2000 and $model =~ /(86|83|81|16)/) or
                ($index > 256  and $model =~ /(105|11|12)/)) {
 
                 my $v_index = $reverse_vlan{$iid};
@@ -244,7 +244,7 @@ sub i_mac {
 
     # Get VLAN Virtual Router Interfaces
     if (!defined $partial or (defined $model and
-        (($partial > 2000 and $model =~ /(86|83|81)/) or
+        (($partial > 2000 and $model =~ /(86|83|81|16)/) or
         ($partial > 256  and $model =~ /(105|11|12)/)))) {
 
         my $vlan_index = $passport->rc_vlan_if() || {};
@@ -310,7 +310,7 @@ sub i_description {
 
     # Get VLAN Virtual Router Interfaces
     if (!defined $partial or (defined $model and
-        (($partial > 2000 and $model =~ /(86|83|81)/) or
+        (($partial > 2000 and $model =~ /(86|83|81|16)/) or
         ($partial > 256  and $model =~ /(105|11|12)/)))) {
 
         my $v_descr = $passport->rc_vlan_name();
@@ -342,7 +342,7 @@ sub i_name {
     my %reverse_vlan;
 
     if (!defined $partial or (defined $model and
-        (($partial > 2000 and $model =~ /(86|83|81)/) or
+        (($partial > 2000 and $model =~ /(86|83|81|16)/) or
         ($partial > 256  and $model =~ /(105|11|12)/)))) {
             $v_name = $passport->rc_vlan_name() || {};
             $vlan_index = $passport->rc_vlan_if() || {};
@@ -368,7 +368,7 @@ sub i_name {
             $i_name{$iid} = 'CPU 6 Ethernet Port';
         }
 
-        elsif (($iid > 2000 and defined $model and $model =~ /(86|81)/) or
+        elsif (($iid > 2000 and defined $model and $model =~ /(86|83|81|16)/) or
                 ($iid > 256 and defined $model and $model =~ /(105|11|12)/)) {
             my $vlan_index = $reverse_vlan{$iid};
             my $vlan_name = $v_name->{$vlan_index};
@@ -435,8 +435,8 @@ sub root_ip {
     my $sonmp_topo_port = $passport->sonmp_topo_port();
     my $sonmp_topo_ip = $passport->sonmp_topo_ip();
 
-    # Only 8600 has CLIP or Management Virtual IP
-    if (defined $model and $model =~ /(86)/) {
+    # Only 8600 and 1600 have CLIP or Management Virtual IP
+    if (defined $model and $model =~ /(86|16)/) {
         # Return CLIP (CircuitLess IP)
         foreach my $iid (keys %$rc_ip_type){
             my $ip_type = $rc_ip_type->{$iid};
@@ -509,7 +509,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Passport - Perl5 Interface to modular Nortel Ethernet Routing
+SNMP::Info::Layer3::Passport - SNMP Interface to modular Nortel Ethernet Routing
 Switches (formerly Passport / Accelar)
 
 =head1 AUTHOR
@@ -564,11 +564,11 @@ determining a more specific class using the method above.
 
 =item Inherited Classes' MIBs
 
-See SNMP::Info::SONMP for its own MIB requirements.
+See L<SNMP::Info::SONMP> for its own MIB requirements.
 
-See SNMP::Info::RapidCity for its own MIB requirements.
+See L<SNMP::Info::RapidCity> for its own MIB requirements.
 
-See SNMP::Info::Layer3 for its own MIB requirements.
+See L<SNMP::Info::Layer3> for its own MIB requirements.
 
 =back
 
@@ -627,15 +627,15 @@ Required by SNMP::Info::SONMP.  Returns 0.
 
 =head2 Global Methods imported from SNMP::Info::SONMP
 
-See documentation in SNMP::Info::SONMP for details.
+See documentation in L<SNMP::Info::SONMP> for details.
 
 =head2 Global Methods imported from SNMP::Info::RapidCity
 
-See documentation in SNMP::Info::RapidCity for details.
+See documentation in L<SNMP::Info::RapidCity> for details.
 
 =head2 Globals imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3> for details.
 
 =head1 TABLE ENTRIES
 
@@ -693,14 +693,14 @@ problems with BRIDGE-MIB
 
 =head2 Table Methods imported from SNMP::Info::SONMP
 
-See documentation in SNMP::Info::SONMP for details.
+See documentation in L<SNMP::Info::SONMP> for details.
 
 =head2 Table Methods imported from SNMP::Info::RapidCity
 
-See documentation in SNMP::Info::RapidCity for details.
+See documentation in L<SNMP::Info::RapidCity> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3> for details.
 
 =cut
