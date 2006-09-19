@@ -915,8 +915,8 @@ sub device_type {
         # Next one untested. Reported working by DA
         $objtype = 'SNMP::Info::Layer3::C6500'   if ($desc =~ /cisco/i and $desc =~ /3750/);
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /(s72033_rp|s3223_rp|s222_rp)/;
-        # Nortel ERS (Passport) 1600 Series
-        $objtype = 'SNMP::Info::Layer3::N1600'  if $desc =~ /(Passport|Ethernet\s+Routing\s+Switch|ERS)-16/i;
+        # Nortel ERS (Passport) 1600 Series < version 2.1
+        $objtype = 'SNMP::Info::Layer3::N1600'  if $desc =~ /(Passport|Ethernet\s+Routing\s+Switch)-16/i;
         #  ERS - BayStack Numbered 
         $objtype = 'SNMP::Info::Layer2::Baystack' if ($desc =~ /(BayStack|Ethernet\s+Routing\s+Switch)\s[345]\d/i);
         # Nortel Alteon AD Series
