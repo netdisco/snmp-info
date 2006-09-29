@@ -993,6 +993,7 @@ sub device_type {
 
         #  Bay Hub
         $objtype = 'SNMP::Info::Layer1::Bayhub' if ($desc =~ /\bNMM.*Agent/);
+        $objtype = 'SNMP::Info::Layer1::Bayhub' if ($desc =~ /\bBay\s*Stack.*Hub/i);
 
         #  Synoptics Hub
         #  This will override Bay Hub only for specific devices supported by this class
@@ -2000,6 +2001,7 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '622000000'  => 'OC-12',
                 '622080000'  => 'OC-12',
                 '1000000000' => '1.0 Gbps',
+                '2488000000' => 'OC-48',
              )
 
 =cut
@@ -2039,6 +2041,7 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '622000000'  => 'OC-12',
                 '622080000'  => 'OC-12',
                 '1000000000' => '1.0 Gbps',
+                '2488000000' => 'OC-48',
              );
 
 sub munge_speed {
