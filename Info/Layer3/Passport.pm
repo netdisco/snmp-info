@@ -126,7 +126,7 @@ sub i_index {
     # Get VLAN Virtual Router Interfaces
     if (!defined $partial or (defined $model and
         (($partial > 2000 and $model =~ /(86|83|81|16)/) or
-        ($partial > 256  and $model =~ /(105|11|12)/)))) {
+        ($partial > 256  and $model =~ /(105|1100|12)/)))) {
         
         my $vlan_index = $passport->rc_vlan_if() || {};
         
@@ -177,7 +177,7 @@ sub interfaces {
     
     if (!defined $partial or (defined $model and
         (($partial > 2000 and $model =~ /(86|83|81|16)/) or
-        ($partial > 256  and $model =~ /(105|11|12)/)))) {
+        ($partial > 256  and $model =~ /(105|1100|12)/)))) {
             $vlan_index = $passport->rc_vlan_if(); 
             %reverse_vlan = reverse %$vlan_index;
             $vlan_id = $passport->rc_vlan_id();
@@ -205,7 +205,7 @@ sub interfaces {
         }
 
         elsif (($index > 2000 and $model =~ /(86|83|81|16)/) or
-               ($index > 256  and $model =~ /(105|11|12)/)) {
+               ($index > 256  and $model =~ /(105|1100|12)/)) {
 
                 my $v_index = $reverse_vlan{$iid};
                 my $v_id = $vlan_id->{$v_index};
@@ -245,7 +245,7 @@ sub i_mac {
     # Get VLAN Virtual Router Interfaces
     if (!defined $partial or (defined $model and
         (($partial > 2000 and $model =~ /(86|83|81|16)/) or
-        ($partial > 256  and $model =~ /(105|11|12)/)))) {
+        ($partial > 256  and $model =~ /(105|1100|12)/)))) {
 
         my $vlan_index = $passport->rc_vlan_if() || {};
         my $vlan_mac = $passport->rc_vlan_mac() || {};
@@ -311,7 +311,7 @@ sub i_description {
     # Get VLAN Virtual Router Interfaces
     if (!defined $partial or (defined $model and
         (($partial > 2000 and $model =~ /(86|83|81|16)/) or
-        ($partial > 256  and $model =~ /(105|11|12)/)))) {
+        ($partial > 256  and $model =~ /(105|1100|12)/)))) {
 
         my $v_descr = $passport->rc_vlan_name();
         my $vlan_index = $passport->rc_vlan_if();
@@ -343,7 +343,7 @@ sub i_name {
 
     if (!defined $partial or (defined $model and
         (($partial > 2000 and $model =~ /(86|83|81|16)/) or
-        ($partial > 256  and $model =~ /(105|11|12)/)))) {
+        ($partial > 256  and $model =~ /(105|1100|12)/)))) {
             $v_name = $passport->rc_vlan_name() || {};
             $vlan_index = $passport->rc_vlan_if() || {};
             %reverse_vlan = reverse %$vlan_index;
@@ -369,7 +369,7 @@ sub i_name {
         }
 
         elsif (($iid > 2000 and defined $model and $model =~ /(86|83|81|16)/) or
-                ($iid > 256 and defined $model and $model =~ /(105|11|12)/)) {
+                ($iid > 256 and defined $model and $model =~ /(105|1100|12)/)) {
             my $vlan_index = $reverse_vlan{$iid};
             my $vlan_name = $v_name->{$vlan_index};
             next unless defined $vlan_name;
@@ -478,7 +478,7 @@ sub index_factor {
     my $model   = $passport->model();
     my $index_factor = 64;
     # Older Accelar models use base 16 instead of 64
-    $index_factor = 16  if (defined $model and $model =~ /(105|11|12)/);
+    $index_factor = 16  if (defined $model and $model =~ /(105|1100|12)/);
     return $index_factor;
 }
 
