@@ -64,6 +64,10 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             'bayhub_pp_index'        => 's5EnPortIndx',
             'bayhub_up_admin'        => 's5EnPortPartStatus',
             'bayhub_up'              => 's5EnPortLinkStatus',
+            # S5-ETHERNET-COMMON-MIB::s5EnPortExtTable
+            'bayhub_p_speed'        => 's5EnPortExtActiveSpeed',
+            'bayhub_p_cap'          => 's5EnPortExtHwCapability',
+            'bayhub_p_adv'          => 's5EnPortExtAutoNegAdv',
             # S5-COMMON-STATS-MIB::s5CmSNodeTable
             'bayhub_nb_index'        => 's5CmSNodeBrdIndx',
             'bayhub_np_index'        => 's5CmSNodePortIndx',
@@ -96,7 +100,7 @@ sub model {
     return $id unless defined $model;
     $model =~ s/^sreg-//i;
 
-    return 'Baystack Hub' if ($model =~ /BayStackEth/);
+    return 'Baystack Hub' if ($model =~ /BayStack/);
     return '5000' if ($model =~ /5000/);
     return '5005' if ($model =~ /5005/);
     return $model;
@@ -111,7 +115,7 @@ sub i_index {
 
     my $b_index = $bayhub->bayhub_pb_index($partial) || {};
     my $p_index = $bayhub->bayhub_pp_index($partial) || {};
-    my $model = $bayhub->model();
+    my $model = $bayhub->model() || 'Baystack Hub';
 
     my %i_index;
     foreach my $iid (keys %$b_index){
@@ -207,14 +211,17 @@ sub i_speed {
     my $partial = shift;
 
     my $port_index  = $bayhub->i_index() || {};
+    my $port_speed  = $bayhub->bayhub_p_speed() || {};
 
     my %i_speed;
     foreach my $iid (keys %$port_index){
         my $index = $port_index->{$iid};
         next unless defined $index;
         next if (defined $partial and $index !~ /^$partial$/);
-    
-        my $speed = '10 Mbps';
+        my $speed = $port_speed->{$iid} || '10 Mbps';
+
+        $speed = '10 Mbps' if $speed =~ /bps10M/i;
+        $speed = '100 Mbps' if $speed =~ /bps100M/i;
         $i_speed{$index}=$speed; 
     }
     return \%i_speed;
@@ -289,7 +296,7 @@ sub bp_index {
 
     my $b_index = $bayhub->bayhub_nb_index() || {};
     my $p_index = $bayhub->bayhub_np_index() || {};
-    my $model = $bayhub->model();
+    my $model = $bayhub->model() || 'Baystack Hub';
 
     my %bp_index;
     foreach my $iid (keys %$b_index){
@@ -324,7 +331,7 @@ sub fw_port {
 
     my $b_index = $bayhub->bayhub_nb_index($partial) || {};
     my $p_index = $bayhub->bayhub_np_index($partial) || {};
-    my $model = $bayhub->model();
+    my $model = $bayhub->model() || 'Baystack Hub';
 
     my %fw_port;
     foreach my $iid (keys %$b_index){
@@ -448,7 +455,7 @@ Returns 'bay_hub'
 Cross references $bayhub->id() to the SYNOPTICS-MIB and returns
 the results.
 
-Removes sreg- from the model name
+Removes either Baystack Hub, 5000, or 5005 depending on the model.
 
 =back
 
@@ -514,7 +521,7 @@ Returns half, hubs do not support full duplex.
 
 =item $bayhub->i_speed()
 
-Currently returns 10 Mbps.  The class does not currently support 100 Mbps hubs.
+Returns interface speed.
 
 =item $bayhub->i_up()
 
