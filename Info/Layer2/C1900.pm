@@ -370,15 +370,15 @@ Returns reference to hash of IIDs to admin duplex setting
 
 =item $c1900->i_name()
 
-Crosses ifName with c1900_p_name() and returns the human set port name if exists.
+Crosses ifName with $c1900->c1900_p_name() and returns the human set port name
+if exists.
 
 =item $c1900->i_type()
 
 Returns reference to hash of IID to port type
 
-Takes the default ifType and overrides it with 
-
-c1900_p_type() and c1900_p_media()  if they exist.
+Takes the default ifType and overrides it with $c1900->c1900_p_type() and
+$c1900->c1900_p_media() if they exist.
 
 =back
 
@@ -396,37 +396,37 @@ B<swPortIfIndex>
 
 Gives Port Duplex Info
 
-B<swPortDuplexStatus>
+(B<swPortDuplexStatus>)
 
 =item $c1900->c1900_p_duplex_admin()
 
 Gives admin setting for Duplex Info
 
-B<swPortFullDuplex>
+(B<swPortFullDuplex>)
 
 =item $c1900->c1900_p_name()
 
 Gives human set name for port 
 
-B<swPortName>
+(B<swPortName>)
 
 =item $c1900->c1900_p_up_admin()
 
 Gives Admin status of port enabled.
 
-B<swPortAdminStatus>
+(B<swPortAdminStatus>)
 
 =item $c1900->c1900_p_type()
 
 Gives Type of port, ie. "general-ethernet"
 
-B<swPortMediaCapability>
+(B<swPortMediaCapability>)
 
 =item $c1900->c1900_p_media()
 
 Gives the media of the port , ie "fiber-sc"
 
-B<swPortConnectorType>
+(B<swPortConnectorType>)
 
 =back
 
@@ -446,8 +446,6 @@ See L<SNMP::Info::CiscoStats/"TABLE ENTRIES"> for details.
 
 See L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
-=back
-
 =head1 SET METHODS
 
 These are methods that provide SNMP set functionality for overridden methods or
@@ -465,6 +463,5 @@ are 'auto', 'half', 'full'.
   my %if_map = reverse %{$c1900->interfaces()};
   $c1900->set_i_duplex_admin('auto', $if_map{'1'}) 
     or die "Couldn't change port duplex. ",$c1900->error(1);
-
 
 =cut
