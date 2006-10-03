@@ -32,7 +32,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Bridge;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -68,7 +68,7 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
           'fw_status' => 'dot1dTpFdbStatus',
           # Bridge Port Table: Dot1dBasePortEntry
           'bp_index'  => 'dot1dBasePortIfIndex',
-          'bp_port'   => 'dot1dBasePortCircuit ',
+          'bp_port'   => 'dot1dBasePortCircuit',
           # Bridge Static (Destination-Address Filtering) Database
           'bs_mac'     => 'dot1dStaticAddress',
           'bs_port'   => 'dot1dStaticReceivePort',
