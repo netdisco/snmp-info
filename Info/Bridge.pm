@@ -57,8 +57,9 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
             'stp_time' => 'dot1dStpTimeSinceTopologyChange',
             'stp_root' => 'dot1dStpDesignatedRoot',
             # Q-BRIDGE-MIB
-            'qb_vlans_max'  => 'dot1qMaxSupportedVlans',
-            'qb_vlans'      => 'dot1qNumVlans',
+            'qb_vlans_max'        => 'dot1qMaxSupportedVlans',
+            'qb_vlans'            => 'dot1qNumVlans',
+            'qb_next_vlan_index'  => 'dot1qNextFreeLocalVlanIndex',
            );
 
 %FUNCS = (
@@ -70,7 +71,7 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
           'bp_index'  => 'dot1dBasePortIfIndex',
           'bp_port'   => 'dot1dBasePortCircuit',
           # Bridge Static (Destination-Address Filtering) Database
-          'bs_mac'     => 'dot1dStaticAddress',
+          'bs_mac'    => 'dot1dStaticAddress',
           'bs_port'   => 'dot1dStaticReceivePort',
           'bs_to'     => 'dot1dStaticAllowedToGoTo',
           'bs_status' => 'dot1dStaticStatus',
@@ -82,11 +83,16 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
           'stp_p_root'     => 'dot1dStpPortDesignatedRoot',
           'stp_p_bridge'   => 'dot1dStpPortDesignatedBridge',
           'stp_p_port'     => 'dot1dStpPortDesignatedPort',
-          # Q-BRIDGE-MIB : 
-          'qb_i_vlan'      => 'dot1qPvid',
-          'qb_i_vlan_type' => 'dot1qPortAcceptableFrameTypes',
-          'qb_v_name'      => 'dot1qVlanStaticName',
-          'qb_v_stat'      => 'dot1qVlanStaticRowStatus',
+          # Q-BRIDGE-MIB : dot1qPortVlanTable
+          'qb_i_vlan'        => 'dot1qPvid',
+          'qb_i_vlan_type'   => 'dot1qPortAcceptableFrameTypes',
+          'qb_i_vlan_in_flt' => 'dot1qPortIngressFiltering',
+          # Q-BRIDGE-MIB : dot1qVlanStaticTable
+          'qb_v_name'        => 'dot1qVlanStaticName',
+          'qb_v_egress'      => 'dot1qVlanStaticEgressPorts',
+          'qb_v_fbdn_egress' => 'dot1qVlanForbiddenEgressPorts',
+          'qb_v_untagged'    => 'dot1qVlanStaticUntaggedPorts',
+          'qb_v_stat'        => 'dot1qVlanStaticRowStatus',
           );
 
 %MUNGE = (
@@ -136,7 +142,6 @@ sub i_stp_state {
 
     return \%i_stp_state;
 }
-
 
 sub i_stp_port {
     my $bridge = shift;    
@@ -189,6 +194,75 @@ sub i_stp_bridge {
     return \%i_stp_bridge;
 }
 
+#
+# These are internal methods and are not documented.  Do not use directly. 
+#
+sub check_forbidden_ports {
+    my $bridge = shift;
+    my ($vlan_id, $ifindex) = @_;
+    return undef unless ($vlan_id =~ /\d+/ and $ifindex =~ /\d+/);
+
+    my $iv_forbidden = $bridge->qb_v_fbdn_egress($vlan_id);
+
+    my @forbidden_ports = split(//, unpack("B*", $iv_forbidden->{$vlan_id}));
+    print "Forbidden ports: @forbidden_ports\n" if $bridge->debug();
+    if ( defined($forbidden_ports[$ifindex]) and ($forbidden_ports[$ifindex] eq "1")) {
+        print "Error: IfIndex: $ifindex in forbidden list for VLAN: $vlan_id unable to add\n" if $bridge->debug();
+        return undef;
+    }
+    return 1;
+}
+
+sub add_to_egress_portlist {
+    my $bridge = shift;
+    my ($vlan_id, $ifindex) = @_;
+    return undef unless ($vlan_id =~ /\d+/ and $ifindex =~ /\d+/);
+
+    my $iv_members   = $bridge->qb_v_egress($vlan_id);
+
+    my @egress_list = split(//, unpack("B*", $iv_members->{$vlan_id}));
+    print "Original egress list for VLAN: $vlan_id: @egress_list \n" if $bridge->debug();
+    $egress_list[$ifindex] = '1';
+    # Some devices do not populate the portlist with all possible ports.
+    # If we have lengthened the list fill all undefined elements with zero.
+    foreach my $item (@egress_list) {
+        $item = '0' unless (defined($item));
+    }
+    print "Modified egress list for VLAN: $vlan_id: @egress_list \n" if $bridge->debug();
+    my $new_egress = pack("B*", join('', @egress_list));
+
+    my $egress_rv = $bridge->set_qb_v_egress($new_egress, $vlan_id);
+    unless ($egress_rv) {
+        print "Error: Unable to add VLAN: $vlan_id to IfIndex: $ifindex egress list\n" if $bridge->debug();
+        return undef;
+    }
+    return 1;
+}
+
+sub remove_from_egress_portlist {
+    my $bridge = shift;
+    my ($vlan_id, $ifindex) = @_;
+    return undef unless ($vlan_id =~ /\d+/ and $ifindex =~ /\d+/);
+
+    my $iv_members   = $bridge->qb_v_egress($vlan_id);
+
+    my @egress_list = split(//, unpack("B*", $iv_members->{$vlan_id}));
+    print "Original egress list for VLAN: $vlan_id: @egress_list \n" if $bridge->debug();
+    # Some devices may remove automatically, so check state before set
+    if ( defined($egress_list[$ifindex]) and ($egress_list[$ifindex] eq "1")) {
+        $egress_list[$ifindex] = '0';
+        print "Modified egress list for VLAN: $vlan_id: @egress_list \n" if $bridge->debug();
+        my $new_egress = pack("B*", join('', @egress_list));
+
+        my $egress_rv = $bridge->set_qb_v_egress($new_egress, $vlan_id);
+        unless ($egress_rv) {
+            print "Warning: Unable to remove IfIndex: $ifindex from VLAN: $vlan_id egress list\n" if $bridge->debug();
+            return undef;
+        }  
+    }
+    return 1;
+}
+
 1;
 
 __END__
@@ -196,7 +270,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Bridge - Perl5 Interface to SNMP data available through the BRIDGE-MIB (RFC1493)
+SNMP::Info::Bridge - SNMP Interface to SNMP data available through the
+BRIDGE-MIB (RFC1493)
 
 =head1 AUTHOR
 
@@ -212,7 +287,7 @@ Max Baker
                              Version     => 2
                              );
 
- my $class = $cdp->class();
+ my $class = $bridge->class();
  print " Using device sub class : $class\n";
 
  # Grab Forwarding Tables
@@ -232,10 +307,12 @@ Max Baker
 
 =head1 DESCRIPTION
 
-BRIDGE-MIB is used by most Layer 2 devices, and holds information like the MAC Forwarding Table and Spanning Tree Protocol info.
+BRIDGE-MIB is used by most Layer 2 devices, and holds information like the
+MAC Forwarding Table and Spanning Tree Protocol info.
 
-Q-BRIDGE-MIB holds 802.11q information -- VLANs and Trunking.  Cisco tends not to use this MIB, but some
-proprietary ones.  HP and some nicer vendors use this.  This is from C<RFC2674_q>.  
+Q-BRIDGE-MIB holds 802.11q information -- VLANs and Trunking.  Cisco tends not
+to use this MIB, but some proprietary ones.  HP and some nicer vendors use
+this.  This is from C<RFC2674_q>.  
 
 Create or use a subclass of SNMP::Info that inherits this class.  Do not use directly.
 
@@ -281,7 +358,8 @@ Returns the number of ports in device
 
 =item $bridge->b_type()
 
-Returns the type? of the device
+Returns the type of bridging this bridge can perform, transparent and/or
+sourceroute.
 
 (B<dot1dBaseType>)
 
@@ -303,15 +381,24 @@ Returns root of STP.
 
 (B<dot1dStpDesignatedRoot>)
 
-=item $bridge->qb_vlans_max()
+=item $bridge->qb_vlans_max() 
+
+Maximum number of VLANS supported on this device.
 
 (B<dot1qMaxSupportedVlans>)
 
 =item $bridge->qb_vlans() 
 
-Number of VLANS on this device.
+Current number of VLANs that are configured in this device.
 
 (B<dot1qNumVlans>)
+
+=item $bridge->qb_next_vlan_index() 
+
+The next available value for B<dot1qVlanIndex> of a local VLAN entry in
+B<dot1qVlanStaticTable>
+
+(B<dot1qNextFreeLocalVlanIndex>)
 
 =back
 
@@ -332,7 +419,8 @@ Returns reference to hash of forwarding table MAC Addresses
 
 =item $bridge->fw_port()
 
-Returns reference to hash of forwarding table entries port interface identifier (iid)
+Returns reference to hash of forwarding table entries port interface
+identifier (iid)
 
 (B<dot1dTpFdbPort>)
 
@@ -350,13 +438,17 @@ Returns reference to hash of forwading table entries status
 
 =item $bridge->bp_index()
 
-Returns reference to hash of bridge port table entries map back to interface identifier (iid)
+Returns reference to hash of bridge port table entries map back to interface
+identifier (iid)
 
 (B<dot1dBasePortIfIndex>)
 
 =item $bridge->bp_port()
 
-Returns reference to hash of bridge port table entries physical port name.
+Returns reference to hash of bridge port table entries for a port which
+(potentially) has the same value of B<dot1dBasePortIfIndex> as another port
+on the same bridge, this object contains the name of an	object instance unique
+to this port.
 
 (B<dot1dBasePortCircuit>)
 
@@ -370,25 +462,26 @@ Descriptions are lifted straight from F<BRIDGE-MIB.my>
 
 =item $bridge->stp_p_id()
 
-"The port number of the port for which this entry contains Spanning Tree Protocol management
-information."
+"The port number of the port for which this entry contains Spanning Tree
+Protocol management information."
 
 (B<dot1dStpPort>)
 
 =item $bridge->stp_p_priority()
 
-"The value of the priority field which is contained in the first (in network byte order)
-octet of the (2 octet long) Port ID.  The other octet of the Port ID is given by the value of
-dot1dStpPort."
+"The value of the priority field which is contained in the first
+(in network byte order) octet of the (2 octet long) Port ID.  The other octet
+of the Port ID is given by the value of dot1dStpPort."
 
 (B<dot1dStpPortPriority>)
 
 =item $bridge->stp_p_state()
 
-"The port's current state as defined by application of the Spanning Tree Protocol.  This
-state controls what action a port takes on reception of a frame.  If the bridge has detected
-a port that is malfunctioning it will place that port into the broken(6) state.  For ports which
-are disabled (see dot1dStpPortEnable), this object will have a value of disabled(1)."
+"The port's current state as defined by application of the Spanning Tree
+Protocol.  This state controls what action a port takes on reception of a
+frame.  If the bridge has detected a port that is malfunctioning it will place
+that port into the broken(6) state.  For ports which are disabled
+(see dot1dStpPortEnable), this object will have a value of disabled(1)."
 
  disabled(1)
  blocking(2)
@@ -401,23 +494,25 @@ are disabled (see dot1dStpPortEnable), this object will have a value of disabled
 
 =item $bridge->stp_p_cost()
 
-"The contribution of this port to the path cost of paths towards the spanning tree root which include
-this port.  802.1D-1990 recommends that the default value of this parameter be in inverse
-proportion to the speed of the attached LAN."
+"The contribution of this port to the path cost of paths towards the spanning
+tree root which include this port.  802.1D-1990 recommends that the default
+value of this parameter be in inverse proportion to the speed of the attached
+LAN."
 
 (B<dot1dStpPortPathCost>)
 
 =item $bridge->stp_p_root()
 
-"The unique Bridge Identifier of the Bridge recorded as the Root in the Configuration BPDUs
-transmitted by the Designated Bridge for the segment to which the port is attached."
+"The unique Bridge Identifier of the Bridge recorded as the Root in the
+Configuration BPDUs transmitted by the Designated Bridge for the segment to
+which the port is attached."
 
 (B<dot1dStpPortDesignatedRoot>)
 
 =item $bridge->stp_p_bridge()
 
-"The Bridge Identifier of the bridge which this port considers to be the Designated Bridge for
-this port's segment."
+"The Bridge Identifier of the bridge which this port considers to be the
+Designated Bridge for this port's segment."
 
 (B<dot1dStpPortDesignatedBridge>)
 
@@ -425,11 +520,13 @@ this port's segment."
 
 (B<dot1dStpPortDesignatedPort>)
 
-"The Port Identifier of the port on the Designated Bridge for this port's segment."
+"The Port Identifier of the port on the Designated Bridge for this port's
+segment."
 
 =item $bridge->i_stp_port()
 
-Returns the mapping of (B<dot1dStpPortDesignatedPort>) to the interface index (iid).
+Returns the mapping of (B<dot1dStpPortDesignatedPort>) to the interface
+index (iid).
 
 =item $bridge->i_stp_id()
 
@@ -437,17 +534,19 @@ Returns the mapping of (B<dot1dStpPort>) to the interface index (iid).
 
 =item $bridge->i_stp_bridge()
 
-Returns the mapping of (B<dot1dStpPortDesignatedBridge>) to the interface index (iid).
+Returns the mapping of (B<dot1dStpPortDesignatedBridge>) to the interface
+index (iid).
 
 =back
 
-=head2 Q-BRIDGE Data
+=head2 Q-BRIDGE Port VLAN Table (dot1qPortVlanTable)
 
 =over
 
 =item $bridge->qb_i_vlan()
 
-Gives the vlan used by interfaces
+The PVID, the VLAN ID assigned to untagged frames or Priority-Tagged frames
+received on this port.
 
 (B<dot1qPvid>)
 
@@ -458,11 +557,45 @@ trunk ports.
 
 (B<dot1qPortAcceptableFrameTypes>)
 
+=item $bridge->qb_i_vlan_in_flt()
+
+When this is C<true> the device will discard incoming frames for VLANs which
+do not include this Port in its Member set.  When C<false>, the port will
+accept all incoming frames.
+
+(B<dot1qPortIngressFiltering>)
+
+=back
+
+=head2 Q-BRIDGE VLAN Static Table (dot1qVlanStaticTable)
+
+=over
+
 =item $bridge->qb_v_name()
 
 Human-entered name for vlans.
 
 (B<dot1qVlanStaticName>)
+
+=item $bridge->qb_v_egress()
+
+The set of ports which are assigned to the egress list for this VLAN.
+
+(B<dot1qVlanStaticEgressPorts>)
+
+=item $bridge->qb_v_fbdn_egress()
+
+The set of ports which are prohibited from being included in the egress list
+for this VLAN.
+
+(B<dot1qVlanForbiddenEgressPorts>)
+
+=item $bridge->qb_v_untagged()
+
+The set of ports which should transmit egress packets for this VLAN as
+untagged. 
+
+(B<dot1qVlanStaticUntaggedPorts>)
 
 =item $bridge->qb_v_stat()
 
