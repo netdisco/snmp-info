@@ -137,6 +137,10 @@ sub test_fn {
         return 0;
     }
 
+    # If accidentally called on a global, pass it along nicely.
+    if (defined($results) and !ref($results)) {
+	return test_global($dev, $method);
+    }
     unless (defined $results and scalar keys %$results) {
         printf "%-20s Empty Results.\n",$method;
         return 0;
