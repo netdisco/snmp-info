@@ -127,6 +127,10 @@ device: 3620
 device: 3640
 duplex: no
 
+device-family:7200
+class: Layer3::Cisco
+note: !"When scanning my network with netdisco I would find that my 7200 series router running Cisco IOS Software Release 12.2(1) would reboot when scanning for CDP neighbours, to solve the issue I upgraded to Cisco IOS Software Release  Version 12.2(37)"
+
 device-family: 7500
 class: Layer3::Cisco
 
