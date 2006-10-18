@@ -118,7 +118,7 @@ MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =over
 
-none
+=item none
 
 =back
 
@@ -140,12 +140,10 @@ This table describes the interfaces/media types and the policymap that are attac
 
 (B<cbQosIfType>)
 
+=back
+
 =head2 ClassMap configuration Table
 
 This table is from CISCO-CLASS-BASED-QOS-MIB::cbQosCMCfgTable
-
-=over
-
-=back
 
 =cut
