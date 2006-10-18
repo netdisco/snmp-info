@@ -77,7 +77,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
 sub model {
     my $l2 = shift;
     my $id = $l2->id();
-    my $model = &SNMP::translateObj($id);
+    my $model = &SNMP::translateObj($id) || $id || '';
    
     # HP
     $model =~ s/^hpswitch//i;
