@@ -32,25 +32,25 @@ $VERSION = '1.05';
 use strict;
 
 use Exporter;
-use SNMP::Info;
-use SNMP::Info::Bridge;
 use SNMP::Info::SONMP;
+use SNMP::Info::IEEE802dot11;
+use SNMP::Info::Layer2;
 
-@SNMP::Info::Layer2::NAP222x::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::SONMP Exporter/;
+@SNMP::Info::Layer2::NAP222x::ISA = qw/SNMP::Info::SONMP SNMP::Info::IEEE802dot11 SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::NAP222x::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 %MIBS    = (
-            %SNMP::Info::MIBS,
-            %SNMP::Info::Bridge::MIBS,
+            %SNMP::Info::Layer2::MIBS,
+            %SNMP::Info::IEEE802dot11::MIBS,
             %SNMP::Info::SONMP::MIBS,
             'NORTEL-WLAN-AP-MIB' => 'ntWlanSwHardwareVer',
            );
 
 %GLOBALS = (
-            %SNMP::Info::GLOBALS,
-            %SNMP::Info::Bridge::GLOBALS,
+            %SNMP::Info::Layer2::GLOBALS,
+            %SNMP::Info::IEEE802dot11::GLOBALS,
             %SNMP::Info::SONMP::GLOBALS,
             'nt_hw_ver'     => 'ntWlanSwHardwareVer',
             'nt_fw_ver'     => 'ntWlanSwBootRomVer',
@@ -68,37 +68,28 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
            );
 
 %FUNCS   = (
-            %SNMP::Info::FUNCS,
-            %SNMP::Info::Bridge::FUNCS,
+            %SNMP::Info::Layer2::FUNCS,
+            %SNMP::Info::IEEE802dot11::FUNCS,
             %SNMP::Info::SONMP::FUNCS,
-            'i_name2'             => 'ifName',
-            'bp_index_2'  => 'dot1dTpFdbPort',
             # From ntWlanPortTable
-            'nt_prt_name'   => 'ntWlanPortName',
-            'nt_dpx_admin'  => 'ntWlanPortCapabilities',
-            'nt_auto'       => 'ntWlanPortAutonegotiation',
-            'nt_dpx'        => 'ntWlanPortSpeedDpxStatus',
+            'nt_prt_name'    => 'ntWlanPortName',
+            'nt_dpx_admin'   => 'ntWlanPortCapabilities',
+            'nt_auto'        => 'ntWlanPortAutonegotiation',
+            'nt_dpx'         => 'ntWlanPortSpeedDpxStatus',
+            # From ntWlanDot11PhyOperationTable
+            'nt_i_broadcast' => 'ntWlanDot11ClosedSystem',
+            # From ntWlanApVlanTable
+            'nt_i_vlan'      => 'ntWlanApVlanDefaultVid',
             );
 
 %MUNGE   = (
-            %SNMP::Info::MUNGE,
-            %SNMP::Info::Bridge::MUNGE,
+            %SNMP::Info::Layer2::MUNGE,
+            %SNMP::Info::IEEE802dot11::MUNGE,
             %SNMP::Info::SONMP::MUNGE,
             );
 
 sub os {
     return 'nortel';
-}
-
-sub os_ver {
-    my $nap222x = shift;
-    my $ver = $nap222x->nt_sw_ver();
-    return undef unless defined $ver;
-    
-    if ($ver =~ m/(\d+\.\d+\.\d+\.\d+)/){
-        return $1;
-        }
-    return undef;
 }
 
 sub os_bin {
@@ -112,10 +103,6 @@ sub os_bin {
     return undef;
 }
 
-sub vendor {
-    return 'nortel';
-}
-
 sub model {
     my $nap222x = shift;
     my $descr = $nap222x->description();
@@ -123,7 +110,6 @@ sub model {
 
     return 'AP-2220' if ($descr =~ /2220/);
     return 'AP-2221' if ($descr =~ /2221/);
-    return 'AP-2225' if ($descr =~ /2225/);
     return undef;
 }
 
@@ -153,23 +139,12 @@ sub serial {
     return undef;
 }
 
-sub i_ignore {
-    my $nap222x = shift;
-    my $descr = $nap222x->i_description();
-
-    my %i_ignore;
-    foreach my $if (keys %$descr){
-        my $type = $descr->{$if};
-      # Skip virtual interfaces  
-        $i_ignore{$if}++ if $type =~ /(loopback|lo|other)/i;
-    }
-    return \%i_ignore;
-}
-
 sub interfaces {
     my $nap222x = shift;
-    my $interfaces = $nap222x->i_index();
-    my $description = $nap222x->i_description();
+    my $partial = shift;
+
+    my $interfaces = $nap222x->i_index($partial) || {};
+    my $description = $nap222x->i_description($partial) || {};
 
     my %interfaces = ();
     foreach my $iid (keys %$interfaces){
@@ -184,10 +159,11 @@ sub interfaces {
 
 sub i_duplex {
     my $nap222x = shift;
+    my $partial = shift;
     
-    my $mode = $nap222x->nt_dpx();
-    my $port_name = $nap222x->nt_prt_name();
-    my $interfaces = $nap222x->interfaces();
+    my $mode = $nap222x->nt_dpx($partial) || {};
+    my $port_name = $nap222x->nt_prt_name($partial) || {};
+    my $interfaces = $nap222x->interfaces($partial) || {};
     
     my %i_duplex;
     foreach my $if (keys %$interfaces){
@@ -210,11 +186,12 @@ sub i_duplex {
 
 sub i_duplex_admin {
     my $nap222x = shift;
-    
-    my $dpx_admin = $nap222x->nt_dpx_admin();
-    my $nt_auto = $nap222x->nt_auto();
-    my $interfaces = $nap222x->interfaces();
-    my $port_name = $nap222x->nt_prt_name();
+    my $partial = shift;
+
+    my $dpx_admin = $nap222x->nt_dpx_admin($partial) || {};
+    my $nt_auto = $nap222x->nt_auto($partial) || {};
+    my $interfaces = $nap222x->interfaces($partial) || {};
+    my $port_name = $nap222x->nt_prt_name($partial) || {};
  
     my %i_duplex_admin;
     foreach my $if (keys %$interfaces){
@@ -239,12 +216,14 @@ sub i_duplex_admin {
 
 sub i_name {
     my $nap222x = shift;
-    my $interfaces = $nap222x->interfaces();
+    my $partial = shift;
+
+    my $interfaces = $nap222x->interfaces($partial) || {};
 
     my %i_name;
     foreach my $if (keys %$interfaces){
         my $desc = $interfaces->{$if};
-    next unless defined $desc;
+        next unless defined $desc;
         
         my $name = 'unknown';
         $name = 'Ethernet Interface' if $desc =~ /dp/i;
@@ -259,7 +238,9 @@ sub i_name {
 # dot1dBasePortTable does not exist and dot1dTpFdbPort does not map to ifIndex
 sub bp_index {
     my $nap222x = shift;
-    my $interfaces = $nap222x->interfaces();
+    my $partial = shift;
+
+    my $interfaces = $nap222x->interfaces($partial) || {};
 
     my %bp_index;
     foreach my $iid (keys %$interfaces){
@@ -273,6 +254,106 @@ sub bp_index {
     $bp_index{$port} = $iid;
     }
     return \%bp_index;
+}
+
+# Indicies don't match anywhere in these devices! Need to override to match
+# IfIndex.
+sub i_ssidlist {
+    my $nap222x = shift;
+    my $partial = shift;
+
+    # modify partial to match index
+    if (defined $partial) {
+        $partial = $partial - 2;
+    }
+    my $ssids = $nap222x->orig_i_ssidlist($partial) || {};
+
+    my %i_ssidlist;
+    foreach my $iid (keys %$ssids){
+        my $port = $iid + 2;
+        my $ssid = $ssids->{$iid};
+        next unless defined $ssid;
+        
+        $i_ssidlist{$port} = $ssid;
+    }
+    return \%i_ssidlist;        
+}
+
+sub i_ssidbcast {
+    my $nap222x = shift;
+    my $partial = shift;
+
+    # modify partial to match index
+    if (defined $partial) {
+        $partial = $partial - 2;
+    }
+    my $bcast = $nap222x->nt_i_broadcast($partial) || {};
+
+    my %i_ssidbcast;
+    foreach my $iid (keys %$bcast){
+        my $port = $iid + 2;
+        my $bc   = $bcast->{$iid};
+        next unless defined $bc;
+        
+        $i_ssidbcast{$port} = $bc;
+    }
+    return \%i_ssidbcast;        
+}
+
+sub i_80211channel {
+    my $nap222x = shift;
+    my $partial = shift;
+
+    # modify partial to match index
+    if (defined $partial) {
+        $partial = $partial - 2;
+    }
+    my $phy_type = $nap222x->dot11_phy_type($partial) || {};
+    my $cur_freq = $nap222x->dot11_cur_freq() || {};
+    my $cur_ch   = $nap222x->dot11_cur_ch() || {};
+
+    my %i_80211channel;
+    foreach my $iid (keys %$phy_type){
+        my $port = $iid + 2;
+        my $type = $phy_type->{$iid};
+        next unless defined $type;
+        if ($type =~ /dsss/) {
+            my $ch = $cur_ch->{1};
+            next unless defined $ch;
+            $i_80211channel{$port} = $ch;
+        }
+        elsif ($type =~ /ofdm/) {
+            my $ch = $cur_freq->{0};
+            next unless defined $ch;
+            $i_80211channel{$port} = $ch;
+        }
+        else {
+            next;
+        }
+    }
+
+    return \%i_80211channel;
+}
+
+sub i_vlan {
+    my $nap222x = shift;
+    my $partial = shift;
+
+    # modify partial to match index
+    if (defined $partial) {
+        $partial = $partial - 2;
+    }
+    my $vlans = $nap222x->nt_i_vlan($partial) || {};
+
+    my %i_vlan;
+    foreach my $iid (keys %$vlans){
+        my $port = $iid + 2;
+        my $vlan = $vlans->{$iid};
+        next unless defined $vlan;
+        
+        $i_vlan{$port} = $vlan;
+    }
+    return \%i_vlan;        
 }
 
 1;
@@ -299,7 +380,7 @@ Eric Miller
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $nap222x->class();
+ my $class = $nap222x->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
@@ -316,11 +397,11 @@ a more specific class using the method above.
 
 =over
 
-=item SNMP::Info
-
-=item SNMP::Info::Bridge
-
 =item SNMP::Info::SONMP
+
+=item SNMP::Info::IEEE802dot11
+
+=item SNMP::Info::Layer2
 
 =back
 
@@ -330,24 +411,16 @@ a more specific class using the method above.
 
 =item NORTEL-WLAN-AP-MIB
 
-=item Inherited classes
-
-See SNMP::Info for its own MIB requirements.
-
-See SNMP::Info::Bridge for its own MIB requirements.
-
-See SNMP::Info::SONMP for its own MIB requirements.
-
 =back
 
-MIBs can be found on the CD that came with your product.
+=head2 Inherited MIBs
 
-Or, they can be downloaded directly from Nortel Networks regardless of support
-contract status.
+See L<SNMP::Info::SONMP/"Required MIBs"> for its MIB requirements.
 
-Go to http://www.nortelnetworks.com Techninal Support, Browse Technical Support,
-Select by Product Families, Wireless LAN, WLAN - Access Point 2220, Software.
-Filter on mibs and download the latest version's archive.
+See L<SNMP::Info::IEEE802dot11/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
+
 
 =head1 GLOBALS
 
@@ -355,21 +428,13 @@ These are methods that return scalar value from SNMP
 
 =over
 
-=item $nap222x->vendor()
-
-Returns 'Nortel'
-
 =item $nap222x->model()
 
 Returns the model extracted from B<sysDescr>.
 
 =item $nap222x->os()
 
-Returns 'Nortel'
-
-=item $nap222x->os_ver()
-
-Returns the software version extracted from B<ntWlanSwOpCodeVer>.
+Returns 'nortel'
 
 =item $nap222x->os_bin()
 
@@ -387,63 +452,63 @@ Returns the MAC address of the first Ethernet Interface.
 
 Returns the hardware version.
 
-B<ntWlanSwHardwareVer>
+(B<ntWlanSwHardwareVer>)
 
 =item $nap222x->nt_cc()
 
 Returns the country code of the AP.
 
-B<ntWlanSwHardwareVer>
+(B<ntWlanSwHardwareVer>)
 
 =item $nap222x->tftp_action()
 
-B<ntWlanTransferStart>
+(B<ntWlanTransferStart>)
 
 =item $nap222x->tftp_host()
 
-B<ntWlanFileServer>
+(B<ntWlanFileServer>)
 
 =item $nap222x->tftp_file()
 
-B<ntWlanDestFile>
+(B<ntWlanDestFile>)
 
 =item $nap222x->tftp_type()
 
-B<ntWlanFileType>
+(B<ntWlanFileType>)
 
 =item $nap222x->tftp_result()
 
-B<ntWlanFileTransferStatus>
+(B<ntWlanFileTransferStatus>)
 
 =item $nap222x->tftp_xtype()
 
-B<ntWlanTransferType>
+(B<ntWlanTransferType>)
 
 =item $nap222x->tftp_src_file()
 
-B<ntWlanSrcFile>
+(B<ntWlanSrcFile>)
 
 =item $nap222x->ftp_user()
 
-B<ntWlanUserName>
+(B<ntWlanUserName>)
 
 =item $nap222x->ftp_pass()
 
-B<ntWlanPassword>
+(B<ntWlanPassword>)
 
 =back
 
-=head2 Globals imported from SNMP::Info
+=head2 Globals imported from SNMP::Info::SONMP
 
-See documentation in SNMP::Info for details.
+See L<SNMP::Info::SONMP/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::Bridge
+=head2 Global Methods imported from SNMP::Info::IEEE802dot11
 
-See documentation in SNMP::Info::Bridge for details.
+See L<SNMP::Info::IEEE802dot11/"GLOBALS"> for details.
 
-=head2 Global Methods imported from SNMP::Info::SONMP
+=head2 Global Methods imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::SONMP for details.
+See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -458,21 +523,17 @@ to a hash.
 
 Returns reference to map of IIDs to physical ports. 
 
-=item $nap222x->i_ignore()
-
-Returns reference to hash of IIDs to ignore.
-
 =item $nap222x->i_duplex()
 
 Returns reference to hash.  Maps port operational duplexes to IIDs.
 
-B<ntWlanPortSpeedDpxStatus>
+(B<ntWlanPortSpeedDpxStatus>)
 
 =item $nap222x->i_duplex_admin()
 
 Returns reference to hash.  Maps port admin duplexes to IIDs.
 
-B<ntWlanPortCapabilities>
+(B<ntWlanPortCapabilities>)
 
 =item $nap222x->i_name()
 
@@ -483,18 +544,37 @@ Returns a human name based upon port description.
 Returns a mapping between ifIndex and the Bridge Table.  This does not exist in
 the MIB and bridge port index is not the same as ifIndex so it is created. 
 
+=item $nap222x->i_ssidlist()
+
+Returns reference to hash.  SSID's recognized by the radio interface.
+
+=item $nap222x->i_ssidbcast()
+
+Returns reference to hash.  Indicates whether the SSID is broadcast.
+
+=item $nap222x->i_80211channel()
+
+Returns reference to hash.  Current operating frequency channel of the radio
+interface.
+
+=item $nap222x->i_vlan()
+
+The default VID of the radio interfaces.
+
+(B<ntWlanApVlanDefaultVid>)
+
 =back
-
-=head2 Table Methods imported from SNMP::Info
-
-See documentation in SNMP::Info for details.
-
-=head2 Table Methods imported from SNMP::Info::Bridge
-
-See documentation in SNMP::Info::Bridge for details.
 
 =head2 Table Methods imported from SNMP::Info::SONMP
 
-See documentation in SNMP::Info::SONMP for details.
+See L<SNMP::Info::SONMP/"TABLE ENTRIES"> for details.
+
+=head2 Table Methods imported from SNMP::Info::IEEE802dot11
+
+See L<SNMP::Info::IEEE802dot11/"TABLE ENTRIES"> for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
 =cut
