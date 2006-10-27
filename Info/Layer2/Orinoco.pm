@@ -2,7 +2,7 @@
 # Eric Miller
 # $Id$
 #
-# Copyright (c) 2004-6 Eric Miller
+# Copyright (c) 2004 Eric Miller
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,36 +28,42 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Orinoco;
-$VERSION = '1.04';
+$VERSION = '1.05';
 use strict;
 
 use Exporter;
-use SNMP::Info;
-use SNMP::Info::Bridge;
+use SNMP::Info::IEEE802dot11;
+use SNMP::Info::Layer2;
 
-@SNMP::Info::Layer2::Orinoco::ISA = qw/SNMP::Info SNMP::Info::Bridge Exporter/;
+@SNMP::Info::Layer2::Orinoco::ISA = qw/SNMP::Info::IEEE802dot11 SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Orinoco::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 %MIBS    = (
-            %SNMP::Info::MIBS,
-            %SNMP::Info::Bridge::MIBS,
+            %SNMP::Info::Layer2::MIBS,
+            %SNMP::Info::IEEE802dot11::MIBS,
+            #'ORiNOCO-MIB' => 'orinoco',
            );
 
 %GLOBALS = (
-            %SNMP::Info::GLOBALS,
-            %SNMP::Info::Bridge::GLOBALS,
+            %SNMP::Info::Layer2::GLOBALS,
+            %SNMP::Info::IEEE802dot11::GLOBALS,
            );
 
 %FUNCS   = (
-            %SNMP::Info::FUNCS,
-            %SNMP::Info::Bridge::FUNCS,
+            %SNMP::Info::Layer2::FUNCS,
+            %SNMP::Info::IEEE802dot11::FUNCS,
+            # ORiNOCO-MIB:oriWirelessIfPropertiesTable
+            #'ori_ssid'       => 'oriWirelessIfNetworkName',
+            #'ori_channel'    => 'oriWirelessIfChannel',
+            #'ori_closed_sys' => 'oriWirelessIfClosedSystem',
+            # ORiNOCO-MIB:oriSystemInvMgmtComponentTable
              );
 
 %MUNGE   = (
-            %SNMP::Info::MUNGE,
-            %SNMP::Info::Bridge::MUNGE,
+            %SNMP::Info::Layer2::MUNGE,
+            %SNMP::Info::IEEE802dot11::MUNGE,
             );
 
 sub os {
@@ -66,6 +72,7 @@ sub os {
 
 sub os_ver {
     my $orinoco = shift;
+
     my $descr = $orinoco->description();
     return undef unless defined $descr;
 
@@ -81,6 +88,7 @@ sub os_ver {
 
 sub os_bin {
     my $orinoco = shift;
+
     my $descr = $orinoco->description();
     return undef unless defined $descr;
 
@@ -100,6 +108,7 @@ sub vendor {
 
 sub model {
     my $orinoco = shift;
+
     my $descr = $orinoco->description();
     return undef unless defined $descr;
 
@@ -110,6 +119,7 @@ sub model {
 
 sub serial {
     my $orinoco = shift;
+
     my $descr = $orinoco->description();
     return undef unless defined $descr;
 
@@ -119,7 +129,9 @@ sub serial {
 
 sub i_ignore {
     my $orinoco = shift;
-    my $descr = $orinoco->i_description();
+    my $partial = shift;
+
+    my $descr = $orinoco->i_description($partial) || {};
 
     my %i_ignore;
     foreach my $if (keys %$descr){
@@ -132,8 +144,10 @@ sub i_ignore {
 
 sub interfaces {
     my $orinoco = shift;
-    my $interfaces = $orinoco->i_index();
-    my $descriptions = $orinoco->i_description();
+    my $partial = shift;
+
+    my $interfaces = $orinoco->i_index($partial) || {};
+    my $descriptions = $orinoco->i_description($partial) || {};
 
     my %interfaces = ();
     foreach my $iid (keys %$interfaces){
@@ -147,6 +161,22 @@ sub interfaces {
     }
     return \%interfaces;
 }
+
+#sub i_ssidbcast {
+#    my $orinoco = shift;
+#    my $partial = shift;
+#
+#    my $bcast = $orinoco->ori_closed_sys($partial) || {};
+#
+#    my %i_ssidbcast;
+#    foreach my $iid (keys %$bcast){
+#        my $bc   = $bcast->{$iid};
+#        next unless defined $bc;
+#
+#        $i_ssidbcast{$iid} = $bc;
+#    }
+#    return \%i_ssidbcast;        
+#}
 
 1;
 __END__
@@ -172,13 +202,14 @@ Eric Miller
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $orinoco->class();
+ my $class = $orinoco->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a Orinoco
-Access Point through SNMP. 
+Access Point through SNMP.  Orinoco devices have been maufactured by Proxim,
+Agere, and Lucent.
 
 For speed or debugging purposes you can call the subclass directly, but not after
 determining a more specific class using the method above. 
@@ -189,9 +220,9 @@ determining a more specific class using the method above.
 
 =over
 
-=item SNMP::Info
+=item SNMP::Info::Layer2
 
-=item SNMP::Info::Bridge
+=item SNMP::Info::IEEE802dot11
 
 =back
 
@@ -199,13 +230,15 @@ determining a more specific class using the method above.
 
 =over
 
-=item Inherited classes
-
-See SNMP::Info for its own MIB requirements.
-
-See SNMP::Info::Bridge for its own MIB requirements.
+None.
 
 =back
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::IEEE802dot11/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -215,7 +248,7 @@ These are methods that return scalar value from SNMP
 
 =item $orinoco->vendor()
 
-Returns 'Proxim' :)
+Returns 'proxim'
 
 =item $orinoco->model()
 
@@ -239,13 +272,13 @@ Returns the serial number extracted from B<sysDescr>.
 
 =back
 
-=head2 Globals imported from SNMP::Info
+=head2 Global Methods imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info for details.
+See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::Bridge
+=head2 Global Methods imported from SNMP::Info::IEEE802dot11
 
-See documentation in SNMP::Info::Bridge for details.
+See L<SNMP::Info::IEEE802dot11/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -266,12 +299,12 @@ Returns reference to hash of IIDs to ignore.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info
+=head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info for details.
+See L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
-=head2 Table Methods imported from SNMP::Info::Bridge
+=head2 Table Methods imported from SNMP::Info::IEEE802dot11
 
-See documentation in SNMP::Info::Bridge for details.
+See L<SNMP::Info::IEEE802dot11/"TABLE ENTRIES"> for details.
 
 =cut
