@@ -41,10 +41,10 @@ use SNMP::Info::Bridge;
 use SNMP::Info::EtherLike;
 use SNMP::Info::Entity;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
 
-@SNMP::Info::Layer3::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::EtherLike
-                              SNMP::Info::Entity Exporter/;
+@SNMP::Info::Layer3::ISA = qw/SNMP::Info::Entity SNMP::Info::EtherLike 
+                              SNMP::Info::Bridge SNMP::Info Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
 
 %MIBS = ( %SNMP::Info::MIBS,
@@ -82,9 +82,20 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
             'at_index'    => 'ipNetToMediaIfIndex',
             'at_paddr'    => 'ipNetToMediaPhysAddress',
             'at_netaddr'  => 'ipNetToMediaNetAddress',
-            # OSPF
-            'ospf_ip'    => 'ospfHostIpAddress',
-            # BGP Peer Table
+            # OSPF-MIB::ospfIfTable
+            'ospf_if_ip'    => 'ospfIfIpAddress',
+            'ospf_if_area'  => 'ospfIfAreaId',
+            'ospf_if_type'  => 'ospfIfType',
+            'ospf_if_hello' => 'ospfIfHelloInterval',
+            'ospf_if_dead'  => 'ospfIfRtrDeadInterval',
+            'ospf_if_admin' => 'ospfIfAdminStat',
+            'ospf_if_state' => 'ospfIfState',
+            # OSPF-MIB::ospfNbrTable
+            'ospf_ip'         => 'ospfHostIpAddress',
+            'ospf_peers'      => 'ospfNbrIpAddr',
+            'ospf_peer_id'    => 'ospfNbrRtrId',
+            'ospf_peer_state' => 'ospfNbrState',
+            # BGP4-MIB::bgpPeerTable
             'bgp_peers'               => 'bgpPeerLocalAddr',
             'bgp_peer_id'             => 'bgpPeerIdentifier',
             'bgp_peer_state'          => 'bgpPeerState',
@@ -105,7 +116,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
             %SNMP::Info::EtherLike::MUNGE,
             %SNMP::Info::Entity::MUNGE,
             'old_at_paddr' => \&SNMP::Info::munge_mac,
-            'at_paddr' => \&SNMP::Info::munge_mac,
+            'at_paddr'     => \&SNMP::Info::munge_mac,
          );
 
 
@@ -134,8 +145,9 @@ sub root_ip {
 
 sub i_ignore {
     my $l3 = shift;
+    my $partial = shift;
     
-    my $interfaces = $l3->interfaces();
+    my $interfaces = $l3->interfaces($partial) || {};
 
     my %i_ignore;
     foreach my $if (keys %$interfaces) {
@@ -279,14 +291,14 @@ sub at_netaddr {
     return $l3->orig_at_netaddr($partial) || $l3->old_at_netaddr($partial);
 }
 
-
 1;
 
 __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3 - Perl5 Interface to network devices serving Layer3 or Layers 2 & 3
+SNMP::Info::Layer3 - SNMP Interface to network devices serving Layer3 or
+Layers 2 & 3
 
 =head1 AUTHOR
 
@@ -305,7 +317,7 @@ Max Baker
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $l3->class();
+ my $class = $l3->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
  # Let's get some basic Port information
@@ -321,14 +333,15 @@ Max Baker
 
 =head1 DESCRIPTION
 
-This class is usually used as a superclass for more specific device classes listed under 
-SNMP::Info::Layer3::*   Please read all docs under SNMP::Info first.
+This class is usually used as a superclass for more specific device classes
+listed under SNMP::Info::Layer3::*   Please read all docs under SNMP::Info
+first.
 
 Provides generic methods for accessing SNMP data for Layer 3 network devices. 
 Includes support for Layer2+3 devices. 
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $l3 = new SNMP::Info::Layer3(...);
 
@@ -338,11 +351,11 @@ a more specific class using the method above.
 
 =item SNMP::Info
 
-=item SNMP::Info::Bridge
-
-For L2/L3 devices.
+=item SNMP::Info::Bridge (For L2/L3 devices)
 
 =item SNMP::Info::EtherLike
+
+=item SNMP::Info::Entity
 
 =back
 
@@ -350,15 +363,23 @@ For L2/L3 devices.
 
 =over
 
+=item IP-MIB
+
 =item OSPF-MIB
 
 =item BGP4-MIB
 
-=item Inherited Classes
-
-MIBs required by the inherited classes listed above.
-
 =back
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::Bridge/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::EtherLike/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::Entity/"Required MIBs"> for its MIB requirements.
 
 MIBs can be found in the netdisco-mibs package.
 
@@ -410,23 +431,29 @@ Trys to cull a serial number from ENTITY-MIB, description, and OLD-CISCO-... mib
 
 Trys to cull a Vendor name from B<sysDescr>
 
+=item $l3->root_ip()
+
+Returns the primary IP used to communicate with the device.  Returns the first
+found:  OSPF Router ID (B<ospfRouterId>) or any OSPF Host IP Address
+(B<ospfHostIpAddress>).
+
 =back
 
 =head2 Globals imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See L<SNMP::Info/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::Bridge
+=head2 Global Methods imported from SNMP::Info::Bridge
 
-See documentation in SNMP::Info::Bridge for details.
+See L<SNMP::Info::Bridge/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::EtherLike
+=head2 Global Methods imported from SNMP::Info::EtherLike
 
-See documentation in SNMP::Info::EtherLike for details.
+See L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::Entity
+=head2 Global Methods imported from SNMP::Info::Entity
 
-See documentation in SNMP::Info::Entity for details.
+See L<SNMP::Info::Entity/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -462,7 +489,7 @@ Returns reference to hash of iid to current link duplex setting.
 Maps $l3->el_index() to $l3->el_duplex, then culls out 
 full,half, or auto and sets the map to that value. 
 
-see SNMP::Info::Etherlike for the el_index() and el_duplex() methods.
+See L<SNMP::Info::Etherlike> for the el_index() and el_duplex() methods.
 
 =back
 
@@ -526,7 +553,7 @@ Returns reference to hash of Arp Cache Entries to IP Address
 
 =back
 
-=head2 BGP Peer Table
+=head2 BGP Peer Table (B<bgpPeerTable>)
 
 =over
 
@@ -604,20 +631,94 @@ transmitted on this connection
 
 =back
 
+=head2 OSPF Interface Table (B<ospfIfTable>)
+
+=over
+
+=item $l3->ospf_if_ip()
+
+Returns reference to hash of OSPF interface IP addresses
+
+(B<ospfIfIpAddress>)
+
+=item $l3->ospf_if_area()
+
+Returns reference to hash of the OSPF area to which the interfaces connect
+
+(B<ospfIfAreaId>)
+
+=item $l3->ospf_if_type()
+
+Returns reference to hash of the OSPF interfaces' type
+
+(B<ospfIfType>)
+
+=item $l3->ospf_if_hello()
+
+Returns reference to hash of the OSPF interfaces' hello interval
+
+(B<ospfIfHelloInterval>)
+
+=item $l3->ospf_if_dead()
+
+Returns reference to hash of the OSPF interfaces' dead interval
+
+(B<ospfIfRtrDeadInterval>)
+
+=item $l3->ospf_if_admin()
+
+Returns reference to hash of the OSPF interfaces' administrative status
+
+(B<ospfIfAdminStat>)
+
+=item $l3->ospf_if_state()
+
+Returns reference to hash of the OSPF interfaces' state
+
+(B<ospfIfState>)
+
+=back
+
+=head2 OSPF Neighbor Table (B<ospfNbrTable>)
+
+=over
+
+=item $l3->ospf_peers()
+
+Returns reference to hash of IP addresses the neighbor is using in its
+IP Source Addresses
+
+(B<ospfNbrIpAddr>)
+
+=item $l3->ospf_peer_id()
+
+Returns reference to hash of neighbor Router IDs
+
+(B<ospfNbrRtrId>)
+
+=item $l3->ospf_peer_state()
+
+Returns reference to hash of state of the relationship with the neighbor
+routers
+
+(B<ospfNbrState>)
+
+=back
+
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See L<SNMP::Info/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 
-See documentation in SNMP::Info::Bridge for details.
+See L<SNMP::Info::Bridge/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::EtherLike
 
-See documentation in SNMP::Info::EtherLike for details.
+See L<SNMP::Info::EtherLike/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Entity
 
-See documentation in SNMP::Info::Entity for details.
+See L<SNMP::Info::Entity/"TABLE ENTRIES"> for details.
 
 =cut
