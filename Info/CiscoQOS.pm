@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoQOS;
-$VERSION = '1.04';
+$VERSION = '1.05';
 use strict;
 
 use Exporter;
@@ -39,7 +39,7 @@ use SNMP::Info;
 @SNMP::Info::CiscoQOS::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoQOS::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 %MIBS    = (
             'CISCO-CLASS-BASED-QOS-MIB'      => 'cbQosIfIndex',
@@ -49,16 +49,19 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
            );
 
 %FUNCS   = (
-            # CISCO-CLASS-BASED-QOS-MIB
+            # CISCO-CLASS-BASED-QOS-MIB::cbQosServicePolicyTable
             'qos_i_index'             => 'cbQosIfIndex',
             'qos_i_type'              => 'cbQosIfType',
             'qos_pol_direction'       => 'cbQosPolicyDirection',
+            # CISCO-CLASS-BASED-QOS-MIB::cbQosObjectsTable
             'qos_obj_index'           => 'cbQosConfigIndex',
             'qos_obj_type'            => 'cbQosObjectsType',
             'qos_obj_parent'          => 'cbQosParentObjectsIndex',
+            # CISCO-CLASS-BASED-QOS-MIB::cbQosCMCfgTable
             'qos_cm_name'             => 'cbQosCMName',
             'qos_cm_desc'             => 'cbQosCMDesc',
             'qos_cm_info'             => 'cbQosCMInfo',
+            # CISCO-CLASS-BASED-QOS-MIB::cbQosCMCfgTable
             'qos_octet_pre'           => 'cbQosCMPrePolicyByte',
             'qos_octet_post'          => 'cbQosCMPostPolicyByte',
            );
@@ -71,11 +74,11 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::CiscoQOS - Perl5 Interface to Cisco's Quality of Service MIBs
+SNMP::Info::CiscoQOS - SNMP Interface to Cisco's Quality of Service MIBs
 
 =head1 AUTHOR
 
-Alexander Hartmaier (C<alexander.hartmaier@t-systems.at>)
+Alexander Hartmaier
 
 =head1 SYNOPSIS
 
@@ -90,7 +93,7 @@ Alexander Hartmaier (C<alexander.hartmaier@t-systems.at>)
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $qos->class();
+ my $class = $qos->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
@@ -124,11 +127,10 @@ MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =head1 TABLE METHODS
 
-=head2 ServicePolicy Table
+=head2 ServicePolicy Table (cbQosServicePolicyTable)
 
-This table is from CISCO-CLASS-BASED-QOS-MIB::cbQosServicePolicyTable
-
-This table describes the interfaces/media types and the policymap that are attached to it.
+This table describes the interfaces/media types and the policymap that are
+attached to it.
 
 =over
 
@@ -140,10 +142,58 @@ This table describes the interfaces/media types and the policymap that are attac
 
 (B<cbQosIfType>)
 
+=item $qos->qos_pol_direction()
+
+(B<cbQosPolicyDirection>)
+
 =back
 
-=head2 ClassMap configuration Table
+=head2 ClassMap Objects Table (cbQosObjectsTable)
 
-This table is from CISCO-CLASS-BASED-QOS-MIB::cbQosCMCfgTable
+=over
+
+=item $qos->qos_obj_index()
+
+(B<cbQosConfigIndex>)
+
+=item $qos->qos_obj_type()
+
+(B<cbQosObjectsType>)
+
+=item $qos->qos_obj_parent()
+
+(B<cbQosParentObjectsIndex>)
+
+=back
+
+=head2 ClassMap Configuration Table (cbQosCMCfgTable)
+
+=over
+
+=item $qos->qos_cm_name()
+
+(B<cbQosCMName>)
+
+=item $qos->qos_cm_desc()
+
+(B<cbQosCMDesc>)
+
+=item $qos->qos_cm_info()
+
+(B<cbQosCMInfo>)
+
+=back
+
+=head2 ClassMap Stats Table (cbQosCMStatsTable)
+
+=over
+
+=item $qos->qos_octet_pre()
+
+(B<cbQosCMPrePolicyByte>)
+
+=item $qos->qos_octet_post()
+
+(B<cbQosCMPostPolicyByte>)
 
 =cut
