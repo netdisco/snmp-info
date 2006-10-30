@@ -3,11 +3,38 @@ ChangeLog $Id$
 
 version 1.05
     + Added support for Dell PowerConnect switches as new class L3::Dell
+    + Added basic support for Sun routers as new class L3::Sun (begemot)
+    + Added basic support for Juniper NetScreen devices as new class
+      L3::Netscreen (Kent Hamilton)
     + Added generic device type detection using IANA assigned enterpise
       number extracted from sysObjectID
     + Added ifDiscards and other missing entries from IF-MIB::ifEntry (Greg King)
     + Added CGESM devices to L2::C2900 class (Alexander Hartmaier)
+    + Added support for dual speed 10/100 hubs and i_speed() in L1::Bayhub
+    + Added i_ssidlist(), i_ssidbcast(), and i_80211channel() methods to
+      L2::Aruba, Airespace, and L2::NAP222x classes
+    + New class IEEE802dot11 class for generic standards based wireless AP
+      support to include i_ssidlist()and i_80211channel() methods.
+    + L2::Orinoco inherits from new IEEE802dot11 for i_ssidlist()and
+      i_80211channel() support. 
+    + Added new VLAN methods i_pvid(), i_vlan_membership(), set_i_pvid(),
+      set_i_vlan(), set_add_i_vlan_tagged(), set_remove_i_vlan_tagged() to
+      Nortel RapidCity class, 
+    + Added set_i_speed_admin() method to Nortel RapidCity class,
+    + Added set_i_duplex_admin() method to Nortel RapidCity class,
+    
+    * Enable single instance partial table fetches (Alexander Hartmaier)
+    *** Enable partial table fetches in overriden table methods (Justin Hunter)
+    *** Not fully completed yet ***
     * Fixed vlan trunk port handling bug in L2:HP (Michael Robbert)
+    * Correct bp_port() definition in Bridge class (Reported by Nicolai Petri)
+    * Remove port security definitions from CiscoStack and move into new class
+      CiscoPortSecurity.  Needed to support devices such a L3::C4000 which
+      support CISCO-PORT-SECURITY-MIB, but not CISCO-STACK-MIB.
+      (Reported by Prakash RudraRaju)
+    * Correct port numbering for Nortel 8110, 1100, 1150 in L3:Passport
+      (Reported by David Pinkoski)
+    * Documentation updates
 
 version 1.04 (07/08/06)
     +  Added C1130 and C1240 to L2::Aironet (Ralf Gross)
@@ -51,7 +78,8 @@ version 1.0 (04/07/06) - CVS only. No official release
     + Added ipforwarding status to Info base class (Carlos Vicente)
     + Added STP port state to Bridge class (Alexander Barthel)
     + Added L3 support (arpnip) to Baystack class for routing capable switches
-    + Added set_i_duplex_admin() and set_i_speed_admin() to C2900 class (Justin Hunter)
+    + Added set_i_duplex_admin() and set_i_speed_admin() to C2900 class
+      (Justin Hunter)
     + Added set_i_duplex_admin() and set_i_speed_admin() to CiscoStack class
     + CDP added to Aironet class
     + Added Juniper class
@@ -97,7 +125,8 @@ verison 0.9 (11/15/04)
     + Added i_lastchange() per suggestion of Nicolai Petri
     + Added BULKWALK patch by Bradley Baetz - This should
           greatly speed up requests on SNMPv2c devices.
-    + Added MibDirs option to new() to allow specifying non-system MIB directories.
+    + Added MibDirs option to new() to allow specifying non-system MIB
+      directories.
 
     * Added C3560s to the C3550 class. Thanks to Nicolai.
     * Fixed Bug where older Cisco's would append nulls to certain
@@ -152,8 +181,10 @@ version 0.4 (04/29/03)
     * Added clear_cache() method
     * Added NO_SUCH support for snmpget (TABLE) calls to get SNMP MIB II data 
       from SNMP Version 1 devices.
-    * Methods load_all() and all() have changed their return value. Sorry but the API had to change.
-    * New object methods snmp_comm(), snmp_ver(), store(), class(), nosuch() to make it more OO happy.
+    * Methods load_all() and all() have changed their return value. Sorry but
+      the API had to change.
+    * New object methods snmp_comm(), snmp_ver(), store(), class(), nosuch()
+      to make it more OO happy.
     * Globals are now cached
     * Added new argument 'AutoSpecify' to new() to auto-connect with subclass 
       detected in device_type()
@@ -166,8 +197,8 @@ version 0.4 (04/29/03)
 
 version 0.3 (03/06/03)
     * Fixed HP model() warning
-    * Added error checking for responses of NOSUCHOBJECT and NOSUCHINSTANCE in _global
-      and _load_attr
+    * Added error checking for responses of NOSUCHOBJECT and NOSUCHINSTANCE
+      in _global and _load_attr
     * Added more debugging
     * Added info and munging for c_capabilities in SNMP::Info::CD
       Thanks to Martin Lorensen <martin /at- lorensen.dk>
@@ -184,7 +215,8 @@ version 0.2 (02/19/03)
     * Added Spanning Tree Protocol (STP) methods to SNMP::Info::Bridge
     * Removed HP Specific MIBS in SNMP::Info::Layer2 and cleaned up model()
     * Added poke for Bay 450 Switches 
-    * Mapped HP Part Numbers to model numbers J4812A => 2512 in SNMP::Info::Layer2::HP
+    * Mapped HP Part Numbers to model numbers J4812A => 2512 in
+      SNMP::Info::Layer2::HP
      
 version 0.1 (12/30/02)
     * Initial Release
