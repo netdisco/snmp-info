@@ -1,5 +1,5 @@
 # SNMP::Info::CiscoConfig
-# Justin Hunter
+# Justin Hunter, Eric Miller
 # $Id$
 #
 # Redistribution and use in source and binary forms, with or without
@@ -84,23 +84,86 @@ sub copy_run_tftp {
     srand( time() ^ ( $$ + ( $$ << 15 ) ) );
     my $rand = int( rand( 1 << 24 ) );
 
-    $ciscoconfig->set_config_protocol( 1, $rand );
-    $ciscoconfig->set_config_source_type( 4, $rand );
-    $ciscoconfig->set_config_dest_type( 1, $rand );
-    $ciscoconfig->set_config_server_addr( $tftphost, $rand );
-    $ciscoconfig->set_config_filename( $tftpfile, $rand );
-    $ciscoconfig->set_config_row_status( 1, $rand );
-    my $status = 0;
-    while ( $status !~ /successful|failed/ ) {
-        my $t = $ciscoconfig->config_copy_state($rand);
-        $status = $t->{$rand};
-        last if $status =~ /successful|failed/;
-        sleep 1;
+    print "Saving running config to $tftphost as $tftpfile\n" if $ciscoconfig->debug();
+
+    #Try new method first fall back to old method 
+    if ( $ciscoconfig->set_config_protocol( 1, $rand ) ) {
+        print "Using new method, row iid: $rand\n" if $ciscoconfig->debug();
+        #Check each set, delete created row if any fail
+        unless ( $ciscoconfig->set_config_source_type( 4, $rand ) ) {
+            $ciscoconfig->error_throw("Setting source type failed");
+            unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
+                $ciscoconfig->error_throw("Setting source type failed and failed to delete row $rand");
+            }
+            return undef;
+        }
+        unless ( $ciscoconfig->set_config_dest_type( 1, $rand ) ) {
+            $ciscoconfig->error_throw("Setting destination type failed");
+            unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
+                $ciscoconfig->error_throw("Setting dest type failed and failed to delete row $rand");
+            }
+            return undef;
+        }
+        unless ( $ciscoconfig->set_config_server_addr( $tftphost, $rand ) ) {
+            $ciscoconfig->error_throw("Setting tftp server failed");
+            unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
+                $ciscoconfig->error_throw("Setting tftp server failed and failed to delete row $rand");
+            }
+            return undef;
+        }
+        unless ( $ciscoconfig->set_config_filename( $tftpfile, $rand ) ) {
+            $ciscoconfig->error_throw("Setting file name failed");
+            unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
+                $ciscoconfig->error_throw("Setting file name failed and failed to delete row $rand");
+            }
+            return undef;
+        }
+        unless ( $ciscoconfig->set_config_row_status( 1, $rand ) ) {
+            $ciscoconfig->error_throw("Initiating transfer failed");
+            unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
+                $ciscoconfig->error_throw("Initiating transfer failed and failed to delete row $rand");
+            }
+            return undef;
+        }            
+        my $status = 0;
+        my $timer  = 0;
+        # Hard-coded timeout of approximately 5 minutes, we can wrap this in an
+        # option later if needed
+        my $timeout = 300; 
+        while ( $status !~ /successful|failed/ ) {
+            my $t = $ciscoconfig->config_copy_state($rand);
+            $status = $t->{$rand};
+            last if $status =~ /successful|failed/;
+            $timer += 1;
+            if ($timer >= $timeout) {
+                $status = 'failed';
+                last;
+            }
+            sleep 1;
+        }  
+
+        unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
+                print "Failed deleting row, iid $rand\n" if $ciscoconfig->debug();
+        }
+
+        if ( $status eq 'successful' ) {
+            print "Save operation successful\n" if $ciscoconfig->debug();
+            return 1;
+        }        
+        if ( $status eq 'failed' ) {
+            $ciscoconfig->error_throw("Save operation failed");
+            return undef;
+        }
+
     }
 
-    $ciscoconfig->set_config_row_status( 6, $rand );
-    return 0 if $status eq 'failed';
-    return 1 if $status eq 'successful';
+    print "Using old method\n" if $ciscoconfig->debug();
+    unless ( $ciscoconfig->set_old_write_net( $tftpfile, $tftphost ) ) {
+            $ciscoconfig->error_throw("Save operation failed");
+            return undef;
+    }
+
+    return 1;
 }
 
 sub copy_run_start {
@@ -109,20 +172,64 @@ sub copy_run_start {
     srand( time() ^ ( $$ + ( $$ << 15 ) ) );
     my $rand = int( rand( 1 << 24 ) );
 
-    my $t = $ciscoconfig->set_config_source_type( 4, $rand );
-    $ciscoconfig->set_config_dest_type( 3, $rand );
-    $ciscoconfig->set_config_row_status( 1, $rand );
-    my $status = 0;
-    while ( $status !~ /successful|failed/ ) {
-        my $t = $ciscoconfig->config_copy_state($rand);
-        $status = $t->{$rand};
-        last if $status =~ /successful|failed/;
-        sleep 1;
-    }
-    $ciscoconfig->set_config_row_status( 6, $rand );
+    print "Saving running config to memory\n" if $ciscoconfig->debug();
 
-    return 0 if $status eq 'failed';
-    return 1 if $status eq 'successful';
+    if ( $ciscoconfig->set_config_source_type( 4, $rand ) ) {
+        print "Using new method, row iid: $rand\n" if $ciscoconfig->debug();
+        #Check each set, delete created row if any fail
+        unless ( $ciscoconfig->set_config_dest_type( 3, $rand ) ) {
+            $ciscoconfig->error_throw("Setting dest type failed");
+            unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
+                $ciscoconfig->error_throw("Setting dest type failed and failed to delete row $rand");
+            }
+            return undef;
+        }
+        unless ( $ciscoconfig->set_config_row_status( 1, $rand ) ) {
+            $ciscoconfig->error_throw("Initiating save failed");
+            unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
+                $ciscoconfig->error_throw("Initiating save failed and failed to delete row $rand");
+                }
+            return undef;
+        }
+        my $status = 0;
+        my $timer  = 0;
+        # Hard-coded timeout of approximately 5 minutes, we can wrap this in an
+        # option later if needed
+        my $timeout = 300; 
+        while ( $status !~ /successful|failed/ ) {
+            my $t = $ciscoconfig->config_copy_state($rand);
+            $status = $t->{$rand};
+            last if $status =~ /successful|failed/;
+            $timer += 1;
+            if ($timer >= $timeout) {
+                $status = 'failed';
+                last;
+            }
+            sleep 1;
+        }
+
+        unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
+                print "Failed deleting row, iid $rand\n" if $ciscoconfig->debug();
+        }
+
+        if ( $status eq 'successful' ) {
+            print "Save operation successful\n" if $ciscoconfig->debug();
+            return 1;
+        }        
+        if ( $status eq 'failed' ) {
+            $ciscoconfig->error_throw("Save operation failed");
+            return undef;
+        }
+
+    }
+
+    print "Using old method\n" if $ciscoconfig->debug();
+    unless ( $ciscoconfig->set_old_write_mem( 1 ) ) {
+            $ciscoconfig->error_throw("Save operation failed");
+            return undef;
+    }
+
+    return 1;
 }
 
 1;
@@ -135,7 +242,7 @@ SNMP::Info::CiscoConfig - SNMP Interface to Cisco Configuration Files
 
 =head1 AUTHOR
 
-Justin Hunter
+Justin Hunter, Eric Miller
 
 =head1 SYNOPSIS
 
@@ -307,11 +414,14 @@ L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set operations.
 =item $ciscoconfig->copy_run_tftp (tftpserver, tftpfilename )
 
 Store the running configuration on a TFTP server.  Equivalent to the CLI
-command "copy running-config tftp".
+commands "copy running-config tftp" or "write net".
 
-This method currently only supports Cisco devices with the
-CISCO-CONFIG-COPY-MIB available with Cisco IOS software release 12.0, or on
-some devices as early as release 11.2P.
+This method attempts to use newer "copy running-config tftp" procedure first
+and then the older "write net" procedure if that fails.  The newer procedure is
+supported Cisco devices with the CISCO-CONFIG-COPY-MIB available, Cisco IOS
+software release 12.0 or on some devices as early as release 11.2P.  The
+older procedure has been depreciated by Cisco and is utilized only to support
+devices running older code revisions.
 
  Example:
  $ciscoconfig->copy_run_tftp('1.2.3.4', 'myconfig') 
@@ -320,11 +430,14 @@ some devices as early as release 11.2P.
 =item $ciscoconfig->copy_run_start()
 
 Copy the running configuration to the startup configuration.  Equivalent to
-the CLI command "copy running-config startup-config".
+the CLI command "copy running-config startup-config" or "write mem".
 
-This method currently only supports Cisco devices with the
-CISCO-CONFIG-COPY-MIB available with Cisco IOS software release 12.0, or on
-some devices as early as release 11.2P.
+This method attempts to use newer "copy running-config startup-config"
+procedure first and then the older "write mem" procedure if that fails.  The
+newer procedure is supported Cisco devices with the CISCO-CONFIG-COPY-MIB
+available, Cisco IOS software release 12.0 or on some devices as early as
+release 11.2P.  The older procedure has been depreciated by Cisco and is
+utilized only to support devices running older code revisions.
 
  Example:
  $ciscoconfig->copy_run_start()
