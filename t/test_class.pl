@@ -150,7 +150,13 @@ sub test_fn {
     if (grep(/^$method$/,@Dump)) {
         $Dumped{$method} = 1;
         foreach my $iid (keys %$results){
-            print "  $iid : $results->{$iid}\n";
+            print "  $iid : ";
+	    if (ref($results->{$iid}) eq 'ARRAY') {
+		print "[ ", join(", ", @{$results->{$iid}}), " ]";
+	    } else {
+		print $results->{$iid};
+	    }
+	    print "\n";
         }
     }
     return 1;
