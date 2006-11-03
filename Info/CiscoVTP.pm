@@ -124,6 +124,7 @@ sub i_vlan {
 
     my $port_vlan = $vtp->vtp_trunk_native($partial) || {};
     my $i_vlan = $vtp->i_vlan2($partial) || {};
+    my $trunk_dyn_stat = $vtp->vtp_trunk_dyn_stat($partial) || {};
 
     my %i_vlans;
     # Get access ports
@@ -138,8 +139,10 @@ sub i_vlan {
     foreach my $port (keys %$port_vlan) {
         my $vlan = $port_vlan->{$port};
         next unless defined $vlan;
-
-        $i_vlans{$port} = $vlan;
+        my $stat = $trunk_dyn_stat->{$port};
+        if ( defined $stat and $stat =~ /^trunking/ ) {
+            $i_vlans{$port} = $vlan;
+        }
     }
 
     # Check in CISCO-VLAN-IFTABLE-RELATION-MIB
@@ -166,9 +169,10 @@ sub i_vlan_membership {
     my $vtp = shift;
     my $partial = shift;
 
-    my $ports_vlans = $vtp->vtp_trunk_vlans($partial) || {};
-    my $vtp_vlans   = $vtp->v_state();
-    my $i_vlan      = $vtp->i_vlan2($partial) || {};
+    my $ports_vlans    = $vtp->vtp_trunk_vlans($partial) || {};
+    my $vtp_vlans      = $vtp->v_state();
+    my $i_vlan         = $vtp->i_vlan2($partial) || {};
+    my $trunk_dyn_stat = $vtp->vtp_trunk_dyn_stat($partial) || {};
 
     my $i_vlan_membership = {};
 
@@ -176,8 +180,10 @@ sub i_vlan_membership {
     foreach my $port (keys %$i_vlan) {
         my $vlan = $i_vlan->{$port};
         next unless defined $vlan;
-        
-        push(@{$i_vlan_membership->{$port}}, $vlan);
+        my $stat = $trunk_dyn_stat->{$port};
+        unless ( defined $stat and $stat =~ /^trunking/ ) {
+            push(@{$i_vlan_membership->{$port}}, $vlan);
+        }
     }
 
     # Get trunk ports
