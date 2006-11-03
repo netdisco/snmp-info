@@ -91,6 +91,12 @@ sub model {
     return $model;
 }
 
+# Override the fancy Layer3.pm serial function
+sub serial {
+    my $juniper = shift;
+    return $juniper->orig_serial();
+}
+
 1;
 __END__
 
