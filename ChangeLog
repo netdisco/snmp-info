@@ -19,9 +19,11 @@ version 1.05
       i_80211channel() support. 
     + Added new VLAN methods i_pvid(), i_vlan_membership(), set_i_pvid(),
       set_i_vlan(), set_add_i_vlan_tagged(), set_remove_i_vlan_tagged() to
-      Nortel RapidCity class, 
+      Nortel RapidCity class, CiscoVTP,
     + Added set_i_speed_admin() method to Nortel RapidCity class,
     + Added set_i_duplex_admin() method to Nortel RapidCity class,
+    + Added OSPF Neighbor Tables, SF Patch 1577918 to Layer 3 (Andrew Herrick)
+    + Added CiscoConfig class, SF Patch 1555001 (Justin Hunter)
     
     * Enable single instance partial table fetches (Alexander Hartmaier)
     *** Enable partial table fetches in overriden table methods (Justin Hunter)
