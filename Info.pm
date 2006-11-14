@@ -149,8 +149,10 @@ Version 5.1.2 or greater is recommended.
 Various version 4's and 5.0 and 5.1 series will work. 5.0.1 is kinda flaky
 on the Perl side.
 
-B<Redhat Users>: Certain versions that comes with certain versions of Redhat/Fedora doesn't have
-the Perl library installed.  Uninstall the RPM and install by hand.
+Versions 5.0301 and 5.0203 have issues with bulkwalk, turn off bulkwalk.
+
+B<Redhat Users>: Some versions that come with certain versions of Redhat/Fedora
+don't have the Perl library installed.  Uninstall the RPM and install by hand.
 
 =item 2. MIBS
 
@@ -228,28 +230,40 @@ BRIDGE-MIB (RFC1286).  QBRIDGE-MIB. Inherited by devices with Layer2 support.
 
 =item SNMP::Info::CDP
 
-CISCO-CDP-MIB.  Cisco Discovery Protocol (CDP) Support.  Inherited by Cisco and HP devices.
+CISCO-CDP-MIB.  Cisco Discovery Protocol (CDP) Support.  Inherited by Cisco
+and HP devices.
+
+=item SNMP::Info::CiscoConfig
+
+CISCO-CONFIG-COPY-MIB, CISCO-FLASH-MIB, and OLD-CISCO-SYS-MIB.
+These OIDs facilitate the writing of configuration files.
 
 =item SNMP::Info::CiscoImage
 
 CISCO-IMAGE-MIB. A collection of OIDs providing IOS image characteristics.
 
+=item SNMP::Info::CiscoPortSecurity
+
+CISCO-PORT-SECURITY-MIB.
+
 =item SNMP::Info::CiscoQOS
 
-CISCO-CLASS-BASED-QOS-MIB. A collection of OIDs providing information about a Cisco device's QOS config.
+CISCO-CLASS-BASED-QOS-MIB. A collection of OIDs providing information about
+a Cisco device's QOS config.
 
 =item SNMP::Info::CiscoRTT
 
-CISCO-RTTMON-MIB. A collection of OIDs providing information about a Cisco device's RTT values.
+CISCO-RTTMON-MIB. A collection of OIDs providing information about a Cisco
+device's RTT values.
 
 =item SNMP::Info::CiscoStack
 
-CISCO-STACK-MIB and CISCO-PORT-SECURITY-MIB
+CISCO-STACK-MIB.
 
 =item SNMP::Info::CiscoStats
 
-Provides common interfaces for memory, cpu, and os statistics for Cisco devices.  Provides methods for 
-information in : OLD-CISCO-CPU-MIB, CISCO-PROCESS-MIB and CISCO-MEMORY-POOL-MIB
+OLD-CISCO-CPU-MIB, CISCO-PROCESS-MIB, and CISCO-MEMORY-POOL-MIB.  Provides
+common interfaces for memory, cpu, and os statistics for Cisco devices.  
 
 =item SNMP::Info::CiscoVTP
 
@@ -261,11 +275,17 @@ ENTITY-MIB.  Used for device info in Cisco and other vendors.
 
 =item SNMP::Info::EtherLike
 
-ETHERLIKE-MIB (RFC1398) - Some Layer3 devices implement this MIB, as well as some Aironet Layer 2 devices (non Cisco).
+ETHERLIKE-MIB (RFC1398) - Some Layer3 devices implement this MIB, as well as
+some Aironet Layer 2 devices (non Cisco).
 
 =item SNMP::Info::FDP
 
 Foundry Discovery Protocol.  FOUNDRY-SN-SWITCH-GROUP-MIB
+
+=item SNMP::Info::IEEE802dot11
+
+IEEE802dot11-MIB.  A collection of OIDs providing information about standards
+based 802.11 wireless devices.  
 
 =item SNMP::Info::MAU
 
@@ -397,10 +417,6 @@ Subclass for Nortel 2270 wireless switches.
 
 Subclass for Nortel 222x series wireless access points.
 
-=item SNMP::Info::Layer3::Netscreen
-
-Subclass for Juniper NetScreen.
-
 =item SNMP::Info::Layer2::Orinoco
 
 Subclass for Orinoco/Proxim wireless access points.
@@ -419,8 +435,8 @@ Generic Layer3 and Layer2+3 Device subclass.
 
 =item SNMP::Info::Layer3::Aironet
 
-Subclass for Cisco Aironet wireless access points (AP) not running IOS. These are usually older
-devices.
+Subclass for Cisco Aironet wireless access points (AP) not running IOS. These
+are usually older devices.
 
 MIBs for these devices now included in v2.tar.gz available from ftp.cisco.com.
 
@@ -445,8 +461,8 @@ This class covers Catalyst 4000s and 4500s.
 
 =item SNMP::Info::Layer3::C6500
 
-This class covers Catalyst 6500s in native mode, hybrid mode.  Catalyst 4000's, 3750's, 2970's
-and probably others.
+This class covers Catalyst 6500s in native mode, hybrid mode.  Catalyst
+3750's, 2970's and probably others.
 
 =item SNMP::Info::Layer3::Cisco
 
@@ -468,7 +484,8 @@ See SNMP::Info::Layer3::Extreme for more info.
 
 =item SNMP::Info::Layer3::Foundry
 
-Subclass for older Foundry Network devices.  Outdated, but being updated for newer devices.
+Subclass for older Foundry Network devices.  Outdated, but being updated
+for newer devices.
 
 Requires FOUNDRY-SN-ROOT-MIB.
 
@@ -482,10 +499,18 @@ Subclass for Juniper devices.
 
 Subclass for Nortel Ethernet Routing Switch 1600 series.
 
+=item SNMP::Info::Layer3::Netscreen
+
+Subclass for Juniper NetScreen.
+
 =item SNMP::Info::Layer3::Passport
 
 Subclass for Nortel Ethernet Routing Switch/Passport 8000 series and Accelar
 series switches.
+
+=item SNMP::Info::Layer3::Sun
+
+Subclass for Generic Sun Routers running SunOS.
 
 =back
 
@@ -717,13 +742,14 @@ sub new {
 
 =head2 Data is Cached
 
-Methods and subroutines requesting data from a device will only load the data once, and then
-return cached versions of that data. 
+Methods and subroutines requesting data from a device will only load the data
+once, and then return cached versions of that data. 
 
-Run $info->load_METHOD() where method is something like 'i_name' to reload data from a 
-table method.
+Run $info->load_METHOD() where method is something like 'i_name' to reload
+data from a method.
 
-Run $info->clear_cache() to clear the cache to allow reload of both globals and table methods.
+Run $info->clear_cache() to clear the cache to allow reload of both globals
+and table methods.
 
 =head2 Object Scalar Methods
 
@@ -822,6 +848,7 @@ Algorithm for Subclass Detection:
             Alteon Ace Director            -> SNMP::Info::Layer3::AlteonAD
             Nortel Contivity               -> SNMP::Info::Layer3::Contivity
             Nortel BayRS Router            -> SNMP::Info::Layer3::BayRS
+            Sun Router                     -> SNMP::Info::Layer3::Sun
          Elsif Layer2 (no Layer3)          -> SNMP::Info::Layer2
             Aironet - IOS Devices          -> SNMP::Info::Layer2::Aironet
             Catalyst 1900                  -> SNMP::Info::Layer2::C1900
@@ -1190,7 +1217,8 @@ Returns either forwarding or not-forwarding
 
 =head2 Table Methods
 
-Each of these methods returns a hash_reference to a hash keyed on the interface index in SNMP.
+Each of these methods returns a hash_reference to a hash keyed on the
+interface index in SNMP.
 
 Example : $info->interfaces() might return  
 
@@ -1199,18 +1227,19 @@ Example : $info->interfaces() might return
       '9.99' => 'FastEthernet/2'
     }
 
-The key is what you would see if you were to do an snmpwalk, and in some cases changes between reboots of
-the network device.
+The key is what you would see if you were to do an snmpwalk, and in some cases
+changes between reboots of the network device.
 
 =head2 Partial Table Fetches
 
-If you want to get only a part of an SNMP table and you know the IID for the part of the table that you
-want, you can specify it in the call:
+If you want to get only a part of an SNMP table or a single instance from the
+table and you know the IID for the part of the table that you want, you can
+specify it in the call:
 
     $local_routes = $info->ipr_route('192.168.0');
 
-This will only fetch entries in the table that start with C<192.168.0>, which in this case are routes on the local
-network. 
+This will only fetch entries in the table that start with C<192.168.0>, which
+in this case are routes on the local network. 
 
 Remember that you must supply the partial IID (a numeric OID).
 
@@ -2519,7 +2548,11 @@ sub all {
 
 =item $info->_load_attr()
 
-Used internally by AUTOLOAD to fetch data called from methods listed in %FUNCS.
+Used internally by AUTOLOAD to fetch data called from methods listed in %FUNCS
+or a MIB Leaf node name.
+
+Supports partial table fetches and single instance table fetches.
+See L<SNMP::Info/"Partial Table Fetches">.
 
 Called from $info->load_METHOD();
 
@@ -2565,14 +2598,21 @@ sub _load_attr {
     # They have a flag RetryNoSuch that is used for get() operations,
     # but not for getnext().  We set this flag normally, and if we're
     # using V1, let's try and fetch the data even if we get one of those.
-    my $errornum = $sess->{ErrorNum};
-    if ($ver == 1 and $nosuch and $errornum and $sess->{ErrorStr} =~ /nosuch/i){
-        $errornum = 0; 
-    } elsif ($errornum){
-        $self->error_throw("SNMP::Info::_load_attr: Varbind $varleaf ".$sess->{ErrorStr}."\n");
-        return undef;
-    }
+
+#  This code is causing problems if we have an error from any other SNMP
+#  operation in the same SNMP session, $sess->{ErrorNum} will still contain
+#  the last error.  We have not yet performed a get or getnext operation
+#  so if this code is needed, not sure it is at the correct location???
+#    my $errornum = $sess->{ErrorNum};
+#    if ($ver == 1 and $nosuch and $errornum and $sess->{ErrorStr} =~ /nosuch/i){
+#        $errornum = 0; 
+#    } elsif ($errornum){
+#        $self->error_throw("SNMP::Info::_load_attr: Varbind $varleaf ".$sess->{ErrorStr}."\n");
+#        return undef;
+#    }
+
     my $localstore = undef;
+    my $errornum = 0;
 
     my $vars = [];
     my $bulkwalk_no  = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
@@ -2581,17 +2621,21 @@ sub _load_attr {
     my $repeaters    = $self->{BulkRepeaters} || $REPEATERS;
     my $bulkwalk     = $can_bulkwalk && $ver != 1;
 
-    if ($partial) {
+    if (defined $partial) {
 	# Try a GET, in case the partial is a leaf OID.
 	# Would like to only do this if we know the OID is
 	# long enough; implementing that would require a
 	# lot of MIB mucking.
 	my $try = $sess->get($var);
-	my $errorno = $sess->{ErrorNum};
-	if (defined($try) && $errorno == 0 && $try !~ /^NOSUCH/) {
+        $errornum = $sess->{ErrorNum};
+	if (defined($try) && $errornum == 0 && $try !~ /^NOSUCH/) {
 	    $var->[2] = $try;
 	    $vars = [ $var ];
 	    $bulkwalk = 1;	# fake a bulkwalk return
+        }
+        # We want to execute the while loop below for the getnext request.
+        if ($ver == 1 and $sess->{ErrorNum} and $sess->{ErrorStr} =~ /nosuch/i){
+            $errornum = 0;
 	}
     }
 
@@ -2727,30 +2771,41 @@ sub snmp_connect_ip {
 
 =head2 AUTOLOAD
 
-Each entry in either %FUNCS or %GLOBALS is used by AUTOLOAD() to create dynamic methods.
+Each entry in either %FUNCS, %GLOBALS, or MIB Leaf node names present in
+loaded MIBs are used by AUTOLOAD() to create dynamic methods.
 
-Note that this AUTOLOAD is going to be run for all the classes listed in the @ISA array 
-in a subclass, so will be called with a variety of package names.  We check the %FUNCS and
-%GLOBALS of the package that is doing the calling at this given instant.
+Note that this AUTOLOAD is going to be run for all the classes listed in the
+@ISA array in a subclass, so will be called with a variety of package names.
+We check the %FUNCS and %GLOBALS of the package that is doing the calling at
+this given instant.
 
 =over 
 
-=item 1. Returns unless method is listed in %FUNCS or %GLOBALS for given class
+=item 1. Returns unless method is listed in %FUNCS, %GLOBALS, or is MIB Leaf
+node name in a loaded MIB for given class.
 
-=item 2. If the method exists in %GLOBALS it runs $info->_global(method) unless already cached.
+=item 2. Checks for load_ prefix and if present runs $info->_global(method)
+for methods which exist in %GLOBALS, otherwise runs $info->_load_attr(method)
+for methods which exist in %FUNCS or are MIB Leaf node names.  This always
+forces reloading and does not use cached data.
 
-=item 3. Method is in %FUNCS
+=item 3. Check for set_ prefix and if present runs $info->_set(method).
 
-=item 4. Run $info->_load_attr(method) if not cached
+=item 4. If the method exists in %GLOBALS it runs $info->_global(method) unless
+already cached.
 
-=item 5. Return $info->_show_attr(method).
+=item 5. If the method exists in %FUNCS or is MIB Leaf node name it runs
+$info->_load_attr(method) if not cached.
+
+=item 6. Otherwise return $info->_show_attr(method).
 
 =back
 
-Override any dynamic method listed in one of these hashes by creating a subroutine with 
-the same name.
+Override any dynamic method listed in one of these hashes by creating a
+subroutine with the same name.
 
-For example to override $info->name() create `` sub name {...}'' in your subclass.
+For example to override $info->name() create `` sub name {...}'' in your
+subclass.
 
 =cut
 
@@ -2778,16 +2833,27 @@ sub AUTOLOAD {
         %globals = %{$package.'GLOBALS'};
     }
 
+    my $mib_leaf = $SNMP::MIB{$attr};
+
     unless( defined $funcs{$attr} or
-            defined $globals{$attr} ) {
+            defined $globals{$attr} or
+            defined $mib_leaf ) {
         $self->error_throw("SNMP::Info::AUTOLOAD($attr) Attribute not found in this device class.");
         return;
     }
     
     # Check for load_ ing.
     if ($sub_name =~ /^load_/){
-        return $self->_load_attr( $attr,$funcs{$attr} );
-    } 
+        if ( defined $globals{$attr} ) {
+            return $self->_global( $attr );
+        }
+        if ( defined $funcs{$attr} ) {
+            return $self->_load_attr( $attr,$funcs{$attr},@_ );
+        }
+        if ( defined $mib_leaf ) {
+            return $self->_load_attr( 'mib_leaf',$attr,@_ );
+        }
+    }
 
     # Check for set_ ing.
     if ($sub_name =~ /^set_/){
@@ -2805,8 +2871,14 @@ sub AUTOLOAD {
     # Otherwise we must be listed in %FUNCS 
 
     # Load data if it both not cached and we are not requesting partial info.
-    return $self->_load_attr( $attr, $funcs{$attr},@_ )
-        unless (defined $self->{"_${attr}"} and !scalar(@_));
+    if ( defined $funcs{$attr} ) {
+        return $self->_load_attr( $attr, $funcs{$attr},@_ )
+            unless (defined $self->{"_${attr}"} and !scalar(@_));
+    }
+    if ( defined $mib_leaf ) {
+        return $self->_load_attr( 'mib_leaf', $attr,@_ )
+            unless (defined $self->{"_${attr}"} and !scalar(@_));
+    }
 
     return $self->_show_attr($attr);
 }
