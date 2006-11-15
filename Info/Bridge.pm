@@ -93,6 +93,9 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
           'qb_v_fbdn_egress' => 'dot1qVlanForbiddenEgressPorts',
           'qb_v_untagged'    => 'dot1qVlanStaticUntaggedPorts',
           'qb_v_stat'        => 'dot1qVlanStaticRowStatus',
+          # VLAN Forwarding Table: Dot1qTpFdbEntry
+          'qb_fw_port'       => 'dot1qTpFdbPort',
+          'qb_fw_status'     => 'dot1qTpFdbStatus',
           );
 
 %MUNGE = (
@@ -107,6 +110,25 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
           'stp_p_bridge' => \&SNMP::Info::munge_mac,
           'stp_p_port'   => \&SNMP::Info::munge_mac
          );
+
+# break up the Dot1qTpFdbEntry INDEX into FDB ID and MAC Address.
+sub _qb_fdbtable_index {
+    my $idx = shift;
+    my @values = split(/\./, $idx);
+    my $fdb_id = shift(@values);
+    return ($fdb_id, join(':',map { sprintf "%02x",$_ } @values));
+}
+
+sub qb_fw_mac {
+    my $bridge = shift;
+    my $qb_fw_port = $bridge->qb_fw_port();
+    my $qb_fw_mac = {};
+    foreach my $idx (keys %$qb_fw_port) {
+        my($fdb_id, $mac) = _qb_fdbtable_index($idx);
+        $qb_fw_mac->{$idx} = $mac;
+    }
+    $qb_fw_mac;
+}
 
 sub qb_i_vlan_t {
     my $bridge = shift;
@@ -602,6 +624,31 @@ untagged.
 uhh. C<active> !
 
 (B<dot1qVlanStaticRowStatus>)
+
+=back
+
+=head2 Q-BRIDGE Filtering Database Table (dot1qFdbTable)
+
+=over
+
+=item $bridge->qb_fw_mac()
+
+Returns reference to hash of forwarding table MAC Addresses
+
+(B<dot1qTpFdbAddress>)
+
+=item $bridge->qb_fw_port()
+
+Returns reference to hash of forwarding table entries port interface
+identifier (iid)
+
+(B<dot1qTpFdbPort>)
+
+=item $bridge->qb_fw_status()
+
+Returns reference to hash of forwading table entries status
+
+(B<dot1qTpFdbStatus>)
 
 =back
 
