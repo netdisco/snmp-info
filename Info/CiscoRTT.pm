@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoRTT;
-$VERSION = '1.04';
+$VERSION = '1.05';
 
 use strict;
 
@@ -40,7 +40,7 @@ use SNMP::Info;
 @SNMP::Info::CiscoRTT::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoRTT::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 %MIBS    = (
             'CISCO-RTTMON-MIB'      => 'rttMonCtrlAdminOwner',
@@ -63,11 +63,11 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::CiscoRTT - Perl5 Interface to Cisco's Round Trip Time MIBs
+SNMP::Info::CiscoRTT - SNMP Interface to Cisco's Round Trip Time MIBs
 
 =head1 AUTHOR
 
-Alexander Hartmaier (C<alexander.hartmaier@t-systems.at>)
+Alexander Hartmaier
 
 =head1 SYNOPSIS
 
@@ -82,7 +82,7 @@ Alexander Hartmaier (C<alexander.hartmaier@t-systems.at>)
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $rtt->class();
+ my $class = $rtt->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
@@ -110,7 +110,7 @@ MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =over
 
-none
+None
 
 =back
 
