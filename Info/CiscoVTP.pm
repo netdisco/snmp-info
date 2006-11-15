@@ -259,7 +259,7 @@ sub set_add_i_vlan_tagged {
 
     print "Adding VLAN: $vlan_id to ifIndex: $ifindex\n" if $vtp->debug();
 
-    my $trunk_serial = $vtp->vtp_trunk_set_serial();
+    my $trunk_serial = $vtp->load_vtp_trunk_set_serial();
     my $trunk_members   = $vtp->vtp_trunk_vlans($ifindex);
 
     unless (defined $trunk_members) {
@@ -296,7 +296,7 @@ sub set_remove_i_vlan_tagged {
 
     print "Removing VLAN: $vlan_id from ifIndex: $ifindex\n" if $vtp->debug();
 
-    my $trunk_serial   = $vtp->vtp_trunk_set_serial();
+    my $trunk_serial   = $vtp->load_vtp_trunk_set_serial();
     my $trunk_members  = $vtp->vtp_trunk_vlans($ifindex);
 
     unless (defined $trunk_members) {
