@@ -532,15 +532,16 @@ Mike Hunter, Justin Hunter, Brian Chow and people listed on the Netdisco README!
 
 Creates a new object and connects via SNMP::Session. 
 
- my $info = new SNMP::Info( 'Debug'       => 1,
-                            'AutoSpecify' => 1,
-                            'BigInt'      => 1,
-                            'BulkWalk'    => 1,
-                            'BulkRepeaters'=> 20,
-                            'DestHost'    => 'myrouter',
-                            'Community'   => 'public',
-                            'Version'     => 2,
-                            'MibDirs'     => ['dir1','dir2','dir3'],
+ my $info = new SNMP::Info( 'Debug'         => 1,
+                            'AutoSpecify'   => 1,
+                            'BigInt'        => 1,
+                            'BulkWalk'      => 1,
+                            'BulkRepeaters' => 20,
+                            'LoopDetect'    => 1,
+                            'DestHost'      => 'myrouter',
+                            'Community'     => 'public',
+                            'Version'       => 2,
+                            'MibDirs'       => ['dir1','dir2','dir3'],
                           ) or die;
 
 SNMP::Info Specific Arguments :
@@ -572,6 +573,17 @@ Note that BULKWALK is turned off for Net-SNMP versions 5.1.x because of a bug.
 Set number of MaxRepeaters for BULKWALK operation.  See C<perldoc SNMP> -> bulkwalk() for more info.
 
 (default 20)
+
+=item LoopDetect
+
+Detects looping during getnext table column walks by comparing IIDs for each
+instance.  A loop is detected if the same IID is seen more than once and the
+walk is aborted.  Note:  This will not detect loops during a bulkwalk
+operation, Net-SNMP's internal bulkwalk function must detect the loop. 
+
+Set to C<0> to turn off loop detection.
+
+(default on)
 
 =item Debug
 
@@ -682,6 +694,11 @@ sub new {
     if (defined $args{BulkWalk}){
         $new_obj->{BulkWalk} = $args{BulkWalk};
         delete $sess_args{BulkWalk};
+    }
+
+    if (defined $args{LoopDetect}){
+        $new_obj->{LoopDetect} = $args{LoopDetect};
+        delete $sess_args{LoopDetect};
     }
 
     my $sess = undef;
@@ -815,6 +832,24 @@ sub bulkwalk {
     return $self->{BulkWalk};
 }
     
+
+=item $info->loopdetect([1|0])
+
+Returns if loopdetect is currently turned on for this object.
+
+Optionally sets the loopdetect parameter.
+
+=cut
+
+sub loopdetect {
+    my $self = shift;
+    my $ld   = shift;
+
+    if (defined $ld){
+        $self->{LoopDetect} = $ld;
+    }   
+    return $self->{LoopDetect};
+}
 
 =item $info->device_type()
 
@@ -2613,6 +2648,7 @@ sub _load_attr {
 
     my $localstore = undef;
     my $errornum = 0;
+    my %seen   = ();
 
     my $vars = [];
     my $bulkwalk_no  = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
@@ -2620,6 +2656,7 @@ sub _load_attr {
     my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
     my $repeaters    = $self->{BulkRepeaters} || $REPEATERS;
     my $bulkwalk     = $can_bulkwalk && $ver != 1;
+    my $loopdetect   = defined $self->{LoopDetect} ? $self->{LoopDetect} : 1;
 
     if (defined $partial) {
 	# Try a GET, in case the partial is a leaf OID.
@@ -2665,6 +2702,17 @@ sub _load_attr {
         unless (defined $iid){
             $self->error_throw("SNMP::Info::_load_attr: $attr not here");
             next;
+        }
+
+        if ($loopdetect){
+        # Check to see if we've already seen this IID (looping)
+            if (defined $seen{$iid} and $seen{$iid}){
+                $self->error_throw("Looping on: $attr iid:$iid. ");
+                last;
+            }
+            else {
+                $seen{$iid}++;
+            }
         }
 
         # Check to make sure we are still in partial land
