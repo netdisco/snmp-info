@@ -24,10 +24,19 @@ version 1.05
     + Added set_i_duplex_admin() method to Nortel RapidCity class,
     + Added OSPF Neighbor Tables, SF Patch 1577918 to Layer 3 (Andrew Herrick)
     + Added CiscoConfig class, SF Patch 1555001 (Justin Hunter)
-    
+    + Enable load_ methods for %GLOBALS and MIB Leaf node names.
+    + Enable dynamic methods in AUTOLOAD with MIB Leaf node names for loaded
+      MIBs without definition in %FUNCS
+    + Enable load_ methods for %GLOBALS and MIB Leaf node names.
+    + Add loop detect option and code for getnext table column walks.
+
+    * Fix for bug where an SNMP error in any operation would cause subsequent
+      table get operations to fail while using the same session, originally
+      identified by Nicolai Petri.
     * Enable single instance partial table fetches (Alexander Hartmaier)
     *** Enable partial table fetches in overriden table methods (Justin Hunter)
     *** Not fully completed yet ***
+    * Allow partial table fetches with load_ methods.
     * Fixed vlan trunk port handling bug in L2:HP (Michael Robbert)
     * Correct bp_port() definition in Bridge class (Reported by Nicolai Petri)
     * Remove port security definitions from CiscoStack and move into new class
