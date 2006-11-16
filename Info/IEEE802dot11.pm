@@ -64,6 +64,16 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
             'i_ssidlist'      => 'dot11DesiredSSID',
             'dot11_pwr_mode'  => 'dot11PowerManagementMode',
             'dot11_sta_id'    => 'dot11StationID',
+            # dot11PhyTxPowerTable
+            'dot11_cur_tx_pwr'     => 'dot11CurrentTxPowerLevel',
+            'dot11_tx_pwr_level_1' => 'dot11TxPowerLevel1',
+            'dot11_tx_pwr_level_2' => 'dot11TxPowerLevel2',
+            'dot11_tx_pwr_level_3' => 'dot11TxPowerLevel3',
+            'dot11_tx_pwr_level_4' => 'dot11TxPowerLevel4',
+            'dot11_tx_pwr_level_5' => 'dot11TxPowerLevel5',
+            'dot11_tx_pwr_level_6' => 'dot11TxPowerLevel6',
+            'dot11_tx_pwr_level_7' => 'dot11TxPowerLevel7',
+            'dot11_tx_pwr_level_8' => 'dot11TxPowerLevel8',
             );
 
 %MUNGE   = (
@@ -143,6 +153,23 @@ sub i_80211channel {
     }
 
     return \%i_80211channel;
+}
+
+sub dot11_cur_tx_pwr_mw {
+    my $dot11 = shift;
+    my $partial = shift;
+    my $cur = $dot11->dot11_cur_tx_pwr($partial);
+    my $dot11_cur_tx_pwr_mw = {};
+    foreach my $idx (keys %$cur) {
+        my $pwr = $cur->{$idx};
+        if ($pwr >= 1 && $pwr <= 8) {
+            my $mw = eval "\$dot11->dot11_tx_pwr_level_$pwr(\$idx)";
+            $dot11_cur_tx_pwr_mw->{$idx} = $mw->{$idx};
+        } else {
+            next;
+        }
+    }
+    return $dot11_cur_tx_pwr_mw;
 }
 
 1;
@@ -238,6 +265,11 @@ Returns reference to hash.  SSID's recognized by the radio interface.
 Returns reference to hash.  Current operating frequency channel of the radio
 interface.
 
+=item $dot11->dot11_cur_tx_pwr_mw()
+
+Returns reference to hash.  Current transmit power, in milliwats, of the radio
+interface.
+
 =back
 
 =head2 Dot11 Phy OFDM Table  (B<dot11PhyOFDMTable>)
@@ -317,5 +349,49 @@ interface.
 =item $dot11->dot11_sta_id()
 
 (B<dot11StationID>)
+
+=back
+
+=head2 Dot11 Transmission Power Table  (B<dot11PhyTxPowerTable>)
+
+=over
+
+=item $dot11->dot11_cur_tx_pwr()
+
+(B<dot11CurrentTxPowerLevel>)
+
+=item $dot11->dot11_tx_pwr_level_1()
+
+(B<dot11TxPowerLevel1>)
+
+=item $dot11->dot11_tx_pwr_level_2()
+
+(B<dot11TxPowerLevel2>)
+
+=item $dot11->dot11_tx_pwr_level_3()
+
+(B<dot11TxPowerLevel3>)
+
+=item $dot11->dot11_tx_pwr_level_4()
+
+(B<dot11TxPowerLevel4>)
+
+=item $dot11->dot11_tx_pwr_level_5()
+
+(B<dot11TxPowerLevel5>)
+
+=item $dot11->dot11_tx_pwr_level_6()
+
+(B<dot11TxPowerLevel6>)
+
+=item $dot11->dot11_tx_pwr_level_7()
+
+(B<dot11TxPowerLevel7>)
+
+=item $dot11->dot11_tx_pwr_level_8()
+
+(B<dot11TxPowerLevel8>)
+
+=back
 
 =cut
