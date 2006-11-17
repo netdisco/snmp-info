@@ -211,11 +211,11 @@ a more specific class using the method above.
 
 =item Inherited Classes' MIBs
 
-See SNMP::Info for its own MIB requirements.
+See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::Layer3 for its own MIB requirements.
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::Entity for its own MIB requirements.
+See L<SNMP::Info::Entity/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -268,15 +268,15 @@ layers.
 
 =head2 Globals imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Entity
 
-See documentation in SNMP::Info::Entity for details.
+See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -296,14 +296,14 @@ tunnel interfaces.
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Entity
 
-See documentation in SNMP::Info::Entity for details.
+See documentation in L<SNMP::Info::Entity/"TABLE ENTRIES"> for details.
 
 =cut

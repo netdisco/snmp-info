@@ -372,7 +372,7 @@ Returns the status of the chassis fan.
 
 =head2 Globals imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -453,6 +453,6 @@ Returns reference to hash.  Current Port Speed.
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"TABLE ENTRIES"> for details.
 
 =cut

@@ -142,7 +142,7 @@ Subclass for Generic Juniper Routers running JUNOS
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::Layer3> for its own MIB requirements.
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -173,7 +173,7 @@ These are methods that return scalar value from SNMP
 
 =head2 Globals imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info::Layer3> for details.
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -182,6 +182,6 @@ to a hash.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info::Layer3> for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
 
 =cut

@@ -320,7 +320,7 @@ Returns serial number. (B<rlPhdUnitGenParamSerialNum>)
 
 =head2 Globals imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -384,6 +384,6 @@ Returns reference to hash of iid to current link administrative duplex setting.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
 
 =cut

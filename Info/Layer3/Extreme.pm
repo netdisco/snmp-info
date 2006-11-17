@@ -280,11 +280,11 @@ Returns base mac
 
 =head2 Globals imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::MAU
 
-See documentation in SNMP::Info::MAU for details.
+See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -322,10 +322,10 @@ rather than BRIDGE-MIB.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::MAU
 
-See documentation in SNMP::Info::MAU for details.
+See documentation in L<SNMP::Info::MAU/"TABLE ENTRIES"> for details.
 
 =cut

@@ -277,7 +277,7 @@ not stack, the only requirment to reserve more than the max number of ports.
 
 =head2 Globals imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::SONMP
 
@@ -311,10 +311,10 @@ Returns reference to hash of interface administrative link duplex status.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::SONMP
 
-See documentation in SNMP::Info::SONMP for details.
+See documentation in L<SNMP::Info::SONMP/"TABLE ENTRIES"> for details.
 
 =cut

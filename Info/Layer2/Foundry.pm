@@ -269,11 +269,11 @@ These are methods that return scalar value from SNMP
 
 =head2 Globals imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer2 for details.
+See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::FDP
 
-See documentation in SNMP::Info::FDP for details.
+See documentation in L<SNMP::Info::FDP/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -290,10 +290,10 @@ to a hash.
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer2 for details.
+See documentation in L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::FDP
 
-See documentation in SNMP::Info::FDP for details.
+See documentation in L<SNMP::Info::FDP/"TABLE ENTRIES"> for details.
 
 =cut

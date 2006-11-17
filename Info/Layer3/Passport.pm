@@ -564,11 +564,11 @@ determining a more specific class using the method above.
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::SONMP> for its own MIB requirements.
+See L<SNMP::Info::SONMP/"Required MIBs"> for its own MIB requirements.
 
-See L<SNMP::Info::RapidCity> for its own MIB requirements.
+See L<SNMP::Info::RapidCity/"Required MIBs"> for its own MIB requirements.
 
-See L<SNMP::Info::Layer3> for its own MIB requirements.
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -627,15 +627,15 @@ Required by SNMP::Info::SONMP.  Returns 0.
 
 =head2 Global Methods imported from SNMP::Info::SONMP
 
-See documentation in L<SNMP::Info::SONMP> for details.
+See documentation in L<SNMP::Info::SONMP/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::RapidCity
 
-See documentation in L<SNMP::Info::RapidCity> for details.
+See documentation in L<SNMP::Info::RapidCity/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info::Layer3> for details.
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -693,14 +693,14 @@ problems with BRIDGE-MIB
 
 =head2 Table Methods imported from SNMP::Info::SONMP
 
-See documentation in L<SNMP::Info::SONMP> for details.
+See documentation in L<SNMP::Info::SONMP/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::RapidCity
 
-See documentation in L<SNMP::Info::RapidCity> for details.
+See documentation in L<SNMP::Info::RapidCity/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info::Layer3> for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
 
 =cut

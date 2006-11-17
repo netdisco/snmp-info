@@ -161,7 +161,7 @@ This MIB assumedly obtainable through ZyXEL or possibly included with your devic
 
 =item Inherited Classes
 
-MIBs listed in SNMP::Info::Layer2 and their inherited classes.
+MIBs listed in L<SNMP::Info::Layer2/"Required MIBs"> and their inherited classes.
 
 =back
 
@@ -199,7 +199,7 @@ Trys to cull out model out of the description field.
 
 =head2 Global Methods imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer2 for details.
+See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -219,6 +219,6 @@ Returns reference to map of IIDs to human-set port description (profile name).
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer2 for details.
+See documentation in L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
 =cut

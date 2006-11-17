@@ -195,17 +195,17 @@ a more specific class using the method above.
 
 =item Inherited Classes' MIBs
 
-See SNMP::Info::Layer3 for its own MIB requirements.
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::CiscoVTP for its own MIB requirements.
+See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::CiscoStack for its own MIB requirements.
+See L<SNMP::Info::CiscoStack/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::CiscoStats for its own MIB requirements.
+See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::CiscoImage for its own MIB requirements.
+See L<SNMP::Info::CiscoImage/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::CDP for its own MIB requirements.
+See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -234,27 +234,27 @@ Trys to cull the number of ports from the model number.
 
 =head2 Globals imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::CiscoVTP
 
-See documentation in SNMP::Info::CiscoVTP for details.
+See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::CiscoStack
 
-See documentation in SNMP::Info::CiscoStack for details.
+See documentation in L<SNMP::Info::CiscoStack/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::CDP
 
-See documentation in SNMP::Info::CDP for details.
+See documentation in L<SNMP::Info::CDP/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::CiscoStats
 
-See documentation in SNMP::Info::CiscoStats for details.
+See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::CiscoImage
 
-See documentation in SNMP::Info::CiscoImage for details.
+See documentation in L<SNMP::Info::CiscoImage/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -263,26 +263,26 @@ to a hash.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
-See documentation in SNMP::Info::CiscoVTP for details.
+See documentation in L<SNMP::Info::CiscoVTP/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoStack
 
-See documentation in SNMP::Info::CiscoStack for details.
+See documentation in L<SNMP::Info::CiscoStack/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CDP
 
-See documentation in SNMP::Info::CDP for details.
+See documentation in L<SNMP::Info::CDP/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
-See documentation in SNMP::Info::CiscoStats for details.
+See documentation in L<SNMP::Info::CiscoStats/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoImage
 
-See documentation in SNMP::Info::CiscoImage for details.
+See documentation in L<SNMP::Info::CiscoImage/"TABLE ENTRIES"> for details.
 
 =cut

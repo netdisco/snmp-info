@@ -254,15 +254,15 @@ Trys to discover the vendor from $l2->model() and $l2->description()
 
 =head2 Globals imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Bridge
 
-See documentation in SNMP::Info::Bridge for details.
+See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Entity
 
-See documentation in SNMP::Info::Entity for details.
+See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 

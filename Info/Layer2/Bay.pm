@@ -307,7 +307,7 @@ a more specific class using the method above.
 
 =item Inherited classes
 
-MIBs required by SNMP::Info::Layer2 and its superclasses.
+MIBs required by L<SNMP::Info::Layer2/"Required MIBs"> and its superclasses.
 
 =back
 
@@ -354,7 +354,7 @@ Returns if the S5-ETH-MULTISEG-TOPOLOGY info is on for this device.
 
 =head2 Globals imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer2 for details.
+See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -469,6 +469,6 @@ Returns reference to hash.  Key: Table entry, Value:Boolean, if bay_topo_seg() i
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer2 for details.
+See documentation in L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
 =cut

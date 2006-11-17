@@ -209,11 +209,11 @@ a more specific class using the method above.
 
 =item Inherited Classes' MIBs
 
-See SNMP::Info::Layer2 for its own MIB requirements.
+See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::CiscoVTP for its own MIB requirements.
+See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::CiscoStack for its own MIB requirements.
+See L<SNMP::Info::CiscoStack/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -242,15 +242,15 @@ Returns 'cisco'
 
 =head2 Globals imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer2 for details.
+See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::CiscoVTP
 
-See documentation in SNMP::Info::CiscoVTP for details.
+See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::CiscoStack
 
-See documentation in SNMP::Info::CiscoStack for details.
+See documentation in L<SNMP::Info::CiscoStack/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -272,14 +272,14 @@ problems with BRIDGE-MIB
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
-See documentation in SNMP::Info::CiscoVTP for details.
+See documentation in L<SNMP::Info::CiscoVTP/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer2 for details.
+See documentation in L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer2::CiscoStack
 
-See documentation in SNMP::Info::Layer2::CiscoStack for details.
+See documentation in L<SNMP::Info::Layer2::CiscoStack/"TABLE ENTRIES"> for details.
 
 =cut

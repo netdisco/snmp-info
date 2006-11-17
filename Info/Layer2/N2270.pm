@@ -156,13 +156,13 @@ my $n2270 = new SNMP::Info::Layer2::N2270(...);
 
 =item Inherited Classes' MIBs
 
-See SNMP::Info for its own MIB requirements.
+See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::Bridge for its own MIB requirements.
+See L<SNMP::Info::Bridge/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::SONMP for its own MIB requirements.
+See L<SNMP::Info::SONMP/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::Airespace for its own MIB requirements.
+See L<SNMP::Info::Airespace/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -207,19 +207,19 @@ start at 0.  Returns 0.
 
 =head2 Globals imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Bridge
 
-See documentation in SNMP::Info::Bridge for details.
+See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::SONMP
 
-See documentation in SNMP::Info::SONMP for details.
+See documentation in L<SNMP::Info::SONMP/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::Airespace
 
-See documentation in SNMP::Info::Airespace for details.
+See documentation in L<SNMP::Info::Airespace/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -236,18 +236,18 @@ to a hash.
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 
-See documentation in SNMP::Info::Bridge for details.
+See documentation in L<SNMP::Info::Bridge/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::SONMP
 
-See documentation in SNMP::Info::SONMP for details.
+See documentation in L<SNMP::Info::SONMP/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Airespace
 
-See documentation in SNMP::Info::Airespace for details.
+See documentation in L<SNMP::Info::Airespace/"TABLE ENTRIES"> for details.
 
 =cut

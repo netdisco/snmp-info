@@ -539,15 +539,15 @@ hp
 
 =head2 Globals imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer2 for details.
+See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Entity
 
-See documentation in SNMP::Info::Entity for details.
+See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::MAU
 
-See documentation in SNMP::Info::MAU for details.
+See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 

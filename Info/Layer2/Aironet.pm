@@ -220,15 +220,15 @@ Adds info from method e_descr() from SNMP::Info::Entity
 
 =head2 Globals imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer2 for details.
+See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Entity
 
-See documentation in SNMP::Info::Entity for details.
+See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::EtherLike
 
-See documentation in SNMP::Info::EtherLike for details.
+See documentation in L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -248,14 +248,14 @@ Crosses information from SNMP::Info::EtherLike to get duplex info for interfaces
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in SNMP::Info::Layer2 for details.
+See documentation in L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Entity
 
-See documentation in SNMP::Info::Entity for details.
+See documentation in L<SNMP::Info::Entity/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::EtherLike
 
-See documentation in SNMP::Info::EtherLike for details.
+See documentation in L<SNMP::Info::EtherLike/"TABLE ENTRIES"> for details.
 
 =cut

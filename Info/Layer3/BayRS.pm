@@ -390,9 +390,9 @@ a more specific class using the method above.
 
 =item Inherited Classes' MIBs
 
-See SNMP::Info for its own MIB requirements.
+See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::Bridge for its own MIB requirements.
+See L<SNMP::Info::Bridge/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -450,11 +450,11 @@ Returns the first found:  CLIP (CircuitLess IP), (B<wfOspfRouterId>), or undefin
 
 =head2 Globals imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Bridge
 
-See documentation in SNMP::Info::Bridge for details.
+See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -495,14 +495,14 @@ Returns reference to hash.  Maps port VLAN ID to IIDs.
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in SNMP::Info::Layer3 for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 
-See documentation in SNMP::Info::Bridge for details.
+See documentation in L<SNMP::Info::Bridge/"TABLE ENTRIES"> for details.
 
 =cut

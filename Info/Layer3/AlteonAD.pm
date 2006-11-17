@@ -315,9 +315,9 @@ the latest version's archive.
 
 =item Inherited Classes' MIBs
 
-See SNMP::Info for its own MIB requirements.
+See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
 
-See SNMP::Info::Bridge for its own MIB requirements.
+See L<SNMP::Info::Bridge/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -363,11 +363,11 @@ Returns the software version reported by B<agSoftwareVersion>
 
 =head2 Globals imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Bridge
 
-See documentation in SNMP::Info::Bridge for details.
+See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
 
@@ -409,10 +409,10 @@ Returns a mapping between ifIndex and the Bridge Table.
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"TABLE ENTRIES"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 
-See documentation in SNMP::Info::Bridge for details.
+See documentation in L<SNMP::Info::Bridge/"TABLE ENTRIES"> for details.
 
 =cut
