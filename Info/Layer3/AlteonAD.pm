@@ -35,15 +35,17 @@ use strict;
 
 use Exporter;
 use SNMP::Info;
+use SNMP::Info::Layer3;
 use SNMP::Info::Bridge;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE /;
 
-@SNMP::Info::Layer3::AlteonAD::ISA = qw/SNMP::Info SNMP::Info::Bridge Exporter/;
+@SNMP::Info::Layer3::AlteonAD::ISA = qw/SNMP::Info SNMP::Info::Layer3 SNMP::Info::Bridge Exporter/;
 @SNMP::Info::Layer3::AlteonAD::EXPORT_OK = qw//;
 
 %MIBS = (
           %SNMP::Info::MIBS,
+          %SNMP::Info::Layer3::MIBS,
           %SNMP::Info::Bridge::MIBS,
           'ALTEON-TIGON-SWITCH-MIB' => 'agSoftwareVersion',
           'ALTEON-TS-PHYSICAL-MIB'  => 'agPortTableMaxEnt',
@@ -52,6 +54,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE /;
 
 %GLOBALS = (
             %SNMP::Info::GLOBALS,
+            %SNMP::Info::Layer3::GLOBALS,
             %SNMP::Info::Bridge::GLOBALS,
             'sw_ver'           => 'agSoftwareVersion',
             'tftp_action'  => 'agTftpAction',
@@ -62,13 +65,8 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE /;
 
 %FUNCS = (
             %SNMP::Info::FUNCS,
+            %SNMP::Info::Layer3::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
-            'bp_index_2'  => 'dot1dBasePortIfIndex',
-            'i_name2'    => 'ifName',
-            # From RFC1213-MIB
-            'at_index'    => 'ipNetToMediaIfIndex',
-            'at_paddr'    => 'ipNetToMediaPhysAddress',
-            'at_netaddr'  => 'ipNetToMediaNetAddress',
             # From agPortCurCfgTable
             'ag_p_cfg_idx'        => 'agPortCurCfgIndx',
             'ag_p_cfg_pref'       => 'agPortCurCfgPrefLink',
@@ -86,8 +84,8 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE /;
          
 %MUNGE = (
             %SNMP::Info::MUNGE,
+            %SNMP::Info::Layer3::MUNGE,
             %SNMP::Info::Bridge::MUNGE,
-            'at_paddr' => \&SNMP::Info::munge_mac,
          );
 
 sub model {
@@ -236,7 +234,7 @@ sub i_name {
 # Bridge MIB does not map Bridge Port to ifIndex correctly
 sub bp_index {
     my $alteon = shift;
-    my $b_index = $alteon->bp_index_2();
+    my $b_index = $alteon->orig_bp_index();
 
     my %bp_index;
     foreach my $iid (keys %$b_index){
@@ -406,30 +404,6 @@ Maps (B<agPortCurCfgPortName>) to port and returns the human set port name if ex
 =item $alteon->bp_index()
 
 Returns a mapping between ifIndex and the Bridge Table.
-
-=back
-
-=head2 RFC1213 Arp Cache Table (B<ipNetToMediaTable>)
-
-=over
-
-=item $alteon->at_index()
-
-Returns reference to hash.  Maps ARP table entries to Interface IIDs 
-
-(B<ipNetToMediaIfIndex>)
-
-=item $alteon->at_paddr()
-
-Returns reference to hash.  Maps ARP table entries to MAC addresses. 
-
-(B<ipNetToMediaPhysAddress>)
-
-=item $alteon->at_netaddr()
-
-Returns reference to hash.  Maps ARP table entries to IPs 
-
-(B<ipNetToMediaNetAddress>)
 
 =back
 

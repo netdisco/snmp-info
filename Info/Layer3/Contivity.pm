@@ -35,37 +35,36 @@ use strict;
 
 use Exporter;
 use SNMP::Info;
+use SNMP::Info::Layer3;
 use SNMP::Info::Entity;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-@SNMP::Info::Layer3::Contivity::ISA = qw/SNMP::Info SNMP::Info::Entity Exporter/;
+@SNMP::Info::Layer3::Contivity::ISA = qw/SNMP::Info SNMP::Info::Layer3 SNMP::Info::Entity Exporter/;
 @SNMP::Info::Layer3::Contivity::EXPORT_OK = qw//;
 
 %MIBS = (
          %SNMP::Info::MIBS,
+         %SNMP::Info::Layer3::MIBS,
          %SNMP::Info::Entity::MIBS,
         );
 
 %GLOBALS = (
            %SNMP::Info::GLOBALS,
+           %SNMP::Info::Layer3::GLOBALS,
            %SNMP::Info::Entity::GLOBALS,
            );
 
 %FUNCS = (
           %SNMP::Info::FUNCS,
+          %SNMP::Info::Layer3::FUNCS,
           %SNMP::Info::Entity::FUNCS,
-          'i_name2'     => 'ifName',
-          # From RFC1213-MIB
-          'at_index'    => 'ipNetToMediaIfIndex',
-          'at_paddr'    => 'ipNetToMediaPhysAddress',
-          'at_netaddr'  => 'ipNetToMediaNetAddress',
          );
          
 %MUNGE = (
           %SNMP::Info::MUNGE,
+          %SNMP::Info::Layer3::MUNGE,
           %SNMP::Info::Entity::MUNGE,
-          'at_paddr' => \&SNMP::Info::munge_mac,
          );
 
 sub layers {
@@ -142,7 +141,7 @@ sub interfaces {
 
 sub i_name {
     my $contivity = shift;
-    my $i_name2 = $contivity->i_name2();
+    my $i_name2 = $contivity->orig_i_name();
     
     my %i_name;
     foreach my $iid (keys %$i_name2){
@@ -200,6 +199,8 @@ a more specific class using the method above.
 
 =item SNMP::Info
 
+=item SNMP::Info::Layer3
+
 =item SNMP::Info::Entity
 
 =back
@@ -211,6 +212,8 @@ a more specific class using the method above.
 =item Inherited Classes' MIBs
 
 See SNMP::Info for its own MIB requirements.
+
+See SNMP::Info::Layer3 for its own MIB requirements.
 
 See SNMP::Info::Entity for its own MIB requirements.
 
@@ -267,6 +270,10 @@ layers.
 
 See documentation in SNMP::Info for details.
 
+=head2 Globals imported from SNMP::Info::Layer3
+
+See documentation in SNMP::Info::Layer3 for details.
+
 =head2 Globals imported from SNMP::Info::Entity
 
 See documentation in SNMP::Info::Entity for details.
@@ -287,33 +294,13 @@ tunnel interfaces.
 
 =back
 
-=head2 RFC1213 Arp Cache Table (B<ipNetToMediaTable>)
-
-=over
-
-=item $contivity->at_index()
-
-Returns reference to hash.  Maps ARP table entries to Interface IIDs 
-
-(B<ipNetToMediaIfIndex>)
-
-=item $contivity->at_paddr()
-
-Returns reference to hash.  Maps ARP table entries to MAC addresses. 
-
-(B<ipNetToMediaPhysAddress>)
-
-=item $contivity->at_netaddr()
-
-Returns reference to hash.  Maps ARP table entries to IPs 
-
-(B<ipNetToMediaNetAddress>)
-
-=back
-
 =head2 Table Methods imported from SNMP::Info
 
 See documentation in SNMP::Info for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See documentation in SNMP::Info::Layer3 for details.
 
 =head2 Table Methods imported from SNMP::Info::Entity
 

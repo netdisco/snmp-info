@@ -35,15 +35,17 @@ use strict;
 
 use Exporter;
 use SNMP::Info;
+use SNMP::Info::Layer3;
 use SNMP::Info::Bridge;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP/;
 
-@SNMP::Info::Layer3::BayRS::ISA = qw/SNMP::Info SNMP::Info::Bridge Exporter/;
+@SNMP::Info::Layer3::BayRS::ISA = qw/SNMP::Info SNMP::Info::Layer3 SNMP::Info::Bridge Exporter/;
 @SNMP::Info::Layer3::BayRS::EXPORT_OK = qw//;
 
 %MIBS = (
           %SNMP::Info::MIBS,
+          %SNMP::Info::Layer3::MIBS,
           %SNMP::Info::Bridge::MIBS,
           'Wellfleet-HARDWARE-MIB'        => 'wfHwBpIdOpt',
           'Wellfleet-OSPF-MIB'            => 'wfOspfRouterId',
@@ -53,6 +55,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP/;
 
 %GLOBALS = (
             %SNMP::Info::GLOBALS,
+            %SNMP::Info::Layer3::GLOBALS,
             %SNMP::Info::Bridge::GLOBALS,
             'bp_id'         => 'wfHwBpIdOpt',
             'bp_serial'     => 'wfHwBpSerialNumber',
@@ -61,12 +64,8 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP/;
 
 %FUNCS = (
             %SNMP::Info::FUNCS,
+            %SNMP::Info::Layer3::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
-            'i_name2'             => 'ifName',
-            # From RFC1213-MIB
-            'at_index'    => 'ipNetToMediaIfIndex',
-            'at_paddr'    => 'ipNetToMediaPhysAddress',
-            'at_netaddr'  => 'ipNetToMediaNetAddress',
             # From Wellfleet-CSMACD-MIB::wfCSMACDTable
             'wf_csmacd_cct'          => 'wfCSMACDCct',
             'wf_csmacd_slot'    => 'wfCSMACDSlot',
@@ -97,8 +96,8 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP/;
          
 %MUNGE = (
             %SNMP::Info::MUNGE,
+            %SNMP::Info::Layer3::MUNGE,
             %SNMP::Info::Bridge::MUNGE,
-            'at_paddr' => \&SNMP::Info::munge_mac,
          );
 
 %MODEL_MAP = ( 
@@ -494,33 +493,13 @@ Returns reference to hash.  Maps port VLAN ID to IIDs.
 
 =back
 
-=head2 RFC1213 Arp Cache Table (B<ipNetToMediaTable>)
-
-=over
-
-=item $bayrs->at_index()
-
-Returns reference to hash.  Maps ARP table entries to Interface IIDs 
-
-(B<ipNetToMediaIfIndex>)
-
-=item $bayrs->at_paddr()
-
-Returns reference to hash.  Maps ARP table entries to MAC addresses. 
-
-(B<ipNetToMediaPhysAddress>)
-
-=item $bayrs->at_netaddr()
-
-Returns reference to hash.  Maps ARP table entries to IPs 
-
-(B<ipNetToMediaNetAddress>)
-
-=back
-
 =head2 Table Methods imported from SNMP::Info
 
 See documentation in SNMP::Info for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See documentation in SNMP::Info::Layer3 for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 

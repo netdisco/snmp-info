@@ -61,7 +61,7 @@ $VERSION = '1.04';
             %SNMP::Info::FDP::GLOBALS,
             'mac'        => 'ifPhysAddress.1',
             'chassis'    => 'entPhysicalDescr.1',
-            'serial'     => 'snChasSerNum',
+            'serial1'    => 'snChasSerNum',
             'temp'       => 'snChasActualTemperature',
             'ps1_type'   => 'snChasPwrSupplyDescription.1',
             'ps1_status' => 'snChasPwrSupplyOperStatus.1',
@@ -89,7 +89,6 @@ $VERSION = '1.04';
             # Inherit all the built in munging
             %SNMP::Info::Layer3::MUNGE,
             %SNMP::Info::FDP::MUNGE,
-            'at_paddr' => \&SNMP::Info::munge_mac,
          );
 
 
@@ -419,30 +418,6 @@ Returns reference to hash of interface speeds .
 
 Crosses $foundry->sw_speeD() with $foundry->sw_index() and 
 does a little munging.
-
-=back
-
-=head2 RFC1213 Arp Cache Table (B<ipNetToMediaTable>)
-
-=over
-
-=item $foundry->at_index()
-
-Returns reference to hash.  Maps ARP table entries to Interface IIDs 
-
-(B<ipNetToMediaIfIndex>)
-
-=item $foundry->at_paddr()
-
-Returns reference to hash.  Maps ARP table entries to MAC addresses. 
-
-(B<ipNetToMediaPhysAddress>)
-
-=item $foundry->at_netaddr()
-
-Returns reference to hash.  Maps ARP table entries to IPs 
-
-(B<ipNetToMediaNetAddress>)
 
 =back
 
