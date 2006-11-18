@@ -252,7 +252,7 @@ See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::CiscoStack/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -272,14 +272,14 @@ problems with BRIDGE-MIB
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
-See documentation in L<SNMP::Info::CiscoVTP/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::CiscoVTP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer2::CiscoStack
 
-See documentation in L<SNMP::Info::Layer2::CiscoStack/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Layer2::CiscoStack/"TABLE METHODS"> for details.
 
 =cut

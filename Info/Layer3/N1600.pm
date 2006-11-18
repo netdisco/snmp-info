@@ -283,7 +283,7 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 See documentation in SNMP::SONMP::Layer3 for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -311,10 +311,10 @@ Returns reference to hash of interface administrative link duplex status.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::SONMP
 
-See documentation in L<SNMP::Info::SONMP/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::SONMP/"TABLE METHODS"> for details.
 
 =cut

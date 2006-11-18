@@ -341,7 +341,7 @@ Returns either (auto,none,full,half).
 
 =back
 
-=head2 MAU INTERFACE TABLE ENTRIES
+=head2 MAU INTERFACE TABLE METHODS
 
 =over
 

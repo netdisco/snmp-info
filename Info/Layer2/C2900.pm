@@ -299,7 +299,7 @@ See L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
 
 See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -366,19 +366,19 @@ Gives Admin speed of port
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
-See L<SNMP::Info::CiscoVTP/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::CiscoVTP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CDP
 
-See L<SNMP::Info::CDP/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::CDP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
-See L<SNMP::Info::CiscoStats/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =head1 SET METHODS
 

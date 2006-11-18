@@ -510,7 +510,7 @@ See L<SNMP::Info::IEEE802dot11/"GLOBALS"> for details.
 
 See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -567,14 +567,14 @@ The default VID of the radio interfaces.
 
 =head2 Table Methods imported from SNMP::Info::SONMP
 
-See L<SNMP::Info::SONMP/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::SONMP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::IEEE802dot11
 
-See L<SNMP::Info::IEEE802dot11/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::IEEE802dot11/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =cut

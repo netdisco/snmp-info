@@ -405,7 +405,7 @@ See documentation in L<SNMP::Info::NortelStack/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::SONMP/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -504,18 +504,18 @@ Returns reference to hash.  Key: Table entry, Value: VLAN Type
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 
-See documentation in L<SNMP::Info::Bridge/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::NortelStack
 
-See documentation in L<SNMP::Info::NortelStack/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::NortelStack/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::SONMP
 
-See documentation in L<SNMP::Info::SONMP/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::SONMP/"TABLE METHODS"> for details.
 
 =cut

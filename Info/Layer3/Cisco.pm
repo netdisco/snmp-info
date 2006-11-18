@@ -186,29 +186,29 @@ See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::CiscoImage/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
-See documentation in L<SNMP::Info::CiscoVTP/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::CiscoVTP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CDP
 
-See documentation in L<SNMP::Info::CDP/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
-See documentation in L<SNMP::Info::CiscoStats/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoImage
 
-See documentation in L<SNMP::Info::CiscoImage/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::CiscoImage/"TABLE METHODS"> for details.
 
 =cut

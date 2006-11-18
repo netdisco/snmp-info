@@ -201,7 +201,7 @@ Trys to cull out model out of the description field.
 
 See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 =head2 Overrides
 
@@ -219,6 +219,6 @@ Returns reference to map of IIDs to human-set port description (profile name).
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =cut

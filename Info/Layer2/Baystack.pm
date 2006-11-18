@@ -349,7 +349,7 @@ See L<SNMP::Info::RapidCity/"GLOBALS"> for details.
 
 See L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -388,18 +388,18 @@ Crosses ifName with ifAlias and returns the human set port name if exists.
 
 =head2 Table Methods imported from SNMP::Info::SONMP
 
-See L<SNMP::Info::SONMP/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::SONMP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::NortelStack
 
-See L<SNMP::Info::NortelStack/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::NortelStack/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::RapidCity
 
-See L<SNMP::Info::RapidCity/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::RapidCity/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =cut

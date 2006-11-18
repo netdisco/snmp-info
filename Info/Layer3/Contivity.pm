@@ -278,7 +278,7 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -296,14 +296,14 @@ tunnel interfaces.
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Entity
 
-See documentation in L<SNMP::Info::Entity/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 
 =cut

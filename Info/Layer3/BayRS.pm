@@ -456,7 +456,7 @@ See documentation in L<SNMP::Info/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -495,14 +495,14 @@ Returns reference to hash.  Maps port VLAN ID to IIDs.
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 
-See documentation in L<SNMP::Info::Bridge/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
 =cut

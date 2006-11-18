@@ -455,7 +455,7 @@ See L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 
 See L<SNMP::Info::Entity/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -707,18 +707,18 @@ routers
 
 =head2 Table Methods imported from SNMP::Info
 
-See L<SNMP::Info/"TABLE ENTRIES"> for details.
+See L<SNMP::Info/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 
-See L<SNMP::Info::Bridge/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::EtherLike
 
-See L<SNMP::Info::EtherLike/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::EtherLike/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Entity
 
-See L<SNMP::Info::Entity/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 
 =cut

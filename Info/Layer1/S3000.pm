@@ -450,7 +450,7 @@ Returns 00000011.  Class emulates Layer 2 functionality through proprietary MIBs
 
 See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -531,6 +531,6 @@ Returns reference to hash.  Key: Table entry, Value:Remote MAC address
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =cut

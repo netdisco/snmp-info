@@ -219,7 +219,7 @@ Trys to cull out AT-nnnnX out of the description field.
 
 See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 =head2 Overrides
 
@@ -234,6 +234,6 @@ the values of ati_up() to 'up' and 'down'.
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
+See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =cut

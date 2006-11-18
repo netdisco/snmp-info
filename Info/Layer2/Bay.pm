@@ -356,7 +356,7 @@ Returns if the S5-ETH-MULTISEG-TOPOLOGY info is on for this device.
 
 See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -469,6 +469,6 @@ Returns reference to hash.  Key: Table entry, Value:Boolean, if bay_topo_seg() i
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in L<SNMP::Info::Layer2/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =cut

@@ -322,7 +322,7 @@ Returns serial number. (B<rlPhdUnitGenParamSerialNum>)
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
@@ -384,6 +384,6 @@ Returns reference to hash of iid to current link administrative duplex setting.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info::Layer3/"TABLE ENTRIES"> for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =cut

@@ -800,7 +800,7 @@ proprietary MIBs.
 
 =back
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.

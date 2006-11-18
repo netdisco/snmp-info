@@ -289,14 +289,14 @@ Ignores ports with B<ifType> of loopback,propvirtual,other, and cpu
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in SNMP::Info for details.
+See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 
-See documentation in SNMP::Info::Bridge for details.
+See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Entity
 
-See documentation in SNMP::Info::Entity for details.
+See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 
 =cut
