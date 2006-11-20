@@ -414,21 +414,21 @@ B<cySPortSocketPort> to avoid conflicts with B<ifIndex>.
 Returns reference to map of IIDs to physical ports.  Extended to include
 serial ports, B<cyISPortTty>.
 
-=item $bayhub->i_speed()
+=item $cyclades->i_speed()
 
 Returns interface speed.  Extended to include serial ports, B<cyISPortSpeed>. 
 
-=item $bayhub->i_up()
+=item $cyclades->i_up()
 
 Returns link status for each port.  Extended to include serial ports,
 B<cyISPortSigCD>.
 
-=item $bayhub->i_description()
+=item $cyclades->i_description()
 
 Returns description of each port.  Extended to include serial ports,
 B<cyISPortName>.
 
-=item $bayhub->i_name()
+=item $cyclades->i_name()
 
 Returns name of each port.  Extended to include serial ports, B<cyISPortName>.
 
