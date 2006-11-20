@@ -338,6 +338,10 @@ Requires ASANTE-HUB1012-MIB
 Subclass for Nortel/Bay hubs.  This includes System 5000, 100 series,
 200 series, and probably more.
 
+=item SNMP::Info::Layer1::Cyclades
+
+Subclass for Cyclades terminal servers.
+
 =item SNMP::Info::Layer1::S3000
 
 Subclass for Bay/Synoptics hubs.  This includes System 3000, 281X, and
@@ -874,6 +878,7 @@ Algorithm for Subclass Detection:
             Catalyst 4000,4500             -> SNMP::Info::Layer3::C4000
             Catalyst 6500,3750             -> SNMP::Info::Layer3::C6500
             Cisco Generic L3 IOS device    -> SNMP::Info::Layer3::Cisco
+            Cyclades terminal server       -> SNMP::Info::Layer1::Cyclades
             Dell PowerConnect              -> SNMP::Info::Layer3::Dell
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
@@ -894,6 +899,7 @@ Algorithm for Subclass Detection:
             Cisco 3400 w/ MetroBase        -> SNMP::Info::Layer3::C3550
             Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
             Cisco (not covered by above)   -> SNMP::Info::Layer2::Cisco
+            Cyclades terminal server       -> SNMP::Info::Layer1::Cyclades
             Dell PowerConnect              -> SNMP::Info::Layer3::Dell
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry (EdgeIron,????)        -> SNMP::Info::Layer2::Foundry
@@ -941,8 +947,9 @@ sub device_type {
                       674   => 'SNMP::Info::Layer3::Dell',
                       1916  => 'SNMP::Info::Layer3::Extreme',
                       1991  => 'SNMP::Info::Layer3::Foundry',
-                      2272  => 'SNMP::Info::Layer3::Passport', 
+                      2272  => 'SNMP::Info::Layer3::Passport',
                       2636  => 'SNMP::Info::Layer3::Juniper',
+                      2925  => 'SNMP::Info::Layer1::Cyclades',
                     );
 
     my %l2sysoidmap = (
@@ -952,6 +959,7 @@ sub device_type {
                       1916  => 'SNMP::Info::Layer3::Extreme',
                       1991  => 'SNMP::Info::Layer2::Foundry',
                       2272  => 'SNMP::Info::Layer3::Passport',
+                      2925  => 'SNMP::Info::Layer1::Cyclades',
                       14823 => 'SNMP::Info::Layer2::Aruba',
                     );
 
