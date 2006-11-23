@@ -2735,6 +2735,11 @@ sub _load_attr {
         if ($val eq 'ENDOFMIBVIEW'){
             last;
         }
+        # Similarly for SNMPv1 - noSuchName return results in both $iid
+        # and $val being empty strings.
+        if ($val eq '' and $iid eq ''){
+            last;
+        }
 
         if ($val eq 'NOSUCHOBJECT'){
             $self->error_throw("SNMP::Info::_load_attr: $attr :  NOSUCHOBJECT");
