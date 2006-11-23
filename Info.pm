@@ -960,6 +960,7 @@ sub device_type {
                       1991  => 'SNMP::Info::Layer2::Foundry',
                       2272  => 'SNMP::Info::Layer3::Passport',
                       2925  => 'SNMP::Info::Layer1::Cyclades',
+                      4526  => 'SNMP::Info::Layer2::Netgear',
                       14823 => 'SNMP::Info::Layer2::Aruba',
                     );
 
