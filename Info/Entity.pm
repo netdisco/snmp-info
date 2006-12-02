@@ -60,7 +60,7 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
             'e_model'   => 'entPhysicalModelName',
             'e_name'    => 'entPhysicalName',
             'e_parent'  => 'entPhysicalContainedIn',
-            'e_pos'     => 'entParentRelPos',
+            'e_pos'     => 'entPhysicalParentRelPos',
             'e_serial'  => 'entPhysicalSerialNum',
             'e_swver'   => 'entPhysicalSoftwareRev',
             'e_type'    => 'entPhysicalVendorType',
@@ -225,6 +225,12 @@ More computer friendly name of entity.  Parse me.
 
 Maps EntityTable entries to the Interface Table (IfTable) using
 $entity->e_map()
+
+=item $entity->e_pos()
+
+The relative position among all entities sharing the same parent.
+
+(C<entPhysicalParentRelPos>)
 
 =item $entity->e_serial()
 
