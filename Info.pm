@@ -355,6 +355,10 @@ Generic Layer2 Device subclass.
 
 =over
 
+=item SNMP::Info::Layer2::Airespace
+
+Subclass for Cisco (Airespace) wireless controllers.
+
 =item SNMP::Info::Layer2::Aironet
 
 Class for Cisco Aironet wireless devices that run IOS.  See also
@@ -898,6 +902,7 @@ Algorithm for Subclass Detection:
             Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
             Cisco 3400 w/ MetroBase        -> SNMP::Info::Layer3::C3550
             Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
+            Cisco (Airespace) Wireless     -> SNMP::Info::Layer2::Airespace
             Cisco (not covered by above)   -> SNMP::Info::Layer2::Cisco
             Cyclades terminal server       -> SNMP::Info::Layer1::Cyclades
             Dell PowerConnect              -> SNMP::Info::Layer3::Dell
@@ -961,6 +966,7 @@ sub device_type {
                       2272  => 'SNMP::Info::Layer3::Passport',
                       2925  => 'SNMP::Info::Layer1::Cyclades',
                       4526  => 'SNMP::Info::Layer2::Netgear',
+                      14179 => 'SNMP::Info::Layer2::Airespace',
                       14823 => 'SNMP::Info::Layer2::Aruba',
                     );
 

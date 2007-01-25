@@ -6,6 +6,9 @@ version 1.05
     + Added basic support for Sun routers as new class L3::Sun (begemot)
     + Added basic support for Juniper NetScreen devices as new class
       L3::Netscreen (Kent Hamilton)
+    + Added support for Cyclades terminal servers as new class L1::Cyclades
+    + Added support for Cisco (Airespace) wireless controllers as new class
+      L2::Airespace
     + Added generic device type detection using IANA assigned enterpise
       number extracted from sysObjectID
     + Added ifDiscards and other missing entries from IF-MIB::ifEntry (Greg King)
