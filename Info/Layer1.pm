@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -38,7 +38,7 @@ use strict;
 use Exporter;
 use SNMP::Info;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
 
 @SNMP::Info::Layer1::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::Layer1::EXPORT_OK = qw//;
@@ -63,11 +63,13 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
             'rptr_slot'     => 'rptrPortGroupIndex',
             'rptr_up_admin' => 'rptrPortAdminStatus',
             'rptr_up'       => 'rptrPortOperStatus',
+            'rptr_last_src' => 'rptrAddrTrackNewLastSrcAddress',
            );
 
 %MUNGE = (
             # Inherit all the built in munging
             %SNMP::Info::MUNGE,
+            'rptr_last_src'=> \&SNMP::Info::munge_mac,
          );
 
 # Method OverRides
@@ -158,7 +160,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer1 - Perl5 Interface to network devices serving Layer1 only.
+SNMP::Info::Layer1 - SNMP Interface to network devices serving Layer1 only.
 
 =head1 AUTHOR
 
@@ -177,7 +179,7 @@ Max Baker
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $l1->class();
+ my $class = $l1->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
  # Let's get some basic Port information
@@ -194,14 +196,15 @@ Max Baker
 
 =head1 DESCRIPTION
 
-This class is usually used as a superclass for more specific device classes listed under 
-SNMP::Info::Layer1::*   Please read all docs under SNMP::Info first.
+This class is usually used as a superclass for more specific device classes
+listed under SNMP::Info::Layer1::*   Please read all docs under SNMP::Info
+first.
 
 Provides abstraction to the configuration information obtainable from a 
 Layer1 device through SNMP.  Information is stored in a number of MIBs.
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $l1 = new SNMP::Info::Layer1(...);
 
@@ -219,13 +222,14 @@ a more specific class using the method above.
 
 =item SNMP-REPEATER-MIB
 
-=item Inherited Classes
+=back
 
 MIBs required for L<SNMP::Info/"Required MIBs">
 
-=back
+See L<SNMP::Info/"Required MIBs"> for its MIB requirements.
 
-SNMP-REPEATER-MIB needs to be extracted from ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
+SNMP-REPEATER-MIB needs to be extracted from
+ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
 
 =head1 GLOBALS
 
@@ -261,7 +265,7 @@ Number of 'groups' in the Repeater MIB
 
 =back
 
-=head2 Globals imported from SNMP::Info
+=head2 Global Methods imported from SNMP::Info
 
 See documentation in L<SNMP::Info/"GLOBALS"> for details.
 
@@ -311,6 +315,10 @@ Group (slot) Number for given port.
 =item $l1->rptr_up()
 
 (B<rptrPortOperStatus>)
+
+=item $l1->rptr_last_src()
+
+(B<rptrAddrTrackNewLastSrcAddress>)
 
 =back
 
