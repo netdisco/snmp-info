@@ -143,6 +143,14 @@ sub layers {
     return '00000011';
 }
 
+sub serial {
+    my $airespace = shift;
+    my $sn = $airespace->airespace_serial();
+    return undef unless defined $sn;
+
+    return $sn;
+}
+
 # Wirless switches do not support ifMIB requirements to get MAC
 # and port status
 
@@ -797,6 +805,10 @@ Transfer upload datatype configures the type of file to upload from the switch.
 
 Returns 00000011.  Class emulates Layer 2 functionality for Thin APs through
 proprietary MIBs.
+
+=item $airespace->serial()
+
+(B<agentInventorySerialNumber>)
 
 =back
 
