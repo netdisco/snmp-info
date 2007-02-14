@@ -32,6 +32,8 @@ version 1.05
       MIBs without definition in %FUNCS
     + Enable load_ methods for %GLOBALS and MIB Leaf node names.
     + Add loop detect option and code for getnext table column walks.
+    + Add Layer3::NetSNMP for Net-SNMP-based hosts, part of
+      SF patch 1557529 (Bradley Baetz).
 
     * Fix for bug where an SNMP error in any operation would cause subsequent
       table get operations to fail while using the same session, originally

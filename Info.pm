@@ -507,6 +507,10 @@ Subclass for Juniper devices.
 
 Subclass for Nortel Ethernet Routing Switch 1600 series.
 
+=item SNMP::Info::Layer3::NetSNMP
+
+Subclass for host systems running Net-SNMP.
+
 =item SNMP::Info::Layer3::Netscreen
 
 Subclass for Juniper NetScreen.
@@ -887,6 +891,7 @@ Algorithm for Subclass Detection:
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
             Juniper                        -> SNMP::Info::Layer3::Juniper
+            Net-SNMP                       -> SNMP::Info::Layer3::NetSNMP
             Nortel Passport/Accelar LAN    -> SNMP::Info::Layer3::Passport
             Nortel/Bay Baystack            -> SNMP::Info::Layer2::Baystack
             Alteon Ace Director            -> SNMP::Info::Layer3::AlteonAD
@@ -952,9 +957,11 @@ sub device_type {
                       674   => 'SNMP::Info::Layer3::Dell',
                       1916  => 'SNMP::Info::Layer3::Extreme',
                       1991  => 'SNMP::Info::Layer3::Foundry',
+                      2021  => 'SNMP::Info::Layer3::NetSNMP',
                       2272  => 'SNMP::Info::Layer3::Passport',
                       2636  => 'SNMP::Info::Layer3::Juniper',
                       2925  => 'SNMP::Info::Layer1::Cyclades',
+                      8072  => 'SNMP::Info::Layer3::NetSNMP',
                     );
 
     my %l2sysoidmap = (
