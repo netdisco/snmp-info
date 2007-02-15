@@ -599,7 +599,8 @@ Set to C<0> to turn off loop detection.
 
 =item Debug
 
-Prints Lots of debugging messages
+Prints Lots of debugging messages.
+Pass 2 to print even more debugging messages.
 
 (default off)
 
@@ -2645,7 +2646,7 @@ sub _load_attr {
     }
 
     $self->debug() and print "SNMP::Info::_load_attr $attr : $leaf", 
-        defined $partial ? "($partial)" : '', "\n";
+        defined $partial ? "($partial / $varleaf)" : '', "\n";
 
     my $var = new SNMP::Varbind([$varleaf]);
 
@@ -2716,6 +2717,11 @@ sub _load_attr {
             $errornum = $sess->{ErrorNum};
         }
 
+        if ($self->debug() > 1) {
+            use Data::Dumper;
+            print "SNMP::Info::_load_attr $attr : leaf = $leaf , var = ", Dumper($var);
+        }
+
         # Check if we've left the requested subtree
         last if $var->[0] ne $leaf;
         my $iid = $var->[1];
@@ -2739,7 +2745,7 @@ sub _load_attr {
 
         # Check to make sure we are still in partial land
         if (defined $partial and $iid !~ /^$partial$/ and $iid !~ /^$partial\./){
-            #print "$iid makes us leave partial land.\n";
+            $self->debug() and print "$iid makes us leave partial land.\n";
             last;
         }
 
@@ -2894,6 +2900,16 @@ sub AUTOLOAD {
     (my $package = $sub_name) =~ s/[^:]*$//;
     # Sub name is the last part
     $sub_name =~ s/.*://;   
+
+    # Typos in function calls in SNMP::Info subclasses turn into
+    # AUTOLOAD requests for non-methods.  While this is deprecated,
+    # we'll still get called, so report a less confusing error.
+    if (ref($self) !~ /^SNMP::Info/) {
+        # croak reports one level too high.  die reports here.
+        # I would really like to get the place that's likely to
+        # have the typo, but perl doesn't want me to.
+        croak("SNMP::Info::AUTOLOAD($AUTOLOAD) called with no class (probably typo of function call to $sub_name)");
+    }
 
     my $attr = $sub_name;
     $attr =~ s/^(load|set)_//;
