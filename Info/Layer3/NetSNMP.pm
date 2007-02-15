@@ -32,7 +32,7 @@ use Exporter;
 use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.04';
+$VERSION = '1.05';
 @SNMP::Info::Layer3::NetSNMP::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::NetSNMP::EXPORT_OK = qw//;
 
@@ -97,7 +97,7 @@ sub uptime {
     my $netsnmp = shift;
     my $uptime;
 
-    $uptime = $ucd->hrSystemUptime();
+    $uptime = $netsnmp->hrSystemUptime();
     return $uptime if defined $uptime;
 
     return $netsnmp->SUPER::uptime();
@@ -182,19 +182,20 @@ These are methods that return scalar value from SNMP
 
 =item $netsnmp->vendor()
 
-    Returns 'Net-SNMP' and the Net-SNMP version.
+Returns 'Net-SNMP'.
 
 =item $netsnmp->os()
 
-    Returns the OS extracted from sysDescr.
+Returns the OS extracted from sysDescr.
 
 =item $netsnmp->os_ver()
 
-    Returns the software version extracted from sysDescr.
+Returns the software version extracted from sysDescr, along
+with the Net-SNMP version.
 
 =item $netsnmp->uptime()
 
-    Returns the system uptime instead of the agent uptime.
+Returns the system uptime instead of the agent uptime.
 NOTE: discontinuity timers and other TimeStamp-based objects
 are based on agent uptime, so use orig_uptime().
 
