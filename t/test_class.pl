@@ -13,7 +13,7 @@ use lib '/usr/local/netdisco';
 use SNMP::Info;
 use Getopt::Long;
 use strict;
-use vars qw/$Class $Dev $Comm $Ver @Dump %Dumped $Debug/;
+use vars qw/$Class $Dev $Comm $Ver @Dump %Dumped $Debug %args $NoBulk/;
 
 # Default Values
 $Class = '';
@@ -22,14 +22,16 @@ $Comm  = '';
 $Ver   = 2;
 @Dump  = ();
 $Debug = 0;
+$NoBulk = 0;
 
-GetOptions ('c|class=s' => \$Class,
-            'd|dev=s'   => \$Dev,
-            's|comm=s'  => \$Comm,
-            'v|ver=i'   => \$Ver,
-            'h|help'    => \&usage,
-            'p|print=s'   => \@Dump,
-            'x|debug'   => \$Debug,
+GetOptions ('c|class=s'  => \$Class,
+            'd|dev=s'    => \$Dev,
+            's|comm=s'   => \$Comm,
+            'v|ver=i'    => \$Ver,
+            'h|help'     => \&usage,
+            'p|print=s'  => \@Dump,
+            'x|debug+'   => \$Debug,
+            'n|nobulk'   => \$NoBulk,
            );
 
 &usage unless ($Dev and $Comm);
@@ -44,12 +46,18 @@ print "Class $Class loaded.\n";
 
 print "Dumping : ",join(',',@Dump),"\n"  if scalar @Dump;
 
+%args = ();
+if ($NoBulk) {
+	$args{BulkWalk} = 0;
+}
+
 my $dev = new $Class( 'AutoSpecify' => 0,
                       'AutoVerBack' => 0,
                       'Version'     => $Ver,
                       'Debug'       => $Debug,
                       'DestHost'    => $Dev,
-                      'Community'   => $Comm
+                      'Community'   => $Comm,
+			%args
                     ) or die "\n"; 
 
 print "Connected to $Dev.\n";
@@ -166,12 +174,14 @@ sub usage {
     print << "end_usage";
 
 test_class - Test a device against an SNMP::Info class
-    -c  --class Layer2::Catalyst
-    -d  --dev   myswitch
-    -s  --comm  public
-    -v  --ver   2
-    -p  --print i_blah
-    -p  --print i_blah2
+    -c  --class  Layer2::Catalyst
+    -d  --dev    myswitch
+    -s  --comm   public
+    -v  --ver    2
+    -p  --print  i_blah
+    -p  --print  i_blah2
+    -x  --debug  debugging flag
+    -n  --nobulk disable bulkwalk
 
 end_usage
     exit;
