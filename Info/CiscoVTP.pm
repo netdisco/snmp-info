@@ -71,7 +71,6 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
             'vtp_d_pruning'   => 'managementDomainPruningState',
             'vtp_d_ver'       => 'managementDomainVersionInUse',
             # CISCO-VTP-MIB::vtpVlanTable
-            'v_index'    => 'vtpVlanIndex',
             'v_state'    => 'vtpVlanState',
             'v_type'     => 'vtpVlanType',
             'v_name'     => 'vtpVlanName',
@@ -117,6 +116,19 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 %MUNGE   = (
            );
+
+sub v_index {
+    my $vtp = shift;
+    my $partial = shift;
+
+    my $v_name = $vtp->v_name($partial);
+    my %v_index;
+    foreach my $idx (keys %$v_name) {
+        my ($mgmtdomain, $vlan) = split(/\./, $idx);
+        $v_index{$idx} = $vlan;
+    }
+    return \%v_index;
+}
 
 sub i_vlan {
     my $vtp = shift;
