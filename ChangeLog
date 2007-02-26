@@ -51,6 +51,7 @@ version 1.05
     * Correct port numbering for Nortel 8110, 1100, 1150 in L3:Passport
       (Reported by David Pinkoski)
     * Documentation updates
+    * Translate OIDs returned by Entity MIB e_type
 
 version 1.04 (07/08/06)
     +  Added C1130 and C1240 to L2::Aironet (Ralf Gross)

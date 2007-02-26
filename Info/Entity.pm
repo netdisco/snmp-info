@@ -68,6 +68,7 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
            );
 
 %MUNGE   = (
+            'e_type'    => \&munge_e_type,
            );
 
 sub e_port {
@@ -87,6 +88,14 @@ sub e_port {
     }
 
     return \%e_port;
+}
+
+sub munge_e_type {
+    my $oid = shift;
+
+    my $name = &SNMP::translateObj($oid);
+    return $name if defined($name);
+    return $oid;
 }
 1;
 
