@@ -2186,7 +2186,9 @@ sub munge_mac {
     my $mac = shift;
     return undef unless defined $mac;
     return undef unless length $mac;
-    return join(':',map { sprintf "%02x",$_ } unpack('C*',$mac));
+    $mac = join(':',map { sprintf "%02x",$_ } unpack('C*',$mac));
+    return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){5}[0-9A-F][0-9A-F]$/i;
+    return undef;
 }
 
 =item munge_octet2hex()
