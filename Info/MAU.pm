@@ -161,10 +161,12 @@ sub mau_i_duplex {
 
 sub mau_i_duplex_admin {
     my $mau = shift;
+    my $partial = shift;
 
     my $mau_index = $mau->mau_index();
-    my $mau_autostat = $mau->mau_autostat();
-    my $mau_type_admin = $mau->mau_type_admin();
+    my %rev_mau_index = reverse %$mau_index;
+    my $mau_autostat = defined $partial ? $mau->mau_autostat($rev_mau_index{$partial}) : $mau->mau_autostat();
+    my $mau_type_admin = defined $partial ? $mau->mau_type_admin($rev_mau_index{$partial}) : $mau->mau_type_admin();
 
     # Older HP4000's don't implement ifMauDefaultType, but we can
     # figure out from ifMauAutoNegCapAdvertised what we'd like.
@@ -197,6 +199,8 @@ sub mau_i_duplex_admin {
             $duplex = 'full';
         } elsif ($type_admin =~ /hd$/i){
             $duplex = 'half';
+        } elsif ($type_admin eq 'zeroDotZero') {
+            $duplex = 'auto';
         }
 
         $i_duplex_admin{$iid} = $duplex if defined $duplex;
