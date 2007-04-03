@@ -67,7 +67,8 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             'c_capabilities' => 'cdpCacheCapabilities',
             'c_domain'       => 'cdpCacheVTPMgmtDomain',
             'c_vlan'         => 'cdpCacheNativeVLAN',
-            'c_duplex'       => 'cdpCacheDuplex'
+            'c_duplex'       => 'cdpCacheDuplex',
+            'c_power'        => 'cdpCachePowerConsumption',
           );
 
 %MUNGE = (
@@ -77,7 +78,9 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
           'c_port'         => \&munge_null,
           'c_id'           => \&munge_null,
           'c_ver'          => \&munge_null,
-          'c_ip'           => \&SNMP::Info::munge_ip
+          'c_ip'           => \&SNMP::Info::munge_ip,
+          'c_power'        => \&munge_power,
+
          );
 
 # munge_null() - removes nulls (\0)
@@ -94,9 +97,15 @@ sub munge_caps {
 
     my $bits = substr(unpack("B*",$caps),-7);
     return $bits;
-    
-    
 }
+
+sub munge_power {
+    my $power = shift;
+    my $decimal = substr($power, -3);
+    $power =~ s/$decimal$/\.$decimal/;
+    return $power;
+}
+
 sub hasCDP {
     my $cdp = shift;
 
