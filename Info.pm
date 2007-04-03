@@ -2460,7 +2460,13 @@ sub _global{
 
     my $globals = $self->globals(); 
 
-    my $oid = $globals->{$attr};
+    my $oid;
+    if (exists $globals->{$attr}) {
+        $oid = $globals->{$attr};
+    }
+    else {
+        $oid = $attr;
+    }
 
     # Tag on .0 unless the leaf ends in .number
     unless ($oid =~ /\.\d+$/) {
@@ -2868,17 +2874,18 @@ this given instant.
 node name in a loaded MIB for given class.
 
 =item 2. Checks for load_ prefix and if present runs $info->_global(method)
-for methods which exist in %GLOBALS, otherwise runs $info->_load_attr(method)
-for methods which exist in %FUNCS or are MIB Leaf node names.  This always
+for methods which exist in %GLOBALS or are a single instance MIB Leaf node
+name, otherwise runs $info->_load_attr(method) for methods which exist in
+%FUNCS or are MIB Leaf node name contained within a table.  This always
 forces reloading and does not use cached data.
 
 =item 3. Check for set_ prefix and if present runs $info->_set(method).
 
-=item 4. If the method exists in %GLOBALS it runs $info->_global(method) unless
-already cached.
+=item 4. If the method exists in %GLOBALS or is a single instance MIB Leaf
+node name it runs $info->_global(method) unless already cached.
 
-=item 5. If the method exists in %FUNCS or is MIB Leaf node name it runs
-$info->_load_attr(method) if not cached.
+=item 5. If the method exists in %FUNCS or is MIB Leaf node name contained
+within a table it runs $info->_load_attr(method) if not cached.
 
 =item 6. Otherwise return $info->_show_attr(method).
 
@@ -2901,7 +2908,9 @@ sub AUTOLOAD {
     # package is the first part
     (my $package = $sub_name) =~ s/[^:]*$//;
     # Sub name is the last part
-    $sub_name =~ s/.*://;   
+    $sub_name =~ s/.*://;
+    #  Enable calls to SUPER class to find autoloaded methods
+    $package =~ s/SUPER::$//;
 
     # Typos in function calls in SNMP::Info subclasses turn into
     # AUTOLOAD requests for non-methods.  While this is deprecated,
@@ -2926,7 +2935,26 @@ sub AUTOLOAD {
         %globals = %{$package.'GLOBALS'};
     }
 
-    my $mib_leaf = $SNMP::MIB{$attr};
+    # Check if we were called with a MIB leaf node name 
+    my $trans = SNMP::translateObj($attr);
+    
+    my $mib_leaf = 0;
+    my $table_leaf = 0;
+    if ( defined($trans) ) {
+        my $mib = $SNMP::MIB{$trans};
+        # We're not a leaf if we don't have access attribute
+        # Don't bother if not-accessable
+        my $access = $$mib{'access'};
+        $mib_leaf = 1 if ( defined $access && $access !~ /NoAccess/ );
+        if ($self->debug() and !$mib_leaf) {
+            print "SNMP::Info::AUTOLOAD($attr) Leaf not accessable.\n";
+        }
+        # If we're a leaf check to see if we are in a table
+        if ($mib_leaf) {
+            my $indexes  = $$mib{'parent'}{'indexes'};
+            $table_leaf = 1 if (defined $indexes && scalar( @{$indexes} ) > 0);
+        }
+    }
 
     unless( defined $funcs{$attr} or
             defined $globals{$attr} or
@@ -2943,7 +2971,10 @@ sub AUTOLOAD {
         if ( defined $funcs{$attr} ) {
             return $self->_load_attr( $attr,$funcs{$attr},@_ );
         }
-        if ( defined $mib_leaf ) {
+        if ( defined $mib_leaf and !$table_leaf) {
+            return $self->_global( $attr );
+        }        
+        if ( $table_leaf ) {
             return $self->_load_attr( 'mib_leaf',$attr,@_ );
         }
     }
@@ -2954,7 +2985,7 @@ sub AUTOLOAD {
     }
 
     # Next check for entry in %GLOBALS
-    if (defined $globals{$attr} ){
+    if (defined $globals{$attr} or (defined $mib_leaf and !$table_leaf)){
         # Return Cached Value if exists
         return $self->{"_${attr}"} if exists $self->{"_${attr}"};
         # Fetch New Value
@@ -2968,7 +2999,7 @@ sub AUTOLOAD {
         return $self->_load_attr( $attr, $funcs{$attr},@_ )
             unless (defined $self->{"_${attr}"} and !scalar(@_));
     }
-    if ( defined $mib_leaf ) {
+    if ( $table_leaf ) {
         return $self->_load_attr( 'mib_leaf', $attr,@_ )
             unless (defined $self->{"_${attr}"} and !scalar(@_));
     }
