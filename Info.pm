@@ -287,6 +287,11 @@ Foundry Discovery Protocol.  FOUNDRY-SN-SWITCH-GROUP-MIB
 IEEE802dot11-MIB.  A collection of OIDs providing information about standards
 based 802.11 wireless devices.  
 
+=item SNMP::Info::LLDP
+
+LLDP-MIB, LLDP-EXT-DOT1-MIB, and LLDP-EXT-DOT3-MIB.  Link Layer Discovery
+Protocol (LLDP) Support.
+
 =item SNMP::Info::MAU
 
 MAU-MIB (RFC2668).  Some Layer2 devices use this for extended Ethernet (Media Access Unit) interface information.
@@ -1008,6 +1013,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::AlteonAD' if $desc =~ /Alteon\s[1A][8D]/;
         # Nortel Contivity
         $objtype = 'SNMP::Info::Layer3::Contivity' if $desc =~ /\bCES\b/;
+        # Cisco PIX
+        $objtype = 'SNMP::Info::Layer3::Cisco' if ($desc =~ /Cisco PIX Security Appliance/i);
+        # Cisco ASA
+        $objtype = 'SNMP::Info::Layer3::Cisco' if ($desc =~ /Cisco Adaptive Security Appliance/i);
 
         # Allied Telesyn Layer2 managed switches. They report they have L3 support
         $objtype = 'SNMP::Info::Layer2::Allied' if ($desc =~ /Allied.*AT-80\d{2}\S*/i);

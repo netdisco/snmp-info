@@ -61,9 +61,12 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
             'qos_cm_name'             => 'cbQosCMName',
             'qos_cm_desc'             => 'cbQosCMDesc',
             'qos_cm_info'             => 'cbQosCMInfo',
-            # CISCO-CLASS-BASED-QOS-MIB::cbQosCMCfgTable
+            # CISCO-CLASS-BASED-QOS-MIB::cbQosCMStatsTable
             'qos_octet_pre'           => 'cbQosCMPrePolicyByte',
             'qos_octet_post'          => 'cbQosCMPostPolicyByte',
+            # CISCO-CLASS-BASED-QOS-MIB::cbQosQueueingCfgTable
+            'qos_queueingcfg_bw'        => 'cbQosQueueingCfgBandwidth',
+            'qos_queueingcfg_bw_units'  => 'cbQosQueueingCfgBandwidthUnits',
            );
 
 %MUNGE   = (
@@ -127,7 +130,7 @@ MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =head1 TABLE METHODS
 
-=head2 ServicePolicy Table (cbQosServicePolicyTable)
+=head2 ServicePolicy Table (B<cbQosServicePolicyTable>)
 
 This table describes the interfaces/media types and the policymap that are
 attached to it.
@@ -148,7 +151,7 @@ attached to it.
 
 =back
 
-=head2 ClassMap Objects Table (cbQosObjectsTable)
+=head2 ClassMap Objects Table (B<cbQosObjectsTable>)
 
 =over
 
@@ -166,7 +169,7 @@ attached to it.
 
 =back
 
-=head2 ClassMap Configuration Table (cbQosCMCfgTable)
+=head2 ClassMap Configuration Table (B<cbQosCMCfgTable>)
 
 =over
 
@@ -184,7 +187,7 @@ attached to it.
 
 =back
 
-=head2 ClassMap Stats Table (cbQosCMStatsTable)
+=head2 ClassMap Stats Table (B<cbQosCMStatsTable>)
 
 =over
 
@@ -195,5 +198,19 @@ attached to it.
 =item $qos->qos_octet_post()
 
 (B<cbQosCMPostPolicyByte>)
+
+=back
+
+=head2 Queueing Configuration Table (B<cbQosQueueingCfgTable>)
+
+=over
+
+=item $qos->qos_queueingcfg_bw()
+
+(B<cbQosQueueingCfgBandwidth>)
+
+=item $qos->qos_queueingcfg_bw_units()
+
+(B<cbQosQueueingCfgBandwidthUnits>)
 
 =cut

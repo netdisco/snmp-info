@@ -31,7 +31,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStats;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -44,13 +44,15 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::CiscoStats::EXPORT_OK = qw//;
 
 %MIBS    = (
-            'SNMPv2-MIB'            => 'sysDescr',
-            'CISCO-PROCESS-MIB'     => 'cpmCPUTotal5sec',
-            'CISCO-MEMORY-POOL-MIB' => 'ciscoMemoryPoolUsed',
-            'OLD-CISCO-SYSTEM-MIB'  => 'writeMem',
-            'CISCO-PRODUCTS-MIB'    => 'sysName',
-            'CISCO-STACK-MIB'       => 'wsc1900sysID',    # some older catalysts live here
+            'SNMPv2-MIB'                       => 'sysDescr',
+            'CISCO-PROCESS-MIB'               => 'cpmCPUTotal5sec',
+            'CISCO-MEMORY-POOL-MIB'           => 'ciscoMemoryPoolUsed',
+            'OLD-CISCO-SYSTEM-MIB'            => 'writeMem',
+            'CISCO-PRODUCTS-MIB'              => 'sysName',
+            # some older catalysts live here
+            'CISCO-STACK-MIB'                 => 'wsc1900sysID',    
             'CISCO-ENTITY-VENDORTYPE-OID-MIB' => 'cevChassis',
+            'CISCO-FLASH-MIB'                 => 'ciscoFlashDeviceSize',
            );
 
 %GLOBALS = (
@@ -65,14 +67,16 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
             'cat_cpu'      => 'cpmCPUTotal5sec.9',
             'cat_cpu_1min' => 'cpmCPUTotal1min.9',
             'cat_cpu_5min' => 'cpmCPUTotal5min.9',
-            # CISCO-MEMORY-POOL-MIB
-            'mem_free'     => 'ciscoMemoryPoolFree.1',
-            'mem_used'     => 'ciscoMemoryPoolUsed.1',
             # OLD-CISCO-SYSTEM-MIB
             'write_mem'    => 'writeMem',
            );
 
 %FUNCS   = (
+            # CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolTable
+            'cisco_mem_free'    => 'ciscoMemoryPoolFree',
+            'cisco_mem_used'    => 'ciscoMemoryPoolUsed',
+            # CISCO-FLASH-MIB::ciscoFlashDeviceTable
+            'cisco_flash_size'  => 'ciscoFlashDeviceSize',
            );
 
 %MUNGE   = (
@@ -129,12 +133,62 @@ sub cpu_5min {
     return $cat_cpu_5min;
 }
 
+sub mem_free {
+    my $self = shift;
+
+    my $mem_free;
+
+    my $cisco_mem_free = $self->cisco_mem_free() || {};
+
+    foreach my $mem_free_val (values %$cisco_mem_free) {
+        $mem_free += $mem_free_val;
+    }
+
+    return $mem_free;
+}
+
+sub mem_used {
+    my $self = shift;
+
+    my $mem_used;
+
+    my $cisco_mem_used = $self->cisco_mem_used() || {};
+ 
+    foreach my $mem_used_val (values %$cisco_mem_used) {
+        $mem_used += $mem_used_val;
+    }
+
+    return $mem_used;
+}
+
 sub mem_total {
     my $self = shift;
-    my $mem_free = $self->mem_free();
-    my $mem_used = $self->mem_used();
-    return undef unless defined $mem_free and defined $mem_used;
-    return $mem_free + $mem_used;
+
+    my $mem_total;
+
+    my $cisco_mem_free = $self->cisco_mem_free() || {};
+    my $cisco_mem_used = $self->cisco_mem_used() || {};
+
+    foreach my $mem_entry (keys %$cisco_mem_free){
+        my $mem_free = $cisco_mem_free->{$mem_entry} || 0;
+        my $mem_used = $cisco_mem_used->{$mem_entry} || 0;
+        $mem_total += ($mem_free + $mem_used);
+    }
+    return $mem_total;
+}
+
+sub flashmem_total {
+    my $self = shift;
+
+    my $flashmem_total;
+
+    my $flash_sizes = $self->cisco_flash_size;
+
+    foreach my $flash_index (keys %$flash_sizes) {
+        $flashmem_total += $flash_sizes->{$flash_index};
+    }
+
+    return $flashmem_total;
 }
 
 1;
@@ -173,7 +227,7 @@ Use or create in a subclass of SNMP::Info.  Do not use directly.
 
 =head2 Inherited Classes
 
-none.
+None.
 
 =head2 Required MIBs
 
@@ -192,6 +246,8 @@ none.
 =item CISCO-STACK-MIB
 
 =item CISCO-ENTITY-VENDORTYPE-OID-MIB
+
+=item CISCO-FLASH-MIB
 
 =back
 
@@ -227,57 +283,98 @@ Trys to parse device operating system version from description()
 
 =item $ciscostats->ios_cpu()
 
-Current CPU usage in percents of device.
+Current CPU usage in percent.
 
 B<1.3.6.1.4.1.9.2.1.56.0> = 
 B<OLD-CISCO-CPU-MIB:avgBusyPer>
 
 =item $ciscostats->ios_cpu_1min()
 
-Average CPU Usage in percents of device over last minute.
+Average CPU Usage in percent over the last minute.
 
 B<1.3.6.1.4.1.9.2.1.57.0>
 
 =item $ciscostats->ios_cpu_5min()
 
-Average CPU Usage in percents of device over last 5 minutes.
+Average CPU Usage in percent over the last 5 minutes.
 
 B<1.3.6.1.4.1.9.2.1.58.0>
 
 =item $ciscostats->cat_cpu()
 
-Current CPU usage in percents of device.
+Current CPU usage in percent.
 
 B<CISCO-PROCESS-MIB::cpmCPUTotal5sec.9>
 
 =item $ciscostats->cat_cpu_1min()
 
-Average CPU Usage in percents of device over last minute.
+Average CPU Usage in percent over the last minute.
 
 B<CISCO-PROCESS-MIB::cpmCPUTotal1min.9>
 
 =item $ciscostats->cat_cpu_5min()
 
-Average CPU Usage in percents of device over last 5 minutes.
+Average CPU Usage in percent over the last 5 minutes.
 
 B<CISCO-PROCESS-MIB::cpmCPUTotal5min.9>
 
 =item $ciscostats->mem_free()
 
-Main DRAM free in device.  In bytes.
+Main DRAM free of the device in bytes.
 
-B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolFree.1>
+B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolFree>
 
 =item $ciscostats->mem_used()
 
-Main DRAM used in device.  In bytes.
+Main DRAM used of the device in bytes.
 
-B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolUsed.1>
+B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolUsed>
+
+=item $ciscostats->mem_total()
+
+Main DRAM of the device in bytes.
+
+B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolFree> + B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolUsed>
+
+=item $ciscostats->flashmem_total()
+
+Flash memory of the device in bytes.
+
+B<CISCO-FLASH-MIB::ciscoFlashDeviceSize>
 
 =back
 
 =head1 TABLE METHODS
 
-None.
+=head2 Cisco Memory Pool Table (B<ciscoMemoryPoolTable>)
+
+=over
+
+=item $ciscostats->cisco_mem_free()
+
+The number of bytes from the memory pool that are currently unused on the
+managed device.
+
+(B<ciscoMemoryPoolFree>)
+
+=item $ciscostats->cisco_mem_used()
+
+The number of bytes from the memory pool that are currently in use by
+applications on the managed device.
+
+(B<ciscoMemoryPoolUsed>)
+
+=back
+
+=head2 Cisco Flash Device Table (B<ciscoFlashDeviceTable>)
+
+=over
+
+=item $ciscostats->cisco_flash_size()
+
+Total size of the Flash device.  For a removable device, the size will be
+zero if the device has been removed.
+
+(B<ciscoFlashDeviceSize>)
 
 =cut
