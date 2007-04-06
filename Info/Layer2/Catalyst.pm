@@ -29,61 +29,54 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Catalyst;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
 
 use Exporter;
-use SNMP::Info::Layer2;
-use SNMP::Info::CiscoVTP;
 use SNMP::Info::CiscoStack;
+use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
+use SNMP::Info::Layer2;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-@SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::Layer2 SNMP::Info::CiscoStack 
-                                        SNMP::Info::CiscoVTP SNMP::Info::CDP SNMP::Info::CiscoStats Exporter/;
+@SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::CiscoStack SNMP::Info::CiscoVTP 
+                                        SNMP::Info::CDP SNMP::Info::CiscoStats
+                                        SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Catalyst::EXPORT_OK = qw//;
 
 %MIBS =    ( %SNMP::Info::Layer2::MIBS, 
-             %SNMP::Info::CiscoVTP::MIBS,
-             %SNMP::Info::CiscoStack::MIBS,
              %SNMP::Info::CiscoStats::MIBS,
              %SNMP::Info::CDP::MIBS,
-           );
+             %SNMP::Info::CiscoVTP::MIBS,
+             %SNMP::Info::CiscoStack::MIBS,
+             );
 
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
-            %SNMP::Info::CiscoVTP::GLOBALS,
-            %SNMP::Info::CiscoStack::GLOBALS,
             %SNMP::Info::CiscoStats::GLOBALS,
             %SNMP::Info::CDP::GLOBALS,
-           );
+            %SNMP::Info::CiscoVTP::GLOBALS,
+            %SNMP::Info::CiscoStack::GLOBALS,
+            );
 
 %FUNCS =   (
             %SNMP::Info::Layer2::FUNCS,
-            %SNMP::Info::CiscoVTP::FUNCS,
-            %SNMP::Info::CiscoStack::FUNCS,
             %SNMP::Info::CiscoStats::FUNCS,
             %SNMP::Info::CDP::FUNCS,
+            %SNMP::Info::CiscoVTP::FUNCS,
+            %SNMP::Info::CiscoStack::FUNCS,
            );
 
 %MUNGE =   (
             %SNMP::Info::Layer2::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
+            %SNMP::Info::CDP::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
             %SNMP::Info::CiscoStack::MUNGE,
-            %SNMP::Info::CDP::MUNGE,
-            %SNMP::Info::CiscoStats::MUNGE,
-           );
-
-# Need to specify this or it might grab the ones out of L2 instead of CiscoStack
-*SNMP::Info::Layer2::Catalyst::serial         = \&SNMP::Info::CiscoStack::serial;
-*SNMP::Info::Layer2::Catalyst::interfaces     = \&SNMP::Info::CiscoStack::interfaces;
-*SNMP::Info::Layer2::Catalyst::i_duplex       = \&SNMP::Info::CiscoStack::i_duplex;
-*SNMP::Info::Layer2::Catalyst::i_type         = \&SNMP::Info::CiscoStack::i_type;
-*SNMP::Info::Layer2::Catalyst::i_name         = \&SNMP::Info::CiscoStack::i_name;
-*SNMP::Info::Layer2::Catalyst::i_duplex_admin = \&SNMP::Info::CiscoStack::i_duplex_admin;
+            );
 
 # Overidden Methods
 
@@ -148,7 +141,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Catalyst - Perl5 Interface to Cisco Catalyst devices running Catalyst OS.
+SNMP::Info::Layer2::Catalyst - SNMP Interface to Cisco Catalyst devices
+running Catalyst OS.
 
 =head1 AUTHOR
 
@@ -172,22 +166,24 @@ Max Baker
 
 =head1 DESCRIPTION
 
-SNMP::Info subclass to provide information for Cisco Catalyst series switches running CatOS.
+SNMP::Info subclass to provide information for Cisco Catalyst series switches
+running CatOS.
 
 This class includes the Catalyst 2920, 4000, 5000, 6000 (hybrid mode) families.
 
-This subclass is not for all devices that have the name Catalyst.  Note that some Catalyst
-switches run IOS, like the 2900 and 3550 families.  Cisco Catalyst 1900 switches use their
-own MIB and have a separate subclass.  Use the method above to have SNMP::Info determine the
-appropriate subclass before using this class directly.
+This subclass is not for all devices that have the name Catalyst.  Note that
+some Catalyst switches run IOS, like the 2900 and 3550 families.  Cisco
+Catalyst 1900 switches use their own MIB and have a separate subclass.  Use
+the method above to have SNMP::Info determine the appropriate subclass before
+using this class directly.
 
 See SNMP::Info::device_type() for specifics.
 
-Note:  Some older Catalyst switches will only talk SNMP version 1.  Some newer ones will not
-return all their data if connected via Version 1.
+Note:  Some older Catalyst switches will only talk SNMP version 1.  Some
+newer ones will not return all their data if connected via Version 1.
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $cat = new SNMP::Info::Layer2::Catalyst(...);
 
@@ -195,11 +191,15 @@ a more specific class using the method above.
 
 =over
 
-=item SNMP::Info::Layer2
+=item SNMP::Info::CiscoStack
 
 =item SNMP::Info::CiscoVTP
 
-=item SNMP::Info::CiscoStack
+=item SNMP::Info::CDP
+
+=item SNMP::Info::CiscoStats
+
+=item SNMP::Info::Layer2
 
 =back
 
@@ -209,11 +209,15 @@ a more specific class using the method above.
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CiscoStack/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
 
-See L<SNMP::Info::CiscoStack/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -240,17 +244,25 @@ Returns 'cisco'
 
 =back
 
-=head2 Globals imported from SNMP::Info::Layer2
-
-See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
-
-=head2 Global Methods imported from SNMP::Info::CiscoVTP
-
-See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
-
 =head2 Global Methods imported from SNMP::Info::CiscoStack
 
 See documentation in L<SNMP::Info::CiscoStack/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::CiscoVTP
+
+See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::CDP
+
+See documentation in L<SNMP::Info::CDP/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::CiscoStats
+
+See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::Layer2
+
+See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -263,23 +275,34 @@ to a hash.
 
 =item $cat->bp_index()
 
-Returns reference to hash of bridge port table entries map back to interface identifier (iid)
+Returns reference to hash of bridge port table entries map back to interface
+identifier (iid)
 
 Crosses (B<portCrossIndex>) to (B<portIfIndex>) since some devices seem to have
 problems with BRIDGE-MIB
 
 =back
 
+=head2 Table Methods imported from SNMP::Info::Layer2::CiscoStack
+
+See documentation in L<SNMP::Info::Layer2::CiscoStack/"TABLE METHODS"> for
+details.
+
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
 See documentation in L<SNMP::Info::CiscoVTP/"TABLE METHODS"> for details.
 
+=head2 Table Methods imported from SNMP::Info::CDP
+
+See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer2::CiscoStats
+
+See documentation in L<SNMP::Info::Layer2::CiscoStats/"TABLE METHODS"> for
+details.
+
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Layer2::CiscoStack
-
-See documentation in L<SNMP::Info::Layer2::CiscoStack/"TABLE METHODS"> for details.
 
 =cut
