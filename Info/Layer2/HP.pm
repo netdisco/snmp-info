@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::HP;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -38,18 +38,18 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::MAU;
-use SNMP::Info::Entity;
+use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $INIT/ ;
 
-@SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer2 SNMP::Info::MAU SNMP::Info::Entity
+@SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer2 SNMP::Info::MAU SNMP::Info::LLDP
                                   SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::HP::EXPORT_OK = qw//;
 
 %MIBS = ( %SNMP::Info::Layer2::MIBS,
           %SNMP::Info::MAU::MIBS,
-          %SNMP::Info::Entity::MIBS,
+          %SNMP::Info::LLDP::MIBS,
           %SNMP::Info::CDP::MIBS,
           'RFC1271-MIB' => 'logDescription',
           'HP-ICF-OID'  => 'hpSwitch4000',
@@ -61,7 +61,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $I
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
             %SNMP::Info::MAU::GLOBALS,
-            %SNMP::Info::Entity::GLOBALS,
+            %SNMP::Info::LLDP::GLOBALS,
             %SNMP::Info::CDP::GLOBALS,
             'serial1'      => 'entPhysicalSerialNum.1',
             'hp_cpu'       => 'hpSwitchCpuStat.0',
@@ -77,7 +77,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $I
 %FUNCS   = (
             %SNMP::Info::Layer2::FUNCS,
             %SNMP::Info::MAU::FUNCS,
-            %SNMP::Info::Entity::FUNCS,
+            %SNMP::Info::LLDP::FUNCS,
             %SNMP::Info::CDP::FUNCS,
             'bp_index2' => 'dot1dBasePortIfIndex',
             'i_type2'   => 'ifType',
@@ -98,7 +98,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $I
             # Inherit all the built in munging
             %SNMP::Info::Layer2::MUNGE,
             %SNMP::Info::MAU::MUNGE,
-            %SNMP::Info::Entity::MUNGE,
+            %SNMP::Info::LLDP::MUNGE,
             %SNMP::Info::CDP::MUNGE
          );
 
@@ -355,6 +355,134 @@ sub bp_index {
     return \%mod_bp_index;
 }
 
+#  Use CDP and/or LLDP
+
+sub hasCDP {
+    my $hp = shift;
+
+    return $hp->hasLLDP() || $hp->SUPER::hasCDP();
+}
+
+sub c_ip {
+    my $hp = shift;
+    my $partial = shift;
+
+    my $cdp  = $hp->SUPER::c_ip($partial) || {};
+    my $lldp = $hp->lldp_ip($partial) || {};
+
+    my %c_ip;
+    foreach my $iid (keys %$cdp){
+        my $ip = $cdp->{$iid};
+        next unless defined $ip;
+
+        $c_ip{$iid} = $ip;
+    }
+
+    foreach my $iid (keys %$lldp){
+        my $ip = $lldp->{$iid};
+        next unless defined $ip;
+
+        $c_ip{$iid} = $ip;
+    }
+    return \%c_ip;
+}
+
+sub c_if {
+    my $hp = shift;
+    my $partial = shift;
+
+    my $lldp = $hp->lldp_if($partial) || {};;
+    my $cdp  = $hp->SUPER::c_if($partial) || {};
+    
+    my %c_if;
+    foreach my $iid (keys %$cdp){
+        my $if = $cdp->{$iid};
+        next unless defined $if;
+
+        $c_if{$iid} = $if;
+    }
+
+    foreach my $iid (keys %$lldp){
+        my $if = $lldp->{$iid};
+        next unless defined $if;
+
+        $c_if{$iid} = $if;
+    }
+    return \%c_if;
+}
+
+sub c_port {
+    my $hp = shift;
+    my $partial = shift;
+
+    my $lldp = $hp->lldp_port($partial) || {};
+    my $cdp  = $hp->SUPER::c_port($partial) || {};
+    
+    my %c_port;
+    foreach my $iid (keys %$cdp){
+        my $port = $cdp->{$iid};
+        next unless defined $port;
+
+        $c_port{$iid} = $port;
+    }
+
+    foreach my $iid (keys %$lldp){
+        my $port = $lldp->{$iid};
+        next unless defined $port;
+
+        $c_port{$iid} = $port;
+    }
+    return \%c_port;
+}
+
+sub c_id {
+    my $hp = shift;
+    my $partial = shift;
+
+    my $lldp = $hp->lldp_id($partial) || {};
+    my $cdp  = $hp->SUPER::c_id($partial) || {};
+
+    my %c_id;
+    foreach my $iid (keys %$cdp){
+        my $id = $cdp->{$iid};
+        next unless defined $id;
+
+        $c_id{$iid} = $id;
+    }
+
+    foreach my $iid (keys %$lldp){
+        my $id = $lldp->{$iid};
+        next unless defined $id;
+
+        $c_id{$iid} = $id;
+    }
+    return \%c_id;
+}
+
+sub c_platform {
+    my $hp = shift;
+    my $partial = shift;
+
+    my $lldp = $hp->lldp_rem_sysdesc($partial) || {};
+    my $cdp  = $hp->SUPER::c_platform($partial) || {};
+
+    my %c_platform;
+    foreach my $iid (keys %$cdp){
+        my $platform = $cdp->{$iid};
+        next unless defined $platform;
+
+        $c_platform{$iid} = $platform;
+    }
+
+    foreach my $iid (keys %$lldp){
+        my $platform = $lldp->{$iid};
+        next unless defined $platform;
+
+        $c_platform{$iid} = $platform;
+    }
+    return \%c_platform;
+}
+
 1;
 __END__
 
@@ -402,7 +530,7 @@ a more specific class using the method above.
 
 =item SNMP::Info::Layer2
 
-=item SNMP::Info::Entity
+=item SNMP::Info::LLDP
 
 =item SNMP::Info::MAU
 
@@ -541,9 +669,9 @@ hp
 
 See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::Entity
+=head2 Globals imported from SNMP::Info::LLDP
 
-See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::MAU
 
@@ -596,13 +724,60 @@ since they seem to have problems with BRIDGE-MIB
 
 =back
 
+=head2 Topology information
+
+Based upon the firmware version HP devices may support Cisco Discovery
+Protocol (CDP), Link Layer Discovery Protocol (LLDP), or both.  These methods
+will query both and return the combination of all information.  As a result,
+there may be identical topology information returned from the two protocols
+causing duplicate entries.  It is the calling program's responsibility to
+identify any duplicate entries and de-duplicate if necessary.
+
+=over
+
+=item $hp->hasCDP()
+
+Returns true if the device is running either CDP or LLDP.
+
+=item $hp->c_if()
+
+Returns reference to hash.  Key: iid Value: local device port (interfaces)
+
+=item $hp->c_ip()
+
+Returns reference to hash.  Key: iid Value: remote IPv4 address
+
+If multiple entries exist with the same local port, c_if(), with the same IPv4
+address, c_ip(), it may be a duplicate entry.
+
+If multiple entries exist with the same local port, c_if(), with different IPv4
+addresses, c_ip(), there is either a non-CDP/LLDP device in between two or
+more devices or multiple devices which are not directly connected.  
+
+Use the data from the Layer2 Topology Table below to dig deeper.
+
+=item $hp->c_port()
+
+Returns reference to hash. Key: iid Value: remote port (interfaces)
+
+=item $hp->c_id()
+
+Returns reference to hash. Key: iid Value: string value used to identify the
+chassis component associated with the remote system.
+
+=item $hp->c_platform()
+
+Returns reference to hash.  Key: iid Value: Remote Device Type
+
+=back
+
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
-=head2 Table Methods imported from SNMP::Info::Entity
+=head2 Table Methods imported from SNMP::Info::LLDP
 
-See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::MAU
 
