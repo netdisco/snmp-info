@@ -2980,7 +2980,7 @@ sub AUTOLOAD {
         if ( defined $funcs{$attr} ) {
             return $self->_load_attr( $attr,$funcs{$attr},@_ );
         }
-        if ( defined $mib_leaf and !$table_leaf) {
+        if ( $mib_leaf and !$table_leaf ) {
             return $self->_global( $attr );
         }        
         if ( $table_leaf ) {
@@ -2994,7 +2994,7 @@ sub AUTOLOAD {
     }
 
     # Next check for entry in %GLOBALS
-    if (defined $globals{$attr} or (defined $mib_leaf and !$table_leaf)){
+    if (defined $globals{$attr} or ( $mib_leaf and !$table_leaf )){
         # Return Cached Value if exists
         return $self->{"_${attr}"} if exists $self->{"_${attr}"};
         # Fetch New Value
