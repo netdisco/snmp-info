@@ -352,6 +352,86 @@ sub c_platform {
     return \%c_platform;
 }
 
+# Newer devices support ENTITY-MIB, use if available otherwise use proprietary
+# methods.
+
+sub e_index {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->SUPER::e_index($partial) || $stack->ns_e_index($partial);
+}
+
+sub e_class {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->SUPER::e_class($partial) || $stack->ns_e_class($partial);
+}
+
+sub e_descr {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->SUPER::e_descr($partial) || $stack->ns_e_descr($partial);
+}
+
+sub e_fwver {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->SUPER::e_fwver($partial) || $stack->ns_e_fwver($partial);
+}
+
+sub e_hwver {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->SUPER::e_hwver($partial) || $stack->ns_e_hwver($partial);
+}
+
+sub e_parent {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->SUPER::e_parent($partial) || $stack->ns_e_parent($partial);
+}
+
+sub e_pos {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->SUPER::e_pos($partial) || $stack->ns_e_pos($partial);
+}
+
+sub e_serial {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->SUPER::e_serial($partial) || $stack->ns_e_serial($partial);
+}
+
+sub e_swver {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->SUPER::e_swver($partial) || $stack->ns_e_swver($partial);
+}
+
+sub e_type {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->SUPER::e_type($partial) || $stack->ns_e_type($partial);
+}
+
+sub e_vendor {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->SUPER::e_vendor($partial) || $stack->ns_e_vendor($partial);
+}
+
 1;
 
 __END__
@@ -526,6 +606,68 @@ revisions of Baystack firmware report all zeros for each port mac.
 =item $baystack->i_name()
 
 Crosses ifName with ifAlias and returns the human set port name if exists.
+
+=back
+
+=head2 ENTITY-MIB Information
+
+For older devices which do not support ENTITY-MIB, these methods emulate
+Physical Table methods using S5-CHASSIS-MIB.  See
+L<SNMP::Info::NortelStack/"TABLE METHODS"> for details on ns_e_* methods.
+
+=over
+
+=item $baystack->e_index() 
+
+If the device doesn't support B<entPhysicalIndex>, this will try ns_e_index().
+
+=item $baystack->e_class() 
+
+If the device doesn't support B<entPhysicalClass>, this will try ns_e_class().
+
+=item $baystack->e_descr() 
+
+If the device doesn't support B<entPhysicalDescr>, this will try ns_e_descr().
+
+=item $baystack->e_fwver() 
+
+If the device doesn't support B<entPhysicalFirmwareRev>, this will try
+ns_e_fwver().
+
+=item $baystack->e_hwver() 
+
+If the device doesn't support B<entPhysicalHardwareRev>, this will try
+ns_e_hwver().
+
+=item $baystack->e_parent() 
+
+If the device doesn't support B<entPhysicalContainedIn>, this will try
+ns_e_parent().
+
+=item $baystack->e_pos() 
+
+If the device doesn't support B<entPhysicalParentRelPos>, this will try
+ns_e_pos().
+
+=item $baystack->e_serial() 
+
+If the device doesn't support B<entPhysicalSerialNum>, this will try
+ns_e_serial().
+
+=item $baystack->e_swver() 
+
+If the device doesn't support B<entPhysicalSoftwareRev>, this will try
+ns_e_swver().
+
+=item $baystack->e_type() 
+
+If the device doesn't support B<entPhysicalVendorType>, this will try
+ns_e_type().
+
+=item $baystack->e_vendor() 
+
+If the device doesn't support B<entPhysicalMfgName>, this will try
+ns_e_vendor().
 
 =back
 

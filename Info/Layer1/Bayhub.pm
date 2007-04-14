@@ -367,6 +367,86 @@ sub slot_offset {
     return 0;
 }
 
+
+# Devices do not support ENTITY-MIB use proprietary methods.
+
+sub e_index {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_index($partial);
+}
+
+sub e_class {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_class($partial);
+}
+
+sub e_descr {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_descr($partial);
+}
+
+sub e_fwver {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_fwver($partial);
+}
+
+sub e_hwver {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_hwver($partial);
+}
+
+sub e_parent {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_parent($partial);
+}
+
+sub e_pos {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_pos($partial);
+}
+
+sub e_serial {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_serial($partial);
+}
+
+sub e_swver {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_swver($partial);
+}
+
+sub e_type {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_type($partial);
+}
+
+sub e_vendor {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_vendor($partial);
+}
+
 1;
 __END__
 
@@ -555,6 +635,60 @@ to the Interface index.
 =item $bayhub->fw_mac()
 
 (B<s5CmSNodeMacAddr>)
+
+=back
+
+=head2 Pseudo ENTITY-MIB Information
+
+These devices do not support ENTITY-MIB.  These methods emulate Physical Table
+methods using S5-CHASSIS-MIB.  See L<SNMP::Info::NortelStack/"TABLE METHODS">
+for details.
+
+=over
+
+=item $bayhub->e_index() 
+
+Returns ns_e_index().
+
+=item $bayhub->e_class() 
+
+Returns ns_e_class().
+
+=item $bayhub->e_descr() 
+
+Returns ns_e_descr().
+
+=item $bayhub->e_fwver() 
+
+Returns ns_e_fwver().
+
+=item $bayhub->e_hwver() 
+
+Returns ns_e_hwver().
+
+=item $bayhub->e_parent() 
+
+Returns ns_e_parent().
+
+=item $bayhub->e_pos() 
+
+Returns ns_e_pos().
+
+=item $bayhub->e_serial() 
+
+Returns ns_e_serial().
+
+=item $bayhub->e_swver() 
+
+Returns ns_e_swver().
+
+=item $bayhub->e_type() 
+
+Returns ns_e_type().
+
+=item $bayhub->e_vendor() 
+
+Returns ns_e_vendor().
 
 =back
 

@@ -44,6 +44,7 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             # S5-ROOT-MIB and S5-TCS-MIB required by the MIBs below
             'S5-AGENT-MIB'   => 's5AgMyGrpIndx',
             'S5-CHASSIS-MIB' => 's5ChasType',
+            'S5-REG-MIB'     => 's5ChasTypeVal',
             );
 
 %GLOBALS = (
@@ -68,7 +69,7 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             'i_cfg_host'       => 's5AgMyIfLdSvrAddr',
             # From S5-CHASSIS-MIB::s5ChasComTable
             'ns_com_grp_idx'   => 's5ChasComGrpIndx',
-            'ns_com_ns_com_idx'=> 's5ChasComIndx',
+            'ns_com_idx'       => 's5ChasComIndx',
             'ns_com_sub_idx'   => 's5ChasComSubIndx',
             'ns_com_type'      => 's5ChasComType',
             'ns_com_descr'     => 's5ChasComDescr',
@@ -76,7 +77,7 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             'ns_com_serial'    => 's5ChasComSerNum',
             # From S5-CHASSIS-MIB::s5ChasStoreTable
             'ns_store_grp_idx' => 's5ChasStoreGrpIndx',
-            'ns_store_ns_com_idx' => 's5ChasStoreComIndx',
+            'ns_store_com_idx' => 's5ChasStoreComIndx',
             'ns_store_sub_idx' => 's5ChasStoreSubIndx',
             'ns_store_idx'     => 's5ChasStoreIndx',
             'ns_store_type'    => 's5ChasStoreType',
@@ -85,7 +86,8 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
           );
 
 %MUNGE = (
-
+            'ns_com_type'      => \&munge_ns_com_type,
+            'ns_store_type'    => \&munge_ns_store_type,
          );
 
 sub os_ver {
@@ -128,6 +130,243 @@ sub serial {
     return undef;
 }
 
+# Psuedo ENTITY-MIB methods for older switches with don't support ENTITY-MIB
+
+sub ns_e_index {
+    my $stack   = shift;
+    my $partial = shift;
+
+    my $ns_e_idx = $stack->ns_com_sub_idx($partial) || {};
+
+    my %ns_e_index;
+    foreach my $iid (keys %$ns_e_idx){
+        # Format into consistent integer format so that numeric sorting works
+        my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
+        $ns_e_index{$iid} = $index;
+    }
+    return \%ns_e_index;
+}
+
+sub ns_e_class {
+    my $stack = shift;
+    my $partial = shift;
+
+    my $ns_e_idx  = $stack->ns_com_grp_idx($partial) || {};
+    my $classes = $stack->s5ChasGrpDescr();
+
+    my %ns_e_class;
+    foreach my $iid (keys %$ns_e_idx){
+        my $grp = $ns_e_idx->{$iid};
+        next unless defined $grp;
+        my $class = $classes->{$grp};
+        next unless defined $class; 
+      
+        $class =~ s/\s*Group[\0\s]*//;
+      
+        $ns_e_class{$iid} = $class;
+    }
+    return \%ns_e_class;
+}
+
+sub ns_e_descr {
+    my $stack   = shift;
+    my $partial = shift;
+
+    my $ns_e_descr = $stack->ns_com_descr($partial) || {};
+
+    my %ns_e_descr;
+    foreach my $iid (keys %$ns_e_descr){
+        my $descr = $ns_e_descr->{$iid};
+        next unless defined $descr;
+
+        $ns_e_descr{$iid} = $descr;
+    }
+    return \%ns_e_descr;
+}
+
+sub ns_e_hwver {
+    my $stack   = shift;
+    my $partial = shift;
+
+    my $ns_e_ver = $stack->ns_com_ver($partial) || {};
+
+    my %ns_e_hwver;
+    foreach my $iid (keys %$ns_e_ver){
+        my $ver = $ns_e_ver->{$iid};
+        next unless defined $ver;
+
+        $ns_e_hwver{$iid} = $ver;
+    }
+    return \%ns_e_hwver;
+}
+
+sub ns_e_vendor {
+    my $stack   = shift;
+    my $partial = shift;
+
+    my $ns_e_idx = $stack->ns_com_sub_idx($partial) || {};
+
+    my %ns_e_vendor;
+    foreach my $iid (keys %$ns_e_idx){
+        my $vendor = 'nortel';
+
+        $ns_e_vendor{$iid} = $vendor;
+    }
+    return \%ns_e_vendor;
+}
+
+sub ns_e_serial {
+    my $stack   = shift;
+    my $partial = shift;
+
+    my $ns_e_serial = $stack->ns_com_serial($partial) || {};
+
+    my %ns_e_serial;
+    foreach my $iid (keys %$ns_e_serial){
+        my $serial = $ns_e_serial->{$iid};
+        next unless defined $serial;
+
+        $ns_e_serial{$iid} = $serial;
+    }
+    return \%ns_e_serial;
+}
+
+sub ns_e_pos {
+    my $stack   = shift;
+    my $partial = shift;
+
+    my $ns_e_pos = $stack->ns_com_sub_idx($partial) || {};
+
+    my %ns_e_pos;
+    foreach my $iid (keys %$ns_e_pos){
+        my $pos = $ns_e_pos->{$iid};
+        next unless defined $pos;
+
+        $ns_e_pos{$iid} = $pos;
+    }
+    return \%ns_e_pos;
+}
+
+sub ns_e_type {
+    my $stack   = shift;
+    my $partial = shift;
+
+    my $ns_e_type = $stack->ns_com_type($partial) || {};
+
+    my %ns_e_type;
+    foreach my $iid (keys %$ns_e_type){
+        my $type = $ns_e_type->{$iid};
+        next unless defined $type;
+
+        $ns_e_type{$iid} = $type;
+    }
+    return \%ns_e_type;
+}
+
+sub ns_e_fwver {
+    my $stack   = shift;
+    my $partial = shift;
+
+    my $ns_e_ver  = $stack->ns_store_ver($partial)  || {};
+    my $ns_e_type = $stack->ns_store_type($partial) || {};
+
+    my %ns_e_fwver;
+    foreach my $iid (keys %$ns_e_type){
+        my $type = $ns_e_type->{$iid};
+        next unless defined $type;
+        next unless $type =~ /(rom|boot|fw)/i;
+        my $ver  = $ns_e_ver->{$iid};
+        next unless defined $ver;
+        $iid =~ s/\.\d+$//;
+        
+
+      $ns_e_fwver{$iid} = $ver;
+    }
+    return \%ns_e_fwver;
+}
+
+sub ns_e_swver {
+    my $stack   = shift;
+    my $partial = shift;
+
+    my $ns_e_ver  = $stack->ns_store_ver($partial)  || {};
+    my $ns_e_type = $stack->ns_store_type($partial) || {};
+
+    my %ns_e_swver;
+    foreach my $iid (keys %$ns_e_type){
+        my $type = $ns_e_type->{$iid};
+        next unless defined $type;
+        next unless $type =~ /(flash)/i;
+        my $ver  = $ns_e_ver->{$iid};
+        next unless defined $ver;
+        $iid =~ s/\.\d+$//;
+        
+        $ns_e_swver{$iid} = $ver;
+    }
+    return \%ns_e_swver;
+}
+
+sub ns_e_parent {
+    my $stack   = shift;
+    my $partial = shift;
+
+    my $ns_e_idx  = $stack->ns_com_grp_idx($partial)  || {};
+    
+    # Check to see if we are dealing with a stack "virtual chassis"
+    my $v_test = $stack->s5ChasComRelPos('8.1.0');
+    my $virtual = $v_test->{'8.1.0'};
+    
+    my %ns_e_parent;
+    foreach my $iid (keys %$ns_e_idx){
+        my $grp_idx = $ns_e_idx->{$iid};
+        next unless defined $grp_idx;
+        if ($grp_idx != 3) {
+            if ($virtual != 0) {
+                $ns_e_parent{$iid} = '0';
+            }
+            # In a traditional chassis everything except submodules
+            # are a child of the chassis
+            else {
+                $ns_e_parent{$iid} = '080100';
+            }
+        }
+        if ($grp_idx == 3) {
+            if ($iid =~ /0$/) {
+                if ($virtual != 0) {
+                    $ns_e_parent{$iid} = '0';
+                }
+                else {
+                    $ns_e_parent{$iid} = '080100';
+                }
+            }
+            else {
+                my $parent = $iid;
+                $parent =~ s/\.\d+$/\.00/;
+                $parent = join('',map { sprintf "%02d",$_ } split /\./, $parent);
+                $ns_e_parent{$iid} = $parent;
+            }
+        }
+        next;
+    }
+    return \%ns_e_parent;
+}
+
+sub munge_ns_com_type {
+    my $oid = shift;
+
+    my $name = &SNMP::translateObj($oid);
+    return $name if defined($name);
+    return $oid;
+}
+
+sub munge_ns_store_type {
+    my $oid = shift;
+
+    my $name = &SNMP::translateObj($oid);
+    return $name if defined($name);
+    return $oid;
+}
+
 1;
 
 __END__
@@ -144,13 +383,13 @@ Eric Miller
 
  # Let SNMP::Info determine the correct subclass for you. 
  my $stack = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
-                          DestHost    => 'myswitch',
-                          Community   => 'public',
-                          Version     => 2
-                        ) 
+                    AutoSpecify => 1,
+                    Debug       => 1,
+                    # These arguments are passed directly on to SNMP::Session
+                    DestHost    => 'myswitch',
+                    Community   => 'public',
+                    Version     => 2
+                    ) 
     or die "Can't connect to DestHost.\n";
 
  my $class = $stack->class();
@@ -309,7 +548,7 @@ group which contains this component.
 
 (B<s5ChasComGrpIndx>)
 
-=item $stack->ns_com_ns_com_idx()
+=item $stack->ns_com_idx()
 
 Returns reference to hash.  Key: Table entry, Value: Index of the component in
 the group.  For modules in the 'board' group, this is the slot number.
@@ -360,7 +599,7 @@ group.
 
 (B<s5ChasStoreGrpIndx>)
 
-=item $stack->ns_store_ns_com_idx()
+=item $stack->ns_store_idx()
 
 Returns reference to hash.  Key: Table entry, Value: Index of the group.
 
@@ -395,5 +634,80 @@ Returns reference to hash.  Key: Table entry, Value: Size
 Returns reference to hash.  Key: Table entry, Value: Version
 
 (B<s5ChasStoreCntntVer>)
+
+=back
+
+=head2 Psuedo ENTITY-MIB information
+
+These methods emulate ENTITY-MIB Physical Table methods using S5-CHASSIS-MIB. 
+
+=over
+
+=item $stack->ns_e_index()
+
+Returns reference to hash.  Key: IID, Value: Integer, Indicies are combined
+into a six digit integer, each index is two digits padded with leading zero if
+required.
+
+=item $stack->ns_e_class()
+
+Returns reference to hash.  Key: IID, Value: General hardware type
+(B<s5ChasGrpDescr>).
+
+Group is stripped from the string.  Values may be Supervisory Module,
+Backplane, Board, Power Supply, Sensor, Fan, Clock, Unit.
+
+=item $stack->ns_e_descr()
+
+Returns reference to hash.  Key: IID, Value: Human friendly name
+
+(B<s5ChasComDescr>)
+
+=item $stack->ns_e_hwver()
+
+Returns reference to hash.  Key: IID, Value: Hardware version
+
+(B<s5ChasComVer>)
+
+=item $stack->ns_e_vendor()
+
+Returns reference to hash.  Key: IID, Value: nortel
+
+=item $stack->ns_e_serial()
+
+Returns reference to hash.  Key: IID, Value: Serial number
+
+(B<s5ChasComSerNum>)
+
+=item $stack->ns_e_pos()
+
+Returns reference to hash.  Key: IID, Value: The relative position among all
+entities sharing the same parent.
+
+(B<s5ChasComSubIndx>)
+
+=item $stack->ns_e_type()
+
+Returns reference to hash.  Key: IID, Value: Type of component/sub-component
+as defined under B<s5ChasComTypeVal> in S5-REG-MIB.
+
+=item $stack->ns_e_fwver()
+
+Returns reference to hash.  Key: IID, Value: Firmware revision.
+
+Value of B<s5ChasStoreCntntVer> for entries with rom, boot, or fw in
+B<s5ChasStoreType>.
+
+=item $stack->ns_e_fwver()
+
+Returns reference to hash.  Key: IID, Value: Software revision.
+
+Value of B<s5ChasStoreCntntVer> for entries with "flash" in B<s5ChasStoreType>.
+
+=item $stack->ns_e_parent()
+
+Returns reference to hash.  Key: IID, Value: The value of ns_e_index() for the
+entity which 'contains' this entity.  A value of zero indicates	this entity
+is not contained in any other entity.
 
 =cut
