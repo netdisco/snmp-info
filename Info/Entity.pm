@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Entity;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -48,7 +48,6 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
            );
 
 %FUNCS   = (
-            'e_index'   => 'entPhysicalIndex',
             'e_alias'   => 'entPhysicalAlias',
             'e_class'   => 'entPhysicalClass',
             'e_descr'   => 'entPhysicalDescr',
@@ -71,9 +70,29 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
             'e_type'    => \&munge_e_type,
            );
 
+# entPhysicalIndex is not-accessible.  Create to facilitate emulation methods
+# in other classes
+
+sub e_index {
+    my $entity = shift;
+    my $partial = shift;
+
+    my $e_descr  = $entity->e_descr($partial);
+
+    my %e_index;
+
+    foreach my $iid (keys %$e_descr) {
+        $e_index{$iid} = $iid;
+    }
+
+    return \%e_index;
+}
+
 sub e_port {
     my $entity = shift;
-    my $e_map  = $entity->e_map();
+    my $partial = shift;
+
+    my $e_map  = $entity->e_map($partial);
 
     my %e_port;
 
@@ -101,7 +120,7 @@ sub munge_e_type {
 
 =head1 NAME
 
-SNMP::Info::Entity - Perl5 Interface to SNMP data stored in ENTITY-MIB. RFC 2737
+SNMP::Info::Entity - SNMP Interface to data stored in ENTITY-MIB. RFC 2737
 
 =head1 AUTHOR
 
@@ -164,7 +183,7 @@ to a hash.
 
 =item $entity->e_index()
 
-Not normally implemented
+Index
 
 (C<entPhysicalIndex>)
 
