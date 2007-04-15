@@ -59,6 +59,7 @@ $VERSION = '1.05';
             %SNMP::Info::CiscoStats::MIBS,
             %SNMP::Info::CDP::MIBS,
             %SNMP::Info::CiscoVTP::MIBS,
+            'CISCO-EIGRP-MIB' => 'cEigrpAsRouterId',
         );
 
 %GLOBALS = (
@@ -70,6 +71,7 @@ $VERSION = '1.05';
             %SNMP::Info::CiscoStats::GLOBALS,
             %SNMP::Info::CDP::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
+            'eigrp_id'     => 'cEigrpAsRouterId',
            );
 
 %FUNCS = (
@@ -81,6 +83,8 @@ $VERSION = '1.05';
             %SNMP::Info::CiscoStats::FUNCS,
             %SNMP::Info::CDP::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
+            # EIGRP
+            'eigrp_peers' => 'cEigrpPeerAddr',
          );
 
 %MUNGE = (
@@ -92,6 +96,7 @@ $VERSION = '1.05';
             %SNMP::Info::CiscoStats::MUNGE,
             %SNMP::Info::CDP::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
+            'eigrp_peers' => \&SNMP::Info::munge_ip,
          );
 
 1;
@@ -152,6 +157,8 @@ Subclass for Generic Cisco Routers running IOS
 
 =over
 
+=item CISCO-EIGRP-MIB
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
@@ -181,6 +188,10 @@ These are methods that return scalar value from SNMP
 =item $cisco->vendor()
 
     Returns 'cisco'
+
+=item $cisco->eigrp_id()
+
+(B<cEigrpAsRouterId>)
 
 =back
 
@@ -220,6 +231,16 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=over
+
+=item $cisco->eigrp_peers()
+
+Returns EIGRP peer IP addresses
+
+(B<cEigrpPeerAddr>)
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
