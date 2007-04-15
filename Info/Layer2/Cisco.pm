@@ -32,60 +32,66 @@ package SNMP::Info::Layer2::Cisco;
 use strict;
 
 use Exporter;
-use SNMP::Info::Layer2;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoImage;
 use SNMP::Info::CiscoRTT;
 use SNMP::Info::CiscoQOS;
+use SNMP::Info::CiscoConfig;
+use SNMP::Info::Layer2;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = 1.04;
-@SNMP::Info::Layer2::Cisco::ISA = qw/SNMP::Info::Layer2 SNMP::Info::CiscoVTP 
-                                     SNMP::Info::CDP    SNMP::Info::CiscoStats 
-                                     SNMP::Info::CiscoImage SNMP::Info::CiscoRTT
-                                     SNMP::Info::CiscoQOS Exporter/;
+$VERSION = 1.05;
+@SNMP::Info::Layer2::Cisco::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP  
+                                     SNMP::Info::CiscoStats SNMP::Info::CiscoImage 
+                                     SNMP::Info::CiscoRTT SNMP::Info::CiscoQOS 
+                                     SNMP::Info::CiscoConfig SNMP::Info::Layer2
+                                     Exporter/;
 @SNMP::Info::Layer2::Cisco::EXPORT_OK = qw//;
 
 %MIBS = (
             %SNMP::Info::Layer2::MIBS,  
-            %SNMP::Info::CiscoVTP::MIBS,
-            %SNMP::Info::CDP::MIBS,
-            %SNMP::Info::CiscoStats::MIBS,
-            %SNMP::Info::CiscoImage::MIBS,
-            %SNMP::Info::CiscoRTT::MIBS,
+            %SNMP::Info::CiscoConfig::MIBS,
             %SNMP::Info::CiscoQOS::MIBS,
+            %SNMP::Info::CiscoRTT::MIBS,
+            %SNMP::Info::CiscoImage::MIBS,
+            %SNMP::Info::CiscoStats::MIBS,
+            %SNMP::Info::CDP::MIBS,
+            %SNMP::Info::CiscoVTP::MIBS,
         );
 
 %GLOBALS = (
-            %SNMP::Info::Layer2::GLOBALS,
-            %SNMP::Info::CiscoVTP::GLOBALS,
-            %SNMP::Info::CDP::GLOBALS,
-            %SNMP::Info::CiscoStats::GLOBALS,
-            %SNMP::Info::CiscoImage::GLOBALS,
-            %SNMP::Info::CiscoRTT::GLOBALS,
+            %SNMP::Info::Layer2::GLOBALS,  
+            %SNMP::Info::CiscoConfig::GLOBALS,
             %SNMP::Info::CiscoQOS::GLOBALS,
+            %SNMP::Info::CiscoRTT::GLOBALS,
+            %SNMP::Info::CiscoImage::GLOBALS,
+            %SNMP::Info::CiscoStats::GLOBALS,
+            %SNMP::Info::CDP::GLOBALS,
+            %SNMP::Info::CiscoVTP::GLOBALS,
            );
 
 %FUNCS = (
-            %SNMP::Info::Layer2::FUNCS,
-            %SNMP::Info::CiscoVTP::FUNCS,
-            %SNMP::Info::CDP::FUNCS,
-            %SNMP::Info::CiscoStats::FUNCS,
-            %SNMP::Info::CiscoImage::FUNCS,
-            %SNMP::Info::CiscoRTT::FUNCS,
+            %SNMP::Info::Layer2::FUNCS,  
+            %SNMP::Info::CiscoConfig::FUNCS,
             %SNMP::Info::CiscoQOS::FUNCS,
+            %SNMP::Info::CiscoRTT::FUNCS,
+            %SNMP::Info::CiscoImage::FUNCS,
+            %SNMP::Info::CiscoStats::FUNCS,
+            %SNMP::Info::CDP::FUNCS,
+            %SNMP::Info::CiscoVTP::FUNCS,
          );
 
 %MUNGE = (
-            %SNMP::Info::Layer2::MUNGE,
-            %SNMP::Info::CiscoVTP::MUNGE,
-            %SNMP::Info::CDP::MUNGE,
-            %SNMP::Info::CiscoStats::MUNGE,
-            %SNMP::Info::CiscoImage::MUNGE,
-            %SNMP::Info::CiscoRTT::MUNGE,
+            %SNMP::Info::Layer2::MUNGE,  
+            %SNMP::Info::CiscoConfig::MUNGE,
             %SNMP::Info::CiscoQOS::MUNGE,
+            %SNMP::Info::CiscoRTT::MUNGE,
+            %SNMP::Info::CiscoImage::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
+            %SNMP::Info::CDP::MUNGE,
+            %SNMP::Info::CiscoVTP::MUNGE,
          );
 
 1;
@@ -93,7 +99,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Cisco - Perl5 Interface to L3 and L2+L3 IOS Cisco Device
+SNMP::Info::Layer2::Cisco - SNMP Interface to L3 and L2+L3 IOS Cisco Device
 that are not covered in other classes.
 
 =head1 AUTHOR
@@ -104,12 +110,12 @@ Max Baker
 
  # Let SNMP::Info determine the correct subclass for you. 
  my $cisco = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
-                          DestHost    => 'myswitch',
-                          Community   => 'public',
-                          Version     => 2
+                        AutoSpecify => 1,
+                        Debug       => 1,
+                        # These arguments are passed directly to SNMP::Session
+                        DestHost    => 'myswitch',
+                        Community   => 'public',
+                        Version     => 2
                         ) 
     or die "Can't connect to DestHost.\n";
 
@@ -124,8 +130,6 @@ Subclass for Generic Cisco Routers running IOS
 
 =over
 
-=item SNMP::Info::Layer2
-
 =item SNMP::Info::CiscoVTP
 
 =item SNMP::Info::CDP
@@ -133,6 +137,14 @@ Subclass for Generic Cisco Routers running IOS
 =item SNMP::Info::CiscoStats
 
 =item SNMP::Info::CiscoImage
+
+=item SNMP::Info::CiscoRTT
+
+=item SNMP::Info::CiscoQOS
+
+=item SNMP::Info::CiscoConfig
+
+=item SNMP::Info::Layer2
 
 =back
 
@@ -142,8 +154,6 @@ Subclass for Generic Cisco Routers running IOS
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
-
 See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
@@ -151,6 +161,14 @@ See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
 See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoImage/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::CiscoRTT/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::CiscoQOS/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::CiscoConfig/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -165,10 +183,6 @@ These are methods that return scalar value from SNMP
     Returns 'cisco'
 
 =back
-
-=head2 Globals imported from SNMP::Info::Layer2
-
-See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::CiscoVTP
 
@@ -186,14 +200,26 @@ See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::CiscoImage/"GLOBALS"> for details.
 
+=head2 Globals imported from SNMP::Info::CiscoRTT
+
+See documentation in L<SNMP::Info::CiscoRTT/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::CiscoQOS
+
+See documentation in L<SNMP::Info::CiscoQOS/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::CiscoConfig
+
+See documentation in L<SNMP::Info::CiscoConfig/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::Layer2
+
+See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
+
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=head2 Table Methods imported from SNMP::Info::Layer2
-
-See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
@@ -210,5 +236,21 @@ See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::CiscoImage
 
 See documentation in L<SNMP::Info::CiscoImage/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoRTT
+
+See documentation in L<SNMP::Info::CiscoRTT/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoQOS
+
+See documentation in L<SNMP::Info::CiscoQOS/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoConfig
+
+See documentation in L<SNMP::Info::CiscoConfig/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =cut

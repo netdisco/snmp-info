@@ -39,23 +39,28 @@ use SNMP::Info::CiscoStack;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
+use SNMP::Info::CiscoPortSecurity;
 use SNMP::Info::Layer2;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
 @SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::CiscoStack SNMP::Info::CiscoVTP 
                                         SNMP::Info::CDP SNMP::Info::CiscoStats
+                                        SNMP::Info::CiscoPortSecurity
                                         SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Catalyst::EXPORT_OK = qw//;
 
-%MIBS =    ( %SNMP::Info::Layer2::MIBS, 
-             %SNMP::Info::CiscoStats::MIBS,
-             %SNMP::Info::CDP::MIBS,
-             %SNMP::Info::CiscoVTP::MIBS,
-             %SNMP::Info::CiscoStack::MIBS,
-             );
+%MIBS =    (
+            %SNMP::Info::Layer2::MIBS,
+            %SNMP::Info::CiscoPortSecurity::MIBS,
+            %SNMP::Info::CiscoStats::MIBS,
+            %SNMP::Info::CDP::MIBS,
+            %SNMP::Info::CiscoVTP::MIBS,
+            %SNMP::Info::CiscoStack::MIBS,
+            );
 
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
+            %SNMP::Info::CiscoPortSecurity::GLOBALS,
             %SNMP::Info::CiscoStats::GLOBALS,
             %SNMP::Info::CDP::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
@@ -64,6 +69,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
 
 %FUNCS =   (
             %SNMP::Info::Layer2::FUNCS,
+            %SNMP::Info::CiscoPortSecurity::FUNCS,
             %SNMP::Info::CiscoStats::FUNCS,
             %SNMP::Info::CDP::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
@@ -72,6 +78,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
 
 %MUNGE =   (
             %SNMP::Info::Layer2::MUNGE,
+            %SNMP::Info::CiscoPortSecurity::MUNGE,
             %SNMP::Info::CiscoStats::MUNGE,
             %SNMP::Info::CDP::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
@@ -199,6 +206,8 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::CiscoStats
 
+=item SNMP::Info::CiscoPortSecurity
+
 =item SNMP::Info::Layer2
 
 =back
@@ -216,6 +225,8 @@ See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
 See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
 
@@ -260,6 +271,10 @@ See documentation in L<SNMP::Info::CDP/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
 
+=head2 Global Methods imported from SNMP::Info::CiscoPortSecurity
+
+See documentation in L<SNMP::Info::CiscoPortSecurity/"GLOBALS"> for details.
+
 =head2 Globals imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
@@ -283,10 +298,9 @@ problems with BRIDGE-MIB
 
 =back
 
-=head2 Table Methods imported from SNMP::Info::Layer2::CiscoStack
+=head2 Table Methods imported from SNMP::Info::CiscoStack
 
-See documentation in L<SNMP::Info::Layer2::CiscoStack/"TABLE METHODS"> for
-details.
+See documentation in L<SNMP::Info::CiscoStack/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
@@ -296,9 +310,13 @@ See documentation in L<SNMP::Info::CiscoVTP/"TABLE METHODS"> for details.
 
 See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
 
-=head2 Table Methods imported from SNMP::Info::Layer2::CiscoStats
+=head2 Table Methods imported from SNMP::Info::CiscoStats
 
-See documentation in L<SNMP::Info::Layer2::CiscoStats/"TABLE METHODS"> for
+See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoPortSecurity
+
+See documentation in L<SNMP::Info::CiscoPortSecurity/"TABLE METHODS"> for
 details.
 
 =head2 Table Methods imported from SNMP::Info::Layer2

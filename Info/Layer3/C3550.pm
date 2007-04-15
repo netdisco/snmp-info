@@ -29,71 +29,74 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::C3550;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
 
 use Exporter;
-use SNMP::Info::Layer3;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CiscoStack;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoImage;
+use SNMP::Info::CiscoPortSecurity;
+use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-@SNMP::Info::Layer3::C3550::ISA = qw/SNMP::Info::Layer3     SNMP::Info::CiscoStack SNMP::Info::CiscoVTP
-                                     SNMP::Info::CiscoStats SNMP::Info::CDP        Exporter
-                                     SNMP::Info::CiscoImage/;
+@SNMP::Info::Layer3::C3550::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CiscoStack 
+                                     SNMP::Info::CDP SNMP::Info::CiscoStats
+                                     SNMP::Info::CiscoPortSecurity
+                                     SNMP::Info::CiscoImage SNMP::Info::Layer3
+                                     Exporter/;
 @SNMP::Info::Layer3::C3550::EXPORT_OK = qw//;
 
 %MIBS =    (
-            %SNMP::Info::Layer3::MIBS,  
-            %SNMP::Info::CiscoVTP::MIBS,
-            %SNMP::Info::CiscoStack::MIBS,
-            %SNMP::Info::CDP::MIBS,
-            %SNMP::Info::CiscoStats::MIBS,
+            %SNMP::Info::Layer3::MIBS,
+            %SNMP::Info::CiscoPortSecurity::MIBS,
             %SNMP::Info::CiscoImage::MIBS,
+            %SNMP::Info::CiscoStats::MIBS,
+            %SNMP::Info::CDP::MIBS,
+            %SNMP::Info::CiscoStack::MIBS,
+            %SNMP::Info::CiscoVTP::MIBS,
            );
 
 %GLOBALS = (
             %SNMP::Info::Layer3::GLOBALS,
-            %SNMP::Info::CiscoVTP::GLOBALS,
-            %SNMP::Info::CiscoStack::GLOBALS,
-            %SNMP::Info::CDP::GLOBALS,
-            %SNMP::Info::CiscoStats::GLOBALS,
+            %SNMP::Info::CiscoPortSecurity::GLOBALS,
             %SNMP::Info::CiscoImage::GLOBALS,
+            %SNMP::Info::CiscoStats::GLOBALS,
+            %SNMP::Info::CDP::GLOBALS,
+            %SNMP::Info::CiscoStack::GLOBALS,
+            %SNMP::Info::CiscoVTP::GLOBALS,
             'ports2'      => 'ifNumber',
            );
 
 %FUNCS = (
             %SNMP::Info::Layer3::FUNCS,
-            %SNMP::Info::CiscoVTP::FUNCS,
-            %SNMP::Info::CiscoStack::FUNCS,
-            %SNMP::Info::CDP::FUNCS,
-            %SNMP::Info::CiscoStats::FUNCS,
+            %SNMP::Info::CiscoPortSecurity::FUNCS,
             %SNMP::Info::CiscoImage::FUNCS,
+            %SNMP::Info::CiscoStats::FUNCS,
+            %SNMP::Info::CDP::FUNCS,
+            %SNMP::Info::CiscoStack::FUNCS,
+            %SNMP::Info::CiscoVTP::FUNCS,
          );
 
 %MUNGE = (
             # Inherit all the built in munging
             %SNMP::Info::Layer3::MUNGE,
-            %SNMP::Info::CiscoVTP::MUNGE,
-            %SNMP::Info::CiscoStack::MUNGE,
-            %SNMP::Info::CDP::MUNGE,
-            %SNMP::Info::CiscoStats::MUNGE,
+            %SNMP::Info::CiscoPortSecurity::MUNGE,
             %SNMP::Info::CiscoImage::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
+            %SNMP::Info::CDP::MUNGE,
+            %SNMP::Info::CiscoStack::MUNGE,
+            %SNMP::Info::CiscoVTP::MUNGE,
          );
 
-# Pick and choose
+# Override Inheritance for these specific methods
 
-*SNMP::Info::Layer3::C3550::serial     = \&SNMP::Info::CiscoStack::serial;
 *SNMP::Info::Layer3::C3550::interfaces = \&SNMP::Info::Layer3::interfaces;
-*SNMP::Info::Layer3::C3550::i_duplex   = \&SNMP::Info::CiscoStack::i_duplex;
-*SNMP::Info::Layer3::C3550::i_duplex_admin = \&SNMP::Info::CiscoStack::i_duplex_admin;
 *SNMP::Info::Layer3::C3550::i_name     = \&SNMP::Info::Layer3::i_name;
-*SNMP::Info::Layer3::C3550::i_type     = \&SNMP::Info::CiscoStack::i_type;
 
 sub vendor {
     return 'cisco';
@@ -130,13 +133,13 @@ sub cisco_comm_indexing {
     1;
 }
 
-
 1;
 __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::C3550 - Perl5 Interface to Cisco Catalyst 3550 Layer 2/3 Switches running IOS
+SNMP::Info::Layer3::C3550 - SNMP Interface to Cisco Catalyst 3550 Layer 2/3
+Switches running IOS
 
 =head1 AUTHOR
 
@@ -146,12 +149,12 @@ Max Baker
 
  # Let SNMP::Info determine the correct subclass for you. 
  my $c3550 = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
-                          DestHost    => 'myswitch',
-                          Community   => 'public',
-                          Version     => 2
+                        AutoSpecify => 1,
+                        Debug       => 1,
+                        # These arguments are passed directly to SNMP::Session
+                        DestHost    => 'myswitch',
+                        Community   => 'public',
+                        Version     => 2
                         ) 
     or die "Can't connect to DestHost.\n";
 
@@ -162,12 +165,12 @@ Max Baker
 
 Abstraction subclass for Cisco Catalyst 3550 Layer 2/3 Switches.  
 
-These devices run IOS but have some of the same charactersitics as the Catalyst WS-C family (5xxx,6xxx). 
-For example, forwarding tables are held in VLANs, and extened interface information
-is gleened from CISCO-SWITCH-MIB.
+These devices run IOS but have some of the same charactersitics as the
+Catalyst WS-C family (5xxx,6xxx).  For example, forwarding tables are held in
+VLANs, and extened interface information is gleened from CISCO-SWITCH-MIB.
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $c3550 = new SNMP::Info::Layer3::C3550(...);
 
@@ -176,6 +179,8 @@ a more specific class using the method above.
 =over
 
 =item SNMP::Info::Layer3
+
+=item SNMP::Info::CiscoPortSecurity
 
 =item SNMP::Info::CiscoVTP
 
@@ -196,6 +201,8 @@ a more specific class using the method above.
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
 
@@ -236,6 +243,10 @@ Trys to cull the number of ports from the model number.
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
+=head2 Globals imported from SNMP::Info::CiscoPortSecurity
+
+See documentation in L<SNMP::Info::CiscoPortSecurity/"GLOBALS"> for details.
+
 =head2 Global Methods imported from SNMP::Info::CiscoVTP
 
 See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
@@ -264,6 +275,10 @@ to a hash.
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoPortSecurity
+
+See documentation in L<SNMP::Info::CiscoPortSecurity/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 

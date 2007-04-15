@@ -39,16 +39,18 @@ use Exporter;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
+use SNMP::Info::CiscoConfig;
 use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer2::C1900::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
-  SNMP::Info::CiscoStats SNMP::Info::Layer2 Exporter/;
+  SNMP::Info::CiscoStats SNMP::Info::CiscoConfig SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::C1900::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 %GLOBALS = (
              %SNMP::Info::Layer2::GLOBALS,
+             %SNMP::Info::CiscoConfig::GLOBALS,
              %SNMP::Info::CiscoStats::GLOBALS,
              %SNMP::Info::CDP::GLOBALS,
              %SNMP::Info::CiscoVTP::GLOBALS,
@@ -57,6 +59,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 %FUNCS = (
            %SNMP::Info::Layer2::FUNCS,
+           %SNMP::Info::CiscoConfig::FUNCS,
            %SNMP::Info::CiscoStats::FUNCS,
            %SNMP::Info::CDP::FUNCS,
            %SNMP::Info::CiscoVTP::FUNCS,
@@ -73,6 +76,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
 %MIBS = (
           %SNMP::Info::Layer2::MIBS,
+          %SNMP::Info::CiscoConfig::MIBS,
           %SNMP::Info::CiscoStats::MIBS,
           %SNMP::Info::CDP::MIBS,
           %SNMP::Info::CiscoVTP::MIBS,
@@ -81,8 +85,11 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
         );
 
 %MUNGE = (
-           %SNMP::Info::Layer2::MUNGE, %SNMP::Info::CiscoStats::MUNGE,
-           %SNMP::Info::CDP::MUNGE,    %SNMP::Info::CiscoVTP::MUNGE,
+           %SNMP::Info::Layer2::MUNGE,
+           %SNMP::Info::CiscoConfig::MUNGE,
+           %SNMP::Info::CiscoStats::MUNGE,
+           %SNMP::Info::CDP::MUNGE,
+           %SNMP::Info::CiscoVTP::MUNGE,
          );
 
 sub bulkwalk_no         { 1; }
@@ -225,7 +232,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::C1900 - SNMP Interface to data from Cisco Catlyst 1900 Network Switches running CatOS
+SNMP::Info::Layer2::C1900 - SNMP Interface to data from Cisco Catlyst 1900
+Network Switches running CatOS
 
 =head1 AUTHOR
 
@@ -249,13 +257,13 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a Catalyst 1900 device through SNMP. 
-See SNMP::Info for full documentation
+Provides abstraction to the configuration information obtainable from a
+Catalyst 1900 device through SNMP.  See SNMP::Info for full documentation
 
 Note that most of these devices only talk SNMP version 1, but not all.
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $c1900 = new SNMP::Info::Layer2::C1900(...);
 
@@ -268,6 +276,8 @@ a more specific class using the method above.
 =item SNMP::Info::CDP
 
 =item SNMP::Info::CiscoStats
+
+=item SNMP::Info::CiscoConfig
 
 =item SNMP::Info::Layer2
 
@@ -292,6 +302,8 @@ See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its MIB requirements.
 See L<SNMP::Info::CDP/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::CiscoStats/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::CiscoConfig/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
@@ -346,6 +358,10 @@ See L<SNMP::Info::CDP/"GLOBALS"> for details.
 =head2 Globals imported from SNMP::Info::CiscoStats
 
 See L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::CiscoConfig
+
+See L<SNMP::Info::CiscoConfig/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer2
 
@@ -441,6 +457,10 @@ See L<SNMP::Info::CDP/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
 See L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoConfig
+
+See L<SNMP::Info::CiscoConfig/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 

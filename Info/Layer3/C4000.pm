@@ -33,37 +33,46 @@ package SNMP::Info::Layer3::C4000;
 use strict;
 
 use Exporter;
-use SNMP::Info::Layer3;
+
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoImage;
+use SNMP::Info::CiscoPortSecurity;
+use SNMP::Info::CiscoConfig;
 use SNMP::Info::MAU;
+use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.04';
-@SNMP::Info::Layer3::C4000::ISA = qw/ SNMP::Info::Layer3 SNMP::Info::CiscoVTP 
-                                      SNMP::Info::CiscoStats SNMP::Info::CDP
-                                      SNMP::Info::CiscoImage SNMP::Info::MAU Exporter/;
+$VERSION = '1.05';
+@SNMP::Info::Layer3::C4000::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
+                                    SNMP::Info::CiscoStats SNMP::Info::CiscoImage
+                                    SNMP::Info::CiscoPortSecurity
+                                    SNMP::Info::CiscoConfig SNMP::Info::MAU 
+                                    SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::C4000::EXPORT_OK = qw//;
 
-%MIBS =    (
-            %SNMP::Info::Layer3::MIBS,  
-            %SNMP::Info::CiscoVTP::MIBS,
-            %SNMP::Info::CDP::MIBS,
-            %SNMP::Info::CiscoStats::MIBS,
-            %SNMP::Info::CiscoImage::MIBS,
+%MIBS =    ( 
+            %SNMP::Info::Layer3::MIBS,
             %SNMP::Info::MAU::MIBS,
+            %SNMP::Info::CiscoConfig::MIBS,
+            %SNMP::Info::CiscoPortSecurity::MIBS,
+            %SNMP::Info::CiscoImage::MIBS,
+            %SNMP::Info::CiscoStats::MIBS,
+            %SNMP::Info::CDP::MIBS,
+            %SNMP::Info::CiscoVTP::MIBS,
             'CISCO-ENVMON-MIB' => 'ciscoEnvMonMIB',
            );
 
 %GLOBALS = (
             %SNMP::Info::Layer3::GLOBALS,
-            %SNMP::Info::CiscoVTP::GLOBALS,
-            %SNMP::Info::CDP::GLOBALS,
-            %SNMP::Info::CiscoStats::GLOBALS,
-            %SNMP::Info::CiscoImage::GLOBALS,
             %SNMP::Info::MAU::GLOBALS,
+            %SNMP::Info::CiscoConfig::GLOBALS,
+            %SNMP::Info::CiscoPortSecurity::GLOBALS,
+            %SNMP::Info::CiscoImage::GLOBALS,
+            %SNMP::Info::CiscoStats::GLOBALS,
+            %SNMP::Info::CDP::GLOBALS,
+            %SNMP::Info::CiscoVTP::GLOBALS,
 	    'ps1_type' => 'ciscoEnvMonSupplyStatusDescr.1',
 	    'ps1_status' => 'ciscoEnvMonSupplyState.1',
 	    'ps2_type' => 'ciscoEnvMonSupplyStatusDescr.2',
@@ -72,24 +81,29 @@ $VERSION = '1.04';
 
 %FUNCS = (
             %SNMP::Info::Layer3::FUNCS,
-            %SNMP::Info::CiscoVTP::FUNCS,
-            %SNMP::Info::CDP::FUNCS,
-            %SNMP::Info::CiscoStats::FUNCS,
-            %SNMP::Info::CiscoImage::FUNCS,
             %SNMP::Info::MAU::FUNCS,
+            %SNMP::Info::CiscoConfig::FUNCS,
+            %SNMP::Info::CiscoPortSecurity::FUNCS,
+            %SNMP::Info::CiscoImage::FUNCS,
+            %SNMP::Info::CiscoStats::FUNCS,
+            %SNMP::Info::CDP::FUNCS,
+            %SNMP::Info::CiscoVTP::FUNCS,
             'fan_state' => 'ciscoEnvMonFanState',
             'fan_descr' => 'ciscoEnvMonFanStatusDescr',
          );
 
 %MUNGE = (
             %SNMP::Info::Layer3::MUNGE,
-            %SNMP::Info::CiscoVTP::MUNGE,
-            %SNMP::Info::CDP::MUNGE,
-            %SNMP::Info::CiscoStats::MUNGE,
-            %SNMP::Info::CiscoImage::MUNGE,
             %SNMP::Info::MAU::MUNGE,
+            %SNMP::Info::CiscoConfig::MUNGE,
+            %SNMP::Info::CiscoPortSecurity::MUNGE,
+            %SNMP::Info::CiscoImage::MUNGE,
+            %SNMP::Info::CiscoStats::MUNGE,
+            %SNMP::Info::CDP::MUNGE,
+            %SNMP::Info::CiscoVTP::MUNGE,
          );
 
+# Override Inheritance for these specific methods
 # use MAU-MIB for admin. duplex and admin. speed
 *SNMP::Info::Layer3::C4000::i_duplex_admin = \&SNMP::Info::MAU::mau_i_duplex_admin;
 *SNMP::Info::Layer3::C4000::i_speed_admin = \&SNMP::Info::MAU::mau_i_speed_admin;
@@ -115,7 +129,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::C4000 - Perl5 Interface to Cisco Catalyst 4000 Layer 2/3 Switches running IOS
+SNMP::Info::Layer3::C4000 - SNMP Interface to Cisco Catalyst 4000 Layer 2/3
+Switches running IOS
 
 =head1 AUTHOR
 
@@ -125,12 +140,12 @@ Bill Fenner
 
  # Let SNMP::Info determine the correct subclass for you. 
  my $c4000 = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
-                          DestHost    => 'myswitch',
-                          Community   => 'public',
-                          Version     => 2
+                        AutoSpecify => 1,
+                        Debug       => 1,
+                        # These arguments are passed directly to SNMP::Session
+                        DestHost    => 'myswitch',
+                        Community   => 'public',
+                        Version     => 2
                         ) 
     or die "Can't connect to DestHost.\n";
 
@@ -141,8 +156,8 @@ Bill Fenner
 
 Abstraction subclass for Cisco Catalyst 4000 Layer 2/3 Switches.  
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $c4000 = new SNMP::Info::Layer3::C4000(...);
 
@@ -150,17 +165,21 @@ a more specific class using the method above.
 
 =over
 
-=item SNMP::Info::Layer3
-
 =item SNMP::Info::CiscoVTP
-
-=item SNMP::Info::CiscoStats
 
 =item SNMP::Info::CDP
 
+=item SNMP::Info::CiscoStats
+
 =item SNMP::Info::CiscoImage
 
+=item SNMP::Info::CiscoPortSecurity
+
+=item SNMP::Info::CiscoConfig
+
 =item SNMP::Info::MAU
+
+=item SNMP::Info::Layer3
 
 =back
 
@@ -170,27 +189,27 @@ a more specific class using the method above.
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
-
 See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
 
+See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
+
 See L<SNMP::Info::CiscoImage/"Required MIBs"> for its own MIB requirements.
 
+See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::CiscoConfig/"Required MIBs"> for its own MIB requirements.
+
 See L<SNMP::Info::MAU/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 =back
 
 =head1 GLOBALS
 
 These are methods that return scalar value from SNMP
-
-=head2 Globals imported from SNMP::Info::Layer3
-
-See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::CiscoVTP
 
@@ -208,18 +227,26 @@ See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::CiscoImage/"GLOBALS"> for details.
 
+=head2 Globals imported from SNMP::Info::CiscoPortSecurity
+
+See documentation in L<SNMP::Info::CiscoPortSecurity/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::CiscoConfig
+
+See documentation in L<SNMP::Info::CiscoConfig/"GLOBALS"> for details.
+
 =head2 Globals imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=head2 Table Methods imported from SNMP::Info::Layer3
-
-See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
@@ -237,9 +264,20 @@ See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
 
 See documentation in L<SNMP::Info::CiscoImage/"TABLE METHODS"> for details.
 
+=head2 Table Methods imported from SNMP::Info::CiscoPortSecurity
+
+See documentation in L<SNMP::Info::CiscoPortSecurity/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoConfig
+
+See documentation in L<SNMP::Info::CiscoConfig/"TABLE METHODS"> for details.
+
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
 
-=cut
+=head2 Table Methods imported from SNMP::Info::Layer3
 
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+
+=cut

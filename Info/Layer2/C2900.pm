@@ -38,23 +38,27 @@ use Exporter;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
+use SNMP::Info::CiscoConfig;
 use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer2::C2900::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
-                                     SNMP::Info::CiscoStats SNMP::Info::Layer2 Exporter/;
+                                    SNMP::Info::CiscoStats SNMP::Info::CiscoConfig
+                                    SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::C2900::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
 
-# Set for No CDP
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
+            %SNMP::Info::CiscoConfig::GLOBALS,
             %SNMP::Info::CiscoStats::GLOBALS,
             %SNMP::Info::CDP::GLOBALS,
             %SNMP::Info::CiscoVTP::GLOBALS,
             );
 
-%FUNCS   = (%SNMP::Info::Layer2::FUNCS,
+%FUNCS   = (
+            %SNMP::Info::Layer2::FUNCS,
+            %SNMP::Info::CiscoConfig::FUNCS,
             %SNMP::Info::CiscoStats::FUNCS,
             %SNMP::Info::CDP::FUNCS,
             %SNMP::Info::CiscoVTP::FUNCS,
@@ -66,14 +70,18 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
             'c2900_p_speed_admin'  => 'c2900PortAdminSpeed',
            );
 
-%MIBS    = ( %SNMP::Info::Layer2::MIBS,
-             %SNMP::Info::CiscoStats::MIBS,
-             %SNMP::Info::CDP::MIBS,
-             %SNMP::Info::CiscoVTP::MIBS,
+%MIBS    = (
+            %SNMP::Info::Layer2::MIBS,
+            %SNMP::Info::CiscoConfig::MIBS,
+            %SNMP::Info::CiscoStats::MIBS,
+            %SNMP::Info::CDP::MIBS,
+            %SNMP::Info::CiscoVTP::MIBS,
             'CISCO-C2900-MIB' => 'ciscoC2900MIB',
            );
 
-%MUNGE   = (%SNMP::Info::Layer2::MUNGE,
+%MUNGE   = (
+            %SNMP::Info::Layer2::MUNGE,
+            %SNMP::Info::CiscoConfig::MUNGE,
             %SNMP::Info::CiscoStats::MUNGE,
             %SNMP::Info::CDP::MUNGE,
             %SNMP::Info::CiscoVTP::MUNGE,
@@ -213,12 +221,12 @@ Max Baker
 
  # Let SNMP::Info determine the correct subclass for you. 
  my $c2900 = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
-                          DestHost    => 'myswitch',
-                          Community   => 'public',
-                          Version     => 2
+                        AutoSpecify => 1,
+                        Debug       => 1,
+                        # These arguments are passed directly to SNMP::Session
+                        DestHost    => 'myswitch',
+                        Community   => 'public',
+                        Version     => 2
                         ) 
     or die "Can't connect to DestHost.\n";
 
@@ -245,6 +253,8 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::CiscoStats
 
+=item SNMP::Info::CiscoConfig
+
 =item SNMP::Info::Layer2
 
 =back
@@ -261,13 +271,15 @@ Part of the v2 MIBs from Cisco.
 
 =head2 Inherited MIBs
 
-See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its MIB requirements.
 
-See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CDP/"Required MIBs"> for its MIB requirements.
 
-See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CiscoStats/"Required MIBs"> for its MIB requirements.
 
-See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CiscoConfig/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -294,6 +306,10 @@ See L<SNMP::Info::CDP/"GLOBALS"> for details.
 =head2 Globals imported from SNMP::Info::CiscoStats
 
 See L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::CiscoConfig
+
+See L<SNMP::Info::CiscoConfig/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer2
 
@@ -375,6 +391,10 @@ See L<SNMP::Info::CDP/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
 See L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoConfig
+
+See L<SNMP::Info::CiscoConfig/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
