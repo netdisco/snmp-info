@@ -300,11 +300,34 @@ sub slots {
 #
 #}
 
+# Bridge MIB does not map Bridge Port to ifIndex correctly on all models
+sub bp_index {
+    my $hp = shift;
+    my $partial = shift;
+
+    my $if_index = $hp->i_index($partial);
+    my $model = $hp->model();
+    my $bp_index = $hp->bp_index2($partial);
+    
+    unless (defined $model and $model =~ /(1600|2424|4000|8000)/) {
+        return $bp_index;
+    }
+
+    my %mod_bp_index;
+    foreach my $iid (keys %$if_index){
+        $mod_bp_index{$iid} = $iid;
+    }
+    return \%mod_bp_index;
+}
+
+# VLAN methods.  Newer HPs use Q-BRIDGE, older use proprietary MIB.  Use
+# Q-BRIDGE if available.
+
 sub i_vlan {
     my $hp = shift;
 
     # Newer devices use Q-BRIDGE-MIB
-    my $qb_i_vlan = $hp->qb_i_vlan_t();
+    my $qb_i_vlan = $hp->SUPER::i_vlan();
     if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
         return $qb_i_vlan;
     }
@@ -321,15 +344,7 @@ sub i_vlan {
         my $tag = $hp_v_if_tag->{$row};
         my $vlan = $hp_v_index->{$index};
         
-        next unless defined $tag;
-        $vlan = 'Trunk' if $tag eq 'tagged';
-        $vlan = 'Auto'  if $tag eq 'auto';
-        undef $vlan if $tag eq 'no';
-
-        # HP4000 issue reported by Michael Robbert 5/25/06:
-        # if we're already listed as a trunk port, don't 
-        #   overwrite this with the untagged vlan number
-        next if defined $i_vlan->{$if} and $i_vlan->{$if} =~ /trunk/i;
+        next unless (defined $tag and $tag =~ /untagged/);
 
         $i_vlan->{$if} = $vlan if defined $vlan;
     }
@@ -337,22 +352,193 @@ sub i_vlan {
     return $i_vlan;
 }
 
-# Bridge MIB does not map Bridge Port to ifIndex correctly on all models
-sub bp_index {
+sub i_vlan_membership {
     my $hp = shift;
-    my $if_index = $hp->i_index();
-    my $model = $hp->model();
-    my $bp_index = $hp->bp_index2();
-    
-    unless (defined $model and $model =~ /(1600|2424|4000|8000)/) {
-        return $bp_index;
+
+    # Newer devices use Q-BRIDGE-MIB
+    my $qb_i_vlan = $hp->SUPER::i_vlan_membership();
+    if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
+        return $qb_i_vlan;
     }
 
-    my %mod_bp_index;
-    foreach my $iid (keys %$if_index){
-        $mod_bp_index{$iid} = $iid;
+    # Older get it from HP-VLAN
+    my $i_vlan_membership = {};
+    my $hp_v_index  = $hp->hp_v_index();
+    my $hp_v_if_tag = $hp->hp_v_if_tag();
+    foreach my $row (keys %$hp_v_if_tag){
+        my ($index,$if) = split(/\./,$row);
+
+        my $tag = $hp_v_if_tag->{$row};
+        my $vlan = $hp_v_index->{$index};
+        
+        next unless (defined $tag);
+        next if ($tag eq 'no');
+
+        push(@{$i_vlan_membership->{$if}}, $vlan);
     }
-    return \%mod_bp_index;
+
+    return $i_vlan_membership;
+}
+
+sub set_i_vlan {
+    my $hp = shift;
+    my ($vlan, $ifindex) = @_;
+
+    unless ( defined $vlan and defined $ifindex and
+            $vlan =~ /^\d+$/ and $ifindex =~ /^\d+$/ ) {
+        $hp->error_throw("Invalid parameter");
+        return undef;
+    }
+
+    # Newer devices use Q-BRIDGE-MIB
+    my $qb_i_vlan = $hp->qb_i_vlan_t();
+    if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
+        return $hp->SUPER::set_i_vlan($vlan, $ifindex);
+    } # We're done here if the device supports the Q-BRIDGE-MIB
+
+    # Older HP switches use the HP-VLAN MIB
+    # Thanks to Jeroen van Ingen
+    my $hp_v_index  = $hp->hp_v_index();
+    my $hp_v_if_tag = $hp->hp_v_if_tag();
+    if (defined $hp_v_index and scalar(keys %$hp_v_index)){
+        my $old_untagged;
+        # Hash to lookup VLAN index of the VID (dot1q tag)
+        my %vl_trans = reverse %$hp_v_index;
+
+        foreach my $row (keys %$hp_v_if_tag){
+            # Loop through table to determine current untagged vlan for the port we're about to change
+            my ($index,$if) = split(/\./,$row);
+            if ($if == $ifindex and $hp_v_if_tag->{$row} =~ /untagged/) {
+                # Store the row information of the current untagged VLAN and temporarily set it to tagged
+                $old_untagged = $row;
+                my $rv = $hp->set_hp_v_if_tag(1, $row);
+                warn "Unexpected error changing native/untagged VLAN into tagged.\n" unless $rv;
+                last;
+            }
+        }
+
+        # Translate the VLAN identifier (tag) value to the index used by the HP-VLAN MIB
+        my $vlan_index = $vl_trans{$vlan};
+        if (defined $vlan_index) {
+            # Set our port untagged in the desired VLAN
+            my $rv = $hp->set_hp_v_if_tag(2, "$vlan_index.$ifindex");
+            if ($rv) {
+                # If port change is successful, remove VLAN that used to be untagged from the port
+                $hp->set_hp_v_if_tag(3, $old_untagged) if defined $old_untagged;
+                return $rv;
+            } else {
+                # If not, try to revert to the old situation.
+                $hp->set_hp_v_if_tag(2, $old_untagged) if defined $old_untagged;
+            }
+        }
+        else {
+            warn "Requested VLAN (VLAN ID: $vlan) not found!\n";
+        }
+    }
+    print "Error: Unable to change VLAN: $vlan on IfIndex: $ifindex list\n" if $hp->debug();
+    return undef;
+}
+
+sub set_i_pvid {
+    my $hp = shift;
+    my ($vlan, $ifindex) = @_;
+
+    unless ( defined $vlan and defined $ifindex and
+            $vlan =~ /^\d+$/ and $ifindex =~ /^\d+$/ ) {
+        $hp->error_throw("Invalid parameter");
+        return undef;
+    }
+
+    # Newer devices use Q-BRIDGE-MIB
+    my $qb_i_vlan = $hp->qb_i_vlan_t();
+    if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
+        return $hp->SUPER::set_i_pvid($vlan, $ifindex);
+    }
+    
+    # HP method same as set_i_vlan()
+    return $hp->set_i_vlan($vlan, $ifindex);
+}
+
+sub set_add_i_vlan_tagged {
+    my $hp = shift;
+    my ($vlan, $ifindex) = @_;
+
+    unless ( defined $vlan and defined $ifindex and
+            $vlan =~ /^\d+$/ and $ifindex =~ /^\d+$/ ) {
+        $hp->error_throw("Invalid parameter");
+        return undef;
+    }
+
+    # Newer devices use Q-BRIDGE-MIB
+    my $qb_i_vlan = $hp->qb_i_vlan();
+    if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
+        return $hp->SUPER::set_add_i_vlan_tagged($vlan, $ifindex);
+    } # We're done here if the device supports the Q-BRIDGE-MIB
+
+    # Older HP switches use the HP-VLAN MIB
+    my $hp_v_index  = $hp->hp_v_index();
+    my $hp_v_if_tag = $hp->hp_v_if_tag();
+    if (defined $hp_v_index and scalar(keys %$hp_v_index)){
+        # Hash to lookup VLAN index of the VID (dot1q tag)
+        my %vl_trans = reverse %$hp_v_index;
+
+        # Translate the VLAN identifier (tag) value to the index used by the HP-VLAN MIB
+        my $vlan_index = $vl_trans{$vlan};
+        if (defined $vlan_index) {
+            # Add port to egress list for VLAN
+            my $rv = ($hp->set_hp_v_if_tag(1, "$vlan_index.$ifindex"));
+            if ($rv) {
+                print "Successfully added IfIndex: $ifindex to VLAN: $vlan list\n" if $hp->debug();
+                return 1;
+            }
+        }
+        else {
+            $hp->error_throw("Requested VLAN (VLAN ID: $vlan) not found!\n");
+        }
+    }
+    print "Error: Unable to add VLAN: $vlan to IfIndex: $ifindex list\n" if $hp->debug();
+    return undef;
+}
+
+sub set_remove_i_vlan_tagged {
+    my $hp = shift;
+    my ($vlan, $ifindex) = @_;
+
+    unless ( defined $vlan and defined $ifindex and
+            $vlan =~ /^\d+$/ and $ifindex =~ /^\d+$/ ) {
+        $hp->error_throw("Invalid parameter");
+        return undef;
+    }
+
+    # Newer devices use Q-BRIDGE-MIB
+    my $qb_i_vlan = $hp->qb_i_vlan();
+    if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
+        return $hp->SUPER::set_remove_i_vlan_tagged($vlan, $ifindex);
+    } # We're done here if the device supports the Q-BRIDGE-MIB
+
+    # Older HP switches use the HP-VLAN MIB
+    my $hp_v_index  = $hp->hp_v_index();
+    my $hp_v_if_tag = $hp->hp_v_if_tag();
+    if (defined $hp_v_index and scalar(keys %$hp_v_index)){
+        # Hash to lookup VLAN index of the VID (dot1q tag)
+        my %vl_trans = reverse %$hp_v_index;
+
+        # Translate the VLAN identifier (tag) value to the index used by the HP-VLAN MIB
+        my $vlan_index = $vl_trans{$vlan};
+        if (defined $vlan_index) {
+            # Add port to egress list for VLAN
+            my $rv = ($hp->set_hp_v_if_tag(3, "$vlan_index.$ifindex"));
+            if ($rv) {
+                print "Successfully added IfIndex: $ifindex to VLAN: $vlan list\n" if $hp->debug();
+                return 1;
+            }
+        }
+        else {
+            $hp->error_throw("Requested VLAN (VLAN ID: $vlan) not found!\n");
+        }
+    }
+    print "Error: Unable to remove VLAN: $vlan to IfIndex: $ifindex list\n" if $hp->debug();
+    return undef;
 }
 
 #  Use CDP and/or LLDP
@@ -711,9 +897,30 @@ Crosses i_type() with $hp->e_descr() using $hp->e_port()
 
 =item $hp->i_vlan()
 
-Looks in Q-BRIDGE-MIB -- see SNMP::Info::Bridge
+Returns a mapping between ifIndex and the PVID (default VLAN) or untagged
+port when using HP-VLAN.
 
-and for older devices looks in HP-VLAN.
+Looks in Q-BRIDGE-MIB first (L<SNMP::Info::Bridge/"TABLE METHODS">) and for
+older devices looks in HP-VLAN.
+
+=item $hp->i_vlan_membership()
+
+Returns reference to hash of arrays: key = ifIndex, value = array of VLAN IDs.
+These are the VLANs which are members of the egress list for the port.  It
+is the union of tagged, untagged, and auto ports when using HP-VLAN.
+
+Looks in Q-BRIDGE-MIB first (L<SNMP::Info::Bridge/"TABLE METHODS">) and for
+older devices looks in HP-VLAN.
+
+  Example:
+  my $interfaces = $hp->interfaces();
+  my $vlans      = $hp->i_vlan_membership();
+  
+  foreach my $iid (sort keys %$interfaces) {
+    my $port = $interfaces->{$iid};
+    my $vlan = join(',', sort(@{$vlans->{$iid}}));
+    print "Port: $port VLAN: $vlan\n";
+  }
 
 =item $hp->bp_index()
 
@@ -783,4 +990,55 @@ See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
 
+=head1 SET METHODS
+
+These are methods that provide SNMP set functionality for overridden methods or
+provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set operations. 
+
+=over
+
+=item $hp->set_i_vlan(vlan, ifIndex)
+
+Changes an untagged port VLAN, must be supplied with the numeric VLAN
+ID and port ifIndex.  This method will modify the port's VLAN membership.
+This method should only be used on end station (non-trunk) ports.
+
+  Example:
+  my %if_map = reverse %{$hp->interfaces()};
+  $hp->set_i_vlan('2', $if_map{'1.1'}) 
+    or die "Couldn't change port VLAN. ",$hp->error(1);
+
+=item $hp->set_i_pvid(pvid, ifIndex)
+
+Sets port PVID or default VLAN, must be supplied with the numeric VLAN ID and
+port ifIndex.  This method only changes the PVID, to modify an access (untagged)
+port use set_i_vlan() instead.
+
+  Example:
+  my %if_map = reverse %{$hp->interfaces()};
+  $hp->set_i_pvid('2', $if_map{'1.1'}) 
+    or die "Couldn't change port PVID. ",$hp->error(1);
+
+=item $hp->set_add_i_vlan_tagged(vlan, ifIndex)
+
+Adds the port to the egress list of the VLAN, must be supplied with the numeric
+VLAN ID and port ifIndex.
+
+  Example:
+  my %if_map = reverse %{$hp->interfaces()};
+  $hp->set_add_i_vlan_tagged('2', $if_map{'1.1'}) 
+    or die "Couldn't add port to egress list. ",$hp->error(1);
+
+=item $hp->set_remove_i_vlan_tagged(vlan, ifIndex)
+
+Removes the port from the egress list of the VLAN, must be supplied with the
+numeric VLAN ID and port ifIndex.
+
+  Example:
+  my %if_map = reverse %{$hp->interfaces()};
+  $hp->set_remove_i_vlan_tagged('2', $if_map{'1.1'}) 
+    or die "Couldn't add port to egress list. ",$hp->error(1);
+
 =cut
+
