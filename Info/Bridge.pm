@@ -721,6 +721,29 @@ B<dot1qVlanStaticTable>
 These are methods that return tables of information in the form of a reference
 to a hash.
 
+=over
+
+=item $bridge->i_vlan()
+
+Returns a mapping between ifIndex and the PVID or default VLAN.
+
+=item $bridge->i_vlan_membership()
+
+Returns reference to hash of arrays: key = ifIndex, value = array of VLAN IDs.
+These are the VLANs which are members of the egress list for the port.
+
+  Example:
+  my $interfaces = $bridge->interfaces();
+  my $vlans      = $bridge->i_vlan_membership();
+  
+  foreach my $iid (sort keys %$interfaces) {
+    my $port = $interfaces->{$iid};
+    my $vlan = join(',', sort(@{$vlans->{$iid}}));
+    print "Port: $port VLAN: $vlan\n";
+  }
+
+=back
+
 =head2 Forwarding Table (dot1dTpFdbEntry)
 
 =over 
