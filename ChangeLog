@@ -2,6 +2,9 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
 version 1.05
+    + Added support for LLDP in new class LLDP (contributions from Bernhard
+      Augenstein)
+    + Added device specific support for LLDP in L2::HP and L2::Baystack
     + Added support for Dell PowerConnect switches as new class L3::Dell
     + Added basic support for Sun routers as new class L3::Sun (begemot)
     + Added basic support for Juniper NetScreen devices as new class
@@ -22,18 +25,26 @@ version 1.05
       i_80211channel() support. 
     + Added new VLAN methods i_pvid(), i_vlan_membership(), set_i_pvid(),
       set_i_vlan(), set_add_i_vlan_tagged(), set_remove_i_vlan_tagged() to
-      Nortel RapidCity class, CiscoVTP,
-    + Added set_i_speed_admin() method to Nortel RapidCity class,
-    + Added set_i_duplex_admin() method to Nortel RapidCity class,
+      RapidCity, CiscoVTP, Bridge, and HP classes
+    + Added set_i_speed_admin() method to RapidCity class,
+    + Added set_i_duplex_admin() method to RapidCity class,
     + Added OSPF Neighbor Tables, SF Patch 1577918 to Layer 3 (Andrew Herrick)
     + Added CiscoConfig class, SF Patch 1555001 (Justin Hunter)
     + Enable load_ methods for %GLOBALS and MIB Leaf node names.
     + Enable dynamic methods in AUTOLOAD with MIB Leaf node names for loaded
-      MIBs without definition in %FUNCS
+      MIBs without definition in %FUNCS or %GLOBALS.  Single instance mib leafs
+      will be treated as a GLOBAL and returna scalar while mib leafs which
+      reside in a table will be treated as a FUNC and return a reference to a
+      hash.
     + Enable load_ methods for %GLOBALS and MIB Leaf node names.
     + Add loop detect option and code for getnext table column walks.
     + Add Layer3::NetSNMP for Net-SNMP-based hosts, part of
       SF patch 1557529 (Bradley Baetz).
+    + Add EIGRP Neighbor Tables to L3::Cisco SF Patch 1577927 (Andrew Herrick)
+    + Additions to CiscoQOS and CiscoStats (Alexander Hartmaier)
+    + Emulate ENTITY-MIB Physical Table methods for devices which don't
+      have ENTITY-MIB support in NortelStack, Bayhub, Baystack, and BayRS
+      classes.
 
     * Fix for bug where an SNMP error in any operation would cause subsequent
       table get operations to fail while using the same session, originally
@@ -52,6 +63,12 @@ version 1.05
       (Reported by David Pinkoski)
     * Documentation updates
     * Translate OIDs returned by Entity MIB e_type
+    * Modify inheritance to use Cisco classes before generic classes
+    * Create e_index method in ENTITY-MIB to facilitate emulation methods in
+      other classes as entPhysicalIndex is not-accessible.
+    * Only return MAC from munge_mac() if it actually is a MAC. Fix for
+      netdisco where device would not be inserted in DB due to malformed MAC.
+    * Enable SUPER class calls to find autoloaded methods (Bernhard Augenstein)
 
 version 1.04 (07/08/06)
     +  Added C1130 and C1240 to L2::Aironet (Ralf Gross)
