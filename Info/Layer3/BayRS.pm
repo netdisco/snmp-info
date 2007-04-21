@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::BayRS;
-$VERSION = '1.04';
+$VERSION = '1.05';
 
 use strict;
 
@@ -38,9 +38,11 @@ use SNMP::Info;
 use SNMP::Info::Layer3;
 use SNMP::Info::Bridge;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP/;
+use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP
+            %MODID_MAP %PROCID_MAP/;
 
-@SNMP::Info::Layer3::BayRS::ISA = qw/SNMP::Info SNMP::Info::Layer3 SNMP::Info::Bridge Exporter/;
+@SNMP::Info::Layer3::BayRS::ISA = qw/SNMP::Info SNMP::Info::Layer3
+                                     SNMP::Info::Bridge Exporter/;
 @SNMP::Info::Layer3::BayRS::EXPORT_OK = qw//;
 
 %MIBS = (
@@ -51,6 +53,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP/;
           'Wellfleet-OSPF-MIB'            => 'wfOspfRouterId',
           'Wellfleet-DOT1QTAG-CONFIG-MIB' => 'wfDot1qTagCfgVlanName',
           'Wellfleet-CSMACD-MIB'          => 'wfCSMACDCct',
+          'Wellfleet-MODULE-MIB'          => 'wfHwModuleSlot',
         );
 
 %GLOBALS = (
@@ -67,38 +70,52 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP/;
             %SNMP::Info::Layer3::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
             # From Wellfleet-CSMACD-MIB::wfCSMACDTable
-            'wf_csmacd_cct'          => 'wfCSMACDCct',
+            'wf_csmacd_cct'     => 'wfCSMACDCct',
             'wf_csmacd_slot'    => 'wfCSMACDSlot',
             'wf_csmacd_conn'    => 'wfCSMACDConnector',
-            'wf_csmacd_mtu'            => 'wfCSMACDMtu',
-            'wf_duplex'            => 'wfCSMACDLineCapability',
-            'wf_csmacd_line'           => 'wfCSMACDLineNumber',
+            'wf_csmacd_mtu'     => 'wfCSMACDMtu',
+            'wf_duplex'         => 'wfCSMACDLineCapability',
+            'wf_csmacd_line'    => 'wfCSMACDLineNumber',
             # From Wellfleet-CSMACD-MIB::wfCSMACDAutoNegTable
-            'wf_auto'            => 'wfCSMACDAutoNegSpeedSelect',
+            'wf_auto'           => 'wfCSMACDAutoNegSpeedSelect',
             # From Wellfleet-DOT1QTAG-CONFIG-MIB::wfDot1qTagConfigTable
-            'wf_vlan_name'        => 'wfDot1qTagCfgVlanName',
-            'wf_local_vlan_id'    => 'wfDot1qTagCfgLocalVlanId',
-            'wf_global_vlan_id'   => 'wfDot1qTagCfgGlobalVlanId',
-            'wf_vlan_port'          => 'wfDot1qTagCfgPhysicalPortId',
+            'wf_vlan_name'      => 'wfDot1qTagCfgVlanName',
+            'wf_local_vlan_id'  => 'wfDot1qTagCfgLocalVlanId',
+            'wf_global_vlan_id' => 'wfDot1qTagCfgGlobalVlanId',
+            'wf_vlan_port'      => 'wfDot1qTagCfgPhysicalPortId',
             # From Wellfleet-HARDWARE-MIB::wfHwTable
             'wf_hw_slot'        => 'wfHwSlot',
-            'wf_hw_mod_id'        => 'wfHwModIdOpt',
-            'wf_hw_mod_rev'        => 'wfHwModRev',
-            'wf_hw_mod_ser'        => 'wfHwModSerialNumber',
+            'wf_hw_mod_id'      => 'wfHwModIdOpt',
+            'wf_hw_mod_rev'     => 'wfHwModRev',
+            'wf_hw_mod_ser'     => 'wfHwModSerialNumber',
             'wf_hw_mobo_id'     => 'wfHwMotherBdIdOpt ',
             'wf_hw_mobo_rev'    => 'wfHwMotherBdRev',
-            'wf_hw_mobo_ser'        => 'wfHwMotherBdSerialNumber',
+            'wf_hw_mobo_ser'    => 'wfHwMotherBdSerialNumber',
             'wf_hw_diag'        => 'wfHwDiagPromRev',
             'wf_hw_boot'        => 'wfHwBootPromRev',
-            'wf_hw_mobo_mem'        => 'wfHwMotherBdMemorySize',
-            'wf_hw_cfg_time'        => 'wfHwConfigDateAndTime ',
+            'wf_hw_mobo_mem'    => 'wfHwMotherBdMemorySize',
+            'wf_hw_cfg_time'    => 'wfHwConfigDateAndTime',
+            'wf_hw_db_ser'      => 'wfHwDaughterBdSerialNumber',
+            'wf_hw_bb_ser'      => 'wfHwBabyBdSerialNumber',
+            'wf_hw_mm_ser'      => 'wfHwModuleModSerialNumber',
+            'wf_hw_md1_ser'     => 'wfHwModDaughterBd1SerialNumber',
+            'wf_hw_md2_ser'     => 'wfHwModDaughterBd2SerialNumber',
          );
          
 %MUNGE = (
             %SNMP::Info::MUNGE,
             %SNMP::Info::Layer3::MUNGE,
             %SNMP::Info::Bridge::MUNGE,
-         );
+            'wf_hw_boot'     => \&munge_hw_rev,
+            'wf_hw_diag'     => \&munge_hw_rev,
+            'wf_hw_mobo_ser' => \&munge_wf_serial,
+            'wf_hw_mod_ser'  => \&munge_wf_serial,
+            'wf_hw_db_ser'   => \&munge_wf_serial,
+            'wf_hw_bb_ser'   => \&munge_wf_serial,
+            'wf_hw_mm_ser'   => \&munge_wf_serial,
+            'wf_hw_md1_ser'  => \&munge_wf_serial,
+            'wf_hw_md2_ser'  => \&munge_wf_serial,
+            );
 
 %MODEL_MAP = ( 
         'acefn'     => 'FN',
@@ -116,6 +133,402 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP/;
         'asnzcable' => 'ASN-Z',
         'asnbcable' => 'ASN-B',
              );
+
+%MODID_MAP = (
+      1 => 'DUAL ENET',
+      8 => 'DUAL ENET',
+      16 => 'QSYNC',
+      24 => 'DUAL T1',
+      32 => 'SSE,DSE',
+      40 => 'TS 4/16 - 1x2',
+      44 => 'TS 4/16 - 1x1',
+      45 => 'TS 4/16 - 1x0',
+      48 => 'SYSTEM I/O',
+      49 => 'SYSTEM I/O',
+      56 => 'DUAL T1',
+      57 => 'DUAL T1 - 56K',
+      58 => 'T1 - SINGLE PORT',
+      60 => 'T1 56K - SINGLE PORT',
+      61 => 'E1 - 75 OHM',
+      80 => 'QSYNC',
+      112 => 'DSDE 4',
+      116 => 'DSE',
+      118 => 'SSE',
+      132 => 'ESA 2x0',
+      156 => 'ESA 2x2',
+      162 => 'QUAD ENET with CAM DAUGHTERCARD',
+      164 => 'QUAD ENET with CAM DAUGHTERCARD,QUAD ENET CAM DAUGHTER CARD',
+      168 => 'MCT1 - 2',
+      169 => 'MCT1 - 1',
+      176 => 'DUAL TOKEN',
+      184 => 'MCE1 - DUAL PORT',
+      185 => 'MCE1 - SINGLE PORT',
+      192 => 'MULTIMODE FDDI',
+      193 => 'SINGLEMODE FDDI PHY-B',
+      194 => 'SINGLEMODE FDDI PHY-A/B',
+      195 => 'SINGLEMODE FDDI PHY-A',
+      196 => 'MULTIMODE FDDI,FDDI CAM DAUGHTER CARD',
+      197 => 'SINGLEMODE FDDI PHY-B,FDDI CAM DAUGHTER CARD',
+      198 => 'SINGLEMODE FDDI PHY-A/B,FDDI CAM DAUGHTER CARD',
+      199 => 'SINGLEMODE FDDI PHY-A,FDDI CAM DAUGHTER CARD',
+      208 =>
+      {
+        0 => 'AFNes - V.35,AFNes - X.21,AFNes - CCITT  V.35,AFNes - RS449/RS422,AFNes - V.35  w/FLASH,AFNes - X.21  w/FLASH,AFNes-CCITT V.35 w/FL,AFNes - RS422 w/FLASH AFNes 16M - V.35,AFNes 16M - X.21,AFNes 16M - CCITT V.35,AFNes 16M - RS449/RS422,AFNes 16M V.35 w/Flash,AFNes 16M X.21 w/Flash,AFNes 16M CCITT V.35 w/Flash,AFNes 16M RS449/RS422 w/Flash',
+        4096 => 'AFNes - V.35,AFNes - X.21,AFNes - CCITT  V.35,AFNes - RS449/RS422,AFNes - V.35  w/FLASH,AFNes - X.21  w/FLASH,AFNes-CCITT V.35 w/FL,AFNes - RS422 w/FLASH',
+        16384 => 'AFNes 16M - V.35,AFNes 16M - X.21,AFNes 16M - CCITT V.35,AFNes 16M - RS449/RS422,AFNes 16M V.35 w/Flash,AFNes 16M X.21 w/Flash,AFNes 16M CCITT V.35 w/Flash,AFNes 16M RS449/RS422 w/Flash',
+      },
+      216 =>
+      {
+        0 => 'AFNts 2x2,AFNts 2x2 - w/FLASH,AFNTS 2X2 16MB,AFNTS 2X2 16MB FLASH',
+        4096 => 'AFNts 2x2,AFNts 2x2 - w/FLASH',
+        16384 => 'AFNTS 2X2 16MB,AFNTS 2X2 16MB FLASH',
+      },
+      217 =>
+      {
+        0 => 'AFNts 1x2,AFNts 1x2 - w/FLASH,AFNTS 1X2 16MB,AFNTS 1X2 16MB FLASH',
+        4096 => 'AFNts 1x2,AFNts 1x2 - w/FLASH',
+        16384 => 'AFNTS 1X2 16MB,AFNTS 1X2 16MB FLASH',
+      },
+      225 => 'HSSI - SINGLE PORT',
+      232 => 'EASF  0 DEFA & 0 CAMS',
+      236 => 'ESAF w/DEFA & 2 CAMS,ESAF w/DEFA & 6 CAMS',
+      256 => 'QUAD TOKEN',
+      512 => 'SPX NET MODULE',
+      769 => 'HOT SWAP SPEX NET MOD',
+      1024 =>
+      {
+        4096 => 'AN-ENET 1X2 SPARE 4F/8D,BAYSTACK AN-ES   8MB',
+        8192 => 'AN-ENET 1X2 SPARE 4F/8D,BAYSTACK AN-ES   8MB',
+        16384 => 'AN-ENET 1X2 SPARE 4F/16D,BAYSTACK AN-ES  16MB',
+      },
+      1025 =>
+      {
+        4096 => 'AN-ENET/TOK 1X1X2 SPARE 4F/8D,BAYSTACK AN-ETS   8MB',
+        8192 => 'AN-ENET/TOK 1X1X2 SPARE 4F/8D,BAYSTACK AN-ETS   8MB',
+        16384 => 'AN-ENET/TOK 1X1X2 SPARE 4F/16D,BAYSTACK AN-ETS  16MB',
+      },
+      1026 =>
+      {
+        4096 => 'AN-HUB SPARE 4F/8D,BAYSTACK ANH-12   8MB',
+        8192 => 'AN-HUB SPARE 4F/8D,BAYSTACK ANH-12   8MB',
+        16384 => 'AN - HUB SPARE 4F/16D,BAYSTACK ANH-12  16MB',
+      },
+      1027 =>
+      {
+        4096 => 'AN-ENET 1X2 SPARE 4F/8D,AN ISDN BRI DAUGHTER CARD',
+        8192 => 'AN-ENET 1X2 SPARE 4F/8D,AN ISDN BRI DAUGHTER CARD',
+        16384 => 'AN-ENET 1X2 SPARE 4F/16D,AN ISDN BRI DAUGHTER CARD',
+      },
+      1028 =>
+      {
+        4096 => 'AN-ENET/TOK 1X1X2 SPARE 4F/8D,AN ISDN BRI DAUGHTER CARD',
+        8192 => 'AN-ENET/TOK 1X1X2 SPARE 4F/8D,AN ISDN BRI DAUGHTER CARD',
+        16384 => 'AN-ENET/TOK 1X1X2 SPARE 4F/16D,AN ISDN BRI DAUGHTER CARD',
+      },
+      1029 =>
+      {
+        4096 => 'AN-HUB SPARE 4F/8D,AN ISDN BRI DAUGHTER CARD',
+        8192 => 'AN-HUB SPARE 4F/8D,AN ISDN BRI DAUGHTER CARD',
+        16384 => 'AN - HUB SPARE 4F/16D,AN ISDN BRI DAUGHTER CARD',
+      },
+      1030 =>
+      {
+        4096 => 'AN 3RD SYNC DAUGHTER CARD,AN-ENET 1X2 SPARE 4F/8D,BAYSTACK AN-ES   8MB',
+        8192 => 'AN 3RD SYNC DAUGHTER CARD,AN-ENET 1X2 SPARE 4F/8D,BAYSTACK AN-ES   8MB',
+        16384 => 'AN 3RD SYNC DAUGHTER CARD,AN-ENET 1X2 SPARE 4F/16D,BAYSTACK AN-ES  16MB',
+      },
+      1031 =>
+      {
+        4096 => 'AN 3RD SYNC DAUGHTER CARD,AN-ENET/TOK 1X1X2 SPARE 4F/8D,BAYSTACK AN-ETS   8MB',
+        8192 => 'AN 3RD SYNC DAUGHTER CARD,AN-ENET/TOK 1X1X2 SPARE 4F/8D,BAYSTACK AN-ETS   8MB',
+        16384 => 'AN 3RD SYNC DAUGHTER CARD,AN-ENET/TOK 1X1X2 SPARE 4F/16D,BAYSTACK AN-ETS  16MB',
+      },
+      1032 =>
+      {
+        4096 => 'AN 3RD SYNC DAUGHTER CARD,AN-HUB SPARE 4F/8D,BAYSTACK ANH-12   8MB',
+        8192 => 'AN 3RD SYNC DAUGHTER CARD,AN-HUB SPARE 4F/8D,BAYSTACK ANH-12   8MB',
+        16384 => 'AN 3RD SYNC DAUGHTER CARD,AN - HUB SPARE 4F/16D,BAYSTACK ANH-12  16MB',
+      },
+      1033 =>
+      {
+        4096 => 'AN 2ND ENET DAUGHTER CARD,AN-ENET 1X2 SPARE 4F/8D,BAYSTACK AN-ES   8MB',
+        8192 => 'AN 2ND ENET DAUGHTER CARD,AN-ENET 1X2 SPARE 4F/8D,BAYSTACK AN-ES   8MB',
+        16384 => 'AN 2ND ENET DAUGHTER CARD,AN-ENET 1X2 SPARE 4F/16D,BAYSTACK AN-ES  16MB',
+      },
+      1035 =>
+      {
+        4096 => 'AN 2ND ENET DAUGHTER CARD,AN-HUB SPARE 4F/8D,BAYSTACK ANH-12   8MB',
+        8192 => 'AN 2ND ENET DAUGHTER CARD,AN-HUB SPARE 4F/8D,BAYSTACK ANH-12   8MB',
+        16384 => 'AN 2ND ENET DAUGHTER CARD,AN - HUB SPARE 4F/16D,BAYSTACK ANH-12  16MB',
+      },
+      1037 =>
+      {
+        4096 => 'AN-TOK 1X2 SPARE 4F/8D,BAYSTACK AN-TS   8MB',
+        8192 => 'AN-TOK 1X2 SPARE 4F/8D,BAYSTACK AN-TS   8MB',
+        16384 => 'AN-TOK 1X2 SPARE 4F/16D,BAYSTACK AN-TS  16MB',
+      },
+      1038 =>
+      {
+        4096 => 'AN-TOK 1X2 SPARE 4F/8D,AN ISDN BRI DAUGHTER CARD',
+        8192 => 'AN-TOK 1X2 SPARE 4F/8D,AN ISDN BRI DAUGHTER CARD',
+        16384 => 'AN-TOK 1X2 SPARE 4F/16D,AN ISDN BRI DAUGHTER CARD',
+      },
+      1039 =>
+      {
+        4096 => 'AN 3RD SYNC DAUGHTER CARD,AN-TOK 1X2 SPARE 4F/8D,BAYSTACK AN-TS   8MB',
+        8192 => 'AN 3RD SYNC DAUGHTER CARD,AN-TOK 1X2 SPARE 4F/8D,BAYSTACK AN-TS   8MB',
+        16384 => 'AN 3RD SYNC DAUGHTER CARD,AN-TOK 1X2 SPARE 4F/16D,BAYSTACK AN-TS  16MB',
+      },
+      1042 =>
+      {
+        4096 => 'BAYSTACK AN-ETS   8MB,BAYSTACK AN N11 DCM',
+        8192 => 'BAYSTACK AN-ETS   8MB,BAYSTACK AN N11 DCM',
+        16384 => 'BAYSTACK AN-ETS  16MB,BAYSTACK AN N11 DCM',
+      },
+      1043 =>
+      {
+        4096 => 'BAYSTACK AN-ES   8MB,AN ISDN BRI DAUGHTER CARD',
+        8192 => 'BAYSTACK AN-ES   8MB,AN ISDN BRI DAUGHTER CARD',
+        16384 => 'BAYSTACK AN-ES  16MB,AN ISDN BRI DAUGHTER CARD',
+      },
+      1044 =>
+      {
+        4096 => 'BAYSTACK AN-ETS   8MB,AN ISDN BRI DAUGHTER CARD',
+        8192 => 'BAYSTACK AN-ETS   8MB,AN ISDN BRI DAUGHTER CARD',
+        16384 => 'BAYSTACK AN-ETS  16MB,AN ISDN BRI DAUGHTER CARD',
+      },
+      1045 =>
+      {
+        4096 => 'BAYSTACK ANH-12   8MB,AN ISDN BRI DAUGHTER CARD',
+        8192 => 'BAYSTACK ANH-12   8MB,AN ISDN BRI DAUGHTER CARD',
+        16384 => 'BAYSTACK ANH-12  16MB,AN ISDN BRI DAUGHTER CARD',
+      },
+      1046 =>
+      {
+        4096 => 'BAYSTACK AN-TS   8MB,AN ISDN BRI DAUGHTER CARD',
+        8192 => 'BAYSTACK AN-TS   8MB,AN ISDN BRI DAUGHTER CARD',
+        16384 => 'BAYSTACK AN-TS  16MB,AN ISDN BRI DAUGHTER CARD',
+      },
+      1047 =>
+      {
+        4096 => 'BAYSTACK ANH-8  8MB',
+        8192 => 'BAYSTACK ANH-8  8MB',
+        16384 => 'BAYSTACK ANH-8  16MB',
+      },
+      1048 =>
+      {
+        4096 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 N11 DCM',
+        8192 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 N11 DCM',
+        16384 => 'BAYSTACK ANH-8  16MB,BAYSTACK ANH-8 N11 DCM',
+      },
+      1049 =>
+      {
+        4096 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 3RD SYNC DAUGHTER CARD',
+        8192 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 3RD SYNC DAUGHTER CARD',
+        16384 => 'BAYSTACK ANH-8  16MB,BAYSTACK ANH-8 3RD SYNC DAUGHTER CARD',
+      },
+      1050 =>
+      {
+        4096 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 2ND ENET DAUGHTER CARD',
+        8192 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 2ND ENET DAUGHTER CARD',
+        16384 => 'BAYSTACK ANH-8  16MB,BAYSTACK ANH-8 2ND ENET DAUGHTER CARD',
+      },
+      1051 =>
+      {
+        4096 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 ISDN BRI DAUGHTER CARD',
+        8192 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 ISDN BRI DAUGHTER CARD',
+        16384 => 'BAYSTACK ANH-8  16MB,BAYSTACK ANH-8 ISDN BRI DAUGHTER CARD',
+      },
+      1052 =>
+      {
+        4096 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 3RD SYNC DAUGHTER CARD,BAYSTACK ANH-8 N11 DCM',
+        8192 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 3RD SYNC DAUGHTER CARD,BAYSTACK ANH-8 N11 DCM',
+        16384 => 'BAYSTACK ANH-8  16MB,BAYSTACK ANH-8 3RD SYNC DAUGHTER CARD,BAYSTACK ANH-8 N11 DCM',
+      },
+      1053 =>
+      {
+        4096 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 2ND ENET DAUGHTER CARD,BAYSTACK ANH-8 N11 DCM',
+        8192 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 2ND ENET DAUGHTER CARD,BAYSTACK ANH-8 N11 DCM',
+        16384 => 'BAYSTACK ANH-8  16MB,BAYSTACK ANH-8 2ND ENET DAUGHTER CARD,BAYSTACK ANH-8 N11 DCM',
+      },
+      1054 =>
+      {
+        4096 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 ISDN BRI DAUGHTER CARD,BAYSTACK ANH-8 N11 DCM',
+        8192 => 'BAYSTACK ANH-8  8MB,BAYSTACK ANH-8 ISDN BRI DAUGHTER CARD,BAYSTACK ANH-8 N11 DCM',
+        16384 => 'BAYSTACK ANH-8  16MB,BAYSTACK ANH-8 ISDN BRI DAUGHTER CARD,BAYSTACK ANH-8 N11 DCM',
+      },
+      1055 =>
+      {
+        4096 => 'BAYSTACK AN-ES   8MB,BAYSTACK AN N11 DCM',
+        8192 => 'BAYSTACK AN-ES   8MB,BAYSTACK AN N11 DCM',
+        16384 => 'BAYSTACK AN-ES  16MB,BAYSTACK AN N11 DCM',
+      },
+      1056 =>
+      {
+        4096 => 'BAYSTACK AN-ES   8MB,AN 3RD SYNC DAUGHTER CARD,BAYSTACK AN N11 DCM',
+        8192 => 'BAYSTACK AN-ES   8MB,AN 3RD SYNC DAUGHTER CARD,BAYSTACK AN N11 DCM',
+        16384 => 'BAYSTACK AN-ES  16MB,AN 3RD SYNC DAUGHTER CARD,BAYSTACK AN N11 DCM',
+      },
+      1057 =>
+      {
+        4096 => 'BAYSTACK AN-ES   8MB,AN 2ND ENET DAUGHTER CARD,BAYSTACK AN N11 DCM',
+        8192 => 'BAYSTACK AN-ES   8MB,AN 2ND ENET DAUGHTER CARD,BAYSTACK AN N11 DCM',
+        16384 => 'BAYSTACK AN-ES  16MB,AN 2ND ENET DAUGHTER CARD,BAYSTACK AN N11 DCM',
+      },
+      1059 =>
+      {
+        4096 => 'BAYSTACK AN-ETS   8MB,AN 3RD SYNC DAUGHTER CARD,BAYSTACK AN N11 DCM',
+        8192 => 'BAYSTACK AN-ETS   8MB,AN 3RD SYNC DAUGHTER CARD,BAYSTACK AN N11 DCM',
+        16384 => 'BAYSTACK AN-ETS  16MB,AN 3RD SYNC DAUGHTER CARD,BAYSTACK AN N11 DCM',
+      },
+      1062 =>
+      {
+        4096 => 'BAYSTACK AN-ES   8MB,AN ISDN BRI DAUGHTER CARD,BAYSTACK AN N11 DCM',
+        8192 => 'BAYSTACK AN-ES   8MB,AN ISDN BRI DAUGHTER CARD,BAYSTACK AN N11 DCM',
+        16384 => 'BAYSTACK AN-ES  16MB,AN ISDN BRI DAUGHTER CARD,BAYSTACK AN N11 DCM',
+      },
+      1063 =>
+      {
+        4096 => 'BAYSTACK AN-ETS   8MB,AN ISDN BRI DAUGHTER CARD,BAYSTACK AN N11 DCM',
+        8192 => 'BAYSTACK AN-ETS   8MB,AN ISDN BRI DAUGHTER CARD,BAYSTACK AN N11 DCM',
+        16384 => 'BAYSTACK AN-ETS  16MB,AN ISDN BRI DAUGHTER CARD,BAYSTACK AN N11 DCM',
+      },
+      1280 => 'DUAL ENET NET MODULE',
+      1536 => 'DUAL SYNC NET MODULE',
+      1537 => 'DUAL SYNC NET MODULE',
+      1538 => 'DUAL SYNC NET MODULE',
+      1540 => 'DUAL SYNC NET MODULE',
+      1541 => 'DUAL SYNC NET MODULE',
+      1542 => 'DUAL SYNC NET MODULE',
+      1544 => 'DUAL SYNC NET MODULE',
+      1545 => 'DUAL SYNC NET MODULE',
+      1546 => 'DUAL SYNC NET MODULE',
+      1584 => 'DUAL SYNC NET MODULE,ASN ISDN DAUGHTER CARD',
+      1585 => 'DUAL SYNC NET MODULE,ASN ISDN DAUGHTER CARD',
+      1586 => 'DUAL SYNC NET MODULE,ASN ISDN DAUGHTER CARD',
+      1588 => 'DUAL SYNC NET MODULE,ASN ISDN DAUGHTER CARD',
+      1589 => 'DUAL SYNC NET MODULE,ASN ISDN DAUGHTER CARD',
+      1590 => 'DUAL SYNC NET MODULE,ASN ISDN DAUGHTER CARD',
+      1592 => 'DUAL SYNC NET MODULE,ASN ISDN DAUGHTER CARD',
+      1593 => 'DUAL SYNC NET MODULE,ASN ISDN DAUGHTER CARD',
+      1594 => 'DUAL SYNC NET MODULE,ASN ISDN DAUGHTER CARD',
+      1793 => 'MUTLIMODE FDDI NET MODULE',
+      1801 => 'SINGLEMODE FDDI NET MODULE',
+      1825 => 'S.M. PHY A FDDI NET MODULE',
+      1833 => 'S.M. PHY B FDDI NET MODULE',
+      2048 => 'DUAL TOKEN NET MODULE',
+      2304 => '100 BASE-TX NET MODULE',
+      2560 => 'QUAD ISDN BRI NET MOD',
+      2816 => 'MCE1 NET MODULE',
+      3584 => 'SINGLE HSSI NET MODULE',
+      4098 => 'ATM LINK - OC3 MULTIMODE',
+      4099 => 'ATM LINK - OC3 SINGLEMODE',
+      4352 => 'OCTAL SYNC LINK MODULE',
+      4353 => 'OCTAL SYNC LINK MODULE,32 CONTEXTS HARDWARE COMPRESSION DGHTR. CARD',
+      4354 => 'OCTAL SYNC LINK MODULE,128 CONTEXTS HARDWARE COMPRESSION DGHTR. CARD',
+      4608 => 'SONET/SDH MMF LINK',
+      4609 => 'SONET/SDH SMF LINK',
+      4864 => '100 BASE-Tx ETHERNET',
+      5376 => 'QUAD PORT MULTICHANNEL T1 (QMCT1) RJ48',
+      5377 => 'QUAD PORT MULTICHANNEL T1 (QMCT1) DB15',
+      5378 => 'QUAD PORT MULTICHANNEL T1 DS0A (QMCT1 w/DS0A) DB15',
+      6144 => '4-PORT 10/100BASE-TX',
+      6145 => '4-PORT 100BASE-FX',
+      6400 => '1000BASE-SX',
+      6401 => '1000BASE-LX',
+      8448 => 'SRM-L',
+      8704 => 'ARN Motherboard Single Token Ring',
+      8720 => 'ARN Motherboard Single Ethernet',
+      8728 => 'ARN Motherboard Single 10/100BASE-TX',
+      8729 => 'ARN Motherboard Single 10/100BASE-FX',
+      8736 => 'ARN Serial Adapter Module',
+      8752 => 'ARN V.34 Modem Adapter Module',
+      8768 => 'ARN 56/64 DSU/CSU Adapter Module',
+      8784 => 'ARN ISDN BRI S/T Adapter Module',
+      8800 => 'ARN ISDN BRI U Adapter Module',
+      8816 => 'ARN Token Ring Expansion Module',
+      8832 => 'ARN Ethernet Expansion Module',
+      8848 => 'ARN Tri Serial Expansion Module',
+      8864 => 'ARN Ethernet and Tri-Serial Expansion Module',
+      8880 => 'ARN Token Ring and Tri-Serial Expansion Module',
+      8896 => 'arnmbenx10',
+      8912 => 'arnmbtrx10',
+      8928 => 'arnpbenx10',
+      8944 => 'arnpbtrx10',
+      8960 => 'arnpbtenx10',
+      8976 => 'arnpbttrx10',
+    );
+
+%PROCID_MAP = (
+      1 => 'SYSTEM CONTROLLER',
+      2 => '5MEG ACE25',
+      3 =>
+      {
+        5120 => '5MEG ACE25',
+        8192 => '8MEG ACE25',
+      },
+      4 =>
+      {
+        4096 => 'ACE32',
+        8192 => '8MEG ACE32',
+        16384 => '16MEG ACE32',
+      },
+      5 => 'AFN',
+      6 => 'LN',
+      7 => 'FLASH SYSTEM CTRL.',
+      16384 => 'AN',
+      32 =>
+      {
+        4096 => 'ARN Ethernet - 4 MEG',
+        8192 => 'ARN Ethernet - 8 MEG',
+        16384 => 'ARN Ethernet - 16 MEG',
+        32768 => 'ARN Ethernet - 32 MEG',
+      },
+      256 => 'FAST ROUTING ENGINE',
+      768 =>
+      {
+        8192  => 'FRE2 - 8MEG',
+        16384 => 'FRE2 - 16MEG',
+        24576 => 'FRE2 - 24MEG',
+        32768 => 'FRE2 - 32MEG',
+      },
+      769 =>
+      {
+        8192 => 'FRE2 060 - 8MEG',
+        16384 => 'FRE2 060 - 16MEG',
+        32768 => 'FRE2 060 - 32MEG',
+        65536 => 'FRE2 060 - 64MEG',
+      },
+      1024 =>
+      {
+        8192 => 'ASN MOTHER BOARD - 8MB,ASN TRAY / POWER SUPPLY ASSEMBLY',
+        16384 => 'ASN MOTHER BOARD - 16MB,ASN TRAY / POWER SUPPLY ASSEMBLY',
+        32768 => 'ASN MOTHER BOARD - 32MB,ASN TRAY / POWER SUPPLY ASSEMBLY',
+      },
+      1025 =>
+      {
+        8192 => 'ASN2 MOTHER BOARD - 8MB,ASN TRAY / POWER SUPPLY ASSEMBLY',
+        16384 => 'ASN2 MOTHER BOARD - 16MB,ASN TRAY / POWER SUPPLY ASSEMBLY',
+        32768 => 'ASN2 MOTHER BOARD - 32MB,ASN TRAY / POWER SUPPLY ASSEMBLY',
+      },
+      1280 =>
+      {
+        9216  => 'ARE - 8MB DRAM & 1MB VBM',
+        19456 => 'ARE - 16MB DRAM & 3MB VBM',
+        38912 => 'ARE -32MB DRAM & 6MB VBM',
+        71680 => 'ARE -64MB DRAM & 6MB VBM',
+      },
+      8704 => 'SRM-F',
+      1536 => 'ARE5000',
+      1792 => 'ASN500',
+      6656 =>
+      {
+        49152  => 'FRE4-PPC - 32MEG',
+        81920  => 'FRE4-PPC - 64MEG',
+        147456 => 'FRE4-PPC - 128MEG',
+      },
+    );
+
 
 sub model {
     my $bayrs = shift;
@@ -330,12 +743,356 @@ sub root_ip {
     return undef;
 }
 
+
+# Psuedo ENTITY-MIB methods
+
+sub e_index {
+    my $bayrs   = shift;
+
+    # Don't like polling all these columns to build the index, can't think of
+    # a better way right now.  Luckly all this data will be cached for the
+    # rest of the e_* methods
+
+    # Using mib leafs so we don't have to define everything in FUNCS
+
+    # Processor
+    my $wf_mb = $bayrs->wfHwMotherBdIdOpt() || {};
+    my $wf_db = $bayrs->wfHwDaughterBdIdOpt() || {};
+    my $wf_bb = $bayrs->wfHwBabyBdIdOpt() || {};
+    # Link Module
+    my $wf_mod = $bayrs->wfHwModIdOpt() || {};
+    my $wf_mod1 = $bayrs->wfHwModDaughterBd1IdOpt() || {};
+    my $wf_mod2 = $bayrs->wfHwModDaughterBd2IdOpt() || {};
+    # Hardware Module
+    my $wf_mm = $bayrs->wfHwModuleModIdOpt() || {};
+    my $wf_dm = $bayrs->wfHwModuleDaughterBdIdOpt() || {};
+    
+    my @slots = ($wf_mb, $wf_db, $wf_bb, $wf_mod, $wf_mod1, $wf_mod2); 
+    my @mods  = ($wf_mm, $wf_dm);
+    
+    # We're going to hack an index: Slot/Module/Postion
+    my %wf_e_index;
+    # Handle Processor / Link Modules first 
+    foreach my $idx (keys %$wf_mb){
+        my $index = "$idx"."0000";
+        $wf_e_index{$index} = $index;
+        foreach my $slot (@slots) {
+            $index ++;
+            $wf_e_index{$index} = $index if $slot->{$idx};
+        }
+    }
+    # Handle Hardware Modules
+    foreach my $iid (keys %$wf_mm){
+        my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
+        $index = "$index"."00";
+        foreach my $mod (@mods) {
+            $index ++;
+            $wf_e_index{$index} = $index if $mod->{$iid};
+        }
+    }
+    return \%wf_e_index;
+}
+
+sub e_class {
+    my $bayrs = shift;
+
+    my $wf_e_idx  = $bayrs->e_index() || {};
+
+    my %wf_e_class;
+    foreach my $iid (keys %$wf_e_idx){
+        if ($iid =~/(00){1,2}$/) {
+            $wf_e_class{$iid} = 'container';
+        }
+        else {
+            $wf_e_class{$iid} = 'module';
+        }
+    }
+    return \%wf_e_class;
+}
+
+sub e_descr {
+    my $bayrs   = shift;
+
+    # Using mib leafs so we don't have to define everything in FUNCS
+    # We only have descriptions for the processors and modules
+    # Processor
+    my $wf_mb     = $bayrs->wfHwMotherBdIdOpt() || {};
+    my $wf_mb_mem = $bayrs->wfHwMotherBdMemorySize() || {};
+    # Link Module
+    my $wf_mod = $bayrs->wfHwModIdOpt() || {};
+    # Hardware Module
+    my $wf_mm = $bayrs->wfHwModuleModIdOpt() || {};
+
+    my %wf_e_descr;
+    # Handle Processor / Link Modules first 
+    foreach my $idx (keys %$wf_mb){
+        $wf_e_descr{"$idx"."0000"} = 'slot'.$idx;
+        my $mb_id  = &SNMP::mapEnum('wfHwMotherBdIdOpt',$wf_mb->{$idx}) if $wf_mb->{$idx};
+        my $mb_mem = $wf_mb_mem->{$idx};
+        my $mod_id = &SNMP::mapEnum('wfHwModIdOpt',$wf_mod->{$idx})if $wf_mod->{$idx};
+        # Processor
+        if ($mb_id) {
+            if (ref($PROCID_MAP{$mb_id}) =~ /HASH/) {
+                $wf_e_descr{"$idx"."0001"} = defined $PROCID_MAP{$mb_id}{$mb_mem} ?
+                    $PROCID_MAP{$mb_id}{$mb_mem} : $mb_id;
+            }
+            else {
+                $wf_e_descr{"$idx"."0001"} = defined $PROCID_MAP{$mb_id} ?
+                    $PROCID_MAP{$mb_id} : $mb_id;
+            }
+        }
+        # Link Module
+        if ($mod_id) {
+            if (ref($MODID_MAP{$mod_id}) =~ /HASH/) {
+                $wf_e_descr{"$idx"."0004"} = defined $MODID_MAP{$mod_id}{$mb_mem} ?
+                    $MODID_MAP{$mod_id}{$mb_mem} : $mod_id;
+            }
+            else {
+                $wf_e_descr{"$idx"."0004"} = defined $MODID_MAP{$mod_id} ?
+                    $MODID_MAP{$mod_id} : $mod_id;
+            }
+        }
+    }
+    # Handle Hardware Modules
+    foreach my $iid (keys %$wf_mm){
+        next unless ($wf_mm->{$iid});
+        my $mm_id  = &SNMP::mapEnum('wfHwModuleModIdOpt',$wf_mm->{$iid});
+        my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
+        $wf_e_descr{"$index"."01"} =
+            defined $MODID_MAP{$mm_id} ? $MODID_MAP{$mm_id} : $mm_id;
+    }
+    return \%wf_e_descr;
+}
+
+sub e_type {
+    my $bayrs   = shift;
+
+    # Using mib leafs so we don't have to define everything in FUNCS
+    # Processor
+    my $wf_mb = $bayrs->wfHwMotherBdIdOpt() || {};
+    my $wf_db = $bayrs->wfHwDaughterBdIdOpt() || {};
+    my $wf_bb = $bayrs->wfHwBabyBdIdOpt() || {};
+    # Link Module
+    my $wf_mod = $bayrs->wfHwModIdOpt() || {};
+    my $wf_mod1 = $bayrs->wfHwModDaughterBd1IdOpt() || {};
+    my $wf_mod2 = $bayrs->wfHwModDaughterBd2IdOpt() || {};
+    # Hardware Module
+    my $wf_mm = $bayrs->wfHwModuleModIdOpt() || {};
+    my $wf_dm = $bayrs->wfHwModuleDaughterBdIdOpt() || {};
+    
+    my @slots = ($wf_mb, $wf_db, $wf_bb, $wf_mod, $wf_mod1, $wf_mod2); 
+    my @mods  = ($wf_mm, $wf_dm);
+
+    my %wf_e_type;
+    # Handle Processor / Link Modules first 
+    foreach my $idx (keys %$wf_mb){
+        my $index = "$idx"."0000";
+        $wf_e_type{$index} = 'slot'.$idx;
+        foreach my $slot (@slots) {
+            $index ++;
+            $wf_e_type{$index} = $slot->{$idx} if $slot->{$idx};
+        }
+    }
+    # Handle Hardware Modules
+    foreach my $iid (keys %$wf_mm){
+        my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
+        $index = "$index"."00";
+        foreach my $mod (@mods) {
+            $index ++;
+            $wf_e_type{$index} = $mod->{$iid} if $mod->{$iid};
+        }
+    }
+    return \%wf_e_type;
+}
+
+sub e_hwver {
+    my $bayrs   = shift;
+
+    # Using mib leafs so we don't have to define everything in FUNCS
+    # Processor
+    my $wf_mb = $bayrs->wfHwMotherBdRev() || {};
+    my $wf_db = $bayrs->wfHwDaughterBdRev() || {};
+    my $wf_bb = $bayrs->wfHwBabyBdRev() || {};
+    # Link Module
+    my $wf_mod = $bayrs->wfHwModRev() || {};
+    my $wf_mod1 = $bayrs->wfHwModDaughterBd1Rev() || {};
+    my $wf_mod2 = $bayrs->wfHwModDaughterBd2Rev() || {};
+    # Hardware Module
+    my $wf_mm = $bayrs->wfHwModuleModRev() || {};
+    
+    my @slots = ($wf_mb, $wf_db, $wf_bb, $wf_mod, $wf_mod1, $wf_mod2); 
+
+    my %wf_e_hwver;
+    # Handle Processor / Link Modules first 
+    foreach my $idx (keys %$wf_mb){
+        my $index = "$idx"."0000";
+        foreach my $slot (@slots) {
+            $index ++;
+            next unless ($slot->{$idx});
+            my $mod = hex(join('','0x',map{sprintf "%02X", $_}unpack("C*",$slot->{$idx}))) if $slot->{$idx}; 
+            $wf_e_hwver{$index} = $mod if $mod;
+        }
+    }
+    foreach my $iid (keys %$wf_mm){
+        my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
+        my $mod = hex(join('','0x',map{sprintf "%02X", $_}unpack("C*",$wf_mm->{$iid}))) if $wf_mm->{$iid};
+        $index = "$index"."00";
+        $index ++;
+        next unless ($wf_mm->{$iid});
+        $wf_e_hwver{$index} = $mod if $mod;
+    }
+    return \%wf_e_hwver;
+}
+
+sub e_vendor {
+    my $bayrs = shift;
+
+    my $wf_e_idx  = $bayrs->e_index() || {};
+
+    my %wf_e_vendor;
+    foreach my $iid (keys %$wf_e_idx){
+        $wf_e_vendor{$iid} = 'nortel';
+    }
+    return \%wf_e_vendor;
+}
+
+sub e_serial {
+    my $bayrs   = shift;
+
+    # Processor
+    my $wf_mb = $bayrs->wf_hw_mobo_ser() || {};
+    my $wf_db = $bayrs->wf_hw_db_ser() || {};
+    my $wf_bb = $bayrs->wf_hw_bb_ser() || {};
+    # Link Module
+    my $wf_mod = $bayrs->wf_hw_mod_ser() || {};
+    my $wf_mod1 = $bayrs->wf_hw_md1_ser() || {};
+    my $wf_mod2 = $bayrs->wf_hw_md2_ser() || {};
+    # Hardware Module
+    my $wf_mm = $bayrs->wf_hw_mm_ser() || {};
+    
+    my @slots = ($wf_mb, $wf_db, $wf_bb, $wf_mod, $wf_mod1, $wf_mod2); 
+
+    my %wf_e_serial;
+    # Handle Processor / Link Modules first 
+    foreach my $idx (keys %$wf_mb){
+        my $index = "$idx"."0000";
+        foreach my $slot (@slots) {
+            $index ++;
+            my $mod = $slot->{$idx};
+            next unless ($mod);
+            $wf_e_serial{$index} = $mod if $mod;
+        }
+    }
+    # Handle Hardware Modules
+    foreach my $iid (keys %$wf_mm){
+        my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
+        my $mod = $wf_mm->{$iid};
+        $index = "$index"."00";
+        $index ++;
+        next unless ($mod);
+        $wf_e_serial{$index} = $mod if $mod;
+    }
+    return \%wf_e_serial;
+}
+
+sub e_pos {
+    my $bayrs = shift;
+
+    my $wf_e_idx  = $bayrs->e_index() || {};
+
+    my %wf_e_pos;
+    foreach my $iid (keys %$wf_e_idx){
+        my $sub = substr($iid, -1);
+        my $slot = substr($iid, -6, 2);
+        if ($iid =~/(00){1,2}$/) {
+            $wf_e_pos{$iid} = $slot;
+        }
+        else {
+            $wf_e_pos{$iid} = $sub;
+        }
+    }
+    return \%wf_e_pos;
+}
+
+sub e_fwver {
+    my $bayrs   = shift;
+
+    # Only on Processor
+    my $wf_mb = $bayrs->wf_hw_boot() || {};
+    my %wf_e_hwver;
+    foreach my $idx (keys %$wf_mb){
+        my $fw = $wf_mb->{$idx};
+        next unless $fw;
+        
+        $wf_e_hwver{"$idx"."0001"} = $fw;
+    }
+    return \%wf_e_hwver;
+}
+
+sub e_swver {
+    my $bayrs   = shift;
+
+    # Only on Processor
+    my $wf_mb = $bayrs->wfHwActiveImageSource() || {};
+    my %wf_e_swver;
+    foreach my $idx (keys %$wf_mb){
+        my $sw = $wf_mb->{$idx};
+        next unless $sw;
+        
+        $wf_e_swver{"$idx"."0001"} = $sw;
+    }
+    return \%wf_e_swver;
+}
+
+sub e_parent {
+    my $bayrs = shift;
+
+    my $wf_e_idx  = $bayrs->e_index() || {};
+
+    my %wf_e_parent;
+    foreach my $iid (keys %$wf_e_idx){
+        my $mod = substr($iid, -4, 2);
+        my $slot = substr($iid, -6, 2);
+        if ($iid =~/(00){1,2}$/) {
+            $wf_e_parent{$iid} = 0;
+        }
+        elsif ($mod != 0) {
+            $wf_e_parent{$iid} = "$slot"."$mod"."00";
+        }
+        else {
+            $wf_e_parent{$iid} = "$slot"."0000";
+        }
+    }
+    return \%wf_e_parent;
+}
+
+sub munge_hw_rev {
+    my $hw_boot = shift;
+    
+    my @bytes = map{sprintf "%02X", $_}unpack("C*",$hw_boot);
+    my $major = hex("$bytes[0]"."$bytes[1]");
+    my $minor = hex("$bytes[2]"."$bytes[3]");
+    
+    my $rev = "$major.$minor";
+    return $rev if defined($rev);
+    return undef;
+}
+
+sub munge_wf_serial {
+    my $wf_serial = shift;
+
+    my $serial = hex(join('','0x',map{sprintf "%02X", $_}unpack("C*",$wf_serial)));
+
+    return $serial if defined($serial);
+    return undef;
+}
+
 1;
 __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::BayRS - Perl5 Interface to Nortel routers running BayRS.
+SNMP::Info::Layer3::BayRS - SNMP Interface to Nortel routers running BayRS.
 
 =head1 AUTHOR
 
@@ -374,6 +1131,8 @@ a more specific class using the method above.
 
 =item SNMP::Info::Bridge
 
+=item SNMP::Info::Layer3
+
 =back
 
 =head2 Required MIBs
@@ -382,19 +1141,23 @@ a more specific class using the method above.
 
 =item Wellfleet-HARDWARE-MIB
 
+=item Wellfleet-MODULE-MIB
+
 =item Wellfleet-OSPF-MIB
 
 =item Wellfleet-DOT1QTAG-CONFIG-MIB
 
 =item Wellfleet-CSMACD-MIB
 
-=item Inherited Classes' MIBs
+=back
+
+=head2 Inherited MIBs
 
 See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::Bridge/"Required MIBs"> for its own MIB requirements.
 
-=back
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 =head1 GLOBALS
 
@@ -422,7 +1185,7 @@ the common model with this map :
         'asn' => 'ASN',
         'asnzcable' => 'ASN-Z',
         'asnbcable' => 'ASN-B',
-             );
+        );
 
 =item $bayrs->vendor()
 
@@ -444,7 +1207,8 @@ Returns (B<wfHwBpSerialNumber>) after conversion to ASCII decimal
 
 Returns the primary IP used to communicate with the router.
 
-Returns the first found:  CLIP (CircuitLess IP), (B<wfOspfRouterId>), or undefined.
+Returns the first found:  CLIP (CircuitLess IP), (B<wfOspfRouterId>), or
+undefined.
 
 =back
 
@@ -456,10 +1220,17 @@ See documentation in L<SNMP::Info/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 
+=head2 Globals imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
+
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+Note:  These methods do not support partial table fetches, a partial can be
+passed but the entire table will be returned.
 
 =head2 Overrides
 
@@ -485,7 +1256,8 @@ interfaces.
 
 =item $bayrs->i_duplex_admin()
 
-Returns reference to hash.  Maps port admin duplexes to IIDs for Ethernet interfaces.
+Returns reference to hash.  Maps port admin duplexes to IIDs for Ethernet
+interfaces.
 
 =item $bayrs->i_vlan()
 
@@ -493,16 +1265,81 @@ Returns reference to hash.  Maps port VLAN ID to IIDs.
 
 =back
 
+=head2 Psuedo ENTITY-MIB information
+
+These methods emulate ENTITY-MIB Physical Table methods using
+Wellfleet-HARDWARE-MIB and Wellfleet-MODULE-MIB.
+
+=over
+
+=item $bayrs->e_index()
+
+Returns reference to hash.  Key and Value: Integer. The index is created by
+combining the slot, module, and position into a five or six digit integer.
+Slot can be either one or two digits while the module and position are each
+two digits padded with leading zero if required.
+
+=item $bayrs->e_class()
+
+Returns reference to hash.  Key: IID, Value: General hardware type.  This
+class only returns container and module types.
+
+=item $bayrs->e_descr()
+
+Returns reference to hash.  Key: IID, Value: Human friendly name.  This is only
+available for processors, link modules, and hardware modules.
+
+=item $bayrs->e_hwver()
+
+Returns reference to hash.  Key: IID, Value: Hardware version.
+
+=item $bayrs->e_vendor()
+
+Returns reference to hash.  Key: IID, Value: nortel.
+
+=item $bayrs->e_serial()
+
+Returns reference to hash.  Key: IID, Value: Serial number.
+
+=item $bayrs->e_pos()
+
+Returns reference to hash.  Key: IID, Value: The relative position among all
+entities sharing the same parent.
+
+=item $bayrs->e_type()
+
+Returns reference to hash.  Key: IID, Value: Type of component/sub-component
+as defined in Wellfleet-HARDWARE-MIB for processors and link moduels or
+Wellfleet-MODULE-MIB for hardware modules.
+
+=item $bayrs->e_fwver()
+
+Returns reference to hash.  Key: IID, Value: Firmware revision.  Only available
+on processors.
+
+=item $bayrs->e_swver()
+
+Returns reference to hash.  Key: IID, Value: Software revision.  Only available
+on processors.
+
+=item $bayrs->e_parent()
+
+Returns reference to hash.  Key: IID, Value: The value of e_index() for the
+entity which 'contains' this entity.  A value of zero indicates	this entity
+is not contained in any other entity.
+
+=back
+
 =head2 Table Methods imported from SNMP::Info
 
 See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
 
-=head2 Table Methods imported from SNMP::Info::Layer3
-
-See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
-
 =head2 Table Methods imported from SNMP::Info::Bridge
 
 See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =cut
