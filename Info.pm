@@ -2984,7 +2984,7 @@ sub AUTOLOAD {
             return $self->_global( $attr );
         }        
         if ( $table_leaf ) {
-            return $self->_load_attr( 'mib_leaf',$attr,@_ );
+            return $self->_load_attr( $attr,$attr,@_ );
         }
     }
 
@@ -3009,7 +3009,7 @@ sub AUTOLOAD {
             unless (defined $self->{"_${attr}"} and !scalar(@_));
     }
     if ( $table_leaf ) {
-        return $self->_load_attr( 'mib_leaf', $attr,@_ )
+        return $self->_load_attr( $attr, $attr,@_ )
             unless (defined $self->{"_${attr}"} and !scalar(@_));
     }
 
