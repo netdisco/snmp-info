@@ -43,8 +43,8 @@ version 1.05
     + Add EIGRP Neighbor Tables to L3::Cisco SF Patch 1577927 (Andrew Herrick)
     + Additions to CiscoQOS and CiscoStats (Alexander Hartmaier)
     + Emulate ENTITY-MIB Physical Table methods for devices which don't
-      have ENTITY-MIB support in NortelStack, Bayhub, Baystack, and BayRS
-      classes.
+      have ENTITY-MIB support in Bayhub, Baystack, BayRS, NortelStack, and
+      Passport classes.
 
     * Fix for bug where an SNMP error in any operation would cause subsequent
       table get operations to fail while using the same session, originally
