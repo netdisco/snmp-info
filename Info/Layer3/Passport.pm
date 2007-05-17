@@ -40,7 +40,8 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-@SNMP::Info::Layer3::Passport::ISA = qw/SNMP::Info::SONMP SNMP::Info::RapidCity SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Passport::ISA = qw/SNMP::Info::SONMP SNMP::Info::RapidCity
+                                        SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Passport::EXPORT_OK = qw//;
 
 %MIBS = (
@@ -504,6 +505,380 @@ sub bp_index {
     return \%bp_index;
 }
 
+# Psuedo ENTITY-MIB methods
+
+sub e_index {
+    my $passport = shift;
+
+    my $model   = $passport->model();
+    my $rc_ps_t = $passport->rc_ps_type() || {};
+
+    # We're going to hack an index: Slot/Mda/Postion
+    # We're going to put power supplies in a slot
+    # which doesn't exist
+    my %rc_e_index;
+
+    # Power supplies are common, handle them first
+    foreach my $idx (keys %$rc_ps_t){
+        next unless $idx;
+        # We should never have 90 slots, they will also
+        # sort numerically at the bottom
+        my $index = $idx + 90 ."0000";
+        $rc_e_index{$index} = $index;
+    }
+    # Older Accelars use RAPID-CITY::rcCardTable
+    if (defined $model and $model =~ /(105|11[05]0|12[05])/) {
+        my $rc_c_t  = $passport->rc_c_type() || {};
+        foreach my $idx (keys %$rc_c_t){
+            next unless $idx;
+
+            my $index = "$idx"."0000";
+            $rc_e_index{$index} = $index;
+            $index++;
+            $rc_e_index{$index} = $index;
+        }
+    }
+    # All newer models use RAPID-CITY::rc2kCardTable
+    else {
+        my $rc2_c_t = $passport->rc2k_c_ftype() || {};
+        my $rc2_m_t = $passport->rc2k_mda_type() || {};
+        
+        foreach my $idx (keys %$rc2_c_t){
+            next unless $idx;
+
+            my $index = "$idx"."0000";
+            for ( 0 .. 2) {
+                $rc_e_index{$index} = $index;
+                $index ++;
+            }
+        }
+        foreach my $idx (keys %$rc2_m_t){
+            next unless $idx;
+            next if $idx == 0;
+
+            my ($slot, $mda) = split /\./,$idx;
+            $mda = sprintf ("%02d", $mda);
+
+            my $index = "$idx"."$mda"."00";
+            $rc_e_index{$index} = $index;
+            $index++;
+            $rc_e_index{$index} = $index;
+        }
+    }
+    return \%rc_e_index;
+}
+
+sub e_class {
+    my $passport = shift;
+
+    my $rc_e_idx  = $passport->e_index() || {};
+
+    my %rc_e_class;
+    foreach my $iid (keys %$rc_e_idx){
+        if ($iid =~/^9/) {
+            $rc_e_class{$iid} = 'powerSupply';
+        }
+        elsif ($iid =~/00$/) {
+            $rc_e_class{$iid} = 'container';
+        }    
+        else {
+            $rc_e_class{$iid} = 'module';
+        }
+    }
+    return \%rc_e_class;
+}
+
+sub e_descr {
+    my $passport = shift;
+
+    my $model = $passport->model();
+    my $rc_ps = $passport->rc_ps_detail() || {};
+
+    my %rc_e_descr;
+    # Power supplies are common, handle them first
+    foreach my $idx (keys %$rc_ps){
+        next unless $idx;
+        my $ps = $rc_ps->{$idx};
+        next unless $ps;
+        my $index = $idx + 90 . "0000";
+        $rc_e_descr{$index} = $ps;
+    }
+    # Older Accelars use RAPID-CITY::rcCardTable
+    if (defined $model and $model =~ /(105|11[05]0|12[05])/) {
+        my $rc_c_t  = $passport->rc_c_type() || {};
+        foreach my $idx (keys %$rc_c_t){
+            next unless $idx;
+            my $type = $rc_c_t->{$idx};
+            next unless $type;
+            my $index = "$idx"."0000";
+            $rc_e_descr{$index} = "slot"."$idx";
+            $index++;
+            $rc_e_descr{$index} = $type;
+        }
+    }
+    # All newer models use RAPID-CITY::rc2kCardTable
+    else {
+        my $rc2_cf = $passport->rc2k_c_fdesc() || {};
+        my $rc2_cb = $passport->rc2k_c_bdesc() || {};
+        my $rc2_m  = $passport->rc2k_mda_desc() || {};
+        
+        foreach my $idx (keys %$rc2_cf){
+            next unless $idx;
+            my $cf = $rc2_cf->{$idx};
+            next unless $idx;
+            my $cb = $rc2_cb->{$idx};
+
+            my $index = "$idx"."0000";
+            $rc_e_descr{$index} = "slot"."$idx";
+            $index++;
+            $rc_e_descr{$index} = $cf;
+            $index++;
+            $rc_e_descr{$index} = $cb;
+        }
+        foreach my $idx (keys %$rc2_m){
+            next unless $idx;
+            my $cm = $rc2_m->{$idx};
+            next unless $cm;
+            my ($slot, $mda) = split /\./,$idx;
+            $mda = sprintf ("%02d", $mda);
+
+            my $index = "$idx"."$mda"."00";
+            $rc_e_descr{$index} = $cm;
+        }
+    }
+    return \%rc_e_descr;
+}
+
+sub e_type {
+    my $passport = shift;
+
+    my $model = $passport->model();
+    my $rc_ps = $passport->rc_ps_type() || {};
+
+    my %rc_e_type;
+    # Power supplies are common, handle them first
+    foreach my $idx (keys %$rc_ps){
+        next unless $idx;
+        my $ps = $rc_ps->{$idx};
+        next unless $ps;
+        my $index = $idx + 90 . "0000";
+        $rc_e_type{$index} = $ps;
+    }
+    # Older Accelars use RAPID-CITY::rcCardTable
+    if (defined $model and $model =~ /(105|11[05]0|12[05])/) {
+        my $rc_c_t  = $passport->rc_c_type() || {};
+        foreach my $idx (keys %$rc_c_t){
+            next unless $idx;
+            my $type = $rc_c_t->{$idx};
+            next unless $type;
+            my $index = "$idx"."0000";
+            $rc_e_type{$index} = "slot"."$idx";
+            $index++;
+            $rc_e_type{$index} = $type;
+        }
+    }
+    # All newer models use RAPID-CITY::rc2kCardTable
+    else {
+        my $rc2_cf = $passport->rc2k_c_ftype() || {};
+        my $rc2_cb = $passport->rc2k_c_btype() || {};
+        my $rc2_m  = $passport->rc2k_mda_type() || {};
+        
+        foreach my $idx (keys %$rc2_cf){
+            next unless $idx;
+            my $cf = $rc2_cf->{$idx};
+            next unless $idx;
+            my $cb = $rc2_cb->{$idx};
+
+            my $index = "$idx"."0000";
+            $rc_e_type{$index} = "slot"."$idx";
+            $index++;
+            $rc_e_type{$index} = $cf;
+            $index++;
+            $rc_e_type{$index} = $cb;
+        }
+        foreach my $idx (keys %$rc2_m){
+            next unless $idx;
+            my $cm = $rc2_m->{$idx};
+            next unless $cm;
+            my ($slot, $mda) = split /\./,$idx;
+            $mda = sprintf ("%02d", $mda);
+
+            my $index = "$idx"."$mda"."00";
+            $rc_e_type{$index} = $cm;
+        }
+    }
+    return \%rc_e_type;
+}
+
+sub e_hwver {
+    my $passport = shift;
+
+    my $model = $passport->model();
+    my $rc_ps = $passport->rc_ps_rev() || {};
+
+    my %rc_e_hwver;
+    # Power supplies are common, handle them first
+    foreach my $idx (keys %$rc_ps){
+        next unless $idx;
+        my $ps = $rc_ps->{$idx};
+        next unless $ps;
+        my $index = $idx + 90 . "0000";
+        $rc_e_hwver{$index} = $ps;
+    }
+    # Older Accelars use RAPID-CITY::rcCardTable
+    if (defined $model and $model =~ /(105|11[05]0|12[05])/) {
+        my $rc_c_t  = $passport->rc_c_rev() || {};
+        foreach my $idx (keys %$rc_c_t){
+            next unless $idx;
+            my $type = $rc_c_t->{$idx};
+            next unless $type;
+            my $index = "$idx"."0001";
+            $rc_e_hwver{$index} = $type;
+        }
+    }
+    # All newer models use RAPID-CITY::rc2kCardTable
+    else {
+        my $rc2_cf = $passport->rc2k_c_frev() || {};
+        my $rc2_cb = $passport->rc2k_c_brev() || {};
+        my $rc2_m  = $passport->rc2k_mda_rev() || {};
+        
+        foreach my $idx (keys %$rc2_cf){
+            next unless $idx;
+            my $cf = $rc2_cf->{$idx};
+            next unless $idx;
+            my $cb = $rc2_cb->{$idx};
+
+            my $index = "$idx"."0001";
+            $rc_e_hwver{$index} = $cf;
+            $index++;
+            $rc_e_hwver{$index} = $cb;
+        }
+        foreach my $idx (keys %$rc2_m){
+            next unless $idx;
+            my $cm = $rc2_m->{$idx};
+            next unless $cm;
+            my ($slot, $mda) = split /\./,$idx;
+            $mda = sprintf ("%02d", $mda);
+
+            my $index = "$idx"."$mda"."00";
+            $rc_e_hwver{$index} = $cm;
+        }
+    }
+    return \%rc_e_hwver;
+}
+
+sub e_vendor {
+    my $passport = shift;
+
+    my $rc_e_idx  = $passport->e_index() || {};
+
+    my %rc_e_vendor;
+    foreach my $iid (keys %$rc_e_idx){
+        $rc_e_vendor{$iid} = 'nortel';
+    }
+    return \%rc_e_vendor;
+}
+
+sub e_serial {
+    my $passport = shift;
+
+    my $model = $passport->model();
+    my $rc_ps = $passport->rc_ps_serial() || {};
+
+    my %rc_e_serial;
+    # Power supplies are common, handle them first
+    foreach my $idx (keys %$rc_ps){
+        next unless $idx;
+        my $ps = $rc_ps->{$idx};
+        next unless $ps;
+        my $index = $idx + 90 . "0000";
+        $rc_e_serial{$index} = $ps;
+    }
+    # Older Accelars use RAPID-CITY::rcCardTable
+    if (defined $model and $model =~ /(105|11[05]0|12[05])/) {
+        my $rc_c_t  = $passport->rc_c_serial() || {};
+        foreach my $idx (keys %$rc_c_t){
+            next unless $idx;
+            my $type = $rc_c_t->{$idx};
+            next unless $type;
+            my $index = "$idx"."0001";
+            $rc_e_serial{$index} = $type;
+        }
+    }
+    # All newer models use RAPID-CITY::rc2kCardTable
+    else {
+        my $rc2_cf = $passport->rc2k_c_fserial() || {};
+        my $rc2_cb = $passport->rc2k_c_bserial() || {};
+        my $rc2_m  = $passport->rc2k_mda_serial() || {};
+        
+        foreach my $idx (keys %$rc2_cf){
+            next unless $idx;
+            my $cf = $rc2_cf->{$idx};
+            next unless $idx;
+            my $cb = $rc2_cb->{$idx};
+
+            my $index = "$idx"."0001";
+            $rc_e_serial{$index} = $cf;
+            $index++;
+            $rc_e_serial{$index} = $cb;
+        }
+        foreach my $idx (keys %$rc2_m){
+            next unless $idx;
+            my $cm = $rc2_m->{$idx};
+            next unless $cm;
+            my ($slot, $mda) = split /\./,$idx;
+            $mda = sprintf ("%02d", $mda);
+
+            my $index = "$idx"."$mda"."00";
+            $rc_e_serial{$index} = $cm;
+        }
+    }
+    return \%rc_e_serial;
+}
+
+sub e_pos {
+    my $passport = shift;
+
+    my $rc_e_idx  = $passport->e_index() || {};
+
+    my %rc_e_pos;
+    foreach my $iid (keys %$rc_e_idx){
+        next unless $iid;
+        my $sub = substr($iid, -1);
+        my $slot = substr($iid, -6, 2);
+        if ($iid =~/(00){1,2}$/) {
+            $rc_e_pos{$iid} = $slot;
+        }
+        else {
+            $rc_e_pos{$iid} = $sub;
+        }
+    }
+    return \%rc_e_pos;
+}
+
+sub e_parent {
+    my $passport = shift;
+
+    my $rc_e_idx  = $passport->e_index() || {};
+
+    my %rc_e_parent;
+    foreach my $iid (keys %$rc_e_idx){
+        next unless $iid;
+        my $mod = substr($iid, -4, 2);
+        my $slot = substr($iid, -6, 2);
+        if ($iid =~/(00){1,2}$/) {
+            $rc_e_parent{$iid} = 0;
+        }
+        elsif ($mod != 0) {
+            $rc_e_parent{$iid} = "$slot"."$mod"."00";
+        }
+        else {
+            $rc_e_parent{$iid} = "$slot"."0000";
+        }
+    }
+    return \%rc_e_parent;
+}
+
 1;
 __END__
 
@@ -688,6 +1063,58 @@ Returns reference to hash of bridge port table entries map back to interface ide
 
 Returns (B<ifIndex>) for both key and value since some devices seem to have
 problems with BRIDGE-MIB
+
+=back
+
+=head2 Psuedo ENTITY-MIB information
+
+These devices do not support ENTITY-MIB.  These methods emulate Physical Table
+methods using the RAPID-CITY MIB.
+
+=over
+
+=item $passport->e_index()
+
+Returns reference to hash.  Key and Value: Integer. The index is created by
+combining the slot, module, and position into a five or six digit integer.
+Slot can be either one or two digits while the module and position are each
+two digits padded with leading zero if required.
+
+=item $passport->e_class()
+
+Returns reference to hash.  Key: IID, Value: General hardware type.  This
+class only returns container, module, and powerSupply types.
+
+=item $passport->e_descr()
+
+Returns reference to hash.  Key: IID, Value: Human friendly name.
+
+=item $passport->e_hwver()
+
+Returns reference to hash.  Key: IID, Value: Hardware version.
+
+=item $passport->e_vendor()
+
+Returns reference to hash.  Key: IID, Value: nortel.
+
+=item $passport->e_serial()
+
+Returns reference to hash.  Key: IID, Value: Serial number.
+
+=item $passport->e_pos()
+
+Returns reference to hash.  Key: IID, Value: The relative position among all
+entities sharing the same parent.
+
+=item $passport->e_type()
+
+Returns reference to hash.  Key: IID, Value: Type of component/sub-component.
+
+=item $passport->e_parent()
+
+Returns reference to hash.  Key: IID, Value: The value of e_index() for the
+entity which 'contains' this entity.  A value of zero indicates	this entity
+is not contained in any other entity.
 
 =back
 
