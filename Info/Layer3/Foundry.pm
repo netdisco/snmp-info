@@ -37,48 +37,43 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::FDP;
+use SNMP::Info::LLDP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-$VERSION = '1.04';
+$VERSION = '1.05';
 
-@SNMP::Info::Layer3::Foundry::ISA = qw/SNMP::Info::Layer3 SNMP::Info::FDP Exporter/;
+@SNMP::Info::Layer3::Foundry::ISA = qw/SNMP::Info::FDP SNMP::Info::LLDP
+                                       SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Foundry::EXPORT_OK = qw//;
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS,
+          %SNMP::Info::LLDP::MIBS,
           %SNMP::Info::FDP::MIBS,
-          'FOUNDRY-SN-ROOT-MIB' => 'foundry',
-          'FOUNDRY-SN-AGENT-MIB' => 'snChasPwrSupplyDescription',
-          # IP-FORWARD-MIB
-          # ETHERLIKE-MIB
-          # RFC1398-MIB
-          # RMON-MIB
-          # IF-MIB
+          'FOUNDRY-SN-ROOT-MIB'         => 'foundry',
+          'FOUNDRY-SN-AGENT-MIB'        => 'snChasPwrSupplyDescription',
+          'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snSwGroupOperMode',
         );
 
 %GLOBALS = (
             %SNMP::Info::Layer3::GLOBALS,
+            %SNMP::Info::LLDP::GLOBALS,
             %SNMP::Info::FDP::GLOBALS,
             'mac'        => 'ifPhysAddress.1',
             'chassis'    => 'entPhysicalDescr.1',
-            'serial1'    => 'snChasSerNum',
             'temp'       => 'snChasActualTemperature',
             'ps1_type'   => 'snChasPwrSupplyDescription.1',
             'ps1_status' => 'snChasPwrSupplyOperStatus.1',
             'fan'        => 'snChasFanOperStatus.1',
-            #'serial'   => 'enterprises.1991.1.1.1.1.2.0',
-            #'temp'     => 'enterprises.1991.1.1.1.1.18.0',
-            #'ps1_type' => 'enterprises.1991.1.1.1.2.1.1.2.1',
-            #'ps1_status' => 'enterprises.1991.1.1.1.2.1.1.3.1',
-            #'fan'   => 'enterprises.1991.1.1.1.3.1.1.3.1'
+
            );
 
 %FUNCS   = (
             %SNMP::Info::Layer3::FUNCS,
+            %SNMP::Info::LLDP::FUNCS,
             %SNMP::Info::FDP::FUNCS,
-            'i_name2'    => 'ifName',
-            # FOUNDRY-MIB
-            #   snSwPortInfoTable - Switch Port Information Group
+            # FOUNDRY-SN-SWITCH-GROUP-MIB
+            # snSwPortInfoTable - Switch Port Information Group
             'sw_index'    => 'snSwPortIfIndex',
             'sw_duplex'   => 'snSwPortInfoChnMode',
             'sw_type'     => 'snSwPortInfoMediaType',
@@ -86,43 +81,20 @@ $VERSION = '1.04';
            );
 
 %MUNGE = (
-            # Inherit all the built in munging
             %SNMP::Info::Layer3::MUNGE,
+            %SNMP::Info::LLDP::MUNGE,
             %SNMP::Info::FDP::MUNGE,
          );
 
-
-# Method OverRides
-
-sub bulkwalk_no { 1; }
-
-# Add our i_aliases if they are set (manually)
-sub i_name {
-    my $foundry = shift;
-    my $i_name = $foundry->i_name2();
-
-    my $i_alias = $foundry->i_alias();
-
-    foreach my $iid (keys %$i_name){
-        my $alias = $i_alias->{$iid};
-        next unless defined $alias;
-        next unless length($alias);
-        $i_name->{$iid} = $i_alias->{$iid};
-    }
-
-    return $i_name;
-}
-
 sub i_ignore {
     my $foundry = shift;
-    
-    my $interfaces = $foundry->interfaces();
-    my $i_descr    = $foundry->i_descr();
+    my $partial = shift;
+
+    my $interfaces = $foundry->interfaces($partial) || {};
 
     my %i_ignore;
     foreach my $if (keys %$interfaces) {
-        # lo -> cisco aironet 350 loopback
-        if ($interfaces->{$if} =~ /(tunnel|loopback|lo|lb|null)/i){
+        if ($interfaces->{$if} =~ /(tunnel|loopback|\blo\b|lb|null)/i){
             $i_ignore{$if}++;
         }
     }
@@ -131,8 +103,10 @@ sub i_ignore {
 
 sub i_duplex {
     my $foundry = shift;
-    my $sw_index = $foundry->sw_index();
-    my $sw_duplex= $foundry->sw_duplex();
+    my $partial = shift;
+
+    my $sw_index = $foundry->sw_index($partial);
+    my $sw_duplex= $foundry->sw_duplex($partial);
 
     unless (defined $sw_index and defined $sw_duplex){
        return $foundry->SUPER::i_duplex(); 
@@ -149,104 +123,273 @@ sub i_duplex {
     return \%i_duplex;
 }
 
-sub i_type {
-    my $foundry = shift;
-    my $sw_index = $foundry->sw_index();
-    my $sw_type= $foundry->sw_type();
-
-    unless (defined $sw_index and defined $sw_type){
-       return $foundry->SUPER::i_type(); 
-    }
-    
-    my %i_type;
-    foreach my $sw_port (keys %$sw_type){
-        my $iid = $sw_index->{$sw_port};
-        my $type = $sw_type->{$sw_port};
-        next unless defined $type;
-        $i_type{$iid} = $type;
-    }
-    return \%i_type;
-}
-
-sub i_speed {
-    my $foundry = shift;
-    my $sw_index = $foundry->sw_index();
-    my $sw_speed= $foundry->sw_speed();
-
-    unless (defined $sw_index and defined $sw_speed){
-       return $foundry->SUPER::i_speed(); 
-    }
-    
-    my %i_speed;
-    foreach my $sw_port (keys %$sw_speed){
-        my $iid = $sw_index->{$sw_port};
-        my $speed = $sw_speed->{$sw_port};
-        next unless defined $speed;
-        $speed = 'auto'     if $speed =~ /auto/i;
-        $speed = '10 Mbps'  if $speed =~ /s10m/i;
-        $speed = '100 Mbps' if $speed =~ /s100m/i;
-        $speed = '1.0 Gbps' if $speed =~ /s1g/i;
-        $speed = '45 Mbps' if $speed =~ /s45M/i;
-        $speed = '155 Mbps' if $speed =~ /s155M/i;
-        $i_speed{$iid} = $speed;
-    }
-    return \%i_speed;
-}
-
-# $foundry->model() - looks for xxnnnn in the description
 sub model {
     my $foundry = shift;
     my $id = $foundry->id();
-    my $desc = $foundry->description();
     my $model = &SNMP::translateObj($id);
 
-    $model = $1 if $desc =~ /\s+([a-z]{2}\d{4})\D/i;
-    $model = $1 if $desc =~ /\b(FW[A-Z\d]+)/;
+    # EdgeIron
+    if ($id =~ /\.1991\.1\.[45]\./) {
 
+        my $e_name = $foundry->e_name();
+
+        # Find entity table entry for "unit.1"
+        my $unit_iid = undef;
+        foreach my $e (keys %$e_name){
+            my $name = $e_name->{$e} || '';
+            $unit_iid = $e if $name eq 'unit.1';
+        }
+
+        # Find Model Name
+        my $e_model = $foundry->e_model();
+        if (defined $e_model->{$unit_iid}){
+            return $e_model->{$unit_iid};
+        }
+    }
+    
+    return $id unless defined $model;
+    
     $model =~ s/^sn//;
 
     return $model;
 }
 
-sub os {
-    my $foundry = shift;
-    my $descr = $foundry->description();
-    if ($descr =~ m/IronWare/i) {
-        return 'IronWare';
-    }
-
+sub os { 
     return 'foundry';
 }
+
+sub vendor {
+    return 'foundry';
+}
+
 sub os_ver {
     my $foundry = shift;
-    my $os_version = $foundry->os_version();
-    return $os_version if defined $os_version;
+
+    return $foundry->snAgImgVer() if ( defined $foundry->snAgImgVer() );
+
     # Some older ones don't have this value,so we cull it from the description
     my $descr = $foundry->description();
     if ($descr =~ m/Version (\d\S*)/) {
         return $1;
     }
-    return undef;
+
+    # EdgeIron
+    my $e_name = $foundry->e_name();
+
+    # find entity table entry for "stackmanaget.1"
+    my $unit_iid = undef;
+    foreach my $e (keys %$e_name){
+        my $name = $e_name->{$e} || '';
+        $unit_iid = $e if $name eq 'stackmanaget.1';
+    }
+
+    if (defined $unit_iid){
+
+        # Find Model Name
+        my $e_fwver = $foundry->e_fwver();
+        if (defined $e_fwver->{$unit_iid}){
+            return $e_fwver->{$unit_iid};
+        }
+    }
+
+    # Last resort
+    return $foundry->SUPER::os_ver();
+
 }
 
+sub serial {
+    my $foundry = shift;
 
-# $foundry->interfaces() - Map the Interfaces to their physical names
+    # Return chassis serial number if available
+    return $foundry->snChasSerNum() if ( $foundry->snChasSerNum() );
+
+    # If no chassis serial use first module serial
+    my $mod_serials = $foundry->snAgentConfigModuleSerialNumber();
+
+    foreach my $mod (sort keys %$mod_serials){
+        my $serial = $mod_serials->{$mod} || '';
+        next unless defined $serial;
+        return $serial;
+    }
+
+    # EdgeIron
+    my $e_name = $foundry->e_name();
+
+    # find entity table entry for "unit.1"
+    my $unit_iid = undef;
+    foreach my $e (keys %$e_name){
+        my $name = $e_name->{$e} || '';
+        $unit_iid = $e if $name eq 'unit.1';
+    }
+
+    if (defined $unit_iid) {
+        # Look up serial of found entry.
+        my $e_serial = $foundry->e_serial();
+        return $e_serial->{$unit_iid} if defined $e_serial->{$unit_iid};
+    }
+
+    # Last resort
+    return $foundry->SUPER::serial();
+}
+
 sub interfaces {
     my $foundry = shift;
-    my $interfaces = $foundry->i_index();
-    
-    my $descriptions = $foundry->i_description();
+    my $partial = shift;
 
-    my %ifs = ();
-    foreach my $iid (keys %$interfaces){
-        $ifs{$iid} = $descriptions->{$iid}; 
+    my $i_descr = $foundry->i_description($partial) || {};
+    my $i_name  = $foundry->i_name($partial) || {};
+
+    # Use ifName for EdgeIrons else use ifDescr
+    foreach my $iid (keys %$i_name){
+        my $name = $i_name->{$iid};
+        next unless defined $name;
+        $i_descr->{$iid} = $name 
+            if $name =~ /^port\d+/i;
     }
     
-    return \%ifs;
+    return $i_descr;
 }
 
-sub vendor {
-    return 'foundry';
+# Reported hangs on a EdgeIron 24G
+sub stp_p_state {
+    my $foundry = shift;  
+    my $partial = shift;
+
+    my $descr = $foundry->description();
+    if ($descr =~ m/\bEdgeIron 24G\b/) {
+        return undef;
+    }
+
+    return $foundry->SUPER::stp_p_state($partial) || {};
+
+}
+
+#  Use FDP and/or LLDP
+
+sub hasCDP {
+    my $foundry = shift;
+
+    return $foundry->hasLLDP() || $foundry->SUPER::hasCDP();
+}
+
+sub c_ip {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $cdp  = $foundry->SUPER::c_ip($partial) || {};
+    my $lldp = $foundry->lldp_ip($partial) || {};
+
+    my %c_ip;
+    foreach my $iid (keys %$cdp){
+        my $ip = $cdp->{$iid};
+        next unless defined $ip;
+
+        $c_ip{$iid} = $ip;
+    }
+
+    foreach my $iid (keys %$lldp){
+        my $ip = $lldp->{$iid};
+        next unless defined $ip;
+
+        $c_ip{$iid} = $ip;
+    }
+    return \%c_ip;
+}
+
+sub c_if {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $lldp = $foundry->lldp_if($partial) || {};;
+    my $cdp  = $foundry->SUPER::c_if($partial) || {};
+    
+    my %c_if;
+    foreach my $iid (keys %$cdp){
+        my $if = $cdp->{$iid};
+        next unless defined $if;
+
+        $c_if{$iid} = $if;
+    }
+
+    foreach my $iid (keys %$lldp){
+        my $if = $lldp->{$iid};
+        next unless defined $if;
+
+        $c_if{$iid} = $if;
+    }
+    return \%c_if;
+}
+
+sub c_port {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $lldp = $foundry->lldp_port($partial) || {};
+    my $cdp  = $foundry->SUPER::c_port($partial) || {};
+    
+    my %c_port;
+    foreach my $iid (keys %$cdp){
+        my $port = $cdp->{$iid};
+        next unless defined $port;
+
+        $c_port{$iid} = $port;
+    }
+
+    foreach my $iid (keys %$lldp){
+        my $port = $lldp->{$iid};
+        next unless defined $port;
+
+        $c_port{$iid} = $port;
+    }
+    return \%c_port;
+}
+
+sub c_id {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $lldp = $foundry->lldp_id($partial) || {};
+    my $cdp  = $foundry->SUPER::c_id($partial) || {};
+
+    my %c_id;
+    foreach my $iid (keys %$cdp){
+        my $id = $cdp->{$iid};
+        next unless defined $id;
+
+        $c_id{$iid} = $id;
+    }
+
+    foreach my $iid (keys %$lldp){
+        my $id = $lldp->{$iid};
+        next unless defined $id;
+
+        $c_id{$iid} = $id;
+    }
+    return \%c_id;
+}
+
+sub c_platform {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $lldp = $foundry->lldp_rem_sysdesc($partial) || {};
+    my $cdp  = $foundry->SUPER::c_platform($partial) || {};
+
+    my %c_platform;
+    foreach my $iid (keys %$cdp){
+        my $platform = $cdp->{$iid};
+        next unless defined $platform;
+
+        $c_platform{$iid} = $platform;
+    }
+
+    foreach my $iid (keys %$lldp){
+        my $platform = $lldp->{$iid};
+        next unless defined $platform;
+
+        $c_platform{$iid} = $platform;
+    }
+    return \%c_platform;
 }
 
 1;
@@ -254,7 +397,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Foundry - Perl5 Interface to Foundry FastIron Network Devices
+SNMP::Info::Layer3::Foundry - SNMP Interface to Foundry Network Devices
 
 =head1 AUTHOR
 
@@ -273,18 +416,16 @@ Max Baker
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $foundry->class();
+ my $class = $foundry->class();
 
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
 
-This module provides limited functionality from some L2+L3 and L3 Foundry devices.
+Abstraction subclass for Foundry Networks devices.
 
-Specifically designed for a FI4802. Works on a FWSX424.
-
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above.  Turn off the AutoSpecify flag.
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above.
 
  my $foundry = new SNMP::Info::Layer3::Foundry(...);
 
@@ -292,8 +433,11 @@ a more specific class using the method above.  Turn off the AutoSpecify flag.
 
 =over
 
-=item SNMP::Info
+=item SNMP::Info::Layer3;
 
+=item SNMP::Info::FDP;
+
+=item SNMP::Info::LLDP;
 
 =back
 
@@ -303,13 +447,19 @@ a more specific class using the method above.  Turn off the AutoSpecify flag.
 
 =item FOUNDRY-SN-ROOT-MIB
 
+=item FOUNDRY-SN-AGENT-MIB
+
+=item FOUNDRY-SN-SWITCH-GROUP-MIB
+
 =item Inherited Classes' MIBs
 
-See classes listed above for their required MIBs.
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::FDP/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
 
 =back
-
-The Foundry MIBS can be downloaded from www.mibdepot.com and ??
 
 =head1 GLOBALS
 
@@ -319,12 +469,20 @@ These are methods that return scalar value from SNMP
 
 =item $foundry->model()
 
-Returns model type.  Checks $foundry->id() against the 
-FOUNDRY-SN-ROOT-MIB and then parses out xxNNNN
+Returns model type.  Checks $foundry->id() against the FOUNDRY-SN-ROOT-MIB
+and removes 'sn'.  EdgeIron models determined through ENTITY-MIB.  
 
 =item $foundry->vendor()
 
-Returns 'foundry' :)
+Returns 'foundry'
+
+=item $foundry->os()
+
+Returns 'foundry'
+
+=item $foundry->os_ver()
+
+Returns the software version
 
 =item $foundry->mac()
 
@@ -341,8 +499,6 @@ Returns Chassis type.
 =item $foundry->serial()
 
 Returns serial number of device.
-
-(B<snChasSerNum>)
 
 =item $foundry->temp()
 
@@ -370,9 +526,17 @@ Returns the status of the chassis fan.
 
 =back
 
-=head2 Globals imported from SNMP::Info
+=head2 Global Methods imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::FDP
+
+See documentation in L<SNMP::Info::FDP/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -387,13 +551,6 @@ to a hash.
 
 Returns reference to hash of interface names to iids.
 
-Uses B<ifDescr>.
-
-=item $foundry->i_name()
-
-Returns reference to hash of interface names.  
-Trys for B<ifAlias> and Defaults to B<ifName>
-
 =item $foundry->i_ignore()
 
 Returns reference to hash of interfaces to be ignored.
@@ -405,19 +562,6 @@ Ignores interfaces with descriptions of  tunnel,loopback,null
 Returns reference to hash of interface link duplex status. 
 
 Crosses $foundry->sw_duplex() with $foundry->sw_index()
-
-=item $foundry->i_type()
-
-Returns reference to hash of interface types.
-
-Crosses $foundry->sw_type() with $foundry->sw_index()
-
-=item $foundry->i_speed()
-
-Returns reference to hash of interface speeds .
-
-Crosses $foundry->sw_speeD() with $foundry->sw_index() and 
-does a little munging.
 
 =back
 
@@ -451,8 +595,63 @@ Returns reference to hash.  Current Port Speed.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info
+=head2 Topology information
 
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
+Based upon the software version devices may support Foundry Discovery
+Protocol (FDP) and Link Layer Discovery Protocol (LLDP). These
+methods will query both and return the combination of all information. As a
+result, there may be identical topology information returned from the two
+protocols causing duplicate entries.  It is the calling program's
+responsibility to identify any duplicate entries and de-duplicate if necessary.
+
+=over
+
+=item $foundry->hasCDP()
+
+Returns true if the device is running either FDP or LLDP.
+
+=item $foundry->c_if()
+
+Returns reference to hash.  Key: iid Value: local device port (interfaces)
+
+=item $foundry->c_ip()
+
+Returns reference to hash.  Key: iid Value: remote IPv4 address
+
+If multiple entries exist with the same local port, c_if(), with the same IPv4
+address, c_ip(), it may be a duplicate entry.
+
+If multiple entries exist with the same local port, c_if(), with different IPv4
+addresses, c_ip(), there is either a non-SONMP/LLDP device in between two or
+more devices or multiple devices which are not directly connected.  
+
+Use the data from the Layer2 Topology Table below to dig deeper.
+
+=item $foundry->c_port()
+
+Returns reference to hash. Key: iid Value: remote port (interfaces)
+
+=item $foundry->c_id()
+
+Returns reference to hash. Key: iid Value: string value used to identify the
+chassis component associated with the remote system.
+
+=item $foundry->c_platform()
+
+Returns reference to hash.  Key: iid Value: Remote Device Type
+
+=back
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::FDP
+
+See documentation in L<SNMP::Info::FDP/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut
