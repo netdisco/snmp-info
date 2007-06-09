@@ -412,7 +412,7 @@ in more specific subclasses.
 
 =item SNMP::Info::Layer2::Foundry
 
-Subclass for Foundry Switches.  Tested on EdgeIron 24G.
+Depreciated.  Use SNMP::Info::Layer3::Foundry.
 
 =item SNMP::Info::Layer2::HP
 
@@ -497,10 +497,7 @@ See SNMP::Info::Layer3::Extreme for more info.
 
 =item SNMP::Info::Layer3::Foundry
 
-Subclass for older Foundry Network devices.  Outdated, but being updated
-for newer devices.
-
-Requires FOUNDRY-SN-ROOT-MIB.
+Subclass for Foundry Network devices.
 
 See SNMP::Info::Layer3::Foundry for more info.
 
@@ -918,7 +915,7 @@ Algorithm for Subclass Detection:
             Cyclades terminal server       -> SNMP::Info::Layer1::Cyclades
             Dell PowerConnect              -> SNMP::Info::Layer3::Dell
             Extreme                        -> SNMP::Info::Layer3::Extreme
-            Foundry (EdgeIron,????)        -> SNMP::Info::Layer2::Foundry
+            Foundry                        -> SNMP::Info::Layer3::Foundry
             HP Procurve                    -> SNMP::Info::Layer2::HP
             Nortel/Bay Centillion ATM      -> SNMP::Info::Layer2::Centillion
             Nortel/Bay Baystack            -> SNMP::Info::Layer2::Baystack
@@ -975,7 +972,7 @@ sub device_type {
                       11    => 'SNMP::Info::Layer2::HP',
                       674   => 'SNMP::Info::Layer3::Dell',
                       1916  => 'SNMP::Info::Layer3::Extreme',
-                      1991  => 'SNMP::Info::Layer2::Foundry',
+                      1991  => 'SNMP::Info::Layer3::Foundry',
                       2272  => 'SNMP::Info::Layer3::Passport',
                       2925  => 'SNMP::Info::Layer1::Cyclades',
                       4526  => 'SNMP::Info::Layer2::Netgear',
@@ -1172,8 +1169,7 @@ Returns an object of a more-specific subclass.
 
 Usually this method is called internally from new(AutoSpecify => 1)
 
-See device_type() entry for how a subclass is chosen. 
-
+See device_type() entry for how a subclass is chosen.
 
 =cut
 
@@ -2519,10 +2515,12 @@ sub _global{
 
 =item $info->_set(attr,val,iid)
 
-Used internally by AUTOLOAD to run an SNMP set command for dynamic methods listed in 
-either %GLOBALS or %FUNCS.
+Used internally by AUTOLOAD to run an SNMP set command for dynamic methods
+listed in either %GLOBALS or %FUNCS or a valid mib leaf from a loaded MIB.
+Clears attr cache on sucessful set.
 
-Example:  $info->set_name('dog',3) uses autoload to resolve to $info->_set('name','dog',3);
+Example:  $info->set_name('dog',3) uses autoload to resolve to
+$info->_set('name','dog',3);
 
 =cut
 
@@ -2548,11 +2546,12 @@ sub _set {
 
     # Lookup oid
     my $oid = undef;
+    $oid = $attr if SNMP::translateObj($attr);
     $oid = $globals->{$attr} if defined $globals->{$attr};
     $oid = $funcs->{$attr} if defined $funcs->{$attr};
 
     unless (defined $oid) { 
-        $self->error_throw("SNMP::Info::_set($attr,$val) - Failed to find $attr in \%GLOBALS or \%FUNCS.");
+        $self->error_throw("SNMP::Info::_set($attr,$val) - Failed to find $attr in \%GLOBALS or \%FUNCS or loaded MIB.");
         return undef;
     }
 
@@ -2568,6 +2567,7 @@ sub _set {
         return undef;
     }
 
+    delete $self->{"_$attr"};
     return $rv;
 }
 
