@@ -4,7 +4,8 @@ ChangeLog $Id$
 version 1.05
     + Added support for LLDP in new class LLDP (contributions from Bernhard
       Augenstein)
-    + Added device specific support for LLDP in L2::HP and L2::Baystack
+    + Added device specific support for LLDP in L2::HP, L2::Baystack, and
+      L3::Foundry
     + Added support for Dell PowerConnect switches as new class L3::Dell
     + Added basic support for Sun routers as new class L3::Sun (begemot)
     + Added basic support for Juniper NetScreen devices as new class
@@ -12,6 +13,8 @@ version 1.05
     + Added support for Cyclades terminal servers as new class L1::Cyclades
     + Added support for Cisco (Airespace) wireless controllers as new class
       L2::Airespace
+    + Update of L3::Foundry to support all Foundry devices including newer
+      switches.  Depreciate L2::Foundry.
     + Added generic device type detection using IANA assigned enterpise
       number extracted from sysObjectID
     + Added ifDiscards and other missing entries from IF-MIB::ifEntry (Greg King)
@@ -45,6 +48,7 @@ version 1.05
     + Emulate ENTITY-MIB Physical Table methods for devices which don't
       have ENTITY-MIB support in Bayhub, Baystack, BayRS, NortelStack, and
       Passport classes.
+    + Enable use of MIB Leaf node names in SNMP sets.
 
     * Fix for bug where an SNMP error in any operation would cause subsequent
       table get operations to fail while using the same session, originally
@@ -69,6 +73,7 @@ version 1.05
     * Only return MAC from munge_mac() if it actually is a MAC. Fix for
       netdisco where device would not be inserted in DB due to malformed MAC.
     * Enable SUPER class calls to find autoloaded methods (Bernhard Augenstein)
+    * Clear attribute cache on sucessful SNMP set.
 
 version 1.04 (07/08/06)
     +  Added C1130 and C1240 to L2::Aironet (Ralf Gross)
