@@ -26,7 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Foundry;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -209,7 +209,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Foundry - Perl5 Interface to Foundry FastIron Network Devices
+SNMP::Info::Layer2::Foundry - SNMP Interface to Foundry FastIron Network Devices
 
 =head1 AUTHOR
 
@@ -217,19 +217,7 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
- my $foundry = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
-                          DestHost    => 'myswitch',
-                          Community   => 'public',
-                          Version     => 1
-                        ) 
-    or die "Can't connect to DestHost.\n";
-
- my $class      = $foundry->class();
- print "SNMP::Info determined this device to fall under subclass : $class\n";
+This module is Deprecated.  Please use Layer3::Foundry instead.
 
 =head1 DESCRIPTION
 
