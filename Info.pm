@@ -503,7 +503,11 @@ See SNMP::Info::Layer3::Foundry for more info.
 
 =item SNMP::Info::Layer3::Juniper
 
-Subclass for Juniper devices.
+Subclass for Juniper devices
+
+=item SNMP::Info::Layer3::Microsoft
+
+Subclass for Generic Microsoft Routers running Microsoft Windows OS.
 
 =item SNMP::Info::Layer3::N1600
 
@@ -894,6 +898,7 @@ Algorithm for Subclass Detection:
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
             Juniper                        -> SNMP::Info::Layer3::Juniper
+            Microsoft                      -> SNMP::Info::Layer3::Microsoft
             Net-SNMP                       -> SNMP::Info::Layer3::NetSNMP
             Nortel Passport/Accelar LAN    -> SNMP::Info::Layer3::Passport
             Nortel/Bay Baystack            -> SNMP::Info::Layer2::Baystack
@@ -957,6 +962,7 @@ sub device_type {
                       11    => 'SNMP::Info::Layer2::HP',
                       18    => 'SNMP::Info::Layer3::BayRS',
                       42    => 'SNMP::Info::Layer3::Sun',
+                      311   => 'SNMP::Info::Layer3::Microsoft',
                       674   => 'SNMP::Info::Layer3::Dell',
                       1916  => 'SNMP::Info::Layer3::Extreme',
                       1991  => 'SNMP::Info::Layer3::Foundry',

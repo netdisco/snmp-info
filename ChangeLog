@@ -7,6 +7,8 @@ version 1.05
     + Added device specific support for LLDP in L2::HP, L2::Baystack, and
       L3::Foundry
     + Added support for Dell PowerConnect switches as new class L3::Dell
+    + Added basic support for generic routers running Microsoft Windows OS
+      as new class L3::Microsoft (begemot)
     + Added basic support for Sun routers as new class L3::Sun (begemot)
     + Added basic support for Juniper NetScreen devices as new class
       L3::Netscreen (Kent Hamilton)
