@@ -6,6 +6,22 @@
 
 # $Id$
 
+# Airespace (pre-Cisco)
+device-vendor: Airespace
+cdp:no
+arpnip: no
+macsuck: yes
+portmac: yes
+duplex: both
+vlan: yes
+note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+note: Device will only communicate with SNMP version configured in the controller.
+
+device-family: Airespace Wireless Controllers
+class: Layer2::Airespace
+
+device: 3500, 4101, 4102
+
 # Allied
 device-vendor: Allied Telesyn
 cdp:no
@@ -355,6 +371,37 @@ duplex: no
 
 device: VG200
 
+device-family: Wireless Controllers
+class: Layer2::Airespace
+cdp:no
+arpnip: no
+macsuck: yes
+portmac: yes
+duplex: both
+note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+note: Device will only communicate with SNMP version configured in the controller.
+
+device: 2006, 4112, 4124, 4136, 4402, 4404
+
+# Dell
+device-vendor: Dell
+arpnip: no
+macsuck: yes
+duplex: both
+vlan: yes
+cdp: no
+class: Layer3::Dell
+
+device-family: Dell PowerConnect 6000 Series
+arpnip: yes
+device: 6024F, 6224, 6248
+
+device-family: Dell PowerConnect 5000 Series
+device: 5324
+
+device-family: Dell PowerConnect 3000 Series
+device: 3348, 3448P, 3424, 3424P
+
 # Extreme
 device-vendor: Extreme Networks
 
@@ -372,6 +419,7 @@ device: Summit 7i, 48si
 # Foundry
 device-vendor: Foundry Networks
 note: CDP --> FDP.
+vlan: yes
 
 device-family: FastIron
 class: Layer3::Foundry
@@ -382,7 +430,7 @@ device: FastIron 4802
 
 device-family: EdgeIron
 ver: 2
-class: Layer2::Foundry
+class: Layer3::Foundry
 cdp: yes
 duplex: yes
 macsuck: yes
@@ -400,7 +448,6 @@ arpnip: yes
 device:FWSX424 
 device:SI400 Router
 
-
 # HP
 device-vendor: HP
 class:  Layer2::HP
@@ -411,7 +458,7 @@ duplex: both
 macsuck: yes
 arpnip: no
 cdp: yes
-vlan: yes
+vlan: write
 note: CDP only available with newer ROM versions. 
 
 device: 2512
@@ -429,6 +476,22 @@ duplex: link
 device: 4108GL,8000,2626,2650,8000
 note: VLAN info in Q-BRIDGE-MIB
 
+# Juniper
+device-vendor: Juniper
+arpnip: yes
+
+device-family: M-series router
+class: Layer3::Juniper
+device: M-series router
+
+device-family: NetScreen
+class: Layer3::Netscreen
+device:  Netscreen
+
+# NetScreen
+device-vendor: NetScreen
+note: See Juniper
+
 # Net-SNMP
 device-vendor: Net-SNMP
 class: Layer3
@@ -436,14 +499,10 @@ ver: 2
 
 device-family: Linux
 note: net-snmp 4.x agent and 5.x agent.
+device:  Linux routers
 
 device-family: BSD
-
-# Juniper
-device-vendor: Juniper
-
-device-family: M-series router
-arpnip: yes
+device:  BSD routers
 
 # NORTEL
 device-vendor: Nortel
@@ -466,7 +525,7 @@ device-family: Ethernet Switch/Baystack Switch
 arpnip: no
 macsuck: yes
 duplex: both
-vlan: yes
+vlan: write
 cdp: proprietary
 class: Layer2::Baystack
 
@@ -491,8 +550,8 @@ device: BPS
 device-family: Ethernet Routing Switch/Baystack Switch
 arpnip: yes
 macsuck: yes
-duplex: both
-vlan: yes
+duplex: write
+vlan: write
 cdp: proprietary
 class: Layer2::Baystack
 
@@ -592,9 +651,9 @@ device-family: Ethernet Routing Switch/Passport/Accelar LAN
 arpnip: yes
 macsuck: yes
 portmac: yes
-duplex: both
+duplex: write
 cdp: proprietary
-vlan: yes
+vlan: write
 class: Layer3::Passport
 note: !8600 Code versions < 3.2 vlan based mac-suck and are unsupported.  Upgrade code.
 note: !8600 3.2 code versions < 3.2.2.2 have Bridge MIB loop.  Upgrade code.
@@ -607,14 +666,25 @@ device: 8106,8110
 
 device: 1050,1100,1150,1200
 
-device-family: Ethernet Routing Switch/Passport 1600
+device-family: Ethernet Routing Switch/Passport 1600 (Software < 2.1)
 arpnip: yes
 macsuck: yes
 portmac: yes
 duplex: both
 cdp: proprietary
-vlan: yes
+vlan: write
 class: Layer3::N1600
+
+device: 1612,1624,1648
+
+device-family: Ethernet Routing Switch/Passport 1600 (Software >= 2.1)
+arpnip: yes
+macsuck: yes
+portmac: yes
+duplex: write
+cdp: proprietary
+vlan: write
+class: Layer3::Passport
 
 device: 1612,1624,1648
 
@@ -658,6 +728,14 @@ device: AP-2000
 device: AP-4000
 
 device: WavePOINT-II
+
+# Sun
+device-vendor: Sun
+class: Layer3::Sun
+
+device-family: Sun routers
+
+device: Sun routers
 
 # Synoptics
 device-vendor: Synoptics
