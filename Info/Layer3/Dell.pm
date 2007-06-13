@@ -146,9 +146,10 @@ sub serial {
 # Descriptions are all the same, so use name instead
 sub interfaces {
     my $dell = shift;
+    my $partial = shift;
 
-    my $interfaces = $dell->i_index();
-    my $names = $dell->orig_i_name();
+    my $interfaces = $dell->i_index($partial) || {};
+    my $names = $dell->orig_i_name($partial) || {};
 
     my %interfaces = ();
     foreach my $iid (keys %$interfaces){
@@ -163,10 +164,11 @@ sub interfaces {
 
 sub i_duplex_admin {
     my $dell = shift;
+    my $partial = shift;
     
-    my $interfaces  = $dell->interfaces();
-    my $dell_duplex = $dell->dell_duplex_admin();
-    my $dell_auto   = $dell->dell_auto();
+    my $interfaces  = $dell->interfaces($partial) || {};
+    my $dell_duplex = $dell->dell_duplex_admin($partial) || {};
+    my $dell_auto   = $dell->dell_auto($partial) || {};
  
     my %i_duplex_admin;
     foreach my $if (keys %$interfaces){
@@ -180,15 +182,6 @@ sub i_duplex_admin {
         $i_duplex_admin{$if}=$duplex; 
     }
     return \%i_duplex_admin;
-}
-
-sub i_vlan {
-    my $dell = shift;
-
-    my $qb_i_vlan = $dell->qb_i_vlan_t();
-    if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
-        return $qb_i_vlan;
-    }
 }
 
 # dot1qTpFdbAddress doesn't return values but is used as the index for the table
@@ -217,7 +210,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Dell - Perl5 Interface to Dell Power Connect Network Devices
+SNMP::Info::Layer3::Dell - SNMP Interface to Dell Power Connect Network Devices
 
 =head1 AUTHOR
 
@@ -236,7 +229,7 @@ Eric Miller
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $dell->class();
+ my $class = $dell->class();
 
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
@@ -245,8 +238,8 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from an 
 Dell Power Connect device through SNMP. 
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
 my $dell = new SNMP::Info::Layer3::Dell(...);
 

@@ -24,12 +24,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Sun;
+$VERSION = '1.05';
+
+# $Id$
+use strict;
 
 use Exporter;
 use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.05';
 @SNMP::Info::Layer3::Sun::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Sun::EXPORT_OK = qw//;
 
@@ -81,8 +84,9 @@ sub serial {
 
 sub i_ignore {
     my $l3 = shift;
+    my $partial = shift;
 
-    my $interfaces = $l3->interfaces();
+    my $interfaces = $l3->interfaces($partial) || {};
 
     my %i_ignore;
     foreach my $if (keys %$interfaces) {
@@ -99,7 +103,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Sun - Perl5 Interface to L3 Sun Solaris
+SNMP::Info::Layer3::Sun - SNMP Interface to L3 Sun Solaris
 
 =head1 AUTHOR
 

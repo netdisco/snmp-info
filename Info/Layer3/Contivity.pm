@@ -29,7 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Contivity;
-$VERSION = '1.04';
+$VERSION = '1.05';
 
 use strict;
 
@@ -126,7 +126,9 @@ sub serial {
 
 sub interfaces {
     my $contivity = shift;
-    my $description = $contivity->i_description();
+    my $partial = shift;
+
+    my $description = $contivity->i_description($partial) || {};
     
     my %interfaces = ();
     foreach my $iid (keys %$description){
@@ -141,7 +143,9 @@ sub interfaces {
 
 sub i_name {
     my $contivity = shift;
-    my $i_name2 = $contivity->orig_i_name();
+    my $partial = shift;
+
+    my $i_name2 = $contivity->orig_i_name($partial) || {};
     
     my %i_name;
     foreach my $iid (keys %$i_name2){
@@ -161,8 +165,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Contivity - Perl5 Interface to Nortel Networks' Contivity
-Extranet Switches (CES).
+SNMP::Info::Layer3::Contivity - SNMP Interface to Nortel VPN Routers (Contivity
+Extranet Switches).
 
 =head1 AUTHOR
 
@@ -181,15 +185,15 @@ Eric Miller
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $contivity->class();
+ my $class = $contivity->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Nortel Networks' Contivity Extranet Switch (CES).  
+Abstraction subclass for Nortel VPN Routers (Contivity Extranet Switch).  
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $contivity = new SNMP::Info::Layer3::Contivity(...);
 

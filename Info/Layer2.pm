@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -126,8 +126,9 @@ sub serial {
 
 sub i_ignore {
     my $l2 = shift;
+    my $partial = shift;
 
-    my $i_type = $l2->i_type();
+    my $i_type = $l2->i_type($partial) || {};
 
     my %i_ignore = ();
 
@@ -142,8 +143,10 @@ sub i_ignore {
 
 sub interfaces {
     my $l2 = shift;
-    my $interfaces = $l2->i_index();
-    my $i_descr    = $l2->i_description(); 
+    my $partial = shift;
+
+    my $interfaces = $l2->i_index($partial) || {};
+    my $i_descr    = $l2->i_description($partial) || {};
 
     # Replace the Index with the ifDescr field.
     foreach my $iid (keys %$i_descr){
@@ -159,7 +162,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2 - Perl5 Interface to network devices serving Layer2 only.
+SNMP::Info::Layer2 - SNMP Interface to network devices serving Layer2 only.
 
 =head1 AUTHOR
 
@@ -194,14 +197,15 @@ Max Baker
 
 =head1 DESCRIPTION
 
-This class is usually used as a superclass for more specific device classes listed under 
-SNMP::Info::Layer2::*   Please read all docs under SNMP::Info first.
+This class is usually used as a superclass for more specific device classes
+listed under SNMP::Info::Layer2::*   Please read all docs under SNMP::Info
+first.
 
 Provides abstraction to the configuration information obtainable from a 
 Layer2 device through SNMP.  Information is stored in a number of MIBs.
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $l2 = new SNMP::Info::Layer2(...);
 

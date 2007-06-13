@@ -1,10 +1,7 @@
 # SNMP::Info::Layer3::N1600 - SNMP Interface to Nortel N16XX devices
 # Eric Miller
 #
-# Copyright (c) 2004,2005 Max Baker changes from version 0.8 and beyond.
-#
-# Copyright (c) 2002,2003 Regents of the University of California
-# All rights reserved.
+# Copyright (c) 2005 Eric Miller
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -14,9 +11,6 @@
 #     * Redistributions in binary form must reproduce the above copyright notice,
 #       this list of conditions and the following disclaimer in the documentation
 #       and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
-#       derived from this software without specific prior written permission.
 # 
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
@@ -40,7 +34,7 @@ use SNMP::Info::SONMP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-$VERSION = '1.04';
+$VERSION = '1.05';
 
 @SNMP::Info::Layer3::N1600::ISA = qw/SNMP::Info::Layer3 SNMP::Info::SONMP Exporter/;
 @SNMP::Info::Layer3::N1600::EXPORT_OK = qw//;
@@ -115,7 +109,9 @@ sub os_ver {
 
 sub interfaces {
     my $n1600 = shift;
-    my $i_index = $n1600->i_index();
+    my $partial = shift;
+
+    my $i_index = $n1600->i_index($partial) || {};
     
     my %if;
     foreach my $iid (keys %$i_index){
@@ -130,7 +126,9 @@ sub interfaces {
 
 sub i_duplex {
     my $n1600 = shift;
-    my $nway_status = $n1600->n1600_nway_status();
+    my $partial = shift;
+
+    my $nway_status = $n1600->n1600_nway_status($partial) || {};
     
     my %i_duplex;
     foreach my $iid (keys %$nway_status){
@@ -145,7 +143,9 @@ sub i_duplex {
 
 sub i_duplex_admin {
     my $n1600 = shift;
-    my $nway_state = $n1600->n1600_nway_state();
+    my $partial = shift;
+
+    my $nway_state = $n1600->n1600_nway_state($partial) || {};
     
     my %i_duplex;
     foreach my $iid (keys %$nway_state){
@@ -169,7 +169,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::N1600 - Perl5 Interface to Nortel 16XX Network Devices
+SNMP::Info::Layer3::N1600 - SNMP Interface to Nortel 16XX Network Devices
 
 =head1 AUTHOR
 
@@ -197,8 +197,8 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from a Nortel 
 N16XX device through SNMP. 
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
 my $n1600 = new SNMP::Info::Layer3::N1600(...);
 

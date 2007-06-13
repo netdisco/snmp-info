@@ -56,8 +56,6 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
 
 %FUNCS   = (
             %SNMP::Info::FUNCS,
-            'i_up2'         => 'ifOperStatus',
-            'i_up_admin2'   => 'ifAdminStatus',
             'rptr_ports'    => 'rptrGroupPortCapacity',
             'rptr_port'     => 'rptrPortIndex',
             'rptr_slot'     => 'rptrPortGroupIndex',
@@ -118,8 +116,10 @@ sub vendor {
 # By Default we'll use the description field
 sub interfaces {
     my $l1 = shift;
-    my $interfaces = $l1->i_index();
-    my $rptr_port  = $l1->rptr_port();
+    my $partial = shift;
+
+    my $interfaces = $l1->i_index($partial) || {};
+    my $rptr_port  = $l1->rptr_port($partial) || {};
 
     foreach my $port (keys %$rptr_port){
         $interfaces->{$port} = $port;
@@ -129,9 +129,10 @@ sub interfaces {
 
 sub i_up_admin {
     my $l1 = shift;
+    my $partial = shift;
 
-    my $i_up_admin = $l1->i_up_admin2();
-    my $rptr_up_admin = $l1->rptr_up_admin();
+    my $i_up_admin = $l1->SUPER::i_up_admin($partial) || {};
+    my $rptr_up_admin = $l1->rptr_up_admin($partial) || {};
 
     foreach my $key (keys %$rptr_up_admin){
         my $up = $rptr_up_admin->{$key};
@@ -144,8 +145,10 @@ sub i_up_admin {
 
 sub i_up {
     my $l1 = shift;
-    my $i_up = $l1->i_up2();
-    my $rptr_up = $l1->rptr_up();
+    my $partial = shift;
+
+    my $i_up = $l1->SUPER::i_up($partial) || {};
+    my $rptr_up = $l1->rptr_up($partial) || {};
 
     foreach my $key (keys %$rptr_up){
         my $up = $rptr_up->{$key};
@@ -153,8 +156,8 @@ sub i_up {
     }
 
     return $i_up;
-    
 }
+
 1;
 __END__
 

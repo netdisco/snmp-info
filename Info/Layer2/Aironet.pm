@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Aironet;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 use strict;
 
@@ -96,7 +96,9 @@ sub vendor {
 
 sub interfaces {
     my $aironet = shift;
-    my $i_description = $aironet->i_description();
+    my $partial = shift;
+
+    my $i_description = $aironet->i_description($partial);
 
     return $i_description;
 }
@@ -115,7 +117,9 @@ sub description {
 # Fetch duplex from EtherLike
 sub i_duplex {
     my $aironet = shift;
-    my $el_duplex = $aironet->el_duplex();
+    my $partial = shift;
+
+    my $el_duplex = $aironet->el_duplex($partial);
 
     my %i_duplex;
     foreach my $d (keys %$el_duplex){
