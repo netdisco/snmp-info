@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Centillion;
-$VERSION = '1.04';
+$VERSION = '1.05';
 
 use strict;
 

@@ -32,7 +32,7 @@ use Exporter;
 use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.04';
+$VERSION = '1.05';
 @SNMP::Info::Layer3::Juniper::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Juniper::EXPORT_OK = qw//;
 
@@ -102,7 +102,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Juniper - Perl5 Interface to L3 Juniper Devices
+SNMP::Info::Layer3::Juniper - SNMP Interface to L3 Juniper Devices
 
 =head1 AUTHOR
 

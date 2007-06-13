@@ -31,7 +31,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CDP;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -154,7 +154,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::CDP - Perl5 Interface to Cisco Discovery Protocol (CDP) using SNMP
+SNMP::Info::CDP - SNMP Interface to Cisco Discovery Protocol (CDP) using SNMP
 
 =head1 AUTHOR
 

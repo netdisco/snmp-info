@@ -42,9 +42,11 @@ use SNMP::Info;
 @SNMP::Info::FDP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
-$VERSION = '1.04';
+$VERSION = '1.05';
 
-%MIBS 	= ( 'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snFdpGlobalRun' );
+%MIBS 	= (
+           'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snFdpGlobalRun'
+           );
 
 %GLOBALS = (
             # CDP-Compatibility
@@ -84,8 +86,6 @@ sub munge_caps {
 
     my $bits = substr(unpack("B*",$caps),-7);
     return $bits;
-    
-    
 }
 
 sub cdp_run {
@@ -102,8 +102,6 @@ sub hasFDP {
 
     my $ver = $fdp->{_version};
     #my $ver = $fdp->fdp_ver;
-
-
 
     # SNMP v1 clients dont have the globals
     if (defined $ver and $ver == 1){
@@ -147,7 +145,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::FDP - Perl5 Interface to Foundry Discovery Protocol (FDP) using SNMP
+SNMP::Info::FDP - SNMP Interface to Foundry Discovery Protocol (FDP) using SNMP
 
 =head1 AUTHOR
 

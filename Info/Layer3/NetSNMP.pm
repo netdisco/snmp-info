@@ -124,7 +124,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::NetSNMP - Perl5 Interface to L3 Net-SNMP Devices
+SNMP::Info::Layer3::NetSNMP - SNMP Interface to L3 Net-SNMP Devices
 
 =head1 AUTHORS
 

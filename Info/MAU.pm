@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::MAU;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -259,7 +259,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::MAU - Perl5 Interface to Medium Access Unit (MAU) MIB (RFC 2668) via SNMP
+SNMP::Info::MAU - SNMP Interface to Medium Access Unit (MAU) MIB (RFC 2668)
+via SNMP
 
 =head1 AUTHOR
 
@@ -281,13 +282,14 @@ Max Baker
 =head1 DESCRIPTION
 
 SNMP::Info::MAU is a sublcass of SNMP::Info that supplies access to the
-MAU-MIB (RFC 2668). This MIB is sometimes implemented on Layer 2 network devices like HP Switches.
-MAU = Media Access Unit.
+MAU-MIB (RFC 2668). This MIB is sometimes implemented on Layer 2 network
+devices like HP Switches.  MAU = Media Access Unit.
 
 The MAU table contains link and duplex info for the port itself and the device
 connected to that port.
 
-Normally you use or create a subclass of SNMP::Info that inherits this one.  Do not use directly.
+Normally you use or create a subclass of SNMP::Info that inherits this one.  Do
+not use directly.
 
 For debugging purposes call the class directly as you would SNMP::Info
 

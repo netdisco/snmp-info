@@ -622,7 +622,7 @@ If multiple entries exist with the same local port, c_if(), with the same IPv4
 address, c_ip(), it may be a duplicate entry.
 
 If multiple entries exist with the same local port, c_if(), with different IPv4
-addresses, c_ip(), there is either a non-SONMP/LLDP device in between two or
+addresses, c_ip(), there is either a non-FDP/LLDP device in between two or
 more devices or multiple devices which are not directly connected.  
 
 Use the data from the Layer2 Topology Table below to dig deeper.

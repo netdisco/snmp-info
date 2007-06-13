@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::EtherLike;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -42,7 +42,9 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::EtherLike::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::EtherLike::EXPORT_OK = qw//;
 
-%MIBS = ('ETHERLIKE-MIB' => 'etherMIB' );
+%MIBS = (
+         'ETHERLIKE-MIB' => 'etherMIB'
+         );
 
 %GLOBALS = ();
 
@@ -69,8 +71,9 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
           'el_coll_freq'       => 'dot3CollFrequencies'
           );
 
-%MUNGE = ( %SNMP::Info::MUNGE,
-           'el_duplex' => \&munge_el_duplex,
+%MUNGE = (
+          %SNMP::Info::MUNGE,
+          'el_duplex' => \&munge_el_duplex,
          );
 
 sub munge_el_duplex {
@@ -88,7 +91,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::EtherLike - Perl5 Interface to SNMP ETHERLIKE-MIB RFC 1398
+SNMP::Info::EtherLike - SNMP Interface to SNMP ETHERLIKE-MIB RFC 1398
 
 =head1 AUTHOR
 
