@@ -30,7 +30,7 @@ version 1.05
       i_80211channel() support. 
     + Added new VLAN methods i_pvid(), i_vlan_membership(), set_i_pvid(),
       set_i_vlan(), set_add_i_vlan_tagged(), set_remove_i_vlan_tagged() to
-      RapidCity, CiscoVTP, Bridge, and HP classes
+      Bridge, CiscoVTP, Extreme, HP, and RapidCity classes.
     + Added set_i_speed_admin() method to RapidCity class,
     + Added set_i_duplex_admin() method to RapidCity class,
     + Added OSPF Neighbor Tables, SF Patch 1577918 to Layer 3 (Andrew Herrick)
@@ -56,8 +56,7 @@ version 1.05
       table get operations to fail while using the same session, originally
       identified by Nicolai Petri.
     * Enable single instance partial table fetches (Alexander Hartmaier)
-    *** Enable partial table fetches in overriden table methods (Justin Hunter)
-    *** Not fully completed yet ***
+    * Enable partial table fetches in overriden table methods (Justin Hunter)
     * Allow partial table fetches with load_ methods.
     * Fixed vlan trunk port handling bug in L2:HP (Michael Robbert)
     * Correct bp_port() definition in Bridge class (Reported by Nicolai Petri)
