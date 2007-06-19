@@ -1374,12 +1374,16 @@ Speed of the link, human format.  See munge_speed() later in document for detail
 =cut
 
 sub i_speed {
-    my $l3 = shift;
-    my $i_speed = $l3->orig_i_speed();
+    my $info = shift;
+    my $partial = shift;
+
+    my $i_speed = $info->orig_i_speed($partial);
+    my $i_up = $info->i_up($partial);
+
     my $i_speed_high = undef;
     foreach my $i (keys %$i_speed) {
 	if ($i_speed->{$i} eq "4294967295") {
-	    $i_speed_high = $l3->i_speed_high() unless defined($i_speed_high);
+	    $i_speed_high = $info->i_speed_high($partial) unless defined($i_speed_high);
 	    $i_speed->{$i} = $i_speed_high->{$i} if ($i_speed_high->{$i});
 	}
     }
