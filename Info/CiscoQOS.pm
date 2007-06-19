@@ -1,6 +1,5 @@
 # SNMP::Info::CiscoQOS
 # Alexander Hartmaier <alexander.hartmaier@t-systems.at>
-# $Id$
 #
 # Copyright (c) 2005 Alexander Hartmaier
 #
@@ -31,6 +30,8 @@
 
 package SNMP::Info::CiscoQOS;
 $VERSION = '1.05';
+
+# $Id$
 use strict;
 
 use Exporter;
@@ -54,7 +55,7 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
             'qos_i_type'              => 'cbQosIfType',
             'qos_pol_direction'       => 'cbQosPolicyDirection',
             # CISCO-CLASS-BASED-QOS-MIB::cbQosObjectsTable
-            'qos_obj_index'           => 'cbQosConfigIndex',
+            'qos_obj_conf_index'      => 'cbQosConfigIndex',
             'qos_obj_type'            => 'cbQosObjectsType',
             'qos_obj_parent'          => 'cbQosParentObjectsIndex',
             # CISCO-CLASS-BASED-QOS-MIB::cbQosCMCfgTable
