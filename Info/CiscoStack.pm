@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStack;
-$VERSION = '1.04';
+$VERSION = '1.05';
 # $Id$
 
 use strict;
@@ -42,7 +42,6 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT $INIT/;
 
 %MIBS    = (
             'CISCO-STACK-MIB'         => 'ciscoStackMIB',
-            'CISCO-PORT-SECURITY-MIB' => 'ciscoPortSecurityMIB',
            );
 
 %GLOBALS = (
@@ -58,17 +57,9 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT $INIT/;
             'ps2_status'  => 'chassisPs2Status',    
             'slots'       => 'chassisNumSlots',    
             'fan'         => 'chassisFanStatus',
-            # CISCO-PORT-SECURITY-MIB
-            'cps_clear'     => 'cpsGlobalClearSecureMacAddresses',
-            'cps_notify'    => 'cpsGlobalSNMPNotifControl',
-            'cps_rate'      => 'cpsGlobalSNMPNotifRate',
-            'cps_enable'    => 'cpsGlobalPortSecurityEnable',
-            'cps_mac_count' => 'cpsGlobalTotalSecureAddress',
-            'cps_mac_max'   => 'cpsGlobalMaxSecureAddress',
            );
 
 %FUNCS   = (
-            'i_type2'        => 'ifType',
             # CISCO-STACK-MIB::moduleEntry
             #   These are blades in a catalyst device
             'm_type'         => 'moduleType',
@@ -101,47 +92,11 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT $INIT/;
             # CISCO-STACK-MIB::PortCpbEntry
             'p_speed_admin'  => 'portCpbSpeed',
             'p_duplex_admin' => 'portCpbDuplex',
-            # CISCO-PORT-SECURITY-MIB::cpsIfConfigTable
-            'cps_i_limit_val'  => 'cpsIfInvalidSrcRateLimitValue',
-            'cps_i_limit'      => 'cpsIfInvalidSrcRateLimitEnable',
-            'cps_i_sticky'     => 'cpsIfStickyEnable',
-            'cps_i_clear_type' => 'cpsIfClearSecureMacAddresses',
-            'cps_i_shutdown'   => 'cpsIfShutdownTimeout',
-            'cps_i_flood'      => 'cpsIfUnicastFloodingEnable',
-            'cps_i_clear'      => 'cpsIfClearSecureAddresses',
-            'cps_i_mac'        => 'cpsIfSecureLastMacAddress',
-            'cps_i_count'      => 'cpsIfViolationCount',
-            'cps_i_action'     => 'cpsIfViolationAction',
-            'cps_i_mac_static' => 'cpsIfStaticMacAddrAgingEnable',
-            'cps_i_mac_type'   => 'cpsIfSecureMacAddrAgingType',
-            'cps_i_mac_age'    => 'cpsIfSecureMacAddrAgingTime',
-            'cps_i_mac_count'  => 'cpsIfCurrentSecureMacAddrCount',
-            'cps_i_mac_max'    => 'cpsIfMaxSecureMacAddr',
-            'cps_i_status'     => 'cpsIfPortSecurityStatus',
-            'cps_i_enable'     => 'cpsIfPortSecurityEnable',
-            # CISCO-PORT-SECURITY-MIB::cpsIfVlanTable
-            'cps_i_v_mac_count' => 'cpsIfVlanCurSecureMacAddrCount',
-            'cps_i_v_mac_max'   => 'cpsIfVlanMaxSecureMacAddr',
-            'cps_i_v'           => 'cpsIfVlanIndex',
-            # CISCO-PORT-SECURITY-MIB::cpsIfVlanSecureMacAddrTable
-            'cps_i_v_mac_status' => 'cpsIfVlanSecureMacAddrRowStatus',
-            'cps_i_v_mac_age'    => 'cpsIfVlanSecureMacAddrRemainAge',
-            'cps_i_v_mac_type'   => 'cpsIfVlanSecureMacAddrType',
-            'cps_i_v_vlan'       => 'cpsIfVlanSecureVlanIndex',
-            'cps_i_v_mac'        => 'cpsIfVlanSecureMacAddress',
-            # CISCO-PORT-SECURITY-MIB::cpsSecureMacAddressTable
-            'cps_m_status' => 'cpsSecureMacAddrRowStatus',
-            'cps_m_age' => 'cpsSecureMacAddrRemainingAge',
-            'cps_m_type' => 'cpsSecureMacAddrType',
-            'cps_m_mac' => 'cpsSecureMacAddress',
            );
 
 %MUNGE   = (
             'm_ports_status' => \&munge_port_status,
             'p_duplex_admin' => \&SNMP::Info::munge_bits,
-            'cps_i_mac'      => \&SNMP::Info::munge_mac, 
-            'cps_m_mac'      => \&SNMP::Info::munge_mac,
-            'cps_i_v_mac'    => \&SNMP::Info::munge_mac,
            );
 
 %PORTSTAT = (1 => 'other',
@@ -167,83 +122,104 @@ sub serial {
     return undef;
 }
 
-sub i_type {
-    my $stack = shift;
-
-    my $p_port = $stack->p_port() || {};
-    my $p_type = $stack->p_type() || {};
-
-    # Get more generic port types from IF-MIB
-    my $i_type  = $stack->i_type2() || {};
-
-    # Now Override w/ port entries
-    foreach my $port (keys %$p_type) {
-        my $iid = $p_port->{$port};
-        next unless defined $iid;
-        $i_type->{$iid} = $p_type->{$port};  
-    }
-
-    return $i_type;
-}
-
-# p_* functions are indexed to physical port.  let's index these
-#   to snmp iid
-sub i_name {
-    my $stack = shift;
-
-    my $p_port = $stack->p_port() || {};
-    my $p_name = $stack->p_name() || {};
-
-    my %i_name;
-    foreach my $port (keys %$p_name) {
-        my $iid = $p_port->{$port};
-        next unless defined $iid;
-        $i_name{$iid} = $p_name->{$port};
-    }
-    return \%i_name; 
-}
+# Rules for older CatOS devices using CiscoStack
+#
+# You can configure Ethernet and Fast Ethernet interfaces to either full
+# duplex or half duplex. 
+#
+# You cannot configure the duplex mode on Gigabit Ethernet ports (they are
+# always in full-duplex mode).
+#
+# If you set the port speed to auto, duplex mode is automatically set to auto. 
+#
+# For operational duplex if portCpbDuplex is all zeros the port is a gigabit
+# port and duplex is always full.  If the port is not operational and auto
+# return value will be undef since we don't know the operational status.
+#
+# Newer devices use ETHERLIKE-MIB to report operational duplex, this will be
+# checked in the device class.
 
 sub i_duplex {
     my $stack = shift;
+    my $partial = shift;
 
-    #my $i_duplex = $stack->SUPER::i_duplex();
-    my $p_port   = $stack->p_port()   || {};
-    my $p_duplex = $stack->p_duplex() || {};
+    my $p_port       = $stack->p_port()   || {};
+    my $p_duplex     = $stack->p_duplex() || {};
+    my $p_duplex_cap = $stack->p_duplex_admin() || {};
 
     my $i_duplex = {};
     foreach my $port (keys %$p_duplex) {
         my $iid = $p_port->{$port};
         next unless defined $iid;
-        $i_duplex->{$iid} = $p_duplex->{$port};
+        next if (defined $partial and $iid !~ /^$partial$/);
+        # Test for gigabit 
+        if ($p_duplex_cap->{$port} == 0) {
+            $i_duplex->{$iid} = 'full';
+        }
+        # Auto is not a valid operational state
+        elsif ($p_duplex->{$port} eq 'auto') {
+            next;
+        }
+        else {
+            $i_duplex->{$iid} = $p_duplex->{$port};
+        }
     }
     return $i_duplex; 
 }
 
+# For administrative duplex if portCpbDuplex is all zeros the port is a gigabit
+# port and duplex is always full.  If portAdminSpeed is set to auto then the
+# duplex will be auto, otherwise use portDuplex.
+
 sub i_duplex_admin {
     my $stack = shift;
+    my $partial = shift;
 
-    my $p_port         = $stack->p_port()         || {};
-    my $p_duplex_admin = $stack->p_duplex_admin() || {};
+    my $p_port       = $stack->p_port()   || {};
+    my $p_duplex     = $stack->p_duplex() || {};
+    my $p_duplex_cap = $stack->p_duplex_admin() || {};
+    my $p_speed      = $stack->p_speed() || {};
 
-    my %i_duplex_admin;
-    foreach my $port (keys %$p_duplex_admin) {
+    my $i_duplex_admin = {};
+    foreach my $port (keys %$p_duplex) {
         my $iid = $p_port->{$port};
         next unless defined $iid;
-        my $duplex = $p_duplex_admin->{$port};
-        next unless defined $duplex;
-
-        my $string = 'other';
-        # see CISCO-STACK-MIB for a description of the bits
-        $string = 'half' if ($duplex =~ /001$/ or $duplex =~ /0100.$/);
-        $string = 'full' if ($duplex =~ /010$/ or $duplex =~ /100.0$/);
-        # we'll call it auto if both full and half are turned on, or if the
-        #   specifically 'auto' flag bit is set.
-        $string = 'auto' 
-            if ($duplex =~ /1..$/ or $duplex =~ /110..$/ or $duplex =~ /..011$/);
-       
-        $i_duplex_admin{$iid} = $string;
+        next if (defined $partial and $iid !~ /^$partial$/);
+        # Test for gigabit 
+        if ($p_duplex_cap->{$port} == 0) {
+            $i_duplex_admin->{$iid} = 'full';
+        }
+        # Check admin speed for auto
+        elsif ($p_speed->{$port} =~ /auto/) {
+            $i_duplex_admin->{$iid} = 'auto';
+        }
+        else {
+            $i_duplex_admin->{$iid} = $p_duplex->{$port};
+        }
     }
-    return \%i_duplex_admin; 
+    return $i_duplex_admin; 
+}
+
+sub i_speed_admin {
+    my $stack = shift;
+    my $partial = shift;
+
+    my %i_speed_admin;
+    my $p_port  = $stack->p_port();
+    my %mapping = reverse %$p_port;
+    my $p_speed = $stack->p_speed($mapping{$partial});
+
+    my %speeds = ('autoDetect'      => 'auto',
+                  'autoDetect10100' => 'auto',
+                  's10000000'       => '10 Mbps',
+                  's100000000'      => '100 Mbps',
+                  's1000000000'     => '1.0 Gbps',
+                  's10G'            => '10 Gbps',
+                 );
+
+    %i_speed_admin = map { $p_port->{$_} => $speeds{$p_speed->{$_}} } keys %$p_port;
+
+    return \%i_speed_admin;
 }
 
 sub set_i_speed_admin {
@@ -261,7 +237,7 @@ sub set_i_speed_admin {
 
     $iid = $reverse_p_port{$iid};
 
-    return $stack->set_p_speed($speeds{$speed}, $iid);
+    return $stack->set_p_speed_admin($speeds{$speed}, $iid);
 }
 
 sub set_i_duplex_admin {
@@ -270,6 +246,14 @@ sub set_i_duplex_admin {
 
     my $stack = shift;
     my ($duplex, $iid) = @_;
+    if ($duplex eq 'auto') {
+        $stack->error_throw("Software doesn't support setting auto duplex with
+                            set_i_duplex_admin() you must use
+                            set_i_speed_admin() and set both speed and duplex
+                            to auto");
+        return 0;
+    }
+
     my $p_port  = $stack->p_port() || {};
     my %reverse_p_port = reverse %$p_port;
 
@@ -282,31 +266,14 @@ sub set_i_duplex_admin {
     return $stack->set_p_duplex($duplexes{$duplex}, $iid);
 }
 
-
-# $stack->interfaces() - Maps the ifIndex table to a physical port
-sub interfaces {
-    my $self = shift;
-    my $i_index    = $self->i_index();
-    my $portnames  = $self->p_port() || {};
-    my %portmap    = reverse %$portnames;
-
-    my %interfaces = ();
-    foreach my $iid (keys %$i_index) {
-        next unless defined $iid;
-        my $if   = $i_index->{$iid};
-        my $port = $portmap{$iid};
-        $interfaces{$iid} = $port || $if;
-    }
-
-    return \%interfaces;
-}
-
 1;
+
 __END__
 
 =head1 NAME
 
-SNMP::Info::CiscoStack - Intefaces to data from CISCO-STACK-MIB and CISCO-PORT-SECURITY-MIB
+SNMP::Info::CiscoStack - SNMP Inteface to data from CISCO-STACK-MIB and
+CISCO-PORT-SECURITY-MIB
 
 =head1 AUTHOR
 
@@ -325,7 +292,7 @@ Max Baker
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $ciscostats->class();
+ my $class = $ciscostats->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
@@ -345,8 +312,6 @@ none.
 =over
 
 =item CISCO-STACK-MIB
-
-=item CISCO-PORT-SECURITY-MIB
 
 =back
 
@@ -399,47 +364,11 @@ Netdisco-mib package at netdisco.org.
 
 =back
 
-=head2 CISCO-PORT-SECURITY-MIB globals
-
-See CISCO-PORT-SECURITY-MIB for details.
-
-=over
-
-=item $stack->cps_clear()
-
-B<cpsGlobalClearSecureMacAddresses>
-
-=item $stack->cps_notify()
-
-B<cpsGlobalSNMPNotifControl>
-
-=item $stack->cps_rate()
-
-B<cpsGlobalSNMPNotifRate>
-
-=item $stack->cps_enable()
-
-B<cpsGlobalPortSecurityEnable>
-
-=item $stack->cps_mac_count()
-
-B<cpsGlobalTotalSecureAddress>
-
-=item $stack->cps_mac_max()
-
-B<cpsGlobalMaxSecureAddress>
-
-=back
-
 =head1 TABLE METHODS
 
 =head2 Interface Tables
 
 =over
-
-=item $stack->interfaces()
-
-Crosses p_port() with i_index() to get physical names.
 
 =item $stack->i_physical()
 
@@ -451,19 +380,23 @@ Crosses p_port() with p_type() and returns the results.
 
 Overrides with ifType if p_type() isn't available.
 
-=item $stack->i_name()
-
-Crosses p_name with p_port and returns results.
-
 =item $stack->i_duplex()
 
-Crosses p_duplex with p_port and returns results.
+Returns reference to hash of iid to current link duplex setting.
+
+First checks for fixed gigabit ports which are always full duplex.  Next, if
+the port is not operational and reported port duplex (B<portDuplex>) is auto
+then the operational duplex can not be determined.  Otherwise it uses the
+reported port duplex (B<portDuplex>).
 
 =item $stack->i_duplex_admin()
 
-Crosses p_duplex_admin with p_port.
+Returns reference to hash of iid to administrative duplex setting.
 
-Munges bit_string returned from p_duplex_admin to get duplex settings.
+First checks for fixed gigabit ports which are always full duplex. Next checks
+the port administrative speed (B<portAdminSpeed>) which if set to
+autonegotiate then the duplex will also autonegotiate, otherwise it uses the
+reported port duplex (B<portDuplex>).
 
 =item $stack->set_i_speed_admin(speed, ifIndex)
 
@@ -670,149 +603,6 @@ B<portAdminTxFlowControl>
 =item $stack->p_duplex_admin()
 
 (B<portCpbDuplex>)
-
-=back
-
-
-=head2 CISCO-PORT-SECURITY-MIB - Interface Config Table
-
-See CISCO-PORT-SECURITY-MIB for details.
-
-=over
-
-=item $stack->cps_i_limit_val()
-
-B<cpsIfInvalidSrcRateLimitValue>
-
-=item $stack->cps_i_limit()
-
-B<cpsIfInvalidSrcRateLimitEnable>
-
-=item $stack->cps_i_sticky()
-
-B<cpsIfStickyEnable>
-
-=item $stack->cps_i_clear_type()
-
-B<cpsIfClearSecureMacAddresses>
-
-=item $stack->cps_i_shutdown()
-
-B<cpsIfShutdownTimeout>
-
-=item $stack->cps_i_flood()
-
-B<cpsIfUnicastFloodingEnable>
-
-=item $stack->cps_i_clear()
-
-B<cpsIfClearSecureAddresses>
-
-=item $stack->cps_i_mac()
-
-B<cpsIfSecureLastMacAddress>
-
-=item $stack->cps_i_count()
-
-B<cpsIfViolationCount>
-
-=item $stack->cps_i_action()
-
-B<cpsIfViolationAction>
-
-=item $stack->cps_i_mac_static()
-
-B<cpsIfStaticMacAddrAgingEnable>
-
-=item $stack->cps_i_mac_type()
-
-B<cpsIfSecureMacAddrAgingType>
-
-=item $stack->cps_i_mac_age()
-
-B<cpsIfSecureMacAddrAgingTime>
-
-=item $stack->cps_i_mac_count()
-
-B<cpsIfCurrentSecureMacAddrCount>
-
-=item $stack->cps_i_mac_max()
-
-B<cpsIfMaxSecureMacAddr>
-
-=item $stack->cps_i_status()
-
-B<cpsIfPortSecurityStatus>
-
-=item $stack->cps_i_enable()
-
-B<cpsIfPortSecurityEnable>
-
-=back
-
-=head2 CISCO-PORT-SECURITY-MIB::cpsIfVlanTable
-
-=over
-
-=item $stack->cps_i_v_mac_count()
-
-B<cpsIfVlanCurSecureMacAddrCount>
-
-=item $stack->cps_i_v_mac_max()
-
-B<cpsIfVlanMaxSecureMacAddr>
-
-=item $stack->cps_i_v()
-
-B<cpsIfVlanIndex>
-
-=back
-
-=head2 CISCO-PORT-SECURITY-MIB::cpsIfVlanSecureMacAddrTable
-
-=over
-
-=item $stack->cps_i_v_mac_status()
-
-B<cpsIfVlanSecureMacAddrRowStatus>
-
-=item $stack->cps_i_v_mac_age()
-
-B<cpsIfVlanSecureMacAddrRemainAge>
-
-=item $stack->cps_i_v_mac_type()
-
-B<cpsIfVlanSecureMacAddrType>
-
-=item $stack->cps_i_v_vlan()
-
-B<cpsIfVlanSecureVlanIndex>
-
-=item $stack->cps_i_v_mac()
-
-B<cpsIfVlanSecureMacAddress>
-
-=back
-
-=head2 CISCO-PORT-SECURITY-MIB::cpsSecureMacAddressTable
-
-=over
-
-=item $stack->cps_m_status()
-
-B<cpsSecureMacAddrRowStatus>
-
-=item $stack->cps_m_age()
-
-B<cpsSecureMacAddrRemainingAge>
-
-=item $stack->cps_m_type()
-
-B<cpsSecureMacAddrType>
-
-=item $stack->cps_m_mac()
-
-B<cpsSecureMacAddress>
 
 =back
 

@@ -93,11 +93,6 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
             %SNMP::Info::CiscoVTP::MUNGE,
          );
 
-# Override Inheritance for these specific methods
-
-*SNMP::Info::Layer3::C3550::interfaces = \&SNMP::Info::Layer3::interfaces;
-*SNMP::Info::Layer3::C3550::i_name     = \&SNMP::Info::Layer3::i_name;
-
 sub vendor {
     return 'cisco';
 }
@@ -127,6 +122,90 @@ sub ports {
         return $1;
     }
     return $ports2;
+}
+
+#  Verions prior to 12.1(22)EA1a use the older CiscoStack method
+#  Newer versions use the ETHERLIKE-MIB to report operational duplex.
+#  See http://www.ciscosystems.com/en/US/products/hw/switches/ps646/prod_release_note09186a00802a08ee.html
+
+sub i_duplex {
+    my $c3550 = shift;
+    my $partial = shift;
+
+    my $el_duplex = $c3550->el_duplex($partial);
+
+    # Newer software     
+    if (defined $el_duplex and scalar(keys %$el_duplex)){
+        my %i_duplex;
+        foreach my $el_port (keys %$el_duplex){
+            my $duplex = $el_duplex->{$el_port};
+            next unless defined $duplex;
+
+            $i_duplex{$el_port} = 'half' if $duplex =~ /half/i;
+            $i_duplex{$el_port} = 'full' if $duplex =~ /full/i;
+        }
+        return \%i_duplex;
+    }
+    # Fall back to CiscoStack method
+    else {
+        return $c3550->SUPER::i_duplex($partial);
+    }
+}
+
+# Software >= 12.1(22)EA1a uses portDuplex as admin setting
+
+sub i_duplex_admin {
+    my $c3550 = shift;
+    my $partial = shift;
+
+    my $el_duplex = $c3550->el_duplex($partial);
+
+    # Newer software     
+    if (defined $el_duplex and scalar(keys %$el_duplex)){
+        my $p_port   = $c3550->p_port()   || {};
+        my $p_duplex = $c3550->p_duplex() || {};
+        
+        my $i_duplex_admin = {};
+        foreach my $port (keys %$p_duplex) {
+            my $iid = $p_port->{$port};
+            next unless defined $iid;
+            next if (defined $partial and $iid !~ /^$partial$/);
+            
+            $i_duplex_admin->{$iid} = $p_duplex->{$port};
+        }
+        return $i_duplex_admin;
+    }
+    # Fall back to CiscoStack method
+    else {
+        return $c3550->SUPER::i_duplex_admin($partial);
+    }    
+}
+
+sub set_i_duplex_admin {
+    # map a textual duplex to an integer one the switch understands
+    my %duplexes = qw/half 1 full 2 auto 4/;
+
+    my $c3550 = shift;
+    my ($duplex, $iid) = @_;
+
+    my $el_duplex = $c3550->el_duplex($iid);
+
+    # Auto duplex only supported on newer software
+    if (defined $el_duplex and scalar(keys %$el_duplex)){
+        my $p_port  = $c3550->p_port() || {};
+        my %reverse_p_port = reverse %$p_port;
+
+       $duplex = lc($duplex);
+
+       return 0 unless defined $duplexes{$duplex};
+
+       $iid = $reverse_p_port{$iid};
+
+       return $c3550->set_p_duplex($duplexes{$duplex}, $iid);
+    }
+    else {
+        $c3550->SUPER::set_i_duplex_admin;
+    }
 }
 
 sub cisco_comm_indexing {
@@ -271,6 +350,46 @@ See documentation in L<SNMP::Info::CiscoImage/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=head2 Overrides
+
+=over
+
+=item $c3550->i_duplex()
+
+Returns reference to hash of iid to current link duplex setting.
+
+Software version 12.1(22)EA1a or greater returns duplex based upon the
+result of $c3550->el_duplex().  Otherwise it uses the result of
+the call to CiscoStack i_duplex().
+
+See L<SNMP::Info::Etherlike> for el_duplex() method and
+L<SNMP::Info::CiscoStack> for its i_duplex() method.
+
+=item $c3550->i_duplex_admin()
+
+Returns reference to hash of iid to administrative duplex setting.
+
+Software version 12.1(22)EA1a or greater returns duplex based upon the
+result of $c3550->p_duplex().  Otherwise it uses the result of
+the call to CiscoStack i_duplex().
+
+See L<SNMP::Info::CiscoStack> for its i_duplex() and p_duplex() methods.
+
+=item $c3550->set_i_duplex_admin(duplex, ifIndex)
+
+Sets port duplex, must be supplied with duplex and port ifIndex.
+
+Speed choices are 'auto', 'half', 'full'.
+
+Crosses $c3550->p_port() with $c3550->p_duplex() to utilize port ifIndex.
+
+    Example:
+    my %if_map = reverse %{$c3550->interfaces()};
+    $c3550->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'}) 
+        or die "Couldn't change port duplex. ",$c3550->error(1);
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

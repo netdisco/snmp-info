@@ -143,6 +143,41 @@ sub cisco_comm_indexing {
     1;
 }
 
+sub interfaces {
+    my $self = shift;
+    my $partial = shift;
+
+    my $i_index    = $self->i_index($partial);
+    my $portnames  = $self->p_port() || {};
+    my %portmap    = reverse %$portnames;
+
+    my %interfaces = ();
+    foreach my $iid (keys %$i_index) {
+        next unless defined $iid;
+        my $if   = $i_index->{$iid};
+        my $port = $portmap{$iid};
+        $interfaces{$iid} = $port || $if;
+    }
+    return \%interfaces;
+}
+
+sub i_name {
+    my $stack = shift;
+    my $partial = shift;
+
+    my $p_port = $stack->p_port() || {};
+    my %mapping = reverse %$p_port;
+    my $p_name = $stack->p_name($mapping{$partial}) || {};
+
+    my %i_name;
+    foreach my $port (keys %$p_name) {
+        my $iid = $p_port->{$port};
+        next unless defined $iid;
+        $i_name{$iid} = $p_name->{$port};
+    }
+    return \%i_name; 
+}
+
 1;
 __END__
 
@@ -287,6 +322,16 @@ to a hash.
 =head2 Overrides
 
 =over
+
+=item $cat->interfaces()
+
+Returns the map between SNMP Interface Identifier (iid) and physical port name. 
+
+=item $cat->i_name()
+
+Returns reference to hash of iid to human set name. 
+
+B<portName>
 
 =item $cat->bp_index()
 

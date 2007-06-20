@@ -96,11 +96,6 @@ $VERSION = '1.05';
             %SNMP::Info::CiscoVTP::MUNGE,
          );
 
-# Override Inheritance for these specific methods
-
-*SNMP::Info::Layer3::C6500::interfaces = \&SNMP::Info::Layer3::interfaces;
-*SNMP::Info::Layer3::C6500::i_name     = \&SNMP::Info::Layer3::i_name;
-
 sub vendor {
     return 'cisco';
 }
@@ -108,6 +103,88 @@ sub vendor {
 # There are some buggy 6509's out there.
 sub bulkwalk_no { 1; }
 sub cisco_comm_indexing { 1; }
+
+#  Newer versions use the ETHERLIKE-MIB to report operational duplex.
+
+sub i_duplex {
+    my $c6500 = shift;
+    my $partial = shift;
+
+    my $el_duplex = $c6500->el_duplex($partial);
+
+    # Newer software     
+    if (defined $el_duplex and scalar(keys %$el_duplex)){
+        my %i_duplex;
+        foreach my $el_port (keys %$el_duplex){
+            my $duplex = $el_duplex->{$el_port};
+            next unless defined $duplex;
+
+            $i_duplex{$el_port} = 'half' if $duplex =~ /half/i;
+            $i_duplex{$el_port} = 'full' if $duplex =~ /full/i;
+        }
+        return \%i_duplex;
+    }
+    # Fall back to CiscoStack method
+    else {
+        return $c6500->SUPER::i_duplex($partial);
+    }
+}
+
+# Newer software uses portDuplex as admin setting
+
+sub i_duplex_admin {
+    my $c6500 = shift;
+    my $partial = shift;
+
+    my $el_duplex = $c6500->el_duplex($partial);
+
+    # Newer software     
+    if (defined $el_duplex and scalar(keys %$el_duplex)){
+        my $p_port   = $c6500->p_port()   || {};
+        my $p_duplex = $c6500->p_duplex() || {};
+        
+        my $i_duplex_admin = {};
+        foreach my $port (keys %$p_duplex) {
+            my $iid = $p_port->{$port};
+            next unless defined $iid;
+            next if (defined $partial and $iid !~ /^$partial$/);
+            
+            $i_duplex_admin->{$iid} = $p_duplex->{$port};
+        }
+        return $i_duplex_admin;
+    }
+    # Fall back to CiscoStack method
+    else {
+        return $c6500->SUPER::i_duplex_admin($partial);
+    }    
+}
+
+sub set_i_duplex_admin {
+    # map a textual duplex to an integer one the switch understands
+    my %duplexes = qw/half 1 full 2 auto 4/;
+
+    my $c6500 = shift;
+    my ($duplex, $iid) = @_;
+
+    my $el_duplex = $c6500->el_duplex($iid);
+
+    # Auto duplex only supported on newer software
+    if (defined $el_duplex and scalar(keys %$el_duplex)){
+        my $p_port  = $c6500->p_port() || {};
+        my %reverse_p_port = reverse %$p_port;
+
+       $duplex = lc($duplex);
+
+       return 0 unless defined $duplexes{$duplex};
+
+       $iid = $reverse_p_port{$iid};
+
+       return $c6500->set_p_duplex($duplexes{$duplex}, $iid);
+    }
+    else {
+        $c6500->SUPER::set_i_duplex_admin;
+    }
+}
 
 1;
 __END__
@@ -249,6 +326,46 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=head2 Overrides
+
+=over
+
+=item $c6500->i_duplex()
+
+Returns reference to hash of iid to current link duplex setting.
+
+Newer software versions return duplex based upon the result of
+$c6500->el_duplex().  Otherwise it uses the result of the call to
+CiscoStack i_duplex().
+
+See L<SNMP::Info::Etherlike> for el_duplex() method and
+L<SNMP::Info::CiscoStack> for its i_duplex() method.
+
+=item $c6500->i_duplex_admin()
+
+Returns reference to hash of iid to administrative duplex setting.
+
+Newer software versions return duplex based upon the result of
+$c6500->p_duplex().  Otherwise it uses the result of the call to
+CiscoStack i_duplex().
+
+See L<SNMP::Info::CiscoStack> for its i_duplex() and p_duplex() methods.
+
+=item $c6500->set_i_duplex_admin(duplex, ifIndex)
+
+Sets port duplex, must be supplied with duplex and port ifIndex.
+
+Speed choices are 'auto', 'half', 'full'.
+
+Crosses $c6500->p_port() with $c6500->p_duplex() to utilize port ifIndex.
+
+    Example:
+    my %if_map = reverse %{$c6500->interfaces()};
+    $c6500->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'}) 
+        or die "Couldn't change port duplex. ",$c6500->error(1);
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
