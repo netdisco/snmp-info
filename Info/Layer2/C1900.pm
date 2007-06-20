@@ -36,14 +36,14 @@ $VERSION = '1.05';
 use strict;
 
 use Exporter;
-use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoConfig;
 use SNMP::Info::Layer2;
 
-@SNMP::Info::Layer2::C1900::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
-  SNMP::Info::CiscoStats SNMP::Info::CiscoConfig SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::C1900::ISA = qw/SNMP::Info::CDP SNMP::Info::CiscoStats
+                                    SNMP::Info::CiscoConfig SNMP::Info::Layer2
+                                    Exporter/;
 @SNMP::Info::Layer2::C1900::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
