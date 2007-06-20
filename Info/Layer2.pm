@@ -135,7 +135,7 @@ sub i_ignore {
     foreach my $if (keys %$i_type){
         my $type = $i_type->{$if};
         $i_ignore{$if}++ 
-            if $type =~ /(loopback|propvirtual|other|cpu)/i;
+            if $type =~ /(loopback|other|cpu)/i;
     }
 
     return \%i_ignore;
