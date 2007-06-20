@@ -214,27 +214,6 @@ sub interfaces {
 
 }
 
-sub i_type {
-    my $hp = shift;
-    my $e_descr = $hp->e_descr();
-    my $e_port = $hp->e_port();
-
-    # Grab default values to pass through
-    my $i_type = $hp->i_type2();
-
-    # Now Stuff in the entity-table values
-    foreach my $port (keys %$e_descr){
-        my $iid = $e_port->{$port};
-        next unless defined $iid;
-        my $type = $e_descr->{$port};
-        $type =~ s/^HP ?//;
-        $i_type->{$iid} = $type;
-    }
-    
-    return $i_type;
-
-}
-
 sub i_name {
     my $hp = shift;
     my $i_alias    = $hp->i_alias();
@@ -890,10 +869,6 @@ SNMP::Info::MAU.
 =item $hp->i_name()
 
 Crosses i_name() with $hp->e_name() using $hp->e_port() and i_alias()
-
-=item $hp->i_type()
-
-Crosses i_type() with $hp->e_descr() using $hp->e_port()
 
 =item $hp->i_vlan()
 
