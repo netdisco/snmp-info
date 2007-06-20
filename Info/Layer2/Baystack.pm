@@ -1,6 +1,5 @@
 # SNMP::Info::Layer2::Baystack
 # Eric Miller
-# $Id$
 #
 # Copyright (c) 2004-6 Max Baker changes from version 0.8 and beyond.
 # All rights reserved.
@@ -30,6 +29,8 @@
 
 package SNMP::Info::Layer2::Baystack;
 $VERSION = '1.05';
+
+# $Id$
 use strict;
 
 use Exporter;
@@ -134,19 +135,6 @@ sub model {
     return $2 if ($model =~ /(ES|ERS|BayStack|EthernetRoutingSwitch|EthernetSwitch)(\d+)/);
     
     return $model;
-}
-
-sub i_ignore {
-    my $baystack = shift;
-    my $i_type = $baystack->i_type();
-
-    my %i_ignore;
-    foreach my $if (keys %$i_type){
-        my $type = $i_type->{$if};
-        next unless defined $type;
-        $i_ignore{$if}++ if $type =~ /(54|loopback|propvirtual|cpu)/i;
-    }
-    return \%i_ignore;
 }
 
 sub interfaces {
