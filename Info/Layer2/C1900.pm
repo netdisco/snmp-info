@@ -53,7 +53,6 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
              %SNMP::Info::CiscoConfig::GLOBALS,
              %SNMP::Info::CiscoStats::GLOBALS,
              %SNMP::Info::CDP::GLOBALS,
-             %SNMP::Info::CiscoVTP::GLOBALS,
              'c1900_flash_status' => 'upgradeFlashBankStatus',
            );
 
@@ -62,7 +61,6 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
            %SNMP::Info::CiscoConfig::FUNCS,
            %SNMP::Info::CiscoStats::FUNCS,
            %SNMP::Info::CDP::FUNCS,
-           %SNMP::Info::CiscoVTP::FUNCS,
            # ESSWITCH-MIB
            'c1900_p_index'        => 'swPortIndex',
            'c1900_p_ifindex'      => 'swPortIfIndex',
@@ -79,7 +77,6 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
           %SNMP::Info::CiscoConfig::MIBS,
           %SNMP::Info::CiscoStats::MIBS,
           %SNMP::Info::CDP::MIBS,
-          %SNMP::Info::CiscoVTP::MIBS,
           # Also known as the ESSWITCH-MIB
           'STAND-ALONE-ETHERNET-SWITCH-MIB' => 'series2000'
         );
@@ -89,7 +86,6 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
            %SNMP::Info::CiscoConfig::MUNGE,
            %SNMP::Info::CiscoStats::MUNGE,
            %SNMP::Info::CDP::MUNGE,
-           %SNMP::Info::CiscoVTP::MUNGE,
          );
 
 sub bulkwalk_no         { 1; }
@@ -169,31 +165,6 @@ sub i_duplex_admin {
     return \%i_duplex_admin;
 }
 
-sub i_type {
-    my $c1900   = shift;
-    my $partial = shift;
-
-    my $i_type        = $c1900->orig_i_type($partial)   || {};
-    my $c1900_p_index = $c1900->c1900_p_index($partial) || {};
-    my $c1900_p_type  = $c1900->c1900_p_type($partial)  || {};
-    my $c1900_p_media = $c1900->c1900_p_media($partial) || {};
-
-    foreach my $p_iid ( keys %$c1900_p_index ) {
-        my $port = $c1900_p_index->{$p_iid};
-        next if ( defined $partial and $port !~ /^$partial$/ );
-        my $type  = $c1900_p_type->{$p_iid};
-        my $media = $c1900_p_media->{$p_iid};
-
-        next unless defined $port;
-        next unless defined $type;
-        next unless defined $media;
-
-        $i_type->{$port} = "$type $media";
-    }
-
-    return $i_type;
-}
-
 sub i_name {
     my $c1900   = shift;
     my $partial = shift;
@@ -225,6 +196,58 @@ sub set_i_duplex_admin {
     return 0 unless defined $duplexes{$duplex};
 
     return $c1900->set_c1900_p_duplex_admin( $duplexes{$duplex}, $iid );
+}
+
+sub i_vlan {
+    my $c1900 = shift;
+    my $partial = shift;    
+
+    # Overlap allows more than one VLAN per port.  Unable to determine default    
+    my $overlap = $c1900->bridgeGroupAllowMembershipOverlap() ||
+                  $c1900->vlanAllowMembershipOverlap();
+    
+    if ($overlap eq 'enabled') {
+        return undef;
+    }
+
+    my $member_of = $c1900->bridgeGroupMemberPortOfBridgeGroup() ||
+                    $c1900->vlanMemberPortOfVlan();
+
+    my $i_pvid = {};
+    foreach my $idx (keys %$member_of) {
+        my @values = split(/\./, $idx);
+        my ($vlan, $port) = @values;
+        next unless $vlan;
+        next unless $port;
+        next if (defined $partial and $port !~ /^$partial$/);
+        my $value = $member_of->{$idx};
+        next if ($value eq 'false');
+        
+        $i_pvid->{$port} = $vlan;
+    }
+    return $i_pvid;
+}
+
+sub i_vlan_membership {
+    my $c1900 = shift;
+    my $partial = shift;
+
+    my $member_of = $c1900->bridgeGroupMemberPortOfBridgeGroup() ||
+                    $c1900->vlanMemberPortOfVlan();
+
+    my $i_vlan_membership = {};
+    foreach my $idx (keys %$member_of) {
+        my @values = split(/\./, $idx);
+        my ($vlan, $port) = @values;
+        next unless $vlan;
+        next unless $port;
+        next if (defined $partial and $port !~ /^$partial$/);
+        my $value = $member_of->{$idx};
+        next if ($value eq 'false');
+
+        push(@{$i_vlan_membership->{$port}}, $vlan);
+    }
+    return $i_vlan_membership;
 }
 
 1;
@@ -271,8 +294,6 @@ after determining a more specific class using the method above.
 
 =over
 
-=item SNMP::Info::CiscoVTP
-
 =item SNMP::Info::CDP
 
 =item SNMP::Info::CiscoStats
@@ -296,8 +317,6 @@ They can be found at ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
 =back
 
 =head2 Inherited MIBs
-
-See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::CDP/"Required MIBs"> for its MIB requirements.
 
@@ -347,10 +366,6 @@ Return C<1>.  Bulkwalk is turned off for this class.
 
 =back
 
-=head2 Globals imported from SNMP::Info::CiscoVTP
-
-See L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
-
 =head2 Globals imported from SNMP::Info::CDP
 
 See L<SNMP::Info::CDP/"GLOBALS"> for details.
@@ -389,12 +404,25 @@ Returns reference to hash of IIDs to admin duplex setting
 Crosses ifName with $c1900->c1900_p_name() and returns the human set port name
 if exists.
 
-=item $c1900->i_type()
+=item $c1900->i_vlan()
 
-Returns reference to hash of IID to port type
+Returns a mapping between the interface and the VLAN / bridge group if overlap
+is not enabled.
 
-Takes the default ifType and overrides it with $c1900->c1900_p_type() and
-$c1900->c1900_p_media() if they exist.
+=item $c1900->i_vlan_membership()
+
+Returns reference to hash of arrays: key = interface, value = array of VLAN /
+bridge group IDs.
+
+  Example:
+  my $interfaces = $c1900->interfaces();
+  my $vlans      = $c1900->i_vlan_membership();
+  
+  foreach my $iid (sort keys %$interfaces) {
+    my $port = $interfaces->{$iid};
+    my $vlan = join(',', sort(@{$vlans->{$iid}}));
+    print "Port: $port VLAN: $vlan\n";
+  }
 
 =back
 
@@ -445,10 +473,6 @@ Gives the media of the port , ie "fiber-sc"
 (B<swPortConnectorType>)
 
 =back
-
-=head2 Table Methods imported from SNMP::Info::CiscoVTP
-
-See L<SNMP::Info::CiscoVTP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CDP
 
