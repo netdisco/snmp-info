@@ -491,6 +491,10 @@ Subclass for Nortel Contivity/VPN Routers.
 
 Subclass for Dell PowerConnect switches.  
 
+=item SNMP::Info::Layer3::Enterasys
+
+Subclass for Enterasys devices.
+
 =item SNMP::Info::Layer3::Extreme
 
 Subclass for Extreme Networks switches.
@@ -897,6 +901,7 @@ Algorithm for Subclass Detection:
             Cisco Generic L3 IOS device    -> SNMP::Info::Layer3::Cisco
             Cyclades terminal server       -> SNMP::Info::Layer1::Cyclades
             Dell PowerConnect              -> SNMP::Info::Layer3::Dell
+            Enterasys                      -> SNMP::Info::Layer3::Enterasys
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
             Juniper                        -> SNMP::Info::Layer3::Juniper
@@ -921,6 +926,7 @@ Algorithm for Subclass Detection:
             Cisco (not covered by above)   -> SNMP::Info::Layer2::Cisco
             Cyclades terminal server       -> SNMP::Info::Layer1::Cyclades
             Dell PowerConnect              -> SNMP::Info::Layer3::Dell
+            Enterasys                      -> SNMP::Info::Layer3::Enterasys
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
             HP Procurve                    -> SNMP::Info::Layer2::HP
@@ -972,6 +978,7 @@ sub device_type {
                       2272  => 'SNMP::Info::Layer3::Passport',
                       2636  => 'SNMP::Info::Layer3::Juniper',
                       2925  => 'SNMP::Info::Layer1::Cyclades',
+                      5624  => 'SNMP::Info::Layer3::Enterasys',
                       8072  => 'SNMP::Info::Layer3::NetSNMP',
                     );
 
@@ -984,6 +991,7 @@ sub device_type {
                       2272  => 'SNMP::Info::Layer3::Passport',
                       2925  => 'SNMP::Info::Layer1::Cyclades',
                       4526  => 'SNMP::Info::Layer2::Netgear',
+                      5624  => 'SNMP::Info::Layer3::Enterasys',
                       14179 => 'SNMP::Info::Layer2::Airespace',
                       14823 => 'SNMP::Info::Layer2::Aruba',
                     );
