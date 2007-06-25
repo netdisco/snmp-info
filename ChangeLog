@@ -4,8 +4,9 @@ ChangeLog $Id$
 version 1.05
     + Added support for LLDP in new class LLDP (contributions from Bernhard
       Augenstein)
-    + Added device specific support for LLDP in L2::HP, L2::Baystack, and
-      L3::Foundry
+    + Added device specific support for LLDP in L2::HP, L2::Baystack,
+      L3::Enterasys and L3::Foundry
+    + Added support for Enterasys devices as new class L3::Enterasys 
     + Added support for Dell PowerConnect switches as new class L3::Dell
     + Added basic support for generic routers running Microsoft Windows OS
       as new class L3::Microsoft (begemot)
@@ -75,6 +76,10 @@ version 1.05
       netdisco where device would not be inserted in DB due to malformed MAC.
     * Enable SUPER class calls to find autoloaded methods (Bernhard Augenstein)
     * Clear attribute cache on sucessful SNMP set.
+    * Improve accuracy of operational and administrative duplex reporting on
+      devices using CiscoStack.
+    * All i_type() methods now use standard IANAifType values.
+    * Report bridge groups (VLANs) in L2::C1900.
 
 version 1.04 (07/08/06)
     +  Added C1130 and C1240 to L2::Aironet (Ralf Gross)
