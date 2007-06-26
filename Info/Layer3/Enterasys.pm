@@ -64,6 +64,9 @@ $VERSION = '1.05';
             %SNMP::Info::CDP::FUNCS,
             %SNMP::Info::LLDP::FUNCS,
             %SNMP::Info::MAU::FUNCS,
+            # Normal BRIDGE-MIB has issues on some devices, duplicates and
+            # non-increasing oids, Use Q-BRIDGE-MIB for macsuck
+            'fw_port'      => 'dot1qTpFdbPort',
            );
 
 %MUNGE = (
@@ -148,6 +151,27 @@ sub i_duplex_admin {
     my $partial = shift;
     
     return $enterasys->mau_i_duplex_admin($partial);
+}
+
+# dot1qTpFdbAddress doesn't return values but is used as the index for the table
+# so extract mac from index of dot1qTpFdbPort
+sub fw_mac {
+    my $enterasys = shift;
+    
+    my $enterasys_fw_port  = $enterasys->fw_port();
+ 
+    my %fw_mac;
+    foreach my $iid (keys %$enterasys_fw_port){
+        # iid is dot1qFdbId.dot1qTpFdbAddress so strip dot1qFdbId
+        my $mac = $iid;
+        $mac =~ s/^\d+\.//;
+        # Convert the remaining 0.254.123.456 index entry to a MAC address.
+        $mac = join(':',map {sprintf("%02x",$_)} split(/\./,$mac));
+        next unless defined $mac;
+        
+        $fw_mac{$iid}=$mac; 
+    }
+    return \%fw_mac;
 }
 
 #  Use CDP and/or LLDP
