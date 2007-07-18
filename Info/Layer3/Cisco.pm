@@ -99,6 +99,24 @@ $VERSION = '1.05';
             'eigrp_peers' => \&SNMP::Info::munge_ip,
          );
 
+sub i_vlan {
+	my ($cisco) = shift;
+	my ($partial) = shift;
+
+	my ($i_type) = $cisco->i_type($partial);
+	my ($i_descr) = $cisco->i_description($partial);
+	my %i_vlan;
+
+	foreach my $idx (keys %$i_descr) {
+		if ($i_type->{$idx} eq 'l2vlan' || $i_type->{$idx} eq 135) {
+			if ($i_descr->{$idx} =~ /\.(\d+)$/) {
+				$i_vlan{$idx} = $1;
+			}
+		}
+	}
+	\%i_vlan;
+}
+
 1;
 __END__
 
