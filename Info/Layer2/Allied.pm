@@ -34,6 +34,7 @@ use strict;
 
 use Exporter;
 use SNMP::Info::Layer2;
+use SNMP::Info::Layer1;
 
 @SNMP::Info::Layer2::Allied::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Allied::EXPORT_OK = qw//;
@@ -173,9 +174,11 @@ inherited methods.
 
 =over
 
-=item ATI-MIB 
+=item AtiSwitch-MIB
 
-Download for your device from http://www.allied-telesyn.com/allied/support/
+=item AtiStackInfo-MIB
+
+Download for your device from ftp://ftp.allied-telesyn.com/pub/switches/mibs/
 
 =back
 
