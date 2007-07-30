@@ -40,10 +40,12 @@ use SNMP::Info;
 use SNMP::Info::Bridge;
 use SNMP::Info::EtherLike;
 use SNMP::Info::Entity;
+use SNMP::Info::PowerEthernet;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
 
-@SNMP::Info::Layer3::ISA = qw/SNMP::Info::Entity SNMP::Info::EtherLike 
+@SNMP::Info::Layer3::ISA = qw/SNMP::Info::PowerEthernet
+                              SNMP::Info::Entity SNMP::Info::EtherLike 
                               SNMP::Info::Bridge SNMP::Info Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
 
@@ -51,6 +53,7 @@ use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
           %SNMP::Info::Bridge::MIBS,
           %SNMP::Info::EtherLike::MIBS,
           %SNMP::Info::Entity::MIBS,
+          %SNMP::Info::PowerEthernet::MIBS,
           'IP-MIB'      => 'ipNetToMediaIfIndex',
           'OSPF-MIB'    => 'ospfRouterId',
           'BGP4-MIB'    => 'bgpIdentifier',
@@ -62,6 +65,7 @@ use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
             %SNMP::Info::Bridge::GLOBALS,
             %SNMP::Info::EtherLike::GLOBALS,
             %SNMP::Info::Entity::GLOBALS,
+            %SNMP::Info::PowerEthernet::GLOBALS,
             'mac'          => 'ifPhysAddress.1',
             'serial1'      => '.1.3.6.1.4.1.9.3.6.3.0', # OLD-CISCO-CHASSIS-MIB::chassisId.0
             'router_ip'    => 'ospfRouterId.0',
@@ -74,6 +78,7 @@ use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
             %SNMP::Info::Bridge::FUNCS,
             %SNMP::Info::EtherLike::FUNCS,
             %SNMP::Info::Entity::FUNCS,
+            %SNMP::Info::PowerEthernet::FUNCS,
             # Obsolete Address Translation Table (ARP Cache)
             'old_at_index'   => 'atIfIndex',
             'old_at_paddr'   => 'atPhysAddress',
@@ -115,6 +120,7 @@ use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
             %SNMP::Info::Bridge::MUNGE,
             %SNMP::Info::EtherLike::MUNGE,
             %SNMP::Info::Entity::MUNGE,
+            %SNMP::Info::PowerEthernet::MUNGE,
             'old_at_paddr' => \&SNMP::Info::munge_mac,
             'at_paddr'     => \&SNMP::Info::munge_mac,
          );

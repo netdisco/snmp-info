@@ -39,21 +39,24 @@ use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
 use SNMP::Info::Entity;
+use SNMP::Info::PowerEthernet;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
 
-@SNMP::Info::Layer2::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity Exporter/;
+@SNMP::Info::Layer2::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet Exporter/;
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
 
 %MIBS = (   %SNMP::Info::MIBS, 
             %SNMP::Info::Bridge::MIBS,
             %SNMP::Info::Entity::MIBS,
+            %SNMP::Info::PowerEthernet::MIBS,
         );
 
 %GLOBALS = (
             %SNMP::Info::GLOBALS,
             %SNMP::Info::Bridge::GLOBALS,
             %SNMP::Info::Entity::GLOBALS,
+            %SNMP::Info::PowerEthernet::GLOBALS,
             'serial1'   => '.1.3.6.1.4.1.9.3.6.3.0', # OLD-CISCO-CHASSIS-MIB::chassisId.0
             );
 
@@ -61,6 +64,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
             %SNMP::Info::FUNCS,
             %SNMP::Info::Bridge::FUNCS,
             %SNMP::Info::Entity::FUNCS,
+            %SNMP::Info::PowerEthernet::FUNCS,
            );
 
 %MUNGE = (
@@ -68,6 +72,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
             %SNMP::Info::MUNGE,
             %SNMP::Info::Bridge::MUNGE,
             %SNMP::Info::Entity::MUNGE,
+            %SNMP::Info::PowerEthernet::MUNGE,
          );
 
 # Method OverRides
