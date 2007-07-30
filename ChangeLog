@@ -52,6 +52,7 @@ version 1.05
       have ENTITY-MIB support in Bayhub, Baystack, BayRS, NortelStack, and
       Passport classes.
     + Enable use of MIB Leaf node names in SNMP sets.
+    + Add POWER-ETHERNET-MIB and CISCO-POWER-ETHERNET-EXT-MIB support.
 
     * Fix for bug where an SNMP error in any operation would cause subsequent
       table get operations to fail while using the same session, originally
