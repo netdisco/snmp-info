@@ -97,6 +97,24 @@ sub serial {
     return $juniper->orig_serial();
 }
 
+sub i_vlan {
+	my ($juniper) = shift;
+	my ($partial) = shift;
+
+	my ($i_type) = $juniper->i_type($partial);
+	my ($i_descr) = $juniper->i_description($partial);
+	my %i_vlan;
+
+	foreach my $idx (keys %$i_descr) {
+		if ($i_type->{$idx} eq 'l2vlan' || $i_type->{$idx} eq 135) {
+			if ($i_descr->{$idx} =~ /\.(\d+)$/) {
+				$i_vlan{$idx} = $1;
+			}
+		}
+	}
+	\%i_vlan;
+}
+
 1;
 __END__
 
@@ -179,6 +197,15 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=over
+
+=item $juniper->i_vlan()
+
+Returns the list of interfaces whose ifType is l2vlan(135), and
+the VLAN ID extracted from the interface description.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
