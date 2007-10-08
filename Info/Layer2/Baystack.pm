@@ -347,7 +347,17 @@ sub e_index {
     my $stack   = shift;
     my $partial = shift;
 
-    return $stack->SUPER::e_index($partial) || $stack->ns_e_index($partial);
+    # This has intimate knowledge of the implementation of e_index.
+    # e_index is implemented in terms of e_descr, so unlike the other
+    # functions below we can't just
+    # return $stack->SUPER::e_index($partial) || $stack->ns_e_index($partial);
+    # since it will call *our* e_descr.  So we only call e_index if
+    # SUPER::e_descr works.
+    if ($stack->SUPER::e_descr($partial)) {
+	return $stack->SUPER::e_index($partial);
+    } else {
+	return $stack->ns_e_index($partial);
+    }
 }
 
 sub e_class {
@@ -607,7 +617,9 @@ L<SNMP::Info::NortelStack/"TABLE METHODS"> for details on ns_e_* methods.
 
 =item $baystack->e_index() 
 
-If the device doesn't support B<entPhysicalIndex>, this will try ns_e_index().
+If the device doesn't support B<entPhysicalDescr>, this will try ns_e_index().
+Note that this is based on B<entPhysicalDescr> due to implementation
+details of SNMP::Info::Entity::e_index().
 
 =item $baystack->e_class() 
 
