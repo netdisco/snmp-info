@@ -985,6 +985,7 @@ sub device_type {
     my %l2sysoidmap = (
                       9     => 'SNMP::Info::Layer2::Cisco',
                       11    => 'SNMP::Info::Layer2::HP',
+                      207   => 'SNMP::Info::Layer2::Allied',
                       674   => 'SNMP::Info::Layer3::Dell',
                       1916  => 'SNMP::Info::Layer3::Extreme',
                       1991  => 'SNMP::Info::Layer3::Foundry',
