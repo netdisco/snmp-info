@@ -107,8 +107,6 @@ sub vendor {
     return 'cisco';
 }
 
-# There are some buggy 6509's out there.
-sub bulkwalk_no { 1; }
 sub cisco_comm_indexing { 1; }
 
 #  Newer versions use the ETHERLIKE-MIB to report operational duplex.
@@ -289,11 +287,6 @@ See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 These are methods that return scalar value from SNMP
 
 =over
-
-=item $c6500->bulkwalk_no
-
-Return C<1>.  There are some buggy 6509's out there, so bulkwalk
-is turned off for this class.
 
 =item $c6500->vendor()
 

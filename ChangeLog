@@ -81,6 +81,8 @@ version 1.05
       devices using CiscoStack.
     * All i_type() methods now use standard IANAifType values.
     * Report bridge groups (VLANs) in L2::C1900.
+    * Turn on bulkwalk for C6500.  Users with buggy OS versions can turn
+      it off when creating the object.
 
 version 1.04 (07/08/06)
     +  Added C1130 and C1240 to L2::Aironet (Ralf Gross)
