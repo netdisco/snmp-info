@@ -64,10 +64,6 @@ $VERSION = '1.05';
             %SNMP::Info::CDP::FUNCS,
             %SNMP::Info::LLDP::FUNCS,
             %SNMP::Info::MAU::FUNCS,
-            # Normal BRIDGE-MIB has issues on some devices, duplicates and
-            # non-increasing oids, Use Q-BRIDGE-MIB for macsuck
-            'fw_mac'    => 'qb_fw_mac',
-            'fw_port'   => 'qb_fw_port',
            );
 
 %MUNGE = (
@@ -153,6 +149,22 @@ sub i_duplex_admin {
     my $partial = shift;
     
     return $enterasys->mau_i_duplex_admin($partial);
+}
+
+# Normal BRIDGE-MIB has issues on some devices, duplicates and
+# non-increasing oids, Use Q-BRIDGE-MIB for macsuck
+sub fw_mac {
+    my $enterasys = shift;
+    my $partial = shift;
+
+    return $enterasys->qb_fw_mac($partial);
+}
+
+sub fw_port {
+    my $enterasys = shift;
+    my $partial = shift;
+
+    return $enterasys->qb_fw_port($partial);
 }
 
 #  Use CDP and/or LLDP

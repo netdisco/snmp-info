@@ -94,9 +94,6 @@ $VERSION = '1.05';
             # RADLAN-HWENVIROMENT:rlEnvMonFanStatusTable
             'dell_fan_state' => 'rlEnvMonFanState',
             'dell_fan_desc'  => 'rlEnvMonFanStatusDescr',
-            # Normal BRIDGE-MIB not working?  Use Q-BRIDGE-MIB for macsuck
-            'fw_mac'    => 'qb_fw_mac',
-            'fw_port'   => 'qb_fw_port',
            );
 
 
@@ -183,6 +180,21 @@ sub i_duplex_admin {
         $i_duplex_admin{$if}=$duplex; 
     }
     return \%i_duplex_admin;
+}
+
+# Normal BRIDGE-MIB not working?  Use Q-BRIDGE-MIB for macsuck
+sub fw_mac {
+    my $dell = shift;
+    my $partial = shift;
+
+    return $dell->qb_fw_mac($partial);
+}
+
+sub fw_port {
+    my $dell = shift;
+    my $partial = shift;
+
+    return $dell->qb_fw_port($partial);
 }
 
 1;
