@@ -95,7 +95,8 @@ $VERSION = '1.05';
             'dell_fan_state' => 'rlEnvMonFanState',
             'dell_fan_desc'  => 'rlEnvMonFanStatusDescr',
             # Normal BRIDGE-MIB not working?  Use Q-BRIDGE-MIB for macsuck
-            'fw_port'      => 'dot1qTpFdbPort',
+            'fw_mac'    => 'qb_fw_mac',
+            'fw_port'   => 'qb_fw_port',
            );
 
 
@@ -182,27 +183,6 @@ sub i_duplex_admin {
         $i_duplex_admin{$if}=$duplex; 
     }
     return \%i_duplex_admin;
-}
-
-# dot1qTpFdbAddress doesn't return values but is used as the index for the table
-# so extract mac from index of dot1qTpFdbPort
-sub fw_mac {
-    my $dell = shift;
-    
-    my $dell_fw_port  = $dell->fw_port();
- 
-    my %fw_mac;
-    foreach my $iid (keys %$dell_fw_port){
-        # iid is dot1qFdbId.dot1qTpFdbAddress so strip dot1qFdbId
-        my $mac = $iid;
-        $mac =~ s/^\d+\.//;
-        # Convert the remaining 0.254.123.456 index entry to a MAC address.
-        $mac = join(':',map {sprintf("%02x",$_)} split(/\./,$mac));
-        next unless defined $mac;
-        
-        $fw_mac{$iid}=$mac; 
-    }
-    return \%fw_mac;
 }
 
 1;
