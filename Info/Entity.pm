@@ -77,14 +77,16 @@ sub e_index {
     my $entity = shift;
     my $partial = shift;
 
-    my $e_descr  = $entity->e_descr($partial);
+    # Force use of MIB leaf to avoid inheritance issues in psuedo classes
+    my $e_descr  = $entity->entPhysicalDescr($partial);
 
+    return undef unless ($e_descr);
+    
     my %e_index;
 
     foreach my $iid (keys %$e_descr) {
         $e_index{$iid} = $iid;
     }
-
     return \%e_index;
 }
 
