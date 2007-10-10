@@ -59,6 +59,7 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             'vlan'         => 's5AgSysManagementVlanId',
             # From S5-CHASSIS-MIB
             'ns_serial'    => 's5ChasSerNum',
+            'ns_ch_type'   => 's5ChasType',
             'ns_cfg_chg'   => 's5ChasGblConfChngs',
             'ns_cfg_time'  => 's5ChasGblConfLstChng',
             );
@@ -67,6 +68,8 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
             # From S5-AGENT-MIB::s5AgMyIfTable
             'i_cfg_file'       => 's5AgMyIfCfgFname',
             'i_cfg_host'       => 's5AgMyIfLdSvrAddr',
+            # From S5-CHASSIS-MIB::s5ChasGrpTable
+            'ns_grp_type'      => 's5ChasGrpType',
             # From S5-CHASSIS-MIB::s5ChasComTable
             'ns_com_grp_idx'   => 's5ChasComGrpIndx',
             'ns_com_idx'       => 's5ChasComIndx',
@@ -86,6 +89,8 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
           );
 
 %MUNGE = (
+            'ns_ch_type'       => \&munge_ns_com_type,
+            'ns_grp_type'      => \&munge_ns_grp_type,
             'ns_com_type'      => \&munge_ns_com_type,
             'ns_store_type'    => \&munge_ns_store_type,
          );
@@ -132,14 +137,44 @@ sub serial {
 
 # Psuedo ENTITY-MIB methods for older switches with don't support ENTITY-MIB
 
+# This class supports both stackable and chassis based switches, identify if
+# we have a stackable so that we return appropriate entPhysicalClass 
+sub ns_e_is_virtual {
+    my $stack   = shift;
+
+    # We really only need one value, but we want this cached since most methods
+    # call it at least via ns_e_index() 
+    my $v_test = $stack->s5ChasComRelPos() || {};
+    return $v_test->{'8.1.0'};
+}
+
+# Identify is the stackable is actually a stack vs. single switch
+sub ns_e_is_stack {
+    my $stack   = shift;
+
+    my $s_test = $stack->ns_e_class() || {};
+    
+    foreach my $iid (keys %$s_test){
+        my $class = $s_test->{$iid};
+        next unless defined $class;
+        return 1 if ($class eq 'stack');
+    }
+    return 0;
+}
+
 sub ns_e_index {
     my $stack   = shift;
     my $partial = shift;
 
-    my $ns_e_idx = $stack->ns_com_sub_idx($partial) || {};
+    my $ns_e_idx = $stack->ns_com_grp_idx($partial) || {};
+    my $is_virtual = $stack->ns_e_is_virtual();
 
     my %ns_e_index;
     foreach my $iid (keys %$ns_e_idx){
+        # Skip backplane, power, sensor, fan, clock - these aren't in the
+        # newer devices ENTITY-MIB we're emulating
+        next if ($iid =~ /^[24567]/);
+        next if (($is_virtual) and ($iid =~ /^8/ or $iid eq '1.0.0'));
         # Format into consistent integer format so that numeric sorting works
         my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
         $ns_e_index{$iid} = $index;
@@ -151,19 +186,29 @@ sub ns_e_class {
     my $stack = shift;
     my $partial = shift;
 
-    my $ns_e_idx  = $stack->ns_com_grp_idx($partial) || {};
-    my $classes = $stack->s5ChasGrpDescr();
+    my $ns_e_idx   = $stack->ns_e_index($partial) || {};
+    my $classes    = $stack->ns_grp_type();
+    my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
+    my $is_virtual = $stack->ns_e_is_virtual();
 
     my %ns_e_class;
     foreach my $iid (keys %$ns_e_idx){
-        my $grp = $ns_e_idx->{$iid};
+        my $index = $ns_e_idx->{$iid};
+        my ($grp, $idx, $sub) = split (/\./,$iid);
         next unless defined $grp;
         my $class = $classes->{$grp};
-        next unless defined $class; 
-      
-        $class =~ s/\s*Group[\0\s]*//;
-      
-        $ns_e_class{$iid} = $class;
+        next unless defined $class;
+        my $enc = $ns_grp_enc->{$grp};
+
+        # Handle quirks of dealing with both stacks and chassis
+        if ((!$is_virtual) and ($grp == 1)) {
+            $class = 'module';
+        }
+        if (($is_virtual) and ($grp == 3) and !($idx % $enc)) {
+            $class = 'chassis';
+        }
+
+        $ns_e_class{$index} = $class;
     }
     return \%ns_e_class;
 }
@@ -172,14 +217,16 @@ sub ns_e_descr {
     my $stack   = shift;
     my $partial = shift;
 
+    my $ns_e_idx   = $stack->ns_e_index($partial) || {};
     my $ns_e_descr = $stack->ns_com_descr($partial) || {};
 
     my %ns_e_descr;
-    foreach my $iid (keys %$ns_e_descr){
+    foreach my $iid (keys %$ns_e_idx){
+        my $index = $ns_e_idx->{$iid};
         my $descr = $ns_e_descr->{$iid};
         next unless defined $descr;
 
-        $ns_e_descr{$iid} = $descr;
+        $ns_e_descr{$index} = $descr;
     }
     return \%ns_e_descr;
 }
@@ -188,14 +235,16 @@ sub ns_e_hwver {
     my $stack   = shift;
     my $partial = shift;
 
+    my $ns_e_idx = $stack->ns_e_index($partial) || {};
     my $ns_e_ver = $stack->ns_com_ver($partial) || {};
 
     my %ns_e_hwver;
-    foreach my $iid (keys %$ns_e_ver){
+    foreach my $iid (keys %$ns_e_idx){
+        my $index = $ns_e_idx->{$iid};
         my $ver = $ns_e_ver->{$iid};
         next unless defined $ver;
 
-        $ns_e_hwver{$iid} = $ver;
+        $ns_e_hwver{$index} = $ver;
     }
     return \%ns_e_hwver;
 }
@@ -204,13 +253,14 @@ sub ns_e_vendor {
     my $stack   = shift;
     my $partial = shift;
 
-    my $ns_e_idx = $stack->ns_com_sub_idx($partial) || {};
+    my $ns_e_idx = $stack->ns_e_index($partial) || {};
 
     my %ns_e_vendor;
     foreach my $iid (keys %$ns_e_idx){
+        my $index = $ns_e_idx->{$iid};
         my $vendor = 'nortel';
 
-        $ns_e_vendor{$iid} = $vendor;
+        $ns_e_vendor{$index} = $vendor;
     }
     return \%ns_e_vendor;
 }
@@ -219,56 +269,96 @@ sub ns_e_serial {
     my $stack   = shift;
     my $partial = shift;
 
+    my $ns_e_idx    = $stack->ns_e_index($partial) || {};
     my $ns_e_serial = $stack->ns_com_serial($partial) || {};
 
     my %ns_e_serial;
-    foreach my $iid (keys %$ns_e_serial){
+    foreach my $iid (keys %$ns_e_idx){
+        my $index = $ns_e_idx->{$iid};
         my $serial = $ns_e_serial->{$iid};
         next unless defined $serial;
 
-        $ns_e_serial{$iid} = $serial;
+        $ns_e_serial{$index} = $serial;
     }
     return \%ns_e_serial;
-}
-
-sub ns_e_pos {
-    my $stack   = shift;
-    my $partial = shift;
-
-    my $ns_e_pos = $stack->ns_com_sub_idx($partial) || {};
-
-    my %ns_e_pos;
-    foreach my $iid (keys %$ns_e_pos){
-        my $pos = $ns_e_pos->{$iid};
-        next unless defined $pos;
-
-        $ns_e_pos{$iid} = $pos;
-    }
-    return \%ns_e_pos;
 }
 
 sub ns_e_type {
     my $stack   = shift;
     my $partial = shift;
 
+    my $ns_e_idx  = $stack->ns_e_index($partial) || {};
     my $ns_e_type = $stack->ns_com_type($partial) || {};
+    my $is_stack  = $stack->ns_e_is_stack();
+    my $ch_type   = $stack->ns_ch_type();
 
     my %ns_e_type;
-    foreach my $iid (keys %$ns_e_type){
+    foreach my $iid (keys %$ns_e_idx){
+        my $index = $ns_e_idx->{$iid};
         my $type = $ns_e_type->{$iid};
         next unless defined $type;
-
-        $ns_e_type{$iid} = $type;
+        
+        if ($is_stack and $iid =~ /^1/) {
+            $type = $ch_type;
+        }
+        $ns_e_type{$index} = $type;
     }
     return \%ns_e_type;
+}
+
+sub ns_e_pos {
+    my $stack   = shift;
+    my $partial = shift;
+
+    my $ns_e_idx   = $stack->ns_e_index($partial) || {};
+    my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
+    my $is_stack   = $stack->ns_e_is_stack();
+    my $is_virtual = $stack->ns_e_is_virtual();
+
+    my %ns_e_pos;
+    foreach my $iid (keys %$ns_e_idx){
+        my $index = $ns_e_idx->{$iid};
+        my ($grp, $idx, $pos) = split (/\./,$iid);
+        next unless defined $grp;
+        next unless defined $pos;
+
+        if ($grp == 1) {
+            if ($is_stack) {
+                $pos = -1;
+            }
+            else {
+                $pos = 99;
+            }
+        }
+        elsif ($grp == 3 and $pos == 0) {
+            my $enc = $ns_grp_enc->{$grp};
+            if ($is_stack and !($idx % $enc)) {
+                $pos = int ($idx / $enc);
+            }
+            elsif ($is_virtual and !$is_stack and !($idx % $enc)) {
+                $pos = -1;
+            }
+            else {
+                $pos = ($idx % $enc);
+            }
+        }
+        elsif ($grp == 8) {
+            $pos = -1;
+        }
+        $ns_e_pos{$index} = $pos;
+    }
+    return \%ns_e_pos;
 }
 
 sub ns_e_fwver {
     my $stack   = shift;
     my $partial = shift;
 
-    my $ns_e_ver  = $stack->ns_store_ver($partial)  || {};
-    my $ns_e_type = $stack->ns_store_type($partial) || {};
+    my $ns_e_idx   = $stack->ns_e_index($partial) || {};
+    my $ns_e_ver   = $stack->ns_store_ver($partial)  || {};
+    my $ns_e_type  = $stack->ns_store_type($partial) || {};
+    my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
+    my $is_stack   = $stack->ns_e_is_stack();
 
     my %ns_e_fwver;
     foreach my $iid (keys %$ns_e_type){
@@ -278,9 +368,15 @@ sub ns_e_fwver {
         my $ver  = $ns_e_ver->{$iid};
         next unless defined $ver;
         $iid =~ s/\.\d+$//;
+        my $index = $ns_e_idx->{$iid};
         
-
-      $ns_e_fwver{$iid} = $ver;
+        if ($is_stack and $iid =~ /^8/) {
+            my ($grp, $idx, $pos) = split (/\./,$iid);
+            my $enc = $ns_grp_enc->{$grp};
+            $idx = $idx * $enc;
+            $iid = "3.$idx.$pos";
+        }
+        $ns_e_fwver{$index} = $ver;
     }
     return \%ns_e_fwver;
 }
@@ -289,8 +385,11 @@ sub ns_e_swver {
     my $stack   = shift;
     my $partial = shift;
 
+    my $ns_e_idx   = $stack->ns_e_index($partial) || {};
     my $ns_e_ver  = $stack->ns_store_ver($partial)  || {};
     my $ns_e_type = $stack->ns_store_type($partial) || {};
+    my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
+    my $is_stack   = $stack->ns_e_is_stack();
 
     my %ns_e_swver;
     foreach my $iid (keys %$ns_e_type){
@@ -300,8 +399,15 @@ sub ns_e_swver {
         my $ver  = $ns_e_ver->{$iid};
         next unless defined $ver;
         $iid =~ s/\.\d+$//;
-        
-        $ns_e_swver{$iid} = $ver;
+        my $index = $ns_e_idx->{$iid};
+
+        if ($is_stack and $iid =~ /^8/) {
+            my ($grp, $idx, $pos) = split (/\./,$iid);
+            my $enc = $ns_grp_enc->{$grp};
+            $idx = $idx * $enc;
+            $iid = "3.$idx.$pos";
+        }
+        $ns_e_swver{$index} = $ver;
     }
     return \%ns_e_swver;
 }
@@ -310,40 +416,49 @@ sub ns_e_parent {
     my $stack   = shift;
     my $partial = shift;
 
-    my $ns_e_idx  = $stack->ns_com_grp_idx($partial)  || {};
-    
-    # Check to see if we are dealing with a stack "virtual chassis"
-    my $v_test = $stack->s5ChasComRelPos('8.1.0');
-    my $virtual = $v_test->{'8.1.0'};
-    
+    my $ns_e_idx   = $stack->ns_e_index($partial) || {};
+    my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
+    my $is_stack   = $stack->ns_e_is_stack();
+    my $is_virtual = $stack->ns_e_is_virtual();
+
     my %ns_e_parent;
     foreach my $iid (keys %$ns_e_idx){
-        my $grp_idx = $ns_e_idx->{$iid};
-        next unless defined $grp_idx;
-        if ($grp_idx != 3) {
-            if ($virtual != 0) {
-                $ns_e_parent{$iid} = '0';
+        my $index = $ns_e_idx->{$iid};
+        my ($grp, $idx, $pos) = split (/\./,$iid);
+        next unless defined $grp;
+        if ($grp == 8) {
+                $ns_e_parent{$index} = '0';
+        }
+        if ($grp == 1) {
+            if ($is_stack) {
+                $ns_e_parent{$index} = '0';
             }
-            # In a traditional chassis everything except submodules
-            # are a child of the chassis
             else {
-                $ns_e_parent{$iid} = '080100';
+                $ns_e_parent{$index} = '080100';
             }
         }
-        if ($grp_idx == 3) {
-            if ($iid =~ /0$/) {
-                if ($virtual != 0) {
-                    $ns_e_parent{$iid} = '0';
-                }
-                else {
-                    $ns_e_parent{$iid} = '080100';
-                }
+        if ($grp == 3) {
+            my $enc = $ns_grp_enc->{$grp};
+            if ($idx % $enc) {
+                my $npos = ($idx % $enc) * $enc;
+                my @parent = ($grp, $npos, $pos);
+                my $parent = join('',map { sprintf "%02d",$_ } @parent);
+                $ns_e_parent{$index} = $parent;
+            }
+            elsif ($is_stack) {
+                $ns_e_parent{$index} = '010100';
+            }
+            elsif ($is_virtual and !$is_stack) {
+                $ns_e_parent{$index} = 0;
+            }
+            elsif ($pos == 0) {
+                $ns_e_parent{$index} = '080100';
             }
             else {
                 my $parent = $iid;
                 $parent =~ s/\.\d+$/\.00/;
                 $parent = join('',map { sprintf "%02d",$_ } split /\./, $parent);
-                $ns_e_parent{$iid} = $parent;
+                $ns_e_parent{$index} = $parent;
             }
         }
         next;
@@ -363,6 +478,29 @@ sub munge_ns_store_type {
     my $oid = shift;
 
     my $name = &SNMP::translateObj($oid);
+    return $name if defined($name);
+    return $oid;
+}
+
+sub munge_ns_grp_type {
+    my $oid = shift;
+    
+    my %e_class = (
+                    Sup     => 'stack',
+                    Bkpl    => 'backplane',
+                    Brd     => 'module',
+                    Pwr     => 'powerSupply',
+                    TmpSnr  => 'sensor',
+                    Fan     => 'fan',
+                    Clk     => 'other',
+                    Unit    => 'chassis',
+                  );
+
+    my $name = &SNMP::translateObj($oid);
+    $name =~ s/s5ChasGrp//;
+    if ((defined($name)) and (exists($e_class{$name}))) {
+        $name = $e_class{$name};
+    }
     return $name if defined($name);
     return $oid;
 }
