@@ -514,10 +514,13 @@ sub e_index {
     my $rc_ps_t = $passport->rc_ps_type() || {};
 
     # We're going to hack an index: Slot/Mda/Postion
-    # We're going to put power supplies in a slot
+    # We're going to put chassis and power supplies in a slot
     # which doesn't exist
     my %rc_e_index;
 
+    # Make up a chassis index
+    $rc_e_index{1} = 1;
+    
     # Power supplies are common, handle them first
     foreach my $idx (keys %$rc_ps_t){
         next unless $idx;
@@ -575,7 +578,10 @@ sub e_class {
 
     my %rc_e_class;
     foreach my $iid (keys %$rc_e_idx){
-        if ($iid =~/^9/) {
+        if ($iid == 1) {
+            $rc_e_class{$iid} = 'chassis';
+        }
+        elsif ($iid =~/^9/) {
             $rc_e_class{$iid} = 'powerSupply';
         }
         elsif ($iid =~/00$/) {
@@ -593,8 +599,14 @@ sub e_descr {
 
     my $model = $passport->model();
     my $rc_ps = $passport->rc_ps_detail() || {};
+    my $rc_ch = $passport->rcChasType();
+    $rc_ch =~ s/a//;
 
     my %rc_e_descr;
+    
+    # Chassis
+    $rc_e_descr{1} = $rc_ch;
+
     # Power supplies are common, handle them first
     foreach my $idx (keys %$rc_ps){
         next unless $idx;
@@ -654,8 +666,14 @@ sub e_type {
 
     my $model = $passport->model();
     my $rc_ps = $passport->rc_ps_type() || {};
+    my $rc_ch = $passport->rcChasType();
+    $rc_ch =~ s/a//;
 
     my %rc_e_type;
+
+    # Chassis
+    $rc_e_type{1} = $rc_ch;
+
     # Power supplies are common, handle them first
     foreach my $idx (keys %$rc_ps){
         next unless $idx;
@@ -717,6 +735,10 @@ sub e_hwver {
     my $rc_ps = $passport->rc_ps_rev() || {};
 
     my %rc_e_hwver;
+
+    # Chassis
+    $rc_e_hwver{1} = $passport->rc_ch_rev();
+
     # Power supplies are common, handle them first
     foreach my $idx (keys %$rc_ps){
         next unless $idx;
@@ -786,6 +808,10 @@ sub e_serial {
     my $rc_ps = $passport->rc_ps_serial() || {};
 
     my %rc_e_serial;
+
+    # Chassis
+    $rc_e_serial{1} = $passport->rc_serial();
+
     # Power supplies are common, handle them first
     foreach my $idx (keys %$rc_ps){
         next unless $idx;
@@ -844,6 +870,10 @@ sub e_pos {
     my %rc_e_pos;
     foreach my $iid (keys %$rc_e_idx){
         next unless $iid;
+        if ($iid == 1) {
+            $rc_e_pos{$iid} = -1;
+            next;
+        }
         my $sub = substr($iid, -1);
         my $slot = substr($iid, -6, 2);
         if ($iid =~/(00){1,2}$/) {
@@ -864,10 +894,14 @@ sub e_parent {
     my %rc_e_parent;
     foreach my $iid (keys %$rc_e_idx){
         next unless $iid;
+        if ($iid == 1) {
+            $rc_e_parent{$iid} = 0;
+            next;
+        }
         my $mod = substr($iid, -4, 2);
         my $slot = substr($iid, -6, 2);
         if ($iid =~/(00){1,2}$/) {
-            $rc_e_parent{$iid} = 0;
+            $rc_e_parent{$iid} = 1;
         }
         elsif ($mod != 0) {
             $rc_e_parent{$iid} = "$slot"."$mod"."00";
