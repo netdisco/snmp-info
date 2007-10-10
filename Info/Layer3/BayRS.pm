@@ -749,33 +749,49 @@ sub root_ip {
 sub e_index {
     my $bayrs   = shift;
 
+    my $bp_id = $bayrs->bp_id();
+
     # Don't like polling all these columns to build the index, can't think of
     # a better way right now.  Luckly all this data will be cached for the
     # rest of the e_* methods
 
     # Using mib leafs so we don't have to define everything in FUNCS
 
-    # Processor
+    # Processor - All models should support these
     my $wf_mb = $bayrs->wfHwMotherBdIdOpt() || {};
     my $wf_db = $bayrs->wfHwDaughterBdIdOpt() || {};
     my $wf_bb = $bayrs->wfHwBabyBdIdOpt() || {};
-    # Link Module
-    my $wf_mod = $bayrs->wfHwModIdOpt() || {};
-    my $wf_mod1 = $bayrs->wfHwModDaughterBd1IdOpt() || {};
-    my $wf_mod2 = $bayrs->wfHwModDaughterBd2IdOpt() || {};
+    
+    my ($wf_mod, $wf_mod1, $wf_mod2, $wf_mm, $wf_dm) = {};
+
+    # Only query objects we need
+    # Link Module    
+    if ($bp_id !~ /arn|asn/) {
+        $wf_mod = $bayrs->wfHwModIdOpt() || {};
+        $wf_mod1 = $bayrs->wfHwModDaughterBd1IdOpt() || {};
+        $wf_mod2 = $bayrs->wfHwModDaughterBd2IdOpt() || {};
+    }
     # Hardware Module
-    my $wf_mm = $bayrs->wfHwModuleModIdOpt() || {};
-    my $wf_dm = $bayrs->wfHwModuleDaughterBdIdOpt() || {};
+    if ($bp_id =~ /arn|asn/) {
+        $wf_mm = $bayrs->wfHwModuleModIdOpt() || {};
+        $wf_dm = $bayrs->wfHwModuleDaughterBdIdOpt() || {};
+    }
     
     my @slots = ($wf_mb, $wf_db, $wf_bb, $wf_mod, $wf_mod1, $wf_mod2); 
     my @mods  = ($wf_mm, $wf_dm);
     
     # We're going to hack an index: Slot/Module/Postion
     my %wf_e_index;
+    # Chassis on BN types
+    if ($bp_id !~ /an|arn|asn/) {
+        $wf_e_index{1} = 1;
+    }
     # Handle Processor / Link Modules first 
     foreach my $idx (keys %$wf_mb){
         my $index = "$idx"."0000";
-        $wf_e_index{$index} = $index;
+        unless ($bp_id =~ /an|arn|asn/) {
+            $wf_e_index{$index} = $index;
+        }
         foreach my $slot (@slots) {
             $index ++;
             $wf_e_index{$index} = $index if $slot->{$idx};
@@ -783,8 +799,11 @@ sub e_index {
     }
     # Handle Hardware Modules
     foreach my $iid (keys %$wf_mm){
+        my $main_mod = $wf_mm->{$iid};
+        next unless $main_mod;
         my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
         $index = "$index"."00";
+        $wf_e_index{$index} = $index;
         foreach my $mod (@mods) {
             $index ++;
             $wf_e_index{$index} = $index if $mod->{$iid};
@@ -796,11 +815,19 @@ sub e_index {
 sub e_class {
     my $bayrs = shift;
 
+    my $bp_id = $bayrs->bp_id();
+
     my $wf_e_idx  = $bayrs->e_index() || {};
 
     my %wf_e_class;
     foreach my $iid (keys %$wf_e_idx){
-        if ($iid =~/(00){1,2}$/) {
+        if ($iid == 1) {
+            $wf_e_class{$iid} = 'chassis';
+        }
+        elsif ($bp_id =~ /an|arn|asn/ and $iid == '10001') {
+            $wf_e_class{$iid} = 'chassis';
+        }
+        elsif ($iid =~/(00){1,2}$/) {
             $wf_e_class{$iid} = 'container';
         }
         else {
@@ -810,23 +837,97 @@ sub e_class {
     return \%wf_e_class;
 }
 
+sub e_name {
+    my $bayrs   = shift;
+
+    my $bp_id = $bayrs->bp_id();
+    my $wf_e_idx  = $bayrs->e_index() || {};
+
+    my %wf_e_name;
+    # Chassis
+    foreach my $iid (keys %$wf_e_idx){
+        if ($iid == 1) {
+            $wf_e_name{$iid} = 'Router';
+            next;
+        }
+
+        my $pos = substr($iid, -1);
+        my $sub = substr($iid, -4, 2);
+        $sub =~ s/^0//;
+        my $slot = substr($iid, -6, 2);
+        $slot =~ s/^0//;
+
+        if ($bp_id =~ /an|arn|asn/ and $iid == '10001') {
+            $wf_e_name{$iid} = 'Router';
+        }
+        elsif ($iid =~/(00){2}$/) {
+            $wf_e_name{$iid} = "Slot $slot";
+        }
+        elsif ($iid =~/(00){1}$/) {
+            $wf_e_name{$iid} = "Module Container $slot $sub";
+        }
+        elsif ($bp_id !~ /an|arn|asn/ and $iid =~/1$/) {
+            $wf_e_name{$iid} = "Processor Slot $slot";
+        }
+        elsif ($bp_id =~ /an|arn|asn/ and $iid =~/1$/) {
+            $wf_e_name{$iid} = "Module $slot $sub";
+        }
+        elsif ($bp_id !~ /an|arn|asn/ and $iid =~/2$/) {
+            $wf_e_name{$iid} = "Processor Daughter Board Slot $slot";
+        }
+        elsif ($bp_id =~ /an|arn|asn/ and $iid =~/2$/) {
+            $wf_e_name{$iid} = "Module Daughter Board $slot $sub";
+        }
+        elsif ($iid =~/3$/) {
+            $wf_e_name{$iid} = "Processor Baby Board Slot $slot";
+        }
+        elsif ($iid =~/4$/) {
+            $wf_e_name{$iid} = "Link Module Slot $slot";
+        }
+        elsif ($iid =~/5$/) {
+            $wf_e_name{$iid} = "Link Module Daughter Board 1 Slot $slot";
+        }
+        elsif ($iid =~/6$/) {
+            $wf_e_name{$iid} = "Link Module Daughter Board 2 Slot $slot";
+        }
+        else {
+            next;
+        }
+    }
+    return \%wf_e_name;
+}
+
 sub e_descr {
     my $bayrs   = shift;
+
+    my $bp_id = $bayrs->bp_id();
 
     # Using mib leafs so we don't have to define everything in FUNCS
     # We only have descriptions for the processors and modules
     # Processor
     my $wf_mb     = $bayrs->wfHwMotherBdIdOpt() || {};
     my $wf_mb_mem = $bayrs->wfHwMotherBdMemorySize() || {};
+
+    my ($wf_mod, $wf_mm) = {};
     # Link Module
-    my $wf_mod = $bayrs->wfHwModIdOpt() || {};
+    if ($bp_id !~ /arn|asn/) {
+        $wf_mod = $bayrs->wfHwModIdOpt() || {};
+    }
     # Hardware Module
-    my $wf_mm = $bayrs->wfHwModuleModIdOpt() || {};
+    if ($bp_id =~ /arn|asn/) {
+        $wf_mm = $bayrs->wfHwModuleModIdOpt() || {};
+    }
 
     my %wf_e_descr;
+    # Chassis
+    if ($bp_id !~ /an|arn|asn/) {
+        $wf_e_descr{1} = $bayrs->model();
+    }
     # Handle Processor / Link Modules first 
     foreach my $idx (keys %$wf_mb){
-        $wf_e_descr{"$idx"."0000"} = 'slot'.$idx;
+        unless ($bp_id =~ /an|arn|asn/) {
+            $wf_e_descr{"$idx"."0000"} = 'Slot '.$idx;
+        }
         my $mb_id  = &SNMP::mapEnum('wfHwMotherBdIdOpt',$wf_mb->{$idx}) if $wf_mb->{$idx};
         my $mb_mem = $wf_mb_mem->{$idx};
         my $mod_id = &SNMP::mapEnum('wfHwModIdOpt',$wf_mod->{$idx})if $wf_mod->{$idx};
@@ -856,6 +957,9 @@ sub e_descr {
     # Handle Hardware Modules
     foreach my $iid (keys %$wf_mm){
         next unless ($wf_mm->{$iid});
+        my $idx = join('',map { sprintf "%02d",$_ } split /\./, $iid);
+        my ($slot, $mod) = split /\./, $iid;
+        $wf_e_descr{"$idx"."00"} = "Module Container $slot $mod";
         my $mm_id  = &SNMP::mapEnum('wfHwModuleModIdOpt',$wf_mm->{$iid});
         my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
         $wf_e_descr{"$index"."01"} =
@@ -867,27 +971,39 @@ sub e_descr {
 sub e_type {
     my $bayrs   = shift;
 
+    my $bp_id = $bayrs->bp_id();
+
     # Using mib leafs so we don't have to define everything in FUNCS
     # Processor
     my $wf_mb = $bayrs->wfHwMotherBdIdOpt() || {};
     my $wf_db = $bayrs->wfHwDaughterBdIdOpt() || {};
     my $wf_bb = $bayrs->wfHwBabyBdIdOpt() || {};
+
+    my ($wf_mod, $wf_mod1, $wf_mod2, $wf_mm, $wf_dm) = {};
+
     # Link Module
-    my $wf_mod = $bayrs->wfHwModIdOpt() || {};
-    my $wf_mod1 = $bayrs->wfHwModDaughterBd1IdOpt() || {};
-    my $wf_mod2 = $bayrs->wfHwModDaughterBd2IdOpt() || {};
+    if ($bp_id !~ /arn|asn/) {
+        $wf_mod = $bayrs->wfHwModIdOpt() || {};
+        $wf_mod1 = $bayrs->wfHwModDaughterBd1IdOpt() || {};
+        $wf_mod2 = $bayrs->wfHwModDaughterBd2IdOpt() || {};
+    }
     # Hardware Module
-    my $wf_mm = $bayrs->wfHwModuleModIdOpt() || {};
-    my $wf_dm = $bayrs->wfHwModuleDaughterBdIdOpt() || {};
+    if ($bp_id =~ /arn|asn/) {
+        $wf_mm = $bayrs->wfHwModuleModIdOpt() || {};
+        $wf_dm = $bayrs->wfHwModuleDaughterBdIdOpt() || {};
+    }
     
     my @slots = ($wf_mb, $wf_db, $wf_bb, $wf_mod, $wf_mod1, $wf_mod2); 
     my @mods  = ($wf_mm, $wf_dm);
 
     my %wf_e_type;
+    # Chassis
+    if ($bp_id !~ /an|arn|asn/) {
+        $wf_e_type{1} = $bayrs->bp_id();
+    }
     # Handle Processor / Link Modules first 
     foreach my $idx (keys %$wf_mb){
         my $index = "$idx"."0000";
-        $wf_e_type{$index} = 'slot'.$idx;
         foreach my $slot (@slots) {
             $index ++;
             $wf_e_type{$index} = $slot->{$idx} if $slot->{$idx};
@@ -895,6 +1011,8 @@ sub e_type {
     }
     # Handle Hardware Modules
     foreach my $iid (keys %$wf_mm){
+        my $main_mod = $wf_mm->{$iid};
+        next unless $main_mod;
         my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
         $index = "$index"."00";
         foreach my $mod (@mods) {
@@ -908,21 +1026,37 @@ sub e_type {
 sub e_hwver {
     my $bayrs   = shift;
 
+    my $bp_id = $bayrs->bp_id();
+
     # Using mib leafs so we don't have to define everything in FUNCS
     # Processor
     my $wf_mb = $bayrs->wfHwMotherBdRev() || {};
     my $wf_db = $bayrs->wfHwDaughterBdRev() || {};
     my $wf_bb = $bayrs->wfHwBabyBdRev() || {};
+
+    my ($wf_mod, $wf_mod1, $wf_mod2, $wf_mm) = {};
+
     # Link Module
-    my $wf_mod = $bayrs->wfHwModRev() || {};
-    my $wf_mod1 = $bayrs->wfHwModDaughterBd1Rev() || {};
-    my $wf_mod2 = $bayrs->wfHwModDaughterBd2Rev() || {};
+    if ($bp_id !~ /arn|asn/) {
+        $wf_mod = $bayrs->wfHwModRev() || {};
+        $wf_mod1 = $bayrs->wfHwModDaughterBd1Rev() || {};
+        $wf_mod2 = $bayrs->wfHwModDaughterBd2Rev() || {};
+    }
     # Hardware Module
-    my $wf_mm = $bayrs->wfHwModuleModRev() || {};
+    if ($bp_id =~ /arn|asn/) {
+        $wf_mm = $bayrs->wfHwModuleModRev() || {};
+    }
     
     my @slots = ($wf_mb, $wf_db, $wf_bb, $wf_mod, $wf_mod1, $wf_mod2); 
 
     my %wf_e_hwver;
+    # Chassis
+    if ($bp_id !~ /an|arn|asn/) {
+        my $bp_rev = $bayrs->wfHwBpRev(); 
+        $bp_rev = hex(join('','0x',map{sprintf "%02X", $_}unpack("C*",$bp_rev)));
+
+        $wf_e_hwver{1} = $bp_rev;
+    }
     # Handle Processor / Link Modules first 
     foreach my $idx (keys %$wf_mb){
         my $index = "$idx"."0000";
@@ -959,20 +1093,33 @@ sub e_vendor {
 sub e_serial {
     my $bayrs   = shift;
 
+    my $bp_id = $bayrs->bp_id();
+
     # Processor
     my $wf_mb = $bayrs->wf_hw_mobo_ser() || {};
     my $wf_db = $bayrs->wf_hw_db_ser() || {};
     my $wf_bb = $bayrs->wf_hw_bb_ser() || {};
+
+    my ($wf_mod, $wf_mod1, $wf_mod2, $wf_mm) = {};
+
     # Link Module
-    my $wf_mod = $bayrs->wf_hw_mod_ser() || {};
-    my $wf_mod1 = $bayrs->wf_hw_md1_ser() || {};
-    my $wf_mod2 = $bayrs->wf_hw_md2_ser() || {};
+    if ($bp_id !~ /arn|asn/) {
+        $wf_mod = $bayrs->wf_hw_mod_ser() || {};
+        $wf_mod1 = $bayrs->wf_hw_md1_ser() || {};
+        $wf_mod2 = $bayrs->wf_hw_md2_ser() || {};
+    }
     # Hardware Module
-    my $wf_mm = $bayrs->wf_hw_mm_ser() || {};
+    if ($bp_id =~ /arn|asn/) {
+        $wf_mm = $bayrs->wf_hw_mm_ser() || {};
+    }
     
     my @slots = ($wf_mb, $wf_db, $wf_bb, $wf_mod, $wf_mod1, $wf_mod2); 
 
     my %wf_e_serial;
+    # Chassis
+    if ($bp_id !~ /an|arn|asn/) {
+        $wf_e_serial{1} = $bayrs->serial();
+    }
     # Handle Processor / Link Modules first 
     foreach my $idx (keys %$wf_mb){
         my $index = "$idx"."0000";
@@ -999,16 +1146,30 @@ sub e_pos {
     my $bayrs = shift;
 
     my $wf_e_idx  = $bayrs->e_index() || {};
+    my $bp_id = $bayrs->bp_id();
 
     my %wf_e_pos;
     foreach my $iid (keys %$wf_e_idx){
-        my $sub = substr($iid, -1);
+        if ($iid == 1) {
+            $wf_e_pos{$iid} = -1;
+            next;
+        }
+
+        my $pos = substr($iid, -1);
+        my $sub = substr($iid, -4, 2);
         my $slot = substr($iid, -6, 2);
-        if ($iid =~/(00){1,2}$/) {
+
+        if ($bp_id =~ /an|arn|asn/ and $iid == '10001') {
+            $wf_e_pos{$iid} = -1;
+        }
+        elsif ($iid =~/(00){2}$/) {
             $wf_e_pos{$iid} = $slot;
         }
-        else {
+        elsif ($iid =~/(00){1}$/) {
             $wf_e_pos{$iid} = $sub;
+        }
+        else {
+            $wf_e_pos{$iid} = $pos;
         }
     }
     return \%wf_e_pos;
@@ -1048,13 +1209,25 @@ sub e_parent {
     my $bayrs = shift;
 
     my $wf_e_idx  = $bayrs->e_index() || {};
+    my $bp_id = $bayrs->bp_id();
 
     my %wf_e_parent;
     foreach my $iid (keys %$wf_e_idx){
+        if ($iid == 1) {
+            $wf_e_parent{$iid} = 0;
+            next;
+        }
+
         my $mod = substr($iid, -4, 2);
         my $slot = substr($iid, -6, 2);
-        if ($iid =~/(00){1,2}$/) {
+
+        if ($bp_id =~ /an|arn|asn/ and $iid == '10001') {
             $wf_e_parent{$iid} = 0;
+        }
+        elsif ($iid =~/(00){1,2}$/) {
+            my $parent = 1;
+            $parent = '10001' if ($bp_id =~ /an|arn|asn/);
+            $wf_e_parent{$iid} = $parent;
         }
         elsif ($mod != 0) {
             $wf_e_parent{$iid} = "$slot"."$mod"."00";
