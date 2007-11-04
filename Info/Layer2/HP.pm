@@ -302,6 +302,34 @@ sub bp_index {
 # VLAN methods.  Newer HPs use Q-BRIDGE, older use proprietary MIB.  Use
 # Q-BRIDGE if available.
 
+sub v_index {
+    my $hp = shift;
+    my $partial = shift;
+
+    # Newer devices
+    my $q_index = $hp->SUPER::v_index($partial);
+    if (defined $q_index and scalar(keys %$q_index)){
+        return $q_index;
+    }
+
+    # Older devices
+    return $hp->hp_v_index($partial);
+}
+
+sub v_name {
+    my $hp = shift;
+    my $partial = shift;
+
+    # Newer devices
+    my $q_name = $hp->SUPER::v_name($partial);
+    if (defined $q_name and scalar(keys %$q_name)){
+        return $q_name;
+    }
+
+    # Older devices
+    return $hp->hp_v_name($partial);
+}
+
 sub i_vlan {
     my $hp = shift;
 

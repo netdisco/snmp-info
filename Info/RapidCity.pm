@@ -83,7 +83,7 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
             'rc_i_vlan_tag'     => 'rcVlanPortPerformTagging',
             # From RAPID-CITY::rcVlanTable
             'rc_vlan_id'      => 'rcVlanId',
-            'rc_vlan_name'    => 'rcVlanName',
+            'v_name'          => 'rcVlanName',
             'rc_vlan_color'   => 'rcVlanColor',
             'rc_vlan_if'      => 'rcVlanIfIndex',
             'rc_vlan_stg'     => 'rcVlanStgId',
@@ -265,6 +265,13 @@ sub set_i_speed_admin {
         return $rapidcity->set_rc_speed_admin($speeds{$speed}, $iid);
     }        
     return undef;
+}
+
+sub v_index {
+    my $rapidcity = shift;
+    my $partial = shift;
+
+    return $rapidcity->rc_vlan_id($partial);
 }
 
 sub i_vlan {

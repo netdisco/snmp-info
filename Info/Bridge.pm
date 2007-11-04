@@ -92,7 +92,7 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
           'qb_cv_untagged'    => 'dot1qVlanCurrentUntaggedPorts',
           'qb_cv_stat'        => 'dot1qVlanStatus',
           # Q-BRIDGE-MIB : dot1qVlanStaticTable
-          'qb_v_name'        => 'dot1qVlanStaticName',
+          'v_name'           => 'dot1qVlanStaticName',
           'qb_v_egress'      => 'dot1qVlanStaticEgressPorts',
           'qb_v_fbdn_egress' => 'dot1qVlanForbiddenEgressPorts',
           'qb_v_untagged'    => 'dot1qVlanStaticUntaggedPorts',
@@ -231,6 +231,19 @@ sub i_stp_bridge {
     return \%i_stp_bridge;
 }
 
+# Non-accessible, but needed for consistency with other classes
+sub v_index {
+    my $bridge = shift;
+    my $partial = shift;
+
+    my $v_name = $bridge->v_name($partial);
+    my %v_index;
+    foreach my $idx (keys %$v_name) {
+        $v_index{$idx} = $idx;
+    }
+    return \%v_index;
+}
+
 sub i_vlan {
     my $bridge  = shift;
     my $partial = shift;
@@ -268,15 +281,21 @@ sub i_vlan_membership {
 
     # Use VlanCurrentTable if available since it will include dynamic
     # VLANs.  However, some devices do not populate the table.
-    my $v_ports = $bridge->qb_cv_egress() || $bridge->qb_v_egress();
+    
+    # 11/07 - Todo: Issue with some devices trying to query VlanCurrentTable
+    # as table may grow very large with frequent VLAN changes.
+    #my $v_ports = $bridge->qb_cv_egress() || $bridge->qb_v_egress();
+
+    my $v_ports = $bridge->qb_v_egress() || {};
 
     my $i_vlan_membership = {};
     foreach my $idx (keys %$v_ports) {
+        next unless (defined $v_ports->{$idx});
         my $portlist = [split(//, unpack("B*", $v_ports->{$idx}))];
         my $ret = [];
         my $vlan;
         # Strip TimeFilter if we're using VlanCurrentTable
-        ($vlan = $idx) =~ s/^\d+\.//;
+        #($vlan = $idx) =~ s/^\d+\.//;
 
         # Convert portlist bit array to bp_index array
         for (my $i = 0; $i <= $#$portlist; $i++) {
