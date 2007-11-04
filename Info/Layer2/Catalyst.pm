@@ -124,7 +124,7 @@ sub os_ver {
 
 # Workaround for incomplete bp_index
 sub bp_index {
-   my $cat = shift;
+    my $cat = shift;
     my $p_index = $cat->p_port();
     my $b_index = $cat->p_oidx();
 
@@ -144,11 +144,11 @@ sub cisco_comm_indexing {
 }
 
 sub interfaces {
-    my $self = shift;
+    my $cat = shift;
     my $partial = shift;
 
-    my $i_index    = $self->i_index($partial);
-    my $portnames  = $self->p_port() || {};
+    my $i_index    = $cat->i_index($partial);
+    my $portnames  = $cat->p_port() || {};
     my %portmap    = reverse %$portnames;
 
     my %interfaces = ();
@@ -162,17 +162,17 @@ sub interfaces {
 }
 
 sub i_name {
-    my $stack = shift;
+    my $cat = shift; 	 
     my $partial = shift;
 
-    my $p_port = $stack->p_port() || {};
-    my %mapping = reverse %$p_port;
-    my $p_name = $stack->p_name($mapping{$partial}) || {};
+    my $p_port = $cat->p_port() || {};
+    my $p_name = $cat->p_name() || {};
 
     my %i_name;
     foreach my $port (keys %$p_name) {
         my $iid = $p_port->{$port};
         next unless defined $iid;
+        next if (defined $partial and $iid !~ /^$partial$/);
         $i_name{$iid} = $p_name->{$port};
     }
     return \%i_name; 
