@@ -204,7 +204,7 @@ sub i_vlan {
 
     # Overlap allows more than one VLAN per port.  Unable to determine default    
     my $overlap = $c1900->bridgeGroupAllowMembershipOverlap() ||
-                  $c1900->vlanAllowMembershipOverlap();
+                  $c1900->vlanAllowMembershipOverlap() || 'disabled';
     
     if ($overlap eq 'enabled') {
         return undef;
