@@ -295,7 +295,7 @@ sub i_vlan_membership {
         my $ret = [];
         my $vlan;
         # Strip TimeFilter if we're using VlanCurrentTable
-        #($vlan = $idx) =~ s/^\d+\.//;
+        ($vlan = $idx) =~ s/^\d+\.//;
 
         # Convert portlist bit array to bp_index array
         for (my $i = 0; $i <= $#$portlist; $i++) {
