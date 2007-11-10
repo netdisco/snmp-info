@@ -264,8 +264,8 @@ sub i_mac {
     
     if (defined $model and $model =~ /(86)/) {
 
-        my $cpu_mac = $passport->rc_cpu_mac($partial);
-        my $virt_ip = $passport->rc_virt_ip();
+        my $cpu_mac = $passport->rc_cpu_mac($partial) || {};
+        my $virt_ip = $passport->rc_virt_ip() || '0.0.0.0';
 
         # Get CPU Ethernet Interfaces
         foreach my $iid (keys %$cpu_mac){
@@ -278,17 +278,19 @@ sub i_mac {
         # Check for Virtual Mgmt Interface
         unless (($virt_ip eq '0.0.0.0') or (defined $partial and $partial ne "1")) {
             my $chassis_base_mac = $passport->rc_base_mac();
-            my @virt_mac = split /:/, $chassis_base_mac;
-            $virt_mac[0] = hex($virt_mac[0]);
-            $virt_mac[1] = hex($virt_mac[1]);
-            $virt_mac[2] = hex($virt_mac[2]);
-            $virt_mac[3] = hex($virt_mac[3]);
-            $virt_mac[4] = hex($virt_mac[4]) + 0x03;
-            $virt_mac[5] = hex($virt_mac[5]) + 0xF8;
+            if (defined $chassis_base_mac) {
+                my @virt_mac = split /:/, $chassis_base_mac;
+                $virt_mac[0] = hex($virt_mac[0]);
+                $virt_mac[1] = hex($virt_mac[1]);
+                $virt_mac[2] = hex($virt_mac[2]);
+                $virt_mac[3] = hex($virt_mac[3]);
+                $virt_mac[4] = hex($virt_mac[4]) + 0x03;
+                $virt_mac[5] = hex($virt_mac[5]) + 0xF8;
 
-            my $mac = join(':',map { sprintf "%02x",$_ } @virt_mac);
+                my $mac = join(':',map { sprintf "%02x",$_ } @virt_mac);
 
-            $if_mac{1} = $mac;
+                $if_mac{1} = $mac;
+            }
         }
     }
     return \%if_mac;
