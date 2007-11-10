@@ -88,7 +88,7 @@ use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP
             'wf_hw_mod_id'      => 'wfHwModIdOpt',
             'wf_hw_mod_rev'     => 'wfHwModRev',
             'wf_hw_mod_ser'     => 'wfHwModSerialNumber',
-            'wf_hw_mobo_id'     => 'wfHwMotherBdIdOpt ',
+            'wf_hw_mobo_id'     => 'wfHwMotherBdIdOpt',
             'wf_hw_mobo_rev'    => 'wfHwMotherBdRev',
             'wf_hw_mobo_ser'    => 'wfHwMotherBdSerialNumber',
             'wf_hw_diag'        => 'wfHwDiagPromRev',
