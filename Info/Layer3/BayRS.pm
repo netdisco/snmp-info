@@ -743,7 +743,6 @@ sub root_ip {
     return undef;
 }
 
-
 # Psuedo ENTITY-MIB methods
 
 sub e_index {
@@ -1004,6 +1003,9 @@ sub e_type {
     # Handle Processor / Link Modules first 
     foreach my $idx (keys %$wf_mb){
         my $index = "$idx"."0000";
+        unless ($bp_id =~ /an|arn|asn/) {
+            $wf_e_type{$index} = "zeroDotZero";
+        }
         foreach my $slot (@slots) {
             $index ++;
             $wf_e_type{$index} = $slot->{$idx} if $slot->{$idx};
@@ -1015,6 +1017,7 @@ sub e_type {
         next unless $main_mod;
         my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
         $index = "$index"."00";
+        $wf_e_type{$index} = "zeroDotZero";
         foreach my $mod (@mods) {
             $index ++;
             $wf_e_type{$index} = $mod->{$iid} if $mod->{$iid};
