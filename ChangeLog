@@ -16,6 +16,8 @@ version 1.05
     + Added support for Cyclades terminal servers as new class L1::Cyclades
     + Added support for Cisco (Airespace) wireless controllers as new class
       L2::Airespace
+    + Added support for Nortel Ethernet Routing Switch 2500 series and
+      Business Ethernet Switches (David Siebörger)
     + Update of L3::Foundry to support all Foundry devices including newer
       switches.  Depreciate L2::Foundry.
     + Added generic device type detection using IANA assigned enterpise
