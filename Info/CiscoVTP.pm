@@ -96,13 +96,19 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
             'i_vlan_2'    => 'vmVlans2k',
             'i_vlan_3'    => 'vmVlans3k',
             'i_vlan_4'    => 'vmVlans4k',
+            # CISCO-VLAN-MEMBERSHIP-MIB::vmVoiceVlanTable
+            'i_voice_vlan' => 'vmVoiceVlanId',
             # CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
             'v_cvi_if'    => 'cviRoutedVlanIfIndex',
             # CISCO-VTP-MIB::vlanTrunkPortTable
             'vtp_trunk_mgmt_dom' => 'vlanTrunkPortManagementDomain',
             'vtp_trunk_encaps_t' => 'vlanTrunkPortEncapsulationType',
             'vtp_trunk_vlans'    => 'vlanTrunkPortVlansEnabled',
+            'vtp_trunk_vlans_2k' => 'vlanTrunkPortVlansEnabled2k',
+            'vtp_trunk_vlans_3k' => 'vlanTrunkPortVlansEnabled3k',
+            'vtp_trunk_vlans_4k' => 'vlanTrunkPortVlansEnabled4k',
             'vtp_trunk_native'   => 'vlanTrunkPortNativeVlan',
+            'i_pvid'             => 'vlanTrunkPortNativeVlan',
             'vtp_trunk_rstat'    => 'vlanTrunkPortRowStatus',
             'vtp_trunk_dyn'      => 'vlanTrunkPortDynamicState',
             'vtp_trunk_dyn_stat' => 'vlanTrunkPortDynamicStatus',
@@ -182,6 +188,9 @@ sub i_vlan_membership {
     my $partial = shift;
 
     my $ports_vlans    = $vtp->vtp_trunk_vlans($partial) || {};
+    my $ports_vlans_2k = $vtp->vtp_trunk_vlans_2k($partial) || {};
+    my $ports_vlans_3k = $vtp->vtp_trunk_vlans_3k($partial) || {};
+    my $ports_vlans_4k = $vtp->vtp_trunk_vlans_4k($partial) || {};
     my $vtp_vlans      = $vtp->v_state();
     my $i_vlan         = $vtp->i_vlan2($partial) || {};
     my $trunk_dyn_stat = $vtp->vtp_trunk_dyn_stat($partial) || {};
@@ -199,23 +208,49 @@ sub i_vlan_membership {
     }
 
     # Get trunk ports
+
+    my %oper_vlans;
+    foreach my $iid (keys %$vtp_vlans) {
+        my $vlan = 0;
+        my $vtp_dom =0;
+        my $state = $vtp_vlans->{$iid};
+        next unless defined $state;
+        next if $state !~ /operational/;
+        if ($iid =~ /(\d+)\.(\d+)/ ) {
+            $vtp_dom = $1;
+            $vlan    = $2;
+        }
+        $oper_vlans{$vlan}++;
+    }
+
     foreach my $port (keys %$ports_vlans) {
         my $vlanlist = [split(//, unpack("B*", $ports_vlans->{$port}))];
-
-        foreach my $iid (keys %$vtp_vlans) {
-            my $vlan = 0;
-            my $vtp_dom =0;
-            my $state = $vtp_vlans->{$iid};
-            next unless defined $state;
-            next if $state !~ /operational/;
-            if ($iid =~ /(\d+)\.(\d+)/ ) {
-                $vtp_dom = $1;
-                $vlan    = $2;
-            }
-            
+        foreach my $vlan (keys %oper_vlans) {            
             push(@{$i_vlan_membership->{$port}}, $vlan) if (@$vlanlist[$vlan]);
         }
     }
+
+    foreach my $port (keys %$ports_vlans_2k) {
+        my $vlanlist = [split(//, unpack("B*", $ports_vlans_2k->{$port}))];
+        foreach my $vlan (keys %oper_vlans) {   
+            push(@{$i_vlan_membership->{$port}}, $vlan) if (@$vlanlist[$vlan-1024]);
+        }
+    }
+
+    foreach my $port (keys %$ports_vlans_3k) {
+        my $vlanlist = [split(//, unpack("B*", $ports_vlans_3k->{$port}))];
+        foreach my $vlan (keys %oper_vlans) {
+            push(@{$i_vlan_membership->{$port}}, $vlan) if (@$vlanlist[$vlan-2048]);
+        }
+    }
+
+    foreach my $port (keys %$ports_vlans_4k) {
+        my $vlanlist = [split(//, unpack("B*", $ports_vlans_4k->{$port}))];
+        foreach my $vlan (keys %oper_vlans) {
+            push(@{$i_vlan_membership->{$port}}, $vlan) if (@$vlanlist[$vlan-3072]);
+        }
+    }
+
     return $i_vlan_membership;
 }
 
@@ -622,6 +657,16 @@ Each bit represents a VLAN.  This is 3072 through 4095
 
 =back
 
+=head2 VLAN Membership Voice VLAN Table (B<CISCO-VLAN-MEMBERSHIP-MIB::vmVoiceVlanTable>)
+
+=over
+
+=item $vtp->i_voice_vlan() 
+
+(B<vmVoiceVlanId>)
+
+=back
+
 =head2 Managment Domain Table (B<CISCO-VTP-MIB::managementDomainTable>)
 
 =over
@@ -688,7 +733,23 @@ Each bit represents a VLAN.  This is 3072 through 4095
 
 (B<vlanTrunkPortVlansEnabled>)
 
+=item $vtp->vtp_trunk_vlans_2k()
+
+(B<vlanTrunkPortVlansEnabled2k>)
+
+=item $vtp->vtp_trunk_vlans_3k()
+
+(B<vlanTrunkPortVlansEnabled3k>)
+
+=item $vtp->vtp_trunk_vlans_4k()
+
+(B<vlanTrunkPortVlansEnabled4k>)
+
 =item $vtp->vtp_trunk_native()
+
+(B<vlanTrunkPortNativeVlan>)
+
+=item $vtp->i_pvid()
 
 (B<vlanTrunkPortNativeVlan>)
 
