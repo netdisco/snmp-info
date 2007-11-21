@@ -161,7 +161,7 @@ sub c_ip {
         my $addr  = $c_addr->{$key};
         my $proto = $c_proto->{$key};
         next unless defined $addr;
-        next unless (defined $proto and $proto eq 'ip');
+        next if (defined $proto and $proto ne 'ip');
 
         my $ip = join('.',unpack('C4',$addr));
         $c_ip{$key} = $ip;
@@ -376,7 +376,8 @@ See c_if() entry.
 
 =item  $cdp->c_ip()
 
-Returns remote IPV4 address only
+If $cdp->c_proto() is supported, returns remote IPV4 address only.  Otherwise
+it will return all addresses.
 
 (B<cdpCacheAddress>)
 
