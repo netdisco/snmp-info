@@ -391,6 +391,13 @@ sub e_descr {
     return $stack->ns_e_descr($partial);
 }
 
+sub e_name {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->ns_e_name($partial);
+}
+
 sub e_fwver {
     my $stack   = shift;
     my $partial = shift;
