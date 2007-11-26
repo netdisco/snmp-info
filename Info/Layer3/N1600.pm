@@ -34,7 +34,7 @@ use SNMP::Info::SONMP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-$VERSION = '1.05';
+$VERSION = '1.07';
 
 @SNMP::Info::Layer3::N1600::ISA = qw/SNMP::Info::Layer3 SNMP::Info::SONMP Exporter/;
 @SNMP::Info::Layer3::N1600::EXPORT_OK = qw//;

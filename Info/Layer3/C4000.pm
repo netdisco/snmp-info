@@ -44,7 +44,7 @@ use SNMP::Info::MAU;
 use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.05';
+$VERSION = '1.07';
 @SNMP::Info::Layer3::C4000::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
                                     SNMP::Info::CiscoStats SNMP::Info::CiscoImage
                                     SNMP::Info::CiscoPortSecurity

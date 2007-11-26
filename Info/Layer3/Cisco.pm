@@ -43,7 +43,7 @@ use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.05';
+$VERSION = '1.07';
 @SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
                                     SNMP::Info::CiscoStats SNMP::Info::CiscoImage 
                                     SNMP::Info::CiscoRTT  SNMP::Info::CiscoQOS

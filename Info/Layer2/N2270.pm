@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::N2270;
-$VERSION = '1.04';
+$VERSION = '1.07';
 use strict;
 
 use Exporter;

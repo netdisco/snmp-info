@@ -36,7 +36,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-$VERSION = '1.05';
+$VERSION = '1.07';
 
 @SNMP::Info::Layer3::Dell::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Dell::EXPORT_OK = qw//;

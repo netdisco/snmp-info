@@ -42,7 +42,7 @@ use SNMP::Info;
 @SNMP::Info::FDP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
-$VERSION = '1.05';
+$VERSION = '1.07';
 
 %MIBS 	= (
            'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snFdpGlobalRun'

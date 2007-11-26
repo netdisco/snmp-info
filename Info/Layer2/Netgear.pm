@@ -36,7 +36,7 @@ use SNMP::Info::Layer2;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/;
 
-$VERSION = '1.04';
+$VERSION = '1.07';
 @SNMP::Info::Layer2::Netgear::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Netgear::EXPORT_OK = qw//;
 

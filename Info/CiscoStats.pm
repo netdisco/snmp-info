@@ -31,7 +31,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStats;
-$VERSION = '1.05';
+$VERSION = '1.07';
 # $Id$
 
 use strict;

@@ -36,7 +36,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-$VERSION = '1.05';
+$VERSION = '1.07';
 
 @SNMP::Info::Layer3::Enterasys::ISA = qw/SNMP::Info::MAU SNMP::Info::LLDP
                                         SNMP::Info::CDP SNMP::Info::Layer3

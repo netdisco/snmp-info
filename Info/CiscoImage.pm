@@ -32,7 +32,7 @@ use Exporter;
 use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
-$VERSION = '1.05';
+$VERSION = '1.07';
 
 @SNMP::Info::CiscoImage::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoImage::EXPORT_OK = qw//;
