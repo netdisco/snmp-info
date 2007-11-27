@@ -9,7 +9,7 @@
 # $Id$
 
 package SNMP::Info;
-$VERSION = '1.05';
+$VERSION = '1.07';
 use strict;
 
 use Exporter;
@@ -29,7 +29,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 1.05
+SNMP::Info - Version 1.07
 
 =head1 AUTHOR
 

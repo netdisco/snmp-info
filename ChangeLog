@@ -1,7 +1,9 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
-version 1.05
+version 1.07 (11/26/07) - Beta/developer release
+
+version 1.05 (11/25/07) - CVS only. No official release
     + Added support for LLDP in new class LLDP (contributions from Bernhard
       Augenstein)
     + Added device specific support for LLDP in L2::HP, L2::Baystack,
