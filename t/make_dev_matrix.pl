@@ -296,6 +296,10 @@ be assumed working.
     </TD>
 </TR>
 <TR>
+    <TD>Modules</TD>
+    <TD>Ability to gather hardware module information.</TD>
+</TR>
+<TR>
     <TD>Portmac</TD>
     <TD>Whether the device will list the MAC address of the switch port on each
         switch port when doing a Macsuck.
