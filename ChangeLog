@@ -8,6 +8,11 @@ version 1.09
     +  Added support for CISCO-PAE-MIB in CiscoPortSecurity (Kesy)
     +  Updates to fan, power supply, and serial number methods in
        L2::HP (Jeroen van Ingen)
+    +  Use Cisco Client Association MIBs for Aironet client reporting
+       via fw_mac
+    +  Support VLANs on Aironet
+    +  Get the proper radio MAC address from aironet in MBSS mode
+    +  Additional wireless statistics from Aironet
 
     *  Silence warnings from Cisco devices which don't return values for
        extended VLAN range (1024-4096)
