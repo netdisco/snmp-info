@@ -224,92 +224,132 @@ For more info run C<perldoc> on any of the following module names.
 AIRESPACE-WIRELESS-MIB and AIRESPACE-SWITCHING-MIB.  Inherited by devices based
 on the Airespace wireless platform.
 
+See documentation in L<SNMP::Info::Airespace> for details.
+
 =item SNMP::Info::Bridge
 
 BRIDGE-MIB (RFC1286).  QBRIDGE-MIB. Inherited by devices with Layer2 support.
 
+See documentation in L<SNMP::Info::Bridge> for details.
+
 =item SNMP::Info::CDP
 
-CISCO-CDP-MIB.  Cisco Discovery Protocol (CDP) Support.  Inherited by Cisco
-and HP devices.
+CISCO-CDP-MIB.  Cisco Discovery Protocol (CDP) Support.  Inherited by Cisco, 
+Enterasys, and HP devices.
+
+See documentation in L<SNMP::Info::CDP> for details.
 
 =item SNMP::Info::CiscoConfig
 
 CISCO-CONFIG-COPY-MIB, CISCO-FLASH-MIB, and OLD-CISCO-SYS-MIB.
 These OIDs facilitate the writing of configuration files.
 
+See documentation in L<SNMP::Info::CiscoConfig> for details.
+
 =item SNMP::Info::CiscoImage
 
 CISCO-IMAGE-MIB. A collection of OIDs providing IOS image characteristics.
 
+See documentation in L<SNMP::Info::CiscoImage> for details.
+
 =item SNMP::Info::CiscoPortSecurity
 
 CISCO-PORT-SECURITY-MIB.
+
+See documentation in L<SNMP::Info::CiscoPortSecurity> for details.
 
 =item SNMP::Info::CiscoQOS
 
 CISCO-CLASS-BASED-QOS-MIB. A collection of OIDs providing information about
 a Cisco device's QOS config.
 
+See documentation in L<SNMP::Info::CiscoQOS> for details.
+
 =item SNMP::Info::CiscoRTT
 
 CISCO-RTTMON-MIB. A collection of OIDs providing information about a Cisco
 device's RTT values.
 
+See documentation in L<SNMP::Info::CiscoRTT> for details.
+
 =item SNMP::Info::CiscoStack
 
 CISCO-STACK-MIB.
+
+See documentation in L<SNMP::Info::CiscoStack> for details.
 
 =item SNMP::Info::CiscoStats
 
 OLD-CISCO-CPU-MIB, CISCO-PROCESS-MIB, and CISCO-MEMORY-POOL-MIB.  Provides
 common interfaces for memory, cpu, and os statistics for Cisco devices.  
 
+See documentation in L<SNMP::Info::CiscoStats> for details.
+
 =item SNMP::Info::CiscoVTP
 
 CISCO-VTP-MIB, CISCO-VLAN-MEMBERSHIP-MIB, CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
 
+See documentation in L<SNMP::Info::CiscoVTP> for details.
+
 =item SNMP::Info::Entity
 
 ENTITY-MIB.  Used for device info in Cisco and other vendors.
+
+See documentation in L<SNMP::Info::Entity> for details.
 
 =item SNMP::Info::EtherLike
 
 ETHERLIKE-MIB (RFC1398) - Some Layer3 devices implement this MIB, as well as
 some Aironet Layer 2 devices (non Cisco).
 
+See documentation in L<SNMP::Info::EtherLike> for details.
+
 =item SNMP::Info::FDP
 
 Foundry Discovery Protocol.  FOUNDRY-SN-SWITCH-GROUP-MIB
+
+See documentation in L<SNMP::Info::FDP> for details.
 
 =item SNMP::Info::IEEE802dot11
 
 IEEE802dot11-MIB.  A collection of OIDs providing information about standards
 based 802.11 wireless devices.  
 
+See documentation in L<SNMP::Info::IEEE802dot11> for details.
+
 =item SNMP::Info::LLDP
 
 LLDP-MIB, LLDP-EXT-DOT1-MIB, and LLDP-EXT-DOT3-MIB.  Link Layer Discovery
 Protocol (LLDP) Support.
+
+See documentation in L<SNMP::Info::LLDP> for details.
 
 =item SNMP::Info::MAU
 
 MAU-MIB (RFC2668).  Some Layer2 devices use this for extended Ethernet
 (Media Access Unit) interface information.
 
+See documentation in L<SNMP::Info::MAU> for details.
+
 =item SNMP::Info::NortelStack
 
 S5-AGENT-MIB, S5-CHASSIS-MIB.
 
+See documentation in L<SNMP::Info::NortelStack> for details.
+
 =item SNMP::Info::RapidCity
 
 RAPID-CITY.  Inhertited by Nortel switches for duplex and VLAN information.
+
+See documentation in L<SNMP::Info::RapidCity> for details.
 
 =item SNMP::Info::SONMP
 
 SYNOPTICS-ROOT-MIB, S5-ETH-MULTISEG-TOPOLOGY-MIB.  Provides translation from
 Nortel Topology Table information to CDP.  Inherited by Nortel/Bay/Synoptics
 switches and hubs.
+
+See documentation in L<SNMP::Info::SONMP> for details.
 
 =back
 
@@ -326,6 +366,8 @@ All the required MIB files are included in the netdisco-mib package.  (See Above
 
 Generic Layer1 Device subclass.
 
+See documentation in L<SNMP::Info::Layer1> for details.
+
 =over 
 
 =item SNMP::Info::Layer1::Allied
@@ -334,25 +376,35 @@ Subclass for Allied Telesys Repeaters / Hubs.
 
 Requires ATI-MIB
 
+See documentation in L<SNMP::Info::Layer1::Allied> for details.
+
 =item SNMP::Info::Layer1::Asante
 
 Subclass for Asante 1012 Hubs. 
 
 Requires ASANTE-HUB1012-MIB
 
+See documentation in L<SNMP::Info::Layer1::Asante> for details.
+
 =item SNMP::Info::Layer1::Bayhub
 
 Subclass for Nortel/Bay hubs.  This includes System 5000, 100 series,
 200 series, and probably more.
 
+See documentation in L<SNMP::Info::Layer1::Bayhub> for details.
+
 =item SNMP::Info::Layer1::Cyclades
 
 Subclass for Cyclades terminal servers.
+
+See documentation in L<SNMP::Info::Layer1::Cyclades> for details.
 
 =item SNMP::Info::Layer1::S3000
 
 Subclass for Bay/Synoptics hubs.  This includes System 3000, 281X, and
 probably more.
+
+See documentation in L<SNMP::Info::Layer1::S3000> for details.
 
 =back
 
@@ -360,24 +412,34 @@ probably more.
 
 Generic Layer2 Device subclass.
 
+See documentation in L<SNMP::Info::Layer2> for details.
+
 =over
 
 =item SNMP::Info::Layer2::Airespace
 
 Subclass for Cisco (Airespace) wireless controllers.
 
+See documentation in L<SNMP::Info::Layer2::Airespace> for details.
+
 =item SNMP::Info::Layer2::Aironet
 
 Class for Cisco Aironet wireless devices that run IOS.  See also
 Layer3::Aironet for Aironet devices that don't run IOS.
 
+See documentation in L<SNMP::Info::Layer2::Aironet> for details.
+
 =item SNMP::Info::Layer2::Allied
 
 Allied Telesys switches.
 
+See documentation in L<SNMP::Info::Layer2::Allied> for details.
+
 =item SNMP::Info::Layer2::Aruba
 
 Subclass for Aruba wireless switches.
+
+See documentation in L<SNMP::Info::Layer2::Aruba> for details.
 
 =item SNMP::Info::Layer2::Bay
 
@@ -386,16 +448,23 @@ Depreciated.  Use BayStack.
 =item SNMP::Info::Layer2::Baystack
 
 Subclass for Nortel/Bay Ethernet Switch/Baystack switches.  This includes 303,
-304, 350, 380, 410, 420, 425, 450, 460, 470, 5510, 5520, 5530, Business Policy
-Switch (BPS) and probably others.
+304, 350, 380, 410, 420, 425, 450, 460, 470 series, 2500 series, 4500 series,
+5500 series, Business Ethernet Switch (BES), Business Policy Switch (BPS)
+and probably others.
+
+See documentation in L<SNMP::Info::Layer2::Baystack> for details.
 
 =item SNMP::Info::Layer2::C1900
 
 Subclass for Cisco Catalyst 1900 and 1900c Devices running CatOS.
 
+See documentation in L<SNMP::Info::Layer2::C1900> for details.
+
 =item SNMP::Info::Layer2::C2900
 
 Subclass for Cisco Catalyst 2900, 2950, 3500XL, and 3548 devices running IOS.
+
+See documentation in L<SNMP::Info::Layer2::C2900> for details.
 
 =item SNMP::Info::Layer2::Catalyst
 
@@ -403,14 +472,20 @@ Subclass for Cisco Catalyst switches running CatOS.  These switches usually
 report a model number that starts with C<wsc>.   Note that this class
 does not support everything that has the name Catalyst. 
 
+See documentation in L<SNMP::Info::Layer2::Catalyst> for details.
+
 =item SNMP::Info::Layer2::Centillion
 
 Subclass for Nortel/Bay Centillion and 5000BH ATM switches.
+
+See documentation in L<SNMP::Info::Layer2::Centillion> for details.
 
 =item SNMP::Info::Layer2::Cisco
 
 Generic Cisco subclass for layer2 devices that are not yet supported
 in more specific subclasses.
+
+See documentation in L<SNMP::Info::Layer2::Cisco> for details.
 
 =item SNMP::Info::Layer2::Foundry
 
@@ -422,29 +497,39 @@ Subclass for HP Procurve Switches
 
 Requires HP-ICF-OID and ENTITY-MIB downloaded from HP.  
 
-See SNMP::Info::Layer2::HP for more info.
+See documentation in L<SNMP::Info::Layer2::HP> for details.
 
 =item SNMP::Info::Layer2::N2270
 
 Subclass for Nortel 2270 wireless switches.
 
+See documentation in L<SNMP::Info::Layer2::N2270> for details.
+
 =item SNMP::Info::Layer2::NAP222x
 
 Subclass for Nortel 222x series wireless access points.
+
+See documentation in L<SNMP::Info::Layer2::NAP222x> for details.
 
 =item SNMP::Info::Layer2::Orinoco
 
 Subclass for Orinoco/Proxim wireless access points.
 
+See documentation in L<SNMP::Info::Layer2::Orinoco> for details.
+
 =item SNMP::Info::Layer2::ZyXEL_DSLAM
 
 Zyxel DSLAMs.  Need I say more?
+
+See documentation in L<SNMP::Info::Layer2::ZyXEL_DSLAM> for details.
 
 =back
 
 =item SNMP::Info::Layer3
 
 Generic Layer3 and Layer2+3 Device subclass.
+
+See documentation in L<SNMP::Info::Layer3> for details.
 
 =over
 
@@ -457,84 +542,125 @@ MIBs for these devices now included in v2.tar.gz available from ftp.cisco.com.
 
 Note Layer2::Aironet 
 
+See documentation in L<SNMP::Info::Layer3::Aironet> for details.
+
 =item SNMP::Info::Layer3::AlteonAD
 
 Subclass for Nortel Alteon Ace Director series L2-7 switches.
+
+See documentation in L<SNMP::Info::Layer3::AlteonAD> for details.
 
 =item SNMP::Info::Layer3::BayRS
 
 Subclass for Nortel Multiprotocol/BayRS routers.  This includes BCN, BLN, ASN,
 ARN, AN, 2430, and 5430 routers.
 
+See documentation in L<SNMP::Info::Layer3::BayRS> for details.
+
 =item SNMP::Info::Layer3::C3550
 
 Subclass for Cisco Catalyst 3550,3540,3560 2/3 switches running IOS.
 
+See documentation in L<SNMP::Info::Layer3::C3550> for details.
+
 =item SNMP::Info::Layer3::C4000
 
 This class covers Catalyst 4000s and 4500s.
+
+See documentation in L<SNMP::Info::Layer3::C4000> for details.
 
 =item SNMP::Info::Layer3::C6500
 
 This class covers Catalyst 6500s in native mode, hybrid mode.  Catalyst
 3750's, 2970's and probably others.
 
+See documentation in L<SNMP::Info::Layer3::C6500> for details.
+
 =item SNMP::Info::Layer3::Cisco
 
 This is a simple wrapper around Layer3 for IOS devices.  It adds on CiscoVTP.
+
+See documentation in L<SNMP::Info::Layer3::Cisco> for details.
 
 =item SNMP::Info::Layer3::Contivity
 
 Subclass for Nortel Contivity/VPN Routers.  
 
+See documentation in L<SNMP::Info::Layer3::Contivity> for details.
+
 =item SNMP::Info::Layer3::Dell
 
 Subclass for Dell PowerConnect switches.  
+
+See documentation in L<SNMP::Info::Layer3::Dell> for details.
 
 =item SNMP::Info::Layer3::Enterasys
 
 Subclass for Enterasys devices.
 
+See documentation in L<SNMP::Info::Layer3::Enterasys> for details.
+
 =item SNMP::Info::Layer3::Extreme
 
 Subclass for Extreme Networks switches.
 
-See SNMP::Info::Layer3::Extreme for more info.
+See documentation in L<SNMP::Info::Layer3::Extreme> for details.
 
 =item SNMP::Info::Layer3::Foundry
 
 Subclass for Foundry Network devices.
 
-See SNMP::Info::Layer3::Foundry for more info.
+See documentation in L<SNMP::Info::Layer3::Foundry> for details.
+
+=item SNMP::Info::Layer3::HP9300
+
+Subclass for HP network devices which Foundry Networks was the
+Original Equipment Manufacturer (OEM) such as the HP ProCurve 9300 series.
+
+See documentation in L<SNMP::Info::Layer3::HP9300> for details.
 
 =item SNMP::Info::Layer3::Juniper
 
 Subclass for Juniper devices
 
+See documentation in L<SNMP::Info::Layer3::Juniper> for details.
+
 =item SNMP::Info::Layer3::Microsoft
 
 Subclass for Generic Microsoft Routers running Microsoft Windows OS.
+
+See documentation in L<SNMP::Info::Layer3::Microsoft> for details.
 
 =item SNMP::Info::Layer3::N1600
 
 Subclass for Nortel Ethernet Routing Switch 1600 series.
 
+See documentation in L<SNMP::Info::Layer3::N1600> for details.
+
 =item SNMP::Info::Layer3::NetSNMP
 
 Subclass for host systems running Net-SNMP.
 
+See documentation in L<SNMP::Info::Layer3::NetSNMP> for details.
+
 =item SNMP::Info::Layer3::Netscreen
 
 Subclass for Juniper NetScreen.
+
+See documentation in L<SNMP::Info::Layer3::Netscreen> for details.
 
 =item SNMP::Info::Layer3::Passport
 
 Subclass for Nortel Ethernet Routing Switch/Passport 8000 series and Accelar
 series switches.
 
+See documentation in L<SNMP::Info::Layer3::Passport> for details.
+
 =item SNMP::Info::Layer3::Sun
 
 Subclass for Generic Sun Routers running SunOS.
+
+See documentation in L<SNMP::Info::Layer3::Sun> for details.
 
 =back
 
@@ -543,8 +669,12 @@ Subclass for Generic Sun Routers running SunOS.
 =head1 Thanks
 
 Thanks for testing and coding help (in no particular order) to :
-Andy Ford, Brian Wilson, Jean-Philippe Luiggi, Dána Watanabe, Bradley Baetz,
-Mike Hunter, Justin Hunter, Brian Chow and people listed on the Netdisco README!
+Alexander Barthel, Andy Ford, Alexander Hartmaier, Andrew Herrick, Alex Kramarov
+Bernhard Augenstein, Bradley Baetz, Brian Chow, Brian Wilson, Carlos Vicente,
+Dana Watanabe, David Pinkoski, David Sieborger, Douglas McKeown, Greg King, 
+Ivan Auger, Jean-Philippe Luiggi, Justin Hunter, Kent Hamilton, Matthew Tuttle, 
+Michael Robbert, Mike Hunter, Nicolai Petri, Ralf Gross and people listed on
+the Netdisco README!
 
 =head1 USAGE
 
@@ -905,6 +1035,7 @@ Algorithm for Subclass Detection:
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
             HP Procurve                    -> SNMP::Info::Layer2::HP
+            HP Procurve 9300 series        -> SNMP::Info::Layer3::HP9300
             Juniper                        -> SNMP::Info::Layer3::Juniper
             Microsoft                      -> SNMP::Info::Layer3::Microsoft
             Net-SNMP                       -> SNMP::Info::Layer3::NetSNMP
@@ -931,6 +1062,7 @@ Algorithm for Subclass Detection:
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
             HP Procurve                    -> SNMP::Info::Layer2::HP
+            HP Procurve 9300 series        -> SNMP::Info::Layer3::HP9300
             Nortel/Bay Centillion ATM      -> SNMP::Info::Layer2::Centillion
             Nortel/Bay Baystack            -> SNMP::Info::Layer2::Baystack
             Nortel Business Ethernet Switch-> SNMP::Info::Layer2::Baystack
@@ -1021,6 +1153,8 @@ sub device_type {
         # Next one untested. Reported working by DA
         $objtype = 'SNMP::Info::Layer3::C6500'   if ($desc =~ /cisco/i and $desc =~ /3750/);
         $objtype = 'SNMP::Info::Layer3::C6500'   if $desc =~ /(s72033_rp|s3223_rp|s222_rp)/;
+        # HP, Foundry OEM
+        $objtype = 'SNMP::Info::Layer3::HP9300' if $desc =~ /\b(J4874A|J4138A|J4139A|J4840A|J4841A)\b/ ;
         # Nortel ERS (Passport) 1600 Series < version 2.1
         $objtype = 'SNMP::Info::Layer3::N1600'  if $desc =~ /(Passport|Ethernet\s+Routing\s+Switch)-16/i;
         #  ERS - BayStack Numbered 
@@ -1029,10 +1163,8 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::AlteonAD' if $desc =~ /Alteon\s[1A][8D]/;
         # Nortel Contivity
         $objtype = 'SNMP::Info::Layer3::Contivity' if $desc =~ /\bCES\b/;
-
         # Allied Telesyn Layer2 managed switches. They report they have L3 support
         $objtype = 'SNMP::Info::Layer2::Allied' if ($desc =~ /Allied.*AT-80\d{2}\S*/i);
-
         # Generic device classification based upon sysObjectID
         if (($objtype eq 'SNMP::Info::Layer3') and (defined($id)) and (exists($l3sysoidmap{$id}))) {
             $objtype = $l3sysoidmap{$id};
@@ -1048,44 +1180,33 @@ sub device_type {
 
         #   Catalyst 1900 series override
         $objtype = 'SNMP::Info::Layer2::C1900' if ($desc =~ /catalyst/i and $desc =~ /\D19\d{2}/);
-
         #   Catalyst 2900 and 3500XL (IOS) series override
         $objtype = 'SNMP::Info::Layer2::C2900' if ($desc =~ /(C2900XL|C2950|C3500XL|C2940|CGESM)/i );
-
         #   Catalyst WS-C series override 2926,4k,5k,6k in Hybrid
         $objtype = 'SNMP::Info::Layer2::Catalyst' if ($desc =~ /WS-C\d{4}/);
-
         #   Catalyst 3550 / 3548 Layer2 only switches
         #   Cisco 3400 w/ MetroBase Image
         $objtype = 'SNMP::Info::Layer3::C3550' if ($desc =~ /(C3550|ME340x)/);
-
         #   Cisco 2970  
         $objtype = 'SNMP::Info::Layer3::C6500' if ($desc =~ /(C2970|C2960)/);
-
+        # HP, Foundry OEM
+        $objtype = 'SNMP::Info::Layer3::HP9300' if $desc =~ /\b(J4874A|J4138A|J4139A|J4840A|J4841A)\b/ ;
         #  Centillion ATM
         $objtype = 'SNMP::Info::Layer2::Centillion' if ($desc =~ /MCP/);
-  
         #  BPS
         $objtype = 'SNMP::Info::Layer2::Baystack' if ($desc =~ /Business\sPolicy\sSwitch/i);
-
         #  BayStack Numbered
         $objtype = 'SNMP::Info::Layer2::Baystack' if ($desc =~ /^(BayStack|Ethernet\s+(Routing\s+)??Switch)\s[2345](\d){2,3}/i);
-
         #  Nortel Business Ethernet Switch
         $objtype = 'SNMP::Info::Layer2::Baystack' if ($desc =~ /^Business Ethernet Switch\s[12]\d\d/i);
-
         #  Nortel AP 222X
         $objtype = 'SNMP::Info::Layer2::NAP222x' if ($desc =~ /Access\s+Point\s+222/);
-
         #  Orinco
         $objtype = 'SNMP::Info::Layer2::Orinoco' if ($desc =~ /(AP-\d{3}|WavePOINT)/);
-
         #  Aironet - IOS
         $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /\b(C1100|C1130|AP1200|C350|C1200|C1240)\b/  and $desc =~ /\bIOS\b/);
-
         # Aironet - non IOS
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(BR500)\D/) ;
-
         #Nortel 2270
         $objtype = 'SNMP::Info::Layer2::N2270' if ($desc =~ /Nortel\s+(Networks\s+)??WLAN\s+-\s+Security\s+Switch/) ;
 
