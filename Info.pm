@@ -905,9 +905,57 @@ sub new {
     $new_obj->{args}      = \%args;
     $new_obj->{snmp_ver}  = $args{Version}   || 2;
     $new_obj->{snmp_comm} = $args{Community} || 'public';
+    $new_obj->{snmp_user} = $args{SecName}   || 'initial';
 
     return $auto_specific ?
         $new_obj->specify() : $new_obj;
+}
+
+=item update()
+
+Replace the existing session with a new one with updated values,
+without re-identifying the device.  The only supported changes are
+to Community or Context.
+
+Clears the object cache.
+
+This is useful, e.g., when a device supports multiple contexts
+(via changes to the Community string, or via the SNMPv3 Context
+parameter), but a context that you want to access does not support
+the objects (e.g., sysObjectID, sysDescr) that we use to identify
+the device.
+
+=cut
+
+sub update {
+    my $obj = shift;
+    my %update_args = @_;
+    my %sess_args = (%{$obj->{args}}, %update_args);
+
+    # silently only update "the right" args
+    delete $sess_args{Debug};
+    delete $sess_args{DebugSNMP};
+    delete $sess_args{AutoSpecify};
+    delete $sess_args{BulkRepeaters};
+    delete $sess_args{BulkWalk};
+    delete $sess_args{LoopDetect};
+    delete $sess_args{BigInt};
+    delete $sess_args{MibDirs};
+
+    my $sess = new SNMP::Session( 'UseEnums' => 1, %sess_args , 'RetryNoSuch' => $obj->{nosuch});
+    unless (defined $sess){
+        $obj->error_throw("SNMP::Info::update() Failed to Create new Session. ");
+        return undef;
+    }
+
+    # Session object created but SNMP connection failed.
+    my $sess_err = $sess->{ErrorStr} || '';
+    if ($sess_err){
+        $obj->error_throw("SNMP::Info::update() Net-SNMP session creation failed. $sess_err");
+        return undef;
+    }
+    $obj->clear_cache();
+    return $obj->session($sess);
 }
 
 =back
@@ -1288,7 +1336,11 @@ Returns SNMP Community string used in connection.
 
 sub snmp_comm {
     my $self = shift;
-    return $self->{snmp_comm};
+    if ($self->{snmp_ver} == 3) {
+	return $self->{snmp_user};
+    } else {
+	return $self->{snmp_comm};
+    }
 }
 
 =item $info->snmp_ver()
