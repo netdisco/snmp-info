@@ -272,7 +272,8 @@ The relative position among all entities sharing the same parent.
 
 =item $entity->e_type()
 
-This is an OID.
+This is an OID, which gets munged into the object name if the right
+MIB is loaded.
 
 (C<entPhysicalVendorType>)
 
