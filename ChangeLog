@@ -1,6 +1,18 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
+version 1.09
+    +  Added support for HP ProCurve Foundry OEM switches, such as the 9300
+       series, in new class L3::HP9300 (contributions from Douglas McKeown and
+       Ivan Auger)
+    +  Added support for CISCO-PAE-MIB in CiscoPortSecurity (Kesy)
+    +  Updates to fan, power supply, and serial number methods in
+       L2::HP (Jeroen van Ingen)
+
+    *  Silence warnings from Cisco devices which don't return values for
+       extended VLAN range (1024-4096)
+    *  Documentation corrections and updates
+
 version 1.07 (11/26/07) - Beta/developer release
 
 version 1.05 (11/25/07) - CVS only. No official release
