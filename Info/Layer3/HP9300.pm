@@ -68,10 +68,12 @@ $VERSION = '1.09';
             %SNMP::Info::FDP::FUNCS,
             # HP-SN-SWITCH-GROUP-MIB
             # snSwPortInfoTable - Switch Port Information Group
-            'sw_index'    => 'snSwPortIfIndex',
-            'sw_duplex'   => 'snSwPortInfoChnMode',
-            'sw_type'     => 'snSwPortInfoMediaType',
-            'sw_speed'    => 'snSwPortInfoSpeed',
+            # Fully qualify these since FDP class will load
+            # FOUNDRY-SN-SWITCH-GROUP-MIB which contains the same leaf names
+            'sw_index'    => 'HP_SN_SWITCH_GROUP_MIB__snSwPortIfIndex',
+            'sw_duplex'   => 'HP_SN_SWITCH_GROUP_MIB__snSwPortInfoChnMode',
+            'sw_type'     => 'HP_SN_SWITCH_GROUP_MIB__snSwPortInfoMediaType',
+            'sw_speed'    => 'HP_SN_SWITCH_GROUP_MIB__snSwPortInfoSpeed',
            );
 
 %MUNGE = (
