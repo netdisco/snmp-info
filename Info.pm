@@ -254,7 +254,7 @@ See documentation in L<SNMP::Info::CiscoImage> for details.
 
 =item SNMP::Info::CiscoPortSecurity
 
-CISCO-PORT-SECURITY-MIB.
+CISCO-PORT-SECURITY-MIB and CISCO-PAE-MIB.
 
 See documentation in L<SNMP::Info::CiscoPortSecurity> for details.
 
@@ -546,7 +546,8 @@ See documentation in L<SNMP::Info::Layer3::Aironet> for details.
 
 =item SNMP::Info::Layer3::AlteonAD
 
-Subclass for Nortel Alteon Ace Director series L2-7 switches.
+Subclass for Nortel Alteon Series Layer 2-7 load balancing switches
+and Nortel BladeCenter Layer2-3 GbE Switch Modules.
 
 See documentation in L<SNMP::Info::Layer3::AlteonAD> for details.
 
@@ -590,7 +591,8 @@ See documentation in L<SNMP::Info::Layer3::Contivity> for details.
 
 =item SNMP::Info::Layer3::Dell
 
-Subclass for Dell PowerConnect switches.  
+Subclass for Dell PowerConnect switches. D-Link and the IBM BladeCenter
+Gigabit Ethernet Switch Module also use this module based upon MIB support.
 
 See documentation in L<SNMP::Info::Layer3::Dell> for details.
 
@@ -672,9 +674,9 @@ Thanks for testing and coding help (in no particular order) to :
 Alexander Barthel, Andy Ford, Alexander Hartmaier, Andrew Herrick, Alex Kramarov
 Bernhard Augenstein, Bradley Baetz, Brian Chow, Brian Wilson, Carlos Vicente,
 Dana Watanabe, David Pinkoski, David Sieborger, Douglas McKeown, Greg King, 
-Ivan Auger, Jean-Philippe Luiggi, Justin Hunter, Kent Hamilton, Matthew Tuttle, 
-Michael Robbert, Mike Hunter, Nicolai Petri, Ralf Gross and people listed on
-the Netdisco README!
+Ivan Auger, Jean-Philippe Luiggi, Jeroen van Ingen, Justin Hunter,
+Kent Hamilton, Matthew Tuttle, Michael Robbert, Mike Hunter, Nicolai Petri,
+Ralf Gross, Robert Kerr and people listed on the Netdisco README!
 
 =head1 USAGE
 
@@ -1079,6 +1081,7 @@ Algorithm for Subclass Detection:
             Cisco Generic L3 IOS device    -> SNMP::Info::Layer3::Cisco
             Cyclades terminal server       -> SNMP::Info::Layer1::Cyclades
             Dell PowerConnect              -> SNMP::Info::Layer3::Dell
+            D-Link                         -> SNMP::Info::Layer3::Dell
             Enterasys                      -> SNMP::Info::Layer3::Enterasys
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
@@ -1106,11 +1109,13 @@ Algorithm for Subclass Detection:
             Cisco (not covered by above)   -> SNMP::Info::Layer2::Cisco
             Cyclades terminal server       -> SNMP::Info::Layer1::Cyclades
             Dell PowerConnect              -> SNMP::Info::Layer3::Dell
+            D-Link                         -> SNMP::Info::Layer3::Dell
             Enterasys                      -> SNMP::Info::Layer3::Enterasys
             Extreme                        -> SNMP::Info::Layer3::Extreme
             Foundry                        -> SNMP::Info::Layer3::Foundry
             HP Procurve                    -> SNMP::Info::Layer2::HP
             HP Procurve 9300 series        -> SNMP::Info::Layer3::HP9300
+            IBM BladeCenter GbESM          -> SNMP::Info::Layer3::Dell
             Nortel/Bay Centillion ATM      -> SNMP::Info::Layer2::Centillion
             Nortel/Bay Baystack            -> SNMP::Info::Layer2::Baystack
             Nortel Business Ethernet Switch-> SNMP::Info::Layer2::Baystack
@@ -1152,6 +1157,7 @@ sub device_type {
                       11    => 'SNMP::Info::Layer2::HP',
                       18    => 'SNMP::Info::Layer3::BayRS',
                       42    => 'SNMP::Info::Layer3::Sun',
+                      171   => 'SNMP::Info::Layer3::Dell',
                       311   => 'SNMP::Info::Layer3::Microsoft',
                       674   => 'SNMP::Info::Layer3::Dell',
                       1916  => 'SNMP::Info::Layer3::Extreme',
@@ -1167,6 +1173,7 @@ sub device_type {
     my %l2sysoidmap = (
                       9     => 'SNMP::Info::Layer2::Cisco',
                       11    => 'SNMP::Info::Layer2::HP',
+                      171   => 'SNMP::Info::Layer3::Dell',
                       207   => 'SNMP::Info::Layer2::Allied',
                       674   => 'SNMP::Info::Layer3::Dell',
                       1916  => 'SNMP::Info::Layer3::Extreme',
@@ -1239,6 +1246,8 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500' if ($desc =~ /(C2970|C2960)/);
         # HP, Foundry OEM
         $objtype = 'SNMP::Info::Layer3::HP9300' if $desc =~ /\b(J4874A|J4138A|J4139A|J4840A|J4841A)\b/ ;
+        # IBM BladeCenter 4-Port GB Ethernet Switch Module
+        $objtype = 'SNMP::Info::Layer3::Dell' if ($desc =~ /^IBM Gigabit Ethernet Switch Module$/);
         #  Centillion ATM
         $objtype = 'SNMP::Info::Layer2::Centillion' if ($desc =~ /MCP/);
         #  BPS
@@ -2667,27 +2676,41 @@ sub _global{
     my $oid;
     if (exists $globals->{$attr}) {
         $oid = $globals->{$attr};
+        unless ($oid =~ /\.\d+$/) {
+            $oid .= ".0";
+        }
+        # Check for fully qualified attr
+        if ($oid =~ /__/) {
+            $oid =~ s/__/::/;
+            $oid =~ s/_/-/g;
+            # Need to translate fully qualified attr to full oid
+            $oid = &SNMP::translateObj($oid);
+            unless (defined $oid) {
+                $self->error_throw("SNMP::Info::_load_attr: Can't translate $globals->{$attr}.  Missing MIB?\n");
+                return undef;
+            }
+        }
     }
     else {
-        $oid = $attr;
+        $oid = $attr;       
     }
-
+ 
     # Tag on .0 unless the leaf ends in .number
     unless ($oid =~ /\.\d+$/) {
         $oid .= ".0";
     }
-
+ 
     print "SNMP::Info::_global $attr : $oid\n" if $self->debug();
-    my $val = $sess->get($oid); 
-
+    my $val = $sess->get($oid);
+ 
     # mark as gotten. Even if it fails below, we don't want to keep failing.
     $self->{"_$attr"}=undef;
-
+ 
     if ($sess->{ErrorStr} ){
         $self->error_throw("SNMP::Info::_global($attr) $sess->{ErrorStr}");
         return undef;
     }
-
+ 
     if (defined $val and $val eq 'NOSUCHOBJECT'){
         $self->error_throw("SNMP::Info::_global($attr) NOSUCHOBJECT");
         return undef;
@@ -2843,8 +2866,15 @@ sub _load_attr {
     my $munge  = $self->munge();
     return undef unless defined $sess;
 
-    # Deal with partial entries.
     my $varleaf = $leaf;
+    # Check for fully qualified attr
+    if ($leaf =~ /__/) {
+        $leaf =~ s/__/::/;
+        $leaf =~ s/_/-/g;
+        $varleaf = $leaf;
+    }
+
+    # Deal with partial entries.
     if (defined $partial) {
         # If we aren't supplied an OID translate
         if ($leaf !~ /^[.\d]*$/) {
