@@ -41,6 +41,7 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PAECAPABILITIES/;
 %MIBS    = (
             'CISCO-PORT-SECURITY-MIB' => 'ciscoPortSecurityMIB',
  	    'CISCO-PAE-MIB'           => 'ciscoPaeMIB',
+            'IEEE8021-PAE-MIB'        => 'dot1xAuthLastEapolFrameSource',
            );
 
 %GLOBALS = (
@@ -84,18 +85,20 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PAECAPABILITIES/;
             'cps_i_v_mac'        => 'cpsIfVlanSecureMacAddress',
             # CISCO-PORT-SECURITY-MIB::cpsSecureMacAddressTable
             'cps_m_status' => 'cpsSecureMacAddrRowStatus',
-            'cps_m_age' => 'cpsSecureMacAddrRemainingAge',
-            'cps_m_type' => 'cpsSecureMacAddrType',
-            'cps_m_mac' => 'cpsSecureMacAddress',
+            'cps_m_age'    => 'cpsSecureMacAddrRemainingAge',
+            'cps_m_type'   => 'cpsSecureMacAddrType',
+            'cps_m_mac'    => 'cpsSecureMacAddress',
  	    # CISCO-PAE-MIB::dot1xPaePortEntry
-            'pae_i_capabilities'   => 'dot1xPaePortCapabilities',
+            'pae_i_capabilities'             => 'dot1xPaePortCapabilities',
+            'pae_i_last_eapol_frame_source'  => 'dot1xAuthLastEapolFrameSource',
            );
 
 %MUNGE   = (
-            'cps_i_mac'          => \&SNMP::Info::munge_mac, 
-            'cps_m_mac'          => \&SNMP::Info::munge_mac,
-            'cps_i_v_mac'        => \&SNMP::Info::munge_mac,
-            'pae_i_capabilities' => \&munge_pae_capabilities,
+            'cps_i_mac'                      => \&SNMP::Info::munge_mac, 
+            'cps_m_mac'                      => \&SNMP::Info::munge_mac,
+            'cps_i_v_mac'                    => \&SNMP::Info::munge_mac,
+            'pae_i_last_eapol_frame_source'  => \&SNMP::Info::munge_mac,
+            'pae_i_capabilities'             => \&munge_pae_capabilities,
            );
 
 %PAECAPABILITIES = (0 => 'dot1xPaePortAuthCapable',
@@ -156,6 +159,8 @@ None.
 =item CISCO-PORT-SECURITY-MIB
 
 =item CISCO-PAE-MIB
+
+=item IEEE8021-PAE-MIB
 
 =back
 
