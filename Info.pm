@@ -1574,7 +1574,6 @@ sub i_speed {
     my $partial = shift;
 
     my $i_speed = $info->orig_i_speed($partial);
-    my $i_up = $info->i_up($partial);
 
     my $i_speed_high = undef;
     foreach my $i (keys %$i_speed) {
@@ -1584,6 +1583,31 @@ sub i_speed {
 	}
     }
     return $i_speed;
+}
+
+=item $info->i_speed_raw()
+
+Speed of the link in bits per second without munging.
+If i_speed_high is available it will be used and multiplied by 1_000_000.
+
+(B<ifSpeed>, B<ifHighSpeed> if necessary)
+
+=cut
+
+sub i_speed_raw {
+    my $info = shift;
+    my $partial = shift;
+
+    my $i_speed_raw = $info->orig_i_speed($partial);
+
+    my $i_speed_high = undef;
+    foreach my $i (keys %$i_speed_raw) {
+        if ($i_speed_raw->{$i} eq "4294967295") {
+            $i_speed_high = $info->i_speed_high($partial) unless defined($i_speed_high);
+            $i_speed_raw->{$i} = ($i_speed_high->{$i} * 1_000_000) if ($i_speed_high->{$i});
+       }
+    }
+    return $i_speed_raw;
 }
 
 =item $info->i_speed_high()
@@ -2401,6 +2425,21 @@ sub munge_mac {
     return undef unless length $mac;
     $mac = join(':',map { sprintf "%02x",$_ } unpack('C*',$mac));
     return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){5}[0-9A-F][0-9A-F]$/i;
+    return undef;
+}
+
+=item munge_prio_mac()
+
+Takes an 8-byte octet stream (HEX-STRING) and returns a colon separated ASCII hex string.
+
+=cut
+
+sub munge_prio_mac {
+    my $mac = shift;
+    return undef unless defined $mac;
+    return undef unless length $mac;
+    $mac = join(':',map { sprintf "%02x",$_ } unpack('C*',$mac));
+    return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){7}[0-9A-F][0-9A-F]$/i;
     return undef;
 }
 
