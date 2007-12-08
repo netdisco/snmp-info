@@ -110,9 +110,9 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
           'fw_mac'       => \&SNMP::Info::munge_mac,
           'bs_mac'       => \&SNMP::Info::munge_mac,
           'stp_root'     => \&SNMP::Info::munge_mac,
-          'stp_p_root'   => \&SNMP::Info::munge_mac,
-          'stp_p_bridge' => \&SNMP::Info::munge_mac,
-          'stp_p_port'   => \&SNMP::Info::munge_mac
+          'stp_p_root'   => \&SNMP::Info::munge_prio_mac,
+          'stp_p_bridge' => \&SNMP::Info::munge_prio_mac,
+          'stp_p_port'   => \&SNMP::Info::munge_prio_mac,
          );
 
 # break up the Dot1qTpFdbEntry INDEX into FDB ID and MAC Address.
