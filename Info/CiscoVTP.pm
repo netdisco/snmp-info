@@ -246,7 +246,7 @@ sub i_vlan_membership {
                 my $vlanlist = [split(//, unpack("B*", $list))];
                 my $offset = 1024 * $k;
                 foreach my $vlan (keys %oper_vlans) {            
-                    push(@{$i_vlan_membership->{$port}}, $vlan) if (@$vlanlist[$vlan]-$offset);
+                    push(@{$i_vlan_membership->{$port}}, $vlan) if (@$vlanlist[$vlan-$offset]);
                 }
                 $k++;
             }
