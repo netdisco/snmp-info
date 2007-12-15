@@ -351,6 +351,12 @@ sub set_i_vlan {
 
     # Store current untagged VLAN to remove it from the egress port list later
     my $old_vlan_id = $i_pvid->{$bport};
+    # Check that haven't been given the same VLAN we are currently using
+    if ($old_vlan_id eq $new_vlan_id) {
+        $bridge->error_throw("Current PVID: $old_vlan_id and New VLAN: $new_vlan_id the same, no change.");
+        return undef;      
+    }
+    
     print "Changing VLAN: $old_vlan_id to $new_vlan_id on IfIndex: $ifindex\n"
         if $bridge->debug();
 
@@ -363,13 +369,13 @@ sub set_i_vlan {
     return undef unless
         ($bridge->_remove_from_untagged_lists($bport));
 
-    # Remove port from old VLAN from egress list
-    return undef unless
-        ($bridge->_remove_from_egress_portlist($old_vlan_id, $bport));
-
     # Add port to egress list for VLAN
     return undef unless
         ($bridge->_add_to_egress_portlist($new_vlan_id, $bport));
+
+    # Remove port from old VLAN from egress list
+    return undef unless
+        ($bridge->_remove_from_egress_portlist($old_vlan_id, $bport));
 
     # Add port to untagged egress list for VLAN
     return undef unless
@@ -383,6 +389,17 @@ sub set_i_vlan {
     print "Current PVID: $cur_i_pvid\n" if $bridge->debug();
     unless ($cur_i_pvid eq $new_vlan_id) {
         return undef unless ($bridge->set_i_pvid($new_vlan_id, $ifindex));
+    }
+
+    # We shouldn't need this, but some devices may change this during the
+    # action.  If this occurs change it back.
+    my $new_vlan_p_type = $bridge->qb_i_vlan_type($bport);
+    unless ( $new_vlan_p_type->{$bport} =~ /admitAll/ ) {
+        print "Changing Acceptable Frame Type\n" if $bridge->debug();
+        unless ($bridge->set_qb_i_vlan_type(1, $bport)) {
+            $bridge->error_throw("Unable to change Acceptable Frame Type");
+            return undef;
+        }
     }
 
     print "Successfully changed VLAN: $old_vlan_id to $new_vlan_id on IfIndex: $ifindex\n" if $bridge->debug();
@@ -458,6 +475,8 @@ sub _add_to_untagged_portlist {
     my $iv_members   = $bridge->qb_v_untagged($vlan_id);
 
     my @untagged_list = split(//, unpack("B*", $iv_members->{$vlan_id}));
+    # Return if we don't need to do anything
+    return 1 if ( defined($untagged_list[$index-1]) and ($untagged_list[$index-1] eq "1"));
     print "Original untagged list for VLAN: $vlan_id: @untagged_list \n" if $bridge->debug();
     $untagged_list[$index-1] = '1';
     # Some devices do not populate the portlist with all possible ports.
@@ -486,8 +505,8 @@ sub _remove_from_untagged_lists {
     foreach my $vlan (keys %$iv_members) {
 
         my @untagged_list = split(//, unpack("B*", $iv_members->{$vlan}));
-        print "Original untagged list for VLAN: $vlan: @untagged_list \n" if $bridge->debug();
         if ( defined($untagged_list[$index-1]) and ($untagged_list[$index-1] eq "1")) {
+            print "Original untagged list for VLAN: $vlan: @untagged_list \n" if $bridge->debug();
             $untagged_list[$index-1] = '0';
             print "Modified untagged list for VLAN: $vlan: @untagged_list \n" if $bridge->debug();
             my $new_untagged = pack("B*", join('', @untagged_list));
@@ -536,9 +555,9 @@ sub _remove_from_egress_portlist {
     my $iv_members   = $bridge->qb_v_egress($vlan_id);
 
     my @egress_list = split(//, unpack("B*", $iv_members->{$vlan_id}));
-    print "Original egress list for VLAN: $vlan_id: @egress_list \n" if $bridge->debug();
     # Some devices may remove automatically, so check state before set
     if ( defined($egress_list[$index-1]) and ($egress_list[$index-1] eq "1")) {
+        print "Original egress list for VLAN: $vlan_id: @egress_list \n" if $bridge->debug();
         $egress_list[$index-1] = '0';
         print "Modified egress list for VLAN: $vlan_id: @egress_list \n" if $bridge->debug();
         my $new_egress = pack("B*", join('', @egress_list));
