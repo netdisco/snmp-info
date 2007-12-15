@@ -263,7 +263,7 @@ sub i_vlan {
         my $vlan    = $i_pvid->{$bport};
         my $ifindex = $index->{$bport};
         unless (defined $ifindex) {
-            print "  Port $bport has no bp_index mapping. Skipping\n"
+            print "  Port $bport has no bp_index mapping. Skipping.\n"
                 if $DEBUG;
             next;
         }
@@ -324,8 +324,7 @@ sub set_i_pvid {
     my $bport = $r_index{$ifindex};
 
     unless ( $bridge->set_qb_i_vlan($vlan_id, $bport) ) {
-        $bridge->error_throw("Unable to change PVID to $vlan_id on
-                             IfIndex: $ifindex");
+        $bridge->error_throw("Unable to change PVID to $vlan_id on IfIndex: $ifindex.");
         return undef;
     }
     return 1;
@@ -343,7 +342,7 @@ sub set_i_vlan {
 
     my $vlan_p_type = $bridge->qb_i_vlan_type($bport);
     unless ( $vlan_p_type->{$bport} =~ /admitAll/ ) {
-        $bridge->error_throw("Not an access port");
+        $bridge->error_throw("Not an access port, tagged only.");
         return undef;
     }
 
@@ -357,7 +356,7 @@ sub set_i_vlan {
         return undef;      
     }
     
-    print "Changing VLAN: $old_vlan_id to $new_vlan_id on IfIndex: $ifindex\n"
+    print "Changing VLAN: $old_vlan_id to $new_vlan_id on IfIndex: $ifindex.\n"
         if $bridge->debug();
 
     # Check if port in forbidden list for the VLAN, haven't seen this used,
@@ -395,14 +394,14 @@ sub set_i_vlan {
     # action.  If this occurs change it back.
     my $new_vlan_p_type = $bridge->qb_i_vlan_type($bport);
     unless ( $new_vlan_p_type->{$bport} =~ /admitAll/ ) {
-        print "Changing Acceptable Frame Type\n" if $bridge->debug();
+        print "Changing Acceptable Frame Type.\n" if $bridge->debug();
         unless ($bridge->set_qb_i_vlan_type(1, $bport)) {
-            $bridge->error_throw("Unable to change Acceptable Frame Type");
+            $bridge->error_throw("Unable to change Acceptable Frame Type.");
             return undef;
         }
     }
 
-    print "Successfully changed VLAN: $old_vlan_id to $new_vlan_id on IfIndex: $ifindex\n" if $bridge->debug();
+    print "Successfully changed VLAN: $old_vlan_id to $new_vlan_id on IfIndex: $ifindex.\n" if $bridge->debug();
     return 1;
 }
 
@@ -416,7 +415,7 @@ sub set_add_i_vlan_tagged {
 
     return undef unless ( $bridge->_validate_vlan_param ($vlan_id, $ifindex) );
 
-    print "Adding VLAN: $vlan_id to IfIndex: $ifindex\n" if $bridge->debug();
+    print "Adding VLAN: $vlan_id to IfIndex: $ifindex.\n" if $bridge->debug();
 
     # Check if port in forbidden list for the VLAN, haven't seen this used,
     # but we'll check anyway
@@ -425,7 +424,7 @@ sub set_add_i_vlan_tagged {
     # Add port to egress list for VLAN
     return undef unless ($bridge->_add_to_egress_portlist($vlan_id, $bport));
 
-    print "Successfully added IfIndex: $ifindex to VLAN: $vlan_id egress list\n" if $bridge->debug();
+    print "Successfully added IfIndex: $ifindex to VLAN: $vlan_id egress list.\n" if $bridge->debug();
     return 1;
 }
 
@@ -439,12 +438,12 @@ sub set_remove_i_vlan_tagged {
 
     return undef unless ( $bridge->_validate_vlan_param ($vlan_id, $ifindex) );
 
-    print "Removing VLAN: $vlan_id from IfIndex: $ifindex\n" if $bridge->debug();
+    print "Removing VLAN: $vlan_id from IfIndex: $ifindex.\n" if $bridge->debug();
 
     # Remove port from egress list for VLAN
     return undef unless ($bridge->_remove_from_egress_portlist($vlan_id, $bport));
 
-    print "Successfully removed IfIndex: $ifindex from VLAN: $vlan_id egress list\n" if $bridge->debug();
+    print "Successfully removed IfIndex: $ifindex from VLAN: $vlan_id egress list.\n" if $bridge->debug();
     return 1;
 }
 
@@ -461,7 +460,7 @@ sub _check_forbidden_ports {
     my @forbidden_ports = split(//, unpack("B*", $iv_forbidden->{$vlan_id}));
     print "Forbidden ports: @forbidden_ports\n" if $bridge->debug();
     if ( defined($forbidden_ports[$index-1]) and ($forbidden_ports[$index-1] eq "1")) {
-        print "Error: Index: $index in forbidden list for VLAN: $vlan_id unable to add\n" if $bridge->debug();
+        print "Error: Index: $index in forbidden list for VLAN: $vlan_id unable to add.\n" if $bridge->debug();
         return undef;
     }
     return 1;
@@ -489,7 +488,7 @@ sub _add_to_untagged_portlist {
 
     my $untagged_rv = $bridge->set_qb_v_untagged($new_untagged, $vlan_id);
     unless ($untagged_rv) {
-        print "Error: Unable to add VLAN: $vlan_id to Index: $index untagged list\n" if $bridge->debug();
+        print "Error: Unable to add VLAN: $vlan_id to Index: $index untagged list.\n" if $bridge->debug();
         return undef;
     }
     return 1;
@@ -513,7 +512,7 @@ sub _remove_from_untagged_lists {
 
             my $untagged_rv = $bridge->set_qb_v_untagged($new_untagged, $vlan);
             unless ($untagged_rv) {
-                print "Warning: Unable to remove Index: $index from VLAN: $vlan untagged list\n" if $bridge->debug();
+                print "Warning: Unable to remove Index: $index from VLAN: $vlan untagged list.\n" if $bridge->debug();
                 return undef;
             }
         }
@@ -541,7 +540,7 @@ sub _add_to_egress_portlist {
 
     my $egress_rv = $bridge->set_qb_v_egress($new_egress, $vlan_id);
     unless ($egress_rv) {
-        print "Error: Unable to add VLAN: $vlan_id to Index: $index egress list\n" if $bridge->debug();
+        print "Error: Unable to add VLAN: $vlan_id to Index: $index egress list.\n" if $bridge->debug();
         return undef;
     }
     return 1;
@@ -564,7 +563,7 @@ sub _remove_from_egress_portlist {
 
         my $egress_rv = $bridge->set_qb_v_egress($new_egress, $vlan_id);
         unless ($egress_rv) {
-            print "Warning: Unable to remove Index: $index from VLAN: $vlan_id egress list\n" if $bridge->debug();
+            print "Warning: Unable to remove Index: $index from VLAN: $vlan_id egress list.\n" if $bridge->debug();
             return undef;
         }  
     }
@@ -578,7 +577,7 @@ sub _validate_vlan_param {
     # VID and ifIndex should both be numeric
     unless ( defined $vlan_id and defined $ifindex and
             $vlan_id =~ /^\d+$/ and $ifindex =~ /^\d+$/ ) {
-        $bridge->error_throw("Invalid parameter");
+        $bridge->error_throw("Invalid parameter.");
         return undef;
     }
     
@@ -586,7 +585,7 @@ sub _validate_vlan_param {
     my $index = $bridge->interfaces($ifindex);
 
     unless ( exists $index->{$ifindex} ) {
-        $bridge->error_throw("ifIndex $ifindex does not exist");
+        $bridge->error_throw("ifIndex $ifindex does not exist.");
         return undef;
     }
 
@@ -605,8 +604,7 @@ sub _validate_vlan_param {
         $vlan_exists = 1 if ( $vlan_id eq $vlan );
     }
     unless ( $vlan_exists ) {
-        $bridge->error_throw("VLAN $vlan_id does not exist or is not
-                             operational");
+        $bridge->error_throw("VLAN $vlan_id does not exist or is not operational.");
         return undef;
     }
 
