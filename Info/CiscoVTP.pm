@@ -237,18 +237,17 @@ sub i_vlan_membership {
         my $stat = $trunk_dyn_stat->{$port};
         if ( defined $stat and $stat =~ /^trunking/ ) {
             my $k = 0;
-            my $list1 = $ports_vlans->{$port} || 'unavail';
-            my $list2 = $ports_vlans_2k->{$port} || 'unavail';
-            my $list3 = $ports_vlans_3k->{$port} || 'unavail';
-            my $list4 = $ports_vlans_4k->{$port} || 'unavail';
+            my $list1 = $ports_vlans->{$port} || '0';
+            my $list2 = $ports_vlans_2k->{$port} || '0';
+            my $list3 = $ports_vlans_3k->{$port} || '0';
+            my $list4 = $ports_vlans_4k->{$port} || '0';
             foreach my $list ("$list1", "$list2", "$list3", "$list4") {
-                next if ($list eq 'unavail');
+                my $offset = 1024 * $k++;
+                next unless $list;
                 my $vlanlist = [split(//, unpack("B*", $list))];
-                my $offset = 1024 * $k;
                 foreach my $vlan (keys %oper_vlans) {            
                     push(@{$i_vlan_membership->{$port}}, $vlan) if (@$vlanlist[$vlan-$offset]);
                 }
-                $k++;
             }
         }
     }
