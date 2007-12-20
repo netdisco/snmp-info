@@ -2520,6 +2520,25 @@ sub munge_i_up {
     return $i_up;
 }
 
+=item munge_port_list
+
+Takes an octet string representing a set of ports and returns a reference
+to an array of binary values each array element representing a port. 
+
+If the element has a value of '1', then that port is included in the set of
+ports; the port is not included if it has a value of '0'.
+
+=cut
+
+sub munge_port_list {
+    my $oct = shift;
+    return unless defined $oct;
+
+    my $list = [ split(//, unpack("B*", $oct)) ];
+
+    return $list;
+}
+
 =back
 
 =head2 Internaly Used Functions
@@ -2774,11 +2793,15 @@ sub _global{
     return $val;
 }
 
-=item $info->_set(attr,val,iid)
+=item $info->_set(attr,val,iid,type)
 
 Used internally by AUTOLOAD to run an SNMP set command for dynamic methods
-listed in either %GLOBALS or %FUNCS or a valid mib leaf from a loaded MIB.
-Clears attr cache on sucessful set.
+listed in either %GLOBALS or %FUNCS or a valid mib leaf from a loaded MIB or
+the set_multi() method to set multiple varible in one command.  When run
+clears attr cache.
+
+Attr is passed as either a scalar for dynamic methods or a reference to an
+array or array of arrays when used with set_multi().
 
 Example:  $info->set_name('dog',3) uses autoload to resolve to
 $info->_set('name','dog',3);
@@ -2786,50 +2809,112 @@ $info->_set('name','dog',3);
 =cut
 
 sub _set {
-    my ($self,$attr,$val,$iid) = @_;
+    my ($self,$attr,$val,$iid,$type) = @_;
+    my $varbind_list_ref;
 
-    $iid = defined $iid ? $iid : '.0';
-    # prepend dot if necessary to $iid
-    $iid = ".$iid" unless $iid =~ /^\./;
+    if (!ref($attr)) {
+        $varbind_list_ref = [[$attr, $iid, $val, $type]];
+    }
+    elsif (ref($attr) =~ /ARRAY/) {
+        $varbind_list_ref = [$attr];
+        $varbind_list_ref = $attr if ref($$attr[0]) =~ /ARRAY/;
+    }
+    else {
+        $self->error_throw("SNMP::Info::_set($attr,$val) - Failed. Invalid argument for attr.");
+    }
 
     my $sess = $self->session();
     return undef unless defined $sess;
 
     my $funcs = $self->funcs();
-    my $globals = $self->globals(); 
+    my $globals = $self->globals();
 
-    # Check if this method is from a sub or from the tables.
-    if ($self->can($attr)){
-        $self->error_throw("SNMP::Info::_set($attr,$val) - Failed. $attr is generated in a sub(). set_$attr sub required.");
-        # if sub set_attr() existed, we wouldn't have gotten this far.
-        return undef;
+    foreach my $var_list (@$varbind_list_ref) {
+        my $list_attr = $var_list->[0];
+        my $list_iid  = $var_list->[1];
+        my $list_val  = $var_list->[2];
+
+        # Get rid of non-printable chars in $list_val for debug statements
+        $list_val =~ s/\W//;
+        # Instance is 0 for scalars without a supplied instance
+        $var_list->[1] = $list_iid = defined $list_iid ? $list_iid : '0';
+
+        # Check if this method is from a sub or from the tables.
+        if ($self->can($list_attr)){
+            $self->error_throw("SNMP::Info::_set($list_attr,$list_val) - Failed. $list_attr is generated in a sub(). set_$list_attr sub required.");
+            # if sub set_attr() existed, we wouldn't have gotten this far.
+            return undef;
+        }
+
+        # Lookup oid
+        my $oid = undef;
+        $oid = $list_attr if SNMP::translateObj($list_attr);
+        $oid = $globals->{$list_attr} if defined $globals->{$list_attr};
+        $oid = $funcs->{$list_attr} if defined $funcs->{$list_attr};
+
+        unless (defined $oid) { 
+            $self->error_throw("SNMP::Info::_set($list_attr,$list_val) - Failed to find $list_attr in \%GLOBALS or \%FUNCS or loaded MIB.");
+            return undef;
+        }
+
+        # Check for fully qualified attr
+        if ($oid =~ /__/) {
+            $oid =~ s/__/::/;
+            $oid =~ s/_/-/g;
+        }
+        
+        $var_list->[0] = $oid;
+
+        $self->debug() and print "SNMP::Info::_set $list_attr.$list_iid ($oid.$list_iid) = $list_val\n";        
+        delete $self->{"_$list_attr"};
     }
 
-    # Lookup oid
-    my $oid = undef;
-    $oid = $attr if SNMP::translateObj($attr);
-    $oid = $globals->{$attr} if defined $globals->{$attr};
-    $oid = $funcs->{$attr} if defined $funcs->{$attr};
-
-    unless (defined $oid) { 
-        $self->error_throw("SNMP::Info::_set($attr,$val) - Failed to find $attr in \%GLOBALS or \%FUNCS or loaded MIB.");
-        return undef;
-    }
-
-    $oid .= $iid;
-    $oid = &SNMP::translateObj($oid);
-
-    $self->debug() and print "SNMP::Info::_set $attr$iid ($oid) = $val\n";
-
-    my $rv = $sess->set($oid,$val);
+    my $rv = $sess->set($varbind_list_ref);
 
     if ($sess->{ErrorStr}){
-        $self->error_throw("SNMP::Info::_set $attr$iid $sess->{ErrorStr}");
+        $self->error_throw("SNMP::Info::_set $sess->{ErrorStr}");
         return undef;
     }
 
-    delete $self->{"_$attr"};
     return $rv;
+}
+
+=item $info->set_multi(arrayref)
+
+Used to run an SNMP set command on several new values in the one request.
+Returns the result of $info->_set(method).
+
+Pass either a reference to a 4 element array [<obj>, <iid>, <val>, <type>] or
+a reference to an array of 4 element arrays to specify multiple values.
+
+<obj>  - One of the following forms:
+        1) leaf identifier (e.g., 'sysContact')
+        2) An entry in either %FUNCS, %GLOBALS (e.g., 'contact')
+<iid>  - The dotted-decimal, instance identifier. For scalar MIB objects use '0'
+<val>  - The SNMP data value being set (e.g., 'netdisco')
+<type> - Optional as the MIB should be loaded.
+
+If one of the set assigments is invalid, then the request will be rejected
+without applying any of the new values - regardless of the order they appear
+in the list.
+
+Example:
+    my $vlan_set = [
+        ['qb_v_untagged',"$old_vlan_id","$old_untagged_portlist"],
+        ['qb_v_egress',"$new_vlan_id","$new_egress_portlist"],
+        ['qb_v_egress',"$old_vlan_id","$old_egress_portlist"],
+        ['qb_v_untagged',"$new_vlan_id","$new_untagged_portlist"],
+        ['qb_i_vlan',"$port","$new_vlan_id"],
+    ];
+
+    $info->set_multi($vlan_set);
+
+=cut
+
+sub set_multi {
+    my $self = shift;
+
+    return $self->_set( @_);
 }
 
 =item $info->load_all()
@@ -3093,7 +3178,7 @@ sub _show_attr {
     return $store->{$attr};
 }
 
-=item $info->snmp_connect_ip() 
+=item $info->snmp_connect_ip(ip) 
 
 Returns true or false based upon snmp connectivity to an IP.
 
@@ -3131,6 +3216,28 @@ sub snmp_connect_ip {
 
     return 1;
 
+}
+
+=item modify_port_list(portlist,offset,replacement)
+
+Replaces the specified bit in a port_list array and
+returns the packed bitmask 
+
+=cut
+
+sub modify_port_list {
+    my ($self, $portlist, $offset, $replacement) = @_;
+
+    print "Original port list: @$portlist \n" if $self->debug();
+    @$portlist[$offset] = $replacement;
+    # Some devices do not populate the portlist with all possible ports.
+    # If we have lengthened the list fill all undefined elements with zero.
+    foreach my $item (@$portlist) {
+        $item = '0' unless (defined($item));
+    }
+    print "Modified port list: @$portlist \n" if $self->debug();
+
+    return pack("B*", join('', @$portlist));
 }
 
 =back
