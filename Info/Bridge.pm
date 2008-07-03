@@ -290,7 +290,10 @@ sub i_vlan_membership {
     
     # 11/07 - Todo: Issue with some devices trying to query VlanCurrentTable
     # as table may grow very large with frequent VLAN changes.
-    #my $v_ports = $bridge->qb_cv_egress() || $bridge->qb_v_egress();
+    # 06/08 - VlanCurrentTable may be due to timefilter, should query with
+    # zero partial for no time filter.
+    # my $v_ports = $bridge->qb_cv_egress() || $bridge->qb_v_egress();
+
 
     my $v_ports = $bridge->qb_v_egress() || {};
 
@@ -321,152 +324,30 @@ sub i_vlan_membership {
 
 sub set_i_pvid {
     my $bridge = shift;
-    my ($vlan_id, $ifindex) = @_; 
 
-    return undef unless ($bridge->_validate_vlan_param ($vlan_id, $ifindex));
-
-    my $index = $bridge->bp_index();
-    my %r_index = reverse %$index;
-    my $bport = $r_index{$ifindex};
-
-    unless ( $bridge->set_qb_i_vlan($vlan_id, $bport) ) {
-        $bridge->error_throw("Unable to change PVID to $vlan_id on IfIndex: $ifindex.");
-        return undef;
-    }
-    return 1;
+    $bridge->error_throw("VLAN set not supported.");
+    return;
 }
 
 sub set_i_vlan {
     my $bridge = shift;
-    my ($new_vlan_id, $ifindex) = @_;
 
-    return undef unless ($bridge->_validate_vlan_param ($new_vlan_id, $ifindex));
-
-    my $index = $bridge->bp_index();
-    my %r_index = reverse %$index;
-    my $bport = $r_index{$ifindex};
-
-    my $vlan_p_type = $bridge->qb_i_vlan_type($bport);
-    unless ( $vlan_p_type->{$bport} =~ /admitAll/ ) {
-        $bridge->error_throw("Not an access port, tagged only.");
-        return undef;
-    }
-
-    my $i_pvid = $bridge->qb_i_vlan($bport);
-
-    # Store current untagged VLAN to remove it from the egress port list later
-    my $old_vlan_id = $i_pvid->{$bport};
-    # Check that haven't been given the same VLAN we are currently using
-    if ($old_vlan_id eq $new_vlan_id) {
-        $bridge->error_throw("Current PVID: $old_vlan_id and New VLAN: $new_vlan_id the same, no change.");
-        return undef;      
-    }
-    
-    print "Changing VLAN: $old_vlan_id to $new_vlan_id on IfIndex: $ifindex.\n"
-        if $bridge->debug();
-
-    # Check if port in forbidden list for the VLAN, haven't seen this used,
-    # but we'll check anyway
-    return undef unless
-        ($bridge->_check_forbidden_ports($new_vlan_id, $bport));
-
-    my $old_vlan_u_members = $bridge->qb_v_untagged($old_vlan_id);
-    my $new_vlan_u_members = $bridge->qb_v_untagged($new_vlan_id);
-    my $old_vlan_e_members = $bridge->qb_v_egress($old_vlan_id);
-    my $new_vlan_e_members = $bridge->qb_v_egress($new_vlan_id);
-    
-    print "Modifying untagged list for VLAN: $old_vlan_id \n" if $bridge->debug();
-    my $old_untagged = $bridge->modify_port_list($old_vlan_u_members->{$old_vlan_id},$bport-1,'0');
-
-    print "Modifying untagged list for VLAN: $new_vlan_id \n" if $bridge->debug();
-    my $new_untagged = $bridge->modify_port_list($new_vlan_u_members->{$new_vlan_id},$bport-1,'1');
-
-    print "Modifying egress list for VLAN: $new_vlan_id \n" if $bridge->debug();
-    my $new_egress = $bridge->modify_port_list($new_vlan_e_members->{$new_vlan_id},$bport-1,'1');
-
-    print "Modifying egress list for VLAN: $old_vlan_id \n" if $bridge->debug();
-    my $old_egress = $bridge->modify_port_list($old_vlan_e_members->{$old_vlan_id},$bport-1,'0');
-
-    my $vlan_set = [
-        ['qb_v_untagged',"$old_vlan_id","$old_untagged"],
-        ['qb_v_egress',"$new_vlan_id","$new_egress"],
-        ['qb_v_egress',"$old_vlan_id","$old_egress"],
-        ['qb_v_untagged',"$new_vlan_id","$new_untagged"],
-        ['qb_i_vlan',"$bport","$new_vlan_id"],
-    ];
-
-    return undef unless
-        ($bridge->set_multi($vlan_set));
-
-    # We shouldn't need this, but some devices may change this during the
-    # action.  If this occurs change it back.
-    my $new_vlan_p_type = $bridge->qb_i_vlan_type($bport);
-    unless ( $new_vlan_p_type->{$bport} =~ /admitAll/ ) {
-        print "Changing Acceptable Frame Type.\n" if $bridge->debug();
-        unless ($bridge->set_qb_i_vlan_type(1, $bport)) {
-            $bridge->error_throw("Unable to change Acceptable Frame Type.");
-            return undef;
-        }
-    }
-
-    print "Successfully changed VLAN: $old_vlan_id to $new_vlan_id on IfIndex: $ifindex.\n" if $bridge->debug();
-    return 1;
+    $bridge->error_throw("VLAN set not supported.");
+    return;
 }
 
 sub set_add_i_vlan_tagged {
     my $bridge = shift;
-    my ($vlan_id, $ifindex) = @_;
 
-    my $index = $bridge->bp_index();
-    my %r_index = reverse %$index;
-    my $bport = $r_index{$ifindex};
-
-    return undef unless ( $bridge->_validate_vlan_param ($vlan_id, $ifindex) );
-
-    print "Adding VLAN: $vlan_id to IfIndex: $ifindex.\n" if $bridge->debug();
-
-    # Check if port in forbidden list for the VLAN, haven't seen this used,
-    # but we'll check anyway
-    return undef unless ($bridge->_check_forbidden_ports($vlan_id, $bport));
-
-    my $iv_members = $bridge->qb_v_egress($vlan_id);
-
-    print "Modifying egress list for VLAN: $vlan_id \n" if $bridge->debug();
-    my $new_egress = $bridge->modify_port_list($iv_members->{$vlan_id},$bport-1,'1');
-
-    unless ( $bridge->set_qb_v_egress($new_egress, $vlan_id) ) {
-        print "Error: Unable to add VLAN: $vlan_id to Index: $index egress list.\n" if $bridge->debug();
-        return undef;
-    }
-
-    print "Successfully added IfIndex: $ifindex to VLAN: $vlan_id egress list.\n" if $bridge->debug();
-    return 1;
+    $bridge->error_throw("VLAN set not supported.");
+    return;
 }
 
 sub set_remove_i_vlan_tagged {
     my $bridge = shift;
-    my ($vlan_id, $ifindex) = @_;
 
-    my $index = $bridge->bp_index();
-    my %r_index = reverse %$index;
-    my $bport = $r_index{$ifindex};
-
-    return undef unless ( $bridge->_validate_vlan_param ($vlan_id, $ifindex) );
-
-    print "Removing VLAN: $vlan_id from IfIndex: $ifindex.\n" if $bridge->debug();
-
-    my $iv_members = $bridge->qb_v_egress($vlan_id);
-
-    print "Modifying egress list for VLAN: $vlan_id \n" if $bridge->debug();
-    my $new_egress = $bridge->modify_port_list($iv_members->{$vlan_id},$bport-1,'0');
-
-    unless ( $bridge->set_qb_v_egress($new_egress, $vlan_id) ) {
-        print "Error: Unable to add VLAN: $vlan_id to Index: $index egress list.\n" if $bridge->debug();
-        return undef;
-    }
-
-    print "Successfully removed IfIndex: $ifindex from VLAN: $vlan_id egress list.\n" if $bridge->debug();
-    return 1;
+    $bridge->error_throw("VLAN set not supported.");
+    return;
 }
 
 #
@@ -943,58 +824,5 @@ identifier (iid)
 Returns reference to hash of forwading table entries status
 
 (B<dot1qTpFdbStatus>)
-
-=back
-
-=head1 SET METHODS
-
-These are methods that provide SNMP set functionality for overridden methods or
-provide a simpler interface to complex set operations.  See
-L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set operations. 
-
-=over
-
-=item $bridge->set_i_vlan(vlan, ifIndex)
-
-Changes an access (untagged) port VLAN, must be supplied with the numeric VLAN
-ID and port ifIndex.  This method will modify the port's VLAN membership and
-PVID (default VLAN).  This method should only be used on end station
-(non-trunk) ports.
-
-  Example:
-  my %if_map = reverse %{$bridge->interfaces()};
-  $bridge->set_i_vlan('2', $if_map{'1.1'}) 
-    or die "Couldn't change port VLAN. ",$bridge->error(1);
-
-=item $bridge->set_i_pvid(pvid, ifIndex)
-
-Sets port PVID or default VLAN, must be supplied with the numeric VLAN ID and
-port ifIndex.  This method only changes the PVID, to modify an access (untagged)
-port use set_i_vlan() instead.
-
-  Example:
-  my %if_map = reverse %{$bridge->interfaces()};
-  $bridge->set_i_pvid('2', $if_map{'1.1'}) 
-    or die "Couldn't change port PVID. ",$bridge->error(1);
-
-=item $bridge->set_add_i_vlan_tagged(vlan, ifIndex)
-
-Adds the port to the egress list of the VLAN, must be supplied with the numeric
-VLAN ID and port ifIndex.
-
-  Example:
-  my %if_map = reverse %{$bridge->interfaces()};
-  $bridge->set_add_i_vlan_tagged('2', $if_map{'1.1'}) 
-    or die "Couldn't add port to egress list. ",$bridge->error(1);
-
-=item $bridge->set_remove_i_vlan_tagged(vlan, ifIndex)
-
-Removes the port from the egress list of the VLAN, must be supplied with the
-numeric VLAN ID and port ifIndex.
-
-  Example:
-  my %if_map = reverse %{$bridge->interfaces()};
-  $bridge->set_remove_i_vlan_tagged('2', $if_map{'1.1'}) 
-    or die "Couldn't add port to egress list. ",$bridge->error(1);
 
 =cut
