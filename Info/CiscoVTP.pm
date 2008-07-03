@@ -191,7 +191,6 @@ sub i_vlan_membership {
     my $ports_vlans_2k = $vtp->vtp_trunk_vlans_2k($partial) || {};
     my $ports_vlans_3k = $vtp->vtp_trunk_vlans_3k($partial) || {};
     my $ports_vlans_4k = $vtp->vtp_trunk_vlans_4k($partial) || {};
-    my $voice_vlans    = $vtp->i_voice_vlan($partial) || {};
     my $vtp_vlans      = $vtp->v_state();
     my $i_vlan         = $vtp->i_vlan2($partial) || {};
     my $trunk_dyn_stat = $vtp->vtp_trunk_dyn_stat($partial) || {};
@@ -206,15 +205,6 @@ sub i_vlan_membership {
         if ( defined $stat and $stat =~ /notTrunking/ ) {
             push(@{$i_vlan_membership->{$port}}, $vlan);
         }
-    }
-
-    # Get special voice VLANs (0 and 4096)
-    foreach my $port (keys %$voice_vlans) {
-        my $vlan = $voice_vlans->{$port};
-        next unless defined $vlan;
-        # Going to assume we would catch regular VLANs with the other methods
-        next unless ($vlan == 0 or $vlan == 4096);
-            push(@{$i_vlan_membership->{$port}}, $vlan);
     }
 
     # Get trunk ports
