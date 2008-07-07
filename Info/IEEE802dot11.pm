@@ -1,34 +1,34 @@
 # SNMP::Info::IEEE802dot11
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2006 Eric Miller
+# Copyright (c) 2008 Eric Miller
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::IEEE802dot11;
-$VERSION = '1.07';
+$VERSION = '1.09';
 use strict;
 
 use Exporter;
@@ -178,7 +178,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::IEEE802dot11 - SNMP Interface to data from IEEE802dot11-MIB
+SNMP::Info::IEEE802dot11 - SNMP Interface to data from F<IEEE802dot11-MIB>
 
 =head1 AUTHOR
 
@@ -202,7 +202,7 @@ Eric Miller
 =head1 DESCRIPTION
 
 SNMP::Info::IEEE802dot11 is a subclass of SNMP::Info that provides an interface
-to C<IEEE802dot11-MIB>.  This MIB is used in standards based 802.11 wireless
+to F<IEEE802dot11-MIB>.  This MIB is used in standards based 802.11 wireless
 devices.
 
 Use or create a subclass of SNMP::Info that inherits this one.
@@ -220,7 +220,7 @@ None.
 
 =over
 
-=item IEEE802dot11-MIB
+=item F<IEEE802dot11-MIB>
 
 =back
 
@@ -232,17 +232,17 @@ These are methods that return scalar value from SNMP
 
 =item $dot11->vendor()
 
-Trys to discover the vendor from dot11_man_name() - returns lower case
+Tries to discover the vendor from dot11_man_name() - returns lower case
 of the first word in the first instance found.
 
 =item $dot11->model()
 
-Trys to discover the model from dot11_prod_name() - returns lower case
+Tries to discover the model from dot11_prod_name() - returns lower case
 of the first instance found.
 
 =item $dot11->os_ver()
 
-Trys to discover the operating system version from dot11_prod_ver() - returns
+Tries to discover the operating system version from dot11_prod_ver() - returns
 string of numeric and decimals in the first instance found.
 
 =back
@@ -258,7 +258,7 @@ to a hash.
 
 Returns reference to hash.  SSID's recognized by the radio interface.
 
-(B<dot11DesiredSSID>)
+(C<dot11DesiredSSID>)
 
 =item $dot11->i_80211channel()
 
@@ -267,130 +267,130 @@ interface.
 
 =item $dot11->dot11_cur_tx_pwr_mw()
 
-Returns reference to hash.  Current transmit power, in milliwats, of the radio
+Returns reference to hash.  Current transmit power, in milliwatts, of the radio
 interface.
 
 =back
 
-=head2 Dot11 Phy OFDM Table  (B<dot11PhyOFDMTable>)
+=head2 Dot11 Phy OFDM Table  (C<dot11PhyOFDMTable>)
 
 =over
 
 =item $dot11->dot11_cur_freq()
 
-(B<dot11CurrentFrequency>)
+(C<dot11CurrentFrequency>)
 
 =back
 
-=head2 Dot11 Phy DSSS Table  (B<dot11PhyDSSSTable>)
+=head2 Dot11 Phy DSSS Table  (C<dot11PhyDSSSTable>)
 
 =over
 
 =item $dot11->dot11_cur_ch()
 
-(B<dot11CurrentChannel>)
+(C<dot11CurrentChannel>)
 
 =back
 
-=head2 Dot11 Phy Operation Table  (B<dot11PhyOperationTable>)
+=head2 Dot11 Phy Operation Table  (C<dot11PhyOperationTable>)
 
 =over
 
 =item $dot11->dot11_phy_type()
 
-(B<dot11PHYType>)
+(C<dot11PHYType>)
 
 =item $dot11->dot11_reg_dom()
 
-(B<dot11CurrentRegDomain>)
+(C<dot11CurrentRegDomain>)
 
 =back
 
-=head2 Dot11 Resource Information Table  (B<dot11ResourceInfoTable>)
+=head2 Dot11 Resource Information Table  (C<dot11ResourceInfoTable>)
 
 =over
 
 =item $dot11->dot11_prod_ver()
 
-(B<dot11manufacturerProductVersion>)
+(C<dot11manufacturerProductVersion>)
 
 =item $dot11->dot11_prod_name()
 
-(B<dot11manufacturerProductName>)
+(C<dot11manufacturerProductName>)
 
 =item $dot11->dot11_man_name()
 
-(B<dot11manufacturerName>)
+(C<dot11manufacturerName>)
 
 =back
 
-=head2 Dot11 Operation Table  (B<dot11OperationTable>)
+=head2 Dot11 Operation Table  (C<dot11OperationTable>)
 
 =over
 
 =item $dot11->dot11_mac()
 
-(B<dot11MACAddress>)
+(C<dot11MACAddress>)
 
 =back
 
-=head2 Dot11 Station Configuration Table  (B<dot11StationConfigTable>)
+=head2 Dot11 Station Configuration Table  (C<dot11StationConfigTable>)
 
 =over
 
 =item $dot11->dot11_bss_type()
 
-(B<dot11DesiredBSSType>)
+(C<dot11DesiredBSSType>)
 
 =item $dot11->dot11_pwr_mode()
 
-(B<dot11PowerManagementMode>)
+(C<dot11PowerManagementMode>)
 
 =item $dot11->dot11_sta_id()
 
-(B<dot11StationID>)
+(C<dot11StationID>)
 
 =back
 
-=head2 Dot11 Transmission Power Table  (B<dot11PhyTxPowerTable>)
+=head2 Dot11 Transmission Power Table  (C<dot11PhyTxPowerTable>)
 
 =over
 
 =item $dot11->dot11_cur_tx_pwr()
 
-(B<dot11CurrentTxPowerLevel>)
+(C<dot11CurrentTxPowerLevel>)
 
 =item $dot11->dot11_tx_pwr_level_1()
 
-(B<dot11TxPowerLevel1>)
+(C<dot11TxPowerLevel1>)
 
 =item $dot11->dot11_tx_pwr_level_2()
 
-(B<dot11TxPowerLevel2>)
+(C<dot11TxPowerLevel2>)
 
 =item $dot11->dot11_tx_pwr_level_3()
 
-(B<dot11TxPowerLevel3>)
+(C<dot11TxPowerLevel3>)
 
 =item $dot11->dot11_tx_pwr_level_4()
 
-(B<dot11TxPowerLevel4>)
+(C<dot11TxPowerLevel4>)
 
 =item $dot11->dot11_tx_pwr_level_5()
 
-(B<dot11TxPowerLevel5>)
+(C<dot11TxPowerLevel5>)
 
 =item $dot11->dot11_tx_pwr_level_6()
 
-(B<dot11TxPowerLevel6>)
+(C<dot11TxPowerLevel6>)
 
 =item $dot11->dot11_tx_pwr_level_7()
 
-(B<dot11TxPowerLevel7>)
+(C<dot11TxPowerLevel7>)
 
 =item $dot11->dot11_tx_pwr_level_8()
 
-(B<dot11TxPowerLevel8>)
+(C<dot11TxPowerLevel8>)
 
 =back
 

@@ -1,34 +1,34 @@
 # SNMP::Info::Airespace
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2005 Eric Miller
+# Copyright (c) 2008 Eric Miller
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Airespace;
-$VERSION = '1.07';
+$VERSION = '1.09';
 use strict;
 
 use Exporter;
@@ -647,7 +647,7 @@ sub i_80211channel {
 }
 
 
-# Psuedo ENTITY-MIB methods
+# Pseudo ENTITY-MIB methods
 
 sub e_index {
     my $airespace = shift;
@@ -879,8 +879,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Airespace - SNMP Interface to data from AIRESPACE-WIRELESS-MIB
-and AIRESPACE-SWITCHING-MIB
+SNMP::Info::Airespace - SNMP Interface to data from F<AIRESPACE-WIRELESS-MIB>
+and F<AIRESPACE-SWITCHING-MIB>
 
 =head1 AUTHOR
 
@@ -904,7 +904,7 @@ Eric Miller
 =head1 DESCRIPTION
 
 SNMP::Info::Airespace is a subclass of SNMP::Info that provides an interface
-to C<AIRESPACE-WIRELESS-MIB> and C<AIRESPACE-SWITCHING-MIB>.  These MIBs are
+to F<AIRESPACE-WIRELESS-MIB> and F<AIRESPACE-SWITCHING-MIB>.  These MIBs are
 used in Airespace wireless switches, as well as, products from Cisco, Nortel,
 and Alcatel which are based upon the Airespace platform.
 
@@ -931,9 +931,9 @@ None.
 
 =over
 
-=item AIRESPACE-WIRELESS-MIB
+=item F<AIRESPACE-WIRELESS-MIB>
 
-=item AIRESPACE-SWITCHING-MIB
+=item F<AIRESPACE-SWITCHING-MIB>
 
 =back
 
@@ -945,79 +945,79 @@ These are methods that return scalar value from SNMP
 
 =item $airespace->airespace_type()
 
-(B<agentInventoryMachineType>)
+(C<agentInventoryMachineType>)
 
 =item $airespace->airespace_model()
 
-(B<agentInventoryMachineModel>)
+(C<agentInventoryMachineModel>)
 
 =item $airespace->airespace_serial()
 
-(B<agentInventorySerialNumber>)
+(C<agentInventorySerialNumber>)
 
 =item $airespace->airespace_maint_ver()
 
-(B<agentInventoryMaintenanceLevel>)
+(C<agentInventoryMaintenanceLevel>)
 
 =item $airespace->airespace_mac()
 
-(B<agentInventoryBurnedInMacAddress>)
+(C<agentInventoryBurnedInMacAddress>)
 
 =item $airespace->airespace_os()
 
-(B<agentInventoryOperatingSystem>)
+(C<agentInventoryOperatingSystem>)
 
 =item $airespace->airespace_vendor()
 
-(B<agentInventoryManufacturerName>)
+(C<agentInventoryManufacturerName>)
 
 =item $airespace->airespace_prod_name()
 
-(B<agentInventoryProductName>)
+(C<agentInventoryProductName>)
 
 =item $airespace->os_ver()
 
-(B<agentInventoryProductVersion>)
+(C<agentInventoryProductVersion>)
 
 =item $airespace->airespace_bssid_mode()
 
-(B<agentNetworkBroadcastSsidMode>)
+(C<agentNetworkBroadcastSsidMode>)
 
 =item $airespace->airespace_mc_mode()
 
-(B<agentNetworkMulticastMode>)
+(C<agentNetworkMulticastMode>)
 
 =item $airespace->airespace_lwapp_mode()
 
 The LWAPP transport mode decides if the switch is operating in the Layer2 or
 Layer3 mode.
 
-(B<agentSwitchLwappTransportMode>)
+(C<agentSwitchLwappTransportMode>)
 
 =item $airespace->airespace_ul_mode()
 
 Transfer upload mode configures the mode to use when uploading from the switch.
 Normal usage tftp.
 
-(B<agentTransferUploadMode>)
+(C<agentTransferUploadMode>)
 
 =item $airespace->airespace_ul_ip()
 
-Transfer upload tftpserverip configures the IP address of the server. It is
+Transfer upload tftp server ip configures the IP address of the server. It is
 valid only when the Transfer Mode is tftp.
 
-(B<agentTransferUploadServerIP>)
+(C<agentTransferUploadServerIP>)
 
 =item $airespace->airespace_ul_path()
 
-Transfer upload tftppath configures the directory path where the file is to be
+Transfer upload tftp path configures the directory path where the file is to be
 uploaded to. The switch remembers the last file path used. 
 
-(B<agentTransferUploadPath>)
+(C<agentTransferUploadPath>)
 
 =item $airespace->airespace_ul_file()
 
-(B<agentTransferUploadFilename>)
+(C<agentTransferUploadFilename>)
 
 =item $airespace->airespace_ul_type()
 
@@ -1030,15 +1030,15 @@ Transfer upload datatype configures the type of file to upload from the switch.
     traplog(5)
     crashfile(6)
 
-(B<agentTransferUploadDataType>)
+(C<agentTransferUploadDataType>)
 
 =item $airespace->airespace_ul_start()
 
-(B<agentTransferUploadStart>)
+(C<agentTransferUploadStart>)
 
 =item $airespace->airespace_ul_status()
 
-(B<agentTransferUploadStatus>)
+(C<agentTransferUploadStatus>)
 
 =back
 
@@ -1053,7 +1053,7 @@ proprietary MIBs.
 
 =item $airespace->serial()
 
-(B<agentInventorySerialNumber>)
+(C<agentInventorySerialNumber>)
 
 =back
 
@@ -1079,7 +1079,7 @@ interface.
 
 =back
 
-=head2 Dot11 Ess Table  (B<bsnDot11EssTable>)
+=head2 Dot11 Ess Table  (C<bsnDot11EssTable>)
 
 Ess(WLAN) Configuration Table. Maximum of 17 WLANs can be created on
 Airespace Switch. Index of 17 is reserved for WLAN for Third Party
@@ -1089,33 +1089,33 @@ APs(non-Airespace APs).
 
 =item $airespace->airespace_ess_idx()
 
-(B<bsnDot11EssIndex>)
+(C<bsnDot11EssIndex>)
 
 =item $airespace->airespace_ess_ssid()
 
 SSID assigned to ESS(WLAN)
 
-(B<bsnDot11EssSsid>)
+(C<bsnDot11EssSsid>)
 
 =item $airespace->airespace_ess_macflt()
 
 Select to filter clients by MAC address.  By selecting this Security, you need
-to create MacFilters in B<bsnUsersTable> or have MacFilters configured on
-Radius Servers specified in B<bsnRadiusAuthenticationTable>
+to create MAC Filters in C<bsnUsersTable> or have MAC Filters configured on
+Radius Servers specified in C<bsnRadiusAuthenticationTable>
 
-(B<bsnDot11EssMacFiltering>)
+(C<bsnDot11EssMacFiltering>)
 
 =item $airespace->airespace_ess_status()
 
 Administrative Status of ESS(WLAN).
 
-(B<bsnDot11EssAdminStatus>)
+(C<bsnDot11EssAdminStatus>)
 
 =item $airespace->airespace_ess_sec_auth()
 
 Type of 802.11 Authentication.
 
-(B<bsnDot11EssSecurityAuthType>)
+(C<bsnDot11EssSecurityAuthType>)
 
 =item $airespace->airespace_ess_radio_pol()
 
@@ -1123,30 +1123,30 @@ Radio Policy for a WLAN. It can either be All where it will be applicable
 to ALL types of protocols or it can be set to apply to combinations of
 802.11a, 802.11b, 802.11g.
 
-(B<bsnDot11EssRadioPolicy>)
+(C<bsnDot11EssRadioPolicy>)
 
 =item $airespace->airespace_ess_qos()
 
 Quality of Service for a WLAN.
 
-(B<bsnDot11EssQualityOfService>)
+(C<bsnDot11EssQualityOfService>)
 
 =item $airespace->airespace_ess_ifname()
 
 Name of the interface used by this WLAN.
 
-(B<bsnDot11EssInterfaceName>)
+(C<bsnDot11EssInterfaceName>)
 
 =item $airespace->airespace_ess_aclname()
 
 Name of ACL for the WLAN. This is applicable only when Web Authentication is
 enabled.
 
-(B<bsnDot11EssAclName>)           
+(C<bsnDot11EssAclName>)           
 
 =back
 
-=head2 AP Table (B<bsnAPTable>)
+=head2 AP Table (C<bsnAPTable>)
 
 Table of Airespace APs managed by this Airespace Switch.
 
@@ -1156,55 +1156,55 @@ Table of Airespace APs managed by this Airespace Switch.
 
 The MAC address of the 802.3 interface of the AP.
 
-(B<bsnAPDot3MacAddress>)
+(C<bsnAPDot3MacAddress>)
 
 =item $airespace->airespace_ap_name()
 
 Name assigned to this AP. If an AP is not configured its factory default name
-will be ap:<last three byte of MAC Address>.  eg. ap:af:12:be
+will be ap:<last three byte of MAC Address>.  e.g. ap:af:12:be
 
-(B<bsnAPName>)
+(C<bsnAPName>)
 
 =item $airespace->airespace_ap_ip()
 
 Ip address of the AP. This will not be available when the switch is operating
 in the Layer2 mode. In this case, the attribute will return 0 as value.
 
-(B<bsnApIpAddress>)
+(C<bsnApIpAddress>)
 
 =item $airespace->airespace_ap_loc()
 
 User specified location of this AP.
 
-(B<bsnAPLocation>)
+(C<bsnAPLocation>)
 
 =item $airespace->airespace_ap_sw()
 
-(B<bsnAPSoftwareVersion>)
+(C<bsnAPSoftwareVersion>)
 
 =item $airespace->airespace_ap_fw()
 
-(B<bsnAPBootVersion>)
+(C<bsnAPBootVersion>)
 
 =item $airespace->airespace_ap_model()
 
-(B<bsnAPModel>)
+(C<bsnAPModel>)
 
 =item $airespace->airespace_ap_serial()
 
-(B<bsnAPSerialNumber>)
+(C<bsnAPSerialNumber>)
 
 =item $airespace->airespace_ap_type()
 
-(B<bsnAPType>)
+(C<bsnAPType>)
 
 =item $airespace->airespace_ap_status()
 
-(B<bsnAPAdminStatus>)
+(C<bsnAPAdminStatus>)
 
 =back
 
-=head2 AP Interface Table (B<bsnAPIfTable>)
+=head2 AP Interface Table (C<bsnAPIfTable>)
 
 Table of 802.11 interfaces in an Airespace APs.
 
@@ -1212,44 +1212,44 @@ Table of 802.11 interfaces in an Airespace APs.
 
 =item $airespace->airespace_apif_slot()
 
-The slotId of this interface. Value will be 0 for a 802.11a (5Ghz) interface
+The slot Id of this interface. Value will be 0 for a 802.11a (5Ghz) interface
 and will be 1 for 802.11b/g (2.4Ghz) interface.
 
-(B<bsnAPIfSlotId>)
+(C<bsnAPIfSlotId>)
 
 =item $airespace->airespace_apif_type()
 
-(B<bsnAPIfType>)
+(C<bsnAPIfType>)
 
 =item $airespace->airespace_apif_ch_num()
 
-(B<bsnAPIfPhyChannelNumber>)
+(C<bsnAPIfPhyChannelNumber>)
 
 =item $airespace->airespace_apif_power()
 
-The TxPowerLevel N currently being used to transmit data.
+The transmit power level N currently being used to transmit data.
 
-(B<bsnAPIfPhyTxPowerLevel>)
+(C<bsnAPIfPhyTxPowerLevel>)
 
 =item $airespace->airespace_apif()
 
-(B<bsnAPIfOperStatus>)
+(C<bsnAPIfOperStatus>)
 
 =item $airespace->airespace_apif_oride()
 
 This flag when disabled implies that all WLANs are available from this radio.
 However, if this is enabled, then only those WLANs that appear in the
-(B<bsnApIfWlanOverrideTable>) will be available from this radio.
+(C<bsnApIfWlanOverrideTable>) will be available from this radio.
 
-(B<bsnAPIfWlanOverride>)
+(C<bsnAPIfWlanOverride>)
 
 =item $airespace->airespace_apif_admin()
 
-(B<bsnAPIfAdminStatus>)
+(C<bsnAPIfAdminStatus>)
 
 =back
 
-=head2 Mobile Station Table (B<bsnMobileStationTable>)
+=head2 Mobile Station Table (C<bsnMobileStationTable>)
 
 =over
 
@@ -1257,36 +1257,36 @@ However, if this is enabled, then only those WLANs that appear in the
 
 Mac Address of the AP on which Mobile Station is associated.
 
-(B<bsnMobileStationAPMacAddr>)
+(C<bsnMobileStationAPMacAddr>)
 
 =item $airespace->airespace_sta_slot()
 
-SlotId of APIf on which mobile station is associated.
+Slot Id of AP If on which mobile station is associated.
 
-(B<bsnMobileStationAPIfSlotId>)
+(C<bsnMobileStationAPIfSlotId>)
 
 =item $airespace->airespace_sta_ess_idx()
 
 Ess Index of the Wlan(SSID) that is being used by Mobile Station to connect
 to the AP.
 
-(B<bsnMobileStationEssIndex>)
+(C<bsnMobileStationEssIndex>)
 
 =item $airespace->airespace_sta_ssid()
 
 The SSID Advertised by the Mobile Station.
 
-(B<bsnMobileStationSsid>)
+(C<bsnMobileStationSsid>)
 
 =item $airespace->airespace_sta_delete()
 
 Action to Deauthenticate the Mobile Station. Set the State to delete.
 
-(B<bsnMobileStationDeleteAction>)
+(C<bsnMobileStationDeleteAction>)
 
 =back
 
-=head2 Users Table (B<bsnUsersTable>)
+=head2 Users Table (C<bsnUsersTable>)
 
 The (conceptual) table listing Wlan Users.
 
@@ -1294,47 +1294,47 @@ The (conceptual) table listing Wlan Users.
 
 =item $airespace->airespace_user_name()
 
-User name.  For MAC filters, this will be the MAC address (eg. 000123456789).
+User name.  For MAC filters, this will be the MAC address (e.g. 000123456789).
 
-(B<bsnUserName>)
+(C<bsnUserName>)
 
 =item $airespace->airespace_user_pw()
 
 User Password.  For MAC filters, this will be "nopassword".
 
-(B<bsnUserPassword>)
+(C<bsnUserPassword>)
 
 =item $airespace->airespace_user_ess_idx()
 
 User WLAN ID. Value 0 implies that this applies to any WLAN ID.
 
-(B<bsnUserEssIndex>)
+(C<bsnUserEssIndex>)
 
 =item $airespace->airespace_user_access()
 
 For MAC filters, this will be "readOnly".
 
-(B<bsnUserAccessMode>)
+(C<bsnUserAccessMode>)
 
 =item $airespace->airespace_user_type()
 
 User Access Mode. For MAC filters, this will be "macFilter".
 
-(B<bsnUserType>)
+(C<bsnUserType>)
 
 =item $airespace->airespace_user_ifname()
 
-ACL for MAC Filters.  An interface name from B<agentInterfaceConfigTable>
+ACL for MAC Filters.  An interface name from C<agentInterfaceConfigTable>
 
-(B<bsnUserInterfaceName>)
+(C<bsnUserInterfaceName>)
 
 =item $airespace->airespace_user_rstat()
 
-(B<bsnUserRowStatus>)
+(C<bsnUserRowStatus>)
 
 =back
 
-=head2 Black List Client Table (B<bsnBlackListClientTable>)
+=head2 Black List Client Table (C<bsnBlackListClientTable>)
 
 The table listing Wlan Black Listed Clients
 
@@ -1342,41 +1342,41 @@ The table listing Wlan Black Listed Clients
 
 =item $airespace->airespace_bl_mac()
 
-(B<bsnBlackListClientMacAddress>)
+(C<bsnBlackListClientMacAddress>)
 
 =item $airespace->airespace_bl_descr()
 
-(B<bsnBlackListClientDescription>)
+(C<bsnBlackListClientDescription>)
 
 =item $airespace->airespace_bl_rstat()
 
-(B<bsnBlackListClientRowStatus>)
+(C<bsnBlackListClientRowStatus>)
 
 =back
 
-=head2 AP Interface WLAN Override Table (B<bsnAPIfWlanOverrideTable>)
+=head2 AP Interface WLAN Override Table (C<bsnAPIfWlanOverrideTable>)
 
 Each entry represents an SSID added to the AP when the attribute
-B<bsnAPIfWlanOverride> on the radio is enabled.  This means only those WLANs
+C<bsnAPIfWlanOverride> on the radio is enabled.  This means only those WLANs
 on the switch that are added to this table will be available on such a radio.
 
 =over
 
 =item $airespace->airespace_oride_id()
 
-Index of the WLAN (B<bsnDot11EssIndex>) added to the radio.
+Index of the WLAN (C<bsnDot11EssIndex>) added to the radio.
 
-(B<bsnAPIfWlanOverrideId>)
+(C<bsnAPIfWlanOverrideId>)
 
 =item $airespace->airespace_oride_ssid()
 
 SSID assigned to the override WLAN.
 
-(B<bsnAPIfWlanOverrideSsid>)
+(C<bsnAPIfWlanOverrideSsid>)
 
 =back
 
-=head2 Interface Config Table (B<agentInterfaceConfigTable>)
+=head2 Interface Config Table (C<agentInterfaceConfigTable>)
 
 A table of the switch's Interface Config entries. Typically, it will contain
 entries	for Service Port Interface, DS Port Interface and Virtual Gateway
@@ -1386,17 +1386,17 @@ Interface apart from other entries.
 
 =item $airespace->airespace_if_name()
 
-Interace Name. This values is 'management' for DS port, 'service-port' for
+Interface Name. This values is 'management' for DS port, 'service-port' for
 service port and 'virtual' for virtual gateway. For other interfaces, the
 name can be anything. These interfaces are already created by default.
 
-(B<agentInterfaceName>)
+(C<agentInterfaceName>)
 
 =item $airespace->airespace_if_vlan()
 
 VLAN Id configured for the Interface.
 
-(B<agentInterfaceVlanId>)
+(C<agentInterfaceVlanId>)
 
 =item $airespace->airespace_if_type()
 
@@ -1404,22 +1404,22 @@ The interface's type. The static type is set for the interfaces that are
 created by default on the switch and these cannot be deleted. Any other
 interface that is created is of type dynamic which can be deleted.
 
-(B<agentInterfaceType>)
+(C<agentInterfaceType>)
 
 =item $airespace->airespace_if_mac()
 
 Interface MAC Address. This is only applicable in case of management and
 service-port interfaces.
 
-(B<agentInterfaceMacAddress>)
+(C<agentInterfaceMacAddress>)
 
 =item $airespace->airespace_if_ip()
 
-(B<agentInterfaceIPAddress>)
+(C<agentInterfaceIPAddress>)
 
 =item $airespace->airespace_if_mask()
 
-(B<agentInterfaceIPNetmask>)
+(C<agentInterfaceIPNetmask>)
 
 =item $airespace->airespace_if_acl()
 
@@ -1428,25 +1428,25 @@ applicable only to the management interface and other dynamic interfaces.
 If it is required to remove the ACL name for an interface, it should be set
 to an empty string.
 
-(B<agentInterfaceAclName>)
+(C<agentInterfaceAclName>)
 
 =item $airespace->airespace_if_rstat()
 
-(B<agentInterfaceRowStatus>)
+(C<agentInterfaceRowStatus>)
 
 =back
 
-=head2 Port Config Table (B<agentPortConfigTable>)
+=head2 Port Config Table (C<agentPortConfigTable>)
 
 =over
 
 =item $airespace->airespace_duplex_admin()
 
-(B<agentPortPhysicalMode>)
+(C<agentPortPhysicalMode>)
 
 =item $airespace->airespace_duplex()
 
-(B<agentPortPhysicalStatus>)
+(C<agentPortPhysicalStatus>)
 
 =back
 
@@ -1458,7 +1458,7 @@ to an empty string.
 
 Returns reference to map of IIDs to Interface index. 
 
-Extends ifIndex to support thin APs and WLAN virtual interfaces as device
+Extends C<ifIndex> to support thin APs and WLAN virtual interfaces as device
 interfaces.
 
 =item $airespace->interfaces()
@@ -1470,38 +1470,38 @@ use airespace_if_name() as the port identifier.
 
 =item $airespace->i_name()
 
-Returns reference to map of IIDs to interface names.  Returns B<ifName> for
+Returns reference to map of IIDs to interface names.  Returns C<ifName> for
 Ethernet interfaces, airespace_ap_name() for thin AP interfaces, and
 airespace_if_name() for virtual interfaces.
 
 =item $airespace->i_description()
 
-Returns reference to map of IIDs to interface types.  Returns B<ifDescr>
+Returns reference to map of IIDs to interface types.  Returns C<ifDescr>
 for Ethernet interfaces, airespace_ap_loc() for thin AP interfaces, and
 airespace_if_name() for virtual interfaces.
 
 =item $airespace->i_type()
 
 Returns reference to map of IIDs to interface descriptions.  Returns
-B<ifType> for Ethernet interfaces, airespace_apif_type() for thin AP
+C<ifType> for Ethernet interfaces, airespace_apif_type() for thin AP
 interfaces, and airespace_if_type() for virtual interfaces.
 
 =item $airespace->i_up()
 
 Returns reference to map of IIDs to link status of the interface.  Returns
-B<ifOperStatus> for Ethernet interfaces and airespace_apif() for thin AP
+C<ifOperStatus> for Ethernet interfaces and airespace_apif() for thin AP
 interfaces.
 
 =item $airespace->i_up_admin()
 
 Returns reference to map of IIDs to administrative status of the interface.
-Returns B<ifAdminStatus> for Ethernet interfaces and airespace_apif_admin()
+Returns C<ifAdminStatus> for Ethernet interfaces and airespace_apif_admin()
 for thin AP interfaces.
 
 =item $airespace->i_mac()
 
 Returns reference to map of IIDs to MAC address of the interface.  Returns
-B<ifPhysAddress> for Ethernet interfaces and airespace_if_mac() for virtual 
+C<ifPhysAddress> for Ethernet interfaces and airespace_if_mac() for virtual 
 interfaces.
 
 =item $airespace->i_vlan()
@@ -1539,14 +1539,14 @@ airespace_sta_slot() combined to match the interface iid.
 
 =item $airespace->fw_mac()
 
-(B<bsnMobileStationMacAddress>)
+(C<bsnMobileStationMacAddress>)
 
 =back
 
-=head2 Psuedo ENTITY-MIB information
+=head2 Pseudo F<ENTITY-MIB> information
 
-These methods emulate ENTITY-MIB Physical Table methods using
-AIRESPACE-SWITCHING-MIB and AIRESPACE-WIRELESS-MIB.  Thin APs are included
+These methods emulate F<ENTITY-MIB> Physical Table methods using
+F<AIRESPACE-SWITCHING-MIB> and F<AIRESPACE-WIRELESS-MIB>.  Thin APs are included
 as subcomponents of the wireless controller.
 
 =over
@@ -1599,5 +1599,7 @@ Returns reference to hash.  Key: IID, Value: Software revision.
 
 Returns reference to hash.  Key: IID, Value: The value of e_index() for the
 entity which 'contains' this entity.
+
+=back
 
 =cut

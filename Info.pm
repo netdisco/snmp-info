@@ -1,4 +1,5 @@
 # SNMP::Info - Max Baker
+# $Id$
 #
 # Copyright (c) 2003,2004 Max Baker 
 # All rights reserved.  
@@ -6,7 +7,6 @@
 # All rights reserved.  
 #
 # See COPYRIGHT at bottom
-# $Id$
 
 package SNMP::Info;
 $VERSION = '1.09';
@@ -25,7 +25,8 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_
 
 =head1 NAME
 
-SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through SNMP. 
+SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
+SNMP. 
 
 =head1 VERSION
 
@@ -34,7 +35,7 @@ SNMP::Info - Version 1.09
 =head1 AUTHOR
 
 SNMP::Info was created at UCSC for the netdisco project (www.netdisco.org)
-and was orginally written by Max Baker.
+and was originally written by Max Baker.
 
 Currently being maintained by team of Open Source authors headed by Eric Miller
 and Bill Fenner. 
@@ -97,32 +98,35 @@ and Bill Fenner.
 
 =head1 SUPPORT
 
-Please direct all support, help, and bug requests to the snmp-info-users Mailing List
-at <http://lists.sourceforge.net/lists/listinfo/snmp-info-users>.
+Please direct all support, help, and bug requests to the snmp-info-users
+Mailing List at <http://lists.sourceforge.net/lists/listinfo/snmp-info-users>.
 
 =head1 DESCRIPTION 
 
-SNMP::Info gives an object oriented interface to information obtained through SNMP.
+SNMP::Info gives an object oriented interface to information obtained through
+SNMP.
 
-This module lives at http://snmp-info.sourceforge.net  Check for newest version and 
-documentation.
+This module lives at http://snmp-info.sourceforge.net  Check for newest version
+and documentation.
 
 This module is geared towards network devices.  Subclasses exist for a number of 
 network devices and common MIBs. 
 
-The idea behind this module is to give a common interface to data from network devices,
-leaving the device-specific hacks behind the scenes in subclasses.
+The idea behind this module is to give a common interface to data from network
+devices, leaving the device-specific hacks behind the scenes in subclasses.
 
-In the SYNOPSIS example we fetch the name of all the ports on the device and the duplex
-setting for that port with two methods -- interfaces() and i_duplex().
+In the SYNOPSIS example we fetch the name of all the ports on the device and
+the duplex setting for that port with two methods -- interfaces() and
+i_duplex().
 
-The information may be coming from any number of MIB files and is very vendor specific.
-SNMP::Info provides you a common method for all supported devices.
+The information may be coming from any number of MIB files and is very vendor
+specific.  SNMP::Info provides you a common method for all supported devices.
 
 Adding support for your own device is easy, and takes little SNMP knowledge.
 
-The module is not limited to network devices. Any MIB or device can be given an objected oriented
-front-end by making a module that consists of a couple hashes.  See EXTENDING SNMP::INFO.
+The module is not limited to network devices. Any MIB or device can be given an
+objected oriented front-end by making a module that consists of a couple
+hashes.  See EXTENDING SNMP::INFO.
 
 =head1 REQUIREMENTS
 
@@ -138,9 +142,10 @@ DO NOT INSTALL SNMP:: or Net::SNMP from CPAN!
 The SNMP module is matched to an install of net-snmp, and must be installed
 from the net-snmp source tree.
 
-The Perl module C<SNMP> is found inside the net-snmp distribution.  Go to the F<perl/> directory
-of the distribution to install it, or run C<./configure --with-perl-modules> from the top directory
-of the net-snmp distribution.
+The Perl module C<SNMP> is found inside the net-snmp distribution.  Go to the
+F<perl/> directory of the distribution to install it, or run
+C<./configure --with-perl-modules> from the top directory of the net-snmp
+distribution.
 
 Net-SNMP can be found at http://net-snmp.sourceforge.net
 
@@ -159,7 +164,7 @@ don't have the Perl library installed.  Uninstall the RPM and install by hand.
 SNMP::Info operates on textual descriptors found in MIBs.
 
 If you are using SNMP::Info separate from Netdisco, 
-download the Netdisco-MIB package at
+download the Netdisco MIB package at
 
  http://sourceforge.net/project/showfiles.php?group_id=80033&package_id=135517
 
@@ -194,7 +199,8 @@ SNMP::Info will ask for C<RFC1213-MIB::ifType> and will get back C<ppp>.
 You can create a new subclass for a device by providing four hashes :
 %GLOBALS, %MIBS, %FUNCS, and %MUNGE.  
 
-Or you can override any existing methods from a parent class by making a short subroutine. 
+Or you can override any existing methods from a parent class by making a short
+subroutine. 
 
 See the section EXTENDING SNMP::INFO for more details.
 
@@ -221,133 +227,135 @@ For more info run C<perldoc> on any of the following module names.
 
 =item SNMP::Info::Airespace
 
-AIRESPACE-WIRELESS-MIB and AIRESPACE-SWITCHING-MIB.  Inherited by devices based
-on the Airespace wireless platform.
+F<AIRESPACE-WIRELESS-MIB> and F<AIRESPACE-SWITCHING-MIB>.  Inherited by devices
+based on the Airespace wireless platform.
 
 See documentation in L<SNMP::Info::Airespace> for details.
 
 =item SNMP::Info::Bridge
 
-BRIDGE-MIB (RFC1286).  QBRIDGE-MIB. Inherited by devices with Layer2 support.
+F<BRIDGE-MIB> (RFC1286).  F<QBRIDGE-MIB>. Inherited by devices with Layer2
+support.
 
 See documentation in L<SNMP::Info::Bridge> for details.
 
 =item SNMP::Info::CDP
 
-CISCO-CDP-MIB.  Cisco Discovery Protocol (CDP) Support.  Inherited by Cisco, 
+F<CISCO-CDP-MIB>.  Cisco Discovery Protocol (CDP) Support.  Inherited by Cisco, 
 Enterasys, and HP devices.
 
 See documentation in L<SNMP::Info::CDP> for details.
 
 =item SNMP::Info::CiscoConfig
 
-CISCO-CONFIG-COPY-MIB, CISCO-FLASH-MIB, and OLD-CISCO-SYS-MIB.
+F<CISCO-CONFIG-COPY-MIB>, F<CISCO-FLASH-MIB>, and F<OLD-CISCO-SYS-MIB>.
 These OIDs facilitate the writing of configuration files.
 
 See documentation in L<SNMP::Info::CiscoConfig> for details.
 
 =item SNMP::Info::CiscoImage
 
-CISCO-IMAGE-MIB. A collection of OIDs providing IOS image characteristics.
+F<CISCO-IMAGE-MIB>. A collection of OIDs providing IOS image characteristics.
 
 See documentation in L<SNMP::Info::CiscoImage> for details.
 
 =item SNMP::Info::CiscoPortSecurity
 
-CISCO-PORT-SECURITY-MIB and CISCO-PAE-MIB.
+F<CISCO-PORT-SECURITY-MIB> and F<CISCO-PAE-MIB>.
 
 See documentation in L<SNMP::Info::CiscoPortSecurity> for details.
 
 =item SNMP::Info::CiscoQOS
 
-CISCO-CLASS-BASED-QOS-MIB. A collection of OIDs providing information about
+F<CISCO-CLASS-BASED-QOS-MIB>. A collection of OIDs providing information about
 a Cisco device's QOS config.
 
 See documentation in L<SNMP::Info::CiscoQOS> for details.
 
 =item SNMP::Info::CiscoRTT
 
-CISCO-RTTMON-MIB. A collection of OIDs providing information about a Cisco
+F<CISCO-RTTMON-MIB>. A collection of OIDs providing information about a Cisco
 device's RTT values.
 
 See documentation in L<SNMP::Info::CiscoRTT> for details.
 
 =item SNMP::Info::CiscoStack
 
-CISCO-STACK-MIB.
+F<CISCO-STACK-MIB>.
 
 See documentation in L<SNMP::Info::CiscoStack> for details.
 
 =item SNMP::Info::CiscoStats
 
-OLD-CISCO-CPU-MIB, CISCO-PROCESS-MIB, and CISCO-MEMORY-POOL-MIB.  Provides
-common interfaces for memory, cpu, and os statistics for Cisco devices.  
+F<OLD-CISCO-CPU-MIB>, F<CISCO-PROCESS-MIB>, and F<CISCO-MEMORY-POOL-MIB>.
+Provides common interfaces for memory, cpu, and os statistics for Cisco devices.  
 
 See documentation in L<SNMP::Info::CiscoStats> for details.
 
 =item SNMP::Info::CiscoVTP
 
-CISCO-VTP-MIB, CISCO-VLAN-MEMBERSHIP-MIB, CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
+F<CISCO-VTP-MIB>, F<CISCO-VLAN-MEMBERSHIP-MIB>,
+F<CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB>
 
 See documentation in L<SNMP::Info::CiscoVTP> for details.
 
 =item SNMP::Info::Entity
 
-ENTITY-MIB.  Used for device info in Cisco and other vendors.
+F<ENTITY-MIB>.  Used for device info in Cisco and other vendors.
 
 See documentation in L<SNMP::Info::Entity> for details.
 
 =item SNMP::Info::EtherLike
 
-ETHERLIKE-MIB (RFC1398) - Some Layer3 devices implement this MIB, as well as
+F<ETHERLIKE-MIB> (RFC1398) - Some Layer3 devices implement this MIB, as well as
 some Aironet Layer 2 devices (non Cisco).
 
 See documentation in L<SNMP::Info::EtherLike> for details.
 
 =item SNMP::Info::FDP
 
-Foundry Discovery Protocol.  FOUNDRY-SN-SWITCH-GROUP-MIB
+Foundry Discovery Protocol.  F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
 See documentation in L<SNMP::Info::FDP> for details.
 
 =item SNMP::Info::IEEE802dot11
 
-IEEE802dot11-MIB.  A collection of OIDs providing information about standards
+F<IEEE802dot11-MIB>.  A collection of OIDs providing information about standards
 based 802.11 wireless devices.  
 
 See documentation in L<SNMP::Info::IEEE802dot11> for details.
 
 =item SNMP::Info::LLDP
 
-LLDP-MIB, LLDP-EXT-DOT1-MIB, and LLDP-EXT-DOT3-MIB.  Link Layer Discovery
-Protocol (LLDP) Support.
+F<LLDP-MIB>, F<LLDP-EXT-DOT1-MIB>, and F<LLDP-EXT-DOT3-MIB>.  Link Layer
+Discovery Protocol (LLDP) Support.
 
 See documentation in L<SNMP::Info::LLDP> for details.
 
 =item SNMP::Info::MAU
 
-MAU-MIB (RFC2668).  Some Layer2 devices use this for extended Ethernet
+F<MAU-MIB> (RFC2668).  Some Layer2 devices use this for extended Ethernet
 (Media Access Unit) interface information.
 
 See documentation in L<SNMP::Info::MAU> for details.
 
 =item SNMP::Info::NortelStack
 
-S5-AGENT-MIB, S5-CHASSIS-MIB.
+F<S5-AGENT-MIB>, F<S5-CHASSIS-MIB>.
 
 See documentation in L<SNMP::Info::NortelStack> for details.
 
 =item SNMP::Info::RapidCity
 
-RAPID-CITY.  Inhertited by Nortel switches for duplex and VLAN information.
+F<RAPID-CITY>.  Inherited by Nortel switches for duplex and VLAN information.
 
 See documentation in L<SNMP::Info::RapidCity> for details.
 
 =item SNMP::Info::SONMP
 
-SYNOPTICS-ROOT-MIB, S5-ETH-MULTISEG-TOPOLOGY-MIB.  Provides translation from
-Nortel Topology Table information to CDP.  Inherited by Nortel/Bay/Synoptics
-switches and hubs.
+F<SYNOPTICS-ROOT-MIB>, F<S5-ETH-MULTISEG-TOPOLOGY-MIB>.  Provides translation
+from Nortel Topology Table information to CDP.  Inherited by
+Nortel/Bay/Synoptics switches and hubs.
 
 See documentation in L<SNMP::Info::SONMP> for details.
 
@@ -358,7 +366,8 @@ See documentation in L<SNMP::Info::SONMP> for details.
 These subclasses inherit from one or more classes to provide a common interface
 to data obtainable from network devices. 
 
-All the required MIB files are included in the netdisco-mib package.  (See Above).
+All the required MIB files are included in the netdisco-mib package.
+(See Above).
 
 =over
 
@@ -374,7 +383,7 @@ See documentation in L<SNMP::Info::Layer1> for details.
 
 Subclass for Allied Telesys Repeaters / Hubs.  
 
-Requires ATI-MIB
+Requires F<ATI-MIB>
 
 See documentation in L<SNMP::Info::Layer1::Allied> for details.
 
@@ -382,7 +391,7 @@ See documentation in L<SNMP::Info::Layer1::Allied> for details.
 
 Subclass for Asante 1012 Hubs. 
 
-Requires ASANTE-HUB1012-MIB
+Requires F<ASANTE-HUB1012-MIB>
 
 See documentation in L<SNMP::Info::Layer1::Asante> for details.
 
@@ -495,7 +504,7 @@ Depreciated.  Use SNMP::Info::Layer3::Foundry.
 
 Subclass for HP Procurve Switches
 
-Requires HP-ICF-OID and ENTITY-MIB downloaded from HP.  
+Requires F<HP-ICF-OID> and F<ENTITY-MIB> downloaded from HP.  
 
 See documentation in L<SNMP::Info::Layer2::HP> for details.
 
@@ -712,7 +721,8 @@ Returns an object of a more specific device class
 
 =item BigInt
 
-Return Math::BigInt objects for 64 bit counters.  Sets on a global scope, not object.
+Return Math::BigInt objects for 64 bit counters.  Sets on a global scope,
+not object.
 
 (default off)
 
@@ -726,7 +736,8 @@ Note that BULKWALK is turned off for Net-SNMP versions 5.1.x because of a bug.
 
 =item BulkRepeaters
 
-Set number of MaxRepeaters for BULKWALK operation.  See C<perldoc SNMP> -> bulkwalk() for more info.
+Set number of MaxRepeaters for BULKWALK operation.  See
+C<perldoc SNMP> -> bulkwalk() for more info.
 
 (default 20)
 
@@ -735,7 +746,7 @@ Set number of MaxRepeaters for BULKWALK operation.  See C<perldoc SNMP> -> bulkw
 Detects looping during getnext table column walks by comparing IIDs for each
 instance.  A loop is detected if the same IID is seen more than once and the
 walk is aborted.  Note:  This will not detect loops during a bulkwalk
-operation, Net-SNMP's internal bulkwalk function must detect the loop. 
+operation, Net-'s internal bulkwalk function must detect the loop. 
 
 Set to C<0> to turn off loop detection.
 
@@ -752,7 +763,7 @@ Pass 2 to print even more debugging messages.
 
 Set $SNMP::debugging  level for Net-SNMP.
 
-See L<SNMP> for more details.
+See F<SNMP> for more details.
 
 =item MibDirs
 
@@ -793,14 +804,14 @@ you create the device object to see if there was a problem in connecting.
 
 A note about SNMP Versions :
 
-Some older devices don't support SNMP version 2, and will not return anything when a
-connection under Version 2 is attempted.
+Some older devices don't support SNMP version 2, and will not return anything
+when a connection under Version 2 is attempted.
 
-Some newer devices will support Version 1, but will not return all the data they might have
-if you had connected under Version 1 
+Some newer devices will support Version 1, but will not return all the data
+they might have if you had connected under Version 1 
 
-When trying to get info from a new device, you may have to try version 2 and then fallback to 
-version 1.
+When trying to get info from a new device, you may have to try version 2 and
+then fallback to version 1.
 
 =cut
 
@@ -924,7 +935,7 @@ Clears the object cache.
 This is useful, e.g., when a device supports multiple contexts
 (via changes to the Community string, or via the SNMPv3 Context
 parameter), but a context that you want to access does not support
-the objects (e.g., sysObjectID, sysDescr) that we use to identify
+the objects (e.g., C<sysObjectID>, C<sysDescr>) that we use to identify
 the device.
 
 =cut
@@ -975,7 +986,7 @@ and table methods.
 
 =head2 Object Scalar Methods
 
-These are for package related data, not direcly supplied
+These are for package related data, not directly supplied
 from SNMP.
 
 =over
@@ -1004,7 +1015,8 @@ sub clear_cache {
 
 =item $info->debug(1)
 
-Returns current debug status, and optionally toggles debugging info for this object.
+Returns current debug status, and optionally toggles debugging info for this
+object.
 
 =cut
 
@@ -1426,7 +1438,8 @@ sub cisco_comm_indexing{
 
 These are methods to return scalar data from RFC1213.  
 
-Some subset of these is probably available for any network device that speaks SNMP.
+Some subset of these is probably available for any network device that speaks
+SNMP.
 
 =over
 
@@ -1434,19 +1447,19 @@ Some subset of these is probably available for any network device that speaks SN
 
 Uptime in hundredths of seconds since device became available.
 
-(B<sysUpTime>)
+(C<sysUpTime>)
 
 =item $info->contact()
 
-(B<sysContact>)
+(C<sysContact>)
 
 =item $info->name()
 
-(B<sysName>)
+(C<sysName>)
 
 =item $info->location() 
 
-(B<sysLocation>)
+(C<sysLocation>)
 
 =item $info->layers()
 
@@ -1461,7 +1474,7 @@ Note:  This string is 8 digits long.
 
 See $info->has_layer()
 
-(B<sysServices>)
+(C<sysServices>)
 
 =item $info->ports()
 
@@ -1470,7 +1483,7 @@ Number of interfaces available on this device.
 Not too useful as the number of SNMP interfaces usually does not 
 correspond with the number of physical ports
 
-(B<ifNumber>)
+(C<ifNumber>)
 
 =item $info->ipforwarding()
 
@@ -1478,7 +1491,7 @@ The indication of whether the entity is acting as an IP gateway
 
 Returns either forwarding or not-forwarding
 
-(B<ipForwarding>)
+(C<ipForwarding>)
 
 =back
 
@@ -1518,7 +1531,7 @@ Partial table results are not cached.
 
 =item $info->interfaces()
 
-This methods is overriden in each subclass to provide a 
+This methods is overridden in each subclass to provide a 
 mapping between the Interface Table Index (iid) and the physical port name.
 
 =item $info->if_ignore()
@@ -1526,8 +1539,8 @@ mapping between the Interface Table Index (iid) and the physical port name.
 Returns a reference to a hash where key values that exist are 
 interfaces to ignore.
 
-Ignored interfaces are ones that are usually not physical ports or Virtual Lans (VLANs) such as the Loopback interface,
-or the CPU interface. 
+Ignored interfaces are ones that are usually not physical ports or Virtual
+Lans (VLANs) such as the Loopback interface, or the CPU interface. 
 
 =cut
 
@@ -1540,32 +1553,33 @@ sub if_ignore {
 
 Default SNMP IID to Interface index.
 
-(B<ifIndex>)
+(C<ifIndex>)
 
 =item $info->i_description() 
 
-Description of the interface. Usually a little longer single word name that is both
-human and machine friendly.  Not always.
+Description of the interface. Usually a little longer single word name that is
+both human and machine friendly.  Not always.
 
-(B<ifDescr>)
+(C<ifDescr>)
 
 =item $info->i_type()
 
-Interface type, such as Vlan, 10baseT, Ethernet, Serial
+Interface type, such as Vlan, Ethernet, Serial
 
-(B<ifType>)
+(C<ifType>)
 
 =item $info->i_mtu()
 
 INTEGER. Interface MTU value.
 
-(B<ifMtu>)
+(C<ifMtu>)
 
 =item $info->i_speed()
 
-Speed of the link, human format.  See munge_speed() later in document for details.
+Speed of the link, human format.  See munge_speed() later in document for
+details.
 
-(B<ifSpeed>, B<ifHighSpeed> if necessary)
+(C<ifSpeed>, C<ifHighSpeed> if necessary)
 
 =cut
 
@@ -1590,7 +1604,7 @@ sub i_speed {
 Speed of the link in bits per second without munging.
 If i_speed_high is available it will be used and multiplied by 1_000_000.
 
-(B<ifSpeed>, B<ifHighSpeed> if necessary)
+(C<ifSpeed>, C<ifHighSpeed> if necessary)
 
 =cut
 
@@ -1616,45 +1630,46 @@ Speed of a high-speed link, human format.  See munge_highspeed() later in
 document for details.  You should not need to call this directly, as
 i_speed() will call it if it needs to.
 
-(B<ifHighSpeed>)
+(C<ifHighSpeed>)
 
 =item $info->i_mac() 
 
-MAC address of the interface.  Note this is just the MAC of the port, not anything connected to it.
+MAC address of the interface.  Note this is just the MAC of the port, not
+anything connected to it.
 
-(B<ifPhysAddress>)
+(C<ifPhysAddress>)
 
 =item $info->i_up() 
 
 Link Status of the interface.  Typical values are 'up' and 'down'.
 
-(B<ifOperStatus>)
+(C<ifOperStatus>)
 
 =item $info->i_up_admin()
 
 Administrative status of the port.  Typical values are 'enabled' and 'disabled'.
 
-(B<ifAdminStatus>)
+(C<ifAdminStatus>)
 
 =item $info->i_lastchange()
 
-The value of sysUpTime when this port last changed states (up,down).
+The value of C<sysUpTime> when this port last changed states (up,down).
 
-(B<ifLastChange>)
+(C<ifLastChange>)
 
 =item $info->i_name()
 
-Interface Name field.  Supported by a smaller subset of devices, this fields is often 
-human set.
+Interface Name field.  Supported by a smaller subset of devices, this fields
+is often human set.
 
-(B<ifName>)
+(C<ifName>)
 
 =item $info->i_alias()
 
-Interface Name field.  For certain devices this is a more human friendly form of i_description().
-For others it is a human set field like i_name().
+Interface Name field.  For certain devices this is a more human friendly form
+of i_description().  For others it is a human set field like i_name().
 
-(B<ifAlias>)
+(C<ifAlias>)
 
 =back
 
@@ -1671,19 +1686,21 @@ Number of octets sent/received on the interface including framing characters.
 
 64 bit version may not exist on all devices. 
 
-NOTE: To manipulate 64 bit counters you need to use Math::BigInt, since the values
-are too large for a normal Perl scalar.   Set the global $SNMP::Info::BIGINT to 1 , or
-pass the BigInt value to new() if you want SNMP::Info to do it for you.
+NOTE: To manipulate 64 bit counters you need to use Math::BigInt, since the
+values are too large for a normal Perl scalar.   Set the global
+$SNMP::Info::BIGINT to 1 , or pass the BigInt value to new() if you want
+SNMP::Info to do it for you.
 
 
-(B<ifInOctets>) (B<ifOutOctets>)
-(B<ifHCInOctets>) (B<ifHCOutOctets>)
+(C<ifInOctets>) (C<ifOutOctets>)
+(C<ifHCInOctets>) (C<ifHCOutOctets>)
 
 =item $info->i_errors_in(), $info->i_errors_out()
 
-Number of packets that contained an error prventing delivery.  See IF-MIB for more info.
+Number of packets that contained an error preventing delivery.  See C<IF-MIB>
+for more info.
 
-(B<ifInErrors>) (B<ifOutErrors>)
+(C<ifInErrors>) (C<ifOutErrors>)
 
 =item $info->i_pkts_ucast_in(), $info->i_pkts_ucast_out(),
 $info->i_pkts_ucast_in64(), $info->i_pkts_ucast_out64()
@@ -1692,17 +1709,17 @@ Number of packets not sent to a multicast or broadcast address.
 
 64 bit version may not exist on all devices. 
 
-(B<ifInUcastPkts>) (B<ifOutUcastPkts>)
-(B<ifHCInUcastPkts>) (B<ifHCOutUcastPkts>)
+(C<ifInUcastPkts>) (C<ifOutUcastPkts>)
+(C<ifHCInUcastPkts>) (C<ifHCOutUcastPkts>)
 
 =item $info->i_pkts_nucast_in(), $info->i_pkts_nucast_out(),
 
 Number of packets sent to a multicast or broadcast address.
 
-These methods are depricated by i_pkts_multi_in() and i_pkts_bcast_in()
-according to IF-MIB.  Actual device usage may vary.
+These methods are deprecated by i_pkts_multi_in() and i_pkts_bcast_in()
+according to C<IF-MIB>.  Actual device usage may vary.
 
-(B<ifInNUcastPkts>) (B<ifOutNUcastPkts>)
+(C<ifInNUcastPkts>) (C<ifOutNUcastPkts>)
 
 =item $info->i_pkts_multi_in() $info->i_pkts_multi_out(),
 $info->i_pkts_multi_in64(), $info->i_pkts_multi_out64()
@@ -1711,8 +1728,8 @@ Number of packets sent to a multicast address.
 
 64 bit version may not exist on all devices. 
 
-(B<ifInMulticastPkts>) (B<ifOutMulticastPkts>)
-(B<ifHCInMulticastPkts>) (B<ifHCOutMulticastPkts>)
+(C<ifInMulticastPkts>) (C<ifOutMulticastPkts>)
+(C<ifHCInMulticastPkts>) (C<ifHCOutMulticastPkts>)
 
 =item $info->i_pkts_bcast_in() $info->i_pkts_bcast_out(),
 $info->i_pkts_bcast_in64() $info->i_pkts_bcast_out64()
@@ -1721,17 +1738,17 @@ Number of packets sent to a broadcast address on an interface.
 
 64 bit version may not exist on all devices. 
 
-(B<ifInBroadcastPkts>) (B<ifOutBroadcastPkts>)
-(B<ifHCInBroadcastPkts>) (B<ifHCOutBroadcastPkts>)
+(C<ifInBroadcastPkts>) (C<ifOutBroadcastPkts>)
+(C<ifHCInBroadcastPkts>) (C<ifHCOutBroadcastPkts>)
 
 =item $info->i_discards_in() $info->i_discards_out()
 
 "The number of inbound packets which were chosen to be discarded even though
 no errors had been detected to prevent their being deliverable to a
 higher-layer protocol.  One possible reason for discarding such a packet could
-be to free up buffer space."  (IF-MIB)
+be to free up buffer space."  (C<IF-MIB>)
 
-(B<ifInDiscards>) (B<ifOutDiscards>)
+(C<ifInDiscards>) (C<ifOutDiscards>)
 
 =item $info->i_bad_proto_in()
 
@@ -1743,19 +1760,19 @@ were discarded because of an unknown or unsupported protocol.  For any
 interface that does not support protocol multiplexing, this counter will always
 be 0."
 
-(B<ifInUnknownProtos>)
+(C<ifInUnknownProtos>)
 
 =item $info->i_qlen_out()
 
 "The length of the output packet queue (in packets)."
 
-(B<ifOutQLen>)
+(C<ifOutQLen>)
 
 =item $info->i_specific()
 
-See IF-MIB for full description
+See C<IF-MIB> for full description
 
-(B<ifSpecific>)
+(C<ifSpecific>)
 
 =back
 
@@ -1770,25 +1787,25 @@ this is implemented in Layer3 Devices.
 
 Maps the IP Table to the IID
 
-(B<ipAdEntIfIndex>)
+(C<ipAdEntIfIndex>)
 
 =item $info->ip_table()
 
 Maps the Table to the IP address
 
-(B<ipAdEntAddr>)
+(C<ipAdEntAddr>)
 
 =item $info->ip_netmask()
 
 Gives netmask setting for IP table entry.
 
-(B<ipAdEntNetMask>)
+(C<ipAdEntNetMask>)
 
 =item $info->ip_broadcast()
 
 Gives broadcast address for IP table entry.
 
-(B<ipAdEntBcastAddr>)
+(C<ipAdEntBcastAddr>)
 
 =back
 
@@ -1952,21 +1969,23 @@ Returns undef if failed, or the return value from SNMP::Session::set() (snmp_err
 
 =back
 
-NOTE: You must be connected to your device with a C<ReadWrite> community string in order
-for set operations to work.
+NOTE: You must be connected to your device with a C<ReadWrite> community
+string in order for set operations to work.
 
-NOTE: This will only set data listed in %FUNCS and %GLOBALS.  For data acquired from
-overriden methods (subroutines) specific set_METHOD() subroutines will need to be
-added if they haven't been already.
+NOTE: This will only set data listed in %FUNCS and %GLOBALS.  For data acquired
+from overridden methods (subroutines) specific set_METHOD() subroutines will
+need to be added if they haven't been already.
 
 =head1 Quiet Mode
 
-SNMP::Info will not chirp anything to STDOUT unless there is a serious error (in which case it will probably
-die).
+SNMP::Info will not chirp anything to STDOUT unless there is a serious error
+(in which case it will probably die).
 
-To get lots of debug info, set the Debug flag when calling new() or call $info->debug(1);
+To get lots of debug info, set the Debug flag when calling new() or
+call $info->debug(1);
 
-When calling a method check the return value.  If the return value is undef then check $info->error()
+When calling a method check the return value.  If the return value is undef
+then check $info->error()
 
 Beware, calling $info->error() clears the error.
 
@@ -1976,8 +1995,7 @@ Beware, calling $info->error() clears the error.
 
 =head2 Data Structures required in new Subclass
 
-A class inheriting this class must implement these data
-structures : 
+A class inheriting this class must implement these data structures : 
 
 =over
 
@@ -2023,7 +2041,7 @@ the SNMP::Info methods.
 =item %FUNCS
 
 Contains a hash in the form ( method_name => SNMP MIB leaf name)
-These are table entries, such as the IfIndex
+These are table entries, such as the C<ifIndex>
 
 To resolve MIB leaf name conflicts between private MIBs, you may prefix the
 leaf name with the MIB replacing each - (dash) and : (colon) with
@@ -2099,7 +2117,7 @@ ALTEON-TS-PHYSICAL-MIB::agPortCurCfgPortName.
 
 A list of each mib needed.  
 
-('MIB-NAME' => 'itemToTestForPresence')
+C<('MIB-NAME' => 'itemToTestForPresence')>
 
 The value for each entry should be a MIB object to check for to make sure 
 that the MIB is present and has loaded correctly. 
@@ -2257,9 +2275,9 @@ These set the default value for an object upon creation.
 
 =item $DEBUG
 
-Default 0.  Sends copious debug info to stdout.  This global sets the object's debug status
-in new() unless 'Debug' argument passed in new().  Change objects' debug status with
-$info->debug().
+Default 0.  Sends copious debug info to stdout.  This global sets the object's
+debug status in new() unless 'Debug' argument passed in new().  Change objects'
+debug status with $info->debug().
 
 =cut
 
@@ -2267,8 +2285,9 @@ $DEBUG = 0;
 
 =item $BIGINT
 
-Default 0.   Set to true to have 64 bit counters return Math::BigInt objects instead of scalar
-string values.  See note under Interface Statistics about 64 bit values.
+Default 0.   Set to true to have 64 bit counters return Math::BigInt objects
+instead of scalar string values.  See note under Interface Statistics about
+64 bit values.
 
 =cut
 
@@ -2276,8 +2295,8 @@ $BIGINT = 0;
 
 =item $NOSUCH
 
-Default 1.  Set to false to disable RetryNoSuch option for SNMP::Session.  Or see method in new()
-to do it on an object scope.
+Default 1.  Set to false to disable RetryNoSuch option for SNMP::Session.  Or
+see method in new() to do it on an object scope.
 
 =cut
 
@@ -2285,8 +2304,8 @@ $NOSUCH = 1;
 
 =item $REPEATERS
 
-Default 20.  MaxRepeaters for BULKWALK operations.  See C<perldoc SNMP> for more info.  Can change
-by passing L<BulkRepeaters> option in new()
+Default 20.  MaxRepeaters for BULKWALK operations.  See C<perldoc SNMP> for
+more info.  Can change by passing L<BulkRepeaters> option in new()
 
 =cut
 
@@ -2390,7 +2409,7 @@ sub munge_speed {
 
 =item munge_highspeed()
 
-Makes human friendly speed ratings for ifHighSpeed
+Makes human friendly speed ratings for C<ifHighSpeed>
 
 =cut
 
@@ -2427,7 +2446,8 @@ sub munge_ip {
 
 =item munge_mac()
 
-Takes an octet stream (HEX-STRING) and returns a colon separated ASCII hex string.
+Takes an octet stream (HEX-STRING) and returns a colon separated ASCII hex
+string.
 
 =cut
 
@@ -2442,7 +2462,8 @@ sub munge_mac {
 
 =item munge_prio_mac()
 
-Takes an 8-byte octet stream (HEX-STRING) and returns a colon separated ASCII hex string.
+Takes an 8-byte octet stream (HEX-STRING) and returns a colon separated ASCII
+hex string.
 
 =cut
 
@@ -2513,12 +2534,12 @@ sub munge_counter64 {
 
 =item munge_i_up
 
-There is a collision between data in IF-MIB and RFC-1213. 
-For devices that fully implement IF-MIB it might return 7 for 
-a port that is down.  This munges the data against the IF-MIB 
+There is a collision between data in C<IF-MIB> and C<RFC-1213>. 
+For devices that fully implement C<IF-MIB> it might return 7 for 
+a port that is down.  This munges the data against the C<IF-MIB> 
 by hand.
 
-TODO: Get the precidence of MIBs and overriding of MIB data in Net-SNMP
+TODO: Get the precedence of MIBs and overriding of MIB data in Net-SNMP
 figured out.  Heirarchy/precendence of MIBS in SNMP::Info.
 
 =cut
@@ -2553,7 +2574,7 @@ sub munge_port_list {
 
 =back
 
-=head2 Internaly Used Functions
+=head2 Internally Used Functions
 
 =over
 
@@ -2679,7 +2700,7 @@ sub mibs {
 
 =item $info->munge()
 
-Returns a reference ot the %MUNGE hash.
+Returns a reference of the %MUNGE hash.
 
 =cut
 
@@ -2809,7 +2830,7 @@ sub _global{
 
 Used internally by AUTOLOAD to run an SNMP set command for dynamic methods
 listed in either %GLOBALS or %FUNCS or a valid mib leaf from a loaded MIB or
-the set_multi() method to set multiple varible in one command.  When run
+the set_multi() method to set multiple variable in one command.  When run
 clears attr cache.
 
 Attr is passed as either a scalar for dynamic methods or a reference to an
@@ -2900,13 +2921,13 @@ Pass either a reference to a 4 element array [<obj>, <iid>, <val>, <type>] or
 a reference to an array of 4 element arrays to specify multiple values.
 
 <obj>  - One of the following forms:
-        1) leaf identifier (e.g., 'sysContact')
+        1) leaf identifier (e.g., C<'sysContact'>)
         2) An entry in either %FUNCS, %GLOBALS (e.g., 'contact')
 <iid>  - The dotted-decimal, instance identifier. For scalar MIB objects use '0'
 <val>  - The SNMP data value being set (e.g., 'netdisco')
 <type> - Optional as the MIB should be loaded.
 
-If one of the set assigments is invalid, then the request will be rejected
+If one of the set assignments is invalid, then the request will be rejected
 without applying any of the new values - regardless of the order they appear
 in the list.
 
@@ -2931,8 +2952,8 @@ sub set_multi {
 
 =item $info->load_all()
 
-Debugging routine.  This does not include any overriden method or method implemented 
-by subroutine.
+Debugging routine.  This does not include any overridden method or method
+implemented by subroutine.
 
 Runs $info->load_METHOD() for each entry in $info->funcs();
 
@@ -3172,7 +3193,7 @@ sub _load_attr {
 
 =item $info->_show_attr()
 
-Used internaly by AUTOLOAD to return data called by methods listed in %FUNCS.
+Used internally by AUTOLOAD to return data called by methods listed in %FUNCS.
 
 Called like $info->METHOD().
 
@@ -3404,7 +3425,7 @@ sub AUTOLOAD {
 }
 1;
 
-=head1 COPYRIGHT AND LICENCE
+=head1 COPYRIGHT AND LICENSE
 
 Changes from SNMP::Info Version 0.7 and on are:
 Copyright (c)2003, 2004 Max Baker - All rights reserved.

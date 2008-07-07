@@ -1,34 +1,34 @@
 # SNMP::Info::CiscoPortSecurity
-# Eric Miller
+# $Id$
 #
-# Copyright (c) 2006 Eric Miller 
+# Copyright (c) 2008 Eric Miller 
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
-#     * Neither the name of the author nor the 
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoPortSecurity;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -118,7 +118,7 @@ __END__
 =head1 NAME
 
 SNMP::Info::CiscoPortSecurity - SNMP Interface to data from
-CISCO-PORT-SECURITY-MIB and CISCO-PAE-MIB
+F<CISCO-PORT-SECURITY-MIB> and F<CISCO-PAE-MIB>
 
 =head1 AUTHOR
 
@@ -128,12 +128,11 @@ Eric Miller
 
  # Let SNMP::Info determine the correct subclass for you. 
  my $cps = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
-                          DestHost    => 'myswitch',
-                          Community   => 'public',
-                          Version     => 2
+                        AutoSpecify => 1,
+                        Debug       => 1,
+                        DestHost    => 'myswitch',
+                        Community   => 'public',
+                        Version     => 2
                         ) 
     or die "Can't connect to DestHost.\n";
 
@@ -143,7 +142,7 @@ Eric Miller
 =head1 DESCRIPTION
 
 SNMP::Info::CiscoPortSecurity is a subclass of SNMP::Info that provides
-an interface to the C<CISCO-PORT-SECURITY-MIB> and C<CISCO-PAE-MIB>.  These
+an interface to the F<CISCO-PORT-SECURITY-MIB> and F<CISCO-PAE-MIB>.  These
 MIBs are used across the Catalyst family under CatOS and IOS.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
@@ -156,16 +155,13 @@ None.
 
 =over
 
-=item CISCO-PORT-SECURITY-MIB
+=item F<CISCO-PORT-SECURITY-MIB>
 
-=item CISCO-PAE-MIB
+=item F<CISCO-PAE-MIB>
 
-=item IEEE8021-PAE-MIB
+=item F<IEEE8021-PAE-MIB>
 
 =back
-
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz or from
-Netdisco-mib package at netdisco.org. 
 
 =head1 GLOBALS
 
@@ -175,185 +171,185 @@ These are methods that return scalar values from SNMP
 
 =back
 
-=head2 CISCO-PORT-SECURITY-MIB globals
+=head2 F<CISCO-PORT-SECURITY-MIB> globals
 
 =over
 
 =item $stack->cps_clear()
 
-(B<cpsGlobalClearSecureMacAddresses>)
+(C<cpsGlobalClearSecureMacAddresses>)
 
 =item $stack->cps_notify()
 
-(B<cpsGlobalSNMPNotifControl>)
+(C<cpsGlobalSNMPNotifControl>)
 
 =item $stack->cps_rate()
 
-(B<cpsGlobalSNMPNotifRate>)
+(C<cpsGlobalSNMPNotifRate>)
 
 =item $stack->cps_enable()
 
-(B<cpsGlobalPortSecurityEnable>)
+(C<cpsGlobalPortSecurityEnable>)
 
 =item $stack->cps_mac_count()
 
-(B<cpsGlobalTotalSecureAddress>)
+(C<cpsGlobalTotalSecureAddress>)
 
 =item $stack->cps_mac_max()
 
-(B<cpsGlobalMaxSecureAddress>)
+(C<cpsGlobalMaxSecureAddress>)
 
 =back
 
 =head1 TABLE METHODS
 
-=head2 CISCO-PORT-SECURITY-MIB - Interface Config Table
+=head2 F<CISCO-PORT-SECURITY-MIB> - Interface Config Table
 
 =over
 
 =item $stack->cps_i_limit_val()
 
-(B<cpsIfInvalidSrcRateLimitValue>)
+(C<cpsIfInvalidSrcRateLimitValue>)
 
 =item $stack->cps_i_limit()
 
-(B<cpsIfInvalidSrcRateLimitEnable>)
+(C<cpsIfInvalidSrcRateLimitEnable>)
 
 =item $stack->cps_i_sticky()
 
-(B<cpsIfStickyEnable>)
+(C<cpsIfStickyEnable>)
 
 =item $stack->cps_i_clear_type()
 
-(B<cpsIfClearSecureMacAddresses>)
+(C<cpsIfClearSecureMacAddresses>)
 
 =item $stack->cps_i_shutdown()
 
-(B<cpsIfShutdownTimeout>)
+(C<cpsIfShutdownTimeout>)
 
 =item $stack->cps_i_flood()
 
-(B<cpsIfUnicastFloodingEnable>)
+(C<cpsIfUnicastFloodingEnable>)
 
 =item $stack->cps_i_clear()
 
-(B<cpsIfClearSecureAddresses>)
+(C<cpsIfClearSecureAddresses>)
 
 =item $stack->cps_i_mac()
 
-(B<cpsIfSecureLastMacAddress>)
+(C<cpsIfSecureLastMacAddress>)
 
 =item $stack->cps_i_count()
 
-(B<cpsIfViolationCount>)
+(C<cpsIfViolationCount>)
 
 =item $stack->cps_i_action()
 
-(B<cpsIfViolationAction>)
+(C<cpsIfViolationAction>)
 
 =item $stack->cps_i_mac_static()
 
-(B<cpsIfStaticMacAddrAgingEnable>)
+(C<cpsIfStaticMacAddrAgingEnable>)
 
 =item $stack->cps_i_mac_type()
 
-(B<cpsIfSecureMacAddrAgingType>)
+(C<cpsIfSecureMacAddrAgingType>)
 
 =item $stack->cps_i_mac_age()
 
-(B<cpsIfSecureMacAddrAgingTime>)
+(C<cpsIfSecureMacAddrAgingTime>)
 
 =item $stack->cps_i_mac_count()
 
-(B<cpsIfCurrentSecureMacAddrCount>)
+(C<cpsIfCurrentSecureMacAddrCount>)
 
 =item $stack->cps_i_mac_max()
 
-(B<cpsIfMaxSecureMacAddr>)
+(C<cpsIfMaxSecureMacAddr>)
 
 =item $stack->cps_i_status()
 
-(B<cpsIfPortSecurityStatus>)
+(C<cpsIfPortSecurityStatus>)
 
 =item $stack->cps_i_enable()
 
-(B<cpsIfPortSecurityEnable>)
+(C<cpsIfPortSecurityEnable>)
 
 =back
 
-=head2 CISCO-PORT-SECURITY-MIB::cpsIfVlanTable
+=head2 C<CISCO-PORT-SECURITY-MIB::cpsIfVlanTable>
 
 =over
 
 =item $stack->cps_i_v_mac_count()
 
-(B<cpsIfVlanCurSecureMacAddrCount>)
+(C<cpsIfVlanCurSecureMacAddrCount>)
 
 =item $stack->cps_i_v_mac_max()
 
-(B<cpsIfVlanMaxSecureMacAddr>)
+(C<cpsIfVlanMaxSecureMacAddr>)
 
 =item $stack->cps_i_v()
 
-(B<cpsIfVlanIndex>)
+(C<cpsIfVlanIndex>)
 
 =back
 
-=head2 CISCO-PORT-SECURITY-MIB::cpsIfVlanSecureMacAddrTable
+=head2 C<CISCO-PORT-SECURITY-MIB::cpsIfVlanSecureMacAddrTable>
 
 =over
 
 =item $stack->cps_i_v_mac_status()
 
-(B<cpsIfVlanSecureMacAddrRowStatus>)
+(C<cpsIfVlanSecureMacAddrRowStatus>)
 
 =item $stack->cps_i_v_mac_age()
 
-(B<cpsIfVlanSecureMacAddrRemainAge>)
+(C<cpsIfVlanSecureMacAddrRemainAge>)
 
 =item $stack->cps_i_v_mac_type()
 
-(B<cpsIfVlanSecureMacAddrType>)
+(C<cpsIfVlanSecureMacAddrType>)
 
 =item $stack->cps_i_v_vlan()
 
-(B<cpsIfVlanSecureVlanIndex>)
+(C<cpsIfVlanSecureVlanIndex>)
 
 =item $stack->cps_i_v_mac()
 
-(B<cpsIfVlanSecureMacAddress>)
+(C<cpsIfVlanSecureMacAddress>)
 
 =back
 
-=head2 CISCO-PORT-SECURITY-MIB::cpsSecureMacAddressTable
+=head2 C<CISCO-PORT-SECURITY-MIB::cpsSecureMacAddressTable>
 
 =over
 
 =item $stack->cps_m_status()
 
-(B<cpsSecureMacAddrRowStatus>)
+(C<cpsSecureMacAddrRowStatus>)
 
 =item $stack->cps_m_age()
 
-(B<cpsSecureMacAddrRemainingAge>)
+(C<cpsSecureMacAddrRemainingAge>)
 
 =item $stack->cps_m_type()
 
-(B<cpsSecureMacAddrType>)
+(C<cpsSecureMacAddrType>)
 
 =item $stack->cps_m_mac()
 
-(B<cpsSecureMacAddress>)
+(C<cpsSecureMacAddress>)
 
 =back
 
-=head2 CISCO-PAE-MIB::dot1xPaePortEntry
+=head2 C<CISCO-PAE-MIB::dot1xPaePortEntry>
 
 =over
 
 =item $stack->pae_i_capabilities()
 
-B<dot1xPaePortCapabilities>
+C<dot1xPaePortCapabilities>
 
 Indicates the PAE functionality that this Port supports
 and that may be managed through this MIB.

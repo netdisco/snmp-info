@@ -1,7 +1,7 @@
 # SNMP::Info::Layer1 - SNMP Interface to Layer1 Devices 
-# Max Baker
+# $Id$
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -11,27 +11,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -175,7 +175,6 @@ Max Baker
  my $l1 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
@@ -223,7 +222,7 @@ after determining a more specific class using the method above.
 
 =over
 
-=item SNMP-REPEATER-MIB
+=item F<SNMP-REPEATER-MIB>
 
 =back
 
@@ -231,7 +230,7 @@ MIBs required for L<SNMP::Info/"Required MIBs">
 
 See L<SNMP::Info/"Required MIBs"> for its MIB requirements.
 
-SNMP-REPEATER-MIB needs to be extracted from
+F<SNMP-REPEATER-MIB> needs to be extracted from
 ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
 
 =head1 GLOBALS
@@ -244,7 +243,7 @@ These are methods that return scalar value from SNMP
 
 Gets the number of ports under the interface mib 
 
-(B<ifNumber>)
+(C<ifNumber>)
 
 =back
 
@@ -254,7 +253,7 @@ Gets the number of ports under the interface mib
 
 =item $l1->vendor()
 
-Trys to discover the vendor from $l1->model() and $l1->vendor()
+Tries to discover the vendor from $l1->model() and $l1->vendor()
 
 =item $l1->ports()
 
@@ -264,7 +263,7 @@ Adds the values from rptr_ports() and ports_managed()
 
 Number of 'groups' in the Repeater MIB
 
-(B<rptrGroupCapacity>)
+(C<rptrGroupCapacity>)
 
 =back
 
@@ -297,31 +296,31 @@ to a hash.
 
 Number of ports in each group.
 
-(B<rptrGroupPortCapacity>)
+(C<rptrGroupPortCapacity>)
 
 =item $l1->rptr_port()
 
 Port number in Group
 
-(B<rptrPortIndex>)
+(C<rptrPortIndex>)
 
 =item $l1->rptr_slot()
 
 Group (slot) Number for given port.
 
-(B<rptrPortGroupIndex>)
+(C<rptrPortGroupIndex>)
 
 =item $l1->rptr_up_admin()
 
-(B<rptrPortAdminStatus>)
+(C<rptrPortAdminStatus>)
 
 =item $l1->rptr_up()
 
-(B<rptrPortOperStatus>)
+(C<rptrPortOperStatus>)
 
 =item $l1->rptr_last_src()
 
-(B<rptrAddrTrackNewLastSrcAddress>)
+(C<rptrAddrTrackNewLastSrcAddress>)
 
 =back
 

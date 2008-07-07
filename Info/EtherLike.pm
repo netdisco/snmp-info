@@ -1,7 +1,7 @@
 # SNMP::Info::EtherLike
-# Max Baker
+# $Id$
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -11,27 +11,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::EtherLike;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -91,7 +91,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::EtherLike - SNMP Interface to SNMP ETHERLIKE-MIB RFC 1398
+SNMP::Info::EtherLike - SNMP Interface to SNMP F<ETHERLIKE-MIB> RFC 1398
 
 =head1 AUTHOR
 
@@ -126,11 +126,13 @@ Max Baker
 =head1 DESCRIPTION
 
 SNMP::Info::EtherLike is a subclass of SNMP::Info that supplies 
-access to the ETHERLIKE-MIB used by some Layer 3 Devices such as Cisco routers.
+access to the F<ETHERLIKE-MIB> used by some Layer 3 Devices such as
+Cisco routers.
 
 See RFC 1398 for more details.
 
-Use or create a subclass of SNMP::Info that inherits this one.  Do not use directly.
+Use or create a subclass of SNMP::Info that inherits this one.  Do not use
+directly.
 
 =head2 Inherited Classes
 
@@ -140,7 +142,7 @@ None.
 
 =over
 
-=item ETHERLIKE-MIB
+=item F<ETHERLIKE-MIB>
 
 =back
 
@@ -161,7 +163,7 @@ These are methods that return scalar values from SNMP
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2 ETHERLIKE STATS TABLE (dot3StatsTable)
+=head2 ETHERLIKE STATS TABLE (C<dot3StatsTable>)
 
 =over
 
@@ -169,77 +171,77 @@ to a hash.
 
 Returns reference to hash. Indexes Stats Table to the interface index (iid).
 
-(B<dot3StatsIndex>)
+(C<dot3StatsIndex>)
 
 =item $el->el_duplex()
 
 Returns reference to hash.  Indexes Stats Table to Duplex Status of port.
 
-(B<dot3StatsDuplexStatus>)
+(C<dot3StatsDuplexStatus>)
 
 =item $el->el_chipset()
 
-(B<dot3StatsEtherChipSet>)
+(C<dot3StatsEtherChipSet>)
 
 =item $el->el_coll_excess()
 
-(B<dot3StatsExcessiveCollisions>)
+(C<dot3StatsExcessiveCollisions>)
 
 =item $el->el_coll_late()
 
-(B<dot3StatsLateCollisions>)
+(C<dot3StatsLateCollisions>)
 
 =item $el->el_coll_mult()
 
-(B<dot3StatsMultipleCollisionFrames>)
+(C<dot3StatsMultipleCollisionFrames>)
 
 =item $el->el_coll_single()
 
-(B<dot3StatsSingleCollisionFrames>)
+(C<dot3StatsSingleCollisionFrames>)
 
 =item $el->el_error_alignment()
 
-(B<dot3StatsAlignmentErrors>)
+(C<dot3StatsAlignmentErrors>)
 
 =item $el->el_error_fcs()
 
-(B<dot3StatsFCSErrors>)
+(C<dot3StatsFCSErrors>)
 
 =item $el->el_error_cs()
 
-(B<dot3StatsCarrierSenseErrors>)
+(C<dot3StatsCarrierSenseErrors>)
 
 =item $el->el_error_frame()
 
-(B<dot3StatsFrameTooLongs>)
+(C<dot3StatsFrameTooLongs>)
 
 =item $el->el_error_mac_rec()
 
-(B<dot3StatsInternalMacReceiveErrors>)
+(C<dot3StatsInternalMacReceiveErrors>)
 
 =item $el->el_error_mac_xmit()
 
-(B<dot3StatsInternalMacTransmitErrors>)
+(C<dot3StatsInternalMacTransmitErrors>)
 
 =item $el->el_error_sqe()
 
-(B<dot3StatsSQETestErrors>)
+(C<dot3StatsSQETestErrors>)
 
 =item $el->el_error_symbol()
 
-(B<dot3StatsSymbolErrors>)
+(C<dot3StatsSymbolErrors>)
 
 =item $el->el_xmit_defer()
 
-(B<dot3StatsDeferredTransmissions>)
+(C<dot3StatsDeferredTransmissions>)
 
 =item $el->el_coll_count()
 
-(B<dot3CollCount>)
+(C<dot3CollCount>)
 
 =item $el->el_coll_freq()
 
-(B<dot3CollFrequencies>)
+(C<dot3CollFrequencies>)
 
 =back
 

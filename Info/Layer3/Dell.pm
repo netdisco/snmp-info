@@ -1,33 +1,34 @@
 # SNMP::Info::Layer3::Dell - SNMP Interface to Dell devices
-# Eric Miller
+# $Id$
 #
-# Copyright (c) 2006 Eric Miller
+# Copyright (c) 2008 Eric Miller
+# All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Dell;
-# $Id$
 
 use strict;
 
@@ -36,7 +37,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 @SNMP::Info::Layer3::Dell::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Dell::EXPORT_OK = qw//;
@@ -240,7 +241,6 @@ Eric Miller
  my $dell = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
@@ -274,13 +274,13 @@ my $dell = new SNMP::Info::Layer3::Dell(...);
 
 =over
 
-=item Dell-Vendor-MIB
+=item F<Dell-Vendor-MIB>
 
-=item RADLAN-Physicaldescription-MIB
+=item F<RADLAN-Physicaldescription-MIB>
 
-=item RADLAN-rlInterfaces
+=item F<RADLAN-rlInterfaces>
 
-=item RADLAN-HWENVIROMENT
+=item F<RADLAN-HWENVIROMENT>
 
 =item Inherited Classes' MIBs
 
@@ -296,15 +296,15 @@ These are methods that return scalar value from SNMP
 
 =item $dell->os_ver()
 
-(B<productIdentificationVersion>)
+(C<productIdentificationVersion>)
 
 =item $dell->dell_id_name()
 
-(B<productIdentificationDisplayName>)
+(C<productIdentificationDisplayName>)
 
 =item $dell->model()
 
-Returns model type.  Returns numeric from (B<productIdentificationDisplayName>)
+Returns model type.  Returns numeric from (C<productIdentificationDisplayName>)
 if available, otherwise if returns description().
 
 =item $dell->vendor()
@@ -325,7 +325,7 @@ id().  Defaults to 'dlink'.
 
 =item $dell->serial()
 
-Returns serial number. Returns (B<rlPhdUnitGenParamSerialNum>) if available,
+Returns serial number. Returns (C<rlPhdUnitGenParamSerialNum>) if available,
 otherwise uses the Layer3 serial method.
 
 =back
@@ -339,41 +339,41 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2 RADLAN Interface Table (B<swIfTable>)
+=head2 RADLAN Interface Table (C<swIfTable>)
 
 =over
 
 =item $dell->dell_duplex_admin()
 
-(B<swIfDuplexAdminMode>)
+(C<swIfDuplexAdminMode>)
 
 =item $dell->dell_duplex()
 
-(B<swIfDuplexOperMode>)
+(C<swIfDuplexOperMode>)
 
 =item $dell->dell_tag_mode()
 
-(B<swIfTaggedMode>)
+(C<swIfTaggedMode>)
 
 =item $dell->dell_i_type()
 
-(B<swIfType>)
+(C<swIfType>)
 
 =item $dell->dell_fc_admin()
 
-(B<swIfFlowControlMode>)
+(C<swIfFlowControlMode>)
 
 =item $dell->dell_speed_admin()
 
-(B<swIfSpeedAdminMode>)
+(C<swIfSpeedAdminMode>)
 
 =item $dell->dell_auto()
 
-(B<swIfSpeedDuplexAutoNegotiation>)
+(C<swIfSpeedDuplexAutoNegotiation>)
 
 =item $dell->dell_fc()
 
-(B<swIfOperFlowControlMode>)
+(C<swIfOperFlowControlMode>)
 
 =back
 

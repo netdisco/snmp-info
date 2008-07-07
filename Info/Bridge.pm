@@ -1,39 +1,38 @@
 # SNMP::Info::Bridge
-# Max Baker
+# $Id$
 #
 # Changes since Version 0.7 Copyright (c) 2004 Max Baker 
 # All rights reserved.  
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-#
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Bridge;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -418,7 +417,7 @@ __END__
 =head1 NAME
 
 SNMP::Info::Bridge - SNMP Interface to SNMP data available through the
-BRIDGE-MIB (RFC1493)
+F<BRIDGE-MIB> (RFC1493)
 
 =head1 AUTHOR
 
@@ -454,10 +453,10 @@ Max Baker
 
 =head1 DESCRIPTION
 
-BRIDGE-MIB is used by most Layer 2 devices, and holds information like the
+F<BRIDGE-MIB> is used by most Layer 2 devices, and holds information like the
 MAC Forwarding Table and Spanning Tree Protocol info.
 
-Q-BRIDGE-MIB holds 802.1q information -- VLANs and Trunking.  Cisco tends not
+F<Q-BRIDGE-MIB> holds 802.1q information -- VLANs and Trunking.  Cisco tends not
 to use this MIB, but some proprietary ones.  HP and some nicer vendors use
 this.  This is from C<RFC2674_q>.  
 
@@ -476,15 +475,14 @@ None.
 
 =over
 
-=item BRIDGE-MIB
+=item F<BRIDGE-MIB>
 
-=item Q-BRIDGE-MIB
-
-F<rfc2674_q.mib>
+=item F<Q-BRIDGE-MIB>
 
 =back
 
-BRIDGE-MIB needs to be extracted from ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
+F<BRIDGE-MIB> needs to be extracted from
+ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
 
 =head1 GLOBAL METHODS
 
@@ -496,58 +494,57 @@ These are methods that return scalar values from SNMP
 
 Returns the MAC Address of the root bridge port
 
-(B<dot1dBaseBridgeAddress>)
+(C<dot1dBaseBridgeAddress>)
 
 =item $bridge->b_ports()
 
 Returns the number of ports in device
 
-(B<dot1dBaseNumPorts>)
+(C<dot1dBaseNumPorts>)
 
 =item $bridge->b_type()
 
 Returns the type of bridging this bridge can perform, transparent and/or
-sourceroute.
+source route.
 
-(B<dot1dBaseType>)
+(C<dot1dBaseType>)
 
 =item $bridge->stp_ver()
 
-Returns what version of STP the device is running.  Either decLb100 or
-ieee8021d.
+Returns what version of STP the device is running.
 
-(B<dot1dStpProtocolSpecification>)
+(C<dot1dStpProtocolSpecification>)
 
 =item $bridge->stp_time()
 
 Returns time since last topology change detected. (100ths/second)
 
-(B<dot1dStpTimeSinceTopologyChange>)
+(C<dot1dStpTimeSinceTopologyChange>)
 
 =item $bridge->stp_root()
 
 Returns root of STP.
 
-(B<dot1dStpDesignatedRoot>)
+(C<dot1dStpDesignatedRoot>)
 
 =item $bridge->qb_vlans_max() 
 
 Maximum number of VLANS supported on this device.
 
-(B<dot1qMaxSupportedVlans>)
+(C<dot1qMaxSupportedVlans>)
 
 =item $bridge->qb_vlans() 
 
 Current number of VLANs that are configured in this device.
 
-(B<dot1qNumVlans>)
+(C<dot1qNumVlans>)
 
 =item $bridge->qb_next_vlan_index() 
 
-The next available value for B<dot1qVlanIndex> of a local VLAN entry in
-B<dot1qVlanStaticTable>
+The next available value for C<dot1qVlanIndex> of a local VLAN entry in
+C<dot1qVlanStaticTable>
 
-(B<dot1qNextFreeLocalVlanIndex>)
+(C<dot1qNextFreeLocalVlanIndex>)
 
 =back
 
@@ -560,12 +557,12 @@ to a hash.
 
 =item $bridge->i_vlan()
 
-Returns a mapping between ifIndex and the PVID or default VLAN.
+Returns a mapping between C<ifIndex> and the PVID or default VLAN.
 
 =item $bridge->i_vlan_membership()
 
-Returns reference to hash of arrays: key = ifIndex, value = array of VLAN IDs.
-These are the VLANs which are members of the egress list for the port.
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the egress list for the port.
 
   Example:
   my $interfaces = $bridge->interfaces();
@@ -579,7 +576,7 @@ These are the VLANs which are members of the egress list for the port.
 
 =back
 
-=head2 Forwarding Table (dot1dTpFdbEntry)
+=head2 Forwarding Table (C<dot1dTpFdbEntry>)
 
 =over 
 
@@ -587,24 +584,24 @@ These are the VLANs which are members of the egress list for the port.
 
 Returns reference to hash of forwarding table MAC Addresses
 
-(B<dot1dTpFdbAddress>)
+(C<dot1dTpFdbAddress>)
 
 =item $bridge->fw_port()
 
 Returns reference to hash of forwarding table entries port interface
 identifier (iid)
 
-(B<dot1dTpFdbPort>)
+(C<dot1dTpFdbPort>)
 
 =item $bridge->fw_status()
 
-Returns reference to hash of forwading table entries status
+Returns reference to hash of forwarding table entries status
 
-(B<dot2dTpFdbStatus>)
+(C<dot2dTpFdbStatus>)
 
 =back
 
-=head2 Bridge Port Table (dot1dBasePortEntry)
+=head2 Bridge Port Table (C<dot1dBasePortEntry>)
 
 =over
 
@@ -613,20 +610,20 @@ Returns reference to hash of forwading table entries status
 Returns reference to hash of bridge port table entries map back to interface
 identifier (iid)
 
-(B<dot1dBasePortIfIndex>)
+(C<dot1dBasePortIfIndex>)
 
 =item $bridge->bp_port()
 
 Returns reference to hash of bridge port table entries for a port which
-(potentially) has the same value of B<dot1dBasePortIfIndex> as another port
+(potentially) has the same value of C<dot1dBasePortIfIndex> as another port
 on the same bridge, this object contains the name of an	object instance unique
 to this port.
 
-(B<dot1dBasePortCircuit>)
+(C<dot1dBasePortCircuit>)
 
 =back
 
-=head2 Spanning Tree Protocol Table (dot1dStpPortTable)
+=head2 Spanning Tree Protocol Table (C<dot1dStpPortTable>)
 
 Descriptions are lifted straight from F<BRIDGE-MIB.my>
 
@@ -637,15 +634,15 @@ Descriptions are lifted straight from F<BRIDGE-MIB.my>
 "The port number of the port for which this entry contains Spanning Tree
 Protocol management information."
 
-(B<dot1dStpPort>)
+(C<dot1dStpPort>)
 
 =item $bridge->stp_p_priority()
 
 "The value of the priority field which is contained in the first
 (in network byte order) octet of the (2 octet long) Port ID.  The other octet
-of the Port ID is given by the value of dot1dStpPort."
+of the Port ID is given by the value of C<dot1dStpPort>."
 
-(B<dot1dStpPortPriority>)
+(C<dot1dStpPortPriority>)
 
 =item $bridge->stp_p_state()
 
@@ -653,7 +650,7 @@ of the Port ID is given by the value of dot1dStpPort."
 Protocol.  This state controls what action a port takes on reception of a
 frame.  If the bridge has detected a port that is malfunctioning it will place
 that port into the broken(6) state.  For ports which are disabled
-(see dot1dStpPortEnable), this object will have a value of disabled(1)."
+(see C<dot1dStpPortEnable>), this object will have a value of disabled(1)."
 
  disabled(1)
  blocking(2)
@@ -662,7 +659,7 @@ that port into the broken(6) state.  For ports which are disabled
  forwarding(5)
  broken(6)
 
-(B<dot1dStpPortState>)
+(C<dot1dStpPortState>)
 
 =item $bridge->stp_p_cost()
 
@@ -671,7 +668,7 @@ tree root which include this port.  802.1D-1990 recommends that the default
 value of this parameter be in inverse proportion to the speed of the attached
 LAN."
 
-(B<dot1dStpPortPathCost>)
+(C<dot1dStpPortPathCost>)
 
 =item $bridge->stp_p_root()
 
@@ -679,39 +676,39 @@ LAN."
 Configuration BPDUs transmitted by the Designated Bridge for the segment to
 which the port is attached."
 
-(B<dot1dStpPortDesignatedRoot>)
+(C<dot1dStpPortDesignatedRoot>)
 
 =item $bridge->stp_p_bridge()
 
 "The Bridge Identifier of the bridge which this port considers to be the
 Designated Bridge for this port's segment."
 
-(B<dot1dStpPortDesignatedBridge>)
+(C<dot1dStpPortDesignatedBridge>)
 
 =item $bridge->stp_p_port()
 
-(B<dot1dStpPortDesignatedPort>)
+(C<dot1dStpPortDesignatedPort>)
 
 "The Port Identifier of the port on the Designated Bridge for this port's
 segment."
 
 =item $bridge->i_stp_port()
 
-Returns the mapping of (B<dot1dStpPortDesignatedPort>) to the interface
+Returns the mapping of (C<dot1dStpPortDesignatedPort>) to the interface
 index (iid).
 
 =item $bridge->i_stp_id()
 
-Returns the mapping of (B<dot1dStpPort>) to the interface index (iid).
+Returns the mapping of (C<dot1dStpPort>) to the interface index (iid).
 
 =item $bridge->i_stp_bridge()
 
-Returns the mapping of (B<dot1dStpPortDesignatedBridge>) to the interface
+Returns the mapping of (C<dot1dStpPortDesignatedBridge>) to the interface
 index (iid).
 
 =back
 
-=head2 Q-BRIDGE Port VLAN Table (dot1qPortVlanTable)
+=head2 Q-BRIDGE Port VLAN Table (C<dot1qPortVlanTable>)
 
 =over
 
@@ -720,14 +717,14 @@ index (iid).
 The PVID, the VLAN ID assigned to untagged frames or Priority-Tagged frames
 received on this port.
 
-(B<dot1qPvid>)
+(C<dot1qPvid>)
 
 =item $bridge->qb_i_vlan_type()
 
 Either C<admitAll> or C<admitOnlyVlanTagged>.  This is a good spot to find
 trunk ports.
 
-(B<dot1qPortAcceptableFrameTypes>)
+(C<dot1qPortAcceptableFrameTypes>)
 
 =item $bridge->qb_i_vlan_in_flt()
 
@@ -735,11 +732,11 @@ When this is C<true> the device will discard incoming frames for VLANs which
 do not include this Port in its Member set.  When C<false>, the port will
 accept all incoming frames.
 
-(B<dot1qPortIngressFiltering>)
+(C<dot1qPortIngressFiltering>)
 
 =back
 
-=head2 Q-BRIDGE VLAN Current Table (dot1qVlanCurrentTable)
+=head2 Q-BRIDGE VLAN Current Table (C<dot1qVlanCurrentTable>)
 
 =over
 
@@ -747,24 +744,24 @@ accept all incoming frames.
 
 The set of ports which are assigned to the egress list for this VLAN.
 
-(B<dot1qVlanCurrentEgressPorts>)
+(C<dot1qVlanCurrentEgressPorts>)
 
 =item $bridge->qb_cv_untagged()
 
 The set of ports which should transmit egress packets for this VLAN as
 untagged. 
 
-(B<dot1qVlanCurrentUntaggedPorts>)
+(C<dot1qVlanCurrentUntaggedPorts>)
 
 =item $bridge->qb_cv_stat()
 
 Status of the VLAN, other, permanent, or dynamicGvrp.
 
-(B<dot1qVlanStatus>)
+(C<dot1qVlanStatus>)
 
 =back
 
-=head2 Q-BRIDGE VLAN Static Table (dot1qVlanStaticTable)
+=head2 Q-BRIDGE VLAN Static Table (C<dot1qVlanStaticTable>)
 
 =over
 
@@ -772,37 +769,37 @@ Status of the VLAN, other, permanent, or dynamicGvrp.
 
 Human-entered name for vlans.
 
-(B<dot1qVlanStaticName>)
+(C<dot1qVlanStaticName>)
 
 =item $bridge->qb_v_egress()
 
 The set of ports which are assigned to the egress list for this VLAN.
 
-(B<dot1qVlanStaticEgressPorts>)
+(C<dot1qVlanStaticEgressPorts>)
 
 =item $bridge->qb_v_fbdn_egress()
 
 The set of ports which are prohibited from being included in the egress list
 for this VLAN.
 
-(B<dot1qVlanForbiddenEgressPorts>)
+(C<dot1qVlanForbiddenEgressPorts>)
 
 =item $bridge->qb_v_untagged()
 
 The set of ports which should transmit egress packets for this VLAN as
 untagged. 
 
-(B<dot1qVlanStaticUntaggedPorts>)
+(C<dot1qVlanStaticUntaggedPorts>)
 
 =item $bridge->qb_v_stat()
 
-uhh. C<active> !
+C<active> !
 
-(B<dot1qVlanStaticRowStatus>)
+(C<dot1qVlanStaticRowStatus>)
 
 =back
 
-=head2 Q-BRIDGE Filtering Database Table (dot1qFdbTable)
+=head2 Q-BRIDGE Filtering Database Table (C<dot1qFdbTable>)
 
 =over
 
@@ -810,19 +807,21 @@ uhh. C<active> !
 
 Returns reference to hash of forwarding table MAC Addresses
 
-(B<dot1qTpFdbAddress>)
+(C<dot1qTpFdbAddress>)
 
 =item $bridge->qb_fw_port()
 
 Returns reference to hash of forwarding table entries port interface
 identifier (iid)
 
-(B<dot1qTpFdbPort>)
+(C<dot1qTpFdbPort>)
 
 =item $bridge->qb_fw_status()
 
-Returns reference to hash of forwading table entries status
+Returns reference to hash of forwarding table entries status
 
-(B<dot1qTpFdbStatus>)
+(C<dot1qTpFdbStatus>)
+
+=back
 
 =cut

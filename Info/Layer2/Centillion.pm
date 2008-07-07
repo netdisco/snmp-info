@@ -1,34 +1,34 @@
 # SNMP::Info::Layer2::Centillion
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller
+# Copyright (c) 2008 Eric Miller
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Centillion;
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 use strict;
 
@@ -244,7 +244,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Centillion - SNMP Interface to Nortel Centillion based ATM Switches
+SNMP::Info::Layer2::Centillion - SNMP Interface to Nortel Centillion based
+ATM Switches
 
 =head1 AUTHOR
 
@@ -256,7 +257,6 @@ Eric Miller
  my $centillion = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -271,8 +271,8 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from a 
 Centillion device through SNMP. 
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $centillion = new SNMP::Info::Layer2::centillion(...);
  
@@ -297,13 +297,13 @@ than bridge group based.
 
 =over
 
-=item CENTILLION-DOT3-EXTENSIONS-MIB
+=item F<CENTILLION-DOT3-EXTENSIONS-MIB>
 
-=item S5-COMMON-STATS-MIB
+=item F<S5-COMMON-STATS-MIB>
 
-=item CENTILLION-VLAN-MIB
+=item F<CENTILLION-VLAN-MIB>
 
-=item CENTILLION-CONFIG-MIB
+=item F<CENTILLION-CONFIG-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -317,15 +317,6 @@ See L<SNMP::Info::SONMP/"Required MIBs"> for its own MIB requirements.
 
 =back
 
-MIBs can be found on the CD that came with your product.
-
-Or, they can be downloaded directly from Nortel Networks regardless of support
-contract status.
-
-Go to http://www.nortelnetworks.com Techninal Support, Browse Technical Support,
-Select by Product Families, Centillion, Centillion C100-C50 ATM Speed Modules,
-Software.  Filter on mibs and download the latest version's archive.
-
 =head1 GLOBALS
 
 These are methods that return scalar value from SNMP
@@ -338,10 +329,10 @@ Returns 'Nortel'
 
 =item $centillion->model()
 
-Cross references $centillion->id() to the SYNOPTICS-MIB and returns
+Cross references $centillion->id() to the F<SYNOPTICS-MIB> and returns
 the results.
 
-Removes sreg- from the model name
+Removes C<sreg-> from the model name
 
 =item $centillion->os()
 
@@ -349,23 +340,23 @@ Returns 'Centillion'
 
 =item $centillion->tftp_action()
 
-(B<sysTFTPStart>)
+(C<sysTFTPStart>)
 
 =item $centillion->tftp_host()
 
-(B<sysTFTPIpAddress>)
+(C<sysTFTPIpAddress>)
 
 =item $centillion->tftp_file()
 
-(B<sysTFTPFileName>)
+(C<sysTFTPFileName>)
 
 =item $centillion->tftp_type()
 
-(B<sysTFTPFileType>)
+(C<sysTFTPFileType>)
 
 =item $centillion->tftp_result()
 
-(B<sysTFTPResult>)
+(C<sysTFTPResult>)
 
 =back
 
@@ -375,7 +366,8 @@ Returns 'Centillion'
 
 =item $centillion->layers()
 
-Returns 00000011.  Class emulates Layer 2 functionality through proprietary MIBs.
+Returns 00000011.  Class emulates Layer 2 functionality through proprietary
+MIBs.
 
 =item  $centillion->index_factor()
 
@@ -438,23 +430,23 @@ Returns reference to hash of IIDs to ignore.
 
 =item $centillion->fw_mac()
 
-(B<s5CmSNodeMacAddr>)
+(C<s5CmSNodeMacAddr>)
 
 =item $centillion->fw_port()
 
-(B<s5CmSNodeIfIndx>)
+(C<s5CmSNodeIfIndx>)
 
 =item $centillion->bp_index()
 
-Returns a mapping between ifIndex and the Bridge Table.
+Returns a mapping between C<ifIndex> and the Bridge Table.
 
 =item $centillion->i_vlan()
 
-Returns a mapping between ifIndex and the VLAN.
+Returns a mapping between C<ifIndex> and the VLAN.
 
 =back
 
-=head2 Centillion 802.3 Extension Table (B<cnDot3ExtnTable>)
+=head2 Centillion 802.3 Extension Table (C<cnDot3ExtnTable>)
 
 =over
 
@@ -462,23 +454,23 @@ Returns a mapping between ifIndex and the VLAN.
 
 Returns reference to hash.  Maps table IIDs to Interface IIDs 
 
-(B<cnDot3ExtnIfIndex>)
+(C<cnDot3ExtnIfIndex>)
 
 =item $centillion->centillion_p_duplex()
 
 Returns reference to hash.  Maps port operational duplexes to IIDs 
 
-(B<cnDot3ExtnIfOperConnectionType>)
+(C<cnDot3ExtnIfOperConnectionType>)
 
 =item $centillion->rc_centillion_p_duplex_admin()
 
 Returns reference to hash.  Maps port admin duplexes to IIDs
 
-(B<cnDot3ExtnIfAdminConnectionType>)
+(C<cnDot3ExtnIfAdminConnectionType>)
 
 =back
 
-=head2 Centillion VLAN Table (B<cnVlanPortMemberTable>)
+=head2 Centillion VLAN Table (C<cnVlanPortMemberTable>)
 
 =over
 
@@ -486,19 +478,19 @@ Returns reference to hash.  Maps port admin duplexes to IIDs
 
 Returns reference to hash.  Key: Table entry, Value: Index 
 
-(B<cnVlanPortMemberIfIndex>)
+(C<cnVlanPortMemberIfIndex>)
 
 =item $centillion->centillion_i_vlan()
 
 Returns reference to hash.  Key: Table entry, Value: VLAN ID 
 
-(B<cnVlanPortMemberVID>)
+(C<cnVlanPortMemberVID>)
 
 =item $centillion->centillion_i_vlan_type()
 
 Returns reference to hash.  Key: Table entry, Value: VLAN Type 
 
-(B<cnVlanPortMemberIngressType>)
+(C<cnVlanPortMemberIngressType>)
 
 =back
 

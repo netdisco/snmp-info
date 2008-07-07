@@ -1,8 +1,7 @@
 # SNMP::Info::Layer3::Extreme - SNMP Interface to Extreme devices
-# Eric Miller
-# Bill Fenner
+# $Id$
 #
-# Copyright (c) 2005 Eric Miller
+# Copyright (c) 2008 Eric Miller
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -12,26 +11,26 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Extreme;
-# $Id$
 
 use strict;
 
@@ -41,7 +40,7 @@ use SNMP::Info::MAU;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 @SNMP::Info::Layer3::Extreme::ISA = qw/SNMP::Info::Layer3 SNMP::Info::MAU Exporter/;
 @SNMP::Info::Layer3::Extreme::EXPORT_OK = qw//;
@@ -499,7 +498,6 @@ Eric Miller, Bill Fenner
  my $extreme = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
@@ -515,8 +513,8 @@ Eric Miller, Bill Fenner
 Provides abstraction to the configuration information obtainable from an 
 Extreme device through SNMP. 
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
 my $extreme = new SNMP::Info::Layer3::Extreme(...);
 
@@ -534,13 +532,13 @@ my $extreme = new SNMP::Info::Layer3::Extreme(...);
 
 =over
 
-=item EXTREME-BASE-MIB
+=item F<EXTREME-BASE-MIB>
 
-=item EXTREME-SYSTEM-MIB
+=item F<EXTREME-SYSTEM-MIB>
 
-=item EXTREME-FDB-MIB
+=item F<EXTREME-FDB-MIB>
 
-=item EXTREME-VLAN-MIB
+=item F<EXTREME-VLAN-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -554,13 +552,9 @@ These are methods that return scalar value from SNMP
 
 =over
 
-#=item $extreme->bulkwalk_no
-#
-#Return C<1>.  Bulkwalk is currently turned off for this class.
-
 =item $extreme->model()
 
-Returns model type.  Checks $extreme->id() against the EXTREME-BASE-MIB.
+Returns model type.  Checks $extreme->id() against the F<EXTREME-BASE-MIB>.
 
 =item $extreme->vendor()
 
@@ -574,31 +568,31 @@ Returns extreme
 
 Returns serial number
 
-(B<extremeSystemID>)
+(C<extremeSystemID>)
 
 =item $extreme->temp()
 
 Returns system temperature
 
-(B<extremeCurrentTemperature>)
+(C<extremeCurrentTemperature>)
 
 =item $extreme->ps1_status()
 
 Returns status of power supply 1
 
-(B<extremePowerSupplyStatus.1>)
+(C<extremePowerSupplyStatus.1>)
 
 =item $extreme->fan()
 
 Returns fan status
 
-(B<extremeFanOperational.1>)
+(C<extremeFanOperational.1>)
 
 =item $extreme->mac()
 
 Returns base mac
 
-(B<dot1dBaseBridgeAddress>)
+(C<dot1dBaseBridgeAddress>)
 
 =back
 
@@ -627,26 +621,27 @@ to a hash.
 
 =item $extreme->fw_mac()
 
-(B<extremeFdbMacFdbMacAddress>)
+(C<extremeFdbMacFdbMacAddress>)
 
 =item $extreme->fw_port()
 
-(B<extremeFdbMacFdbPortIfIndex>)
+(C<extremeFdbMacFdbPortIfIndex>)
 
 =item $extreme->fw_status()
 
-(B<extremeFdbMacFdbStatus>)
+(C<extremeFdbMacFdbStatus>)
 
 =item $extreme->i_vlan()
 
-Returns a mapping between ifIndex and the VLAN.
+Returns a mapping between C<ifIndex> and the VLAN.
 
 =item $stack->bp_index()
 
-Returns reference to hash of bridge port table entries map back to interface identifier (iid)
+Returns reference to hash of bridge port table entries map back to interface
+identifier (iid)
 
-Returns (B<ifIndex>) for both key and value since we're using EXTREME-FDB-MIB
-rather than BRIDGE-MIB.
+Returns (C<ifIndex>) for both key and value since we're using F<EXTREME-FDB-MIB>
+rather than F<BRIDGE-MIB>.
 
 =back
 
@@ -658,10 +653,12 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
 
+=over
+
 =item $extreme->set_i_vlan ( vlan, ifIndex )
 
 Changes an access (untagged) port VLAN, must be supplied with the numeric
-VLAN ID and port ifIndex.  This method should only be used on end station
+VLAN ID and port C<ifIndex>.  This method should only be used on end station
 (non-trunk) ports.
 
   Example:
@@ -672,7 +669,7 @@ VLAN ID and port ifIndex.  This method should only be used on end station
 =item $extreme->set_i_pvid ( pvid, ifIndex )
 
 Sets port default VLAN, must be supplied with the numeric VLAN ID and
-port ifIndex.  This method should only be used on trunk ports.
+port C<ifIndex>.  This method should only be used on trunk ports.
 
   Example:
   my %if_map = reverse %{$extreme->interfaces()};
@@ -682,7 +679,7 @@ port ifIndex.  This method should only be used on trunk ports.
 =item $extreme->set_add_i_vlan_tagged ( vlan, ifIndex )
 
 Adds the VLAN to the enabled VLANs list of the port, must be supplied with the
-numeric VLAN ID and port ifIndex.
+numeric VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$extreme->interfaces()};
@@ -692,11 +689,13 @@ numeric VLAN ID and port ifIndex.
 =item $extreme->set_remove_i_vlan_tagged ( vlan, ifIndex )
 
 Removes the VLAN from the enabled VLANs list of the port, must be supplied
-with the numeric VLAN ID and port ifIndex.
+with the numeric VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$extreme->interfaces()};
   $extreme->set_remove_i_vlan_tagged('2', $if_map{'FastEthernet0/1'}) 
     or die "Couldn't add port to egress list. ",$extreme->error(1);
+
+=back
 
 =cut

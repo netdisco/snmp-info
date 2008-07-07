@@ -1,34 +1,34 @@
 # SNMP::Info::Layer2::Aruba
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2005 Eric Miller
+# Copyright (c) 2008 Eric Miller
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Aruba;
-$VERSION = '1.07';
+$VERSION = '1.09';
 use strict;
 
 use Exporter;
@@ -373,8 +373,8 @@ This class emulates bridge functionality for the wireless switch. This enables
 end station MAC addresses collection and correlation to the thin access point
 the end station is using for communication.
 
-For speed or debugging purposes you can call the subclass directly, but not after
-determining a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $aruba = new SNMP::Info::Layer2::Aruba(...);
 
@@ -390,9 +390,9 @@ determining a more specific class using the method above.
 
 =over
 
-=item WLSX-SWITCH-MIB
+=item F<WLSX-SWITCH-MIB>
 
-=item WLSR-AP-MIB
+=item F<WLSR-AP-MIB>
 
 =back
 
@@ -421,7 +421,7 @@ Returns 'airos'
 
 =item $aruba->os_ver()
 
-Returns the software version extracted from B<sysDescr>
+Returns the software version extracted from C<sysDescr>
 
 =back
 
@@ -453,7 +453,7 @@ to a hash.
 
 Returns reference to map of IIDs to Interface index. 
 
-Extends ifIndex to support thin APs as device interfaces.
+Extends C<ifIndex> to support thin APs as device interfaces.
 
 =item $aruba->interfaces()
 
@@ -462,7 +462,7 @@ interfaces.  The thin AP MAC address is used as the port identifier.
 
 =item $aruba->i_name()
 
-Interface name.  Returns (B<ifName>) for Ethernet interfaces and (B<apLocation>)
+Interface name.  Returns (C<ifName>) for Ethernet interfaces and (C<apLocation>)
 for thin AP interfaces.
 
 =item $aruba->bp_index()
@@ -472,72 +472,73 @@ both the keys and values.
 
 =item $aruba->fw_port()
 
-(B<staAccessPointBSSID>) as extracted from the IID.
+(C<staAccessPointBSSID>) as extracted from the IID.
 
 =item $aruba->fw_mac()
 
-(B<staPhyAddress>) as extracted from the IID.
+(C<staPhyAddress>) as extracted from the IID.
 
 =item $aruba->i_ssidlist()
 
 Returns reference to hash.  SSID's recognized by the radio interface.
 
-(B<apESSID>)
+(C<apESSID>)
 
 =item $aruba->i_ssidbcast()
 
-Returns reference to hash.  Indicates whether the SSID is broadcast, true or false.
+Returns reference to hash.  Indicates whether the SSID is broadcast, true or
+false.
 
-(B<wlsrHideSSID>)
+(C<wlsrHideSSID>)
 
 =item $aruba->i_80211channel()
 
 Returns reference to hash.  Current operating frequency channel of the radio
 interface.
 
-(B<apCurrentChannel>)
+(C<apCurrentChannel>)
 
 =back
 
-=head2 Aruba Switch AP Table  (B<wlsxSwitchAccessPointTable>)
+=head2 Aruba Switch AP Table  (C<wlsxSwitchAccessPointTable>)
 
 =over
 
 =item $aruba->aruba_ap_name()
 
-(B<apLocation>)
+(C<apLocation>)
 
 =item $aruba->aruba_ap_ip()
 
-(B<apIpAddress>)
+(C<apIpAddress>)
 
 =item $aruba->aruba_ap_essid()
 
-(B<apESSID>)
+(C<apESSID>)
 
 =item $aruba->aruba_ap_ssidbcast()
 
-(B<wlsrHideSSID>)
+(C<wlsrHideSSID>)
 
 =back
 
-=head2 Aruba Switch Station Management Table (B<wlsxSwitchStationMgmtTable>)
+=head2 Aruba Switch Station Management Table (C<wlsxSwitchStationMgmtTable>)
 
 =over
 
 =item $aruba->fw_user()
 
-(B<staUserName>)
+(C<staUserName>)
 
 =back
 
-=head2 Aruba Wireless AP Configuration Table (B<wlsrConfigTable>)
+=head2 Aruba Wireless AP Configuration Table (C<wlsrConfigTable>)
 
 =over
 
 =item $aruba->aruba_ap_channel()
 
-(B<apCurrentChannel>)
+(C<apCurrentChannel>)
 
 =back
 

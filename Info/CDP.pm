@@ -1,5 +1,5 @@
 # SNMP::Info::CDP
-# Max Baker
+# $Id$
 #
 # Changes since Version 0.7 Copyright (c) 2004 Max Baker 
 # All rights reserved.  
@@ -12,27 +12,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CDP;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -214,8 +214,9 @@ Max Baker
 SNMP::Info::CDP is a subclass of SNMP::Info that provides an object oriented 
 interface to CDP information through SNMP.
 
-CDP is a Layer 2 protocol that supplies topology information of devices that also speak CDP, 
-mostly switches and routers.  CDP is implemented in Cisco and some HP devices.
+CDP is a Layer 2 protocol that supplies topology information of devices that
+also speak CDP, mostly switches and routers.  CDP is implemented in Cisco and
+some HP devices.
 
 Create or use a device subclass that inherits this class.  Do not use directly.
 
@@ -230,7 +231,7 @@ None.
 
 =over
 
-=item CISCO-CDP-MIB
+=item F<CISCO-CDP-MIB>
 
 =back
 
@@ -253,27 +254,28 @@ Accounts for SNMP version 1 devices which may have CDP but not cdp_run()
 Is CDP enabled on this device?  Note that a lot of Cisco devices that implement
 CDP don't implement this value. @#%$!
 
-(B<cdpGlobalRun>)
+(C<cdpGlobalRun>)
 
 =item $cdp->cdp_interval()
 
 Interval in seconds at which CDP messages are generated.
 
-(B<cdpGlobalMessageInterval>)
+(C<cdpGlobalMessageInterval>)
 
 =item $cdp->cdp_holdtime()
 
 Time in seconds that CDP messages are kept. 
 
-(B<cdpGlobalHoldTime>)
+(C<cdpGlobalHoldTime>)
 
 =item  $cdp->cdp_id() 
 
 Returns CDP device ID.  
 
-This is the device id broadcast via CDP to other devices, and is what is retrieved from remote devices with $cdp->id().
+This is the device id broadcast via CDP to other devices, and is what is
+retrieved from remote devices with $cdp->id().
 
-(B<cdpGlobalDeviceId>)
+(C<cdpGlobalDeviceId>)
 
 =back
 
@@ -300,7 +302,7 @@ From L<http://www.cisco.com/univercd/cc/td/doc/product/lan/trsrb/frames.htm#1884
 
 =item (0x40) - Provides level 1 functionality.
 
-=item (0x20) - The bridge or switch does not forward IGMP Report packets on nonrouter ports.
+=item (0x20) - The bridge or switch does not forward IGMP Report packets on non router ports.
 
 =item (0x10) - Sends and receives packets for at least one network layer protocol. If the device is routing the protocol, this bit should not be set.
 
@@ -314,27 +316,29 @@ From L<http://www.cisco.com/univercd/cc/td/doc/product/lan/trsrb/frames.htm#1884
 
 =back
 
-Thanks to Martin Lorensen C<martin -at- lorensen.dk> for a pointer to this information.
+Thanks to Martin Lorensen C<martin -at- lorensen.dk> for a pointer to this
+information.
 
-(B<cdpCacheCapabilities>)
+(C<cdpCacheCapabilities>)
 
 =item $cdp->c_domain()
 
-Returns remote VTP Management Domain as defined in CISCO-VTP-MIB::managementDomainName
+Returns remote VTP Management Domain as defined in
+C<CISCO-VTP-MIB::managementDomainName>
 
-(B<cdpCacheVTPMgmtDomain>)
+(C<cdpCacheVTPMgmtDomain>)
 
 =item $cdp->c_duplex() 
 
 Returns the port duplex status from remote devices.
 
-(B<cdpCacheDuplex>)
+(C<cdpCacheDuplex>)
 
 =item $cdp->c_id()
 
 Returns remote device id string
 
-(B<cdpCacheDeviceId>)
+(C<cdpCacheDeviceId>)
 
 =item $cdp->c_if()
 
@@ -343,8 +347,8 @@ Returns the mapping to the SNMP Interface Table.
 Note that a lot devices don't implement $cdp->c_index(),  So if it isn't around,
 we fake it. 
 
-In order to map the cdp table entry back to the interfaces() entry, we truncate the last number
-off of it :
+In order to map the cdp table entry back to the interfaces() entry, we truncate
+the last number off of it :
 
   # it exists, yay.
   my $c_index     = $device->c_index();
@@ -368,54 +372,55 @@ off of it :
 
 Returns the mapping to the SNMP2 Interface table for CDP Cache Entries. 
 
-Most devices don't implement this, so you probably want to use $cdp->c_if() instead.
+Most devices don't implement this, so you probably want to use $cdp->c_if()
+instead.
 
 See c_if() entry.
 
-(B<cdpCacheIfIndex>)
+(C<cdpCacheIfIndex>)
 
 =item  $cdp->c_ip()
 
 If $cdp->c_proto() is supported, returns remote IPV4 address only.  Otherwise
 it will return all addresses.
 
-(B<cdpCacheAddress>)
+(C<cdpCacheAddress>)
 
 =item  $cdp->c_addr()
 
 Returns remote address
 
-(B<cdpCacheAddress>)
+(C<cdpCacheAddress>)
 
 =item $cdp->c_platform() 
 
 Returns remote platform id 
 
-(B<cdpCachePlatform>)
+(C<cdpCachePlatform>)
 
 =item $cdp->c_port()
 
 Returns remote port ID
 
-(B<cdpDevicePort>)
+(C<cdpDevicePort>)
 
 =item  $cdp->c_proto()
 
 Returns remote address type received.  Usually IP.
 
-(B<cdpCacheAddressType>)
+(C<cdpCacheAddressType>)
 
 =item $cdp->c_ver() 
 
 Returns remote hardware version
 
-(B<cdpCacheVersion>)
+(C<cdpCacheVersion>)
 
 =item $cdp->c_vlan()
 
 Returns the remote interface native VLAN.
 
-(B<cdpCacheNativeVLAN>)
+(C<cdpCacheNativeVLAN>)
 
 =back
 

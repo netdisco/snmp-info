@@ -1,7 +1,7 @@
 # SNMP::Info::CiscoVTP
-# Max Baker
+# $Id$
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2003 Regents of the University of California
 # All rights reserved.
@@ -11,27 +11,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoVTP;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -426,7 +426,6 @@ Max Baker
  my $vtp = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -439,7 +438,7 @@ Max Baker
 =head1 DESCRIPTION
 
 SNMP::Info::CiscoVTP is a subclass of SNMP::Info that provides 
-information about a Cisco device's VLAN and VTP Domain memebership.
+information about a Cisco device's VLAN and VTP Domain membership.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
@@ -451,11 +450,11 @@ None.
 
 =over
 
-=item CISCO-VTP-MIB
+=item F<CISCO-VTP-MIB>
 
-=item CISCO-VLAN-MEMBERSHIP-MIB
+=item F<CISCO-VLAN-MEMBERSHIP-MIB>
 
-=item CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
+=item F<CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB>
 
 =back
 
@@ -467,27 +466,27 @@ MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =item $vtp->vtp_version()
 
-(B<vtpVersion>)
+(C<vtpVersion>)
 
 =item $vtp->vtp_maxstore()
 
-(B<vtpMaxVlanStorage>)
+(C<vtpMaxVlanStorage>)
 
 =item $vtp->vtp_notify()
 
-(B<vtpNotificationsEnabled>)
+(C<vtpNotificationsEnabled>)
 
 =item $vtp->vtp_notify_create()
 
-(B<vtpVlanCreatedNotifEnabled>)
+(C<vtpVlanCreatedNotifEnabled>)
 
 =item $vtp->vtp_notify_delete()
 
-(B<vtpVlanDeletedNotifEnabled>)
+(C<vtpVlanDeletedNotifEnabled>)
 
 =item $vtp->vtp_trunk_set_serial()
 
-(B<vlanTrunkPortSetSerialNo>)
+(C<vlanTrunkPortSetSerialNo>)
 
 =back
 
@@ -499,13 +498,13 @@ Your device will only implement a subset of these methods.
 
 =item $vtp->i_vlan()
 
-Returns a mapping between ifIndex and assigned VLAN ID for access ports and the
-default VLAN ID for trunk ports.
+Returns a mapping between C<ifIndex> and assigned VLAN ID for access ports
+and the default VLAN ID for trunk ports.
 
 =item $vtp->i_vlan_membership()
 
-Returns reference to hash of arrays: key = ifIndex, value = array of VLAN IDs.
-These are the VLANs which are members of enabled VLAN list for the port.
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of enabled VLAN list for the port.
 
   Example:
   my $interfaces = $vtp->interfaces();
@@ -519,88 +518,88 @@ These are the VLANs which are members of enabled VLAN list for the port.
 
 =back
 
-=head2 VLAN Table (B<CISCO-VTP-MIB::vtpVlanTable>)
+=head2 VLAN Table (C<CISCO-VTP-MIB::vtpVlanTable>)
 
-See ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html
+See L<ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html>
 for a good treaty of how to connect to the VLANs
 
 =over
 
 =item $vtp->v_index()
 
-(B<vtpVlanIndex>)
+(C<vtpVlanIndex>)
 
 =item $vtp->v_state()
 
-(B<vtpVlanState>)
+(C<vtpVlanState>)
 
 =item $vtp->v_type()
 
-(B<vtpVlanType>)
+(C<vtpVlanType>)
 
 =item $vtp->v_name()
 
-(B<vtpVlanName>)
+(C<vtpVlanName>)
 
 =item $vtp->v_mtu()
 
-(B<vtpVlanMtu>)
+(C<vtpVlanMtu>)
 
 =item $vtp->v_said()
 
-(B<vtpVlanDot10Said>)
+(C<vtpVlanDot10Said>)
 
 =item $vtp->v_ring()
 
-(B<vtpVlanRingNumber>)
+(C<vtpVlanRingNumber>)
 
 =item $vtp->v_bridge()
 
-(B<vtpVlanBridgeNumber>)
+(C<vtpVlanBridgeNumber>)
 
 =item $vtp->v_stp()
 
-(B<vtpVlanStpType>)
+(C<vtpVlanStpType>)
 
 =item $vtp->v_parent()
 
-(B<vtpVlanParentVlan>)
+(C<vtpVlanParentVlan>)
 
 =item $vtp->v_trans1()
 
-(B<vtpVlanTranslationalVlan1>)
+(C<vtpVlanTranslationalVlan1>)
 
 =item $vtp->v_trans2()
 
-(B<vtpVlanTranslationalVlan2>)
+(C<vtpVlanTranslationalVlan2>)
 
 =item $vtp->v_btype()
 
-(B<vtpVlanBridgeType>)
+(C<vtpVlanBridgeType>)
 
 =item $vtp->v_hop_are()
 
-(B<vtpVlanAreHopCount>)
+(C<vtpVlanAreHopCount>)
 
 =item $vtp->v_hop_ste()
 
-(B<vtpVlanSteHopCount>)
+(C<vtpVlanSteHopCount>)
 
 =item $vtp->v_crf()
 
-(B<vtpVlanIsCRFBackup>)
+(C<vtpVlanIsCRFBackup>)
 
 =item $vtp->v_type_ext()
 
-(B<vtpVlanTypeExt>)
+(C<vtpVlanTypeExt>)
 
 =item $vtp->v_if()
 
-(B<vtpVlanIfIndex>)
+(C<vtpVlanIfIndex>)
 
 =back
 
-=head2 VLAN Membership Table (B<CISCO-VLAN-MEMBERSHIP-MIB::vmMembershipTable>)
+=head2 VLAN Membership Table (C<CISCO-VLAN-MEMBERSHIP-MIB::vmMembershipTable>)
 
 =over
 
@@ -608,161 +607,162 @@ for a good treaty of how to connect to the VLANs
 
 Static, Dynamic, or multiVlan.  
 
-(B<vmVlanType>)
+(C<vmVlanType>)
 
 =item $vtp->i_vlan2()
 
 The VLAN that an access port is assigned to.
 
-(B<vmVlan>)
+(C<vmVlan>)
 
 =item $vtp->i_vlan_stat()
 
 Inactive, active, shutdown.
 
-(B<vmPortStatus>)
+(C<vmPortStatus>)
 
 =item $vtp->i_vlan_1()
 
 Each bit represents a VLAN.  This is 0 through 1023
 
-(B<vmVlans>)
+(C<vmVlans>)
 
 =item $vtp->i_vlan_2()
 
 Each bit represents a VLAN.  This is 1024 through 2047
 
-(B<vmVlans2k>)
+(C<vmVlans2k>)
 
 =item $vtp->i_vlan_3()
 
 Each bit represents a VLAN.  This is 2048 through 3071
 
-(B<vmVlans3k>)
+(C<vmVlans3k>)
 
 =item $vtp->i_vlan_4()
 
 Each bit represents a VLAN.  This is 3072 through 4095
 
-(B<vmVlans4k>)
+(C<vmVlans4k>)
 
 =back
 
-=head2 VLAN Membership Voice VLAN Table (B<CISCO-VLAN-MEMBERSHIP-MIB::vmVoiceVlanTable>)
+=head2 VLAN Membership Voice VLAN Table
+(C<CISCO-VLAN-MEMBERSHIP-MIB::vmVoiceVlanTable>)
 
 =over
 
 =item $vtp->i_voice_vlan() 
 
-(B<vmVoiceVlanId>)
+(C<vmVoiceVlanId>)
 
 =back
 
-=head2 Managment Domain Table (B<CISCO-VTP-MIB::managementDomainTable>)
+=head2 Management Domain Table (C<CISCO-VTP-MIB::managementDomainTable>)
 
 =over
 
 =item $vtp->vtp_d_index()
 
-(B<managementDomainIndex>)
+(C<managementDomainIndex>)
 
 =item $vtp->vtp_d_name()
 
-(B<managementDomainName>)
+(C<managementDomainName>)
 
 =item $vtp->vtp_d_mode()
 
-(B<managementDomainLocalMode>)
+(C<managementDomainLocalMode>)
 
 =item $vtp->vtp_d_rev()
 
-(B<managementDomainConfigRevNumber>)
+(C<managementDomainConfigRevNumber>)
 
 =item $vtp->vtp_d_updater()
 
-(B<managementDomainLastUpdater>)
+(C<managementDomainLastUpdater>)
 
 =item $vtp->vtp_d_last()
 
-(B<managementDomainLastChange>)
+(C<managementDomainLastChange>)
 
 =item $vtp->vtp_d_status()
 
-(B<managementDomainRowStatus>)
+(C<managementDomainRowStatus>)
 
 =item $vtp->vtp_d_tftp()
 
-(B<managementDomainTftpServer>)
+(C<managementDomainTftpServer>)
 
 =item $vtp->vtp_d_tftp_path()
 
-(B<managementDomainTftpPathname>)
+(C<managementDomainTftpPathname>)
 
 =item $vtp->vtp_d_pruning()
 
-(B<managementDomainPruningState>)
+(C<managementDomainPruningState>)
 
 =item $vtp->vtp_d_ver()
 
-(B<managementDomainVersionInUse>)
+(C<managementDomainVersionInUse>)
 
 =back
 
-=head2 VLAN Trunk Port Table (B<CISCO-VTP-MIB::vlanTrunkPortTable>)
+=head2 VLAN Trunk Port Table (C<CISCO-VTP-MIB::vlanTrunkPortTable>)
 
 =over
 
 =item $vtp->vtp_trunk_mgmt_dom()
 
-(B<vlanTrunkPortManagementDomain>)
+(C<vlanTrunkPortManagementDomain>)
 
 =item $vtp->vtp_trunk_encaps_t()
 
-(B<vlanTrunkPortEncapsulationType>)
+(C<vlanTrunkPortEncapsulationType>)
 
 =item $vtp->vtp_trunk_vlans()
 
-(B<vlanTrunkPortVlansEnabled>)
+(C<vlanTrunkPortVlansEnabled>)
 
 =item $vtp->vtp_trunk_vlans_2k()
 
-(B<vlanTrunkPortVlansEnabled2k>)
+(C<vlanTrunkPortVlansEnabled2k>)
 
 =item $vtp->vtp_trunk_vlans_3k()
 
-(B<vlanTrunkPortVlansEnabled3k>)
+(C<vlanTrunkPortVlansEnabled3k>)
 
 =item $vtp->vtp_trunk_vlans_4k()
 
-(B<vlanTrunkPortVlansEnabled4k>)
+(C<vlanTrunkPortVlansEnabled4k>)
 
 =item $vtp->vtp_trunk_native()
 
-(B<vlanTrunkPortNativeVlan>)
+(C<vlanTrunkPortNativeVlan>)
 
 =item $vtp->i_pvid()
 
-(B<vlanTrunkPortNativeVlan>)
+(C<vlanTrunkPortNativeVlan>)
 
 =item $vtp->vtp_trunk_rstat()
 
-(B<vlanTrunkPortRowStatus>)
+(C<vlanTrunkPortRowStatus>)
 
 =item $vtp->vtp_trunk_dyn()
 
-(B<vlanTrunkPortDynamicState>)
+(C<vlanTrunkPortDynamicState>)
 
 =item $vtp->vtp_trunk_dyn_stat()
 
-(B<vlanTrunkPortDynamicStatus>)
+(C<vlanTrunkPortDynamicStatus>)
 
 =item $vtp->vtp_trunk_vtp()
 
-(B<vlanTrunkPortVtpEnabled>)
+(C<vlanTrunkPortVtpEnabled>)
 
 =item $vtp->vtp_trunk_encaps()
 
-(B<vlanTrunkPortEncapsulationOperType>)
+(C<vlanTrunkPortEncapsulationOperType>)
 
 =back
 
@@ -777,7 +777,7 @@ L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set operations.
 =item $vtp->set_i_vlan ( vlan, ifIndex )
 
 Changes an access (untagged) port VLAN, must be supplied with the numeric
-VLAN ID and port ifIndex.  This method should only be used on end station
+VLAN ID and port C<ifIndex>.  This method should only be used on end station
 (non-trunk) ports.
 
   Example:
@@ -788,7 +788,7 @@ VLAN ID and port ifIndex.  This method should only be used on end station
 =item $vtp->set_i_pvid ( pvid, ifIndex )
 
 Sets port default VLAN, must be supplied with the numeric VLAN ID and
-port ifIndex.  This method should only be used on trunk ports.
+port C<ifIndex>.  This method should only be used on trunk ports.
 
   Example:
   my %if_map = reverse %{$vtp->interfaces()};
@@ -798,7 +798,7 @@ port ifIndex.  This method should only be used on trunk ports.
 =item $vtp->set_add_i_vlan_tagged ( vlan, ifIndex )
 
 Adds the VLAN to the enabled VLANs list of the port, must be supplied with the
-numeric VLAN ID and port ifIndex.
+numeric VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$vtp->interfaces()};
@@ -808,11 +808,13 @@ numeric VLAN ID and port ifIndex.
 =item $vtp->set_remove_i_vlan_tagged ( vlan, ifIndex )
 
 Removes the VLAN from the enabled VLANs list of the port, must be supplied
-with the numeric VLAN ID and port ifIndex.
+with the numeric VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$vtp->interfaces()};
   $vtp->set_remove_i_vlan_tagged('2', $if_map{'FastEthernet0/1'}) 
     or die "Couldn't add port to egress list. ",$vtp->error(1);
+
+=back
 
 =cut

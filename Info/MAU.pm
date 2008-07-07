@@ -1,7 +1,7 @@
 # SNMP::Info::MAU - Media Access Unit - RFC 2668
-# Max Baker
+# $Id$
 #
-# Copyright (c) 2004,2005 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -11,27 +11,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::MAU;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -281,8 +281,8 @@ Max Baker
 
 =head1 DESCRIPTION
 
-SNMP::Info::MAU is a sublcass of SNMP::Info that supplies access to the
-MAU-MIB (RFC 2668). This MIB is sometimes implemented on Layer 2 network
+SNMP::Info::MAU is a subclass of SNMP::Info that supplies access to the
+F<MAU-MIB> (RFC 2668). This MIB is sometimes implemented on Layer 2 network
 devices like HP Switches.  MAU = Media Access Unit.
 
 The MAU table contains link and duplex info for the port itself and the device
@@ -303,7 +303,7 @@ None.
 
 =over
 
-=item MAU-MIB
+=item F<MAU-MIB>
 
 =back
 
@@ -354,14 +354,14 @@ Returns either (auto,none,full,half).
 =item $mau->mau_index() -  Returns a list of interfaces
 and their index in the MAU IF Table.
 
-(B<ifMauIfIndex>)
+(C<ifMauIfIndex>)
 
 =item $mau->mau_link() - Returns the type of Media Access used.  
 
     This is essentially the type of link in use.  
     eg. dot3MauType100BaseTXFD - 100BaseT at Full Duplex
 
-(B<ifMauType>)
+(C<ifMauType>)
 
 =item $mau->mau_status() - Returns the admin link condition as 
 
@@ -374,16 +374,16 @@ and their index in the MAU IF Table.
 
 Use 5 and !5 to see if the link is up or down on the admin side.
 
-(B<ifMauStatus>)
+(C<ifMauStatus>)
 
 =item $mau->mau_up() -  Returns the current link condition
 
- (B<ifMauMediaAvailable>)
+ (C<ifMauMediaAvailable>)
 
 =item $mau->mau_type() - Returns a 32bit string reporting the capabilities
 of the port from a MAU POV. 
 
-  Directly from the MAU-MIB : 
+  Directly from F<MAU-MIB> : 
           Bit   Capability
             0      other or unknown
             1      AUI
@@ -407,7 +407,7 @@ of the port from a MAU POV.
            19      100BASE-T2 half duplex mode
            20      100BASE-T2 full duplex mode
 
-(B<ifMauTypeList>)
+(C<ifMauTypeList>)
 
 =item $mau->mau_type_admin()
 
@@ -415,7 +415,7 @@ of the port from a MAU POV.
 
 =item $mau->mau_auto() - Returns status of auto-negotiation mode for ports.
 
-(B<ifMauAutoNegAdminStatus>)
+(C<ifMauAutoNegAdminStatus>)
 
 =item $mau->mau_autostat()
 
@@ -426,7 +426,7 @@ capabilities we are broadcasting on that port
 
     Uses the same decoder as $mau->mau_type().
 
-(B<ifMauAutoNegCapAdvertised>)
+(C<ifMauAutoNegCapAdvertised>)
 
 
 =item $mau->mau_autorec() - Returns a 32 bit bit-string representing the 
@@ -434,7 +434,7 @@ capabilities of the device on the other end.
 
     Uses the same decoder as $mau->mau_type().
 
-(B<ifMauAutoNegCapReceived>)
+(C<ifMauAutoNegCapReceived>)
 
 =back
 

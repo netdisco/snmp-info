@@ -1,8 +1,7 @@
 # SNMP::Info::Layer3::Passport
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller, Max Baker
+# Copyright (c) 2008 Eric Miller
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -10,26 +9,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Passport;
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 use strict;
 
@@ -547,7 +547,7 @@ sub bp_index {
     return \%bp_index;
 }
 
-# Psuedo ENTITY-MIB methods
+# Pseudo ENTITY-MIB methods
 
 sub e_index {
     my $passport = shift;
@@ -1011,7 +1011,6 @@ Eric Miller
  my $passport = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -1026,12 +1025,12 @@ Eric Miller
 Abstraction subclass for modular Nortel Ethernet Routing Switches (formerly
 Passport and Accelar Series Switches).
 
-These devices have some of the same charactersitics as the stackable Nortel 
+These devices have some of the same characteristics as the stackable Nortel 
 Ethernet Switches (Baystack).  For example, extended interface information is 
-gleened from RAPID-CITY.
+gleaned from F<RAPID-CITY>.
 
-For speed or debugging purposes you can call the subclass directly, but not after
-determining a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $passport = new SNMP::Info::Layer3::Passport(...);
 
@@ -1070,7 +1069,7 @@ These are methods that return scalar value from SNMP
 =item $passport->model()
 
 Returns model type.  Checks $passport->id() against the 
-RAPID-CITY-MIB and then parses out rcA.
+F<RAPID-CITY-MIB> and then parses out C<rcA>.
 
 =item $passport->vendor()
 
@@ -1082,17 +1081,17 @@ Returns 'passport'
 
 =item $passport->os_ver()
 
-Returns the software version extracted from B<sysDescr>
+Returns the software version extracted from C<sysDescr>
 
 =item $passport->serial()
 
-Returns (B<rcChasSerialNumber>)
+Returns (C<rcChasSerialNumber>)
 
 =item $passport->root_ip()
 
 Returns the primary IP used to communicate with the device.  Returns the first
-found:  CLIP (CircuitLess IP), Management Virtual IP (B<rcSysVirtualIpAddr>),
-OSPF Router ID (B<ospfRouterId>), SONMP Advertised IP Address.
+found:  CLIP (CircuitLess IP), Management Virtual IP (C<rcSysVirtualIpAddr>),
+OSPF Router ID (C<ospfRouterId>), SONMP Advertised IP Address.
 
 =back
 
@@ -1137,16 +1136,17 @@ to a hash.
 
 =item $passport->i_index()
 
-Returns SNMP IID to Interface index.  Extends (B<ifIndex>) by adding the index of
-the CPU virtual management IP (if present), each CPU Ethernet port, and each VLAN
-to ensure the virtual router ports are captured.
+Returns SNMP IID to Interface index.  Extends (C<ifIndex>) by adding the index
+of the CPU virtual management IP (if present), each CPU Ethernet port, and
+each VLAN to ensure the virtual router ports are captured.
 
 =item $passport->interfaces()
 
 Returns reference to the map between IID and physical Port.
 
 Slot and port numbers on the Passport switches are determined by the formula:
-port = (ifIndex % index_factor) + port_offset, slot = int(ifIndex / index_factor).
+port = (C<ifIndex % index_factor>) + port_offset,
+slot = int(C<ifIndex / index_factor>).
 
 The physical port name is returned as slot.port.  CPU Ethernet ports are prefixed
 with CPU and VLAN interfaces are returned as the VLAN ID prefixed with Vlan.
@@ -1163,32 +1163,33 @@ human and machine friendly.  Not always.
 
 =item $passport->i_name()
 
-Crosses rc_alias() (B<rcPortName>) with ifAlias() and returns the human set port
+Crosses rc_alias() (C<rcPortName>) with ifAlias() and returns the human set port
 name if exists.
 
 =item $passport->ip_index()
 
-Maps the IP Table to the IID.  Extends (B<ipAdEntIfIndex>) by adding the index of
+Maps the IP Table to the IID.  Extends (C<ipAdEntIfIndex>) by adding the index of
 the CPU virtual management IP (if present) and each CPU Ethernet port.
 
 =item $passport->ip_netmask()
 
-Extends (B<ipAdEntNetMask>) by adding the mask of the CPU virtual management
+Extends (C<ipAdEntNetMask>) by adding the mask of the CPU virtual management
 IP (if present) and each CPU Ethernet port.
 
 =item $passport->bp_index()
 
-Returns reference to hash of bridge port table entries map back to interface identifier (iid)
+Returns reference to hash of bridge port table entries map back to interface
+identifier (iid)
 
-Returns (B<ifIndex>) for both key and value since some devices seem to have
-problems with BRIDGE-MIB
+Returns (C<ifIndex>) for both key and value since some devices seem to have
+problems with F<BRIDGE-MIB>
 
 =back
 
-=head2 Psuedo ENTITY-MIB information
+=head2 Pseudo F<ENTITY-MIB> information
 
-These devices do not support ENTITY-MIB.  These methods emulate Physical Table
-methods using the RAPID-CITY MIB.
+These devices do not support F<ENTITY-MIB>.  These methods emulate Physical
+Table methods using the F<RAPID-CITY MIB>.
 
 =over
 
@@ -1202,7 +1203,7 @@ two digits padded with leading zero if required.
 =item $passport->e_class()
 
 Returns reference to hash.  Key: IID, Value: General hardware type.  This
-class only returns container, module, and powerSupply types.
+class only returns container, module, and power supply types.
 
 =item $passport->e_descr()
 

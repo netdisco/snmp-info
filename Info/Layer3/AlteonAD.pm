@@ -1,8 +1,7 @@
 # SNMP::Info::Layer3::AlteonAD
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller
+# Copyright (c) 2008 Eric Miller
 # All Rights Reserved
 #
 # Redistribution and use in source and binary forms, with or without 
@@ -10,26 +9,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::AlteonAD;
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 use strict;
 
@@ -340,7 +340,6 @@ Eric Miller
  my $alteon = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -355,8 +354,8 @@ Eric Miller
 Abstraction subclass for Nortel Alteon Series Layer 2-7 load balancing switches
 and Nortel BladeCenter Layer2-3 GbE Switch Modules.
 
-For speed or debugging purposes you can call the subclass directly, but not after
-determining a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $alteon = new SNMP::Info::Layer3::AlteonAD(...);
 
@@ -372,19 +371,19 @@ determining a more specific class using the method above.
 
 =over
 
-=item ALTEON-ROOT-MIB
+=item F<ALTEON-ROOT-MIB>
 
-=item ALTEON-TIGON-SWITCH-MIB
+=item F<ALTEON-TIGON-SWITCH-MIB>
 
-=item ALTEON-TS-PHYSICAL-MIB
+=item F<ALTEON-TS-PHYSICAL-MIB>
 
-=item ALTEON-TS-NETWORK-MIB
+=item F<ALTEON-TS-NETWORK-MIB>
 
-=item ALTEON-CS-PHYSICAL-MIB
+=item F<ALTEON-CS-PHYSICAL-MIB>
 
-=item ALTEON-CHEETAH-SWITCH-MIB
+=item F<ALTEON-CHEETAH-SWITCH-MIB>
 
-=item ALTEON-CHEETAH-NETWORK-MIB
+=item F<ALTEON-CHEETAH-NETWORK-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -400,8 +399,8 @@ These are methods that return scalar value from SNMP
 
 =item $alteon->model()
 
-Returns model type.  Checks $alteon->id() against the ALTEON-ROOT-MIB and
-then parses out aceswitch, replaces acedirector with AD, and replaces
+Returns model type.  Checks $alteon->id() against the F<ALTEON-ROOT-MIB> and
+then parses out C<aceswitch>, replaces C<acedirector> with AD, and replaces
 copperModule/fiberModule with BladeCenter GbESM.
 
 =item $alteon->vendor()
@@ -414,23 +413,23 @@ Returns 'alteon'
 
 =item $alteon->os_ver()
 
-Returns the software version reported by B<agSoftwareVersion>
+Returns the software version reported by C<agSoftwareVersion>
 
 =item $alteon->tftp_action()
 
-(B<agTftpAction>)
+(C<agTftpAction>)
 
 =item $alteon->tftp_host()
 
-(B<agTftpServer>)
+(C<agTftpServer>)
 
 =item $alteon->tftp_file()
 
-(B<agTftpCfgFileName>)
+(C<agTftpCfgFileName>)
 
 =item $alteon->tftp_result()
 
-(B<agTftpLastActionStatus>)
+(C<agTftpLastActionStatus>)
 
 =back
 
@@ -452,7 +451,7 @@ to a hash.
 Returns reference to the map between IID and physical port.
 
 Utilizes description for network interfaces.  Ports are determined by
-formula (ifIndex mod 256).
+formula (C<ifIndex mod 256>).
 
 =item $alteon->i_duplex()
 
@@ -464,12 +463,12 @@ Returns reference to hash.  Maps port admin duplexes to IIDs.
 
 =item $alteon->i_vlan()
 
-Returns a mapping between ifIndex and the PVID or default VLAN.
+Returns a mapping between C<ifIndex> and the PVID or default VLAN.
 
 =item $alteon->i_vlan_membership()
 
-Returns reference to hash of arrays: key = ifIndex, value = array of VLAN IDs.
-These are the VLANs which are members of the egress list for the port.
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the egress list for the port.
 
   Example:
   my $interfaces = $alteon->interfaces();
@@ -487,11 +486,12 @@ Human-entered name for vlans.
 
 =item $alteon->i_name()
 
-Maps (B<agPortCurCfgPortName>) to port and returns the human set port name if exists.
+Maps (C<agPortCurCfgPortName>) to port and returns the human set port name if
+exists.
 
 =item $alteon->bp_index()
 
-Returns a mapping between ifIndex and the Bridge Table.
+Returns a mapping between C<ifIndex> and the Bridge Table.
 
 =back
 

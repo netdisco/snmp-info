@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3::Aironet
-# Max Baker
+# $Id$
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -11,27 +11,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Aironet;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -212,7 +212,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Aironet - Perl5 Interface to Cisco Aironet Wireless Devices running Aironet software, not IOS
+SNMP::Info::Layer3::Aironet - Perl5 Interface to Cisco Aironet Wireless Devices
+running Aironet software, not IOS
 
 =head1 AUTHOR
 
@@ -224,7 +225,6 @@ Max Baker
  my $aironet = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -236,8 +236,8 @@ Max Baker
 
 =head1 DESCRIPTION
 
-SNMP::Info subclass to provide access to SNMP data for an Aironet device running Aironet software,
-not cisco IOS.
+SNMP::Info subclass to provide access to SNMP data for an Aironet device
+running Aironet software, not cisco IOS.
 
 Note there are two classes for Aironet devices :
 
@@ -253,8 +253,8 @@ This class is for devices running Cisco IOS software (newer)
 
 =back
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $aironet = new SNMP::Info::Layer3::Aironet(...);
 
@@ -270,14 +270,14 @@ a more specific class using the method above.
 
 =over
 
-=item AWCVX-MIB
+=item F<AWCVX-MIB>
 
-=item IEEE802dot11-MIB
+=item F<IEEE802dot11-MIB>
 
 =back
 
-These MIBs are now included in the v2.tar.gz archive available from ftp.cisco.com.  Make sure you 
-have a current version. 
+These MIBs are now included in the v2.tar.gz archive available from
+ftp.cisco.com.  Make sure you have a current version. 
 
 =head1 GLOBALS
 
@@ -289,13 +289,13 @@ These are methods that return scalar value from SNMP
 
 Gives the admin duplex setting for the Ethernet Port.
 
-B<awcEtherDuplex.0>
+C<awcEtherDuplex.0>
 
 =item $aironet->mac()
 
 Gives the MAC Address of the wireless side 
 
-B<dot11StationID.2>
+C<dot11StationID.2>
 
 =item $aironet->os()
 
@@ -326,18 +326,18 @@ to a hash.
 
 =item $aironet->bp_index()
 
-Takes the bp_index() value from SNMP::Info::Bridge and overrides the wireless port 
-to be assigned to the transparent bridge port (port 0)
+Takes the bp_index() value from SNMP::Info::Bridge and overrides the wireless
+port to be assigned to the transparent bridge port (port 0)
 
 =item $aironet->fw_mac()
 
-Adds static table entries from bs_mac() to port 0 so that wireless MAC addresses will
-be reported.  Forwarding table entries for port 0 are removed.
+Adds static table entries from bs_mac() to port 0 so that wireless MAC
+addresses will be reported.  Forwarding table entries for port 0 are removed.
 
 =item $aironet->fw_port()
 
-Adds the static table port mappings to the forwarding table port mappings by adding 
-bs_port() to fw_port()
+Adds the static table port mappings to the forwarding table port mappings by
+adding bs_port() to fw_port()
 
 =item $aironet->i_duplex()
 
@@ -361,29 +361,29 @@ Ignores ports that are of type ``rptr'' and ``lo''.
 
 Gives the default MAC address of each interface.
 
-B<awcIfDefaultPhyAddress>
+C<awcIfDefaultPhyAddress>
 
 =item $aironet->awc_mac()
 
 Gives the actual MAC address of each interface.
 
-B<awcIfPhyAddress>
+C<awcIfPhyAddress>
 
 =item $aironet->awc_ip()
 
 Gives the IP Address assigned to each interface.
 
-B<awcIfIpAddress>
+C<awcIfIpAddress>
 
 =item $aironet->awc_netmask()
 
 Gives the NetMask for each interface.
 
-B<awcIfIpNetMask>
+C<awcIfIpNetMask>
 
 =item $aironet->awc_msdu()
 
-B<awcIfMSDUMaxLength>
+C<awcIfMSDUMaxLength>
 
 =back
 

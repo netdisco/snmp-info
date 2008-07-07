@@ -1,34 +1,34 @@
 # SNMP::Info::Layer1::Bayhub
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller, Max Baker
+# Copyright (c) 2008 Eric Miller, Max Baker
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Bayhub;
-$VERSION = '1.07';
+$VERSION = '1.09';
 use strict;
 
 use Exporter;
@@ -472,7 +472,6 @@ Eric Miller
     my $bayhub = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -486,10 +485,11 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a 
-Bayhub device through SNMP.  Also provides device MAC to port mapping through the proprietary MIB. 
+Bay hub device through SNMP.  Also provides device MAC to port mapping through
+the proprietary MIB. 
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
 my $bayhub = new SNMP::Info::Layer1::Bayhub(...);
 
@@ -509,9 +509,9 @@ my $bayhub = new SNMP::Info::Layer1::Bayhub(...);
 
 =over
 
-=item S5-ETHERNET-COMMON-MIB
+=item F<S5-ETHERNET-COMMON-MIB>
 
-=item S5-COMMON-STATS-MIB
+=item F<S5-COMMON-STATS-MIB>
 
 =back
 
@@ -539,7 +539,7 @@ Returns 'bay_hub'
 
 =item $bayhub->model()
 
-Cross references $bayhub->id() to the SYNOPTICS-MIB and returns
+Cross references $bayhub->id() to the F<SYNOPTICS-MIB> and returns
 the results.
 
 Removes either Baystack Hub, 5000, or 5005 depending on the model.
@@ -552,7 +552,8 @@ Removes either Baystack Hub, 5000, or 5005 depending on the model.
 
 =item $bayhub->layers()
 
-Returns 00000011.  Class emulates Layer 2 functionality through proprietary MIBs.
+Returns 00000011.  Class emulates Layer 2 functionality through proprietary
+MIBs.
 
 =item  $bayhub->index_factor()
 
@@ -591,7 +592,7 @@ to a hash.
 
 Returns reference to map of IIDs to Interface index. 
 
-Since hubs do not support ifIndex, the interface index is created using the
+Since hubs do not support C<ifIndex>, the interface index is created using the
 formula (board * 256 + port).
 
 =item $bayhub->interfaces()
@@ -612,17 +613,17 @@ Returns interface speed.
 
 =item $bayhub->i_up()
 
-Returns (B<s5EnPortLinkStatus>) for each port.  Translates on/off to up/down.
+Returns (C<s5EnPortLinkStatus>) for each port.  Translates on/off to up/down.
 
 =item $bayhub->i_up_admin()
 
-Returns (B<s5EnPortPartStatus>) for each port.
+Returns (C<s5EnPortPartStatus>) for each port.
 
 =item $bayhub->set_i_up_admin(state, ifIndex)
 
-Sets port state, must be supplied with state and port ifIndex
+Sets port state, must be supplied with state and port C<ifIndex>
 
-State choices are 'up'or 'down'
+State choices are 'up' or 'down'
 
 Example:
   my %if_map = reverse %{$bayhub->interfaces()};
@@ -636,20 +637,20 @@ both the keys and values.
 
 =item $bayhub->fw_port()
 
-Returns reference to map of IIDs of the S5-COMMON-STATS-MIB::s5CmSNodeTable
+Returns reference to map of IIDs of the C<S5-COMMON-STATS-MIB::s5CmSNodeTable>
 to the Interface index.
 
 =item $bayhub->fw_mac()
 
-(B<s5CmSNodeMacAddr>)
+(C<s5CmSNodeMacAddr>)
 
 =back
 
-=head2 Pseudo ENTITY-MIB Information
+=head2 Pseudo F<ENTITY-MIB> Information
 
-These devices do not support ENTITY-MIB.  These methods emulate Physical Table
-methods using S5-CHASSIS-MIB.  See L<SNMP::Info::NortelStack/"TABLE METHODS">
-for details.
+These devices do not support F<ENTITY-MIB>.  These methods emulate Physical
+Table methods using F<S5-CHASSIS-MIB>.  See
+L<SNMP::Info::NortelStack/"TABLE METHODS"> for details.
 
 =over
 

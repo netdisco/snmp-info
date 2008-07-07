@@ -1,32 +1,32 @@
 # SNMP::Info::CiscoConfig
-# Justin Hunter, Eric Miller
 # $Id$
 #
-# Redistribution and use in source and binary forms, with or without
+# Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
-#
+# 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the
-#       names of its contributors may be used to endorse or promote products
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the University of California, Santa Cruz nor the 
+#       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoConfig;
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 use strict;
 
@@ -262,7 +262,7 @@ Justin Hunter, Eric Miller
 =head1 DESCRIPTION
 
 SNMP::Info::CiscoConfig is a subclass of SNMP::Info that provides an interface
-to C<CISCO-CONFIG-COPY-MIB>, C<CISCO-FLASH-MIB>, and C<OLD-CISCO-SYS-MIB>.
+to F<CISCO-CONFIG-COPY-MIB>, F<CISCO-FLASH-MIB>, and F<OLD-CISCO-SYS-MIB>.
 These MIBs facilitate the writing of configuration files.
 
 Use or create a subclass of SNMP::Info that inherits this one.
@@ -280,11 +280,11 @@ None.
 
 =over
 
-=item CISCO-CONFIG-COPY-MIB
+=item F<CISCO-CONFIG-COPY-MIB>
 
-=item CISCO-FLASH-MIB
+=item F<CISCO-FLASH-MIB>
 
-=item OLD-CISCO-SYS-MIB
+=item F<OLD-CISCO-SYS-MIB>
 
 =back
 
@@ -296,11 +296,11 @@ These are methods that return scalar value from SNMP
 
 =item $ciscoconfig->old_write_mem()
 
-(B<writeMem>)
+(C<writeMem>)
 
 =item $ciscoconfig->old_write_net()
 
-(B<writeNet>)
+(C<writeNet>)
 
 =back
 
@@ -313,65 +313,65 @@ to a hash.
 
 =back
 
-=head2 Config Copy Request Table  (B<ccCopyTable>)
+=head2 Config Copy Request Table  (C<ccCopyTable>)
 
 =over
 
 =item $ciscoconfig->config_protocol()
 
-(B<ccCopyProtocol>)
+(C<ccCopyProtocol>)
 
 =item $ciscoconfig->config_source_type()
 
-(B<ccCopySourceFileType>)
+(C<ccCopySourceFileType>)
 
 =item $ciscoconfig->config_dest_type()
 
-(B<ccCopyDestFileType>)
+(C<ccCopyDestFileType>)
 
 =item $ciscoconfig->config_server_addr()
 
-(B<ccCopyServerAddress>)
+(C<ccCopyServerAddress>)
 
 =item $ciscoconfig->config_filename()
 
-(B<ccCopyFileName>)
+(C<ccCopyFileName>)
 
 =item $ciscoconfig->config_username()
 
-(B<ccCopyUserName>)
+(C<ccCopyUserName>)
 
 =item $ciscoconfig->config_password()
 
-(B<ccCopyUserPassword>)
+(C<ccCopyUserPassword>)
 
 =item $ciscoconfig->config_notify_complete()
 
-(B<ccCopyNotificationOnCompletion>)
+(C<ccCopyNotificationOnCompletion>)
 
 =item $ciscoconfig->config_copy_state()
 
-(B<ccCopyState>)
+(C<ccCopyState>)
 
 =item $ciscoconfig->config_copy_start_time()
 
-(B<ccCopyTimeStarted>)
+(C<ccCopyTimeStarted>)
 
 =item $ciscoconfig->config_copy_complete_time()
 
-(B<ccCopyTimeCompleted>)
+(C<ccCopyTimeCompleted>)
 
 =item $ciscoconfig->config_fail_cause()
 
-(B<ccCopyFailCause>)
+(C<ccCopyFailCause>)
 
 =item $ciscoconfig->config_row_status()
 
-(B<ccCopyEntryRowStatus>)
+(C<ccCopyEntryRowStatus>)
 
 =back
 
-=head2 Flash Copy Table (B<ciscoFlashCopyTable>)
+=head2 Flash Copy Table (C<ciscoFlashCopyTable>)
 
 Table of Flash copy operation entries.
 
@@ -379,27 +379,27 @@ Table of Flash copy operation entries.
 
 =item $ciscoconfig->flash_copy_cmd()
 
-(B<ciscoFlashCopyCommand>)
+(C<ciscoFlashCopyCommand>)
 
 =item $ciscoconfig->flash_copy_protocol()
 
-(B<ciscoFlashCopyProtocol>)
+(C<ciscoFlashCopyProtocol>)
 
 =item $ciscoconfig->flash_copy_address()
 
-(B<ciscoFlashCopyServerAddress>)
+(C<ciscoFlashCopyServerAddress>)
 
 =item $ciscoconfig->flash_copy_source()
 
-(B<ciscoFlashCopySourceName>)
+(C<ciscoFlashCopySourceName>)
 
 =item $ciscoconfig->flash_copy_dest()
 
-(B<ciscoFlashCopyDestinationName>)
+(C<ciscoFlashCopyDestinationName>)
 
 =item $ciscoconfig->flash_copy_row_status()
 
-(B<ciscoFlashCopyEntryStatus>)
+(C<ciscoFlashCopyEntryStatus>)
 
 =back
 
@@ -418,7 +418,7 @@ commands "copy running-config tftp" or "write net".
 
 This method attempts to use newer "copy running-config tftp" procedure first
 and then the older "write net" procedure if that fails.  The newer procedure is
-supported Cisco devices with the CISCO-CONFIG-COPY-MIB available, Cisco IOS
+supported Cisco devices with the F<CISCO-CONFIG-COPY-MIB> available, Cisco IOS
 software release 12.0 or on some devices as early as release 11.2P.  The
 older procedure has been depreciated by Cisco and is utilized only to support
 devices running older code revisions.
@@ -429,12 +429,12 @@ devices running older code revisions.
 
 =item $ciscoconfig->copy_run_start()
 
-Copy the running configuration to the startup configuration.  Equivalent to
-the CLI command "copy running-config startup-config" or "write mem".
+Copy the running configuration to the start up configuration.  Equivalent to
+the CLI command C<"copy running-config startup-config"> or C<"write mem">.
 
-This method attempts to use newer "copy running-config startup-config"
-procedure first and then the older "write mem" procedure if that fails.  The
-newer procedure is supported Cisco devices with the CISCO-CONFIG-COPY-MIB
+This method attempts to use newer C<"copy running-config startup-config">
+procedure first and then the older C<"write mem"> procedure if that fails.  The
+newer procedure is supported Cisco devices with the F<CISCO-CONFIG-COPY-MIB>
 available, Cisco IOS software release 12.0 or on some devices as early as
 release 11.2P.  The older procedure has been depreciated by Cisco and is
 utilized only to support devices running older code revisions.
@@ -442,5 +442,7 @@ utilized only to support devices running older code revisions.
  Example:
  $ciscoconfig->copy_run_start()
     or die "Couldn't save config. ",$ciscoconfig->error(1);
+
+=back
 
 =cut

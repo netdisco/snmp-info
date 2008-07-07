@@ -1,34 +1,34 @@
 # SNMP::Info::Layer1::S3000
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2006 Eric Miller
+# Copyright (c) 2008 Eric Miller
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::S3000;
-$VERSION = '1.07';
+$VERSION = '1.09';
 use strict;
 
 use Exporter;
@@ -225,7 +225,7 @@ sub i_speed {
         next unless defined $index;
         next if (defined $partial and $index !~ /^$partial$/);
 
-        # These hubs only support 10Mbs      
+        # These hubs only support 10 Mbs      
         my $speed = '10000000';
         $i_speed{$index}=$speed; 
     }
@@ -356,7 +356,6 @@ Eric Miller
     my $s3000 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -370,10 +369,11 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a 
-Bayhub device through SNMP.  Also provides device MAC to port mapping through the proprietary MIB.
+Bay hub device through SNMP.  Also provides device MAC to port mapping through
+the proprietary MIB.
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
 my $s3000 = new SNMP::Info::Layer1::S3000(...);
 
@@ -389,9 +389,9 @@ my $s3000 = new SNMP::Info::Layer1::S3000(...);
 
 =over
 
-=item SYNOPTICS-COMMON-MIB
+=item F<SYNOPTICS-COMMON-MIB>
 
-=item SYNOPTICS-ETHERNET-MIB
+=item F<SYNOPTICS-ETHERNET-MIB>
 
 =back
 
@@ -415,20 +415,21 @@ Returns 'synoptics'
 
 =item $s3000->model()
 
-Cross references $s3000->id() to the SYNOPTICS-MIB and returns
+Cross references $s3000->id() to the F<SYNOPTICS-MIB> and returns
 the results.
 
-Removes sreg- from the model name and returns only the numeric model identifier.
+Removes C<sreg-> from the model name and returns only the numeric model
+identifier.
 
 =item $stack->os_ver()
 
 Returns the software version specified as major.minor.maint.
 
-(B<s3AgentSwMajorVer>).(B<s3AgentSwMinorVer>).(B<s3AgentSwMaintVer>)
+(C<s3AgentSwMajorVer>).(C<s3AgentSwMinorVer>).(C<s3AgentSwMaintVer>)
 
 =item $stack->os_bin()
 
-Returns the firmware version. (B<s3AgentFwVer>)
+Returns the firmware version. (C<s3AgentFwVer>)
 
 =item $s3000->mac()
 
@@ -442,7 +443,8 @@ Returns MAC of the advertised IP address of the device.
 
 =item $s3000->layers()
 
-Returns 00000011.  Class emulates Layer 2 functionality through proprietary MIBs.
+Returns 00000011.  Class emulates Layer 2 functionality through proprietary
+MIBs.
 
 =back
 
@@ -463,8 +465,9 @@ to a hash.
 
 Returns reference to map of IIDs to Interface index. 
 
-Since hubs do not support ifIndex, the interface index is created using the
-formula (board * 256 + port).  This is required to support devices with more than one module.
+Since hubs do not support C<ifIndex>, the interface index is created using the
+formula (board * 256 + port).  This is required to support devices with more
+than one module.
 
 =item $s3000->interfaces()
 
@@ -480,21 +483,21 @@ Returns half, hubs do not support full duplex.
 
 =item $s3000->i_speed()
 
-Returns 10000000.  The hubs only support 10Mbs Ethernet.
+Returns 10000000.  The hubs only support 10 Mbs Ethernet.
 
 =item $s3000->i_up()
 
-Returns (B<s3EnetPortLinkStatus>) for each port.  Translates on/off to up/down.
+Returns (C<s3EnetPortLinkStatus>) for each port.  Translates on/off to up/down.
 
 =item $s3000->i_up_admin()
 
-Returns (B<s3EnetPortPartStatus>) for each port.
+Returns (C<s3EnetPortPartStatus>) for each port.
 
 =item $s3000->set_i_up_admin(state, ifIndex)
 
-Sets port state, must be supplied with state and port ifIndex
+Sets port state, must be supplied with state and port C<ifIndex>
 
-State choices are 'up'or 'down'
+State choices are 'up' or 'down'
 
 Example:
   my %if_map = reverse %{$s3000->interfaces()};
@@ -508,22 +511,22 @@ both the keys and values.
 
 =item $s3000->fw_port()
 
-Returns reference to map of IIDs of the SYNOPTICS-ETHERNET-MIB::s3EnetShowNodesTable
-to the Interface index.
+Returns reference to map of IIDs of the
+C<SYNOPTICS-ETHERNET-MIB::s3EnetShowNodesTable> to the Interface index.
 
 =item $s3000->fw_mac()
 
-(B<s3EnetShowNodesMacAddress>)
+(C<s3EnetShowNodesMacAddress>)
 
 =item $s3000->s3000_topo_port()
 
 Returns reference to hash.  Key: Table entry, Value:Port Number (interface iid)
 
-(B<s3EnetTopNmmPort>)
+(C<s3EnetTopNmmPort>)
 
 =item $s3000->s3000_topo_mac()
 
-(B<s3EnetTopNmmMacAddr>)
+(C<s3EnetTopNmmMacAddr>)
 
 Returns reference to hash.  Key: Table entry, Value:Remote MAC address
 

@@ -1,30 +1,34 @@
 # SNMP::Info::Layer3::N1600 - SNMP Interface to Nortel N16XX devices
-# Eric Miller
+# $Id$
 #
-# Copyright (c) 2005 Eric Miller
+# Copyright (c) 2008 Eric Miller
+# All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the University of California, Santa Cruz nor the 
+#       names of its contributors may be used to endorse or promote products 
+#       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::N1600;
-# $Id$
 
 use strict;
 
@@ -34,7 +38,7 @@ use SNMP::Info::SONMP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 @SNMP::Info::Layer3::N1600::ISA = qw/SNMP::Info::Layer3 SNMP::Info::SONMP Exporter/;
 @SNMP::Info::Layer3::N1600::EXPORT_OK = qw//;
@@ -181,7 +185,6 @@ Eric Miller
  my $n1600 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
@@ -216,25 +219,15 @@ my $n1600 = new SNMP::Info::Layer3::N1600(...);
 
 =over
 
-=item SWL2MGMT-MIB
+=item F<SWL2MGMT-MIB>
 
-=item RAPID-CITY
+=item F<RAPID-CITY>
 
 =item Inherited Classes' MIBs
 
 See classes listed above for their required MIBs.
 
 =back
-
-MIBs can be found on the CD that came with your product.
-
-Or, they can be downloaded directly from Nortel regardless of support
-contract status.
-
-Go to http://www.nortel.com Techninal Support, Browse Technical Support,
-Select by product, Java Device Manager, Software.  Download the latest version.
-After installation, all mibs are located under the install directory under mibs
-and the repspective product line.
 
 =head1 GLOBALS
 
@@ -249,7 +242,7 @@ Return C<1>.  Bulkwalk is currently turned off for this class.
 =item $n1600->model()
 
 Returns model type.  Checks $n1600->id() against the 
-RAPID-CITY-MIB and then parses out rcA.
+F<RAPID-CITY-MIB> and then parses out C<rcA>.
 
 =item $n1600->vendor()
 
@@ -271,7 +264,7 @@ Required by SNMP::Info::SONMP.  Number representing the number of ports
 reserved per slot within the device MIB.
 
 Returns 64 since largest switch has 48 ports.  Since these switches can
-not stack, the only requirment to reserve more than the max number of ports.
+not stack, the only requirement to reserve more than the max number of ports.
 
 =back
 
@@ -296,7 +289,7 @@ to a hash.
 
 Returns reference to hash of interface names to iids.
 
-Places a 1 in front of index number.  This is required for compatibilty with
+Places a 1 in front of index number.  This is required for compatibility with
 SNMP::Info::SONMP.
 
 =item $n1600->i_duplex()

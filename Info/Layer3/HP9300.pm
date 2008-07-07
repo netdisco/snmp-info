@@ -1,30 +1,34 @@
 # SNMP::Info::Layer3::HP9300 - SNMP Interface to HP Foundry OEM devices
-# Eric Miller
+# $Id$
 #
-# Copyright (c) 2007 Eric Miller
+# Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the University of California, Santa Cruz nor the 
+#       names of its contributors may be used to endorse or promote products 
+#       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::HP9300;
-# $Id$
 
 use strict;
 
@@ -337,7 +341,6 @@ Eric Miller
  my $hp9300 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
@@ -374,11 +377,11 @@ after determining a more specific class using the method above.
 
 =over
 
-=item HP-SN-ROOT-MIB
+=item F<HP-SN-ROOT-MIB>
 
-=item HP-SN-AGENT-MIB
+=item F<HP-SN-AGENT-MIB>
 
-=item HP-SN-SWITCH-GROUP-MIB
+=item F<HP-SN-SWITCH-GROUP-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -398,8 +401,8 @@ These are methods that return scalar value from SNMP
 
 =item $hp9300->model()
 
-Returns model type.  Checks $hp9300->id() against the HP-SN-ROOT-MIB
-and removes 'hpSwitch'.
+Returns model type.  Checks $hp9300->id() against the F<HP-SN-ROOT-MIB>
+and removes C<hpSwitch>.
 
 =item $hp9300->vendor()
 
@@ -417,13 +420,13 @@ Returns the software version
 
 Returns MAC Address of root port.
 
-(B<ifPhysAddress.1>)
+(C<ifPhysAddress.1>)
 
 =item $hp9300->chassis()
 
 Returns Chassis type.
 
-(B<entPhysicalDescr.1>)
+(C<entPhysicalDescr.1>)
 
 =item $hp9300->serial()
 
@@ -433,25 +436,25 @@ Returns serial number of device.
 
 Returns the chassis temperature
 
-(B<snChasActualTemperature>)
+(C<snChasActualTemperature>)
 
 =item $hp9300->ps1_type()
 
 Returns the Description for the power supply
 
-(B<snChasPwrSupplyDescription.1>)
+(C<snChasPwrSupplyDescription.1>)
 
 =item $hp9300->ps1_status()
 
 Returns the status of the power supply.
 
-(B<snChasPwrSupplyOperStatus.1>)
+(C<snChasPwrSupplyOperStatus.1>)
 
 =item $hp9300->fan()
 
 Returns the status of the chassis fan.
 
-(B<snChasFanOperStatus.1>)
+(C<snChasFanOperStatus.1>)
 
 =back
 
@@ -494,7 +497,7 @@ Crosses $hp9300->sw_duplex() with $hp9300->sw_index()
 
 =back
 
-=head2 Switch Port Information Table (B<snSwPortIfTable>)
+=head2 Switch Port Information Table (C<snSwPortIfTable>)
 
 =over
 
@@ -502,25 +505,25 @@ Crosses $hp9300->sw_duplex() with $hp9300->sw_index()
 
 Returns reference to hash.  Maps Table to Interface IID. 
 
-(B<snSwPortIfIndex>)
+(C<snSwPortIfIndex>)
 
 =item $hp9300->sw_duplex()
 
 Returns reference to hash.   Current duplex status for switch ports. 
 
-(B<snSwPortInfoChnMode>)
+(C<snSwPortInfoChnMode>)
 
 =item $hp9300->sw_type()
 
 Returns reference to hash.  Current Port Type .
 
-(B<snSwPortInfoMediaType>)
+(C<snSwPortInfoMediaType>)
 
 =item $hp9300->sw_speed()
 
 Returns reference to hash.  Current Port Speed. 
 
-(B<snSwPortInfoSpeed>)
+(C<snSwPortInfoSpeed>)
 
 =back
 
@@ -531,7 +534,8 @@ Protocol (FDP) and Link Layer Discovery Protocol (LLDP). These
 methods will query both and return the combination of all information. As a
 result, there may be identical topology information returned from the two
 protocols causing duplicate entries.  It is the calling program's
-responsibility to identify any duplicate entries and de-duplicate if necessary.
+responsibility to identify any duplicate entries and remove duplicates
+if necessary.
 
 =over
 

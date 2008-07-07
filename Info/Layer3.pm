@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3 - SNMP Interface to Layer3 devices
-# Max Baker
+# $Id$
 #
-# Copyright (c) 2004 Max Baker -- All changes from Version 0.7 on
+# Copyright (c) 2008 Max Baker -- All changes from Version 0.7 on
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -11,27 +11,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -316,7 +316,6 @@ Max Baker
  my $l3 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -369,11 +368,11 @@ after determining a more specific class using the method above.
 
 =over
 
-=item IP-MIB
+=item F<IP-MIB>
 
-=item OSPF-MIB
+=item F<OSPF-MIB>
 
-=item BGP4-MIB
+=item F<BGP4-MIB>
 
 =back
 
@@ -387,8 +386,6 @@ See L<SNMP::Info::EtherLike/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::Entity/"Required MIBs"> for its MIB requirements.
 
-MIBs can be found in the netdisco-mibs package.
-
 =head1 GLOBALS
 
 These are methods that return scalar value from SNMP
@@ -399,15 +396,15 @@ These are methods that return scalar value from SNMP
 
 Returns root port mac address
 
-(B<ifPhysAddress.1>)
+(C<ifPhysAddress.1>)
 
 =item $l3->router_ip()
 
-(B<ospfRouterId.0>)
+(C<ospfRouterId.0>)
 
 =item $l3->bgp_id()
 
-(B<bgpIdentifier.0>)
+(C<bgpIdentifier.0>)
 
 Returns the BGP identifier of the local system
 
@@ -415,7 +412,7 @@ Returns the BGP identifier of the local system
 
 Returns the local autonomous system number 
 
-(B<bgpLocalAs.0>)
+(C<bgpLocalAs.0>)
 
 =back
 
@@ -425,23 +422,24 @@ Returns the local autonomous system number
 
 =item $l3->model()
 
-Trys to reference $l3->id() to one of the product MIBs listed above
+Tries to reference $l3->id() to one of the product MIBs listed above
 
 Removes 'cisco'  from cisco devices for readability.
 
 =item $l3->serial()
 
-Trys to cull a serial number from ENTITY-MIB, description, and OLD-CISCO-... mib
+Tries to cull a serial number from F<ENTITY-MIB>, description, and
+F<OLD-CISCO->... MIB.
 
 =item $l3->vendor()
 
-Trys to cull a Vendor name from B<sysDescr>
+Tries to cull a Vendor name from C<sysDescr>
 
 =item $l3->root_ip()
 
 Returns the primary IP used to communicate with the device.  Returns the first
-found:  OSPF Router ID (B<ospfRouterId>) or any OSPF Host IP Address
-(B<ospfHostIpAddress>).
+found:  OSPF Router ID (C<ospfRouterId>) or any OSPF Host IP Address
+(C<ospfHostIpAddress>).
 
 =back
 
@@ -486,7 +484,7 @@ Currently looks for tunnel,loopback,lo,null from $l3->interfaces()
 
 Returns reference to hash of iid to human set name. 
 
-Defaults to B<ifName>, but checks for an B<ifAlias>
+Defaults to C<ifName>, but checks for an C<ifAlias>
 
 =item $l3->i_duplex()
 
@@ -499,7 +497,7 @@ See L<SNMP::Info::Etherlike> for the el_index() and el_duplex() methods.
 
 =back
 
-=head2 IP-MIB Arp Cache Table (B<ipNetToMediaTable>)
+=head2 F<IP-MIB> Arp Cache Table (C<ipNetToMediaTable>)
 
 =over
 
@@ -507,35 +505,35 @@ See L<SNMP::Info::Etherlike> for the el_index() and el_duplex() methods.
 
 Returns reference to hash.  Maps ARP table entries to Interface IIDs 
 
-(B<ipNetToMediaIfIndex>)
+(C<ipNetToMediaIfIndex>)
 
-If the device doesn't support B<ipNetToMediaIfIndex>, this will try
-the deprecated B<atIfIndex>.
+If the device doesn't support C<ipNetToMediaIfIndex>, this will try
+the deprecated C<atIfIndex>.
 
 =item $l3->at_paddr()
 
 Returns reference to hash.  Maps ARP table entries to MAC addresses. 
 
-(B<ipNetToMediaPhysAddress>)
+(C<ipNetToMediaPhysAddress>)
 
-If the device doesn't support B<ipNetToMediaPhysAddress>, this will try
-the deprecated B<atPhysAddress>.
+If the device doesn't support C<ipNetToMediaPhysAddress>, this will try
+the deprecated C<atPhysAddress>.
 
 =item $l3->at_netaddr()
 
-Returns reference to hash.  Maps ARP table entries to IPs 
+Returns reference to hash.  Maps ARP table entries to IP addresses. 
 
-(B<ipNetToMediaNetAddress>)
+(C<ipNetToMediaNetAddress>)
 
-If the device doesn't support B<ipNetToMediaNetAddress>, this will try
-the deprecated B<atNetAddress>.
+If the device doesn't support C<ipNetToMediaNetAddress>, this will try
+the deprecated C<atNetAddress>.
 
 =back
 
 =head2 ARP Cache Entries
 
-The B<atTable> has been deprecated since 1991.  You should never need
-to use these methods.  See B<ipNetToMediaTable> above.
+The C<atTable> has been deprecated since 1991.  You should never need
+to use these methods.  See C<ipNetToMediaTable> above.
 
 =over
 
@@ -543,23 +541,23 @@ to use these methods.  See B<ipNetToMediaTable> above.
 
 Returns reference to map of IID to Arp Cache Entry
 
-(B<atIfIndex>)
+(C<atIfIndex>)
 
 =item $l3->old_at_paddr()
 
 Returns reference to hash of Arp Cache Entries to MAC address
 
-(B<atPhysAddress>)
+(C<atPhysAddress>)
 
 =item $l3->old_at_netaddr()
 
 Returns reference to hash of Arp Cache Entries to IP Address
 
-(B<atNetAddress>)
+(C<atNetAddress>)
 
 =back
 
-=head2 BGP Peer Table (B<bgpPeerTable>)
+=head2 BGP Peer Table (C<bgpPeerTable>)
 
 =over
 
@@ -567,77 +565,77 @@ Returns reference to hash of Arp Cache Entries to IP Address
 
 Returns reference to hash of BGP peer to local IP address
 
-(B<bgpPeerLocalAddr>)
+(C<bgpPeerLocalAddr>)
 
 =item $l3->bgp_peer_id()
 
 Returns reference to hash of BGP peer to BGP peer identifier
 
-(B<bgpPeerIdentifier>)
+(C<bgpPeerIdentifier>)
 
 =item $l3->bgp_peer_state()
 
 Returns reference to hash of BGP peer to BGP peer state
 
-(B<bgpPeerState>)
+(C<bgpPeerState>)
 
 =item $l3->bgp_peer_as()
 
 Returns reference to hash of BGP peer to BGP peer autonomous system number
 
-(B<bgpPeerRemoteAs>)
+(C<bgpPeerRemoteAs>)
 
 =item $l3->bgp_peer_addr()
 
 Returns reference to hash of BGP peer to BGP peer IP address
 
-(B<bgpPeerRemoteAddr>)
+(C<bgpPeerRemoteAddr>)
 
 =item $l3->bgp_peer_fsm_est_trans()
 
 Returns reference to hash of BGP peer to the total number of times the BGP FSM
 transitioned into the established state
 
-(B<bgpPeerFsmEstablishedTransitions>)
+(C<bgpPeerFsmEstablishedTransitions>)
 
 =item $l3->bgp_peer_in_tot_msgs()
 
 Returns reference to hash of BGP peer to the total number of messages received
 from the remote peer on this connection
 
-(B<bgpPeerInTotalMessages>)
+(C<bgpPeerInTotalMessages>)
 
 =item $l3->bgp_peer_in_upd_el_time()
 
 Returns reference to hash of BGP peer to the elapsed time in seconds since
 the last BGP UPDATE message was received from the peer.
 
-(B<bgpPeerInUpdateElapsedTime>)
+(C<bgpPeerInUpdateElapsedTime>)
 
 =item $l3->bgp_peer_in_upd()
 
 Returns reference to hash of BGP peer to the number of BGP UPDATE messages
 received on this connection
 
-(B<bgpPeerInUpdates>)
+(C<bgpPeerInUpdates>)
 
 =item $l3->bgp_peer_out_tot_msgs()
 
 Returns reference to hash of BGP peer to the total number of messages transmitted
 to the remote peer on this connection
 
-(B<bgpPeerOutTotalMessages>)
+(C<bgpPeerOutTotalMessages>)
 
 =item $l3->bgp_peer_out_upd()
 
 Returns reference to hash of BGP peer to the number of BGP UPDATE messages
 transmitted on this connection
 
-(B<bgpPeerOutUpdates>)
+(C<bgpPeerOutUpdates>)
 
 =back
 
-=head2 OSPF Interface Table (B<ospfIfTable>)
+=head2 OSPF Interface Table (C<ospfIfTable>)
 
 =over
 
@@ -645,47 +643,47 @@ transmitted on this connection
 
 Returns reference to hash of OSPF interface IP addresses
 
-(B<ospfIfIpAddress>)
+(C<ospfIfIpAddress>)
 
 =item $l3->ospf_if_area()
 
 Returns reference to hash of the OSPF area to which the interfaces connect
 
-(B<ospfIfAreaId>)
+(C<ospfIfAreaId>)
 
 =item $l3->ospf_if_type()
 
 Returns reference to hash of the OSPF interfaces' type
 
-(B<ospfIfType>)
+(C<ospfIfType>)
 
 =item $l3->ospf_if_hello()
 
 Returns reference to hash of the OSPF interfaces' hello interval
 
-(B<ospfIfHelloInterval>)
+(C<ospfIfHelloInterval>)
 
 =item $l3->ospf_if_dead()
 
 Returns reference to hash of the OSPF interfaces' dead interval
 
-(B<ospfIfRtrDeadInterval>)
+(C<ospfIfRtrDeadInterval>)
 
 =item $l3->ospf_if_admin()
 
 Returns reference to hash of the OSPF interfaces' administrative status
 
-(B<ospfIfAdminStat>)
+(C<ospfIfAdminStat>)
 
 =item $l3->ospf_if_state()
 
 Returns reference to hash of the OSPF interfaces' state
 
-(B<ospfIfState>)
+(C<ospfIfState>)
 
 =back
 
-=head2 OSPF Neighbor Table (B<ospfNbrTable>)
+=head2 OSPF Neighbor Table (C<ospfNbrTable>)
 
 =over
 
@@ -694,20 +692,20 @@ Returns reference to hash of the OSPF interfaces' state
 Returns reference to hash of IP addresses the neighbor is using in its
 IP Source Addresses
 
-(B<ospfNbrIpAddr>)
+(C<ospfNbrIpAddr>)
 
 =item $l3->ospf_peer_id()
 
 Returns reference to hash of neighbor Router IDs
 
-(B<ospfNbrRtrId>)
+(C<ospfNbrRtrId>)
 
 =item $l3->ospf_peer_state()
 
 Returns reference to hash of state of the relationship with the neighbor
 routers
 
-(B<ospfNbrState>)
+(C<ospfNbrState>)
 
 =back
 

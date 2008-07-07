@@ -1,7 +1,7 @@
 # SNMP::Info::CiscoStats
-# Max Baker
+# $Id$
 #
-# Changes since Version 0.7 Copyright (c) 2004 Max Baker 
+# Changes since Version 0.7 Copyright (c) 2008 Max Baker 
 # All rights reserved.  
 #
 # Copyright (c) 2003 Regents of the University of California
@@ -12,27 +12,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStats;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -233,21 +233,21 @@ None.
 
 =over
 
-=item CISCO-PRODUCTS-MIB
+=item F<CISCO-PRODUCTS-MIB>
 
-=item CISCO-PROCESS-MIB
+=item F<CISCO-PROCESS-MIB>
 
-=item CISCO-MEMORY-POOL-MIB
+=item F<CISCO-MEMORY-POOL-MIB>
 
-=item SNMPv2-MIB
+=item F<SNMPv2-MIB>
 
-=item OLD-CISCO-SYSTEM-MIB
+=item F<OLD-CISCO-SYSTEM-MIB>
 
-=item CISCO-STACK-MIB
+=item F<CISCO-STACK-MIB>
 
-=item CISCO-ENTITY-VENDORTYPE-OID-MIB
+=item F<CISCO-ENTITY-VENDORTYPE-OID-MIB>
 
-=item CISCO-FLASH-MIB
+=item F<CISCO-FLASH-MIB>
 
 =back
 
@@ -275,78 +275,79 @@ Returns mem_free() + mem_used()
 
 =item $ciscostats->os()
 
-Trys to parse if device is running IOS or CatOS from description()
+Tries to parse if device is running IOS or CatOS from description()
 
 =item $ciscostats->os_ver()
 
-Trys to parse device operating system version from description()
+Tries to parse device operating system version from description()
 
 =item $ciscostats->ios_cpu()
 
 Current CPU usage in percent.
 
-B<1.3.6.1.4.1.9.2.1.56.0> = 
-B<OLD-CISCO-CPU-MIB:avgBusyPer>
+C<1.3.6.1.4.1.9.2.1.56.0> = 
+C<OLD-CISCO-CPU-MIB:avgBusyPer>
 
 =item $ciscostats->ios_cpu_1min()
 
 Average CPU Usage in percent over the last minute.
 
-B<1.3.6.1.4.1.9.2.1.57.0>
+C<1.3.6.1.4.1.9.2.1.57.0>
 
 =item $ciscostats->ios_cpu_5min()
 
 Average CPU Usage in percent over the last 5 minutes.
 
-B<1.3.6.1.4.1.9.2.1.58.0>
+C<1.3.6.1.4.1.9.2.1.58.0>
 
 =item $ciscostats->cat_cpu()
 
 Current CPU usage in percent.
 
-B<CISCO-PROCESS-MIB::cpmCPUTotal5sec.9>
+C<CISCO-PROCESS-MIB::cpmCPUTotal5sec.9>
 
 =item $ciscostats->cat_cpu_1min()
 
 Average CPU Usage in percent over the last minute.
 
-B<CISCO-PROCESS-MIB::cpmCPUTotal1min.9>
+C<CISCO-PROCESS-MIB::cpmCPUTotal1min.9>
 
 =item $ciscostats->cat_cpu_5min()
 
 Average CPU Usage in percent over the last 5 minutes.
 
-B<CISCO-PROCESS-MIB::cpmCPUTotal5min.9>
+C<CISCO-PROCESS-MIB::cpmCPUTotal5min.9>
 
 =item $ciscostats->mem_free()
 
 Main DRAM free of the device in bytes.
 
-B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolFree>
+C<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolFree>
 
 =item $ciscostats->mem_used()
 
 Main DRAM used of the device in bytes.
 
-B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolUsed>
+C<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolUsed>
 
 =item $ciscostats->mem_total()
 
 Main DRAM of the device in bytes.
 
-B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolFree> + B<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolUsed>
+C<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolFree> +
+C<CISCO-MEMORY-POOL-MIB::ciscoMemoryPoolUsed>
 
 =item $ciscostats->flashmem_total()
 
 Flash memory of the device in bytes.
 
-B<CISCO-FLASH-MIB::ciscoFlashDeviceSize>
+C<CISCO-FLASH-MIB::ciscoFlashDeviceSize>
 
 =back
 
 =head1 TABLE METHODS
 
-=head2 Cisco Memory Pool Table (B<ciscoMemoryPoolTable>)
+=head2 Cisco Memory Pool Table (C<ciscoMemoryPoolTable>)
 
 =over
 
@@ -355,18 +356,18 @@ B<CISCO-FLASH-MIB::ciscoFlashDeviceSize>
 The number of bytes from the memory pool that are currently unused on the
 managed device.
 
-(B<ciscoMemoryPoolFree>)
+(C<ciscoMemoryPoolFree>)
 
 =item $ciscostats->cisco_mem_used()
 
 The number of bytes from the memory pool that are currently in use by
 applications on the managed device.
 
-(B<ciscoMemoryPoolUsed>)
+(C<ciscoMemoryPoolUsed>)
 
 =back
 
-=head2 Cisco Flash Device Table (B<ciscoFlashDeviceTable>)
+=head2 Cisco Flash Device Table (C<ciscoFlashDeviceTable>)
 
 =over
 
@@ -375,6 +376,8 @@ applications on the managed device.
 Total size of the Flash device.  For a removable device, the size will be
 zero if the device has been removed.
 
-(B<ciscoFlashDeviceSize>)
+(C<ciscoFlashDeviceSize>)
+
+=back
 
 =cut

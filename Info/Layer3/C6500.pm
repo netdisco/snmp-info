@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3::C6500
-# Max Baker
+# $Id$
 #
-# Copyright (c) 2003,2004,2005 Max Baker
+# Copyright (c) 2008 Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -9,26 +9,26 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
-#     * Neither the name of the Author, nor 
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::C6500;
-# $Id$
 
 use strict;
 
@@ -44,7 +44,7 @@ use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.07';
+$VERSION = '1.09';
 @SNMP::Info::Layer3::C6500::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CiscoStack 
                                     SNMP::Info::CDP SNMP::Info::CiscoStats 
                                     SNMP::Info::CiscoImage 
@@ -223,9 +223,9 @@ Max Baker
 
 Abstraction subclass for Cisco Catalyst 6500 Layer 2/3 Switches.  
 
-These devices run IOS but have some of the same charactersitics as the Catalyst
+These devices run IOS but have some of the same characteristics as the Catalyst
 WS-C family (5xxx). For example, forwarding tables are held in VLANs, and
-extended interface information is gleened from CISCO-SWITCH-MIB.
+extended interface information is gleaned from F<CISCO-SWITCH-MIB>.
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 
@@ -272,7 +272,8 @@ See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoImage/"Required MIBs"> for its own MIB requirements.
 
-See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB
+requirements.
 
 See L<SNMP::Info::CiscoConfig/"Required MIBs"> for its own MIB requirements.
 
@@ -345,7 +346,7 @@ Returns reference to hash of iid to current link duplex setting.
 
 Newer software versions return duplex based upon the result of
 $c6500->el_duplex().  Otherwise it uses the result of the call to
-CiscoStack i_duplex().
+CiscoStack::i_duplex().
 
 See L<SNMP::Info::Etherlike> for el_duplex() method and
 L<SNMP::Info::CiscoStack> for its i_duplex() method.
@@ -356,17 +357,17 @@ Returns reference to hash of iid to administrative duplex setting.
 
 Newer software versions return duplex based upon the result of
 $c6500->p_duplex().  Otherwise it uses the result of the call to
-CiscoStack i_duplex().
+CiscoStack::i_duplex().
 
 See L<SNMP::Info::CiscoStack> for its i_duplex() and p_duplex() methods.
 
 =item $c6500->set_i_duplex_admin(duplex, ifIndex)
 
-Sets port duplex, must be supplied with duplex and port ifIndex.
+Sets port duplex, must be supplied with duplex and port C<ifIndex>.
 
 Speed choices are 'auto', 'half', 'full'.
 
-Crosses $c6500->p_port() with $c6500->p_duplex() to utilize port ifIndex.
+Crosses $c6500->p_port() with $c6500->p_duplex() to utilize port C<ifIndex>.
 
     Example:
     my %if_map = reverse %{$c6500->interfaces()};
@@ -397,7 +398,8 @@ See documentation in L<SNMP::Info::CiscoImage/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoPortSecurity
 
-See documentation in L<SNMP::Info::CiscoPortSecurity/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::CiscoPortSecurity/"TABLE METHODS"> for
+details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoConfig
 

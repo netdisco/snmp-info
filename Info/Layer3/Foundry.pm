@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3::Foundry - SNMP Interface to Foundry devices
-# Max Baker
+# $Id$
 #
-# Copyright (c) 2004,2005 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -11,26 +11,26 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Foundry;
-# $Id$
 
 use strict;
 
@@ -41,7 +41,7 @@ use SNMP::Info::LLDP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
 
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 @SNMP::Info::Layer3::Foundry::ISA = qw/SNMP::Info::FDP SNMP::Info::LLDP
                                        SNMP::Info::Layer3 Exporter/;
@@ -409,7 +409,6 @@ Max Baker
  my $foundry = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
@@ -445,11 +444,11 @@ after determining a more specific class using the method above.
 
 =over
 
-=item FOUNDRY-SN-ROOT-MIB
+=item F<FOUNDRY-SN-ROOT-MIB>
 
-=item FOUNDRY-SN-AGENT-MIB
+=item F<FOUNDRY-SN-AGENT-MIB>
 
-=item FOUNDRY-SN-SWITCH-GROUP-MIB
+=item F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -469,8 +468,8 @@ These are methods that return scalar value from SNMP
 
 =item $foundry->model()
 
-Returns model type.  Checks $foundry->id() against the FOUNDRY-SN-ROOT-MIB
-and removes 'sn'.  EdgeIron models determined through ENTITY-MIB.  
+Returns model type.  Checks $foundry->id() against the F<FOUNDRY-SN-ROOT-MIB>
+and removes 'C<sn>'.  EdgeIron models determined through F<ENTITY-MIB>.  
 
 =item $foundry->vendor()
 
@@ -488,13 +487,13 @@ Returns the software version
 
 Returns MAC Address of root port.
 
-(B<ifPhysAddress.1>)
+(C<ifPhysAddress.1>)
 
 =item $foundry->chassis()
 
 Returns Chassis type.
 
-(B<entPhysicalDescr.1>)
+(C<entPhysicalDescr.1>)
 
 =item $foundry->serial()
 
@@ -504,25 +503,25 @@ Returns serial number of device.
 
 Returns the chassis temperature
 
-(B<snChasActualTemperature>)
+(C<snChasActualTemperature>)
 
 =item $foundry->ps1_type()
 
 Returns the Description for the power supply
 
-(B<snChasPwrSupplyDescription.1>)
+(C<snChasPwrSupplyDescription.1>)
 
 =item $foundry->ps1_status()
 
 Returns the status of the power supply.
 
-(B<snChasPwrSupplyOperStatus.1>)
+(C<snChasPwrSupplyOperStatus.1>)
 
 =item $foundry->fan()
 
 Returns the status of the chassis fan.
 
-(B<snChasFanOperStatus.1>)
+(C<snChasFanOperStatus.1>)
 
 =back
 
@@ -565,7 +564,7 @@ Crosses $foundry->sw_duplex() with $foundry->sw_index()
 
 =back
 
-=head2 Foundry Switch Port Information Table (B<snSwPortIfTable>)
+=head2 Foundry Switch Port Information Table (C<snSwPortIfTable>)
 
 =over
 
@@ -573,25 +572,25 @@ Crosses $foundry->sw_duplex() with $foundry->sw_index()
 
 Returns reference to hash.  Maps Table to Interface IID. 
 
-(B<snSwPortIfIndex>)
+(C<snSwPortIfIndex>)
 
 =item $foundry->sw_duplex()
 
 Returns reference to hash.   Current duplex status for switch ports. 
 
-(B<snSwPortInfoChnMode>)
+(C<snSwPortInfoChnMode>)
 
 =item $foundry->sw_type()
 
 Returns reference to hash.  Current Port Type .
 
-(B<snSwPortInfoMediaType>)
+(C<snSwPortInfoMediaType>)
 
 =item $foundry->sw_speed()
 
 Returns reference to hash.  Current Port Speed. 
 
-(B<snSwPortInfoSpeed>)
+(C<snSwPortInfoSpeed>)
 
 =back
 
@@ -602,7 +601,8 @@ Protocol (FDP) and Link Layer Discovery Protocol (LLDP). These
 methods will query both and return the combination of all information. As a
 result, there may be identical topology information returned from the two
 protocols causing duplicate entries.  It is the calling program's
-responsibility to identify any duplicate entries and de-duplicate if necessary.
+responsibility to identify any duplicate entries and remove duplicates if
+necessary.
 
 =over
 

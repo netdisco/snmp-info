@@ -1,7 +1,7 @@
 # SNMP::Info::Layer2::HP - SNMP Interface to HP ProCurve Switches
-# Max Baker
+# $Id$
 #
-# Copyright (c) 2004,2005 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -11,27 +11,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::HP;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -613,7 +613,6 @@ Max Baker
  my $hp = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -628,12 +627,12 @@ Max Baker
 Provides abstraction to the configuration information obtainable from a 
 HP ProCurve Switch via SNMP. 
 
-Note:  Some HP Switches will connect via SNMP version 1, but a lot of config data will 
-not be available.  Make sure you try and connect with Version 2 first, and then fail back
-to version 1.
+Note:  Some HP Switches will connect via SNMP version 1, but a lot of config
+data will not be available.  Make sure you try and connect with Version 2
+first, and then fail back to version 1.
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $hp = new SNMP::Info::Layer2::HP(...);
 
@@ -653,30 +652,32 @@ a more specific class using the method above.
 
 =over
 
-=item RFC1271-MIB
+=item F<RFC1271-MIB>
 
 Included in V2 mibs from Cisco
 
-=item HP-ICF-OID
+=item F<HP-ICF-OID>
 
-=item HP-VLAN
+=item F<HP-VLAN>
 
 (this MIB new with SNMP::Info 0.8)
 
-=item STATISTICS-MIB
+=item F<STATISTICS-MIB>
 
-=item NETSWITCH-MIB
+=item F<NETSWITCH-MIB>
 
-=item CONFIG-MIB
+=item F<CONFIG-MIB>
 
 =back
 
-The last five MIBs listed are from HP and can be found at L<http://www.hp.com/rnd/software>
-or L<http://www.hp.com/rnd/software/MIBs.htm>
+The last five MIBs listed are from HP and can be found at
+L<http://www.hp.com/rnd/software> or
+L<http://www.hp.com/rnd/software/MIBs.htm>
 
-=head1 ChangeLog
+=head1 Change Log
 
-Version 0.4 - Removed ENTITY-MIB e_*() methods to separate sub-class - SNMP::Info::Entity
+Version 0.4 - Removed F<ENTITY-MIB> e_*() methods to separate sub-class -
+SNMP::Info::Entity
 
 =head1 GLOBALS
 
@@ -690,7 +691,8 @@ Returns CPU Utilization in percentage.
 
 =item $hp->log()
 
-Returns all the log entries from the switch's log that are not Link up or down messages.
+Returns all the log entries from the switch's log that are not Link up or
+down messages.
 
 =item $hp->mem_free()
 
@@ -706,8 +708,8 @@ Returns bytes of used memory
 
 =item $hp->model()
 
-Returns the model number of the HP Switch.  Will translate between the HP Part number and 
-the common model number with this map :
+Returns the model number of the HP Switch.  Will translate between the HP Part
+number and the common model number with this map :
 
  %MODEL_MAP = ( 
                 'J4093A' => '2424M',
@@ -776,7 +778,7 @@ Returns hp
 
 =item $hp->os_bin()
 
-B<hpSwitchRomVersion.0>
+C<hpSwitchRomVersion.0>
 
 =item $hp->os_ver()
 
@@ -785,7 +787,7 @@ the description field.
 
 =item $hp->os_version()
 
-B<hpSwitchOsVersion.0>
+C<hpSwitchOsVersion.0>
 
 =item $hp->serial()
 
@@ -840,20 +842,20 @@ Crosses i_name() with $hp->e_name() using $hp->e_port() and i_alias()
 
 =item $hp->i_vlan()
 
-Returns a mapping between ifIndex and the PVID (default VLAN) or untagged
-port when using HP-VLAN.
+Returns a mapping between C<ifIndex> and the PVID (default VLAN) or untagged
+port when using F<HP-VLAN>.
 
-Looks in Q-BRIDGE-MIB first (L<SNMP::Info::Bridge/"TABLE METHODS">) and for
-older devices looks in HP-VLAN.
+Looks in F<Q-BRIDGE-MIB> first (L<SNMP::Info::Bridge/"TABLE METHODS">) and for
+older devices looks in F<HP-VLAN>.
 
 =item $hp->i_vlan_membership()
 
-Returns reference to hash of arrays: key = ifIndex, value = array of VLAN IDs.
-These are the VLANs which are members of the egress list for the port.  It
-is the union of tagged, untagged, and auto ports when using HP-VLAN.
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the egress list for the port.
+It  is the union of tagged, untagged, and auto ports when using F<HP-VLAN>.
 
-Looks in Q-BRIDGE-MIB first (L<SNMP::Info::Bridge/"TABLE METHODS">) and for
-older devices looks in HP-VLAN.
+Looks in F<Q-BRIDGE-MIB> first (L<SNMP::Info::Bridge/"TABLE METHODS">) and for
+older devices looks in F<HP-VLAN>.
 
   Example:
   my $interfaces = $hp->interfaces();
@@ -867,10 +869,11 @@ older devices looks in HP-VLAN.
 
 =item $hp->bp_index()
 
-Returns reference to hash of bridge port table entries map back to interface identifier (iid)
+Returns reference to hash of bridge port table entries map back to interface
+identifier (iid)
 
-Returns (B<ifIndex>) for both key and value for 1600, 2424, 4000, and 8000 models
-since they seem to have problems with BRIDGE-MIB
+Returns (C<ifIndex>) for both key and value for 1600, 2424, 4000, and 8000
+models since they seem to have problems with F<BRIDGE-MIB>
 
 =back
 
@@ -881,7 +884,7 @@ Protocol (CDP), Link Layer Discovery Protocol (LLDP), or both.  These methods
 will query both and return the combination of all information.  As a result,
 there may be identical topology information returned from the two protocols
 causing duplicate entries.  It is the calling program's responsibility to
-identify any duplicate entries and de-duplicate if necessary.
+identify any duplicate entries and remove duplicates if necessary.
 
 =over
 

@@ -1,38 +1,40 @@
 # SNMP::Info::Layer3::NetSNMP
-# Bradley Baetz and Bill Fenner
+# $Id$
 #
+# Copyright (c) 2008 Bill Fenner
+# All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::NetSNMP;
-# $Id$
 
 use Exporter;
 use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.07';
+$VERSION = '1.09';
 @SNMP::Info::Layer3::NetSNMP::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::NetSNMP::EXPORT_OK = qw//;
 
@@ -136,7 +138,6 @@ Bradley Baetz and Bill Fenner
  my $netsnmp = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
@@ -162,11 +163,11 @@ Subclass for Generic Net-SNMP devices
 
 =over
 
-=item UCD-SNMP-MIB
+=item F<UCD-SNMP-MIB>
 
-=item NET-SNMP-TC
+=item F<NET-SNMP-TC>
 
-=item HOST-RESOURCES-MIB
+=item F<HOST-RESOURCES-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -186,17 +187,17 @@ Returns 'Net-SNMP'.
 
 =item $netsnmp->os()
 
-Returns the OS extracted from sysDescr.
+Returns the OS extracted from C<sysDescr>.
 
 =item $netsnmp->os_ver()
 
-Returns the software version extracted from sysDescr, along
+Returns the software version extracted from C<sysDescr>, along
 with the Net-SNMP version.
 
 =item $netsnmp->uptime()
 
 Returns the system uptime instead of the agent uptime.
-NOTE: discontinuity timers and other TimeStamp-based objects
+NOTE: discontinuity timers and other Time Stamp based objects
 are based on agent uptime, so use orig_uptime().
 
 =back
@@ -224,7 +225,7 @@ similar to
 
 where N is the object ID for your OS from the C<NET-SNMP-TC> MIB (or
 255 if not listed).  Some Net-SNMP installations default to an
-incorrect return value for system.sysObjectId.
+incorrect return value for C<system.sysObjectId>.
 
 In order to recognize a Net-SNMP device as Layer3, it may be necessary
 to put a configuration line similar to

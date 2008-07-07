@@ -1,34 +1,35 @@
 # SNMP::Info::NortelStack
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller, Max Baker
+# Copyright (c) 2008 Eric Miller
+# All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::NortelStack;
-$VERSION = '1.07'; 
+$VERSION = '1.09'; 
 
 use strict;
 
@@ -135,7 +136,7 @@ sub serial {
     return undef;
 }
 
-# Psuedo ENTITY-MIB methods for older switches with don't support ENTITY-MIB
+# Pseudo ENTITY-MIB methods for older switches with don't support ENTITY-MIB
 
 # This class supports both stackable and chassis based switches, identify if
 # we have a stackable so that we return appropriate entPhysicalClass 
@@ -554,7 +555,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::NortelStack - SNMP Interface to the Nortel S5-AGENT-MIB and S5-CHASSIS-MIB
+SNMP::Info::NortelStack - SNMP Interface to the Nortel F<S5-AGENT-MIB> and
+F<S5-CHASSIS-MIB>
 
 =head1 AUTHOR
 
@@ -579,7 +581,7 @@ Eric Miller
 =head1 DESCRIPTION
 
 SNMP::Info::NortelStack is a subclass of SNMP::Info that provides an interface
-to C<S5-AGENT-MIB> and C<S5-CHASSIS-MIB>.  These MIBs are used across the
+to F<S5-AGENT-MIB> and F<S5-CHASSIS-MIB>.  These MIBs are used across the
 Nortel Stackable Ethernet Switches (BayStack), as well as, older Nortel devices
 such as the Centillion family of ATM switches.
 
@@ -593,11 +595,11 @@ None.
 
 =over
 
-=item S5-AGENT-MIB
+=item F<S5-AGENT-MIB>
 
-=item S5-CHASSIS-MIB
+=item F<S5-CHASSIS-MIB>
 
-=item S5-ROOT-MIB and S5-TCS-MIB are required by the other MIBs.
+=item F<S5-ROOT-MIB> and F<S5-TCS-MIB> are required by the other MIBs.
 
 =back
 
@@ -609,89 +611,89 @@ These are methods that return scalar values from SNMP
 
 =item $stack->os_ver()
 
-Returns the software version extracted from (B<s5AgInfoVer>)
+Returns the software version extracted from (C<s5AgInfoVer>)
 
 =item $stack->os_bin()
 
-Returns the firmware version extracted from (B<s5AgInfoVer>)
+Returns the firmware version extracted from (C<s5AgInfoVer>)
 
 =item  $stack->serial()
 
 Returns serial number of the chassis
 
-(B<s5ChasSerNum>)
+(C<s5ChasSerNum>)
 
 =item $stack->ns_ag_ver()
 
 Returns the version of the agent in the form 'major.minor.maintenance[letters]'. 
 
-(B<s5AgInfoVer>)
+(C<s5AgInfoVer>)
 
 =item $stack->ns_op_mode()
 
 Returns the stacking mode. 
 
-(B<s5AgSysCurrentOperationalMode>)
+(C<s5AgSysCurrentOperationalMode>)
 
 =item $stack->tftp_action()
 
 This object is used to download or upload a config file or an image file.
 
-(B<s5AgInfoFileAction>)
+(C<s5AgInfoFileAction>)
 
 =item $stack->tftp_result()
 
 Returns the status of the latest action as shown by $stack->tftp_action().
 
-(B<s5AgInfoFileStatus>)
+(C<s5AgInfoFileStatus>)
 
 =item $stack->ns_auto_pvid()
 
 Returns the value indicating whether adding a port as a member of a VLAN
 automatically results in its PVID being set to be the same as that VLAN ID.
 
-(B<s5AgSysAutoPvid>)
+(C<s5AgSysAutoPvid>)
 
 =item $stack->tftp_file()
 
 Name of the binary configuration file that will be downloaded/uploaded when
 the $stack->tftp_action() object is set.
 
-(B<s5AgSysBinaryConfigFilename>)
+(C<s5AgSysBinaryConfigFilename>)
 
 =item $stack->tftp_host()
 
 The IP address of the TFTP server for all TFTP operations.
 
-(B<s5AgSysTftpServerAddress>)
+(C<s5AgSysTftpServerAddress>)
 
 =item $stack->vlan()
 
 Returns the VLAN ID of the system's management VLAN.
 
-(B<s5AgSysManagementVlanId>)
+(C<s5AgSysManagementVlanId>)
 
 =item $stack->ch_ser()
 
 Returns the serial number of the chassis.
 
-(B<s5ChasSerNum>)
+(C<s5ChasSerNum>)
 
 =item $stack->ns_cfg_chg()
 
-Returns the total number of configuration changes (other than attachment changes,
-or physical additions or removals) in the chassis that have been detected since
-cold/warm start.
+Returns the total number of configuration changes (other than attachment
+changes, or physical additions or removals) in the chassis that have been
+detected since cold/warm start.
 
-(B<s5ChasGblConfChngs>)
+(C<s5ChasGblConfChngs>)
 
 =item $stack->ns_cfg_time()
 
-Returns the value of sysUpTime when the last configuration change (other than
+Returns the value of C<sysUpTime> when the last configuration change (other than
 attachment changes, or physical additions or removals) in the chassis was
 detected.
 
-(B<s5ChasGblConfLstChng>)
+(C<s5ChasGblConfLstChng>)
 
 =back
 
@@ -700,7 +702,7 @@ detected.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2 Agent Interface Table (s5AgMyIfTable)
+=head2 Agent Interface Table (C<s5AgMyIfTable>)
 
 =over
 
@@ -708,17 +710,18 @@ to a hash.
 
 Returns reference to hash.  Key: Table entry, Value: Name of the file
 
-(B<s5AgMyIfCfgFname>)
+(C<s5AgMyIfCfgFname>)
 
 =item $stack->i_cfg_host()
 
-Returns reference to hash.  Key: Table entry, Value: IP address of the load server
+Returns reference to hash.  Key: Table entry, Value: IP address of the load
+server
 
-(B<s5AgMyIfLdSvrAddr>)
+(C<s5AgMyIfLdSvrAddr>)
 
 =back
 
-=head2 Chassis Components Table (s5ChasComTable)
+=head2 Chassis Components Table (C<s5ChasComTable>)
 
 =over
 
@@ -727,49 +730,49 @@ Returns reference to hash.  Key: Table entry, Value: IP address of the load serv
 Returns reference to hash.  Key: Table entry, Value: Index of the chassis level
 group which contains this component.
 
-(B<s5ChasComGrpIndx>)
+(C<s5ChasComGrpIndx>)
 
 =item $stack->ns_com_idx()
 
 Returns reference to hash.  Key: Table entry, Value: Index of the component in
 the group.  For modules in the 'board' group, this is the slot number.
 
-(B<s5ChasComIndx>)
+(C<s5ChasComIndx>)
 
 =item $stack->ns_com_sub_idx()
 
 Returns reference to hash.  Key: Table entry, Value: Index of the sub-component
 in the component.
 
-(B<s5ChasComSubIndx>)
+(C<s5ChasComSubIndx>)
 
 =item $stack->ns_com_type()
 
 Returns reference to hash.  Key: Table entry, Value: Type
 
-(B<s5ChasComType>)
+(C<s5ChasComType>)
 
 =item $stack->ns_com_descr()
 
 Returns reference to hash.  Key: Table entry, Value: Description
 
-(B<s5ChasComDescr>)
+(C<s5ChasComDescr>)
 
 =item $stack->ns_com_ver()
 
 Returns reference to hash.  Key: Table entry, Value: Version
 
-(B<s5ChasComVer>)
+(C<s5ChasComVer>)
 
 =item $stack->ns_com_serial()
 
 Returns reference to hash.  Key: Table entry, Value: Serial Number
 
-(B<s5ChasComSerNum>)
+(C<s5ChasComSerNum>)
 
 =back
 
-=head2 Storage Area Table (s5ChasStoreTable)
+=head2 Storage Area Table (C<s5ChasStoreTable>)
 
 =over
 
@@ -778,77 +781,78 @@ Returns reference to hash.  Key: Table entry, Value: Serial Number
 Returns reference to hash.  Key: Table entry, Value: Index of the chassis level
 group.
 
-(B<s5ChasStoreGrpIndx>)
+(C<s5ChasStoreGrpIndx>)
 
 =item $stack->ns_store_idx()
 
 Returns reference to hash.  Key: Table entry, Value: Index of the group.
 
-(B<s5ChasStoreComIndx>)
+(C<s5ChasStoreComIndx>)
 
 =item $stack->ns_store_sub_idx()
 
 Returns reference to hash.  Key: Table entry, Value: Index of the sub-component.
 
-(B<s5ChasStoreSubIndx>)
+(C<s5ChasStoreSubIndx>)
 
 =item $stack->ns_store_idx()
 
 Returns reference to hash.  Key: Table entry, Value: Index of the storage area.
 
-(B<s5ChasStoreIndx>)
+(C<s5ChasStoreIndx>)
 
 =item $stack->ns_store_type()
 
 Returns reference to hash.  Key: Table entry, Value: Type
 
-(B<s5ChasStoreType>)
+(C<s5ChasStoreType>)
 
 =item $stack->ns_store_size()
 
 Returns reference to hash.  Key: Table entry, Value: Size
 
-(B<s5ChasStoreCurSize>)
+(C<s5ChasStoreCurSize>)
 
 =item $stack->ns_store_ver()
 
 Returns reference to hash.  Key: Table entry, Value: Version
 
-(B<s5ChasStoreCntntVer>)
+(C<s5ChasStoreCntntVer>)
 
 =back
 
-=head2 Psuedo ENTITY-MIB information
+=head2 Pseudo F<ENTITY-MIB> information
 
-These methods emulate ENTITY-MIB Physical Table methods using S5-CHASSIS-MIB. 
+These methods emulate F<ENTITY-MIB> Physical Table methods using
+F<S5-CHASSIS-MIB>. 
 
 =over
 
 =item $stack->ns_e_index()
 
-Returns reference to hash.  Key: IID, Value: Integer, Indicies are combined
+Returns reference to hash.  Key: IID, Value: Integer, Indices are combined
 into a six digit integer, each index is two digits padded with leading zero if
 required.
 
 =item $stack->ns_e_class()
 
 Returns reference to hash.  Key: IID, Value: General hardware type
-(B<s5ChasGrpDescr>).
+(C<s5ChasGrpDescr>).
 
 Group is stripped from the string.  Values may be Supervisory Module,
-Backplane, Board, Power Supply, Sensor, Fan, Clock, Unit.
+Back Plane, Board, Power Supply, Sensor, Fan, Clock, Unit.
 
 =item $stack->ns_e_descr()
 
 Returns reference to hash.  Key: IID, Value: Human friendly name
 
-(B<s5ChasComDescr>)
+(C<s5ChasComDescr>)
 
 =item $stack->ns_e_hwver()
 
 Returns reference to hash.  Key: IID, Value: Hardware version
 
-(B<s5ChasComVer>)
+(C<s5ChasComVer>)
 
 =item $stack->ns_e_vendor()
 
@@ -858,37 +862,39 @@ Returns reference to hash.  Key: IID, Value: nortel
 
 Returns reference to hash.  Key: IID, Value: Serial number
 
-(B<s5ChasComSerNum>)
+(C<s5ChasComSerNum>)
 
 =item $stack->ns_e_pos()
 
 Returns reference to hash.  Key: IID, Value: The relative position among all
 entities sharing the same parent.
 
-(B<s5ChasComSubIndx>)
+(C<s5ChasComSubIndx>)
 
 =item $stack->ns_e_type()
 
 Returns reference to hash.  Key: IID, Value: Type of component/sub-component
-as defined under B<s5ChasComTypeVal> in S5-REG-MIB.
+as defined under C<s5ChasComTypeVal> in F<S5-REG-MIB>.
 
 =item $stack->ns_e_fwver()
 
 Returns reference to hash.  Key: IID, Value: Firmware revision.
 
-Value of B<s5ChasStoreCntntVer> for entries with rom, boot, or fw in
-B<s5ChasStoreType>.
+Value of C<s5ChasStoreCntntVer> for entries with rom, boot, or firmware in
+C<s5ChasStoreType>.
 
 =item $stack->ns_e_fwver()
 
 Returns reference to hash.  Key: IID, Value: Software revision.
 
-Value of B<s5ChasStoreCntntVer> for entries with "flash" in B<s5ChasStoreType>.
+Value of C<s5ChasStoreCntntVer> for entries with "flash" in C<s5ChasStoreType>.
 
 =item $stack->ns_e_parent()
 
 Returns reference to hash.  Key: IID, Value: The value of ns_e_index() for the
 entity which 'contains' this entity.  A value of zero indicates	this entity
 is not contained in any other entity.
+
+=back
 
 =cut

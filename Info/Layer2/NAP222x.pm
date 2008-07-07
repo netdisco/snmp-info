@@ -1,34 +1,34 @@
 # SNMP::Info::Layer2::NAP222x
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller
+# Copyright (c) 2008 Eric Miller
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::NAP222x;
-$VERSION = '1.07';
+$VERSION = '1.09';
 use strict;
 
 use Exporter;
@@ -373,7 +373,6 @@ Eric Miller
  my $nap222x = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -388,8 +387,8 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from a Nortel
 2220 series wireless Access Points through SNMP. 
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $nap222x = new SNMP::Info::Layer2::NAP222x(...);
 
@@ -409,7 +408,7 @@ a more specific class using the method above.
 
 =over
 
-=item NORTEL-WLAN-AP-MIB
+=item F<NORTEL-WLAN-AP-MIB>
 
 =back
 
@@ -430,7 +429,7 @@ These are methods that return scalar value from SNMP
 
 =item $nap222x->model()
 
-Returns the model extracted from B<sysDescr>.
+Returns the model extracted from C<sysDescr>.
 
 =item $nap222x->os()
 
@@ -438,7 +437,7 @@ Returns 'nortel'
 
 =item $nap222x->os_bin()
 
-Returns the firmware version extracted from B<ntWlanSwBootRomVer>.
+Returns the firmware version extracted from C<ntWlanSwBootRomVer>.
 
 =item $nap222x->mac()
 
@@ -452,49 +451,49 @@ Returns the MAC address of the first Ethernet Interface.
 
 Returns the hardware version.
 
-(B<ntWlanSwHardwareVer>)
+(C<ntWlanSwHardwareVer>)
 
 =item $nap222x->nt_cc()
 
 Returns the country code of the AP.
 
-(B<ntWlanSwHardwareVer>)
+(C<ntWlanSwHardwareVer>)
 
 =item $nap222x->tftp_action()
 
-(B<ntWlanTransferStart>)
+(C<ntWlanTransferStart>)
 
 =item $nap222x->tftp_host()
 
-(B<ntWlanFileServer>)
+(C<ntWlanFileServer>)
 
 =item $nap222x->tftp_file()
 
-(B<ntWlanDestFile>)
+(C<ntWlanDestFile>)
 
 =item $nap222x->tftp_type()
 
-(B<ntWlanFileType>)
+(C<ntWlanFileType>)
 
 =item $nap222x->tftp_result()
 
-(B<ntWlanFileTransferStatus>)
+(C<ntWlanFileTransferStatus>)
 
 =item $nap222x->tftp_xtype()
 
-(B<ntWlanTransferType>)
+(C<ntWlanTransferType>)
 
 =item $nap222x->tftp_src_file()
 
-(B<ntWlanSrcFile>)
+(C<ntWlanSrcFile>)
 
 =item $nap222x->ftp_user()
 
-(B<ntWlanUserName>)
+(C<ntWlanUserName>)
 
 =item $nap222x->ftp_pass()
 
-(B<ntWlanPassword>)
+(C<ntWlanPassword>)
 
 =back
 
@@ -527,13 +526,13 @@ Returns reference to map of IIDs to physical ports.
 
 Returns reference to hash.  Maps port operational duplexes to IIDs.
 
-(B<ntWlanPortSpeedDpxStatus>)
+(C<ntWlanPortSpeedDpxStatus>)
 
 =item $nap222x->i_duplex_admin()
 
 Returns reference to hash.  Maps port admin duplexes to IIDs.
 
-(B<ntWlanPortCapabilities>)
+(C<ntWlanPortCapabilities>)
 
 =item $nap222x->i_name()
 
@@ -541,8 +540,9 @@ Returns a human name based upon port description.
 
 =item $nap222x->bp_index()
 
-Returns a mapping between ifIndex and the Bridge Table.  This does not exist in
-the MIB and bridge port index is not the same as ifIndex so it is created. 
+Returns a mapping between C<ifIndex> and the Bridge Table.  This does not
+exist in the MIB and bridge port index is not the same as C<ifIndex> so it is
+created. 
 
 =item $nap222x->i_ssidlist()
 
@@ -559,9 +559,9 @@ interface.
 
 =item $nap222x->i_vlan()
 
-The default VID of the radio interfaces.
+The default Vlan ID of the radio interfaces.
 
-(B<ntWlanApVlanDefaultVid>)
+(C<ntWlanApVlanDefaultVid>)
 
 =back
 

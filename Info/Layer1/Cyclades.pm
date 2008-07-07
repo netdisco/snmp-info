@@ -1,34 +1,34 @@
 # SNMP::Info::Layer1::Cyclades
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2006 Eric Miller
+# Copyright (c) 2008 Eric Miller
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Cyclades;
-$VERSION = '1.07';
+$VERSION = '1.09';
 use strict;
 
 use Exporter;
@@ -325,11 +325,11 @@ my $cyclades = new SNMP::Info::Layer1::Cyclades(...);
 
 =over
 
-=item CYCLADES-ACS-SYS-MIB
+=item F<CYCLADES-ACS-SYS-MIB>
 
-=item CYCLADES-ACS-CONF-MIB
+=item F<CYCLADES-ACS-CONF-MIB>
 
-=item CYCLADES-ACS-INFO-MIB
+=item F<CYCLADES-ACS-INFO-MIB>
 
 =back
 
@@ -345,23 +345,23 @@ These are methods that return scalar value from SNMP
 
 =item $cyclades->os_ver()
 
-(B<cyACSversion>)
+(C<cyACSversion>)
 
 =item $cyclades->serial()
 
-(B<cyACSDevId>)
+(C<cyACSDevId>)
 
 =item $cyclades->root_ip()
 
-(B<cyEthIPaddr>)
+(C<cyEthIPaddr>)
 
 =item $cyclades->ps1_status()
 
-(B<cyACSPw1>)
+(C<cyACSPw1>)
 
 =item $cyclades->ps2_status()
 
-(B<cyACSPw2>)
+(C<cyACSPw2>)
 
 =back
 
@@ -384,7 +384,7 @@ Returns 'cyclades'
 
 =item $cyclades->model()
 
-Returns lower case (B<cyACSpname>)
+Returns lower case (C<cyACSpname>)
 
 =back
 
@@ -407,30 +407,30 @@ Returns reference to map of IIDs to Interface index.
 
 Extended to include serial ports.  Serial ports are indexed with the
 alternative labeling system for the serial port, the listening socket port
-B<cySPortSocketPort> to avoid conflicts with B<ifIndex>.  
+C<cySPortSocketPort> to avoid conflicts with C<ifIndex>.  
 
 =item $cyclades->interfaces()
 
 Returns reference to map of IIDs to physical ports.  Extended to include
-serial ports, B<cyISPortTty>.
+serial ports, C<cyISPortTty>.
 
 =item $cyclades->i_speed()
 
-Returns interface speed.  Extended to include serial ports, B<cyISPortSpeed>. 
+Returns interface speed.  Extended to include serial ports, C<cyISPortSpeed>. 
 
 =item $cyclades->i_up()
 
 Returns link status for each port.  Extended to include serial ports,
-B<cyISPortSigCD>.
+C<cyISPortSigCD>.
 
 =item $cyclades->i_description()
 
 Returns description of each port.  Extended to include serial ports,
-B<cyISPortName>.
+C<cyISPortName>.
 
 =item $cyclades->i_name()
 
-Returns name of each port.  Extended to include serial ports, B<cyISPortName>.
+Returns name of each port.  Extended to include serial ports, C<cyISPortName>.
 
 =back
 

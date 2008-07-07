@@ -1,7 +1,7 @@
 # SNMP::Info::Layer2::C2900
-# Max Baker
+# $Id$
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -11,27 +11,28 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::C2900;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
+
 use strict;
 
 use Exporter;
@@ -211,7 +212,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::C2900 - SNMP Interface to Cisco Catalyst 2900 Switches running IOS
+SNMP::Info::Layer2::C2900 - SNMP Interface to Cisco Catalyst 2900 Switches
+running IOS
 
 =head1 AUTHOR
 
@@ -263,7 +265,7 @@ after determining a more specific class using the method above.
 
 =over
 
-=item CISCO-C2900-MIB
+=item F<CISCO-C2900-MIB>
 
 Part of the v2 MIBs from Cisco.
 
@@ -328,10 +330,11 @@ to a hash.
 
 Returns reference to the map between IID and physical Port.
 
-On the 2900 devices i_name isn't reliable, so we override to just the description.
+On the 2900 devices i_name isn't reliable, so we override to just the
+description.
 
 Next all dots are changed for forward slashes so that the physical port name 
-is the same as the broadcasted CDP port name. 
+is the same as the broad-casted CDP port name. 
     (Ethernet0.1 -> Ethernet0/1)
 
 Also, any weird characters are removed, as I saw a few pop up.
@@ -350,7 +353,7 @@ Crosses $c2900->c2900_p_index() with $c2900->c2900_p_duplex_admin()
 
 =back
 
-=head2 C2900-MIB Port Entry Table 
+=head2 F<C2900-MIB> Port Entry Table 
 
 =over
 
@@ -358,25 +361,25 @@ Crosses $c2900->c2900_p_index() with $c2900->c2900_p_duplex_admin()
 
 Maps the Switch Port Table to the IID
 
-(B<c2900PortIfIndex>)
+(C<c2900PortIfIndex>)
 
 =item $c2900->c2900_p_duplex()
 
 Gives Port Duplex Info
 
-(B<c2900PortDuplexStatus>)
+(C<c2900PortDuplexStatus>)
 
 =item $c2900->c2900_p_duplex_admin()
 
 Gives admin setting for Duplex Info
 
-(B<c2900PortDuplexState>)
+(C<c2900PortDuplexState>)
 
 =item $c2900->c2900_p_speed_admin()
 
 Gives Admin speed of port 
 
-(B<c2900PortAdminSpeed>)
+(C<c2900PortAdminSpeed>)
 
 =back
 
@@ -410,12 +413,12 @@ L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set operations.
 
 =item $c2900->set_i_speed_admin(speed, ifIndex)
 
-Sets port speed, must be supplied with speed and port ifIndex
+Sets port speed, must be supplied with speed and port C<ifIndex>
 
 Speed choices are 'auto', '10', '100'
 
 Crosses $c2900->c2900_p_index() with $c2900->c2900_p_speed_admin() to utilize
-port ifIndex.
+port C<ifIndex>.
 
     Example:
     my %if_map = reverse %{$c2900->interfaces()};
@@ -424,16 +427,18 @@ port ifIndex.
 
 =item $c2900->set_i_duplex_admin(duplex, ifIndex)
 
-Sets port duplex, must be supplied with duplex and port ifIndex
+Sets port duplex, must be supplied with duplex and port C<ifIndex>
 
 Speed choices are 'auto', 'half', 'full'
 
 Crosses $c2900->c2900_p_index() with $c2900->c2900_p_duplex_admin() to utilize
-port ifIndex.
+port C<ifIndex>.
 
     Example:
     my %if_map = reverse %{$c2900->interfaces()};
     $c2900->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'}) 
         or die "Couldn't change port duplex. ",$c2900->error(1);
+
+=back
 
 =cut

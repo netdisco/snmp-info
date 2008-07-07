@@ -1,8 +1,8 @@
 # SNMP::Info::Layer3::C3550
-# Max Baker
+# $Id$
 #
-# Copyright (c) 2004 Max Baker changes from version 0.8 and beyond.
-# Copyright (c) 2003, Regents of the University of California
+# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2004 Regents of the University of California
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -10,27 +10,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::C3550;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -250,9 +250,9 @@ Max Baker
 
 Abstraction subclass for Cisco Catalyst 3550 Layer 2/3 Switches.  
 
-These devices run IOS but have some of the same charactersitics as the
+These devices run IOS but have some of the same characteristics as the
 Catalyst WS-C family (5xxx,6xxx).  For example, forwarding tables are held in
-VLANs, and extened interface information is gleened from CISCO-SWITCH-MIB.
+VLANs, and extended interface information is gleaned from F<CISCO-SWITCH-MIB>.
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 
@@ -291,7 +291,8 @@ See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoPower/"Required MIBs"> for its own MIB requirements.
 
-See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB
+requirements.
 
 See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
 
@@ -324,7 +325,7 @@ Will take the translated model number and try to format it better.
 
 =item $c3550->ports()
 
-Trys to cull the number of ports from the model number.
+Tries to cull the number of ports from the model number.
 
 =back
 
@@ -375,7 +376,7 @@ Returns reference to hash of iid to current link duplex setting.
 
 Software version 12.1(22)EA1a or greater returns duplex based upon the
 result of $c3550->el_duplex().  Otherwise it uses the result of
-the call to CiscoStack i_duplex().
+the call to CiscoStack::i_duplex().
 
 See L<SNMP::Info::Etherlike> for el_duplex() method and
 L<SNMP::Info::CiscoStack> for its i_duplex() method.
@@ -386,17 +387,17 @@ Returns reference to hash of iid to administrative duplex setting.
 
 Software version 12.1(22)EA1a or greater returns duplex based upon the
 result of $c3550->p_duplex().  Otherwise it uses the result of
-the call to CiscoStack i_duplex().
+the call to CiscoStack::i_duplex().
 
 See L<SNMP::Info::CiscoStack> for its i_duplex() and p_duplex() methods.
 
 =item $c3550->set_i_duplex_admin(duplex, ifIndex)
 
-Sets port duplex, must be supplied with duplex and port ifIndex.
+Sets port duplex, must be supplied with duplex and port C<ifIndex>.
 
 Speed choices are 'auto', 'half', 'full'.
 
-Crosses $c3550->p_port() with $c3550->p_duplex() to utilize port ifIndex.
+Crosses $c3550->p_port() with $c3550->p_duplex() to utilize port C<ifIndex>.
 
     Example:
     my %if_map = reverse %{$c3550->interfaces()};
@@ -415,7 +416,8 @@ See documentation in L<SNMP::Info::CiscoPower/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoPortSecurity
 
-See documentation in L<SNMP::Info::CiscoPortSecurity/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::CiscoPortSecurity/"TABLE METHODS"> for
+details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 

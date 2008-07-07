@@ -1,8 +1,7 @@
 # SNMP::Info::Layer3::BayRS
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller, Max Baker
+# Copyright (c) 2008 Eric Miller
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -10,26 +9,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::BayRS;
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 use strict;
 
@@ -1316,7 +1316,6 @@ Eric Miller
  my $bayrs = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -1330,8 +1329,8 @@ Eric Miller
 
 Abstraction subclass for routers running Nortel BayRS.  
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
  my $bayrs = new SNMP::Info::Layer3::BayRS(...);
 
@@ -1351,15 +1350,15 @@ a more specific class using the method above.
 
 =over
 
-=item Wellfleet-HARDWARE-MIB
+=item F<Wellfleet-HARDWARE-MIB>
 
-=item Wellfleet-MODULE-MIB
+=item F<Wellfleet-MODULE-MIB>
 
-=item Wellfleet-OSPF-MIB
+=item F<Wellfleet-OSPF-MIB>
 
-=item Wellfleet-DOT1QTAG-CONFIG-MIB
+=item F<Wellfleet-DOT1QTAG-CONFIG-MIB>
 
-=item Wellfleet-CSMACD-MIB
+=item F<Wellfleet-CSMACD-MIB>
 
 =back
 
@@ -1382,22 +1381,22 @@ These are methods that return scalar value from SNMP
 Returns the model of the BayRS router.  Will translate between the MIB model and 
 the common model with this map :
 
-%MODEL_MAP = ( 
-        'acefn' => 'FN',
-        'aceln' => 'LN',
-        'acecn' => 'CN',
-        'afn' => 'AFN',
-        'in' => 'IN',
-        'an' => 'AN',
-        'arn' => 'ARN',
-        'sys5000' => '5000',
-        'freln' => 'BLN',
-        'frecn' => 'BCN',
-        'frerbln' => 'BLN-2',
-        'asn' => 'ASN',
+    C<%MODEL_MAP = ( 
+        'acefn'     => 'FN',
+        'aceln'     => 'LN',
+        'acecn'     => 'CN',
+        'afn'       => 'AFN',
+        'in'        => 'IN',
+        'an'        => 'AN',
+        'arn'       => 'ARN',
+        'sys5000'   => '5000',
+        'freln'     => 'BLN',
+        'frecn'     => 'BCN',
+        'frerbln'   => 'BLN-2',
+        'asn'       => 'ASN',
         'asnzcable' => 'ASN-Z',
         'asnbcable' => 'ASN-B',
-        );
+        );>
 
 =item $bayrs->vendor()
 
@@ -1409,17 +1408,17 @@ Returns 'bayrs'
 
 =item $bayrs->os_ver()
 
-Returns the software version extracted from B<sysDescr>
+Returns the software version extracted from C<sysDescr>
 
 =item $bayrs->serial()
 
-Returns (B<wfHwBpSerialNumber>) after conversion to ASCII decimal
+Returns (C<wfHwBpSerialNumber>) after conversion to ASCII decimal
 
 =item $bayrs->root_ip()
 
 Returns the primary IP used to communicate with the router.
 
-Returns the first found:  CLIP (CircuitLess IP), (B<wfOspfRouterId>), or
+Returns the first found:  CLIP (CircuitLess IP), (C<wfOspfRouterId>), or
 undefined.
 
 =back
@@ -1458,7 +1457,7 @@ maintained.  Otherwise the port is the interface description.
 
 =item $bayrs->i_name()
 
-Returns (B<ifDescr>) along with VLAN name (B<wfDot1qTagCfgVlanName>) for VLAN
+Returns (C<ifDescr>) along with VLAN name (C<wfDot1qTagCfgVlanName>) for VLAN
 interfaces.
 
 =item $bayrs->i_duplex()
@@ -1477,10 +1476,10 @@ Returns reference to hash.  Maps port VLAN ID to IIDs.
 
 =back
 
-=head2 Pseudo ENTITY-MIB information
+=head2 Pseudo F<ENTITY-MIB> information
 
-These methods emulate ENTITY-MIB Physical Table methods using
-Wellfleet-HARDWARE-MIB and Wellfleet-MODULE-MIB.
+These methods emulate F<ENTITY-MIB> Physical Table methods using
+F<Wellfleet-HARDWARE-MIB> and F<Wellfleet-MODULE-MIB>.
 
 =over
 
@@ -1521,8 +1520,8 @@ entities sharing the same parent.
 =item $bayrs->e_type()
 
 Returns reference to hash.  Key: IID, Value: Type of component/sub-component
-as defined in Wellfleet-HARDWARE-MIB for processors and link moduels or
-Wellfleet-MODULE-MIB for hardware modules.
+as defined in F<Wellfleet-HARDWARE-MIB> for processors and link modules or
+F<Wellfleet-MODULE-MIB> for hardware modules.
 
 =item $bayrs->e_fwver()
 

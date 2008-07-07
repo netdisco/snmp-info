@@ -1,34 +1,35 @@
 # SNMP::Info::SONMP
-# Eric Miller
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller, Max Baker
+# Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::SONMP;
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 use strict;
 
@@ -215,7 +216,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::SONMP - SNMP Interface to SynOptics Network Management Protocol (SONMP)
+SNMP::Info::SONMP - SNMP Interface to SynOptics Network Management Protocol
+(SONMP)
 
 =head1 AUTHOR
 
@@ -274,9 +276,9 @@ None.
 
 =over
 
-=item SYNOPTICS-ROOT-MIB
+=item F<SYNOPTICS-ROOT-MIB>
 
-=item S5-ETH-MULTISEG-TOPOLOGY-MIB
+=item F<S5-ETH-MULTISEG-TOPOLOGY-MIB>
 
 =back
 
@@ -307,13 +309,13 @@ Is SONMP is active in this device?
 
 Returns the IP that the device is sending out for its Nmm topology info.
 
-(B<s5EnMsTopIpAddr>)
+(C<s5EnMsTopIpAddr>)
 
 =item $sonmp->cdp_run()
 
 Returns true if SONMP is on for this device. 
 
-(B<s5EnMsTopStatus>)
+(C<s5EnMsTopStatus>)
 
 =item $sonmp->mac()
 
@@ -326,7 +328,7 @@ Returns MAC of the advertised IP address of the device.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2 Layer2 Topology info (B<s5EnMsTopNmmTable>)
+=head2 Layer2 Topology info (C<s5EnMsTopNmmTable>)
 
 =over
 
@@ -334,29 +336,29 @@ to a hash.
 
 Returns reference to hash.  Key: Table entry, Value:slot number
 
-(B<s5EnMsTopNmmSlot>)
+(C<s5EnMsTopNmmSlot>)
 
 =item $sonmp->sonmp_topo_port()
 
 Returns reference to hash.  Key: Table entry, Value:Port Number (interface iid)
 
-(B<s5EnMsTopNmmPort>)
+(C<s5EnMsTopNmmPort>)
 
 =item $sonmp->sonmp_topo_ip()
 
 Returns reference to hash.  Key: Table entry, Value:Remote IP address of entry
 
-(B<s5EnMsTopNmmIpAddr>)
+(C<s5EnMsTopNmmIpAddr>)
 
 =item $sonmp->sonmp_topo_seg()
 
 Returns reference to hash.  Key: Table entry, Value:Remote Segment ID
 
-(B<s5EnMsTopNmmSegId>)
+(C<s5EnMsTopNmmSegId>)
 
 =item $sonmp->sonmp_topo_mac()
 
-(B<s5EnMsTopNmmMacAddr>)
+(C<s5EnMsTopNmmMacAddr>)
 
 Returns reference to hash.  Key: Table entry, Value:Remote MAC address
 
@@ -364,18 +366,18 @@ Returns reference to hash.  Key: Table entry, Value:Remote MAC address
 
 Returns reference to hash.  Key: Table entry, Value:Remote Device Type
 
-(B<s5EnMsTopNmmChassisType>)
+(C<s5EnMsTopNmmChassisType>)
 
 =item $sonmp->sonmp_topo_localseg
 
 Returns reference to hash.  Key: Table entry, Value: Boolean, if bay_topo_seg()
 is local.
 
-(B<s5EnMsTopNmmLocalSeg>)
+(C<s5EnMsTopNmmLocalSeg>)
 
 =back
 
-=head2 Psuedo CDP information
+=head2 Pseudo CDP information
 
 All entries with port=0 are local and ignored.
 
@@ -390,7 +392,7 @@ Returns reference to hash.  Key: IID, Value: Local port (interfaces)
 Returns reference to hash.  Key: IID, Value: Remote IP address
 
 If multiple entries exist with the same local port, c_if(), with different IPv4
-addresses, c_ip(), there is either a non-SONMP device in between two or
+addresses, c_ip(), there is either a non SONMP device in between two or
 more devices or multiple devices which are not directly connected.  
 
 Use the data from the Layer2 Topology Table below to dig deeper.

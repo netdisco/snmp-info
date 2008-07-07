@@ -1,33 +1,35 @@
 # SNMP::Info::LLDP
+# $Id$
 #
-# Eric Miller
-#
-# Copyright (c) 2007 Eric Miller
+# Copyright (c) 2008 Eric Miller
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
+# Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
-#
+# 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the University of California, Santa Cruz nor the 
+#       names of its contributors may be used to endorse or promote products 
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::LLDP;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -304,11 +306,11 @@ None.
 
 =over
 
-=item LLDP-MIB
+=item F<LLDP-MIB>
 
-=item LLDP-EXT-DOT1-MIB
+=item F<LLDP-EXT-DOT1-MIB>
 
-=item LLDP-EXT-DOT3-MIB  
+=item F<LLDP-EXT-DOT3-MIB>
 
 =back
 
@@ -322,28 +324,28 @@ These are methods that return scalar values from SNMP
 
 Is LLDP is active in this device?  
 
-Note:  LLDP may be active, but nothing in B<lldpRemoteSystemsData> Tables so
+Note:  LLDP may be active, but nothing in C<lldpRemoteSystemsData> Tables so
 the device would not return any useful topology information.
 
 =item $lldp->lldp_sysname()
 
 The string value used to identify the system name of the local system.  If the
-local agent supports IETF RFC 3418, B<lldpLocSysName> object should have the
-same value of B<sysName> object.
+local agent supports IETF RFC 3418, C<lldpLocSysName> object should have the
+same value of C<sysName> object.
 
 Nulls are removed before the value is returned. 
 
-(B<lldpLocSysName>)
+(C<lldpLocSysName>)
 
 =item $lldp->lldp_sysdesc()
 
 The string value used to identify the system description of the local system.
-If the local agent supports IETF RFC 3418, B<lldpLocSysDesc> object should have
-the same value of B<sysDesc> object.
+If the local agent supports IETF RFC 3418, C<lldpLocSysDesc> object should have
+the same value of C<sysDesc> object.
  
 Nulls are removed before the value is returned.
 
-(B<lldpLocSysDesc>)
+(C<lldpLocSysDesc>)
 
 =item  $lldp->lldp_sys_cap() 
 
@@ -375,7 +377,7 @@ capability and nothing else."
 
 =back
 
-(B<lldpLocSysCapEnabled>)
+(C<lldpLocSysCapEnabled>)
 
 =back
 
@@ -391,7 +393,7 @@ to a hash.
 Returns the string value used to identify the chassis component	associated
 with the remote system.
 
-(B<lldpRemChassisId>)
+(C<lldpRemChassisId>)
 
 =item $lldp->lldp_if()
 
@@ -413,7 +415,7 @@ Returns remote port ID
 
 =back
 
-=head2 LLDP Remote Table (B<lldpRemTable>)
+=head2 LLDP Remote Table (C<lldpRemTable>)
 
 =over
 
@@ -422,28 +424,28 @@ Returns remote port ID
 Returns the type of encoding used to identify the chassis associated with
 the remote system.
 
-(B<lldpRemChassisIdSubtype>)
+(C<lldpRemChassisIdSubtype>)
 
 =item $lldp->lldp_rem_id()
 
 Returns the string value used to identify the chassis component	associated
 with the remote system.
 
-(B<lldpRemChassisId>)
+(C<lldpRemChassisId>)
 
 =item $lldp->lldp_rem_pid_type()
 
 Returns the type of port identifier encoding used in the associated
-B<lldpRemPortId> object.
+C<lldpRemPortId> object.
 
-(B<lldpRemPortIdSubtype>)
+(C<lldpRemPortIdSubtype>)
 
 =item $lldp->lldp_rem_pid()
 
 Returns the string value used to identify the port component associated with
 the remote system.
 
-(B<lldpRemPortId>)
+(C<lldpRemPortId>)
 
 =item $lldp->lldp_rem_desc()
 
@@ -452,7 +454,7 @@ associated with the remote system.
 
 Nulls are removed before the value is returned. 
 
-(B<lldpRemPortDesc>)
+(C<lldpRemPortDesc>)
 
 =item $lldp->lldp_rem_sysname()
 
@@ -460,7 +462,7 @@ Returns the string value used to identify the system name of the remote system.
 
 Nulls are removed before the value is returned. 
 
-(B<lldpRemSysName>)
+(C<lldpRemSysName>)
 
 =item $lldp->lldp_rem_sysdesc()
 
@@ -469,7 +471,7 @@ remote system.
 
 Nulls are removed before the value is returned. 
 
-(B<lldpRemSysDesc>)
+(C<lldpRemSysDesc>)
 
 =item  $lldp->lldp_rem_sys_cap() 
 
@@ -501,7 +503,7 @@ capability and nothing else."
 
 =back
 
-(B<lldpRemSysCapEnabled>)
+(C<lldpRemSysCapEnabled>)
 
 =back
 

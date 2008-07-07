@@ -1,33 +1,35 @@
 # SNMP::Info::RapidCity
 # $Id$
 #
-# Copyright (c) 2004 Eric Miller, Max Baker
+# Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::RapidCity;
-$VERSION = '1.07';
+$VERSION = '1.09';
 use strict;
 
 use Exporter;
@@ -530,12 +532,12 @@ Eric Miller
 
  # Let SNMP::Info determine the correct subclass for you. 
  my $rapidcity = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
-                          DestHost    => 'myswitch',
-                          Community   => 'public',
-                          Version     => 2
+                        AutoSpecify => 1,
+                        Debug       => 1,
+                        # These arguments are passed directly to SNMP::Session
+                        DestHost    => 'myswitch',
+                        Community   => 'public',
+                        Version     => 2
                         ) 
     or die "Can't connect to DestHost.\n";
 
@@ -547,7 +549,7 @@ Eric Miller
 SNMP::Info::RapidCity is a subclass of SNMP::Info that provides an interface
 to the C<RAPID-CITY> MIB.  This MIB is used across the Nortel Ethernet Routing
 Switch and Ethernet Switch product lines (Formerly known as Passport,
-BayStack, and Acclear).
+BayStack, and Accelar).
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
@@ -571,47 +573,47 @@ These are methods that return scalar values from SNMP
 
 =item  $rapidcity->rc_base_mac()
 
-(B<rc2kChassisBaseMacAddr>)
+(C<rc2kChassisBaseMacAddr>)
 
 =item  $rapidcity->rc_serial()
 
-(B<rcChasSerialNumber>)
+(C<rcChasSerialNumber>)
 
 =item  $rapidcity->rc_ch_rev()
 
-(B<rcChasHardwareRevision>)
+(C<rcChasHardwareRevision>)
 
 =item  $rapidcity->chassis()
 
-(B<rcChasType>)
+(C<rcChasType>)
 
 =item  $rapidcity->slots()
 
-(B<rcChasNumSlots>)
+(C<rcChasNumSlots>)
 
 =item  $rapidcity->rc_virt_ip()
 
-(B<rcSysVirtualIpAddr>)
+(C<rcSysVirtualIpAddr>)
 
 =item  $rapidcity->rc_virt_mask()
 
-(B<rcSysVirtualNetMask>)
+(C<rcSysVirtualNetMask>)
 
 =item  $rapidcity->tftp_host()
 
-(B<rcTftpHost>)
+(C<rcTftpHost>)
 
 =item  $rapidcity->tftp_file()
 
-(B<rcTftpFile>)
+(C<rcTftpFile>)
 
 =item  $rapidcity->tftp_action()
 
-(B<rcTftpAction>)
+(C<rcTftpAction>)
 
 =item  $rapidcity->tftp_result()
 
-(B<rcTftpResult>)
+(C<rcTftpResult>)
 
 =back
 
@@ -642,12 +644,12 @@ Returns reference to hash of IIDs to admin duplex setting.
 
 =item $rapidcity->i_vlan()
 
-Returns a mapping between ifIndex and the PVID or default VLAN.
+Returns a mapping between C<ifIndex> and the PVID or default VLAN.
 
 =item $rapidcity->i_vlan_membership()
 
-Returns reference to hash of arrays: key = ifIndex, value = array of VLAN IDs.
-These are the VLANs which are members of the egress list for the port.
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the egress list for the port.
 
   Example:
   my $interfaces = $rapidcity->interfaces();
@@ -661,333 +663,333 @@ These are the VLANs which are members of the egress list for the port.
 
 =back
 
-=head2 RAPID-CITY Port Table (B<rcPortTable>)
+=head2 RAPID-CITY Port Table (C<rcPortTable>)
 
 =over
 
 =item $rapidcity->rc_index()
 
-(B<rcPortIndex>)
+(C<rcPortIndex>)
 
 =item $rapidcity->rc_duplex()
 
-(B<rcPortOperDuplex>)
+(C<rcPortOperDuplex>)
 
 =item $rapidcity->rc_duplex_admin()
 
-(B<rcPortAdminDuplex>)
+(C<rcPortAdminDuplex>)
 
 =item $rapidcity->rc_speed_admin()
 
-(B<rcPortAdminSpeed>)
+(C<rcPortAdminSpeed>)
 
 =item $rapidcity->rc_auto()
 
-(B<rcPortAutoNegotiate>)
+(C<rcPortAutoNegotiate>)
 
 =item $rapidcity->rc_alias()
 
-(B<rcPortName>)
+(C<rcPortName>)
 
 =back
 
-=head2 RAPID-CITY CPU Ethernet Port Table (B<rc2kCpuEthernetPortTable>)
+=head2 RAPID-CITY CPU Ethernet Port Table (C<rc2kCpuEthernetPortTable>)
 
 =over
 
 =item $rapidcity->rc_cpu_ifindex()
 
-(B<rc2kCpuEthernetPortIfIndex>)
+(C<rc2kCpuEthernetPortIfIndex>)
 
 =item $rapidcity->rc_cpu_admin()
 
-(B<rc2kCpuEthernetPortAdminStatus>)
+(C<rc2kCpuEthernetPortAdminStatus>)
 
 =item $rapidcity->rc_cpu_oper()
 
-(B<rc2kCpuEthernetPortOperStatus>)
+(C<rc2kCpuEthernetPortOperStatus>)
 
 =item $rapidcity->rc_cpu_ip()
 
-(B<rc2kCpuEthernetPortAddr>)
+(C<rc2kCpuEthernetPortAddr>)
 
 =item $rapidcity->rc_cpu_mask()
 
-(B<rc2kCpuEthernetPortMask>)
+(C<rc2kCpuEthernetPortMask>)
 
 =item $rapidcity->rc_cpu_auto()
 
-(B<rc2kCpuEthernetPortAutoNegotiate>)
+(C<rc2kCpuEthernetPortAutoNegotiate>)
 
 =item $rapidcity->rc_cpu_duplex_admin()
 
-(B<rc2kCpuEthernetPortAdminDuplex>)
+(C<rc2kCpuEthernetPortAdminDuplex>)
 
 =item $rapidcity->rc_cpu_duplex()
 
-(B<rc2kCpuEthernetPortOperDuplex>)
+(C<rc2kCpuEthernetPortOperDuplex>)
 
 =item $rapidcity->rc_cpu_speed_admin()
 
-(B<rc2kCpuEthernetPortAdminSpeed>)
+(C<rc2kCpuEthernetPortAdminSpeed>)
 
 =item $rapidcity->rc_cpu_speed_oper()
 
-(B<rc2kCpuEthernetPortOperSpeed>)
+(C<rc2kCpuEthernetPortOperSpeed>)
 
 =item $rapidcity->rc_cpu_mac()
 
-(B<rc2kCpuEthernetPortMgmtMacAddr>)
+(C<rc2kCpuEthernetPortMgmtMacAddr>)
 
 =back
 
-=head2 RAPID-CITY VLAN Port Table (B<rcVlanPortTable>)
+=head2 RAPID-CITY VLAN Port Table (C<rcVlanPortTable>)
 
 =over
 
 =item $rapidcity->rc_i_vlan_if()
 
-(B<rcVlanPortIndex>)
+(C<rcVlanPortIndex>)
 
 =item $rapidcity->rc_i_vlan_num()
 
-(B<rcVlanPortNumVlanIds>)
+(C<rcVlanPortNumVlanIds>)
 
 =item $rapidcity->rc_i_vlan()
 
-(B<rcVlanPortVlanIds>)
+(C<rcVlanPortVlanIds>)
 
 =item $rapidcity->rc_i_vlan_type()
 
-(B<rcVlanPortType>)
+(C<rcVlanPortType>)
 
 =item $rapidcity->rc_i_vlan_pvid()
 
-(B<rcVlanPortDefaultVlanId>)
+(C<rcVlanPortDefaultVlanId>)
 
 =item $rapidcity->rc_i_vlan_tag()
 
-(B<rcVlanPortPerformTagging>)
+(C<rcVlanPortPerformTagging>)
 
 =back
 
-=head2 RAPID-CITY VLAN Table (B<rcVlanTable>)
+=head2 RAPID-CITY VLAN Table (C<rcVlanTable>)
 
 =over
 
 =item $rapidcity->rc_vlan_id()
 
-(B<rcVlanId>)
+(C<rcVlanId>)
 
 =item $rapidcity->v_name()
 
-(B<rcVlanName>)
+(C<rcVlanName>)
 
 =item $rapidcity->rc_vlan_color()
 
-(B<rcVlanColor>)
+(C<rcVlanColor>)
 
 =item $rapidcity->rc_vlan_if()
 
-(B<rcVlanIfIndex>)
+(C<rcVlanIfIndex>)
 
 =item $rapidcity->rc_vlan_stg()
 
-(B<rcVlanStgId>)
+(C<rcVlanStgId>)
 
 =item $rapidcity->rc_vlan_type()
 
-(B<rcVlanType>)
+(C<rcVlanType>)
 
 =item $rapidcity->rc_vlan_members()
 
-(B<rcVlanPortMembers>)
+(C<rcVlanPortMembers>)
 
 =item $rapidcity->rc_vlan_mac()
 
-(B<rcVlanMacAddress>)
+(C<rcVlanMacAddress>)
 
 =back
 
-=head2 RAPID-CITY IP Address Table (B<rcIpAddrTable>)
+=head2 RAPID-CITY IP Address Table (C<rcIpAddrTable>)
 
 =over
 
 =item $rapidcity->rc_ip_index()
 
-(B<rcIpAdEntIfIndex>)
+(C<rcIpAdEntIfIndex>)
 
 =item $rapidcity->rc_ip_addr()
 
-(B<rcIpAdEntAddr>)
+(C<rcIpAdEntAddr>)
 
 =item $rapidcity->rc_ip_type()
 
-(B<rcIpAdEntIfType>)
+(C<rcIpAdEntIfType>)
 
 =back
 
-=head2 RAPID-CITY Chassis Fan Table (B<rcChasFanTable>)
+=head2 RAPID-CITY Chassis Fan Table (C<rcChasFanTable>)
 
 =over
 
 =item $rapidcity->rc_fan_op()
 
-(B<rcChasFanOperStatus>)
+(C<rcChasFanOperStatus>)
 
 =back
 
-=head2 RAPID-CITY Power Supply Table (B<rcChasPowerSupplyTable>)
+=head2 RAPID-CITY Power Supply Table (C<rcChasPowerSupplyTable>)
 
 =over
 
 =item $rapidcity->rc_ps_op()
 
-(B<rcChasPowerSupplyOperStatus>)
+(C<rcChasPowerSupplyOperStatus>)
 
 =back
 
-=head2 RAPID-CITY Power Supply Detail Table (B<rcChasPowerSupplyDetailTable>)
+=head2 RAPID-CITY Power Supply Detail Table (C<rcChasPowerSupplyDetailTable>)
 
 =over
 
 =item $rapidcity->rc_ps_type()
 
-(B<rcChasPowerSupplyDetailType>)
+(C<rcChasPowerSupplyDetailType>)
 
 =item $rapidcity->rc_ps_serial()
 
-(B<rcChasPowerSupplyDetailSerialNumber>)
+(C<rcChasPowerSupplyDetailSerialNumber>)
 
 =item $rapidcity->rc_ps_rev()
 
-(B<rcChasPowerSupplyDetailHardwareRevision>)
+(C<rcChasPowerSupplyDetailHardwareRevision>)
 
 =item $rapidcity->rc_ps_part()
 
-(B<rcChasPowerSupplyDetailPartNumber>)
+(C<rcChasPowerSupplyDetailPartNumber>)
 
 =item $rapidcity->rc_ps_detail()
 
-(B<rcChasPowerSupplyDetailDescription>)
+(C<rcChasPowerSupplyDetailDescription>)
 
 =back
 
-=head2 RAPID-CITY Card Table (B<rcCardTable>)
+=head2 RAPID-CITY Card Table (C<rcCardTable>)
 
 =over
 
 =item $rapidcity->rc_c_type()
 
-(B<rcCardType>)
+(C<rcCardType>)
 
 =item $rapidcity->rc_c_serial()
 
-(B<rcCardSerialNumber>)
+(C<rcCardSerialNumber>)
 
 =item $rapidcity->rc_c_rev()
 
-(B<rcCardHardwareRevision>)
+(C<rcCardHardwareRevision>)
 
 =item $rapidcity->rc_c_part()
 
-(B<rcCardPartNumber>)
+(C<rcCardPartNumber>)
 
 =back
 
-=head2 RAPID-CITY 2k Card Table (B<rc2kCardTable>)
+=head2 RAPID-CITY 2k Card Table (C<rc2kCardTable>)
 
 =over
 
 =item $rapidcity->rc2k_c_ftype()
 
-(B<rc2kCardFrontType>)
+(C<rc2kCardFrontType>)
 
 =item $rapidcity->rc2k_c_fdesc()
 
-(B<rc2kCardFrontDescription>)
+(C<rc2kCardFrontDescription>)
 
 =item $rapidcity->rc2k_c_fserial()
 
-(B<rc2kCardFrontSerialNum>)
+(C<rc2kCardFrontSerialNum>)
 
 =item $rapidcity->rc2k_c_frev()
 
-(B<rc2kCardFrontHwVersion>)
+(C<rc2kCardFrontHwVersion>)
 
 =item $rapidcity->rc2k_c_fpart()
 
-(B<rc2kCardFrontPartNumber>)
+(C<rc2kCardFrontPartNumber>)
 
 =item $rapidcity->rc2k_c_fdate()
 
-(B<rc2kCardFrontDateCode>)
+(C<rc2kCardFrontDateCode>)
 
 =item $rapidcity->rc2k_c_fdev()
 
-(B<rc2kCardFrontDeviations>)
+(C<rc2kCardFrontDeviations>)
 
 =item $rapidcity->rc2k_c_btype()
 
-(B<rc2kCardBackType>)
+(C<rc2kCardBackType>)
 
 =item $rapidcity->rc2k_c_bdesc()
 
-(B<rc2kCardBackDescription>)
+(C<rc2kCardBackDescription>)
 
 =item $rapidcity->rc2k_c_bserial()
 
-(B<rc2kCardBackSerialNum>)
+(C<rc2kCardBackSerialNum>)
 
 =item $rapidcity->rc2k_c_brev()
 
-(B<rc2kCardBackHwVersion>)
+(C<rc2kCardBackHwVersion>)
 
 =item $rapidcity->rc2k_c_bpart()
 
-(B<rc2kCardBackPartNumber>)
+(C<rc2kCardBackPartNumber>)
 
 =item $rapidcity->rc2k_c_bdate()
 
-(B<rc2kCardBackDateCode>)
+(C<rc2kCardBackDateCode>)
 
 =item $rapidcity->rc2k_c_bdev()
 
-(B<rc2kCardBackDeviations>)
+(C<rc2kCardBackDeviations>)
 
 =back
 
-=head2 RAPID-CITY MDA Card Table (B<rc2kMdaCardTable>)
+=head2 RAPID-CITY MDA Card Table (C<rc2kMdaCardTable>)
 
 =over
 
 =item $rapidcity->rc2k_mda_type()
 
-(B<rc2kMdaCardType>)
+(C<rc2kMdaCardType>)
 
 =item $rapidcity->rc2k_mda_desc()
 
-(B<rc2kMdaCardDescription>)
+(C<rc2kMdaCardDescription>)
 
 =item $rapidcity->rc2k_mda_serial()
 
-(B<rc2kMdaCardSerialNum>)
+(C<rc2kMdaCardSerialNum>)
 
 =item $rapidcity->rc2k_mda_rev()
 
-(B<rc2kMdaCardHwVersion>)
+(C<rc2kMdaCardHwVersion>)
 
 =item $rapidcity->rc2k_mda_part()
 
-(B<rc2kMdaCardPartNumber>)
+(C<rc2kMdaCardPartNumber>)
 
 =item $rapidcity->rc2k_mda_date()
 
-(B<rc2kMdaCardDateCode>)
+(C<rc2kMdaCardDateCode>)
 
 =item $rapidcity->rc2k_mda_dev()
 
-(B<rc2kMdaCardDeviations>)
+(C<rc2kMdaCardDeviations>)
 
 =back
 
@@ -1001,7 +1003,7 @@ L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set operations.
 
 =item $rapidcity->set_i_speed_admin(speed, ifIndex)
 
-Sets port speed, must be supplied with speed and port ifIndex.  Speed choices
+Sets port speed, must be supplied with speed and port C<ifIndex>.  Speed choices
 are 'auto', '10', '100', '1000'.
 
  Example:
@@ -1011,8 +1013,8 @@ are 'auto', '10', '100', '1000'.
 
 =item $rapidcity->set_i_duplex_admin(duplex, ifIndex)
 
-Sets port duplex, must be supplied with duplex and port ifIndex.  Speed choices
-are 'auto', 'half', 'full'.
+Sets port duplex, must be supplied with duplex and port C<ifIndex>.  Speed
+choices are 'auto', 'half', 'full'.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
@@ -1021,9 +1023,10 @@ are 'auto', 'half', 'full'.
 
 =item $rapidcity->set_i_vlan(vlan, ifIndex)
 
-Changes an access (untagged) port VLAN, must be supplied with the numeric VLAN ID
-and port ifIndex.  This method will modify the port's VLAN membership and PVID
-(default VLAN).  This method should only be used on end station (non-trunk) ports.
+Changes an access (untagged) port VLAN, must be supplied with the numeric
+VLAN ID and port C<ifIndex>.  This method will modify the port's VLAN membership
+and PVID (default VLAN).  This method should only be used on end station
+(non-trunk) ports.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
@@ -1033,8 +1036,8 @@ and port ifIndex.  This method will modify the port's VLAN membership and PVID
 =item $rapidcity->set_i_pvid(pvid, ifIndex)
 
 Sets port PVID or default VLAN, must be supplied with the numeric VLAN ID and
-port ifIndex.  This method only changes the PVID, to modify an access (untagged)
-port use set_i_vlan() instead.
+port C<ifIndex>.  This method only changes the PVID, to modify an access
+(untagged) port use set_i_vlan() instead.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
@@ -1044,7 +1047,7 @@ port use set_i_vlan() instead.
 =item $rapidcity->set_add_i_vlan_tagged(vlan, ifIndex)
 
 Adds the port to the egress list of the VLAN, must be supplied with the numeric
-VLAN ID and port ifIndex.
+VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
@@ -1054,7 +1057,7 @@ VLAN ID and port ifIndex.
 =item $rapidcity->set_remove_i_vlan_tagged(vlan, ifIndex)
 
 Removes the port from the egress list of the VLAN, must be supplied with the
-numeric VLAN ID and port ifIndex.
+numeric VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
@@ -1071,5 +1074,7 @@ Creates the specified VLAN on the device.
 
 Note:  This method only allows creation of Port type VLANs and does not allow
 for the setting of the Spanning Tree Group (STG) which defaults to 1.   
+
+=back
 
 =cut

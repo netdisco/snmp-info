@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3::C4000
-# Bill Fenner
+# $Id$
 #
-# Copyright (c) 2006 Bill Fenner
+# Copyright (c) 2008 Bill Fenner
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -9,26 +9,26 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
-#     * Neither the name of the Author, nor 
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::C4000;
-# $Id$
 
 use strict;
 
@@ -44,7 +44,7 @@ use SNMP::Info::MAU;
 use SNMP::Info::Layer3;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.07';
+$VERSION = '1.09';
 @SNMP::Info::Layer3::C4000::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
                                     SNMP::Info::CiscoStats SNMP::Info::CiscoImage
                                     SNMP::Info::CiscoPortSecurity
@@ -197,7 +197,8 @@ See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoImage/"Required MIBs"> for its own MIB requirements.
 
-See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB
+requirements.
 
 See L<SNMP::Info::CiscoConfig/"Required MIBs"> for its own MIB requirements.
 
@@ -266,7 +267,8 @@ See documentation in L<SNMP::Info::CiscoImage/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoPortSecurity
 
-See documentation in L<SNMP::Info::CiscoPortSecurity/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::CiscoPortSecurity/"TABLE METHODS"> for
+details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoConfig
 

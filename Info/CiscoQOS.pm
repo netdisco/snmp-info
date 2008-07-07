@@ -1,5 +1,5 @@
 # SNMP::Info::CiscoQOS
-# Alexander Hartmaier <alexander.hartmaier@t-systems.at>
+# $Id$
 #
 # Copyright (c) 2005 Alexander Hartmaier
 #
@@ -10,28 +10,28 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoQOS;
-$VERSION = '1.07';
+$VERSION = '1.09';
 
-# $Id$
 use strict;
 
 use Exporter;
@@ -90,7 +90,6 @@ Alexander Hartmaier
  my $qos = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -115,7 +114,7 @@ none.
 
 =over
 
-=item CISCO-CLASS-BASED-QOS-MIB
+=item F<CISCO-CLASS-BASED-QOS-MIB>
 
 =back
 
@@ -131,87 +130,89 @@ MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =head1 TABLE METHODS
 
-=head2 ServicePolicy Table (B<cbQosServicePolicyTable>)
+=head2 Service Policy Table (C<cbQosServicePolicyTable>)
 
-This table describes the interfaces/media types and the policymap that are
+This table describes the interfaces/media types and the policy map that are
 attached to it.
 
 =over
 
 =item $qos->qos_i_index()
 
-(B<cbQosIfIndex>)
+(C<cbQosIfIndex>)
 
 =item $qos->qos_i_type()
 
-(B<cbQosIfType>)
+(C<cbQosIfType>)
 
 =item $qos->qos_pol_direction()
 
-(B<cbQosPolicyDirection>)
+(C<cbQosPolicyDirection>)
 
 =back
 
-=head2 ClassMap Objects Table (B<cbQosObjectsTable>)
+=head2 Class Map Objects Table (C<cbQosObjectsTable>)
 
 =over
 
 =item $qos->qos_obj_index()
 
-(B<cbQosConfigIndex>)
+(C<cbQosConfigIndex>)
 
 =item $qos->qos_obj_type()
 
-(B<cbQosObjectsType>)
+(C<cbQosObjectsType>)
 
 =item $qos->qos_obj_parent()
 
-(B<cbQosParentObjectsIndex>)
+(C<cbQosParentObjectsIndex>)
 
 =back
 
-=head2 ClassMap Configuration Table (B<cbQosCMCfgTable>)
+=head2 Class Map Configuration Table (C<cbQosCMCfgTable>)
 
 =over
 
 =item $qos->qos_cm_name()
 
-(B<cbQosCMName>)
+(C<cbQosCMName>)
 
 =item $qos->qos_cm_desc()
 
-(B<cbQosCMDesc>)
+(C<cbQosCMDesc>)
 
 =item $qos->qos_cm_info()
 
-(B<cbQosCMInfo>)
+(C<cbQosCMInfo>)
 
 =back
 
-=head2 ClassMap Stats Table (B<cbQosCMStatsTable>)
+=head2 Class Map Stats Table (C<cbQosCMStatsTable>)
 
 =over
 
 =item $qos->qos_octet_pre()
 
-(B<cbQosCMPrePolicyByte>)
+(C<cbQosCMPrePolicyByte>)
 
 =item $qos->qos_octet_post()
 
-(B<cbQosCMPostPolicyByte>)
+(C<cbQosCMPostPolicyByte>)
 
 =back
 
-=head2 Queueing Configuration Table (B<cbQosQueueingCfgTable>)
+=head2 Queueing Configuration Table (C<cbQosQueueingCfgTable>)
 
 =over
 
 =item $qos->qos_queueingcfg_bw()
 
-(B<cbQosQueueingCfgBandwidth>)
+(C<cbQosQueueingCfgBandwidth>)
 
 =item $qos->qos_queueingcfg_bw_units()
 
-(B<cbQosQueueingCfgBandwidthUnits>)
+(C<cbQosQueueingCfgBandwidthUnits>)
+
+=back
 
 =cut

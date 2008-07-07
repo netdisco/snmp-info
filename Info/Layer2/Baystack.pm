@@ -1,7 +1,7 @@
 # SNMP::Info::Layer2::Baystack
-# Eric Miller
+# $Id$
 #
-# Copyright (c) 2004-6 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -9,28 +9,28 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Baystack;
-$VERSION = '1.07';
+$VERSION = '1.09';
 
-# $Id$
 use strict;
 
 use Exporter;
@@ -436,7 +436,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Baystack - SNMP Interface to Nortel Ethernet (Baystack) Switches
+SNMP::Info::Layer2::Baystack - SNMP Interface to Nortel Ethernet (Baystack)
+Switches
 
 =head1 AUTHOR
 
@@ -448,7 +449,6 @@ Eric Miller
  my $baystack = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -463,8 +463,8 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from a Nortel 
 Ethernet Switch (Baystack) through SNMP. 
 
-For speed or debugging purposes you can call the subclass directly, but not after determining
-a more specific class using the method above. 
+For speed or debugging purposes you can call the subclass directly, but not
+after determining a more specific class using the method above. 
 
 my $baystack = new SNMP::Info::Layer2::Baystack(...);
 
@@ -514,14 +514,13 @@ Returns 'nortel'
 
 =item $baystack->model()
 
-Cross references $baystack->id() to the SYNOPTICS-MIB and returns
+Cross references $baystack->id() to the F<SYNOPTICS-MIB> and returns
 the results.  303s and 304s have the same ID, so we have a hack
 to return depending on which it is.
 
 Returns BPS for Business Policy Switch
 
-For BayStack, EthernetRoutingSwitch, or EthernetSwitch extracts and returns
-the switch numeric designation.
+For others extracts and returns the switch numeric designation.
 
 =item $baystack->os()
 
@@ -529,7 +528,7 @@ Returns 'baystack' or 'boss' depending on software version.
 
 =item $baystack->os_bin()
 
-Returns the firmware version extracted from B<sysDescr>.
+Returns the firmware version extracted from C<sysDescr>.
 
 =back
 
@@ -596,77 +595,77 @@ Returns reference to hash of IIDs to ignore.
 
 =item $baystack->i_mac()
 
-Returns the B<ifPhysAddress> table entries. 
+Returns the C<ifPhysAddress> table entries. 
 
 Removes all entries matching '00:00:00:00:00:00' -- Certain 
 revisions of Baystack firmware report all zeros for each port mac.
 
 =item $baystack->i_name()
 
-Crosses ifName with ifAlias and returns the human set port name if exists.
+Crosses C<ifName> with C<ifAlias> and returns the human set port name if exists.
 
 =back
 
-=head2 ENTITY-MIB Information
+=head2 F<ENTITY-MIB> Information
 
-For older devices which do not support ENTITY-MIB, these methods emulate
-Physical Table methods using S5-CHASSIS-MIB.  See
+For older devices which do not support F<ENTITY-MIB>, these methods emulate
+Physical Table methods using F<S5-CHASSIS-MIB>.  See
 L<SNMP::Info::NortelStack/"TABLE METHODS"> for details on ns_e_* methods.
 
 =over
 
 =item $baystack->e_index() 
 
-If the device doesn't support B<entPhysicalDescr>, this will try ns_e_index().
-Note that this is based on B<entPhysicalDescr> due to implementation
+If the device doesn't support C<entPhysicalDescr>, this will try ns_e_index().
+Note that this is based on C<entPhysicalDescr> due to implementation
 details of SNMP::Info::Entity::e_index().
 
 =item $baystack->e_class() 
 
-If the device doesn't support B<entPhysicalClass>, this will try ns_e_class().
+If the device doesn't support C<entPhysicalClass>, this will try ns_e_class().
 
 =item $baystack->e_descr() 
 
-If the device doesn't support B<entPhysicalDescr>, this will try ns_e_descr().
+If the device doesn't support C<entPhysicalDescr>, this will try ns_e_descr().
 
 =item $baystack->e_fwver() 
 
-If the device doesn't support B<entPhysicalFirmwareRev>, this will try
+If the device doesn't support C<entPhysicalFirmwareRev>, this will try
 ns_e_fwver().
 
 =item $baystack->e_hwver() 
 
-If the device doesn't support B<entPhysicalHardwareRev>, this will try
+If the device doesn't support C<entPhysicalHardwareRev>, this will try
 ns_e_hwver().
 
 =item $baystack->e_parent() 
 
-If the device doesn't support B<entPhysicalContainedIn>, this will try
+If the device doesn't support C<entPhysicalContainedIn>, this will try
 ns_e_parent().
 
 =item $baystack->e_pos() 
 
-If the device doesn't support B<entPhysicalParentRelPos>, this will try
+If the device doesn't support C<entPhysicalParentRelPos>, this will try
 ns_e_pos().
 
 =item $baystack->e_serial() 
 
-If the device doesn't support B<entPhysicalSerialNum>, this will try
+If the device doesn't support C<entPhysicalSerialNum>, this will try
 ns_e_serial().
 
 =item $baystack->e_swver() 
 
-If the device doesn't support B<entPhysicalSoftwareRev>, this will try
+If the device doesn't support C<entPhysicalSoftwareRev>, this will try
 ns_e_swver().
 
 =item $baystack->e_type() 
 
-If the device doesn't support B<entPhysicalVendorType>, this will try
+If the device doesn't support C<entPhysicalVendorType>, this will try
 ns_e_type().
 
 =item $baystack->e_vendor() 
 
-If the device doesn't support B<entPhysicalMfgName>, this will try
+If the device doesn't support C<entPhysicalMfgName>, this will try
 ns_e_vendor().
 
 =back
@@ -678,7 +677,8 @@ Management Protocol (SONMP) and Link Layer Discovery Protocol (LLDP). These
 methods will query both and return the combination of all information. As a
 result, there may be identical topology information returned from the two
 protocols causing duplicate entries.  It is the calling program's
-responsibility to identify any duplicate entries and de-duplicate if necessary.
+responsibility to identify any duplicate entries and remove duplicates if
+necessary.
 
 =over
 

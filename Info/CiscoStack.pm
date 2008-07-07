@@ -1,7 +1,7 @@
 # SNMP::Info::CiscoStack
-# Max Baker
+# $Id$
 #
-# Copyright (c)2003,2004,2006 Max Baker 
+# Copyright (c) 2008 Max Baker 
 # All rights reserved.  
 #
 # Redistribution and use in source and binary forms, with or without 
@@ -9,27 +9,27 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
-#     * Neither the name of the author nor the 
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStack;
-$VERSION = '1.07';
-# $Id$
+$VERSION = '1.09';
 
 use strict;
 
@@ -272,8 +272,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::CiscoStack - SNMP Inteface to data from CISCO-STACK-MIB and
-CISCO-PORT-SECURITY-MIB
+SNMP::Info::CiscoStack - SNMP Interface to data from F<CISCO-STACK-MIB> and
+F<CISCO-PORT-SECURITY-MIB>
 
 =head1 AUTHOR
 
@@ -285,7 +285,6 @@ Max Baker
  my $ciscostats = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          # These arguments are passed directly on to SNMP::Session
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
@@ -311,12 +310,9 @@ none.
 
 =over
 
-=item CISCO-STACK-MIB
+=item F<CISCO-STACK-MIB>
 
 =back
-
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz or from
-Netdisco-mib package at netdisco.org. 
 
 =head1 GLOBALS
 
@@ -324,43 +320,43 @@ Netdisco-mib package at netdisco.org.
 
 =item $stack->broadcast()
 
-(B<sysBroadcast>)
+(C<sysBroadcast>)
 
 =item $stack->fan()
 
-(B<chassisFanStatus>)
+(C<chassisFanStatus>)
 
 =item $stack->model()
 
-(B<chassisModel>)
+(C<chassisModel>)
 
 =item $stack->netmask()
 
-(B<sysNetMask>)
+(C<sysNetMask>)
 
 =item $stack->ps1_type()
 
-(B<chassisPs1Type>)
+(C<chassisPs1Type>)
 
 =item $stack->ps2_type()
 
-(B<chassisPs2Type>)
+(C<chassisPs2Type>)
 
 =item $stack->ps1_status()
 
-(B<chassisPs1Status>)
+(C<chassisPs1Status>)
 
 =item $stack->ps2_status()
 
-(B<chassisPs2Status>)
+(C<chassisPs2Status>)
 
 =item $stack->serial()
 
-(B<chassisSerialNumberString>) or (B<chassisSerialNumber>)
+(C<chassisSerialNumberString>) or (C<chassisSerialNumber>)
 
 =item $stack->slots()
 
-(B<chassisNumSlots>)
+(C<chassisNumSlots>)
 
 =back
 
@@ -378,34 +374,34 @@ Returns a map to IID for ports that are physical ports, not vlans, etc.
 
 Crosses p_port() with p_type() and returns the results. 
 
-Overrides with ifType if p_type() isn't available.
+Overrides with C<ifType> if p_type() isn't available.
 
 =item $stack->i_duplex()
 
 Returns reference to hash of iid to current link duplex setting.
 
 First checks for fixed gigabit ports which are always full duplex.  Next, if
-the port is not operational and reported port duplex (B<portDuplex>) is auto
+the port is not operational and reported port duplex (C<portDuplex>) is auto
 then the operational duplex can not be determined.  Otherwise it uses the
-reported port duplex (B<portDuplex>).
+reported port duplex (C<portDuplex>).
 
 =item $stack->i_duplex_admin()
 
 Returns reference to hash of iid to administrative duplex setting.
 
 First checks for fixed gigabit ports which are always full duplex. Next checks
-the port administrative speed (B<portAdminSpeed>) which if set to
+the port administrative speed (C<portAdminSpeed>) which if set to
 autonegotiate then the duplex will also autonegotiate, otherwise it uses the
-reported port duplex (B<portDuplex>).
+reported port duplex (C<portDuplex>).
 
 =item $stack->set_i_speed_admin(speed, ifIndex)
 
-    Sets port speed, must be supplied with speed and port ifIndex
+    Sets port speed, must be supplied with speed and port C<ifIndex>
 
     Speed choices are 'auto', '10', '100', '1000'
 
     Crosses $stack->p_port() with $stack->p_duplex() to
-    utilize port ifIndex.
+    utilize port C<ifIndex>.
 
     Example:
     my %if_map = reverse %{$stack->interfaces()};
@@ -414,12 +410,12 @@ reported port duplex (B<portDuplex>).
 
 =item $stack->set_i_duplex_admin(duplex, ifIndex)
 
-    Sets port duplex, must be supplied with duplex and port ifIndex
+    Sets port duplex, must be supplied with duplex and port C<ifIndex>
 
     Speed choices are 'auto', 'half', 'full'
 
     Crosses $stack->p_port() with $stack->p_duplex() to
-    utilize port ifIndex.
+    utilize port C<ifIndex>.
 
     Example:
     my %if_map = reverse %{$stack->interfaces()};
@@ -437,27 +433,27 @@ the Catalyst device.
 
 =item $stack->m_type()
 
-(B<moduleType>)
+(C<moduleType>)
 
 =item $stack->m_model()
 
-(B<moduleModel>)
+(C<moduleModel>)
 
 =item $stack->m_serial()
 
-(B<moduleSerialNumber>)
+(C<moduleSerialNumber>)
 
 =item $stack->m_status()
 
-(B<moduleStatus>)
+(C<moduleStatus>)
 
 =item $stack->m_name()
 
-(B<moduleName>)
+(C<moduleName>)
 
 =item $stack->m_ports()
 
-(B<moduleNumPorts>)
+(C<moduleNumPorts>)
 
 =item $stack->m_ports_status()
 
@@ -468,31 +464,31 @@ To see the status of port 4 :
     @ports_status = split(' ', $stack->m_ports_status() );
     $port4 = $ports_status[3];
 
-(B<modulePortStatus>)
+(C<modulePortStatus>)
 
 =item $stack->m_ports_hwver()
 
-(B<moduleHwVersion>)
+(C<moduleHwVersion>)
 
 =item $stack->m_ports_fwver()
 
-(B<moduleFwVersion>)
+(C<moduleFwVersion>)
 
 =item $stack->m_ports_swver()
 
-(B<moduleSwVersion>)
+(C<moduleSwVersion>)
 
 =item $stack->m_ports_ip()
 
-(B<moduleIPAddress>)
+(C<moduleIPAddress>)
 
 =item $stack->m_ports_sub1()
 
-(B<moduleSubType>)
+(C<moduleSubType>)
 
 =item $stack->m_ports_sub2()
 
-(B<moduleSubType2>)
+(C<moduleSubType2>)
 
 =back
 
@@ -502,49 +498,49 @@ To see the status of port 4 :
 
 =item $stack->m_ip()
 
-(B<moduleIPAddress>)
+(C<moduleIPAddress>)
 
 =item $stack->m_sub1()
 
-(B<moduleSubType>)
+(C<moduleSubType>)
 
 =item $stack->m_sub2()
 
-(B<moduleSubType2>)
+(C<moduleSubType2>)
 
 =back
 
-=head2 Port Entry Table (CISCO-STACK-MIB::portTable)
+=head2 Port Entry Table (C<CISCO-STACK-MIB::portTable>)
 
 =over
 
 =item $stack->p_name()
 
-(B<portName>)
+(C<portName>)
 
 =item $stack->p_type()
 
-(B<portType>)
+(C<portType>)
 
 =item $stack->p_status()
 
-(B<portOperStatus>)
+(C<portOperStatus>)
 
 =item $stack->p_status2()
 
-(B<portAdditionalStatus>)
+(C<portAdditionalStatus>)
 
 =item $stack->p_speed()
 
-(B<portAdminSpeed>)
+(C<portAdminSpeed>)
 
 =item $stack->p_duplex()
 
-(B<portDuplex>)
+(C<portDuplex>)
 
 =item $stack->p_port()
 
-(B<portIfIndex>)
+(C<portIfIndex>)
 
 =item $stack->p_rx_flow_control()
 
@@ -554,7 +550,7 @@ Can be either C<on> C<off> or C<disagree>
 could not agree with the far end on a link protocol, its operational status
 will be disagree(3)."
 
-B<portOperRxFlowControl>
+C<portOperRxFlowControl>
 
 =item $stack->p_tx_flow_control()
 
@@ -564,7 +560,7 @@ Can be either C<on> C<off> or C<disagree>
 port could not agree with the far end on a link protocol, its operational
 status will be disagree(3)."
 
-B<portOperTxFlowControl>
+C<portOperTxFlowControl>
 
 =item $stack->p_rx_flow_control_admin()
 
@@ -576,7 +572,7 @@ control. If the status is set to off(2), the port will not allow far end to
 send flow control.  If the status is set to desired(3), the port will allow the
 far end to send the flow control."
 
-B<portAdminRxFlowControl>
+C<portAdminRxFlowControl>
 
 =item $stack->p_tx_flow_control_admin()
 
@@ -588,21 +584,21 @@ the status is set to off(2), the port will not send flow control to the far
 end. If the status is set to desired(3), the port will send flow control to the
 far end if the far end supports it."
 
-B<portAdminTxFlowControl>
+C<portAdminTxFlowControl>
 
 =back
 
-=head2 Port Capability Table (CISCO-STACK-MIB::portCpbTable)
+=head2 Port Capability Table (C<CISCO-STACK-MIB::portCpbTable>)
 
 =over
 
 =item $stack->p_speed_admin()
 
-(B<portCpbSpeed>)
+(C<portCpbSpeed>)
 
 =item $stack->p_duplex_admin()
 
-(B<portCpbDuplex>)
+(C<portCpbDuplex>)
 
 =back
 

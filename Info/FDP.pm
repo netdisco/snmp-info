@@ -1,8 +1,7 @@
 # SNMP::Info::FDP
-# Bruce Rodger
 # $Id$
 #
-# (c) 2004 Bruce Rodger, Max Baker 
+# Copyright (c) 2008 Bruce Rodger, Max Baker 
 # All rights reserved.  
 #
 # Copyright (c) 2002,2003 Regents of the University of California
@@ -13,23 +12,24 @@
 # 
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright notice,
-#       this list of conditions and the following disclaimer in the documentation
-#       and/or other materials provided with the distribution.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
 #     * Neither the name of the University of California, Santa Cruz nor the 
 #       names of its contributors may be used to endorse or promote products 
 #       derived from this software without specific prior written permission.
 # 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::FDP;
 
@@ -42,7 +42,7 @@ use SNMP::Info;
 @SNMP::Info::FDP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
-$VERSION = '1.07';
+$VERSION = '1.09';
 
 %MIBS 	= (
            'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snFdpGlobalRun'
@@ -204,16 +204,12 @@ None.
 
 =over
 
-=item FOUNDRY-SN-SWITCH-GROUP-MIB
+=item F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
 Needs a reasonably recent MIB. Works OK with B2R07604A.mib, but doesn't
 work with B2R07600C. 
 
-
 =back
-
-MIBs are normally distributed with each code update. Contact your vendor,
-or trawl through google...
 
 =head1 GLOBAL METHODS
 
@@ -231,27 +227,28 @@ Accounts for SNMP version 1 devices which may have FDP but not fdp_run()
 
 Is FDP enabled on this device?  
 
-(B<fdpGlobalRun>)
+(C<fdpGlobalRun>)
 
 =item $fdp->fdp_interval()
 
 Interval in seconds at which FDP messages are generated.
 
-(B<fdpGlobalMessageInterval>)
+(C<fdpGlobalMessageInterval>)
 
 =item $fdp->fdp_holdtime()
 
 Time in seconds that FDP messages are kept. 
 
-(B<fdpGlobalHoldTime>)
+(C<fdpGlobalHoldTime>)
 
 =item  $fdp->fdp_id() 
 
 Returns FDP device ID.  
 
-This is the device id broadcast via FDP to other devices, and is what is retrieved from remote devices with $fdp->id().
+This is the device id broadcast via FDP to other devices, and is what is
+retrieved from remote devices with $fdp->id().
 
-(B<fdpGlobalDeviceId>)
+(C<fdpGlobalDeviceId>)
 
 =back
 
@@ -278,7 +275,7 @@ From L<http://www.cisco.com/univercd/cc/td/doc/product/lan/trsrb/frames.htm#1884
 
 =item (0x40) - Provides level 1 functionality.
 
-=item (0x20) - The bridge or switch does not forward IGMP Report packets on nonrouter ports.
+=item (0x20) - The bridge or switch does not forward IGMP Report packets on non router ports.
 
 =item (0x10) - Sends and receives packets for at least one network layer protocol. If the device is routing the protocol, this bit should not be set.
 
@@ -292,37 +289,39 @@ From L<http://www.cisco.com/univercd/cc/td/doc/product/lan/trsrb/frames.htm#1884
 
 =back
 
-Thanks to Martin Lorensen C<martin -at- lorensen.dk> for a pointer to this information.
+Thanks to Martin Lorensen C<martin -at- lorensen.dk> for a pointer to
+this information.
 
-(B<fdpCacheCapabilities>)
+(C<fdpCacheCapabilities>)
 
 =item $fdp->fdp_domain()
 
-The CDP version of this returns remote VTP Management Domain as defined in CISCO-VTP-MIB::managementDomainName
+The CDP version of this returns remote VTP Management Domain as defined
+in C<CISCO-VTP-MIB::managementDomainName>
 
-(B<fdpCacheVTPMgmtDomain>)
+(C<fdpCacheVTPMgmtDomain>)
 
 =item $fdp->fdp_duplex() 
 
 Returns the port duplex status from remote devices.
 
-(B<fdpCacheDuplex>)
+(C<fdpCacheDuplex>)
 
 =item $fdp->fdp_id()
 
 Returns remote device id string
 
-(B<fdpCacheDeviceId>)
+(C<fdpCacheDeviceId>)
 
 =item $fdp->fdp_if()
 
 Returns the mapping to the SNMP Interface Table.
 
-Note that a lot devices don't implement $fdp->fdp_index(),  So if it isn't around,
-we fake it. 
+Note that a lot devices don't implement $fdp->fdp_index(),  So if it isn't
+around, we fake it. 
 
-In order to map the fdp table entry back to the interfaces() entry, we truncate the last number
-off of it :
+In order to map the fdp table entry back to the interfaces() entry, we
+truncate the last number off of it :
 
   # it exists, yay.
   my $fdp_index     = $device->fdp_index();
@@ -346,47 +345,48 @@ off of it :
 
 Returns the mapping to the SNMP2 Interface table for FDP Cache Entries. 
 
-Most devices don't implement this, so you probably want to use $fdp->fdp_if() instead.
+Most devices don't implement this, so you probably want to use $fdp->fdp_if()
+instead.
 
 See fdp_if() entry.
 
-(B<fdpCacheIfIndex>)
+(C<fdpCacheIfIndex>)
 
 =item  $fdp->fdp_ip()
 
 Returns remote IP address
 
-(B<fdpCacheAddress>)
+(C<fdpCacheAddress>)
 
 =item $fdp->fdp_platform() 
 
 Returns remote platform id 
 
-(B<fdpCachePlatform>)
+(C<fdpCachePlatform>)
 
 =item $fdp->fdp_port()
 
 Returns remote port ID
 
-(B<fdpDevicePort>)
+(C<fdpDevicePort>)
 
 =item  $fdp->fdp_proto()
 
 Returns remote address type received.  Usually IP.
 
-(B<fdpCacheAddressType>)
+(C<fdpCacheAddressType>)
 
 =item $fdp->fdp_ver() 
 
 Returns remote hardware version
 
-(B<fdpCacheVersion>)
+(C<fdpCacheVersion>)
 
 =item $fdp->fdp_vlan()
 
 Returns the remote interface native VLAN.
 
-(B<fdpCacheNativeVLAN>)
+(C<fdpCacheNativeVLAN>)
 
 =back
 
