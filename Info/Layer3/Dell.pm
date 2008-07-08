@@ -213,6 +213,7 @@ sub _vendor {
                   2   => 'ibm',
                   171 => 'dlink',
                   674 => 'dell',
+                  3955 => 'linksys',
                 );
     $id = $1 if (defined($id) && $id =~ /^\.1\.3\.6\.1\.4\.1\.(\d+)/);
 

@@ -600,8 +600,9 @@ See documentation in L<SNMP::Info::Layer3::Contivity> for details.
 
 =item SNMP::Info::Layer3::Dell
 
-Subclass for Dell PowerConnect switches. D-Link and the IBM BladeCenter
-Gigabit Ethernet Switch Module also use this module based upon MIB support.
+Subclass for Dell PowerConnect switches. D-Link, the IBM BladeCenter
+Gigabit Ethernet Switch Module and some Linksys switches
+also use this module based upon MIB support.
 
 See documentation in L<SNMP::Info::Layer3::Dell> for details.
 
@@ -1260,6 +1261,8 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::HP9300' if $desc =~ /\b(J4874A|J4138A|J4139A|J4840A|J4841A)\b/ ;
         # IBM BladeCenter 4-Port GB Ethernet Switch Module
         $objtype = 'SNMP::Info::Layer3::Dell' if ($desc =~ /^IBM Gigabit Ethernet Switch Module$/);
+        # Linksys 2048
+        $objtype = 'SNMP::Info::Layer3::Dell' if ($desc =~ /^48-Port 10\/100\/1000 Gigabit Switch with WebView$/);
         #  Centillion ATM
         $objtype = 'SNMP::Info::Layer2::Centillion' if ($desc =~ /MCP/);
         #  BPS
@@ -1273,7 +1276,7 @@ sub device_type {
         #  Orinco
         $objtype = 'SNMP::Info::Layer2::Orinoco' if ($desc =~ /(AP-\d{3}|WavePOINT)/);
         #  Aironet - IOS
-        $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /\b(C1100|C1130|AP1200|C350|C1200|C1240)\b/  and $desc =~ /\bIOS\b/);
+        $objtype = 'SNMP::Info::Layer2::Aironet' if ($desc =~ /\b(C1100|C1130|AP1200|C350|C1200|C1240|C1250)\b/  and $desc =~ /\bIOS\b/);
         # Aironet - non IOS
         $objtype = 'SNMP::Info::Layer3::Aironet' if ($desc =~ /Cisco/ and $desc =~ /\D(BR500)\D/) ;
         #Nortel 2270
