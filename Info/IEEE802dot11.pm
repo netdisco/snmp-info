@@ -165,7 +165,8 @@ sub dot11_cur_tx_pwr_mw {
     foreach my $idx (keys %$cur) {
         my $pwr = $cur->{$idx};
         if ($pwr >= 1 && $pwr <= 8) {
-            my $mw = eval "\$dot11->dot11_tx_pwr_level_$pwr(\$idx)";
+            # ToDo - Look at string eval 
+            my $mw = eval "\$dot11->dot11_tx_pwr_level_$pwr(\$idx)"; ## no critic
             $dot11_cur_tx_pwr_mw->{$idx} = $mw->{$idx};
         } else {
             next;
