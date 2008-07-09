@@ -115,6 +115,7 @@ jeroen
 junos
 kramarov
 lans
+linksys
 lldp
 loopback
 loopdetect
