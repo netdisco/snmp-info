@@ -183,7 +183,8 @@ sub i_duplex {
         $duplex = 'half' if $duplex =~ /half/i;
         $duplex = 'full' if $duplex =~ /full/i;
         
-        my $idx = $if + $ip_max if (defined $ip_max);
+        my $idx;
+        $idx = $if + $ip_max if (defined $ip_max);
         
         $i_duplex{$idx}=$duplex; 
     }
@@ -217,7 +218,9 @@ sub i_duplex_admin {
             $string = 'full' if ($fe_mode =~ /full/i and $fe_auto =~ /off/i);
             $string = 'auto' if $fe_auto =~ /on/i;
         }
-        my $idx = $if + $ip_max if (defined $ip_max);
+
+        my $idx;
+        $idx = $if + $ip_max if (defined $ip_max);
         
         $i_duplex_admin{$idx}=$string; 
     }
@@ -234,7 +237,8 @@ sub i_name {
     foreach my $iid (keys %$p_name){
         my $name = $p_name->{$iid};
         next unless defined $name;
-        my $idx = $iid + $ip_max if (defined $ip_max);
+        my $idx;
+        $idx = $iid + $ip_max if (defined $ip_max);
         $i_name{$idx} = $name;
     }
     return \%i_name;
@@ -272,7 +276,8 @@ sub i_vlan {
         my $ag_vlanid = $ag_vlans->{$if};
         next unless defined $ag_vlanid;
         
-        my $idx = $if + $ip_max if (defined $ip_max);
+        my $idx;
+        $idx = $if + $ip_max if (defined $ip_max);
         $i_vlan{$idx}=$ag_vlanid; 
     }
     return \%i_vlan;
@@ -291,7 +296,8 @@ sub i_vlan_membership {
 
         # Convert portlist bit array to ifIndex array
         for (my $i = 0; $i <= scalar(@$portlist); $i++) {
-            my $idx = $i + $ip_max if (defined $ip_max);
+            my $idx;
+            $idx = $i + $ip_max if (defined $ip_max);
 	    push(@{$ret}, $idx) if (@$portlist[$i]);
         }
 

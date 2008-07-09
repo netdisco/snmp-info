@@ -952,9 +952,11 @@ sub e_descr {
         unless ($bp_id =~ /an|arn|asn/) {
             $wf_e_descr{"$idx"."0000"} = 'Slot '.$idx;
         }
-        my $mb_id  = &SNMP::mapEnum('wfHwMotherBdIdOpt',$wf_mb->{$idx}) if $wf_mb->{$idx};
+        my $mb_id;
+        $mb_id = &SNMP::mapEnum('wfHwMotherBdIdOpt',$wf_mb->{$idx}) if $wf_mb->{$idx};
         my $mb_mem = $wf_mb_mem->{$idx};
-        my $mod_id = &SNMP::mapEnum('wfHwModIdOpt',$wf_mod->{$idx})if $wf_mod->{$idx};
+        my $mod_id;
+        $mod_id = &SNMP::mapEnum('wfHwModIdOpt',$wf_mod->{$idx})if $wf_mod->{$idx};
         # Processor
         if ($mb_id) {
             if (ref($PROCID_MAP{$mb_id}) =~ /HASH/) {
@@ -1102,13 +1104,15 @@ sub e_hwver {
         foreach my $slot (@slots) {
             $index ++;
             next unless ($slot->{$idx});
-            my $mod = hex(join('','0x',map{sprintf "%02X", $_}unpack("C*",$slot->{$idx}))) if $slot->{$idx}; 
+            my $mod;
+            $mod = hex(join('','0x',map{sprintf "%02X", $_}unpack("C*",$slot->{$idx}))) if $slot->{$idx}; 
             $wf_e_hwver{$index} = $mod if $mod;
         }
     }
     foreach my $iid (keys %$wf_mm){
         my $index = join('',map { sprintf "%02d",$_ } split /\./, $iid);
-        my $mod = hex(join('','0x',map{sprintf "%02X", $_}unpack("C*",$wf_mm->{$iid}))) if $wf_mm->{$iid};
+        my $mod;
+        $mod = hex(join('','0x',map{sprintf "%02X", $_}unpack("C*",$wf_mm->{$iid}))) if $wf_mm->{$iid};
         $index = "$index"."00";
         $index ++;
         next unless ($wf_mm->{$iid});
