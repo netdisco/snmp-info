@@ -829,7 +829,7 @@ sub new {
 
     # load references to all the subclass data structures
     {
-        no strict 'refs';
+        no strict 'refs'; ## no critic
         $new_obj->{init}    = \${$class . '::INIT'};
         $new_obj->{mibs}    = \%{$class . '::MIBS'};
         $new_obj->{globals} = \%{$class . '::GLOBALS'};
@@ -1012,7 +1012,8 @@ sub clear_cache {
     }
 
     # Clear store for tables
-    $self->store({});
+    return $self->store({});
+
 }
 
 =item $info->debug(1)
@@ -1405,7 +1406,7 @@ sub specify {
 
     # Load Subclass
     # By evaling a string the contents of device_type now becomes a bareword. 
-    eval "require $device_type;";
+    eval "require $device_type;"; ## no critic
     if ($@) {
         croak "SNMP::Info::specify() Loading $device_type Failed. $@\n";
     }
@@ -1433,7 +1434,7 @@ See L<ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexin
 =cut
 
 sub cisco_comm_indexing{
-    0;
+    return 0;
 }
 
 =back
@@ -2624,6 +2625,7 @@ sub init {
             croak "The $mib did not load. See README for $self->{class}\n";
         }    
     }
+    return;
 }
 
 =item $info->args()
@@ -2667,6 +2669,7 @@ sub error_throw {
         $error =~  s/\n+$//;
         carp($error);
     }
+    return;
 }
 
 =item $info->funcs()
@@ -2980,8 +2983,10 @@ sub load_all {
     }
 
     $self->{_all}++;
-
-    return $self->store() if defined wantarray;
+    
+    return unless defined wantarray;
+    
+    return $self->store();
 }
 
 =item $info->all()
@@ -3351,7 +3356,7 @@ sub AUTOLOAD {
     #   inherited us.
     my (%funcs,%globals);
     {
-        no strict 'refs';
+        no strict 'refs'; ## no critic
         %funcs = %{$package.'FUNCS'};
         %globals = %{$package.'GLOBALS'};
     }
