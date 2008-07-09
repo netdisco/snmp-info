@@ -119,10 +119,10 @@ sub fan {
 	$s = ", ";
     }
     return if ($s eq "");
-    $ret;
+    return $ret;
 }
 
-sub cisco_comm_indexing { 1; }
+sub cisco_comm_indexing { return 1; }
 
 1;
 __END__

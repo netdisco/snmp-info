@@ -273,6 +273,8 @@ sub vendor {
 
     return 'cisco' if ($descr =~ /(cisco|\bios\b)/i);
     return 'foundry' if ($descr =~ /foundry/i);
+    
+    return 'unknown';
 
 }
 

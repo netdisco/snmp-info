@@ -141,7 +141,7 @@ sub bp_index {
 }
 
 sub cisco_comm_indexing {
-    1;
+    return 1;
 }
 
 sub interfaces {

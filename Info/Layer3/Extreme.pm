@@ -223,7 +223,7 @@ sub fan {
         $s = ", ";
     }
     return if ($s eq "");
-    $ret;
+    return $ret;
 }
 
 # Newer versions of the Extreme firmware have vendor-specific tables
@@ -291,7 +291,7 @@ sub _if2tag {
             $if2tag{$if} = -$global_id->{$if} if ($if2tag{$if} == -1 && defined($global_id->{$if}));
         }
     }
-    \%if2tag;
+    return \%if2tag;
 }
 
 # No partial support in v_name or v_index, because the obivous partial

@@ -122,7 +122,7 @@ sub i_vlan {
 			}
 		}
 	}
-	\%i_vlan;
+	return \%i_vlan;
 }
 
 1;

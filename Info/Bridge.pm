@@ -139,7 +139,7 @@ sub qb_fw_mac {
         my($fdb_id, $mac) = _qb_fdbtable_index($idx);
         $qb_fw_mac->{$idx} = $mac;
     }
-    $qb_fw_mac;
+    return $qb_fw_mac;
 }
 
 sub qb_i_vlan_t {

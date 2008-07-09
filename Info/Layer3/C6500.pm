@@ -108,7 +108,7 @@ sub vendor {
     return 'cisco';
 }
 
-sub cisco_comm_indexing { 1; }
+sub cisco_comm_indexing { return 1; }
 
 #  Newer versions use the ETHERLIKE-MIB to report operational duplex.
 
@@ -188,7 +188,7 @@ sub set_i_duplex_admin {
        return $c6500->set_p_duplex($duplexes{$duplex}, $iid);
     }
     else {
-        $c6500->SUPER::set_i_duplex_admin;
+        return $c6500->SUPER::set_i_duplex_admin;
     }
 }
 

@@ -267,7 +267,8 @@ sub munge_cd11_txrate {
     my $txrates = shift;
     my @rates = unpack("C*", $txrates);
     map {$_ *= 0.5} @rates;
-    \@rates;
+
+    return \@rates;
 }
 
 # cd11 INDEX

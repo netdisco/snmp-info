@@ -71,8 +71,6 @@ $VERSION = '1.09';
 
 # Method OverRides
 
-sub bulkwalk_no { 1; }
-
 sub model {
     my $n1600 = shift;
     my $id = $n1600->id();

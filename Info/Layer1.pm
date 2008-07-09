@@ -110,6 +110,8 @@ sub vendor {
     return 'cisco' if ($descr =~ /(catalyst|cisco|ios)/i);
     return 'allied' if ($descr =~ /allied/i);
     return 'asante' if ($descr =~ /asante/i);
+    
+    return 'unknown';
 
 }
 

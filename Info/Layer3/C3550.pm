@@ -211,12 +211,12 @@ sub set_i_duplex_admin {
        return $c3550->set_p_duplex($duplexes{$duplex}, $iid);
     }
     else {
-        $c3550->SUPER::set_i_duplex_admin;
+        return $c3550->SUPER::set_i_duplex_admin;
     }
 }
 
 sub cisco_comm_indexing {
-    1;
+    return 1;
 }
 
 1;

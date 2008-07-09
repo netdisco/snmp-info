@@ -88,8 +88,8 @@ $VERSION = '1.09';
            %SNMP::Info::CDP::MUNGE,
          );
 
-sub bulkwalk_no         { 1; }
-sub cisco_comm_indexing { 1; }
+sub bulkwalk_no         { return 1; }
+sub cisco_comm_indexing { return 1; }
 
 sub vendor {
     return 'cisco';

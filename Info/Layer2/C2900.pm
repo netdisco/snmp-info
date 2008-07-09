@@ -93,7 +93,7 @@ sub vendor {
 }
 
 sub cisco_comm_indexing {
-    1;
+    return 1;
 }
 
 sub i_duplex {
