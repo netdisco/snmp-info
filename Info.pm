@@ -9,9 +9,8 @@
 # See COPYRIGHT at bottom
 
 package SNMP::Info;
-$VERSION = '1.09';
-use strict;
 
+use strict;
 use Exporter;
 use SNMP;
 use Carp;
@@ -22,6 +21,8 @@ use Math::BigInt;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP 
             $NOSUCH $BIGINT $REPEATERS/;
+
+$VERSION = '1.09';
 
 =head1 NAME
 
@@ -900,14 +901,14 @@ sub new {
     # No session object created
     unless (defined $sess){
         $new_obj->error_throw("SNMP::Info::new() Failed to Create Session. ");
-        return undef;
+        return;
     }
     
     # Session object created but SNMP connection failed.
     my $sess_err = $sess->{ErrorStr} || '';
     if ($sess_err){
         $new_obj->error_throw("SNMP::Info::new() Net-SNMP session creation failed. $sess_err");
-        return undef;
+        return;
     }
 
     # Table function store
@@ -959,14 +960,14 @@ sub update {
     my $sess = new SNMP::Session( 'UseEnums' => 1, %sess_args , 'RetryNoSuch' => $obj->{nosuch});
     unless (defined $sess){
         $obj->error_throw("SNMP::Info::update() Failed to Create new Session. ");
-        return undef;
+        return;
     }
 
     # Session object created but SNMP connection failed.
     my $sess_err = $sess->{ErrorStr} || '';
     if ($sess_err){
         $obj->error_throw("SNMP::Info::update() Net-SNMP session creation failed. $sess_err");
-        return undef;
+        return;
     }
     $obj->clear_cache();
     return $obj->session($sess);
@@ -1155,7 +1156,7 @@ sub device_type {
 
     my $layers = $info->layers();
     # if we dont have sysServices, we dont have anything else either probably.
-    return undef unless (defined $layers and length($layers));
+    return unless (defined $layers and length($layers));
 
     my $desc   = $info->description() || 'undef';
     $desc =~ s/[\r\n\l]+/ /g;
@@ -1338,7 +1339,7 @@ sub error {
 
 Returns non-zero if the device has the supplied layer in the OSI Model
 
-Returns C<undef> if the device doesn't support the layers() call.
+Returns if the device doesn't support the layers() call.
 
 =cut
 
@@ -1347,8 +1348,8 @@ sub has_layer {
     my $check_for = shift;
 
     my $layers = $self->layers();
-    return undef unless defined $layers;
-    return undef unless length($layers);
+    return unless defined $layers;
+    return unless length($layers);
     return substr($layers,8-$check_for, 1);
 }
 
@@ -1398,7 +1399,7 @@ sub specify {
     my $device_type = $self->device_type();
     unless (defined $device_type) {
         $self->error_throw("SNMP::Info::specify() - Could not get info from device");
-        return undef;
+        return;
     }
     return $self if $device_type eq 'SNMP::Info';
 
@@ -1955,7 +1956,7 @@ This section explains how to use SNMP::Info to do SNMP Set operations.
 
 Sets the global METHOD to value.  Assumes that iid is .0
 
-Returns undef if failed, or the return value from SNMP::Session::set() (snmp_errno)
+Returns if failed, or the return value from SNMP::Session::set() (snmp_errno)
 
  $info->set_location("Here!");
 
@@ -1963,7 +1964,7 @@ Returns undef if failed, or the return value from SNMP::Session::set() (snmp_err
 
 Table Methods. Set iid of method to value. 
 
-Returns undef if failed, or the return value from SNMP::Session::set() (snmp_errno)
+Returns if failed, or the return value from SNMP::Session::set() (snmp_errno)
 
  # Disable a port administratively
  my %if_map = reverse %{$info->interfaces()}
@@ -2456,11 +2457,11 @@ string.
 
 sub munge_mac {
     my $mac = shift;
-    return undef unless defined $mac;
-    return undef unless length $mac;
+    return unless defined $mac;
+    return unless length $mac;
     $mac = join(':',map { sprintf "%02x",$_ } unpack('C*',$mac));
     return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){5}[0-9A-F][0-9A-F]$/i;
-    return undef;
+    return;
 }
 
 =item munge_prio_mac()
@@ -2472,11 +2473,11 @@ hex string.
 
 sub munge_prio_mac {
     my $mac = shift;
-    return undef unless defined $mac;
-    return undef unless length $mac;
+    return unless defined $mac;
+    return unless length $mac;
     $mac = join(':',map { sprintf "%02x",$_ } unpack('C*',$mac));
     return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){7}[0-9A-F][0-9A-F]$/i;
-    return undef;
+    return;
 }
 
 =item munge_octet2hex()
@@ -2498,8 +2499,8 @@ Takes a binary char and returns its ASCII binary representation
 
 sub munge_dec2bin {
     my $num = shift;
-    return undef unless defined $num;
-    #return undef unless length($num);
+    return unless defined $num;
+    #return unless length($num);
     $num = unpack("B32",pack("N",$num));
 
     # return last 8 characters only
@@ -2515,7 +2516,7 @@ Takes a SNMP2 'BITS' field and returns the ASCII bit string
 
 sub munge_bits {
     my $bits = shift;
-    return undef unless defined $bits;
+    return unless defined $bits;
 
     return unpack("b*",$bits);
 }
@@ -2659,7 +2660,7 @@ sub error_throw {
     my $self = shift;
     my $error = shift;
 
-    return undef unless defined $error;
+    return unless defined $error;
     $self->{error} = $error;
 
     if ($self->debug()){
@@ -2763,7 +2764,7 @@ sub _global{
     my $self = shift;
     my $attr = shift;
     my $sess = $self->session();
-    return undef unless defined $sess;
+    return unless defined $sess;
 
     my $globals = $self->globals(); 
 
@@ -2781,7 +2782,7 @@ sub _global{
             $oid = &SNMP::translateObj($oid);
             unless (defined $oid) {
                 $self->error_throw("SNMP::Info::_load_attr: Can't translate $globals->{$attr}.  Missing MIB?\n");
-                return undef;
+                return;
             }
         }
     }
@@ -2802,17 +2803,17 @@ sub _global{
  
     if ($sess->{ErrorStr} ){
         $self->error_throw("SNMP::Info::_global($attr) $sess->{ErrorStr}");
-        return undef;
+        return;
     }
  
     if (defined $val and $val eq 'NOSUCHOBJECT'){
         $self->error_throw("SNMP::Info::_global($attr) NOSUCHOBJECT");
-        return undef;
+        return;
     }
 
     if (defined $val and $val eq 'NOSUCHINSTANCE'){
         $self->error_throw("SNMP::Info::_global($attr) NOSUCHINSTANCE");
-        return undef;
+        return;
     }
     # Get the callback hash for data munging
     my $munge = $self->munge();
@@ -2860,7 +2861,7 @@ sub _set {
     }
 
     my $sess = $self->session();
-    return undef unless defined $sess;
+    return unless defined $sess;
 
     my $funcs = $self->funcs();
     my $globals = $self->globals();
@@ -2879,7 +2880,7 @@ sub _set {
         if ($self->can($list_attr)){
             $self->error_throw("SNMP::Info::_set($list_attr,$list_val) - Failed. $list_attr is generated in a sub(). set_$list_attr sub required.");
             # if sub set_attr() existed, we wouldn't have gotten this far.
-            return undef;
+            return;
         }
 
         # Lookup oid
@@ -2890,7 +2891,7 @@ sub _set {
 
         unless (defined $oid) { 
             $self->error_throw("SNMP::Info::_set($list_attr,$list_val) - Failed to find $list_attr in \%GLOBALS or \%FUNCS or loaded MIB.");
-            return undef;
+            return;
         }
 
         # Check for fully qualified attr
@@ -2909,7 +2910,7 @@ sub _set {
 
     if ($sess->{ErrorStr}){
         $self->error_throw("SNMP::Info::_set $sess->{ErrorStr}");
-        return undef;
+        return;
     }
 
     return $rv;
@@ -2969,7 +2970,7 @@ Note return value has changed since version 0.3
 sub load_all {
     my $self = shift;
     my $sess = $self->session();
-    return undef unless defined $sess;
+    return unless defined $sess;
 
     my $funcs = $self->funcs();
     
@@ -2996,7 +2997,7 @@ Note return value has changed since version 0.3
 sub all {
     my $self = shift;
     my $sess = $self->session();
-    return undef unless defined $sess;
+    return unless defined $sess;
 
     $self->load_all() unless defined $self->{_all};
 
@@ -3024,7 +3025,7 @@ sub _load_attr {
     my $sess   = $self->session();
     my $store  = $self->store();
     my $munge  = $self->munge();
-    return undef unless defined $sess;
+    return unless defined $sess;
 
     my $varleaf = $leaf;
     # Check for fully qualified attr
@@ -3043,7 +3044,7 @@ sub _load_attr {
             my $oid = &SNMP::translateObj($leaf);
             unless (defined $oid) {
                 $self->error_throw("SNMP::Info::_load_attr: Can't translate $leaf.$partial.  Missing MIB?\n");
-                return undef;
+                return;
             }
             $varleaf = "$oid.$partial";
         } else {
@@ -3072,7 +3073,7 @@ sub _load_attr {
 #        $errornum = 0; 
 #    } elsif ($errornum){
 #        $self->error_throw("SNMP::Info::_load_attr: Varbind $varleaf ".$sess->{ErrorStr}."\n");
-#        return undef;
+#        return;
 #    }
 
     my $localstore = undef;
@@ -3110,7 +3111,7 @@ sub _load_attr {
         ($vars) = $sess->bulkwalk(0, $repeaters, $var);
         if($sess->{ErrorNum}) {
             $self->error_throw("SNMP::Info::_load_atrr: BULKWALK ".$sess->{ErrorStr},"\n");
-            return undef;
+            return;
         }
     }
 
@@ -3226,20 +3227,20 @@ sub snmp_connect_ip {
     my $ver = $self->snmp_ver();
     my $comm = $self->snmp_comm();
     
-    return undef if ($ip eq '0.0.0.0') or ($ip =~ /^127\./);
+    return if ($ip eq '0.0.0.0') or ($ip =~ /^127\./);
     
     # Create session object
     my $snmp_test = new SNMP::Session( 'DestHost' => $ip, 'Community' => $comm, 'Version' => $ver);
 
     # No session object created
     unless (defined $snmp_test){
-        return undef;
+        return;
     }
     
     # Session object created but SNMP connection failed.
     my $sess_err = $snmp_test->{ErrorStr} || '';
     if ($sess_err){
-        return undef;
+        return;
     }
     
     # Try to get some data from IP
@@ -3247,7 +3248,7 @@ sub snmp_connect_ip {
     
     $sess_err = $snmp_test->{ErrorStr} || '';
     if ($sess_err){
-        return undef;
+        return;
     }    
 
     return 1;
