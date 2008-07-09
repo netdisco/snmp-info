@@ -2,6 +2,7 @@
 # $Id$
 #
 # Copyright (c) 2008 Max Baker
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,21 +29,21 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Foundry;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::FDP;
 use SNMP::Info::EtherLike;
 use SNMP::Info::MAU;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
-
 @SNMP::Info::Layer2::Foundry::ISA = qw/SNMP::Info::Layer2 SNMP::Info::FDP SNMP::Info::EtherLike
                                        SNMP::Info::MAU    Exporter/;
 @SNMP::Info::Layer2::Foundry::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS =    ( %SNMP::Info::Layer2::MIBS,
              %SNMP::Info::FDP::MIBS,
@@ -150,7 +151,7 @@ sub serial {
         my $name = $e_name->{$e} || '';
         $unit_iid = $e if $name eq 'unit.1';
     }
-    return undef unless defined $unit_iid;
+    return unless defined $unit_iid;
 
     # Look up serial of found entry.
     my $e_serial = $foundry->e_serial();

@@ -31,16 +31,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Aironet;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer3;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::Layer3::Aironet::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Aironet::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS =    (
             %SNMP::Info::Layer3::MIBS,
@@ -97,7 +98,7 @@ sub os_ver {
         return $1;
     }
 
-    return undef;
+    return;
 }
 
 # Override wireless port with static info

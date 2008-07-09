@@ -29,17 +29,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::SONMP;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
 @SNMP::Info::SONMP::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::SONMP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             'SYNOPTICS-ROOT-MIB' => 'synoptics',
@@ -208,7 +208,7 @@ sub mac {
         return $mac;
     }
     # Topology turned off, not supported.
-    return undef;
+    return;
 }
 
 1;

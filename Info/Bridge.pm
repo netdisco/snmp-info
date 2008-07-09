@@ -32,16 +32,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Bridge;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::Bridge::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::Bridge::EXPORT_OK = qw//;
+
+use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
+
+$VERSION = '1.09';
 
 %MIBS    = ('BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',
             'Q-BRIDGE-MIB' => 'dot1qPvid',
@@ -355,7 +356,7 @@ sub set_remove_i_vlan_tagged {
 sub _check_forbidden_ports {
     my $bridge = shift;
     my ($vlan_id, $index) = @_;
-    return undef unless ($vlan_id =~ /\d+/ and $index =~ /\d+/);
+    return unless ($vlan_id =~ /\d+/ and $index =~ /\d+/);
 
     my $iv_forbidden = $bridge->qb_v_fbdn_egress($vlan_id);
 
@@ -363,7 +364,7 @@ sub _check_forbidden_ports {
     print "Forbidden ports: @$forbidden_ports\n" if $bridge->debug();
     if ( defined(@$forbidden_ports[$index-1]) and (@$forbidden_ports[$index-1] eq "1")) {
         print "Error: Index: $index in forbidden list for VLAN: $vlan_id unable to add.\n" if $bridge->debug();
-        return undef;
+        return;
     }
     return 1;
 }
@@ -376,7 +377,7 @@ sub _validate_vlan_param {
     unless ( defined $vlan_id and defined $ifindex and
             $vlan_id =~ /^\d+$/ and $ifindex =~ /^\d+$/ ) {
         $bridge->error_throw("Invalid parameter.");
-        return undef;
+        return;
     }
     
     # Check that ifIndex exists on device
@@ -384,7 +385,7 @@ sub _validate_vlan_param {
 
     unless ( exists $index->{$ifindex} ) {
         $bridge->error_throw("ifIndex $ifindex does not exist.");
-        return undef;
+        return;
     }
 
     #Check that VLAN exists on device
@@ -403,7 +404,7 @@ sub _validate_vlan_param {
     }
     unless ( $vlan_exists ) {
         $bridge->error_throw("VLAN $vlan_id does not exist or is not operational.");
-        return undef;
+        return;
     }
 
     return 1;

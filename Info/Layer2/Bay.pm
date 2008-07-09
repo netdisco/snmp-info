@@ -32,17 +32,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Bay;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer2::Bay::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Bay::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 # Set for No CDP
 %GLOBALS = ( %SNMP::Info::Layer2::GLOBALS,
@@ -84,7 +84,7 @@ sub os {
 sub os_ver {
     my $bay = shift;
     my $descr = $bay->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     # 303 / 304
     if ($descr =~ m/Rev: \d+\.\d+\.\d+\.\d+-(\d+\.\d+\.\d+\.\d+)/){
@@ -95,13 +95,13 @@ sub os_ver {
     if ($descr =~ m/SW:v(\d+\.\d+\.\d+\.\d+)/){
         return $1;
     }
-    return undef;
+    return;
 }
 
 sub os_bin {
     my $bay = shift;
     my $descr = $bay->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     # 303 / 304
     if ($descr =~ m/Rev: \d+\.(\d+\.\d+\.\d+)-\d+\.\d+\.\d+\.\d+/){
@@ -112,7 +112,7 @@ sub os_bin {
     if ($descr =~ m/FW:v(\d+\.\d+\.\d+\.\d+)/){
         return $1;
     }
-    return undef;
+    return;
 }
 
 sub vendor {
@@ -158,7 +158,7 @@ sub i_mac {
 sub model {
     my $bay = shift;
     my $id = $bay->id();
-    return undef unless defined $id;
+    return unless defined $id;
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
     $model =~ s/^sreg-//i;

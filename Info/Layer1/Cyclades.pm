@@ -2,6 +2,7 @@
 # $Id$
 #
 # Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,9 +29,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Cyclades;
-$VERSION = '1.09';
-use strict;
 
+use strict;
 use Exporter;
 use SNMP::Info::Layer1;
 
@@ -38,6 +38,8 @@ use SNMP::Info::Layer1;
 @SNMP::Info::Layer1::Cyclades::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             %SNMP::Info::Layer1::MIBS,
@@ -91,7 +93,7 @@ sub model {
 
     my $model = $cyclades->cy_model();
 
-    return undef unless defined $model;
+    return unless defined $model;
 
     return lc($model);
 }

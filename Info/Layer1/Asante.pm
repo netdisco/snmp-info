@@ -31,17 +31,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Asante;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer1;
 
 @SNMP::Info::Layer1::Asante::ISA = qw/SNMP::Info::Layer1 Exporter/;
 @SNMP::Info::Layer1::Asante::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 # Set for No CDP
 %GLOBALS = (
@@ -148,7 +148,7 @@ sub i_mac {
 }
 
 sub i_description {
-    return undef;
+    return;
 }
 
 sub i_name {

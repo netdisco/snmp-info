@@ -28,9 +28,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Airespace;
-$VERSION = '1.09';
-use strict;
 
+use strict;
 use Exporter;
 use SNMP::Info::Bridge;
 use SNMP::Info::CDP;
@@ -40,6 +39,8 @@ use SNMP::Info::Airespace;
 @SNMP::Info::Layer2::Airespace::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             %SNMP::Info::MIBS,
@@ -80,7 +81,7 @@ sub vendor {
 sub model {
     my $airespace = shift;
     my $model = $airespace->airespace_model();
-    return undef unless defined $model;
+    return unless defined $model;
 
     return $model;
 }

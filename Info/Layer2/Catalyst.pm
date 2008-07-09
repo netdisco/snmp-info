@@ -30,10 +30,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Catalyst;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::CiscoStack;
 use SNMP::Info::CiscoVTP;
@@ -42,12 +40,15 @@ use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoPortSecurity;
 use SNMP::Info::Layer2;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
 @SNMP::Info::Layer2::Catalyst::ISA = qw/SNMP::Info::CiscoStack SNMP::Info::CiscoVTP 
                                         SNMP::Info::CDP SNMP::Info::CiscoStats
                                         SNMP::Info::CiscoPortSecurity
                                         SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Catalyst::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/ ;
+
+$VERSION = '1.09';
 
 %MIBS =    (
             %SNMP::Info::Layer2::MIBS,
@@ -115,11 +116,11 @@ sub os_ver {
     return $os_ver if defined $os_ver;
 
     my $m_swver = $cat->m_swver();
-    return undef unless defined $m_swver;
+    return unless defined $m_swver;
 
     # assume .1 entry is the chassis and the sw version we want.
     return $m_swver->{1} if defined $m_swver->{1};
-    return undef;
+    return;
 }
 
 # Workaround for incomplete bp_index

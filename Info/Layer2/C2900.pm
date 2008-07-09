@@ -31,10 +31,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::C2900;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
@@ -47,7 +45,9 @@ use SNMP::Info::Layer2;
                                     SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::C2900::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS,
@@ -157,7 +157,7 @@ sub set_i_speed_admin {
 
     $speed = lc($speed);
 
-    return undef unless defined $speeds{$speed};
+    return unless defined $speeds{$speed};
 
     # account for weirdness of c2900 mib
     $iid = $reverse_2900{$iid};
@@ -177,7 +177,7 @@ sub set_i_duplex_admin {
 
     $duplex = lc($duplex);
 
-    return undef unless defined $duplexes{$duplex};
+    return unless defined $duplexes{$duplex};
 
     # account for weirdness of c2900 mib
     $iid = $reverse_2900{$iid};

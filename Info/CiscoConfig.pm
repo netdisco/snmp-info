@@ -1,6 +1,9 @@
 # SNMP::Info::CiscoConfig
 # $Id$
 #
+# Copyright (c) 2008 Eric Miller
+# All rights reserved.
+#
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
 # 
@@ -26,10 +29,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoConfig;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
@@ -37,6 +38,8 @@ use SNMP::Info;
 @SNMP::Info::CiscoConfig::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = (
          'CISCO-CONFIG-COPY-MIB' => 'ccCopyTable',
@@ -95,35 +98,35 @@ sub copy_run_tftp {
             unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
                 $ciscoconfig->error_throw("Setting source type failed and failed to delete row $rand");
             }
-            return undef;
+            return;
         }
         unless ( $ciscoconfig->set_config_dest_type( 1, $rand ) ) {
             $ciscoconfig->error_throw("Setting destination type failed");
             unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
                 $ciscoconfig->error_throw("Setting dest type failed and failed to delete row $rand");
             }
-            return undef;
+            return;
         }
         unless ( $ciscoconfig->set_config_server_addr( $tftphost, $rand ) ) {
             $ciscoconfig->error_throw("Setting tftp server failed");
             unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
                 $ciscoconfig->error_throw("Setting tftp server failed and failed to delete row $rand");
             }
-            return undef;
+            return;
         }
         unless ( $ciscoconfig->set_config_filename( $tftpfile, $rand ) ) {
             $ciscoconfig->error_throw("Setting file name failed");
             unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
                 $ciscoconfig->error_throw("Setting file name failed and failed to delete row $rand");
             }
-            return undef;
+            return;
         }
         unless ( $ciscoconfig->set_config_row_status( 1, $rand ) ) {
             $ciscoconfig->error_throw("Initiating transfer failed");
             unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
                 $ciscoconfig->error_throw("Initiating transfer failed and failed to delete row $rand");
             }
-            return undef;
+            return;
         }            
         my $status = 0;
         my $timer  = 0;
@@ -152,7 +155,7 @@ sub copy_run_tftp {
         }        
         if ( $status eq 'failed' ) {
             $ciscoconfig->error_throw("Save operation failed");
-            return undef;
+            return;
         }
 
     }
@@ -160,7 +163,7 @@ sub copy_run_tftp {
     print "Using old method\n" if $ciscoconfig->debug();
     unless ( $ciscoconfig->set_old_write_net( $tftpfile, $tftphost ) ) {
             $ciscoconfig->error_throw("Save operation failed");
-            return undef;
+            return;
     }
 
     return 1;
@@ -182,14 +185,14 @@ sub copy_run_start {
             unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
                 $ciscoconfig->error_throw("Setting dest type failed and failed to delete row $rand");
             }
-            return undef;
+            return;
         }
         unless ( $ciscoconfig->set_config_row_status( 1, $rand ) ) {
             $ciscoconfig->error_throw("Initiating save failed");
             unless ( $ciscoconfig->set_config_row_status( 6, $rand ) ) {
                 $ciscoconfig->error_throw("Initiating save failed and failed to delete row $rand");
                 }
-            return undef;
+            return;
         }
         my $status = 0;
         my $timer  = 0;
@@ -218,7 +221,7 @@ sub copy_run_start {
         }        
         if ( $status eq 'failed' ) {
             $ciscoconfig->error_throw("Save operation failed");
-            return undef;
+            return;
         }
 
     }
@@ -226,7 +229,7 @@ sub copy_run_start {
     print "Using old method\n" if $ciscoconfig->debug();
     unless ( $ciscoconfig->set_old_write_mem( 1 ) ) {
             $ciscoconfig->error_throw("Save operation failed");
-            return undef;
+            return;
     }
 
     return 1;

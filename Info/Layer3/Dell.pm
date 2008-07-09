@@ -31,16 +31,15 @@
 package SNMP::Info::Layer3::Dell;
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer3;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
-
-$VERSION = '1.09';
-
 @SNMP::Info::Layer3::Dell::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Dell::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS,
           'RADLAN-Physicaldescription-MIB'   => 'rlPhdStackReorder',
@@ -210,9 +209,9 @@ sub _vendor {
 
     my $id     = $dell->id() || 'undef';
     my %oidmap = (
-                  2   => 'ibm',
-                  171 => 'dlink',
-                  674 => 'dell',
+                  2    => 'ibm',
+                  171  => 'dlink',
+                  674  => 'dell',
                   3955 => 'linksys',
                 );
     $id = $1 if (defined($id) && $id =~ /^\.1\.3\.6\.1\.4\.1\.(\d+)/);

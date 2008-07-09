@@ -29,21 +29,21 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::BayRS;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Layer3;
 use SNMP::Info::Bridge;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE %MODEL_MAP
-            %MODID_MAP %PROCID_MAP/;
-
 @SNMP::Info::Layer3::BayRS::ISA = qw/SNMP::Info SNMP::Info::Layer3
                                      SNMP::Info::Bridge Exporter/;
 @SNMP::Info::Layer3::BayRS::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE %MODEL_MAP
+            %MODID_MAP %PROCID_MAP/;
+
+$VERSION = '1.09';
 
 %MIBS = (
           %SNMP::Info::MIBS,
@@ -548,12 +548,12 @@ sub os {
 sub os_ver {
     my $bayrs = shift;
     my $descr = $bayrs->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     if ($descr =~ m/^\s*Image:\s+re[lv]\/((\d+\.){1,3}\d+)/){
         return $1;
     }
-    return undef;
+    return;
 }
 
 sub serial {
@@ -562,7 +562,7 @@ sub serial {
     $serialnum = hex(join('','0x',map{sprintf "%02X", $_}unpack("C*",$serialnum)));
     
     return $serialnum if defined $serialnum ;
-    return undef;
+    return;
 }
 
 sub interfaces {
@@ -740,7 +740,7 @@ sub root_ip {
         return $ospf_ip;
     }
 
-    return undef;
+    return;
 }
 
 # Pseudo ENTITY-MIB methods
@@ -1287,7 +1287,7 @@ sub munge_hw_rev {
     
     my $rev = "$major.$minor";
     return $rev if defined($rev);
-    return undef;
+    return;
 }
 
 sub munge_wf_serial {
@@ -1296,7 +1296,7 @@ sub munge_wf_serial {
     my $serial = hex(join('','0x',map{sprintf "%02X", $_}unpack("C*",$wf_serial)));
 
     return $serial if defined($serial);
-    return undef;
+    return;
 }
 
 1;

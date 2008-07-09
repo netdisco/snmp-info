@@ -31,10 +31,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
@@ -42,12 +40,14 @@ use SNMP::Info::EtherLike;
 use SNMP::Info::Entity;
 use SNMP::Info::PowerEthernet;
 
-use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
-
 @SNMP::Info::Layer3::ISA = qw/SNMP::Info::PowerEthernet
                               SNMP::Info::Entity SNMP::Info::EtherLike 
                               SNMP::Info::Bridge SNMP::Info Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = ( %SNMP::Info::MIBS,
           %SNMP::Info::Bridge::MIBS,
@@ -146,7 +146,7 @@ sub root_ip {
     }
 
     return $router_ip if ( (defined $router_ip) and ($router_ip ne '0.0.0.0') and ($l3->snmp_connect_ip($router_ip)) );
-    return undef;
+    return;
 }
 
 sub i_ignore {
@@ -181,7 +181,7 @@ sub serial {
     return $1 if (defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i);
     return $serial1 if (defined $serial1 and $serial1 !~ /^\s*$/);
 
-    return undef;
+    return;
 }
 
 # $l3->model() - the sysObjectID returns an IID to an entry in 
@@ -192,7 +192,7 @@ sub model {
     
     unless (defined $id){
         print " SNMP::Info::Layer3::model() - Device does not support sysObjectID\n" if $l3->debug(); 
-        return undef;
+        return;
     }
     
     my $model = &SNMP::translateObj($id);

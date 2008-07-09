@@ -29,20 +29,20 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Passport;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::SONMP;
 use SNMP::Info::RapidCity;
 use SNMP::Info::Layer3;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
-
 @SNMP::Info::Layer3::Passport::ISA = qw/SNMP::Info::SONMP SNMP::Info::RapidCity
                                         SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Passport::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = (
          %SNMP::Info::Layer3::MIBS,
@@ -74,7 +74,7 @@ sub model {
     
     unless (defined $id){
         print " SNMP::Info::Layer3::Passport::model() - Device does not support sysObjectID\n" if $passport->debug(); 
-        return undef;
+        return;
     }
     
     my $model = &SNMP::translateObj($id);
@@ -96,7 +96,7 @@ sub os {
 sub os_ver {
     my $passport = shift;
     my $descr = $passport->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     #ERS / Passport
     if ($descr =~ m/(\d+\.\d+\.\d+\.\d+)/){
@@ -106,7 +106,7 @@ sub os_ver {
     if ($descr =~ m/(\d+\.\d+\.\d+)/){
         return $1;
     }
-    return undef;
+    return;
 }
 
 sub i_index {
@@ -512,7 +512,7 @@ sub root_ip {
         my $ip = $sonmp_topo_ip->{$entry};
         return $ip if ( (defined $ip) and ($ip ne '0.0.0.0') and ($passport->snmp_connect_ip($ip)) );
     }
-    return undef;
+    return;
 }
 
 # Required for SNMP::Info::SONMP

@@ -31,7 +31,6 @@
 package SNMP::Info::Layer3::C6500;
 
 use strict;
-
 use Exporter;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CiscoStack;
@@ -43,8 +42,6 @@ use SNMP::Info::CiscoConfig;
 use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.09';
 @SNMP::Info::Layer3::C6500::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CiscoStack 
                                     SNMP::Info::CDP SNMP::Info::CiscoStats 
                                     SNMP::Info::CiscoImage 
@@ -54,6 +51,10 @@ $VERSION = '1.09';
                                     SNMP::Info::Layer3
                                     Exporter/;
 @SNMP::Info::Layer3::C6500::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/ ;
+
+$VERSION = '1.09';
 
 %MIBS =    (
             %SNMP::Info::Layer3::MIBS,

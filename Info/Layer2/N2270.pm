@@ -2,6 +2,7 @@
 # $Id$
 #
 # Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,9 +29,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::N2270;
-$VERSION = '1.09';
-use strict;
 
+use strict;
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
@@ -41,6 +41,8 @@ use SNMP::Info::Airespace;
 @SNMP::Info::Layer2::N2270::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             %SNMP::Info::MIBS,
@@ -81,7 +83,7 @@ sub vendor {
 sub model {
     my $n2270 = shift;
     my $id = $n2270->id();
-    return undef unless defined $id;
+    return unless defined $id;
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
     $model =~ s/^sreg-WLANSecuritySwitch//i;

@@ -30,13 +30,16 @@
 
 package SNMP::Info::Layer3::NetSNMP;
 
+use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.09';
 @SNMP::Info::Layer3::NetSNMP::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::NetSNMP::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/ ;
+
+$VERSION = '1.09';
 
 %MIBS = (
             %SNMP::Info::Layer3::MIBS,  
@@ -68,7 +71,7 @@ sub os {
     my $descr = $netsnmp->description();
 
     return $1 if ($descr =~ /^(\S+)\s+/);
-    return undef;
+    return;
 }
 
 sub os_ver {

@@ -2,6 +2,7 @@
 # $Id$
 #
 # Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,9 +29,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::NAP222x;
-$VERSION = '1.09';
-use strict;
 
+use strict;
 use Exporter;
 use SNMP::Info::SONMP;
 use SNMP::Info::IEEE802dot11;
@@ -40,6 +40,8 @@ use SNMP::Info::Layer2;
 @SNMP::Info::Layer2::NAP222x::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             %SNMP::Info::Layer2::MIBS,
@@ -95,22 +97,22 @@ sub os {
 sub os_bin {
     my $nap222x = shift;
     my $bin = $nap222x->nt_fw_ver();
-    return undef unless defined $bin;
+    return unless defined $bin;
 
     if ($bin =~ m/(\d+\.\d+\.\d+)/){
         return $1;
         }
-    return undef;
+    return;
 }
 
 sub model {
     my $nap222x = shift;
     my $descr = $nap222x->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     return 'AP-2220' if ($descr =~ /2220/);
     return 'AP-2221' if ($descr =~ /2221/);
-    return undef;
+    return;
 }
 
 sub mac {
@@ -123,7 +125,7 @@ sub mac {
         next unless $sn;
         return $sn;
     }
-    return undef;
+    return;
 }
 
 sub serial {
@@ -136,7 +138,7 @@ sub serial {
         next unless $sn;
         return $sn;
     }
-    return undef;
+    return;
 }
 
 sub interfaces {

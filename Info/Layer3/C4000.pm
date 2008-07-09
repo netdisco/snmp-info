@@ -31,9 +31,7 @@
 package SNMP::Info::Layer3::C4000;
 
 use strict;
-
 use Exporter;
-
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
@@ -43,14 +41,16 @@ use SNMP::Info::CiscoConfig;
 use SNMP::Info::MAU;
 use SNMP::Info::Layer3;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.09';
 @SNMP::Info::Layer3::C4000::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
                                     SNMP::Info::CiscoStats SNMP::Info::CiscoImage
                                     SNMP::Info::CiscoPortSecurity
                                     SNMP::Info::CiscoConfig SNMP::Info::MAU 
                                     SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::C4000::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/ ;
+
+$VERSION = '1.09';
 
 %MIBS =    ( 
             %SNMP::Info::Layer3::MIBS,
@@ -118,7 +118,7 @@ sub fan {
 	$ret .= $s . $fan_descr->{$i} . ": " . $fan_state->{$i};
 	$s = ", ";
     }
-    return undef if ($s eq "");
+    return if ($s eq "");
     $ret;
 }
 

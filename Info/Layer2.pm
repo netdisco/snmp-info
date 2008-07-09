@@ -31,20 +31,20 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
 use SNMP::Info::Entity;
 use SNMP::Info::PowerEthernet;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE $INIT/;
-
 @SNMP::Info::Layer2::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet Exporter/;
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = (   %SNMP::Info::MIBS, 
             %SNMP::Info::Bridge::MIBS,
@@ -126,7 +126,7 @@ sub serial {
     return $1 if (defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i);
     return $serial1 if (defined $serial1 and $serial1 !~ /^\s*$/);
 
-    return undef;
+    return;
 }
 
 sub i_ignore {

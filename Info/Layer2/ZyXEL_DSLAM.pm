@@ -29,17 +29,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::ZyXEL_DSLAM;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer2::ZyXEL_DSLAM::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::ZyXEL_DSLAM::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 # Set for No CDP
 %GLOBALS = (
@@ -85,7 +85,7 @@ sub os_ver {
     if ($descr =~ m/version (\S+) /){
         return $1;
     }
-    return undef;
+    return;
 }
 
 sub model {
@@ -98,7 +98,7 @@ sub model {
     } elsif ($desc =~ /8-port ADSL Module\(Annex B\)/){
         return "AAM1008-63";
     }
-    return undef;
+    return;
 }
 
 sub ip{

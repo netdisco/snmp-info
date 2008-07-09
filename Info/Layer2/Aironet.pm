@@ -31,10 +31,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Aironet;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::Entity;
@@ -47,7 +45,9 @@ use SNMP::Info::IEEE802dot11;
                                        SNMP::Info::CiscoStats SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::Aironet::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %GLOBALS = (
 	    %SNMP::Info::IEEE802dot11::GLOBALS,

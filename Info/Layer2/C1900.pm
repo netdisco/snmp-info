@@ -31,10 +31,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::C1900;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
@@ -46,7 +44,9 @@ use SNMP::Info::Layer2;
                                     Exporter/;
 @SNMP::Info::Layer2::C1900::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %GLOBALS = (
              %SNMP::Info::Layer2::GLOBALS,
@@ -107,12 +107,12 @@ sub os_ver {
     return $os_ver if defined $os_ver;
 
     my $c1900_flash_status = $c1900->c1900_flash_status();
-    return undef unless defined $c1900_flash_status;
+    return unless defined $c1900_flash_status;
 
     if ( $c1900_flash_status =~ m/V(\d+\.\d+(\.\d+)?)/ ) {
         return $1;
     }
-    return undef;
+    return;
 }
 
 sub interfaces {
@@ -207,7 +207,7 @@ sub i_vlan {
                   $c1900->vlanAllowMembershipOverlap() || 'disabled';
     
     if ($overlap eq 'enabled') {
-        return undef;
+        return;
     }
 
     my $member_of = $c1900->bridgeGroupMemberPortOfBridgeGroup() ||

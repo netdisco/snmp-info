@@ -31,16 +31,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::EtherLike;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::EtherLike::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::EtherLike::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = (
          'ETHERLIKE-MIB' => 'etherMIB'

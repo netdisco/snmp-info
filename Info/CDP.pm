@@ -32,10 +32,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CDP;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
@@ -43,6 +41,8 @@ use SNMP::Info;
 @SNMP::Info::CDP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
+
+$VERSION = '1.09';
 
 # Five data structures required by SNMP::Info
 %MIBS    = ( 'CISCO-CDP-MIB' => 'cdpGlobalRun' );
@@ -93,7 +93,7 @@ sub munge_null {
 
 sub munge_caps {
     my $caps = shift;
-    return undef unless defined $caps;
+    return unless defined $caps;
 
     my $bits = substr(unpack("B*",$caps),-7);
     return $bits;
@@ -117,7 +117,7 @@ sub hasCDP {
         my $c_ip = $cdp->c_ip();
         # See if anything in cdp cache, if so we have cdp
         return 1 if (defined $c_ip and scalar(keys %$c_ip)) ;
-        return undef;
+        return;
     }
     
     return $cdp->cdp_run();
@@ -134,7 +134,7 @@ sub c_if {
     my $c_ip = $cdp->c_ip();
     unless (defined $c_ip){
         $cdp->error_throw("SNMP::Info::CDP:c_if() - Device doesn't have cdp_ip() data.  Can't fake cdp_index()");
-        return undef;
+        return;
     }
 
     my %c_if;

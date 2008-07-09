@@ -2,6 +2,7 @@
 # $Id$
 #
 # Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,9 +29,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Airespace;
-$VERSION = '1.09';
-use strict;
 
+use strict;
 use Exporter;
 use SNMP::Info;
 
@@ -38,6 +38,8 @@ use SNMP::Info;
 @SNMP::Info::Airespace::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             %SNMP::Info::MIBS,
@@ -151,7 +153,7 @@ sub layers {
 sub serial {
     my $airespace = shift;
     my $sn = $airespace->airespace_serial();
-    return undef unless defined $sn;
+    return unless defined $sn;
 
     return $sn;
 }

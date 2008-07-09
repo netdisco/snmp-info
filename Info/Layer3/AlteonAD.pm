@@ -29,17 +29,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::AlteonAD;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer3;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE /;
-
 @SNMP::Info::Layer3::AlteonAD::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::AlteonAD::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = (
           %SNMP::Info::Layer3::MIBS,
@@ -115,7 +115,7 @@ sub model {
     
     unless (defined $id){
         print " SNMP::Info::Layer3::AlteonAD::model() - Device does not support sysObjectID\n" if $alteon->debug(); 
-        return undef;
+        return;
     }
     
     my $model = &SNMP::translateObj($id);
@@ -140,7 +140,7 @@ sub os {
 sub os_ver {
     my $alteon = shift;
     my $version = $alteon->new_sw_ver() || $alteon->old_sw_ver();
-    return undef unless defined $version;
+    return unless defined $version;
 
     return $version;
 }

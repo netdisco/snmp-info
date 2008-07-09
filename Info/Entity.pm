@@ -31,16 +31,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Entity;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::Entity::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::Entity::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = ('ENTITY-MIB' => 'entPhysicalSerialNum');
 
@@ -80,7 +81,7 @@ sub e_index {
     # Force use of MIB leaf to avoid inheritance issues in psuedo classes
     my $e_descr  = $entity->entPhysicalDescr($partial);
 
-    return undef unless ($e_descr);
+    return unless ($e_descr);
     
     my %e_index;
 

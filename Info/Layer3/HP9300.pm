@@ -31,19 +31,18 @@
 package SNMP::Info::Layer3::HP9300;
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::FDP;
 use SNMP::Info::LLDP;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
-
-$VERSION = '1.09';
-
 @SNMP::Info::Layer3::HP9300::ISA = qw/SNMP::Info::FDP SNMP::Info::LLDP
                                        SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::HP9300::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS,
           %SNMP::Info::LLDP::MIBS,

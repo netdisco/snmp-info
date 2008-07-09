@@ -1,7 +1,7 @@
 # SNMP::Info::Layer2::Allied
 # $Id$
 #
-# Copyright (c) 2004 Max Baker
+# Copyright (c) 2008 Max Baker
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -29,10 +29,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Allied;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::Layer1;
@@ -40,7 +38,9 @@ use SNMP::Info::Layer1;
 @SNMP::Info::Layer2::Allied::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Allied::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %GLOBALS = (
             %SNMP::Info::Layer2::GLOBALS
@@ -87,7 +87,7 @@ sub model {
     if ($desc =~ /(AT-80\d{2}\S*)/){
         return $1;
     }
-    return undef;
+    return;
 }
 
 sub root_ip {

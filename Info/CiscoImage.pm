@@ -1,7 +1,8 @@
 package SNMP::Info::CiscoImage;
-#$Id$
-
+# $Id$
+#
 # Copyright (c) 2005 Matt Tuttle
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,15 +29,15 @@ package SNMP::Info::CiscoImage;
 # POSSIBILITY OF SUCH DAMAGE.
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
-$VERSION = '1.09';
-
 @SNMP::Info::CiscoImage::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoImage::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             'CISCO-IMAGE-MIB' => 'ciscoImageString',

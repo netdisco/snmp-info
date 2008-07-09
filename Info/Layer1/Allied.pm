@@ -31,17 +31,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::Allied;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer1;
 
 @SNMP::Info::Layer1::Allied::ISA = qw/SNMP::Info::Layer1 Exporter/;
 @SNMP::Info::Layer1::Allied::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 # Set for No CDP
 %GLOBALS = (
@@ -87,7 +87,7 @@ sub model {
     if ($desc =~ /(AT-\d{4}\S{1}?)/){
         return $1;
     }
-    return undef;
+    return;
 }
 
 sub i_name{

@@ -2,6 +2,7 @@
 # $Id$
 #
 # Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,10 +29,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Centillion;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
@@ -41,7 +40,9 @@ use SNMP::Info::SONMP;
 @SNMP::Info::Layer2::Centillion::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::NortelStack SNMP::Info::SONMP Exporter/;
 @SNMP::Info::Layer2::Centillion::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             %SNMP::Info::MIBS,
@@ -201,7 +202,7 @@ sub i_vlan {
 sub model {
     my $centillion = shift;
     my $id = $centillion->id();
-    return undef unless defined $id;
+    return unless defined $id;
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
     $model =~ s/^sreg-//i;

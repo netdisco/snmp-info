@@ -2,6 +2,7 @@
 # $Id$
 #
 # Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,15 +29,16 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::IEEE802dot11;
-$VERSION = '1.09';
-use strict;
 
+use strict;
 use Exporter;
 
 @SNMP::Info::IEEE802dot11::ISA = qw/Exporter/;
 @SNMP::Info::IEEE802dot11::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             'IEEE802dot11-MIB'     => 'dot11DesiredSSID',
@@ -94,7 +96,7 @@ sub vendor {
         }
     }
     
-    return undef;
+    return;
 }
 
 sub model {
@@ -107,7 +109,7 @@ sub model {
         next unless defined $prod;
         return lc($prod);
         }
-    return undef;
+    return;
 }
 
 sub os_ver {
@@ -123,7 +125,7 @@ sub os_ver {
         }
     }
     
-    return undef;
+    return;
 }
 
 sub i_80211channel {

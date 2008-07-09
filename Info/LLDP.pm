@@ -29,17 +29,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::LLDP;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
  
 @SNMP::Info::LLDP::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::LLDP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             'LLDP-MIB'          => 'lldpLocSysCapEnabled',
@@ -89,7 +89,7 @@ sub munge_null {
 
 sub munge_caps {
     my $caps = shift;
-    return undef unless defined $caps;
+    return unless defined $caps;
 
     my $bits = unpack("b*",$caps);
     return $bits;
@@ -103,7 +103,7 @@ sub hasLLDP {
     my $lldp_cap = $lldp->lldp_sys_cap();
 
     return 1 if defined $lldp_cap;
-    return undef;
+    return;
 }
 
 sub lldp_if {
@@ -222,7 +222,7 @@ sub lldp_id {
 #            return $addr if (defined $addr and $lldp->snmp_connect_ip($addr));
 #        }
 #    }
-#    return undef;
+#    return;
 #}
 
 # Break up the lldpRemManAddrTable INDEX into common index, protocol,
@@ -243,7 +243,7 @@ sub _lldp_addr_index {
     }
     # TODO - Need to handle other protocols, i.e. IPv6
     else {
-        return undef;
+        return;
     }
 }
 
@@ -401,7 +401,7 @@ Returns the mapping to the SNMP Interface Table.
 
 =item  $lldp->lldp_ip()
 
-Returns remote IPv4 address.  Returns undef for all other address types, use
+Returns remote IPv4 address.  Returns for all other address types, use
 lldp_addr if you want any return address type.
 
 =item  $lldp->lldp_addr()

@@ -2,6 +2,7 @@
 # $Id$
 #
 # Copyright (c) 2008 Bill Fenner
+# All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,16 +29,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoPower;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::CiscoPower::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoPower::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = ('CISCO-POWER-ETHERNET-EXT-MIB' => 'cpeExtPsePortEntPhyIndex');
 

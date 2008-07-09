@@ -31,17 +31,16 @@
 package SNMP::Info::Layer3::N1600;
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::SONMP;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
-
-$VERSION = '1.09';
-
 @SNMP::Info::Layer3::N1600::ISA = qw/SNMP::Info::Layer3 SNMP::Info::SONMP Exporter/;
 @SNMP::Info::Layer3::N1600::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS,
           %SNMP::Info::SONMP::MIBS,
@@ -80,7 +79,7 @@ sub model {
     
     unless (defined $id){
         print " SNMP::Info::Layer3::N1600::model() - Device does not support sysObjectID\n" if $n1600->debug(); 
-        return undef;
+        return;
     }
     
     my $model = &SNMP::translateObj($id);
@@ -102,13 +101,13 @@ sub os {
 sub os_ver {
     my $n1600 = shift;
     my $descr = $n1600->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     if ($descr =~ m/(\d+\.\d+\.\d+\.\d+)/){
         return $1;
     }
 
-    return undef;
+    return;
 }
 
 sub interfaces {

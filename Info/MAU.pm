@@ -31,16 +31,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::MAU;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::MAU::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::MAU::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = ('MAU-MIB' => 'mauMod');
 
@@ -74,7 +75,7 @@ use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 
 sub munge_int2bin {
     my $int = shift;
-    return undef unless defined $int;
+    return unless defined $int;
     return unpack("B32", pack("N", $int));
 }
 
@@ -174,7 +175,7 @@ sub mau_i_duplex_admin {
         if (defined($mau_index)) {
             return mau_i_duplex_admin_old($mau,$mau_index,$mau_autostat);
         } else {
-            return undef;
+            return;
         }
     }
 

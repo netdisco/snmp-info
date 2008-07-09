@@ -31,17 +31,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
-
 @SNMP::Info::Layer1::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::Layer1::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = ( %SNMP::Info::MIBS, 
           'SNMP-REPEATER-MIB' => 'rptrPortGroupIndex'

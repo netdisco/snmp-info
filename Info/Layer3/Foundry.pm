@@ -33,19 +33,18 @@
 package SNMP::Info::Layer3::Foundry;
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::FDP;
 use SNMP::Info::LLDP;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
-
-$VERSION = '1.09';
-
 @SNMP::Info::Layer3::Foundry::ISA = qw/SNMP::Info::FDP SNMP::Info::LLDP
                                        SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Foundry::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS,
           %SNMP::Info::LLDP::MIBS,
@@ -257,7 +256,7 @@ sub stp_p_state {
 
     my $descr = $foundry->description();
     if ($descr =~ m/\bEdgeIron 24G\b/) {
-        return undef;
+        return;
     }
 
     return $foundry->SUPER::stp_p_state($partial) || {};

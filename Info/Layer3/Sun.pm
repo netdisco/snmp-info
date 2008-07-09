@@ -29,16 +29,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Sun;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer3;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
 @SNMP::Info::Layer3::Sun::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Sun::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/ ;
+
+$VERSION = '1.09';
 
 %MIBS = (
             %SNMP::Info::Layer3::MIBS,  
@@ -69,12 +70,12 @@ sub os {
 sub os_ver {
     my $sun = shift;
     my $descr = $sun->motd();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     if ($descr =~ m/SunOS (\S+)/) {
 	return $1;
     }
-    return undef;
+    return;
 }
 
 sub model {

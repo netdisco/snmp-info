@@ -29,17 +29,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::NortelStack;
-$VERSION = '1.09'; 
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
 @SNMP::Info::NortelStack::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::NortelStack::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09'; 
 
 %MIBS    = (
             # S5-ROOT-MIB and S5-TCS-MIB required by the MIBs below
@@ -100,7 +100,7 @@ sub os_ver {
     my $stack = shift;
 
     my $ver = $stack->ns_ag_ver();
-    return undef unless defined $ver;
+    return unless defined $ver;
 
     if ($ver =~ m/(\d+\.\d+\.\d+\.\d+)/){
         return $1;
@@ -108,14 +108,14 @@ sub os_ver {
     if ($ver =~ m/V(\d+\.\d+\.\d+)/i){
         return $1;
     }  
-   return undef;
+   return;
 }
 
 sub os_bin {
     my $stack = shift;
 
     my $ver = $stack->ns_ag_ver();
-    return undef unless defined $ver;
+    return unless defined $ver;
 
     if ($ver =~ m/(\d+\.\d+\.\d+\.\d+)/i){
         return $1;
@@ -123,7 +123,7 @@ sub os_bin {
     if ($ver =~ m/V(\d+\.\d+.\d+)/i){
         return $1;
     }
-   return undef;
+   return;
 }
 
 # Need to override here since overridden in Layer2 and Layer3 classes
@@ -133,7 +133,7 @@ sub serial {
     my $ver = $stack->ns_serial();
     return $ver unless !defined $ver;
     
-    return undef;
+    return;
 }
 
 # Pseudo ENTITY-MIB methods for older switches with don't support ENTITY-MIB

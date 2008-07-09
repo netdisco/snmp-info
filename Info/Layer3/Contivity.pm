@@ -29,19 +29,19 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Contivity;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Layer3;
 use SNMP::Info::Entity;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
-
 @SNMP::Info::Layer3::Contivity::ISA = qw/SNMP::Info SNMP::Info::Layer3 SNMP::Info::Entity Exporter/;
 @SNMP::Info::Layer3::Contivity::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = (
          %SNMP::Info::MIBS,
@@ -82,7 +82,7 @@ sub model {
     my $model = $e_model->{1} || undef;
     
     return $1 if (defined $model and $model =~ /(CES\d+)/i);
-    return undef;
+    return;
 }
 
 sub os {
@@ -92,12 +92,12 @@ sub os {
 sub os_ver {
     my $contivity = shift;
     my $descr = $contivity->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     if ($descr =~ m/V(\d+_\d+\.\d+)/i){
         return $1;
     }
-    return undef;
+    return;
 }
 
 sub mac {
@@ -110,7 +110,7 @@ sub mac {
         next unless $sn;
         return $sn;
     }
-    return undef;
+    return;
 }
 
 sub serial {
@@ -120,7 +120,7 @@ sub serial {
     my $serial = $e_serial->{1} || undef;
     
     return $1 if (defined $serial and $serial =~ /(\d+)/);
-    return undef;
+    return;
 }
 
 

@@ -1,7 +1,8 @@
 # SNMP::Info::CiscoPortSecurity
 # $Id$
 #
-# Copyright (c) 2008 Eric Miller 
+# Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,15 +29,16 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoPortSecurity;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PAECAPABILITIES/;
 @SNMP::Info::CiscoPortSecurity::ISA = qw/Exporter/;
 @SNMP::Info::CiscoPortSecurity::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PAECAPABILITIES/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             'CISCO-PORT-SECURITY-MIB' => 'ciscoPortSecurityMIB',
@@ -107,7 +109,7 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PAECAPABILITIES/;
 sub munge_pae_capabilities {
     my $bits = shift;
 
-    return undef unless defined $bits;
+    return unless defined $bits;
     my @vals = map($PAECAPABILITIES{$_},sprintf("%x",unpack('b*',$bits)));
     return join(' ',@vals);
 }

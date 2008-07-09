@@ -2,6 +2,7 @@
 # $Id$
 #
 # Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,16 +29,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer1::S3000;
-$VERSION = '1.09';
-use strict;
 
+use strict;
 use Exporter;
 use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer1::S3000::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer1::S3000::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             %SNMP::Info::Layer2::MIBS,
@@ -90,7 +92,7 @@ sub vendor {
 sub model {
     my $s3000 = shift;
     my $id = $s3000->id();
-    return undef unless defined $id;
+    return unless defined $id;
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
     $model =~ s/^s3reg-//i;
@@ -121,7 +123,7 @@ sub mac {
         return $mac;
     }
     # Topology turned off, not supported.
-    return undef;
+    return;
 }
 
 # Hubs do not support ifMIB requirements for get MAC

@@ -29,16 +29,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::PowerEthernet;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::PowerEthernet::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::PowerEthernet::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = ('POWER-ETHERNET-MIB' => 'pethPsePortDetectionStatus');
 
@@ -80,7 +81,7 @@ sub peth_port_ifindex {
 	    # This heuristic won't work, so say that we got nothing.
 	    # If you have this case, you have to write a device-specific
 	    # version of this function.
-	    return undef;
+	    return;
 	}
 	$peth_port_ifindex->{$i} = $port;
     }

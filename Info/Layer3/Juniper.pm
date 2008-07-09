@@ -30,13 +30,16 @@
 
 package SNMP::Info::Layer3::Juniper;
 
+use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
-$VERSION = '1.09';
 @SNMP::Info::Layer3::Juniper::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Juniper::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/ ;
+
+$VERSION = '1.09';
 
 %MIBS = (
             %SNMP::Info::Layer3::MIBS,  
@@ -68,12 +71,12 @@ sub os {
 sub os_ver {
     my $juniper = shift;
     my $descr = $juniper->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     if ($descr =~ m/kernel JUNOS (\S+)/) {
 	return $1;
     }
-    return undef;
+    return;
 }
 
 sub model {
@@ -82,7 +85,7 @@ sub model {
     
     unless (defined $id){
         print " SNMP::Info::Layer3::Juniper::model() - Device does not support sysObjectID\n" if $l3->debug(); 
-        return undef;
+        return;
     }
     
     my $model = &SNMP::translateObj($id);

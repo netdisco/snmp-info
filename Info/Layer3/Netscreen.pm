@@ -29,17 +29,18 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Netscreen;
-$VERSION = '1.09';
-use strict;
 
+use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 
 @SNMP::Info::Layer3::Netscreen::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Netscreen::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
- 
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
+
 %MIBS    = ( 
 	     %SNMP::Info::Layer3::MIBS,
 	     'NETSCREEN-SMI'             => 'netscreenSetting',
@@ -80,7 +81,7 @@ sub os_ver {
     if ( $descr =~ m/version (\d\S*) \(SN: /) {
       return $1;
     }
-    return undef;
+    return;
 }
 
 sub serial {
@@ -95,7 +96,7 @@ sub serial {
     if ( $descr =~ m/version .*\(SN: (\d\S*),/) {
         return $1;
     }
-    return undef;
+    return;
 }
 
 1;

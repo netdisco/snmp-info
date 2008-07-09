@@ -29,14 +29,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer3::Microsoft;
-$VERSION = '1.09';
 
+use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/ ;
 @SNMP::Info::Layer3::Microsoft::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Microsoft::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/ ;
+
+$VERSION = '1.09';
 
 %MIBS = (
             %SNMP::Info::Layer3::MIBS,  

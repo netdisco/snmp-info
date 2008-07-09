@@ -31,21 +31,21 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::HP;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
 use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE $INIT/ ;
-
 @SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer3 SNMP::Info::MAU SNMP::Info::LLDP
                                   SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::HP::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE/ ;
+
+$VERSION = '1.09';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS,
           %SNMP::Info::MAU::MIBS,
@@ -198,14 +198,14 @@ sub os_ver {
     if ($descr =~ m/revision ([A-Z]{1}\.\d{2}\.\d{2})/) {
         return $1;
     }
-    return undef;
+    return;
 }
 
 # Lookup model number, and translate the part number to the common number
 sub model {
     my $hp = shift;
     my $id = $hp->id();
-    return undef unless defined $id;
+    return unless defined $id;
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
     
@@ -316,7 +316,7 @@ sub slots {
     
     my $e_name = $hp->e_name();
 
-    return undef unless defined $e_name;
+    return unless defined $e_name;
 
     my $slots;
     foreach my $slot (keys %$e_name) {

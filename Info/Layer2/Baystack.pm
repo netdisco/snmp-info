@@ -29,10 +29,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Baystack;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info::SONMP;
 use SNMP::Info::NortelStack;
@@ -45,7 +43,9 @@ use SNMP::Info::Layer3;
                                       SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer2::Baystack::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             %SNMP::Info::Layer3::MIBS,
@@ -101,7 +101,7 @@ sub os {
 sub os_bin {
     my $baystack = shift;
     my $descr = $baystack->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     # 303 / 304
     if ($descr =~ m/Rev: \d+\.(\d+\.\d+\.\d+)-\d+\.\d+\.\d+\.\d+/){
@@ -116,7 +116,7 @@ sub os_bin {
     if ($descr =~ m/FW:(\d+\.\d+\.\d+\.\d+)/i){
         return $1;
     }
-    return undef;
+    return;
 }
 
 sub vendor {
@@ -126,7 +126,7 @@ sub vendor {
 sub model {
     my $baystack = shift;
     my $id = $baystack->id();
-    return undef unless defined $id;
+    return unless defined $id;
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
 

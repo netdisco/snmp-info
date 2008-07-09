@@ -32,16 +32,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStats;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 @SNMP::Info::CiscoStats::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoStats::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             'SNMPv2-MIB'                       => 'sysDescr',
@@ -89,7 +90,7 @@ sub os {
     # order here matters - there are Catalysts that run IOS and have catalyst in their description field.
     return 'ios'      if ($descr =~ /IOS/);
     return 'catalyst' if ($descr =~ /catalyst/i);
-    return undef;
+    return;
 }
 
 sub os_ver {
@@ -106,7 +107,7 @@ sub os_ver {
     if (defined $descr and $descr =~ m/Version (\d+\.\d+\([^)]+\)[^,\s]*)(,|\s)+/ ){
         return $1;
     } 
-    return undef;
+    return;
 }
 
 sub cpu {

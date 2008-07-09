@@ -31,21 +31,20 @@
 package SNMP::Info::Layer3::Enterasys;
 
 use strict;
-
 use Exporter;
 use SNMP::Info::MAU;
 use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
 use SNMP::Info::Layer3;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
-
-$VERSION = '1.09';
-
 @SNMP::Info::Layer3::Enterasys::ISA = qw/SNMP::Info::MAU SNMP::Info::LLDP
                                         SNMP::Info::CDP SNMP::Info::Layer3
                                         Exporter/;
 @SNMP::Info::Layer3::Enterasys::EXPORT_OK = qw//;
+
+use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = (
          %SNMP::Info::Layer3::MIBS,
@@ -83,7 +82,7 @@ sub model {
     
     unless (defined $id){
         print " SNMP::Info::Layer3::Enterasys::model() - Device does not support sysObjectID\n" if $enterasys->debug(); 
-        return undef;
+        return;
     }
     
     my $model = &SNMP::translateObj($id);
@@ -106,13 +105,13 @@ sub os {
 sub os_ver {
     my $enterasys = shift;
     my $descr = $enterasys->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     if ($descr =~ m/\bRev ([\d.]*)/){
         return $1;
     }
 
-    return undef;
+    return;
 }
 
 # Use ifName as it is used for CDP and LLDP.

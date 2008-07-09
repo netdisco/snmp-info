@@ -33,17 +33,16 @@
 package SNMP::Info::Layer3::Extreme;
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
-
-$VERSION = '1.09';
-
 @SNMP::Info::Layer3::Extreme::ISA = qw/SNMP::Info::Layer3 SNMP::Info::MAU Exporter/;
 @SNMP::Info::Layer3::Extreme::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS,
           %SNMP::Info::MAU::MIBS,
@@ -103,7 +102,7 @@ sub model {
     
     unless (defined $id){
         print " SNMP::Info::Layer3::Extreme::model() - Device does not support sysObjectID\n" if $extreme->debug(); 
-        return undef;
+        return;
     }
     
     my $model = &SNMP::translateObj($id);
@@ -124,13 +123,13 @@ sub os {
 sub os_ver {
     my $extreme = shift;
     my $descr = $extreme->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     if ($descr =~ m/Version ([\d.]*)/){
         return $1;
     }
 
-    return undef;
+    return;
 }
 
 #
@@ -188,7 +187,7 @@ sub bp_index {
 
 sub munge_true_ok {
     my $val = shift;
-    return undef unless defined($val);
+    return unless defined($val);
     return "OK" if ($val eq 'true');
     return "Not OK" if ($val eq 'false');
     return $val;
@@ -196,7 +195,7 @@ sub munge_true_ok {
 
 sub munge_power_stat {
     my $val = shift;
-    return undef unless defined($val);
+    return unless defined($val);
     $val =~ s/^present//;
     $val =~ s/^not/Not /i;
     return $val;
@@ -223,7 +222,7 @@ sub fan {
         $ret .= $s . $i . ": " . $fan_state->{$i};
         $s = ", ";
     }
-    return undef if ($s eq "");
+    return if ($s eq "");
     $ret;
 }
 
@@ -404,13 +403,13 @@ sub _extreme_set_i_vlan {
     my $encapidx = $encapif{$vlan_id};
     if (!defined($encapidx)) {
         $extreme->error_throw("can't map $vlan_id to encapsulation interface");
-        return undef;
+        return;
     }
     # now find vlan interface stacked above encap
     my @abovevlan =  keys %{$invstack->{$encapidx}};
     if (@abovevlan != 1) {
         $extreme->error_throw("can't map encap interface $encapidx for $vlan_id to encapsulation interface");
-        return undef;
+        return;
     }
     my $vlanidx = $abovevlan[0];
     my $rv;
@@ -422,14 +421,14 @@ sub _extreme_set_i_vlan {
         $rv = $extreme->set_ifStackStatus("destroy", $oldidx . "." . $ifindex);
         unless ($rv) {
             $extreme->error_throw("Unable to remove $ifindex from old VLAN index $oldidx");
-            return undef;
+            return;
         }
     }
     # Add new VLAN mapping
     $rv = $extreme->set_ifStackStatus("createAndGo", $vlanidx . "." . $ifindex);
     unless ($rv) {
         $extreme->error_throw("Unable to add new VLAN index $vlanidx to ifIndex $ifindex");
-        return undef;
+        return;
     }
     # XXX invalidate cache of ifstack?
     # XXX Info.pm library function for this?
@@ -449,12 +448,12 @@ sub set_remove_i_vlan_tagged {
     my $encapidx = $encapif{$vlan_id};
     if (!defined($encapidx)) {
         $extreme->error_throw("can't map $vlan_id to encapsulation interface");
-        return undef;
+        return;
     }
     my $rv = $extreme->set_ifStackStatus("destroy", $encapidx . "." . $ifindex);
     unless ($rv) {
         $extreme->error_throw("Unable to delete VLAN encap ifIndex $encapidx for VLAN $vlan_id from ifIndex $ifindex");
-        return undef;
+        return;
     }
     # invalidate cache of ifstack?
     return $rv;
@@ -470,12 +469,12 @@ sub set_add_i_vlan_tagged {
     my $encapidx = $encapif{$vlan_id};
     if (!defined($encapidx)) {
         $extreme->error_throw("can't map $vlan_id to encapsulation interface");
-        return undef;
+        return;
     }
     my $rv = $extreme->set_ifStackStatus("createAndGo", $encapidx . "." . $ifindex);
     unless ($rv) {
         $extreme->error_throw("Unable to add VLAN encap ifIndex $encapidx for VLAN $vlan_id to ifIndex $ifindex");
-        return undef;
+        return;
     }
     # invalidate cache of ifstack?
     return $rv;

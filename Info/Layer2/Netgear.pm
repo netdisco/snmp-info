@@ -2,6 +2,7 @@
 # $Id$
 #
 # Copyright (c) 2008 Bill Fenner
+# All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -30,16 +31,15 @@
 package SNMP::Info::Layer2::Netgear;
 
 use strict;
-
 use Exporter;
 use SNMP::Info::Layer2;
 
-
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE $INIT/;
-
-$VERSION = '1.09';
 @SNMP::Info::Layer2::Netgear::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Netgear::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             %SNMP::Info::Layer2::MIBS,

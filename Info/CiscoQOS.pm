@@ -2,7 +2,6 @@
 # $Id$
 #
 # Copyright (c) 2005 Alexander Hartmaier
-#
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without 
@@ -30,10 +29,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoQOS;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
@@ -41,6 +38,8 @@ use SNMP::Info;
 @SNMP::Info::CiscoQOS::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             'CISCO-CLASS-BASED-QOS-MIB'      => 'cbQosIfIndex',

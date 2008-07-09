@@ -31,16 +31,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoVTP;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
- 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
 @SNMP::Info::CiscoVTP::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoVTP::EXPORT_OK = qw//;
+ 
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             'CISCO-VTP-MIB'                       => 'vtpVlanName',
@@ -249,7 +250,7 @@ sub set_i_pvid {
     my $vtp = shift;
     my ($vlan_id, $ifindex) = @_;
 
-    return undef unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
 
     my $native_vlan = $vtp->vtp_trunk_native($ifindex);
     if (defined $native_vlan) {
@@ -259,19 +260,19 @@ sub set_i_pvid {
         my $rv = $vtp->set_vtp_trunk_native($vlan_id, $ifindex);
         unless ($rv) {
             $vtp->error_throw("Unable to change native VLAN to $vlan_id on IfIndex: $ifindex");
-            return undef;
+            return;
         }
         return $rv;
     }
     $vtp->error_throw("Can't find ifIndex: $ifindex - Is it a trunk port?");
-    return undef;
+    return;
 }
 
 sub set_i_vlan {
     my $vtp = shift;
     my ($vlan_id, $ifindex) = @_;
 
-    return undef unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
 
     my $i_vlan = $vtp->i_vlan2($ifindex);
     if (defined $i_vlan) {
@@ -281,19 +282,19 @@ sub set_i_vlan {
         my $rv = $vtp->set_i_vlan2($vlan_id, $ifindex);
         unless ($rv) {
             $vtp->error_throw("Unable to change VLAN to $vlan_id on IfIndex: $ifindex");
-            return undef;
+            return;
         }
         return $rv;
     }
     $vtp->error_throw("Can't find ifIndex: $ifindex - Is it an access port?");
-    return undef;
+    return;
 }
 
 sub set_add_i_vlan_tagged {
     my $vtp = shift;
     my ($vlan_id, $ifindex) = @_;
 
-    return undef unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
 
     print "Adding VLAN: $vlan_id to ifIndex: $ifindex\n" if $vtp->debug();
 
@@ -302,7 +303,7 @@ sub set_add_i_vlan_tagged {
 
     unless (defined $trunk_members) {
         $vtp->error_throw("Can't find ifIndex: $ifindex - Is it a trunk port?");
-        return undef;
+        return;
     }
 
     my @member_list = split(//, unpack("B*", $trunk_members->{$ifindex}));
@@ -315,13 +316,13 @@ sub set_add_i_vlan_tagged {
     my $list_rv = $vtp->set_vtp_trunk_vlans($new_list, $ifindex);
     unless ($list_rv) {
         $vtp->error_throw("Unable to add VLAN: $vlan_id to ifIndex: $ifindex member list");
-        return undef;
+        return;
     }
     #Make sure no other SNMP manager was making modifications at the same time.
     my $serial_rv = $vtp->set_vtp_trunk_set_serial($trunk_serial);
     unless ($serial_rv) {
         $vtp->error_throw("Unable to increment trunk set serial number - check configuration!");
-        return undef;
+        return;
     }
     return 1;
 }
@@ -330,7 +331,7 @@ sub set_remove_i_vlan_tagged {
     my $vtp = shift;
     my ($vlan_id, $ifindex) = @_;
 
-    return undef unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
 
     print "Removing VLAN: $vlan_id from ifIndex: $ifindex\n" if $vtp->debug();
 
@@ -339,7 +340,7 @@ sub set_remove_i_vlan_tagged {
 
     unless (defined $trunk_members) {
         $vtp->error_throw("Can't find ifIndex: $ifindex - Is it a trunk port?");
-        return undef;
+        return;
     }
 
     my @member_list = split(//, unpack("B*", $trunk_members->{$ifindex}));
@@ -352,13 +353,13 @@ sub set_remove_i_vlan_tagged {
     my $list_rv = $vtp->set_vtp_trunk_vlans($new_list, $ifindex);
     unless ($list_rv) {
         $vtp->error_throw("Error: Unable to remove VLAN: $vlan_id from ifIndex: $ifindex member list");
-        return undef;
+        return;
     }
     #Make sure no other manager was making modifications at the same time.
     my $serial_rv = $vtp->set_vtp_trunk_set_serial($trunk_serial);
     unless ($serial_rv) {
         $vtp->error_throw("Error: Unable to increment trunk set serial number - check configuration!");
-        return undef;
+        return;
     }
     return 1;
 }
@@ -373,7 +374,7 @@ sub validate_vlan_param {
     # VID and ifIndex should both be numeric
     unless ( defined $vlan_id and defined $ifindex and $vlan_id =~ /^\d+$/ and $ifindex =~ /^\d+$/ ) {
         $vtp->error_throw("Invalid parameter");
-        return undef;
+        return;
     }
     
     # Check that ifIndex exists on device
@@ -381,7 +382,7 @@ sub validate_vlan_param {
 
     unless ( exists $index->{$ifindex} ) {
         $vtp->error_throw("ifIndex $ifindex does not exist");
-        return undef;
+        return;
     }
 
     #Check that VLAN exists on device
@@ -403,7 +404,7 @@ sub validate_vlan_param {
     }
     unless ( $vlan_exists ) {
         $vtp->error_throw("VLAN $vlan_id does not exist or is not operational");
-        return undef;
+        return;
     }
 
     return 1;

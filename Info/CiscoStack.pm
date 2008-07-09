@@ -29,16 +29,17 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStack;
-$VERSION = '1.09';
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT $INIT/;
 @SNMP::Info::CiscoStack::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoStack::EXPORT_OK = qw//;
+
+use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             'CISCO-STACK-MIB'         => 'ciscoStackMIB',
@@ -119,7 +120,7 @@ sub serial {
 
     return $serial1 if defined $serial1;
     return $serial2 if defined $serial2;
-    return undef;
+    return;
 }
 
 # Rules for older CatOS devices using CiscoStack

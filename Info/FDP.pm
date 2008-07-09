@@ -34,14 +34,14 @@
 package SNMP::Info::FDP;
 
 use strict;
-
 use Exporter;
 use SNMP::Info;
 
 @SNMP::Info::FDP::ISA = qw/SNMP::Info Exporter/;
 @SNMP::Info::FDP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
+use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
 $VERSION = '1.09';
 
 %MIBS 	= (
@@ -82,7 +82,7 @@ $VERSION = '1.09';
 
 sub munge_caps {
     my $caps = shift;
-    return undef unless defined $caps;
+    return unless defined $caps;
 
     my $bits = substr(unpack("B*",$caps),-7);
     return $bits;
@@ -108,7 +108,7 @@ sub hasFDP {
         my $fdp_ip = $fdp->fdp_ip();
         # See if anything in fdp cache, if so we have fdp
         return 1 if (defined $fdp_ip and scalar(keys %$fdp_ip)) ;
-        return undef;
+        return;
     }
     
     return $fdp->fdp_run();
@@ -125,7 +125,7 @@ sub c_if {
     my $fdp_ip = $fdp->c_ip();
     unless (defined $fdp_ip){
         $fdp->error_throw("SNMP::Info::FDP:fdp_if() - Device doesn't have fdp_ip() data.  Can't fake fdp_index()");
-        return undef;
+        return;
     }
 
     my %fdp_if;

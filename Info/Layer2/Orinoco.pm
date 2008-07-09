@@ -2,6 +2,7 @@
 # $Id$
 #
 # Copyright (c) 2008 Eric Miller
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
 # modification, are permitted provided that the following conditions are met:
@@ -28,9 +29,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::Layer2::Orinoco;
-$VERSION = '1.09';
-use strict;
 
+use strict;
 use Exporter;
 use SNMP::Info::IEEE802dot11;
 use SNMP::Info::Layer2;
@@ -39,6 +39,8 @@ use SNMP::Info::Layer2;
 @SNMP::Info::Layer2::Orinoco::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+
+$VERSION = '1.09';
 
 %MIBS    = (
             %SNMP::Info::Layer2::MIBS,
@@ -74,7 +76,7 @@ sub os_ver {
     my $orinoco = shift;
 
     my $descr = $orinoco->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     if ($descr =~ m/V(\d+\.\d+)/){
         return $1;
@@ -83,14 +85,14 @@ sub os_ver {
         return $1;
     }
 
-    return undef;
+    return;
 }
 
 sub os_bin {
     my $orinoco = shift;
 
     my $descr = $orinoco->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     if ($descr =~ m/V(\d+\.\d+)$/){
         return $1;
@@ -99,7 +101,7 @@ sub os_bin {
         return $1;
     }
 
-    return undef;
+    return;
 }
 
 sub vendor {
@@ -110,18 +112,18 @@ sub model {
     my $orinoco = shift;
 
     my $descr = $orinoco->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     return $1 if ($descr =~ /(AP-\d+)/);
     return 'WavePOINT-II' if ($descr =~ /WavePOINT-II/);
-    return undef;
+    return;
 }
 
 sub serial {
     my $orinoco = shift;
 
     my $descr = $orinoco->description();
-    return undef unless defined $descr;
+    return unless defined $descr;
 
     $descr  = $1 if $descr =~ /SN-(\S+)/;
     return $descr;
