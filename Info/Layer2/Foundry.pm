@@ -204,7 +204,7 @@ sub vendor {
 
 # this hangs on a edgeiron24g
 # TODO: check by devicetype and deferr to SUPER if not bad device
-sub stp_p_state { return undef; }
+sub stp_p_state { return; }
 
 1;
 __END__
