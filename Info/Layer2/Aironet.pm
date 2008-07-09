@@ -265,8 +265,11 @@ sub i_vlan {
 # 5.5Mbps is reported as 11.
 sub munge_cd11_txrate {
     my $txrates = shift;
-    my @rates = unpack("C*", $txrates);
-    map {$_ *= 0.5} @rates;
+    my @units = unpack("C*", $txrates);
+    my @rates = map {
+                    my $unit = $_;
+                    $unit *= 0.5;
+                    } @units;
 
     return \@rates;
 }
@@ -315,7 +318,6 @@ sub i_mac {
     my $aironet = shift;
     # no partial is possible due to the levels
     # of indirection.
-    my $idx;
 
     # Start with the ifPhysAddress, and override
     my $mbss_mac = $aironet->orig_i_mac();
@@ -326,13 +328,13 @@ sub i_mac {
     my $ifstack = $aironet->ifStackStatus();
 
     my $vlan_list = {};
-    foreach $idx (keys %$vlan_map) {
+    foreach my $idx (keys %$vlan_map) {
 	my ($vlan, $num) = split(/\./, $idx);
 	push(@{$vlan_list->{$vlan}}, $vlan_map->{$idx});
     }
 
     my $stack = {};
-    foreach $idx (keys %$ifstack) {
+    foreach my $idx (keys %$ifstack) {
 	my ($upper, $lower) = split(/\./, $idx);
 	$stack->{$upper}->{$lower} = $ifstack->{$idx};
     }
