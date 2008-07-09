@@ -93,11 +93,10 @@ sub model {
 sub root_ip {
     my $allied = shift;
     my $ip_hash = $allied->ip_addresses();
-    my $ip;
     my $found_ip;
     
-    foreach $ip (values %{$ip_hash}) {
-        my $found_ip = SNMP::Info::munge_ip($ip) if (defined $ip);
+    foreach my $ip (values %{$ip_hash}) {
+        $found_ip = SNMP::Info::munge_ip($ip) if (defined $ip);
         last; # this is only one IP address
     }
     return $found_ip;
@@ -106,10 +105,9 @@ sub root_ip {
 sub mac{
     my $allied = shift;
     my $mac_hash = $allied->ip_mac();
-    my $mac;
     my $found_mac;
     
-    foreach $mac (values %{$mac_hash}) {
+    foreach my $mac (values %{$mac_hash}) {
         $found_mac = SNMP::Info::munge_mac($mac);
         last; # this is only one MAC address
     }

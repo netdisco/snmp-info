@@ -104,12 +104,12 @@ sub model {
 sub ip{
     my $zyxel = shift;
     my $ip_hash = $zyxel->ip_addresses();
-    my $ip;
+    my $found_ip;
     
-    foreach $ip (keys %{$ip_hash}) {
-        my $found_ip = $ip if (defined $ip and $ip =~ /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/);
+    foreach my $ip (keys %{$ip_hash}) {
+        $found_ip = $ip if (defined $ip and $ip =~ /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/);
     }
-    return $ip;
+    return $found_ip;
 }
 1;
 __END__
