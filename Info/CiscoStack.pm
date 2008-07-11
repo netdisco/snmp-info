@@ -238,7 +238,7 @@ sub set_i_speed_admin {
 
     $iid = $reverse_p_port{$iid};
 
-    return $stack->set_p_speed_admin($speeds{$speed}, $iid);
+    return $stack->set_p_speed ($speeds{$speed}, $iid);
 }
 
 sub set_i_duplex_admin {
