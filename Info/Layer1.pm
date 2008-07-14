@@ -253,6 +253,14 @@ Gets the number of ports under the interface mib
 
 =over
 
+=item $l1->model()
+
+Cross references $l1->id() with product IDs.
+
+For HP devices, removes C<'hpswitch'> from the name
+
+For Cisco devices, removes C<'sysid'> from the name
+
 =item $l1->vendor()
 
 Tries to discover the vendor from $l1->model() and $l1->vendor()
