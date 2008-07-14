@@ -250,7 +250,7 @@ sub set_i_pvid {
     my $vtp = shift;
     my ($vlan_id, $ifindex) = @_;
 
-    return unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->_validate_vlan_param ($vlan_id, $ifindex) );
 
     my $native_vlan = $vtp->vtp_trunk_native($ifindex);
     if (defined $native_vlan) {
@@ -272,7 +272,7 @@ sub set_i_vlan {
     my $vtp = shift;
     my ($vlan_id, $ifindex) = @_;
 
-    return unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->_validate_vlan_param ($vlan_id, $ifindex) );
 
     my $i_vlan = $vtp->i_vlan2($ifindex);
     if (defined $i_vlan) {
@@ -294,7 +294,7 @@ sub set_add_i_vlan_tagged {
     my $vtp = shift;
     my ($vlan_id, $ifindex) = @_;
 
-    return unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->_validate_vlan_param ($vlan_id, $ifindex) );
 
     print "Adding VLAN: $vlan_id to ifIndex: $ifindex\n" if $vtp->debug();
 
@@ -331,7 +331,7 @@ sub set_remove_i_vlan_tagged {
     my $vtp = shift;
     my ($vlan_id, $ifindex) = @_;
 
-    return unless ( $vtp->validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->_validate_vlan_param ($vlan_id, $ifindex) );
 
     print "Removing VLAN: $vlan_id from ifIndex: $ifindex\n" if $vtp->debug();
 
@@ -367,7 +367,7 @@ sub set_remove_i_vlan_tagged {
 #
 # These are internal methods and are not documented.  Do not use directly. 
 #
-sub validate_vlan_param {
+sub _validate_vlan_param {
     my $vtp = shift;
     my ($vlan_id, $ifindex) = @_;
 
