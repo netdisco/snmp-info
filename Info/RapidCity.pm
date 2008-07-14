@@ -317,7 +317,7 @@ sub set_i_pvid {
     my $rapidcity = shift;
     my ($vlan_id, $ifindex) = @_; 
 
-    return unless ( $rapidcity->validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $rapidcity->_validate_vlan_param ($vlan_id, $ifindex) );
 
     unless ( $rapidcity->set_rc_i_vlan_pvid($vlan_id, $ifindex) ) {
         $rapidcity->error_throw("Unable to change PVID to $vlan_id on IfIndex: $ifindex");
@@ -330,7 +330,7 @@ sub set_i_vlan {
     my $rapidcity = shift;
     my ($new_vlan_id, $ifindex) = @_;
 
-    return unless ( $rapidcity->validate_vlan_param ($new_vlan_id, $ifindex) );
+    return unless ( $rapidcity->_validate_vlan_param ($new_vlan_id, $ifindex) );
 
     my $vlan_p_type = $rapidcity->rc_i_vlan_type($ifindex);
     unless ( $vlan_p_type->{$ifindex} =~ /access/ ) {
@@ -354,7 +354,7 @@ sub set_i_vlan {
     # Check if port in forbidden list for the VLAN, haven't seen this used,
     # but we'll check anyway
     return unless
-        ($rapidcity->check_forbidden_ports($new_vlan_id, $ifindex));
+        ($rapidcity->_check_forbidden_ports($new_vlan_id, $ifindex));
 
     my $old_vlan_members = $rapidcity->rc_vlan_members($old_vlan_id);
     my $new_vlan_members = $rapidcity->rc_vlan_members($new_vlan_id);
@@ -398,12 +398,12 @@ sub set_add_i_vlan_tagged {
     my $rapidcity = shift;
     my ($vlan_id, $ifindex) = @_;
 
-    return unless ( $rapidcity->validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $rapidcity->_validate_vlan_param ($vlan_id, $ifindex) );
 
     print "Adding VLAN: $vlan_id to IfIndex: $ifindex\n" if $rapidcity->debug();
 
     # Check if port in forbidden list for the VLAN, haven't seen this used, but we'll check anyway
-    return unless ($rapidcity->check_forbidden_ports($vlan_id, $ifindex));
+    return unless ($rapidcity->_check_forbidden_ports($vlan_id, $ifindex));
 
     my $iv_members = $rapidcity->rc_vlan_members($vlan_id);
 
@@ -423,7 +423,7 @@ sub set_remove_i_vlan_tagged {
     my $rapidcity = shift;
     my ($vlan_id, $ifindex) = @_;
 
-    return unless ( $rapidcity->validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $rapidcity->_validate_vlan_param ($vlan_id, $ifindex) );
 
     print "Removing VLAN: $vlan_id from IfIndex: $ifindex\n" if $rapidcity->debug();
 
@@ -475,7 +475,7 @@ sub set_delete_vlan {
 #
 # These are internal methods and are not documented.  Do not use directly. 
 #
-sub check_forbidden_ports {
+sub _check_forbidden_ports {
     my $rapidcity = shift;
     my ($vlan_id, $ifindex) = @_;
 
@@ -490,7 +490,7 @@ sub check_forbidden_ports {
     return 1;
 }
 
-sub validate_vlan_param {
+sub _validate_vlan_param {
     my $rapidcity = shift;
     my ($vlan_id, $ifindex) = @_;
 
@@ -661,6 +661,12 @@ IDs.  These are the VLANs which are members of the egress list for the port.
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
     print "Port: $port VLAN: $vlan\n";
   }
+
+=item $rapidcity->v_index()
+
+Returns VLAN IDs
+
+(C<rcVlanId>)
 
 =back
 
