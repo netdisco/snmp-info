@@ -575,6 +575,15 @@ IDs.  These are the VLANs which are members of the egress list for the port.
     print "Port: $port VLAN: $vlan\n";
   }
 
+=item $bridge->qb_i_vlan_t()
+
+Returns reference to hash: key = C<dot1dBasePort>, value = either 'trunk' for
+tagged ports or the VLAN ID.
+
+=item $bridge->v_index()
+
+Returns VLAN IDs
+
 =back
 
 =head2 Forwarding Table (C<dot1dTpFdbEntry>)
@@ -626,7 +635,7 @@ to this port.
 
 =head2 Spanning Tree Protocol Table (C<dot1dStpPortTable>)
 
-Descriptions are lifted straight from F<BRIDGE-MIB.my>
+Descriptions are straight from F<BRIDGE-MIB.my>
 
 =over
 
@@ -696,6 +705,11 @@ segment."
 =item $bridge->i_stp_port()
 
 Returns the mapping of (C<dot1dStpPortDesignatedPort>) to the interface
+index (iid).
+
+=item $bridge->i_stp_state()
+
+Returns the mapping of (C<dot1dStpPortState>) to the interface
 index (iid).
 
 =item $bridge->i_stp_id()
@@ -824,5 +838,30 @@ Returns reference to hash of forwarding table entries status
 (C<dot1qTpFdbStatus>)
 
 =back
+ 
+=head1 SET METHODS
+
+These are methods that provide SNMP set functionality for overridden methods
+or provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
+operations. 
+
+=over
+
+=item $bridge->set_i_vlan(vlan, ifIndex)
+
+Currently unsupported.  Throws an error and returns.
+
+=item $bridge->set_i_pvid(pvid, ifIndex)
+
+Currently unsupported.  Throws an error and returns.
+
+=item $bridge->set_add_i_vlan_tagged(vlan, ifIndex)
+
+Currently unsupported.  Throws an error and returns.
+
+=item $bridge->set_remove_i_vlan_tagged(vlan, ifIndex)
+
+Currently unsupported.  Throws an error and returns.
 
 =cut
