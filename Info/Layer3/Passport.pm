@@ -1209,6 +1209,10 @@ class only returns container, module, and power supply types.
 
 Returns reference to hash.  Key: IID, Value: Human friendly name.
 
+=item $passport->e_name()
+
+Returns reference to hash.  Key: IID, Value: Human friendly name.
+
 =item $passport->e_hwver()
 
 Returns reference to hash.  Key: IID, Value: Hardware version.

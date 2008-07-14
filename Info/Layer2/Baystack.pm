@@ -628,6 +628,10 @@ If the device doesn't support C<entPhysicalClass>, this will try ns_e_class().
 
 If the device doesn't support C<entPhysicalDescr>, this will try ns_e_descr().
 
+=item $baystack->e_name() 
+
+If the device doesn't support C<entPhysicalName>, this will try ns_e_name().
+
 =item $baystack->e_fwver() 
 
 If the device doesn't support C<entPhysicalFirmwareRev>, this will try

@@ -668,6 +668,10 @@ Returns ns_e_class().
 
 Returns ns_e_descr().
 
+=item $bayhub->e_name() 
+
+Returns ns_e_name().
+
 =item $bayhub->e_fwver() 
 
 Returns ns_e_fwver().
