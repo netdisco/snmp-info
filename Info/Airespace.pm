@@ -1572,6 +1572,11 @@ Returns reference to hash.  Key: IID, Value: Human friendly name.
 
 Returns reference to hash.  Key: IID, Value: Model name.
 
+=item $airespace->e_name()
+
+More computer friendly name of entity.  Name is either 'WLAN Controller' or
+'AP'.
+
 =item $airespace->e_vendor()
 
 Returns reference to hash.  Key: IID, Value: cisco.
