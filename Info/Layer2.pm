@@ -258,6 +258,10 @@ For Cisco devices, removes c<'sysid'> from the name
 
 Tries to discover the vendor from $l2->model() and $l2->description()
 
+=item $l2->serial()
+
+Returns serial number if available through SNMP
+
 =back
 
 =head2 Globals imported from SNMP::Info
