@@ -90,7 +90,7 @@ $VERSION = '1.09';
             'cps_m_age'    => 'cpsSecureMacAddrRemainingAge',
             'cps_m_type'   => 'cpsSecureMacAddrType',
             'cps_m_mac'    => 'cpsSecureMacAddress',
- 	    # CISCO-PAE-MIB::dot1xPaePortEntry
+ 	    # IEEE8021-PAE-MIB::dot1xPaePortEntry
             'pae_i_capabilities'             => 'dot1xPaePortCapabilities',
             'pae_i_last_eapol_frame_source'  => 'dot1xAuthLastEapolFrameSource',
            );
@@ -177,27 +177,27 @@ These are methods that return scalar values from SNMP
 
 =over
 
-=item $stack->cps_clear()
+=item $cps->cps_clear()
 
 (C<cpsGlobalClearSecureMacAddresses>)
 
-=item $stack->cps_notify()
+=item $cps->cps_notify()
 
 (C<cpsGlobalSNMPNotifControl>)
 
-=item $stack->cps_rate()
+=item $cps->cps_rate()
 
 (C<cpsGlobalSNMPNotifRate>)
 
-=item $stack->cps_enable()
+=item $cps->cps_enable()
 
 (C<cpsGlobalPortSecurityEnable>)
 
-=item $stack->cps_mac_count()
+=item $cps->cps_mac_count()
 
 (C<cpsGlobalTotalSecureAddress>)
 
-=item $stack->cps_mac_max()
+=item $cps->cps_mac_max()
 
 (C<cpsGlobalMaxSecureAddress>)
 
@@ -205,75 +205,75 @@ These are methods that return scalar values from SNMP
 
 =head1 TABLE METHODS
 
-=head2 F<CISCO-PORT-SECURITY-MIB> - Interface Config Table
+=head2 C<CISCO-PORT-SECURITY-MIB> - Interface Config Table
 
 =over
 
-=item $stack->cps_i_limit_val()
+=item $cps->cps_i_limit_val()
 
 (C<cpsIfInvalidSrcRateLimitValue>)
 
-=item $stack->cps_i_limit()
+=item $cps->cps_i_limit()
 
 (C<cpsIfInvalidSrcRateLimitEnable>)
 
-=item $stack->cps_i_sticky()
+=item $cps->cps_i_sticky()
 
 (C<cpsIfStickyEnable>)
 
-=item $stack->cps_i_clear_type()
+=item $cps->cps_i_clear_type()
 
 (C<cpsIfClearSecureMacAddresses>)
 
-=item $stack->cps_i_shutdown()
+=item $cps->cps_i_shutdown()
 
 (C<cpsIfShutdownTimeout>)
 
-=item $stack->cps_i_flood()
+=item $cps->cps_i_flood()
 
 (C<cpsIfUnicastFloodingEnable>)
 
-=item $stack->cps_i_clear()
+=item $cps->cps_i_clear()
 
 (C<cpsIfClearSecureAddresses>)
 
-=item $stack->cps_i_mac()
+=item $cps->cps_i_mac()
 
 (C<cpsIfSecureLastMacAddress>)
 
-=item $stack->cps_i_count()
+=item $cps->cps_i_count()
 
 (C<cpsIfViolationCount>)
 
-=item $stack->cps_i_action()
+=item $cps->cps_i_action()
 
 (C<cpsIfViolationAction>)
 
-=item $stack->cps_i_mac_static()
+=item $cps->cps_i_mac_static()
 
 (C<cpsIfStaticMacAddrAgingEnable>)
 
-=item $stack->cps_i_mac_type()
+=item $cps->cps_i_mac_type()
 
 (C<cpsIfSecureMacAddrAgingType>)
 
-=item $stack->cps_i_mac_age()
+=item $cps->cps_i_mac_age()
 
 (C<cpsIfSecureMacAddrAgingTime>)
 
-=item $stack->cps_i_mac_count()
+=item $cps->cps_i_mac_count()
 
 (C<cpsIfCurrentSecureMacAddrCount>)
 
-=item $stack->cps_i_mac_max()
+=item $cps->cps_i_mac_max()
 
 (C<cpsIfMaxSecureMacAddr>)
 
-=item $stack->cps_i_status()
+=item $cps->cps_i_status()
 
 (C<cpsIfPortSecurityStatus>)
 
-=item $stack->cps_i_enable()
+=item $cps->cps_i_enable()
 
 (C<cpsIfPortSecurityEnable>)
 
@@ -283,15 +283,15 @@ These are methods that return scalar values from SNMP
 
 =over
 
-=item $stack->cps_i_v_mac_count()
+=item $cps->cps_i_v_mac_count()
 
 (C<cpsIfVlanCurSecureMacAddrCount>)
 
-=item $stack->cps_i_v_mac_max()
+=item $cps->cps_i_v_mac_max()
 
 (C<cpsIfVlanMaxSecureMacAddr>)
 
-=item $stack->cps_i_v()
+=item $cps->cps_i_v()
 
 (C<cpsIfVlanIndex>)
 
@@ -301,23 +301,23 @@ These are methods that return scalar values from SNMP
 
 =over
 
-=item $stack->cps_i_v_mac_status()
+=item $cps->cps_i_v_mac_status()
 
 (C<cpsIfVlanSecureMacAddrRowStatus>)
 
-=item $stack->cps_i_v_mac_age()
+=item $cps->cps_i_v_mac_age()
 
 (C<cpsIfVlanSecureMacAddrRemainAge>)
 
-=item $stack->cps_i_v_mac_type()
+=item $cps->cps_i_v_mac_type()
 
 (C<cpsIfVlanSecureMacAddrType>)
 
-=item $stack->cps_i_v_vlan()
+=item $cps->cps_i_v_vlan()
 
 (C<cpsIfVlanSecureVlanIndex>)
 
-=item $stack->cps_i_v_mac()
+=item $cps->cps_i_v_mac()
 
 (C<cpsIfVlanSecureMacAddress>)
 
@@ -327,34 +327,52 @@ These are methods that return scalar values from SNMP
 
 =over
 
-=item $stack->cps_m_status()
+=item $cps->cps_m_status()
 
 (C<cpsSecureMacAddrRowStatus>)
 
-=item $stack->cps_m_age()
+=item $cps->cps_m_age()
 
 (C<cpsSecureMacAddrRemainingAge>)
 
-=item $stack->cps_m_type()
+=item $cps->cps_m_type()
 
 (C<cpsSecureMacAddrType>)
 
-=item $stack->cps_m_mac()
+=item $cps->cps_m_mac()
 
 (C<cpsSecureMacAddress>)
 
 =back
 
-=head2 C<CISCO-PAE-MIB::dot1xPaePortEntry>
+=head2 C<IEEE8021-PAE-MIB::dot1xPaePortEntry>
 
 =over
 
-=item $stack->pae_i_capabilities()
+=item $cps->pae_i_capabilities()
 
 C<dot1xPaePortCapabilities>
 
 Indicates the PAE functionality that this Port supports
-and that may be managed through this MIB.
+and that may be managed through this MIB munged to return either
+C<'dot1xPaePortAuthCapable'> or C<'dot1xPaePortSuppCapable'>.
+
+=item $cps->pae_i_last_eapol_frame_source()
+
+C<dot1xAuthLastEapolFrameSource>
+
+The source MAC address carried in the most recently received EAPOL frame.
+
+=back
+
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item munge_pae_capabilities()
+
+Return either C<'dot1xPaePortAuthCapable'> or C<'dot1xPaePortSuppCapable'>
+based upon bit value.
 
 =back
 
