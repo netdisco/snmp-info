@@ -90,10 +90,10 @@ $VERSION = '1.09';
           );
 
 %MUNGE = (
-            'ns_ch_type'       => \&munge_ns_com_type,
+            'ns_ch_type'       => \&SNMP::Info::munge_e_type,
             'ns_grp_type'      => \&munge_ns_grp_type,
-            'ns_com_type'      => \&munge_ns_com_type,
-            'ns_store_type'    => \&munge_ns_store_type,
+            'ns_com_type'      => \&SNMP::Info::munge_e_type,
+            'ns_store_type'    => \&SNMP::Info::munge_e_type,
          );
 
 sub os_ver {
@@ -140,7 +140,7 @@ sub serial {
 
 # This class supports both stackable and chassis based switches, identify if
 # we have a stackable so that we return appropriate entPhysicalClass 
-sub ns_e_is_virtual {
+sub _ns_e_is_virtual {
     my $stack   = shift;
 
     # We really only need one value, but we want this cached since most methods
@@ -150,7 +150,7 @@ sub ns_e_is_virtual {
 }
 
 # Identify is the stackable is actually a stack vs. single switch
-sub ns_e_is_stack {
+sub _ns_e_is_stack {
     my $stack   = shift;
 
     my $s_test = $stack->ns_e_class() || {};
@@ -168,7 +168,7 @@ sub ns_e_index {
     my $partial = shift;
 
     my $ns_e_idx = $stack->ns_com_grp_idx($partial) || {};
-    my $is_virtual = $stack->ns_e_is_virtual();
+    my $is_virtual = $stack->_ns_e_is_virtual();
 
     my %ns_e_index;
     foreach my $iid (keys %$ns_e_idx){
@@ -190,7 +190,7 @@ sub ns_e_class {
     my $ns_e_idx   = $stack->ns_e_index($partial) || {};
     my $classes    = $stack->ns_grp_type();
     my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
-    my $is_virtual = $stack->ns_e_is_virtual();
+    my $is_virtual = $stack->_ns_e_is_virtual();
 
     my %ns_e_class;
     foreach my $iid (keys %$ns_e_idx){
@@ -237,7 +237,7 @@ sub ns_e_name {
     my $ns_class  = $stack->ns_e_class() || {};
     my $ns_e_idx  = $stack->ns_e_index() || {};
     my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
-    my $is_virtual = $stack->ns_e_is_virtual();
+    my $is_virtual = $stack->_ns_e_is_virtual();
 
     my %ns_e_name;
     foreach my $iid (keys %$ns_e_idx){
@@ -334,7 +334,7 @@ sub ns_e_type {
 
     my $ns_e_idx  = $stack->ns_e_index($partial) || {};
     my $ns_e_type = $stack->ns_com_type($partial) || {};
-    my $is_stack  = $stack->ns_e_is_stack();
+    my $is_stack  = $stack->_ns_e_is_stack();
     my $ch_type   = $stack->ns_ch_type();
 
     my %ns_e_type;
@@ -356,8 +356,8 @@ sub ns_e_pos {
 
     my $ns_e_idx   = $stack->ns_e_index($partial) || {};
     my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
-    my $is_stack   = $stack->ns_e_is_stack();
-    my $is_virtual = $stack->ns_e_is_virtual();
+    my $is_stack   = $stack->_ns_e_is_stack();
+    my $is_virtual = $stack->_ns_e_is_virtual();
 
     my %ns_e_pos;
     foreach my $iid (keys %$ns_e_idx){
@@ -404,7 +404,7 @@ sub ns_e_fwver {
     my $ns_e_ver   = $stack->ns_store_ver($partial)  || {};
     my $ns_e_type  = $stack->ns_store_type($partial) || {};
     my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
-    my $is_virt   = $stack->ns_e_is_virtual();
+    my $is_virt   = $stack->_ns_e_is_virtual();
 
     my %ns_e_fwver;
     foreach my $iid (keys %$ns_e_type){
@@ -434,7 +434,7 @@ sub ns_e_swver {
     my $ns_e_ver  = $stack->ns_store_ver($partial)  || {};
     my $ns_e_type = $stack->ns_store_type($partial) || {};
     my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
-    my $is_virt   = $stack->ns_e_is_virtual();
+    my $is_virt   = $stack->_ns_e_is_virtual();
 
     my %ns_e_swver;
     foreach my $iid (keys %$ns_e_type){
@@ -462,8 +462,8 @@ sub ns_e_parent {
 
     my $ns_e_idx   = $stack->ns_e_index($partial) || {};
     my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
-    my $is_stack   = $stack->ns_e_is_stack();
-    my $is_virtual = $stack->ns_e_is_virtual();
+    my $is_stack   = $stack->_ns_e_is_stack();
+    my $is_virtual = $stack->_ns_e_is_virtual();
 
     my %ns_e_parent;
     foreach my $iid (keys %$ns_e_idx){
@@ -508,22 +508,6 @@ sub ns_e_parent {
         next;
     }
     return \%ns_e_parent;
-}
-
-sub munge_ns_com_type {
-    my $oid = shift;
-
-    my $name = &SNMP::translateObj($oid);
-    return $name if defined($name);
-    return $oid;
-}
-
-sub munge_ns_store_type {
-    my $oid = shift;
-
-    my $name = &SNMP::translateObj($oid);
-    return $name if defined($name);
-    return $oid;
 }
 
 sub munge_ns_grp_type {
@@ -582,8 +566,8 @@ Eric Miller
 
 SNMP::Info::NortelStack is a subclass of SNMP::Info that provides an interface
 to F<S5-AGENT-MIB> and F<S5-CHASSIS-MIB>.  These MIBs are used across the
-Nortel Stackable Ethernet Switches (BayStack), as well as, older Nortel devices
-such as the Centillion family of ATM switches.
+Nortel Stackable Ethernet Switches (BayStack), as well as, older Nortel
+devices such as the Centillion family of ATM switches.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
@@ -625,7 +609,8 @@ Returns serial number of the chassis
 
 =item $stack->ns_ag_ver()
 
-Returns the version of the agent in the form 'major.minor.maintenance[letters]'. 
+Returns the version of the agent in the form
+'major.minor.maintenance[letters]'. 
 
 (C<s5AgInfoVer>)
 
@@ -689,9 +674,9 @@ detected since cold/warm start.
 
 =item $stack->ns_cfg_time()
 
-Returns the value of C<sysUpTime> when the last configuration change (other than
-attachment changes, or physical additions or removals) in the chassis was
-detected.
+Returns the value of C<sysUpTime> when the last configuration change (other
+than attachment changes, or physical additions or removals) in the chassis
+was detected.
 
 (C<s5ChasGblConfLstChng>)
 
@@ -734,15 +719,15 @@ group which contains this component.
 
 =item $stack->ns_com_idx()
 
-Returns reference to hash.  Key: Table entry, Value: Index of the component in
-the group.  For modules in the 'board' group, this is the slot number.
+Returns reference to hash.  Key: Table entry, Value: Index of the component
+in the group.  For modules in the 'board' group, this is the slot number.
 
 (C<s5ChasComIndx>)
 
 =item $stack->ns_com_sub_idx()
 
-Returns reference to hash.  Key: Table entry, Value: Index of the sub-component
-in the component.
+Returns reference to hash.  Key: Table entry, Value: Index of the
+sub-component in the component.
 
 (C<s5ChasComSubIndx>)
 
@@ -778,8 +763,8 @@ Returns reference to hash.  Key: Table entry, Value: Serial Number
 
 =item $stack->ns_store_grp_idx()
 
-Returns reference to hash.  Key: Table entry, Value: Index of the chassis level
-group.
+Returns reference to hash.  Key: Table entry, Value: Index of the chassis
+level group.
 
 (C<s5ChasStoreGrpIndx>)
 
@@ -791,13 +776,15 @@ Returns reference to hash.  Key: Table entry, Value: Index of the group.
 
 =item $stack->ns_store_sub_idx()
 
-Returns reference to hash.  Key: Table entry, Value: Index of the sub-component.
+Returns reference to hash.  Key: Table entry, Value: Index of the
+sub-component.
 
 (C<s5ChasStoreSubIndx>)
 
 =item $stack->ns_store_idx()
 
-Returns reference to hash.  Key: Table entry, Value: Index of the storage area.
+Returns reference to hash.  Key: Table entry, Value: Index of the storage
+area.
 
 (C<s5ChasStoreIndx>)
 
@@ -848,6 +835,10 @@ Returns reference to hash.  Key: IID, Value: Human friendly name
 
 (C<s5ChasComDescr>)
 
+=item $stack->ns_e_name()
+
+Returns reference to hash.  Key: IID, Value: Human friendly name
+
 =item $stack->ns_e_hwver()
 
 Returns reference to hash.  Key: IID, Value: Hardware version
@@ -883,17 +874,28 @@ Returns reference to hash.  Key: IID, Value: Firmware revision.
 Value of C<s5ChasStoreCntntVer> for entries with rom, boot, or firmware in
 C<s5ChasStoreType>.
 
-=item $stack->ns_e_fwver()
+=item $stack->ns_e_swver()
 
 Returns reference to hash.  Key: IID, Value: Software revision.
 
-Value of C<s5ChasStoreCntntVer> for entries with "flash" in C<s5ChasStoreType>.
+Value of C<s5ChasStoreCntntVer> for entries with "flash" in
+C<s5ChasStoreType>.
 
 =item $stack->ns_e_parent()
 
 Returns reference to hash.  Key: IID, Value: The value of ns_e_index() for the
 entity which 'contains' this entity.  A value of zero indicates	this entity
 is not contained in any other entity.
+
+=back
+
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item munge_ns_grp_type()
+
+Munges C<s5ChasGrpType> into an C<ENTITY-MIB> PhysicalClass equivalent. 
 
 =back
 
