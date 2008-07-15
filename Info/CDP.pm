@@ -72,32 +72,16 @@ $VERSION = '1.09';
           );
 
 %MUNGE = (
-          'c_capabilities' => \&munge_caps,
-          'c_platform'     => \&munge_null,
-          'c_domain'       => \&munge_null,
-          'c_port'         => \&munge_null,
-          'c_id'           => \&munge_null,
-          'c_ver'          => \&munge_null,
+          'c_capabilities' => \&SNMP::Info::munge_caps,
+          'c_platform'     => \&SNMP::Info::munge_null,
+          'c_domain'       => \&SNMP::Info::munge_null,
+          'c_port'         => \&SNMP::Info::munge_null,
+          'c_id'           => \&SNMP::Info::munge_null,
+          'c_ver'          => \&SNMP::Info::munge_null,
           'c_ip'           => \&SNMP::Info::munge_ip,
           'c_power'        => \&munge_power,
 
          );
-
-# munge_null() - removes nulls (\0)
-sub munge_null {
-    my $text = shift || return;
-    
-    $text =~ s/\0//g;
-    return $text;
-}
-
-sub munge_caps {
-    my $caps = shift;
-    return unless defined $caps;
-
-    my $bits = substr(unpack("B*",$caps),-7);
-    return $bits;
-}
 
 sub munge_power {
     my $power = shift;
@@ -218,7 +202,8 @@ CDP is a Layer 2 protocol that supplies topology information of devices that
 also speak CDP, mostly switches and routers.  CDP is implemented in Cisco and
 some HP devices.
 
-Create or use a device subclass that inherits this class.  Do not use directly.
+Create or use a device subclass that inherits this class.  Do not use
+directly.
 
 Each device implements a subset of the global and cache entries. 
 Check the return value to see if that data is held by the device.
@@ -251,8 +236,8 @@ Accounts for SNMP version 1 devices which may have CDP but not cdp_run()
 
 =item $cdp->cdp_run()
 
-Is CDP enabled on this device?  Note that a lot of Cisco devices that implement
-CDP don't implement this value. @#%$!
+Is CDP enabled on this device?  Note that a lot of Cisco devices that
+implement CDP don't implement this value. @#%$!
 
 (C<cdpGlobalRun>)
 
@@ -302,17 +287,23 @@ From L<http://www.cisco.com/univercd/cc/td/doc/product/lan/trsrb/frames.htm#1884
 
 =item (0x40) - Provides level 1 functionality.
 
-=item (0x20) - The bridge or switch does not forward IGMP Report packets on non router ports.
+=item (0x20) - The bridge or switch does not forward IGMP Report packets on
+non router ports.
 
-=item (0x10) - Sends and receives packets for at least one network layer protocol. If the device is routing the protocol, this bit should not be set.
+=item (0x10) - Sends and receives packets for at least one network layer
+protocol. If the device is routing the protocol, this bit should not be set.
 
-=item (0x08) - Performs level 2 switching. The difference between this bit and bit 0x02 is that a switch does not run the Spanning-Tree Protocol. This device is assumed to be deployed in a physical loop-free topology.
+=item (0x08) - Performs level 2 switching. The difference between this bit
+and bit 0x02 is that a switch does not run the Spanning-Tree Protocol. This
+device is assumed to be deployed in a physical loop-free topology.
 
-=item (0x04) - Performs level 2 source-route bridging. A source-route bridge would set both this bit and bit 0x02.
+=item (0x04) - Performs level 2 source-route bridging. A source-route bridge
+would set both this bit and bit 0x02.
 
 =item (0x02) - Performs level 2 transparent bridging.
 
-=item (0x01) - Performs level 3 routing for at least one network layer protocol.
+=item (0x01) - Performs level 3 routing for at least one network layer
+protocol.
 
 =back
 
@@ -344,11 +335,11 @@ Returns remote device id string
 
 Returns the mapping to the SNMP Interface Table.
 
-Note that a lot devices don't implement $cdp->c_index(),  So if it isn't around,
-we fake it. 
+Note that a lot devices don't implement $cdp->c_index(),  So if it isn't
+around, we fake it. 
 
-In order to map the cdp table entry back to the interfaces() entry, we truncate
-the last number off of it :
+In order to map the cdp table entry back to the interfaces() entry, we
+truncate the last number off of it :
 
   # it exists, yay.
   my $c_index     = $device->c_index();
@@ -421,6 +412,23 @@ Returns remote hardware version
 Returns the remote interface native VLAN.
 
 (C<cdpCacheNativeVLAN>)
+
+=item $cdp->c_power()
+
+Returns the amount of power consumed by remote device in milliwatts munged
+for decimal placement.
+
+(C<cdpCachePowerConsumption>)
+
+=back
+
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item munge_power()
+
+Inserts a decimal at the proper location.
 
 =back
 
