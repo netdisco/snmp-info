@@ -68,7 +68,7 @@ $VERSION = '1.09';
            );
 
 %MUNGE   = (
-            'e_type'    => \&munge_e_type,
+            'e_type'    => \&SNMP::Info::munge_e_type,
            );
 
 # entPhysicalIndex is not-accessible.  Create to facilitate emulation methods
@@ -112,14 +112,6 @@ sub e_port {
     return \%e_port;
 }
 
-sub munge_e_type {
-    my $oid = shift;
-
-    my $name = &SNMP::translateObj($oid);
-    return $name if defined($name);
-    return $oid;
-}
-
 1;
 
 __END__
@@ -156,7 +148,8 @@ See RFC 2737 for full details.
 
 Create or use a device subclass that inherit this class.  Do not use directly.
 
-For debugging purposes you can call this class directly as you would SNMP::Info
+For debugging purposes you can call this class directly as you would
+SNMP::Info
 
  my $entity = new SNMP::Info::Entity (...);
 

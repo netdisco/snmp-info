@@ -2605,6 +2605,20 @@ sub munge_null {
     return $text;
 }
 
+=item munge_e_type()
+
+Takes an OID and return the object name if the right MIB is loaded.
+
+=cut
+
+sub munge_e_type {
+    my $oid = shift;
+
+    my $name = &SNMP::translateObj($oid);
+    return $name if defined($name);
+    return $oid;
+}
+
 =back
 
 =head2 Internally Used Functions
