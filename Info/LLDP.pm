@@ -71,29 +71,14 @@ $VERSION = '1.09';
 
 
 %MUNGE = (
-          'lldp_sysdesc'        => \&munge_null,
-          'lldp_sysname'        => \&munge_null,
-          'lldp_rem_sysname'    => \&munge_null,
-          'lldp_rem_sysdesc'    => \&munge_null,
-          'lldp_rem_port_desc'  => \&munge_null,
-          'lldp_sys_cap'        => \&munge_caps,
-          'lldp_rem_sys_cap'    => \&munge_caps,
+          'lldp_sysdesc'        => \&SNMP::Info::munge_null,
+          'lldp_sysname'        => \&SNMP::Info::munge_null,
+          'lldp_rem_sysname'    => \&SNMP::Info::munge_null,
+          'lldp_rem_sysdesc'    => \&SNMP::Info::munge_null,
+          'lldp_rem_port_desc'  => \&SNMP::Info::munge_null,
+          'lldp_sys_cap'        => \&SNMP::Info::munge_bits,
+          'lldp_rem_sys_cap'    => \&SNMP::Info::munge_bits,
          );
-
-sub munge_null {
-    my $text = shift || return;
-    
-    $text =~ s/\0//g;
-    return $text;
-}
-
-sub munge_caps {
-    my $caps = shift;
-    return unless defined $caps;
-
-    my $bits = unpack("b*",$caps);
-    return $bits;
-}
 
 sub hasLLDP {
     my $lldp = shift;
@@ -296,7 +281,8 @@ LLDP is a Layer 2 protocol that allows a network device to advertise its
 identity and capabilities on the local network providing topology information.
 The protocol is defined in the IEEE standard 802.1AB.
 
-Create or use a device subclass that inherits this class.  Do not use directly.
+Create or use a device subclass that inherits this class.  Do not use
+directly.
 
 =head2 Inherited Classes
 
@@ -340,8 +326,8 @@ Nulls are removed before the value is returned.
 =item $lldp->lldp_sysdesc()
 
 The string value used to identify the system description of the local system.
-If the local agent supports IETF RFC 3418, C<lldpLocSysDesc> object should have
-the same value of C<sysDesc> object.
+If the local agent supports IETF RFC 3418, C<lldpLocSysDesc> object should
+have the same value of C<sysDesc> object.
  
 Nulls are removed before the value is returned.
 
@@ -406,8 +392,8 @@ lldp_addr if you want any return address type.
 
 =item  $lldp->lldp_addr()
 
-Returns remote address.  Type may be any IANA Address Family Number.  Currently
-only returns IPv4 or MAC addresses.
+Returns remote address.  Type may be any IANA Address Family Number.
+Currently only returns IPv4 or MAC addresses.
 
 =item $lldp->lldp_port()
 
@@ -458,7 +444,8 @@ Nulls are removed before the value is returned.
 
 =item $lldp->lldp_rem_sysname()
 
-Returns the string value used to identify the system name of the remote system.
+Returns the string value used to identify the system name of the remote
+system.
 
 Nulls are removed before the value is returned. 
 
