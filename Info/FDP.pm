@@ -75,18 +75,10 @@ $VERSION = '1.09';
           );
 
 %MUNGE = (
-          'c_capabilities' => \&munge_caps,
+          'c_capabilities' => \&SNMP::Info::munge_caps,
           'c_ip'           => \&SNMP::Info::munge_ip
          );
 
-
-sub munge_caps {
-    my $caps = shift;
-    return unless defined $caps;
-
-    my $bits = substr(unpack("B*",$caps),-7);
-    return $bits;
-}
 
 sub cdp_run {
     my $fdp = shift;
@@ -145,7 +137,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::FDP - SNMP Interface to Foundry Discovery Protocol (FDP) using SNMP
+SNMP::Info::FDP - SNMP Interface to Foundry Discovery Protocol (FDP) using
+SNMP
 
 =head1 AUTHOR
 
@@ -191,7 +184,8 @@ similar functionality to Cisco's CDP, and the SNMP interface is
 virtually identical.  FDP is implemented in Foundry devices, including
 the Bigiron and Fastiron range.
 
-Create or use a device subclass that inherits this class.  Do not use directly.
+Create or use a device subclass that inherits this class.  Do not use
+directly.
 
 Each device implements a subset of the global and cache entries. 
 Check the return value to see if that data is held by the device.
@@ -252,16 +246,51 @@ retrieved from remote devices with $fdp->id().
 
 =back
 
+=head2 Overrides
+
+CDP compatibility
+
+=over
+
+=item $fdp->c_interval()
+
+Interval in seconds at which FDP messages are generated.
+
+(C<fdpGlobalMessageInterval>)
+
+=item $fdp->c_holdtime()
+
+Time in seconds that FDP messages are kept. 
+
+(C<fdpGlobalHoldTime>)
+
+=item  $fdp->c_id() 
+
+Returns FDP device ID.  
+
+This is the device id broadcast via FDP to other devices, and is what is
+retrieved from remote devices with $fdp->id().
+
+(C<fdpGlobalDeviceId>)
+
+=item $cdp->cdp_run()
+
+Is FDP enabled on this device?
+
+=back
+
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2 FDP CACHE ENTRIES
+=head2 Overrides
+
+CDP compatibility
 
 =over
 
-=item $fdp->fdp_capabilities()
+=item $fdp->c_capabilities()
 
 Returns Device Functional Capabilities.  Results are munged into an ascii
 binary string, 7 digits long, MSB.  Each digit represents a bit from the
@@ -275,17 +304,23 @@ From L<http://www.cisco.com/univercd/cc/td/doc/product/lan/trsrb/frames.htm#1884
 
 =item (0x40) - Provides level 1 functionality.
 
-=item (0x20) - The bridge or switch does not forward IGMP Report packets on non router ports.
+=item (0x20) - The bridge or switch does not forward IGMP Report packets on
+non router ports.
 
-=item (0x10) - Sends and receives packets for at least one network layer protocol. If the device is routing the protocol, this bit should not be set.
+=item (0x10) - Sends and receives packets for at least one network layer
+protocol. If the device is routing the protocol, this bit should not be set.
 
-=item (0x08) - Performs level 2 switching. The difference between this bit and bit 0x02 is that a switch does not run the Spanning-Tree Protocol. This device is assumed to be deployed in a physical loop-free topology.
+=item (0x08) - Performs level 2 switching. The difference between this bit
+and bit 0x02 is that a switch does not run the Spanning-Tree Protocol. This
+device is assumed to be deployed in a physical loop-free topology.
 
-=item (0x04) - Performs level 2 source-route bridging. A source-route bridge would set both this bit and bit 0x02.
+=item (0x04) - Performs level 2 source-route bridging. A source-route bridge
+would set both this bit and bit 0x02.
 
 =item (0x02) - Performs level 2 transparent bridging.
 
-=item (0x01) - Performs level 3 routing for at least one network layer protocol.
+=item (0x01) - Performs level 3 routing for at least one network layer
+protocol.
 
 =back
 
@@ -294,26 +329,26 @@ this information.
 
 (C<fdpCacheCapabilities>)
 
-=item $fdp->fdp_domain()
+=item $fdp->c_domain()
 
 The CDP version of this returns remote VTP Management Domain as defined
 in C<CISCO-VTP-MIB::managementDomainName>
 
 (C<fdpCacheVTPMgmtDomain>)
 
-=item $fdp->fdp_duplex() 
+=item $fdp->c_duplex() 
 
 Returns the port duplex status from remote devices.
 
 (C<fdpCacheDuplex>)
 
-=item $fdp->fdp_id()
+=item $fdp->c_id()
 
 Returns remote device id string
 
 (C<fdpCacheDeviceId>)
 
-=item $fdp->fdp_if()
+=item $fdp->c_if()
 
 Returns the mapping to the SNMP Interface Table.
 
@@ -341,7 +376,7 @@ truncate the last number off of it :
   return \%fdp_if;
 
 
-=item $fdp->fdp_index()
+=item $fdp->c_index()
 
 Returns the mapping to the SNMP2 Interface table for FDP Cache Entries. 
 
@@ -352,37 +387,37 @@ See fdp_if() entry.
 
 (C<fdpCacheIfIndex>)
 
-=item  $fdp->fdp_ip()
+=item  $fdp->c_ip()
 
 Returns remote IP address
 
 (C<fdpCacheAddress>)
 
-=item $fdp->fdp_platform() 
+=item $fdp->c_platform() 
 
 Returns remote platform id 
 
 (C<fdpCachePlatform>)
 
-=item $fdp->fdp_port()
+=item $fdp->c_port()
 
 Returns remote port ID
 
 (C<fdpDevicePort>)
 
-=item  $fdp->fdp_proto()
+=item  $fdp->c_proto()
 
 Returns remote address type received.  Usually IP.
 
 (C<fdpCacheAddressType>)
 
-=item $fdp->fdp_ver() 
+=item $fdp->c_ver() 
 
 Returns remote hardware version
 
 (C<fdpCacheVersion>)
 
-=item $fdp->fdp_vlan()
+=item $fdp->c_vlan()
 
 Returns the remote interface native VLAN.
 
