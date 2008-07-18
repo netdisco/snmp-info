@@ -346,6 +346,10 @@ order to find the admin duplex setting for all the interfaces.
 
 Returns either (auto,none,full,half).
 
+=item $mau->mau_i_speed_admin()
+
+Returns admin speed setting for all the interfaces.
+
 =back
 
 =head2 MAU INTERFACE TABLE METHODS
@@ -428,7 +432,6 @@ capabilities we are broadcasting on that port
     Uses the same decoder as $mau->mau_type().
 
 (C<ifMauAutoNegCapAdvertised>)
-
 
 =item $mau->mau_autorec() - Returns a 32 bit bit-string representing the 
 capabilities of the device on the other end. 

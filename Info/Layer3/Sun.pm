@@ -104,6 +104,7 @@ sub i_ignore {
 }
 
 1;
+
 __END__
 
 =head1 NAME
@@ -159,19 +160,23 @@ These are methods that return scalar value from SNMP
 
 =item $sun->vendor()
 
-    Returns 'sun'
+Returns 'sun'
 
 =item $sun->os()
 
-    Returns 'sun'
+Returns 'sun'
 
 =item $sun->os_ver()
 
-    Returns the software version extracted from motd.
+Returns the software version extracted from message of the day.
 
 =item $sun->model()
 
-    Returns 'Solaris Router'
+Returns 'Solaris Router'
+
+=item $sun->serial()
+
+Returns serial number
 
 =back
 
@@ -183,6 +188,18 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=head2 Overrides
+
+=over
+
+=item $sun->i_ignore()
+
+Returns reference to hash.  Increments value of IID if port is to be ignored.
+
+Ignores loopback
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

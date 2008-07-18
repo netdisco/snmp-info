@@ -203,6 +203,10 @@ Returns the system uptime instead of the agent uptime.
 NOTE: discontinuity timers and other Time Stamp based objects
 are based on agent uptime, so use orig_uptime().
 
+=item $netsnmp->serial()
+
+Returns ''.
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -213,6 +217,18 @@ See documentation in L<SNMP::Info::Layer3> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=head2 Overrides
+
+=over
+
+=item $netsnmp->i_ignore()
+
+Returns reference to hash.  Increments value of IID if port is to be ignored.
+
+Ignores loopback
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

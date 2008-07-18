@@ -426,7 +426,7 @@ for decimal placement.
 
 =over
 
-=item munge_power()
+=item $cdp->munge_power()
 
 Inserts a decimal at the proper location.
 

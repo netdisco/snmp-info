@@ -369,7 +369,7 @@ The source MAC address carried in the most recently received EAPOL frame.
 
 =over
 
-=item munge_pae_capabilities()
+=item $cps->munge_pae_capabilities()
 
 Return either C<'dot1xPaePortAuthCapable'> or C<'dot1xPaePortSuppCapable'>
 based upon bit value.

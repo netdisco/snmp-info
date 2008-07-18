@@ -212,6 +212,20 @@ See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 These are methods that return scalar value from SNMP
 
+=head2 Overrides
+
+=over
+
+=item $c4000->cisco_comm_indexing()
+
+Returns 1.  Use vlan indexing.
+
+=item $c4000->fan()
+
+Returns fan status
+
+=back
+
 =head2 Global Methods imported from SNMP::Info::CiscoVTP
 
 See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
@@ -248,6 +262,28 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=head2 Overrides
+
+=over
+
+=item $c4000->i_duplex()
+
+Parses mau_index and mau_link to return the duplex information for
+interfaces.
+
+=item $c4000->i_duplex_admin()
+
+Parses C<mac_index>,C<mau_autostat>,C<mau_type_admin> in
+order to find the admin duplex setting for all the interfaces.
+
+Returns either (auto,full,half).
+
+=item $c4000->i_speed_admin()
+
+Returns administrative speed for interfaces.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 

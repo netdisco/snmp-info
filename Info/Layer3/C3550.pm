@@ -328,6 +328,10 @@ Will take the translated model number and try to format it better.
 
 Tries to cull the number of ports from the model number.
 
+=item $c3550->cisco_comm_indexing()
+
+Returns 1.  Use vlan indexing.
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3

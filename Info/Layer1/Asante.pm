@@ -163,7 +163,9 @@ sub i_name {
 
     return \%i_name;
 }
+
 1;
+
 __END__
 
 =head1 NAME
@@ -249,6 +251,19 @@ See L<SNMP::Info::Layer1/"GLOBALS"> for details.
 
 =over
 
+=item $asante->interfaces()
+
+Returns reference to the map between IID and physical Port.
+
+=item $asante->i_description() 
+
+Description of the interface.
+
+=item $asante->i_mac()
+
+MAC address of the interface.  Note this is just the MAC of the port, not
+anything connected to it.
+
 =item $asante->i_name()
 
 Returns reference to map of IIDs to human-set port name.
@@ -257,6 +272,10 @@ Returns reference to map of IIDs to human-set port name.
 
 Returns reference to map of IIDs to link status.  Changes
 the values of asante_up() to 'up' and 'down'.
+
+=item $asante->i_speed()
+
+Speed of the link, human format.
 
 =back
 

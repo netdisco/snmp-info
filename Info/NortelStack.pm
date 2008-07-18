@@ -893,7 +893,7 @@ is not contained in any other entity.
 
 =over
 
-=item munge_ns_grp_type()
+=item $stack->munge_ns_grp_type()
 
 Munges C<s5ChasGrpType> into an C<ENTITY-MIB PhysicalClass> equivalent. 
 

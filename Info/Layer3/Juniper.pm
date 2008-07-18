@@ -176,20 +176,26 @@ These are methods that return scalar value from SNMP
 
 =item $juniper->vendor()
 
-    Returns 'juniper'
+Returns C<'juniper'>
 
 =item $juniper->os()
 
-    Returns 'junos'
+Returns C<'junos'>
 
 =item $juniper->os_ver()
 
-    Returns the software version extracted from sysDescr.
+Returns the software version extracted from C<sysDescr>.
 
 =item $juniper->model()
 
-    Returns the model from sysObjectID, with jnxProductName
-    removed from the beginning.
+Returns the model from C<sysObjectID>, with C<jnxProductNameremoved> from the
+beginning.
+
+=item $juniper->serial()
+
+Returns serial number
+
+(C<jnxBoxSerialNo.0>)
 
 =back
 

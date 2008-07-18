@@ -390,6 +390,10 @@ Returns enterasys
 
 Returns enterasys
 
+=item $enterasys->os_ver()
+
+Returns os version extracted from C<sysDescr>
+
 =item $enterasys->mac()
 
 Returns base mac
@@ -429,11 +433,16 @@ to a hash.
 
 =over
 
+=item $enterasys->interfaces()
+
+Mapping between the Interface Table Index (iid) and the physical port name.
+
 =item $enterasys->i_ignore()
 
 Returns reference to hash.  Creates a key for each IID that should be ignored.
 
-Currently looks for rs232, tunnel,loopback,lo,null from $enterasys->interfaces()
+Currently looks for rs232, tunnel,loopback,lo,null from
+$enterasys->interfaces()
 
 =item $enterasys->i_duplex()
 
@@ -443,6 +452,17 @@ See documentation for mau_i_duplex() in L<SNMP::Info::MAU/"TABLE METHODS">.
 
 See documentation for mau_i_duplex_admin() in
 L<SNMP::Info::MAU/"TABLE METHODS">.
+
+=item $enterasys->fw_mac()
+
+Returns reference to hash of forwarding table MAC Addresses.
+
+=item $enterasys->fw_port()
+
+Returns reference to hash of forwarding table entries port interface
+identifier (iid).
+
+(C<dot1qTpFdbPort>)
 
 =back
 
@@ -474,9 +494,9 @@ Returns reference to hash.  Key: iid Value: remote IPv4 address
 If multiple entries exist with the same local port, c_if(), with the same IPv4
 address, c_ip(), it may be a duplicate entry.
 
-If multiple entries exist with the same local port, c_if(), with different IPv4
-addresses, c_ip(), there is either a non-CDP/LLDP device in between two or
-more devices or multiple devices which are not directly connected.  
+If multiple entries exist with the same local port, c_if(), with different
+IPv4 addresses, c_ip(), there is either a non-CDP/LLDP device in between two
+or more devices or multiple devices which are not directly connected.  
 
 Use the data from the Layer2 Topology Table below to dig deeper.
 

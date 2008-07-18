@@ -395,6 +395,12 @@ the port administrative speed (C<portAdminSpeed>) which if set to
 autonegotiate then the duplex will also autonegotiate, otherwise it uses the
 reported port duplex (C<portDuplex>).
 
+=item $stack->i_speed_admin()
+
+Returns reference to hash of iid to administrative speed setting.
+
+C<portAdminSpeed>
+
 =item $stack->set_i_speed_admin(speed, ifIndex)
 
     Sets port speed, must be supplied with speed and port C<ifIndex>
@@ -600,6 +606,17 @@ C<portAdminTxFlowControl>
 =item $stack->p_duplex_admin()
 
 (C<portCpbDuplex>)
+
+=back
+
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item $stack->munge_port_status()
+
+Munges binary byte describing each port into ascii, and returns an ascii
+list separated by spaces.
 
 =back
 

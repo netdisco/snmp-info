@@ -486,6 +486,10 @@ IDs.  These are the VLANs which are members of the egress list for the port.
     print "Port: $port VLAN: $vlan\n";
   }
 
+=item $alteon->v_index()
+
+Returns VLAN IDs
+
 =item $alteon->v_name()
 
 Human-entered name for vlans.

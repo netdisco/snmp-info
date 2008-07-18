@@ -292,9 +292,15 @@ to a hash.
 
 =item $l1->interfaces()
 
+Returns reference to the map between IID and physical Port.
+
 =item $l1->i_up()
 
+Returns reference to map of IIDs to link status.
+
 =item $l1->i_up_admin()
+
+Returns reference to map of IIDs to administrative link status.
 
 =back
 

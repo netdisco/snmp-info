@@ -481,6 +481,7 @@ sub set_add_i_vlan_tagged {
 }
 
 1;
+
 __END__
 
 =head1 NAME
@@ -563,6 +564,10 @@ Returns extreme
 
 Returns extreme
 
+=item $extreme->os_ver()
+
+Parses device operating system version from description()
+
 =item $extreme->serial()
 
 Returns serial number
@@ -580,6 +585,12 @@ Returns system temperature
 Returns status of power supply 1
 
 (C<extremePowerSupplyStatus.1>)
+
+=item $extreme->ps2_status()
+
+Returns status of power supply 2
+
+(C<extremePowerSupplyStatus.2>)
 
 =item $extreme->fan()
 
@@ -618,6 +629,29 @@ to a hash.
 
 =over
 
+=item $extreme->interfaces()
+
+Returns a mapping between the Interface Table Index (iid) and the physical
+port name.
+
+=item $extreme->i_duplex()
+
+Parses mau_index and mau_link to return the duplex information for
+interfaces.
+
+=item $extreme->i_duplex_admin()
+
+Parses C<mac_index>,C<mau_autostat>,C<mau_type_admin> in
+order to find the admin duplex setting for all the interfaces.
+
+Returns either (auto,full,half).
+
+=item $extreme->i_ignore()
+
+Returns reference to hash.  Increments value of IID if port is to be ignored.
+
+Ignores VLAN meta interfaces and loopback
+
 =item $extreme->fw_mac()
 
 (C<extremeFdbMacFdbMacAddress>)
@@ -634,7 +668,32 @@ to a hash.
 
 Returns a mapping between C<ifIndex> and the VLAN.
 
-=item $stack->bp_index()
+=item $extreme->i_vlan_membership()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the egress list for the port.
+
+  Example:
+  my $interfaces = $extreme->interfaces();
+  my $vlans      = $extreme->i_vlan_membership();
+  
+  foreach my $iid (sort keys %$interfaces) {
+    my $port = $interfaces->{$iid};
+    my $vlan = join(',', sort(@{$vlans->{$iid}}));
+    print "Port: $port VLAN: $vlan\n";
+  }
+
+=item $extreme->v_index()
+
+Returns VLAN IDs
+
+=item $extreme->v_name()
+
+Returns VLAN names
+
+(C<extremeVlanIfDescr>)
+
+=item $extreme->bp_index()
 
 Returns reference to hash of bridge port table entries map back to interface
 identifier (iid)
@@ -651,6 +710,13 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
+
+=head1 SET METHODS
+
+These are methods that provide SNMP set functionality for overridden methods
+or provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
+operations. 
 
 =over
 
@@ -694,6 +760,20 @@ with the numeric VLAN ID and port C<ifIndex>.
   my %if_map = reverse %{$extreme->interfaces()};
   $extreme->set_remove_i_vlan_tagged('2', $if_map{'FastEthernet0/1'}) 
     or die "Couldn't add port to egress list. ",$extreme->error(1);
+
+=back
+
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item $extreme->munge_power_stat()
+
+Removes 'present' and changes 'not' to 'Not' in the front of a string.
+
+=item $extreme->munge_true_ok()
+
+Replaces 'true' with "OK" and 'false' with "Not OK".
 
 =back
 

@@ -561,6 +561,15 @@ Returns reference to hash of interface link duplex status.
 
 Crosses $foundry->sw_duplex() with $foundry->sw_index()
 
+=item $foundry->stp_p_state()
+
+"The port's current state as defined by application of the Spanning Tree
+Protocol.
+
+Skipped if device is an EdgeIron 24G due to reports of hangs.
+
+(C<dot1dStpPortState>)
+
 =back
 
 =head2 Foundry Switch Port Information Table (C<snSwPortIfTable>)

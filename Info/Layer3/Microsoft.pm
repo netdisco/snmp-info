@@ -149,23 +149,29 @@ See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 These are methods that return scalar value from SNMP
 
+=head2 Overrides
+
 =over
 
 =item $router->vendor()
 
-    Returns 'microsoft'
+Returns C<'microsoft'>
 
 =item $router->os()
 
-    Returns 'windows'
+Returns C<'windows'>
 
 =item $router->os_ver()
 
-    Returns nothing.
+Returns ''
 
 =item $router->model()
 
-    Returns 'Windows Router'
+Returns C<'Windows Router'>
+
+=item $router->serial()
+
+Returns ''
 
 =back
 
@@ -177,6 +183,17 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=head2 Overrides
+
+=over
+
+=item $router->interfaces()
+
+Map the Interfaces to their physical names.  Adds interface number to
+interface name because identical interface cards return identical C<ifDescr>.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

@@ -246,4 +246,14 @@ Returns reference to hash.  Indexes Stats Table to Duplex Status of port.
 
 =back
 
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item $el->munge_el_duplex()
+
+Removes 'Duplex' from the end of a string.
+
+=back
+
 =cut

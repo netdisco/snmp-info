@@ -1501,8 +1501,11 @@ class only returns container and module types.
 
 =item $bayrs->e_descr()
 
-Returns reference to hash.  Key: IID, Value: Human friendly name.  This is only
-available for processors, link modules, and hardware modules.
+Returns reference to hash.  Key: IID, Value: Human friendly name.
+
+=item $bayrs->e_name()
+
+Returns reference to hash.  Key: IID, Value: Human friendly name.
 
 =item $bayrs->e_hwver()
 
@@ -1556,5 +1559,19 @@ See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item $extreme->munge_hw_rev()
+
+Converts octets to a decimal major.minor string.
+
+=item $extreme->munge_wf_serial()
+
+Coverts octets to a decimal string.
+
+=back
 
 =cut

@@ -249,6 +249,10 @@ Returns 'nortel'
 
 Returns 'passport'
 
+=item $n1600->os_ver()
+
+Returns os version extracted from C<sysDescr>.
+
 =back
 
 =head2 Overrides

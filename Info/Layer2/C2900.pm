@@ -295,6 +295,10 @@ These are methods that return scalar value from SNMP
 
 Returns 'cisco' :)
 
+=item $c2900->cisco_comm_indexing()
+
+Returns 1.  Use vlan indexing.
+
 =back
 
 =head2 Globals imported from SNMP::Info::CiscoVTP

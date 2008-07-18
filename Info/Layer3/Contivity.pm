@@ -292,8 +292,12 @@ to a hash.
 
 =item $contivity->interfaces()
 
-Returns reference to the map between IID and physical Port.  Skips loopback and
-tunnel interfaces.
+Returns reference to the map between IID and physical Port.  Skips loopback
+and tunnel interfaces.
+
+=item $contivity->i_name()
+
+Interface Name field.  Skips loopback and tunnel interfaces.
 
 =back
 

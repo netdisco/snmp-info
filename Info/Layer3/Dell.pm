@@ -391,6 +391,23 @@ sometimes not unique.
 
 Returns reference to hash of iid to current link administrative duplex setting.
 
+=item $dell->fw_mac()
+
+Returns reference to hash of forwarding table MAC Addresses.
+
+Some devices don't implement the C<BRIDGE-MIB> forwarding table, so we use
+the C<Q-BRIDGE-MIB> forwarding table.  Fall back to the C<BRIDGE-MIB> if
+C<Q-BRIDGE-MIB> doesn't return anything.
+
+=item $dell->fw_port()
+
+Returns reference to hash of forwarding table entries port interface
+identifier (iid)
+
+Some devices don't implement the C<BRIDGE-MIB> forwarding table, so we use
+the C<Q-BRIDGE-MIB> forwarding table.  Fall back to the C<BRIDGE-MIB> if
+C<Q-BRIDGE-MIB> doesn't return anything.
+
 =back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
