@@ -214,6 +214,10 @@ Returns IP Address of Managed Device.
 
 Tries to cull out C<AT-nnnnX> out of the description field.
 
+=item $allied->mac()
+
+Returns device MAC. 
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer2

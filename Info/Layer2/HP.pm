@@ -328,20 +328,20 @@ sub slots {
 
 sub fan {
     my $hp = shift;
-    return &sensor($hp, 'fan');
+    return &_sensor($hp, 'fan');
 }
 
 sub ps1_status {
     my $hp = shift;
-    return &sensor($hp, 'power', '^power supply 1') || &sensor($hp, 'power', '^power supply sensor');
+    return &_sensor($hp, 'power', '^power supply 1') || &_sensor($hp, 'power', '^power supply sensor');
 }
 
 sub ps2_status {
     my $hp = shift;
-    return &sensor($hp, 'power', '^power supply 2') || &sensor($hp, 'power', '^redundant');
+    return &_sensor($hp, 'power', '^power supply 2') || &_sensor($hp, 'power', '^redundant');
 }
 
-sub sensor {
+sub _sensor {
     my $hp = shift;
     my $search_type = shift || 'fan';
     my $search_name = shift || '';
@@ -801,6 +801,18 @@ Returns number of entries in $hp->e_name that have 'slot' in them.
 
 hp
 
+=item $hp->fan()
+
+Returns fan status
+
+=item $hp->ps1_status()
+
+Power supply 1 status
+
+=item $hp->ps2_status()
+
+Power supply 2 status
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer2
@@ -866,6 +878,14 @@ older devices looks in F<HP-VLAN>.
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
     print "Port: $port VLAN: $vlan\n";
   }
+
+=item $hp->v_index()
+
+Returns VLAN IDs
+
+=item $hp->v_name()
+
+Returns VLAN names
 
 =item $hp->bp_index()
 

@@ -194,6 +194,10 @@ Returns IP Address of DSLAM.
 
 Tries to cull out model out of the description field.
 
+=item $zyxel->layers()
+
+Returns 00000011.
+
 =back
 
 =head2 Global Methods imported from SNMP::Info::Layer2

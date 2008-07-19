@@ -221,7 +221,23 @@ Max Baker
 
 This module is Deprecated.  Please use Layer3::Foundry instead.
 
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $foundry = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 1
+                        ) 
+    or die "Can't connect to DestHost.\n";
+
+ my $class = $foundry->class();
+
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
 =head1 DESCRIPTION
+
+This module is Deprecated.  Please use Layer3::Foundry instead.
 
 This module provides support for Foundry EdgeIron Switches
 
@@ -253,7 +269,25 @@ These are methods that return scalar value from SNMP
 
 =over
 
-=item todo
+=item $foundry->model()
+
+Returns model type.
+
+=item $foundry->vendor()
+
+Returns 'foundry'
+
+=item $foundry->os()
+
+Returns 'foundry'
+
+=item $foundry->os_ver()
+
+Returns the software version
+
+=item $foundry->serial()
+
+Returns the serial number
 
 =back
 
@@ -274,7 +308,38 @@ to a hash.
 
 =over
 
-=item todo2
+=item $foundry->interfaces()
+
+Returns reference to hash of interface names to iids.
+
+=item $foundry->i_ignore()
+
+Returns reference to hash of interfaces to be ignored.
+
+Ignores interfaces with descriptions of  tunnel,loopback,null 
+
+=item $foundry->i_duplex()
+
+Returns reference to hash of interface link duplex status. 
+
+Crosses $foundry->sw_duplex() with $foundry->sw_index()
+
+=item $foundry->i_duplex_admin()
+
+Returns reference to hash of interface administrative duplex status. 
+
+=item $foundry->stp_p_state()
+
+"The port's current state as defined by application of the Spanning Tree
+Protocol.
+
+Skipped if device is an EdgeIron 24G due to reports of hangs.
+
+(C<dot1dStpPortState>)
+
+=item $foundry->i_vlan()
+
+Returns a mapping between C<ifIndex> and the PVID or default VLAN.
 
 =back
 

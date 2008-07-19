@@ -359,6 +359,10 @@ Returns 'cisco' :)
 
 =over
 
+=item $c1900->cisco_comm_indexing()
+
+Returns 1.  Use vlan indexing.
+
 =item $c1900->bulkwalk_no
 
 Return C<1>.  Bulkwalk is turned off for this class.
@@ -389,6 +393,10 @@ to a hash.
 =head2 Overrides
 
 =over
+
+=item $c1900->interfaces()
+
+Returns reference to the map between IID and physical Port.
 
 =item $c1900->i_duplex()
 

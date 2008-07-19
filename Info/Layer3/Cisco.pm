@@ -274,6 +274,10 @@ Returns EIGRP peer IP addresses
 
 (C<cEigrpPeerAddr>)
 
+=item $cisco->i_vlan()
+
+Returns a mapping between C<ifIndex> and the PVID or default VLAN.
+
 =back
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP

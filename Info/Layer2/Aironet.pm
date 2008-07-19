@@ -445,7 +445,11 @@ Adds info from method e_descr() from SNMP::Info::Entity
 
 =item $aironet->vendor()
 
-    Returns 'cisco' :)
+Returns 'cisco'
+
+=item $aironet->description()
+
+System description
 
 =back
 
@@ -463,6 +467,26 @@ See documentation in L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
+=over
+
+=item $aironet->cd11_port()
+
+Returns radio interfaces.
+
+=item $aironet->cd11_mac()
+
+Returns radio interface MAC addresses.
+
+=item $aironet->cd11_ssid()
+
+Returns radio interface ssid.
+
+=item $aironet->dot11_cur_tx_pwr_mw()
+
+Current transmit power, in milliwatts, of the radio interface.
+
+=back
+
 =head2 Overrides
 
 =over
@@ -471,10 +495,41 @@ See documentation in L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 
 Uses the i_description() field.
 
+=item $aironet->i_mac()
+
+MAC address of the interface. Note this is just the MAC of the port, not
+anything connected to it.
+
 =item $aironet->i_duplex()
 
 Crosses information from SNMP::Info::EtherLike to get duplex info for
 interfaces.
+
+=item $aironet->bp_index()
+
+Returns reference to hash of bridge port table entries map back to interface
+identifier (iid)
+
+=item $aironet->fw_mac()
+
+Returns reference to hash of forwarding table MAC Addresses
+
+=item $aironet->fw_port()
+
+Returns reference to hash of forwarding table entries port interface
+identifier (iid)
+
+=item $aironet->i_vlan()
+
+Returns a mapping between C<ifIndex> and the PVID or default VLAN.
+
+=item $aironet->v_index()
+
+Returns VLAN IDs
+
+=item $aironet->v_name()
+
+Returns VLAN names
 
 =back
 
@@ -489,5 +544,15 @@ See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::EtherLike
 
 See documentation in L<SNMP::Info::EtherLike/"TABLE METHODS"> for details.
+
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item $aironet->munge_cd11_txrate()
+
+Converts units of half a megabit to human readable string.
+
+=back
 
 =cut

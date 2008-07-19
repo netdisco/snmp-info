@@ -330,6 +330,18 @@ to return depending on which it is.
 
 Removes C<sreg-> from the model name
 
+=item $baystack->os()
+
+Returns 'bay'.
+
+=item $bay->os_ver()
+
+Returns the os version extracted from C<sysDescr>.
+
+=item $bay->os_bin()
+
+Returns the firmware version extracted from C<sysDescr>.
+
 =item $bay->cdp_id()
 
 Returns the IP that the device is sending out for its Nmm topology info.
@@ -403,6 +415,14 @@ an array of neighbors, is if there is a non-bay device in between two or more
 devices. 
 
 Use the data from the Layer2 Topology Table below to dig deeper.
+
+=item $bay->c_port()
+
+Returns reference to hash. Key: IID, Value: Remote port (interfaces)
+
+=item $bay->c_platform()
+
+Returns reference to hash. Key: IID, Value: Remote device type
 
 =item $bay->port()
 

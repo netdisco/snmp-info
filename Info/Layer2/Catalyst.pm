@@ -289,6 +289,10 @@ it grabs $cat->m_swver()->{1} and uses that.
 
 Returns 'cisco'
 
+=item $cat->cisco_comm_indexing()
+
+Returns 1.  Use vlan indexing.
+
 =back
 
 =head2 Global Methods imported from SNMP::Info::CiscoStack
@@ -333,6 +337,10 @@ Returns the map between SNMP Interface Identifier (iid) and physical port name.
 Returns reference to hash of iid to human set name. 
 
 C<portName>
+
+=item $cat->i_physical()
+
+Returns a map to IID for ports that are physical ports, not vlans, etc.
 
 =item $cat->bp_index()
 
