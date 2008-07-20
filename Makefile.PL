@@ -1,32 +1,39 @@
-# SNMP::Info -  Makefile.PL
+# Module makefile for SNMP::Info (using ExtUtils::MakeMaker)
 # $Id$
+
+require 5.006;
 
 use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-    NAME               => 'SNMP::Info',
-    VERSION_FROM       => 'Info.pm',
-    PL_FILES           => {},
-    PREREQ_PM          => {
-                            'Test::More'   => 0,
-                            'Math::BigInt' => 0,
-                            'SNMP'         => 0,
-                            },
-    ($] >= 5.005 ?    
-          (ABSTRACT_FROM => 'Info.pm', 
-           AUTHOR        => 'Eric A. Miller <eric@jeneric.org>',)
-                 : () 
+    NAME          => 'SNMP::Info',
+    AUTHOR        => 'Eric A. Miller <emiller@cpan.org>',
+    VERSION_FROM  => 'Info.pm',
+    ABSTRACT_FROM => 'Info.pm',
+    PREREQ_PM     => {
+        'Test::More'   => 0,
+        'Math::BigInt' => 0,
+        'SNMP'         => 0,
+    },
+    PMLIBDIRS => [ 'Info', '$(BASEEXT)' ],
+    dist      => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
+    clean     => { FILES    => 'SNMP-Info-*' },
+    realclean => { FILES    => 'Makefile.old' },
+    (     ( ExtUtils::MakeMaker->VERSION() lt '6.25' ) ? ( 'PL_FILES' => {} )
+        : ()
     ),
-    PMLIBDIRS          => ['Info','$(BASEEXT)'],
-    dist               => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean              => { FILES => 'SNMP-Info-*' },
-    realclean          => { FILES => 'Makefile.old' },
+    (   ( ExtUtils::MakeMaker->VERSION() gt '6.30' ) ? ( 'LICENSE' => 'bsd' )
+        : ()
+    ),
+
 );
 
-sub MY::postamble { "
+sub MY::postamble {
+    "
 .PHONY: readme
 readme: README
 README: Info.pm
-	pod2text -l Info.pm > README" }
+	pod2text -l Info.pm > README";
+}
