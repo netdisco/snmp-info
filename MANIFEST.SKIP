@@ -18,4 +18,4 @@
 
 # Private Regression Tests
 \d+_local_
-^perlcritic.rc
+^\.?perl\w+\.?rc$
