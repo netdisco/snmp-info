@@ -5,21 +5,21 @@
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -39,140 +39,147 @@ use SNMP::Info::MAU;
 use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
 
-@SNMP::Info::Layer2::HP::ISA = qw/SNMP::Info::Layer3 SNMP::Info::MAU SNMP::Info::LLDP
-                                  SNMP::Info::CDP Exporter/;
+@SNMP::Info::Layer2::HP::ISA
+    = qw/SNMP::Info::Layer3 SNMP::Info::MAU SNMP::Info::LLDP
+    SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::HP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE/ ;
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS = ( %SNMP::Info::Layer3::MIBS,
-          %SNMP::Info::MAU::MIBS,
-          %SNMP::Info::LLDP::MIBS,
-          %SNMP::Info::CDP::MIBS,
-          'RFC1271-MIB'    => 'logDescription',
-          'HP-ICF-OID'     => 'hpSwitch4000',
-          'HP-VLAN'        => 'hpVlanMemberIndex',
-          'STATISTICS-MIB' => 'hpSwitchCpuStat',
-          'NETSWITCH-MIB'  => 'hpMsgBufFree',
-          'CONFIG-MIB'     => 'hpSwitchConfig',
-          'SEMI-MIB'       => 'hpHttpMgSerialNumber',
-          'HP-ICF-CHASSIS' => 'hpicfSensorObjectId',
-        );
+%MIBS = (
+    %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::MAU::MIBS,
+    %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::CDP::MIBS,
+    'RFC1271-MIB'    => 'logDescription',
+    'HP-ICF-OID'     => 'hpSwitch4000',
+    'HP-VLAN'        => 'hpVlanMemberIndex',
+    'STATISTICS-MIB' => 'hpSwitchCpuStat',
+    'NETSWITCH-MIB'  => 'hpMsgBufFree',
+    'CONFIG-MIB'     => 'hpSwitchConfig',
+    'SEMI-MIB'       => 'hpHttpMgSerialNumber',
+    'HP-ICF-CHASSIS' => 'hpicfSensorObjectId',
+);
 
 %GLOBALS = (
-            %SNMP::Info::Layer3::GLOBALS,
-            %SNMP::Info::MAU::GLOBALS,
-            %SNMP::Info::LLDP::GLOBALS,
-            %SNMP::Info::CDP::GLOBALS,
-            'serial1'      => 'entPhysicalSerialNum.1',
-            'serial2'      => 'hpHttpMgSerialNumber.0',
-            'hp_cpu'       => 'hpSwitchCpuStat.0',
-            'hp_mem_total' => 'hpGlobalMemTotalBytes.1',
-            'mem_free'     => 'hpGlobalMemFreeBytes.1',
-            'mem_used'     => 'hpGlobalMemAllocBytes.1',
-            'os_version'   => 'hpSwitchOsVersion.0',
-            'os_bin'       => 'hpSwitchRomVersion.0',
-            'mac'          => 'hpSwitchBaseMACAddress.0',
-            'hp_vlans'     => 'hpVlanNumber',
-           );
+    %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::MAU::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::CDP::GLOBALS,
+    'serial1'      => 'entPhysicalSerialNum.1',
+    'serial2'      => 'hpHttpMgSerialNumber.0',
+    'hp_cpu'       => 'hpSwitchCpuStat.0',
+    'hp_mem_total' => 'hpGlobalMemTotalBytes.1',
+    'mem_free'     => 'hpGlobalMemFreeBytes.1',
+    'mem_used'     => 'hpGlobalMemAllocBytes.1',
+    'os_version'   => 'hpSwitchOsVersion.0',
+    'os_bin'       => 'hpSwitchRomVersion.0',
+    'mac'          => 'hpSwitchBaseMACAddress.0',
+    'hp_vlans'     => 'hpVlanNumber',
+);
 
-%FUNCS   = (
-            %SNMP::Info::Layer3::FUNCS,
-            %SNMP::Info::MAU::FUNCS,
-            %SNMP::Info::LLDP::FUNCS,
-            %SNMP::Info::CDP::FUNCS,
-            'bp_index2' => 'dot1dBasePortIfIndex',
-            'i_type2'   => 'ifType',
-            # RFC1271
-            'l_descr'   => 'logDescription',
-            # HP-VLAN-MIB
-            'hp_v_index'   => 'hpVlanDot1QID',
-            'hp_v_name'    => 'hpVlanIdentName',
-            'hp_v_state'   => 'hpVlanIdentState',
-            'hp_v_type'    => 'hpVlanIdentType',
-            'hp_v_status'  => 'hpVlanIdentStatus',
-            'hp_v_mac'     => 'hpVlanAddrPhysAddress',
-            'hp_v_if_index'=> 'hpVlanMemberIndex',
-            'hp_v_if_tag'  => 'hpVlanMemberTagged2',
-            # CONFIG-MIB::hpSwitchPortTable
-            'hp_duplex'       => 'hpSwitchPortEtherMode',
-            'hp_duplex_admin' => 'hpSwitchPortFastEtherMode',
-             # HP-ICF-CHASSIS
-             'hp_s_oid'     => 'hpicfSensorObjectId',
-             'hp_s_name'    => 'hpicfSensorDescr',
-             'hp_s_status'  => 'hpicfSensorStatus',
-           );
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::MAU::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
+    %SNMP::Info::CDP::FUNCS,
+    'bp_index2' => 'dot1dBasePortIfIndex',
+    'i_type2'   => 'ifType',
+
+    # RFC1271
+    'l_descr' => 'logDescription',
+
+    # HP-VLAN-MIB
+    'hp_v_index'    => 'hpVlanDot1QID',
+    'hp_v_name'     => 'hpVlanIdentName',
+    'hp_v_state'    => 'hpVlanIdentState',
+    'hp_v_type'     => 'hpVlanIdentType',
+    'hp_v_status'   => 'hpVlanIdentStatus',
+    'hp_v_mac'      => 'hpVlanAddrPhysAddress',
+    'hp_v_if_index' => 'hpVlanMemberIndex',
+    'hp_v_if_tag'   => 'hpVlanMemberTagged2',
+
+    # CONFIG-MIB::hpSwitchPortTable
+    'hp_duplex'       => 'hpSwitchPortEtherMode',
+    'hp_duplex_admin' => 'hpSwitchPortFastEtherMode',
+
+    # HP-ICF-CHASSIS
+    'hp_s_oid'    => 'hpicfSensorObjectId',
+    'hp_s_name'   => 'hpicfSensorDescr',
+    'hp_s_status' => 'hpicfSensorStatus',
+);
 
 %MUNGE = (
-            # Inherit all the built in munging
-            %SNMP::Info::Layer3::MUNGE,
-            %SNMP::Info::MAU::MUNGE,
-            %SNMP::Info::LLDP::MUNGE,
-            %SNMP::Info::CDP::MUNGE
-         );
 
-%MODEL_MAP = ( 
-                'J4093A' => '2424M',
-                'J4110A' => '8000M',
-                'J4120A' => '1600M',
-                'J4121A' => '4000M',
-                'J4122A' => '2400M',
-                'J4122B' => '2424M',
-                'J4138A' => '9308M',
-                'J4139A' => '9304M',
-                'J4812A' => '2512',
-                'J4813A' => '2524',
-                'J4815A' => '3324XL',
-                'J4819A' => '5308XL',
-                'J4840A' => '6308M-SX',
-                'J4841A' => '6208M-SX',
-                'J4850A' => '5304XL',
-                'J4851A' => '3124',
-                'J4865A' => '4108GL',
-                'J4874A' => '9315M',
-                'J4887A' => '4104GL',
-                'J4899A' => '2650',
-                'J4899B' => '2650-CR',
-                'J4900A' => '2626',
-                'J4900B' => '2626-CR',
-                'J4902A' => '6108',
-                'J4903A' => '2824',
-                'J4904A' => '2848',
-                'J4905A' => '3400cl-24G',
-                'J4906A' => '3400cl-48G',
-                'J8130A' => 'WAP-420-NA',
-                'J8131A' => 'WAP-420-WW',
-                'J8133A' => 'AP520WL',
-                'J8164A' => '2626-PWR',
-                'J8165A' => '2650-PWR',
-                'J8433A' => 'CX4-6400cl-6XG',
-                'J8474A' => 'MF-6400cl-6XG',
-                'J8680A' => '9608sl',
-                'J8692A' => '3500yl-24G-PWR',
-                'J8693A' => '3500yl-48G-PWR',
-                'J8697A' => '5406zl',
-                'J8698A' => '5412zl',
-                'J8718A' => '5404yl',
-                'J8719A' => '5408yl',
-                'J8770A' => '4204vl',
-                'J8771A' => '4202vl-48G',
-                'J8772A' => '4202vl-72',
-                'J8773A' => '4208vl',
-                'J8762A' => '2600-8-PWR',
-                'J8992A' => '6200yl-24G',
-                'J9019A' => '2510-24A',
-                'J9020A' => '2510-48A',
-                'J9021A' => '2810-24G',
-                'J9022A' => '2810-48G',
-                'J9028A' => '1800-24G',
-                'J9029A' => '1800-8G',
-                'J9050A' => '2900-48G',
-                'J9049A' => '2900-24G',
-                'J9032A' => '4202vl-68G',
-                'J9091A' => '8212zl',
-           );
+    # Inherit all the built in munging
+    %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::MAU::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::CDP::MUNGE
+);
+
+%MODEL_MAP = (
+    'J4093A' => '2424M',
+    'J4110A' => '8000M',
+    'J4120A' => '1600M',
+    'J4121A' => '4000M',
+    'J4122A' => '2400M',
+    'J4122B' => '2424M',
+    'J4138A' => '9308M',
+    'J4139A' => '9304M',
+    'J4812A' => '2512',
+    'J4813A' => '2524',
+    'J4815A' => '3324XL',
+    'J4819A' => '5308XL',
+    'J4840A' => '6308M-SX',
+    'J4841A' => '6208M-SX',
+    'J4850A' => '5304XL',
+    'J4851A' => '3124',
+    'J4865A' => '4108GL',
+    'J4874A' => '9315M',
+    'J4887A' => '4104GL',
+    'J4899A' => '2650',
+    'J4899B' => '2650-CR',
+    'J4900A' => '2626',
+    'J4900B' => '2626-CR',
+    'J4902A' => '6108',
+    'J4903A' => '2824',
+    'J4904A' => '2848',
+    'J4905A' => '3400cl-24G',
+    'J4906A' => '3400cl-48G',
+    'J8130A' => 'WAP-420-NA',
+    'J8131A' => 'WAP-420-WW',
+    'J8133A' => 'AP520WL',
+    'J8164A' => '2626-PWR',
+    'J8165A' => '2650-PWR',
+    'J8433A' => 'CX4-6400cl-6XG',
+    'J8474A' => 'MF-6400cl-6XG',
+    'J8680A' => '9608sl',
+    'J8692A' => '3500yl-24G-PWR',
+    'J8693A' => '3500yl-48G-PWR',
+    'J8697A' => '5406zl',
+    'J8698A' => '5412zl',
+    'J8718A' => '5404yl',
+    'J8719A' => '5408yl',
+    'J8770A' => '4204vl',
+    'J8771A' => '4202vl-48G',
+    'J8772A' => '4202vl-72',
+    'J8773A' => '4208vl',
+    'J8762A' => '2600-8-PWR',
+    'J8992A' => '6200yl-24G',
+    'J9019A' => '2510-24A',
+    'J9020A' => '2510-48A',
+    'J9021A' => '2810-24G',
+    'J9022A' => '2810-48G',
+    'J9028A' => '1800-24G',
+    'J9029A' => '1800-8G',
+    'J9050A' => '2900-48G',
+    'J9049A' => '2900-24G',
+    'J9032A' => '4202vl-68G',
+    'J9091A' => '8212zl',
+);
 
 # Method Overrides
 
@@ -189,13 +196,15 @@ sub mem_total {
 sub os {
     return 'hp';
 }
+
 sub os_ver {
-    my $hp = shift;
+    my $hp         = shift;
     my $os_version = $hp->os_version();
     return $os_version if defined $os_version;
+
     # Some older ones don't have this value,so we cull it from the description
     my $descr = $hp->description();
-    if ($descr =~ m/revision ([A-Z]{1}\.\d{2}\.\d{2})/) {
+    if ( $descr =~ m/revision ([A-Z]{1}\.\d{2}\.\d{2})/ ) {
         return $1;
     }
     return;
@@ -208,7 +217,7 @@ sub model {
     return unless defined $id;
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
-    
+
     $model =~ s/^hpswitch//i;
 
     return defined $MODEL_MAP{$model} ? $MODEL_MAP{$model} : $model;
@@ -220,19 +229,19 @@ sub serial {
 
     my $serial = $hp->serial1() || $hp->serial2() || undef;
 
-    return $serial; 
+    return $serial;
 }
 
 sub interfaces {
-    my $hp = shift;
+    my $hp         = shift;
     my $interfaces = $hp->i_index();
-    my $i_descr    = $hp->i_description(); 
+    my $i_descr    = $hp->i_description();
 
     my %if;
-    foreach my $iid (keys %$interfaces){
+    foreach my $iid ( keys %$interfaces ) {
         my $descr = $i_descr->{$iid};
         next unless defined $descr;
-        $if{$iid} = $descr if (defined $descr and length $descr);
+        $if{$iid} = $descr if ( defined $descr and length $descr );
     }
 
     return \%if
@@ -240,14 +249,14 @@ sub interfaces {
 }
 
 sub i_name {
-    my $hp = shift;
-    my $i_alias    = $hp->i_alias();
-    my $e_name     = $hp->e_name();
-    my $e_port     = $hp->e_port();
+    my $hp      = shift;
+    my $i_alias = $hp->i_alias();
+    my $e_name  = $hp->e_name();
+    my $e_port  = $hp->e_port();
 
     my %i_name;
 
-    foreach my $port (keys %$e_name){
+    foreach my $port ( keys %$e_name ) {
         my $iid = $e_port->{$port};
         next unless defined $iid;
         my $alias = $i_alias->{$iid};
@@ -255,9 +264,9 @@ sub i_name {
         $i_name{$iid} = $e_name->{$port};
 
         # Check for alias
-        $i_name{$iid} = $alias if (defined $alias and length($alias));
+        $i_name{$iid} = $alias if ( defined $alias and length($alias) );
     }
-    
+
     return \%i_name;
 }
 
@@ -268,22 +277,22 @@ sub i_duplex {
 }
 
 sub i_duplex_admin {
-    my $hp = shift;
+    my $hp      = shift;
     my $partial = shift;
 
     # Try HP MIB first
     my $hp_duplex = $hp->hp_duplex_admin($partial);
-    if (defined $hp_duplex and scalar(keys %$hp_duplex)){
+    if ( defined $hp_duplex and scalar( keys %$hp_duplex ) ) {
 
         my %i_duplex;
-        foreach my $if (keys %$hp_duplex){
+        foreach my $if ( keys %$hp_duplex ) {
             my $duplex = $hp_duplex->{$if};
-            next unless defined $duplex; 
-    
+            next unless defined $duplex;
+
             $duplex = 'half' if $duplex =~ /half/i;
             $duplex = 'full' if $duplex =~ /full/i;
             $duplex = 'auto' if $duplex =~ /auto/i;
-            $i_duplex{$if}=$duplex; 
+            $i_duplex{$if} = $duplex;
         }
         return \%i_duplex;
     }
@@ -297,29 +306,29 @@ sub vendor {
 }
 
 sub log {
-    my $hp=shift;
+    my $hp = shift;
 
     my $log = $hp->l_descr();
 
     my $logstring = undef;
 
-    foreach my $val (values %$log){
+    foreach my $val ( values %$log ) {
         next if $val =~ /^Link\s+(Up|Down)/;
-        $logstring .= "$val\n"; 
+        $logstring .= "$val\n";
     }
 
-    return $logstring; 
+    return $logstring;
 }
 
 sub slots {
-    my $hp=shift;
-    
+    my $hp = shift;
+
     my $e_name = $hp->e_name();
 
     return unless defined $e_name;
 
     my $slots;
-    foreach my $slot (keys %$e_name) {
+    foreach my $slot ( keys %$e_name ) {
         $slots++ if $e_name->{$slot} =~ /slot/i;
     }
 
@@ -328,31 +337,33 @@ sub slots {
 
 sub fan {
     my $hp = shift;
-    return &_sensor($hp, 'fan');
+    return &_sensor( $hp, 'fan' );
 }
 
 sub ps1_status {
     my $hp = shift;
-    return &_sensor($hp, 'power', '^power supply 1') || &_sensor($hp, 'power', '^power supply sensor');
+    return &_sensor( $hp, 'power', '^power supply 1' )
+        || &_sensor( $hp, 'power', '^power supply sensor' );
 }
 
 sub ps2_status {
     my $hp = shift;
-    return &_sensor($hp, 'power', '^power supply 2') || &_sensor($hp, 'power', '^redundant');
+    return &_sensor( $hp, 'power', '^power supply 2' )
+        || &_sensor( $hp, 'power', '^redundant' );
 }
 
 sub _sensor {
-    my $hp = shift;
+    my $hp          = shift;
     my $search_type = shift || 'fan';
     my $search_name = shift || '';
-    my $hp_s_oid = $hp->hp_s_oid();
+    my $hp_s_oid    = $hp->hp_s_oid();
     my $result;
-    foreach my $sensor (keys %$hp_s_oid) {
-        my $sensortype = &SNMP::translateObj($hp_s_oid->{$sensor});
-        if ($sensortype =~ /$search_type/i) {
-            my $sensorname = $hp->hp_s_name()->{$sensor};
+    foreach my $sensor ( keys %$hp_s_oid ) {
+        my $sensortype = &SNMP::translateObj( $hp_s_oid->{$sensor} );
+        if ( $sensortype =~ /$search_type/i ) {
+            my $sensorname   = $hp->hp_s_name()->{$sensor};
             my $sensorstatus = $hp->hp_s_status()->{$sensor};
-            if ($sensorname =~ /$search_name/i) {
+            if ( $sensorname =~ /$search_name/i ) {
                 $result = $sensorstatus;
             }
         }
@@ -362,19 +373,19 @@ sub _sensor {
 
 # Bridge MIB does not map Bridge Port to ifIndex correctly on all models
 sub bp_index {
-    my $hp = shift;
+    my $hp      = shift;
     my $partial = shift;
 
     my $if_index = $hp->i_index($partial);
-    my $model = $hp->model();
+    my $model    = $hp->model();
     my $bp_index = $hp->bp_index2($partial);
-    
-    unless (defined $model and $model =~ /(1600|2424|4000|8000)/) {
+
+    unless ( defined $model and $model =~ /(1600|2424|4000|8000)/ ) {
         return $bp_index;
     }
 
     my %mod_bp_index;
-    foreach my $iid (keys %$if_index){
+    foreach my $iid ( keys %$if_index ) {
         $mod_bp_index{$iid} = $iid;
     }
     return \%mod_bp_index;
@@ -384,12 +395,12 @@ sub bp_index {
 # Q-BRIDGE if available.
 
 sub v_index {
-    my $hp = shift;
+    my $hp      = shift;
     my $partial = shift;
 
     # Newer devices
     my $q_index = $hp->SUPER::v_index($partial);
-    if (defined $q_index and scalar(keys %$q_index)){
+    if ( defined $q_index and scalar( keys %$q_index ) ) {
         return $q_index;
     }
 
@@ -398,12 +409,12 @@ sub v_index {
 }
 
 sub v_name {
-    my $hp = shift;
+    my $hp      = shift;
     my $partial = shift;
 
     # Newer devices
     my $q_name = $hp->SUPER::v_name($partial);
-    if (defined $q_name and scalar(keys %$q_name)){
+    if ( defined $q_name and scalar( keys %$q_name ) ) {
         return $q_name;
     }
 
@@ -416,23 +427,23 @@ sub i_vlan {
 
     # Newer devices use Q-BRIDGE-MIB
     my $qb_i_vlan = $hp->SUPER::i_vlan();
-    if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
+    if ( defined $qb_i_vlan and scalar( keys %$qb_i_vlan ) ) {
         return $qb_i_vlan;
     }
 
     # HP4000 ... get it from HP-VLAN
-    # the hpvlanmembertagged2 table has an entry in the form of 
+    # the hpvlanmembertagged2 table has an entry in the form of
     #   vlan.interface = /untagged/no/tagged/auto
     my $i_vlan      = {};
     my $hp_v_index  = $hp->hp_v_index();
     my $hp_v_if_tag = $hp->hp_v_if_tag();
-    foreach my $row (keys %$hp_v_if_tag){
-        my ($index,$if) = split(/\./,$row);
+    foreach my $row ( keys %$hp_v_if_tag ) {
+        my ( $index, $if ) = split( /\./, $row );
 
-        my $tag = $hp_v_if_tag->{$row};
+        my $tag  = $hp_v_if_tag->{$row};
         my $vlan = $hp_v_index->{$index};
-        
-        next unless (defined $tag and $tag =~ /untagged/);
+
+        next unless ( defined $tag and $tag =~ /untagged/ );
 
         $i_vlan->{$if} = $vlan if defined $vlan;
     }
@@ -445,24 +456,24 @@ sub i_vlan_membership {
 
     # Newer devices use Q-BRIDGE-MIB
     my $qb_i_vlan = $hp->SUPER::i_vlan_membership();
-    if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
+    if ( defined $qb_i_vlan and scalar( keys %$qb_i_vlan ) ) {
         return $qb_i_vlan;
     }
 
     # Older get it from HP-VLAN
     my $i_vlan_membership = {};
-    my $hp_v_index  = $hp->hp_v_index();
-    my $hp_v_if_tag = $hp->hp_v_if_tag();
-    foreach my $row (keys %$hp_v_if_tag){
-        my ($index,$if) = split(/\./,$row);
+    my $hp_v_index        = $hp->hp_v_index();
+    my $hp_v_if_tag       = $hp->hp_v_if_tag();
+    foreach my $row ( keys %$hp_v_if_tag ) {
+        my ( $index, $if ) = split( /\./, $row );
 
-        my $tag = $hp_v_if_tag->{$row};
+        my $tag  = $hp_v_if_tag->{$row};
         my $vlan = $hp_v_index->{$index};
-        
-        next unless (defined $tag);
-        next if ($tag eq 'no');
 
-        push(@{$i_vlan_membership->{$if}}, $vlan);
+        next unless ( defined $tag );
+        next if ( $tag eq 'no' );
+
+        push( @{ $i_vlan_membership->{$if} }, $vlan );
     }
 
     return $i_vlan_membership;
@@ -477,21 +488,21 @@ sub hasCDP {
 }
 
 sub c_ip {
-    my $hp = shift;
+    my $hp      = shift;
     my $partial = shift;
 
     my $cdp  = $hp->SUPER::c_ip($partial) || {};
-    my $lldp = $hp->lldp_ip($partial) || {};
+    my $lldp = $hp->lldp_ip($partial)     || {};
 
     my %c_ip;
-    foreach my $iid (keys %$cdp){
+    foreach my $iid ( keys %$cdp ) {
         my $ip = $cdp->{$iid};
         next unless defined $ip;
 
         $c_ip{$iid} = $ip;
     }
 
-    foreach my $iid (keys %$lldp){
+    foreach my $iid ( keys %$lldp ) {
         my $ip = $lldp->{$iid};
         next unless defined $ip;
 
@@ -501,21 +512,21 @@ sub c_ip {
 }
 
 sub c_if {
-    my $hp = shift;
+    my $hp      = shift;
     my $partial = shift;
 
-    my $lldp = $hp->lldp_if($partial) || {};;
+    my $lldp = $hp->lldp_if($partial)     || {};
     my $cdp  = $hp->SUPER::c_if($partial) || {};
-    
+
     my %c_if;
-    foreach my $iid (keys %$cdp){
+    foreach my $iid ( keys %$cdp ) {
         my $if = $cdp->{$iid};
         next unless defined $if;
 
         $c_if{$iid} = $if;
     }
 
-    foreach my $iid (keys %$lldp){
+    foreach my $iid ( keys %$lldp ) {
         my $if = $lldp->{$iid};
         next unless defined $if;
 
@@ -525,21 +536,21 @@ sub c_if {
 }
 
 sub c_port {
-    my $hp = shift;
+    my $hp      = shift;
     my $partial = shift;
 
-    my $lldp = $hp->lldp_port($partial) || {};
+    my $lldp = $hp->lldp_port($partial)     || {};
     my $cdp  = $hp->SUPER::c_port($partial) || {};
-    
+
     my %c_port;
-    foreach my $iid (keys %$cdp){
+    foreach my $iid ( keys %$cdp ) {
         my $port = $cdp->{$iid};
         next unless defined $port;
 
         $c_port{$iid} = $port;
     }
 
-    foreach my $iid (keys %$lldp){
+    foreach my $iid ( keys %$lldp ) {
         my $port = $lldp->{$iid};
         next unless defined $port;
 
@@ -549,21 +560,21 @@ sub c_port {
 }
 
 sub c_id {
-    my $hp = shift;
+    my $hp      = shift;
     my $partial = shift;
 
-    my $lldp = $hp->lldp_id($partial) || {};
+    my $lldp = $hp->lldp_id($partial)     || {};
     my $cdp  = $hp->SUPER::c_id($partial) || {};
 
     my %c_id;
-    foreach my $iid (keys %$cdp){
+    foreach my $iid ( keys %$cdp ) {
         my $id = $cdp->{$iid};
         next unless defined $id;
 
         $c_id{$iid} = $id;
     }
 
-    foreach my $iid (keys %$lldp){
+    foreach my $iid ( keys %$lldp ) {
         my $id = $lldp->{$iid};
         next unless defined $id;
 
@@ -573,21 +584,21 @@ sub c_id {
 }
 
 sub c_platform {
-    my $hp = shift;
+    my $hp      = shift;
     my $partial = shift;
 
-    my $lldp = $hp->lldp_rem_sysdesc($partial) || {};
+    my $lldp = $hp->lldp_rem_sysdesc($partial)  || {};
     my $cdp  = $hp->SUPER::c_platform($partial) || {};
 
     my %c_platform;
-    foreach my $iid (keys %$cdp){
+    foreach my $iid ( keys %$cdp ) {
         my $platform = $cdp->{$iid};
         next unless defined $platform;
 
         $c_platform{$iid} = $platform;
     }
 
-    foreach my $iid (keys %$lldp){
+    foreach my $iid ( keys %$lldp ) {
         my $platform = $lldp->{$iid};
         next unless defined $platform;
 
@@ -923,9 +934,9 @@ Returns reference to hash.  Key: iid Value: remote IPv4 address
 If multiple entries exist with the same local port, c_if(), with the same IPv4
 address, c_ip(), it may be a duplicate entry.
 
-If multiple entries exist with the same local port, c_if(), with different IPv4
-addresses, c_ip(), there is either a non-CDP/LLDP device in between two or
-more devices or multiple devices which are not directly connected.  
+If multiple entries exist with the same local port, c_if(), with different
+IPv4 addresses, c_ip(), there is either a non-CDP/LLDP device in between two
+or more devices or multiple devices which are not directly connected.  
 
 Use the data from the Layer2 Topology Table below to dig deeper.
 

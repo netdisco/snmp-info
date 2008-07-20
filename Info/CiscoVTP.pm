@@ -5,21 +5,21 @@
 #
 # Copyright (c) 2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -36,126 +36,133 @@ use strict;
 use Exporter;
 use SNMP::Info;
 
-@SNMP::Info::CiscoVTP::ISA = qw/SNMP::Info Exporter/;
+@SNMP::Info::CiscoVTP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoVTP::EXPORT_OK = qw//;
- 
+
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS    = (
-            'CISCO-VTP-MIB'                       => 'vtpVlanName',
-            'CISCO-VLAN-MEMBERSHIP-MIB'           => 'vmMembershipEntry',
-            'CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB' => 'cviRoutedVlanIfIndex',
-           );
+%MIBS = (
+    'CISCO-VTP-MIB'                       => 'vtpVlanName',
+    'CISCO-VLAN-MEMBERSHIP-MIB'           => 'vmMembershipEntry',
+    'CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB' => 'cviRoutedVlanIfIndex',
+);
 
 %GLOBALS = (
-            'vtp_version'           => 'vtpVersion',
-            'vtp_maxstore'          => 'vtpMaxVlanStorage',
-            'vtp_notify'            => 'vtpNotificationsEnabled',
-            'vtp_notify_create'     => 'vtpVlanCreatedNotifEnabled',
-            'vtp_notify_delete'     => 'vtpVlanDeletedNotifEnabled',
-            'vtp_trunk_set_serial'  => 'vlanTrunkPortSetSerialNo',
-           );
+    'vtp_version'          => 'vtpVersion',
+    'vtp_maxstore'         => 'vtpMaxVlanStorage',
+    'vtp_notify'           => 'vtpNotificationsEnabled',
+    'vtp_notify_create'    => 'vtpVlanCreatedNotifEnabled',
+    'vtp_notify_delete'    => 'vtpVlanDeletedNotifEnabled',
+    'vtp_trunk_set_serial' => 'vlanTrunkPortSetSerialNo',
+);
 
-%FUNCS   = (
-            # CISCO-VTP-MIB::managementDomainTable
-            'vtp_d_index'     => 'managementDomainIndex',
-            'vtp_d_name'      => 'managementDomainName',
-            'vtp_d_mode'      => 'managementDomainLocalMode',
-            'vtp_d_rev'       => 'managementDomainConfigRevNumber',
-            'vtp_d_updater'   => 'managementDomainLastUpdater',
-            'vtp_d_last'      => 'managementDomainLastChange',
-            'vtp_d_status'    => 'managementDomainRowStatus',
-            'vtp_d_tftp'      => 'managementDomainTftpServer',
-            'vtp_d_tftp_path' => 'managementDomainTftpPathname',
-            'vtp_d_pruning'   => 'managementDomainPruningState',
-            'vtp_d_ver'       => 'managementDomainVersionInUse',
-            # CISCO-VTP-MIB::vtpVlanTable
-            'v_state'    => 'vtpVlanState',
-            'v_type'     => 'vtpVlanType',
-            'v_name'     => 'vtpVlanName',
-            'v_mtu'      => 'vtpVlanMtu',
-            'v_said'     => 'vtpVlanDot10Said',
-            'v_ring'     => 'vtpVlanRingNumber',
-            'v_bridge'   => 'vtpVlanBridgeNumber',
-            'v_stp'      => 'vtpVlanStpType',
-            'v_parent'   => 'vtpVlanParentVlan',
-            'v_trans1'   => 'vtpVlanTranslationalVlan1',
-            'v_trans2'   => 'vtpVlanTranslationalVlan2',
-            'v_btype'    => 'vtpVlanBridgeType',
-            'v_hop_are'  => 'vtpVlanAreHopCount',
-            'v_hop_ste'  => 'vtpVlanSteHopCount',
-            'v_crf'      => 'vtpVlanIsCRFBackup',
-            'v_type_ext' => 'vtpVlanTypeExt',
-            'v_if'       => 'vtpVlanIfIndex',
-            # CISCO-VLAN-MEMBERSHIP-MIB::vmMembershipTable
-            'i_vlan_type' => 'vmVlanType',
-            'i_vlan2'     => 'vmVlan',
-            'i_vlan_stat' => 'vmPortStatus',
-            'i_vlan_1'    => 'vmVlans',
-            'i_vlan_2'    => 'vmVlans2k',
-            'i_vlan_3'    => 'vmVlans3k',
-            'i_vlan_4'    => 'vmVlans4k',
-            # CISCO-VLAN-MEMBERSHIP-MIB::vmVoiceVlanTable
-            'i_voice_vlan' => 'vmVoiceVlanId',
-            # CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
-            'v_cvi_if'    => 'cviRoutedVlanIfIndex',
-            # CISCO-VTP-MIB::vlanTrunkPortTable
-            'vtp_trunk_mgmt_dom' => 'vlanTrunkPortManagementDomain',
-            'vtp_trunk_encaps_t' => 'vlanTrunkPortEncapsulationType',
-            'vtp_trunk_vlans'    => 'vlanTrunkPortVlansEnabled',
-            'vtp_trunk_vlans_2k' => 'vlanTrunkPortVlansEnabled2k',
-            'vtp_trunk_vlans_3k' => 'vlanTrunkPortVlansEnabled3k',
-            'vtp_trunk_vlans_4k' => 'vlanTrunkPortVlansEnabled4k',
-            'vtp_trunk_native'   => 'vlanTrunkPortNativeVlan',
-            'i_pvid'             => 'vlanTrunkPortNativeVlan',
-            'vtp_trunk_rstat'    => 'vlanTrunkPortRowStatus',
-            'vtp_trunk_dyn'      => 'vlanTrunkPortDynamicState',
-            'vtp_trunk_dyn_stat' => 'vlanTrunkPortDynamicStatus',
-            'vtp_trunk_vtp'      => 'vlanTrunkPortVtpEnabled',
-            'vtp_trunk_encaps'  => 'vlanTrunkPortEncapsulationOperType',
-            # TODO Add these tables if someone wants them..
-            # vtpEditControlTable
-            # vtpVlanEditTable
-            # vtpStatsTable
-           );
+%FUNCS = (
 
-%MUNGE   = (
-           );
+    # CISCO-VTP-MIB::managementDomainTable
+    'vtp_d_index'     => 'managementDomainIndex',
+    'vtp_d_name'      => 'managementDomainName',
+    'vtp_d_mode'      => 'managementDomainLocalMode',
+    'vtp_d_rev'       => 'managementDomainConfigRevNumber',
+    'vtp_d_updater'   => 'managementDomainLastUpdater',
+    'vtp_d_last'      => 'managementDomainLastChange',
+    'vtp_d_status'    => 'managementDomainRowStatus',
+    'vtp_d_tftp'      => 'managementDomainTftpServer',
+    'vtp_d_tftp_path' => 'managementDomainTftpPathname',
+    'vtp_d_pruning'   => 'managementDomainPruningState',
+    'vtp_d_ver'       => 'managementDomainVersionInUse',
+
+    # CISCO-VTP-MIB::vtpVlanTable
+    'v_state'    => 'vtpVlanState',
+    'v_type'     => 'vtpVlanType',
+    'v_name'     => 'vtpVlanName',
+    'v_mtu'      => 'vtpVlanMtu',
+    'v_said'     => 'vtpVlanDot10Said',
+    'v_ring'     => 'vtpVlanRingNumber',
+    'v_bridge'   => 'vtpVlanBridgeNumber',
+    'v_stp'      => 'vtpVlanStpType',
+    'v_parent'   => 'vtpVlanParentVlan',
+    'v_trans1'   => 'vtpVlanTranslationalVlan1',
+    'v_trans2'   => 'vtpVlanTranslationalVlan2',
+    'v_btype'    => 'vtpVlanBridgeType',
+    'v_hop_are'  => 'vtpVlanAreHopCount',
+    'v_hop_ste'  => 'vtpVlanSteHopCount',
+    'v_crf'      => 'vtpVlanIsCRFBackup',
+    'v_type_ext' => 'vtpVlanTypeExt',
+    'v_if'       => 'vtpVlanIfIndex',
+
+    # CISCO-VLAN-MEMBERSHIP-MIB::vmMembershipTable
+    'i_vlan_type' => 'vmVlanType',
+    'i_vlan2'     => 'vmVlan',
+    'i_vlan_stat' => 'vmPortStatus',
+    'i_vlan_1'    => 'vmVlans',
+    'i_vlan_2'    => 'vmVlans2k',
+    'i_vlan_3'    => 'vmVlans3k',
+    'i_vlan_4'    => 'vmVlans4k',
+
+    # CISCO-VLAN-MEMBERSHIP-MIB::vmVoiceVlanTable
+    'i_voice_vlan' => 'vmVoiceVlanId',
+
+    # CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
+    'v_cvi_if' => 'cviRoutedVlanIfIndex',
+
+    # CISCO-VTP-MIB::vlanTrunkPortTable
+    'vtp_trunk_mgmt_dom' => 'vlanTrunkPortManagementDomain',
+    'vtp_trunk_encaps_t' => 'vlanTrunkPortEncapsulationType',
+    'vtp_trunk_vlans'    => 'vlanTrunkPortVlansEnabled',
+    'vtp_trunk_vlans_2k' => 'vlanTrunkPortVlansEnabled2k',
+    'vtp_trunk_vlans_3k' => 'vlanTrunkPortVlansEnabled3k',
+    'vtp_trunk_vlans_4k' => 'vlanTrunkPortVlansEnabled4k',
+    'vtp_trunk_native'   => 'vlanTrunkPortNativeVlan',
+    'i_pvid'             => 'vlanTrunkPortNativeVlan',
+    'vtp_trunk_rstat'    => 'vlanTrunkPortRowStatus',
+    'vtp_trunk_dyn'      => 'vlanTrunkPortDynamicState',
+    'vtp_trunk_dyn_stat' => 'vlanTrunkPortDynamicStatus',
+    'vtp_trunk_vtp'      => 'vlanTrunkPortVtpEnabled',
+    'vtp_trunk_encaps'   => 'vlanTrunkPortEncapsulationOperType',
+
+    # TODO Add these tables if someone wants them..
+    # vtpEditControlTable
+    # vtpVlanEditTable
+    # vtpStatsTable
+);
+
+%MUNGE = ();
 
 sub v_index {
-    my $vtp = shift;
+    my $vtp     = shift;
     my $partial = shift;
 
     my $v_name = $vtp->v_name($partial);
     my %v_index;
-    foreach my $idx (keys %$v_name) {
-        my ($mgmtdomain, $vlan) = split(/\./, $idx);
+    foreach my $idx ( keys %$v_name ) {
+        my ( $mgmtdomain, $vlan ) = split( /\./, $idx );
         $v_index{$idx} = $vlan;
     }
     return \%v_index;
 }
 
 sub i_vlan {
-    my $vtp = shift;
+    my $vtp     = shift;
     my $partial = shift;
 
-    my $port_vlan = $vtp->vtp_trunk_native($partial) || {};
-    my $i_vlan = $vtp->i_vlan2($partial) || {};
+    my $port_vlan      = $vtp->vtp_trunk_native($partial)   || {};
+    my $i_vlan         = $vtp->i_vlan2($partial)            || {};
     my $trunk_dyn_stat = $vtp->vtp_trunk_dyn_stat($partial) || {};
 
     my %i_vlans;
+
     # Get access ports
-    foreach my $port (keys %$i_vlan) {
+    foreach my $port ( keys %$i_vlan ) {
         my $vlan = $i_vlan->{$port};
         next unless defined $vlan;
-        
+
         $i_vlans{$port} = $vlan;
     }
 
     # Get trunk ports
-    foreach my $port (keys %$port_vlan) {
+    foreach my $port ( keys %$port_vlan ) {
         my $vlan = $port_vlan->{$port};
         next unless defined $vlan;
         my $stat = $trunk_dyn_stat->{$port};
@@ -167,14 +174,14 @@ sub i_vlan {
     # Check in CISCO-VLAN-IFTABLE-RELATION-MIB
     # Is this only for Aironet???  If so, it needs
     # to be removed from this class
-    
+
     my $v_cvi_if = $vtp->v_cvi_if();
     if ( defined $v_cvi_if ) {
 
         # Translate vlan.physical_interface -> iid
         #       to iid -> vlan
-        foreach my $i (keys %$v_cvi_if){
-            my ($vlan,$phys) = split(/\./,$i);
+        foreach my $i ( keys %$v_cvi_if ) {
+            my ( $vlan, $phys ) = split( /\./, $i );
             my $iid = $v_cvi_if->{$i};
 
             $i_vlans{$iid} = $vlan;
@@ -185,59 +192,60 @@ sub i_vlan {
 }
 
 sub i_vlan_membership {
-    my $vtp = shift;
+    my $vtp     = shift;
     my $partial = shift;
 
-    my $ports_vlans    = $vtp->vtp_trunk_vlans($partial) || {};
+    my $ports_vlans    = $vtp->vtp_trunk_vlans($partial)    || {};
     my $ports_vlans_2k = $vtp->vtp_trunk_vlans_2k($partial) || {};
     my $ports_vlans_3k = $vtp->vtp_trunk_vlans_3k($partial) || {};
     my $ports_vlans_4k = $vtp->vtp_trunk_vlans_4k($partial) || {};
     my $vtp_vlans      = $vtp->v_state();
-    my $i_vlan         = $vtp->i_vlan2($partial) || {};
+    my $i_vlan         = $vtp->i_vlan2($partial)            || {};
     my $trunk_dyn_stat = $vtp->vtp_trunk_dyn_stat($partial) || {};
 
     my $i_vlan_membership = {};
 
     # Get access ports
-    foreach my $port (keys %$i_vlan) {
+    foreach my $port ( keys %$i_vlan ) {
         my $vlan = $i_vlan->{$port};
         next unless defined $vlan;
         my $stat = $trunk_dyn_stat->{$port};
         if ( defined $stat and $stat =~ /notTrunking/ ) {
-            push(@{$i_vlan_membership->{$port}}, $vlan);
+            push( @{ $i_vlan_membership->{$port} }, $vlan );
         }
     }
 
     # Get trunk ports
 
     my %oper_vlans;
-    foreach my $iid (keys %$vtp_vlans) {
-        my $vlan = 0;
-        my $vtp_dom =0;
-        my $state = $vtp_vlans->{$iid};
+    foreach my $iid ( keys %$vtp_vlans ) {
+        my $vlan    = 0;
+        my $vtp_dom = 0;
+        my $state   = $vtp_vlans->{$iid};
         next unless defined $state;
         next if $state !~ /operational/;
-        if ($iid =~ /(\d+)\.(\d+)/ ) {
+        if ( $iid =~ /(\d+)\.(\d+)/ ) {
             $vtp_dom = $1;
             $vlan    = $2;
         }
         $oper_vlans{$vlan}++;
     }
 
-    foreach my $port (keys %$ports_vlans) {
+    foreach my $port ( keys %$ports_vlans ) {
         my $stat = $trunk_dyn_stat->{$port};
         if ( defined $stat and $stat =~ /^trunking/ ) {
-            my $k = 0;
+            my $k     = 0;
             my $list1 = $ports_vlans->{$port} || '0';
             my $list2 = $ports_vlans_2k->{$port} || '0';
             my $list3 = $ports_vlans_3k->{$port} || '0';
             my $list4 = $ports_vlans_4k->{$port} || '0';
-            foreach my $list ("$list1", "$list2", "$list3", "$list4") {
+            foreach my $list ( "$list1", "$list2", "$list3", "$list4" ) {
                 my $offset = 1024 * $k++;
                 next unless $list;
-                my $vlanlist = [split(//, unpack("B*", $list))];
-                foreach my $vlan (keys %oper_vlans) {            
-                    push(@{$i_vlan_membership->{$port}}, $vlan) if (@$vlanlist[$vlan-$offset]);
+                my $vlanlist = [ split( //, unpack( "B*", $list ) ) ];
+                foreach my $vlan ( keys %oper_vlans ) {
+                    push( @{ $i_vlan_membership->{$port} }, $vlan )
+                        if ( @$vlanlist[ $vlan - $offset ] );
                 }
             }
         }
@@ -248,18 +256,22 @@ sub i_vlan_membership {
 
 sub set_i_pvid {
     my $vtp = shift;
-    my ($vlan_id, $ifindex) = @_;
+    my ( $vlan_id, $ifindex ) = @_;
 
-    return unless ( $vtp->_validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->_validate_vlan_param( $vlan_id, $ifindex ) );
 
     my $native_vlan = $vtp->vtp_trunk_native($ifindex);
-    if (defined $native_vlan) {
+    if ( defined $native_vlan ) {
 
-        print "Changing native VLAN from $native_vlan->{$ifindex} to $vlan_id on IfIndex: $ifindex\n" if $vtp->debug();
+        print
+            "Changing native VLAN from $native_vlan->{$ifindex} to $vlan_id on IfIndex: $ifindex\n"
+            if $vtp->debug();
 
-        my $rv = $vtp->set_vtp_trunk_native($vlan_id, $ifindex);
+        my $rv = $vtp->set_vtp_trunk_native( $vlan_id, $ifindex );
         unless ($rv) {
-            $vtp->error_throw("Unable to change native VLAN to $vlan_id on IfIndex: $ifindex");
+            $vtp->error_throw(
+                "Unable to change native VLAN to $vlan_id on IfIndex: $ifindex"
+            );
             return;
         }
         return $rv;
@@ -270,18 +282,21 @@ sub set_i_pvid {
 
 sub set_i_vlan {
     my $vtp = shift;
-    my ($vlan_id, $ifindex) = @_;
+    my ( $vlan_id, $ifindex ) = @_;
 
-    return unless ( $vtp->_validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->_validate_vlan_param( $vlan_id, $ifindex ) );
 
     my $i_vlan = $vtp->i_vlan2($ifindex);
-    if (defined $i_vlan) {
+    if ( defined $i_vlan ) {
 
-        print "Changing VLAN from $i_vlan->{$ifindex} to $vlan_id on IfIndex: $ifindex\n" if $vtp->debug();
+        print
+            "Changing VLAN from $i_vlan->{$ifindex} to $vlan_id on IfIndex: $ifindex\n"
+            if $vtp->debug();
 
-        my $rv = $vtp->set_i_vlan2($vlan_id, $ifindex);
+        my $rv = $vtp->set_i_vlan2( $vlan_id, $ifindex );
         unless ($rv) {
-            $vtp->error_throw("Unable to change VLAN to $vlan_id on IfIndex: $ifindex");
+            $vtp->error_throw(
+                "Unable to change VLAN to $vlan_id on IfIndex: $ifindex");
             return;
         }
         return $rv;
@@ -292,36 +307,44 @@ sub set_i_vlan {
 
 sub set_add_i_vlan_tagged {
     my $vtp = shift;
-    my ($vlan_id, $ifindex) = @_;
+    my ( $vlan_id, $ifindex ) = @_;
 
-    return unless ( $vtp->_validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->_validate_vlan_param( $vlan_id, $ifindex ) );
 
     print "Adding VLAN: $vlan_id to ifIndex: $ifindex\n" if $vtp->debug();
 
-    my $trunk_serial = $vtp->load_vtp_trunk_set_serial();
-    my $trunk_members   = $vtp->vtp_trunk_vlans($ifindex);
+    my $trunk_serial  = $vtp->load_vtp_trunk_set_serial();
+    my $trunk_members = $vtp->vtp_trunk_vlans($ifindex);
 
-    unless (defined $trunk_members) {
-        $vtp->error_throw("Can't find ifIndex: $ifindex - Is it a trunk port?");
+    unless ( defined $trunk_members ) {
+        $vtp->error_throw(
+            "Can't find ifIndex: $ifindex - Is it a trunk port?");
         return;
     }
 
-    my @member_list = split(//, unpack("B*", $trunk_members->{$ifindex}));
-    
-    print "Original vlan list for ifIndex: $ifindex: @member_list \n" if $vtp->debug();
+    my @member_list = split( //, unpack( "B*", $trunk_members->{$ifindex} ) );
+
+    print "Original vlan list for ifIndex: $ifindex: @member_list \n"
+        if $vtp->debug();
     $member_list[$vlan_id] = '1';
-    print "Modified vlan list for ifIndex: $ifindex: @member_list \n" if $vtp->debug();
-    my $new_list = pack("B*", join('', @member_list));
+    print "Modified vlan list for ifIndex: $ifindex: @member_list \n"
+        if $vtp->debug();
+    my $new_list = pack( "B*", join( '', @member_list ) );
+
     #Add VLAN to member list
-    my $list_rv = $vtp->set_vtp_trunk_vlans($new_list, $ifindex);
+    my $list_rv = $vtp->set_vtp_trunk_vlans( $new_list, $ifindex );
     unless ($list_rv) {
-        $vtp->error_throw("Unable to add VLAN: $vlan_id to ifIndex: $ifindex member list");
+        $vtp->error_throw(
+            "Unable to add VLAN: $vlan_id to ifIndex: $ifindex member list");
         return;
     }
-    #Make sure no other SNMP manager was making modifications at the same time.
+
+   #Make sure no other SNMP manager was making modifications at the same time.
     my $serial_rv = $vtp->set_vtp_trunk_set_serial($trunk_serial);
     unless ($serial_rv) {
-        $vtp->error_throw("Unable to increment trunk set serial number - check configuration!");
+        $vtp->error_throw(
+            "Unable to increment trunk set serial number - check configuration!"
+        );
         return;
     }
     return 1;
@@ -329,54 +352,67 @@ sub set_add_i_vlan_tagged {
 
 sub set_remove_i_vlan_tagged {
     my $vtp = shift;
-    my ($vlan_id, $ifindex) = @_;
+    my ( $vlan_id, $ifindex ) = @_;
 
-    return unless ( $vtp->_validate_vlan_param ($vlan_id, $ifindex) );
+    return unless ( $vtp->_validate_vlan_param( $vlan_id, $ifindex ) );
 
     print "Removing VLAN: $vlan_id from ifIndex: $ifindex\n" if $vtp->debug();
 
-    my $trunk_serial   = $vtp->load_vtp_trunk_set_serial();
-    my $trunk_members  = $vtp->vtp_trunk_vlans($ifindex);
+    my $trunk_serial  = $vtp->load_vtp_trunk_set_serial();
+    my $trunk_members = $vtp->vtp_trunk_vlans($ifindex);
 
-    unless (defined $trunk_members) {
-        $vtp->error_throw("Can't find ifIndex: $ifindex - Is it a trunk port?");
+    unless ( defined $trunk_members ) {
+        $vtp->error_throw(
+            "Can't find ifIndex: $ifindex - Is it a trunk port?");
         return;
     }
 
-    my @member_list = split(//, unpack("B*", $trunk_members->{$ifindex}));
-    
-    print "Original vlan list for ifIndex: $ifindex: @member_list \n" if $vtp->debug();
+    my @member_list = split( //, unpack( "B*", $trunk_members->{$ifindex} ) );
+
+    print "Original vlan list for ifIndex: $ifindex: @member_list \n"
+        if $vtp->debug();
     $member_list[$vlan_id] = '0';
-    print "Modified vlan list for ifIndex: $ifindex: @member_list \n" if $vtp->debug();
-    my $new_list = pack("B*", join('', @member_list));
+    print "Modified vlan list for ifIndex: $ifindex: @member_list \n"
+        if $vtp->debug();
+    my $new_list = pack( "B*", join( '', @member_list ) );
+
     #Remove VLAN to member list
-    my $list_rv = $vtp->set_vtp_trunk_vlans($new_list, $ifindex);
+    my $list_rv = $vtp->set_vtp_trunk_vlans( $new_list, $ifindex );
     unless ($list_rv) {
-        $vtp->error_throw("Error: Unable to remove VLAN: $vlan_id from ifIndex: $ifindex member list");
+        $vtp->error_throw(
+            "Error: Unable to remove VLAN: $vlan_id from ifIndex: $ifindex member list"
+        );
         return;
     }
+
     #Make sure no other manager was making modifications at the same time.
     my $serial_rv = $vtp->set_vtp_trunk_set_serial($trunk_serial);
     unless ($serial_rv) {
-        $vtp->error_throw("Error: Unable to increment trunk set serial number - check configuration!");
+        $vtp->error_throw(
+            "Error: Unable to increment trunk set serial number - check configuration!"
+        );
         return;
     }
     return 1;
 }
 
 #
-# These are internal methods and are not documented.  Do not use directly. 
+# These are internal methods and are not documented.  Do not use directly.
 #
 sub _validate_vlan_param {
     my $vtp = shift;
-    my ($vlan_id, $ifindex) = @_;
+    my ( $vlan_id, $ifindex ) = @_;
 
     # VID and ifIndex should both be numeric
-    unless ( defined $vlan_id and defined $ifindex and $vlan_id =~ /^\d+$/ and $ifindex =~ /^\d+$/ ) {
+    unless (defined $vlan_id
+        and defined $ifindex
+        and $vlan_id =~ /^\d+$/
+        and $ifindex =~ /^\d+$/ )
+    {
         $vtp->error_throw("Invalid parameter");
         return;
     }
-    
+
     # Check that ifIndex exists on device
     my $index = $vtp->interfaces($ifindex);
 
@@ -388,22 +424,23 @@ sub _validate_vlan_param {
     #Check that VLAN exists on device
     my $vtp_vlans   = $vtp->v_state();
     my $vlan_exists = 0;
-    
-    foreach my $iid (keys %$vtp_vlans) {
-        my $vlan = 0;
-        my $vtp_dom =0;
-        my $state = $vtp_vlans->{$iid};
+
+    foreach my $iid ( keys %$vtp_vlans ) {
+        my $vlan    = 0;
+        my $vtp_dom = 0;
+        my $state   = $vtp_vlans->{$iid};
         next unless defined $state;
         next if $state !~ /operational/;
-        if ($iid =~ /(\d+)\.(\d+)/ ) {
+        if ( $iid =~ /(\d+)\.(\d+)/ ) {
             $vtp_dom = $1;
             $vlan    = $2;
         }
-        
+
         $vlan_exists = 1 if ( $vlan_id eq $vlan );
     }
-    unless ( $vlan_exists ) {
-        $vtp->error_throw("VLAN $vlan_id does not exist or is not operational");
+    unless ($vlan_exists) {
+        $vtp->error_throw(
+            "VLAN $vlan_id does not exist or is not operational");
         return;
     }
 
@@ -769,9 +806,10 @@ Each bit represents a VLAN.  This is 3072 through 4095
 
 =head1 SET METHODS
 
-These are methods that provide SNMP set functionality for overridden methods or
-provide a simpler interface to complex set operations.  See
-L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set operations. 
+These are methods that provide SNMP set functionality for overridden methods
+or provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
+operations. 
 
 =over
 

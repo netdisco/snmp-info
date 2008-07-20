@@ -1,26 +1,26 @@
 # SNMP::Info::Bridge
 # $Id$
 #
-# Changes since Version 0.7 Copyright (c) 2004 Max Baker 
-# All rights reserved.  
+# Changes since Version 0.7 Copyright (c) 2004 Max Baker
+# All rights reserved.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -37,122 +37,135 @@ use strict;
 use Exporter;
 use SNMP::Info;
 
-@SNMP::Info::Bridge::ISA = qw/SNMP::Info Exporter/;
+@SNMP::Info::Bridge::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::Bridge::EXPORT_OK = qw//;
 
 use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 
 $VERSION = '1.09';
 
-%MIBS    = ('BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',
-            'Q-BRIDGE-MIB' => 'dot1qPvid',
-           );
+%MIBS = (
+    'BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',
+    'Q-BRIDGE-MIB' => 'dot1qPvid',
+);
 
 %GLOBALS = (
-            'b_mac'    => 'dot1dBaseBridgeAddress',
-            'b_ports'  => 'dot1dBaseNumPorts',
-            'b_type'   => 'dot1dBaseType',
-            # Spanning Tree Protocol
-            'stp_ver'  => 'dot1dStpProtocolSpecification',
-            'stp_time' => 'dot1dStpTimeSinceTopologyChange',
-            'stp_root' => 'dot1dStpDesignatedRoot',
-            # Q-BRIDGE-MIB
-            'qb_vlans_max'        => 'dot1qMaxSupportedVlans',
-            'qb_vlans'            => 'dot1qNumVlans',
-            'qb_next_vlan_index'  => 'dot1qNextFreeLocalVlanIndex',
-           );
+    'b_mac'   => 'dot1dBaseBridgeAddress',
+    'b_ports' => 'dot1dBaseNumPorts',
+    'b_type'  => 'dot1dBaseType',
+
+    # Spanning Tree Protocol
+    'stp_ver'  => 'dot1dStpProtocolSpecification',
+    'stp_time' => 'dot1dStpTimeSinceTopologyChange',
+    'stp_root' => 'dot1dStpDesignatedRoot',
+
+    # Q-BRIDGE-MIB
+    'qb_vlans_max'       => 'dot1qMaxSupportedVlans',
+    'qb_vlans'           => 'dot1qNumVlans',
+    'qb_next_vlan_index' => 'dot1qNextFreeLocalVlanIndex',
+);
 
 %FUNCS = (
-          # Forwarding Table: Dot1dTpFdbEntry 
-          'fw_mac'    => 'dot1dTpFdbAddress',
-          'fw_port'   => 'dot1dTpFdbPort',
-          'fw_status' => 'dot1dTpFdbStatus',
-          # Bridge Port Table: Dot1dBasePortEntry
-          'bp_index'  => 'dot1dBasePortIfIndex',
-          'bp_port'   => 'dot1dBasePortCircuit',
-          # Bridge Static (Destination-Address Filtering) Database
-          'bs_mac'    => 'dot1dStaticAddress',
-          'bs_port'   => 'dot1dStaticReceivePort',
-          'bs_to'     => 'dot1dStaticAllowedToGoTo',
-          'bs_status' => 'dot1dStaticStatus',
-          # Spanning Tree Protocol Table : dot1dStpPortTable
-          'stp_p_id'       => 'dot1dStpPort',
-          'stp_p_priority' => 'dot1dStpPortPriority',
-          'stp_p_state'    => 'dot1dStpPortState',
-          'stp_p_cost'     => 'dot1dStpPortPathCost',
-          'stp_p_root'     => 'dot1dStpPortDesignatedRoot',
-          'stp_p_bridge'   => 'dot1dStpPortDesignatedBridge',
-          'stp_p_port'     => 'dot1dStpPortDesignatedPort',
-          # Q-BRIDGE-MIB : dot1qPortVlanTable
-          'qb_i_vlan'        => 'dot1qPvid',
-          'qb_i_vlan_type'   => 'dot1qPortAcceptableFrameTypes',
-          'qb_i_vlan_in_flt' => 'dot1qPortIngressFiltering',
-          # Q-BRIDGE-MIB : dot1qVlanCurrentTable
-          'qb_cv_egress'      => 'dot1qVlanCurrentEgressPorts',
-          'qb_cv_untagged'    => 'dot1qVlanCurrentUntaggedPorts',
-          'qb_cv_stat'        => 'dot1qVlanStatus',
-          # Q-BRIDGE-MIB : dot1qVlanStaticTable
-          'v_name'           => 'dot1qVlanStaticName',
-          'qb_v_egress'      => 'dot1qVlanStaticEgressPorts',
-          'qb_v_fbdn_egress' => 'dot1qVlanForbiddenEgressPorts',
-          'qb_v_untagged'    => 'dot1qVlanStaticUntaggedPorts',
-          'qb_v_stat'        => 'dot1qVlanStaticRowStatus',
-          # VLAN Forwarding Table: Dot1qTpFdbEntry
-          'qb_fw_port'       => 'dot1qTpFdbPort',
-          'qb_fw_status'     => 'dot1qTpFdbStatus',
-          );
+
+    # Forwarding Table: Dot1dTpFdbEntry
+    'fw_mac'    => 'dot1dTpFdbAddress',
+    'fw_port'   => 'dot1dTpFdbPort',
+    'fw_status' => 'dot1dTpFdbStatus',
+
+    # Bridge Port Table: Dot1dBasePortEntry
+    'bp_index' => 'dot1dBasePortIfIndex',
+    'bp_port'  => 'dot1dBasePortCircuit',
+
+    # Bridge Static (Destination-Address Filtering) Database
+    'bs_mac'    => 'dot1dStaticAddress',
+    'bs_port'   => 'dot1dStaticReceivePort',
+    'bs_to'     => 'dot1dStaticAllowedToGoTo',
+    'bs_status' => 'dot1dStaticStatus',
+
+    # Spanning Tree Protocol Table : dot1dStpPortTable
+    'stp_p_id'       => 'dot1dStpPort',
+    'stp_p_priority' => 'dot1dStpPortPriority',
+    'stp_p_state'    => 'dot1dStpPortState',
+    'stp_p_cost'     => 'dot1dStpPortPathCost',
+    'stp_p_root'     => 'dot1dStpPortDesignatedRoot',
+    'stp_p_bridge'   => 'dot1dStpPortDesignatedBridge',
+    'stp_p_port'     => 'dot1dStpPortDesignatedPort',
+
+    # Q-BRIDGE-MIB : dot1qPortVlanTable
+    'qb_i_vlan'        => 'dot1qPvid',
+    'qb_i_vlan_type'   => 'dot1qPortAcceptableFrameTypes',
+    'qb_i_vlan_in_flt' => 'dot1qPortIngressFiltering',
+
+    # Q-BRIDGE-MIB : dot1qVlanCurrentTable
+    'qb_cv_egress'   => 'dot1qVlanCurrentEgressPorts',
+    'qb_cv_untagged' => 'dot1qVlanCurrentUntaggedPorts',
+    'qb_cv_stat'     => 'dot1qVlanStatus',
+
+    # Q-BRIDGE-MIB : dot1qVlanStaticTable
+    'v_name'           => 'dot1qVlanStaticName',
+    'qb_v_egress'      => 'dot1qVlanStaticEgressPorts',
+    'qb_v_fbdn_egress' => 'dot1qVlanForbiddenEgressPorts',
+    'qb_v_untagged'    => 'dot1qVlanStaticUntaggedPorts',
+    'qb_v_stat'        => 'dot1qVlanStaticRowStatus',
+
+    # VLAN Forwarding Table: Dot1qTpFdbEntry
+    'qb_fw_port'   => 'dot1qTpFdbPort',
+    'qb_fw_status' => 'dot1qTpFdbStatus',
+);
 
 %MUNGE = (
-          # Inherit all the built in munging
-          %SNMP::Info::MUNGE,
-          # Add ones for our class
-          'b_mac'            => \&SNMP::Info::munge_mac,
-          'fw_mac'           => \&SNMP::Info::munge_mac,
-          'bs_mac'           => \&SNMP::Info::munge_mac,
-          'stp_root'         => \&SNMP::Info::munge_mac,
-          'stp_p_root'       => \&SNMP::Info::munge_prio_mac,
-          'stp_p_bridge'     => \&SNMP::Info::munge_prio_mac,
-          'stp_p_port'       => \&SNMP::Info::munge_prio_mac,
-          'qb_cv_egress'     => \&SNMP::Info::munge_port_list,
-          'qb_cv_untagged'   => \&SNMP::Info::munge_port_list,
-          'qb_v_egress'      => \&SNMP::Info::munge_port_list,
-          'qb_v_fbdn_egress' => \&SNMP::Info::munge_port_list,
-          'qb_v_untagged'    => \&SNMP::Info::munge_port_list,
 
-         );
+    # Inherit all the built in munging
+    %SNMP::Info::MUNGE,
+
+    # Add ones for our class
+    'b_mac'            => \&SNMP::Info::munge_mac,
+    'fw_mac'           => \&SNMP::Info::munge_mac,
+    'bs_mac'           => \&SNMP::Info::munge_mac,
+    'stp_root'         => \&SNMP::Info::munge_mac,
+    'stp_p_root'       => \&SNMP::Info::munge_prio_mac,
+    'stp_p_bridge'     => \&SNMP::Info::munge_prio_mac,
+    'stp_p_port'       => \&SNMP::Info::munge_prio_mac,
+    'qb_cv_egress'     => \&SNMP::Info::munge_port_list,
+    'qb_cv_untagged'   => \&SNMP::Info::munge_port_list,
+    'qb_v_egress'      => \&SNMP::Info::munge_port_list,
+    'qb_v_fbdn_egress' => \&SNMP::Info::munge_port_list,
+    'qb_v_untagged'    => \&SNMP::Info::munge_port_list,
+
+);
 
 # break up the Dot1qTpFdbEntry INDEX into FDB ID and MAC Address.
 sub _qb_fdbtable_index {
-    my $idx = shift;
-    my @values = split(/\./, $idx);
+    my $idx    = shift;
+    my @values = split( /\./, $idx );
     my $fdb_id = shift(@values);
-    return ($fdb_id, join(':',map { sprintf "%02x",$_ } @values));
+    return ( $fdb_id, join( ':', map { sprintf "%02x", $_ } @values ) );
 }
 
 sub qb_fw_mac {
-    my $bridge = shift;
+    my $bridge  = shift;
     my $partial = shift;
 
     my $qb_fw_port = $bridge->qb_fw_port($partial);
-    my $qb_fw_mac = {};
-    foreach my $idx (keys %$qb_fw_port) {
-        my($fdb_id, $mac) = _qb_fdbtable_index($idx);
+    my $qb_fw_mac  = {};
+    foreach my $idx ( keys %$qb_fw_port ) {
+        my ( $fdb_id, $mac ) = _qb_fdbtable_index($idx);
         $qb_fw_mac->{$idx} = $mac;
     }
     return $qb_fw_mac;
 }
 
 sub qb_i_vlan_t {
-    my $bridge = shift;
+    my $bridge  = shift;
     my $partial = shift;
 
     my $qb_i_vlan      = $bridge->qb_i_vlan($partial);
     my $qb_i_vlan_type = $bridge->qb_i_vlan_type($partial);
-        
+
     my $i_vlan = {};
 
-    foreach my $if (keys %$qb_i_vlan){
-        my $vlan   = $qb_i_vlan->{$if};
+    foreach my $if ( keys %$qb_i_vlan ) {
+        my $vlan = $qb_i_vlan->{$if};
         my $tagged = $qb_i_vlan_type->{$if} || '';
         next unless defined $vlan;
         $i_vlan->{$if} = $tagged eq 'admitOnlyVlanTagged' ? 'trunk' : $vlan;
@@ -161,46 +174,46 @@ sub qb_i_vlan_t {
 }
 
 sub i_stp_state {
-    my $bridge = shift;
+    my $bridge  = shift;
     my $partial = shift;
 
-    my $bp_index = $bridge->bp_index($partial);
+    my $bp_index    = $bridge->bp_index($partial);
     my $stp_p_state = $bridge->stp_p_state($partial);
 
     my %i_stp_state;
 
-    foreach my $index (keys %$stp_p_state){
+    foreach my $index ( keys %$stp_p_state ) {
         my $state = $stp_p_state->{$index};
         my $iid   = $bp_index->{$index};
         next unless defined $iid;
         next unless defined $state;
-        $i_stp_state{$iid}=$state;
+        $i_stp_state{$iid} = $state;
     }
 
     return \%i_stp_state;
 }
 
 sub i_stp_port {
-    my $bridge = shift;    
+    my $bridge  = shift;
     my $partial = shift;
 
-    my $bp_index = $bridge->bp_index($partial);
+    my $bp_index   = $bridge->bp_index($partial);
     my $stp_p_port = $bridge->stp_p_port($partial);
-    
+
     my %i_stp_port;
 
-    foreach my $index (keys %$stp_p_port){
-       my $bridge = $stp_p_port->{$index};
-       my $iid   = $bp_index->{$index};
-       next unless defined $iid;
-       next unless defined $bridge;
-       $i_stp_port{$iid}=$bridge;
+    foreach my $index ( keys %$stp_p_port ) {
+        my $bridge = $stp_p_port->{$index};
+        my $iid    = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $bridge;
+        $i_stp_port{$iid} = $bridge;
     }
     return \%i_stp_port;
 }
 
 sub i_stp_id {
-    my $bridge = shift;
+    my $bridge  = shift;
     my $partial = shift;
 
     my $bp_index = $bridge->bp_index($partial);
@@ -208,43 +221,43 @@ sub i_stp_id {
 
     my %i_stp_id;
 
-    foreach my $index (keys %$stp_p_id){
+    foreach my $index ( keys %$stp_p_id ) {
         my $bridge = $stp_p_id->{$index};
-        my $iid   = $bp_index->{$index};
+        my $iid    = $bp_index->{$index};
         next unless defined $iid;
         next unless defined $bridge;
-        $i_stp_id{$iid}=$bridge;
+        $i_stp_id{$iid} = $bridge;
     }
     return \%i_stp_id;
 }
 
 sub i_stp_bridge {
-    my $bridge = shift;
+    my $bridge  = shift;
     my $partial = shift;
 
-    my $bp_index = $bridge->bp_index($partial);
+    my $bp_index     = $bridge->bp_index($partial);
     my $stp_p_bridge = $bridge->stp_p_bridge($partial);
 
     my %i_stp_bridge;
 
-    foreach my $index (keys %$stp_p_bridge){
+    foreach my $index ( keys %$stp_p_bridge ) {
         my $bridge = $stp_p_bridge->{$index};
-        my $iid   = $bp_index->{$index};
+        my $iid    = $bp_index->{$index};
         next unless defined $iid;
         next unless defined $bridge;
-        $i_stp_bridge{$iid}=$bridge;
+        $i_stp_bridge{$iid} = $bridge;
     }
     return \%i_stp_bridge;
 }
 
 # Non-accessible, but needed for consistency with other classes
 sub v_index {
-    my $bridge = shift;
+    my $bridge  = shift;
     my $partial = shift;
 
     my $v_name = $bridge->v_name($partial);
     my %v_index;
-    foreach my $idx (keys %$v_name) {
+    foreach my $idx ( keys %$v_name ) {
         $v_index{$idx} = $idx;
     }
     return \%v_index;
@@ -253,70 +266,70 @@ sub v_index {
 sub i_vlan {
     my $bridge  = shift;
     my $partial = shift;
-    
-    my $index   = $bridge->bp_index();
-    
+
+    my $index = $bridge->bp_index();
+
     # If given a partial it will be an ifIndex, we need to use dot1dBasePort
     if ($partial) {
         my %r_index = reverse %$index;
         $partial = $r_index{$partial};
     }
 
-    my $i_pvid  = $bridge->qb_i_vlan($partial) || {};
+    my $i_pvid = $bridge->qb_i_vlan($partial) || {};
     my $i_vlan = {};
 
-    foreach my $bport (keys %$i_pvid) {
+    foreach my $bport ( keys %$i_pvid ) {
         my $vlan    = $i_pvid->{$bport};
         my $ifindex = $index->{$bport};
-        unless (defined $ifindex) {
+        unless ( defined $ifindex ) {
             print "  Port $bport has no bp_index mapping. Skipping.\n"
                 if $DEBUG;
             next;
         }
         $i_vlan->{$ifindex} = $vlan;
     }
-    
+
     return $i_vlan;
 }
 
 sub i_vlan_membership {
-    my $bridge = shift;
+    my $bridge  = shift;
     my $partial = shift;
 
-    my $index   = $bridge->bp_index();
+    my $index = $bridge->bp_index();
 
     # Use VlanCurrentTable if available since it will include dynamic
     # VLANs.  However, some devices do not populate the table.
-    
+
     # 11/07 - Todo: Issue with some devices trying to query VlanCurrentTable
     # as table may grow very large with frequent VLAN changes.
     # 06/08 - VlanCurrentTable may be due to timefilter, should query with
     # zero partial for no time filter.
     # my $v_ports = $bridge->qb_cv_egress() || $bridge->qb_v_egress();
 
-
     my $v_ports = $bridge->qb_v_egress() || {};
 
     my $i_vlan_membership = {};
-    foreach my $idx (keys %$v_ports) {
-        next unless (defined $v_ports->{$idx});
+    foreach my $idx ( keys %$v_ports ) {
+        next unless ( defined $v_ports->{$idx} );
         my $portlist = $v_ports->{$idx};
-        my $ret = [];
+        my $ret      = [];
         my $vlan;
+
         # Strip TimeFilter if we're using VlanCurrentTable
-        ($vlan = $idx) =~ s/^\d+\.//;
+        ( $vlan = $idx ) =~ s/^\d+\.//;
 
         # Convert portlist bit array to bp_index array
-        for (my $i = 0; $i <= $#$portlist; $i++) {
-	    push(@{$ret}, $i+1) if (@$portlist[$i]);
+        for ( my $i = 0; $i <= $#$portlist; $i++ ) {
+            push( @{$ret}, $i + 1 ) if ( @$portlist[$i] );
         }
 
         #Create HoA ifIndex -> VLAN array
-        foreach my $port (@{$ret}) {
+        foreach my $port ( @{$ret} ) {
             my $ifindex = $index->{$port};
-            next unless (defined($ifindex));    # shouldn't happen
-            next if (defined $partial and $ifindex !~ /^$partial$/);
-	    push(@{$i_vlan_membership->{$ifindex}}, $vlan);
+            next unless ( defined($ifindex) );    # shouldn't happen
+            next if ( defined $partial and $ifindex !~ /^$partial$/ );
+            push( @{ $i_vlan_membership->{$ifindex} }, $vlan );
         }
     }
     return $i_vlan_membership;
@@ -351,19 +364,23 @@ sub set_remove_i_vlan_tagged {
 }
 
 #
-# These are internal methods and are not documented.  Do not use directly. 
+# These are internal methods and are not documented.  Do not use directly.
 #
 sub _check_forbidden_ports {
     my $bridge = shift;
-    my ($vlan_id, $index) = @_;
-    return unless ($vlan_id =~ /\d+/ and $index =~ /\d+/);
+    my ( $vlan_id, $index ) = @_;
+    return unless ( $vlan_id =~ /\d+/ and $index =~ /\d+/ );
 
     my $iv_forbidden = $bridge->qb_v_fbdn_egress($vlan_id);
 
     my $forbidden_ports = $iv_forbidden->{$vlan_id};
     print "Forbidden ports: @$forbidden_ports\n" if $bridge->debug();
-    if ( defined(@$forbidden_ports[$index-1]) and (@$forbidden_ports[$index-1] eq "1")) {
-        print "Error: Index: $index in forbidden list for VLAN: $vlan_id unable to add.\n" if $bridge->debug();
+    if ( defined( @$forbidden_ports[ $index - 1 ] )
+        and ( @$forbidden_ports[ $index - 1 ] eq "1" ) )
+    {
+        print
+            "Error: Index: $index in forbidden list for VLAN: $vlan_id unable to add.\n"
+            if $bridge->debug();
         return;
     }
     return 1;
@@ -371,15 +388,18 @@ sub _check_forbidden_ports {
 
 sub _validate_vlan_param {
     my $bridge = shift;
-    my ($vlan_id, $ifindex) = @_;
+    my ( $vlan_id, $ifindex ) = @_;
 
     # VID and ifIndex should both be numeric
-    unless ( defined $vlan_id and defined $ifindex and
-            $vlan_id =~ /^\d+$/ and $ifindex =~ /^\d+$/ ) {
+    unless (defined $vlan_id
+        and defined $ifindex
+        and $vlan_id =~ /^\d+$/
+        and $ifindex =~ /^\d+$/ )
+    {
         $bridge->error_throw("Invalid parameter.");
         return;
     }
-    
+
     # Check that ifIndex exists on device
     my $index = $bridge->interfaces($ifindex);
 
@@ -389,21 +409,22 @@ sub _validate_vlan_param {
     }
 
     #Check that VLAN exists on device
-    my $vtp_vlans   = $bridge->load_qb_cv_stat() || $bridge->load_qb_v_stat();
+    my $vtp_vlans = $bridge->load_qb_cv_stat() || $bridge->load_qb_v_stat();
     my $vlan_exists = 0;
-    
-    foreach my $iid (keys %$vtp_vlans) {
-        my $vlan = 0;
+
+    foreach my $iid ( keys %$vtp_vlans ) {
+        my $vlan  = 0;
         my $state = $vtp_vlans->{$iid};
         next unless defined $state;
-        if ($iid =~ /(\d+)$/ ) {
-            $vlan    = $1;
+        if ( $iid =~ /(\d+)$/ ) {
+            $vlan = $1;
         }
-        
+
         $vlan_exists = 1 if ( $vlan_id eq $vlan );
     }
-    unless ( $vlan_exists ) {
-        $bridge->error_throw("VLAN $vlan_id does not exist or is not operational.");
+    unless ($vlan_exists) {
+        $bridge->error_throw(
+            "VLAN $vlan_id does not exist or is not operational.");
         return;
     }
 
@@ -457,8 +478,8 @@ Max Baker
 F<BRIDGE-MIB> is used by most Layer 2 devices, and holds information like the
 MAC Forwarding Table and Spanning Tree Protocol info.
 
-F<Q-BRIDGE-MIB> holds 802.1q information -- VLANs and Trunking.  Cisco tends not
-to use this MIB, but some proprietary ones.  HP and some nicer vendors use
+F<Q-BRIDGE-MIB> holds 802.1q information -- VLANs and Trunking.  Cisco tends
+not to use this MIB, but some proprietary ones.  HP and some nicer vendors use
 this.  This is from C<RFC2674_q>.  
 
 Create or use a subclass of SNMP::Info that inherits this class.  Do not use

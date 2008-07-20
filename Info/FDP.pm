@@ -1,26 +1,26 @@
 # SNMP::Info::FDP
 # $Id$
 #
-# Copyright (c) 2008 Bruce Rodger, Max Baker 
-# All rights reserved.  
+# Copyright (c) 2008 Bruce Rodger, Max Baker
+# All rights reserved.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -37,51 +37,50 @@ use strict;
 use Exporter;
 use SNMP::Info;
 
-@SNMP::Info::FDP::ISA = qw/SNMP::Info Exporter/;
+@SNMP::Info::FDP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::FDP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS 	= (
-           'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snFdpGlobalRun'
-           );
+%MIBS = ( 'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snFdpGlobalRun' );
 
 %GLOBALS = (
-            # CDP-Compatibility
-            'cdp_interval' => 'snFdpGlobalMessageInterval',
-            'cdp_holdtime' => 'snFdpGlobalHoldTime',
-            'cdp_id'       => 'snFdpGlobalDeviceId',
-            #
-            'fdp_run'      => 'snFdpGlobalRun',
-            'fdp_interval' => 'snFdpGlobalMessageInterval',
-            'fdp_holdtime' => 'snFdpGlobalHoldTime',
-            'fdp_id'       => 'snFdpGlobalDeviceId',
-           );
 
-%FUNCS  = (
-            'c_index'        => 'snFdpCacheIfIndex',
-            'c_proto'        => 'snFdpCacheAddressType',
-            'c_ip'           => 'snFdpCacheAddress',
-            'c_ver'          => 'snFdpCacheVersion',
-            'c_id'           => 'snFdpCacheDeviceId',
-            'c_port'         => 'snFdpCacheDevicePort',
-            'c_platform'     => 'snFdpCachePlatform',
-            'c_capabilities' => 'snFdpCacheCapabilities',
-            'c_domain'       => 'snFdpCacheVTPMgmtDomain',
-            'c_vlan'         => 'snFdpCacheNativeVLAN',
-            'c_duplex'       => 'snFdpCacheDuplex',
-          );
+    # CDP-Compatibility
+    'cdp_interval' => 'snFdpGlobalMessageInterval',
+    'cdp_holdtime' => 'snFdpGlobalHoldTime',
+    'cdp_id'       => 'snFdpGlobalDeviceId',
+
+    #
+    'fdp_run'      => 'snFdpGlobalRun',
+    'fdp_interval' => 'snFdpGlobalMessageInterval',
+    'fdp_holdtime' => 'snFdpGlobalHoldTime',
+    'fdp_id'       => 'snFdpGlobalDeviceId',
+);
+
+%FUNCS = (
+    'c_index'        => 'snFdpCacheIfIndex',
+    'c_proto'        => 'snFdpCacheAddressType',
+    'c_ip'           => 'snFdpCacheAddress',
+    'c_ver'          => 'snFdpCacheVersion',
+    'c_id'           => 'snFdpCacheDeviceId',
+    'c_port'         => 'snFdpCacheDevicePort',
+    'c_platform'     => 'snFdpCachePlatform',
+    'c_capabilities' => 'snFdpCacheCapabilities',
+    'c_domain'       => 'snFdpCacheVTPMgmtDomain',
+    'c_vlan'         => 'snFdpCacheNativeVLAN',
+    'c_duplex'       => 'snFdpCacheDuplex',
+);
 
 %MUNGE = (
-          'c_capabilities' => \&SNMP::Info::munge_caps,
-          'c_ip'           => \&SNMP::Info::munge_ip
-         );
-
+    'c_capabilities' => \&SNMP::Info::munge_caps,
+    'c_ip'           => \&SNMP::Info::munge_ip
+);
 
 sub cdp_run {
-    my $fdp = shift;
+    my $fdp     = shift;
     my $fdp_run = $fdp->fdp_run();
 
     # if fdp_run isn't implemented on device, assume FDP is on
@@ -93,40 +92,45 @@ sub hasFDP {
     my $fdp = shift;
 
     my $ver = $fdp->{_version};
+
     #my $ver = $fdp->fdp_ver;
 
     # SNMP v1 clients dont have the globals
-    if (defined $ver and $ver == 1){
+    if ( defined $ver and $ver == 1 ) {
         my $fdp_ip = $fdp->fdp_ip();
+
         # See if anything in fdp cache, if so we have fdp
-        return 1 if (defined $fdp_ip and scalar(keys %$fdp_ip)) ;
+        return 1 if ( defined $fdp_ip and scalar( keys %$fdp_ip ) );
         return;
     }
-    
+
     return $fdp->fdp_run();
 }
 
 sub c_if {
-    my $fdp  = shift;
+    my $fdp = shift;
 
     # See if by some miracle Cisco implemented the fdpCacheIfIndex entry
-    my $fdp_index     = $fdp->fdp_index();
+    my $fdp_index = $fdp->fdp_index();
     return $fdp_index if defined $fdp_index;
 
     # Nope, didn't think so. Now we fake it.
     my $fdp_ip = $fdp->c_ip();
-    unless (defined $fdp_ip){
-        $fdp->error_throw("SNMP::Info::FDP:fdp_if() - Device doesn't have fdp_ip() data.  Can't fake fdp_index()");
+    unless ( defined $fdp_ip ) {
+        $fdp->error_throw(
+            "SNMP::Info::FDP:fdp_if() - Device doesn't have fdp_ip() data.  Can't fake fdp_index()"
+        );
         return;
     }
 
     my %fdp_if;
-    foreach my $key (keys %$fdp_ip){
-      next unless defined $key;
-      my $iid = $key;
-      # Truncate .1 from fdp cache entry
-      $iid =~ s/\.\d+$//;
-      $fdp_if{$key} = $iid;
+    foreach my $key ( keys %$fdp_ip ) {
+        next unless defined $key;
+        my $iid = $key;
+
+        # Truncate .1 from fdp cache entry
+        $iid =~ s/\.\d+$//;
+        $fdp_if{$key} = $iid;
     }
 
     return \%fdp_if;

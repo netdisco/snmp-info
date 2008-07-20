@@ -6,20 +6,20 @@
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -40,8 +40,8 @@ use SNMP::Info::CiscoConfig;
 use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer2::C1900::ISA = qw/SNMP::Info::CDP SNMP::Info::CiscoStats
-                                    SNMP::Info::CiscoConfig SNMP::Info::Layer2
-                                    Exporter/;
+    SNMP::Info::CiscoConfig SNMP::Info::Layer2
+    Exporter/;
 @SNMP::Info::Layer2::C1900::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
@@ -49,44 +49,44 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 $VERSION = '1.09';
 
 %GLOBALS = (
-             %SNMP::Info::Layer2::GLOBALS,
-             %SNMP::Info::CiscoConfig::GLOBALS,
-             %SNMP::Info::CiscoStats::GLOBALS,
-             %SNMP::Info::CDP::GLOBALS,
-             'c1900_flash_status' => 'upgradeFlashBankStatus',
-           );
+    %SNMP::Info::Layer2::GLOBALS,
+    %SNMP::Info::CiscoConfig::GLOBALS,
+    %SNMP::Info::CiscoStats::GLOBALS,
+    %SNMP::Info::CDP::GLOBALS,
+    'c1900_flash_status' => 'upgradeFlashBankStatus',
+);
 
 %FUNCS = (
-           %SNMP::Info::Layer2::FUNCS,
-           %SNMP::Info::CiscoConfig::FUNCS,
-           %SNMP::Info::CiscoStats::FUNCS,
-           %SNMP::Info::CDP::FUNCS,
-           # ESSWITCH-MIB
-           'c1900_p_index'        => 'swPortIndex',
-           'c1900_p_ifindex'      => 'swPortIfIndex',
-           'c1900_p_duplex'       => 'swPortDuplexStatus',
-           'c1900_p_duplex_admin' => 'swPortFullDuplex',
-           'c1900_p_name'         => 'swPortName',
-           'c1900_p_up_admin'     => 'swPortAdminStatus',
-           'c1900_p_type'         => 'swPortMediaCapability',
-           'c1900_p_media'        => 'swPortConnectorType',
-         );
+    %SNMP::Info::Layer2::FUNCS,
+    %SNMP::Info::CiscoConfig::FUNCS,
+    %SNMP::Info::CiscoStats::FUNCS,
+    %SNMP::Info::CDP::FUNCS,
+
+    # ESSWITCH-MIB
+    'c1900_p_index'        => 'swPortIndex',
+    'c1900_p_ifindex'      => 'swPortIfIndex',
+    'c1900_p_duplex'       => 'swPortDuplexStatus',
+    'c1900_p_duplex_admin' => 'swPortFullDuplex',
+    'c1900_p_name'         => 'swPortName',
+    'c1900_p_up_admin'     => 'swPortAdminStatus',
+    'c1900_p_type'         => 'swPortMediaCapability',
+    'c1900_p_media'        => 'swPortConnectorType',
+);
 
 %MIBS = (
-          %SNMP::Info::Layer2::MIBS,
-          %SNMP::Info::CiscoConfig::MIBS,
-          %SNMP::Info::CiscoStats::MIBS,
-          %SNMP::Info::CDP::MIBS,
-          # Also known as the ESSWITCH-MIB
-          'STAND-ALONE-ETHERNET-SWITCH-MIB' => 'series2000'
-        );
+    %SNMP::Info::Layer2::MIBS,
+    %SNMP::Info::CiscoConfig::MIBS,
+    %SNMP::Info::CiscoStats::MIBS,
+    %SNMP::Info::CDP::MIBS,
+
+    # Also known as the ESSWITCH-MIB
+    'STAND-ALONE-ETHERNET-SWITCH-MIB' => 'series2000'
+);
 
 %MUNGE = (
-           %SNMP::Info::Layer2::MUNGE,
-           %SNMP::Info::CiscoConfig::MUNGE,
-           %SNMP::Info::CiscoStats::MUNGE,
-           %SNMP::Info::CDP::MUNGE,
-         );
+    %SNMP::Info::Layer2::MUNGE,     %SNMP::Info::CiscoConfig::MUNGE,
+    %SNMP::Info::CiscoStats::MUNGE, %SNMP::Info::CDP::MUNGE,
+);
 
 sub bulkwalk_no         { return 1; }
 sub cisco_comm_indexing { return 1; }
@@ -199,53 +199,54 @@ sub set_i_duplex_admin {
 }
 
 sub i_vlan {
-    my $c1900 = shift;
-    my $partial = shift;    
+    my $c1900   = shift;
+    my $partial = shift;
 
-    # Overlap allows more than one VLAN per port.  Unable to determine default    
-    my $overlap = $c1900->bridgeGroupAllowMembershipOverlap() ||
-                  $c1900->vlanAllowMembershipOverlap() || 'disabled';
-    
-    if ($overlap eq 'enabled') {
+    # Overlap allows more than one VLAN per port.  Unable to determine default
+    my $overlap = $c1900->bridgeGroupAllowMembershipOverlap()
+        || $c1900->vlanAllowMembershipOverlap()
+        || 'disabled';
+
+    if ( $overlap eq 'enabled' ) {
         return;
     }
 
-    my $member_of = $c1900->bridgeGroupMemberPortOfBridgeGroup() ||
-                    $c1900->vlanMemberPortOfVlan();
+    my $member_of = $c1900->bridgeGroupMemberPortOfBridgeGroup()
+        || $c1900->vlanMemberPortOfVlan();
 
     my $i_pvid = {};
-    foreach my $idx (keys %$member_of) {
-        my @values = split(/\./, $idx);
-        my ($vlan, $port) = @values;
+    foreach my $idx ( keys %$member_of ) {
+        my @values = split( /\./, $idx );
+        my ( $vlan, $port ) = @values;
         next unless $vlan;
         next unless $port;
-        next if (defined $partial and $port !~ /^$partial$/);
+        next if ( defined $partial and $port !~ /^$partial$/ );
         my $value = $member_of->{$idx};
-        next if ($value eq 'false');
-        
+        next if ( $value eq 'false' );
+
         $i_pvid->{$port} = $vlan;
     }
     return $i_pvid;
 }
 
 sub i_vlan_membership {
-    my $c1900 = shift;
+    my $c1900   = shift;
     my $partial = shift;
 
-    my $member_of = $c1900->bridgeGroupMemberPortOfBridgeGroup() ||
-                    $c1900->vlanMemberPortOfVlan();
+    my $member_of = $c1900->bridgeGroupMemberPortOfBridgeGroup()
+        || $c1900->vlanMemberPortOfVlan();
 
     my $i_vlan_membership = {};
-    foreach my $idx (keys %$member_of) {
-        my @values = split(/\./, $idx);
-        my ($vlan, $port) = @values;
+    foreach my $idx ( keys %$member_of ) {
+        my @values = split( /\./, $idx );
+        my ( $vlan, $port ) = @values;
         next unless $vlan;
         next unless $port;
-        next if (defined $partial and $port !~ /^$partial$/);
+        next if ( defined $partial and $port !~ /^$partial$/ );
         my $value = $member_of->{$idx};
-        next if ($value eq 'false');
+        next if ( $value eq 'false' );
 
-        push(@{$i_vlan_membership->{$port}}, $vlan);
+        push( @{ $i_vlan_membership->{$port} }, $vlan );
     }
     return $i_vlan_membership;
 }
@@ -499,9 +500,10 @@ See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =head1 SET METHODS
 
-These are methods that provide SNMP set functionality for overridden methods or
-provide a simpler interface to complex set operations.  See
-L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set operations. 
+These are methods that provide SNMP set functionality for overridden methods
+or provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
+operations. 
 
 =over
 

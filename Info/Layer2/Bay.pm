@@ -6,21 +6,21 @@
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -37,7 +37,7 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer2;
 
-@SNMP::Info::Layer2::Bay::ISA = qw/SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::Bay::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Bay::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
@@ -45,90 +45,93 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 $VERSION = '1.09';
 
 # Set for No CDP
-%GLOBALS = ( %SNMP::Info::Layer2::GLOBALS,
-             'cdp_id'  => 's5EnMsTopIpAddr',
-             'cdp_run' => 's5EnMsTopStatus',
-           );
+%GLOBALS = (
+    %SNMP::Info::Layer2::GLOBALS,
+    'cdp_id'  => 's5EnMsTopIpAddr',
+    'cdp_run' => 's5EnMsTopStatus',
+);
 
-%FUNCS   = (%SNMP::Info::Layer2::FUNCS,
-            'imac2'      => 'ifPhysAddress',
-            # S5-ETH-MULTISEG-TOPOLOGY-MIB::s5EnMsTopNmmTable
-            'bay_topo_slot'     => 's5EnMsTopNmmSlot',
-            'bay_topo_port'     => 's5EnMsTopNmmPort',
-            'bay_topo_ip'       => 's5EnMsTopNmmIpAddr',
-            'bay_topo_seg'      => 's5EnMsTopNmmSegId',
-            'bay_topo_mac'      => 's5EnMsTopNmmMacAddr',
-            'bay_topo_platform' => 's5EnMsTopNmmChassisType',
-            'bay_topo_localseg' => 's5EnMsTopNmmLocalSeg',
-            );
+%FUNCS = (
+    %SNMP::Info::Layer2::FUNCS,
+    'imac2' => 'ifPhysAddress',
 
-%MIBS    = (
-            %SNMP::Info::Layer2::MIBS,
-            'SYNOPTICS-ROOT-MIB'           => 'synoptics',
-            'S5-ETH-MULTISEG-TOPOLOGY-MIB' => 's5EnMsTop'
-           );
+    # S5-ETH-MULTISEG-TOPOLOGY-MIB::s5EnMsTopNmmTable
+    'bay_topo_slot'     => 's5EnMsTopNmmSlot',
+    'bay_topo_port'     => 's5EnMsTopNmmPort',
+    'bay_topo_ip'       => 's5EnMsTopNmmIpAddr',
+    'bay_topo_seg'      => 's5EnMsTopNmmSegId',
+    'bay_topo_mac'      => 's5EnMsTopNmmMacAddr',
+    'bay_topo_platform' => 's5EnMsTopNmmChassisType',
+    'bay_topo_localseg' => 's5EnMsTopNmmLocalSeg',
+);
+
+%MIBS = (
+    %SNMP::Info::Layer2::MIBS,
+    'SYNOPTICS-ROOT-MIB'           => 'synoptics',
+    'S5-ETH-MULTISEG-TOPOLOGY-MIB' => 's5EnMsTop'
+);
 
 delete $MIBS{'CISCO-CDP-MIB'};
+
 # 450's report full duplex as speed = 20mbps?!
-$SNMP::Info::SPEED_MAP{20_000_000} = '10 Mbps';
+$SNMP::Info::SPEED_MAP{20_000_000}  = '10 Mbps';
 $SNMP::Info::SPEED_MAP{200_000_000} = '100 Mbps';
 
-%MUNGE   = (%SNMP::Info::Layer2::MUNGE,
-            'i_mac2' => \&SNMP::Info::munge_mac ,
-            );
+%MUNGE = ( %SNMP::Info::Layer2::MUNGE, 'i_mac2' => \&SNMP::Info::munge_mac, );
 
 sub os {
     return 'bay';
 }
 
 sub os_ver {
-    my $bay = shift;
+    my $bay   = shift;
     my $descr = $bay->description();
     return unless defined $descr;
 
     # 303 / 304
-    if ($descr =~ m/Rev: \d+\.\d+\.\d+\.\d+-(\d+\.\d+\.\d+\.\d+)/){
+    if ( $descr =~ m/Rev: \d+\.\d+\.\d+\.\d+-(\d+\.\d+\.\d+\.\d+)/ ) {
         return $1;
     }
 
     # 450
-    if ($descr =~ m/SW:v(\d+\.\d+\.\d+\.\d+)/){
+    if ( $descr =~ m/SW:v(\d+\.\d+\.\d+\.\d+)/ ) {
         return $1;
     }
     return;
 }
 
 sub os_bin {
-    my $bay = shift;
+    my $bay   = shift;
     my $descr = $bay->description();
     return unless defined $descr;
 
     # 303 / 304
-    if ($descr =~ m/Rev: \d+\.(\d+\.\d+\.\d+)-\d+\.\d+\.\d+\.\d+/){
+    if ( $descr =~ m/Rev: \d+\.(\d+\.\d+\.\d+)-\d+\.\d+\.\d+\.\d+/ ) {
         return $1;
     }
 
     # 450
-    if ($descr =~ m/FW:v(\d+\.\d+\.\d+\.\d+)/){
+    if ( $descr =~ m/FW:v(\d+\.\d+\.\d+\.\d+)/ ) {
         return $1;
     }
     return;
 }
 
 sub vendor {
+
     # or nortel, or synopsis?
     return 'bay';
 }
 
 sub i_ignore {
-    my $bay = shift;
+    my $bay   = shift;
     my $descr = $bay->description();
 
     my $i_type = $bay->i_type();
 
     my %i_ignore;
-    foreach my $if (keys %$i_type){
-        my $type = $i_type->{$if};  
+    foreach my $if ( keys %$i_type ) {
+        my $type = $i_type->{$if};
         $i_ignore{$if}++ if $type =~ /(loopback|propvirtual|cpu)/i;
     }
 
@@ -136,28 +139,27 @@ sub i_ignore {
 }
 
 sub interfaces {
-    my $bay = shift;
+    my $bay     = shift;
     my $i_index = $bay->i_index();
 
     return $i_index;
 }
 
-sub i_mac { 
-    my $bay = shift;
+sub i_mac {
+    my $bay   = shift;
     my $i_mac = $bay->i_mac2();
 
     # Bay 303's with a hw rev < 2.11.4.5 report the mac as all zeros
-    foreach my $iid (keys %$i_mac){
+    foreach my $iid ( keys %$i_mac ) {
         my $mac = $i_mac->{$iid};
         delete $i_mac->{$iid} if $mac eq '00:00:00:00:00:00';
     }
     return $i_mac;
 }
 
-
 sub model {
     my $bay = shift;
-    my $id = $bay->id();
+    my $id  = $bay->id();
     return unless defined $id;
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
@@ -165,20 +167,20 @@ sub model {
 
     my $descr = $bay->description();
 
-    return '303' if ($descr =~ /\D303\D/);
-    return '304' if ($descr =~ /\D304\D/);
-    return '450' if ($model =~ /BayStack450/);
+    return '303' if ( $descr =~ /\D303\D/ );
+    return '304' if ( $descr =~ /\D304\D/ );
+    return '450' if ( $model =~ /BayStack450/ );
     return $model;
 }
 
 # Hack in some CDP type stuff
 
 sub c_if {
-    my $bay = shift;
+    my $bay           = shift;
     my $bay_topo_port = $bay->bay_topo_port();
 
     my %c_if;
-    foreach my $entry (keys %$bay_topo_port){
+    foreach my $entry ( keys %$bay_topo_port ) {
         my $port = $bay_topo_port->{$entry};
         next unless defined $port;
         next if $port == 0;
@@ -188,29 +190,30 @@ sub c_if {
 }
 
 sub c_ip {
-    my $bay = shift;
+    my $bay           = shift;
     my $bay_topo_ip   = $bay->bay_topo_ip();
     my $bay_topo_port = $bay->bay_topo_port();
-    my $ip = $bay->cdp_ip();
-    
+    my $ip            = $bay->cdp_ip();
+
     # Count the number of devices seen on each port.
     #   more than one device seen means connected to a non-bay
     #   device, but other bay devices are squawking further away.
     my %ip_port;
-    foreach my $entry (keys %$bay_topo_ip){
+    foreach my $entry ( keys %$bay_topo_ip ) {
         my $port = $bay_topo_port->{$entry};
         next unless defined $port;
-        next if ($port =~ /^[\d\.]+$/ and $port == 0);
-        my $ip   = $bay_topo_ip->{$entry};
-        push(@{$ip_port{$port}},$ip);
+        next if ( $port =~ /^[\d\.]+$/ and $port == 0 );
+        my $ip = $bay_topo_ip->{$entry};
+        push( @{ $ip_port{$port} }, $ip );
     }
 
     my %c_ip;
-    foreach my $port (keys %ip_port){
+    foreach my $port ( keys %ip_port ) {
         my $ips = $ip_port{$port};
-        if (scalar @$ips == 1) {
+        if ( scalar @$ips == 1 ) {
             $c_ip{"$port.1"} = $ips->[0];
-        } else {
+        }
+        else {
             $c_ip{"$port.1"} = $ips;
         }
     }
@@ -219,12 +222,12 @@ sub c_ip {
 }
 
 sub c_port {
-    my $bay = shift;
+    my $bay           = shift;
     my $bay_topo_port = $bay->bay_topo_port();
-    my $bay_topo_seg = $bay->bay_topo_seg();
+    my $bay_topo_seg  = $bay->bay_topo_seg();
 
     my %c_port;
-    foreach my $entry (keys %$bay_topo_seg){
+    foreach my $entry ( keys %$bay_topo_seg ) {
         my $port = $bay_topo_port->{$entry};
         next unless defined $port;
         next if $port == 0;
@@ -232,11 +235,11 @@ sub c_port {
         # For fake remotes (multiple IPs for a c_ip), use first found
         next if defined $c_port{"$port.1"};
 
-        my $seg  = $bay_topo_seg->{$entry};
+        my $seg = $bay_topo_seg->{$entry};
 
         # Segment id is (256 * remote slot_num) + (remote_port)
         my $remote_port = $seg % 256;
-    
+
         $c_port{"$port.1"} = $remote_port;
     }
 
@@ -244,20 +247,19 @@ sub c_port {
 }
 
 sub c_platform {
-    my $bay = shift;
+    my $bay               = shift;
     my $bay_topo_port     = $bay->bay_topo_port();
     my $bay_topo_platform = $bay->bay_topo_platform();
 
-
     my %c_platform;
-    foreach my $entry (keys %$bay_topo_platform){
+    foreach my $entry ( keys %$bay_topo_platform ) {
         my $port = $bay_topo_port->{$entry} || 0;
         next if $port == 0;
 
         # For fake remotes (multiple IPs for a c_ip), use first found
         next if defined $c_platform{"$port.1"};
 
-        my $platform  = $bay_topo_platform->{$entry};
+        my $platform = $bay_topo_platform->{$entry};
 
         $c_platform{"$port.1"} = $platform;
     }
@@ -446,7 +448,8 @@ Returns reference to hash.  Key: Table entry, Value:slot number
 
 =item $bay->bay_topo_port()
 
-Returns reference to hash.  Key: Table entry, Value:Port Number (interface iid)
+Returns reference to hash.  Key: Table entry, Value:Port Number
+(interface iid)
 
 (C<s5EnMsTopNmmPort>)
 

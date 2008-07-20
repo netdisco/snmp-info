@@ -5,21 +5,21 @@
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -36,50 +36,54 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::Aironet::ISA = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Aironet::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Aironet::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS =    (
-            %SNMP::Info::Layer3::MIBS,
-            'AWCVX-MIB'        => 'awcIfTable',
-            'IEEE802dot11-MIB' => 'dot11StationID',
-           );
+%MIBS = (
+    %SNMP::Info::Layer3::MIBS,
+    'AWCVX-MIB'        => 'awcIfTable',
+    'IEEE802dot11-MIB' => 'dot11StationID',
+);
 
 %GLOBALS = (
-            %SNMP::Info::Layer3::GLOBALS,
-            'mac'               => 'dot11StationID.2',
-            # AWC Ethernet Table
-            'awc_duplex'        => 'awcEtherDuplex.0',
-           );
+    %SNMP::Info::Layer3::GLOBALS,
+    'mac' => 'dot11StationID.2',
 
-%FUNCS = (  
-            %SNMP::Info::Layer3::FUNCS,
-            'i_mac2'    => 'ifPhysAddress',
-            'i_mtu2'    => 'ifMtu',
-            'i_ssid'    => 'dot11DesiredSSID',
-            # Bridge-mib overrides  
-            'fw_mac2'    => 'dot1dTpFdbAddress',
-            'fw_port2'   => 'dot1dTpFdbPort',
-            'bp_index2'  => 'dot1dBasePortIfIndex',
-            # AWC Interface Table (awcIfTable)
-            'awc_default_mac'   => 'awcIfDefaultPhyAddress',
-            'awc_mac'           => 'awcIfPhyAddress',
-            'awc_ip'            => 'awcIfIpAddress',
-            'awc_netmask'       => 'awcIfIpNetMask',
-            'awc_msdu'           => 'awcIfMSDUMaxLength',
-          );
+    # AWC Ethernet Table
+    'awc_duplex' => 'awcEtherDuplex.0',
+);
+
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,
+    'i_mac2' => 'ifPhysAddress',
+    'i_mtu2' => 'ifMtu',
+    'i_ssid' => 'dot11DesiredSSID',
+
+    # Bridge-mib overrides
+    'fw_mac2'   => 'dot1dTpFdbAddress',
+    'fw_port2'  => 'dot1dTpFdbPort',
+    'bp_index2' => 'dot1dBasePortIfIndex',
+
+    # AWC Interface Table (awcIfTable)
+    'awc_default_mac' => 'awcIfDefaultPhyAddress',
+    'awc_mac'         => 'awcIfPhyAddress',
+    'awc_ip'          => 'awcIfIpAddress',
+    'awc_netmask'     => 'awcIfIpNetMask',
+    'awc_msdu'        => 'awcIfMSDUMaxLength',
+);
 
 %MUNGE = (
-          # Inherit all the built in munging
-          %SNMP::Info::Layer3::MUNGE,
-          'i_mac2'      => \&SNMP::Info::munge_mac,
-          'awc_mac'     => \&SNMP::Info::munge_mac,
-          'fw_mac2'     => \&SNMP::Info::munge_mac,
-         );
+
+    # Inherit all the built in munging
+    %SNMP::Info::Layer3::MUNGE,
+    'i_mac2'  => \&SNMP::Info::munge_mac,
+    'awc_mac' => \&SNMP::Info::munge_mac,
+    'fw_mac2' => \&SNMP::Info::munge_mac,
+);
 
 sub os {
     return 'aironet';
@@ -90,11 +94,11 @@ sub os_ver {
     my $descr = $aironet->description() || '';
 
     # CAP340 11.21, AP4800-E 11.21
-    if ($descr =~ /AP\d{3,4}(-\D+)?\s+(\d{2}\.\d{2})/){
+    if ( $descr =~ /AP\d{3,4}(-\D+)?\s+(\d{2}\.\d{2})/ ) {
         return $2;
     }
-    
-    if ($descr =~ /Series\s*AP\s+(\d{2}\.\d{2})/){
+
+    if ( $descr =~ /Series\s*AP\s+(\d{2}\.\d{2})/ ) {
         return $1;
     }
 
@@ -103,19 +107,19 @@ sub os_ver {
 
 # Override wireless port with static info
 sub bp_index {
-    my $aironet = shift;
+    my $aironet    = shift;
     my $interfaces = $aironet->interfaces();
-    my $bp_index = $aironet->bp_index2();
-    
-    foreach my $iid (keys %$interfaces){
+    my $bp_index   = $aironet->bp_index2();
+
+    foreach my $iid ( keys %$interfaces ) {
         my $port = $interfaces->{$iid};
 
         # Hardwire the wireless port to the transparent bridge port
-        if ($port =~ /awc/){
-            $bp_index->{0}=$iid;
+        if ( $port =~ /awc/ ) {
+            $bp_index->{0} = $iid;
         }
     }
-    
+
     return $bp_index;
 }
 
@@ -124,16 +128,16 @@ sub fw_mac {
     my $aironet = shift;
     my $fw_mac  = $aironet->fw_mac2();
     my $fw_port = $aironet->fw_port2();
-    my $bs_mac  = $aironet->bs_mac();    
- 
+    my $bs_mac  = $aironet->bs_mac();
+
     # remove port 0 forwarding table entries, only port 0 static entries
-    foreach my $fw (keys %$fw_mac){
+    foreach my $fw ( keys %$fw_mac ) {
         my $port = $fw_port->{$fw};
         next unless defined $port;
         delete $fw_mac->{$fw} if $port == 0;
     }
 
-    foreach my $bs (keys %$bs_mac){
+    foreach my $bs ( keys %$bs_mac ) {
         my $entry = $bs;
         $entry =~ s/\.0$//;
         $fw_mac->{$entry} = $bs_mac->{$bs};
@@ -146,10 +150,9 @@ sub fw_mac {
 sub fw_port {
     my $aironet = shift;
     my $fw_port = $aironet->fw_port2();
-    my $bs_port = $aironet->bs_port();    
+    my $bs_port = $aironet->bs_port();
 
-
-    foreach my $bs (keys %$bs_port){
+    foreach my $bs ( keys %$bs_port ) {
         my $entry = $bs;
         $entry =~ s/\.0$//;
         $fw_port->{$entry} = $bs_port->{$bs};
@@ -158,18 +161,17 @@ sub fw_port {
     return $fw_port;
 }
 
-
 sub i_duplex {
-    my $aironet = shift;
+    my $aironet    = shift;
     my $interfaces = $aironet->interfaces();
     my $awc_duplex = $aironet->awc_duplex();
-    
+
     my %i_duplex;
 
-    foreach my $iid (keys %$interfaces){
+    foreach my $iid ( keys %$interfaces ) {
         my $name = $interfaces->{$iid};
 
-        if ($name =~ /fec/){
+        if ( $name =~ /fec/ ) {
             $i_duplex{$iid} = $awc_duplex;
         }
     }
@@ -183,7 +185,7 @@ sub i_mac {
     my $i_mac   = $aironet->i_mac2();
     my $awc_mac = $aironet->awc_mac();
 
-    foreach my $iid (keys %$awc_mac){
+    foreach my $iid ( keys %$awc_mac ) {
         next unless defined $i_mac->{$iid};
         $i_mac->{$iid} = $awc_mac->{$iid};
     }
@@ -192,14 +194,14 @@ sub i_mac {
 }
 
 sub i_ignore {
-    my $aironet = shift;
+    my $aironet    = shift;
     my $interfaces = $aironet->interfaces();
 
     my %i_ignore;
-    foreach my $if (keys %$interfaces){
-        $i_ignore{$if}++ if ($interfaces->{$if} =~ /(rptr|lo)/);
+    foreach my $if ( keys %$interfaces ) {
+        $i_ignore{$if}++ if ( $interfaces->{$if} =~ /(rptr|lo)/ );
     }
-    
+
     return \%i_ignore;
 }
 
@@ -213,8 +215,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Aironet - Perl5 Interface to Cisco Aironet Wireless Devices
-running Aironet software, not IOS
+SNMP::Info::Layer3::Aironet - Perl5 Interface to Cisco Aironet Wireless
+Devices running Aironet software, not IOS
 
 =head1 AUTHOR
 

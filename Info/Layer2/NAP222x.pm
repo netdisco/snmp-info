@@ -4,20 +4,20 @@
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -36,59 +36,60 @@ use SNMP::Info::SONMP;
 use SNMP::Info::IEEE802dot11;
 use SNMP::Info::Layer2;
 
-@SNMP::Info::Layer2::NAP222x::ISA = qw/SNMP::Info::SONMP SNMP::Info::IEEE802dot11 SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::NAP222x::ISA
+    = qw/SNMP::Info::SONMP SNMP::Info::IEEE802dot11 SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::NAP222x::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS    = (
-            %SNMP::Info::Layer2::MIBS,
-            %SNMP::Info::IEEE802dot11::MIBS,
-            %SNMP::Info::SONMP::MIBS,
-            'NORTEL-WLAN-AP-MIB' => 'ntWlanSwHardwareVer',
-           );
+%MIBS = (
+    %SNMP::Info::Layer2::MIBS, %SNMP::Info::IEEE802dot11::MIBS,
+    %SNMP::Info::SONMP::MIBS, 'NORTEL-WLAN-AP-MIB' => 'ntWlanSwHardwareVer',
+);
 
 %GLOBALS = (
-            %SNMP::Info::Layer2::GLOBALS,
-            %SNMP::Info::IEEE802dot11::GLOBALS,
-            %SNMP::Info::SONMP::GLOBALS,
-            'nt_hw_ver'     => 'ntWlanSwHardwareVer',
-            'nt_fw_ver'     => 'ntWlanSwBootRomVer',
-            'nt_sw_ver'     => 'ntWlanSwOpCodeVer',
-            'nt_cc'         => 'ntWlanSwCountryCode',
-            'tftp_action'   => 'ntWlanTransferStart',
-            'tftp_host'     => 'ntWlanFileServer',
-            'tftp_file'     => 'ntWlanDestFile',
-            'tftp_type'     => 'ntWlanFileType',
-            'tftp_result'   => 'ntWlanFileTransferStatus',
-            'tftp_xtype'    => 'ntWlanTransferType',
-            'tftp_src_file' => 'ntWlanSrcFile',
-            'ftp_user'      => 'ntWlanUserName',
-            'ftp_pass'      => 'ntWlanPassword',
-           );
+    %SNMP::Info::Layer2::GLOBALS,
+    %SNMP::Info::IEEE802dot11::GLOBALS,
+    %SNMP::Info::SONMP::GLOBALS,
+    'nt_hw_ver'     => 'ntWlanSwHardwareVer',
+    'nt_fw_ver'     => 'ntWlanSwBootRomVer',
+    'nt_sw_ver'     => 'ntWlanSwOpCodeVer',
+    'nt_cc'         => 'ntWlanSwCountryCode',
+    'tftp_action'   => 'ntWlanTransferStart',
+    'tftp_host'     => 'ntWlanFileServer',
+    'tftp_file'     => 'ntWlanDestFile',
+    'tftp_type'     => 'ntWlanFileType',
+    'tftp_result'   => 'ntWlanFileTransferStatus',
+    'tftp_xtype'    => 'ntWlanTransferType',
+    'tftp_src_file' => 'ntWlanSrcFile',
+    'ftp_user'      => 'ntWlanUserName',
+    'ftp_pass'      => 'ntWlanPassword',
+);
 
-%FUNCS   = (
-            %SNMP::Info::Layer2::FUNCS,
-            %SNMP::Info::IEEE802dot11::FUNCS,
-            %SNMP::Info::SONMP::FUNCS,
-            # From ntWlanPortTable
-            'nt_prt_name'    => 'ntWlanPortName',
-            'nt_dpx_admin'   => 'ntWlanPortCapabilities',
-            'nt_auto'        => 'ntWlanPortAutonegotiation',
-            'nt_dpx'         => 'ntWlanPortSpeedDpxStatus',
-            # From ntWlanDot11PhyOperationTable
-            'nt_i_broadcast' => 'ntWlanDot11ClosedSystem',
-            # From ntWlanApVlanTable
-            'nt_i_vlan'      => 'ntWlanApVlanDefaultVid',
-            );
+%FUNCS = (
+    %SNMP::Info::Layer2::FUNCS,
+    %SNMP::Info::IEEE802dot11::FUNCS,
+    %SNMP::Info::SONMP::FUNCS,
 
-%MUNGE   = (
-            %SNMP::Info::Layer2::MUNGE,
-            %SNMP::Info::IEEE802dot11::MUNGE,
-            %SNMP::Info::SONMP::MUNGE,
-            );
+    # From ntWlanPortTable
+    'nt_prt_name'  => 'ntWlanPortName',
+    'nt_dpx_admin' => 'ntWlanPortCapabilities',
+    'nt_auto'      => 'ntWlanPortAutonegotiation',
+    'nt_dpx'       => 'ntWlanPortSpeedDpxStatus',
+
+    # From ntWlanDot11PhyOperationTable
+    'nt_i_broadcast' => 'ntWlanDot11ClosedSystem',
+
+    # From ntWlanApVlanTable
+    'nt_i_vlan' => 'ntWlanApVlanDefaultVid',
+);
+
+%MUNGE = (
+    %SNMP::Info::Layer2::MUNGE, %SNMP::Info::IEEE802dot11::MUNGE,
+    %SNMP::Info::SONMP::MUNGE,
+);
 
 sub os {
     return 'nortel';
@@ -96,31 +97,31 @@ sub os {
 
 sub os_bin {
     my $nap222x = shift;
-    my $bin = $nap222x->nt_fw_ver();
+    my $bin     = $nap222x->nt_fw_ver();
     return unless defined $bin;
 
-    if ($bin =~ m/(\d+\.\d+\.\d+)/){
+    if ( $bin =~ m/(\d+\.\d+\.\d+)/ ) {
         return $1;
-        }
+    }
     return;
 }
 
 sub model {
     my $nap222x = shift;
-    my $descr = $nap222x->description();
+    my $descr   = $nap222x->description();
     return unless defined $descr;
 
-    return 'AP-2220' if ($descr =~ /2220/);
-    return 'AP-2221' if ($descr =~ /2221/);
+    return 'AP-2220' if ( $descr =~ /2220/ );
+    return 'AP-2221' if ( $descr =~ /2221/ );
     return;
 }
 
 sub mac {
     my $nap222x = shift;
-    my $i_mac = $nap222x->i_mac();
+    my $i_mac   = $nap222x->i_mac();
 
-# Return Interface MAC   
-    foreach my $entry (keys %$i_mac){
+    # Return Interface MAC
+    foreach my $entry ( keys %$i_mac ) {
         my $sn = $i_mac->{$entry};
         next unless $sn;
         return $sn;
@@ -130,10 +131,10 @@ sub mac {
 
 sub serial {
     my $nap222x = shift;
-    my $i_mac = $nap222x->i_mac();
+    my $i_mac   = $nap222x->i_mac();
 
-# Return Interface MAC   
-    foreach my $entry (keys %$i_mac){
+    # Return Interface MAC
+    foreach my $entry ( keys %$i_mac ) {
         my $sn = $i_mac->{$entry};
         next unless $sn;
         return $sn;
@@ -145,11 +146,11 @@ sub interfaces {
     my $nap222x = shift;
     my $partial = shift;
 
-    my $interfaces = $nap222x->i_index($partial) || {};
+    my $interfaces  = $nap222x->i_index($partial)       || {};
     my $description = $nap222x->i_description($partial) || {};
 
     my %interfaces = ();
-    foreach my $iid (keys %$interfaces){
+    foreach my $iid ( keys %$interfaces ) {
         my $desc = $description->{$iid};
         next unless defined $desc;
         next if $desc =~ /lo/i;
@@ -162,25 +163,25 @@ sub interfaces {
 sub i_duplex {
     my $nap222x = shift;
     my $partial = shift;
-    
-    my $mode = $nap222x->nt_dpx($partial) || {};
-    my $port_name = $nap222x->nt_prt_name($partial) || {};
-    my $interfaces = $nap222x->interfaces($partial) || {};
-    
+
+    my $mode       = $nap222x->nt_dpx($partial)      || {};
+    my $port_name  = $nap222x->nt_prt_name($partial) || {};
+    my $interfaces = $nap222x->interfaces($partial)  || {};
+
     my %i_duplex;
-    foreach my $if (keys %$interfaces){
+    foreach my $if ( keys %$interfaces ) {
         my $port = $interfaces->{$if};
         next unless $port =~ /dp/i;
-        foreach my $idx (keys %$mode) {
-            my $name = $port_name->{$idx}||'unknown';
+        foreach my $idx ( keys %$mode ) {
+            my $name = $port_name->{$idx} || 'unknown';
             next unless $name eq $port;
             my $duplex = $mode->{$idx};
-            
+
             $duplex = 'other' unless defined $duplex;
             $duplex = 'half' if $duplex =~ /half/i;
             $duplex = 'full' if $duplex =~ /full/i;
-    
-            $i_duplex{$if}=$duplex;
+
+            $i_duplex{$if} = $duplex;
         }
     }
     return \%i_duplex;
@@ -190,27 +191,29 @@ sub i_duplex_admin {
     my $nap222x = shift;
     my $partial = shift;
 
-    my $dpx_admin = $nap222x->nt_dpx_admin($partial) || {};
-    my $nt_auto = $nap222x->nt_auto($partial) || {};
-    my $interfaces = $nap222x->interfaces($partial) || {};
-    my $port_name = $nap222x->nt_prt_name($partial) || {};
- 
+    my $dpx_admin  = $nap222x->nt_dpx_admin($partial) || {};
+    my $nt_auto    = $nap222x->nt_auto($partial)      || {};
+    my $interfaces = $nap222x->interfaces($partial)   || {};
+    my $port_name  = $nap222x->nt_prt_name($partial)  || {};
+
     my %i_duplex_admin;
-    foreach my $if (keys %$interfaces){
+    foreach my $if ( keys %$interfaces ) {
         my $port = $interfaces->{$if};
         next unless $port =~ /dp/i;
-        foreach my $idx (keys %$dpx_admin) {
-            my $name = $port_name->{$idx}||'unknown';
+        foreach my $idx ( keys %$dpx_admin ) {
+            my $name = $port_name->{$idx} || 'unknown';
             next unless $name eq $port;
             my $duplex = $dpx_admin->{$idx};
-            my $auto = $nt_auto->{$idx};
-    
+            my $auto   = $nt_auto->{$idx};
+
             $duplex = 'other' unless defined $duplex;
-            $duplex = 'half' if ($duplex =~ /half/i and $auto =~ /disabled/i);
-            $duplex = 'full' if ($duplex =~ /full/i and $auto =~ /disabled/i);
+            $duplex = 'half'
+                if ( $duplex =~ /half/i and $auto =~ /disabled/i );
+            $duplex = 'full'
+                if ( $duplex =~ /full/i and $auto =~ /disabled/i );
             $duplex = 'auto' if $auto =~ /enabled/i;
-    
-            $i_duplex_admin{$if}=$duplex;
+
+            $i_duplex_admin{$if} = $duplex;
         }
     }
     return \%i_duplex_admin;
@@ -223,15 +226,15 @@ sub i_name {
     my $interfaces = $nap222x->interfaces($partial) || {};
 
     my %i_name;
-    foreach my $if (keys %$interfaces){
+    foreach my $if ( keys %$interfaces ) {
         my $desc = $interfaces->{$if};
         next unless defined $desc;
-        
+
         my $name = 'unknown';
-        $name = 'Ethernet Interface' if $desc =~ /dp/i;
+        $name = 'Ethernet Interface'   if $desc =~ /dp/i;
         $name = 'Wireless Interface B' if $desc =~ /ndc/i;
         $name = 'Wireless Interface A' if $desc =~ /ar/i;
-        
+
         $i_name{$if} = $name;
     }
     return \%i_name;
@@ -245,15 +248,15 @@ sub bp_index {
     my $interfaces = $nap222x->interfaces($partial) || {};
 
     my %bp_index;
-    foreach my $iid (keys %$interfaces){
+    foreach my $iid ( keys %$interfaces ) {
         my $desc = $interfaces->{$iid};
         next unless defined $desc;
         next unless $desc =~ /(ndc|ar)/i;
-        
+
         my $port = 1;
         $port = 2 if $desc =~ /ndc/i;
 
-    $bp_index{$port} = $iid;
+        $bp_index{$port} = $iid;
     }
     return \%bp_index;
 }
@@ -265,20 +268,20 @@ sub i_ssidlist {
     my $partial = shift;
 
     # modify partial to match index
-    if (defined $partial) {
+    if ( defined $partial ) {
         $partial = $partial - 2;
     }
     my $ssids = $nap222x->orig_i_ssidlist($partial) || {};
 
     my %i_ssidlist;
-    foreach my $iid (keys %$ssids){
+    foreach my $iid ( keys %$ssids ) {
         my $port = $iid + 2;
         my $ssid = $ssids->{$iid};
         next unless defined $ssid;
-        
+
         $i_ssidlist{$port} = $ssid;
     }
-    return \%i_ssidlist;        
+    return \%i_ssidlist;
 }
 
 sub i_ssidbcast {
@@ -286,20 +289,20 @@ sub i_ssidbcast {
     my $partial = shift;
 
     # modify partial to match index
-    if (defined $partial) {
+    if ( defined $partial ) {
         $partial = $partial - 2;
     }
     my $bcast = $nap222x->nt_i_broadcast($partial) || {};
 
     my %i_ssidbcast;
-    foreach my $iid (keys %$bcast){
+    foreach my $iid ( keys %$bcast ) {
         my $port = $iid + 2;
         my $bc   = $bcast->{$iid};
         next unless defined $bc;
-        
+
         $i_ssidbcast{$port} = $bc;
     }
-    return \%i_ssidbcast;        
+    return \%i_ssidbcast;
 }
 
 sub i_80211channel {
@@ -307,24 +310,24 @@ sub i_80211channel {
     my $partial = shift;
 
     # modify partial to match index
-    if (defined $partial) {
+    if ( defined $partial ) {
         $partial = $partial - 2;
     }
     my $phy_type = $nap222x->dot11_phy_type($partial) || {};
-    my $cur_freq = $nap222x->dot11_cur_freq() || {};
-    my $cur_ch   = $nap222x->dot11_cur_ch() || {};
+    my $cur_freq = $nap222x->dot11_cur_freq()         || {};
+    my $cur_ch   = $nap222x->dot11_cur_ch()           || {};
 
     my %i_80211channel;
-    foreach my $iid (keys %$phy_type){
+    foreach my $iid ( keys %$phy_type ) {
         my $port = $iid + 2;
         my $type = $phy_type->{$iid};
         next unless defined $type;
-        if ($type =~ /dsss/) {
+        if ( $type =~ /dsss/ ) {
             my $ch = $cur_ch->{1};
             next unless defined $ch;
             $i_80211channel{$port} = $ch;
         }
-        elsif ($type =~ /ofdm/) {
+        elsif ( $type =~ /ofdm/ ) {
             my $ch = $cur_freq->{0};
             next unless defined $ch;
             $i_80211channel{$port} = $ch;
@@ -342,20 +345,20 @@ sub i_vlan {
     my $partial = shift;
 
     # modify partial to match index
-    if (defined $partial) {
+    if ( defined $partial ) {
         $partial = $partial - 2;
     }
     my $vlans = $nap222x->nt_i_vlan($partial) || {};
 
     my %i_vlan;
-    foreach my $iid (keys %$vlans){
+    foreach my $iid ( keys %$vlans ) {
         my $port = $iid + 2;
         my $vlan = $vlans->{$iid};
         next unless defined $vlan;
-        
+
         $i_vlan{$port} = $vlan;
     }
-    return \%i_vlan;        
+    return \%i_vlan;
 }
 
 1;
@@ -363,7 +366,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::NAP222x - SNMP Interface to Nortel 2220 Series Access Points
+SNMP::Info::Layer2::NAP222x - SNMP Interface to Nortel 2220 Series Access
+Points
 
 =head1 AUTHOR
 

@@ -4,21 +4,21 @@
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 # Copyright (c) 2004 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -42,63 +42,57 @@ use SNMP::Info::CiscoPortSecurity;
 use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::C3550::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CiscoStack 
-                                     SNMP::Info::CDP SNMP::Info::CiscoStats
-                                     SNMP::Info::CiscoPortSecurity
-                                     SNMP::Info::CiscoImage SNMP::Info::CiscoPower
-                                     SNMP::Info::Layer3
-                                     Exporter/;
+@SNMP::Info::Layer3::C3550::ISA
+    = qw/SNMP::Info::CiscoVTP SNMP::Info::CiscoStack
+    SNMP::Info::CDP SNMP::Info::CiscoStats
+    SNMP::Info::CiscoPortSecurity
+    SNMP::Info::CiscoImage SNMP::Info::CiscoPower
+    SNMP::Info::Layer3
+    Exporter/;
 @SNMP::Info::Layer3::C3550::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/ ;
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS =    (
-            %SNMP::Info::Layer3::MIBS,
-            %SNMP::Info::CiscoPower::MIBS,
-            %SNMP::Info::CiscoPortSecurity::MIBS,
-            %SNMP::Info::CiscoImage::MIBS,
-            %SNMP::Info::CiscoStats::MIBS,
-            %SNMP::Info::CDP::MIBS,
-            %SNMP::Info::CiscoStack::MIBS,
-            %SNMP::Info::CiscoVTP::MIBS,
-           );
+%MIBS = (
+    %SNMP::Info::Layer3::MIBS,            %SNMP::Info::CiscoPower::MIBS,
+    %SNMP::Info::CiscoPortSecurity::MIBS, %SNMP::Info::CiscoImage::MIBS,
+    %SNMP::Info::CiscoStats::MIBS,        %SNMP::Info::CDP::MIBS,
+    %SNMP::Info::CiscoStack::MIBS,        %SNMP::Info::CiscoVTP::MIBS,
+);
 
 %GLOBALS = (
-            %SNMP::Info::Layer3::GLOBALS,
-            %SNMP::Info::CiscoPower::GLOBALS,
-            %SNMP::Info::CiscoPortSecurity::GLOBALS,
-            %SNMP::Info::CiscoImage::GLOBALS,
-            %SNMP::Info::CiscoStats::GLOBALS,
-            %SNMP::Info::CDP::GLOBALS,
-            %SNMP::Info::CiscoStack::GLOBALS,
-            %SNMP::Info::CiscoVTP::GLOBALS,
-            'ports2'      => 'ifNumber',
-           );
+    %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::CiscoPower::GLOBALS,
+    %SNMP::Info::CiscoPortSecurity::GLOBALS,
+    %SNMP::Info::CiscoImage::GLOBALS,
+    %SNMP::Info::CiscoStats::GLOBALS,
+    %SNMP::Info::CDP::GLOBALS,
+    %SNMP::Info::CiscoStack::GLOBALS,
+    %SNMP::Info::CiscoVTP::GLOBALS,
+    'ports2' => 'ifNumber',
+);
 
 %FUNCS = (
-            %SNMP::Info::Layer3::FUNCS,
-            %SNMP::Info::CiscoPower::FUNCS,
-            %SNMP::Info::CiscoPortSecurity::FUNCS,
-            %SNMP::Info::CiscoImage::FUNCS,
-            %SNMP::Info::CiscoStats::FUNCS,
-            %SNMP::Info::CDP::FUNCS,
-            %SNMP::Info::CiscoStack::FUNCS,
-            %SNMP::Info::CiscoVTP::FUNCS,
-         );
+    %SNMP::Info::Layer3::FUNCS,            %SNMP::Info::CiscoPower::FUNCS,
+    %SNMP::Info::CiscoPortSecurity::FUNCS, %SNMP::Info::CiscoImage::FUNCS,
+    %SNMP::Info::CiscoStats::FUNCS,        %SNMP::Info::CDP::FUNCS,
+    %SNMP::Info::CiscoStack::FUNCS,        %SNMP::Info::CiscoVTP::FUNCS,
+);
 
 %MUNGE = (
-            # Inherit all the built in munging
-            %SNMP::Info::Layer3::MUNGE,
-            %SNMP::Info::CiscoPower::MUNGE,
-            %SNMP::Info::CiscoPortSecurity::MUNGE,
-            %SNMP::Info::CiscoImage::MUNGE,
-            %SNMP::Info::CiscoStats::MUNGE,
-            %SNMP::Info::CDP::MUNGE,
-            %SNMP::Info::CiscoStack::MUNGE,
-            %SNMP::Info::CiscoVTP::MUNGE,
-         );
+
+    # Inherit all the built in munging
+    %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::CiscoPower::MUNGE,
+    %SNMP::Info::CiscoPortSecurity::MUNGE,
+    %SNMP::Info::CiscoImage::MUNGE,
+    %SNMP::Info::CiscoStats::MUNGE,
+    %SNMP::Info::CDP::MUNGE,
+    %SNMP::Info::CiscoStack::MUNGE,
+    %SNMP::Info::CiscoVTP::MUNGE,
+);
 
 sub vendor {
     return 'cisco';
@@ -106,12 +100,12 @@ sub vendor {
 
 sub model {
     my $c3550 = shift;
-    my $id = $c3550->id();
+    my $id    = $c3550->id();
     my $model = &SNMP::translateObj($id) || $id;
     $model =~ s/^catalyst//;
 
     # turn 355048 into 3550-48
-    if ($model =~ /^(35\d\d)(\d\d(T|G)?)$/) {
+    if ( $model =~ /^(35\d\d)(\d\d(T|G)?)$/ ) {
         $model = "$1-$2";
     }
     return $model;
@@ -121,11 +115,11 @@ sub model {
 sub ports {
     my $c3550 = shift;
 
-    my $ports2 = $c3550->ports2();    
+    my $ports2 = $c3550->ports2();
 
-    my $id = $c3550->id();
+    my $id    = $c3550->id();
     my $model = &SNMP::translateObj($id);
-    if ($model =~ /(12|24|48)(C|T|TS|G|TS-E|TS-S|T-E)?$/) {
+    if ( $model =~ /(12|24|48)(C|T|TS|G|TS-E|TS-S|T-E)?$/ ) {
         return $1;
     }
     return $ports2;
@@ -136,15 +130,15 @@ sub ports {
 #  See http://www.ciscosystems.com/en/US/products/hw/switches/ps646/prod_release_note09186a00802a08ee.html
 
 sub i_duplex {
-    my $c3550 = shift;
+    my $c3550   = shift;
     my $partial = shift;
 
     my $el_duplex = $c3550->el_duplex($partial);
 
-    # Newer software     
-    if (defined $el_duplex and scalar(keys %$el_duplex)){
+    # Newer software
+    if ( defined $el_duplex and scalar( keys %$el_duplex ) ) {
         my %i_duplex;
-        foreach my $el_port (keys %$el_duplex){
+        foreach my $el_port ( keys %$el_duplex ) {
             my $duplex = $el_duplex->{$el_port};
             next unless defined $duplex;
 
@@ -153,6 +147,7 @@ sub i_duplex {
         }
         return \%i_duplex;
     }
+
     # Fall back to CiscoStack method
     else {
         return $c3550->SUPER::i_duplex($partial);
@@ -162,53 +157,55 @@ sub i_duplex {
 # Software >= 12.1(22)EA1a uses portDuplex as admin setting
 
 sub i_duplex_admin {
-    my $c3550 = shift;
+    my $c3550   = shift;
     my $partial = shift;
 
     my $el_duplex = $c3550->el_duplex($partial);
 
-    # Newer software     
-    if (defined $el_duplex and scalar(keys %$el_duplex)){
+    # Newer software
+    if ( defined $el_duplex and scalar( keys %$el_duplex ) ) {
         my $p_port   = $c3550->p_port()   || {};
         my $p_duplex = $c3550->p_duplex() || {};
-        
+
         my $i_duplex_admin = {};
-        foreach my $port (keys %$p_duplex) {
+        foreach my $port ( keys %$p_duplex ) {
             my $iid = $p_port->{$port};
             next unless defined $iid;
-            next if (defined $partial and $iid !~ /^$partial$/);
-            
+            next if ( defined $partial and $iid !~ /^$partial$/ );
+
             $i_duplex_admin->{$iid} = $p_duplex->{$port};
         }
         return $i_duplex_admin;
     }
+
     # Fall back to CiscoStack method
     else {
         return $c3550->SUPER::i_duplex_admin($partial);
-    }    
+    }
 }
 
 sub set_i_duplex_admin {
+
     # map a textual duplex to an integer one the switch understands
     my %duplexes = qw/half 1 full 2 auto 4/;
 
     my $c3550 = shift;
-    my ($duplex, $iid) = @_;
+    my ( $duplex, $iid ) = @_;
 
     my $el_duplex = $c3550->el_duplex($iid);
 
     # Auto duplex only supported on newer software
-    if (defined $el_duplex and scalar(keys %$el_duplex)){
-        my $p_port  = $c3550->p_port() || {};
+    if ( defined $el_duplex and scalar( keys %$el_duplex ) ) {
+        my $p_port = $c3550->p_port() || {};
         my %reverse_p_port = reverse %$p_port;
 
-       $duplex = lc($duplex);
+        $duplex = lc($duplex);
 
-       return 0 unless defined $duplexes{$duplex};
+        return 0 unless defined $duplexes{$duplex};
 
-       $iid = $reverse_p_port{$iid};
+        $iid = $reverse_p_port{$iid};
 
-       return $c3550->set_p_duplex($duplexes{$duplex}, $iid);
+        return $c3550->set_p_duplex( $duplexes{$duplex}, $iid );
     }
     else {
         return $c3550->SUPER::set_i_duplex_admin;
@@ -315,7 +312,7 @@ These are methods that return scalar value from SNMP
 
 =item $c3550->vendor()
 
-    Returns 'cisco'
+Returns 'cisco'
 
 =item $c3550->model()
 

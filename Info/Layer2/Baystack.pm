@@ -3,21 +3,21 @@
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -38,82 +38,82 @@ use SNMP::Info::RapidCity;
 use SNMP::Info::LLDP;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer2::Baystack::ISA = qw/SNMP::Info::SONMP SNMP::Info::NortelStack
-                                      SNMP::Info::RapidCity SNMP::Info::LLDP
-                                      SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer2::Baystack::ISA
+    = qw/SNMP::Info::SONMP SNMP::Info::NortelStack
+    SNMP::Info::RapidCity SNMP::Info::LLDP
+    SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer2::Baystack::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS    = (
-            %SNMP::Info::Layer3::MIBS,
-            %SNMP::Info::LLDP::MIBS,
-            %SNMP::Info::RapidCity::MIBS,
-            %SNMP::Info::NortelStack::MIBS,
-            %SNMP::Info::SONMP::MIBS,
-           );
+%MIBS = (
+    %SNMP::Info::Layer3::MIBS,    %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::RapidCity::MIBS, %SNMP::Info::NortelStack::MIBS,
+    %SNMP::Info::SONMP::MIBS,
+);
 
-%GLOBALS = ( 
-            %SNMP::Info::Layer3::GLOBALS,
-            %SNMP::Info::LLDP::GLOBALS,
-            %SNMP::Info::RapidCity::GLOBALS,
-            %SNMP::Info::NortelStack::GLOBALS,
-            %SNMP::Info::SONMP::GLOBALS,
-           );
+%GLOBALS = (
+    %SNMP::Info::Layer3::GLOBALS,    %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::RapidCity::GLOBALS, %SNMP::Info::NortelStack::GLOBALS,
+    %SNMP::Info::SONMP::GLOBALS,
+);
 
-%FUNCS   = (
-            %SNMP::Info::Layer3::FUNCS,
-            %SNMP::Info::LLDP::FUNCS,
-            %SNMP::Info::RapidCity::FUNCS,
-            %SNMP::Info::NortelStack::FUNCS,
-            %SNMP::Info::SONMP::FUNCS,
-            );
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,    %SNMP::Info::LLDP::FUNCS,
+    %SNMP::Info::RapidCity::FUNCS, %SNMP::Info::NortelStack::FUNCS,
+    %SNMP::Info::SONMP::FUNCS,
+);
 
 # 450's report full duplex as speed = 20mbps?!
-$SNMP::Info::SPEED_MAP{20_000_000} = '10 Mbps';
-$SNMP::Info::SPEED_MAP{200_000_000} = '100 Mbps';
+$SNMP::Info::SPEED_MAP{20_000_000}    = '10 Mbps';
+$SNMP::Info::SPEED_MAP{200_000_000}   = '100 Mbps';
 $SNMP::Info::SPEED_MAP{2_000_000_000} = '1.0 Gbps';
 
-%MUNGE   = (
-            %SNMP::Info::Layer3::MUNGE,
-            %SNMP::Info::LLDP::MUNGE,
-            %SNMP::Info::RapidCity::MUNGE,
-            %SNMP::Info::NortelStack::MUNGE,
-            %SNMP::Info::SONMP::MUNGE,
-            );
+%MUNGE = (
+    %SNMP::Info::Layer3::MUNGE,    %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::RapidCity::MUNGE, %SNMP::Info::NortelStack::MUNGE,
+    %SNMP::Info::SONMP::MUNGE,
+);
 
 sub os {
     my $baystack = shift;
-    my $descr = $baystack->description();
-    my $model = $baystack->model();
+    my $descr    = $baystack->description();
+    my $model    = $baystack->model();
 
-    if ((defined $model and $model =~ /(325|420|425|470|460|BPS|2500|3510|4524|4526|4548|4550|5510|5520|5530)/) and (defined $descr and $descr =~ m/SW:v[3-5]/i)) {
-       return 'boss';
+    if ((   defined $model
+            and $model
+            =~ /(325|420|425|470|460|BPS|2500|3510|4524|4526|4548|4550|5510|5520|5530)/
+        )
+        and ( defined $descr and $descr =~ m/SW:v[3-5]/i )
+        )
+    {
+        return 'boss';
     }
-    if ((defined $descr and $descr =~ /Business Ethernet Switch.*SW:v/i)) {
-       return 'bes';
+    if ( ( defined $descr and $descr =~ /Business Ethernet Switch.*SW:v/i ) )
+    {
+        return 'bes';
     }
     return 'baystack';
 }
 
 sub os_bin {
     my $baystack = shift;
-    my $descr = $baystack->description();
+    my $descr    = $baystack->description();
     return unless defined $descr;
 
     # 303 / 304
-    if ($descr =~ m/Rev: \d+\.(\d+\.\d+\.\d+)-\d+\.\d+\.\d+\.\d+/){
+    if ( $descr =~ m/Rev: \d+\.(\d+\.\d+\.\d+)-\d+\.\d+\.\d+\.\d+/ ) {
         return $1;
     }
 
     # 450
-    if ($descr =~ m/FW:V(\d+\.\d+)/){
+    if ( $descr =~ m/FW:V(\d+\.\d+)/ ) {
         return $1;
     }
 
-    if ($descr =~ m/FW:(\d+\.\d+\.\d+\.\d+)/i){
+    if ( $descr =~ m/FW:(\d+\.\d+\.\d+\.\d+)/i ) {
         return $1;
     }
     return;
@@ -125,38 +125,41 @@ sub vendor {
 
 sub model {
     my $baystack = shift;
-    my $id = $baystack->id();
+    my $id       = $baystack->id();
     return unless defined $id;
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
 
     my $descr = $baystack->description();
 
-    return '303' if (defined $descr and $descr =~ /\D303\D/);
-    return '304' if (defined $descr and $descr =~ /\D304\D/);
-    return 'BPS' if ($model =~ /BPS2000/i);
-    return $2 if ($model =~ /(ES|ERS|BayStack|EthernetRoutingSwitch|EthernetSwitch)-?(\d+)/);
-    
+    return '303' if ( defined $descr and $descr =~ /\D303\D/ );
+    return '304' if ( defined $descr and $descr =~ /\D304\D/ );
+    return 'BPS' if ( $model =~ /BPS2000/i );
+    return $2
+        if ( $model
+        =~ /(ES|ERS|BayStack|EthernetRoutingSwitch|EthernetSwitch)-?(\d+)/ );
+
     return $model;
 }
 
 sub interfaces {
     my $baystack = shift;
-    my $partial = shift;
+    my $partial  = shift;
 
-    my $i_index = $baystack->i_index($partial) || {};
+    my $i_index      = $baystack->i_index($partial) || {};
     my $index_factor = $baystack->index_factor();
-    my $slot_offset = $baystack->slot_offset();
-    
+    my $slot_offset  = $baystack->slot_offset();
+
     my %if;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
+
         # Ignore cascade ports
         next if $index > 513;
 
-        my $port = ($index % $index_factor);
-        my $slot = (int($index / $index_factor)) + $slot_offset;
+        my $port = ( $index % $index_factor );
+        my $slot = ( int( $index / $index_factor ) ) + $slot_offset;
 
         my $slotport = "$slot.$port";
         $if{$iid} = $slotport;
@@ -164,54 +167,58 @@ sub interfaces {
     return \%if;
 }
 
-sub i_mac { 
+sub i_mac {
     my $baystack = shift;
-    my $partial = shift;
+    my $partial  = shift;
 
     my $i_mac = $baystack->orig_i_mac($partial) || {};
 
     my %i_mac;
+
     # Baystack 303's with a hw rev < 2.11.4.5 report the mac as all zeros
-    foreach my $iid (keys %$i_mac){
+    foreach my $iid ( keys %$i_mac ) {
         my $mac = $i_mac->{$iid};
         next unless defined $mac;
         next if $mac eq '00:00:00:00:00:00';
-        $i_mac{$iid}=$mac;
+        $i_mac{$iid} = $mac;
     }
     return \%i_mac;
 }
 
 sub i_name {
     my $baystack = shift;
-    my $partial = shift;
+    my $partial  = shift;
 
-    my $i_index = $baystack->i_index($partial) || {};
-    my $i_alias = $baystack->i_alias($partial) || {};
-    my $i_name2  = $baystack->orig_i_name($partial) || {};
+    my $i_index = $baystack->i_index($partial)     || {};
+    my $i_alias = $baystack->i_alias($partial)     || {};
+    my $i_name2 = $baystack->orig_i_name($partial) || {};
 
     my %i_name;
-    foreach my $iid (keys %$i_name2){
-        my $name = $i_name2->{$iid};
+    foreach my $iid ( keys %$i_name2 ) {
+        my $name  = $i_name2->{$iid};
         my $alias = $i_alias->{$iid};
-        $i_name{$iid} = (defined $alias and $alias !~ /^\s*$/) ?
-                        $alias : 
-                        $name;
+        $i_name{$iid}
+            = ( defined $alias and $alias !~ /^\s*$/ )
+            ? $alias
+            : $name;
     }
 
     return \%i_name;
 }
 
 sub index_factor {
-    my $baystack   = shift;
-    my $model   = $baystack->model();
-    my $os      = $baystack->os();
-    my $op_mode = $baystack->ns_op_mode();
-    
+    my $baystack = shift;
+    my $model    = $baystack->model();
+    my $os       = $baystack->os();
+    my $op_mode  = $baystack->ns_op_mode();
+
     $op_mode = 'pure' unless defined $op_mode;
 
     my $index_factor = 32;
-    $index_factor = 64 if ((defined $model and $model =~ /(470)/) or ($os =~ m/(boss|bes)/) and ($op_mode eq 'pure'));
-    
+    $index_factor = 64
+        if ( ( defined $model and $model =~ /(470)/ )
+        or ( $os =~ m/(boss|bes)/ ) and ( $op_mode eq 'pure' ) );
+
     return $index_factor;
 }
 
@@ -225,20 +232,20 @@ sub hasCDP {
 
 sub c_ip {
     my $baystack = shift;
-    my $partial = shift;
+    my $partial  = shift;
 
     my $cdp  = $baystack->SUPER::c_ip($partial) || {};
-    my $lldp = $baystack->lldp_ip($partial) || {};
+    my $lldp = $baystack->lldp_ip($partial)     || {};
 
     my %c_ip;
-    foreach my $iid (keys %$cdp){
+    foreach my $iid ( keys %$cdp ) {
         my $ip = $cdp->{$iid};
         next unless defined $ip;
 
         $c_ip{$iid} = $ip;
     }
 
-    foreach my $iid (keys %$lldp){
+    foreach my $iid ( keys %$lldp ) {
         my $ip = $lldp->{$iid};
         next unless defined $ip;
 
@@ -249,20 +256,20 @@ sub c_ip {
 
 sub c_if {
     my $baystack = shift;
-    my $partial = shift;
+    my $partial  = shift;
 
-    my $lldp = $baystack->lldp_if($partial) || {};;
+    my $lldp = $baystack->lldp_if($partial)     || {};
     my $cdp  = $baystack->SUPER::c_if($partial) || {};
-    
+
     my %c_if;
-    foreach my $iid (keys %$cdp){
+    foreach my $iid ( keys %$cdp ) {
         my $if = $cdp->{$iid};
         next unless defined $if;
 
         $c_if{$iid} = $if;
     }
 
-    foreach my $iid (keys %$lldp){
+    foreach my $iid ( keys %$lldp ) {
         my $if = $lldp->{$iid};
         next unless defined $if;
 
@@ -273,20 +280,20 @@ sub c_if {
 
 sub c_port {
     my $baystack = shift;
-    my $partial = shift;
+    my $partial  = shift;
 
-    my $lldp = $baystack->lldp_port($partial) || {};
+    my $lldp = $baystack->lldp_port($partial)     || {};
     my $cdp  = $baystack->SUPER::c_port($partial) || {};
-    
+
     my %c_port;
-    foreach my $iid (keys %$cdp){
+    foreach my $iid ( keys %$cdp ) {
         my $port = $cdp->{$iid};
         next unless defined $port;
 
         $c_port{$iid} = $port;
     }
 
-    foreach my $iid (keys %$lldp){
+    foreach my $iid ( keys %$lldp ) {
         my $port = $lldp->{$iid};
         next unless defined $port;
 
@@ -297,20 +304,20 @@ sub c_port {
 
 sub c_id {
     my $baystack = shift;
-    my $partial = shift;
+    my $partial  = shift;
 
-    my $lldp = $baystack->lldp_id($partial) || {};
+    my $lldp = $baystack->lldp_id($partial)     || {};
     my $cdp  = $baystack->SUPER::c_id($partial) || {};
 
     my %c_id;
-    foreach my $iid (keys %$cdp){
+    foreach my $iid ( keys %$cdp ) {
         my $id = $cdp->{$iid};
         next unless defined $id;
 
         $c_id{$iid} = $id;
     }
 
-    foreach my $iid (keys %$lldp){
+    foreach my $iid ( keys %$lldp ) {
         my $id = $lldp->{$iid};
         next unless defined $id;
 
@@ -321,20 +328,20 @@ sub c_id {
 
 sub c_platform {
     my $baystack = shift;
-    my $partial = shift;
+    my $partial  = shift;
 
-    my $lldp = $baystack->lldp_rem_sysdesc($partial) || {};
+    my $lldp = $baystack->lldp_rem_sysdesc($partial)  || {};
     my $cdp  = $baystack->SUPER::c_platform($partial) || {};
 
     my %c_platform;
-    foreach my $iid (keys %$cdp){
+    foreach my $iid ( keys %$cdp ) {
         my $platform = $cdp->{$iid};
         next unless defined $platform;
 
         $c_platform{$iid} = $platform;
     }
 
-    foreach my $iid (keys %$lldp){
+    foreach my $iid ( keys %$lldp ) {
         my $platform = $lldp->{$iid};
         next unless defined $platform;
 
@@ -582,7 +589,8 @@ to a hash.
 
 Returns reference to the map between IID and physical Port.
 
-  Slot and port numbers on the Baystack switches are determined by the formula:
+  Slot and port numbers on the Baystack switches are determined by the
+  formula:
   
   port = (Interface index % Index factor)
   slot = (int(Interface index / Index factor)) + Slot offset
@@ -602,7 +610,8 @@ revisions of Baystack firmware report all zeros for each port mac.
 
 =item $baystack->i_name()
 
-Crosses C<ifName> with C<ifAlias> and returns the human set port name if exists.
+Crosses C<ifName> with C<ifAlias> and returns the human set port name if
+exists.
 
 =back
 
@@ -701,8 +710,8 @@ Returns reference to hash.  Key: iid Value: remote IPv4 address
 If multiple entries exist with the same local port, c_if(), with the same IPv4
 address, c_ip(), it may be a duplicate entry.
 
-If multiple entries exist with the same local port, c_if(), with different IPv4
-addresses, c_ip(), there is either a non-SONMP/LLDP device in between two or
+If multiple entries exist with the same local port, c_if(), with different
+IPv4 addresses, c_ip(), there is either a non-SONMP/LLDP device in between two or
 more devices or multiple devices which are not directly connected.  
 
 Use the data from the Layer2 Topology Table below to dig deeper.

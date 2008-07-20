@@ -5,21 +5,21 @@
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -36,7 +36,7 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer1;
 
-@SNMP::Info::Layer1::Allied::ISA = qw/SNMP::Info::Layer1 Exporter/;
+@SNMP::Info::Layer1::Allied::ISA       = qw/SNMP::Info::Layer1 Exporter/;
 @SNMP::Info::Layer1::Allied::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
@@ -44,23 +44,17 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 $VERSION = '1.09';
 
 # Set for No CDP
-%GLOBALS = (
-            %SNMP::Info::Layer1::GLOBALS,
-            'root_ip'   => 'actualIPAddr',
-            );
+%GLOBALS = ( %SNMP::Info::Layer1::GLOBALS, 'root_ip' => 'actualIPAddr', );
 
-%FUNCS   = (%SNMP::Info::Layer1::FUNCS,
-            'ati_p_name' => 'portName',
-            'ati_up'     => 'linkTestLED',
-            );
+%FUNCS = (
+    %SNMP::Info::Layer1::FUNCS,
+    'ati_p_name' => 'portName',
+    'ati_up'     => 'linkTestLED',
+);
 
-%MIBS    = (
-            %SNMP::Info::Layer1::MIBS,
-            'ATI-MIB' => 'atiPortGroupIndex'
-            );
+%MIBS = ( %SNMP::Info::Layer1::MIBS, 'ATI-MIB' => 'atiPortGroupIndex' );
 
-%MUNGE   = (%SNMP::Info::Layer1::MUNGE,
-            );
+%MUNGE = ( %SNMP::Info::Layer1::MUNGE, );
 
 sub vendor {
     return 'allied';
@@ -72,9 +66,9 @@ sub os {
 
 sub os_ver {
     my $allied = shift;
-    my $descr = $allied->description();
-    
-    if ($descr =~ m/version (\d+\.\d+)/){
+    my $descr  = $allied->description();
+
+    if ( $descr =~ m/version (\d+\.\d+)/ ) {
         return $1;
     }
 }
@@ -84,40 +78,40 @@ sub model {
 
     my $desc = $allied->description();
 
-    if ($desc =~ /(AT-\d{4}\S{1}?)/){
+    if ( $desc =~ /(AT-\d{4}\S{1}?)/ ) {
         return $1;
     }
     return;
 }
 
-sub i_name{
-    my $allied = shift;
+sub i_name {
+    my $allied  = shift;
     my $partial = shift;
 
-    my $i_name = $allied->orig_i_name($partial) || {};
-    my $ati_p_name = $allied->ati_p_name($partial) || {};
+    my $i_name     = $allied->orig_i_name($partial) || {};
+    my $ati_p_name = $allied->ati_p_name($partial)  || {};
 
-    foreach my $port (keys %$ati_p_name){
+    foreach my $port ( keys %$ati_p_name ) {
         my $name = $ati_p_name->{$port};
-        $i_name->{$port} = $name if (defined $name and $name !~ /^\s*$/);
+        $i_name->{$port} = $name if ( defined $name and $name !~ /^\s*$/ );
     }
-    
+
     return $i_name;
 }
 
 sub i_up {
-    my $allied = shift;
+    my $allied  = shift;
     my $partial = shift;
 
-    my $i_up = SNMP::Info::Layer1::i_up($allied, $partial);
+    my $i_up = SNMP::Info::Layer1::i_up( $allied, $partial );
     my $ati_up = $allied->ati_up($partial) || {};
 
-    foreach my $port (keys %$ati_up){
+    foreach my $port ( keys %$ati_up ) {
         my $up = $ati_up->{$port};
         $i_up->{$port} = 'down' if $up eq 'linktesterror';
-        $i_up->{$port} = 'up' if $up eq 'nolinktesterror';
+        $i_up->{$port} = 'up'   if $up eq 'nolinktesterror';
     }
-    
+
     return $i_up;
 }
 1;

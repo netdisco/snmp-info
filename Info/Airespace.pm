@@ -4,20 +4,20 @@
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -34,117 +34,126 @@ use strict;
 use Exporter;
 use SNMP::Info;
 
-@SNMP::Info::Airespace::ISA = qw/SNMP::Info Exporter/;
+@SNMP::Info::Airespace::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::Airespace::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS    = (
-            %SNMP::Info::MIBS,
-            'AIRESPACE-WIRELESS-MIB'     => 'bsnAPName',
-            'AIRESPACE-SWITCHING-MIB'    => 'agentInventorySerialNumber',
-            );
+%MIBS = (
+    %SNMP::Info::MIBS,
+    'AIRESPACE-WIRELESS-MIB'  => 'bsnAPName',
+    'AIRESPACE-SWITCHING-MIB' => 'agentInventorySerialNumber',
+);
 
 %GLOBALS = (
-            %SNMP::Info::GLOBALS,
-            'airespace_type'         => 'agentInventoryMachineType',
-            'airespace_model'        => 'agentInventoryMachineModel',
-            'airespace_serial'       => 'agentInventorySerialNumber',
-            'airespace_maint_ver'    => 'agentInventoryMaintenanceLevel',
-            'airespace_mac'          => 'agentInventoryBurnedInMacAddress',
-            'airespace_os'           => 'agentInventoryOperatingSystem',
-            'airespace_vendor'       => 'agentInventoryManufacturerName',
-            'airespace_prod_name'    => 'agentInventoryProductName',
-            'os_ver'                 => 'agentInventoryProductVersion',
-            'airespace_bssid_mode'   => 'agentNetworkBroadcastSsidMode',
-            'airespace_mc_mode'      => 'agentNetworkMulticastMode',
-            'airespace_lwapp_mode'   => 'agentSwitchLwappTransportMode',
-            'airespace_ul_mode'      => 'agentTransferUploadMode',
-            'airespace_ul_ip'        => 'agentTransferUploadServerIP',
-            'airespace_ul_path'      => 'agentTransferUploadPath',
-            'airespace_ul_file'      => 'agentTransferUploadFilename',
-            'airespace_ul_type'      => 'agentTransferUploadDataType',
-            'airespace_ul_start'     => 'agentTransferUploadStart',
-            'airespace_ul_status'    => 'agentTransferUploadStatus',
-            );
+    %SNMP::Info::GLOBALS,
+    'airespace_type'       => 'agentInventoryMachineType',
+    'airespace_model'      => 'agentInventoryMachineModel',
+    'airespace_serial'     => 'agentInventorySerialNumber',
+    'airespace_maint_ver'  => 'agentInventoryMaintenanceLevel',
+    'airespace_mac'        => 'agentInventoryBurnedInMacAddress',
+    'airespace_os'         => 'agentInventoryOperatingSystem',
+    'airespace_vendor'     => 'agentInventoryManufacturerName',
+    'airespace_prod_name'  => 'agentInventoryProductName',
+    'os_ver'               => 'agentInventoryProductVersion',
+    'airespace_bssid_mode' => 'agentNetworkBroadcastSsidMode',
+    'airespace_mc_mode'    => 'agentNetworkMulticastMode',
+    'airespace_lwapp_mode' => 'agentSwitchLwappTransportMode',
+    'airespace_ul_mode'    => 'agentTransferUploadMode',
+    'airespace_ul_ip'      => 'agentTransferUploadServerIP',
+    'airespace_ul_path'    => 'agentTransferUploadPath',
+    'airespace_ul_file'    => 'agentTransferUploadFilename',
+    'airespace_ul_type'    => 'agentTransferUploadDataType',
+    'airespace_ul_start'   => 'agentTransferUploadStart',
+    'airespace_ul_status'  => 'agentTransferUploadStatus',
+);
 
-%FUNCS   = (
-            %SNMP::Info::FUNCS,
-            # AIRESPACE-WIRELESS-MIB::bsnDot11EssTable
-            'airespace_ess_idx'       => 'bsnDot11EssIndex',
-            'airespace_ess_ssid'      => 'bsnDot11EssSsid',
-            'airespace_ess_macflt'    => 'bsnDot11EssMacFiltering',
-            'airespace_ess_status'    => 'bsnDot11EssAdminStatus',
-            'airespace_ess_sec_auth'  => 'bsnDot11EssSecurityAuthType',
-            'airespace_ess_radio_pol' => 'bsnDot11EssRadioPolicy',
-            'airespace_ess_qos'       => 'bsnDot11EssQualityOfService',
-            'airespace_ess_ifname'    => 'bsnDot11EssInterfaceName',
-            'airespace_ess_aclname'   => 'bsnDot11EssAclName',
-            # AIRESPACE-WIRELESS-MIB::bsnAPTable
-            'airespace_ap_mac'        => 'bsnAPDot3MacAddress',
-            'airespace_ap_name'       => 'bsnAPName',
-            'airespace_ap_ip'         => 'bsnApIpAddress',
-            'airespace_ap_loc'        => 'bsnAPLocation',
-            'airespace_ap_sw'         => 'bsnAPSoftwareVersion',
-            'airespace_ap_fw'         => 'bsnAPBootVersion',
-            'airespace_ap_model'      => 'bsnAPModel',
-            'airespace_ap_serial'     => 'bsnAPSerialNumber',
-            'airespace_ap_type'       => 'bsnAPType',            
-            'airespace_ap_status'     => 'bsnAPAdminStatus',
-            # AIRESPACE-WIRELESS-MIB::bsnAPIfTable
-            'airespace_apif_slot'     => 'bsnAPIfSlotId',
-            'airespace_apif_type'     => 'bsnAPIfType',
-            'airespace_apif_ch_num'   => 'bsnAPIfPhyChannelNumber',
-            'airespace_apif_power'    => 'bsnAPIfPhyTxPowerLevel',
-            'airespace_apif'          => 'bsnAPIfOperStatus',
-            'airespace_apif_oride'    => 'bsnAPIfWlanOverride',            
-            'airespace_apif_admin'    => 'bsnAPIfAdminStatus',
-            # AIRESPACE-WIRELESS-MIB::bsnMobileStationTable
-            'airespace_sta_mac'       => 'bsnMobileStationAPMacAddr',
-            'fw_mac'                  => 'bsnMobileStationMacAddress',
-            'airespace_sta_slot'      => 'bsnMobileStationAPIfSlotId',
-            'airespace_sta_ess_idx'   => 'bsnMobileStationEssIndex',
-            'airespace_sta_ssid'      => 'bsnMobileStationSsid',
-            'airespace_sta_delete'    => 'bsnMobileStationDeleteAction',
-            # AIRESPACE-WIRELESS-MIB::bsnUsersTable
-            'airespace_user_name'     => 'bsnUserName',
-            'airespace_user_pw'       => 'bsnUserPassword',
-            'airespace_user_ess_idx'  => 'bsnUserEssIndex',
-            'airespace_user_access'   => 'bsnUserAccessMode',
-            'airespace_user_type'     => 'bsnUserType',
-            'airespace_user_ifname'   => 'bsnUserInterfaceName',
-            'airespace_user_rstat'    => 'bsnUserRowStatus',
-            # AIRESPACE-WIRELESS-MIB::bsnBlackListClientTable
-            'airespace_bl_mac'        => 'bsnBlackListClientMacAddress',
-            'airespace_bl_descr'      => 'bsnBlackListClientDescription',
-            'airespace_bl_rstat'      => 'bsnBlackListClientRowStatus',
-            # AIRESPACE-WIRELESS-MIB::bsnAPIfWlanOverrideTable
-            'airespace_oride_id'      => 'bsnAPIfWlanOverrideId',
-            'airespace_oride_ssid'    => 'bsnAPIfWlanOverrideSsid',
-            # AIRESPACE-SWITCHING-MIB::agentInterfaceConfigTable
-            'airespace_if_name'       => 'agentInterfaceName',
-            'airespace_if_vlan'       => 'agentInterfaceVlanId',
-            'airespace_if_type'       => 'agentInterfaceType',
-            'airespace_if_mac'        => 'agentInterfaceMacAddress',
-            'airespace_if_ip'         => 'agentInterfaceIPAddress',
-            'airespace_if_mask'       => 'agentInterfaceIPNetmask',
-            'airespace_if_acl'        => 'agentInterfaceAclName',
-            'airespace_if_rstat'      => 'agentInterfaceRowStatus',
-            # AIRESPACE-SWITCHING-MIB::agentPortConfigTable
-            'airespace_duplex_admin'  => 'agentPortPhysicalMode',
-            'airespace_duplex'        => 'agentPortPhysicalStatus',
-            );
+%FUNCS = (
+    %SNMP::Info::FUNCS,
 
-%MUNGE   = (
-            %SNMP::Info::MUNGE,
-            'airespace_ap_mac'  => \&SNMP::Info::munge_mac,
-            'fw_port'           => \&SNMP::Info::munge_mac,
-            'airespace_bl_mac'  => \&SNMP::Info::munge_mac,
-            'airespace_if_mac'  => \&SNMP::Info::munge_mac,
-            'airespace_sta_mac' => \&SNMP::Info::munge_mac,
-            );
+    # AIRESPACE-WIRELESS-MIB::bsnDot11EssTable
+    'airespace_ess_idx'       => 'bsnDot11EssIndex',
+    'airespace_ess_ssid'      => 'bsnDot11EssSsid',
+    'airespace_ess_macflt'    => 'bsnDot11EssMacFiltering',
+    'airespace_ess_status'    => 'bsnDot11EssAdminStatus',
+    'airespace_ess_sec_auth'  => 'bsnDot11EssSecurityAuthType',
+    'airespace_ess_radio_pol' => 'bsnDot11EssRadioPolicy',
+    'airespace_ess_qos'       => 'bsnDot11EssQualityOfService',
+    'airespace_ess_ifname'    => 'bsnDot11EssInterfaceName',
+    'airespace_ess_aclname'   => 'bsnDot11EssAclName',
+
+    # AIRESPACE-WIRELESS-MIB::bsnAPTable
+    'airespace_ap_mac'    => 'bsnAPDot3MacAddress',
+    'airespace_ap_name'   => 'bsnAPName',
+    'airespace_ap_ip'     => 'bsnApIpAddress',
+    'airespace_ap_loc'    => 'bsnAPLocation',
+    'airespace_ap_sw'     => 'bsnAPSoftwareVersion',
+    'airespace_ap_fw'     => 'bsnAPBootVersion',
+    'airespace_ap_model'  => 'bsnAPModel',
+    'airespace_ap_serial' => 'bsnAPSerialNumber',
+    'airespace_ap_type'   => 'bsnAPType',
+    'airespace_ap_status' => 'bsnAPAdminStatus',
+
+    # AIRESPACE-WIRELESS-MIB::bsnAPIfTable
+    'airespace_apif_slot'   => 'bsnAPIfSlotId',
+    'airespace_apif_type'   => 'bsnAPIfType',
+    'airespace_apif_ch_num' => 'bsnAPIfPhyChannelNumber',
+    'airespace_apif_power'  => 'bsnAPIfPhyTxPowerLevel',
+    'airespace_apif'        => 'bsnAPIfOperStatus',
+    'airespace_apif_oride'  => 'bsnAPIfWlanOverride',
+    'airespace_apif_admin'  => 'bsnAPIfAdminStatus',
+
+    # AIRESPACE-WIRELESS-MIB::bsnMobileStationTable
+    'airespace_sta_mac'     => 'bsnMobileStationAPMacAddr',
+    'fw_mac'                => 'bsnMobileStationMacAddress',
+    'airespace_sta_slot'    => 'bsnMobileStationAPIfSlotId',
+    'airespace_sta_ess_idx' => 'bsnMobileStationEssIndex',
+    'airespace_sta_ssid'    => 'bsnMobileStationSsid',
+    'airespace_sta_delete'  => 'bsnMobileStationDeleteAction',
+
+    # AIRESPACE-WIRELESS-MIB::bsnUsersTable
+    'airespace_user_name'    => 'bsnUserName',
+    'airespace_user_pw'      => 'bsnUserPassword',
+    'airespace_user_ess_idx' => 'bsnUserEssIndex',
+    'airespace_user_access'  => 'bsnUserAccessMode',
+    'airespace_user_type'    => 'bsnUserType',
+    'airespace_user_ifname'  => 'bsnUserInterfaceName',
+    'airespace_user_rstat'   => 'bsnUserRowStatus',
+
+    # AIRESPACE-WIRELESS-MIB::bsnBlackListClientTable
+    'airespace_bl_mac'   => 'bsnBlackListClientMacAddress',
+    'airespace_bl_descr' => 'bsnBlackListClientDescription',
+    'airespace_bl_rstat' => 'bsnBlackListClientRowStatus',
+
+    # AIRESPACE-WIRELESS-MIB::bsnAPIfWlanOverrideTable
+    'airespace_oride_id'   => 'bsnAPIfWlanOverrideId',
+    'airespace_oride_ssid' => 'bsnAPIfWlanOverrideSsid',
+
+    # AIRESPACE-SWITCHING-MIB::agentInterfaceConfigTable
+    'airespace_if_name'  => 'agentInterfaceName',
+    'airespace_if_vlan'  => 'agentInterfaceVlanId',
+    'airespace_if_type'  => 'agentInterfaceType',
+    'airespace_if_mac'   => 'agentInterfaceMacAddress',
+    'airespace_if_ip'    => 'agentInterfaceIPAddress',
+    'airespace_if_mask'  => 'agentInterfaceIPNetmask',
+    'airespace_if_acl'   => 'agentInterfaceAclName',
+    'airespace_if_rstat' => 'agentInterfaceRowStatus',
+
+    # AIRESPACE-SWITCHING-MIB::agentPortConfigTable
+    'airespace_duplex_admin' => 'agentPortPhysicalMode',
+    'airespace_duplex'       => 'agentPortPhysicalStatus',
+);
+
+%MUNGE = (
+    %SNMP::Info::MUNGE,
+    'airespace_ap_mac'  => \&SNMP::Info::munge_mac,
+    'fw_port'           => \&SNMP::Info::munge_mac,
+    'airespace_bl_mac'  => \&SNMP::Info::munge_mac,
+    'airespace_if_mac'  => \&SNMP::Info::munge_mac,
+    'airespace_sta_mac' => \&SNMP::Info::munge_mac,
+);
 
 sub layers {
     return '00000011';
@@ -152,7 +161,7 @@ sub layers {
 
 sub serial {
     my $airespace = shift;
-    my $sn = $airespace->airespace_serial();
+    my $sn        = $airespace->airespace_serial();
     return unless defined $sn;
 
     return $sn;
@@ -165,12 +174,12 @@ sub i_index {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $i_index   = $airespace->orig_i_index($partial) || {};
-    my $ap_index  = $airespace->airespace_apif_slot($partial) || {};
-    my $if_index  = $airespace->airespace_if_name($partial) || {};
+    my $i_index  = $airespace->orig_i_index($partial)        || {};
+    my $ap_index = $airespace->airespace_apif_slot($partial) || {};
+    my $if_index = $airespace->airespace_if_name($partial)   || {};
 
     my %if_index;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
@@ -178,20 +187,21 @@ sub i_index {
     }
 
     # Get Attached APs as Interfaces
-    foreach my $ap_id (keys %$ap_index){
+    foreach my $ap_id ( keys %$ap_index ) {
 
-        if ($ap_id =~ /(\d+\.\d+\.\d+\.\d+\.\d+\.\d+)\.(\d+)/) {
-            my $mac  = join(':',map {sprintf("%02x",$_)} split(/\./,$1));
+        if ( $ap_id =~ /(\d+\.\d+\.\d+\.\d+\.\d+\.\d+)\.(\d+)/ ) {
+            my $mac = join( ':',
+                map { sprintf( "%02x", $_ ) } split( /\./, $1 ) );
             my $slot = $2;
-            next unless ( (defined $mac) and (defined $slot) );
+            next unless ( ( defined $mac ) and ( defined $slot ) );
 
             $if_index{$ap_id} = "$mac.$slot";
         }
     }
 
     # Get Switch Interfaces from Interface Config Table
-    foreach my $if_id (keys %$if_index){
-        my $name  = $if_index->{$if_id};
+    foreach my $if_id ( keys %$if_index ) {
+        my $name = $if_index->{$if_id};
         next unless defined $name;
 
         $if_index{$if_id} = $name;
@@ -204,19 +214,19 @@ sub interfaces {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $i_index   = $airespace->i_index($partial) || {};
+    my $i_index = $airespace->i_index($partial) || {};
 
     my %if;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /^\d+$/ ) {
-          $if{$iid} = "1.$index";
+        if ( $index =~ /^\d+$/ ) {
+            $if{$iid} = "1.$index";
         }
 
         else {
-          $if{$iid} = $index;
+            $if{$iid} = $index;
         }
     }
     return \%if;
@@ -226,22 +236,22 @@ sub i_name {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $i_index   = $airespace->i_index($partial) || {};
-    my $i_name    = $airespace->orig_i_name($partial) || {};
-    my $ap_name   = $airespace->airespace_ap_name($partial) || {};
-    
+    my $i_index = $airespace->i_index($partial)           || {};
+    my $i_name  = $airespace->orig_i_name($partial)       || {};
+    my $ap_name = $airespace->airespace_ap_name($partial) || {};
+
     my %i_name;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /^\d+$/ ) {
+        if ( $index =~ /^\d+$/ ) {
             my $name = $i_name->{$iid};
             next unless defined $name;
             $i_name{$iid} = $name;
         }
 
-        elsif ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
+        elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
             my $idx = $iid;
             $idx =~ s/\.\d+$//;
             my $name = $ap_name->{$idx};
@@ -250,7 +260,7 @@ sub i_name {
         }
 
         else {
-            $i_name{$iid} = $index;            
+            $i_name{$iid} = $index;
         }
     }
     return \%i_name;
@@ -260,22 +270,22 @@ sub i_description {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $i_index  = $airespace->i_index($partial) || {};
-    my $i_descr  = $airespace->orig_i_description($partial) || {};
-    my $ap_loc   = $airespace->airespace_ap_loc($partial) || {};
+    my $i_index = $airespace->i_index($partial)            || {};
+    my $i_descr = $airespace->orig_i_description($partial) || {};
+    my $ap_loc  = $airespace->airespace_ap_loc($partial)   || {};
 
     my %descr;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /^\d+$/ ) {
+        if ( $index =~ /^\d+$/ ) {
             my $descr = $i_descr->{$iid};
             next unless defined $descr;
             $descr{$iid} = $descr;
         }
 
-        elsif ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
+        elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
             my $idx = $iid;
             $idx =~ s/\.\d+$//;
             my $name = $ap_loc->{$idx};
@@ -294,23 +304,23 @@ sub i_type {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $i_index   = $airespace->i_index($partial) || {};
-    my $i_descr   = $airespace->orig_i_type($partial) || {};
+    my $i_index   = $airespace->i_index($partial)             || {};
+    my $i_descr   = $airespace->orig_i_type($partial)         || {};
     my $apif_type = $airespace->airespace_apif_type($partial) || {};
-    my $if_type   = $airespace->airespace_if_type($partial) || {};
+    my $if_type   = $airespace->airespace_if_type($partial)   || {};
 
     my %i_type;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /^\d+$/ ) {
+        if ( $index =~ /^\d+$/ ) {
             my $descr = $i_descr->{$iid};
             next unless defined $descr;
             $i_type{$iid} = $descr;
         }
 
-        elsif ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
+        elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
             my $type = $apif_type->{$iid};
             next unless defined $type;
             $i_type{$iid} = $type;
@@ -328,80 +338,80 @@ sub i_up {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $i_index = $airespace->i_index($partial) || {};
-    my $i_up    = $airespace->orig_i_up($partial) || {};
+    my $i_index = $airespace->i_index($partial)        || {};
+    my $i_up    = $airespace->orig_i_up($partial)      || {};
     my $apif_up = $airespace->airespace_apif($partial) || {};
 
     my %i_up;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /^\d+$/ ) {
+        if ( $index =~ /^\d+$/ ) {
             my $stat = $i_up->{$iid};
             next unless defined $stat;
             $i_up{$iid} = $stat;
         }
 
-        elsif ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
+        elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
             my $stat = $apif_up->{$iid};
             next unless defined $stat;
-            $i_up{$iid} = $stat;            
+            $i_up{$iid} = $stat;
         }
-        
+
         else {
             next;
         }
     }
-  return \%i_up;
+    return \%i_up;
 }
 
 sub i_up_admin {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $i_index = $airespace->i_index($partial) || {};
-    my $i_up    = $airespace->orig_i_up($partial) || {};
+    my $i_index = $airespace->i_index($partial)              || {};
+    my $i_up    = $airespace->orig_i_up($partial)            || {};
     my $apif_up = $airespace->airespace_apif_admin($partial) || {};
 
     my %i_up_admin;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /^\d+$/ ) {
+        if ( $index =~ /^\d+$/ ) {
             my $stat = $i_up->{$iid};
             next unless defined $stat;
             $i_up_admin{$iid} = $stat;
         }
 
-        elsif ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
+        elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
             my $stat = $apif_up->{$iid};
             next unless defined $stat;
-            $i_up_admin{$iid} = $stat;            
+            $i_up_admin{$iid} = $stat;
         }
-        
+
         else {
             next;
         }
     }
-  return \%i_up_admin;
+    return \%i_up_admin;
 }
 
 sub i_mac {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $i_index    = $airespace->i_index($partial) || {};
-    my $i_mac      = $airespace->orig_i_mac($partial) || {};
-    my $if_mac     = $airespace->airespace_if_mac($partial) || {};
-    
+    my $i_index = $airespace->i_index($partial)          || {};
+    my $i_mac   = $airespace->orig_i_mac($partial)       || {};
+    my $if_mac  = $airespace->airespace_if_mac($partial) || {};
+
     my %i_mac;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /^\d+$/ ) {
+        if ( $index =~ /^\d+$/ ) {
             my $mac = $i_mac->{$iid};
             next unless defined $mac;
             $i_mac{$iid} = $mac;
@@ -415,44 +425,44 @@ sub i_mac {
             my $mac = $if_mac->{$iid};
             next unless defined $mac;
             next if $mac =~ /00:00:00:00:00:00/;
-            $i_mac{$iid} = $mac;            
+            $i_mac{$iid} = $mac;
         }
     }
-  return \%i_mac;
+    return \%i_mac;
 }
 
 sub i_vlan {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $if_vlan   = $airespace->airespace_if_vlan($partial) || {};
-    
+    my $if_vlan = $airespace->airespace_if_vlan($partial) || {};
+
     my %i_vlan;
-    foreach my $iid (keys %$if_vlan){
+    foreach my $iid ( keys %$if_vlan ) {
         my $vlan = $if_vlan->{$iid};
         next unless defined $vlan;
 
         $i_vlan{$iid} = $vlan;
     }
 
-  return \%i_vlan;
+    return \%i_vlan;
 }
 
 sub i_duplex {
     my $airespace = shift;
     my $partial   = shift;
-    
-    my $ap_duplex   = $airespace->airespace_duplex($partial) || {};
+
+    my $ap_duplex = $airespace->airespace_duplex($partial) || {};
 
     my %i_duplex;
-    foreach my $if (keys %$ap_duplex){
+    foreach my $if ( keys %$ap_duplex ) {
         my $duplex = $ap_duplex->{$if};
-        next unless defined $duplex; 
-    
+        next unless defined $duplex;
+
         $duplex = 'half' if $duplex =~ /half/i;
         $duplex = 'full' if $duplex =~ /full/i;
         $duplex = 'auto' if $duplex =~ /auto/i;
-        $i_duplex{$if}=$duplex; 
+        $i_duplex{$if} = $duplex;
     }
     return \%i_duplex;
 }
@@ -461,17 +471,17 @@ sub i_duplex_admin {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $ap_duplex_admin  = $airespace->airespace_duplex_admin($partial) || {};
+    my $ap_duplex_admin = $airespace->airespace_duplex_admin($partial) || {};
 
     my %i_duplex_admin;
-    foreach my $if (keys %$ap_duplex_admin){
+    foreach my $if ( keys %$ap_duplex_admin ) {
         my $duplex = $ap_duplex_admin->{$if};
-        next unless defined $duplex; 
-    
+        next unless defined $duplex;
+
         $duplex = 'half' if $duplex =~ /half/i;
         $duplex = 'full' if $duplex =~ /full/i;
         $duplex = 'auto' if $duplex =~ /auto/i;
-        $i_duplex_admin{$if}=$duplex; 
+        $i_duplex_admin{$if} = $duplex;
     }
     return \%i_duplex_admin;
 }
@@ -481,20 +491,20 @@ sub ip_index {
     my $partial   = shift;
 
     my $ip_index = $airespace->orig_ip_index($partial) || {};
-    my $if_ip    = $airespace->airespace_if_ip() || {};
+    my $if_ip    = $airespace->airespace_if_ip()       || {};
 
     my %ip_index;
-    foreach my $ip (keys %$ip_index){
-        my $iid  = $ip_index->{$ip};
+    foreach my $ip ( keys %$ip_index ) {
+        my $iid = $ip_index->{$ip};
         next unless defined $iid;
-        
+
         $ip_index{$ip} = $iid;
     }
 
-    foreach my $iid (keys %$if_ip){
-        my $ip  = $if_ip->{$iid};
+    foreach my $iid ( keys %$if_ip ) {
+        my $ip = $if_ip->{$iid};
         next unless defined $ip;
-        next if (defined $partial and $partial !~ /$ip/);
+        next if ( defined $partial and $partial !~ /$ip/ );
 
         $ip_index{$ip} = $iid;
     }
@@ -507,21 +517,21 @@ sub ip_netmask {
     my $partial   = shift;
 
     my $ip_mask = $airespace->orig_ip_netmask($partial) || {};
-    my $if_ip   = $airespace->airespace_if_ip() || {};
-    my $if_mask = $airespace->airespace_if_mask() || {};
+    my $if_ip   = $airespace->airespace_if_ip()         || {};
+    my $if_mask = $airespace->airespace_if_mask()       || {};
 
     my %ip_netmask;
-    foreach my $ip (keys %$ip_mask){
-        my $mask  = $ip_mask->{$ip};
+    foreach my $ip ( keys %$ip_mask ) {
+        my $mask = $ip_mask->{$ip};
         next unless defined $mask;
 
         $ip_netmask{$ip} = $mask;
     }
 
-    foreach my $iid (keys %$if_mask){
-        my $ip  = $if_ip->{$iid};
+    foreach my $iid ( keys %$if_mask ) {
+        my $ip = $if_ip->{$iid};
         next unless defined $ip;
-        next if (defined $partial and $partial !~ /$ip/);
+        next if ( defined $partial and $partial !~ /$ip/ );
         my $mask = $if_mask->{$iid};
         next unless defined $mask;
 
@@ -536,10 +546,10 @@ sub bp_index {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $i_index   = $airespace->i_index($partial) || {};
-    
+    my $i_index = $airespace->i_index($partial) || {};
+
     my %bp_index;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
@@ -553,11 +563,11 @@ sub fw_port {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $sta_mac   = $airespace->airespace_sta_mac($partial) || {};
-    my $sta_slot  = $airespace->airespace_sta_slot($partial) || {};
+    my $sta_mac  = $airespace->airespace_sta_mac($partial)  || {};
+    my $sta_slot = $airespace->airespace_sta_slot($partial) || {};
 
     my %fw_port;
-    foreach my $iid (keys %$sta_mac){
+    foreach my $iid ( keys %$sta_mac ) {
         my $mac = $sta_mac->{$iid};
         next unless defined $mac;
         my $slot = $sta_slot->{$iid};
@@ -573,30 +583,30 @@ sub i_ssidlist {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $apif_override  = $airespace->airespace_apif_oride($partial) || {};
-    my $apif_type      = $airespace->airespace_apif_type($partial) || {};
-    my $ssids          = $airespace->airespace_ess_ssid() || {};
-    my $ssid_policy    = $airespace->airespace_ess_radio_pol() || {};
-    my $ssid_status    = $airespace->airespace_ess_status() || {};
-    my $ovride_ssids   = $airespace->airespace_oride_ssid($partial) || {};
+    my $apif_override = $airespace->airespace_apif_oride($partial) || {};
+    my $apif_type     = $airespace->airespace_apif_type($partial)  || {};
+    my $ssids         = $airespace->airespace_ess_ssid()           || {};
+    my $ssid_policy   = $airespace->airespace_ess_radio_pol()      || {};
+    my $ssid_status   = $airespace->airespace_ess_status()         || {};
+    my $ovride_ssids  = $airespace->airespace_oride_ssid($partial) || {};
 
     my %i_ssidlist;
-    foreach my $iid (keys %$apif_override){
+    foreach my $iid ( keys %$apif_override ) {
         my $override = $apif_override->{$iid};
         next unless defined $override;
-        
-        next unless $override =~ /disable/i ;
+
+        next unless $override =~ /disable/i;
         my $ap_type = $apif_type->{$iid};
         next unless defined $ap_type;
         $ap_type =~ s/dot11//;
-        
-        foreach my $idx (keys %$ssids){
-            my $ssid  = $ssids->{$idx};
+
+        foreach my $idx ( keys %$ssids ) {
+            my $ssid = $ssids->{$idx};
             next unless defined $ssid;
-            my $status  = $ssid_status->{$idx};
+            my $status = $ssid_status->{$idx};
             next unless defined $status;
             next if ( $status =~ /disable/ );
-            my $policy  = $ssid_policy->{$idx};
+            my $policy = $ssid_policy->{$idx};
             next unless $policy =~ /$ap_type/ or $policy =~ /all/;
 
             $i_ssidlist{"$iid.$idx"} = $ssid;
@@ -604,10 +614,10 @@ sub i_ssidlist {
         next;
     }
 
-    foreach my $iid (keys %$ovride_ssids){
+    foreach my $iid ( keys %$ovride_ssids ) {
         my $ssid = $ovride_ssids->{$iid};
         next unless $ssid;
-        
+
         $i_ssidlist{$iid} = $ssid;
     }
 
@@ -618,14 +628,14 @@ sub i_ssidbcast {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $ssidlist = $airespace->i_ssidlist($partial) || {};
+    my $ssidlist = $airespace->i_ssidlist($partial)   || {};
     my $bc_mode  = $airespace->airespace_bssid_mode() || 'enable';
 
-    my %bcmap = qw/enable 1 disable 0/;
+    my %bcmap     = qw/enable 1 disable 0/;
     my $broadcast = $bcmap{$bc_mode};
 
     my %i_ssidbcast;
-    foreach my $iid (keys %$ssidlist){
+    foreach my $iid ( keys %$ssidlist ) {
         $i_ssidbcast{$iid} = $broadcast;
     }
 
@@ -639,7 +649,7 @@ sub i_80211channel {
     my $ch_list = $airespace->airespace_apif_ch_num($partial) || {};
 
     my %i_80211channel;
-    foreach my $iid (keys %$ch_list){
+    foreach my $iid ( keys %$ch_list ) {
         my $ch = $ch_list->{$iid};
         $ch =~ s/ch//;
         $i_80211channel{$iid} = $ch;
@@ -647,7 +657,6 @@ sub i_80211channel {
 
     return \%i_80211channel;
 }
-
 
 # Pseudo ENTITY-MIB methods
 
@@ -657,17 +666,20 @@ sub e_index {
     my $ap_model = $airespace->airespace_ap_model() || {};
 
     my %e_index;
+
     # Chassis
     $e_index{1} = 1;
 
-    # We're going to hack an index to capture APs 
-    foreach my $idx (keys %$ap_model){
-        # Create the integer index by joining the last three octets of the MAC.
-        # Hopefully, this will be unique since the manufacturer should be
-        # limited to Airespace and Cisco.  We can't use the entire MAC since
-        # we would exceed the intger size limit.
-        if ($idx =~ /(\d+\.\d+\.\d+)$/) { 
-            my $index = int (join('',map { sprintf "%03d",$_ } split /\./, $1));
+    # We're going to hack an index to capture APs
+    foreach my $idx ( keys %$ap_model ) {
+
+       # Create the integer index by joining the last three octets of the MAC.
+       # Hopefully, this will be unique since the manufacturer should be
+       # limited to Airespace and Cisco.  We can't use the entire MAC since
+       # we would exceed the intger size limit.
+        if ( $idx =~ /(\d+\.\d+\.\d+)$/ ) {
+            my $index = int(
+                join( '', map { sprintf "%03d", $_ } split /\./, $1 ) );
             $e_index{$idx} = $index;
         }
     }
@@ -680,11 +692,12 @@ sub e_class {
     my $e_idx = $airespace->e_index() || {};
 
     my %e_class;
-    foreach my $iid (keys %$e_idx){
-        if ($iid eq 1) {
+    foreach my $iid ( keys %$e_idx ) {
+        if ( $iid eq 1 ) {
             $e_class{$iid} = 'chassis';
         }
-        # This isn't a valid PhysicalClass, but we're hacking this anyway 
+
+        # This isn't a valid PhysicalClass, but we're hacking this anyway
         else {
             $e_class{$iid} = 'ap';
         }
@@ -698,11 +711,12 @@ sub e_name {
     my $ap_name = $airespace->airespace_ap_name() || {};
 
     my %e_name;
+
     # Chassis
     $e_name{1} = 'WLAN Controller';
 
     # APs
-    foreach my $iid (keys %$ap_name){
+    foreach my $iid ( keys %$ap_name ) {
         $e_name{$iid} = 'AP';
     }
     return \%e_name;
@@ -712,19 +726,20 @@ sub e_descr {
     my $airespace = shift;
 
     my $ap_model = $airespace->airespace_ap_model() || {};
-    my $ap_name  = $airespace->airespace_ap_name() || {};
-    my $ap_loc   = $airespace->airespace_ap_loc() || {};
+    my $ap_name  = $airespace->airespace_ap_name()  || {};
+    my $ap_loc   = $airespace->airespace_ap_loc()   || {};
 
     my %e_descr;
+
     # Chassis
     $e_descr{1} = $airespace->airespace_prod_name();
 
     # APs
-    foreach my $iid (keys %$ap_name){
+    foreach my $iid ( keys %$ap_name ) {
         my $name = $ap_name->{$iid};
         next unless defined $name;
         my $model = $ap_model->{$iid} || 'AP';
-        my $loc = $ap_loc->{$iid} || 'unknown';
+        my $loc   = $ap_loc->{$iid}   || 'unknown';
 
         $e_descr{$iid} = "$model: $name ($loc)";
     }
@@ -737,11 +752,12 @@ sub e_model {
     my $ap_model = $airespace->airespace_ap_model() || {};
 
     my %e_model;
+
     # Chassis
     $e_model{1} = $airespace->airespace_model();
 
     # APs
-    foreach my $iid (keys %$ap_model){
+    foreach my $iid ( keys %$ap_model ) {
         my $model = $ap_model->{$iid};
         next unless defined $model;
 
@@ -756,11 +772,12 @@ sub e_type {
     my $ap_type = $airespace->airespace_ap_type() || {};
 
     my %e_type;
+
     # Chassis
     $e_type{1} = $airespace->airespace_type();
 
     # APs
-    foreach my $iid (keys %$ap_type){
+    foreach my $iid ( keys %$ap_type ) {
         my $type = $ap_type->{$iid};
         next unless defined $type;
 
@@ -775,11 +792,12 @@ sub e_fwver {
     my $ap_fw = $airespace->airespace_ap_fw() || {};
 
     my %e_fwver;
+
     # Chassis
     $e_fwver{1} = $airespace->airespace_maint_ver();
 
     # APs
-    foreach my $iid (keys %$ap_fw){
+    foreach my $iid ( keys %$ap_fw ) {
         my $fw = $ap_fw->{$iid};
         next unless defined $fw;
 
@@ -791,10 +809,10 @@ sub e_fwver {
 sub e_vendor {
     my $airespace = shift;
 
-    my $e_idx  = $airespace->e_index() || {};
+    my $e_idx = $airespace->e_index() || {};
 
     my %e_vendor;
-    foreach my $iid (keys %$e_idx){
+    foreach my $iid ( keys %$e_idx ) {
         $e_vendor{$iid} = 'cisco';
     }
     return \%e_vendor;
@@ -806,11 +824,12 @@ sub e_serial {
     my $ap_serial = $airespace->airespace_ap_serial() || {};
 
     my %e_serial;
+
     # Chassis
     $e_serial{1} = $airespace->airespace_serial();
 
     # APs
-    foreach my $iid (keys %$ap_serial){
+    foreach my $iid ( keys %$ap_serial ) {
         my $serial = $ap_serial->{$iid};
         next unless defined $serial;
 
@@ -822,12 +841,12 @@ sub e_serial {
 sub e_pos {
     my $airespace = shift;
 
-    my $e_idx  = $airespace->e_index() || {};
+    my $e_idx = $airespace->e_index() || {};
 
     my %e_pos;
     my $pos = 0;
-    foreach my $iid (sort keys %$e_idx){
-        if ($iid eq 1) {
+    foreach my $iid ( sort keys %$e_idx ) {
+        if ( $iid eq 1 ) {
             $e_pos{$iid} = -1;
             next;
         }
@@ -845,11 +864,12 @@ sub e_swver {
     my $ap_sw = $airespace->airespace_ap_sw() || {};
 
     my %e_swver;
+
     # Chassis
     $e_swver{1} = $airespace->airespace_os();
 
     # APs
-    foreach my $iid (keys %$ap_sw){
+    foreach my $iid ( keys %$ap_sw ) {
         my $sw = $ap_sw->{$iid};
         next unless defined $sw;
 
@@ -861,11 +881,11 @@ sub e_swver {
 sub e_parent {
     my $airespace = shift;
 
-    my $e_idx  = $airespace->e_index() || {};
+    my $e_idx = $airespace->e_index() || {};
 
     my %e_parent;
-    foreach my $iid (sort keys %$e_idx){
-        if ($iid eq 1) {
+    foreach my $iid ( sort keys %$e_idx ) {
+        if ( $iid eq 1 ) {
             $e_parent{$iid} = 0;
             next;
         }
@@ -998,8 +1018,8 @@ Layer3 mode.
 
 =item $airespace->airespace_ul_mode()
 
-Transfer upload mode configures the mode to use when uploading from the switch.
-Normal usage tftp.
+Transfer upload mode configures the mode to use when uploading from the
+switch.  Normal usage tftp.
 
 (C<agentTransferUploadMode>)
 
@@ -1012,8 +1032,8 @@ valid only when the Transfer Mode is tftp.
 
 =item $airespace->airespace_ul_path()
 
-Transfer upload tftp path configures the directory path where the file is to be
-uploaded to. The switch remembers the last file path used. 
+Transfer upload tftp path configures the directory path where the file is to
+be uploaded to. The switch remembers the last file path used. 
 
 (C<agentTransferUploadPath>)
 
@@ -1023,7 +1043,8 @@ uploaded to. The switch remembers the last file path used.
 
 =item $airespace->airespace_ul_type()
 
-Transfer upload datatype configures the type of file to upload from the switch.
+Transfer upload datatype configures the type of file to upload from the
+switch.
 
     The types for upload are:
     config(2)
@@ -1518,8 +1539,8 @@ only.
 
 =item $airespace->i_duplex_admin()
 
-Returns reference to hash of IIDs to admin duplex setting.  Ethernet interfaces
-only.
+Returns reference to hash of IIDs to admin duplex setting.  Ethernet
+interfaces only.
 
 =item $airespace->ip_index()
 
@@ -1548,8 +1569,8 @@ airespace_sta_slot() combined to match the interface iid.
 =head2 Pseudo F<ENTITY-MIB> information
 
 These methods emulate F<ENTITY-MIB> Physical Table methods using
-F<AIRESPACE-SWITCHING-MIB> and F<AIRESPACE-WIRELESS-MIB>.  Thin APs are included
-as subcomponents of the wireless controller.
+F<AIRESPACE-SWITCHING-MIB> and F<AIRESPACE-WIRELESS-MIB>.  Thin APs are
+included as subcomponents of the wireless controller.
 
 =over
 

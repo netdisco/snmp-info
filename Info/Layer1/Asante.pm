@@ -5,21 +5,21 @@
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -36,7 +36,7 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer1;
 
-@SNMP::Info::Layer1::Asante::ISA = qw/SNMP::Info::Layer1 Exporter/;
+@SNMP::Info::Layer1::Asante::ISA       = qw/SNMP::Info::Layer1 Exporter/;
 @SNMP::Info::Layer1::Asante::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
@@ -44,35 +44,29 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 $VERSION = '1.09';
 
 # Set for No CDP
-%GLOBALS = (
-            %SNMP::Info::Layer1::GLOBALS,
-            );
+%GLOBALS = ( %SNMP::Info::Layer1::GLOBALS, );
 
-%FUNCS   = (%SNMP::Info::Layer1::FUNCS,
-            'asante_port'  => 'ePortIndex',
-            'asante_group' => 'ePortGrpIndex',
-            'i_type'       => 'ePortStateType',
-            'asante_up'    => 'ePortStateLinkStatus',
-            );
+%FUNCS = (
+    %SNMP::Info::Layer1::FUNCS,
+    'asante_port'  => 'ePortIndex',
+    'asante_group' => 'ePortGrpIndex',
+    'i_type'       => 'ePortStateType',
+    'asante_up'    => 'ePortStateLinkStatus',
+);
 
-%MIBS    = (
-            %SNMP::Info::Layer1::MIBS,
-            'ASANTE-HUB1012-MIB' => 'asante'
-            );
+%MIBS = ( %SNMP::Info::Layer1::MIBS, 'ASANTE-HUB1012-MIB' => 'asante' );
 
-%MUNGE   = (
-            %SNMP::Info::Layer1::MUNGE,
-            );
+%MUNGE = ( %SNMP::Info::Layer1::MUNGE, );
 
 sub interfaces {
-    my $asante = shift;
+    my $asante  = shift;
     my $partial = shift;
 
     my $rptr_port = $asante->rptr_port($partial) || {};
 
     my %interfaces;
 
-    foreach my $port (keys %$rptr_port){
+    foreach my $port ( keys %$rptr_port ) {
         $interfaces{$port} = $port;
     }
 
@@ -85,13 +79,13 @@ sub os {
 
 sub os_ver {
     my $asante = shift;
-    my $descr = $asante->description();
-    
-    if ($descr =~ /software v(\d+\.\d+)/){
+    my $descr  = $asante->description();
+
+    if ( $descr =~ /software v(\d+\.\d+)/ ) {
         return $1;
     }
 }
-    
+
 sub vendor {
     return 'asante';
 }
@@ -99,30 +93,30 @@ sub vendor {
 sub model {
     my $asante = shift;
 
-    my $id = $asante->id();
+    my $id    = $asante->id();
     my $model = &SNMP::translateObj($id);
 
     return $model;
 }
 
 sub i_up {
-    my $asante = shift;
+    my $asante  = shift;
     my $partial = shift;
 
     my $asante_up = $asante->asante_up($partial) || {};
 
     my $i_up = {};
-    foreach my $port (keys %$asante_up){
+    foreach my $port ( keys %$asante_up ) {
         my $up = $asante_up->{$port};
         $i_up->{$port} = 'down' if $up =~ /on/;
-        $i_up->{$port} = 'up' if $up =~ /off/;
+        $i_up->{$port} = 'up'   if $up =~ /off/;
     }
-    
+
     return $i_up;
 }
 
 sub i_speed {
-    my $asante = shift;
+    my $asante  = shift;
     my $partial = shift;
 
     my $i_speed = $asante->orig_i_speed($partial) || {};
@@ -135,7 +129,7 @@ sub i_speed {
 }
 
 sub i_mac {
-    my $asante = shift;
+    my $asante  = shift;
     my $partial = shift;
 
     my $i_mac = $asante->orig_i_mac($partial) || {};
@@ -152,7 +146,7 @@ sub i_description {
 }
 
 sub i_name {
-    my $asante = shift;
+    my $asante  = shift;
     my $partial = shift;
 
     my $i_name = $asante->orig_i_descr($partial) || {};

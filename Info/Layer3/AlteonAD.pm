@@ -4,20 +4,20 @@
 # Copyright (c) 2008 Eric Miller
 # All Rights Reserved
 #
-# Redistribution and use in source and binary forms, with or without 
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -34,7 +34,7 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::AlteonAD::ISA = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::AlteonAD::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::AlteonAD::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
@@ -42,82 +42,92 @@ use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
 $VERSION = '1.09';
 
 %MIBS = (
-          %SNMP::Info::Layer3::MIBS,
-          'ALTEON-ROOT-MIB'            => 'aceswitch184',
-          'ALTEON-TIGON-SWITCH-MIB'    => 'hwPowerSupplyStatus',
-          'ALTEON-CHEETAH-SWITCH-MIB'  => 'hwFanStatus',
-          'ALTEON-TS-PHYSICAL-MIB'     => 'agPortTableMaxEnt',
-          'ALTEON-CS-PHYSICAL-MIB'     => 'vlanCurCfgLearn',
-          'ALTEON-TS-NETWORK-MIB'      => 'ripCurCfgSupply',
-          'ALTEON-CHEETAH-NETWORK-MIB' => 'ripCurCfgIntfSupply',
-        );
+    %SNMP::Info::Layer3::MIBS,
+    'ALTEON-ROOT-MIB'            => 'aceswitch184',
+    'ALTEON-TIGON-SWITCH-MIB'    => 'hwPowerSupplyStatus',
+    'ALTEON-CHEETAH-SWITCH-MIB'  => 'hwFanStatus',
+    'ALTEON-TS-PHYSICAL-MIB'     => 'agPortTableMaxEnt',
+    'ALTEON-CS-PHYSICAL-MIB'     => 'vlanCurCfgLearn',
+    'ALTEON-TS-NETWORK-MIB'      => 'ripCurCfgSupply',
+    'ALTEON-CHEETAH-NETWORK-MIB' => 'ripCurCfgIntfSupply',
+);
 
 %GLOBALS = (
-            %SNMP::Info::Layer3::GLOBALS,
-            'old_sw_ver'       => 'ALTEON_TIGON_SWITCH_MIB__agSoftwareVersion',
-            'new_sw_ver'       => 'ALTEON_CHEETAH_SWITCH_MIB__agSoftwareVersion',
-            'old_tftp_action'  => 'ALTEON_TIGON_SWITCH_MIB__agTftpAction',
-            'new_tftp_action'  => 'ALTEON_CHEETAH_SWITCH_MIB__agTftpAction',
-            'old_tftp_host'    => 'ALTEON_TIGON_SWITCH_MIB__agTftpServer',
-            'new_tftp_host'    => 'ALTEON_CHEETAH_SWITCH_MIB__agTftpServer',
-            'old_tftp_file'    => 'ALTEON_TIGON_SWITCH_MIB__agTftpCfgFileName',
-            'new_tftp_file'    => 'ALTEON_CHEETAH_SWITCH_MIB__agTftpCfgFileName',
-            'old_tftp_result'  => 'ALTEON_TIGON_SWITCH_MIB__agTftpLastActionStatus',
-            'new_tftp_result'  => 'ALTEON_CHEETAH_SWITCH_MIB__agTftpLastActionStatus',
-            'old_ip_max'       => 'ALTEON_TS_NETWORK_MIB__ipInterfaceTableMax',
-            'new_ip_max'       => 'ALTEON_CHEETAH_NETWORK_MIB__ipInterfaceTableMax',
-           );
+    %SNMP::Info::Layer3::GLOBALS,
+    'old_sw_ver'      => 'ALTEON_TIGON_SWITCH_MIB__agSoftwareVersion',
+    'new_sw_ver'      => 'ALTEON_CHEETAH_SWITCH_MIB__agSoftwareVersion',
+    'old_tftp_action' => 'ALTEON_TIGON_SWITCH_MIB__agTftpAction',
+    'new_tftp_action' => 'ALTEON_CHEETAH_SWITCH_MIB__agTftpAction',
+    'old_tftp_host'   => 'ALTEON_TIGON_SWITCH_MIB__agTftpServer',
+    'new_tftp_host'   => 'ALTEON_CHEETAH_SWITCH_MIB__agTftpServer',
+    'old_tftp_file'   => 'ALTEON_TIGON_SWITCH_MIB__agTftpCfgFileName',
+    'new_tftp_file'   => 'ALTEON_CHEETAH_SWITCH_MIB__agTftpCfgFileName',
+    'old_tftp_result' => 'ALTEON_TIGON_SWITCH_MIB__agTftpLastActionStatus',
+    'new_tftp_result' => 'ALTEON_CHEETAH_SWITCH_MIB__agTftpLastActionStatus',
+    'old_ip_max'      => 'ALTEON_TS_NETWORK_MIB__ipInterfaceTableMax',
+    'new_ip_max'      => 'ALTEON_CHEETAH_NETWORK_MIB__ipInterfaceTableMax',
+);
 
 %FUNCS = (
-            %SNMP::Info::Layer3::FUNCS,
-            # From agPortCurCfgTable
-            'old_ag_p_cfg_idx'        => 'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgIndx',
-            'new_ag_p_cfg_idx'        => 'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgIndx',
-            'old_ag_p_cfg_pref'       => 'agPortCurCfgPrefLink',
-            'new_ag_p_cfg_pref'       => 'agPortCurCfgPreferred',
-            'old_ag_p_cfg_pvid'       => 'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgPVID',
-            'new_ag_p_cfg_pvid'       => 'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgPVID',
-            'old_ag_p_cfg_fe_auto'    => 'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgFastEthAutoNeg',
-            'new_ag_p_cfg_fe_auto'    => 'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgFastEthAutoNeg',
-            'old_ag_p_cfg_fe_mode'    => 'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgFastEthMode',
-            'new_ag_p_cfg_fe_mode'    => 'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgFastEthMode',
-            'old_ag_p_cfg_ge_auto'    => 'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgGigEthAutoNeg',
-            'new_ag_p_cfg_ge_auto'    => 'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgGigEthAutoNeg',
-            'old_ag_p_cfg_name'       => 'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgPortName',
-            'new_ag_p_cfg_name'       => 'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgPortName',
-            # From portInfoTable
-            'old_p_info_idx'  => 'ALTEON_TS_PHYSICAL_MIB__portInfoIndx',
-            'new_p_info_idx'  => 'ALTEON_CHEETAH_SWITCH_MIB__portInfoIndx',
-            'old_p_info_mode' => 'ALTEON_TS_PHYSICAL_MIB__portInfoMode',
-            'new_p_info_mode' => 'ALTEON_CHEETAH_SWITCH_MIB__portInfoMode',
-            # From ipCurCfgIntfTable
-            'old_ip_cfg_vlan' => 'ALTEON_TS_NETWORK_MIB__ipCurCfgIntfVlan',
-            'new_ip_cfg_vlan' => 'ALTEON_CHEETAH_NETWORK_MIB__ipCurCfgIntfVlan',
-            # From vlanCurCfgTable
-            'old_vlan_id'    => 'ALTEON_TS_PHYSICAL_MIB__vlanCurCfgVlanId',
-            'new_vlan_id'    => 'ALTEON_CS_PHYSICAL_MIB__vlanCurCfgVlanId',
-            'old_vlan_state' => 'ALTEON_TS_PHYSICAL_MIB__vlanCurCfgState',
-            'new_vlan_state' => 'ALTEON_CS_PHYSICAL_MIB__vlanCurCfgState',
-            'old_vlan_name'  => 'ALTEON_TS_PHYSICAL_MIB__vlanCurCfgVlanName',
-            'new_vlan_name'  => 'ALTEON_CS_PHYSICAL_MIB__vlanCurCfgVlanName',
-            'old_vlan_ports' => 'ALTEON_TS_PHYSICAL_MIB__vlanCurCfgPorts',
-            'new_vlan_ports' => 'ALTEON_CS_PHYSICAL_MIB__vlanCurCfgPorts',
-         );
-         
-%MUNGE = (
-            %SNMP::Info::Layer3::MUNGE,
-         );
+    %SNMP::Info::Layer3::FUNCS,
+
+    # From agPortCurCfgTable
+    'old_ag_p_cfg_idx'  => 'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgIndx',
+    'new_ag_p_cfg_idx'  => 'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgIndx',
+    'old_ag_p_cfg_pref' => 'agPortCurCfgPrefLink',
+    'new_ag_p_cfg_pref' => 'agPortCurCfgPreferred',
+    'old_ag_p_cfg_pvid' => 'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgPVID',
+    'new_ag_p_cfg_pvid' => 'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgPVID',
+    'old_ag_p_cfg_fe_auto' =>
+        'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgFastEthAutoNeg',
+    'new_ag_p_cfg_fe_auto' =>
+        'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgFastEthAutoNeg',
+    'old_ag_p_cfg_fe_mode' =>
+        'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgFastEthMode',
+    'new_ag_p_cfg_fe_mode' =>
+        'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgFastEthMode',
+    'old_ag_p_cfg_ge_auto' =>
+        'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgGigEthAutoNeg',
+    'new_ag_p_cfg_ge_auto' =>
+        'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgGigEthAutoNeg',
+    'old_ag_p_cfg_name' => 'ALTEON_TS_PHYSICAL_MIB__agPortCurCfgPortName',
+    'new_ag_p_cfg_name' => 'ALTEON_CHEETAH_SWITCH_MIB__agPortCurCfgPortName',
+
+    # From portInfoTable
+    'old_p_info_idx'  => 'ALTEON_TS_PHYSICAL_MIB__portInfoIndx',
+    'new_p_info_idx'  => 'ALTEON_CHEETAH_SWITCH_MIB__portInfoIndx',
+    'old_p_info_mode' => 'ALTEON_TS_PHYSICAL_MIB__portInfoMode',
+    'new_p_info_mode' => 'ALTEON_CHEETAH_SWITCH_MIB__portInfoMode',
+
+    # From ipCurCfgIntfTable
+    'old_ip_cfg_vlan' => 'ALTEON_TS_NETWORK_MIB__ipCurCfgIntfVlan',
+    'new_ip_cfg_vlan' => 'ALTEON_CHEETAH_NETWORK_MIB__ipCurCfgIntfVlan',
+
+    # From vlanCurCfgTable
+    'old_vlan_id'    => 'ALTEON_TS_PHYSICAL_MIB__vlanCurCfgVlanId',
+    'new_vlan_id'    => 'ALTEON_CS_PHYSICAL_MIB__vlanCurCfgVlanId',
+    'old_vlan_state' => 'ALTEON_TS_PHYSICAL_MIB__vlanCurCfgState',
+    'new_vlan_state' => 'ALTEON_CS_PHYSICAL_MIB__vlanCurCfgState',
+    'old_vlan_name'  => 'ALTEON_TS_PHYSICAL_MIB__vlanCurCfgVlanName',
+    'new_vlan_name'  => 'ALTEON_CS_PHYSICAL_MIB__vlanCurCfgVlanName',
+    'old_vlan_ports' => 'ALTEON_TS_PHYSICAL_MIB__vlanCurCfgPorts',
+    'new_vlan_ports' => 'ALTEON_CS_PHYSICAL_MIB__vlanCurCfgPorts',
+);
+
+%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
 
 sub model {
     my $alteon = shift;
 
     my $id = $alteon->id();
-    
-    unless (defined $id){
-        print " SNMP::Info::Layer3::AlteonAD::model() - Device does not support sysObjectID\n" if $alteon->debug(); 
+
+    unless ( defined $id ) {
+        print
+            " SNMP::Info::Layer3::AlteonAD::model() - Device does not support sysObjectID\n"
+            if $alteon->debug();
         return;
     }
-    
+
     my $model = &SNMP::translateObj($id);
 
     return $id unless defined $model;
@@ -146,23 +156,24 @@ sub os_ver {
 }
 
 sub interfaces {
-    my $alteon = shift;
+    my $alteon       = shift;
     my $interfaces   = $alteon->i_index();
     my $descriptions = $alteon->i_description();
     my $ip_max       = $alteon->new_ip_max() || $alteon->old_ip_max();
 
     my %interfaces = ();
-    foreach my $iid (keys %$interfaces){
+    foreach my $iid ( keys %$interfaces ) {
         my $desc = $descriptions->{$iid};
         next unless defined $desc;
 
-        if ($desc =~ /(^net\d+)/) {
-            $desc  = $1;
+        if ( $desc =~ /(^net\d+)/ ) {
+            $desc = $1;
         }
+
         # IP interfaces are first followed by physical, number possible
         # varies by switch model
-        elsif (defined $ip_max and $iid > $ip_max ) {
-            $desc = ($iid % $ip_max);
+        elsif ( defined $ip_max and $iid > $ip_max ) {
+            $desc = ( $iid % $ip_max );
         }
         $interfaces{$iid} = $desc;
     }
@@ -172,21 +183,23 @@ sub interfaces {
 sub i_duplex {
     my $alteon = shift;
 
-    my $p_mode = $alteon->new_p_info_mode() || $alteon->old_p_info_mode() || {};
+    my $p_mode = $alteon->new_p_info_mode()
+        || $alteon->old_p_info_mode()
+        || {};
     my $ip_max = $alteon->new_ip_max() || $alteon->old_ip_max();
 
     my %i_duplex;
-    foreach my $if (keys %$p_mode){
+    foreach my $if ( keys %$p_mode ) {
         my $duplex = $p_mode->{$if};
-        next unless defined $duplex; 
-    
+        next unless defined $duplex;
+
         $duplex = 'half' if $duplex =~ /half/i;
         $duplex = 'full' if $duplex =~ /full/i;
-        
+
         my $idx;
-        $idx = $if + $ip_max if (defined $ip_max);
-        
-        $i_duplex{$idx}=$duplex; 
+        $idx = $if + $ip_max if ( defined $ip_max );
+
+        $i_duplex{$idx} = $duplex;
     }
     return \%i_duplex;
 }
@@ -194,35 +207,45 @@ sub i_duplex {
 sub i_duplex_admin {
     my $alteon = shift;
 
-    my $ag_pref = $alteon->new_ag_p_cfg_pref() || $alteon->old_ag_p_cfg_pref() || {};
-    my $ag_fe_auto = $alteon->new_ag_p_cfg_fe_auto() || $alteon->old_ag_p_cfg_fe_auto() || {};
-    my $ag_fe_mode = $alteon->new_ag_p_cfg_fe_mode() || $alteon->old_ag_p_cfg_fe_mode() || {};
-    my $ag_ge_auto = $alteon->new_ag_p_cfg_ge_auto() || $alteon->old_ag_p_cfg_ge_auto() || {};
+    my $ag_pref = $alteon->new_ag_p_cfg_pref()
+        || $alteon->old_ag_p_cfg_pref()
+        || {};
+    my $ag_fe_auto = $alteon->new_ag_p_cfg_fe_auto()
+        || $alteon->old_ag_p_cfg_fe_auto()
+        || {};
+    my $ag_fe_mode = $alteon->new_ag_p_cfg_fe_mode()
+        || $alteon->old_ag_p_cfg_fe_mode()
+        || {};
+    my $ag_ge_auto = $alteon->new_ag_p_cfg_ge_auto()
+        || $alteon->old_ag_p_cfg_ge_auto()
+        || {};
     my $ip_max = $alteon->new_ip_max() || $alteon->old_ip_max();
- 
+
     my %i_duplex_admin;
-    foreach my $if (keys %$ag_pref){
+    foreach my $if ( keys %$ag_pref ) {
         my $pref = $ag_pref->{$if};
         next unless defined $pref;
-        
-        my $string = 'other';        
-        if ($pref =~ /gigabit/i) {
+
+        my $string = 'other';
+        if ( $pref =~ /gigabit/i ) {
             my $ge_auto = $ag_ge_auto->{$if};
-            $string = 'full' if ($ge_auto =~ /off/i);
-            $string = 'auto' if ($ge_auto =~ /on/i);
+            $string = 'full' if ( $ge_auto =~ /off/i );
+            $string = 'auto' if ( $ge_auto =~ /on/i );
         }
-        elsif ($pref =~ /fast/i) {
+        elsif ( $pref =~ /fast/i ) {
             my $fe_auto = $ag_fe_auto->{$if};
             my $fe_mode = $ag_fe_mode->{$if};
-            $string = 'half' if ($fe_mode =~ /half/i and $fe_auto =~ /off/i);
-            $string = 'full' if ($fe_mode =~ /full/i and $fe_auto =~ /off/i);
+            $string = 'half'
+                if ( $fe_mode =~ /half/i and $fe_auto =~ /off/i );
+            $string = 'full'
+                if ( $fe_mode =~ /full/i and $fe_auto =~ /off/i );
             $string = 'auto' if $fe_auto =~ /on/i;
         }
 
         my $idx;
-        $idx = $if + $ip_max if (defined $ip_max);
-        
-        $i_duplex_admin{$idx}=$string; 
+        $idx = $if + $ip_max if ( defined $ip_max );
+
+        $i_duplex_admin{$idx} = $string;
     }
     return \%i_duplex_admin;
 }
@@ -230,55 +253,62 @@ sub i_duplex_admin {
 sub i_name {
     my $alteon = shift;
 
-    my $p_name = $alteon->new_ag_p_cfg_name() || $alteon->old_ag_p_cfg_name() || {};
+    my $p_name = $alteon->new_ag_p_cfg_name()
+        || $alteon->old_ag_p_cfg_name()
+        || {};
     my $ip_max = $alteon->new_ip_max() || $alteon->old_ip_max();
 
     my %i_name;
-    foreach my $iid (keys %$p_name){
+    foreach my $iid ( keys %$p_name ) {
         my $name = $p_name->{$iid};
         next unless defined $name;
         my $idx;
-        $idx = $iid + $ip_max if (defined $ip_max);
+        $idx = $iid + $ip_max if ( defined $ip_max );
         $i_name{$idx} = $name;
     }
     return \%i_name;
 }
 
 sub v_index {
-    my $alteon = shift;
+    my $alteon  = shift;
     my $partial = shift;
 
     return $alteon->new_vlan_id($partial) || $alteon->old_vlan_id($partial);
 }
 
 sub v_name {
-    my $alteon = shift;
+    my $alteon  = shift;
     my $partial = shift;
 
-    return $alteon->new_vlan_name($partial) || $alteon->old_vlan_name($partial);
+    return $alteon->new_vlan_name($partial)
+        || $alteon->old_vlan_name($partial);
 }
 
 sub i_vlan {
     my $alteon = shift;
 
-    my $ag_vlans  = $alteon->new_ag_p_cfg_pvid() || $alteon->old_ag_p_cfg_pvid() || {};
-    my $ip_vlans  = $alteon->new_ip_cfg_vlan() || $alteon->old_ip_cfg_vlan() || {};
-    my $ip_max    = $alteon->new_ip_max() || $alteon->old_ip_max();
+    my $ag_vlans = $alteon->new_ag_p_cfg_pvid()
+        || $alteon->old_ag_p_cfg_pvid()
+        || {};
+    my $ip_vlans = $alteon->new_ip_cfg_vlan()
+        || $alteon->old_ip_cfg_vlan()
+        || {};
+    my $ip_max = $alteon->new_ip_max() || $alteon->old_ip_max();
 
     my %i_vlan;
-    foreach my $if (keys %$ip_vlans){
+    foreach my $if ( keys %$ip_vlans ) {
         my $ip_vlanid = $ip_vlans->{$if};
         next unless defined $ip_vlanid;
-        
-        $i_vlan{$if}=$ip_vlanid; 
+
+        $i_vlan{$if} = $ip_vlanid;
     }
-    foreach my $if (keys %$ag_vlans){
+    foreach my $if ( keys %$ag_vlans ) {
         my $ag_vlanid = $ag_vlans->{$if};
         next unless defined $ag_vlanid;
-        
+
         my $idx;
-        $idx = $if + $ip_max if (defined $ip_max);
-        $i_vlan{$idx}=$ag_vlanid; 
+        $idx = $if + $ip_max if ( defined $ip_max );
+        $i_vlan{$idx} = $ag_vlanid;
     }
     return \%i_vlan;
 }
@@ -286,24 +316,26 @@ sub i_vlan {
 sub i_vlan_membership {
     my $alteon = shift;
 
-    my $v_ports = $alteon->old_vlan_ports() || $alteon->new_vlan_ports() || {};
-    my $ip_max  = $alteon->new_ip_max() || $alteon->old_ip_max();
+    my $v_ports = $alteon->old_vlan_ports()
+        || $alteon->new_vlan_ports()
+        || {};
+    my $ip_max = $alteon->new_ip_max() || $alteon->old_ip_max();
 
     my $i_vlan_membership = {};
-    foreach my $vlan (keys %$v_ports) {
-        my $portlist = [split(//, unpack("B*", $v_ports->{$vlan}))];
+    foreach my $vlan ( keys %$v_ports ) {
+        my $portlist = [ split( //, unpack( "B*", $v_ports->{$vlan} ) ) ];
         my $ret = [];
 
         # Convert portlist bit array to ifIndex array
-        for (my $i = 0; $i <= scalar(@$portlist); $i++) {
+        for ( my $i = 0; $i <= scalar(@$portlist); $i++ ) {
             my $idx;
-            $idx = $i + $ip_max if (defined $ip_max);
-	    push(@{$ret}, $idx) if (@$portlist[$i]);
+            $idx = $i + $ip_max if ( defined $ip_max );
+            push( @{$ret}, $idx ) if ( @$portlist[$i] );
         }
 
         #Create HoA ifIndex -> VLAN array
-        foreach my $port (@{$ret}) {
-	    push(@{$i_vlan_membership->{$port}}, $vlan);
+        foreach my $port ( @{$ret} ) {
+            push( @{ $i_vlan_membership->{$port} }, $vlan );
         }
     }
     return $i_vlan_membership;
@@ -315,13 +347,13 @@ sub bp_index {
     my $alteon = shift;
 
     my $b_index = $alteon->orig_bp_index();
-    my $ip_max    = $alteon->new_ip_max() || $alteon->old_ip_max();
+    my $ip_max = $alteon->new_ip_max() || $alteon->old_ip_max();
 
     my %bp_index;
-    foreach my $iid (keys %$b_index){
+    foreach my $iid ( keys %$b_index ) {
         my $port = $b_index->{$iid};
         next unless defined $port;
-        $port = $port + $ip_max if (defined $ip_max and $iid == $ip_max);
+        $port = $port + $ip_max if ( defined $ip_max and $iid == $ip_max );
 
         $bp_index{$iid} = $port;
     }
@@ -357,8 +389,8 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Nortel Alteon Series Layer 2-7 load balancing switches
-and Nortel BladeCenter Layer2-3 GbE Switch Modules.
+Abstraction subclass for Nortel Alteon Series Layer 2-7 load balancing
+switches and Nortel BladeCenter Layer2-3 GbE Switch Modules.
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 

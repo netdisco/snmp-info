@@ -4,20 +4,20 @@
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -37,61 +37,66 @@ use SNMP::Info::Bridge;
 use SNMP::Info::NortelStack;
 use SNMP::Info::SONMP;
 
-@SNMP::Info::Layer2::Centillion::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::NortelStack SNMP::Info::SONMP Exporter/;
+@SNMP::Info::Layer2::Centillion::ISA
+    = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::NortelStack SNMP::Info::SONMP Exporter/;
 @SNMP::Info::Layer2::Centillion::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS    = (
-            %SNMP::Info::MIBS,
-            %SNMP::Info::Bridge::MIBS,
-            %SNMP::Info::NortelStack::MIBS,
-            %SNMP::Info::SONMP::MIBS,
-            'CENTILLION-DOT3-EXTENSIONS-MIB' => 'cnDot3ExtnTable',
-            'S5-COMMON-STATS-MIB'            => 's5CmStat',
-            'CENTILLION-VLAN-MIB'            => 'cnVlanENETMgt',
-            'CENTILLION-CONFIG-MIB'          => 'sysTFTPStart',
-            );
+%MIBS = (
+    %SNMP::Info::MIBS,
+    %SNMP::Info::Bridge::MIBS,
+    %SNMP::Info::NortelStack::MIBS,
+    %SNMP::Info::SONMP::MIBS,
+    'CENTILLION-DOT3-EXTENSIONS-MIB' => 'cnDot3ExtnTable',
+    'S5-COMMON-STATS-MIB'            => 's5CmStat',
+    'CENTILLION-VLAN-MIB'            => 'cnVlanENETMgt',
+    'CENTILLION-CONFIG-MIB'          => 'sysTFTPStart',
+);
 
 %GLOBALS = (
-            %SNMP::Info::GLOBALS,
-            %SNMP::Info::Bridge::GLOBALS,
-            %SNMP::Info::NortelStack::GLOBALS,
-            %SNMP::Info::SONMP::GLOBALS,
-            'tftp_action'  => 'sysTFTPStart',
-            'tftp_host'    => 'sysTFTPIpAddress',
-            'tftp_file'    => 'sysTFTPFileName',
-            'tftp_type'    => 'sysTFTPFileType',
-            'tftp_result'  => 'sysTFTPResult',
-            );
+    %SNMP::Info::GLOBALS,
+    %SNMP::Info::Bridge::GLOBALS,
+    %SNMP::Info::NortelStack::GLOBALS,
+    %SNMP::Info::SONMP::GLOBALS,
+    'tftp_action' => 'sysTFTPStart',
+    'tftp_host'   => 'sysTFTPIpAddress',
+    'tftp_file'   => 'sysTFTPFileName',
+    'tftp_type'   => 'sysTFTPFileType',
+    'tftp_result' => 'sysTFTPResult',
+);
 
-%FUNCS   = (
-            %SNMP::Info::FUNCS,
-            %SNMP::Info::Bridge::FUNCS,
-            %SNMP::Info::NortelStack::FUNCS,
-            %SNMP::Info::SONMP::FUNCS,
-        # CENTILLION-DOT3-EXTENSIONS-MIB::cnDot3ExtnTable
-            'centillion_p_index'        => 'cnDot3ExtnIfIndex',
-            'centillion_p_duplex'       => 'cnDot3ExtnIfOperConnectionType',
-            'centillion_p_duplex_admin' => 'cnDot3ExtnIfAdminConnectionType',
-        # S5-COMMON-STATS-MIB::s5CmSNodeTable
-            'fw_mac'     => 's5CmSNodeMacAddr',
-            'fw_port'    => 's5CmSNodeIfIndx',
-        # CENTILLION-VLAN-MIB::cnVlanPortMemberTable
-            'centillion_i_vlan_index'    => 'cnVlanPortMemberIfIndex',
-            'centillion_i_vlan'        => 'cnVlanPortMemberVID',
-            'centillion_i_vlan_type'    => 'cnVlanPortMemberIngressType',        
-            );
+%FUNCS = (
+    %SNMP::Info::FUNCS,
+    %SNMP::Info::Bridge::FUNCS,
+    %SNMP::Info::NortelStack::FUNCS,
+    %SNMP::Info::SONMP::FUNCS,
 
-%MUNGE   = (
-            # Inherit all the built in munging
-            %SNMP::Info::MUNGE,
-            %SNMP::Info::Bridge::MUNGE,
-            %SNMP::Info::NortelStack::MUNGE,
-            %SNMP::Info::SONMP::MUNGE,
-            );
+    # CENTILLION-DOT3-EXTENSIONS-MIB::cnDot3ExtnTable
+    'centillion_p_index'        => 'cnDot3ExtnIfIndex',
+    'centillion_p_duplex'       => 'cnDot3ExtnIfOperConnectionType',
+    'centillion_p_duplex_admin' => 'cnDot3ExtnIfAdminConnectionType',
+
+    # S5-COMMON-STATS-MIB::s5CmSNodeTable
+    'fw_mac'  => 's5CmSNodeMacAddr',
+    'fw_port' => 's5CmSNodeIfIndx',
+
+    # CENTILLION-VLAN-MIB::cnVlanPortMemberTable
+    'centillion_i_vlan_index' => 'cnVlanPortMemberIfIndex',
+    'centillion_i_vlan'       => 'cnVlanPortMemberVID',
+    'centillion_i_vlan_type'  => 'cnVlanPortMemberIngressType',
+);
+
+%MUNGE = (
+
+    # Inherit all the built in munging
+    %SNMP::Info::MUNGE,
+    %SNMP::Info::Bridge::MUNGE,
+    %SNMP::Info::NortelStack::MUNGE,
+    %SNMP::Info::SONMP::MUNGE,
+);
 
 sub os {
     return 'centillion';
@@ -103,12 +108,13 @@ sub vendor {
 
 sub i_ignore {
     my $centillion = shift;
-    my $descr = $centillion->i_description();
+    my $descr      = $centillion->i_description();
 
     my %i_ignore;
-    foreach my $if (keys %$descr){
+    foreach my $if ( keys %$descr ) {
         my $type = $descr->{$if};
-      # Skip virtual interfaces  
+
+        # Skip virtual interfaces
         $i_ignore{$if}++ if $type =~ /(VE|VID|vc|lp)/i;
     }
     return \%i_ignore;
@@ -116,24 +122,25 @@ sub i_ignore {
 
 sub interfaces {
     my $centillion = shift;
-    my $i_index = $centillion->i_index();
-    my $i_descr = $centillion->i_description();
+    my $i_index    = $centillion->i_index();
+    my $i_descr    = $centillion->i_description();
 
     my %if;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
-      my $descr = $i_descr->{$iid};
-      # Skip ATM and virtual interfaces
-      next if $descr =~ /(VE|VID|vc|lp)/i;
+        my $descr = $i_descr->{$iid};
 
-      # Index numbers are deterministic slot * 256 + port
-    my $port = $index % 256;
-        my $slot = int($index / 256);
+        # Skip ATM and virtual interfaces
+        next if $descr =~ /(VE|VID|vc|lp)/i;
+
+        # Index numbers are deterministic slot * 256 + port
+        my $port     = $index % 256;
+        my $slot     = int( $index / 256 );
         my $slotport = "$slot.$port";
 
-    $slotport = "$descr" if $descr =~ /(mcp)/i;
-    
+        $slotport = "$descr" if $descr =~ /(mcp)/i;
+
         $if{$index} = $slotport;
     }
 
@@ -142,89 +149,89 @@ sub interfaces {
 
 sub i_duplex {
     my $centillion = shift;
-    
+
     my $port_index  = $centillion->centillion_p_index();
     my $port_duplex = $centillion->centillion_p_duplex();
 
     my %i_duplex;
-    foreach my $iid (keys %$port_index){
+    foreach my $iid ( keys %$port_index ) {
         my $index = $port_index->{$iid};
         next unless defined $index;
         my $duplex = $port_duplex->{$iid};
-        next unless defined $duplex; 
-    
+        next unless defined $duplex;
+
         $duplex = 'half' if $duplex =~ /half/i;
         $duplex = 'full' if $duplex =~ /full/i;
-        $i_duplex{$index}=$duplex; 
+        $i_duplex{$index} = $duplex;
     }
     return \%i_duplex;
 }
 
 sub i_duplex_admin {
     my $centillion = shift;
-    
+
     my $port_index = $centillion->centillion_p_index();
     my $port_admin = $centillion->centillion_p_duplex_admin();
 
     my %i_duplex_admin;
-    foreach my $iid (keys %$port_index){
+    foreach my $iid ( keys %$port_index ) {
         my $index = $port_index->{$iid};
         next unless defined $index;
         my $duplex = $port_admin->{$iid};
-        next unless defined $duplex; 
-    
+        next unless defined $duplex;
+
         $duplex = 'half' if $duplex =~ /half/i;
         $duplex = 'full' if $duplex =~ /full/i;
         $duplex = 'auto' if $duplex =~ /auto/i;
-        $i_duplex_admin{$index}=$duplex; 
+        $i_duplex_admin{$index} = $duplex;
     }
     return \%i_duplex_admin;
 }
 
 sub i_vlan {
     my $centillion = shift;
-    
+
     my $cn_vlan_index = $centillion->centillion_i_vlan_index();
-    my $cn_vlan = $centillion->centillion_i_vlan();
+    my $cn_vlan       = $centillion->centillion_i_vlan();
 
     my %i_vlan;
-    foreach my $iid (keys %$cn_vlan_index){
+    foreach my $iid ( keys %$cn_vlan_index ) {
         my $index = $cn_vlan_index->{$iid};
         next unless defined $index;
         my $vlan = $cn_vlan->{$iid};
-        next unless defined $vlan; 
-    
-        $i_vlan{$index}=$vlan; 
+        next unless defined $vlan;
+
+        $i_vlan{$index} = $vlan;
     }
     return \%i_vlan;
 }
 
 sub model {
     my $centillion = shift;
-    my $id = $centillion->id();
+    my $id         = $centillion->id();
     return unless defined $id;
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
     $model =~ s/^sreg-//i;
 
-    return '5000BH' if ($model =~ /5000BH/);
-    return '5005BH' if ($model =~ /5005BH/);
-    return 'C100' if ($model =~ /Centillion100/);
-    return 'C50N' if ($model =~ /Centillion50N/);
-    return 'C50T' if ($model =~ /Centillion50T/);
+    return '5000BH' if ( $model =~ /5000BH/ );
+    return '5005BH' if ( $model =~ /5005BH/ );
+    return 'C100'   if ( $model =~ /Centillion100/ );
+    return 'C50N'   if ( $model =~ /Centillion50N/ );
+    return 'C50T'   if ( $model =~ /Centillion50T/ );
     return $model;
 }
 
 sub bp_index {
     my $centillion = shift;
-    my $index = $centillion->fw_port();
+    my $index      = $centillion->fw_port();
 
     my %bp_index;
-    foreach my $iid (keys %$index){
+    foreach my $iid ( keys %$index ) {
         my $b_index = $index->{$iid};
         next unless defined $b_index;
 
-    #Index value is the same as ifIndex    
+        #Index value is the same as ifIndex
         $bp_index{$b_index} = $b_index;
     }
 
@@ -238,7 +245,6 @@ sub index_factor {
 sub slot_offset {
     return 0;
 }
-
 
 1;
 __END__
@@ -411,7 +417,8 @@ to a hash.
 
     Returns reference to the map between IID and physical Port.
 
-    Slot and port numbers on the Passport switches are determined by the formula:
+    Slot and port numbers on the Passport switches are determined by the
+    formula:
       port = index % 256
       slot = int(index / 256)
  

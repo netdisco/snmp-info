@@ -4,20 +4,20 @@
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -34,48 +34,47 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer2;
 
-@SNMP::Info::Layer2::Aruba::ISA = qw/SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::Aruba::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Aruba::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS    = (
-            %SNMP::Info::Layer2::MIBS,           
-            'WLSX-SWITCH-MIB'  => 'wlsxHostname',
-            'WLSR-AP-MIB'      => 'wlsrHideSSID',
-            );
+%MIBS = (
+    %SNMP::Info::Layer2::MIBS,
+    'WLSX-SWITCH-MIB' => 'wlsxHostname',
+    'WLSR-AP-MIB'     => 'wlsrHideSSID',
+);
 
-%GLOBALS = (
-            %SNMP::Info::Layer2::GLOBALS,
-            );
+%GLOBALS = ( %SNMP::Info::Layer2::GLOBALS, );
 
-%FUNCS   = (
-            %SNMP::Info::Layer2::FUNCS,
-            # WLSX-SWITCH-MIB::wlsxSwitchAccessPointTable
-            # Table index leafs do not return information
-            # therefore unable to use apBSSID.  We extract
-            # the information from the IID instead.
-            'aruba_ap_name'      => 'apLocation',
-            'aruba_ap_ip'        => 'apIpAddress',
-            'aruba_ap_essid'     => 'apESSID',
-            'aruba_ap_ssidbcast' => 'wlsrHideSSID',
-            # WLSR-AP-MIB::wlsrConfigTable
-            'aruba_ap_channel'   => 'apCurrentChannel',
-            # WLSX-SWITCH-MIB::wlsxSwitchStationMgmtTable
-            # Table index leafs do not return information
-            # therefore unable to use staAccessPointBSSID
-            # or staPhyAddress.  We extract the information from
-            # the IID instead.
-            #'fw_port'             => 'staAccessPointBSSID',
-            #'fw_mac'              => 'staPhyAddress',
-            'fw_user'             => 'staUserName',
-            );
+%FUNCS = (
+    %SNMP::Info::Layer2::FUNCS,
 
-%MUNGE   = (
-           %SNMP::Info::Layer2::MUNGE,
-            );
+    # WLSX-SWITCH-MIB::wlsxSwitchAccessPointTable
+    # Table index leafs do not return information
+    # therefore unable to use apBSSID.  We extract
+    # the information from the IID instead.
+    'aruba_ap_name'      => 'apLocation',
+    'aruba_ap_ip'        => 'apIpAddress',
+    'aruba_ap_essid'     => 'apESSID',
+    'aruba_ap_ssidbcast' => 'wlsrHideSSID',
+
+    # WLSR-AP-MIB::wlsrConfigTable
+    'aruba_ap_channel' => 'apCurrentChannel',
+
+    # WLSX-SWITCH-MIB::wlsxSwitchStationMgmtTable
+    # Table index leafs do not return information
+    # therefore unable to use staAccessPointBSSID
+    # or staPhyAddress.  We extract the information from
+    # the IID instead.
+    #'fw_port'             => 'staAccessPointBSSID',
+    #'fw_mac'              => 'staPhyAddress',
+    'fw_user' => 'staUserName',
+);
+
+%MUNGE = ( %SNMP::Info::Layer2::MUNGE, );
 
 sub layers {
     return '00000011';
@@ -94,7 +93,7 @@ sub os_ver {
     my $descr = $aruba->description();
     return unless defined $descr;
 
-    if ($descr =~ m/Version\s+(\d+\.\d+\.\d+\.\d+)/){
+    if ( $descr =~ m/Version\s+(\d+\.\d+\.\d+\.\d+)/ ) {
         return $1;
     }
 
@@ -103,7 +102,7 @@ sub os_ver {
 
 sub model {
     my $aruba = shift;
-    my $id = $aruba->id();
+    my $id    = $aruba->id();
     return unless defined $id;
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
@@ -114,14 +113,14 @@ sub model {
 # Thin APs do not support ifMIB requirement
 
 sub i_index {
-    my $aruba = shift;
+    my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index   = $aruba->orig_i_index($partial) || {};
-    my $ap_index  = $aruba->aruba_ap_name($partial) || {};
-    
+    my $i_index  = $aruba->orig_i_index($partial)  || {};
+    my $ap_index = $aruba->aruba_ap_name($partial) || {};
+
     my %if_index;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
@@ -129,9 +128,11 @@ sub i_index {
     }
 
     # Get Attached APs as Interfaces
-    foreach my $ap_id (keys %$ap_index){
+    foreach my $ap_id ( keys %$ap_index ) {
+
         # Convert the 0.254.123.456 index entry to a MAC address.
-        my $mac = join(':',map {sprintf("%02x",$_)} split(/\./,$ap_id));
+        my $mac = join( ':',
+            map { sprintf( "%02x", $_ ) } split( /\./, $ap_id ) );
 
         $if_index{$ap_id} = $mac;
     }
@@ -139,27 +140,28 @@ sub i_index {
 }
 
 sub interfaces {
-    my $aruba  = shift;
+    my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index    = $aruba->i_index($partial) || {};
-    my $i_descr    = $aruba->i_description($partial) || {};
+    my $i_index = $aruba->i_index($partial)       || {};
+    my $i_descr = $aruba->i_description($partial) || {};
 
     my %if;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /^\d+$/ ) {
-        # Replace the Index with the ifDescr field.
-          my $port = $i_descr->{$iid};
-          next unless defined $port;
-          $if{$iid} = $port;
+        if ( $index =~ /^\d+$/ ) {
+
+            # Replace the Index with the ifDescr field.
+            my $port = $i_descr->{$iid};
+            next unless defined $port;
+            $if{$iid} = $port;
         }
 
-        elsif ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
-          $if{$index} = $index;
-        }           
+        elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
+            $if{$index} = $index;
+        }
 
         else {
             next;
@@ -169,120 +171,119 @@ sub interfaces {
 }
 
 sub i_name {
-    my $aruba  = shift;
+    my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index    = $aruba->i_index($partial) || {};
-    my $i_name2    = $aruba->orig_i_name($partial) || {};
-    my $ap_name    = $aruba->aruba_ap_name($partial) || {};
-    
+    my $i_index = $aruba->i_index($partial)       || {};
+    my $i_name2 = $aruba->orig_i_name($partial)   || {};
+    my $ap_name = $aruba->aruba_ap_name($partial) || {};
+
     my %i_name;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /^\d+$/ ) {
-          my $name = $i_name2->{$iid};
-          next unless defined $name;
-          $i_name{$index} = $name;
+        if ( $index =~ /^\d+$/ ) {
+            my $name = $i_name2->{$iid};
+            next unless defined $name;
+            $i_name{$index} = $name;
         }
 
-        elsif ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
-          my $name = $ap_name->{$iid};
-          next unless defined $name;
-          $i_name{$index} = $name;
-        }           
+        elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
+            my $name = $ap_name->{$iid};
+            next unless defined $name;
+            $i_name{$index} = $name;
+        }
         else {
             next;
         }
     }
-  return \%i_name;
+    return \%i_name;
 }
 
 sub i_ssidlist {
-    my $aruba  = shift;
+    my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index    = $aruba->i_index($partial) || {};
-    my $ap_ssid    = $aruba->aruba_ap_essid($partial) || {};
-    
+    my $i_index = $aruba->i_index($partial)        || {};
+    my $ap_ssid = $aruba->aruba_ap_essid($partial) || {};
+
     my %i_ssid;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
-          my $ssid = $ap_ssid->{$iid};
-          next unless defined $ssid;
-          $i_ssid{$index} = $ssid;
-        }           
+        if ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
+            my $ssid = $ap_ssid->{$iid};
+            next unless defined $ssid;
+            $i_ssid{$index} = $ssid;
+        }
         else {
             next;
         }
     }
-  return \%i_ssid;
+    return \%i_ssid;
 }
 
 sub i_80211channel {
-    my $aruba  = shift;
+    my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index  = $aruba->i_index($partial) || {};
-    my $ap_ch    = $aruba->aruba_ap_channel($partial) || {};
-    
+    my $i_index = $aruba->i_index($partial)          || {};
+    my $ap_ch   = $aruba->aruba_ap_channel($partial) || {};
+
     my %i_ch;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
-          my $ch = $ap_ch->{$iid};
-          next unless defined $ch;
-          $i_ch{$index} = $ch;
-        }           
+        if ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
+            my $ch = $ap_ch->{$iid};
+            next unless defined $ch;
+            $i_ch{$index} = $ch;
+        }
         else {
             next;
         }
     }
-  return \%i_ch;
+    return \%i_ch;
 }
 
 sub i_ssidbcast {
-    my $aruba  = shift;
+    my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index  = $aruba->i_index($partial) || {};
-    my $ap_bc    = $aruba->aruba_ap_ssidbcast($partial) || {};
-    
+    my $i_index = $aruba->i_index($partial)            || {};
+    my $ap_bc   = $aruba->aruba_ap_ssidbcast($partial) || {};
+
     my %i_bc;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        if ($index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/) {
-          my $bc = $ap_bc->{$iid};
-          next unless defined $bc;
-          $bc = ($bc ? 0 : 1);
-          $i_bc{$index} = $bc;
-        }           
+        if ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
+            my $bc = $ap_bc->{$iid};
+            next unless defined $bc;
+            $bc = ( $bc ? 0 : 1 );
+            $i_bc{$index} = $bc;
+        }
         else {
             next;
         }
     }
-  return \%i_bc;
+    return \%i_bc;
 }
-
 
 # Wireless switches do not support the standard Bridge MIB
 sub bp_index {
-    my $aruba = shift;
+    my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index   = $aruba->orig_i_index($partial) || {};
-    my $ap_index  = $aruba->aruba_ap_name($partial) || {};
-    
+    my $i_index  = $aruba->orig_i_index($partial)  || {};
+    my $ap_index = $aruba->aruba_ap_name($partial) || {};
+
     my %bp_index;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
@@ -290,9 +291,11 @@ sub bp_index {
     }
 
     # Get Attached APs as Interfaces
-    foreach my $ap_id (keys %$ap_index){
+    foreach my $ap_id ( keys %$ap_index ) {
+
         # Convert the 0.254.123.456 index entry to a MAC address.
-        my $mac = join(':',map {sprintf("%02x",$_)} split(/\./,$ap_id));
+        my $mac = join( ':',
+            map { sprintf( "%02x", $_ ) } split( /\./, $ap_id ) );
 
         $bp_index{$mac} = $mac;
     }
@@ -300,39 +303,47 @@ sub bp_index {
 }
 
 sub fw_port {
-    my $aruba = shift;
+    my $aruba   = shift;
     my $partial = shift;
 
     my $fw_idx = $aruba->fw_user($partial) || {};
 
     my %fw_port;
-    foreach my $iid (keys %$fw_idx){
-      if ($iid =~ /(\d+\.\d+\.\d+\.\d+\.\d+\.\d+).(\d+\.\d+\.\d+\.\d+\.\d+\.\d+)/) {
-        my $port = join(':',map {sprintf("%02x",$_)} split(/\./,$2));
-        $fw_port{$iid} = $port;
-      }
-      else {
-        next;
-      }
+    foreach my $iid ( keys %$fw_idx ) {
+        if ( $iid
+            =~ /(\d+\.\d+\.\d+\.\d+\.\d+\.\d+).(\d+\.\d+\.\d+\.\d+\.\d+\.\d+)/
+            )
+        {
+            my $port = join( ':',
+                map { sprintf( "%02x", $_ ) } split( /\./, $2 ) );
+            $fw_port{$iid} = $port;
+        }
+        else {
+            next;
+        }
     }
     return \%fw_port;
 }
 
 sub fw_mac {
-    my $aruba = shift;
+    my $aruba   = shift;
     my $partial = shift;
 
     my $fw_idx = $aruba->fw_user($partial) || {};
 
     my %fw_mac;
-    foreach my $iid (keys %$fw_idx){
-      if ($iid =~ /(\d+\.\d+\.\d+\.\d+\.\d+\.\d+).(\d+\.\d+\.\d+\.\d+\.\d+\.\d+)/) {
-        my $mac = join(':',map {sprintf("%02x",$_)} split(/\./,$1));
-        $fw_mac{$iid} = $mac;
-      }
-      else {
-        next;
-      }
+    foreach my $iid ( keys %$fw_idx ) {
+        if ( $iid
+            =~ /(\d+\.\d+\.\d+\.\d+\.\d+\.\d+).(\d+\.\d+\.\d+\.\d+\.\d+\.\d+)/
+            )
+        {
+            my $mac = join( ':',
+                map { sprintf( "%02x", $_ ) } split( /\./, $1 ) );
+            $fw_mac{$iid} = $mac;
+        }
+        else {
+            next;
+        }
     }
     return \%fw_mac;
 }
@@ -366,10 +377,10 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-SNMP::Info::Layer2::Aruba is a subclass of SNMP::Info that provides an interface
-to Aruba wireless switches.  The Aruba platform utilizes intelligent wireless
-switches which control thin access points.  The thin access points themselves
-are unable to be polled for end station information.
+SNMP::Info::Layer2::Aruba is a subclass of SNMP::Info that provides an
+interface to Aruba wireless switches.  The Aruba platform utilizes
+intelligent wireless switches which control thin access points.  The thin
+access points themselves are unable to be polled for end station information.
 
 This class emulates bridge functionality for the wireless switch. This enables
 end station MAC addresses collection and correlation to the thin access point
@@ -464,8 +475,8 @@ interfaces.  The thin AP MAC address is used as the port identifier.
 
 =item $aruba->i_name()
 
-Interface name.  Returns (C<ifName>) for Ethernet interfaces and (C<apLocation>)
-for thin AP interfaces.
+Interface name.  Returns (C<ifName>) for Ethernet interfaces and
+(C<apLocation>) for thin AP interfaces.
 
 =item $aruba->bp_index()
 

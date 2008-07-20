@@ -3,21 +3,21 @@
 #
 # Copyright (c) 2008 Max Baker
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -43,11 +43,11 @@ use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 
 @SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
-                                    SNMP::Info::CiscoStats SNMP::Info::CiscoImage 
-                                    SNMP::Info::CiscoRTT  SNMP::Info::CiscoQOS
-                                    SNMP::Info::CiscoConfig SNMP::Info::CiscoPower
-                                    SNMP::Info::Layer3
-                                    Exporter/;
+    SNMP::Info::CiscoStats SNMP::Info::CiscoImage
+    SNMP::Info::CiscoRTT  SNMP::Info::CiscoQOS
+    SNMP::Info::CiscoConfig SNMP::Info::CiscoPower
+    SNMP::Info::Layer3
+    Exporter/;
 @SNMP::Info::Layer3::Cisco::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
@@ -55,74 +55,70 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 $VERSION = '1.09';
 
 %MIBS = (
-            %SNMP::Info::Layer3::MIBS,
-            %SNMP::Info::CiscoPower::MIBS,
-            %SNMP::Info::CiscoConfig::MIBS,
-            %SNMP::Info::CiscoQOS::MIBS,
-            %SNMP::Info::CiscoRTT::MIBS,
-            %SNMP::Info::CiscoImage::MIBS,
-            %SNMP::Info::CiscoStats::MIBS,
-            %SNMP::Info::CDP::MIBS,
-            %SNMP::Info::CiscoVTP::MIBS,
-            'CISCO-EIGRP-MIB' => 'cEigrpAsRouterId',
-        );
+    %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::CiscoPower::MIBS,
+    %SNMP::Info::CiscoConfig::MIBS,
+    %SNMP::Info::CiscoQOS::MIBS,
+    %SNMP::Info::CiscoRTT::MIBS,
+    %SNMP::Info::CiscoImage::MIBS,
+    %SNMP::Info::CiscoStats::MIBS,
+    %SNMP::Info::CDP::MIBS,
+    %SNMP::Info::CiscoVTP::MIBS,
+    'CISCO-EIGRP-MIB' => 'cEigrpAsRouterId',
+);
 
 %GLOBALS = (
-            %SNMP::Info::Layer3::GLOBALS,
-            %SNMP::Info::CiscoPower::GLOBALS,
-            %SNMP::Info::CiscoConfig::GLOBALS,
-            %SNMP::Info::CiscoQOS::GLOBALS,
-            %SNMP::Info::CiscoRTT::GLOBALS,
-            %SNMP::Info::CiscoImage::GLOBALS,
-            %SNMP::Info::CiscoStats::GLOBALS,
-            %SNMP::Info::CDP::GLOBALS,
-            %SNMP::Info::CiscoVTP::GLOBALS,
-            'eigrp_id'     => 'cEigrpAsRouterId',
-           );
+    %SNMP::Info::Layer3::GLOBALS,      %SNMP::Info::CiscoPower::GLOBALS,
+    %SNMP::Info::CiscoConfig::GLOBALS, %SNMP::Info::CiscoQOS::GLOBALS,
+    %SNMP::Info::CiscoRTT::GLOBALS,    %SNMP::Info::CiscoImage::GLOBALS,
+    %SNMP::Info::CiscoStats::GLOBALS,  %SNMP::Info::CDP::GLOBALS,
+    %SNMP::Info::CiscoVTP::GLOBALS, 'eigrp_id' => 'cEigrpAsRouterId',
+);
 
 %FUNCS = (
-            %SNMP::Info::Layer3::FUNCS,
-            %SNMP::Info::CiscoPower::FUNCS,
-            %SNMP::Info::CiscoConfig::FUNCS,
-            %SNMP::Info::CiscoQOS::FUNCS,
-            %SNMP::Info::CiscoRTT::FUNCS,
-            %SNMP::Info::CiscoImage::FUNCS,
-            %SNMP::Info::CiscoStats::FUNCS,
-            %SNMP::Info::CDP::FUNCS,
-            %SNMP::Info::CiscoVTP::FUNCS,
-            # EIGRP
-            'eigrp_peers' => 'cEigrpPeerAddr',
-         );
+    %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::CiscoPower::FUNCS,
+    %SNMP::Info::CiscoConfig::FUNCS,
+    %SNMP::Info::CiscoQOS::FUNCS,
+    %SNMP::Info::CiscoRTT::FUNCS,
+    %SNMP::Info::CiscoImage::FUNCS,
+    %SNMP::Info::CiscoStats::FUNCS,
+    %SNMP::Info::CDP::FUNCS,
+    %SNMP::Info::CiscoVTP::FUNCS,
+
+    # EIGRP
+    'eigrp_peers' => 'cEigrpPeerAddr',
+);
 
 %MUNGE = (
-            %SNMP::Info::Layer3::MUNGE,
-            %SNMP::Info::CiscoPower::MUNGE,
-            %SNMP::Info::CiscoConfig::MUNGE,
-            %SNMP::Info::CiscoQOS::MUNGE,
-            %SNMP::Info::CiscoRTT::MUNGE,
-            %SNMP::Info::CiscoImage::MUNGE,
-            %SNMP::Info::CiscoStats::MUNGE,
-            %SNMP::Info::CDP::MUNGE,
-            %SNMP::Info::CiscoVTP::MUNGE,
-            'eigrp_peers' => \&SNMP::Info::munge_ip,
-         );
+    %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::CiscoPower::MUNGE,
+    %SNMP::Info::CiscoConfig::MUNGE,
+    %SNMP::Info::CiscoQOS::MUNGE,
+    %SNMP::Info::CiscoRTT::MUNGE,
+    %SNMP::Info::CiscoImage::MUNGE,
+    %SNMP::Info::CiscoStats::MUNGE,
+    %SNMP::Info::CDP::MUNGE,
+    %SNMP::Info::CiscoVTP::MUNGE,
+    'eigrp_peers' => \&SNMP::Info::munge_ip,
+);
 
 sub i_vlan {
-	my ($cisco) = shift;
-	my ($partial) = shift;
+    my ($cisco)   = shift;
+    my ($partial) = shift;
 
-	my ($i_type) = $cisco->i_type($partial);
-	my ($i_descr) = $cisco->i_description($partial);
-	my %i_vlan;
+    my ($i_type)  = $cisco->i_type($partial);
+    my ($i_descr) = $cisco->i_description($partial);
+    my %i_vlan;
 
-	foreach my $idx (keys %$i_descr) {
-		if ($i_type->{$idx} eq 'l2vlan' || $i_type->{$idx} eq 135) {
-			if ($i_descr->{$idx} =~ /\.(\d+)$/) {
-				$i_vlan{$idx} = $1;
-			}
-		}
-	}
-	return \%i_vlan;
+    foreach my $idx ( keys %$i_descr ) {
+        if ( $i_type->{$idx} eq 'l2vlan' || $i_type->{$idx} eq 135 ) {
+            if ( $i_descr->{$idx} =~ /\.(\d+)$/ ) {
+                $i_vlan{$idx} = $1;
+            }
+        }
+    }
+    return \%i_vlan;
 }
 
 1;

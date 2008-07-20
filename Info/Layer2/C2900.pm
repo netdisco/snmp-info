@@ -5,21 +5,21 @@
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -41,8 +41,8 @@ use SNMP::Info::CiscoConfig;
 use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer2::C2900::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
-                                    SNMP::Info::CiscoStats SNMP::Info::CiscoConfig
-                                    SNMP::Info::Layer2 Exporter/;
+    SNMP::Info::CiscoStats SNMP::Info::CiscoConfig
+    SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::C2900::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
@@ -50,43 +50,37 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 $VERSION = '1.09';
 
 %GLOBALS = (
-            %SNMP::Info::Layer2::GLOBALS,
-            %SNMP::Info::CiscoConfig::GLOBALS,
-            %SNMP::Info::CiscoStats::GLOBALS,
-            %SNMP::Info::CDP::GLOBALS,
-            %SNMP::Info::CiscoVTP::GLOBALS,
-            );
+    %SNMP::Info::Layer2::GLOBALS,     %SNMP::Info::CiscoConfig::GLOBALS,
+    %SNMP::Info::CiscoStats::GLOBALS, %SNMP::Info::CDP::GLOBALS,
+    %SNMP::Info::CiscoVTP::GLOBALS,
+);
 
-%FUNCS   = (
-            %SNMP::Info::Layer2::FUNCS,
-            %SNMP::Info::CiscoConfig::FUNCS,
-            %SNMP::Info::CiscoStats::FUNCS,
-            %SNMP::Info::CDP::FUNCS,
-            %SNMP::Info::CiscoVTP::FUNCS,
-            'i_name'               => 'ifAlias',
-            # C2900PortEntry
-            'c2900_p_index'        => 'c2900PortIfIndex',
-            'c2900_p_duplex'       => 'c2900PortDuplexStatus',
-            'c2900_p_duplex_admin' => 'c2900PortDuplexState',
-            'c2900_p_speed_admin'  => 'c2900PortAdminSpeed',
-           );
+%FUNCS = (
+    %SNMP::Info::Layer2::FUNCS,
+    %SNMP::Info::CiscoConfig::FUNCS,
+    %SNMP::Info::CiscoStats::FUNCS,
+    %SNMP::Info::CDP::FUNCS,
+    %SNMP::Info::CiscoVTP::FUNCS,
+    'i_name' => 'ifAlias',
 
-%MIBS    = (
-            %SNMP::Info::Layer2::MIBS,
-            %SNMP::Info::CiscoConfig::MIBS,
-            %SNMP::Info::CiscoStats::MIBS,
-            %SNMP::Info::CDP::MIBS,
-            %SNMP::Info::CiscoVTP::MIBS,
-            'CISCO-C2900-MIB' => 'ciscoC2900MIB',
-           );
+    # C2900PortEntry
+    'c2900_p_index'        => 'c2900PortIfIndex',
+    'c2900_p_duplex'       => 'c2900PortDuplexStatus',
+    'c2900_p_duplex_admin' => 'c2900PortDuplexState',
+    'c2900_p_speed_admin'  => 'c2900PortAdminSpeed',
+);
 
-%MUNGE   = (
-            %SNMP::Info::Layer2::MUNGE,
-            %SNMP::Info::CiscoConfig::MUNGE,
-            %SNMP::Info::CiscoStats::MUNGE,
-            %SNMP::Info::CDP::MUNGE,
-            %SNMP::Info::CiscoVTP::MUNGE,
-           );
+%MIBS = (
+    %SNMP::Info::Layer2::MIBS,     %SNMP::Info::CiscoConfig::MIBS,
+    %SNMP::Info::CiscoStats::MIBS, %SNMP::Info::CDP::MIBS,
+    %SNMP::Info::CiscoVTP::MIBS, 'CISCO-C2900-MIB' => 'ciscoC2900MIB',
+);
+
+%MUNGE = (
+    %SNMP::Info::Layer2::MUNGE,     %SNMP::Info::CiscoConfig::MUNGE,
+    %SNMP::Info::CiscoStats::MUNGE, %SNMP::Info::CDP::MUNGE,
+    %SNMP::Info::CiscoVTP::MUNGE,
+);
 
 sub vendor {
     return 'cisco';
@@ -97,9 +91,9 @@ sub cisco_comm_indexing {
 }
 
 sub i_duplex {
-    my $c2900 = shift;
+    my $c2900   = shift;
     my $partial = shift;
-    
+
     my $interfaces     = $c2900->interfaces($partial);
     my $c2900_p_index  = $c2900->c2900_p_index();
     my $c2900_p_duplex = $c2900->c2900_p_duplex();
@@ -107,53 +101,53 @@ sub i_duplex {
     my %reverse_2900 = reverse %$c2900_p_index;
 
     my %i_duplex;
-    foreach my $if (keys %$interfaces){
+    foreach my $if ( keys %$interfaces ) {
         my $port_2900 = $reverse_2900{$if};
         next unless defined $port_2900;
         my $duplex = $c2900_p_duplex->{$port_2900};
-        next unless defined $duplex; 
-    
+        next unless defined $duplex;
+
         $duplex = 'half' if $duplex =~ /half/i;
         $duplex = 'full' if $duplex =~ /full/i;
-        $i_duplex{$if}=$duplex; 
+        $i_duplex{$if} = $duplex;
     }
     return \%i_duplex;
 }
 
 sub i_duplex_admin {
-    my $c2900 = shift;
+    my $c2900   = shift;
     my $partial = shift;
-    
-    my $interfaces     = $c2900->interfaces($partial);
-    my $c2900_p_index  = $c2900->c2900_p_index();
+
+    my $interfaces    = $c2900->interfaces($partial);
+    my $c2900_p_index = $c2900->c2900_p_index();
     my $c2900_p_admin = $c2900->c2900_p_duplex_admin();
 
     my %reverse_2900 = reverse %$c2900_p_index;
 
     my %i_duplex_admin;
-    foreach my $if (keys %$interfaces){
+    foreach my $if ( keys %$interfaces ) {
         my $port_2900 = $reverse_2900{$if};
         next unless defined $port_2900;
         my $duplex = $c2900_p_admin->{$port_2900};
-        next unless defined $duplex; 
-    
+        next unless defined $duplex;
+
         $duplex = 'half' if $duplex =~ /half/i;
         $duplex = 'full' if $duplex =~ /full/i;
         $duplex = 'auto' if $duplex =~ /auto/i;
-        $i_duplex_admin{$if}=$duplex; 
+        $i_duplex_admin{$if} = $duplex;
     }
     return \%i_duplex_admin;
 }
 
 sub set_i_speed_admin {
     my $c2900 = shift;
-    my ($speed, $iid) = @_;
-    
+    my ( $speed, $iid ) = @_;
+
     # map speeds to those the switch will understand
     my %speeds = qw/auto 1 10 10000000 100 100000000/;
 
-    my $c2900_p_index  = $c2900->c2900_p_index();
-    my %reverse_2900 = reverse %$c2900_p_index;
+    my $c2900_p_index = $c2900->c2900_p_index();
+    my %reverse_2900  = reverse %$c2900_p_index;
 
     $speed = lc($speed);
 
@@ -162,18 +156,18 @@ sub set_i_speed_admin {
     # account for weirdness of c2900 mib
     $iid = $reverse_2900{$iid};
 
-    return $c2900->set_c2900_p_speed_admin($speeds{$speed}, $iid);
+    return $c2900->set_c2900_p_speed_admin( $speeds{$speed}, $iid );
 }
 
 sub set_i_duplex_admin {
     my $c2900 = shift;
-    my ($duplex, $iid) = @_;
+    my ( $duplex, $iid ) = @_;
 
     # map a textual duplex to an integer one the switch understands
     my %duplexes = qw/full 1 half 2 auto 3/;
 
-    my $c2900_p_index  = $c2900->c2900_p_index();
-    my %reverse_2900 = reverse %$c2900_p_index;
+    my $c2900_p_index = $c2900->c2900_p_index();
+    my %reverse_2900  = reverse %$c2900_p_index;
 
     $duplex = lc($duplex);
 
@@ -182,29 +176,29 @@ sub set_i_duplex_admin {
     # account for weirdness of c2900 mib
     $iid = $reverse_2900{$iid};
 
-    return $c2900->set_c2900_p_duplex_admin($duplexes{$duplex}, $iid);
+    return $c2900->set_c2900_p_duplex_admin( $duplexes{$duplex}, $iid );
 }
 
 # Use i_descritption for port key, cuz i_name can be manually entered.
 sub interfaces {
-    my $c2900 = shift;
+    my $c2900   = shift;
     my $partial = shift;
 
-    my $interfaces = $c2900->i_index($partial) || {};
-    my $i_descr    = $c2900->i_description($partial) || {}; 
+    my $interfaces = $c2900->i_index($partial)       || {};
+    my $i_descr    = $c2900->i_description($partial) || {};
 
     my %if;
-    foreach my $iid (keys %$interfaces){
+    foreach my $iid ( keys %$interfaces ) {
         my $port = $i_descr->{$iid};
         next unless defined $port;
 
-        $port =~ s/\./\//g if( $port =~ /\d+\.\d+$/);
+        $port =~ s/\./\//g if ( $port =~ /\d+\.\d+$/ );
         $port =~ s/[^\d\/,()\w]+//gi;
-    
+
         $if{$iid} = $port;
     }
 
-    return \%if
+    return \%if;
 }
 
 1;
@@ -409,9 +403,10 @@ See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =head1 SET METHODS
 
-These are methods that provide SNMP set functionality for overridden methods or
-provide a simpler interface to complex set operations.  See
-L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set operations. 
+These are methods that provide SNMP set functionality for overridden methods
+or provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
+operations. 
 
 =over
 

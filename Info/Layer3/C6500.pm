@@ -3,21 +3,21 @@
 #
 # Copyright (c) 2008 Max Baker
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -42,67 +42,56 @@ use SNMP::Info::CiscoConfig;
 use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::C6500::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CiscoStack 
-                                    SNMP::Info::CDP SNMP::Info::CiscoStats 
-                                    SNMP::Info::CiscoImage 
-                                    SNMP::Info::CiscoPortSecurity
-                                    SNMP::Info::CiscoConfig
-                                    SNMP::Info::CiscoPower
-                                    SNMP::Info::Layer3
-                                    Exporter/;
+@SNMP::Info::Layer3::C6500::ISA
+    = qw/SNMP::Info::CiscoVTP SNMP::Info::CiscoStack
+    SNMP::Info::CDP SNMP::Info::CiscoStats
+    SNMP::Info::CiscoImage
+    SNMP::Info::CiscoPortSecurity
+    SNMP::Info::CiscoConfig
+    SNMP::Info::CiscoPower
+    SNMP::Info::Layer3
+    Exporter/;
 @SNMP::Info::Layer3::C6500::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/ ;
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS =    (
-            %SNMP::Info::Layer3::MIBS,
-            %SNMP::Info::CiscoPower::MIBS,
-            %SNMP::Info::CiscoConfig::MIBS,
-            %SNMP::Info::CiscoPortSecurity::MIBS,
-            %SNMP::Info::CiscoImage::MIBS,
-            %SNMP::Info::CiscoStats::MIBS,
-            %SNMP::Info::CDP::MIBS,
-            %SNMP::Info::CiscoStack::MIBS,
-            %SNMP::Info::CiscoVTP::MIBS,
-           );
+%MIBS = (
+    %SNMP::Info::Layer3::MIBS,      %SNMP::Info::CiscoPower::MIBS,
+    %SNMP::Info::CiscoConfig::MIBS, %SNMP::Info::CiscoPortSecurity::MIBS,
+    %SNMP::Info::CiscoImage::MIBS,  %SNMP::Info::CiscoStats::MIBS,
+    %SNMP::Info::CDP::MIBS,         %SNMP::Info::CiscoStack::MIBS,
+    %SNMP::Info::CiscoVTP::MIBS,
+);
 
 %GLOBALS = (
-            %SNMP::Info::Layer3::GLOBALS,
-            %SNMP::Info::CiscoPower::GLOBALS,
-            %SNMP::Info::CiscoConfig::GLOBALS,
-            %SNMP::Info::CiscoPortSecurity::GLOBALS,
-            %SNMP::Info::CiscoImage::GLOBALS,
-            %SNMP::Info::CiscoStats::GLOBALS,
-            %SNMP::Info::CDP::GLOBALS,
-            %SNMP::Info::CiscoStack::GLOBALS,
-            %SNMP::Info::CiscoVTP::GLOBALS,
-           );
+    %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::CiscoPower::GLOBALS,
+    %SNMP::Info::CiscoConfig::GLOBALS,
+    %SNMP::Info::CiscoPortSecurity::GLOBALS,
+    %SNMP::Info::CiscoImage::GLOBALS,
+    %SNMP::Info::CiscoStats::GLOBALS,
+    %SNMP::Info::CDP::GLOBALS,
+    %SNMP::Info::CiscoStack::GLOBALS,
+    %SNMP::Info::CiscoVTP::GLOBALS,
+);
 
 %FUNCS = (
-            %SNMP::Info::Layer3::FUNCS,
-            %SNMP::Info::CiscoPower::FUNCS,
-            %SNMP::Info::CiscoConfig::FUNCS,
-            %SNMP::Info::CiscoPortSecurity::FUNCS,
-            %SNMP::Info::CiscoImage::FUNCS,
-            %SNMP::Info::CiscoStats::FUNCS,
-            %SNMP::Info::CDP::FUNCS,
-            %SNMP::Info::CiscoStack::FUNCS,
-            %SNMP::Info::CiscoVTP::FUNCS,
-         );
+    %SNMP::Info::Layer3::FUNCS,      %SNMP::Info::CiscoPower::FUNCS,
+    %SNMP::Info::CiscoConfig::FUNCS, %SNMP::Info::CiscoPortSecurity::FUNCS,
+    %SNMP::Info::CiscoImage::FUNCS,  %SNMP::Info::CiscoStats::FUNCS,
+    %SNMP::Info::CDP::FUNCS,         %SNMP::Info::CiscoStack::FUNCS,
+    %SNMP::Info::CiscoVTP::FUNCS,
+);
 
 %MUNGE = (
-            %SNMP::Info::Layer3::MUNGE,
-            %SNMP::Info::CiscoPower::MUNGE,
-            %SNMP::Info::CiscoConfig::MUNGE,
-            %SNMP::Info::CiscoPortSecurity::MUNGE,
-            %SNMP::Info::CiscoImage::MUNGE,
-            %SNMP::Info::CiscoStats::MUNGE,
-            %SNMP::Info::CDP::MUNGE,
-            %SNMP::Info::CiscoStack::MUNGE,
-            %SNMP::Info::CiscoVTP::MUNGE,
-         );
+    %SNMP::Info::Layer3::MUNGE,      %SNMP::Info::CiscoPower::MUNGE,
+    %SNMP::Info::CiscoConfig::MUNGE, %SNMP::Info::CiscoPortSecurity::MUNGE,
+    %SNMP::Info::CiscoImage::MUNGE,  %SNMP::Info::CiscoStats::MUNGE,
+    %SNMP::Info::CDP::MUNGE,         %SNMP::Info::CiscoStack::MUNGE,
+    %SNMP::Info::CiscoVTP::MUNGE,
+);
 
 sub vendor {
     return 'cisco';
@@ -113,15 +102,15 @@ sub cisco_comm_indexing { return 1; }
 #  Newer versions use the ETHERLIKE-MIB to report operational duplex.
 
 sub i_duplex {
-    my $c6500 = shift;
+    my $c6500   = shift;
     my $partial = shift;
 
     my $el_duplex = $c6500->el_duplex($partial);
 
-    # Newer software     
-    if (defined $el_duplex and scalar(keys %$el_duplex)){
+    # Newer software
+    if ( defined $el_duplex and scalar( keys %$el_duplex ) ) {
         my %i_duplex;
-        foreach my $el_port (keys %$el_duplex){
+        foreach my $el_port ( keys %$el_duplex ) {
             my $duplex = $el_duplex->{$el_port};
             next unless defined $duplex;
 
@@ -130,6 +119,7 @@ sub i_duplex {
         }
         return \%i_duplex;
     }
+
     # Fall back to CiscoStack method
     else {
         return $c6500->SUPER::i_duplex($partial);
@@ -139,53 +129,55 @@ sub i_duplex {
 # Newer software uses portDuplex as admin setting
 
 sub i_duplex_admin {
-    my $c6500 = shift;
+    my $c6500   = shift;
     my $partial = shift;
 
     my $el_duplex = $c6500->el_duplex($partial);
 
-    # Newer software     
-    if (defined $el_duplex and scalar(keys %$el_duplex)){
+    # Newer software
+    if ( defined $el_duplex and scalar( keys %$el_duplex ) ) {
         my $p_port   = $c6500->p_port()   || {};
         my $p_duplex = $c6500->p_duplex() || {};
-        
+
         my $i_duplex_admin = {};
-        foreach my $port (keys %$p_duplex) {
+        foreach my $port ( keys %$p_duplex ) {
             my $iid = $p_port->{$port};
             next unless defined $iid;
-            next if (defined $partial and $iid !~ /^$partial$/);
-            
+            next if ( defined $partial and $iid !~ /^$partial$/ );
+
             $i_duplex_admin->{$iid} = $p_duplex->{$port};
         }
         return $i_duplex_admin;
     }
+
     # Fall back to CiscoStack method
     else {
         return $c6500->SUPER::i_duplex_admin($partial);
-    }    
+    }
 }
 
 sub set_i_duplex_admin {
+
     # map a textual duplex to an integer one the switch understands
     my %duplexes = qw/half 1 full 2 auto 4/;
 
     my $c6500 = shift;
-    my ($duplex, $iid) = @_;
+    my ( $duplex, $iid ) = @_;
 
     my $el_duplex = $c6500->el_duplex($iid);
 
     # Auto duplex only supported on newer software
-    if (defined $el_duplex and scalar(keys %$el_duplex)){
-        my $p_port  = $c6500->p_port() || {};
+    if ( defined $el_duplex and scalar( keys %$el_duplex ) ) {
+        my $p_port = $c6500->p_port() || {};
         my %reverse_p_port = reverse %$p_port;
 
-       $duplex = lc($duplex);
+        $duplex = lc($duplex);
 
-       return 0 unless defined $duplexes{$duplex};
+        return 0 unless defined $duplexes{$duplex};
 
-       $iid = $reverse_p_port{$iid};
+        $iid = $reverse_p_port{$iid};
 
-       return $c6500->set_p_duplex($duplexes{$duplex}, $iid);
+        return $c6500->set_p_duplex( $duplexes{$duplex}, $iid );
     }
     else {
         return $c6500->SUPER::set_i_duplex_admin;
@@ -224,9 +216,9 @@ Max Baker
 
 Abstraction subclass for Cisco Catalyst 6500 Layer 2/3 Switches.  
 
-These devices run IOS but have some of the same characteristics as the Catalyst
-WS-C family (5xxx). For example, forwarding tables are held in VLANs, and
-extended interface information is gleaned from F<CISCO-SWITCH-MIB>.
+These devices run IOS but have some of the same characteristics as the
+Catalyst WS-C family (5xxx). For example, forwarding tables are held in
+VLANs, and extended interface information is gleaned from F<CISCO-SWITCH-MIB>.
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 

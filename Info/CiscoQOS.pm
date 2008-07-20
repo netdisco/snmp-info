@@ -3,21 +3,21 @@
 #
 # Copyright (c) 2005 Alexander Hartmaier
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -34,43 +34,44 @@ use strict;
 use Exporter;
 use SNMP::Info;
 
-@SNMP::Info::CiscoQOS::ISA = qw/SNMP::Info Exporter/;
+@SNMP::Info::CiscoQOS::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoQOS::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS    = (
-            'CISCO-CLASS-BASED-QOS-MIB'      => 'cbQosIfIndex',
-           );
+%MIBS = ( 'CISCO-CLASS-BASED-QOS-MIB' => 'cbQosIfIndex', );
 
-%GLOBALS = (
-           );
+%GLOBALS = ();
 
-%FUNCS   = (
-            # CISCO-CLASS-BASED-QOS-MIB::cbQosServicePolicyTable
-            'qos_i_index'             => 'cbQosIfIndex',
-            'qos_i_type'              => 'cbQosIfType',
-            'qos_pol_direction'       => 'cbQosPolicyDirection',
-            # CISCO-CLASS-BASED-QOS-MIB::cbQosObjectsTable
-            'qos_obj_conf_index'      => 'cbQosConfigIndex',
-            'qos_obj_type'            => 'cbQosObjectsType',
-            'qos_obj_parent'          => 'cbQosParentObjectsIndex',
-            # CISCO-CLASS-BASED-QOS-MIB::cbQosCMCfgTable
-            'qos_cm_name'             => 'cbQosCMName',
-            'qos_cm_desc'             => 'cbQosCMDesc',
-            'qos_cm_info'             => 'cbQosCMInfo',
-            # CISCO-CLASS-BASED-QOS-MIB::cbQosCMStatsTable
-            'qos_octet_pre'           => 'cbQosCMPrePolicyByte',
-            'qos_octet_post'          => 'cbQosCMPostPolicyByte',
-            # CISCO-CLASS-BASED-QOS-MIB::cbQosQueueingCfgTable
-            'qos_queueingcfg_bw'        => 'cbQosQueueingCfgBandwidth',
-            'qos_queueingcfg_bw_units'  => 'cbQosQueueingCfgBandwidthUnits',
-           );
+%FUNCS = (
 
-%MUNGE   = (
-           );
+    # CISCO-CLASS-BASED-QOS-MIB::cbQosServicePolicyTable
+    'qos_i_index'       => 'cbQosIfIndex',
+    'qos_i_type'        => 'cbQosIfType',
+    'qos_pol_direction' => 'cbQosPolicyDirection',
+
+    # CISCO-CLASS-BASED-QOS-MIB::cbQosObjectsTable
+    'qos_obj_conf_index' => 'cbQosConfigIndex',
+    'qos_obj_type'       => 'cbQosObjectsType',
+    'qos_obj_parent'     => 'cbQosParentObjectsIndex',
+
+    # CISCO-CLASS-BASED-QOS-MIB::cbQosCMCfgTable
+    'qos_cm_name' => 'cbQosCMName',
+    'qos_cm_desc' => 'cbQosCMDesc',
+    'qos_cm_info' => 'cbQosCMInfo',
+
+    # CISCO-CLASS-BASED-QOS-MIB::cbQosCMStatsTable
+    'qos_octet_pre'  => 'cbQosCMPrePolicyByte',
+    'qos_octet_post' => 'cbQosCMPostPolicyByte',
+
+    # CISCO-CLASS-BASED-QOS-MIB::cbQosQueueingCfgTable
+    'qos_queueingcfg_bw'       => 'cbQosQueueingCfgBandwidth',
+    'qos_queueingcfg_bw_units' => 'cbQosQueueingCfgBandwidthUnits',
+);
+
+%MUNGE = ();
 
 1;
 __END__

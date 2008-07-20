@@ -1,25 +1,25 @@
-# SNMP::Info::Layer2 - SNMP Interface to Layer2 Devices 
+# SNMP::Info::Layer2 - SNMP Interface to Layer2 Devices
 # $Id$
 #
 # Copyright (c) 2008 Max Baker -- All changes from Version 0.7 on
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -39,51 +39,51 @@ use SNMP::Info::Bridge;
 use SNMP::Info::Entity;
 use SNMP::Info::PowerEthernet;
 
-@SNMP::Info::Layer2::ISA = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet Exporter/;
+@SNMP::Info::Layer2::ISA
+    = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet Exporter/;
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS = (   %SNMP::Info::MIBS, 
-            %SNMP::Info::Bridge::MIBS,
-            %SNMP::Info::Entity::MIBS,
-            %SNMP::Info::PowerEthernet::MIBS,
-        );
+%MIBS = (
+    %SNMP::Info::MIBS,         %SNMP::Info::Bridge::MIBS,
+    %SNMP::Info::Entity::MIBS, %SNMP::Info::PowerEthernet::MIBS,
+);
 
 %GLOBALS = (
-            %SNMP::Info::GLOBALS,
-            %SNMP::Info::Bridge::GLOBALS,
-            %SNMP::Info::Entity::GLOBALS,
-            %SNMP::Info::PowerEthernet::GLOBALS,
-            'serial1'   => '.1.3.6.1.4.1.9.3.6.3.0', # OLD-CISCO-CHASSIS-MIB::chassisId.0
-            );
+    %SNMP::Info::GLOBALS,
+    %SNMP::Info::Bridge::GLOBALS,
+    %SNMP::Info::Entity::GLOBALS,
+    %SNMP::Info::PowerEthernet::GLOBALS,
+    'serial1' =>
+        '.1.3.6.1.4.1.9.3.6.3.0',    # OLD-CISCO-CHASSIS-MIB::chassisId.0
+);
 
-%FUNCS   = (
-            %SNMP::Info::FUNCS,
-            %SNMP::Info::Bridge::FUNCS,
-            %SNMP::Info::Entity::FUNCS,
-            %SNMP::Info::PowerEthernet::FUNCS,
-           );
+%FUNCS = (
+    %SNMP::Info::FUNCS,         %SNMP::Info::Bridge::FUNCS,
+    %SNMP::Info::Entity::FUNCS, %SNMP::Info::PowerEthernet::FUNCS,
+);
 
 %MUNGE = (
-            # Inherit all the built in munging
-            %SNMP::Info::MUNGE,
-            %SNMP::Info::Bridge::MUNGE,
-            %SNMP::Info::Entity::MUNGE,
-            %SNMP::Info::PowerEthernet::MUNGE,
-         );
+
+    # Inherit all the built in munging
+    %SNMP::Info::MUNGE,
+    %SNMP::Info::Bridge::MUNGE,
+    %SNMP::Info::Entity::MUNGE,
+    %SNMP::Info::PowerEthernet::MUNGE,
+);
 
 # Method OverRides
 
 # $l2->model() - Looks at sysObjectID which gives the oid of the system
-#       name, contained in a propriatry MIB. 
+#       name, contained in a propriatry MIB.
 sub model {
-    my $l2 = shift;
-    my $id = $l2->id();
+    my $l2    = shift;
+    my $id    = $l2->id();
     my $model = &SNMP::translateObj($id) || $id || '';
-   
+
     # HP
     $model =~ s/^hpswitch//i;
 
@@ -96,15 +96,15 @@ sub model {
 }
 
 sub vendor {
-    my $l2 = shift;
+    my $l2    = shift;
     my $model = $l2->model();
     my $descr = $l2->description();
 
-    if ($model =~ /hp/i or $descr =~ /\bhp\b/i) {
+    if ( $model =~ /hp/i or $descr =~ /\bhp\b/i ) {
         return 'hp';
     }
 
-    if ($model =~ /catalyst/i or $descr =~ /(catalyst|cisco)/i) {
+    if ( $model =~ /catalyst/i or $descr =~ /(catalyst|cisco)/i ) {
         return 'cisco';
     }
 
@@ -112,49 +112,50 @@ sub vendor {
 
 sub serial {
     my $l2 = shift;
-    
-    my $serial1   = $l2->serial1();
-    my $e_descr   = $l2->e_descr()  || {};
-    my $e_serial  = $l2->e_serial() || {};
-    
-    my $serial2   = $e_serial->{1}  || undef;
-    my $chassis   = $e_descr->{1}   || undef;
+
+    my $serial1  = $l2->serial1();
+    my $e_descr  = $l2->e_descr() || {};
+    my $e_serial = $l2->e_serial() || {};
+
+    my $serial2 = $e_serial->{1} || undef;
+    my $chassis = $e_descr->{1}  || undef;
 
     # precedence
     #   serial2,chassis parse,serial1
-    return $serial2 if (defined $serial2 and $serial2 !~ /^\s*$/);
-    return $1 if (defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i);
-    return $serial1 if (defined $serial1 and $serial1 !~ /^\s*$/);
+    return $serial2 if ( defined $serial2 and $serial2 !~ /^\s*$/ );
+    return $1
+        if ( defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i );
+    return $serial1 if ( defined $serial1 and $serial1 !~ /^\s*$/ );
 
     return;
 }
 
 sub i_ignore {
-    my $l2 = shift;
+    my $l2      = shift;
     my $partial = shift;
 
     my $i_type = $l2->i_type($partial) || {};
 
     my %i_ignore = ();
 
-    foreach my $if (keys %$i_type){
+    foreach my $if ( keys %$i_type ) {
         my $type = $i_type->{$if};
-        $i_ignore{$if}++ 
+        $i_ignore{$if}++
             if $type =~ /(loopback|other|cpu)/i;
     }
 
     return \%i_ignore;
-}    
+}
 
 sub interfaces {
-    my $l2 = shift;
+    my $l2      = shift;
     my $partial = shift;
 
-    my $interfaces = $l2->i_index($partial) || {};
+    my $interfaces = $l2->i_index($partial)       || {};
     my $i_descr    = $l2->i_description($partial) || {};
 
     # Replace the Index with the ifDescr field.
-    foreach my $iid (keys %$i_descr){
+    foreach my $iid ( keys %$i_descr ) {
         my $port = $i_descr->{$iid};
         next unless defined $port;
         $interfaces->{$iid} = $port;
@@ -287,7 +288,8 @@ to a hash.
 
 =item $l2->interfaces()
 
-Creates a map between the interface identifier (iid) and the physical port name.
+Creates a map between the interface identifier (iid) and the physical port
+name.
 
 Defaults to C<ifDescr> but checks and overrides with C<ifName>
 

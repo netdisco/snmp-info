@@ -5,21 +5,21 @@
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -41,102 +41,110 @@ use SNMP::Info::Entity;
 use SNMP::Info::PowerEthernet;
 
 @SNMP::Info::Layer3::ISA = qw/SNMP::Info::PowerEthernet
-                              SNMP::Info::Entity SNMP::Info::EtherLike 
-                              SNMP::Info::Bridge SNMP::Info Exporter/;
+    SNMP::Info::Entity SNMP::Info::EtherLike
+    SNMP::Info::Bridge SNMP::Info Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS = ( %SNMP::Info::MIBS,
-          %SNMP::Info::Bridge::MIBS,
-          %SNMP::Info::EtherLike::MIBS,
-          %SNMP::Info::Entity::MIBS,
-          %SNMP::Info::PowerEthernet::MIBS,
-          'IP-MIB'      => 'ipNetToMediaIfIndex',
-          'OSPF-MIB'    => 'ospfRouterId',
-          'BGP4-MIB'    => 'bgpIdentifier',
-        );
+%MIBS = (
+    %SNMP::Info::MIBS,
+    %SNMP::Info::Bridge::MIBS,
+    %SNMP::Info::EtherLike::MIBS,
+    %SNMP::Info::Entity::MIBS,
+    %SNMP::Info::PowerEthernet::MIBS,
+    'IP-MIB'   => 'ipNetToMediaIfIndex',
+    'OSPF-MIB' => 'ospfRouterId',
+    'BGP4-MIB' => 'bgpIdentifier',
+);
 
 %GLOBALS = (
-            # Inherit the super class ones
-            %SNMP::Info::GLOBALS,
-            %SNMP::Info::Bridge::GLOBALS,
-            %SNMP::Info::EtherLike::GLOBALS,
-            %SNMP::Info::Entity::GLOBALS,
-            %SNMP::Info::PowerEthernet::GLOBALS,
-            'mac'          => 'ifPhysAddress.1',
-            'serial1'      => '.1.3.6.1.4.1.9.3.6.3.0', # OLD-CISCO-CHASSIS-MIB::chassisId.0
-            'router_ip'    => 'ospfRouterId.0',
-            'bgp_id'       => 'bgpIdentifier.0',
-            'bgp_local_as' => 'bgpLocalAs.0',
-           );
 
-%FUNCS   = (
-            %SNMP::Info::FUNCS,
-            %SNMP::Info::Bridge::FUNCS,
-            %SNMP::Info::EtherLike::FUNCS,
-            %SNMP::Info::Entity::FUNCS,
-            %SNMP::Info::PowerEthernet::FUNCS,
-            # Obsolete Address Translation Table (ARP Cache)
-            'old_at_index'   => 'atIfIndex',
-            'old_at_paddr'   => 'atPhysAddress',
-            'old_at_netaddr' => 'atNetAddress',
-            # IP-MIB IP Net to Media Table (ARP Cache)
-            'at_index'    => 'ipNetToMediaIfIndex',
-            'at_paddr'    => 'ipNetToMediaPhysAddress',
-            'at_netaddr'  => 'ipNetToMediaNetAddress',
-            # OSPF-MIB::ospfIfTable
-            'ospf_if_ip'    => 'ospfIfIpAddress',
-            'ospf_if_area'  => 'ospfIfAreaId',
-            'ospf_if_type'  => 'ospfIfType',
-            'ospf_if_hello' => 'ospfIfHelloInterval',
-            'ospf_if_dead'  => 'ospfIfRtrDeadInterval',
-            'ospf_if_admin' => 'ospfIfAdminStat',
-            'ospf_if_state' => 'ospfIfState',
-            # OSPF-MIB::ospfNbrTable
-            'ospf_ip'         => 'ospfHostIpAddress',
-            'ospf_peers'      => 'ospfNbrIpAddr',
-            'ospf_peer_id'    => 'ospfNbrRtrId',
-            'ospf_peer_state' => 'ospfNbrState',
-            # BGP4-MIB::bgpPeerTable
-            'bgp_peers'               => 'bgpPeerLocalAddr',
-            'bgp_peer_id'             => 'bgpPeerIdentifier',
-            'bgp_peer_state'          => 'bgpPeerState',
-            'bgp_peer_as'             => 'bgpPeerRemoteAs',
-            'bgp_peer_addr'           => 'bgpPeerRemoteAddr',
-            'bgp_peer_fsm_est_trans'  => 'bgpPeerFsmEstablishedTransitions',
-            'bgp_peer_in_tot_msgs'    => 'bgpPeerInTotalMessages',
-            'bgp_peer_in_upd_el_time' => 'bgpPeerInUpdateElapsedTime',
-            'bgp_peer_in_upd'         => 'bgpPeerInUpdates', 
-            'bgp_peer_out_tot_msgs'   => 'bgpPeerOutTotalMessages',
-            'bgp_peer_out_upd'        => 'bgpPeerOutUpdates',
-           );
+    # Inherit the super class ones
+    %SNMP::Info::GLOBALS,
+    %SNMP::Info::Bridge::GLOBALS,
+    %SNMP::Info::EtherLike::GLOBALS,
+    %SNMP::Info::Entity::GLOBALS,
+    %SNMP::Info::PowerEthernet::GLOBALS,
+    'mac' => 'ifPhysAddress.1',
+    'serial1' =>
+        '.1.3.6.1.4.1.9.3.6.3.0',    # OLD-CISCO-CHASSIS-MIB::chassisId.0
+    'router_ip'    => 'ospfRouterId.0',
+    'bgp_id'       => 'bgpIdentifier.0',
+    'bgp_local_as' => 'bgpLocalAs.0',
+);
+
+%FUNCS = (
+    %SNMP::Info::FUNCS,
+    %SNMP::Info::Bridge::FUNCS,
+    %SNMP::Info::EtherLike::FUNCS,
+    %SNMP::Info::Entity::FUNCS,
+    %SNMP::Info::PowerEthernet::FUNCS,
+
+    # Obsolete Address Translation Table (ARP Cache)
+    'old_at_index'   => 'atIfIndex',
+    'old_at_paddr'   => 'atPhysAddress',
+    'old_at_netaddr' => 'atNetAddress',
+
+    # IP-MIB IP Net to Media Table (ARP Cache)
+    'at_index'   => 'ipNetToMediaIfIndex',
+    'at_paddr'   => 'ipNetToMediaPhysAddress',
+    'at_netaddr' => 'ipNetToMediaNetAddress',
+
+    # OSPF-MIB::ospfIfTable
+    'ospf_if_ip'    => 'ospfIfIpAddress',
+    'ospf_if_area'  => 'ospfIfAreaId',
+    'ospf_if_type'  => 'ospfIfType',
+    'ospf_if_hello' => 'ospfIfHelloInterval',
+    'ospf_if_dead'  => 'ospfIfRtrDeadInterval',
+    'ospf_if_admin' => 'ospfIfAdminStat',
+    'ospf_if_state' => 'ospfIfState',
+
+    # OSPF-MIB::ospfNbrTable
+    'ospf_ip'         => 'ospfHostIpAddress',
+    'ospf_peers'      => 'ospfNbrIpAddr',
+    'ospf_peer_id'    => 'ospfNbrRtrId',
+    'ospf_peer_state' => 'ospfNbrState',
+
+    # BGP4-MIB::bgpPeerTable
+    'bgp_peers'               => 'bgpPeerLocalAddr',
+    'bgp_peer_id'             => 'bgpPeerIdentifier',
+    'bgp_peer_state'          => 'bgpPeerState',
+    'bgp_peer_as'             => 'bgpPeerRemoteAs',
+    'bgp_peer_addr'           => 'bgpPeerRemoteAddr',
+    'bgp_peer_fsm_est_trans'  => 'bgpPeerFsmEstablishedTransitions',
+    'bgp_peer_in_tot_msgs'    => 'bgpPeerInTotalMessages',
+    'bgp_peer_in_upd_el_time' => 'bgpPeerInUpdateElapsedTime',
+    'bgp_peer_in_upd'         => 'bgpPeerInUpdates',
+    'bgp_peer_out_tot_msgs'   => 'bgpPeerOutTotalMessages',
+    'bgp_peer_out_upd'        => 'bgpPeerOutUpdates',
+);
 
 %MUNGE = (
-            # Inherit all the built in munging
-            %SNMP::Info::MUNGE,
-            %SNMP::Info::Bridge::MUNGE,
-            %SNMP::Info::EtherLike::MUNGE,
-            %SNMP::Info::Entity::MUNGE,
-            %SNMP::Info::PowerEthernet::MUNGE,
-            'old_at_paddr' => \&SNMP::Info::munge_mac,
-            'at_paddr'     => \&SNMP::Info::munge_mac,
-         );
 
+    # Inherit all the built in munging
+    %SNMP::Info::MUNGE,
+    %SNMP::Info::Bridge::MUNGE,
+    %SNMP::Info::EtherLike::MUNGE,
+    %SNMP::Info::Entity::MUNGE,
+    %SNMP::Info::PowerEthernet::MUNGE,
+    'old_at_paddr' => \&SNMP::Info::munge_mac,
+    'at_paddr'     => \&SNMP::Info::munge_mac,
+);
 
 # Method OverRides
 
 sub root_ip {
     my $l3 = shift;
 
-    my $router_ip  = $l3->router_ip();
-    my $ospf_ip    = $l3->ospf_ip();
+    my $router_ip = $l3->router_ip();
+    my $ospf_ip   = $l3->ospf_ip();
 
     # return the first one found here (should be only one)
-    if (defined $ospf_ip and scalar(keys %$ospf_ip)){
-        foreach my $key (keys %$ospf_ip){
+    if ( defined $ospf_ip and scalar( keys %$ospf_ip ) ) {
+        foreach my $key ( keys %$ospf_ip ) {
             my $ip = $ospf_ip->{$key};
             next if $ip eq '0.0.0.0';
             next unless $l3->snmp_connect_ip($ip);
@@ -145,20 +153,24 @@ sub root_ip {
         }
     }
 
-    return $router_ip if ( (defined $router_ip) and ($router_ip ne '0.0.0.0') and ($l3->snmp_connect_ip($router_ip)) );
+    return $router_ip
+        if (( defined $router_ip )
+        and ( $router_ip ne '0.0.0.0' )
+        and ( $l3->snmp_connect_ip($router_ip) ) );
     return;
 }
 
 sub i_ignore {
-    my $l3 = shift;
+    my $l3      = shift;
     my $partial = shift;
-    
+
     my $interfaces = $l3->interfaces($partial) || {};
 
     my %i_ignore;
-    foreach my $if (keys %$interfaces) {
+    foreach my $if ( keys %$interfaces ) {
+
         # lo -> cisco aironet 350 loopback
-        if ($interfaces->{$if} =~ /(tunnel|loopback|\blo\b|null)/i){
+        if ( $interfaces->{$if} =~ /(tunnel|loopback|\blo\b|null)/i ) {
             $i_ignore{$if}++;
         }
     }
@@ -167,34 +179,37 @@ sub i_ignore {
 
 sub serial {
     my $l3 = shift;
-    
-    my $serial1     = $l3->serial1();
-    my $e_descr     = $l3->e_descr()  || {};
-    my $e_serial    = $l3->e_serial() || {};
-    
-    my $serial2     = $e_serial->{1}  || undef;
-    my $chassis     = $e_descr->{1}   || undef;
-    
+
+    my $serial1  = $l3->serial1();
+    my $e_descr  = $l3->e_descr() || {};
+    my $e_serial = $l3->e_serial() || {};
+
+    my $serial2 = $e_serial->{1} || undef;
+    my $chassis = $e_descr->{1}  || undef;
+
     # precedence
     #   serial2,chassis parse,serial1
-    return $serial2 if (defined $serial2 and $serial2 !~ /^\s*$/);
-    return $1 if (defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i);
-    return $serial1 if (defined $serial1 and $serial1 !~ /^\s*$/);
+    return $serial2 if ( defined $serial2 and $serial2 !~ /^\s*$/ );
+    return $1
+        if ( defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i );
+    return $serial1 if ( defined $serial1 and $serial1 !~ /^\s*$/ );
 
     return;
 }
 
-# $l3->model() - the sysObjectID returns an IID to an entry in 
+# $l3->model() - the sysObjectID returns an IID to an entry in
 #       the CISCO-PRODUCT-MIB.  Look it up and return it.
 sub model {
     my $l3 = shift;
     my $id = $l3->id();
-    
-    unless (defined $id){
-        print " SNMP::Info::Layer3::model() - Device does not support sysObjectID\n" if $l3->debug(); 
+
+    unless ( defined $id ) {
+        print
+            " SNMP::Info::Layer3::model() - Device does not support sysObjectID\n"
+            if $l3->debug();
         return;
     }
-    
+
     my $model = &SNMP::translateObj($id);
 
     return $id unless defined $model;
@@ -206,34 +221,35 @@ sub model {
 }
 
 sub i_name {
-    my $l3 = shift;
+    my $l3      = shift;
     my $partial = shift;
-    
+
     my $i_index = $l3->i_index($partial);
     my $i_alias = $l3->i_alias($partial);
-    my $i_name2  = $l3->orig_i_name($partial);
+    my $i_name2 = $l3->orig_i_name($partial);
 
     my %i_name;
-    foreach my $iid (keys %$i_name2){
-        my $name = $i_name2->{$iid};
+    foreach my $iid ( keys %$i_name2 ) {
+        my $name  = $i_name2->{$iid};
         my $alias = $i_alias->{$iid};
-        $i_name{$iid} = (defined $alias and $alias !~ /^\s*$/) ?
-                        $alias : 
-                        $name;
+        $i_name{$iid}
+            = ( defined $alias and $alias !~ /^\s*$/ )
+            ? $alias
+            : $name;
     }
 
     return \%i_name;
 }
 
 sub i_duplex {
-    my $l3 = shift;
+    my $l3      = shift;
     my $partial = shift;
-    
-    my $el_index = $l3->el_index($partial);
+
+    my $el_index  = $l3->el_index($partial);
     my $el_duplex = $l3->el_duplex($partial);
-    
+
     my %i_index;
-    foreach my $el_port (keys %$el_duplex){
+    foreach my $el_port ( keys %$el_duplex ) {
         my $iid = $el_index->{$el_port};
         next unless defined $iid;
         my $duplex = $el_duplex->{$el_port};
@@ -249,20 +265,20 @@ sub i_duplex {
 
 # $l3->interfaces() - Map the Interfaces to their physical names
 sub interfaces {
-    my $l3 = shift;
+    my $l3      = shift;
     my $partial = shift;
 
-    my $interfaces = $l3->i_index($partial);
+    my $interfaces   = $l3->i_index($partial);
     my $descriptions = $l3->i_description($partial);
 
     my %interfaces = ();
-    foreach my $iid (keys %$interfaces){
+    foreach my $iid ( keys %$interfaces ) {
         my $desc = $descriptions->{$iid};
         next unless defined $desc;
 
         $interfaces{$iid} = $desc;
     }
-    
+
     return \%interfaces;
 }
 
@@ -271,29 +287,29 @@ sub vendor {
 
     my $descr = $l3->description();
 
-    return 'cisco' if ($descr =~ /(cisco|\bios\b)/i);
-    return 'foundry' if ($descr =~ /foundry/i);
-    
+    return 'cisco'   if ( $descr =~ /(cisco|\bios\b)/i );
+    return 'foundry' if ( $descr =~ /foundry/i );
+
     return 'unknown';
 
 }
 
 sub at_index {
-    my $l3 = shift;
+    my $l3      = shift;
     my $partial = shift;
 
     return $l3->orig_at_index($partial) || $l3->old_at_index($partial);
 }
 
 sub at_paddr {
-    my $l3 = shift;
+    my $l3      = shift;
     my $partial = shift;
 
     return $l3->orig_at_paddr($partial) || $l3->old_at_paddr($partial);
 }
 
 sub at_netaddr {
-    my $l3 = shift;
+    my $l3      = shift;
     my $partial = shift;
 
     return $l3->orig_at_netaddr($partial) || $l3->old_at_netaddr($partial);
@@ -472,7 +488,8 @@ to a hash.
 
 =item $l3->interfaces()
 
-Returns the map between SNMP Interface Identifier (iid) and physical port name. 
+Returns the map between SNMP Interface Identifier (iid) and physical port
+name. 
 
 Only returns those iids that have a description listed in $l3->i_description()
 
@@ -623,8 +640,8 @@ received on this connection
 
 =item $l3->bgp_peer_out_tot_msgs()
 
-Returns reference to hash of BGP peer to the total number of messages transmitted
-to the remote peer on this connection
+Returns reference to hash of BGP peer to the total number of messages
+transmitted to the remote peer on this connection
 
 (C<bgpPeerOutTotalMessages>)
 

@@ -4,20 +4,20 @@
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -33,85 +33,94 @@ package SNMP::Info::CiscoPortSecurity;
 use strict;
 use Exporter;
 
-@SNMP::Info::CiscoPortSecurity::ISA = qw/Exporter/;
+@SNMP::Info::CiscoPortSecurity::ISA       = qw/Exporter/;
 @SNMP::Info::CiscoPortSecurity::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PAECAPABILITIES/;
 
 $VERSION = '1.09';
 
-%MIBS    = (
-            'CISCO-PORT-SECURITY-MIB' => 'ciscoPortSecurityMIB',
- 	    'CISCO-PAE-MIB'           => 'ciscoPaeMIB',
-            'IEEE8021-PAE-MIB'        => 'dot1xAuthLastEapolFrameSource',
-           );
+%MIBS = (
+    'CISCO-PORT-SECURITY-MIB' => 'ciscoPortSecurityMIB',
+    'CISCO-PAE-MIB'           => 'ciscoPaeMIB',
+    'IEEE8021-PAE-MIB'        => 'dot1xAuthLastEapolFrameSource',
+);
 
 %GLOBALS = (
-            # CISCO-PORT-SECURITY-MIB
-            'cps_clear'     => 'cpsGlobalClearSecureMacAddresses',
-            'cps_notify'    => 'cpsGlobalSNMPNotifControl',
-            'cps_rate'      => 'cpsGlobalSNMPNotifRate',
-            'cps_enable'    => 'cpsGlobalPortSecurityEnable',
-            'cps_mac_count' => 'cpsGlobalTotalSecureAddress',
-            'cps_mac_max'   => 'cpsGlobalMaxSecureAddress',
-           );
 
-%FUNCS   = (
-            # CISCO-PORT-SECURITY-MIB::cpsIfConfigTable
-            'cps_i_limit_val'  => 'cpsIfInvalidSrcRateLimitValue',
-            'cps_i_limit'      => 'cpsIfInvalidSrcRateLimitEnable',
-            'cps_i_sticky'     => 'cpsIfStickyEnable',
-            'cps_i_clear_type' => 'cpsIfClearSecureMacAddresses',
-            'cps_i_shutdown'   => 'cpsIfShutdownTimeout',
-            'cps_i_flood'      => 'cpsIfUnicastFloodingEnable',
-            'cps_i_clear'      => 'cpsIfClearSecureAddresses',
-            'cps_i_mac'        => 'cpsIfSecureLastMacAddress',
-            'cps_i_count'      => 'cpsIfViolationCount',
-            'cps_i_action'     => 'cpsIfViolationAction',
-            'cps_i_mac_static' => 'cpsIfStaticMacAddrAgingEnable',
-            'cps_i_mac_type'   => 'cpsIfSecureMacAddrAgingType',
-            'cps_i_mac_age'    => 'cpsIfSecureMacAddrAgingTime',
-            'cps_i_mac_count'  => 'cpsIfCurrentSecureMacAddrCount',
-            'cps_i_mac_max'    => 'cpsIfMaxSecureMacAddr',
-            'cps_i_status'     => 'cpsIfPortSecurityStatus',
-            'cps_i_enable'     => 'cpsIfPortSecurityEnable',
-            # CISCO-PORT-SECURITY-MIB::cpsIfVlanTable
-            'cps_i_v_mac_count' => 'cpsIfVlanCurSecureMacAddrCount',
-            'cps_i_v_mac_max'   => 'cpsIfVlanMaxSecureMacAddr',
-            'cps_i_v'           => 'cpsIfVlanIndex',
-            # CISCO-PORT-SECURITY-MIB::cpsIfVlanSecureMacAddrTable
-            'cps_i_v_mac_status' => 'cpsIfVlanSecureMacAddrRowStatus',
-            'cps_i_v_mac_age'    => 'cpsIfVlanSecureMacAddrRemainAge',
-            'cps_i_v_mac_type'   => 'cpsIfVlanSecureMacAddrType',
-            'cps_i_v_vlan'       => 'cpsIfVlanSecureVlanIndex',
-            'cps_i_v_mac'        => 'cpsIfVlanSecureMacAddress',
-            # CISCO-PORT-SECURITY-MIB::cpsSecureMacAddressTable
-            'cps_m_status' => 'cpsSecureMacAddrRowStatus',
-            'cps_m_age'    => 'cpsSecureMacAddrRemainingAge',
-            'cps_m_type'   => 'cpsSecureMacAddrType',
-            'cps_m_mac'    => 'cpsSecureMacAddress',
- 	    # IEEE8021-PAE-MIB::dot1xPaePortEntry
-            'pae_i_capabilities'             => 'dot1xPaePortCapabilities',
-            'pae_i_last_eapol_frame_source'  => 'dot1xAuthLastEapolFrameSource',
-           );
+    # CISCO-PORT-SECURITY-MIB
+    'cps_clear'     => 'cpsGlobalClearSecureMacAddresses',
+    'cps_notify'    => 'cpsGlobalSNMPNotifControl',
+    'cps_rate'      => 'cpsGlobalSNMPNotifRate',
+    'cps_enable'    => 'cpsGlobalPortSecurityEnable',
+    'cps_mac_count' => 'cpsGlobalTotalSecureAddress',
+    'cps_mac_max'   => 'cpsGlobalMaxSecureAddress',
+);
 
-%MUNGE   = (
-            'cps_i_mac'                      => \&SNMP::Info::munge_mac, 
-            'cps_m_mac'                      => \&SNMP::Info::munge_mac,
-            'cps_i_v_mac'                    => \&SNMP::Info::munge_mac,
-            'pae_i_last_eapol_frame_source'  => \&SNMP::Info::munge_mac,
-            'pae_i_capabilities'             => \&munge_pae_capabilities,
-           );
+%FUNCS = (
 
-%PAECAPABILITIES = (0 => 'dot1xPaePortAuthCapable',
- 		    1 => 'dot1xPaePortSuppCapable');
+    # CISCO-PORT-SECURITY-MIB::cpsIfConfigTable
+    'cps_i_limit_val'  => 'cpsIfInvalidSrcRateLimitValue',
+    'cps_i_limit'      => 'cpsIfInvalidSrcRateLimitEnable',
+    'cps_i_sticky'     => 'cpsIfStickyEnable',
+    'cps_i_clear_type' => 'cpsIfClearSecureMacAddresses',
+    'cps_i_shutdown'   => 'cpsIfShutdownTimeout',
+    'cps_i_flood'      => 'cpsIfUnicastFloodingEnable',
+    'cps_i_clear'      => 'cpsIfClearSecureAddresses',
+    'cps_i_mac'        => 'cpsIfSecureLastMacAddress',
+    'cps_i_count'      => 'cpsIfViolationCount',
+    'cps_i_action'     => 'cpsIfViolationAction',
+    'cps_i_mac_static' => 'cpsIfStaticMacAddrAgingEnable',
+    'cps_i_mac_type'   => 'cpsIfSecureMacAddrAgingType',
+    'cps_i_mac_age'    => 'cpsIfSecureMacAddrAgingTime',
+    'cps_i_mac_count'  => 'cpsIfCurrentSecureMacAddrCount',
+    'cps_i_mac_max'    => 'cpsIfMaxSecureMacAddr',
+    'cps_i_status'     => 'cpsIfPortSecurityStatus',
+    'cps_i_enable'     => 'cpsIfPortSecurityEnable',
+
+    # CISCO-PORT-SECURITY-MIB::cpsIfVlanTable
+    'cps_i_v_mac_count' => 'cpsIfVlanCurSecureMacAddrCount',
+    'cps_i_v_mac_max'   => 'cpsIfVlanMaxSecureMacAddr',
+    'cps_i_v'           => 'cpsIfVlanIndex',
+
+    # CISCO-PORT-SECURITY-MIB::cpsIfVlanSecureMacAddrTable
+    'cps_i_v_mac_status' => 'cpsIfVlanSecureMacAddrRowStatus',
+    'cps_i_v_mac_age'    => 'cpsIfVlanSecureMacAddrRemainAge',
+    'cps_i_v_mac_type'   => 'cpsIfVlanSecureMacAddrType',
+    'cps_i_v_vlan'       => 'cpsIfVlanSecureVlanIndex',
+    'cps_i_v_mac'        => 'cpsIfVlanSecureMacAddress',
+
+    # CISCO-PORT-SECURITY-MIB::cpsSecureMacAddressTable
+    'cps_m_status' => 'cpsSecureMacAddrRowStatus',
+    'cps_m_age'    => 'cpsSecureMacAddrRemainingAge',
+    'cps_m_type'   => 'cpsSecureMacAddrType',
+    'cps_m_mac'    => 'cpsSecureMacAddress',
+
+    # IEEE8021-PAE-MIB::dot1xPaePortEntry
+    'pae_i_capabilities'            => 'dot1xPaePortCapabilities',
+    'pae_i_last_eapol_frame_source' => 'dot1xAuthLastEapolFrameSource',
+);
+
+%MUNGE = (
+    'cps_i_mac'                     => \&SNMP::Info::munge_mac,
+    'cps_m_mac'                     => \&SNMP::Info::munge_mac,
+    'cps_i_v_mac'                   => \&SNMP::Info::munge_mac,
+    'pae_i_last_eapol_frame_source' => \&SNMP::Info::munge_mac,
+    'pae_i_capabilities'            => \&munge_pae_capabilities,
+);
+
+%PAECAPABILITIES = (
+    0 => 'dot1xPaePortAuthCapable',
+    1 => 'dot1xPaePortSuppCapable'
+);
 
 sub munge_pae_capabilities {
     my $bits = shift;
 
     return unless defined $bits;
-    my @vals = map($PAECAPABILITIES{$_},sprintf("%x",unpack('b*',$bits)));
-    return join(' ',@vals);
+    my @vals
+        = map( $PAECAPABILITIES{$_}, sprintf( "%x", unpack( 'b*', $bits ) ) );
+    return join( ' ', @vals );
 }
 
 1;

@@ -3,21 +3,21 @@
 #
 # Copyright (c) 2008 Max Baker
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -35,32 +35,28 @@ use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::Layer1;
 
-@SNMP::Info::Layer2::Allied::ISA = qw/SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::Allied::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Allied::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 $VERSION = '1.09';
 
-%GLOBALS = (
-            %SNMP::Info::Layer2::GLOBALS
-           );
+%GLOBALS = ( %SNMP::Info::Layer2::GLOBALS );
 
-%FUNCS   = (
-            %SNMP::Info::Layer2::FUNCS,
-            'ip_adresses'=> 'atNetAddress',
-            'ip_mac'     => 'atPhysAddress',
-           );
+%FUNCS = (
+    %SNMP::Info::Layer2::FUNCS,
+    'ip_adresses' => 'atNetAddress',
+    'ip_mac'      => 'atPhysAddress',
+);
 
-%MIBS    = (
-            %SNMP::Info::Layer2::MIBS,
-            'AtiSwitch-MIB'    => 'atiswitchProductType',
-            'AtiStackInfo-MIB' => 'atiswitchEnhancedStacking',
-           );
+%MIBS = (
+    %SNMP::Info::Layer2::MIBS,
+    'AtiSwitch-MIB'    => 'atiswitchProductType',
+    'AtiStackInfo-MIB' => 'atiswitchEnhancedStacking',
+);
 
-%MUNGE   = (
-            %SNMP::Info::Layer2::MUNGE,
-           );
+%MUNGE = ( %SNMP::Info::Layer2::MUNGE, );
 
 sub vendor {
     return 'allied';
@@ -72,9 +68,9 @@ sub os {
 
 sub os_ver {
     my $allied = shift;
-    my $descr = $allied->description();
-    
-    if ($descr =~ m/version (\d+\.\d+)/){
+    my $descr  = $allied->description();
+
+    if ( $descr =~ m/version (\d+\.\d+)/ ) {
         return $1;
     }
 }
@@ -84,48 +80,48 @@ sub model {
 
     my $desc = $allied->description();
 
-    if ($desc =~ /(AT-80\d{2}\S*)/){
+    if ( $desc =~ /(AT-80\d{2}\S*)/ ) {
         return $1;
     }
     return;
 }
 
 sub root_ip {
-    my $allied = shift;
+    my $allied  = shift;
     my $ip_hash = $allied->ip_addresses();
     my $found_ip;
-    
-    foreach my $ip (values %{$ip_hash}) {
-        $found_ip = SNMP::Info::munge_ip($ip) if (defined $ip);
-        last; # this is only one IP address
+
+    foreach my $ip ( values %{$ip_hash} ) {
+        $found_ip = SNMP::Info::munge_ip($ip) if ( defined $ip );
+        last;    # this is only one IP address
     }
     return $found_ip;
 }
 
-sub mac{
-    my $allied = shift;
+sub mac {
+    my $allied   = shift;
     my $mac_hash = $allied->ip_mac();
     my $found_mac;
-    
-    foreach my $mac (values %{$mac_hash}) {
+
+    foreach my $mac ( values %{$mac_hash} ) {
         $found_mac = SNMP::Info::munge_mac($mac);
-        last; # this is only one MAC address
+        last;    # this is only one MAC address
     }
     return $found_mac;
 }
 
 sub i_up {
-    my $allied = shift;
+    my $allied  = shift;
     my $partial = shift;
 
-    my $i_up  = SNMP::Info::Layer1::i_up($allied, $partial);
+    my $i_up = SNMP::Info::Layer1::i_up( $allied, $partial );
 
-    foreach my $port (keys %$i_up){
+    foreach my $port ( keys %$i_up ) {
         my $up = $i_up->{$port};
         $i_up->{$port} = 'down' if $up eq 'linktesterror';
-        $i_up->{$port} = 'up' if $up eq 'nolinktesterror';
+        $i_up->{$port} = 'up'   if $up eq 'nolinktesterror';
     }
-    
+
     return $i_up;
 }
 1;

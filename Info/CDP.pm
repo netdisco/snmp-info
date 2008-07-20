@@ -1,26 +1,26 @@
 # SNMP::Info::CDP
 # $Id$
 #
-# Changes since Version 0.7 Copyright (c) 2004 Max Baker 
-# All rights reserved.  
+# Changes since Version 0.7 Copyright (c) 2004 Max Baker
+# All rights reserved.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -37,7 +37,7 @@ use strict;
 use Exporter;
 use SNMP::Info;
 
-@SNMP::Info::CDP::ISA = qw/SNMP::Info Exporter/;
+@SNMP::Info::CDP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CDP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
@@ -45,47 +45,47 @@ use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
 $VERSION = '1.09';
 
 # Five data structures required by SNMP::Info
-%MIBS    = ( 'CISCO-CDP-MIB' => 'cdpGlobalRun' );
+%MIBS = ( 'CISCO-CDP-MIB' => 'cdpGlobalRun' );
 
 # Notice we dont inherit the default GLOBALS and FUNCS
 # only the default MUNGE.
 %GLOBALS = (
-            'cdp_run'      => 'cdpGlobalRun',
-            'cdp_interval' => 'cdpGlobalMessageInterval',
-            'cdp_holdtime' => 'cdpGlobalHoldTime',
-            'cdp_id'       => 'cdpGlobalDeviceId',
-           );
+    'cdp_run'      => 'cdpGlobalRun',
+    'cdp_interval' => 'cdpGlobalMessageInterval',
+    'cdp_holdtime' => 'cdpGlobalHoldTime',
+    'cdp_id'       => 'cdpGlobalDeviceId',
+);
 
-%FUNCS  = (
-            'c_index'        => 'cdpCacheIfIndex',
-            'c_proto'        => 'cdpCacheAddressType',
-            'c_addr'         => 'cdpCacheAddress',
-            'c_ver'          => 'cdpCacheVersion',
-            'c_id'           => 'cdpCacheDeviceId',
-            'c_port'         => 'cdpCacheDevicePort',
-            'c_platform'     => 'cdpCachePlatform',
-            'c_capabilities' => 'cdpCacheCapabilities',
-            'c_domain'       => 'cdpCacheVTPMgmtDomain',
-            'c_vlan'         => 'cdpCacheNativeVLAN',
-            'c_duplex'       => 'cdpCacheDuplex',
-            'c_power'        => 'cdpCachePowerConsumption',
-          );
+%FUNCS = (
+    'c_index'        => 'cdpCacheIfIndex',
+    'c_proto'        => 'cdpCacheAddressType',
+    'c_addr'         => 'cdpCacheAddress',
+    'c_ver'          => 'cdpCacheVersion',
+    'c_id'           => 'cdpCacheDeviceId',
+    'c_port'         => 'cdpCacheDevicePort',
+    'c_platform'     => 'cdpCachePlatform',
+    'c_capabilities' => 'cdpCacheCapabilities',
+    'c_domain'       => 'cdpCacheVTPMgmtDomain',
+    'c_vlan'         => 'cdpCacheNativeVLAN',
+    'c_duplex'       => 'cdpCacheDuplex',
+    'c_power'        => 'cdpCachePowerConsumption',
+);
 
 %MUNGE = (
-          'c_capabilities' => \&SNMP::Info::munge_caps,
-          'c_platform'     => \&SNMP::Info::munge_null,
-          'c_domain'       => \&SNMP::Info::munge_null,
-          'c_port'         => \&SNMP::Info::munge_null,
-          'c_id'           => \&SNMP::Info::munge_null,
-          'c_ver'          => \&SNMP::Info::munge_null,
-          'c_ip'           => \&SNMP::Info::munge_ip,
-          'c_power'        => \&munge_power,
+    'c_capabilities' => \&SNMP::Info::munge_caps,
+    'c_platform'     => \&SNMP::Info::munge_null,
+    'c_domain'       => \&SNMP::Info::munge_null,
+    'c_port'         => \&SNMP::Info::munge_null,
+    'c_id'           => \&SNMP::Info::munge_null,
+    'c_ver'          => \&SNMP::Info::munge_null,
+    'c_ip'           => \&SNMP::Info::munge_ip,
+    'c_power'        => \&munge_power,
 
-         );
+);
 
 sub munge_power {
     my $power = shift;
-    my $decimal = substr($power, -3);
+    my $decimal = substr( $power, -3 );
     $power =~ s/$decimal$/\.$decimal/;
     return $power;
 }
@@ -95,59 +95,62 @@ sub hasCDP {
 
     my $ver = $cdp->{_version};
 
-
     # SNMP v1 clients dont have the globals
-    if (defined $ver and $ver == 1){
+    if ( defined $ver and $ver == 1 ) {
         my $c_ip = $cdp->c_ip();
+
         # See if anything in cdp cache, if so we have cdp
-        return 1 if (defined $c_ip and scalar(keys %$c_ip)) ;
+        return 1 if ( defined $c_ip and scalar( keys %$c_ip ) );
         return;
     }
-    
+
     return $cdp->cdp_run();
 }
 
 sub c_if {
-    my $cdp  = shift;
+    my $cdp = shift;
 
     # See if by some miracle Cisco implemented the cdpCacheIfIndex entry
-    my $c_index     = $cdp->c_index();
+    my $c_index = $cdp->c_index();
     return $c_index if defined $c_index;
 
     # Nope, didn't think so. Now we fake it.
     my $c_ip = $cdp->c_ip();
-    unless (defined $c_ip){
-        $cdp->error_throw("SNMP::Info::CDP:c_if() - Device doesn't have cdp_ip() data.  Can't fake cdp_index()");
+    unless ( defined $c_ip ) {
+        $cdp->error_throw(
+            "SNMP::Info::CDP:c_if() - Device doesn't have cdp_ip() data.  Can't fake cdp_index()"
+        );
         return;
     }
 
     my %c_if;
-    foreach my $key (keys %$c_ip){
-      next unless defined $key;
-      my $iid = $key;
-      # Truncate .1 from cdp cache entry
-      $iid =~ s/\.\d+$//;
-      $c_if{$key} = $iid;
+    foreach my $key ( keys %$c_ip ) {
+        next unless defined $key;
+        my $iid = $key;
+
+        # Truncate .1 from cdp cache entry
+        $iid =~ s/\.\d+$//;
+        $c_if{$key} = $iid;
     }
 
     return \%c_if;
 }
 
 sub c_ip {
-    my $cdp = shift;
+    my $cdp     = shift;
     my $partial = shift;
 
-    my $c_addr  = $cdp->c_addr($partial) || {};
+    my $c_addr  = $cdp->c_addr($partial)  || {};
     my $c_proto = $cdp->c_proto($partial) || {};
-    
-    my %c_ip;    
-    foreach my $key (keys %$c_addr) {
+
+    my %c_ip;
+    foreach my $key ( keys %$c_addr ) {
         my $addr  = $c_addr->{$key};
         my $proto = $c_proto->{$key};
         next unless defined $addr;
-        next if (defined $proto and $proto ne 'ip');
+        next if ( defined $proto and $proto ne 'ip' );
 
-        my $ip = join('.',unpack('C4',$addr));
+        my $ip = join( '.', unpack( 'C4', $addr ) );
         $c_ip{$key} = $ip;
     }
     return \%c_ip;

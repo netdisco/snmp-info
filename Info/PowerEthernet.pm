@@ -3,21 +3,21 @@
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -34,32 +34,32 @@ use strict;
 use Exporter;
 use SNMP::Info;
 
-@SNMP::Info::PowerEthernet::ISA = qw/SNMP::Info Exporter/;
+@SNMP::Info::PowerEthernet::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::PowerEthernet::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS    = ('POWER-ETHERNET-MIB' => 'pethPsePortDetectionStatus');
+%MIBS = ( 'POWER-ETHERNET-MIB' => 'pethPsePortDetectionStatus' );
 
-%GLOBALS = (
-           );
+%GLOBALS = ();
 
-%FUNCS   = (
-	    # parts of pethPsePortTable
-	    'peth_port_admin'    => 'pethPsePortAdminEnable',
-	    'peth_port_status'   => 'pethPsePortDetectionStatus',
-	    'peth_port_class'    => 'pethPsePortPowerClassifications',
-	    # pethMainPseTable
-	    'peth_power_watts'       => 'pethMainPsePower',
-	    'peth_power_status'      => 'pethMainPseOperStatus',
-	    'peth_power_consumption' => 'pethMainPseConsumptionPower',
-	    'peth_power_threshold'   => 'pethMainPseUsageThreshold',
-           );
+%FUNCS = (
 
-%MUNGE   = (
-           );
+    # parts of pethPsePortTable
+    'peth_port_admin'  => 'pethPsePortAdminEnable',
+    'peth_port_status' => 'pethPsePortDetectionStatus',
+    'peth_port_class'  => 'pethPsePortPowerClassifications',
+
+    # pethMainPseTable
+    'peth_power_watts'       => 'pethMainPsePower',
+    'peth_power_status'      => 'pethMainPseOperStatus',
+    'peth_power_consumption' => 'pethMainPseConsumptionPower',
+    'peth_power_threshold'   => 'pethMainPseUsageThreshold',
+);
+
+%MUNGE = ();
 
 # POWER-ETHERNET-MIB doesn't define a mapping of its
 # "module"/"port" index to ifIndex.  Different vendors
@@ -69,21 +69,22 @@ $VERSION = '1.09';
 # If there is a module != 1, this heuristic doesn't work
 # so returns undef.
 sub peth_port_ifindex {
-    my $peth = shift;
+    my $peth    = shift;
     my $partial = shift;
 
     my $peth_port_status = $peth->peth_port_status($partial);
     my $peth_port_ifindex;
 
-    foreach my $i (keys %$peth_port_status) {
-	my ($module, $port) = split(/\./, $i);
-	if ($module != 1) {
-	    # This heuristic won't work, so say that we got nothing.
-	    # If you have this case, you have to write a device-specific
-	    # version of this function.
-	    return;
-	}
-	$peth_port_ifindex->{$i} = $port;
+    foreach my $i ( keys %$peth_port_status ) {
+        my ( $module, $port ) = split( /\./, $i );
+        if ( $module != 1 ) {
+
+            # This heuristic won't work, so say that we got nothing.
+            # If you have this case, you have to write a device-specific
+            # version of this function.
+            return;
+        }
+        $peth_port_ifindex->{$i} = $port;
     }
     return $peth_port_ifindex;
 }
@@ -122,7 +123,8 @@ F<POWER-ETHERNET-MIB> is used to describe PoE (IEEE 802.3af)
 
 Create or use a device subclass that inherit this class.  Do not use directly.
 
-For debugging purposes you can call this class directly as you would SNMP::Info
+For debugging purposes you can call this class directly as you would
+SNMP::Info
 
  my $poe = new SNMP::Info::PowerEthernet (...);
 

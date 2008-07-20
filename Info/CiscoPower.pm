@@ -3,21 +3,21 @@
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -34,41 +34,37 @@ use strict;
 use Exporter;
 use SNMP::Info;
 
-@SNMP::Info::CiscoPower::ISA = qw/SNMP::Info Exporter/;
+@SNMP::Info::CiscoPower::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoPower::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS    = ('CISCO-POWER-ETHERNET-EXT-MIB' => 'cpeExtPsePortEntPhyIndex');
+%MIBS = ( 'CISCO-POWER-ETHERNET-EXT-MIB' => 'cpeExtPsePortEntPhyIndex' );
 
-%GLOBALS = (
-           );
+%GLOBALS = ();
 
-%FUNCS   = (
-	    'cpeth_ent_phy'    => 'cpeExtPsePortEntPhyIndex',
-           );
+%FUNCS = ( 'cpeth_ent_phy' => 'cpeExtPsePortEntPhyIndex', );
 
-%MUNGE   = (
-           );
+%MUNGE = ();
 
 # Cisco overcame the limitation of the module.port index of the
 # pethPsePortTable by adding another mapping table, which maps
 # a pethPsePortTable row to an entPhysicalTable index, which can
 # then be mapped to ifIndex.
 sub peth_port_ifindex {
-    my $cpeth = shift;
+    my $cpeth   = shift;
     my $partial = shift;
 
     my $ent_phy = $cpeth->cpeth_ent_phy($partial);
-    my $e_port = $cpeth->e_port();
+    my $e_port  = $cpeth->e_port();
 
     my $peth_port_ifindex = {};
-    foreach my $i (keys %$ent_phy) {
-	if ($e_port->{$ent_phy->{$i}}) {
-	    $peth_port_ifindex->{$i} = $e_port->{$ent_phy->{$i}};
-	}
+    foreach my $i ( keys %$ent_phy ) {
+        if ( $e_port->{ $ent_phy->{$i} } ) {
+            $peth_port_ifindex->{$i} = $e_port->{ $ent_phy->{$i} };
+        }
     }
     return $peth_port_ifindex;
 }
@@ -111,7 +107,8 @@ contains.
 
 Create or use a device subclass that inherit this class.  Do not use directly.
 
-For debugging purposes you can call this class directly as you would SNMP::Info
+For debugging purposes you can call this class directly as you would
+SNMP::Info
 
  my $poe = new SNMP::Info::CiscoPower (...);
 

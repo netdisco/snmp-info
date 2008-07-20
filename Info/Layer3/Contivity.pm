@@ -3,21 +3,21 @@
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -36,7 +36,8 @@ use SNMP::Info;
 use SNMP::Info::Layer3;
 use SNMP::Info::Entity;
 
-@SNMP::Info::Layer3::Contivity::ISA = qw/SNMP::Info SNMP::Info::Layer3 SNMP::Info::Entity Exporter/;
+@SNMP::Info::Layer3::Contivity::ISA
+    = qw/SNMP::Info SNMP::Info::Layer3 SNMP::Info::Entity Exporter/;
 @SNMP::Info::Layer3::Contivity::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
@@ -44,28 +45,23 @@ use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
 $VERSION = '1.09';
 
 %MIBS = (
-         %SNMP::Info::MIBS,
-         %SNMP::Info::Layer3::MIBS,
-         %SNMP::Info::Entity::MIBS,
-        );
+    %SNMP::Info::MIBS, %SNMP::Info::Layer3::MIBS, %SNMP::Info::Entity::MIBS,
+);
 
 %GLOBALS = (
-           %SNMP::Info::GLOBALS,
-           %SNMP::Info::Layer3::GLOBALS,
-           %SNMP::Info::Entity::GLOBALS,
-           );
+    %SNMP::Info::GLOBALS, %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::Entity::GLOBALS,
+);
 
 %FUNCS = (
-          %SNMP::Info::FUNCS,
-          %SNMP::Info::Layer3::FUNCS,
-          %SNMP::Info::Entity::FUNCS,
-         );
-         
+    %SNMP::Info::FUNCS, %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::Entity::FUNCS,
+);
+
 %MUNGE = (
-          %SNMP::Info::MUNGE,
-          %SNMP::Info::Layer3::MUNGE,
-          %SNMP::Info::Entity::MUNGE,
-         );
+    %SNMP::Info::MUNGE, %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::Entity::MUNGE,
+);
 
 sub layers {
     return '00000100';
@@ -80,8 +76,8 @@ sub model {
     my $e_model = $contivity->e_model() || {};
 
     my $model = $e_model->{1} || undef;
-    
-    return $1 if (defined $model and $model =~ /(CES\d+)/i);
+
+    return $1 if ( defined $model and $model =~ /(CES\d+)/i );
     return;
 }
 
@@ -91,10 +87,10 @@ sub os {
 
 sub os_ver {
     my $contivity = shift;
-    my $descr = $contivity->description();
+    my $descr     = $contivity->description();
     return unless defined $descr;
 
-    if ($descr =~ m/V(\d+_\d+\.\d+)/i){
+    if ( $descr =~ m/V(\d+_\d+\.\d+)/i ) {
         return $1;
     }
     return;
@@ -102,10 +98,10 @@ sub os_ver {
 
 sub mac {
     my $contivity = shift;
-    my $i_mac = $contivity->i_mac();
+    my $i_mac     = $contivity->i_mac();
 
-# Return Interface MAC   
-    foreach my $entry (keys %$i_mac){
+    # Return Interface MAC
+    foreach my $entry ( keys %$i_mac ) {
         my $sn = $i_mac->{$entry};
         next unless $sn;
         return $sn;
@@ -118,23 +114,23 @@ sub serial {
     my $e_serial = $contivity->e_serial() || {};
 
     my $serial = $e_serial->{1} || undef;
-    
-    return $1 if (defined $serial and $serial =~ /(\d+)/);
+
+    return $1 if ( defined $serial and $serial =~ /(\d+)/ );
     return;
 }
 
-
 sub interfaces {
     my $contivity = shift;
-    my $partial = shift;
+    my $partial   = shift;
 
     my $description = $contivity->i_description($partial) || {};
-    
+
     my %interfaces = ();
-    foreach my $iid (keys %$description){
+    foreach my $iid ( keys %$description ) {
         my $desc = $description->{$iid};
+
         # Skip everything except Ethernet interfaces
-        next unless (defined $desc and $desc =~ /fe/i);
+        next unless ( defined $desc and $desc =~ /fe/i );
 
         $interfaces{$iid} = $desc;
     }
@@ -143,21 +139,22 @@ sub interfaces {
 
 sub i_name {
     my $contivity = shift;
-    my $partial = shift;
+    my $partial   = shift;
 
     my $i_name2 = $contivity->orig_i_name($partial) || {};
-    
+
     my %i_name;
-    foreach my $iid (keys %$i_name2){
+    foreach my $iid ( keys %$i_name2 ) {
         my $name = $i_name2->{$iid};
+
         #Skip everything except Ethernet interfaces
-        next unless (defined $name and $name =~ /fe/i);
+        next unless ( defined $name and $name =~ /fe/i );
 
         $name = $1 if $name =~ /(fei\.\d+\.\d+)/;
 
         $i_name{$iid} = $name;
-     }
-     return \%i_name;
+    }
+    return \%i_name;
 }
 
 1;
@@ -165,8 +162,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Contivity - SNMP Interface to Nortel VPN Routers (Contivity
-Extranet Switches).
+SNMP::Info::Layer3::Contivity - SNMP Interface to Nortel VPN Routers
+(Contivity Extranet Switches).
 
 =head1 AUTHOR
 

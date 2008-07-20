@@ -3,21 +3,21 @@
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -35,51 +35,55 @@ use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::SONMP;
 
-@SNMP::Info::Layer3::N1600::ISA = qw/SNMP::Info::Layer3 SNMP::Info::SONMP Exporter/;
+@SNMP::Info::Layer3::N1600::ISA
+    = qw/SNMP::Info::Layer3 SNMP::Info::SONMP Exporter/;
 @SNMP::Info::Layer3::N1600::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS = ( %SNMP::Info::Layer3::MIBS,
-          %SNMP::Info::SONMP::MIBS,
-          'SWL2MGMT-MIB' => 'swL2MgmtMIB',
-          'RAPID-CITY' => 'rapidCity',
-        );
+%MIBS = (
+    %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::SONMP::MIBS,
+    'SWL2MGMT-MIB' => 'swL2MgmtMIB',
+    'RAPID-CITY'   => 'rapidCity',
+);
 
-%GLOBALS = (
-            %SNMP::Info::Layer3::GLOBALS,
-            %SNMP::Info::SONMP::GLOBALS,
-           );
+%GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::SONMP::GLOBALS, );
 
-%FUNCS   = (
-            %SNMP::Info::Layer3::FUNCS,
-            %SNMP::Info::SONMP::FUNCS,
-            # SWL2MGMT-MIB
-            # swL2PortInfoTable
-            'n1600_nway_status'  => 'swL2PortInfoNwayStatus',
-            # swL2PortCtrlTable
-            'n1600_nway_state'   => 'swL2PortCtrlNwayState',
-           );
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::SONMP::FUNCS,
+
+    # SWL2MGMT-MIB
+    # swL2PortInfoTable
+    'n1600_nway_status' => 'swL2PortInfoNwayStatus',
+
+    # swL2PortCtrlTable
+    'n1600_nway_state' => 'swL2PortCtrlNwayState',
+);
 
 %MUNGE = (
-            # Inherit all the built in munging
-            %SNMP::Info::Layer3::MUNGE,
-            %SNMP::Info::SONMP::MUNGE,
-         );
+
+    # Inherit all the built in munging
+    %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::SONMP::MUNGE,
+);
 
 # Method OverRides
 
 sub model {
     my $n1600 = shift;
-    my $id = $n1600->id();
-    
-    unless (defined $id){
-        print " SNMP::Info::Layer3::N1600::model() - Device does not support sysObjectID\n" if $n1600->debug(); 
+    my $id    = $n1600->id();
+
+    unless ( defined $id ) {
+        print
+            " SNMP::Info::Layer3::N1600::model() - Device does not support sysObjectID\n"
+            if $n1600->debug();
         return;
     }
-    
+
     my $model = &SNMP::translateObj($id);
 
     return $id unless defined $model;
@@ -101,7 +105,7 @@ sub os_ver {
     my $descr = $n1600->description();
     return unless defined $descr;
 
-    if ($descr =~ m/(\d+\.\d+\.\d+\.\d+)/){
+    if ( $descr =~ m/(\d+\.\d+\.\d+\.\d+)/ ) {
         return $1;
     }
 
@@ -109,13 +113,13 @@ sub os_ver {
 }
 
 sub interfaces {
-    my $n1600 = shift;
+    my $n1600   = shift;
     my $partial = shift;
 
     my $i_index = $n1600->i_index($partial) || {};
-    
+
     my %if;
-    foreach my $iid (keys %$i_index){
+    foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
@@ -126,13 +130,13 @@ sub interfaces {
 }
 
 sub i_duplex {
-    my $n1600 = shift;
+    my $n1600   = shift;
     my $partial = shift;
 
     my $nway_status = $n1600->n1600_nway_status($partial) || {};
-    
+
     my %i_duplex;
-    foreach my $iid (keys %$nway_status){
+    foreach my $iid ( keys %$nway_status ) {
         my $duplex = $nway_status->{$iid};
         next unless defined $duplex;
         next if $duplex =~ /other/i;
@@ -143,13 +147,13 @@ sub i_duplex {
 }
 
 sub i_duplex_admin {
-    my $n1600 = shift;
+    my $n1600   = shift;
     my $partial = shift;
 
     my $nway_state = $n1600->n1600_nway_state($partial) || {};
-    
+
     my %i_duplex;
-    foreach my $iid (keys %$nway_state){
+    foreach my $iid ( keys %$nway_state ) {
         my $duplex = $nway_state->{$iid};
         next unless defined $duplex;
         next if $duplex =~ /other/i;

@@ -5,21 +5,21 @@
 #
 # Copyright (c) 2003 Regents of the University of California
 # All rights reserved.
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -36,70 +36,67 @@ use strict;
 use Exporter;
 use SNMP::Info;
 
-@SNMP::Info::Entity::ISA = qw/SNMP::Info Exporter/;
+@SNMP::Info::Entity::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::Entity::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS    = ('ENTITY-MIB' => 'entPhysicalSerialNum');
+%MIBS = ( 'ENTITY-MIB' => 'entPhysicalSerialNum' );
 
-%GLOBALS = (
-           );
+%GLOBALS = ();
 
-%FUNCS   = (
-            'e_alias'   => 'entPhysicalAlias',
-            'e_class'   => 'entPhysicalClass',
-            'e_descr'   => 'entPhysicalDescr',
-            'e_fwver'   => 'entPhysicalFirmwareRev',
-            'e_fru'     => 'entPhysicalIsFRU',
-            'e_hwver'   => 'entPhysicalHardwareRev',
-            'e_id'      => 'entPhysicalAssetID',
-            'e_map'     => 'entAliasMappingIdentifier',
-            'e_model'   => 'entPhysicalModelName',
-            'e_name'    => 'entPhysicalName',
-            'e_parent'  => 'entPhysicalContainedIn',
-            'e_pos'     => 'entPhysicalParentRelPos',
-            'e_serial'  => 'entPhysicalSerialNum',
-            'e_swver'   => 'entPhysicalSoftwareRev',
-            'e_type'    => 'entPhysicalVendorType',
-            'e_vendor'  => 'entPhysicalMfgName',
-           );
+%FUNCS = (
+    'e_alias'  => 'entPhysicalAlias',
+    'e_class'  => 'entPhysicalClass',
+    'e_descr'  => 'entPhysicalDescr',
+    'e_fwver'  => 'entPhysicalFirmwareRev',
+    'e_fru'    => 'entPhysicalIsFRU',
+    'e_hwver'  => 'entPhysicalHardwareRev',
+    'e_id'     => 'entPhysicalAssetID',
+    'e_map'    => 'entAliasMappingIdentifier',
+    'e_model'  => 'entPhysicalModelName',
+    'e_name'   => 'entPhysicalName',
+    'e_parent' => 'entPhysicalContainedIn',
+    'e_pos'    => 'entPhysicalParentRelPos',
+    'e_serial' => 'entPhysicalSerialNum',
+    'e_swver'  => 'entPhysicalSoftwareRev',
+    'e_type'   => 'entPhysicalVendorType',
+    'e_vendor' => 'entPhysicalMfgName',
+);
 
-%MUNGE   = (
-            'e_type'    => \&SNMP::Info::munge_e_type,
-           );
+%MUNGE = ( 'e_type' => \&SNMP::Info::munge_e_type, );
 
 # entPhysicalIndex is not-accessible.  Create to facilitate emulation methods
 # in other classes
 
 sub e_index {
-    my $entity = shift;
+    my $entity  = shift;
     my $partial = shift;
 
     # Force use of MIB leaf to avoid inheritance issues in psuedo classes
-    my $e_descr  = $entity->entPhysicalDescr($partial);
+    my $e_descr = $entity->entPhysicalDescr($partial);
 
     return unless ($e_descr);
-    
+
     my %e_index;
 
-    foreach my $iid (keys %$e_descr) {
+    foreach my $iid ( keys %$e_descr ) {
         $e_index{$iid} = $iid;
     }
     return \%e_index;
 }
 
 sub e_port {
-    my $entity = shift;
+    my $entity  = shift;
     my $partial = shift;
 
-    my $e_map  = $entity->e_map($partial);
+    my $e_map = $entity->e_map($partial);
 
     my %e_port;
 
-    foreach my $e_id (keys %$e_map) {
+    foreach my $e_id ( keys %$e_map ) {
         my $id = $e_id;
         $id =~ s/\.0$//;
 

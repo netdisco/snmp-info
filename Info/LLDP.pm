@@ -4,20 +4,20 @@
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -33,52 +33,54 @@ package SNMP::Info::LLDP;
 use strict;
 use Exporter;
 use SNMP::Info;
- 
-@SNMP::Info::LLDP::ISA = qw/SNMP::Info Exporter/;
+
+@SNMP::Info::LLDP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::LLDP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 $VERSION = '1.09';
 
-%MIBS    = (
-            'LLDP-MIB'          => 'lldpLocSysCapEnabled',
-            'LLDP-EXT-DOT1-MIB' => 'lldpXdot1MIB',
-            'LLDP-EXT-DOT3-MIB' => 'lldpXdot3MIB',            
-            );
+%MIBS = (
+    'LLDP-MIB'          => 'lldpLocSysCapEnabled',
+    'LLDP-EXT-DOT1-MIB' => 'lldpXdot1MIB',
+    'LLDP-EXT-DOT3-MIB' => 'lldpXdot3MIB',
+);
 
 %GLOBALS = (
-            'lldp_sysname'   => 'lldpLocSysName',
-            'lldp_sysdesc'   => 'lldpLocSysDesc',
-            'lldp_sys_cap'   => 'lldpLocSysCapEnabled',
-           );
+    'lldp_sysname' => 'lldpLocSysName',
+    'lldp_sysdesc' => 'lldpLocSysDesc',
+    'lldp_sys_cap' => 'lldpLocSysCapEnabled',
+);
 
-%FUNCS  = (
-           # LLDP-MIB::lldpLocManAddrTable
-           'lldp_lman_addr'     => 'lldpLocManAddrIfId',
-           # LLDP-MIB::lldpRemTable
-           'lldp_rem_id_type'   => 'lldpRemChassisIdSubtype',
-           'lldp_rem_id'        => 'lldpRemChassisId',
-           'lldp_rem_pid_type'  => 'lldpRemPortIdSubtype',
-           'lldp_rem_pid'       => 'lldpRemPortId',
-           'lldp_rem_desc'      => 'lldpRemPortDesc',
-           'lldp_rem_sysname'   => 'lldpRemSysName',
-           'lldp_rem_sysdesc'   => 'lldpRemSysDesc',
-           'lldp_rem_sys_cap'   => 'lldpRemSysCapEnabled',
-           # LLDP-MIB::lldpRemManAddrTable
-           'lldp_rman_addr'     => 'lldpRemManAddrIfSubtype',
-          );
+%FUNCS = (
 
+    # LLDP-MIB::lldpLocManAddrTable
+    'lldp_lman_addr' => 'lldpLocManAddrIfId',
+
+    # LLDP-MIB::lldpRemTable
+    'lldp_rem_id_type'  => 'lldpRemChassisIdSubtype',
+    'lldp_rem_id'       => 'lldpRemChassisId',
+    'lldp_rem_pid_type' => 'lldpRemPortIdSubtype',
+    'lldp_rem_pid'      => 'lldpRemPortId',
+    'lldp_rem_desc'     => 'lldpRemPortDesc',
+    'lldp_rem_sysname'  => 'lldpRemSysName',
+    'lldp_rem_sysdesc'  => 'lldpRemSysDesc',
+    'lldp_rem_sys_cap'  => 'lldpRemSysCapEnabled',
+
+    # LLDP-MIB::lldpRemManAddrTable
+    'lldp_rman_addr' => 'lldpRemManAddrIfSubtype',
+);
 
 %MUNGE = (
-          'lldp_sysdesc'        => \&SNMP::Info::munge_null,
-          'lldp_sysname'        => \&SNMP::Info::munge_null,
-          'lldp_rem_sysname'    => \&SNMP::Info::munge_null,
-          'lldp_rem_sysdesc'    => \&SNMP::Info::munge_null,
-          'lldp_rem_port_desc'  => \&SNMP::Info::munge_null,
-          'lldp_sys_cap'        => \&SNMP::Info::munge_bits,
-          'lldp_rem_sys_cap'    => \&SNMP::Info::munge_bits,
-         );
+    'lldp_sysdesc'       => \&SNMP::Info::munge_null,
+    'lldp_sysname'       => \&SNMP::Info::munge_null,
+    'lldp_rem_sysname'   => \&SNMP::Info::munge_null,
+    'lldp_rem_sysdesc'   => \&SNMP::Info::munge_null,
+    'lldp_rem_port_desc' => \&SNMP::Info::munge_null,
+    'lldp_sys_cap'       => \&SNMP::Info::munge_bits,
+    'lldp_rem_sys_cap'   => \&SNMP::Info::munge_bits,
+);
 
 sub hasLLDP {
     my $lldp = shift;
@@ -96,25 +98,25 @@ sub lldp_if {
     my $partial = shift;
 
     my $addr = $lldp->lldp_rem_pid($partial) || {};
-    
+
     my %lldp_if;
-    foreach my $key (keys %$addr) {
-        my @aOID = split ('\.',$key);
-	my $port = $aOID[1];
-	$lldp_if{$key} = $port;
+    foreach my $key ( keys %$addr ) {
+        my @aOID = split( '\.', $key );
+        my $port = $aOID[1];
+        $lldp_if{$key} = $port;
     }
     return \%lldp_if;
 }
 
 sub lldp_ip {
-    my $lldp = shift;
+    my $lldp    = shift;
     my $partial = shift;
 
     my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
-    
-    my %lldp_ip;    
-    foreach my $key (keys %$rman_addr) {
-        my($index, $proto, $addr) = _lldp_addr_index($key);
+
+    my %lldp_ip;
+    foreach my $key ( keys %$rman_addr ) {
+        my ( $index, $proto, $addr ) = _lldp_addr_index($key);
         next unless defined $index;
         next unless $proto == 1;
         $lldp_ip{$index} = $addr;
@@ -123,14 +125,14 @@ sub lldp_ip {
 }
 
 sub lldp_addr {
-    my $lldp = shift;
+    my $lldp    = shift;
     my $partial = shift;
 
     my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
-    
-    my %lldp_ip;    
-    foreach my $key (keys %$rman_addr) {
-        my($index, $proto, $addr) = _lldp_addr_index($key);
+
+    my %lldp_ip;
+    foreach my $key ( keys %$rman_addr ) {
+        my ( $index, $proto, $addr ) = _lldp_addr_index($key);
         next unless defined $index;
         $lldp_ip{$index} = $addr;
     }
@@ -138,29 +140,31 @@ sub lldp_addr {
 }
 
 sub lldp_port {
-    my $lldp = shift;
+    my $lldp    = shift;
     my $partial = shift;
 
-    my $pdesc  = $lldp->lldp_rem_desc($partial) || {};
-    my $pid    = $lldp->lldp_rem_pid($partial) || {};
-    my $ptype  = $lldp->lldp_rem_pid_type($partial) || {};
+    my $pdesc = $lldp->lldp_rem_desc($partial)     || {};
+    my $pid   = $lldp->lldp_rem_pid($partial)      || {};
+    my $ptype = $lldp->lldp_rem_pid_type($partial) || {};
 
-    my %lldp_port;    
-    foreach my $key (sort keys %$pid) {
+    my %lldp_port;
+    foreach my $key ( sort keys %$pid ) {
         my $port = $pdesc->{$key};
-	unless ($port) {
+        unless ($port) {
             $port = $pid->{$key};
             next unless $port;
-	    my $type = $ptype->{$key};
+            my $type = $ptype->{$key};
             next unless $type;
-            # May need to format other types in the future, i.e. Network address
-            if ($type =~ /mac/) {
-                $port = join(':',map { sprintf "%02x",$_ } unpack('C*',$port));
+
+          # May need to format other types in the future, i.e. Network address
+            if ( $type =~ /mac/ ) {
+                $port = join( ':',
+                    map { sprintf "%02x", $_ } unpack( 'C*', $port ) );
             }
         }
 
         # Nortel lldpRemPortDesc doesn't match ifDescr, but we can still
-        # figure out slot.port based upon lldpRemPortDesc 
+        # figure out slot.port based upon lldpRemPortDesc
         if ( $port =~ /^(Unit\s+(\d+)\s+)?Port\s+(\d+)$/ ) {
             $port = defined $1 ? "$2.$3" : "$3";
         }
@@ -171,21 +175,22 @@ sub lldp_port {
 }
 
 sub lldp_id {
-    my $lldp = shift;
+    my $lldp    = shift;
     my $partial = shift;
-    
-    my $ch_type = $lldp->lldp_rem_id_type($partial) || {};
-    my $ch = $lldp->lldp_rem_id($partial) || {};
 
-    my %lldp_id;    
-    foreach my $key (keys %$ch) {
-	my $id = $ch->{$key};
+    my $ch_type = $lldp->lldp_rem_id_type($partial) || {};
+    my $ch      = $lldp->lldp_rem_id($partial)      || {};
+
+    my %lldp_id;
+    foreach my $key ( keys %$ch ) {
+        my $id = $ch->{$key};
         next unless $id;
-	my $type = $ch_type->{$key};
+        my $type = $ch_type->{$key};
         next unless $type;
+
         # May need to format other types in the future
-        if ($type =~ /mac/) {
-            $id = join(':',map { sprintf "%02x",$_ } unpack('C*',$id));
+        if ( $type =~ /mac/ ) {
+            $id = join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $id ) );
         }
         $lldp_id{$key} = $id;
     }
@@ -213,19 +218,23 @@ sub lldp_id {
 # Break up the lldpRemManAddrTable INDEX into common index, protocol,
 # and address.
 sub _lldp_addr_index {
-    my $idx = shift;
-    my @oids   = split(/\./, $idx);
-    my $index  = join('.', splice(@oids, 0, 3));
+    my $idx    = shift;
+    my @oids   = split( /\./, $idx );
+    my $index  = join( '.', splice( @oids, 0, 3 ) );
     my $proto  = shift(@oids);
     my $length = shift(@oids);
+
     # IPv4
-    if ($proto == 1) {
-        return ($index, $proto, join('.',@oids));
+    if ( $proto == 1 ) {
+        return ( $index, $proto, join( '.', @oids ) );
     }
+
     # MAC
-    elsif ($proto == 6) {
-        return ($index, $proto, join(':',map { sprintf "%02x",$_ } @oids));
+    elsif ( $proto == 6 ) {
+        return ( $index, $proto,
+            join( ':', map { sprintf "%02x", $_ } @oids ) );
     }
+
     # TODO - Need to handle other protocols, i.e. IPv6
     else {
         return;
