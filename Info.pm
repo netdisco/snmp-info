@@ -3327,18 +3327,6 @@ sub _load_attr {
             next;
         }
 
-        if ($loopdetect) {
-
-            # Check to see if we've already seen this IID (looping)
-            if ( defined $seen{$iid} and $seen{$iid} ) {
-                $self->error_throw("Looping on: $attr iid:$iid. ");
-                last;
-            }
-            else {
-                $seen{$iid}++;
-            }
-        }
-
         # Check to make sure we are still in partial land
         if (    defined $partial
             and $iid !~ /^$partial$/
@@ -3358,6 +3346,25 @@ sub _load_attr {
         # and $val being empty strings.
         if ( $val eq '' and $iid eq '' ) {
             last;
+        }
+
+        # Another check for SNMPv1 - noSuchName return may results in an $iid
+        # we've already seen and $val an empty string.  If we don't catch
+        # this here we erronously report a loop below.
+        if ( defined $seen{$iid} and $seen{$iid} and $val eq '' ) {
+            last;
+        }
+
+        if ($loopdetect) {
+
+            # Check to see if we've already seen this IID (looping)
+            if ( defined $seen{$iid} and $seen{$iid} ) {
+                $self->error_throw("Looping on: $attr iid:$iid. ");
+                last;
+            }
+            else {
+                $seen{$iid}++;
+            }
         }
 
         if ( $val eq 'NOSUCHOBJECT' ) {
