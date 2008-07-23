@@ -18,4 +18,7 @@
 
 # Private Regression Tests
 \d+_local_
-^\.?perl\w+\.?rc$
+\.?perl\w+\.?rc$
+
+# Komodo project file
+\.kpf$
