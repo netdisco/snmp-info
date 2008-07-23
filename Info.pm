@@ -751,7 +751,7 @@ C<perldoc SNMP> -> bulkwalk() for more info.
 Detects looping during getnext table column walks by comparing IIDs for each
 instance.  A loop is detected if the same IID is seen more than once and the
 walk is aborted.  Note:  This will not detect loops during a bulkwalk
-operation, Net-'s internal bulkwalk function must detect the loop. 
+operation, Net-SNMP's internal bulkwalk function must detect the loop. 
 
 Set to C<0> to turn off loop detection.
 
@@ -2232,7 +2232,7 @@ ALTEON-TS-PHYSICAL-MIB::agPortCurCfgPortName.
 
 A list of each mib needed.  
 
-C<('MIB-NAME' => 'itemToTestForPresence')>
+    ('MIB-NAME' => 'itemToTestForPresence')
 
 The value for each entry should be a MIB object to check for to make sure 
 that the MIB is present and has loaded correctly. 
@@ -3104,13 +3104,13 @@ Returns the result of $info->_set(method).
 Pass either a reference to a 4 element array [<obj>, <iid>, <val>, <type>] or
 a reference to an array of 4 element arrays to specify multiple values.
 
-<obj>  - One of the following forms:
+    <obj> - One of the following forms:
         1) leaf identifier (e.g., C<'sysContact'>)
         2) An entry in either %FUNCS, %GLOBALS (e.g., 'contact')
-<iid>  - The dotted-decimal, instance identifier. For scalar MIB objects
-use '0'
-<val>  - The SNMP data value being set (e.g., 'netdisco')
-<type> - Optional as the MIB should be loaded.
+    <iid> - The dotted-decimal, instance identifier. For scalar MIB objects
+             use '0'
+    <val>  - The SNMP data value being set (e.g., 'netdisco')
+    <type> - Optional as the MIB should be loaded.
 
 If one of the set assignments is invalid, then the request will be rejected
 without applying any of the new values - regardless of the order they appear
