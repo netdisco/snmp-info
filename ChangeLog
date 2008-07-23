@@ -1,7 +1,7 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
-version 1.09
+version 1.09  (07/22/08) - Beta/developer release
     + Added support for HP ProCurve Foundry OEM switches, such as the 9300
       series, in new class L3::HP9300 (contributions from Douglas McKeown and
       Ivan Auger)
@@ -27,6 +27,12 @@ version 1.09
     + Added set_multi() method to enable a SNMP set command on several new
       values in one request.  Required for complex set operations
       on some agents.
+    + Infrastructure for SNMPv3 support:
+        + Save the SecName passed into the constructor
+        + Create an update() function, which replaces the underlying
+          SNMP session using different parameters.
+        + Return the SecName instead of community from snmp_comm() when using
+          SNMPv3.
 
     * L2::HP now isa Layer3 instead of Layer2 to support arpnip
       (Dudley Freeman)
