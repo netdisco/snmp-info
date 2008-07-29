@@ -188,7 +188,7 @@ sub interfaces {
         )
         )
     {
-        $vlan_index   = $passport->rc_vlan_if();
+        $vlan_index   = $passport->rc_vlan_if() || {};
         %reverse_vlan = reverse %$vlan_index;
         $vlan_id      = $passport->rc_vlan_id();
     }

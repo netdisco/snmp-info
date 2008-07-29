@@ -284,7 +284,7 @@ sub set_i_up_admin {
     my $bayhub = shift;
     my ( $setting, $iid ) = @_;
 
-    my $i_index         = $bayhub->i_index();
+    my $i_index = $bayhub->i_index() || {};
     my %reverse_i_index = reverse %$i_index;
 
     $setting = lc($setting);

@@ -95,7 +95,7 @@ sub i_duplex {
     my $partial = shift;
 
     my $interfaces     = $c2900->interfaces($partial);
-    my $c2900_p_index  = $c2900->c2900_p_index();
+    my $c2900_p_index  = $c2900->c2900_p_index() || {};
     my $c2900_p_duplex = $c2900->c2900_p_duplex();
 
     my %reverse_2900 = reverse %$c2900_p_index;
@@ -119,7 +119,7 @@ sub i_duplex_admin {
     my $partial = shift;
 
     my $interfaces    = $c2900->interfaces($partial);
-    my $c2900_p_index = $c2900->c2900_p_index();
+    my $c2900_p_index = $c2900->c2900_p_index() || {};
     my $c2900_p_admin = $c2900->c2900_p_duplex_admin();
 
     my %reverse_2900 = reverse %$c2900_p_index;
@@ -146,8 +146,8 @@ sub set_i_speed_admin {
     # map speeds to those the switch will understand
     my %speeds = qw/auto 1 10 10000000 100 100000000/;
 
-    my $c2900_p_index = $c2900->c2900_p_index();
-    my %reverse_2900  = reverse %$c2900_p_index;
+    my $c2900_p_index = $c2900->c2900_p_index() || {};
+    my %reverse_2900 = reverse %$c2900_p_index;
 
     $speed = lc($speed);
 
@@ -166,8 +166,8 @@ sub set_i_duplex_admin {
     # map a textual duplex to an integer one the switch understands
     my %duplexes = qw/full 1 half 2 auto 3/;
 
-    my $c2900_p_index = $c2900->c2900_p_index();
-    my %reverse_2900  = reverse %$c2900_p_index;
+    my $c2900_p_index = $c2900->c2900_p_index() || {};
+    my %reverse_2900 = reverse %$c2900_p_index;
 
     $duplex = lc($duplex);
 
