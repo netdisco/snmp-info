@@ -607,6 +607,26 @@ sub c_platform {
     return \%c_platform;
 }
 
+# POWER-ETHERNET-MIB doesn't define a mapping of its
+# "module"/"port" index to ifIndex.  Different vendors
+# do this in different ways.
+# HP switches use the ifIndex as port index, so we can
+# ignore the module information and map the index directly
+# onto an ifIndex.
+sub peth_port_ifindex {
+    my $peth    = shift;
+    my $partial = shift;
+
+    my $peth_port_status = $peth->peth_port_status($partial);
+    my $peth_port_ifindex;
+
+    foreach my $i ( keys %$peth_port_status ) {
+        my ( $module, $port ) = split( /\./, $i );
+        $peth_port_ifindex->{$i} = $port;
+    }
+    return $peth_port_ifindex;
+}
+
 1;
 __END__
 
@@ -905,6 +925,11 @@ identifier (iid)
 
 Returns (C<ifIndex>) for both key and value for 1600, 2424, 4000, and 8000
 models since they seem to have problems with F<BRIDGE-MIB>
+
+=item $hp->peth_port_ifindex()
+
+Returns reference to hash of power Ethernet port table entries map back to
+interface index (c<ifIndex>)
 
 =back
 
