@@ -43,8 +43,10 @@ $VERSION = '1.09';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
-    'WLSX-SWITCH-MIB' => 'wlsxHostname',
-    'WLSR-AP-MIB'     => 'wlsrHideSSID',
+    'WLSX-SWITCH-MIB'         => 'wlsxHostname',
+    'WLSX-WLAN-MIB'           => 'wlanAPFQLN',
+    'WLSR-AP-MIB'             => 'wlsrHideSSID',
+    #'ALCATEL-IND1-TP-DEVICES' => 'familyOmniAccessWireless',
 );
 
 %GLOBALS = ( %SNMP::Info::Layer2::GLOBALS, );
@@ -84,11 +86,27 @@ sub layers {
 }
 
 sub os {
-    return 'airos';
+    my $aruba = shift;
+    my %osmap = (
+        'alcatel-lucent' => 'aos-w',
+                );
+    return $osmap{$aruba->vendor()} || 'airos';
 }
 
 sub vendor {
-    return 'aruba';
+    my $aruba = shift;
+    my $id     = $aruba->id() || 'undef';
+    my %oidmap = (
+                  6486 => 'alcatel-lucent',
+                );
+    $id = $1 if (defined($id) && $id =~ /^\.1\.3\.6\.1\.4\.1\.(\d+)/);
+
+    if (defined($id) and exists($oidmap{$id})) {
+        return $oidmap{$id};
+    }
+    else {
+        return 'aruba';
+    }
 }
 
 sub os_ver {
