@@ -61,6 +61,9 @@ $VERSION = '1.09';
     'aruba_ap_essid'     => 'apESSID',
     'aruba_ap_ssidbcast' => 'wlsrHideSSID',
 
+    # WLSX-WLAN-MIB::wlsxWlanAPTable
+    'aruba_perap_fqln'   => 'wlanAPFQLN',
+
     # WLSR-AP-MIB::wlsrConfigTable
     'aruba_ap_channel' => 'apCurrentChannel',
 
@@ -111,6 +114,8 @@ sub model {
 }
 
 # Thin APs do not support ifMIB requirement
+#
+# We return all BSSIDs as pseudo-ports on the controller.
 
 sub i_index {
     my $aruba   = shift;
@@ -170,6 +175,29 @@ sub interfaces {
     return \%if;
 }
 
+# Most items are indexed by BSSID.
+# aruba_perap_fqln is indexed by AP, so we use the
+# [haven't decided yet] index to figure out all of the
+# BSSIDs served by a given radio.
+sub aruba_ap_fqln {
+    my $aruba  = shift;
+    # I don't think $partial is meaningful in this context
+
+    my $perap_fqln = $aruba->aruba_perap_fqln();
+    my $channel = $aruba->wlanAPBssidChannel();
+    my $aruba_ap_fqln = {};
+
+    # Channel index is: AP, radio, BSSID
+    foreach my $idx (keys %$channel) {
+	my @oid = split(/\./, $idx );
+	my $ap = join(".", @oid[0..5]);
+        my $bssid = join(".", @oid[7..12]);
+	$aruba_ap_fqln->{$bssid} = $perap_fqln->{$ap};
+    }
+
+    return $aruba_ap_fqln;
+}
+
 sub i_name {
     my $aruba   = shift;
     my $partial = shift;
@@ -177,6 +205,7 @@ sub i_name {
     my $i_index = $aruba->i_index($partial)       || {};
     my $i_name2 = $aruba->orig_i_name($partial)   || {};
     my $ap_name = $aruba->aruba_ap_name($partial) || {};
+    my $ap_fqln = $aruba->aruba_ap_fqln($partial) || {};
 
     my %i_name;
     foreach my $iid ( keys %$i_index ) {
@@ -190,7 +219,7 @@ sub i_name {
         }
 
         elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
-            my $name = $ap_name->{$iid};
+            my $name = $ap_fqln->{$iid} || $ap_name->{$iid};
             next unless defined $name;
             $i_name{$index} = $name;
         }
@@ -348,6 +377,26 @@ sub fw_mac {
     return \%fw_mac;
 }
 
+# Return the BSSID in i_mac.
+sub i_mac {
+    my $aruba = shift;
+    my $partial = shift;
+
+    # Start with the i_mac entries for the physical ports.
+    my $i_mac = $aruba->orig_i_mac($partial) || {};
+
+    # Add in all the BSSID entries.
+    my $i_index  = $aruba->i_index($partial) || {};
+    foreach my $iid (keys %$i_index) {
+        my $index = $i_index->{$iid};
+	if ($index =~ /:/) {
+	    $i_mac->{$index} = $index;
+	}
+    }
+
+    return $i_mac;
+}
+
 1;
 
 __END__
@@ -471,12 +520,17 @@ Extends C<ifIndex> to support thin APs as device interfaces.
 =item $aruba->interfaces()
 
 Returns reference to map of IIDs to ports.  Thin APs are implemented as device 
-interfaces.  The thin AP MAC address is used as the port identifier.
+interfaces.  The thin AP BSSID is used as the port identifier.
 
 =item $aruba->i_name()
 
 Interface name.  Returns (C<ifName>) for Ethernet interfaces and
-(C<apLocation>) for thin AP interfaces.
+(C<wlanAPFQLN> or C<apLocation>) for thin AP interfaces.
+
+=item $aruba->i_mac()
+
+Interface MAC address.  Returns interface MAC address for Ethernet
+interfaces and BSSID for thin AP interfaces.
 
 =item $aruba->bp_index()
 
@@ -532,6 +586,16 @@ interface.
 =item $aruba->aruba_ap_ssidbcast()
 
 (C<wlsrHideSSID>)
+
+=back
+
+=head2 Aruba AP Table (C<wlsxWlanAPTable>)
+
+=over
+
+=item $aruba->aruba_perap_fqln()
+
+(C<wlanAPFQLN>)
 
 =back
 
