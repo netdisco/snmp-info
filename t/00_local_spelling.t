@@ -5,7 +5,10 @@
 use warnings;
 use strict;
 use Test::More;
-use Test::Spelling;
+
+eval "use Test::Spelling";
+plan skip_all => "Test::Spelling required for checking spelling"
+    if $@;
 
 set_spell_cmd('aspell list');
 add_stopwords(<DATA>);
@@ -22,7 +25,9 @@ alteon
 airespace
 aironet
 airos
+Alcatel
 alcatel
+AOS
 ap
 APs
 arn
@@ -49,6 +54,7 @@ bitmask
 bladecenter
 bln
 bpdus
+BSSID
 bulkrepeaters
 bulkwalk
 cabletron
@@ -84,6 +90,7 @@ eigrp
 erszenyi
 ess
 etherlike
+ethernet
 enterasys
 extranet
 fastiron
@@ -122,6 +129,7 @@ loopback
 loopdetect
 lorensen
 lsb
+Lucent
 lucent
 luiggi
 lwapp
@@ -155,6 +163,7 @@ oem
 ofdm
 oid
 oids
+OmniSwitch
 os
 osi
 ospf
@@ -210,6 +219,8 @@ telesys
 tftp
 tftpfilename
 tftpserver
+TiMOS
+tmnxModel
 tuttle
 ucsc
 uninstall
