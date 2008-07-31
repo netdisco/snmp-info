@@ -583,6 +583,10 @@ interface.
 
 (C<apCurrentChannel>)
 
+=item $aruba->aruba_ap_fqln()
+
+Returns F<aruba_perap_fqln> indexed by BSSID instead of by AP.
+
 =back
 
 =head2 Aruba Switch AP Table  (C<wlsxSwitchAccessPointTable>)
