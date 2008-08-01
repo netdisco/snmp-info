@@ -2,21 +2,21 @@
 # $Id$
 #
 # Copyright (c) 2008 Bill Fenner
-# 
-# Redistribution and use in source and binary forms, with or without 
+#
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -37,7 +37,7 @@ use SNMP::Info::MAU;
 use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer3::AlcatelLucent::ISA = qw/SNMP::Info::LLDP SNMP::Info::MAU
-					SNMP::Info::Layer3 Exporter/;
+    SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::AlcatelLucent::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
@@ -45,13 +45,14 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 $VERSION = '1.09';
 
 %MIBS = (
-         %SNMP::Info::Layer3::MIBS,
-         %SNMP::Info::MAU::MIBS,
-         %SNMP::Info::LLDP::MIBS,
-         'ALCATEL-IND1-DEVICES'         => 'familyOmniSwitch7000',
-	 'ALCATEL-IND1-CHASSIS-MIB'     => 'chasEntPhysOperStatus',
-         'ALU-POWER-ETHERNET-MIB'       => 'pethPsePortDetectionStatus',
-        );
+    %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::MAU::MIBS,
+    %SNMP::Info::LLDP::MIBS,
+    'ALCATEL-IND1-DEVICES'     => 'familyOmniSwitch7000',
+    'ALCATEL-IND1-CHASSIS-MIB' => 'chasEntPhysOperStatus',
+    'ALU-POWER-ETHERNET-MIB'   => 'pethPsePortDetectionStatus',
+);
+
 # Alcatel provides their own version of the POWER-ETHERNET-MIB,
 # off in vendor-space, without renaming any of the objects.
 # This means we have to *not* load the POWER-ETHERNET-MIB
@@ -62,34 +63,33 @@ $VERSION = '1.09';
 delete $MIBS{'POWER-ETHERNET-MIB'};
 
 %GLOBALS = (
-            %SNMP::Info::Layer3::GLOBALS,
-            %SNMP::Info::MAU::GLOBALS,
-            %SNMP::Info::LLDP::GLOBALS,
-	   );
+    %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::MAU::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
+);
 
-%FUNCS   = (
-            %SNMP::Info::Layer3::FUNCS,
-            %SNMP::Info::MAU::FUNCS,
-            %SNMP::Info::LLDP::FUNCS,
-	   );
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS, %SNMP::Info::MAU::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
+);
 
-%MUNGE   = (
-            %SNMP::Info::Layer3::MUNGE,
-            %SNMP::Info::MAU::MUNGE,
-            %SNMP::Info::LLDP::MUNGE,
-	   );
+%MUNGE = (
+    %SNMP::Info::Layer3::MUNGE, %SNMP::Info::MAU::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
+);
 
 # use MAU-MIB for admin. duplex and admin. speed
-*SNMP::Info::Layer3::AlcatelLucent::i_duplex_admin = \&SNMP::Info::MAU::mau_i_duplex_admin;
-*SNMP::Info::Layer3::AlcatelLucent::i_speed_admin = \&SNMP::Info::MAU::mau_i_speed_admin;
+*SNMP::Info::Layer3::AlcatelLucent::i_duplex_admin
+    = \&SNMP::Info::MAU::mau_i_duplex_admin;
+*SNMP::Info::Layer3::AlcatelLucent::i_speed_admin
+    = \&SNMP::Info::MAU::mau_i_speed_admin;
 
 sub model {
-    my $alu = shift;
-    my $id = $alu->id();
+    my $alu   = shift;
+    my $id    = $alu->id();
     my $model = &SNMP::translateObj($id);
-    
+
     return $id unless defined $model;
-    
+
     $model =~ s/^device//;
 
     return $model;
@@ -107,8 +107,8 @@ sub os_ver {
     my $alu = shift;
 
     my $descr = $alu->description();
-    if ($descr =~ m/^(\S+)/) {
-	return $1;
+    if ( $descr =~ m/^(\S+)/ ) {
+        return $1;
     }
 
     # No clue what this will try but hey
@@ -123,68 +123,68 @@ sub os_ver {
 sub _power_supplies {
     my $alu = shift;
 
-    my $e_class = $alu->e_class();
+    my $e_class  = $alu->e_class();
     my @supplies = ();
 
-    foreach my $key (sort { int($a) cmp int($b) } keys %$e_class) {
-	if ( $e_class->{$key} eq 'powerSupply' ) {
-	    push( @supplies, int( $key ) );
-	}
+    foreach my $key ( sort { int($a) cmp int($b) } keys %$e_class ) {
+        if ( $e_class->{$key} eq 'powerSupply' ) {
+            push( @supplies, int($key) );
+        }
     }
     return @supplies;
 }
 
 sub _ps_type {
-    my $alu = shift;
+    my $alu   = shift;
     my $psnum = shift;
-    my @ps = $alu->_power_supplies();
+    my @ps    = $alu->_power_supplies();
 
-    if ($psnum > $#ps) {
+    if ( $psnum > $#ps ) {
         return "none";
     }
     my $supply = $ps[$psnum];
-    my $descr = $alu->e_descr( $supply );
+    my $descr  = $alu->e_descr($supply);
     return $descr->{$supply};
 }
 
 sub _ps_status {
-    my $alu = shift;
+    my $alu   = shift;
     my $psnum = shift;
-    my @ps = $alu->_power_supplies();
+    my @ps    = $alu->_power_supplies();
 
-    if ($psnum > $#ps) {
+    if ( $psnum > $#ps ) {
         return "not present";
     }
     my $supply = $ps[$psnum];
-    my $status = $alu->chasEntPhysOperStatus( $supply );
+    my $status = $alu->chasEntPhysOperStatus($supply);
     return $status->{$supply};
 }
 
 sub ps1_type {
     my $alu = shift;
-    return $alu->_ps_type( 0 );
+    return $alu->_ps_type(0);
 }
 
 sub ps2_type {
     my $alu = shift;
-    return $alu->_ps_type( 1 );
+    return $alu->_ps_type(1);
 }
 
 sub ps1_status {
     my $alu = shift;
-    return $alu->_ps_status( 0 );
+    return $alu->_ps_status(0);
 }
 
 sub ps2_status {
     my $alu = shift;
-    return $alu->_ps_status( 1 );
+    return $alu->_ps_status(1);
 }
 
 # The interface description contains the software version, so
 # to avoid losing historical information through a software upgrade
 # we use interface name instead.
 sub interfaces {
-    my $alu = shift;
+    my $alu     = shift;
     my $partial = shift;
 
     return $alu->orig_i_name($partial);
@@ -192,14 +192,14 @@ sub interfaces {
 
 # Use Q-BRIDGE-MIB
 sub fw_mac {
-    my $alu = shift;
+    my $alu     = shift;
     my $partial = shift;
 
     return $alu->qb_fw_mac($partial);
 }
 
 sub fw_port {
-    my $alu = shift;
+    my $alu     = shift;
     my $partial = shift;
 
     return $alu->qb_fw_port($partial);
@@ -207,10 +207,11 @@ sub fw_port {
 
 # Work around buggy bp_index in 6.3.1.871.R01 and 6.3.1.975.R01
 sub bp_index {
-    my $alu = shift;
+    my $alu     = shift;
     my $partial = shift;
 
     my $bp_index = $alu->SUPER::bp_index($partial);
+
     #
     # This device sometimes reports an ifIndex and sometimes reports
     # dot1dBasePort for the dot1d port values - e.g.,
@@ -222,24 +223,26 @@ sub bp_index {
     # the ifIndex and dot1dBasePort spaces don't overlap, at least for
     # the ports we care about.
     my @keys = keys %$bp_index;
-    foreach my $idx (@keys){
-	my $ifIndex = $bp_index->{$idx};
-	$bp_index->{$ifIndex} = $ifIndex;
+    foreach my $idx (@keys) {
+        my $ifIndex = $bp_index->{$idx};
+        $bp_index->{$ifIndex} = $ifIndex;
     }
+
     #
     # In addition, aggregates aren't reported at all in bp_index.
     # We grab them from i_index.
     my $i_index = $alu->i_index();
-    foreach my $idx (keys %$i_index) {
-	my $ifIndex = $i_index->{$idx};
-	if (int($ifIndex) > 40000001) {
-	    $bp_index->{$ifIndex} = $ifIndex;
-	    # dot1dTpFdbPort seems to use 4098, 4099, 4100 for
-	    # 40000001, 40000002, 40000003.  I guess this is
-	    # 4096 + 1 + aggregate number.
-            my $tmp = sprintf("%d", int($ifIndex) - 39995903);
-	    $bp_index->{$tmp} = $ifIndex;
-	}
+    foreach my $idx ( keys %$i_index ) {
+        my $ifIndex = $i_index->{$idx};
+        if ( int($ifIndex) > 40000001 ) {
+            $bp_index->{$ifIndex} = $ifIndex;
+
+            # dot1dTpFdbPort seems to use 4098, 4099, 4100 for
+            # 40000001, 40000002, 40000003.  I guess this is
+            # 4096 + 1 + aggregate number.
+            my $tmp = sprintf( "%d", int($ifIndex) - 39995903 );
+            $bp_index->{$tmp} = $ifIndex;
+        }
     }
     return $bp_index;
 }
@@ -295,35 +298,35 @@ sub hasCDP {
 }
 
 sub c_ip {
-    my $alu = shift;
+    my $alu     = shift;
     my $partial = shift;
 
     return $alu->lldp_ip($partial);
 }
 
 sub c_if {
-    my $alu = shift;
+    my $alu     = shift;
     my $partial = shift;
 
     return $alu->lldp_if($partial);
 }
 
 sub c_port {
-    my $alu = shift;
+    my $alu     = shift;
     my $partial = shift;
 
     return $alu->lldp_port($partial);
 }
 
 sub c_id {
-    my $alu = shift;
+    my $alu     = shift;
     my $partial = shift;
 
     return $alu->lldp_id($partial);
 }
 
 sub c_platform {
-    my $alu = shift;
+    my $alu     = shift;
     my $partial = shift;
 
     return $alu->lldp_rem_sysdesc($partial);
@@ -333,15 +336,15 @@ sub c_platform {
 # fixed-config single-module system, so this is only a plausible
 # guess as to the mapping on a stack or modular system.
 sub peth_port_ifindex {
-    my $alu = shift;
+    my $alu     = shift;
     my $partial = shift;
 
-    my $peth_port_status = $alu->peth_port_status($partial);
+    my $peth_port_status  = $alu->peth_port_status($partial);
     my $peth_port_ifindex = {};
 
-    foreach my $key (keys %$peth_port_status) {
-	my @oid = split( m/\./, $key );
-	$peth_port_ifindex->{$key} = int($oid[0]) * 1000 + int($oid[1]);
+    foreach my $key ( keys %$peth_port_status ) {
+        my @oid = split( m/\./, $key );
+        $peth_port_ifindex->{$key} = int( $oid[0] ) * 1000 + int( $oid[1] );
     }
     return $peth_port_ifindex;
 }
