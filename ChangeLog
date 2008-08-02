@@ -1,7 +1,14 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
-version 1.09  (07/22/08) - Beta/developer release
+version 2.00 (08/01/08)
+    + Support for Alcatel-Lucent OmniSwitch via L3::AlcatelLucent
+    + Support for Alcatel-Lucent Service Router via L3::Timetra
+    + Support for Alcatel-Lucent OmniAccess via L2::Aruba
+
+    * Silence warnings in MAU due to uninitialized variables 
+
+version 1.09 (07/22/08) - Beta/developer release
     + Added support for HP ProCurve Foundry OEM switches, such as the 9300
       series, in new class L3::HP9300 (contributions from Douglas McKeown and
       Ivan Auger)
@@ -13,9 +20,6 @@ version 1.09  (07/22/08) - Beta/developer release
     + Support for newer Nortel Alteon switches and Nortel BladeCenter Switch
       Modules in L3::AlteonAD
     + Support for Cisco 1250 series through L2::Aironet
-    + Support for Alcatel-Lucent OmniSwitch via L3::AlcatelLucent
-    + Support for Alcatel-Lucent Service Router via L3::Timetra
-    + Support for Alcatel-Lucent OmniAccess via L2::Aruba
     + Updates to fan, power supply, and serial number methods in
       L2::HP (Jeroen van Ingen)
     + Use Cisco Client Association MIBs for Aironet client reporting
