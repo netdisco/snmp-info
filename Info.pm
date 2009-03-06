@@ -1299,7 +1299,7 @@ sub device_type {
 
         #   Catalyst 2900 and 3500XL (IOS) series override
         $objtype = 'SNMP::Info::Layer2::C2900'
-            if ( $desc =~ /(C2900XL|C2950|C3500XL|C2940|CGESM)/i );
+            if ( $desc =~ /(C2900XL|C2950|C3500XL|C2940|CGESM|CIGESM)/i );
 
         #   Catalyst WS-C series override 2926,4k,5k,6k in Hybrid
         $objtype = 'SNMP::Info::Layer2::Catalyst' if ( $desc =~ /WS-C\d{4}/ );
