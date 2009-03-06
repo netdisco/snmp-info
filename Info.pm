@@ -1203,6 +1203,7 @@ sub device_type {
         6486 => 'SNMP::Info::Layer3::AlcatelLucent',
         6527 => 'SNMP::Info::Layer3::Timetra',
         8072 => 'SNMP::Info::Layer3::NetSNMP',
+        30065 => 'SNMP::Info::Layer3::Arista',
     );
 
     my %l2sysoidmap = (
@@ -2678,10 +2679,9 @@ sub munge_counter64 {
 
 =item munge_i_up
 
-There is a collision between data in C<IF-MIB> and C<RFC-1213>. 
-For devices that fully implement C<IF-MIB> it might return 7 for 
-a port that is down.  This munges the data against the C<IF-MIB> 
-by hand.
+Net-SNMP tends to load C<RFC1213-MIB> first, and so ignores the
+updated enumeration for ifOperStatus in C<IF-MIB>.  This munge
+handles the "newer" definitions for the enumeraiton in IF-MIB.
 
 TODO: Get the precedence of MIBs and overriding of MIB data in Net-SNMP
 figured out.  Heirarchy/precendence of MIBS in SNMP::Info.
@@ -2692,9 +2692,11 @@ sub munge_i_up {
     my $i_up = shift;
     return unless defined $i_up;
 
-    $i_up = 'down' if $i_up eq '7';
-
-    return $i_up;
+    my %ifOperStatusMap = ( '4' => 'unknown',
+                            '5' => 'dormant',
+                            '6' => 'notPresent',
+                            '7' => 'lowerLayerDown' );
+    return $ifOperStatusMap{$i_up} || $i_up;
 }
 
 =item munge_port_list
