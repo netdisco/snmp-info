@@ -154,7 +154,7 @@ sub interfaces {
     my $partial = shift;
 
     my $i_descr = $dell->i_description($partial) || {};
-    my $i_name  = $dell->i_name($partial)        || {};
+    my $i_name  = $dell->orig_i_name($partial)   || {};
 
     # Descriptions are all the same on some Dells, so use name instead if
     # available
