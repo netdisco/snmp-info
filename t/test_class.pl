@@ -9,11 +9,14 @@
 # $Id$
 #
 
-use lib '/usr/local/netdisco';
+use FindBin;
+use lib "$FindBin::Bin/../..";
+#use lib '/usr/local/netdisco';
+
 use SNMP::Info;
 use Getopt::Long;
 use strict;
-use vars qw/$Class $Dev $Comm $Ver @Dump %Dumped $Debug %args $NoBulk/;
+use vars qw/$Class $Dev $Comm $Ver @Dump %Dumped $Debug %args $NoBulk $MibDirs/;
 
 # Default Values
 $Class = '';
@@ -32,9 +35,18 @@ GetOptions ('c|class=s'  => \$Class,
             'p|print=s'  => \@Dump,
             'x|debug+'   => \$Debug,
             'n|nobulk'   => \$NoBulk,
+            'm|mibdir=s@' => \$MibDirs,
            );
 
 &usage unless ($Dev and $Comm);
+
+# Default MIB directories
+my $n = '/usr/local/netdisco';
+unless (defined $MibDirs) {
+    $MibDirs = ["$n/mibs/allied", "$n/mibs/asante", "$n/mibs/cisco", "$n/mibs/foundry",
+                "$n/mibs/hp", "$n/mibs/nortel", "$n/mibs/extreme", "$n/mibs/rfc",
+                "$n/mibs/net-snmp"];
+}
 
 $Class = $Class ? "SNMP::Info::$Class" : 'SNMP::Info';
 eval "require $Class;";
@@ -42,8 +54,12 @@ if ($@) {
     die "Can't load Class specified : $Class.\n\n$@\n";
 }
 
-print "Class $Class loaded.\n";
-
+my $class_ver = 'undef';
+{ no strict 'refs';
+    $class_ver = ${"${Class}::VERSION"};
+}
+print "Class $Class ($class_ver) loaded from SNMP::Info $SNMP::Info::VERSION.\n";
+#print "MIB Dirs : ",join(', ',@$MibDirs),"\n";
 print "Dumping : ",join(',',@Dump),"\n"  if scalar @Dump;
 
 %args = ();
@@ -57,11 +73,13 @@ my $dev = new $Class( 'AutoSpecify' => 0,
                       'Debug'       => $Debug,
                       'DestHost'    => $Dev,
                       'Community'   => $Comm,
+                      'MibDirs'     => $MibDirs,
 			%args
                     ) or die "\n"; 
 
 print "Connected to $Dev.\n";
-print "It's a ", $dev->device_type(), ".\n";
+print "Detected Class: ", $dev->device_type(), "\n";
+print "Using    Class: $Class (-c to change)\n";
     
 my $layers = $dev->layers();
 
@@ -182,6 +200,7 @@ test_class - Test a device against an SNMP::Info class
     -p  --print  i_blah2
     -x  --debug  debugging flag
     -n  --nobulk disable bulkwalk
+    -m  --mibdirs directory (repeat as needed)
 
 end_usage
     exit;
