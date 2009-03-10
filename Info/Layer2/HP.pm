@@ -112,12 +112,12 @@ $VERSION = '2.00';
 );
 
 %MUNGE = (
-
     # Inherit all the built in munging
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::MAU::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
-    %SNMP::Info::CDP::MUNGE
+    %SNMP::Info::CDP::MUNGE,
+    'c_id'   => \&munge_hp_c_id,
 );
 
 %MODEL_MAP = (
@@ -553,7 +553,6 @@ sub c_port {
     foreach my $iid ( keys %$lldp ) {
         my $port = $lldp->{$iid};
         next unless defined $port;
-
         $c_port{$iid} = $port;
     }
     return \%c_port;
@@ -570,17 +569,30 @@ sub c_id {
     foreach my $iid ( keys %$cdp ) {
         my $id = $cdp->{$iid};
         next unless defined $id;
-
+	
         $c_id{$iid} = $id;
     }
-
+    
     foreach my $iid ( keys %$lldp ) {
-        my $id = $lldp->{$iid};
-        next unless defined $id;
-
-        $c_id{$iid} = $id;
+	my $id = $lldp->{$iid};
+	next unless defined $id;
+	
+	$c_id{$iid} = $id;
     }
     return \%c_id;
+}
+
+sub munge_hp_c_id {
+    my ($v) = @_;
+    if ( length(unpack('H*', $v)) == 12 ){
+	return join(':',map { sprintf "%02x", $_ } unpack('C*', $v));
+    }if ( length(unpack('H*', $v)) == 10 ){
+	# IP address (first octet is sign, I guess)
+	my @octets = (map { sprintf "%02x",$_ } unpack('C*', $v))[1..4];
+	return join '.', map { hex($_) } @octets;
+    }else{
+	return $v;
+    }
 }
 
 sub c_platform {
