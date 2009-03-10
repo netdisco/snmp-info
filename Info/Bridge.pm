@@ -55,9 +55,11 @@ $VERSION = '2.00';
     'b_type'  => 'dot1dBaseType',
 
     # Spanning Tree Protocol
-    'stp_ver'  => 'dot1dStpProtocolSpecification',
-    'stp_time' => 'dot1dStpTimeSinceTopologyChange',
-    'stp_root' => 'dot1dStpDesignatedRoot',
+    'stp_ver'       => 'dot1dStpProtocolSpecification',
+    'stp_time'      => 'dot1dStpTimeSinceTopologyChange',
+    'stp_root'      => 'dot1dStpDesignatedRoot',
+    'stp_root_port' => 'dot1dStpRootPort',
+    'stp_priority'  => 'dot1dStpPriority',
 
     # Q-BRIDGE-MIB
     'qb_vlans_max'       => 'dot1qMaxSupportedVlans',
