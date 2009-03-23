@@ -77,7 +77,7 @@ $VERSION = '2.00';
     = \&SNMP::Info::MAU::mau_i_speed_admin;
 
 sub vendor {
-    return 'Arista Networks, Inc.';
+    return 'arista';
 }
 
 sub os {
