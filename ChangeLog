@@ -2,6 +2,8 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
 version 2.01 ()
+    + [2020353] Added L3::Altiga for Cisco (Altiga) VPN3000 Concentrators
+                (Jeroen van Ingen)
     * Updated test_class.pl for better debug info and relative path
     * Add cisco vendor detection by OID in Layer3.pm (Sam Stickland)
     * Fix CaSe of EtherLike-MIB in EtherLike.pm (Alexander Hartmaier)

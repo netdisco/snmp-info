@@ -40,6 +40,7 @@ if ($@) {
     $gvds->graph()->as_png($DevPNG);
 }
 
+print "Creating $DevHTML\n";
 open (HTML, "> $DevHTML") or die "Can't open $DevHTML. $!\n";
 $old_fh = select(HTML);
 &html_head;
