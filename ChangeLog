@@ -3,6 +3,8 @@ ChangeLog $Id$
 
 version 2.01 ()
     * Updated test_class.pl for better debug info and relative path
+    * Add cisco vendor detection by OID in Layer3.pm (Sam Stickland)
+    * Fix CaSe of EtherLike-MIB in EtherLike.pm (Alexander Hartmaier)
 
 version 2.00 (08/01/08)
     + Support for Alcatel-Lucent OmniSwitch via L3::AlcatelLucent
