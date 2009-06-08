@@ -1422,6 +1422,11 @@ sub device_type {
         # Cisco ASA
         $objtype = 'SNMP::Info::Layer3::Cisco'
             if ( $desc =~ /Cisco Adaptive Security Appliance/i );
+
+        # Cisco FWSM
+        $objtype = 'SNMP::Info::Layer3::Cisco'
+            if ( $desc =~ /Cisco Firewall Services Module/i );
+
     }
 
     return $objtype;
