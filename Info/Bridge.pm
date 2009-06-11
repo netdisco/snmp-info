@@ -105,6 +105,7 @@ $VERSION = '2.00';
 
     # Q-BRIDGE-MIB : dot1qVlanStaticTable
     'v_name'           => 'dot1qVlanStaticName',
+    'qb_v_name'        => 'dot1qVlanStaticName',
     'qb_v_egress'      => 'dot1qVlanStaticEgressPorts',
     'qb_v_fbdn_egress' => 'dot1qVlanForbiddenEgressPorts',
     'qb_v_untagged'    => 'dot1qVlanStaticUntaggedPorts',
