@@ -48,6 +48,8 @@ Info/Layer3.pm
 Info/Layer3/Aironet.pm
 Info/Layer3/AlcatelLucent.pm
 Info/Layer3/AlteonAD.pm
+Info/Layer3/Altiga.pm
+Info/Layer3/Arista.pm
 Info/Layer3/BayRS.pm
 Info/Layer3/C3550.pm
 Info/Layer3/C4000.pm
@@ -82,4 +84,6 @@ t/make_dev_matrix.pl
 t/pod-coverage.t
 t/pod.t
 t/prereq.t
+t/push_ver
+t/run_test
 t/test_class.pl
