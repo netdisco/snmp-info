@@ -376,6 +376,10 @@ Returns mem_free() + mem_used()
 
 Tries to parse if device is running IOS or CatOS from description()
 
+=item $ciscostats->vendor()
+
+ 'cisco'
+
 Available values :
 
 =over

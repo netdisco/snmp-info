@@ -1,7 +1,7 @@
 # SNMP::Info::Layer2::HP - SNMP Interface to HP ProCurve Switches
 # $Id$
 #
-# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2008-2009 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # All rights reserved.
@@ -1003,5 +1003,15 @@ See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
+
+=head1 MUNGES
+
+=over
+
+=item munge_hp_c_id()
+
+Munge for c_id which handles CDP and LLDP.
+
+=back
 
 =cut
