@@ -1,13 +1,27 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
-version 2.01 ()
-    + Added Cisco FWSM to L3::Cisco
+version 2.01 (06/12/09)
+    + Added CiscoStpExtensions Class (Carlos Vicente)
+    + Added Layer3::Arista (fenner)
     + [2020353] Added L3::Altiga for Cisco (Altiga) VPN3000 Concentrators
                 (Jeroen van Ingen)
+
+    * Fixed RFC1213-MIB vs IF-MIB collision in ifOperStatus
     * Updated test_class.pl for better debug info and relative path
     * Add cisco vendor detection by OID in Layer3.pm (Sam Stickland)
     * Fix CaSe of EtherLike-MIB in EtherLike.pm (Alexander Hartmaier)
+    * Added Cisco FWSM to L3::Cisco
+    * Added s222_rp to L3::C6500
+    * Added CIGESM to L2::C2900
+    * Added Airespace WLC to L2::Airespace
+    * Updated POD and DeviceMatrix quite a bit
+    * Added ENTITY-MIB to CiscoStats for better model handling above
+    * Fix networkaddress handling in LLDP-MIB
+    * Added CiscoConfig to L2::Aironet, L3::C3550  classes
+    * Better SSID capabilities for L2::Aironet
+    * Fix CDP vs LLDP in c_id() for HP Class
+    * test_class.pl improvements
 
 version 2.00 (08/01/08)
     + Support for Alcatel-Lucent OmniSwitch via L3::AlcatelLucent
