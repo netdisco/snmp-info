@@ -5,15 +5,23 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 2.00
+    SNMP::Info - Version 2.01
 
 AUTHOR
 
-    SNMP::Info was created at UCSC for the netdisco project
-    (www.netdisco.org) and was originally written by Max Baker.
-
-    Currently being maintained by team of Open Source authors headed by Eric
+    SNMP::Info is maintained by team of Open Source authors headed by Eric
     Miller and Bill Fenner.
+
+    Please visit <http://sourceforge.net/projects/snmp-info/> for most
+    up-to-date list of developers.
+
+    SNMP::Info was originally created at UCSC for the Netdisco project
+    <http://netdisco.org> by Max Baker.
+
+DEVICES SUPPORTED
+
+    See <http://netdisco.org/doc/DeviceMatrix.html> or DeviceMatrix.txt for
+    more details.
 
 SYNOPSIS
 
@@ -82,9 +90,6 @@ DESCRIPTION
     SNMP::Info gives an object oriented interface to information obtained
     through SNMP.
 
-    This module lives at http://snmp-info.sourceforge.net Check for newest
-    version and documentation.
-
     This module is geared towards network devices. Subclasses exist for a
     number of network devices and common MIBs.
 
@@ -125,13 +130,10 @@ REQUIREMENTS
 
         Net-SNMP can be found at http://net-snmp.sourceforge.net
 
-        Version 5.1.2 or greater is recommended.
+        Version 5.3.2 or greater is recommended.
 
-        Various version 4's and 5.0 and 5.1 series will work. 5.0.1 is kinda
-        flaky on the Perl side.
-
-        Versions 5.0301 and 5.0203 have issues with bulkwalk, turn off
-        bulkwalk.
+        Versions 5.0.1, 5.0301 and 5.0203 have issues with bulkwalk and are
+        not supported.
 
         Redhat Users: Some versions that come with certain versions of
         Redhat/Fedora don't have the Perl library installed. Uninstall the
@@ -142,8 +144,8 @@ REQUIREMENTS
 
         If you are using SNMP::Info separate from Netdisco, download the
         Netdisco MIB package at
-
-         http://sourceforge.net/project/showfiles.php?group_id=80033&package_id=135517
+        <http://sourceforge.net/project/showfiles.php?group_id=80033&package
+        _id=135517>
 
         Make sure that your snmp.conf is updated to point to your MIB
         directory and that the MIBs are world-readable.
@@ -225,6 +227,11 @@ SUBCLASSES
 
         See documentation in SNMP::Info::CiscoPortSecurity for details.
 
+    SNMP::Info::CiscoPower
+        CISCO-POWER-ETHERNET-EXT-MIB.
+
+        See documentation in SNMP::Info::CiscoPower for details.
+
     SNMP::Info::CiscoQOS
         CISCO-CLASS-BASED-QOS-MIB. A collection of OIDs providing
         information about a Cisco device's QOS config.
@@ -241,6 +248,11 @@ SUBCLASSES
         CISCO-STACK-MIB.
 
         See documentation in SNMP::Info::CiscoStack for details.
+
+    SNMP::Info::CiscoStpExtensions
+        CISCO-STP-EXTENSIONS-MIB
+
+        See documentation in SNMP::Info::CiscoStpExtensions for details.
 
     SNMP::Info::CiscoStats
         OLD-CISCO-CPU-MIB, CISCO-PROCESS-MIB, and CISCO-MEMORY-POOL-MIB.
@@ -261,7 +273,7 @@ SUBCLASSES
         See documentation in SNMP::Info::Entity for details.
 
     SNMP::Info::EtherLike
-        ETHERLIKE-MIB (RFC1398) - Some Layer3 devices implement this MIB, as
+        EtherLike-MIB (RFC1398) - Some Layer3 devices implement this MIB, as
         well as some Aironet Layer 2 devices (non Cisco).
 
         See documentation in SNMP::Info::EtherLike for details.
@@ -293,6 +305,11 @@ SUBCLASSES
         S5-AGENT-MIB, S5-CHASSIS-MIB.
 
         See documentation in SNMP::Info::NortelStack for details.
+
+    SNMP::Info::PowerEthernet
+        POWER-ETHERNET-MIB
+
+        See documentation in SNMP::Info::PowerEthernet for details.
 
     SNMP::Info::RapidCity
         RAPID-CITY. Inherited by Nortel switches for duplex and VLAN
@@ -439,6 +456,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::NAP222x for details.
 
+        SNMP::Info::Layer2::Netgear
+            Subclass for Netgear switches
+
+            See documentation in SNMP::Info::Layer2::Netgear for details.
+
         SNMP::Info::Layer2::Orinoco
             Subclass for Orinoco/Proxim wireless access points.
 
@@ -466,11 +488,23 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Aironet for details.
 
+        SNMP::Info::Layer3::AlcatelLucent
+            Alcatel-Lucent OmniSwitch Class.
+
+            See documentation in SNMP::Info::Layer3::AlcatelLucent for
+            details.
+
         SNMP::Info::Layer3::AlteonAD
             Subclass for Nortel Alteon Series Layer 2-7 load balancing
             switches and Nortel BladeCenter Layer2-3 GbE Switch Modules.
 
             See documentation in SNMP::Info::Layer3::AlteonAD for details.
+
+        SNMP::Info::Layer3::Altiga
+            See documentation in SNMP::Info::Layer3::Altiga for details.
+
+        SNMP::Info::Layer3::Arista
+            See documentation in SNMP::Info::Layer3::Arista for details.
 
         SNMP::Info::Layer3::BayRS
             Subclass for Nortel Multiprotocol/BayRS routers. This includes
@@ -571,6 +605,11 @@ SUBCLASSES
             Subclass for Generic Sun Routers running SunOS.
 
             See documentation in SNMP::Info::Layer3::Sun for details.
+
+        SNMP::Info::Layer3::Timetra
+            Alcatel-Lucent SR Class.
+
+            See documentation in SNMP::Info::Layer3::Timetra for details.
 
 Thanks
 
@@ -754,71 +793,9 @@ USAGE
         If the device still can be connected to via SNMP::Info, then
         SNMP::Info is returned.
 
-        Algorithm for Subclass Detection:
-
-                Layer3 Support                     -> SNMP::Info::Layer3
-                    Aironet (BR500,AP340,350,1200) -> SNMP::Info::Layer3::Aironet
-                             AP4800... All Non IOS
-                    Alcatel-Lucent OmniSwitch      -> SNMP::Info::Layer3::AlcatelLucent
-                    Alcatel-Lucent Service Router  -> SNMP::Info::Layer3::Timetra
-                    Catalyst 3550,3548,3560        -> SNMP::Info::Layer3::C3550
-                    Catalyst 4000,4500             -> SNMP::Info::Layer3::C4000
-                    Catalyst 6500,3750             -> SNMP::Info::Layer3::C6500
-                    Cisco Generic L3 IOS device    -> SNMP::Info::Layer3::Cisco
-                    Cyclades terminal server       -> SNMP::Info::Layer1::Cyclades
-                    Dell PowerConnect              -> SNMP::Info::Layer3::Dell
-                    D-Link                         -> SNMP::Info::Layer3::Dell
-                    Enterasys                      -> SNMP::Info::Layer3::Enterasys
-                    Extreme                        -> SNMP::Info::Layer3::Extreme
-                    Foundry                        -> SNMP::Info::Layer3::Foundry
-                    HP Procurve                    -> SNMP::Info::Layer2::HP
-                    HP Procurve 9300 series        -> SNMP::Info::Layer3::HP9300
-                    Juniper                        -> SNMP::Info::Layer3::Juniper
-                    Microsoft                      -> SNMP::Info::Layer3::Microsoft
-                    Net-SNMP                       -> SNMP::Info::Layer3::NetSNMP
-                    Nortel Passport/Accelar LAN    -> SNMP::Info::Layer3::Passport
-                    Nortel/Bay Baystack            -> SNMP::Info::Layer2::Baystack
-                    Alteon Ace Director            -> SNMP::Info::Layer3::AlteonAD
-                    Nortel Contivity               -> SNMP::Info::Layer3::Contivity
-                    Nortel BayRS Router            -> SNMP::Info::Layer3::BayRS
-                    Sun Router                     -> SNMP::Info::Layer3::Sun
-                 Elsif Layer2 (no Layer3)          -> SNMP::Info::Layer2
-                    Aironet - IOS Devices          -> SNMP::Info::Layer2::Aironet
-                    Catalyst 1900                  -> SNMP::Info::Layer2::C1900
-                    Catalyst 2900XL,2940,2950,
-                             3500XL                -> SNMP::Info::Layer2::C2900
-                    Catalyst 2960, 2970            -> SNMP::Info::Layer3::C6500
-                    Catalyst 3550/3548             -> SNMP::Info::Layer3::C3550
-                    Cisco 3400 w/ MetroBase        -> SNMP::Info::Layer3::C3550
-                    Catalyst WS-C 2926,5xxx        -> SNMP::Info::Layer2::Catalyst
-                    Cisco (Airespace) Wireless     -> SNMP::Info::Layer2::Airespace
-                    Cisco (not covered by above)   -> SNMP::Info::Layer2::Cisco
-                    Cyclades terminal server       -> SNMP::Info::Layer1::Cyclades
-                    Dell PowerConnect              -> SNMP::Info::Layer3::Dell
-                    D-Link                         -> SNMP::Info::Layer3::Dell
-                    Enterasys                      -> SNMP::Info::Layer3::Enterasys
-                    Extreme                        -> SNMP::Info::Layer3::Extreme
-                    Foundry                        -> SNMP::Info::Layer3::Foundry
-                    HP Procurve                    -> SNMP::Info::Layer2::HP
-                    HP Procurve 9300 series        -> SNMP::Info::Layer3::HP9300
-                    IBM BladeCenter GbESM          -> SNMP::Info::Layer3::Dell
-                    Nortel/Bay Centillion ATM      -> SNMP::Info::Layer2::Centillion
-                    Nortel/Bay Baystack            -> SNMP::Info::Layer2::Baystack
-                    Nortel Business Ethernet Switch-> SNMP::Info::Layer2::Baystack
-                    Nortel Passport/Accelar 8100   -> SNMP::Info::Layer3::Passport
-                    Nortel AP 222x                 -> SNMP::Info::Layer2::NAP222x
-                    Orinco AP                      -> SNMP::Info::Layer2::Orinoco
-                    Nortel 2270 WSS                -> SNMP::Info::Layer2::N2270
-                Elsif Layer1 Support               -> SNMP::Info::Layer1
-                    Allied                         -> SNMP::Info::Layer1::Allied
-                    Asante                         -> SNMP::Info::Layer1::Asante
-                    Nortel/Bay Hub                 -> SNMP::Info::Layer1::Bayhub
-                    Bay/Synoptics Hub              -> SNMP::Info::Layer1::S3000
-                Else                               -> SNMP::Info
-                    ZyXEL_DSLAM                    -> SNMP::Info::Layer2::ZyXEL_DSLAM
-                    Aruba wireless                 -> SNMP::Info::Layer2::Aruba
-                    Alcatel OmniAccess             -> SNMP::Info::Layer2::Aruba
-                    Juniper NetScreen              -> SNMP::Info::Layer3::Netscreen
+        See <http://netdisco.org/doc/DeviceMatrix.html> or DeviceMatrix.txt
+        for more details about device support, or view "device_type()" in
+        Info.pm.
 
     $info->error(no_clear)
         Returns Error message if there is an error, or undef if there is
@@ -1565,9 +1542,9 @@ SNMP::INFO INTERNALS
         See Math::BigInt for details.
 
     munge_i_up
-        There is a collision between data in "IF-MIB" and "RFC-1213". For
-        devices that fully implement "IF-MIB" it might return 7 for a port
-        that is down. This munges the data against the "IF-MIB" by hand.
+        Net-SNMP tends to load "RFC1213-MIB" first, and so ignores the
+        updated enumeration for "ifOperStatus" in "IF-MIB". This munge
+        handles the "newer" definitions for the enumeration in IF-MIB.
 
         TODO: Get the precedence of MIBs and overriding of MIB data in
         Net-SNMP figured out. Heirarchy/precendence of MIBS in SNMP::Info.
@@ -1657,8 +1634,8 @@ SNMP::INFO INTERNALS
             <obj> - One of the following forms:
                 1) leaf identifier (e.g., C<'sysContact'>)
                 2) An entry in either %FUNCS, %GLOBALS (e.g., 'contact')
-            <iid> - The dotted-decimal, instance identifier. For scalar MIB
-                    objects use '0'
+            <iid> - The dotted-decimal, instance identifier. For scalar MIB objects
+                     use '0'
             <val>  - The SNMP data value being set (e.g., 'netdisco')
             <type> - Optional as the MIB should be loaded.
 
@@ -1749,8 +1726,8 @@ SNMP::INFO INTERNALS
 
 COPYRIGHT AND LICENSE
 
-    Changes from SNMP::Info Version 0.7 and on are: Copyright (c) 2003-2008
-    Max Baker - All rights reserved.
+    Changes from SNMP::Info Version 0.7 and on are: Copyright (c) 2003-2009
+    Max Baker and SNMP::Info Developers All rights reserved.
 
     Original Code is: Copyright (c) 2002-2003, Regents of the University of
     California All rights reserved.
