@@ -6,7 +6,9 @@
 
 # $Id$
 
+#
 # Airespace (pre-Cisco)
+#
 device-vendor: Airespace
 cdp:no
 arpnip: no
@@ -16,14 +18,33 @@ duplex: both
 vlan: yes
 modules: yes
 class: Layer2::Airespace
+
+device-family: Airespace Wireless Controllers
 note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
 note: Device will only communicate with SNMP version configured in the controller.
 
-device-family: Airespace Wireless Controllers
-
 device: 3500, 4101, 4102
 
+#
+# Alcatel-Lucent
+#
+device-vendor: Alcatel-Lucent
+
+device-family: L3
+class: Layer3::AlcatelLucent
+device: All
+
+device-family: Timetra
+class: Layer3::Timetra
+device: All
+
+device-family: AOS
+class: Layer2::Aruba
+device: All
+
+#
 # Allied
+#
 device-vendor: Allied Telesyn
 cdp:no
 class: Layer1::Allied
@@ -40,21 +61,41 @@ device-family: AT-8000 Switches
 class: Layer2::Allied
 ver: 2
 macsuck: yes
+device: All
 
+#
+# Altiga
+#
+device-vendor: Altiga
+class: Layer3::Altiga
+note: See Cisco/Altiga
+
+#
+# Arista
+#
+device-vendor: Arista
+class: Layer3::Arista
+device-family: All
+device: All
+
+#
 # Aruba
+#
 device-vendor: Aruba
 arpnip: no
 macsuck: yes
 portmac: yes
 duplex: no
 class: Layer2::Aruba
-note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
 
 device-family: Aruba Wireless Controllers
+note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
 
 device: 5000
 
+#
 # Asante
+#
 device-vendor: Asante
 class: Layer1::Asante
 ver: 1
@@ -66,16 +107,19 @@ device-family: Asante Hubs
 
 device: 1012
 
+#
 # Bay
+#
 device-vendor: Bay
 note: See Nortel
 
+#
 # CISCO
+#
 device-vendor: Cisco
 cdp: yes
 ver: 2
 modules: yes
-note: Error in CISCO-TC-MIB. See README for how to patch.
 
 device-family: Aironet
 note: IOS and Aironet OS versions
@@ -95,12 +139,7 @@ device-family: Altiga
 class: Layer3::Altiga
 
 device: VPN3000
-note: The Cisco 3000 device can return duplicate interface names, while
-note: Netdisco expects unique interface names.  To ensure unique device names, I took a different approach than
-note: the Microsoft class; while the Microsoft class prepends the iid to each
-note: interface, I chose to append numbers only when an interface name would
-note: not be unique without one. Interfaces with unique names keer their
-note: ifDescr name.
+note: The Cisco 3000 device can return duplicate interface names, while Netdisco expects unique interface names.  To ensure unique device names I append numbers only when an interface name would not be unique without one. Interfaces with unique names keep their ifDescr name.
 
 device-family: 1000
 duplex: no
@@ -132,11 +171,7 @@ arpnip: yes
 macsuck: yes
 class: Layer3::Cisco
 
-device:2610,2610XM,2611,2620,2620XM,2621,2621XM
-
-device:2651XM
-
-device:2691
+device:2610, 2610XM, 2611, 2620, 2620XM, 2621, 2621XM, 2651XM, 2691
 
 device-family: 2800
 duplex: link
@@ -156,14 +191,15 @@ duplex: no
 
 device-family:7200
 class: Layer3::Cisco
-note: !"When scanning my network with netdisco I would find that my 7200 series router running Cisco IOS Software Release 12.2(1) would reboot when scanning for CDP neighbours, to solve the issue I upgraded to Cisco IOS Software Release  Version 12.2(37)"
+device:all
+#note: Unconfirmed problem : "When scanning my network with netdisco I would find that my 7200 series router running Cisco IOS Software Release 12.2(1) would reboot when scanning for CDP neighbours, to solve the issue I upgraded to Cisco IOS Software Release  Version 12.2(37)"
 
 device-family: 7500
 class: Layer3::Cisco
 
 device: 7507
 duplex: no
-note: !Duplex settings are falsely reported in older IOS versions
+note: !Duplex settings are falsely reported in ancient IOS versions
 
 device-family: AS5000
 duplex: no
@@ -182,11 +218,7 @@ duplex: both
 vlan: write
 class: Layer2::C1900
 
-device: wsc1900c
-device-family: Catalyst 1900
-
-device: wsc1900
-device-family: Catalyst 1900
+device: wsc1900c,  wsc1900
 
 device-family: Catalyst 2900
 note: IOS
@@ -197,17 +229,13 @@ class: Layer2::C2900
 portmac: yes
 note: !Pre IOS 11.2 (8) SA3 - PortMAC shows up in CAM table.
 
+device: 2912MfXL, 2924CXL, 2924CXLv
+
 device: 2908xl
 note: !Pre IOS 11.2 (8.6) some features (duplex...) aren't present.
 
-device: 2912MfXL
-
 device: 2924MXL
 ver: 1
-
-device: 2924CXL
-
-device: 2924CXLv
 
 device-family: Catalyst 2940
 note: IOS
@@ -247,11 +275,7 @@ note: L2 only IOS devices - Just like Catalyst 2900 series from SNMP
 note: IOS Version 12.0(5)XP is buggy and doesn't do VLAN Community indexing correctly.
 class: Layer2::C2900
 
-device: 3508GXL
-
-device: 3524XL
-
-device: 3548XL
+device: 3508GXL, 3524XL, 3548XL
 
 device-family: Catalyst 3550
 macsuck: vlan
@@ -267,11 +291,9 @@ device: 3550-12T
 
 device: 3400 w/ MetroBase Image
 
-device: 3550
+device: 3550, 3560, 3550-24, 3550-48
 note: L2/L3 Switch
 arpnip: yes
-
-device: 3550-24, 3550-48
 macsuck: vlan
 
 device-family: Catalyst 3750
@@ -285,13 +307,10 @@ macsuck: vlan
 vlan: write
 class: Layer2::Catalyst
 note: Comes in IOS and CatOS versions like the 6k series.
-note: CatOS versions like L2::Catalyst just fine.
-note: !Reported problems with SNMP taking up all the CPU.  Requests take significantly longer.
+note: !Reported problems with SNMP taking up all the CPU on older SW.  Requests take significantly longer.
 note: !IOS Version 12.1.8a reported not to respond to BRIDGE-MIB calls.
 
-device: wsc4003, wsc4006
-
-device: wsc4503, wsc4506
+device: wsc4003, wsc4006, wsc4503, wsc4506
 
 device: wsc4912g
 note: Dedicated 12 port gig-e switch
@@ -308,25 +327,18 @@ class: Layer3::C4000
 note: !Has serious slowdown/timeout problems with SNMP
 note: !IOS Software Release 12.2(20)EW or higher required for duplex support
 
-
 device-family: Catalyst 5000
 duplex: write
 vlan: write
 class: Layer2::Catalyst
-note: Port info in CISCO-STACK-MIB
 
 device: wsc2926
 note: !Can give false information over SNMP at times.
 
-device: wsc2948g
-
-device: wsc2980g
-note: !Macsuck not working?
+device: wsc2948g, wsc2980g, wsc5500, wsc5505, wsc5509
 
 device: wsc5000
 note: !Has nasty tendency to not give you all SNMP data ,flaky for some older Catalyst versions.
-
-device: wsc5500,wsc5505,wsc5509
 
 device: wsx5302
 arpnip: yes
@@ -344,16 +356,8 @@ note: Native Mode (IOS) versions seem to have SNMP problems with L2 data.
 note: !Problem with IOS 12.2.17d-SXB ... upgrade to -SXB1 or higher.
 note: !Sup720-3B and NativeIOS 12.2 (17d)SXB10 may report 127.0.0.51 as CDP neighbor address.
 
-device: 6503
-macsuck:no
-note: !Macsuck failing even under vlan mode
+device: 6503, 6509, sp72033, s3223, s32p3, s222
 note: Native mode (IOS) reports L2+L3
-
-device: 6509
-duplex: link
-macsuck:no
-note: Native mode (IOS) reports L2+L3
-note: !Macsuck failing even under vlan mode
 
 device: wsc6509
 duplex: write
@@ -390,7 +394,23 @@ note: Device will only communicate with SNMP version configured in the controlle
 
 device: 2006, 4112, 4124, 4136, 4402, 4404
 
+device-family: Firewall
+class: Layer3::Cisco
+device: PIX Security Appliance
+device: Adaptive Security Applicance
+device: Firewall Services Moduels (FWSM)
+
+#
+# Cyclades
+#
+device-vendor: Cyclades
+class: Layer1::Cyclades
+device-family: All
+device: All
+
+#
 # Dell
+#
 device-vendor: Dell
 arpnip: no
 macsuck: yes
@@ -410,7 +430,15 @@ device: 5324
 device-family: Dell PowerConnect 3000 Series
 device: 3348, 3448P, 3424, 3424P
 
+device-family: IBM BladeCenter Ethernet Switch
+device: All
+
+device-family: Linksys 2048
+device: All
+
+#
 # Enterasys
+#
 device-vendor: Enterasys Networks
 arpnip: yes
 macsuck: yes
@@ -422,14 +450,15 @@ class: Layer3::Enterasys
 
 device-family: SuperStack C-Series
 
-device: C3G124-24, C3G124-48
-device: C2G124-24, C2G124-48
+device: C3G124-24, C3G124-48, C2G124-24, C2G124-48
 
 device-family: Matrix
 
 device: Matrix N-Series DFE
 
+#
 # Extreme
+#
 device-vendor: Extreme Networks
 arpnip: yes
 macsuck: yes
@@ -444,9 +473,10 @@ device-family: Alpine and Summit
 device: Alpine 3808
 device: Summit 7i, 48si
 
+#
 # Foundry
+#
 device-vendor: Foundry Networks
-note: CDP --> FDP.
 vlan: yes
 modules: no
 
@@ -478,9 +508,12 @@ device: FWSX424
 device: ServerIronGT
 device: FLS624, FLS648
 
+#
 # HP
+#
 device-vendor: HP
 class:  Layer2::HP
+note: HP Devices are very widely supported.
 ver: 2
 modules: yes
 
@@ -490,40 +523,75 @@ macsuck: yes
 arpnip: no
 cdp: yes
 vlan: write
-note: CDP only available with newer ROM versions. 
+note: CDP and LLDP support are very firmware version dependent
+note: This list hasn't been updated since 2003
 
-device: 2512
+device: 2512, 2524
 ver: 1
 
-device: 2524
-ver: 1
-
-device: 4000
-note: duplex issues?
-
-device: 4104GL
+device: 4000,4104GL
 duplex: link
+note: duplex issues?
 
 device: 4108GL,8000,2626,2650,8000
 note: VLAN info in Q-BRIDGE-MIB
 
+#
 # Juniper
+#
 device-vendor: Juniper
 arpnip: yes
 
 device-family: M-series router
 class: Layer3::Juniper
-device: M-series router
+device: All
 
 device-family: NetScreen
 class: Layer3::Netscreen
-device:  Netscreen
+device: All
 
+#
+# Linksys
+#
+device-vendor: Linksys
+device-family: Generic L2 Device
+class: Layer2
+device: Some
+
+device-family: Generic L3 Device
+class: Layer3
+device: Some
+
+device-family: 2048
+class: Layer3::Dell
+device: All
+
+
+#
+# Microsoft
+#
+device-vendor: Microsoft
+device-family: Windows
+class: Layer3::Microsoft
+device: Windows Router
+
+#
+# Netgear
+#
+device-vendor: NetGear
+device-family: Switches
+class: Layer2::Netgear
+device: All
+
+#
 # NetScreen
+#
 device-vendor: NetScreen
 note: See Juniper
 
+#
 # Net-SNMP
+#
 device-vendor: Net-SNMP
 class: Layer3
 ver: 2
@@ -535,11 +603,13 @@ device:  Linux routers
 device-family: BSD
 device:  BSD routers
 
+#
 # NORTEL
+#
 device-vendor: Nortel
 macsuck: yes
 cdp: proprietary
-note: CDP --> SONMP.
+note: SONMP Discovery Protocol Supported
 
 device-family: BayStack Hub
 duplex: both
@@ -560,23 +630,13 @@ vlan: write
 modules: yes
 class: Layer2::Baystack
 
-device: 303,304
-
-device: 350
-
-device: 380
-
-device: 410
-
-device: 420,425
+device: 303, 304, 350, 380, 410, 420, 425, 460, 470
 
 device: 450
 note: !Some versions > 4.X in stacked configuration have SNMP timeout issues. 
 note: Labels full duplex as 20Mbit connection.
 
-device: 460,470
-
-device: BPS
+device: Business Policy Switch (BPS)
 
 device-family: Ethernet Routing Switch/Baystack Switch
 arpnip: yes
@@ -608,13 +668,8 @@ vlan: yes
 class: Layer2::Centillion
 note: !Must be on version 4.x or 5.x (VLAN based) software.
 
-device: 5000BH
-
-device: 5005BH
-
-device: C100
-
-device: C50
+device: 5000BH, 5005BH
+device: C50,C100
 
 device-family: AP222x
 duplex: both
@@ -682,11 +737,7 @@ class: Layer3::Passport
 note: !8600 Code versions < 3.2 vlan based mac-suck and are unsupported.  Upgrade code.
 note: !8600 3.2 code versions < 3.2.2.2 have Bridge MIB loop.  Upgrade code.
 
-device: 8603,8606,8610
-
-device: 8610co
-
-device: 8106,8110
+device: 8603,8606,8610, 8610co, 8106, 8110
 
 device: 1050,1100,1150,1200
 
@@ -737,7 +788,9 @@ note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switc
 
 device: 2270
 
+#
 # Proxim
+#
 device-vendor: Proxim
 macsuck: yes
 duplex: no
@@ -750,7 +803,9 @@ device: AP-1000,AP-2000,AP-4000
 
 device: WavePOINT-II
 
+#
 # Sun
+#
 device-vendor: Sun
 class: Layer3::Sun
 
@@ -758,11 +813,15 @@ device-family: Sun routers
 
 device: Sun routers
 
+#
 # Synoptics
+#
 device-vendor: Synoptics
 note: See Nortel
 
+#
 # Zyxel
+#
 device-vendor: Zyxel
 class: Layer2::ZyXEL_DSLAM
 note: Doesn't report sysServices (layers)
