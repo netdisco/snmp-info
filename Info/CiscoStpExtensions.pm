@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStpExtensions;
-$VERSION = '2.00';
+$VERSION = '2.01';
 
 use strict;
 
@@ -36,30 +36,30 @@ use SNMP::Info;
 use SNMP::Info::Bridge;
 
 use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT $INIT/;
-@SNMP::Info::CiscoStpExtensions::ISA = qw/SNMP::Info SNMP::Info::Bridge Exporter/;
+@SNMP::Info::CiscoStpExtensions::ISA = qw/SNMP::Info::Bridge SNMP::Info Exporter/;
 @SNMP::Info::CiscoStpExtensions::EXPORT_OK = qw//;
 
 %MIBS    = (
-	    %SNMP::Info::Bridge::MIBS,
+            %SNMP::Info::Bridge::MIBS,
             'CISCO-STP-EXTENSIONS-MIB' => 'stpxSpanningTreeType',
            );
 
 %GLOBALS = (
             %SNMP::Info::Bridge::GLOBALS,
-	    'stpx_mst_config_digest' => 'stpxSMSTConfigDigest',
+            'stpx_mst_config_digest' => 'stpxSMSTConfigDigest',
             'stpx_mst_region_name'   => 'stpxMSTRegionName',
             'stpx_mst_region_rev'    => 'stpxSMSTRegionRevision',
-	    'stpx_stp_type'          => 'stpxSpanningTreeType',
-	    'stpx_bpduguard_enable'  => 'stpxFastStartBpduGuardEnable',
-	    'stpx_bpdufilter_enable' => 'stpxFastStartBpduFilterEnable',
+            'stpx_stp_type'          => 'stpxSpanningTreeType',
+            'stpx_bpduguard_enable'  => 'stpxFastStartBpduGuardEnable',
+            'stpx_bpdufilter_enable' => 'stpxFastStartBpduFilterEnable',
            );
 
 %FUNCS   = (
             %SNMP::Info::Bridge::FUNCS,
-	    'stpx_rootguard_enabled'      => 'stpxRootGuardConfigEnabled',
-	    'stpx_loopguard_enabled'      => 'stpxLoopGuardConfigEnabled',
-	    'stpx_port_bpduguard_mode'    => 'stpxFastStartPortBpduGuardMode',
-	    'stpx_port_bpdufilter_mode'   => 'stpxFastStartPortBpduFilterMode',
+            'stpx_rootguard_enabled'      => 'stpxRootGuardConfigEnabled',
+            'stpx_loopguard_enabled'      => 'stpxLoopGuardConfigEnabled',
+            'stpx_port_bpduguard_mode'    => 'stpxFastStartPortBpduGuardMode',
+            'stpx_port_bpdufilter_mode'   => 'stpxFastStartPortBpduFilterMode',
             'stpx_smst_root'              => 'stpxSMSTInstanceCISTRegionalRoot',
             'stpx_smst_vlans_mapped_1k2k' => 'stpxSMSTInstanceVlansMapped1k2k',
             'stpx_smst_vlans_mapped_3k4k' => 'stpxSMSTInstanceVlansMapped3k4k',
@@ -76,9 +76,9 @@ sub stp_ver {
      my $self = shift;
      my $stp_ver = $self->SUPER::stp_ver();
      if ( $stp_ver eq 'unknown' ){
-	 if ( defined $self->stpx_stp_type() ){
-	     $stp_ver = $self->stpx_stp_type();
-	 }
+         if ( defined $self->stpx_stp_type() ){
+             $stp_ver = $self->stpx_stp_type();
+         }
      }
      return $stp_ver;
 }
@@ -110,33 +110,33 @@ sub mst_vlan2instance {
     my $vlan_membership = $self->i_vlan_membership;
     my @vlans;
     foreach my $iid ( keys %$vlan_membership ){
-	if ( my $vm = $vlan_membership->{$iid} ){
-	    foreach my $vid ( @$vm ){
-		push @vlans, $vid;
-	    }
-	}
+        if ( my $vm = $vlan_membership->{$iid} ){
+            foreach my $vid ( @$vm ){
+                push @vlans, $vid;
+            }
+        }
     }
     my %res;
     foreach my $vlan ( @vlans ){
-	if ( $vlan < 2048 ){
-	    foreach my $inst ( keys %$m1k2k ){
-		my $list = $m1k2k->{$inst};
-		my $vlanlist = [split(//, unpack("B*", $list))];
-		if ( @$vlanlist[$vlan] ){
-		    $res{$vlan} = $inst;
-		    last;
-		}
-	    }
-	}else{
-	    foreach my $inst ( keys %$m3k4k ){
-		my $list = $m3k4k->{$inst};
-		my $vlanlist = [split(//, unpack("B*", $list))];
-		if ( @$vlanlist[$vlan-2048] ){
-		    $res{$vlan} = $inst;
-		    last;
-		}
-	    }	    
-	}
+        if ( $vlan < 2048 ){
+            foreach my $inst ( keys %$m1k2k ){
+                my $list = $m1k2k->{$inst};
+                my $vlanlist = [split(//, unpack("B*", $list))];
+                if ( @$vlanlist[$vlan] ){
+                    $res{$vlan} = $inst;
+                    last;
+                }
+            }
+        }else{
+            foreach my $inst ( keys %$m3k4k ){
+                my $list = $m3k4k->{$inst};
+                my $vlanlist = [split(//, unpack("B*", $list))];
+                if ( @$vlanlist[$vlan-2048] ){
+                    $res{$vlan} = $inst;
+                    last;
+                }
+            }       
+        }
     }
     return \%res;
 }
@@ -150,11 +150,11 @@ sub i_rootguard_enabled {
 
     my %res;
     foreach my $index ( keys %$rg_enabled ){
-	my $enabled = $rg_enabled->{$index};
-	my $iid     = $bp_index->{$index};
-	next unless defined $iid;
-	next unless defined $enabled;
-	$res{$iid} = $enabled;
+        my $enabled = $rg_enabled->{$index};
+        my $iid     = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $enabled;
+        $res{$iid} = $enabled;
     }
     return \%res;
 }  
@@ -168,11 +168,11 @@ sub i_loopguard_enabled {
 
     my %res;
     foreach my $index ( keys %$lg_enabled ){
-	my $enabled = $lg_enabled->{$index};
-	my $iid     = $bp_index->{$index};
-	next unless defined $iid;
-	next unless defined $enabled;
-	$res{$iid} = $enabled;
+        my $enabled = $lg_enabled->{$index};
+        my $iid     = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $enabled;
+        $res{$iid} = $enabled;
     }
     return \%res;
 }  
@@ -187,15 +187,15 @@ sub i_bpduguard_enabled {
     
     my %res;
     foreach my $index ( keys %$bpdugm ){
-	my $mode = $bpdugm->{$index};
-	my $iid  = $bp_index->{$index};
-	next unless defined $iid;
-	next unless defined $mode;
-	if ( $mode eq 'default' ){
-	    $res{$iid} =  $bpdugm_default;
-	}else{
-	    $res{$iid} = $mode;
-	}
+        my $mode = $bpdugm->{$index};
+        my $iid  = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $mode;
+        if ( $mode eq 'default' ){
+            $res{$iid} =  $bpdugm_default;
+        }else{
+            $res{$iid} = $mode;
+        }
     }
     return \%res;
 }
@@ -210,15 +210,15 @@ sub i_bpdufilter_enabled {
     
     my %res;
     foreach my $index ( keys %$bpdufm ){
-	my $mode = $bpdufm->{$index};
-	my $iid  = $bp_index->{$index};
-	next unless defined $iid;
-	next unless defined $mode;
-	if ( $mode eq 'default' ){
-	    $res{$iid} =  $bpdufm_default;
-	}else{
-	    $res{$iid} = $mode;
-	}
+        my $mode = $bpdufm->{$index};
+        my $iid  = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $mode;
+        if ( $mode eq 'default' ){
+            $res{$iid} =  $bpdufm_default;
+        }else{
+            $res{$iid} = $mode;
+        }
     }
     return \%res;
 }
@@ -337,6 +337,16 @@ Returns 1 or 0 depending on whether BpduFilter is enabled on a given port.
 Format is a hash reference with key = ifIndex, value = [1|0]
 
 (stpxFastStartBpduFilterEnable)
+
+=back
+
+=head1 MUNGES
+
+=over
+
+=item oct2str()
+
+Unpacks H* into a string
 
 =back
 
