@@ -234,7 +234,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::CiscoStpExtensions - SNMP Interface to CISCO-STP-EXTENSIONS-MIB
+SNMP::Info::CiscoStpExtensions - SNMP Interface to C<CISCO-STP-EXTENSIONS-MIB>
 
 =head1 AUTHOR
 
@@ -274,9 +274,9 @@ These are methods that return scalar values from SNMP
 Returns the particular STP version running on this device.  
 Meant to override SNMP::Info::Brigde::stp_ver()
 
-Values: pvstPlus, mistp, mistpPvstPlus, mst, rapidPvstPlus
+Values: C<pvstPlus>, C<mistp>, C<mistpPvstPlus>, C<mst>, C<rapidPvstPlus>
 
-(stpxSpanningTreeType)
+(C<stpxSpanningTreeType>)
 
 =back
 
@@ -291,19 +291,19 @@ to a hash.
 
 Returns the Multiple Spanning Tree (MST) configuration digest 
 
-(stpxSMSTConfigDigest)
+(C<stpxSMSTConfigDigest>)
 
 =item $stpx->mst_region_name()
 
 Returns the Multiple Spanning Tree (MST) region name 
 
-(stpxMSTRegionName)
+(C<stpxMSTRegionName>)
 
 =item $stpx->mst_region_rev()
 
 Returns the Multiple Spanning Tree (MST) region name 
 
-(stpxSMSTRegionRevision)
+(C<stpxSMSTRegionRevision>)
 
 =item $stpx->mst_vlan2instance()
 
@@ -312,31 +312,31 @@ with key = VLAN id, value = STP instance
 
 =item $stpx->i_rootguard_enabled()
 
-Returns 1 or 0 depending on whether RootGuard is enabled on a given port.
-Format is a hash reference with key = ifIndex, value = [1|0]
+Returns 1 or 0 depending on whether C<RootGuard> is enabled on a given port.
+Format is a hash reference with key = C<ifIndex>, value = [1|0]
 
-(stpxRootGuardConfigEnabled)
+(C<stpxRootGuardConfigEnabled>)
 
 =item $stpx->i_loopguard_enabled()
 
-Returns 1 or 0 depending on whether LoopGuard is enabled on a given port.
-Format is a hash reference with key = ifIndex, value = [1|0]
+Returns 1 or 0 depending on whether C<LoopGuard> is enabled on a given port.
+Format is a hash reference with key = C<ifIndex>, value = [1|0]
 
-(stpxLoopGuardConfigEnabled)
+(C<stpxLoopGuardConfigEnabled>)
 
 =item $stpx->i_bpduguard_enabled()
 
-Returns 1 or 0 depending on whether BpduGuard is enabled on a given port.
-Format is a hash reference with key = ifIndex, value = [1|0]
+Returns 1 or 0 depending on whether C<BpduGuard> is enabled on a given port.
+Format is a hash reference with key = C<ifIndex>, value = [1|0]
 
-(stpxFastStartPortBpduGuardMode)
+(C<stpxFastStartPortBpduGuardMode>)
 
 =item $stpx->i_bpdufilter_enabled()
 
-Returns 1 or 0 depending on whether BpduFilter is enabled on a given port.
-Format is a hash reference with key = ifIndex, value = [1|0]
+Returns 1 or 0 depending on whether C<BpduFilter> is enabled on a given port.
+Format is a hash reference with key = C<ifIndex>, value = [1|0]
 
-(stpxFastStartBpduFilterEnable)
+(C<stpxFastStartBpduFilterEnable>)
 
 =back
 

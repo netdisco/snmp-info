@@ -320,7 +320,7 @@ See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 =item $SNMP::Info::Layer3::Altiga::int_include_vpn
 
-Variable to modify behaviour of "interfaces" subroutine.
+Variable to modify behavior of "interfaces" subroutine.
 
   * When set to 0, "interfaces" returns only fixed interfaces from the IF-MIB,
   * When set to 1, "interfaces" returns fixed interfaces from IF-MIB and
@@ -344,11 +344,11 @@ Returns 'altiga'
 
 =item $altiga->os_ver()
 
-Tries to determine OS version from the sysDescr.0 field. Returns version or sysDescr.0
+Tries to determine OS version from the C<sysDescr.0> field. Returns version or C<sysDescr.0>
 
 =item $altiga->fan()
 
-Combines results from C<fan1_alarm>, C<fan2_alarm>, and C<fam3_alarm> metohds.
+Combines results from C<fan1_alarm>, C<fan2_alarm>, and C<fam3_alarm> methods.
 
 =item $altiga->hasCDP()
 

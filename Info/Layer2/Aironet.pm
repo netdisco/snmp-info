@@ -1,7 +1,7 @@
 # SNMP::Info::Layer2::Aironet
 # $Id$
 #
-# Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
+# Copyright (c) 2008-2009 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2003 Regents of the University of California
 # All rights reserved.
@@ -615,13 +615,13 @@ Returns VLAN names
 =item $aironet->i_ssidlist()
 
 Returns a list of SSIDs associated with interfaces.  This function
-is MBSSID aware, so when using MBSSID can map SSIDs to the sub-interface
+is C<MBSSID> aware, so when using C<MBSSID> can map SSIDs to the sub-interface
 to which they belong.
 
 =item $aironet->i_ssidbcast()
 
 With the same keys as i_ssidlist, returns whether the given SSID is
-being broadcasted.
+being broadcast.
 
 =back
 

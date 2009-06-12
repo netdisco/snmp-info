@@ -27,6 +27,8 @@ airos
 Alcatel
 alcatel
 alteon
+Altiga
+altiga
 AOS
 ap
 APs
@@ -35,6 +37,7 @@ arista
 arn
 arp
 aruba
+asa
 asante
 ascii
 asn
@@ -101,6 +104,8 @@ fdb
 fdp
 fenner
 fsm
+FWSM
+fwsm
 gbe
 gbesm
 getnext
@@ -142,15 +147,18 @@ maxrepeaters
 mbs
 mckeown
 mda
-mib
+MIB
 mibdirs
+mib
 mibs
 milliwatts
 msb
 mtu
+multi
 multicast
 multiseg
 multivlan
+munge
 munges
 namespace
 ndp
@@ -194,6 +202,8 @@ retrynosuch
 rom
 rtt
 rttmon
+sca
+Schenau
 sergienko
 sieborger
 SNMP
@@ -206,6 +216,8 @@ solaris
 sonmp
 ssid
 SSID's
+SSIDs
+Stickland
 stackable
 stdout
 stg
