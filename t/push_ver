@@ -1,0 +1,46 @@
+#!/usr/bin/perl -w
+# $Id$
+
+use File::Glob qw/bsd_glob/;
+
+my @pms = glob_rec("../Info");
+
+$new_version = shift @ARGV || '2.01';
+
+foreach my $p (@pms) {
+    print "$p\n";
+
+    rename($p,"$p.orig");
+    open (O,"<$p.orig") or die;
+    open (P,">$p") or die "Can't open $p for write. $!\n";
+
+    while (<O>) {
+        s/^\s*\$VERSION\s+=\s*'[^']+'\s*;/\$VERSION = '$new_version';/;
+        print P;
+    }
+
+    close O;
+    close P or die "Can't write $p. $!\n";
+    #last;
+}
+
+sub glob_rec {
+    my $dir = shift;
+
+    my @files = bsd_glob("$dir/*");
+
+    my @pms;
+
+    foreach my $f (@files) {
+        next if $f eq '\.$';
+        
+        if (-d $f) {
+            push @pms, glob_rec($f);
+            next;
+        }
+
+        push @pms,$f if $f =~ /.pm$/;
+    }
+
+    return @pms;
+}
