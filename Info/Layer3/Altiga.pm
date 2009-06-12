@@ -106,6 +106,7 @@ $VERSION = '2.01';
 # Variable to modify behaviour of "interfaces" subroutine.
 # * When set to 0, "interfaces" returns only fixed interfaces from the IF-MIB,
 # * When set to 1, "interfaces" returns fixed interfaces from IF-MIB and LAN-to-LAN tunnels from ALTIGA-SESSION-MIB
+# TODO: This should be an instance method, not a class global
 $int_include_vpn = 1;
 
 # Variable to prepended to each tunnel index when tunnel is added to %interfaces, to avoid overwriting "real" ifIndex entries
@@ -155,15 +156,15 @@ sub hasCDP {
     return 0;
 }
 
-# $l3->interfaces() - Map the Interfaces to their physical names
+# $altiga->interfaces() - Map the Interfaces to their physical names
 # Add interface number to interface name to prevent duplicate ifDescr
 # Included statically configured VPN tunnels if ($int_include_vpn)
 sub interfaces {
-    my $l3 = shift;
+    my $altiga = shift;
     my $partial = shift;
 
-    my $interfaces = $l3->i_index($partial);
-    my $descriptions = $l3->i_description($partial);
+    my $interfaces = $altiga->i_index($partial);
+    my $descriptions = $altiga->i_description($partial);
 
     my %int_rev = ();
     my %interfaces = ();
@@ -190,10 +191,10 @@ sub interfaces {
         }
     }
     if ($int_include_vpn) {
-        my $tun_type = $l3->vpn_sess_protocol();
-        my $peer = $l3->vpn_sess_peer_ip();
-        my $remote = $l3->vpn_sess_rem_ip(); 
-        my $group = $l3->vpn_sess_gid();
+        my $tun_type = $altiga->vpn_sess_protocol();
+        my $peer = $altiga->vpn_sess_peer_ip();
+        my $remote = $altiga->vpn_sess_rem_ip(); 
+        my $group = $altiga->vpn_sess_gid();
         foreach my $tunnel (keys %$tun_type) {
             if ($type_class->{$tun_type->{$tunnel}} eq 1) {
                 $interfaces{"$fake_idx.$tunnel"} = sprintf("%s VPN to %s", uc($tun_type->{$tunnel}), $remote->{$tunnel});
@@ -205,11 +206,11 @@ sub interfaces {
 }
 
 sub i_type {
-    my $l3 = shift;
+    my $altiga = shift;
     my $partial = shift;
-    my $types = $l3->i_type2();
+    my $types = $altiga->i_type2();
     if ($int_include_vpn) {
-        my $tun_type = $l3->vpn_sess_protocol();
+        my $tun_type = $altiga->vpn_sess_protocol();
         foreach my $tunnel (keys %$tun_type) {
             $types->{"$fake_idx.$tunnel"} = $tun_type->{$tunnel};
         }
@@ -218,11 +219,13 @@ sub i_type {
 }
 
 sub i_lastchange {
-    my $l3 = shift;
+    my $altiga = shift;
     my $partial = shift;
-    my $lastchange = $l3->i_lastchange2();
+
+    # TODO: This is what munges are for.
+    my $lastchange = $altiga->i_lastchange2();
     if ($int_include_vpn) {
-        my $tun_start = $l3->vpn_sess_start();
+        my $tun_start = $altiga->vpn_sess_start();
         foreach my $tunnel (keys %$tun_start) {
             $lastchange->{"$fake_idx.$tunnel"} = $tun_start->{$tunnel};
         }
@@ -231,24 +234,24 @@ sub i_lastchange {
 }
 
 sub ps1_status {
-    my $l3 = shift;
-    my $alarm_3v = $l3->ps1_3v_alarm() || "";
-    my $alarm_5v = $l3->ps1_5v_alarm() || "";
+    my $altiga = shift;
+    my $alarm_3v = $altiga->ps1_3v_alarm() || "";
+    my $alarm_5v = $altiga->ps1_5v_alarm() || "";
     return sprintf("3V: %s, 5V: %s", $alarm_3v, $alarm_5v);
 }
 
 sub ps2_status {
-    my $l3 = shift;
-    my $alarm_3v = $l3->ps2_3v_alarm() || "";
-    my $alarm_5v = $l3->ps2_5v_alarm() || "";
+    my $altiga = shift;
+    my $alarm_3v = $altiga->ps2_3v_alarm() || "";
+    my $alarm_5v = $altiga->ps2_5v_alarm() || "";
     return sprintf("3V: %s, 5V: %s", $alarm_3v, $alarm_5v);
 }
 
 sub fan {
-    my $l3 = shift;
-    my $alarm_fan1 = $l3->fan1_alarm() || "";
-    my $alarm_fan2 = $l3->fan2_alarm() || "";
-    my $alarm_fan3 = $l3->fan3_alarm() || "";
+    my $altiga = shift;
+    my $alarm_fan1 = $altiga->fan1_alarm() || "";
+    my $alarm_fan2 = $altiga->fan2_alarm() || "";
+    my $alarm_fan3 = $altiga->fan3_alarm() || "";
     return sprintf("Fan 1: %s, Fan 2: %s, Fan 3: %s", $alarm_fan1, $alarm_fan2, $alarm_fan3);
 }
 
@@ -277,7 +280,7 @@ Jeroen van Ingen Schenau
 =head1 SYNOPSIS
 
  # Let SNMP::Info determine the correct subclass for you. 
- my $vpn = new SNMP::Info(
+ my $altiga = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'my_vpn_host',
@@ -286,7 +289,7 @@ Jeroen van Ingen Schenau
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $vpn->class();
+ my $class      = $altiga->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
@@ -331,23 +334,35 @@ These are methods that return scalar value from SNMP
 
 =over
 
-=item $vpn->vendor()
+=item $altiga->vendor()
 
-    Returns 'altiga'
+Returns 'altiga'
 
-=item $vpn->os()
+=item $altiga->os()
 
-    Returns 'altiga'
+Returns 'altiga'
 
-=item $vpn->os_ver()
+=item $altiga->os_ver()
 
-    Tries to determine OS version from the sysDescr.0 field. Returns version or sysDescr.0
+Tries to determine OS version from the sysDescr.0 field. Returns version or sysDescr.0
+
+=item $altiga->fan()
+
+Combines results from C<fan1_alarm>, C<fan2_alarm>, and C<fam3_alarm> metohds.
+
+=item $altiga->hasCDP()
+
+No.
+
+=item $altiga->ps1_status()
+
+Combines C<ps1_3v_alarm> and C<ps1_5v_alarm> methods.
+
+=item $altiga->ps2_status()
+
+Combines C<ps2_3v_alarm> and C<ps2_5v_alarm> methods.
 
 =back
-
-=head2 Globals imported from SNMP::Info::Layer3
-
-See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -356,17 +371,30 @@ to a hash.
 
 =over
 
-=item $vpn->interfaces()
+=item $altiga->interfaces()
 
 This method overrides the interfaces() method inherited from SNMP::Info.
 It provides a mapping between the Interface Table Index (iid) and the physical 
 port name, adding a port number to the port name to prevent duplicate names.
 
+=item $altiga->i_lastchange()
+
+Filters out the results depending on the value of $SNMP::Info::Layer3::Altiga::int_include_vpn
+
+=item $altiga->i_type()
+
+Filters out the results depending on the value of $SNMP::Info::Layer3::Altiga::int_include_vpn
 
 =back
 
-=head2 Table Methods imported from SNMP::Info::Layer3
+=head1 MUNGES
 
-See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+=over
+
+=item munge_alarm()
+
+Changes C<true> and C<false> to C<FAIL>, C<OK>, and C<(n/a)>.
+
+=back
 
 =cut
