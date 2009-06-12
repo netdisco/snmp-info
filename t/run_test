@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Run this from ../
+/usr/local/bin/perl "-MExtUtils::Command::MM" "-e" "test_harness(0, 'blib/lib', 'blib/arch')" t/$1
