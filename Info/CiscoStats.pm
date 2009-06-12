@@ -131,7 +131,7 @@ sub os {
         return 'fwsm';
     }
 
-    return undef;
+    return;
 }
 
 sub os_ver {
@@ -202,7 +202,7 @@ sub os_ver {
         return $1;
     }
 
-    return undef;
+    return;
 }
 
 sub cpu {
