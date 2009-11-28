@@ -1,0 +1,13 @@
+SNMP::Info Developer Guidelines
+
+Coding Guidelines:
+    - tab-width of 4, no tab characters
+    - keep POD documentation up-to-date
+    - always update ChangeLog before committing
+    - always update DeviceMatrix.txt before committing
+    - check-in required mibs to netdisco-mibs and release new package if needed
+
+Release and Testing Instructions: 
+    - Please see misc/RELEASE in Netdisco
+      ( http://netdisco.cvs.sourceforge.net/viewvc/netdisco/misc/RELEASE?view=markup )
+      and follow all testing and release guidelines
