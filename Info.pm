@@ -23,7 +23,7 @@ use vars
     qw/$VERSION $VERSION_CVS %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '2.01';
+$VERSION = '2.02-cvs';
 $VERSION_CVS = '$Id$';
 
 =head1 NAME
@@ -523,11 +523,19 @@ Depreciated.  Use SNMP::Info::Layer3::Foundry.
 
 =item SNMP::Info::Layer2::HP
 
-Subclass for HP Procurve Switches
+Subclass for more recent HP Procurve Switches
 
 Requires F<HP-ICF-OID> and F<ENTITY-MIB> downloaded from HP.  
 
 See documentation in L<SNMP::Info::Layer2::HP> for details.
+
+=item SNMP::Info::Layer2::HP4000
+
+Subclass for older HP Procurve Switches
+
+Requires F<HP-ICF-OID> and F<ENTITY-MIB> downloaded from HP.  
+
+See documentation in L<SNMP::Info::Layer2::HP4000> for details.
 
 =item SNMP::Info::Layer2::N2270
 
@@ -668,7 +676,7 @@ See documentation in L<SNMP::Info::Layer3::Foundry> for details.
 =item SNMP::Info::Layer3::HP9300
 
 Subclass for HP network devices which Foundry Networks was the
-Original Equipment Manufacturer (OEM) such as the HP ProCurve 9300 series.
+Original Equipment Manufacturer (OEM) such as the HP ProCurve 9300 and 6300 series.
 
 See documentation in L<SNMP::Info::Layer3::HP9300> for details.
 
@@ -1235,6 +1243,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500'
             if $desc =~ /(s72033_rp|s3223_rp|s32p3_rp|s222_rp)/;
 
+        # HP, older ProCurve models (1600, 2400, 2424m, 4000, 8000)
+        $objtype = 'SNMP::Info::Layer2::HP4000'
+            if $desc =~ /\b(J4093A|J4110A|J4120A|J4121A|J4122A|J4122B)\b/;
+
         # HP, Foundry OEM
         $objtype = 'SNMP::Info::Layer3::HP9300'
             if $desc =~ /\b(J4874A|J4138A|J4139A|J4840A|J4841A)\b/;
@@ -1295,6 +1307,10 @@ sub device_type {
         #   Cisco 2970
         $objtype = 'SNMP::Info::Layer3::C6500'
             if ( $desc =~ /(C2970|C2960)/ );
+
+        # HP, older ProCurve models (1600, 2400, 2424m, 4000, 8000)
+        $objtype = 'SNMP::Info::Layer2::HP4000'
+            if $desc =~ /\b(J4093A|J4110A|J4120A|J4121A|J4122A|J4122B)\b/;
 
         # HP, Foundry OEM
         $objtype = 'SNMP::Info::Layer3::HP9300'

@@ -512,29 +512,42 @@ device: FLS624, FLS648
 # HP
 #
 device-vendor: HP
-class:  Layer2::HP
 note: HP Devices are very widely supported.
 ver: 2
 modules: yes
 
-device-family: HP ProCurve
+device-family: HP ProCurve (old)
+class:  Layer2::HP4000
 duplex: both
 macsuck: yes
 arpnip: no
 cdp: yes
 vlan: write
-note: CDP and LLDP support are very firmware version dependent
-note: This list hasn't been updated since 2003
+note: devices in this class only have CDP support
+note: VLAN info in HP-VLAN MIB
 
-device: 2512, 2524
-ver: 1
-
-device: 4000,4104GL
+device: 1600M,2400,2424M,4000,8000
 duplex: link
 note: duplex issues?
 
-device: 4108GL,8000,2626,2650,8000
+device-family: HP ProCurve (recent)
+class:  Layer2::HP
+duplex: both
+macsuck: yes
+arpnip: no
+cdp: yes
+vlan: write
+note: old firmware versions only have CDP support, more recent have LLDP
 note: VLAN info in Q-BRIDGE-MIB
+
+device: 2312,2324,2512,2524
+ver: 1
+
+device: 2510,2600,2610,2800,2810,2900,2910al
+device: 3124,3324XL,3400cl,3500,3500yl
+device: 4100GL,4200vl,5300XL,5400yy,5400zl
+device: 6108,6200yl,6400cl,6410cl,6600,6600ml,8200zl
+
 
 #
 # Juniper

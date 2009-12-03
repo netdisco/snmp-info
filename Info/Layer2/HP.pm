@@ -46,7 +46,7 @@ use SNMP::Info::CDP;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE/;
 
-$VERSION = '2.01';
+$VERSION = '2.02-cvs';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -55,11 +55,9 @@ $VERSION = '2.01';
     %SNMP::Info::CDP::MIBS,
     'RFC1271-MIB'    => 'logDescription',
     'HP-ICF-OID'     => 'hpSwitch4000',
-    'HP-VLAN'        => 'hpVlanMemberIndex',
     'STATISTICS-MIB' => 'hpSwitchCpuStat',
     'NETSWITCH-MIB'  => 'hpMsgBufFree',
     'CONFIG-MIB'     => 'hpSwitchConfig',
-    'SEMI-MIB'       => 'hpHttpMgSerialNumber',
     'HP-ICF-CHASSIS' => 'hpicfSensorObjectId',
 );
 
@@ -69,7 +67,6 @@ $VERSION = '2.01';
     %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
     'serial1'      => 'entPhysicalSerialNum.1',
-    'serial2'      => 'hpHttpMgSerialNumber.0',
     'hp_cpu'       => 'hpSwitchCpuStat.0',
     'hp_mem_total' => 'hpGlobalMemTotalBytes.1',
     'mem_free'     => 'hpGlobalMemFreeBytes.1',
@@ -77,7 +74,6 @@ $VERSION = '2.01';
     'os_version'   => 'hpSwitchOsVersion.0',
     'os_bin'       => 'hpSwitchRomVersion.0',
     'mac'          => 'hpSwitchBaseMACAddress.0',
-    'hp_vlans'     => 'hpVlanNumber',
 );
 
 %FUNCS = (
@@ -85,21 +81,10 @@ $VERSION = '2.01';
     %SNMP::Info::MAU::FUNCS,
     %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::CDP::FUNCS,
-    'bp_index2' => 'dot1dBasePortIfIndex',
     'i_type2'   => 'ifType',
 
     # RFC1271
     'l_descr' => 'logDescription',
-
-    # HP-VLAN-MIB
-    'hp_v_index'    => 'hpVlanDot1QID',
-    'hp_v_name'     => 'hpVlanIdentName',
-    'hp_v_state'    => 'hpVlanIdentState',
-    'hp_v_type'     => 'hpVlanIdentType',
-    'hp_v_status'   => 'hpVlanIdentStatus',
-    'hp_v_mac'      => 'hpVlanAddrPhysAddress',
-    'hp_v_if_index' => 'hpVlanMemberIndex',
-    'hp_v_if_tag'   => 'hpVlanMemberTagged2',
 
     # CONFIG-MIB::hpSwitchPortTable
     'hp_duplex'       => 'hpSwitchPortEtherMode',
@@ -120,65 +105,86 @@ $VERSION = '2.01';
     'c_id'   => \&munge_hp_c_id,
 );
 
+
+# Model map, reverse sorted by common model name (sort -k2 -r)
+# Potential sources for model information: http://www.hp.com/rnd/software/switches.htm or HP-ICF-OID MIB 
 %MODEL_MAP = (
-    'J4093A' => '2424M',
-    'J4110A' => '8000M',
-    'J4120A' => '1600M',
-    'J4121A' => '4000M',
-    'J4122A' => '2400M',
-    'J4122B' => '2424M',
-    'J4138A' => '9308M',
-    'J4139A' => '9304M',
-    'J4812A' => '2512',
-    'J4813A' => '2524',
-    'J4815A' => '3324XL',
-    'J4819A' => '5308XL',
-    'J4840A' => '6308M-SX',
-    'J4841A' => '6208M-SX',
-    'J4850A' => '5304XL',
-    'J4851A' => '3124',
-    'J4865A' => '4108GL',
-    'J4874A' => '9315M',
-    'J4887A' => '4104GL',
-    'J4899A' => '2650',
-    'J4899B' => '2650-CR',
-    'J4900A' => '2626',
-    'J4900B' => '2626-CR',
-    'J4902A' => '6108',
-    'J4903A' => '2824',
-    'J4904A' => '2848',
-    'J4905A' => '3400cl-24G',
-    'J4906A' => '3400cl-48G',
-    'J8130A' => 'WAP-420-NA',
     'J8131A' => 'WAP-420-WW',
+    'J8130A' => 'WAP-420-NA',
     'J8133A' => 'AP520WL',
-    'J8164A' => '2626-PWR',
-    'J8165A' => '2650-PWR',
-    'J8433A' => 'CX4-6400cl-6XG',
-    'J8474A' => 'MF-6400cl-6XG',
-    'J8680A' => '9608sl',
-    'J8692A' => '3500yl-24G-PWR',
-    'J8693A' => '3500yl-48G-PWR',
-    'J8697A' => '5406zl',
-    'J8698A' => '5412zl',
-    'J8718A' => '5404yl',
-    'J8719A' => '5408yl',
-    'J8770A' => '4204vl',
-    'J8771A' => '4202vl-48G',
-    'J8772A' => '4202vl-72',
-    'J8773A' => '4208vl',
-    'J8762A' => '2600-8-PWR',
+    'J8680A' => '9408sl',
+    'J9091A' => '8212zl',
+    'J9475A' => '8206zl',
+    'J9265A' => '6600ml-24XG',
+    'J9264A' => '6600ml-24G-4XG',
+    'J9263A' => '6600ml-24G',
+    'J9452A' => '6600-48G-4XG',
+    'J9451A' => '6600-48G',
+    'J8474A' => '6410cl-6XG',
+    'J8433A' => '6400cl-6XG',
     'J8992A' => '6200yl-24G',
-    'J9019A' => '2510-24A',
-    'J9020A' => '2510-48A',
-    'J9021A' => '2810-24G',
-    'J9022A' => '2810-48G',
-    'J9028A' => '1800-24G',
-    'J9029A' => '1800-8G',
+    'J4902A' => '6108',
+    'J8698A' => '5412zl',
+    'J8719A' => '5408yl',
+    'J8697A' => '5406zl',
+    'J8718A' => '5404yl',
+    'J4819A' => '5308XL',
+    'J4850A' => '5304XL',
+    'J8773A' => '4208vl',
+    'J8770A' => '4204vl',
+    'J8772A' => '4202vl-72',
+    'J9032A' => '4202vl-68G',
+    'J9031A' => '4202vl-68',
+    'J8771A' => '4202vl-48G',
+    'J4865A' => '4108GL',
+    'J4887A' => '4104GL',
+    'J8693A' => '3500yl-48G-PWR',
+    'J8692A' => '3500yl-24G-PWR',
+    'J9473A' => '3500-48-PoE',
+    'J9472A' => '3500-48',
+    'J9471A' => '3500-24-PoE',
+    'J9470A' => '3500-24',
+    'J4906A' => '3400cl-48G',
+    'J4905A' => '3400cl-24G',
+    'J4815A' => '3324XL',
+    'J4851A' => '3124',
+    'J9148A' => '2910al-48G-PoE+',
+    'J9147A' => '2910al-48G',
+    'J9146A' => '2910al-24G-PoE+',
+    'J9145A' => '2910al-24G',
     'J9050A' => '2900-48G',
     'J9049A' => '2900-24G',
-    'J9032A' => '4202vl-68G',
-    'J9091A' => '8212zl',
+    'J4904A' => '2848',
+    'J4903A' => '2824',
+    'J9022A' => '2810-48G',
+    'J9021A' => '2810-24G',
+    'J8165A' => '2650-PWR',
+    'J4899B' => '2650-CR',
+    'J4899C' => '2650C',
+    'J4899A' => '2650',
+    'J8164A' => '2626-PWR',
+    'J4900B' => '2626-CR',
+    'J4900C' => '2626C',
+    'J4900A' => '2626',
+    'J9089A' => '2610-48-PWR',
+    'J9088A' => '2610-48',
+    'J9087A' => '2610-24-PWR',
+    'J9086A' => '2610-24/12PWR',
+    'J9085A' => '2610-24',
+    'J8762A' => '2600-8-PWR',
+    'J4813A' => '2524',
+    'J9137A' => '2520-8-PoE',
+    'J9138A' => '2520-24-PoE',
+    'J4812A' => '2512',
+    'J9280A' => '2510G-48',
+    'J9279A' => '2510G-24',
+    'J9020A' => '2510-48A',
+    'J9019B' => '2510-24B',
+    'J9019A' => '2510-24A',
+    'J4818A' => '2324',
+    'J4817A' => '2312',
+    'J9029A' => '1800-8G',
+    'J9028A' => '1800-24G',
 );
 
 # Method Overrides
@@ -221,15 +227,6 @@ sub model {
     $model =~ s/^hpswitch//i;
 
     return defined $MODEL_MAP{$model} ? $MODEL_MAP{$model} : $model;
-}
-
-# Some have the serial in entity mib, some have it in SEMI-MIB::hphttpmanageable
-sub serial {
-    my $hp = shift;
-
-    my $serial = $hp->serial1() || $hp->serial2() || undef;
-
-    return $serial;
 }
 
 sub interfaces {
@@ -371,116 +368,7 @@ sub _sensor {
     return $result;
 }
 
-# Bridge MIB does not map Bridge Port to ifIndex correctly on all models
-sub bp_index {
-    my $hp      = shift;
-    my $partial = shift;
-
-    my $if_index = $hp->i_index($partial);
-    my $model    = $hp->model();
-    my $bp_index = $hp->bp_index2($partial);
-
-    unless ( defined $model and $model =~ /(1600|2424|4000|8000)/ ) {
-        return $bp_index;
-    }
-
-    my %mod_bp_index;
-    foreach my $iid ( keys %$if_index ) {
-        $mod_bp_index{$iid} = $iid;
-    }
-    return \%mod_bp_index;
-}
-
-# VLAN methods.  Newer HPs use Q-BRIDGE, older use proprietary MIB.  Use
-# Q-BRIDGE if available.
-
-sub v_index {
-    my $hp      = shift;
-    my $partial = shift;
-
-    # Newer devices
-    my $q_index = $hp->SUPER::v_index($partial);
-    if ( defined $q_index and scalar( keys %$q_index ) ) {
-        return $q_index;
-    }
-
-    # Older devices
-    return $hp->hp_v_index($partial);
-}
-
-sub v_name {
-    my $hp      = shift;
-    my $partial = shift;
-
-    # Newer devices
-    my $q_name = $hp->SUPER::v_name($partial);
-    if ( defined $q_name and scalar( keys %$q_name ) ) {
-        return $q_name;
-    }
-
-    # Older devices
-    return $hp->hp_v_name($partial);
-}
-
-sub i_vlan {
-    my $hp = shift;
-
-    # Newer devices use Q-BRIDGE-MIB
-    my $qb_i_vlan = $hp->SUPER::i_vlan();
-    if ( defined $qb_i_vlan and scalar( keys %$qb_i_vlan ) ) {
-        return $qb_i_vlan;
-    }
-
-    # HP4000 ... get it from HP-VLAN
-    # the hpvlanmembertagged2 table has an entry in the form of
-    #   vlan.interface = /untagged/no/tagged/auto
-    my $i_vlan      = {};
-    my $hp_v_index  = $hp->hp_v_index();
-    my $hp_v_if_tag = $hp->hp_v_if_tag();
-    foreach my $row ( keys %$hp_v_if_tag ) {
-        my ( $index, $if ) = split( /\./, $row );
-
-        my $tag  = $hp_v_if_tag->{$row};
-        my $vlan = $hp_v_index->{$index};
-
-        next unless ( defined $tag and $tag =~ /untagged/ );
-
-        $i_vlan->{$if} = $vlan if defined $vlan;
-    }
-
-    return $i_vlan;
-}
-
-sub i_vlan_membership {
-    my $hp = shift;
-
-    # Newer devices use Q-BRIDGE-MIB
-    my $qb_i_vlan = $hp->SUPER::i_vlan_membership();
-    if ( defined $qb_i_vlan and scalar( keys %$qb_i_vlan ) ) {
-        return $qb_i_vlan;
-    }
-
-    # Older get it from HP-VLAN
-    my $i_vlan_membership = {};
-    my $hp_v_index        = $hp->hp_v_index();
-    my $hp_v_if_tag       = $hp->hp_v_if_tag();
-    foreach my $row ( keys %$hp_v_if_tag ) {
-        my ( $index, $if ) = split( /\./, $row );
-
-        my $tag  = $hp_v_if_tag->{$row};
-        my $vlan = $hp_v_index->{$index};
-
-        next unless ( defined $tag );
-        next if ( $tag eq 'no' );
-
-        push( @{ $i_vlan_membership->{$if} }, $vlan );
-    }
-
-    return $i_vlan_membership;
-}
-
 #  Use CDP and/or LLDP
-
 sub hasCDP {
     my $hp = shift;
 
@@ -639,6 +527,75 @@ sub peth_port_ifindex {
     return $peth_port_ifindex;
 }
 
+sub set_i_vlan {
+    my $hp = shift;
+    my $rv;
+
+    my $qb_i_vlan = $hp->qb_i_vlan_t();
+    if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
+        my $vlan = shift;
+        my $iid = shift;
+
+        my $qb_v_egress = $hp->qb_v_egress();
+        if (defined $qb_v_egress and scalar($qb_v_egress->{$vlan})) {
+            # store current untagged VLAN to remove it from the port list later
+            my $old_untagged = $qb_i_vlan->{$iid};
+
+            # set new untagged / native VLAN
+            $rv = $hp->set_qb_i_vlan($vlan, $iid);
+
+            # If change is successful, the old native VLAN will now be a tagged VLAN on the port. This is generally not what we want.
+            # We'll have to remove this VLAN from the "egress list" on the port.
+            if (defined $rv and $old_untagged != $vlan) {
+                if (defined $old_untagged and defined $qb_v_egress and scalar($qb_v_egress->{$vlan})){
+
+                    # First, get the egress list of the old native VLAN (arrayref structure)
+                    my $egressports = $qb_v_egress->{$old_untagged};
+
+                    # Since arrays are zero-based, we have to change the element at Index - 1
+                    $egressports->[$iid-1] = "0";
+
+                    # After changing, pack the array into a binary structure (expected by set_qb_v_egress) and set the new value on the device.
+                    my $new_egresslist = pack("B*", join('', @$egressports));
+
+                    $rv = $hp->set_qb_v_egress($new_egresslist, $old_untagged);
+                }
+            }
+        } else {
+            $hp->error_throw(sprintf("Requested VLAN %s doesn't seem to exist on device...", $vlan));
+        }
+    }
+    return $rv;
+}
+
+sub set_i_vlan_tagged {
+    my $hp = shift;
+    my $rv;
+
+    my $qb_i_vlan = $hp->qb_i_vlan_t();
+    if (defined $qb_i_vlan and scalar(keys %$qb_i_vlan)){
+        my $vlan = shift;
+        my $iid = shift;
+
+        my $qb_v_egress = $hp->qb_v_egress();
+        if (defined $qb_v_egress and scalar($qb_v_egress->{$vlan})) {
+
+            # First, get the egress list of the VLAN we want to add to the port.
+            my $egressports = $qb_v_egress->{$vlan};
+
+            # Since arrays are zero-based, we have to change the element at Index - 1
+            $egressports->[$iid-1] = "1";
+
+            # After changing, pack the array into a binary structure (expected by set_qb_v_egress) and set the new value on the device.
+            my $new_egresslist = pack("B*", join('', @$egressports));
+            $rv = $hp->set_qb_v_egress($new_egresslist, $vlan);
+            return $rv;
+        } else {
+            $hp->error_throw(sprintf("Requested VLAN %s doesn't seem to exist on device...", $vlan));
+        }
+    }
+}
+
 1;
 __END__
 
@@ -701,8 +658,6 @@ Included in V2 mibs from Cisco
 
 =item F<HP-ICF-OID>
 
-=item F<HP-VLAN>
-
 (this MIB new with SNMP::Info 0.8)
 
 =item F<STATISTICS-MIB>
@@ -713,7 +668,7 @@ Included in V2 mibs from Cisco
 
 =back
 
-The last five MIBs listed are from HP and can be found at
+The last four MIBs listed are from HP and can be found at
 L<http://www.hp.com/rnd/software> or
 L<http://www.hp.com/rnd/software/MIBs.htm>
 
@@ -754,66 +709,84 @@ Returns bytes of used memory
 Returns the model number of the HP Switch.  Will translate between the HP Part
 number and the common model number with this map :
 
- %MODEL_MAP = ( 
-                'J4093A' => '2424M',
-                'J4110A' => '8000M',
-                'J4120A' => '1600M',
-                'J4121A' => '4000M',
-                'J4122A' => '2400M',
-                'J4122B' => '2424M',
-                'J4138A' => '9308M',
-                'J4139A' => '9304M',
-                'J4812A' => '2512',
-                'J4813A' => '2524',
-                'J4815A' => '3324XL',
-                'J4819A' => '5308XL',
-                'J4840A' => '6308M-SX',
-                'J4841A' => '6208M-SX',
-                'J4850A' => '5304XL',
-                'J4851A' => '3124',
-                'J4865A' => '4108GL',
-                'J4874A' => '9315M',
-                'J4887A' => '4104GL',
-                'J4899A' => '2650',
-                'J4899B' => '2650-CR',
-                'J4900A' => '2626',
-                'J4900B' => '2626-CR',
-                'J4902A' => '6108',
-                'J4903A' => '2824',
-                'J4904A' => '2848',
-                'J4905A' => '3400cl-24G',
-                'J4906A' => '3400cl-48G',
-                'J8130A' => 'WAP-420-NA',
-                'J8131A' => 'WAP-420-WW',
-                'J8133A' => 'AP520WL',
-                'J8164A' => '2626-PWR',
-                'J8165A' => '2650-PWR',
-                'J8433A' => 'CX4-6400cl-6XG',
-                'J8474A' => 'MF-6400cl-6XG',
-                'J8680A' => '9608sl',
-                'J8692A' => '3500yl-24G-PWR',
-                'J8693A' => '3500yl-48G-PWR',
-                'J8697A' => '5406zl',
-                'J8698A' => '5412zl',
-                'J8718A' => '5404yl',
-                'J8719A' => '5408yl',
-                'J8770A' => '4204vl',
-                'J8771A' => '4202vl-48G',
-                'J8772A' => '4202vl-72',
-                'J8773A' => '4208vl',
-                'J8762A' => '2600-8-PWR',
-                'J8992A' => '6200yl-24G',
-                'J9019A' => '2510-24A',
-                'J9020A' => '2510-48A',
-                'J9021A' => '2810-24G',
-                'J9022A' => '2810-48G',
-                'J9028A' => '1800-24G',
-                'J9029A' => '1800-8G',
-                'J9050A' => '2900-48G',
-                'J9049A' => '2900-24G',
-                'J9032A' => '4202vl-68G',
-                'J9091A' => '8212zl',
-                );
+%MODEL_MAP = (
+    'J8131A' => 'WAP-420-WW',
+    'J8130A' => 'WAP-420-NA',
+    'J8133A' => 'AP520WL',
+    'J8680A' => '9408sl',
+    'J9091A' => '8212zl',
+    'J9475A' => '8206zl',
+    'J9265A' => '6600ml-24XG',
+    'J9264A' => '6600ml-24G-4XG',
+    'J9263A' => '6600ml-24G',
+    'J9452A' => '6600-48G-4XG',
+    'J9451A' => '6600-48G',
+    'J8474A' => '6410cl-6XG',
+    'J8433A' => '6400cl-6XG',
+    'J8992A' => '6200yl-24G',
+    'J4902A' => '6108',
+    'J8698A' => '5412zl',
+    'J8719A' => '5408yl',
+    'J8697A' => '5406zl',
+    'J8718A' => '5404yl',
+    'J4819A' => '5308XL',
+    'J4850A' => '5304XL',
+    'J8773A' => '4208vl',
+    'J8770A' => '4204vl',
+    'J8772A' => '4202vl-72',
+    'J9032A' => '4202vl-68G',
+    'J9031A' => '4202vl-68',
+    'J8771A' => '4202vl-48G',
+    'J4865A' => '4108GL',
+    'J4887A' => '4104GL',
+    'J8693A' => '3500yl-48G-PWR',
+    'J8692A' => '3500yl-24G-PWR',
+    'J9473A' => '3500-48-PoE',
+    'J9472A' => '3500-48',
+    'J9471A' => '3500-24-PoE',
+    'J9470A' => '3500-24',
+    'J4906A' => '3400cl-48G',
+    'J4905A' => '3400cl-24G',
+    'J4815A' => '3324XL',
+    'J4851A' => '3124',
+    'J9148A' => '2910al-48G-PoE+',
+    'J9147A' => '2910al-48G',
+    'J9146A' => '2910al-24G-PoE+',
+    'J9145A' => '2910al-24G',
+    'J9050A' => '2900-48G',
+    'J9049A' => '2900-24G',
+    'J4904A' => '2848',
+    'J4903A' => '2824',
+    'J9022A' => '2810-48G',
+    'J9021A' => '2810-24G',
+    'J8165A' => '2650-PWR',
+    'J4899B' => '2650-CR',
+    'J4899C' => '2650C',
+    'J4899A' => '2650',
+    'J8164A' => '2626-PWR',
+    'J4900B' => '2626-CR',
+    'J4900C' => '2626C',
+    'J4900A' => '2626',
+    'J9089A' => '2610-48-PWR',
+    'J9088A' => '2610-48',
+    'J9087A' => '2610-24-PWR',
+    'J9086A' => '2610-24/12PWR',
+    'J9085A' => '2610-24',
+    'J8762A' => '2600-8-PWR',
+    'J4813A' => '2524',
+    'J9137A' => '2520-8-PoE',
+    'J9138A' => '2520-24-PoE',
+    'J4812A' => '2512',
+    'J9280A' => '2510G-48',
+    'J9279A' => '2510G-24',
+    'J9020A' => '2510-48A',
+    'J9019B' => '2510-24B',
+    'J9019A' => '2510-24A',
+    'J4818A' => '2324',
+    'J4817A' => '2312',
+    'J9029A' => '1800-8G',
+    'J9028A' => '1800-24G',
+);
 
 =item $hp->os()
 
@@ -831,10 +804,6 @@ the description field.
 =item $hp->os_version()
 
 C<hpSwitchOsVersion.0>
-
-=item $hp->serial()
-
-Returns serial number if available through SNMP
 
 =item $hp->slots()
 
@@ -894,49 +863,6 @@ Returns reference to hash of IIDs to admin duplex setting.
 =item $hp->i_name()
 
 Crosses i_name() with $hp->e_name() using $hp->e_port() and i_alias()
-
-=item $hp->i_vlan()
-
-Returns a mapping between C<ifIndex> and the PVID (default VLAN) or untagged
-port when using F<HP-VLAN>.
-
-Looks in F<Q-BRIDGE-MIB> first (L<SNMP::Info::Bridge/"TABLE METHODS">) and for
-older devices looks in F<HP-VLAN>.
-
-=item $hp->i_vlan_membership()
-
-Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
-IDs.  These are the VLANs which are members of the egress list for the port.
-It  is the union of tagged, untagged, and auto ports when using F<HP-VLAN>.
-
-Looks in F<Q-BRIDGE-MIB> first (L<SNMP::Info::Bridge/"TABLE METHODS">) and for
-older devices looks in F<HP-VLAN>.
-
-  Example:
-  my $interfaces = $hp->interfaces();
-  my $vlans      = $hp->i_vlan_membership();
-  
-  foreach my $iid (sort keys %$interfaces) {
-    my $port = $interfaces->{$iid};
-    my $vlan = join(',', sort(@{$vlans->{$iid}}));
-    print "Port: $port VLAN: $vlan\n";
-  }
-
-=item $hp->v_index()
-
-Returns VLAN IDs
-
-=item $hp->v_name()
-
-Returns VLAN names
-
-=item $hp->bp_index()
-
-Returns reference to hash of bridge port table entries map back to interface
-identifier (iid)
-
-Returns (C<ifIndex>) for both key and value for 1600, 2424, 4000, and 8000
-models since they seem to have problems with F<BRIDGE-MIB>
 
 =item $hp->peth_port_ifindex()
 
