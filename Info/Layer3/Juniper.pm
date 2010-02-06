@@ -115,6 +115,21 @@ sub i_vlan {
     return \%i_vlan;
 }
 
+# Use Q-BRIDGE-MIB for bridge forwarding tables
+sub fw_mac {
+    my $juniper  = shift;
+    my $partial = shift;
+
+    return $juniper->qb_fw_mac($partial);
+}
+
+sub fw_port {
+    my $juniper  = shift;
+    my $partial = shift;
+
+    return $juniper->qb_fw_port($partial);
+}
+
 1;
 __END__
 
