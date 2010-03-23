@@ -46,6 +46,8 @@ $VERSION = '2.01';
 %MIBS = (
     %SNMP::Info::MIBS,      %SNMP::Info::Bridge::MIBS,
     %SNMP::Info::CDP::MIBS, %SNMP::Info::Airespace::MIBS,
+    'AIRESPACE-SWITCHING-MIB' => 'agentInterfaceVlanId',
+    'CISCO-LWAPP-DOT11-CLIENT-MIB' => 'cldcClientCurrentTxRateSet',
 );
 
 %GLOBALS = (
@@ -56,11 +58,26 @@ $VERSION = '2.01';
 %FUNCS = (
     %SNMP::Info::FUNCS,      %SNMP::Info::Bridge::FUNCS,
     %SNMP::Info::CDP::FUNCS, %SNMP::Info::Airespace::FUNCS,
+
+    # This needs to be cleaned up, but for now we pretend to
+    # have the CISCO-DOT11-MIB for signal strengths, etc.
+    'cd11_sigstrength' => 'bsnMobileStationRSSI',	# kinda
+    'cd11_sigqual'     => 'bsnMobileStationSnr',	# kinda
+    'cd11_rxbyte'      => 'bsnMobileStationBytesReceived',
+    'cd11_txbyte'      => 'bsnMobileStationBytesSent',
+    'cd11_rxpkt'       => 'bsnMobileStationPacketsReceived',
+    'cd11_txpkt'       => 'bsnMobileStationPacketsSent',
+    'cd11_txrate'      => 'cldcClientCurrentTxRateSet',
+    'cd11_rateset'     => 'cldcClientDataRateSet',
 );
 
 %MUNGE = (
     %SNMP::Info::MUNGE,      %SNMP::Info::Bridge::MUNGE,
     %SNMP::Info::CDP::MUNGE, %SNMP::Info::Airespace::MUNGE,
+    'cd11_rxpkt'	=> \&munge_64bits,
+    'cd11_txpkt'	=> \&munge_64bits,
+    'cd11_txrate'       => \&munge_cd11_txrate,
+    'cd11_rateset'      => \&munge_cd11_rateset,
 );
 
 sub os {
@@ -77,6 +94,42 @@ sub model {
     return unless defined $model;
 
     return $model;
+}
+
+# vlan:
+# AIRESPACE-SWITCHING-MIB::agentInterfaceVlanId
+
+sub cd11_mac {
+    my $airespace = shift;
+    my $cd11_sigstrength = $airespace->cd11_sigstrength();
+
+    my $ret = {};
+    foreach my $idx ( keys %$cd11_sigstrength ) {
+	my $mac = join( ":", map { sprintf "%02x", $_ } split /\./, $idx );
+	$ret->{$idx} = $mac
+    }
+    return $ret;
+}
+
+sub munge_cd11_txrate {
+    my $rate = shift;
+    if ( $rate ) {
+        return [ $rate * 1.0 ];
+    } else {
+        return [ 0.0 ];
+    }
+}
+
+sub munge_cd11_rateset {
+    my $rates = shift;
+    return [ map { $_ * 1.0 } split /,/, $rates ];
+}
+
+sub munge_64bits {
+    # The controller sometimes hands off a ridiculous value for packets.
+    # Just truncate it to 32 bits.
+    my $value = shift;
+    return $value & 0xffffffff;
 }
 
 1;
