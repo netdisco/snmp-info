@@ -85,16 +85,17 @@ $VERSION = '2.01';
     'airespace_ess_aclname'   => 'bsnDot11EssAclName',
 
     # AIRESPACE-WIRELESS-MIB::bsnAPTable
-    'airespace_ap_mac'    => 'bsnAPDot3MacAddress',
-    'airespace_ap_name'   => 'bsnAPName',
-    'airespace_ap_ip'     => 'bsnApIpAddress',
-    'airespace_ap_loc'    => 'bsnAPLocation',
-    'airespace_ap_sw'     => 'bsnAPSoftwareVersion',
-    'airespace_ap_fw'     => 'bsnAPBootVersion',
-    'airespace_ap_model'  => 'bsnAPModel',
-    'airespace_ap_serial' => 'bsnAPSerialNumber',
-    'airespace_ap_type'   => 'bsnAPType',
-    'airespace_ap_status' => 'bsnAPAdminStatus',
+    'airespace_ap_mac'      => 'bsnAPDot3MacAddress',
+    'airespace_ap_name'     => 'bsnAPName',
+    'airespace_ap_ip'       => 'bsnApIpAddress',
+    'airespace_ap_loc'      => 'bsnAPLocation',
+    'airespace_ap_sw'       => 'bsnAPSoftwareVersion',
+    'airespace_ap_fw'       => 'bsnAPBootVersion',
+    'airespace_ap_model'    => 'bsnAPModel',
+    'airespace_ap_serial'   => 'bsnAPSerialNumber',
+    'airespace_ap_type'     => 'bsnAPType',
+    'airespace_ap_status'   => 'bsnAPAdminStatus',
+    'airespace_ap_ethermac' => 'bsnAPEthernetMacAddress',
 
     # AIRESPACE-WIRELESS-MIB::bsnAPIfTable
     'airespace_apif_slot'   => 'bsnAPIfSlotId',
@@ -112,6 +113,7 @@ $VERSION = '2.01';
     'airespace_sta_ess_idx' => 'bsnMobileStationEssIndex',
     'airespace_sta_ssid'    => 'bsnMobileStationSsid',
     'airespace_sta_delete'  => 'bsnMobileStationDeleteAction',
+    'airespace_sta_ip'      => 'bsnMobileStationIpAddress',
 
     # AIRESPACE-WIRELESS-MIB::bsnUsersTable
     'airespace_user_name'    => 'bsnUserName',
@@ -148,15 +150,16 @@ $VERSION = '2.01';
 
 %MUNGE = (
     %SNMP::Info::MUNGE,
-    'airespace_ap_mac'  => \&SNMP::Info::munge_mac,
-    'fw_port'           => \&SNMP::Info::munge_mac,
-    'airespace_bl_mac'  => \&SNMP::Info::munge_mac,
-    'airespace_if_mac'  => \&SNMP::Info::munge_mac,
-    'airespace_sta_mac' => \&SNMP::Info::munge_mac,
+    'airespace_ap_mac'      => \&SNMP::Info::munge_mac,
+    'airespace_ap_ethermac' => \&SNMP::Info::munge_mac,
+    'fw_port'               => \&SNMP::Info::munge_mac,
+    'airespace_bl_mac'      => \&SNMP::Info::munge_mac,
+    'airespace_if_mac'      => \&SNMP::Info::munge_mac,
+    'airespace_sta_mac'     => \&SNMP::Info::munge_mac,
 );
 
 sub layers {
-    return '00000011';
+    return '00000111';
 }
 
 sub serial {
@@ -894,6 +897,47 @@ sub e_parent {
         }
     }
     return \%e_parent;
+}
+
+# arpnip:
+#
+# This is the controller snooping on the MAC->IP mappings.
+# Pretending this is arpnip data allows us to get MAC->IP
+# mappings even for stations that only communicate locally.
+# Also use the controller's knowledge of the APs' MAC and
+# IP addresses to augment the data.
+
+sub at_paddr {
+    my $airespace = shift;
+    my $mac2ip = $airespace->airespace_sta_ip();
+    my $apethermac = $airespace->airespace_ap_ethermac();
+
+    my $ret = {};
+    foreach my $idx ( keys %$mac2ip ) {
+	next if ( $mac2ip->{ $idx } eq '0.0.0.0' );
+	my $mac = join( ":", map { sprintf "%02x", $_ } split /\./, $idx );
+	$ret->{$idx} = $mac;
+    }
+    foreach my $idx ( keys %$apethermac ) {
+	$ret->{$idx} = $apethermac->{$idx};
+    }
+    return $ret;
+}
+
+sub at_netaddr {
+    my $airespace = shift;
+    my $mac2ip = $airespace->airespace_sta_ip();
+    my $ap2ip = $airespace->airespace_ap_ip();
+
+    my $ret = {};
+    foreach my $idx ( keys %$mac2ip ) {
+	next if ( $mac2ip->{ $idx } eq '0.0.0.0' );
+	$ret->{$idx} = $mac2ip->{ $idx };
+    }
+    foreach my $idx ( keys %$ap2ip ) {
+	$ret->{$idx} = $ap2ip->{ $idx };
+    }
+    return $ret;
 }
 
 1;
