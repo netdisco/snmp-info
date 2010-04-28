@@ -398,7 +398,11 @@ device-family: Firewall
 class: Layer3::Cisco
 device: PIX Security Appliance
 device: Adaptive Security Applicance
-device: Firewall Services Moduels (FWSM)
+
+device: Firewall Services Modules (FWSM)
+note: !Arpnip only available for 4.x software releases.
+class: Layer3::CiscoFWSM
+arpnip: yes
 
 #
 # Cyclades

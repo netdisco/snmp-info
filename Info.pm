@@ -641,6 +641,12 @@ This is a simple wrapper around Layer3 for IOS devices.  It adds on CiscoVTP.
 
 See documentation in L<SNMP::Info::Layer3::Cisco> for details.
 
+=item SNMP::Info::Layer3::CiscoFWSM
+
+Subclass for Cisco Firewall Services Modules.
+
+See documentation in L<SNMP::Info::Layer3::CiscoFWSM> for details.
+
 =item SNMP::Info::Layer3::Contivity
 
 Subclass for Nortel Contivity/VPN Routers.  
@@ -1422,7 +1428,7 @@ sub device_type {
             if ( $desc =~ /Cisco Adaptive Security Appliance/i );
 
         # Cisco FWSM
-        $objtype = 'SNMP::Info::Layer3::Cisco'
+        $objtype = 'SNMP::Info::Layer3::CiscoFWSM'
             if ( $desc =~ /Cisco Firewall Services Module/i );
 
     }

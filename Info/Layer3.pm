@@ -47,7 +47,7 @@ use SNMP::Info::PowerEthernet;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
 
-$VERSION = '2.01';
+$VERSION = '2.02-cvs';
 
 %MIBS = (
     %SNMP::Info::MIBS,
@@ -120,6 +120,17 @@ $VERSION = '2.01';
     'bgp_peer_in_upd'         => 'bgpPeerInUpdates',
     'bgp_peer_out_tot_msgs'   => 'bgpPeerOutTotalMessages',
     'bgp_peer_out_upd'        => 'bgpPeerOutUpdates',
+
+    # IP-MIB Net to Physical Table (ARP Cache)
+    'n2p_index' => 'ipNetToPhysicalIfIndex',
+    'n2p_naddrt' => 'ipNetToPhysicalNetAddressType',
+    'n2p_naddr' => 'ipNetToPhysicalNetAddress',
+    'n2p_paddr' => 'ipNetToPhysicalPhysAddress',
+    'n2p_lastupdate' => 'ipNetToPhysicalLastUpdated',
+    'n2p_ptype' => 'ipNetToPhysicalType',
+    'n2p_pstate' => 'ipNetToPhysicalState',
+    'n2p_pstatus' => 'ipNetToPhysicalRowStatus',
+
 );
 
 %MUNGE = (
@@ -132,6 +143,7 @@ $VERSION = '2.01';
     %SNMP::Info::PowerEthernet::MUNGE,
     'old_at_paddr' => \&SNMP::Info::munge_mac,
     'at_paddr'     => \&SNMP::Info::munge_mac,
+    'n2p_paddr' => \&SNMP::Info::munge_mac,
 );
 
 # Method OverRides
