@@ -69,6 +69,10 @@ $VERSION = '2.01';
     'c_vlan'         => 'cdpCacheNativeVLAN',
     'c_duplex'       => 'cdpCacheDuplex',
     'c_power'        => 'cdpCachePowerConsumption',
+    'c_pri_mgmt_type'=> 'cdpCachePrimaryMgmtAddrType',
+    'c_pri_mgmt_addr'=> 'cdpCachePrimaryMgmtAddr',
+    'c_sec_mgmt_type'=> 'cdpCacheSecondaryMgmtAddrType',
+    'c_sec_mgmt_addr'=> 'cdpCacheSecondaryMgmtAddr',
 );
 
 %MUNGE = (
