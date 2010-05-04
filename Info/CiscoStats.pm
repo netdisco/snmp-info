@@ -76,6 +76,7 @@ $VERSION = '2.01';
 
     # OLD-CISCO-SYSTEM-MIB
     'write_mem' => 'writeMem',
+    'rom_id'    => 'romId',
 );
 
 %FUNCS = (
@@ -202,6 +203,15 @@ sub os_ver {
         return $1;
     }
 
+    return;
+}
+
+sub os_bin {
+    my $self   = shift;
+    my $rom_id = $self->rom_id();
+    if ($rom_id =~ m/Version ([^,]+),/)  {
+        return $1;
+    }
     return;
 }
 
@@ -426,6 +436,10 @@ Cisco Content Switch Secure Content Acceleration
 =item $ciscostats->os_ver()
 
 Tries to parse device operating system version from description()
+
+=item $ciscostats->os_bin()
+
+Tries to parse ROMMON version from rom_id() string
 
 =item $ciscostats->ios_cpu()
 

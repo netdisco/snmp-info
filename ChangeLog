@@ -8,6 +8,7 @@ version 2.02 ()
     + [2980782] Added L3::CiscoFWSM for Cisco Firewall Services Modules
       (Brian De Wolf)
     * Added specific functions for neighbor mgmt addresses to CDP class
+    * Implemented os_bin() method in CiscoStats 
 
 version 2.01 (06/12/09)
     + Added CiscoStpExtensions Class (Carlos Vicente)
