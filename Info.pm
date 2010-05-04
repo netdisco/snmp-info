@@ -1,6 +1,6 @@
 # SNMP::Info
 #
-# Copyright (c) 2003-2009 Max Baker and SNMP::Info Developers
+# Copyright (c) 2003-2010 Max Baker and SNMP::Info Developers
 # All rights reserved.
 #
 # Portions Copyright (c) 2002-2003, Regents of the University of California
@@ -32,12 +32,12 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 2.01
+SNMP::Info - Version 2.02
 
 =head1 AUTHOR
 
-SNMP::Info is maintained by team of Open Source authors headed by Eric Miller
-and Bill Fenner.
+SNMP::Info is maintained by team of Open Source authors headed by Eric Miller,
+Bill Fenner, Max Baker and Jeroen van Ingen.
 
 Please visit L<http://sourceforge.net/projects/snmp-info/> for most up-to-date
 list of developers.
@@ -3677,7 +3677,7 @@ sub AUTOLOAD {
 =head1 COPYRIGHT AND LICENSE
 
 Changes from SNMP::Info Version 0.7 and on are:
-Copyright (c) 2003-2009 Max Baker and SNMP::Info Developers
+Copyright (c) 2003-2010 Max Baker and SNMP::Info Developers
 All rights reserved.
 
 Original Code is:

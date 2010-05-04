@@ -5,12 +5,12 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 2.01
+    SNMP::Info - Version 2.02
 
 AUTHOR
 
     SNMP::Info is maintained by team of Open Source authors headed by Eric
-    Miller and Bill Fenner.
+    Miller, Bill Fenner, Max Baker and Jeroen van Ingen.
 
     Please visit <http://sourceforge.net/projects/snmp-info/> for most
     up-to-date list of developers.
@@ -440,11 +440,18 @@ SUBCLASSES
             Depreciated. Use SNMP::Info::Layer3::Foundry.
 
         SNMP::Info::Layer2::HP
-            Subclass for HP Procurve Switches
+            Subclass for more recent HP Procurve Switches
 
             Requires HP-ICF-OID and ENTITY-MIB downloaded from HP.
 
             See documentation in SNMP::Info::Layer2::HP for details.
+
+        SNMP::Info::Layer2::HP4000
+            Subclass for older HP Procurve Switches
+
+            Requires HP-ICF-OID and ENTITY-MIB downloaded from HP.
+
+            See documentation in SNMP::Info::Layer2::HP4000 for details.
 
         SNMP::Info::Layer2::N2270
             Subclass for Nortel 2270 wireless switches.
@@ -535,6 +542,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Cisco for details.
 
+        SNMP::Info::Layer3::CiscoFWSM
+            Subclass for Cisco Firewall Services Modules.
+
+            See documentation in SNMP::Info::Layer3::CiscoFWSM for details.
+
         SNMP::Info::Layer3::Contivity
             Subclass for Nortel Contivity/VPN Routers.
 
@@ -565,7 +577,7 @@ SUBCLASSES
         SNMP::Info::Layer3::HP9300
             Subclass for HP network devices which Foundry Networks was the
             Original Equipment Manufacturer (OEM) such as the HP ProCurve
-            9300 series.
+            9300 and 6300 series.
 
             See documentation in SNMP::Info::Layer3::HP9300 for details.
 
@@ -1726,7 +1738,7 @@ SNMP::INFO INTERNALS
 
 COPYRIGHT AND LICENSE
 
-    Changes from SNMP::Info Version 0.7 and on are: Copyright (c) 2003-2009
+    Changes from SNMP::Info Version 0.7 and on are: Copyright (c) 2003-2010
     Max Baker and SNMP::Info Developers All rights reserved.
 
     Original Code is: Copyright (c) 2002-2003, Regents of the University of
