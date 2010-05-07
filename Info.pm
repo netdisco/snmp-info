@@ -1195,6 +1195,7 @@ sub device_type {
         6486 => 'SNMP::Info::Layer3::AlcatelLucent',
         6527 => 'SNMP::Info::Layer3::Timetra',
         8072 => 'SNMP::Info::Layer3::NetSNMP',
+	12325 => 'SNMP::Info::Layer3::Pf',
         30065 => 'SNMP::Info::Layer3::Arista',
     );
 

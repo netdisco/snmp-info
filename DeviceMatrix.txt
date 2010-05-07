@@ -478,6 +478,16 @@ device: Alpine 3808
 device: Summit 7i, 48si
 
 #
+# FreeBSD
+#
+device-vendor: FreeBSD
+device-famly: Pf
+class: Layer3::Pf
+arpnip: yes
+cdp: no
+note: LLDP support might be available. See note in Layer3::Pf
+
+#
 # Foundry
 #
 device-vendor: Foundry Networks
