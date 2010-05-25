@@ -10,6 +10,8 @@ version 2.02 ()
     + Added L3::Pf for FreeBSD PFSense Firewalls (max)
     * Added specific functions for neighbor mgmt addresses to CDP class
     * Implemented os_bin() method in CiscoStats 
+    + [2980787] Fix for C1900 bp_index not containing interfaces.
+      (Brian De Wolf)
 
 version 2.01 (06/12/09)
     + Added CiscoStpExtensions Class (Carlos Vicente)

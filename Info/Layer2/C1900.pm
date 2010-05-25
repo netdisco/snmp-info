@@ -251,6 +251,18 @@ sub i_vlan_membership {
     return $i_vlan_membership;
 }
 
+sub bp_index {
+    my $c1900   = shift;
+    my $partial = shift;
+
+    my $if_index = $c1900->i_index($partial);
+    my $index = $c1900->orig_bp_index($partial) || {};
+    foreach my $iid ( keys %$if_index ) {
+        $index->{$iid} = $iid if(!defined $index->{$iid});
+    }
+    return $index;
+}
+
 1;
 __END__
 
@@ -431,6 +443,13 @@ bridge group IDs.
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
     print "Port: $port VLAN: $vlan\n";
   }
+
+
+=item $c1900->bp_index()
+
+Returns a bp_index that contains the original bp_index entries and extra
+entries for those interfaces listed in if_index, as some C1900 devices do not
+return complete bp_indexes.
 
 =back
 
