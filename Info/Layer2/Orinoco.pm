@@ -114,6 +114,8 @@ sub model {
 
     return $1             if ( $descr =~ /(AP-\d+)/ );
     return 'WavePOINT-II' if ( $descr =~ /WavePOINT-II/ );
+    return 'Outdoor Router' if ( $descr =~ /Wireless Router/ );
+
     return;
 }
 

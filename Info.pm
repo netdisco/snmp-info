@@ -1211,6 +1211,7 @@ sub device_type {
         2925  => 'SNMP::Info::Layer1::Cyclades',
         4526  => 'SNMP::Info::Layer2::Netgear',
         5624  => 'SNMP::Info::Layer3::Enterasys',
+        11898 => 'SNMP::Info::Layer2::Orinoco',
         14179 => 'SNMP::Info::Layer2::Airespace',
         14823 => 'SNMP::Info::Layer2::Aruba',
     );
