@@ -99,6 +99,7 @@ $VERSION = '2.02-cvs';
     # CONFIG-MIB::hpSwitchPortTable
     'hp_duplex'       => 'hpSwitchPortEtherMode',
     'hp_duplex_admin' => 'hpSwitchPortFastEtherMode',
+    'vendor_i_type'   => 'hpSwitchPortType',
 
     # HP-ICF-CHASSIS
     'hp_s_oid'    => 'hpicfSensorObjectId',
@@ -648,6 +649,10 @@ Returns reference to map of IIDs to current link duplex.
 =item $hp->i_duplex_admin()
 
 Returns reference to hash of IIDs to admin duplex setting.
+
+=item $hp->vendor_i_type()
+
+Returns reference to hash of IIDs to HP specific port type (hpSwitchPortType).
 
 =item $hp->i_name()
 

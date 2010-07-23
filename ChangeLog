@@ -12,6 +12,7 @@ version 2.02 ()
     * Implemented os_bin() method in CiscoStats 
     + [2980787] Fix for C1900 bp_index not containing interfaces.
       (Brian De Wolf)
+    + [2599795] Added vendor_i_type() method to HP and HP4000 clases
 
 version 2.01 (06/12/09)
     + Added CiscoStpExtensions Class (Carlos Vicente)
