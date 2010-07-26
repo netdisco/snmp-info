@@ -1165,13 +1165,22 @@ sub device_type {
 
     my $objtype = "SNMP::Info";
 
-    my $layers = $info->layers();
-
-    # if we dont have sysServices, we dont have anything else either probably.
-    return unless ( defined $layers and length($layers) );
+    my $layers = $info->layers() || '00000000';
 
     my $desc = $info->description() || 'undef';
     $desc =~ s/[\r\n\l]+/ /g;
+
+    # Some devices don't implement sysServices, but do return a description. 
+    # In that case, log a warning and continue.
+    if ( !$layers ) {
+        if ($desc ne 'undef') {
+            carp("Device doesn't implement sysServices but did return sysDescr. Might give unexpected results.\n") if $info->debug();
+        } else {
+            # No sysServices, no sysDescr 
+            return undef;
+        }
+    }
+
     my $id = $info->id() || 'undef';
 
     # Hash for generic fallback to a device class if unable to determine using
@@ -1195,7 +1204,7 @@ sub device_type {
         6486 => 'SNMP::Info::Layer3::AlcatelLucent',
         6527 => 'SNMP::Info::Layer3::Timetra',
         8072 => 'SNMP::Info::Layer3::NetSNMP',
-	12325 => 'SNMP::Info::Layer3::Pf',
+        12325 => 'SNMP::Info::Layer3::Pf',
         30065 => 'SNMP::Info::Layer3::Arista',
     );
 
@@ -1433,6 +1442,14 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::CiscoFWSM'
             if ( $desc =~ /Cisco Firewall Services Module/i );
 
+        # Generic device classification based upon sysObjectID
+        if ( defined($id) ) {
+            if ( defined $l3sysoidmap{$id} ) {
+                $objtype = $l3sysoidmap{$id};
+            } elsif ( defined $l2sysoidmap{$id}) {
+                $objtype = $l2sysoidmap{$id};
+            }
+        }
     }
 
     return $objtype;
