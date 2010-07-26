@@ -1172,7 +1172,7 @@ sub device_type {
 
     # Some devices don't implement sysServices, but do return a description. 
     # In that case, log a warning and continue.
-    if ( !$layers ) {
+    if ( $layers eq '00000000' ) {
         if ($desc ne 'undef') {
             carp("Device doesn't implement sysServices but did return sysDescr. Might give unexpected results.\n") if $info->debug();
         } else {
