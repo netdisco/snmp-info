@@ -15,6 +15,7 @@ version 2.02 ()
     + [2599795] Added vendor_i_type() method to HP and HP4000 clases
     + [2688801] Minor modification for obscure Proxim/Orinoco device
       (jrbinks)
+    * Minor tweaks to support devices without sysServices
 
 version 2.01 (06/12/09)
     + Added CiscoStpExtensions Class (Carlos Vicente)
