@@ -59,6 +59,8 @@ $VERSION = '2.02-cvs';
     'NETSWITCH-MIB'  => 'hpMsgBufFree',
     'CONFIG-MIB'     => 'hpSwitchConfig',
     'HP-ICF-CHASSIS' => 'hpicfSensorObjectId',
+    'HP-ICF-BRIDGE'  => 'hpicfBridgeRstpForceVersion',
+    'HP-ICF-POE-MIB' => 'hpicfPoePethPsePortCurrent',
 );
 
 %GLOBALS = (
@@ -74,6 +76,7 @@ $VERSION = '2.02-cvs';
     'os_version'   => 'hpSwitchOsVersion.0',
     'os_bin'       => 'hpSwitchRomVersion.0',
     'mac'          => 'hpSwitchBaseMACAddress.0',
+    'rstp_ver'     => 'hpicfBridgeRstpForceVersion',
 );
 
 %FUNCS = (
@@ -95,6 +98,9 @@ $VERSION = '2.02-cvs';
     'hp_s_oid'    => 'hpicfSensorObjectId',
     'hp_s_name'   => 'hpicfSensorDescr',
     'hp_s_status' => 'hpicfSensorStatus',
+    
+    # HP-ICF-POE-MIB
+    'peth_port_power'   => 'hpicfPoePethPsePortPower',
 );
 
 %MUNGE = (
@@ -189,6 +195,11 @@ $VERSION = '2.02-cvs';
 );
 
 # Method Overrides
+
+sub stp_ver {
+    my $hp = shift;
+    return $hp->rstp_ver() || $hp->SUPER::stp_ver();
+}
 
 sub cpu {
     my $hp = shift;
@@ -667,6 +678,10 @@ Included in V2 mibs from Cisco
 
 =item F<CONFIG-MIB>
 
+=item F<HP-ICF-BRIDGE>
+
+=item F<HP-ICF-POE-MIB>
+
 =back
 
 The last four MIBs listed are from HP and can be found at
@@ -825,6 +840,16 @@ Power supply 1 status
 =item $hp->ps2_status()
 
 Power supply 2 status
+
+=item $hp->peth_port_power()
+
+Power supplied by PoE ports, in milliwatts
+("hpicfPoePethPsePortPower")
+
+=item $hp->stp_ver()
+
+Returns what version of STP the device is running.
+("hpicfBridgeRstpForceVersion" with fallback to inherited stp_ver())
 
 =back
 

@@ -45,7 +45,10 @@ $VERSION = '2.01';
 
 %GLOBALS = ();
 
-%FUNCS = ( 'cpeth_ent_phy' => 'cpeExtPsePortEntPhyIndex', );
+%FUNCS = ( 
+    'cpeth_ent_phy'     => 'cpeExtPsePortEntPhyIndex', 
+    'peth_port_power'   => 'cpeExtPsePortPwrConsumption', 
+);
 
 %MUNGE = ();
 
@@ -143,6 +146,11 @@ to a hash.
 
 Maps the C<pethPsePortTable> to C<ifIndex> by way of the F<ENTITY-MIB>.
 
+=item $poe->peth_port_power()
+
+Power supplied by PoE ports, in milliwatts
+("cpeExtPsePortPwrConsumption")
+ 
 =back
 
 =cut

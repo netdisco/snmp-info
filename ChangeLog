@@ -15,6 +15,8 @@ version 2.02 ()
     + [2599795] Added vendor_i_type() method to HP and HP4000 clases
     + [2688801] Minor modification for obscure Proxim/Orinoco device
       (jrbinks)
+    + [3051443] Add PoE measured power per port to Cisco, Extrme and HP 
+      classes (jeroenvi)
     * Minor tweaks to support devices without sysServices
 
 version 2.01 (06/12/09)

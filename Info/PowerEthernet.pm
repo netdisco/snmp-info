@@ -89,6 +89,10 @@ sub peth_port_ifindex {
     return $peth_port_ifindex;
 }
 
+sub peth_port_power {
+    return {};
+}
+
 1;
 
 __END__
@@ -173,6 +177,16 @@ Device class: if status is delivering power, this represents the 802.3af
 class of the device being powered.
 
 C<pethPsePortPowerClassifications>
+
+=item $poe->peth_port_power()
+
+Power sourced: if status is delivering power, this represents the actual
+power output to the device being powered. This is not included in the MIB,
+but we include a placeholder for the function so it can be included in 
+device classes in a uniform manner. 
+
+Currently the Cisco, Extreme and HP classes override this method to return 
+actual values. 
 
 =item $poe->peth_port_ifindex()
 
