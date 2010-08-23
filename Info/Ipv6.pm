@@ -216,15 +216,15 @@ sub ipv6_n2p_state {
 
 sub method_used {
     my $info = shift;
-    my $return;
-    if ($info::METHOD eq IPMIB) {
-        $return = 'IP-MIB';
-    } elsif ($info::METHOD eq IPV6MIB) {
-        $return = 'IPV6-MIB';
-    } elsif ($info::METHOD eq CISCO) {
-        $return = 'CISCO-IETF-IP-MIB';
-    } else {
-        $return = 'none of the MIBs';
+    my $return = 'none of the MIBs';
+    if (defined $info::METHOD) {
+        if ($info::METHOD eq IPMIB) {
+            $return = 'IP-MIB';
+        } elsif ($info::METHOD eq IPV6MIB) {
+            $return = 'IPV6-MIB';
+        } elsif ($info::METHOD eq CISCO) {
+            $return = 'CISCO-IETF-IP-MIB';
+        }
     }
     return $return;
 }
