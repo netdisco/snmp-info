@@ -1,6 +1,6 @@
 # SNMP::Info::Ipv6
 #
-# Copyright (c) 2010 Jeroen van Ingen
+# Copyright (c) 2010 Jeroen van Ingen and Carlos Vicente
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -59,13 +59,25 @@ $VERSION = '2.01';
 %FUNCS = ( 
     'ip_n2p_phys_addr'  => 'ipNetToPhysicalPhysAddress',    # IP-MIB
     'c_inet_phys_addr'  => 'cInetNetToMediaPhysAddress',    # CISCO-IETF-IP-MIB
-    'i6_n2p_phys_addr'  => 'ipv6NetToMediaPhysAddress',     # IPV6-MIB
-    'ip_n2p_phys_type'  => 'ipNetToPhysicalType',       # IP-MIB
-    'c_inet_phys_type'  => 'cInetNetToMediaType',       # CISCO-IETF-IP-MIB
-    'i6_n2p_phys_type'  => 'ipv6NetToMediaType',        # IPV6-MIB
-    'ip_n2p_phys_state' => 'ipNetToPhysicalState',      # IP-MIB
-    'c_inet_phys_state' => 'cInetNetToMediaState',      # CISCO-IETF-IP-MIB
-    'i6_n2p_phys_state' => 'ipv6NetToMediaState',       # IPV6-MIB
+    'i6_n2p_phys_addr'  => 'ipv6NetToMediaNetAddress',      # IPV6-MIB
+
+    'ip_n2p_phys_type'  => 'ipNetToPhysicalType',           # IP-MIB
+    'c_inet_phys_type'  => 'cInetNetToMediaType',           # CISCO-IETF-IP-MIB
+    'i6_n2p_phys_type'  => 'ipv6NetToMediaType',            # IPV6-MIB
+
+    'ip_n2p_phys_state' => 'ipNetToPhysicalState',          # IP-MIB
+    'c_inet_phys_state' => 'cInetNetToMediaState',          # CISCO-IETF-IP-MIB
+    'i6_n2p_phys_state' => 'ipv6NetToMediaState',           # IPV6-MIB
+
+    'ip_pfx_origin'     => 'ipAddressPrefixOrigin',         # IP-MIB
+    'c_pfx_origin'      => 'cIpAddressPfxOrigin',           # CISCO-IETF-IP-MIB 
+
+    'ip_addr6_index'    => 'ipAddressIfIndex',              # IP-MIBw
+    'c_addr6_index'     => 'cIpAddressIfIndex',             # CISCO-IETF-IP-MIB 
+
+    'ip_addr6_type'     => 'ipAddressType',                 # IP-MIB
+    'c_addr6_type'      => 'cIpAddressType',                # CISCO-IETF-IP-MIB
+    
 );
 
 %MUNGE = (
@@ -212,7 +224,65 @@ sub ipv6_n2p_state {
     return $return;
 }
 
+sub ipv6_index {
+    my $info = shift;
+    my $return;
+    my $ipv6_index = &test_methods( $info, {
+	ip_addr6_index  => IPMIB,
+	c_addr6_index   => CISCO,
+				    });
+    return unless defined $ipv6_index;
+    foreach my $row (keys %$ipv6_index){
+        if ($row =~ /^(\d+)\.([\d\.]+)$/) {
+            my $addrtype = $1; my $v6addr = $2;
+            if ($addrtype == 2) { # IPv6
+		$return->{$row} = $ipv6_index->{$row};
+	    }
+	}
+    }
+    printf("%s: data comes from %s.\n", &my_sub_name, $info->method_used() ) if $info->debug();
+    return $return;
+}
 
+sub ipv6_type {
+    my $info = shift;
+    my $return;
+    my $ipv6_type = &test_methods( $info, {
+	ip_addr6_type  => IPMIB,
+	c_addr6_type   => CISCO,
+				    });
+    return unless defined $ipv6_type;
+    foreach my $row (keys %$ipv6_type){
+        if ($row =~ /^(\d+)\.([\d\.]+)$/) {
+            my $addrtype = $1; my $v6addr = $2;
+            if ($addrtype == 2) { # IPv6
+		$return->{$row} = $ipv6_type->{$row};
+	    }
+	}
+    }
+    printf("%s: data comes from %s.\n", &my_sub_name, $info->method_used() ) if $info->debug();
+    return $return;
+}
+
+sub ipv6_pfx_origin {
+    my $info = shift;
+    my $return;
+    my $ipv6_pfx_origin = &test_methods( $info, {
+	ip_pfx_origin  => IPMIB,
+	c_pfx_origin   => CISCO,
+				    });
+    return unless defined $ipv6_pfx_origin;
+    foreach my $row (keys %$ipv6_pfx_origin){
+        if ($row =~ /^(\d+)\.(\d+)\.([\d\.]+)\.(\d+)$/) {
+            my $ifindex = $1; my $type = $2; my $pfx = $3; my $len = $4;
+            if ($type == 2) { # IPv6
+		$return->{$row} = $ipv6_pfx_origin->{$row};
+	    }
+	}
+    }
+    printf("%s: data comes from %s.\n", &my_sub_name, $info->method_used() ) if $info->debug();
+    return $return;
+}
 
 sub method_used {
     my $info = shift;
