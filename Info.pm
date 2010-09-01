@@ -1260,6 +1260,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500'
             if $desc =~ /(s72033_rp|s3223_rp|s32p3_rp|s222_rp)/;
 
+        # Various Cisco blade switches, CBS30x0 and CBS31x0 models
+        $objtype = 'SNMP::Info::Layer3::C6500'
+            if ( $desc =~ /cisco/i and $desc =~ /CBS3[0-9A-Za-z]{3}/ );
+
         # HP, older ProCurve models (1600, 2400, 2424m, 4000, 8000)
         $objtype = 'SNMP::Info::Layer2::HP4000'
             if $desc =~ /\b(J4093A|J4110A|J4120A|J4121A|J4122A|J4122B)\b/;

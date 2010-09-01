@@ -301,6 +301,11 @@ class: Layer3::C6500
 
 device: 3750
 
+device-family: Catalyst Blade Switch 3xxx
+macsuck: vlan
+class: Layer3::C6500
+note: Cisco Blade switches for Dell, FSC, HP and IBM blade system chassis. Limited testing done.
+
 device-family: Catalyst 4000
 duplex: write
 macsuck: vlan
