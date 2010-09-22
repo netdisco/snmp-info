@@ -311,6 +311,25 @@ Returns LLDP information.
 
 =back
 
+=head2 Forwarding Table (C<dot1dTpFdbEntry>)
+
+=over 
+
+=item $juniper->fw_mac()
+
+Returns reference to hash of forwarding table MAC Addresses
+
+(C<dot1dTpFdbAddress>)
+
+=item $juniper->fw_port()
+
+Returns reference to hash of forwarding table entries port interface
+identifier (iid)
+
+(C<dot1dTpFdbPort>)
+
+=back 
+
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.

@@ -90,7 +90,7 @@ $VERSION = '2.01';
 sub ipv6_n2p_mac {
     my $info = shift;
     my $return;
-    my $phys_addr = &test_methods( $info, {
+    my $phys_addr = &_test_methods( $info, {
         ip_n2p_phys_addr => IPMIB,
         c_inet_phys_addr => CISCO,
         i6_n2p_phys_addr => IPV6MIB,
@@ -110,14 +110,14 @@ sub ipv6_n2p_mac {
             }
         }
     }
-    printf("%s: data comes from %s.\n", &my_sub_name, $info->method_used() ) if $info->debug();
+    printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
 }
 
 sub ipv6_n2p_addr {
     my $info = shift;
     my $return;
-    my $net_addr = &test_methods( $info, {
+    my $net_addr = &_test_methods( $info, {
         ip_n2p_phys_addr => IPMIB,
         c_inet_phys_addr => CISCO,
         i6_n2p_phys_addr => IPV6MIB,
@@ -139,14 +139,14 @@ sub ipv6_n2p_addr {
             }
         }
     }
-    printf("%s: data comes from %s.\n", &my_sub_name, $info->method_used() ) if $info->debug();
+    printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
 }
 
 sub ipv6_n2p_if {
     my $info = shift;
     my $return;
-    my $phys_addr = &test_methods( $info, {
+    my $phys_addr = &_test_methods( $info, {
         ip_n2p_phys_addr => IPMIB,
         c_inet_phys_addr => CISCO,
         i6_n2p_phys_addr => IPV6MIB,
@@ -166,14 +166,14 @@ sub ipv6_n2p_if {
             }
         }
     }
-    printf("%s: data comes from %s.\n", &my_sub_name, $info->method_used() ) if $info->debug();
+    printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
 }
 
 sub ipv6_n2p_type {
     my $info = shift;
     my $return;
-    my $phys_type = &test_methods( $info, {
+    my $phys_type = &_test_methods( $info, {
         ip_n2p_phys_type => IPMIB,
         c_inet_phys_type => CISCO,
         i6_n2p_phys_type => IPV6MIB,
@@ -193,14 +193,14 @@ sub ipv6_n2p_type {
             }
         }
     }
-    printf("%s: data comes from %s.\n", &my_sub_name, $info->method_used() ) if $info->debug();
+    printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
 }
 
 sub ipv6_n2p_state {
     my $info = shift;
     my $return;
-    my $phys_state = &test_methods( $info, {
+    my $phys_state = &_test_methods( $info, {
         ip_n2p_phys_state => IPMIB,
         c_inet_phys_state => CISCO,
         i6_n2p_phys_state => IPV6MIB,
@@ -220,14 +220,14 @@ sub ipv6_n2p_state {
             }
         }
     }
-    printf("%s: data comes from %s.\n", &my_sub_name, $info->method_used() ) if $info->debug();
+    printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
 }
 
 sub ipv6_index {
     my $info = shift;
     my $return;
-    my $ipv6_index = &test_methods( $info, {
+    my $ipv6_index = &_test_methods( $info, {
 	ip_addr6_index  => IPMIB,
 	c_addr6_index   => CISCO,
 				    });
@@ -240,14 +240,14 @@ sub ipv6_index {
 	    }
 	}
     }
-    printf("%s: data comes from %s.\n", &my_sub_name, $info->method_used() ) if $info->debug();
+    printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
 }
 
 sub ipv6_type {
     my $info = shift;
     my $return;
-    my $ipv6_type = &test_methods( $info, {
+    my $ipv6_type = &_test_methods( $info, {
 	ip_addr6_type  => IPMIB,
 	c_addr6_type   => CISCO,
 				    });
@@ -260,14 +260,14 @@ sub ipv6_type {
 	    }
 	}
     }
-    printf("%s: data comes from %s.\n", &my_sub_name, $info->method_used() ) if $info->debug();
+    printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
 }
 
 sub ipv6_pfx_origin {
     my $info = shift;
     my $return;
-    my $ipv6_pfx_origin = &test_methods( $info, {
+    my $ipv6_pfx_origin = &_test_methods( $info, {
 	ip_pfx_origin  => IPMIB,
 	c_pfx_origin   => CISCO,
 				    });
@@ -280,11 +280,11 @@ sub ipv6_pfx_origin {
 	    }
 	}
     }
-    printf("%s: data comes from %s.\n", &my_sub_name, $info->method_used() ) if $info->debug();
+    printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
 }
 
-sub method_used {
+sub _method_used {
     my $info = shift;
     my $return = 'none of the MIBs';
     if (defined $info::METHOD) {
@@ -299,7 +299,7 @@ sub method_used {
     return $return;
 }
 
-sub test_methods {
+sub _test_methods {
     my $info = shift;
     my $test = shift;
     my $return = {};
@@ -313,17 +313,10 @@ sub test_methods {
     return $return;
 }
 
-sub my_sub_name {
+sub _my_sub_name {
     my @callinfo = caller(1);
     return $callinfo[3];
 }
-
-=item munge_physaddr()
-
-Takes an octet stream (HEX-STRING) and returns a colon separated ASCII hex
-string.
-
-=cut
 
 sub munge_physaddr {
     my $addr = shift;
@@ -339,12 +332,13 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Ipv6 - SNMP Interface for mapping IPv6 addresses to MACs and interfaces, using information from 
+SNMP::Info::Ipv6 - SNMP Interface for obtaining configured IPv6 addresses and
+mapping IPv6 addresses to MACs and interfaces, using information from 
 F<IP-MIB>, F<IPV6-MIB> and/or F<CISCO-IETF-IP-MIB>.
 
 =head1 AUTHOR
 
-Jeroen van Ingen
+Jeroen van Ingen and Carlos Vicente
 
 =head1 SYNOPSIS
 
@@ -398,13 +392,52 @@ none.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2  Internet Address Translation table
+=head2  Internet Address Table
+
+=over
+
+=item $info->ipv6_n2p_addr()
+
+=item $info->ipv6_n2p_if()
+
+=item $info->ipv6_n2p_mac()
+
+=item $info->ipv6_n2p_state()
+
+=item $info->ipv6_n2p_type()
+
+=item $info->ipv6_index()
+
+Maps an IPv6 address to an interface C<ifIndex>
+
+=item $info->ipv6_type()
+
+Maps an IPv6 address to its type (unicast, anycast, etc.)
+
+=item $info->ipv6_pfx_origin()
+
+Maps an IPv6 prefix with its origin (manual, well-known, dhcp, etc.)
+
+=back
+
+=head2  Internet Address Translation Table
 
 =over
 
 =item $info->c_inet_phys_address()
 
 Maps an address of type C<cInetNetToMediaNetAddressType> on interface C<ifIndex> to a physical address.
+
+=back
+
+=head1 MUNGES
+
+=over 
+
+=item munge_physaddr()
+
+Takes an octet stream (HEX-STRING) and returns a colon separated ASCII hex
+string.
 
 =back
 

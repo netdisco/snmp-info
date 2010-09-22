@@ -970,4 +970,17 @@ Munge for c_id which handles CDP and LLDP.
 
 =back
 
+=head1 SET METHODS
+
+These are methods that provide SNMP set functionality for overridden methods
+or provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
+operations. 
+
+=over
+
+=item set_i_vlan()
+
+=item set_i_vlan_tagged()
+
 =cut

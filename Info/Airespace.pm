@@ -1118,6 +1118,9 @@ switch.
 Returns 00000011.  Class emulates Layer 2 functionality for Thin APs through
 proprietary MIBs.
 
+=item $airespace->at_netaddr()
+=item $airespace->at_paddr()
+
 =item $airespace->serial()
 
 (C<agentInventorySerialNumber>)

@@ -234,13 +234,13 @@ See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
+=over 
+
+=item cd11_mac()
+
+=back 
+
 =head2 Overrides
-
-=over
-
-=item None
-
-=back
 
 =head2 Table Methods imported from SNMP::Info::Airespace
 
@@ -253,5 +253,17 @@ See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::Bridge
 
 See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
+
+=head1 MUNGES
+
+=over
+
+=item munge_64bits()
+
+=item munge_cd11_rateset()
+
+=item munge_cd11_txrate()
+
+=back
 
 =cut

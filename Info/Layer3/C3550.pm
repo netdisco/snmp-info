@@ -556,6 +556,8 @@ See documentation in L<SNMP::Info::CiscoImage/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
+=over 
+
 =item $c3550->c_if()
 
 Returns reference to hash.  Key: iid Value: local device port (interfaces)
@@ -585,6 +587,8 @@ chassis component associated with the remote system.
 =item $c3550->c_platform()
 
 Returns reference to hash.  Key: iid Value: Remote Device Type
+
+=back 
 
 =head2 Overrides
 
