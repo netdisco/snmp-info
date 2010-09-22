@@ -35,6 +35,7 @@ use strict;
 use Exporter;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CiscoStack;
+use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoConfig;
 use SNMP::Info::CiscoStats;
@@ -51,6 +52,7 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
     SNMP::Info::CiscoVTP
     SNMP::Info::CiscoStpExtensions
     SNMP::Info::CiscoStack
+    SNMP::Info::LLDP
     SNMP::Info::CDP
     SNMP::Info::CiscoStats
     SNMP::Info::CiscoImage
@@ -74,8 +76,9 @@ $VERSION = '2.01';
     %SNMP::Info::Layer3::MIBS,             %SNMP::Info::CiscoPower::MIBS,
     %SNMP::Info::CiscoConfig::MIBS,        %SNMP::Info::CiscoPortSecurity::MIBS,
     %SNMP::Info::CiscoImage::MIBS,         %SNMP::Info::CiscoStats::MIBS,
-    %SNMP::Info::CDP::MIBS,                %SNMP::Info::CiscoStack::MIBS,
-    %SNMP::Info::CiscoStpExtensions::MIBS, %SNMP::Info::CiscoVTP::MIBS,
+    %SNMP::Info::LLDP::MIBS,               %SNMP::Info::CDP::MIBS,
+    %SNMP::Info::CiscoStack::MIBS,         %SNMP::Info::CiscoStpExtensions::MIBS, 
+    %SNMP::Info::CiscoVTP::MIBS,
 );
 
 
@@ -86,6 +89,7 @@ $VERSION = '2.01';
     %SNMP::Info::CiscoPortSecurity::GLOBALS,
     %SNMP::Info::CiscoImage::GLOBALS,
     %SNMP::Info::CiscoStats::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
     %SNMP::Info::CiscoStack::GLOBALS,
     %SNMP::Info::CiscoStpExtensions::GLOBALS,
@@ -96,16 +100,18 @@ $VERSION = '2.01';
     %SNMP::Info::Layer3::FUNCS,             %SNMP::Info::CiscoPower::FUNCS,
     %SNMP::Info::CiscoConfig::FUNCS,        %SNMP::Info::CiscoPortSecurity::FUNCS,
     %SNMP::Info::CiscoImage::FUNCS,         %SNMP::Info::CiscoStats::FUNCS,
-    %SNMP::Info::CDP::FUNCS,                %SNMP::Info::CiscoStack::FUNCS,
-    %SNMP::Info::CiscoStpExtensions::FUNCS, %SNMP::Info::CiscoVTP::FUNCS,    
+    %SNMP::Info::LLDP::FUNCS,               %SNMP::Info::CDP::FUNCS,
+    %SNMP::Info::CiscoStack::FUNCS,         %SNMP::Info::CiscoStpExtensions::FUNCS, 
+    %SNMP::Info::CiscoVTP::FUNCS,    
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,             %SNMP::Info::CiscoPower::MUNGE,
     %SNMP::Info::CiscoConfig::MUNGE,        %SNMP::Info::CiscoPortSecurity::MUNGE,
     %SNMP::Info::CiscoImage::MUNGE,         %SNMP::Info::CiscoStats::MUNGE,
-    %SNMP::Info::CDP::MUNGE,                %SNMP::Info::CiscoStack::MUNGE,
-    %SNMP::Info::CiscoStpExtensions::MUNGE, %SNMP::Info::CiscoVTP::MUNGE,    
+    %SNMP::Info::LLDP::MUNGE,               %SNMP::Info::CDP::MUNGE,
+    %SNMP::Info::CiscoStack::MUNGE,         %SNMP::Info::CiscoStpExtensions::MUNGE, 
+    %SNMP::Info::CiscoVTP::MUNGE,
 );
 
 sub vendor {
@@ -230,6 +236,141 @@ sub cisco_comm_indexing {
     return 1;
 }
 
+#  Use CDP and/or LLDP
+sub hasCDP {
+    my $c3550 = shift;
+    return $c3550->hasLLDP() || $c3550->SUPER::hasCDP();
+}
+
+sub c_ip {
+    my $c3550      = shift;
+    my $partial = shift;
+
+    my $cdp  = $c3550->SUPER::c_ip($partial) || {};
+    my $lldp = $c3550->lldp_ip($partial)     || {};
+
+    my %c_ip;
+    foreach my $iid ( keys %$cdp ) {
+        my $ip = $cdp->{$iid};
+        next unless defined $ip;
+
+        $c_ip{$iid} = $ip;
+    }
+
+    foreach my $iid ( keys %$lldp ) {
+        my $ip = $lldp->{$iid};
+        next unless defined $ip;
+
+        $c_ip{$iid} = $ip;
+    }
+    return \%c_ip;
+}
+
+sub c_if {
+    my $c3550      = shift;
+    my $partial = shift;
+
+    my $cdp  = $c3550->SUPER::c_if($partial)  || {};
+
+    my %c_if;
+    foreach my $iid ( keys %$cdp ) {
+        my $if = $cdp->{$iid};
+        next unless defined $if;
+
+        $c_if{$iid} = $if;
+    }
+
+    # We need to match the lldp key with the ifIndex
+    # via lldpLocPortId and ifName
+    my $i_name = $c3550->ifName($partial) || {};
+    my $i_name_rev = {};
+    while ( my($key,$val) = each %$i_name ){
+	$i_name_rev->{$val} = $key;
+    }
+    my $loc_port_id = $c3550->lldpLocPortId($partial) || {};
+    my $lldp = $c3550->lldp_if($partial) || {};
+
+    foreach my $iid ( keys %$lldp ) {
+        my $if = $lldp->{$iid} || next;
+	my $name = $loc_port_id->{$if} || next;
+	my $i_index = $i_name_rev->{$name} || next;
+        $c_if{$iid} = $i_index;
+    }
+    return \%c_if;
+}
+
+sub c_port {
+    my $c3550   = shift;
+    my $partial = shift;
+
+    my $lldp = $c3550->lldp_port($partial)     || {};
+    my $cdp  = $c3550->SUPER::c_port($partial) || {};
+
+    my %c_port;
+    foreach my $iid ( keys %$cdp ) {
+        my $port = $cdp->{$iid};
+        next unless defined $port;
+
+        $c_port{$iid} = $port;
+    }
+
+    foreach my $iid ( keys %$lldp ) {
+        my $port = $lldp->{$iid};
+        next unless defined $port;
+        $c_port{$iid} = $port;
+    }
+    return \%c_port;
+}
+
+sub c_id {
+    my $c3550   = shift;
+    my $partial = shift;
+
+    my $lldp = $c3550->lldp_id($partial)     || {};
+    my $cdp  = $c3550->SUPER::c_id($partial) || {};
+
+    my %c_id;
+    foreach my $iid ( keys %$cdp ) {
+        my $id = $cdp->{$iid};
+        next unless defined $id;
+	
+        $c_id{$iid} = $id;
+    }
+    
+    foreach my $iid ( keys %$lldp ) {
+	my $id = $lldp->{$iid};
+	next unless defined $id;
+	
+	$c_id{$iid} = $id;
+    }
+    return \%c_id;
+}
+
+sub c_platform {
+    my $c3550      = shift;
+    my $partial = shift;
+
+    my $lldp = $c3550->lldp_rem_sysdesc($partial)  || {};
+    my $cdp  = $c3550->SUPER::c_platform($partial) || {};
+
+    my %c_platform;
+    foreach my $iid ( keys %$cdp ) {
+        my $platform = $cdp->{$iid};
+        next unless defined $platform;
+
+        $c_platform{$iid} = $platform;
+    }
+
+    foreach my $iid ( keys %$lldp ) {
+        my $platform = $lldp->{$iid};
+        next unless defined $platform;
+
+        $c_platform{$iid} = $platform;
+    }
+    return \%c_platform;
+}
+
+
 1;
 __END__
 
@@ -289,6 +430,8 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::CDP
 
+=item SNMP::Info::LLDP
+
 =item SNMP::Info::CiscoStats
 
 =item SNMP::Info::CiscoImage
@@ -320,6 +463,8 @@ See L<SNMP::Info::CiscoImage/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
 
+See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
+
 =back
 
 =head1 GLOBALS
@@ -346,6 +491,23 @@ Tries to cull the number of ports from the model number.
 =item $c3550->cisco_comm_indexing()
 
 Returns 1.  Use vlan indexing.
+
+=back
+
+=head2 Topology information
+
+Based upon the firmware version Cisco devices may support Link Layer Discovery 
+Protocol (LLDP) in addition to Cisco Discovery Protocol (CDP).  These methods
+will query both and return the combination of all information.  As a result,
+there may be identical topology information returned from the two protocols
+causing duplicate entries.  It is the calling program's responsibility to
+identify any duplicate entries and remove duplicates if necessary.
+
+=over
+
+=item $c3550->hasCDP()
+
+Returns true if the device is running either CDP or LLDP.
 
 =back
 
@@ -377,6 +539,10 @@ See documentation in L<SNMP::Info::CiscoStack/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::CDP/"GLOBALS"> for details.
 
+=head2 Globals imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
+
 =head2 Globals imported from SNMP::Info::CiscoStats
 
 See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
@@ -389,6 +555,36 @@ See documentation in L<SNMP::Info::CiscoImage/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=item $c3550->c_if()
+
+Returns reference to hash.  Key: iid Value: local device port (interfaces)
+
+=item $c3550->c_ip()
+
+Returns reference to hash.  Key: iid Value: remote IPv4 address
+
+If multiple entries exist with the same local port, c_if(), with the same IPv4
+address, c_ip(), it may be a duplicate entry.
+
+If multiple entries exist with the same local port, c_if(), with different
+IPv4 addresses, c_ip(), there is either a non-CDP/LLDP device in between two
+or more devices or multiple devices which are not directly connected.  
+
+Use the data from the Layer2 Topology Table below to dig deeper.
+
+=item $c3550->c_port()
+
+Returns reference to hash. Key: iid Value: remote port (interfaces)
+
+=item $c3550->c_id()
+
+Returns reference to hash. Key: iid Value: string value used to identify the
+chassis component associated with the remote system.
+
+=item $c3550->c_platform()
+
+Returns reference to hash.  Key: iid Value: Remote Device Type
 
 =head2 Overrides
 
@@ -458,6 +654,10 @@ See documentation in L<SNMP::Info::CiscoStack/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::CDP
 
 See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
