@@ -19,6 +19,8 @@ version 2.02 ()
       classes (jeroenvi)
     * Minor tweaks to support devices without sysServices
     * Added Cisco CBS3xxx blade switches to L3::C6500
+    * Fix for FWSMs not being detected properly.  Special thanks goes to
+      Jukka Pirhonen for pointing it out. (Brian De Wolf)
 
 version 2.01 (06/12/09)
     + Added CiscoStpExtensions Class (Carlos Vicente)

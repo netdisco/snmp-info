@@ -1292,6 +1292,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::Allied'
             if ( $desc =~ /Allied.*AT-80\d{2}\S*/i );
 
+        # Cisco FWSM
+        $objtype = 'SNMP::Info::Layer3::CiscoFWSM'
+            if ( $desc =~ /Cisco Firewall Services Module/i );
+
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer3' )
             and ( defined($id) )
@@ -1441,10 +1445,6 @@ sub device_type {
         # Cisco ASA
         $objtype = 'SNMP::Info::Layer3::Cisco'
             if ( $desc =~ /Cisco Adaptive Security Appliance/i );
-
-        # Cisco FWSM
-        $objtype = 'SNMP::Info::Layer3::CiscoFWSM'
-            if ( $desc =~ /Cisco Firewall Services Module/i );
 
         # Generic device classification based upon sysObjectID
         if ( defined($id) ) {
