@@ -89,6 +89,28 @@ sub peth_port_ifindex {
     return $peth_port_ifindex;
 }
 
+# Subclasses are encouraged to override this method to report
+# what has actually been negotiated with the device, if a
+# protocol with more values (e.g., CDP) has been used.
+sub peth_port_neg_power {
+    my $peth    = shift;
+    my $partial = shift;
+
+    my $peth_port_status = $peth->peth_port_status($partial);
+    my $peth_port_class = $peth->peth_port_class($partial);
+
+    my $poemax = { 'class0' => 12950, 'class1' => 3840, 'class2' => 6490, 'class3' => 12950,
+		   'class4' => 25500 };
+
+    my $peth_port_neg_power = {};
+    foreach my $i ( keys %$peth_port_status ) {
+	if ($peth_port_status->{$i} eq 'deliveringPower') {
+	    $peth_port_neg_power->{$i} = $poemax->{ $peth_port_class->{$i} };
+	}
+    }
+    return $peth_port_neg_power;
+}
+
 1;
 
 __END__
@@ -186,6 +208,14 @@ This mapping is more or less left up to the device vendor to
 implement; the MIB gives only very weak guidance.
 A given device class may implement its own version
 of this function (e.g., see Info::CiscoPower).
+
+=item $poe->peth_port_neg_power()
+
+The power, in milliwatts, that has been committed to this port.
+This value is derived from the 802.3af class of the device being
+powered, but may be overridden by a subclass that has information
+from another source (e.g., if a different protocol, such as CDP,
+was used to negotiate the power level.)
 
 =back
 

@@ -41,7 +41,8 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 $VERSION = '2.01';
 
-%MIBS = ( 'CISCO-POWER-ETHERNET-EXT-MIB' => 'cpeExtPsePortEntPhyIndex' );
+%MIBS = ( 'CISCO-POWER-ETHERNET-EXT-MIB' => 'cpeExtPsePortEntPhyIndex',
+          'CISCO-CDP-MIB' => 'cdpCachePowerConsumption' );
 
 %GLOBALS = ();
 
@@ -70,6 +71,31 @@ sub peth_port_ifindex {
         }
     }
     return $peth_port_ifindex;
+}
+
+# peth_port_neg_power uses the same index as the other peth_port_* tables.
+# However, cdpCachePowerConsumption uses <ifIndex>.<neighbor>.
+# Therefore, we have to invert peth_port_ifindex, to get to
+# the index that is expected and the rest of the code can re-invert it.
+sub peth_port_neg_power {
+    my $cpeth   = shift;
+    my $partial = shift;
+
+    # Ignoring partial, since it's not easy to implement properly.
+    my $index = $cpeth->peth_port_ifindex();
+    my %inverse_index;
+    foreach my $i ( keys %$index ) {
+	$inverse_index{ $index->{$i} } = $i;
+    }
+    my $neg_power = $cpeth->cdpCachePowerConsumption();
+    my $peth_port_neg_power = {};
+    foreach my $i ( keys %$neg_power ) {
+	my( $ifIndex, $nbrIndex ) = split( /\./, $i );
+	if ( defined( $inverse_index{ $ifIndex } ) ) {
+		$peth_port_neg_power->{ $inverse_index{ $ifIndex } } = $neg_power->{ $i };
+	}
+    }
+    return $peth_port_neg_power;
 }
 
 1;
@@ -151,6 +177,17 @@ Maps the C<pethPsePortTable> to C<ifIndex> by way of the F<ENTITY-MIB>.
 Power supplied by PoE ports, in milliwatts
 ("cpeExtPsePortPwrConsumption")
  
+=back
+
+=head2 CDP Port table
+
+=over
+
+=item $poe->peth_port_neg_power()
+
+Power negotiated using CDP, in milliwats
+("cdpCachePowerConsumption")
+
 =back
 
 =cut
