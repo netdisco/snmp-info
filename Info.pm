@@ -1260,6 +1260,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500'
             if $desc =~ /(s72033_rp|s3223_rp|s32p3_rp|s222_rp)/;
 
+        #   Cisco 2970
+        $objtype = 'SNMP::Info::Layer3::C6500'
+            if ( $desc =~ /(C2970|C2960)/ );
+
         #   Cisco 3400 w/ Layer3 capable image
         $objtype = 'SNMP::Info::Layer3::C3550'
             if ( $desc =~ /(ME340x)/ );
