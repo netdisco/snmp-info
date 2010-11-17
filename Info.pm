@@ -1294,7 +1294,7 @@ sub device_type {
             if $desc =~ /Alteon\s[1A][8D]/;
 
         # Nortel Contivity
-        $objtype = 'SNMP::Info::Layer3::Contivity' if $desc =~ /\bCES\b/;
+        $objtype = 'SNMP::Info::Layer3::Contivity' if $desc =~ /(\bCES\b|\bNVR\sV\d)/;
 
         # Allied Telesyn Layer2 managed switches. They report they have L3 support
         $objtype = 'SNMP::Info::Layer2::Allied'
