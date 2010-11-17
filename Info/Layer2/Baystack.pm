@@ -82,20 +82,26 @@ sub os {
     my $descr    = $baystack->description();
     my $model    = $baystack->model();
 
-    if ((   defined $model
-            and $model
-            =~ /(325|420|425|470|460|BPS|2500|3510|4524|4526|4548|4550|5510|5520|5530)/
-        )
-        and ( defined $descr and $descr =~ m/SW:v[3-5]/i )
-        )
-    {
-        return 'boss';
-    }
     if ( ( defined $descr and $descr =~ /Business Ethernet Switch.*SW:v/i ) )
     {
         return 'bes';
     }
-    return 'baystack';
+    if (
+        (
+           (defined $model and $model =~ /(420|425|BPS)/ )
+        and
+           (defined $descr and $descr =~ m/SW:v[1-2]/i )
+        )
+        or
+        (
+            (defined $model and $model =~ /(410|450|380)/ )
+        )
+       )
+    {
+        return 'baystack';
+    }
+
+    return 'boss';
 }
 
 sub os_bin {
