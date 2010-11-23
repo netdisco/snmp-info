@@ -216,14 +216,23 @@ sub index_factor {
     my $baystack = shift;
     my $model    = $baystack->model();
     my $os       = $baystack->os();
+    my $os_ver   = $baystack->os_ver();
     my $op_mode  = $baystack->ns_op_mode();
 
     $op_mode = 'pure' unless defined $op_mode;
+    if ( $os_ver =~ m/^(\d+)\./ ) {
+        $os_ver = $1;
+    } else {
+        $os_ver = 1;
+    }
 
     my $index_factor = 32;
     $index_factor = 64
         if ( ( defined $model and $model =~ /(470)/ )
         or ( $os =~ m/(boss|bes)/ ) and ( $op_mode eq 'pure' ) );
+    $index_factor = 128
+        if ( ( defined $model and $model =~ /(5[56]\d\d)/ )
+        and ( $os_ver >= 6 ) );
 
     return $index_factor;
 }
