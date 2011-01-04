@@ -23,6 +23,7 @@ version 2.02 ()
       Jukka Pirhonen for pointing it out. (Brian De Wolf)
     + Added support for IPv6 to physical address mapping
     * Added ME340x to L3::C3550
+    * Added new ProCurve models to HP class
 
 version 2.01 (06/12/09)
     + Added CiscoStpExtensions Class (Carlos Vicente)
