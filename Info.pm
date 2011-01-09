@@ -333,6 +333,14 @@ Foundry Discovery Protocol.  F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
 See documentation in L<SNMP::Info::FDP> for details.
 
+=item SNMP::Info::Ipv6
+
+SNMP Interface for obtaining configured IPv6 addresses and mapping IPv6
+addresses to MACs and interfaces, using information from F<IP-MIB>,
+F<IPV6-MIB> and/or F<CISCO-IETF-IP-MIB>.
+
+See documentation in L<SNMP::Info::Ipv6> for details.
+
 =item SNMP::Info::IEEE802dot11
 
 F<IEEE802dot11-MIB>.  A collection of OIDs providing information about
@@ -722,6 +730,12 @@ Subclass for Nortel Ethernet Routing Switch/Passport 8000 series and Accelar
 series switches.
 
 See documentation in L<SNMP::Info::Layer3::Passport> for details.
+
+=item SNMP::Info::Layer3::Pf
+
+Subclass for FreeBSD-Based Firewalls using Pf /Pf Sense
+
+See documentation in L<SNMP::Info::Layer3::Pf> for details.
 
 =item SNMP::Info::Layer3::Sun
 
