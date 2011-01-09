@@ -332,9 +332,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Ipv6 - SNMP Interface for obtaining configured IPv6 addresses and
-mapping IPv6 addresses to MACs and interfaces, using information from 
-F<IP-MIB>, F<IPV6-MIB> and/or F<CISCO-IETF-IP-MIB>.
+SNMP::Info::Ipv6 - SNMP Interface for obtaining IPv6 addresses and IPv6
+address mappings
 
 =head1 AUTHOR
 
