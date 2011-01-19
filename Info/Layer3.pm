@@ -127,9 +127,6 @@ $VERSION = '2.02-cvs';
     'bgp_peer_out_upd'        => 'bgpPeerOutUpdates',
 
     # IP-MIB Net to Physical Table (ARP Cache)
-    'n2p_index' => 'ipNetToPhysicalIfIndex',
-    'n2p_naddrt' => 'ipNetToPhysicalNetAddressType',
-    'n2p_naddr' => 'ipNetToPhysicalNetAddress',
     'n2p_paddr' => 'ipNetToPhysicalPhysAddress',
     'n2p_lastupdate' => 'ipNetToPhysicalLastUpdated',
     'n2p_ptype' => 'ipNetToPhysicalType',
