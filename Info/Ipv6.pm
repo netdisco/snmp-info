@@ -72,6 +72,9 @@ $VERSION = '2.01';
     'ip_pfx_origin'     => 'ipAddressPrefixOrigin',         # IP-MIB
     'c_pfx_origin'      => 'cIpAddressPfxOrigin',           # CISCO-IETF-IP-MIB 
 
+    'ip_addr6_pfx'      => 'ipAddressPrefix',              # IP-MIB 
+    'c_addr6_pfx'       => 'cIpAddressPrefix',              # CISCO-IETF-IP-MIB 
+
     'ip_addr6_index'    => 'ipAddressIfIndex',              # IP-MIBw
     'c_addr6_index'     => 'cIpAddressIfIndex',             # CISCO-IETF-IP-MIB 
 
@@ -284,6 +287,31 @@ sub ipv6_pfx_origin {
     return $return;
 }
 
+sub ipv6_addr_prefix {
+    my $info = shift;
+    my $return;
+    my $ipv6_addr_prefix = &_test_methods( $info, {
+	ip_addr6_pfx  => IPMIB,
+	c_addr6_pfx   => CISCO,
+				    });
+    return unless defined $ipv6_addr_prefix;
+    foreach my $row (keys %$ipv6_addr_prefix){
+        if ($row =~ /^(\d+)\.[\d\.]+$/) {
+            my $type = $1;
+            if ($type == 2) { # IPv6
+		# Remove the OID part from the value
+		my $val = $ipv6_addr_prefix->{$row};
+		if ( $val =~ /^.+?((?:\d+\.){19}\d+)$/ ){
+		    $val = $1;
+		    $return->{$row} = $val;
+		}
+	    }
+	}
+    }
+    printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
+    return $return;
+}
+
 sub _method_used {
     my $info = shift;
     my $return = 'none of the MIBs';
@@ -416,6 +444,10 @@ Maps an IPv6 address to its type (unicast, anycast, etc.)
 =item $info->ipv6_pfx_origin()
 
 Maps an IPv6 prefix with its origin (manual, well-known, dhcp, etc.)
+
+=item $info->ipv6_addr_prefix() 
+
+Maps IPv6 addresses with their prefixes
 
 =back
 
