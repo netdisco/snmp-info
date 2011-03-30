@@ -1789,6 +1789,11 @@ sub i_speed_raw {
     my $info    = shift;
     my $partial = shift;
 
+    # remove the speed formating
+    my $munge_i_speed = delete $info->{munge}{i_speed};
+    # also for highspeed interfaces e.g. TenGigabitEthernet
+    my $munge_i_speed_high = delete $info->{munge}{i_speed_high};
+
     my $i_speed_raw = $info->orig_i_speed($partial);
 
     my $i_speed_high = undef;
@@ -1800,6 +1805,11 @@ sub i_speed_raw {
                 if ( $i_speed_high->{$i} );
         }
     }
+
+    # restore the speed formating
+    $info->{munge}{i_speed} = $munge_i_speed;
+    $info->{munge}{i_speed_high} = $munge_i_speed_high;
+
     return $i_speed_raw;
 }
 
