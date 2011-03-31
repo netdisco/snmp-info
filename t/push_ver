@@ -5,7 +5,7 @@ use File::Glob qw/bsd_glob/;
 
 my @pms = glob_rec("../Info");
 
-$new_version = shift @ARGV || '2.01';
+$new_version = shift @ARGV || '2.05';
 
 foreach my $p (@pms) {
     print "$p\n";

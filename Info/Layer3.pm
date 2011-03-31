@@ -49,7 +49,7 @@ use SNMP::Info::IPv6;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
 
-$VERSION = '2.02-cvs';
+$VERSION = '2.04';
 
 %MIBS = (
     %SNMP::Info::MIBS,

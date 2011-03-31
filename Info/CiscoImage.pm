@@ -38,7 +38,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '2.01';
+$VERSION = '2.04';
 
 %MIBS = ( 'CISCO-IMAGE-MIB' => 'ciscoImageString', );
 

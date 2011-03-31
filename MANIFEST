@@ -1,5 +1,6 @@
 ChangeLog
 COPYRIGHT
+DEVELOP
 DeviceMatrix.txt
 Info.pm
 Info/Airespace.pm
@@ -19,6 +20,7 @@ Info/Entity.pm
 Info/EtherLike.pm
 Info/FDP.pm
 Info/IEEE802dot11.pm
+Info/IPv6.pm
 Info/Layer1.pm
 Info/Layer1/Allied.pm
 Info/Layer1/Asante.pm
@@ -39,6 +41,7 @@ Info/Layer2/Centillion.pm
 Info/Layer2/Cisco.pm
 Info/Layer2/Foundry.pm
 Info/Layer2/HP.pm
+Info/Layer2/HP4000.pm
 Info/Layer2/N2270.pm
 Info/Layer2/NAP222x.pm
 Info/Layer2/Netgear.pm
@@ -55,6 +58,7 @@ Info/Layer3/C3550.pm
 Info/Layer3/C4000.pm
 Info/Layer3/C6500.pm
 Info/Layer3/Cisco.pm
+Info/Layer3/CiscoFWSM.pm
 Info/Layer3/Contivity.pm
 Info/Layer3/Dell.pm
 Info/Layer3/Enterasys.pm
@@ -67,6 +71,7 @@ Info/Layer3/N1600.pm
 Info/Layer3/Netscreen.pm
 Info/Layer3/NetSNMP.pm
 Info/Layer3/Passport.pm
+Info/Layer3/Pf.pm
 Info/Layer3/Sun.pm
 Info/Layer3/Timetra.pm
 Info/LLDP.pm

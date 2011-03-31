@@ -23,7 +23,7 @@ use vars
     qw/$VERSION $VERSION_CVS %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '2.02-cvs';
+$VERSION = '2.04';
 $VERSION_CVS = '$Id$';
 
 =head1 NAME
@@ -32,7 +32,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 2.02
+SNMP::Info - Version 2.04
 
 =head1 AUTHOR
 
