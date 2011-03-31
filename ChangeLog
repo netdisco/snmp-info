@@ -24,6 +24,7 @@ version 2.04 (2011-03-31)
     + Added support for IPv6 to physical address mapping
     * Added ME340x to L3::C3550
     * Added new ProCurve models to HP class
+    * Fixed i_speed_raw not returning raw values (Alexander Hartmaier)
 
 version 2.01 (06/12/09)
     + Added CiscoStpExtensions Class (Carlos Vicente)
