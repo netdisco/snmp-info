@@ -1,4 +1,4 @@
-# SNMP::Info::Ipv6
+# SNMP::Info::IPv6
 #
 # Copyright (c) 2010 Jeroen van Ingen and Carlos Vicente
 # All rights reserved.
@@ -27,14 +27,14 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package SNMP::Info::Ipv6;
+package SNMP::Info::IPv6;
 
 use strict;
 use Exporter;
 use SNMP::Info;
 
-@SNMP::Info::Ipv6::ISA       = qw/SNMP::Info Exporter/;
-@SNMP::Info::Ipv6::EXPORT_OK = qw//;
+@SNMP::Info::IPv6::ISA       = qw/SNMP::Info Exporter/;
+@SNMP::Info::IPv6::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE $METHOD/;
 
@@ -104,7 +104,7 @@ sub ipv6_n2p_mac {
             my $ifindex = $1; my $addrtype = $2; my $addrsize = $3; my $v6addr = $4;
             if ($info::METHOD == IPV6MIB) { 
                 # IPV6-MIB doesn't include the addrtype in the index; 
-                # also, address syntax is Ipv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
+                # also, address syntax is IPv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
                 $v6addr = join('.', $addrtype, $addrsize, $v6addr);
                 $addrtype = 2;
             }
@@ -131,7 +131,7 @@ sub ipv6_n2p_addr {
             my $ifindex = $1; my $addrtype = $2; my $addrsize = $3; my $v6addr = $4;
             if ($info::METHOD == IPV6MIB) { 
                 # IPV6-MIB doesn't include the addrtype in the index; 
-                # also, address syntax is Ipv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
+                # also, address syntax is IPv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
                 $v6addr = join('.', $addrtype, $addrsize, $v6addr);
                 $addrtype = 2;
             }
@@ -160,7 +160,7 @@ sub ipv6_n2p_if {
             my $ifindex = $1; my $addrtype = $2; my $addrsize = $3; my $v6addr = $4;
             if ($info::METHOD == IPV6MIB) { 
                 # IPV6-MIB doesn't include the addrtype in the index; 
-                # also, address syntax is Ipv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
+                # also, address syntax is IPv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
                 $v6addr = join('.', $addrtype, $addrsize, $v6addr);
                 $addrtype = 2;
             }
@@ -187,7 +187,7 @@ sub ipv6_n2p_type {
             my $ifindex = $1; my $addrtype = $2; my $addrsize = $3; my $v6addr = $4;
             if ($info::METHOD == IPV6MIB) { 
                 # IPV6-MIB doesn't include the addrtype in the index; 
-                # also, address syntax is Ipv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
+                # also, address syntax is IPv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
                 $v6addr = join('.', $addrtype, $addrsize, $v6addr);
                 $addrtype = 2;
             }
@@ -214,7 +214,7 @@ sub ipv6_n2p_state {
             my $ifindex = $1; my $addrtype = $2; my $addrsize = $3; my $v6addr = $4;
             if ($info::METHOD == IPV6MIB) { 
                 # IPV6-MIB doesn't include the addrtype in the index; 
-                # also, address syntax is Ipv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
+                # also, address syntax is IPv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
                 $v6addr = join('.', $addrtype, $addrsize, $v6addr);
                 $addrtype = 2;
             }
@@ -360,7 +360,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Ipv6 - SNMP Interface for obtaining IPv6 addresses and IPv6
+SNMP::Info::IPv6 - SNMP Interface for obtaining IPv6 addresses and IPv6
 address mappings
 
 =head1 AUTHOR
@@ -384,7 +384,7 @@ Jeroen van Ingen and Carlos Vicente
 
 =head1 DESCRIPTION
 
-The SNMP::Info::Ipv6 class implements functions to for mapping IPv6 addresses 
+The SNMP::Info::IPv6 class implements functions to for mapping IPv6 addresses 
 to MAC addresses, interfaces and more. It will use data from the IP-MIB, IPV6-MIB 
 or the CISCO-IETF-IP-MIB, whichever is supported by the device.
 
@@ -394,7 +394,7 @@ device classes.
 For debugging purposes you can call this class directly as you would
 SNMP::Info
 
- my $info = new SNMP::Info::Ipv6 (...);
+ my $info = new SNMP::Info::IPv6 (...);
 
 =head2 Inherited Classes
 
