@@ -37,7 +37,7 @@ SNMP::Info - Version 2.04
 =head1 AUTHOR
 
 SNMP::Info is maintained by team of Open Source authors headed by Eric Miller,
-Bill Fenner, Max Baker and Jeroen van Ingen.
+Bill Fenner, Max Baker, Jeroen van Ingen and Oliver Gorwits.
 
 Please visit L<http://sourceforge.net/projects/snmp-info/> for most up-to-date
 list of developers.
