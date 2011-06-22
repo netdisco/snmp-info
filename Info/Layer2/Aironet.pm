@@ -193,7 +193,7 @@ sub _aironet_breakout_dot11idx {
 sub fw_mac {
     my $aironet = shift;
 
-    return qb_fw_mac($aironet) unless _aironet_special($aironet);
+    return $aironet->qb_fw_mac() unless _aironet_special($aironet);
     my $c_dot11subif = $aironet->c_dot11subif();
     my $fw_mac       = {};
 
