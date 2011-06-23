@@ -159,7 +159,7 @@ sub i_duplex {
         next if ( defined $partial and $iid !~ /^$partial$/ );
 
         # Test for gigabit
-        if ( $p_duplex_cap->{$port} == 0 ) {
+        if ( $p_duplex_cap->{$port} && $p_duplex_cap->{$port} == 0 ) {
             $i_duplex->{$iid} = 'full';
         }
 
@@ -194,7 +194,7 @@ sub i_duplex_admin {
         next if ( defined $partial and $iid !~ /^$partial$/ );
 
         # Test for gigabit
-        if ( $p_duplex_cap->{$port} == 0 ) {
+        if ( $p_duplex_cap->{$port} && $p_duplex_cap->{$port} == 1 ) {
             $i_duplex_admin->{$iid} = 'full';
         }
 
