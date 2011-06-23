@@ -23,7 +23,7 @@ use vars
     qw/$VERSION $VERSION_CVS %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '2.04';
+$VERSION = '2.05';
 $VERSION_CVS = '$Id$';
 
 =head1 NAME
@@ -32,7 +32,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 2.04
+SNMP::Info - Version 2.05
 
 =head1 AUTHOR
 
@@ -473,12 +473,6 @@ Allied Telesys switches.
 
 See documentation in L<SNMP::Info::Layer2::Allied> for details.
 
-=item SNMP::Info::Layer2::Aruba
-
-Subclass for Aruba wireless switches.
-
-See documentation in L<SNMP::Info::Layer2::Aruba> for details.
-
 =item SNMP::Info::Layer2::Bay
 
 Depreciated.  Use BayStack.
@@ -616,6 +610,12 @@ See documentation in L<SNMP::Info::Layer3::Altiga> for details.
 =item SNMP::Info::Layer3::Arista
 
 See documentation in L<SNMP::Info::Layer3::Arista> for details.
+
+=item SNMP::Info::Layer3::Aruba
+
+Subclass for Aruba wireless switches.
+
+See documentation in L<SNMP::Info::Layer3::Aruba> for details.
 
 =item SNMP::Info::Layer3::BayRS
 

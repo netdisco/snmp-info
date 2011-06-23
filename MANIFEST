@@ -31,7 +31,6 @@ Info/Layer2.pm
 Info/Layer2/Airespace.pm
 Info/Layer2/Aironet.pm
 Info/Layer2/Allied.pm
-Info/Layer2/Aruba.pm
 Info/Layer2/Bay.pm
 Info/Layer2/Baystack.pm
 Info/Layer2/C1900.pm
@@ -53,6 +52,7 @@ Info/Layer3/AlcatelLucent.pm
 Info/Layer3/AlteonAD.pm
 Info/Layer3/Altiga.pm
 Info/Layer3/Arista.pm
+Info/Layer3/Aruba.pm
 Info/Layer3/BayRS.pm
 Info/Layer3/C3550.pm
 Info/Layer3/C4000.pm

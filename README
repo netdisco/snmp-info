@@ -1,11 +1,14 @@
 NAME
+
     SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs
     through SNMP.
 
 VERSION
-    SNMP::Info - Version 2.04
+
+    SNMP::Info - Version 2.05
 
 AUTHOR
+
     SNMP::Info is maintained by team of Open Source authors headed by Eric
     Miller, Bill Fenner, Max Baker, Jeroen van Ingen and Oliver Gorwits.
 
@@ -16,10 +19,12 @@ AUTHOR
     <http://netdisco.org> by Max Baker.
 
 DEVICES SUPPORTED
+
     See <http://netdisco.org/doc/DeviceMatrix.html> or DeviceMatrix.txt for
     more details.
 
 SYNOPSIS
+
      use SNMP::Info;
 
      my $info = new SNMP::Info( 
@@ -75,11 +80,13 @@ SYNOPSIS
      }
 
 SUPPORT
+
     Please direct all support, help, and bug requests to the snmp-info-users
     Mailing List at
     <http://lists.sourceforge.net/lists/listinfo/snmp-info-users>.
 
 DESCRIPTION
+
     SNMP::Info gives an object oriented interface to information obtained
     through SNMP.
 
@@ -106,6 +113,7 @@ DESCRIPTION
     a couple hashes. See EXTENDING SNMP::INFO.
 
 REQUIREMENTS
+
     1. Net-SNMP
         To use this module, you must have Net-SNMP installed on your system.
         More specifically you need the Perl modules that come with it.
@@ -143,6 +151,7 @@ REQUIREMENTS
         directory and that the MIBs are world-readable.
 
 DESIGN GOALS
+
     1. Use of textual MIB leaf identifier and enumerated values
 
         *   All values are retrieved via MIB Leaf node names
@@ -172,12 +181,14 @@ DESIGN GOALS
         inclusion in the next version.
 
 SUBCLASSES
+
     These are the subclasses that implement MIBs and support devices:
 
     Required MIBs not included in the install instructions above are noted
     here.
 
   MIB Subclasses
+
     These subclasses implement method to access one or more MIBs. These are
     not used directly, but rather inherited from device subclasses.
 
@@ -323,6 +334,7 @@ SUBCLASSES
         See documentation in SNMP::Info::SONMP for details.
 
   Device Subclasses
+
     These subclasses inherit from one or more classes to provide a common
     interface to data obtainable from network devices.
 
@@ -626,6 +638,7 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::Timetra for details.
 
 Thanks
+
     Thanks for testing and coding help (in no particular order) to :
     Alexander Barthel, Andy Ford, Alexander Hartmaier, Andrew Herrick, Alex
     Kramarov, Bernhard Augenstein, Bradley Baetz, Brian Chow, Brian Wilson,
@@ -636,7 +649,9 @@ Thanks
     Netdisco README!
 
 USAGE
+
   Constructor
+
     new()
         Creates a new object and connects via SNMP::Session.
 
@@ -759,6 +774,7 @@ USAGE
         identify the device.
 
   Data is Cached
+
     Methods and subroutines requesting data from a device will only load the
     data once, and then return cached versions of that data.
 
@@ -769,6 +785,7 @@ USAGE
     globals and table methods.
 
   Object Scalar Methods
+
     These are for package related data, not directly supplied from SNMP.
 
     $info->clear_cache()
@@ -845,6 +862,7 @@ USAGE
         Indexing.html>
 
   Globals (Scalar Methods)
+
     These are methods to return scalar data from RFC1213.
 
     Some subset of these is probably available for any network device that
@@ -893,6 +911,7 @@ USAGE
         ("ipForwarding")
 
   Table Methods
+
     Each of these methods returns a hash_reference to a hash keyed on the
     interface index in SNMP.
 
@@ -907,6 +926,7 @@ USAGE
     cases changes between reboots of the network device.
 
   Partial Table Fetches
+
     If you want to get only a part of an SNMP table or a single instance
     from the table and you know the IID for the part of the table that you
     want, you can specify it in the call:
@@ -921,6 +941,7 @@ USAGE
     Partial table results are not cached.
 
   Interface Information
+
     $info->interfaces()
         This methods is overridden in each subclass to provide a mapping
         between the Interface Table Index (iid) and the physical port name.
@@ -1011,6 +1032,7 @@ USAGE
         ("ifAlias")
 
   Interface Statistics
+
     $info->i_octet_in(), $info->i_octets_out(), $info->i_octet_in64(),
     $info->i_octets_out64()
         Bandwidth.
@@ -1101,6 +1123,7 @@ USAGE
         ("ifSpecific")
 
   IP Address Table
+
     Each entry in this table is an IP address in use on this device. Usually
     this is implemented in Layer3 Devices.
 
@@ -1125,6 +1148,7 @@ USAGE
         ("ipAdEntBcastAddr")
 
   IP Routing Table
+
     $info->ipr_route()
         The route in question. A value of 0.0.0.0 is the default gateway
         route.
@@ -1241,6 +1265,7 @@ USAGE
         ("ipRouteInfo")
 
 SETTING DATA VIA SNMP
+
     This section explains how to use SNMP::Info to do SNMP Set operations.
 
     $info->set_METHOD($value)
@@ -1270,6 +1295,7 @@ SETTING DATA VIA SNMP
     subroutines will need to be added if they haven't been already.
 
 Quiet Mode
+
     SNMP::Info will not chirp anything to STDOUT unless there is a serious
     error (in which case it will probably die).
 
@@ -1284,7 +1310,9 @@ Quiet Mode
      my $name = $info->name() or die "Couldn't get sysName!" . $name->error();
 
 EXTENDING SNMP::INFO
+
   Data Structures required in new Subclass
+
     A class inheriting this class must implement these data structures :
 
     $INIT
@@ -1341,6 +1369,7 @@ EXTENDING SNMP::INFO
          )
 
   Sample Subclass
+
     Let's make a sample Layer 2 Device subclass. This class will inherit the
     Cisco Vlan module as an example.
 
@@ -1433,7 +1462,9 @@ EXTENDING SNMP::INFO
     of SNMP::Info.
 
 SNMP::INFO INTERNALS
+
   Object Namespace
+
     Internal data is stored with bareword keys. For example $info->{debug}
 
     SNMP Data is stored or marked cached with keys starting with an
@@ -1443,6 +1474,7 @@ SNMP::INFO INTERNALS
     above.
 
   Package Globals
+
     These set the default value for an object upon creation.
 
     $DEBUG
@@ -1464,6 +1496,7 @@ SNMP::INFO INTERNALS
         for more info. Can change by passing BulkRepeaters option in new()
 
   Data Munging Callback Subroutines
+
     munge_speed()
         Makes human friendly speed ratings using %SPEED_MAP
 
@@ -1559,6 +1592,7 @@ SNMP::INFO INTERNALS
         Takes an OID and return the object name if the right MIB is loaded.
 
   Internally Used Functions
+
     $info->init()
         Used internally. Loads all entries in %MIBS.
 
@@ -1689,6 +1723,7 @@ SNMP::INFO INTERNALS
         packed bitmask
 
   AUTOLOAD
+
     Each entry in either %FUNCS, %GLOBALS, or MIB Leaf node names present in
     loaded MIBs are used by AUTOLOAD() to create dynamic methods.
 
@@ -1718,6 +1753,7 @@ SNMP::INFO INTERNALS
     subclass.
 
 COPYRIGHT AND LICENSE
+
     Changes from SNMP::Info Version 0.7 and on are: Copyright (c) 2003-2010
     Max Baker and SNMP::Info Developers All rights reserved.
 
