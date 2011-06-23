@@ -386,11 +386,6 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::Allied for details.
 
-        SNMP::Info::Layer2::Aruba
-            Subclass for Aruba wireless switches.
-
-            See documentation in SNMP::Info::Layer2::Aruba for details.
-
         SNMP::Info::Layer2::Bay
             Depreciated. Use BayStack.
 
@@ -509,6 +504,11 @@ SUBCLASSES
 
         SNMP::Info::Layer3::Arista
             See documentation in SNMP::Info::Layer3::Arista for details.
+
+        SNMP::Info::Layer3::Aruba
+            Subclass for Aruba wireless switches.
+
+            See documentation in SNMP::Info::Layer3::Aruba for details.
 
         SNMP::Info::Layer3::BayRS
             Subclass for Nortel Multiprotocol/BayRS routers. This includes

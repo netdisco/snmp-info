@@ -39,7 +39,7 @@ class: Layer3::Timetra
 device: All
 
 device-family: AOS
-class: Layer2::Aruba
+class: Layer3::Aruba
 device: All
 
 #
@@ -82,16 +82,18 @@ device: All
 # Aruba
 #
 device-vendor: Aruba
-arpnip: no
+arpnip: yes
 macsuck: yes
 portmac: yes
 duplex: no
-class: Layer2::Aruba
+class: Layer3::Aruba
 
 device-family: Aruba Wireless Controllers
 note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
 
 device: 5000
+
+device: 6000
 
 #
 # Asante

@@ -1,4 +1,4 @@
-# SNMP::Info::Layer2::Aruba
+# SNMP::Info::Layer3::Aruba
 # $Id$
 #
 # Copyright (c) 2008 Eric Miller
@@ -28,31 +28,31 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package SNMP::Info::Layer2::Aruba;
+package SNMP::Info::Layer3::Aruba;
 
 use strict;
 use Exporter;
-use SNMP::Info::Layer2;
+use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer2::Aruba::ISA       = qw/SNMP::Info::Layer2 Exporter/;
-@SNMP::Info::Layer2::Aruba::EXPORT_OK = qw//;
+@SNMP::Info::Layer3::Aruba::ISA       = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Aruba::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 $VERSION = '2.04';
 
 %MIBS = (
-    %SNMP::Info::Layer2::MIBS,
+    %SNMP::Info::Layer3::MIBS,
     'WLSX-SWITCH-MIB'         => 'wlsxHostname',
     'WLSX-WLAN-MIB'           => 'wlanAPFQLN',
     'WLSR-AP-MIB'             => 'wlsrHideSSID',
     #'ALCATEL-IND1-TP-DEVICES' => 'familyOmniAccessWireless',
 );
 
-%GLOBALS = ( %SNMP::Info::Layer2::GLOBALS, );
+%GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, );
 
 %FUNCS = (
-    %SNMP::Info::Layer2::FUNCS,
+    %SNMP::Info::Layer3::FUNCS,
 
     # WLSX-SWITCH-MIB::wlsxSwitchAccessPointTable
     # Table index leafs do not return information
@@ -79,10 +79,10 @@ $VERSION = '2.04';
     'fw_user' => 'staUserName',
 );
 
-%MUNGE = ( %SNMP::Info::Layer2::MUNGE, );
+%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
 
 sub layers {
-    return '00000011';
+    return '00000111';
 }
 
 sub os {
@@ -421,7 +421,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Aruba - SNMP Interface to Aruba wireless switches
+SNMP::Info::Layer3::Aruba - SNMP Interface to Aruba wireless switches
 
 =head1 AUTHOR
 
@@ -444,7 +444,7 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-SNMP::Info::Layer2::Aruba is a subclass of SNMP::Info that provides an
+SNMP::Info::Layer3::Aruba is a subclass of SNMP::Info that provides an
 interface to Aruba wireless switches.  The Aruba platform utilizes
 intelligent wireless switches which control thin access points.  The thin
 access points themselves are unable to be polled for end station information.
@@ -456,13 +456,13 @@ the end station is using for communication.
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 
 
- my $aruba = new SNMP::Info::Layer2::Aruba(...);
+ my $aruba = new SNMP::Info::Layer3::Aruba(...);
 
 =head2 Inherited Classes
 
 =over
 
-=item SNMP::Info::Layer2
+=item SNMP::Info::Layer3
 
 =back
 
@@ -478,7 +478,7 @@ after determining a more specific class using the method above.
 
 =head2 Inherited MIBs
 
-See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
+See L<SNMP::Info::Layer3/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -516,9 +516,9 @@ proprietary MIBs.
 
 =back
 
-=head2 Globals imported from SNMP::Info::Layer2
+=head2 Globals imported from SNMP::Info::Layer3
 
-See L<SNMP::Info::Layer2/"GLOBALS"> for details.
+See L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -641,8 +641,8 @@ Returns F<aruba_perap_fqln> indexed by BSSID instead of by AP.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info::Layer2
+=head2 Table Methods imported from SNMP::Info::Layer3
 
-See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
+See L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =cut

@@ -1236,7 +1236,7 @@ sub device_type {
         5624  => 'SNMP::Info::Layer3::Enterasys',
         11898 => 'SNMP::Info::Layer2::Orinoco',
         14179 => 'SNMP::Info::Layer2::Airespace',
-        14823 => 'SNMP::Info::Layer2::Aruba',
+        14823 => 'SNMP::Info::Layer3::Aruba',
     );
 
     # Get just the enterprise number for generic mapping
@@ -1449,11 +1449,11 @@ sub device_type {
             if ( $desc =~ /8-port .DSL Module\(Annex .\)/i );
 
         # Aruba wireless switches
-        $objtype = 'SNMP::Info::Layer2::Aruba'
+        $objtype = 'SNMP::Info::Layer3::Aruba'
             if ( $desc =~ /(ArubaOS|AirOS)/ );
 
         # Alcatel-Lucent branded Aruba
-        $objtype = 'SNMP::Info::Layer2::Aruba'
+        $objtype = 'SNMP::Info::Layer3::Aruba'
             if ( $desc =~ /^AOS-W/ );
 
         #Juniper NetScreen

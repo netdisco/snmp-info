@@ -3,6 +3,8 @@ ChangeLog $Id$
 
 version 2.05 ()
     + Fix broken function call in L2::Aironet
+    + Promote L2::Aruba to L3::Aruba, as Aruba devices can be L3 entities and
+      provide L3 information.
 
 version 2.04 (2011-03-31)
     + Support for older HP switch models moved to new L2::HP4000 class
