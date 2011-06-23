@@ -382,13 +382,13 @@ Returns ios_cpu_5min() or cat_cpu5min(), whichever is available.
 
 Returns mem_free() + mem_used()
 
-=item $ciscostats->os()
-
-Tries to parse if device is running IOS or CatOS from description()
-
 =item $ciscostats->vendor()
 
  'cisco'
+
+=item $ciscostats->os()
+
+Tries to parse if device is running IOS or CatOS from description()
 
 Available values :
 
