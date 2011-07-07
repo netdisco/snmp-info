@@ -162,7 +162,7 @@ sub root_ip {
     return $router_ip
         if (( defined $router_ip )
         and ( $router_ip ne '0.0.0.0' )
-        and ( grep { $_ eq $router_ip } (keys %$ospf_ip))
+        and ( grep { $ospf_ip->{$_} eq $router_ip } (keys %$ospf_ip))
         and ( $l3->snmp_connect_ip($router_ip) ) );
 
     # return the first one found here (should be only one)
