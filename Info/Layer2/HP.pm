@@ -61,6 +61,7 @@ $VERSION = '2.05';
     'HP-ICF-CHASSIS' => 'hpicfSensorObjectId',
     'HP-ICF-BRIDGE'  => 'hpicfBridgeRstpForceVersion',
     'HP-ICF-POE-MIB' => 'hpicfPoePethPsePortCurrent',
+    'SEMI-MIB'       => 'hpHttpMgSerialNumber',
 );
 
 %GLOBALS = (
@@ -69,11 +70,13 @@ $VERSION = '2.05';
     %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
     'serial1'      => 'entPhysicalSerialNum.1',
+    'serial2'      => 'hpHttpMgSerialNumber.0',
     'hp_cpu'       => 'hpSwitchCpuStat.0',
     'hp_mem_total' => 'hpGlobalMemTotalBytes.1',
     'mem_free'     => 'hpGlobalMemFreeBytes.1',
     'mem_used'     => 'hpGlobalMemAllocBytes.1',
     'os_version'   => 'hpSwitchOsVersion.0',
+    'os_version2'  => 'hpHttpMgVersion.0',
     'os_bin'       => 'hpSwitchRomVersion.0',
     'mac'          => 'hpSwitchBaseMACAddress.0',
     'rstp_ver'     => 'hpicfBridgeRstpForceVersion',
@@ -223,7 +226,7 @@ sub os {
 
 sub os_ver {
     my $hp         = shift;
-    my $os_version = $hp->os_version();
+    my $os_version = $hp->os_version() || $hp->os_version2();
     return $os_version if defined $os_version;
 
     # Some older ones don't have this value,so we cull it from the description
@@ -232,6 +235,16 @@ sub os_ver {
         return $1;
     }
     return;
+}
+
+# Regular managed ProCurve switches have the serial num in entity mib, 
+# the web-managed models in the semi mib (hphttpmanageable).
+sub serial {
+    my $hp = shift;
+
+    my $serial = $hp->serial1() || $hp->serial2() || undef;;
+
+    return $serial;
 }
 
 # Lookup model number, and translate the part number to the common number
@@ -826,6 +839,10 @@ the description field.
 =item $hp->os_version()
 
 C<hpSwitchOsVersion.0>
+
+=item $hp->serial()
+
+Returns serial number if available through SNMP
 
 =item $hp->slots()
 
