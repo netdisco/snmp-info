@@ -1,6 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 ChangeLog $Id$
 
+version 2.06 ()
+    + Support for PacketFront devices in new class L3::PacketFront
+    * [3344843] Fix returning serial() and os_ver() for web-managable HP
+      switches, introduced by HP/HP4000 class split, reported by J R Binks
+
 version 2.05 (2011-06-23)
     + Fix broken function call in L2::Aironet
     + Promote L2::Aruba to L3::Aruba, as Aruba devices can be L3 entities and
