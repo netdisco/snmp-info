@@ -724,6 +724,12 @@ Subclass for Juniper NetScreen.
 
 See documentation in L<SNMP::Info::Layer3::Netscreen> for details.
 
+=item SNMP::Info::Layer3::PacketFront
+
+Subclass for PacketFront DRG series CPE.
+
+See documentation in L<SNMP::Info::Layer3::PacketFront> for details.
+
 =item SNMP::Info::Layer3::Passport
 
 Subclass for Nortel Ethernet Routing Switch/Passport 8000 series and Accelar
