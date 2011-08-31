@@ -706,6 +706,12 @@ Subclass for Generic Microsoft Routers running Microsoft Windows OS.
 
 See documentation in L<SNMP::Info::Layer3::Microsoft> for details.
 
+=item SNMP::Info::Layer3::Mikrotik
+
+Subclass for Mikrotik devices running RouterOS.
+
+See documentation in L<SNMP::Info::Layer3::Mikrotik> for details.
+
 =item SNMP::Info::Layer3::N1600
 
 Subclass for Nortel Ethernet Routing Switch 1600 series.
@@ -1226,6 +1232,7 @@ sub device_type {
         8072 => 'SNMP::Info::Layer3::NetSNMP',
         9303 => 'SNMP::Info::Layer3::PacketFront',
         12325 => 'SNMP::Info::Layer3::Pf',
+        14988 => 'SNMP::Info::Layer3::Mikrotik',
         30065 => 'SNMP::Info::Layer3::Arista',
     );
 

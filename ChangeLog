@@ -3,6 +3,8 @@ ChangeLog $Id$
 
 version 2.06 ()
     + Support for PacketFront devices in new class L3::PacketFront
+    + Support for Mikrotik devices in new class L3::Mikrotik
+
     * [3344843] Fix returning serial() and os_ver() for web-managable HP
       switches, introduced by HP/HP4000 class split, reported by J R Binks
 
