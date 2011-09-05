@@ -2569,6 +2569,11 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '2488000000' => 'OC-48',
              )
 
+Note: high speed interfaces (usually 1 Gbps or faster) have their link 
+speed in C<ifHighSpeed>. i_speed() automatically determines whether to use 
+C<ifSpeed> or C<ifHighSpeed>; if the latter is used, the value is munged by 
+munge_highspeed(). SNMP::Info can return speeds up to terabit levels this way.
+
 =cut
 
 %SPEED_MAP = (
