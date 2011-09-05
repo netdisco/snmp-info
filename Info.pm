@@ -1365,6 +1365,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C3550'
             if ( $desc =~ /(C3550|ME340x)/ );
 
+        # Cisco blade switches, CBS30x0 and CBS31x0 models with L2 only
+        $objtype = 'SNMP::Info::Layer3::C6500'
+            if ( $desc =~ /cisco/i and $desc =~ /CBS3[0-9A-Za-z]{3}/ );
+
         #   Cisco 2970
         $objtype = 'SNMP::Info::Layer3::C6500'
             if ( $desc =~ /(C2970|C2960)/ );
