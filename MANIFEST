@@ -67,6 +67,7 @@ Info/Layer3/Foundry.pm
 Info/Layer3/HP9300.pm
 Info/Layer3/Juniper.pm
 Info/Layer3/Microsoft.pm
+Info/Layer3/Mikrotik.pm
 Info/Layer3/N1600.pm
 Info/Layer3/Netscreen.pm
 Info/Layer3/NetSNMP.pm
