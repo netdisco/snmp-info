@@ -41,6 +41,7 @@ Info/Layer2/Cisco.pm
 Info/Layer2/Foundry.pm
 Info/Layer2/HP.pm
 Info/Layer2/HP4000.pm
+Info/Layer2/HPVC.pm
 Info/Layer2/N2270.pm
 Info/Layer2/NAP222x.pm
 Info/Layer2/Netgear.pm

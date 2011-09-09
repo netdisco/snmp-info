@@ -1332,6 +1332,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::CiscoFWSM'
             if ( $desc =~ /Cisco Firewall Services Module/i );
 
+        # HP VirtualConnect blade switches
+        $objtype = 'SNMP::Info::Layer2::HPVC'
+            if ( $desc =~ /HP\sVC\s/ );
+
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer3' )
             and ( defined($id) )
@@ -1433,6 +1437,10 @@ sub device_type {
             if (
             $desc =~ /Nortel\s+(Networks\s+)??WLAN\s+-\s+Security\s+Switch/ );
 
+        # HP VirtualConnect blade switches
+        $objtype = 'SNMP::Info::Layer2::HPVC'
+            if ( $desc =~ /HP\sVC\s/ );
+
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer2' )
             and ( defined($id) )
@@ -1486,8 +1494,12 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Cisco'
             if ( $desc =~ /Cisco Adaptive Security Appliance/i );
 
+        # HP VirtualConnect blade switches
+        $objtype = 'SNMP::Info::Layer2::HPVC'
+            if ( $desc =~ /HP\sVC\s/ );
+
         # Generic device classification based upon sysObjectID
-        if ( defined($id) ) {
+        if ( defined($id) and !defined $objtype ) {
             if ( defined $l3sysoidmap{$id} ) {
                 $objtype = $l3sysoidmap{$id};
             } elsif ( defined $l2sysoidmap{$id}) {
