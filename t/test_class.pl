@@ -82,9 +82,10 @@ print "Detected Class: ", $dev->device_type(), "\n";
 print "Using    Class: $Class (-c to change)\n";
     
 my $layers = $dev->layers();
+my $descr = $dev->description();
 
-unless (defined $layers){
-    die "Are you sure you got the right community string and version?\nCan't fetch layers.\n";
+unless (defined $layers or defined $descr){
+    die "Are you sure you got the right community string and version?\nCan't fetch layers or description.\n";
 }
 
 print "Fetching global info...\n\n";
