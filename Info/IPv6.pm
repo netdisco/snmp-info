@@ -108,7 +108,7 @@ sub ipv6_n2p_mac {
                 $v6addr = join('.', $addrtype, $addrsize, $v6addr);
                 $addrtype = 2;
             }
-            if ($addrtype == 2) { # IPv6
+            if (($addrtype == 2) && (defined $phys_addr->{$row})) { # IPv6
                 $return->{$row} = substr($phys_addr->{$row}, 0, 17);
             }
         }
