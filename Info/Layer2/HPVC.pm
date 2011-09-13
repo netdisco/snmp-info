@@ -206,6 +206,4 @@ or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
 operations. 
 
-=over
-
 =cut
