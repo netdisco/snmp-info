@@ -1499,7 +1499,7 @@ sub device_type {
             if ( $desc =~ /HP\sVC\s/ );
 
         # Generic device classification based upon sysObjectID
-        if ( defined($id) and !defined $objtype ) {
+        if ( defined($id) and $objtype eq 'SNMP::Info') {
             if ( defined $l3sysoidmap{$id} ) {
                 $objtype = $l3sysoidmap{$id};
             } elsif ( defined $l2sysoidmap{$id}) {
