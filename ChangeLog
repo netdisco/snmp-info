@@ -10,6 +10,8 @@ version 2.06 ()
       switches, introduced by HP/HP4000 class split, reported by J R Binks
     * [2809033] Put L2-only Cisco blade switches in L3::C6500
     * POD clarification on i_speed() munging by Info.pm
+    * [3408506] Fix uninitialized value in IPv6 when neighbor state is 
+      incomplete (Michael Borgelt)
 
 version 2.05 (2011-06-23)
     + Fix broken function call in L2::Aironet
