@@ -2299,6 +2299,9 @@ ALTEON-TS-PHYSICAL-MIB::agPortCurCfgPortName.
     'i_qlen_out'        => 'ifOutQLen',
     'i_specific'        => 'ifSpecific',
 
+    # IF-MIB::IfStackTable
+    'i_stack_status'    => 'ifStackStatus',
+
     # IP Address Table
     'ip_index'     => 'ipAdEntIfIndex',
     'ip_table'     => 'ipAdEntAddr',

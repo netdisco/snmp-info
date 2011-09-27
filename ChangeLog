@@ -12,6 +12,8 @@ version 2.06 ()
     * POD clarification on i_speed() munging by Info.pm
     * [3408506] Fix uninitialized value in IPv6 when neighbor state is 
       incomplete (Michael Borgelt)
+    + Added i_stack_status method that can be used for finding the parent
+      interface for e.g. ADSL interface speed determination
 
 version 2.05 (2011-06-23)
     + Fix broken function call in L2::Aironet
