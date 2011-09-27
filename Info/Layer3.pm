@@ -40,11 +40,13 @@ use SNMP::Info::EtherLike;
 use SNMP::Info::Entity;
 use SNMP::Info::PowerEthernet;
 use SNMP::Info::IPv6;
+use SNMP::Info::AdslLine;
 
 @SNMP::Info::Layer3::ISA = qw/
     SNMP::Info::PowerEthernet SNMP::Info::IPv6
     SNMP::Info::Entity SNMP::Info::EtherLike
-    SNMP::Info::Bridge SNMP::Info Exporter/;
+    SNMP::Info::Bridge SNMP::Info::AdslLine
+    SNMP::Info Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
@@ -53,6 +55,7 @@ $VERSION = '2.05';
 
 %MIBS = (
     %SNMP::Info::MIBS,
+    %SNMP::Info::AdslLine::MIBS,
     %SNMP::Info::Bridge::MIBS,
     %SNMP::Info::EtherLike::MIBS,
     %SNMP::Info::Entity::MIBS,
@@ -67,6 +70,7 @@ $VERSION = '2.05';
 
     # Inherit the super class ones
     %SNMP::Info::GLOBALS,
+    %SNMP::Info::AdslLine::GLOBALS,
     %SNMP::Info::Bridge::GLOBALS,
     %SNMP::Info::EtherLike::GLOBALS,
     %SNMP::Info::Entity::GLOBALS,
@@ -82,6 +86,7 @@ $VERSION = '2.05';
 
 %FUNCS = (
     %SNMP::Info::FUNCS,
+    %SNMP::Info::AdslLine::FUNCS,
     %SNMP::Info::Bridge::FUNCS,
     %SNMP::Info::EtherLike::FUNCS,
     %SNMP::Info::Entity::FUNCS,
@@ -139,6 +144,7 @@ $VERSION = '2.05';
 
     # Inherit all the built in munging
     %SNMP::Info::MUNGE,
+    %SNMP::Info::AdslLine::MUNGE,
     %SNMP::Info::Bridge::MUNGE,
     %SNMP::Info::EtherLike::MUNGE,
     %SNMP::Info::Entity::MUNGE,
