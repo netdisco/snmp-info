@@ -227,6 +227,14 @@ For more info run C<perldoc> on any of the following module names.
 
 =over
 
+=item SNMP::Info::AdslLine
+
+SNMP Interface to the ADSL-LINE-MIB for ADSL interfaces.
+
+Requires the F<ADSL-LINE-MIB>, downloadable from Cisco.
+
+See documentation in L<SNMP::Info::AdslLine> for details.
+
 =item SNMP::Info::Airespace
 
 F<AIRESPACE-WIRELESS-MIB> and F<AIRESPACE-SWITCHING-MIB>.  Inherited by
@@ -538,6 +546,12 @@ Subclass for older HP Procurve Switches
 Requires F<HP-ICF-OID> and F<ENTITY-MIB> downloaded from HP.  
 
 See documentation in L<SNMP::Info::Layer2::HP4000> for details.
+
+=item SNMP::Info::Layer2::HPVC
+
+Subclass for HP VirtualConnect Switches
+
+See documentation in L<SNMP::Info::Layer2::HPVC> for details.
 
 =item SNMP::Info::Layer2::N2270
 
