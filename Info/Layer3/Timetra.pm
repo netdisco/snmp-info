@@ -40,7 +40,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '2.05';
+$VERSION = '2.06';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS, 'TIMETRA-GLOBAL-MIB' => 'timetraReg', );
 

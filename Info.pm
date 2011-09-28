@@ -20,11 +20,10 @@ use Math::BigInt;
 @SNMP::Info::EXPORT_OK = qw//;
 
 use vars
-    qw/$VERSION $VERSION_CVS %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
+    qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '2.05';
-$VERSION_CVS = '$Id$';
+$VERSION = '2.06';
 
 =head1 NAME
 
@@ -32,7 +31,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 2.05
+SNMP::Info - Version 2.06
 
 =head1 AUTHOR
 
@@ -1271,7 +1270,7 @@ sub device_type {
     $id = $1 if ( defined($id) && $id =~ /^\.1\.3\.6\.1\.4\.1\.(\d+)/ );
 
     if ($info->debug()) {
-        print "SNMP::Info $VERSION ($VERSION_CVS)\n";
+        print "SNMP::Info $VERSION\n";
         print "SNMP::Info::device_type() layers:$layers id:$id sysDescr:\"$desc\"\n";
     }
 

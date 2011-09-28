@@ -51,7 +51,7 @@ use SNMP::Info::AdslLine;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
 
-$VERSION = '2.05';
+$VERSION = '2.06';
 
 %MIBS = (
     %SNMP::Info::MIBS,

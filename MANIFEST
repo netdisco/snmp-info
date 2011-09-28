@@ -3,6 +3,7 @@ COPYRIGHT
 DEVELOP
 DeviceMatrix.txt
 Info.pm
+Info/AdslLine.pm
 Info/Airespace.pm
 Info/Bridge.pm
 Info/CDP.pm

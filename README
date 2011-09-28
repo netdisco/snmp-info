@@ -5,7 +5,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 2.05
+    SNMP::Info - Version 2.06
 
 AUTHOR
 
@@ -193,6 +193,13 @@ SUBCLASSES
     not used directly, but rather inherited from device subclasses.
 
     For more info run "perldoc" on any of the following module names.
+
+    SNMP::Info::AdslLine
+        SNMP Interface to the ADSL-LINE-MIB for ADSL interfaces.
+
+        Requires the ADSL-LINE-MIB, downloadable from Cisco.
+
+        See documentation in SNMP::Info::AdslLine for details.
 
     SNMP::Info::Airespace
         AIRESPACE-WIRELESS-MIB and AIRESPACE-SWITCHING-MIB. Inherited by
@@ -457,6 +464,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::HP4000 for details.
 
+        SNMP::Info::Layer2::HPVC
+            Subclass for HP VirtualConnect Switches
+
+            See documentation in SNMP::Info::Layer2::HPVC for details.
+
         SNMP::Info::Layer2::N2270
             Subclass for Nortel 2270 wireless switches.
 
@@ -601,6 +613,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Microsoft for details.
 
+        SNMP::Info::Layer3::Mikrotik
+            Subclass for Mikrotik devices running RouterOS.
+
+            See documentation in SNMP::Info::Layer3::Mikrotik for details.
+
         SNMP::Info::Layer3::N1600
             Subclass for Nortel Ethernet Routing Switch 1600 series.
 
@@ -615,6 +632,12 @@ SUBCLASSES
             Subclass for Juniper NetScreen.
 
             See documentation in SNMP::Info::Layer3::Netscreen for details.
+
+        SNMP::Info::Layer3::PacketFront
+            Subclass for PacketFront DRG series CPE.
+
+            See documentation in SNMP::Info::Layer3::PacketFront for
+            details.
 
         SNMP::Info::Layer3::Passport
             Subclass for Nortel Ethernet Routing Switch/Passport 8000 series
@@ -1537,6 +1560,12 @@ SNMP::INFO INTERNALS
                         '1000000000' => '1.0 Gbps',
                         '2488000000' => 'OC-48',
                      )
+
+        Note: high speed interfaces (usually 1 Gbps or faster) have their
+        link speed in "ifHighSpeed". i_speed() automatically determines
+        whether to use "ifSpeed" or "ifHighSpeed"; if the latter is used,
+        the value is munged by munge_highspeed(). SNMP::Info can return
+        speeds up to terabit levels this way.
 
     munge_highspeed()
         Makes human friendly speed ratings for "ifHighSpeed"
