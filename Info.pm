@@ -1497,7 +1497,7 @@ sub device_type {
 
         #Juniper NetScreen
         $objtype = 'SNMP::Info::Layer3::Netscreen'
-            if ( $desc =~ /NetScreen/i );
+            if ( $desc =~ /NetScreen|SSG/i );
 
         # Cisco PIX
         $objtype = 'SNMP::Info::Layer3::Cisco'

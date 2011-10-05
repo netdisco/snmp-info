@@ -2,6 +2,10 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 2.07 ()
 
+    [BUG FIXES]
+
+    * [2988163] Detect Juniper SSG firewalls as Layer3::Netscreen (R. Kerr)
+
 version 2.06 (2011-09-28)
 
     [NEW FEATURES]
