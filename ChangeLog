@@ -2,6 +2,9 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 2.07 ()
 
+    [NEW FEATURES]
+    * Basic support for APC UPS devices
+
     [BUG FIXES]
 
     * [2988163] Detect Juniper SSG firewalls as Layer3::Netscreen (R. Kerr)

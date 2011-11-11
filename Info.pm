@@ -1266,6 +1266,10 @@ sub device_type {
         14823 => 'SNMP::Info::Layer3::Aruba',
     );
 
+    my %l7sysoidmap = (
+        318   => 'SNMP::Info::Layer7::APC',
+    );
+
     # Get just the enterprise number for generic mapping
     $id = $1 if ( defined($id) && $id =~ /^\.1\.3\.6\.1\.4\.1\.(\d+)/ );
 
@@ -1517,6 +1521,10 @@ sub device_type {
                 $objtype = $l3sysoidmap{$id};
             } elsif ( defined $l2sysoidmap{$id}) {
                 $objtype = $l2sysoidmap{$id};
+            } elsif ( defined $l7sysoidmap{$id}) {
+                $objtype = $l7sysoidmap{$id};
+            } elsif ($info->has_layer(7)) {
+                $objtype = 'SNMP::Info::Layer7'
             }
         }
     }
