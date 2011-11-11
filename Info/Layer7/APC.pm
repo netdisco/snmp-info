@@ -44,7 +44,7 @@ $VERSION = '2.07';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
-    'POWERNET-MIB' => 'upsBasicIdentModel',
+    'PowerNet-MIB' => 'upsBasicIdentModel',
 );
 
 %GLOBALS = (
