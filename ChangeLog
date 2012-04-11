@@ -4,6 +4,7 @@ version 2.07 ()
 
     [NEW FEATURES]
     * Basic support for APC UPS devices
+    * [2993691] Support for SonicWALL devices in new class L3::SonicWALL (phishphreek)
 
     [BUG FIXES]
 

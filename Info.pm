@@ -762,6 +762,11 @@ Subclass for FreeBSD-Based Firewalls using Pf /Pf Sense
 
 See documentation in L<SNMP::Info::Layer3::Pf> for details.
 
+=item SNMP::Info::Layer3::SonicWALL
+
+Subclass for generic SonicWALL devices. See documentation in
+L<SNMP::Info::Layer3::SonicWALL> for details.
+
 =item SNMP::Info::Layer3::Sun
 
 Subclass for Generic Sun Routers running SunOS.
@@ -1340,6 +1345,9 @@ sub device_type {
 
         # Nortel Contivity
         $objtype = 'SNMP::Info::Layer3::Contivity' if $desc =~ /(\bCES\b|\bNVR\sV\d)/;
+
+        # SonicWALL
+        $objtype = 'SNMP::Info::Layer3::SonicWALL' if $desc =~ /SonicWALL/i;
 
         # Allied Telesyn Layer2 managed switches. They report they have L3 support
         $objtype = 'SNMP::Info::Layer2::Allied'

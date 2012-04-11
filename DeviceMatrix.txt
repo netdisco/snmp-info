@@ -837,6 +837,12 @@ device: AP-1000,AP-2000,AP-4000
 
 device: WavePOINT-II
 
+# 
+# SonicWALL
+# 
+device-vendor: SonicWALL
+class: Layer3::SonicWALL
+
 #
 # Sun
 #
