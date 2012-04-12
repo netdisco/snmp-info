@@ -20,6 +20,7 @@ version 2.07 ()
     * [2988163] Detect Juniper SSG firewalls as Layer3::Netscreen (R. Kerr)
     * [3297786] LLDP INDEX munged to ignore TimeMark component (David Baldwin)
     * [3317739] Fix for Baystack without POE on stack member 1 (David Baldwin)
+    * [2037444] os_ver fails on some Extreme versions (Robert Kerr)
 
 version 2.06 (2011-09-28)
 

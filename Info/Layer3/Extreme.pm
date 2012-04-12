@@ -137,7 +137,7 @@ sub os_ver {
     my $descr   = $extreme->description();
     return unless defined $descr;
 
-    if ( $descr =~ m/Version ([\d.]*)/ ) {
+    if ( $descr =~ m/Version\s+(.+)/ ) {
         return $1;
     }
 
