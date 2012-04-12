@@ -493,6 +493,10 @@ and probably others.
 
 See documentation in L<SNMP::Info::Layer2::Baystack> for details.
 
+=item SNMP::Info::Layer2::Kentrox
+
+Class for Kentrox DataSMART DSU/CSU. See L<SNMP::Info::Layer2::Kentrox> for details.
+
 =item SNMP::Info::Layer2::C1900
 
 Subclass for Cisco Catalyst 1900 and 1900c Devices running CatOS.
@@ -1431,6 +1435,10 @@ sub device_type {
             if ( $desc
             =~ /^(BayStack|Ethernet\s+(Routing\s+)??Switch)\s[2345](\d){2,3}/i
             );
+
+        # Kentrox DataSMART DSU/CSU
+        $objtype = 'SNMP::Info::Layer2::Kentrox'
+            if ( $desc =~ /^DataSMART/i );
 
         #  Nortel Business Ethernet Switch
         $objtype = 'SNMP::Info::Layer2::Baystack'
