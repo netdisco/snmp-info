@@ -24,6 +24,7 @@ version 2.07 ()
     * [2980789] Fix root_ip to try OSPF RouterID first (Brian De Wolf)
     * [2986858] Fix the patch from this ticket (Oliver Gorwits)
     * [3076592] Not an ARRAY reference in Info.pm (Oliver Gorwits)
+    * [3136084] Rename Allied Telesyn to Allied Telesis (Oliver Gorwits)
 
 version 2.06 (2011-09-28)
 

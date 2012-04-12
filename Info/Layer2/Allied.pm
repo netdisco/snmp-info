@@ -129,7 +129,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Allied - SNMP Interface to Allied Telesyn switches
+SNMP::Info::Layer2::Allied - SNMP Interface to Allied Telesis switches
 
 =head1 AUTHOR
 

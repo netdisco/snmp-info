@@ -45,7 +45,7 @@ device: All
 #
 # Allied
 #
-device-vendor: Allied Telesyn
+device-vendor: Allied Telesis
 cdp:no
 class: Layer1::Allied
 ver: 1

@@ -417,7 +417,7 @@ See documentation in L<SNMP::Info::Layer1> for details.
 
 =item SNMP::Info::Layer1::Allied
 
-Subclass for Allied Telesys Repeaters / Hubs.  
+Subclass for Allied Telesis Repeaters / Hubs.  
 
 Requires F<ATI-MIB>
 
@@ -476,7 +476,7 @@ See documentation in L<SNMP::Info::Layer2::Aironet> for details.
 
 =item SNMP::Info::Layer2::Allied
 
-Allied Telesys switches.
+Allied Telesis switches.
 
 See documentation in L<SNMP::Info::Layer2::Allied> for details.
 
@@ -1354,7 +1354,7 @@ sub device_type {
         # SonicWALL
         $objtype = 'SNMP::Info::Layer3::SonicWALL' if $desc =~ /SonicWALL/i;
 
-        # Allied Telesyn Layer2 managed switches. They report they have L3 support
+        # Allied Telesis Layer2 managed switches. They report they have L3 support
         $objtype = 'SNMP::Info::Layer2::Allied'
             if ( $desc =~ /Allied.*AT-80\d{2}\S*/i );
 
