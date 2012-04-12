@@ -33,8 +33,9 @@ package SNMP::Info::Layer3::Dell;
 use strict;
 use Exporter;
 use SNMP::Info::Layer3;
+use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::Dell::ISA       = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Dell::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Dell::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
@@ -43,6 +44,7 @@ $VERSION = '2.06';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::LLDP::MIBS,
     'RADLAN-Physicaldescription-MIB' => 'rlPhdStackReorder',
     'RADLAN-rlInterfaces'            => 'rlIfNumOfLoopbackPorts',
     'RADLAN-HWENVIROMENT'            => 'rlEnvPhysicalDescription',
@@ -51,12 +53,14 @@ $VERSION = '2.06';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
     'os_ver'       => 'productIdentificationVersion',
     'dell_id_name' => 'productIdentificationDisplayName',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
 
     # RADLAN-rlInterfaces:swIfTable
     'dell_duplex_admin' => 'swIfDuplexAdminMode',
@@ -102,7 +106,7 @@ $VERSION = '2.06';
     'dell_fan_desc'  => 'rlEnvMonFanStatusDescr',
 );
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
+%MUNGE = ( %SNMP::Info::Layer3::MUNGE, %SNMP::Info::LLDP::MUNGE, );
 
 # Method OverRides
 
@@ -228,6 +232,47 @@ sub _vendor {
     }
 }
 
+# lldp support
+sub hasCDP {
+    my $dell = shift;
+    return $dell->hasLLDP();
+}
+
+sub c_ip {
+    my $dell    = shift;
+    my $partial = shift;
+
+    return $dell->lldp_ip($partial);
+}
+
+sub c_if {
+    my $dell    = shift;
+    my $partial = shift;
+
+    return $dell->lldp_if($partial);
+}
+
+sub c_port {
+    my $dell    = shift;
+    my $partial = shift;
+
+    return $dell->lldp_port($partial);
+}
+
+sub c_id {
+    my $dell    = shift;
+    my $partial = shift;
+
+    return $dell->lldp_id($partial);
+}
+
+sub c_platform {
+    my $dell    = shift;
+    my $partial = shift;
+
+    return $dell->lldp_rem_sysdesc($partial);
+}
+
 1;
 __END__
 
@@ -323,6 +368,10 @@ id().  Defaults to 'dlink'.
 Returns 'dell', 'dlink', or 'ibm' based upon the IANA enterprise number in
 id().  Defaults to 'dlink'.
 
+=item $dell->hasCDP()
+
+Returns whether LLDP is enabled.
+
 =back
 
 =head2 Overrides
@@ -414,6 +463,26 @@ identifier (iid)
 Some devices don't implement the C<BRIDGE-MIB> forwarding table, so we use
 the C<Q-BRIDGE-MIB> forwarding table.  Fall back to the C<BRIDGE-MIB> if
 C<Q-BRIDGE-MIB> doesn't return anything.
+
+=item $dell->c_id()
+
+Returns LLDP information.
+
+=item $dell->c_if()
+
+Returns LLDP information.
+
+=item $dell->c_ip()
+
+Returns LLDP information.
+
+=item $dell->c_platform()
+
+Returns LLDP information.
+
+=item $dell->c_port()
+
+Returns LLDP information.
 
 =back
 
