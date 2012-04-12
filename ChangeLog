@@ -6,6 +6,7 @@ version 2.07 ()
     * Basic support for APC UPS devices
     * [2993691] Support for SonicWALL devices in new class L3::SonicWALL (phishphreek)
     * [2996795] Support for Kentrox devices in new class L2::Kentrox (phishphreek)
+    * [3085411] Activate L3 properties for Netgear GSM7224v2 (phishphreek)
 
     [BUG FIXES]
 
