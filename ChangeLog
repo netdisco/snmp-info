@@ -3,17 +3,22 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 version 2.07 ()
 
     [NEW FEATURES]
+
     * Basic support for APC UPS devices
     * [2993691] Support for SonicWALL devices in new class L3::SonicWALL (phishphreek)
     * [2996795] Support for Kentrox devices in new class L2::Kentrox (phishphreek)
+
+    [ENHANCEMENTS]
+
     * [3085411] Activate L3 properties for Netgear GSM7224v2 (phishphreek)
     * [3085413] SNMP OIDs for Netgear Serial and OS Ver (phishphreek)
     * [3286549] Dell LLDP Support (Nico Giefing)
-    * [3297786] LLDP INDEX munged to ignore TimeMark component (David Baldwin)
 
     [BUG FIXES]
 
     * [2988163] Detect Juniper SSG firewalls as Layer3::Netscreen (R. Kerr)
+    * [3297786] LLDP INDEX munged to ignore TimeMark component (David Baldwin)
+    * [3317739] Fix for Baystack without POE on stack member 1 (David Baldwin)
 
 version 2.06 (2011-09-28)
 
