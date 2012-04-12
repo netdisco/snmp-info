@@ -43,7 +43,10 @@ $VERSION = '2.06';
 
 %MIBS = ( %SNMP::Info::Layer2::MIBS, );
 
-%GLOBALS = ( %SNMP::Info::Layer2::GLOBALS, );
+%GLOBALS = ( %SNMP::Info::Layer2::GLOBALS,
+    ng_serial => '.1.3.6.1.4.1.4526.10.1.1.1.4.0',
+    ng_osver  => '.1.3.6.1.4.1.4526.10.1.1.1.13.0',
+);
 
 %FUNCS = ( %SNMP::Info::Layer2::FUNCS, );
 
@@ -84,6 +87,20 @@ sub fw_port {
     my $ret     = $netgear->qb_fw_port();
     $ret = $netgear->orig_fw_port() if ( !defined($ret) );
     return $ret;
+}
+
+# these seem to work for GSM models but not GS
+# https://sourceforge.net/tracker/?func=detail&aid=3085413&group_id=70362&atid=527529
+sub os_ver {
+    my $self = shift;
+    return if $self->model and $self->model =~ m/GS\d/i;
+    return $self->ng_osver();
+}
+
+sub serial {
+    my $self = shift;
+    return if $self->model and $self->model =~ m/GS\d/i;
+    return $self->ng_serial();
 }
 
 1;
@@ -157,6 +174,14 @@ Returns 'netgear'
 =item $netgear->model()
 
 Returns description()
+
+=item $netgear->os_ver()
+
+Returns OS Version.
+
+=item $netgear->serial()
+
+Returns Serial Number.
 
 =back
 
