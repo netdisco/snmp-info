@@ -244,6 +244,7 @@ sub i_vlan_membership {
                 next unless $list;
                 my $vlanlist = [ split( //, unpack( "B*", $list ) ) ];
                 foreach my $vlan ( keys %oper_vlans ) {
+                    next if (($vlan < $offset) or ($vlan - $offset > 1024));
                     push( @{ $i_vlan_membership->{$port} }, $vlan )
                         if ( @$vlanlist[ $vlan - $offset ] );
                 }

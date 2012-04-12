@@ -25,6 +25,7 @@ version 2.07 ()
     * [2986858] Fix the patch from this ticket (Oliver Gorwits)
     * [3076592] Not an ARRAY reference in Info.pm (Oliver Gorwits)
     * [3136084] Rename Allied Telesyn to Allied Telesis (Oliver Gorwits)
+    * [3268104] CiscoVTP.pm i_vlan_membership() array bounds (Michael Sanderson)
 
 version 2.06 (2011-09-28)
 
