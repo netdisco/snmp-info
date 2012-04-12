@@ -1335,6 +1335,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::HP9300'
             if $desc =~ /\b(J4874A|J4138A|J4139A|J4840A|J4841A)\b/;
 
+        # Juniper EX switch and SRX routers
+        $objtype = 'SNMP::Info::Layer3::JuniperEX'
+            if $desc =~ /\b(ex4[25]00-\w+|srx\d+\w+)\b/;
+
         # Nortel ERS (Passport) 1600 Series < version 2.1
         $objtype = 'SNMP::Info::Layer3::N1600'
             if $desc =~ /(Passport|Ethernet\s+Routing\s+Switch)-16/i;
