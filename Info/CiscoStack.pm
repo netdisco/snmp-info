@@ -65,6 +65,7 @@ $VERSION = '2.06';
     'm_type'         => 'moduleType',
     'm_model'        => 'moduleModel',
     'm_serial'       => 'moduleSerialNumber',
+    'm_serial_string' => 'moduleSerialNumberString',
     'm_status'       => 'moduleStatus',
     'm_name'         => 'moduleName',
     'm_ports'        => 'moduleNumPorts',
