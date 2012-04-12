@@ -33,24 +33,26 @@ package SNMP::Info::Layer2::Netgear;
 use strict;
 use Exporter;
 use SNMP::Info::Layer2;
+use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer2::Netgear::ISA       = qw/SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::Netgear::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Netgear::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '2.06';
 
-%MIBS = ( %SNMP::Info::Layer2::MIBS, );
+%MIBS = ( %SNMP::Info::Layer2::MIBS, %SNMP::Info::LLDP::MIBS, );
 
-%GLOBALS = ( %SNMP::Info::Layer2::GLOBALS,
+%GLOBALS = (
+    %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::LLDP::GLOBALS,
     ng_serial => '.1.3.6.1.4.1.4526.10.1.1.1.4.0',
     ng_osver  => '.1.3.6.1.4.1.4526.10.1.1.1.13.0',
 );
 
-%FUNCS = ( %SNMP::Info::Layer2::FUNCS, );
+%FUNCS = ( %SNMP::Info::Layer2::FUNCS, %SNMP::Info::LLDP::FUNCS, );
 
-%MUNGE = ( %SNMP::Info::Layer2::MUNGE, );
+%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::LLDP::MUNGE, );
 
 sub vendor {
     return 'netgear';
@@ -103,6 +105,49 @@ sub serial {
     return $self->ng_serial();
 }
 
+#  Use LLDP
+
+sub hasCDP {
+    my $netgear = shift;
+    return $netgear->hasLLDP();
+}
+
+sub c_ip {
+    my $netgear = shift;
+    my $partial  = shift;
+
+    return $netgear->lldp_ip($partial);
+}
+
+sub c_if {
+    my $netgear = shift;
+    my $partial  = shift;
+
+    return $netgear->lldp_if($partial);
+}
+
+sub c_port {
+    my $netgear = shift;
+    my $partial  = shift;
+
+    return $netgear->lldp_port($partial);
+}
+
+sub c_id {
+    my $netgear = shift;
+    my $partial  = shift;
+
+    return $netgear->lldp_id($partial);
+}
+
+sub c_platform {
+    my $netgear = shift;
+    my $partial  = shift;
+
+    return $netgear->lldp_rem_sysdesc($partial);
+}
+
+
 1;
 
 __END__
@@ -113,7 +158,9 @@ SNMP::Info::Layer2::Netgear - SNMP Interface to Netgear switches
 
 =head1 AUTHOR
 
-Bill Fenner and Zoltan Erszenyi
+Bill Fenner and Zoltan Erszenyi, 
+Hacked in LLDP support from Baystack.pm by 
+ Nic Bernstein <nic@onlight.com>
 
 =head1 SYNOPSIS
 
@@ -141,6 +188,7 @@ inherited methods.
 =over
 
 =item SNMP::Info::Layer2
+=item SNMP::Info::LLDP
 
 =back
 
@@ -152,6 +200,8 @@ inherited methods.
 
 MIBs listed in L<SNMP::Info::Layer2/"Required MIBs"> and its inherited
 classes.
+
+See L<SNMP::Info::LLDP/"Required MIBs"> for its MIB requirements.
 
 =back
 
@@ -189,6 +239,10 @@ Returns Serial Number.
 
 See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
+=head2 Globals imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
+
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of
@@ -214,6 +268,49 @@ identifier (iid)
 Some devices don't implement the C<BRIDGE-MIB> forwarding table, so we use
 the C<Q-BRIDGE-MIB> forwarding table.  Fall back to the C<BRIDGE-MIB> if
 C<Q-BRIDGE-MIB> doesn't return anything.
+
+=back
+
+=head2 Topology information
+
+Based upon the software version devices may support Link Layer Discovery 
+Protocol (LLDP).
+
+=over
+
+=item $netgear->hasCDP()
+
+Returns true if the device is running LLDP.
+
+=item $netgear->c_if()
+
+Returns reference to hash.  Key: iid Value: local device port (interfaces)
+
+=item $netgear->c_ip()
+
+Returns reference to hash.  Key: iid Value: remote IPv4 address
+
+If multiple entries exist with the same local port, c_if(), with the same IPv4
+address, c_ip(), it may be a duplicate entry.
+
+If multiple entries exist with the same local port, c_if(), with different
+IPv4 addresses, c_ip(), there is either a non-LLDP device in between two or
+more devices or multiple devices which are not directly connected.  
+
+Use the data from the Layer2 Topology Table below to dig deeper.
+
+=item $netgear->c_port()
+
+Returns reference to hash. Key: iid Value: remote port (interfaces)
+
+=item $netgear->c_id()
+
+Returns reference to hash. Key: iid Value: string value used to identify the
+chassis component associated with the remote system.
+
+=item $netgear->c_platform()
+
+Returns reference to hash.  Key: iid Value: Remote Device Type
 
 =back
 
