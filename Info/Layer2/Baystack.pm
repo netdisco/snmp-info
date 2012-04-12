@@ -162,7 +162,7 @@ sub interfaces {
         next unless defined $index;
 
         # Ignore cascade ports
-        next if $index > 513;
+        next if $index > $index_factor * 8;
 
         my $port = ( $index % $index_factor );
         my $slot = ( int( $index / $index_factor ) ) + $slot_offset;
