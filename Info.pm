@@ -1520,6 +1520,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Netscreen'
             if ( $desc =~ /NetScreen|SSG/i );
 
+        #Juniper NetScreen with WLAN
+        $objtype = 'SNMP::Info::Layer3::NetscreenWLAN'
+            if ( $desc =~ /(NetScreen|SSG).*WLAN/i );
+
         # Cisco PIX
         $objtype = 'SNMP::Info::Layer3::Cisco'
             if ( $desc =~ /Cisco PIX Security Appliance/i );
