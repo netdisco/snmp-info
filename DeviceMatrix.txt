@@ -638,6 +638,14 @@ device-family: BSD
 device:  BSD routers
 
 #
+# Kentrox
+#
+device-vendor: Kentrox
+note: MIB not yet shipped
+
+device: Kentrox DataSMART DSU/CSU
+
+#
 # NORTEL
 #
 device-vendor: Nortel
