@@ -103,7 +103,7 @@ sub lldp_if {
     foreach my $key ( keys %$addr ) {
         my @aOID = split( '\.', $key );
         my $port = $aOID[1];
-        $lldp_if{$key} = $port;
+        $lldp_if{_lldp_rem_index($key)} = $port;
     }
     return \%lldp_if;
 }
@@ -169,7 +169,7 @@ sub lldp_port {
             $port = defined $1 ? "$2.$3" : "$3";
         }
 
-        $lldp_port{$key} = $port;
+        $lldp_port{_lldp_rem_index($key)} = $port;
     }
     return \%lldp_port;
 }
@@ -191,14 +191,15 @@ sub lldp_id {
         # May need to format other types in the future
         if ( $type =~ /mac/ ) {
             $id = join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $id ) );
-        }elsif ($type eq 'networkAddress'){
- 	    if ( length(unpack('H*', $id)) == 10 ){
- 		# IP address (first octet is sign, I guess)
- 		my @octets = (map { sprintf "%02x",$_ } unpack('C*', $id))[1..4];
- 		$id = join '.', map { hex($_) } @octets;
- 	    }
-	}
-        $lldp_id{$key} = $id;
+        }
+        elsif ($type eq 'networkAddress') {
+            if ( length(unpack('H*', $id)) == 10 ) {
+                # IP address (first octet is sign, I guess)
+                my @octets = (map { sprintf "%02x",$_ } unpack('C*', $id))[1..4];
+                $id = join '.', map { hex($_) } @octets;
+            }
+        }
+        $lldp_id{_lldp_rem_index( $key )} = $id;
     }
     return \%lldp_id;
 }
@@ -220,6 +221,16 @@ sub lldp_id {
 #    }
 #    return;
 #}
+
+# Break up the lldpRemTable INDEX into time mark and common index returning
+# index
+sub _lldp_rem_index {
+    my $idx  = shift;
+    my @oids = split( /\./, $idx );
+    # print "DBGoids: $idx\n";
+    my $timemark = shift @oids;
+    return join( '.', @oids );
+}
 
 # Break up the lldpRemManAddrTable INDEX into common index, protocol,
 # and address.
@@ -391,7 +402,7 @@ to a hash.
 
 =item $lldp->lldp_id()
 
-Returns the string value used to identify the chassis component	associated
+Returns the string value used to identify the chassis component    associated
 with the remote system.
 
 (C<lldpRemChassisId>)
@@ -429,7 +440,7 @@ the remote system.
 
 =item $lldp->lldp_rem_id()
 
-Returns the string value used to identify the chassis component	associated
+Returns the string value used to identify the chassis component    associated
 with the remote system.
 
 (C<lldpRemChassisId>)

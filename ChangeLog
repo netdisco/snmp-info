@@ -9,6 +9,7 @@ version 2.07 ()
     * [3085411] Activate L3 properties for Netgear GSM7224v2 (phishphreek)
     * [3085413] SNMP OIDs for Netgear Serial and OS Ver (phishphreek)
     * [3286549] Dell LLDP Support (Nico Giefing)
+    * [3297786] LLDP INDEX munged to ignore TimeMark component (David Baldwin)
 
     [BUG FIXES]
 
