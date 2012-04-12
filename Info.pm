@@ -828,14 +828,14 @@ SNMP::Info Specific Arguments :
 
 Returns an object of a more specific device class
 
-(default on)
+(default 1, which means "on")
 
 =item BigInt
 
 Return Math::BigInt objects for 64 bit counters.  Sets on a global scope,
 not object.
 
-(default off)
+(default 0, which means "off")
 
 =item BulkWalk
 
@@ -843,7 +843,7 @@ Set to C<0> to turn off BULKWALK commands for SNMPv2 connections.
 
 Note that BULKWALK is turned off for Net-SNMP versions 5.1.x because of a bug.
 
-(default on)
+(default 1, which means "on")
 
 =item BulkRepeaters
 
@@ -861,14 +861,14 @@ operation, Net-SNMP's internal bulkwalk function must detect the loop.
 
 Set to C<0> to turn off loop detection.
 
-(default on)
+(default 1, which measn "on")
 
 =item Debug
 
 Prints Lots of debugging messages.
 Pass 2 to print even more debugging messages.
 
-(default off)
+(default 0, which means "off")
 
 =item DebugSNMP
 
@@ -890,7 +890,7 @@ such variable in this MIB".  Set to false if so desired.  This feature lets
 you read SNMPv2 data from an SNMP version 1 connection, and should probably
 be left on.
 
-(default true)
+(default 1, which means "on")
 
 =item Session
 
