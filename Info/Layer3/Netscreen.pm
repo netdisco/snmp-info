@@ -265,7 +265,7 @@ sub i_speed {
         $i_speed{$iid} = $i_speed->{$ns_i_map->{$iid}}
                          || $i_name->{$iid} =~ /tunnel/ && "vpn"
                          || 0;
-    }a
+    }
 
     return \%i_speed;
 }
