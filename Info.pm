@@ -828,7 +828,7 @@ SNMP::Info Specific Arguments :
 
 Returns an object of a more specific device class
 
-(default 1, which means "on")
+(default 0, which means "off")
 
 =item BigInt
 

@@ -154,13 +154,11 @@ DESIGN GOALS
 
     1. Use of textual MIB leaf identifier and enumerated values
 
-        *   All values are retrieved via MIB Leaf node names
-
+        * All values are retrieved via MIB Leaf node names
             For example SNMP::Info has an entry in its %GLOBALS hash for
             ``sysName'' instead of 1.3.6.1.2.1.1.5.
 
-        *   Data returned is in the enumerated value form.
-
+        * Data returned is in the enumerated value form.
             For Example instead of looking up 1.3.6.1.2.1.2.2.1.3 and
             getting back 23
 
@@ -354,7 +352,7 @@ SUBCLASSES
         See documentation in SNMP::Info::Layer1 for details.
 
         SNMP::Info::Layer1::Allied
-            Subclass for Allied Telesys Repeaters / Hubs.
+            Subclass for Allied Telesis Repeaters / Hubs.
 
             Requires ATI-MIB
 
@@ -401,7 +399,7 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer2::Aironet for details.
 
         SNMP::Info::Layer2::Allied
-            Allied Telesys switches.
+            Allied Telesis switches.
 
             See documentation in SNMP::Info::Layer2::Allied for details.
 
@@ -415,6 +413,10 @@ SUBCLASSES
             Switch (BES), Business Policy Switch (BPS) and probably others.
 
             See documentation in SNMP::Info::Layer2::Baystack for details.
+
+        SNMP::Info::Layer2::Kentrox
+            Class for Kentrox DataSMART DSU/CSU. See
+            SNMP::Info::Layer2::Kentrox for details.
 
         SNMP::Info::Layer2::C1900
             Subclass for Cisco Catalyst 1900 and 1900c Devices running
@@ -650,6 +652,10 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Pf for details.
 
+        SNMP::Info::Layer3::SonicWALL
+            Subclass for generic SonicWALL devices. See documentation in
+            SNMP::Info::Layer3::SonicWALL for details.
+
         SNMP::Info::Layer3::Sun
             Subclass for Generic Sun Routers running SunOS.
 
@@ -695,13 +701,13 @@ USAGE
         AutoSpecify
             Returns an object of a more specific device class
 
-            (default on)
+            (default 0, which means "off")
 
         BigInt
             Return Math::BigInt objects for 64 bit counters. Sets on a
             global scope, not object.
 
-            (default off)
+            (default 0, which means "off")
 
         BulkWalk
             Set to 0 to turn off BULKWALK commands for SNMPv2 connections.
@@ -709,7 +715,7 @@ USAGE
             Note that BULKWALK is turned off for Net-SNMP versions 5.1.x
             because of a bug.
 
-            (default on)
+            (default 1, which means "on")
 
         BulkRepeaters
             Set number of MaxRepeaters for BULKWALK operation. See "perldoc
@@ -726,13 +732,13 @@ USAGE
 
             Set to 0 to turn off loop detection.
 
-            (default on)
+            (default 1, which measn "on")
 
         Debug
             Prints Lots of debugging messages. Pass 2 to print even more
             debugging messages.
 
-            (default off)
+            (default 0, which means "off")
 
         DebugSNMP
             Set $SNMP::debugging level for Net-SNMP.
@@ -752,7 +758,7 @@ USAGE
             desired. This feature lets you read SNMPv2 data from an SNMP
             version 1 connection, and should probably be left on.
 
-            (default true)
+            (default 1, which means "on")
 
         Session
             SNMP::Session object to use instead of connecting on own.
@@ -1223,7 +1229,6 @@ USAGE
                              -- route to a non-local
             indirect(4)      -- host/network/sub-network
 
-
               "The type of route.  Note that the values
               direct(3) and indirect(4) refer to the notion of
               direct and indirect routing in the IP
@@ -1435,7 +1440,6 @@ EXTENDING SNMP::INFO
                  'super_hero_name'   => 'SuperHeroIfName',
                  'super_hero_powers' => 'SuperHeroIfPowers'
                 );
-
 
      %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
                  %SNMP::Info::CiscoVTP::MUNGE,
