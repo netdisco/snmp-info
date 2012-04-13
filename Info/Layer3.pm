@@ -163,10 +163,12 @@ sub root_ip {
     my $router_ip = $l3->router_ip();
     my $ospf_ip   = $l3->ospf_ip();
 
-    # if the router ip exists, we use it instead of OSPF host entries
+    # if the router ip exists and is a route advertised by the device we prefer
+    # it over the others
     return $router_ip
         if (( defined $router_ip )
         and ( $router_ip ne '0.0.0.0' )
+        and ( grep { $ospf_ip->{$_} eq $router_ip } (keys %$ospf_ip))
         and ( $l3->snmp_connect_ip($router_ip) ) );
 
     # return the first one found here (should be only one)
