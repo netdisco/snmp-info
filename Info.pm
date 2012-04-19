@@ -3447,7 +3447,7 @@ sub _load_attr {
 
     # Use BULKWALK if we can because its faster
     if ( $bulkwalk && @$vars == 0 ) {
-        $vars = scalar $sess->bulkwalk( 0, $repeaters, $var );
+        ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
         if ( $sess->{ErrorNum} ) {
             $self->error_throw(
                 "SNMP::Info::_load_atrr: BULKWALK " . $sess->{ErrorStr},
