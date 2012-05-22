@@ -47,6 +47,7 @@ $VERSION = '2.06';
     %SNMP::Info::LLDP::MIBS,
     'JUNIPER-CHASSIS-DEFINES-MIB' => 'jnxChassisDefines',
     'JUNIPER-MIB'                 => 'jnxBoxAnatomy',
+    'JUNIPER-VLAN-MIB'            => 'jnxVlanMIBObjects',
 );
 
 %GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, 
@@ -55,6 +56,14 @@ $VERSION = '2.06';
 
 %FUNCS = ( %SNMP::Info::Layer3::FUNCS, 
 	   %SNMP::Info::LLDP::FUNCS,
+	   
+	   # JUNIPER-VLAN-MIB::jnxExVlanTable
+	   'v_index'    => 'jnxExVlanTag',
+	   'v_type'     => 'jnxExVlanType',
+	   'v_name'     => 'jnxExVlanName',
+	   
+	   # JUNIPER-VLAN-MIB::jnxExVlanPortGroupTable
+	   'i_trunk'    => 'jnxExVlanPortAccessMode',
 );
 
 %MUNGE = ( %SNMP::Info::Layer3::MUNGE, 
@@ -105,22 +114,125 @@ sub serial {
     return $juniper->orig_serial();
 }
 
+# 'i_trunk'    => 'jnxExVlanPortAccessMode',
+sub i_trunk {
+    my ($juniper) = shift;
+    my ($partial) = shift;
+
+    my ($access)  = $juniper->jnxExVlanPortAccessMode($partial);
+
+    my %i_trunk;
+
+    foreach (keys %$access)
+    {
+	my $old_key = $_;
+	m/^\d+\.(\d+)$/o;
+	my $new_key = $1;
+	$i_trunk{$new_key} = $access->{$old_key};
+    }
+
+    return \%i_trunk;
+}
+
+# 'v_name'     => 'jnxExVlanName',
+sub v_name {
+    my ($juniper) = shift;
+    my ($partial) = shift;
+
+    my ($v_name)  = $juniper->jnxExVlanName($partial);
+
+    return $v_name;
+}
+
+# 'v_type'     => 'jnxExVlanType',
+sub v_type {
+    my ($juniper) = shift;
+    my ($partial) = shift;
+
+    my ($v_type)  = $juniper->jnxExVlanType($partial);
+
+    return $v_type;
+}
+
+# 'v_index'    => 'jnxExVlanTag',
+sub v_index {
+    my ($juniper) = shift;
+    my ($partial) = shift;
+
+    my ($v_index)  = $juniper->jnxExVlanTag($partial);
+
+    return $v_index;
+}
+
 sub i_vlan {
     my ($juniper) = shift;
     my ($partial) = shift;
 
+    my $index = $juniper->bp_index();
+    my $v_ports = $juniper->qb_v_egress() || {};
+
     my ($i_type)  = $juniper->i_type($partial);
     my ($i_descr) = $juniper->i_description($partial);
+    my ($v_index)  = $juniper->jnxExVlanTag($partial);
+
     my %i_vlan;
 
-    foreach my $idx ( keys %$i_descr ) {
-        if ( $i_type->{$idx} eq 'l2vlan' || $i_type->{$idx} eq 135 ) {
-            if ( $i_descr->{$idx} =~ /\.(\d+)$/ ) {
-                $i_vlan{$idx} = $1;
+    foreach my $idx ( sort keys %$v_ports ) {
+        next unless ( defined $v_ports->{$idx} );
+
+            my $portlist = $v_ports->{$idx}; # is an array reference
+            my $ret      = [];
+
+            # Convert portlist bit array to bp_index array
+            for ( my $i = 0; $i <= $#$portlist; $i++ ) {
+        	push( @{$ret}, $i + 1 ) if ( @$portlist[$i] );
             }
+
+ 	    foreach my $port ( @{$ret} ) {
+        	my $ifindex = $index->{$port};
+        	next unless ( defined($ifindex) );    # shouldn't happen
+        	next if ( defined $partial and $ifindex !~ /^$partial$/ );
+
+	        $i_vlan{$ifindex} = $v_index->{$idx};
         }
     }
+
     return \%i_vlan;
+}
+
+
+sub i_vlan_membership {
+    my $juniper  = shift;
+    my $partial = shift;
+
+    my $index = $juniper->bp_index();
+    my ($v_index)  = $juniper->jnxExVlanTag($partial);
+
+    my $v_ports = $juniper->qb_v_egress() || {};
+
+    my $i_vlan_membership = {};
+
+    foreach my $idx ( sort keys %$v_ports ) {
+        next unless ( defined $v_ports->{$idx} );
+        my $portlist = $v_ports->{$idx}; # is an array reference
+        my $ret      = [];
+        my $vlan_ndx = $idx;
+
+        # Convert portlist bit array to bp_index array
+        for ( my $i = 0; $i <= $#$portlist; $i++ ) {
+            push( @{$ret}, $i + 1 ) if ( @$portlist[$i] );
+        }
+
+        #Create HoA ifIndex -> VLAN array
+        foreach my $port ( @{$ret} ) {
+            my $ifindex = $index->{$port};
+            next unless ( defined($ifindex) );    # shouldn't happen
+            next if ( defined $partial and $ifindex !~ /^$partial$/ );
+            push ( @{ $i_vlan_membership->{$ifindex} }, $v_index->{$vlan_ndx} );
+        }
+    }
+
+    return $i_vlan_membership;
 }
 
 # Use Q-BRIDGE-MIB for bridge forwarding tables
@@ -224,6 +336,8 @@ Subclass for Generic Juniper Routers running JUNOS
 
 =head2 Required MIBs
 
+JUNIPER-VLAN-MIB dated "200901090000Z" -- Fri Jan 09 00:00:00 2009 UTC or later.
+
 =over
 
 =item Inherited Classes' MIBs
@@ -254,7 +368,7 @@ Returns the software version extracted from C<sysDescr>.
 
 =item $juniper->model()
 
-Returns the model from C<sysObjectID>, with C<jnxProductNameremoved> from the
+Returns the model from C<sysObjectID>, with C<jnxProductName> removed from the
 beginning.
 
 =item $juniper->serial()
@@ -284,10 +398,35 @@ to a hash.
 
 =over
 
+=item $juniper->v_index()
+
+(C<jnxExVlanTag>)
+
+=item $juniper->v_name()
+
+(C<jnxExVlanName>)
+
+=item $juniper->v_type()
+
+(C<jnxExVlanType>)
+
 =item $juniper->i_vlan()
 
-Returns the list of interfaces whose C<ifType> is l2vlan(135), and
-the VLAN ID extracted from the interface description.
+Returns a mapping between C<ifIndex> and the VLAN tag on interfaces
+whose C<ifType> is propVirtual (53).
+
+=item $juniper->i_trunk()
+
+(C<jnxExVlanPortAccessMode>)
+
+=item $bridge->i_vlan()
+
+Returns a mapping between C<ifIndex> and the PVID or default VLAN.
+
+=item $bridge->i_vlan_membership()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the egress list for the port.
 
 =item $juniper->c_id()
 
