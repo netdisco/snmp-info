@@ -7,8 +7,6 @@ version 2.07 ()
     * Basic support for APC UPS devices
     * [2993691] Support for SonicWALL devices in new class L3::SonicWALL (phishphreek)
     * [2996795] Support for Kentrox devices in new class L2::Kentrox (phishphreek)
-    * [3523320] Better VLAN support in Juniper class (Web Bulley)
-    * [3532261] LLDP support in C6500 and related (Carlos Vicente)
 
     [ENHANCEMENTS]
 
@@ -17,6 +15,8 @@ version 2.07 ()
     * [3286549] Dell LLDP Support (Nico Giefing)
     * [3469527] Netgear LLDP Support (Nic Bernstein)
     * [3472052] moduleSerialNumber support for Cisco Stack (Slava)
+    * [3523320] Better VLAN support in Juniper class (Web Bulley)
+    * [3532261] LLDP support in C6500 and related (Carlos Vicente)
 
     [BUG FIXES]
 
