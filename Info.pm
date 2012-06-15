@@ -641,6 +641,12 @@ ARN, AN, 2430, and 5430 routers.
 
 See documentation in L<SNMP::Info::Layer3::BayRS> for details.
 
+=item SNMP::Info::Layer3::BlueCoatSG
+
+Subclass for Blue Coat SG series proxy devices.
+
+See documentation in L<SNMP::Info::Layer3::BlueCoatSG> for details.
+
 =item SNMP::Info::Layer3::C3550
 
 Subclass for Cisco Catalyst 3550,3540,3560 2/3 switches running IOS.
@@ -1248,6 +1254,7 @@ sub device_type {
         2636 => 'SNMP::Info::Layer3::Juniper',
         2925 => 'SNMP::Info::Layer1::Cyclades',
         3076 => 'SNMP::Info::Layer3::Altiga',
+        3417 => 'SNMP::Info::Layer3::BlueCoatSG',
         4526 => 'SNMP::Info::Layer2::Netgear',
         5624 => 'SNMP::Info::Layer3::Enterasys',
         6486 => 'SNMP::Info::Layer3::AlcatelLucent',
