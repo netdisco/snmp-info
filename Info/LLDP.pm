@@ -95,22 +95,33 @@ sub hasLLDP {
 
 sub lldp_if {
     my $lldp    = shift;
-    my $partial = shift;
+    my $partial = shift || 0;
 
-    my $addr = $lldp->lldp_rem_pid($partial) || {};
-
+    my $addr    = $lldp->lldp_rem_pid($partial) || {};
+    my $i_descr = $lldp->i_description() || {};
+    my %r_i_descr = reverse %$i_descr;
+    
     my %lldp_if;
     foreach my $key ( keys %$addr ) {
         my @aOID = split( '\.', $key );
         my $port = $aOID[1];
-        $lldp_if{_lldp_rem_index($key)} = $port;
+        # Local LLDP port may not equate to ifIndex
+        # Cross reference lldpLocPortDesc with ifDescr to get ifIndex
+        my $lldp_desc = $lldp->lldpLocPortDesc($port);
+        my $desc = $lldp_desc->{$port};
+        # If cross reference is successful use it, otherwise stick with lldpRemLocalPortNum
+        if ( exists $r_i_descr{$desc} ) {
+            $port = $r_i_descr{$desc};
+        }
+        
+        $lldp_if{$key} = $port;
     }
     return \%lldp_if;
 }
 
 sub lldp_ip {
     my $lldp    = shift;
-    my $partial = shift;
+    my $partial = shift || 0;
 
     my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
 
@@ -126,7 +137,7 @@ sub lldp_ip {
 
 sub lldp_addr {
     my $lldp    = shift;
-    my $partial = shift;
+    my $partial = shift || 0;
 
     my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
 
@@ -141,7 +152,7 @@ sub lldp_addr {
 
 sub lldp_port {
     my $lldp    = shift;
-    my $partial = shift;
+    my $partial = shift || 0;
 
     my $pdesc = $lldp->lldp_rem_desc($partial)     || {};
     my $pid   = $lldp->lldp_rem_pid($partial)      || {};
@@ -169,14 +180,14 @@ sub lldp_port {
             $port = defined $1 ? "$2.$3" : "$3";
         }
 
-        $lldp_port{_lldp_rem_index($key)} = $port;
+        $lldp_port{$key} = $port;
     }
     return \%lldp_port;
 }
 
 sub lldp_id {
     my $lldp    = shift;
-    my $partial = shift;
+    my $partial = shift || 0;
 
     my $ch_type = $lldp->lldp_rem_id_type($partial) || {};
     my $ch      = $lldp->lldp_rem_id($partial)      || {};
@@ -199,7 +210,7 @@ sub lldp_id {
                 $id = join '.', map { hex($_) } @octets;
             }
         }
-        $lldp_id{_lldp_rem_index( $key )} = $id;
+        $lldp_id{$key} = $id;
     }
     return \%lldp_id;
 }
@@ -221,16 +232,6 @@ sub lldp_id {
 #    }
 #    return;
 #}
-
-# Break up the lldpRemTable INDEX into time mark and common index returning
-# index
-sub _lldp_rem_index {
-    my $idx  = shift;
-    my @oids = split( /\./, $idx );
-    # print "DBGoids: $idx\n";
-    my $timemark = shift @oids;
-    return join( '.', @oids );
-}
 
 # Break up the lldpRemManAddrTable INDEX into common index, protocol,
 # and address.
@@ -398,18 +399,24 @@ capability and nothing else."
 These are methods that return tables of information in the form of a reference
 to a hash.
 
+Methods accessing the (C<lldpRemTable>) table use a partial value of zero if 
+not provided to set the (C<lldpRemTimeMark>) TimeMark instance to a known value
+as per RFC 2021.
+
 =over
 
 =item $lldp->lldp_id()
 
-Returns the string value used to identify the chassis component    associated
+Returns the string value used to identify the chassis component associated
 with the remote system.
 
 (C<lldpRemChassisId>)
 
 =item $lldp->lldp_if()
 
-Returns the mapping to the SNMP Interface Table.
+Returns the mapping to the SNMP Interface Table.  Trys to cross reference 
+(C<lldpLocPortDesc>) with (C<ifDescr>) to get (C<ifIndex>), if unable 
+defaults to (C<lldpRemLocalPortNum>).
 
 =item  $lldp->lldp_ip()
 
