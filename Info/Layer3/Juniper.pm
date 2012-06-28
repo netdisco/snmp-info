@@ -38,7 +38,7 @@ use SNMP::Info::LLDP;
 @SNMP::Info::Layer3::Juniper::ISA       = qw/SNMP::Info::Layer3 SNMP::Info::LLDP  Exporter/;
 @SNMP::Info::Layer3::Juniper::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '2.07';
 
@@ -116,10 +116,10 @@ sub serial {
 
 # 'i_trunk'    => 'jnxExVlanPortAccessMode',
 sub i_trunk {
-    my ($juniper) = shift;
-    my ($partial) = shift;
+    my $juniper = shift;
+    my $partial = shift;
 
-    my ($access)  = $juniper->jnxExVlanPortAccessMode($partial);
+    my $access  = $juniper->jnxExVlanPortAccessMode($partial);
 
     my %i_trunk;
 
@@ -134,22 +134,12 @@ sub i_trunk {
     return \%i_trunk;
 }
 
-# 'v_name'     => 'jnxExVlanName',
-sub v_name {
-    my ($juniper) = shift;
-    my ($partial) = shift;
-
-    my ($v_name)  = $juniper->jnxExVlanName($partial);
-
-    return $v_name;
-}
-
 # 'v_type'     => 'jnxExVlanType',
 sub v_type {
-    my ($juniper) = shift;
-    my ($partial) = shift;
+    my $juniper = shift;
+    my $partial = shift;
 
-    my ($v_type)  = $juniper->jnxExVlanType($partial);
+    my $v_type  = $juniper->jnxExVlanType($partial);
 
     return $v_type;
 }
@@ -165,41 +155,35 @@ sub v_index {
 }
 
 sub i_vlan {
-    my ($juniper) = shift;
-    my ($partial) = shift;
+    my $juniper = shift;
+    my $partial = shift;
 
     my $index = $juniper->bp_index();
-    my $v_ports = $juniper->qb_v_egress() || {};
 
-    my ($i_type)  = $juniper->i_type($partial);
-    my ($i_descr) = $juniper->i_description($partial);
-    my ($v_index)  = $juniper->jnxExVlanTag($partial);
-
-    my %i_vlan;
-
-    foreach my $idx ( sort keys %$v_ports ) {
-        next unless ( defined $v_ports->{$idx} );
-
-            my $portlist = $v_ports->{$idx}; # is an array reference
-            my $ret      = [];
-
-            # Convert portlist bit array to bp_index array
-            for ( my $i = 0; $i <= $#$portlist; $i++ ) {
-        	push( @{$ret}, $i + 1 ) if ( @$portlist[$i] );
-            }
-
- 	    foreach my $port ( @{$ret} ) {
-        	my $ifindex = $index->{$port};
-        	next unless ( defined($ifindex) );    # shouldn't happen
-        	next if ( defined $partial and $ifindex !~ /^$partial$/ );
-
-	        $i_vlan{$ifindex} = $v_index->{$idx};
-        }
+    # If given a partial it will be an ifIndex, we need to use dot1dBasePort
+    if ($partial) {
+        my %r_index = reverse %$index;
+        $partial = $r_index{$partial};
     }
 
-    return \%i_vlan;
-}
+    my $v_index  = $juniper->jnxExVlanTag();
+    my $i_pvid   = $juniper->qb_i_vlan($partial) || {};
+    my $i_vlan = {};
 
+    foreach my $bport ( keys %$i_pvid ) {
+        my $q_vlan  = $i_pvid->{$bport};
+	my $vlan    = $v_index->{$q_vlan};
+        my $ifindex = $index->{$bport};
+        unless ( defined $ifindex ) {
+            print "  Port $bport has no bp_index mapping. Skipping.\n"
+                if $DEBUG;
+            next;
+        }
+        $i_vlan->{$ifindex} = $vlan;
+    }
+
+    return $i_vlan;
+}
 
 sub i_vlan_membership {
     my $juniper  = shift;

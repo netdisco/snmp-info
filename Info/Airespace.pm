@@ -83,7 +83,8 @@ $VERSION = '2.06';
     'airespace_ess_qos'       => 'bsnDot11EssQualityOfService',
     'airespace_ess_ifname'    => 'bsnDot11EssInterfaceName',
     'airespace_ess_aclname'   => 'bsnDot11EssAclName',
-
+    'airespace_ess_bcast'     => 'bsnDot11EssBroadcastSsid',
+    
     # AIRESPACE-WIRELESS-MIB::bsnAPTable
     'airespace_ap_mac'      => 'bsnAPDot3MacAddress',
     'airespace_ap_name'     => 'bsnAPName',
@@ -105,6 +106,7 @@ $VERSION = '2.06';
     'airespace_apif'        => 'bsnAPIfOperStatus',
     'airespace_apif_oride'  => 'bsnAPIfWlanOverride',
     'airespace_apif_admin'  => 'bsnAPIfAdminStatus',
+    'airespace_apif_a_pwr'  => 'bsnAPIfAbsolutePowerList',
 
     # AIRESPACE-WIRELESS-MIB::bsnMobileStationTable
     'airespace_sta_mac'     => 'bsnMobileStationAPMacAddr',
@@ -631,15 +633,27 @@ sub i_ssidbcast {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $ssidlist = $airespace->i_ssidlist($partial)   || {};
-    my $bc_mode  = $airespace->airespace_bssid_mode() || 'enable';
+    my $ssidlist    = $airespace->i_ssidlist($partial)   || {};
+    my $bc_mode     = $airespace->airespace_bssid_mode() || 'enable';
+    my $ess_bc_mode = $airespace->airespace_ess_bcast()  || {};
+    my $ssids       = $airespace->airespace_ess_ssid()   || {};
+    my %ssid_index  = reverse %$ssids;
 
     my %bcmap     = qw/enable 1 disable 0/;
     my $broadcast = $bcmap{$bc_mode};
 
     my %i_ssidbcast;
     foreach my $iid ( keys %$ssidlist ) {
-        $i_ssidbcast{$iid} = $broadcast;
+        if (!$broadcast) {
+            $i_ssidbcast{$iid} = $broadcast;
+            next;
+        }
+        else {
+            my $ssid     = $ssidlist->{$iid};
+            my $ssid_idx = $ssid_index{$ssid};
+            my $bc       = $ess_bc_mode->{$ssid_idx};
+            $i_ssidbcast{$iid} = $bcmap{$bc};
+        }
     }
 
     return \%i_ssidbcast;
@@ -659,6 +673,28 @@ sub i_80211channel {
     }
 
     return \%i_80211channel;
+}
+
+sub dot11_cur_tx_pwr_mw {
+    my $airespace = shift;
+    my $partial   = shift;
+    my $cur       = $airespace->airespace_apif_power($partial);
+    my $pwr_abs   = $airespace->airespace_apif_a_pwr($partial);
+    
+    my $dot11_cur_tx_pwr_mw = {};
+    foreach my $idx ( keys %$cur ) {
+        my $pwr = $cur->{$idx};
+        if ( $pwr >= 1 && $pwr <= 8 ) {
+
+            my @pwr_list = split(/,/, $pwr_abs->{$idx} ); 
+            $dot11_cur_tx_pwr_mw->{$idx} = $pwr_list[$pwr-1]; 
+
+        }
+        else {
+            next;
+        }
+    }
+    return $dot11_cur_tx_pwr_mw;
 }
 
 # Pseudo ENTITY-MIB methods
@@ -1147,6 +1183,11 @@ Returns reference to hash.  Indicates whether the SSID is broadcast.
 Returns reference to hash.  Current operating frequency channel of the radio
 interface.
 
+=item $dot11->dot11_cur_tx_pwr_mw()
+
+Returns reference to hash.  Current transmit power, in milliwatts, of the
+radio interface.
+
 =back
 
 =head2 Dot11 Ess Table  (C<bsnDot11EssTable>)
@@ -1213,6 +1254,12 @@ Name of ACL for the WLAN. This is applicable only when Web Authentication is
 enabled.
 
 (C<bsnDot11EssAclName>)           
+
+=item $airespace->airespace_ess_bcast()
+
+This attribute when enabled allows the switch to broadcast this SSID.
+
+(C<bsnDot11EssBroadcastSsid>)
 
 =back
 
@@ -1316,6 +1363,12 @@ However, if this is enabled, then only those WLANs that appear in the
 =item $airespace->airespace_apif_admin()
 
 (C<bsnAPIfAdminStatus>)
+
+=item $airespace->airespace_apif_a_pwr()
+
+List of comma separated absolute power levels supported by the radio.
+
+(C<bsnAPIfAbsolutePowerList>)
 
 =back
 

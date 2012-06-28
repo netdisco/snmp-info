@@ -11,6 +11,8 @@ version 2.07 ()
 
     [ENHANCEMENTS]
 
+    * Add method to report current transmit power of the radio interface,
+      dot11_cur_tx_pwr_mw(), in Airespace class 
     * [3085411] Activate L3 properties for Netgear GSM7224v2 (phishphreek)
     * [3085413] SNMP OIDs for Netgear Serial and OS Ver (phishphreek)
     * [3286549] Dell LLDP Support (Nico Giefing)
@@ -21,8 +23,10 @@ version 2.07 ()
 
     [BUG FIXES]
 
+    * Correct reporting of SSID broadcast status in Airespace class
+    * [2929883] [3413999] LLDP interface mapping issue
+    * [3297786] LLDP TimeMark component defaults to zero (David Baldwin)
     * [2988163] Detect Juniper SSG firewalls as Layer3::Netscreen (R. Kerr)
-    * [3297786] LLDP INDEX munged to ignore TimeMark component (David Baldwin)
     * [3317739] Fix for Baystack without POE on stack member 1 (David Baldwin)
     * [2037444] os_ver fails on some Extreme versions (Robert Kerr)
     * [2980789] Fix root_ip to try OSPF RouterID first (Brian De Wolf)
