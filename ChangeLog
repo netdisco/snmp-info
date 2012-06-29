@@ -8,6 +8,7 @@ version 2.07 ()
     * [2993691] Support for SonicWALL devices in new class L3::SonicWALL (phishphreek)
     * [2996795] Support for Kentrox devices in new class L2::Kentrox (phishphreek)
     * [] Basic support for Blue Coat proxy devices in new class L3::BlueCoatSG (jeroenvi)
+    * [] Support Cisco 6500 / Sup2T in L3::C6500 class (jeroenvi)
 
     [ENHANCEMENTS]
 
