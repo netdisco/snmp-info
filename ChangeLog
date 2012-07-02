@@ -21,6 +21,7 @@ version 2.07 ()
     * [3472052] moduleSerialNumber support for Cisco Stack (Slava)
     * [3523320] Better VLAN support in Juniper class (Web Bulley)
     * [3532261] LLDP support in C6500 and related (Carlos Vicente)
+    * [3538949] Updated switch models in L2::HP (jeroenvi)
 
     [BUG FIXES]
 
