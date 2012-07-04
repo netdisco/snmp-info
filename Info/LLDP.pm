@@ -355,7 +355,7 @@ Nulls are removed before the value is returned.
 The string value used to identify the system description of the local system.
 If the local agent supports IETF RFC 3418, C<lldpLocSysDesc> object should
 have the same value of C<sysDesc> object.
- 
+
 Nulls are removed before the value is returned.
 
 (C<lldpLocSysDesc>)
