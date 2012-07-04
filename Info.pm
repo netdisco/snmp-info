@@ -641,6 +641,12 @@ ARN, AN, 2430, and 5430 routers.
 
 See documentation in L<SNMP::Info::Layer3::BayRS> for details.
 
+=item SNMP::Info::Layer3::BlueCoatSG
+
+Subclass for Blue Coat SG series proxy devices.
+
+See documentation in L<SNMP::Info::Layer3::BlueCoatSG> for details.
+
 =item SNMP::Info::Layer3::C3550
 
 Subclass for Cisco Catalyst 3550,3540,3560 2/3 switches running IOS.
@@ -1248,6 +1254,7 @@ sub device_type {
         2636 => 'SNMP::Info::Layer3::Juniper',
         2925 => 'SNMP::Info::Layer1::Cyclades',
         3076 => 'SNMP::Info::Layer3::Altiga',
+        3417 => 'SNMP::Info::Layer3::BlueCoatSG',
         4526 => 'SNMP::Info::Layer2::Netgear',
         5624 => 'SNMP::Info::Layer3::Enterasys',
         6486 => 'SNMP::Info::Layer3::AlcatelLucent',
@@ -1307,13 +1314,17 @@ sub device_type {
             and $desc =~ /\D(CAP340|AP340|CAP350|350|1200)\D/ );
         $objtype = 'SNMP::Info::Layer3::Aironet'
             if ( $desc =~ /Aironet/ and $desc =~ /\D(AP4800)\D/ );
+
+	# Cat6k with older SUPs (hybrid CatOS/IOS?)
         $objtype = 'SNMP::Info::Layer3::C6500' if $desc =~ /(c6sup2|c6sup1)/;
+
+	# Cat6k with Sup720, Sup720 or Sup2T (and Sup2 running native IOS?)
+        $objtype = 'SNMP::Info::Layer3::C6500'
+            if $desc =~ /(s72033_rp|s3223_rp|s32p3_rp|s222_rp|s2t54)/;
 
         # Next one untested. Reported working by DA
         $objtype = 'SNMP::Info::Layer3::C6500'
             if ( $desc =~ /cisco/i and $desc =~ /3750/ );
-        $objtype = 'SNMP::Info::Layer3::C6500'
-            if $desc =~ /(s72033_rp|s3223_rp|s32p3_rp|s222_rp)/;
 
         #   Cisco 2970
         $objtype = 'SNMP::Info::Layer3::C6500'
