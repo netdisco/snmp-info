@@ -47,6 +47,7 @@ $VERSION = '2.07';
     %SNMP::Info::LLDP::MIBS,
     'JUNIPER-CHASSIS-DEFINES-MIB' => 'jnxChassisDefines',
     'JUNIPER-MIB'                 => 'jnxBoxAnatomy',
+    'JUNIPER-VIRTUALCHASSIS-MIB'  => 'jnxVirtualChassisMemberTable',
     'JUNIPER-VLAN-MIB'            => 'jnxVlanMIBObjects',
 );
 
@@ -64,10 +65,17 @@ $VERSION = '2.07';
 	   
 	   # JUNIPER-VLAN-MIB::jnxExVlanPortGroupTable
 	   'i_trunk'    => 'jnxExVlanPortAccessMode',
+	   
+	   # JUNPIER-MIB
+           'e_contents_type'   => 'jnxContentsType',
+           'e_containers_type' => 'jnxContainersType',
+           'e_hwver'           => 'jnxContentsRevision',
 );
 
 %MUNGE = ( %SNMP::Info::Layer3::MUNGE, 
 	   %SNMP::Info::LLDP::MUNGE,
+	   'e_containers_type' => \&SNMP::Info::munge_e_type,
+	   'e_contents_type' => \&SNMP::Info::munge_e_type,
 );
 
 sub vendor {
@@ -277,6 +285,287 @@ sub c_platform {
     return $juniper->lldp_rem_sysdesc($partial);
 }
 
+# Pseudo ENTITY-MIB methods
+
+# This class supports both virtual chassis (stackable) and physical chassis
+# based devices, identify if we have a virtual chassis so that we return
+# appropriate entPhysicalClass and correct ordering
+
+sub _e_is_virtual {
+    my $juniper = shift;
+
+    my $v_test = $juniper->jnxVirtualChassisMemberRole() || {};
+    
+    #If we are functioning as a stack someone should be master
+    foreach my $iid ( keys %$v_test ) {
+	my $role = $v_test->{$iid};
+	return 1 if ($role =~ /master/i);
+    }
+    return 0;
+}
+
+sub _e_virtual_index {
+    my $juniper = shift;
+
+    my $containers = $juniper->jnxContainersWithin() || {};
+    my $members    = $juniper->jnxVirtualChassisMemberRole() || {};
+    
+    my %v_index;
+    foreach my $key (keys %$containers) {
+	foreach my $member ( keys %$members ) {
+	    # Virtual chassis members start at zero
+	    $member++;
+	    # We will be duplicating and eliminating some keys,
+	    # but this is for the benefit of e_parent()
+	    my $index  = sprintf ("%02d", $key) . sprintf ("%02d", $member) . "0000";
+	    my $iid = "$key\.$member\.0\.0";
+	    $v_index{$iid} = $index;
+	}
+	unless ($containers->{$key}) {
+	    my $index = sprintf ("%02d", $key) . "000000";
+	    $v_index{$key} = $index;
+	}
+    }
+    return \%v_index;
+}
+
+sub e_index {
+    my $juniper = shift;
+
+    my $contents   = $juniper->jnxContentsDescr() || {};
+    my $containers = $juniper->jnxContainersDescr() || {};
+    my $virtuals   = $juniper->_e_virtual_index() || {};
+    my $is_virtual = $juniper->_e_is_virtual();
+
+    # Format into consistent integer format so that numeric sorting works     
+    my %e_index;
+    if ($is_virtual) {
+	foreach my $key ( keys %$virtuals ) {
+	    $e_index{$key} = $virtuals->{$key};
+	}
+    }
+    else {
+	foreach my $key ( keys %$containers ) {
+	    $e_index{$key} = sprintf ("%02d", $key) . "000000";
+	}
+    }
+    foreach my $key ( keys %$contents ) {
+	$e_index{$key} = join( '', map { sprintf "%02d", $_ } split /\./, $key );
+    }
+ 
+    return \%e_index;
+}
+
+sub e_class {
+    my $juniper = shift;
+
+    my $e_index    = $juniper->e_index() || {};
+    my $fru_type   = $juniper->jnxFruType() || {};
+    my $c_type     = $juniper->jnxContainersDescr() || {};
+    my $is_virtual = $juniper->_e_is_virtual();
+
+    my %e_class;
+    foreach my $iid ( keys %$e_index ) {
+	
+	my $type      = $fru_type->{$iid} || 0;
+	my $container = $c_type->{$iid} || 0;
+	
+        if ( $type =~ /power/i  ) {
+            $e_class{$iid} = 'powerSupply';
+        }
+        elsif ( $type =~ /fan/i ) {
+            $e_class{$iid} = 'fan';
+        }
+	elsif ( $type ) {
+	    $e_class{$iid} = 'module';
+	}
+	# Shouldn't get here if we have type which means
+	# we only have container, chassis, and stack left
+        elsif (($container =~ /chassis/i) and (!$is_virtual) ) {
+            $e_class{$iid} = 'chassis';
+        }
+        elsif (($container =~ /chassis/i) and ($is_virtual)) {
+            $e_class{$iid} = 'stack';
+	}
+	# Were calling the second level chassis a container in the case
+	# of a virtual chassis but not sure that it really matters
+        else {
+            $e_class{$iid} = 'container';
+        }
+    }
+    return \%e_class;
+}
+
+sub e_descr {
+    my $juniper = shift;
+
+    my $e_index    = $juniper->e_index() || {};
+    my $box_descr  = $juniper->jnxBoxDescr || 0;
+    my $contents   = $juniper->jnxContentsDescr() || {};
+    my $containers = $juniper->jnxContainersDescr() || {};
+
+    my %e_descr;
+    foreach my $iid ( keys %$e_index ) {
+	
+	my $content_descr   = $contents->{$iid} || 0;
+	my $container_descr = $containers->{$iid} || 0;
+	
+	if ($content_descr) {
+	    $e_descr{$iid} = $content_descr;
+	}
+	elsif ($container_descr and $container_descr !~ /chassis/) {
+	    $e_descr{$iid} = $container_descr;
+	}
+	elsif ($container_descr and $container_descr =~ /chassis/) {
+	    $e_descr{$iid} = $box_descr;
+	}
+	# We should only be left with virtual entries created in
+	# _e_virtual_index()
+	elsif ($iid =~ /^(\d+)\.(\d+)(\.0)+?/) {
+	    my $descr = $containers->{$1};
+	    $e_descr{$iid} = $descr;
+	}
+	# Anything past here undef
+    }
+    return \%e_descr;
+}
+
+sub e_serial {
+    my $juniper = shift;
+
+    my $e_index    = $juniper->e_index() || {};
+    my $serials    = $juniper->jnxContentsSerialNo() || {};
+    my $e_class    = $juniper->e_class() || {};
+    my $is_virtual = $juniper->_e_is_virtual();
+    my $box_serial = $juniper->serial();
+
+    my %e_serial;
+    foreach my $iid ( keys %$e_index ) {
+	my $serial = $serials->{$iid} || '';
+	my $class  = $e_class->{$iid} || '';
+	# Chassis serial number is seperate on true chassis
+	# Virtual chassis (stack) report master switch serial
+	if (!$is_virtual and ($class =~ /chassis/i)){
+	    $e_serial{$iid} = $box_serial;
+	}
+	elsif (($serial !~ /^\w/) or ($serial =~ /builtin/i)) {
+	    next;
+	}
+	else {
+	    $e_serial{$iid} = $serial;
+	}
+    }
+    return  \%e_serial;
+}
+
+sub e_fru {
+    my $juniper = shift;
+
+    my $e_index = $juniper->e_index() || {};
+    my $frus    = $juniper->jnxContentsPartNo() || {};
+
+    my %e_fru;
+    foreach my $iid ( keys %$e_index ) {
+	my $fru = $frus->{$iid} || '';
+	if ( ($fru !~ /^\w/) or ($fru =~ /builtin/i)) {
+	    $e_fru{$iid} = "false";
+	}
+	else {
+	    $e_fru{$iid} = "true";
+	}
+    }
+    return  \%e_fru;
+}
+
+sub e_type {
+    my $juniper = shift;
+
+    my $e_index    = $juniper->e_index() || {};
+    my $contents   = $juniper->e_contents_type() || {};
+    my $containers = $juniper->e_containers_type() || {};
+
+    my %e_type;
+    foreach my $iid ( keys %$e_index ) {
+	
+	my $content_type   = $contents->{$iid} || 0;
+	my $container_type = $containers->{$iid} || 0;
+	
+	if ($content_type) {
+	    $content_type =~ s/\.0//;
+	    $e_type{$iid} = $content_type;
+	}
+	elsif ($container_type) {
+	    $container_type =~ s/\.0//;
+	    $e_type{$iid} = $container_type;
+	}
+	# We should only be left with virtual entries created in
+	# _e_virtual_index()
+	elsif ($iid =~ /^(\d+)\.(\d+)(\.0)+?/) {
+	    my $descr = $containers->{$1};
+	    $descr =~ s/\.0//;
+	    $e_type{$iid} = $descr;
+	}
+	# Anything past here undef
+    }
+    return \%e_type;
+}
+
+sub e_vendor {
+    my $juniper = shift;
+
+    my $e_idx = $juniper->e_index() || {};
+
+    my %e_vendor;
+    foreach my $iid ( keys %$e_idx ) {
+        $e_vendor{$iid} = 'juniper';
+    }
+    return \%e_vendor;
+}
+
+sub e_pos {
+    my $juniper = shift;
+
+    # We could look at index levels, but his will work as well
+    return $juniper->e_index();
+}
+
+sub e_parent {
+    my $juniper = shift;
+
+    my $e_idx      = $juniper->e_index() || {};
+    my $c_within   = $juniper->jnxContainersWithin() || {};
+    my $e_descr    = $juniper->e_descr() || {};
+    my $is_virtual = $juniper->_e_is_virtual();
+    
+    my %e_parent;
+    foreach my $iid ( keys %$e_idx ) {
+        next unless $iid;
+	
+	my ($idx, $l1,$l2, $l3) = split /\./, $iid;
+	my $within = $c_within->{$idx};
+	my $descr  = $e_descr->{$iid};
+	
+        if ( !$is_virtual and ($iid =~ /^(\d+)\.\d+/) ) {
+            $e_parent{$iid} = sprintf ("%02d", $1) . "000000";
+        }
+	elsif ( $is_virtual and ($descr =~ /chassis/i) and ($iid =~ /^(\d+)\.(\d+)(\.0)+?/) ) {
+	    $e_parent{$iid} = sprintf ("%02d", $1) . "000000";
+	}
+	elsif ( $is_virtual and ($iid =~ /^(\d+)\.(\d+)(\.0)+?/) ) {
+	    $e_parent{$iid} = sprintf ("%02d", $within) . sprintf ("%02d", $2) . "0000";
+	}
+	elsif ( $is_virtual and ($iid =~ /^(\d+)\.(\d+)\.[1-9]+/) ) {
+	    $e_parent{$iid} = sprintf ("%02d", $1) . sprintf ("%02d", $2) . "0000";
+	}
+	elsif ( defined $within and $iid =~ /\d+/ ) {
+            $e_parent{$iid} = sprintf ("%02d", $within) . "000000";
+	}
+        else {
+            next;
+        }
+    }
+    return \%e_parent;
+}
 
 1;
 __END__
@@ -306,7 +595,7 @@ Bill Fenner
 
 =head1 DESCRIPTION
 
-Subclass for Generic Juniper Routers running JUNOS
+Subclass for Juniper Devices running JUNOS
 
 =head2 Inherited Classes
 
@@ -320,17 +609,23 @@ Subclass for Generic Juniper Routers running JUNOS
 
 =head2 Required MIBs
 
-JUNIPER-VLAN-MIB dated "200901090000Z" -- Fri Jan 09 00:00:00 2009 UTC or later.
-
 =over
 
-=item Inherited Classes' MIBs
+=item F<JUNIPER-VLAN-MIB> dated "200901090000Z" -- Fri Jan 09 00:00:00 2009 UTC or later.
+
+=item F<JUNIPER-CHASSIS-DEFINES-MIB>
+
+=item F<JUNIPER-MIB>
+
+=item F<JUNIPER-VIRTUALCHASSIS-MIB>
+
+=back
+
+=head2 Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
-
-=back
 
 =head1 GLOBALS
 
@@ -340,11 +635,11 @@ These are methods that return scalar value from SNMP
 
 =item $juniper->vendor()
 
-Returns C<'juniper'>
+Returns 'juniper'
 
 =item $juniper->os()
 
-Returns C<'junos'>
+Returns 'junos'
 
 =item $juniper->os_ver()
 
@@ -363,7 +658,7 @@ Returns serial number
 
 =item $juniper->hasCDP()
 
-    Returns whether LLDP is enabled.
+Returns whether LLDP is enabled.
 
 =back
 
@@ -394,43 +689,47 @@ to a hash.
 
 (C<jnxExVlanType>)
 
-=item $juniper->i_vlan()
-
-Returns a mapping between C<ifIndex> and the VLAN tag on interfaces
-whose C<ifType> is propVirtual (53).
-
 =item $juniper->i_trunk()
 
 (C<jnxExVlanPortAccessMode>)
 
-=item $bridge->i_vlan()
+=item $juniper->i_vlan()
 
 Returns a mapping between C<ifIndex> and the PVID or default VLAN.
 
-=item $bridge->i_vlan_membership()
+=item $juniper->i_vlan_membership()
 
 Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
 IDs.  These are the VLANs which are members of the egress list for the port.
 
+=back
+
+=head2 Topology information
+
+These methods return Link Layer Discovery Protocol (LLDP) information.  See
+documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
+
+=over
+
 =item $juniper->c_id()
 
-Returns LLDP information.
+Returns C<lldp_id>
 
 =item $juniper->c_if()
 
-Returns LLDP information.
+Returns C<lldp_if>
 
 =item $juniper->c_ip()
 
-Returns LLDP information.
+Returns C<lldp_ip>
 
 =item $juniper->c_platform()
 
-Returns LLDP information.
+Returns C<lldp_rem_sysdesc>
 
 =item $juniper->c_port()
 
-Returns LLDP information.
+Returns C<lldp_port>
 
 =back
 
@@ -452,6 +751,57 @@ identifier (iid)
 (C<dot1dTpFdbPort>)
 
 =back 
+
+=head2 Pseudo F<ENTITY-MIB> information
+
+These methods emulate F<ENTITY-MIB> Physical Table methods using
+F<JUNIPER-MIB> and F<JUNIPER-VIRTUALCHASSIS-MIB>. 
+
+=over
+
+=item $juniper->e_index()
+
+Returns reference to hash.  Key: IID, Value: Integer, Indices are combined
+into a eight digit integer, each index is two digits padded with leading zero
+if required.
+
+=item $juniper->e_class()
+
+Returns reference to hash.  Key: IID, Value: General hardware type.
+
+=item $juniper->e_descr()
+
+Returns reference to hash.  Key: IID, Value: Human friendly name
+
+=item $juniper->e_hwver()
+
+Returns reference to hash.  Key: IID, Value: Hardware version
+
+=item $juniper->e_vendor()
+
+Returns reference to hash.  Key: IID, Value: juniper
+
+=item $juniper->e_serial()
+
+Returns reference to hash.  Key: IID, Value: Serial number
+
+=item $juniper->e_pos()
+
+Returns reference to hash.  Key: IID, Value: The relative position among all
+entities sharing the same parent.
+
+=item $juniper->e_type()
+
+Returns reference to hash.  Key: IID, Value: Type of component/sub-component
+as defined in F<JUNIPER-CHASSIS-DEFINES-MIB>.
+
+=item $juniper->e_parent()
+
+Returns reference to hash.  Key: IID, Value: The value of e_index() for the
+entity which 'contains' this entity.  A value of zero indicates	this entity
+is not contained in any other entity.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

@@ -10,6 +10,7 @@ version 2.07 ()
 
     [ENHANCEMENTS]
 
+    * Pseudo ENTITY-MIB methods added to L3::Juniper for hardware information
     * Add method to report current transmit power of the radio interface,
       dot11_cur_tx_pwr_mw(), in Airespace class 
     * [3085411] Activate L3 properties for Netgear GSM7224v2 (phishphreek)
