@@ -53,7 +53,9 @@ $VERSION = '2.07';
 
 %GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, 
 	     %SNMP::Info::LLDP::GLOBALS,
-	     'serial' => 'jnxBoxSerialNo.0', );
+	     'serial' => 'jnxBoxSerialNo.0',
+	     'mac'    => 'dot1dBaseBridgeAddress',
+	     );
 
 %FUNCS = ( %SNMP::Info::Layer3::FUNCS, 
 	   %SNMP::Info::LLDP::FUNCS,
@@ -88,11 +90,15 @@ sub os {
 
 sub os_ver {
     my $juniper = shift;
-    my $descr   = $juniper->description();
-    return unless defined $descr;
+
+    my $descr        = $juniper->description() || '';
+    my $lldp_descr   = $juniper->lldp_sysdesc() || '';
 
     if ( $descr =~ m/kernel JUNOS (\S+)/ ) {
         return $1;
+    }
+    elsif ( $lldp_descr =~ m/version\s(\S+)\s/ ) {
+	return $1;
     }
     return;
 }
@@ -643,7 +649,8 @@ Returns 'junos'
 
 =item $juniper->os_ver()
 
-Returns the software version extracted from C<sysDescr>.
+Returns the software version extracted first from C<sysDescr> or
+C<lldpLocSysDesc> if not available in C<sysDescr>.
 
 =item $juniper->model()
 
@@ -655,6 +662,13 @@ beginning.
 Returns serial number
 
 (C<jnxBoxSerialNo.0>)
+
+=item $juniper->serial()
+
+Returns the MAC address used by this bridge when it must be referred
+to in a unique fashion.
+
+(C<dot1dBaseBridgeAddress>)
 
 =item $juniper->hasCDP()
 
