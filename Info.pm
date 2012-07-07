@@ -1,6 +1,6 @@
 # SNMP::Info
 #
-# Copyright (c) 2003-2010 Max Baker and SNMP::Info Developers
+# Copyright (c) 2003-2012 Max Baker and SNMP::Info Developers
 # All rights reserved.
 #
 # Portions Copyright (c) 2002-2003, Regents of the University of California
@@ -23,7 +23,7 @@ use vars
     qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '2.06';
+$VERSION = '2.07_001';
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 2.06
+SNMP::Info - Version 2.07_001
 
 =head1 AUTHOR
 
@@ -793,6 +793,26 @@ See documentation in L<SNMP::Info::Layer3::Timetra> for details.
 
 =back
 
+=over 4
+
+=item SNMP::Info::Layer7
+
+Generic Layer7 Devices.
+
+See documentation in L<SNMP::Info::Layer7> for details.
+
+=over 4
+
+=item SNMP::Info::Layer7::APC
+
+SNMP Interface to APC UPS devices
+
+See documentation in L<SNMP::Info::Layer7::APC> for details.
+
+=back
+
+=back
+
 =head1 Thanks
 
 Thanks for testing and coding help (in no particular order) to :
@@ -1231,7 +1251,7 @@ sub device_type {
             carp("Device doesn't implement sysServices but did return sysDescr. Might give unexpected results.\n") if $info->debug();
         } else {
             # No sysServices, no sysDescr 
-            return undef;
+            return;
         }
     }
 

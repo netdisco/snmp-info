@@ -5,7 +5,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 2.06
+    SNMP::Info - Version 2.07_001
 
 AUTHOR
 
@@ -154,11 +154,13 @@ DESIGN GOALS
 
     1. Use of textual MIB leaf identifier and enumerated values
 
-        * All values are retrieved via MIB Leaf node names
+        *   All values are retrieved via MIB Leaf node names
+
             For example SNMP::Info has an entry in its %GLOBALS hash for
             ``sysName'' instead of 1.3.6.1.2.1.1.5.
 
-        * Data returned is in the enumerated value form.
+        *   Data returned is in the enumerated value form.
+
             For Example instead of looking up 1.3.6.1.2.1.2.2.1.3 and
             getting back 23
 
@@ -542,6 +544,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::BayRS for details.
 
+        SNMP::Info::Layer3::BlueCoatSG
+            Subclass for Blue Coat SG series proxy devices.
+
+            See documentation in SNMP::Info::Layer3::BlueCoatSG for details.
+
         SNMP::Info::Layer3::C3550
             Subclass for Cisco Catalyst 3550,3540,3560 2/3 switches running
             IOS.
@@ -665,6 +672,16 @@ SUBCLASSES
             Alcatel-Lucent SR Class.
 
             See documentation in SNMP::Info::Layer3::Timetra for details.
+
+    SNMP::Info::Layer7
+        Generic Layer7 Devices.
+
+        See documentation in SNMP::Info::Layer7 for details.
+
+        SNMP::Info::Layer7::APC
+            SNMP Interface to APC UPS devices
+
+            See documentation in SNMP::Info::Layer7::APC for details.
 
 Thanks
 
@@ -1229,6 +1246,7 @@ USAGE
                              -- route to a non-local
             indirect(4)      -- host/network/sub-network
 
+
               "The type of route.  Note that the values
               direct(3) and indirect(4) refer to the notion of
               direct and indirect routing in the IP
@@ -1440,6 +1458,7 @@ EXTENDING SNMP::INFO
                  'super_hero_name'   => 'SuperHeroIfName',
                  'super_hero_powers' => 'SuperHeroIfPowers'
                 );
+
 
      %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
                  %SNMP::Info::CiscoVTP::MUNGE,

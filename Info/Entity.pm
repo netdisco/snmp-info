@@ -41,7 +41,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '2.06';
+$VERSION = '2.07_001';
 
 %MIBS = ( 'ENTITY-MIB' => 'entPhysicalSerialNum' );
 
@@ -207,7 +207,7 @@ Human Friendly
 
 =item $entity->e_fru()
 
-BOOLEAN. Field Replaceable unit?
+BOOLEAN. Is a Field Replaceable unit?
 
 (C<entPhysicalFRU>)
 

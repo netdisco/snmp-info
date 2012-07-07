@@ -46,7 +46,7 @@ use SNMP::Info::CDP;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE/;
 
-$VERSION = '2.06';
+$VERSION = '2.07_001';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -639,6 +639,7 @@ sub set_i_vlan_tagged {
             $hp->error_throw(sprintf("Requested VLAN %s doesn't seem to exist on device...", $vlan));
         }
     }
+    return;
 }
 
 1;
