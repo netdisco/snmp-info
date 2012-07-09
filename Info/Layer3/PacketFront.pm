@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '2.06';
+$VERSION = '2.07_001';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -71,7 +71,7 @@ sub os {
     if ( $descr =~ /drgos/i ) {
         return 'drgos';
     } else {
-        return undef;
+        return;
     }
 }
 

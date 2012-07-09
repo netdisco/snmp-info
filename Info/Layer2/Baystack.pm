@@ -46,7 +46,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '2.06';
+$VERSION = '2.07_001';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,    %SNMP::Info::LLDP::MIBS,
@@ -644,6 +644,10 @@ revisions of Baystack firmware report all zeros for each port mac.
 
 Crosses C<ifName> with C<ifAlias> and returns the human set port name if
 exists.
+
+=item $poe->peth_port_ifindex()
+
+Maps the C<pethPsePortTable> to C<ifIndex> by way of the F<ENTITY-MIB>.
 
 =back
 

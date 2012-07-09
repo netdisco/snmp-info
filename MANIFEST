@@ -43,6 +43,7 @@ Info/Layer2/Foundry.pm
 Info/Layer2/HP.pm
 Info/Layer2/HP4000.pm
 Info/Layer2/HPVC.pm
+Info/Layer2/Kentrox.pm
 Info/Layer2/N2270.pm
 Info/Layer2/NAP222x.pm
 Info/Layer2/Netgear.pm
@@ -56,6 +57,7 @@ Info/Layer3/Altiga.pm
 Info/Layer3/Arista.pm
 Info/Layer3/Aruba.pm
 Info/Layer3/BayRS.pm
+Info/Layer3/BlueCoatSG.pm
 Info/Layer3/C3550.pm
 Info/Layer3/C4000.pm
 Info/Layer3/C6500.pm
@@ -76,8 +78,11 @@ Info/Layer3/NetSNMP.pm
 Info/Layer3/PacketFront.pm
 Info/Layer3/Passport.pm
 Info/Layer3/Pf.pm
+Info/Layer3/SonicWALL.pm
 Info/Layer3/Sun.pm
 Info/Layer3/Timetra.pm
+Info/Layer7.pm
+Info/Layer7/APC.pm
 Info/LLDP.pm
 Info/MAU.pm
 Info/NortelStack.pm

@@ -40,7 +40,7 @@ use SNMP::Info::LLDP;
 
 use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '2.07';
+$VERSION = '2.07_001';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -814,6 +814,12 @@ as defined in F<JUNIPER-CHASSIS-DEFINES-MIB>.
 Returns reference to hash.  Key: IID, Value: The value of e_index() for the
 entity which 'contains' this entity.  A value of zero indicates	this entity
 is not contained in any other entity.
+
+=item $entity->e_fru()
+
+BOOLEAN. Is a Field Replaceable unit?
+
+(C<entPhysicalFRU>)
 
 =back
 
