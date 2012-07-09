@@ -46,7 +46,7 @@ $VERSION = '2.07_001';
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::Layer3::GLOBALS,
     #From BLUECOAT-SG-PROXY-MIB
-    'serial' => 'sgProxySerialNumber',
+    'serial1'=> 'sgProxySerialNumber',
     'sw_ver' => 'sgProxyVersion',
 );
 
