@@ -29,6 +29,7 @@ version 2.07 ()
     * Get OS version for Juniper devices not reporting in sysDescr
     * Correct base MAC reporting for Juniper devices
     * Correct reporting of SSID broadcast status in Airespace class
+    * [2132349] Add an additional check to get Foundry OS version
     * [2929883] [3413999] LLDP interface mapping issue
     * [3297786] LLDP TimeMark component defaults to zero (David Baldwin)
     * [2988163] Detect Juniper SSG firewalls as Layer3::Netscreen (R. Kerr)

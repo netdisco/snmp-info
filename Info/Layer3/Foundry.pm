@@ -192,6 +192,9 @@ sub os_ver {
         }
     }
 
+    # See if we report from Flash if wouldn't report from running above
+    return $foundry->snAgFlashImgVer() if ( defined $foundry->snAgFlashImgVer() );
+    
     # Last resort
     return $foundry->SUPER::os_ver();
 
