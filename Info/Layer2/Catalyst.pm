@@ -148,7 +148,9 @@ sub interfaces {
     foreach my $iid ( keys %$i_index ) {
         next unless defined $iid;
         my $if   = $i_index->{$iid};
+        $if =~ s/\./\// if $if;
         my $port = $portmap{$iid};
+        $port =~ s/\./\// if $port;
         $interfaces{$iid} = $port || $if;
     }
     return \%interfaces;
