@@ -36,7 +36,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '2.07_001';
+$VERSION = '2.07_002';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS, %SNMP::Info::Layer3::MIBS,
@@ -46,7 +46,7 @@ $VERSION = '2.07_001';
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::Layer3::GLOBALS,
     #From BLUECOAT-SG-PROXY-MIB
-    'serial' => 'sgProxySerialNumber',
+    'serial1'=> 'sgProxySerialNumber',
     'sw_ver' => 'sgProxyVersion',
 );
 
