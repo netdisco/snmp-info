@@ -105,6 +105,7 @@ sub lldp_if {
     foreach my $key ( keys %$addr ) {
         my @aOID = split( '\.', $key );
         my $port = $aOID[1];
+        next unless $port;
         # Local LLDP port may not equate to ifIndex
         # Cross reference lldpLocPortDesc with ifDescr to get ifIndex
         my $lldp_desc = $lldp->lldpLocPortDesc($port);
