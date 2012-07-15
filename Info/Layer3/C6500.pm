@@ -66,7 +66,7 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '2.07_002';
+$VERSION = '2.08';
 
 # NOTE: Order creates precedence
 #       Example: v_name exists in Bridge.pm and CiscoVTP.pm
