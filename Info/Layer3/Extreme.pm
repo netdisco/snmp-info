@@ -36,9 +36,12 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
+use SNMP::Info::LLDP;
+use SNMP::Info::EDP;
 
 @SNMP::Info::Layer3::Extreme::ISA
-    = qw/SNMP::Info::Layer3 SNMP::Info::MAU Exporter/;
+    = qw/SNMP::Info::Layer3 SNMP::Info::MAU SNMP::Info::LLDP
+    SNMP::Info::EDP Exporter/;
 @SNMP::Info::Layer3::Extreme::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
@@ -48,6 +51,8 @@ $VERSION = '2.08';
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
+    %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::EDP::MIBS,
     'EXTREME-BASE-MIB'   => 'extremeAgent',
     'EXTREME-SYSTEM-MIB' => 'extremeSystem',
     'EXTREME-FDB-MIB'    => 'extremeSystem',
@@ -58,6 +63,8 @@ $VERSION = '2.08';
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::MAU::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::EDP::GLOBALS,
     'serial1'        => 'extremeSystemID.0',
     'temp'           => 'extremeCurrentTemperature',
     'ps1_status_old' => 'extremePrimaryPowerOperational.0',
@@ -70,6 +77,8 @@ $VERSION = '2.08';
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::MAU::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
+    %SNMP::Info::EDP::FUNCS,
     'fan_state' => 'extremeFanOperational',
 
     # EXTREME-FDB-MIB:extremeFdbMacFdbTable
@@ -92,6 +101,8 @@ $VERSION = '2.08';
     # Inherit all the built in munging
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::MAU::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::EDP::MUNGE,
     'ex_fw_mac'      => \&SNMP::Info::munge_mac,
     'ps1_status_old' => \&munge_true_ok,
     'ps1_status_new' => \&munge_power_stat,
@@ -538,6 +549,125 @@ sub set_add_i_vlan_tagged {
     return $rv;
 }
 
+#  Use EDP and/or LLDP
+sub hasCDP {
+    my $extreme = shift;
+
+    return $extreme->hasLLDP() || $extreme->hasEDP();
+}
+
+sub c_ip {
+    my $extreme = shift;
+    my $partial = shift;
+
+    my $edp  = $extreme->edp_ip() || {};
+    my $lldp = $extreme->lldp_ip($partial) || {};
+
+    my %c_ip;
+    foreach my $iid ( keys %$edp ) {
+        my $ip = $edp->{$iid};
+        next unless defined $ip;
+
+        $c_ip{$iid} = $ip;
+    }
+
+    foreach my $iid ( keys %$lldp ) {
+        my $ip = $lldp->{$iid};
+        next unless defined $ip;
+
+        $c_ip{$iid} = $ip;
+    }
+    return \%c_ip;
+}
+
+sub c_if {
+    my $extreme = shift;
+    my $partial = shift;
+
+    my $lldp = $extreme->lldp_if($partial) || {};
+    my $edp  = $extreme->edp_if() || {};
+
+    my %c_if;
+    foreach my $iid ( keys %$edp ) {
+        my $if = $edp->{$iid};
+        next unless defined $if;
+
+        $c_if{$iid} = $if;
+    }
+
+    foreach my $iid ( keys %$lldp ) {
+        my $if = $lldp->{$iid};
+        next unless defined $if;
+
+        $c_if{$iid} = $if;
+    }
+    return \%c_if;
+}
+
+sub c_port {
+    my $extreme      = shift;
+    my $partial = shift;
+
+    my $lldp = $extreme->lldp_port($partial) || {};
+    my $edp  = $extreme->edp_port() || {};
+
+    my %c_port;
+    foreach my $iid ( keys %$edp ) {
+        my $port = $edp->{$iid};
+        next unless defined $port;
+
+        $c_port{$iid} = $port;
+    }
+
+    foreach my $iid ( keys %$lldp ) {
+        my $port = $lldp->{$iid};
+        next unless defined $port;
+        $c_port{$iid} = $port;
+    }
+    return \%c_port;
+}
+
+sub c_id {
+    my $extreme      = shift;
+    my $partial = shift;
+
+    my $lldp = $extreme->lldp_id($partial) || {};
+    my $edp  = $extreme->edp_id() || {};
+
+    my %c_id;
+    foreach my $iid ( keys %$edp ) {
+        my $id = $edp->{$iid};
+        next unless defined $id;
+	
+        $c_id{$iid} = $id;
+    }
+    
+    foreach my $iid ( keys %$lldp ) {
+	my $id = $lldp->{$iid};
+	next unless defined $id;
+	
+	$c_id{$iid} = $id;
+    }
+    return \%c_id;
+}
+
+sub c_platform {
+    my $extreme      = shift;
+    my $partial = shift;
+
+    my $lldp = $extreme->lldp_rem_sysdesc($partial)  || {};
+
+    my %c_platform;
+
+    foreach my $iid ( keys %$lldp ) {
+        my $platform = $lldp->{$iid};
+        next unless defined $platform;
+
+        $c_platform{$iid} = $platform;
+    }
+    return \%c_platform;
+}
+
 1;
 
 __END__
@@ -583,6 +713,10 @@ my $extreme = new SNMP::Info::Layer3::Extreme(...);
 =item SNMP::Info::Layer3
 
 =item SNMP::Info::MAU
+
+=item SNMP::Info::LLDP
+
+=item SNMP::Info::EDP
 
 =back
 
@@ -666,12 +800,6 @@ Returns base mac
 
 =back
 
-=head2 Overrides
-
-=over
-
-=back
-
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
@@ -679,6 +807,14 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 =head2 Globals imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::EDP
+
+See documentation in L<SNMP::Info::EDP/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -768,6 +904,58 @@ Power supplied by PoE ports, in milliwatts
 
 =back
 
+=head2 Topology information
+
+Based upon the firmware version Extreme devices may support Extreme Discovery
+Protocol (EDP), Link Layer Discovery Protocol (LLDP), or both.  These methods
+will query both and return the combination of all information.  As a result,
+there may be identical topology information returned from the two protocols
+causing duplicate entries.  It is the calling program's responsibility to
+identify any duplicate entries and remove duplicates if necessary.
+
+=over
+
+=item $extreme->hasCDP()
+
+Returns true if the device is running either EDP or LLDP.
+
+=item $extreme->c_if()
+
+Returns reference to hash.  Key: iid Value: local device port (interfaces)
+
+=item $extreme->c_ip()
+
+Returns reference to hash.  Key: iid Value: remote IPv4 address
+
+If multiple entries exist with the same local port, c_if(), with the same IPv4
+address, c_ip(), it may be a duplicate entry.
+
+With EDP multiple entries may exist with the same local port, c_if(), and
+different IPv4 addresses, c_ip(), as EDP reports addresses for each VLAN
+transported across the trunk.  In the case of LLDP with multiple addresses
+there is either a non-LLDP device in between two or more devices or multiple
+devices which are not directly connected.  
+
+Use the data from the Layer2 Topology Table below to dig deeper.
+
+=item $extreme->c_port()
+
+Returns reference to hash. Key: iid Value: remote port (interfaces)
+
+=item $extreme->c_id()
+
+Returns reference to hash. Key: iid Value: string value used to identify the
+chassis component associated with the remote system.
+
+=item $extreme->c_platform()
+
+Returns reference to hash.  Key: iid Value: Remote Device Type
+
+This information is only available from LLDP.  EDP does not provide an 
+equivalent.
+
+=back
+
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
@@ -775,6 +963,14 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::EDP
+
+See documentation in L<SNMP::Info::EDP/"TABLE METHODS"> for details.
 
 =head1 SET METHODS
 
@@ -825,7 +1021,6 @@ with the numeric VLAN ID and port C<ifIndex>.
   my %if_map = reverse %{$extreme->interfaces()};
   $extreme->set_remove_i_vlan_tagged('2', $if_map{'FastEthernet0/1'}) 
     or die "Couldn't add port to egress list. ",$extreme->error(1);
-
 
 =back
 

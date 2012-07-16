@@ -1,5 +1,20 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 2.09
+
+    [NEW FEATURES]
+    
+    * Add EDP and LLDP L2 Topology to L3::Extreme 
+    * [1424336] Support for Extreme Discovery Protocol (EDP)
+    
+    [ENHANCEMENTS]
+    
+    * [3418918] Extreme devices now report OS as either extremeware or xos
+    
+    [BUG FIXES]
+    
+    
+
 version 2.08 (2012-07-15)
 
     [NEW FEATURES]
