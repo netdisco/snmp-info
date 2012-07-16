@@ -92,6 +92,26 @@ sub serial {
     return;
 }
 
+sub model {
+    my $netscreen = shift;
+
+    my $id = $netscreen->id();
+
+    unless ( defined $id ) {
+        print
+            " SNMP::Info::Layer3::model() - Device does not support sysObjectID\n"
+            if $netscreen->debug();
+        return;
+    }
+
+    my $model = &SNMP::translateObj($id);
+
+    return $id unless defined $model;
+
+    $model =~ s/^netscreen//i;
+    return $model;
+}
+
 1;
 
 __END__

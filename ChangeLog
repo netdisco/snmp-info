@@ -10,6 +10,7 @@ version 2.09
     [ENHANCEMENTS]
     
     * [3418918] Extreme devices now report OS as either extremeware or xos
+    * [2809045] Strip preceding netscreen from model name in L3::Netscreen
     
     [BUG FIXES]
     
