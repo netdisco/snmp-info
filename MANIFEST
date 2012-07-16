@@ -17,6 +17,7 @@ Info/CiscoStack.pm
 Info/CiscoStats.pm
 Info/CiscoStpExtensions.pm
 Info/CiscoVTP.pm
+Info/EDP.pm
 Info/Entity.pm
 Info/EtherLike.pm
 Info/FDP.pm

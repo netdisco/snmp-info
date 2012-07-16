@@ -321,6 +321,12 @@ F<CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB>
 
 See documentation in L<SNMP::Info::CiscoVTP> for details.
 
+=item SNMP::Info::EDP
+
+Extreme Discovery Protocol.  F<EXTREME-EDP-MIB>
+
+See documentation in L<SNMP::Info::EDP> for details.
+
 =item SNMP::Info::Entity
 
 F<ENTITY-MIB>.  Used for device info in Cisco and other vendors.
