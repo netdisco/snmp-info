@@ -129,7 +129,15 @@ sub vendor {
 }
 
 sub os {
-    return 'extreme';
+    my $extreme = shift;
+
+    my $desc = $extreme->description();
+
+    if ($desc =~ /xos/i) {
+        return 'xos';
+    }
+    
+    return 'extremeware';
 }
 
 sub os_ver {
