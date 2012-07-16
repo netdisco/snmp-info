@@ -273,7 +273,7 @@ sub stp_p_state {
 sub hasCDP {
     my $foundry = shift;
 
-    return $foundry->hasLLDP() || $foundry->SUPER::hasCDP();
+    return $foundry->hasLLDP() || $foundry->hasFDP();
 }
 
 sub c_ip {
