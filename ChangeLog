@@ -14,7 +14,8 @@ version 2.09
     
     [BUG FIXES]
     
-    
+    * Fixed logic to return cached data for table methods when available and
+      not a partial fetch
 
 version 2.08 (2012-07-15)
 

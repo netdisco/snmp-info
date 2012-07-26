@@ -23,7 +23,7 @@ use vars
     qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '2.08';
+$VERSION = '2.09-cvs';
 
 =head1 NAME
 
@@ -3831,11 +3831,11 @@ sub AUTOLOAD {
     # Load data if it both not cached and we are not requesting partial info.
     if ( defined $funcs{$attr} ) {
         return $self->_load_attr( $attr, $funcs{$attr}, @_ )
-            unless ( defined $self->{"_${attr}"} and !scalar(@_) );
+            unless ( defined $self->{"_${attr}"} and !defined $_[0] );
     }
     if ($table_leaf) {
         return $self->_load_attr( $attr, $attr, @_ )
-            unless ( defined $self->{"_${attr}"} and !scalar(@_) );
+            unless ( defined $self->{"_${attr}"} and !defined $_[0] );
     }
 
     return $self->_show_attr($attr);
