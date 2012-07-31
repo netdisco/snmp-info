@@ -82,6 +82,7 @@ Info/Layer3/Passport.pm
 Info/Layer3/Pf.pm
 Info/Layer3/SonicWALL.pm
 Info/Layer3/Sun.pm
+Info/Layer3/Tasman.pm
 Info/Layer3/Timetra.pm
 Info/Layer7.pm
 Info/Layer7/APC.pm

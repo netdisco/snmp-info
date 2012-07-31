@@ -795,6 +795,12 @@ Subclass for Generic Sun Routers running SunOS.
 
 See documentation in L<SNMP::Info::Layer3::Sun> for details.
 
+=item SNMP::Info::Layer3::Tasman
+
+Subclass for Avaya Secure Routers.
+
+See documentation in L<SNMP::Info::Layer3::Tasman> for details.
+
 =item SNMP::Info::Layer3::Timetra
 
 Alcatel-Lucent SR Class.
@@ -1408,6 +1414,10 @@ sub device_type {
         # Cisco FWSM
         $objtype = 'SNMP::Info::Layer3::CiscoFWSM'
             if ( $desc =~ /Cisco Firewall Services Module/i );
+        
+        # Avaya Secure Router
+        $objtype = 'SNMP::Info::Layer3::Tasman'
+            if ( $desc =~ /^(avaya|nortel)\s+(SR|secure\srouter)\s+\d{4}/i );
 
         # HP VirtualConnect blade switches
         $objtype = 'SNMP::Info::Layer2::HPVC'
