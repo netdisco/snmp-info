@@ -827,6 +827,12 @@ SNMP Interface to APC UPS devices
 
 See documentation in L<SNMP::Info::Layer7::APC> for details.
 
+=item SNMP::Info::Layer7::Neoteris
+
+SNMP Interface to Juniper SSL VPN appliances
+
+See documentation in L<SNMP::Info::Layer7::Neoteris> for details.
+
 =back
 
 =back
@@ -1323,6 +1329,7 @@ sub device_type {
 
     my %l7sysoidmap = (
         318   => 'SNMP::Info::Layer7::APC',
+        12532 => 'SNMP::Info::Layer7::Neoteris',
     );
 
     # Get just the enterprise number for generic mapping

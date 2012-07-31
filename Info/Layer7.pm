@@ -65,6 +65,10 @@ sub model {
     my $l7    = shift;
     my $id    = $l7->id();
     my $model = &SNMP::translateObj($id);
+
+    # Neoteris (Juniper IVE)    
+    $model =~ s/^ive//i;
+
     return $model;
 }
 
@@ -206,7 +210,6 @@ Cross references $l7->id() with product IDs.
 Tries to discover the vendor by looking up the enterprise number in
 C<sysObjectID>.
 
-
 =back
 
 =head2 Global Methods imported from SNMP::Info
@@ -225,6 +228,12 @@ to a hash.
 =item $l7->interfaces()
 
 Returns reference to the map between IID and physical Port.
+
+=item $l7->i_ignore()
+
+Returns reference to hash.  Increments value of IID if port is to be ignored.
+
+Ignores loopback, other, and cpu
 
 =back
 

@@ -5,8 +5,9 @@ version 2.09
     [NEW FEATURES]
 
     * Support for Avaya Secure Routers in new class L3::Tasman
-    * [3381027] Support for Cisco Nexus in new class L3::Nexus   
     * Add EDP and LLDP L2 Topology to L3::Extreme 
+    * [3185393] Support for Juniper SSL VPN in new class L7::Neoteris
+    * [3381027] Support for Cisco Nexus in new class L3::Nexus   
     * [1424336] Support for Extreme Discovery Protocol (EDP)
     
     [ENHANCEMENTS]

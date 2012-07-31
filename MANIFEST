@@ -86,6 +86,7 @@ Info/Layer3/Tasman.pm
 Info/Layer3/Timetra.pm
 Info/Layer7.pm
 Info/Layer7/APC.pm
+Info/Layer7/Neoteris.pm
 Info/LLDP.pm
 Info/MAU.pm
 Info/NortelStack.pm
