@@ -37,9 +37,9 @@ use SNMP::Info;
 @SNMP::Info::Layer7::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::Layer7::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
+use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '2.08';
+$VERSION = '2.09';
 
 %MIBS = (
     %SNMP::Info::MIBS,
@@ -60,7 +60,7 @@ $VERSION = '2.08';
 
 
 # $l7->model() - Looks at sysObjectID which gives the oid of the system
-#       name, contained in a propriatry MIB.
+#       name, contained in a proprietary  MIB.
 sub model {
     my $l7    = shift;
     my $id    = $l7->id();
@@ -84,13 +84,33 @@ sub interfaces {
     my $l7      = shift;
     my $partial = shift;
 
-    my $interfaces = $l7->i_index($partial)   || {};
-    my $rptr_port  = $l7->rptr_port($partial) || {};
+    my $interfaces = $l7->i_index($partial)       || {};
+    my $i_descr    = $l7->i_description($partial) || {};
 
-    foreach my $port ( keys %$rptr_port ) {
-        $interfaces->{$port} = $port;
+    # Replace the Index with the ifDescr field.
+    foreach my $iid ( keys %$i_descr ) {
+        my $port = $i_descr->{$iid};
+        next unless defined $port;
+        $interfaces->{$iid} = $port;
     }
     return $interfaces;
+}
+
+sub i_ignore {
+    my $l7      = shift;
+    my $partial = shift;
+
+    my $i_type = $l7->i_type($partial) || {};
+
+    my %i_ignore = ();
+
+    foreach my $if ( keys %$i_type ) {
+        my $type = $i_type->{$if};
+        $i_ignore{$if}++
+            if $type =~ /(loopback|other|cpu)/i;
+    }
+
+    return \%i_ignore;
 }
 
 1;
