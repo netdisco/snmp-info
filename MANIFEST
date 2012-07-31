@@ -76,6 +76,7 @@ Info/Layer3/Mikrotik.pm
 Info/Layer3/N1600.pm
 Info/Layer3/Netscreen.pm
 Info/Layer3/NetSNMP.pm
+Info/Layer3/Nexus.pm
 Info/Layer3/PacketFront.pm
 Info/Layer3/Passport.pm
 Info/Layer3/Pf.pm

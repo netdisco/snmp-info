@@ -23,7 +23,7 @@ use vars
     qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '2.09-cvs';
+$VERSION = '2.09';
 
 =head1 NAME
 
@@ -759,6 +759,12 @@ Subclass for Juniper NetScreen.
 
 See documentation in L<SNMP::Info::Layer3::Netscreen> for details.
 
+=item SNMP::Info::Layer3::Nexus
+
+Subclass for Cisco Nexus devices running NX-OS
+
+See documentation in L<SNMP::Info::Layer3::Nexus> for details.
+
 =item SNMP::Info::Layer3::PacketFront
 
 Subclass for PacketFront DRG series CPE.
@@ -1363,6 +1369,10 @@ sub device_type {
         # Various Cisco blade switches, CBS30x0 and CBS31x0 models
         $objtype = 'SNMP::Info::Layer3::C6500'
             if ( $desc =~ /cisco/i and $desc =~ /CBS3[0-9A-Za-z]{3}/ );
+
+        # Cisco Nexus running NX-OS
+        $objtype = 'SNMP::Info::Layer3::Nexus'
+            if ( $desc =~ /^Cisco\s+NX-OS/ );
 
         # HP, older ProCurve models (1600, 2400, 2424m, 4000, 8000)
         $objtype = 'SNMP::Info::Layer2::HP4000'
