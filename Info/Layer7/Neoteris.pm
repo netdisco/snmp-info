@@ -73,7 +73,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Neoteris - SNMP Interface to Juniper SSL VPN appliances
+SNMP::Info::Layer7::Neoteris - SNMP Interface to Juniper SSL VPN appliances
 
 =head1 AUTHORS
 
