@@ -33,8 +33,9 @@ package SNMP::Info::Layer3::NetSNMP;
 use strict;
 use Exporter;
 use SNMP::Info::Layer3;
+use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::NetSNMP::ISA       = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::NetSNMP::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::NetSNMP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
@@ -43,6 +44,7 @@ $VERSION = '2.08';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::LLDP::MIBS,
     'UCD-SNMP-MIB'       => 'versionTag',
     'NET-SNMP-TC'        => 'netSnmpAgentOIDs',
     'HOST-RESOURCES-MIB' => 'hrSystem',
@@ -50,13 +52,20 @@ $VERSION = '2.08';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
     'netsnmp_vers'   => 'versionTag',
     'hrSystemUptime' => 'hrSystemUptime',
 );
 
-%FUNCS = ( %SNMP::Info::Layer3::FUNCS, );
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
+);
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
+%MUNGE = (
+    %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
+);
 
 sub vendor {
     return 'Net-SNMP';
@@ -121,6 +130,42 @@ sub i_ignore {
     return \%i_ignore;
 }
 
+# Use LLDP
+sub hasCDP {
+    my $netsnmp = shift;
+    return $netsnmp->hasLLDP();
+}
+
+sub c_ip {
+    my $netsnmp  = shift;
+    my $partial = shift;
+    return $netsnmp->lldp_ip($partial);
+}
+
+sub c_if {
+    my $netsnmp  = shift;
+    my $partial = shift;
+    return $netsnmp->lldp_if($partial);
+}
+
+sub c_port {
+    my $netsnmp  = shift;
+    my $partial = shift;
+    return $netsnmp->lldp_port($partial);
+}
+
+sub c_id {
+    my $netsnmp  = shift;
+    my $partial = shift;
+    return $netsnmp->lldp_id($partial);
+}
+
+sub c_platform {
+    my $netsnmp  = shift;
+    my $partial = shift;
+    return $netsnmp->lldp_rem_sysdesc($partial);
+}
+
 1;
 __END__
 
@@ -173,6 +218,8 @@ Subclass for Generic Net-SNMP devices
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
 
+See L<SNMP::Info::LLDP> for its own MIB requirements.
+
 =back
 
 =head1 GLOBALS
@@ -210,6 +257,10 @@ Returns ''.
 
 See documentation in L<SNMP::Info::Layer3> for details.
 
+=head2 Globals imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP> for details.
+
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
@@ -227,9 +278,53 @@ Ignores loopback
 
 =back
 
+=head2 Topology information
+
+Link Layer Discovery Protocol (LLDP) support.  The device must be running
+an optional LLDP agent, such as lldpd, which can integrate with the SNMP agent. 
+
+=over
+
+=item $netsnmp->hasCDP()
+
+Returns true if the device is running LLDP.
+
+=item $netsnmp->c_if()
+
+Returns reference to hash.  Key: iid Value: local device port (interfaces)
+
+=item $netsnmp->c_ip()
+
+Returns reference to hash.  Key: iid Value: remote IPv4 address
+
+If multiple entries exist with the same local port, c_if(), with different
+IPv4 addresses, c_ip(), there is either a non-LLDP device in between two
+or more devices or multiple devices which are not directly connected.  
+
+Use the data from the Layer2 Topology Table below to dig deeper.
+
+=item $netsnmp->c_port()
+
+Returns reference to hash. Key: iid Value: remote port (interfaces)
+
+=item $netsnmp->c_id()
+
+Returns reference to hash. Key: iid Value: string value used to identify the
+chassis component associated with the remote system.
+
+=item $netsnmp->c_platform()
+
+Returns reference to hash.  Key: iid Value: Remote Device Type
+
+=back
+
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
+
+=head2 Table Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP> for details.
 
 =head1 NOTES
 

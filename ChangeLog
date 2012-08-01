@@ -11,7 +11,8 @@ version 2.09
     * [1424336] Support for Extreme Discovery Protocol (EDP)
     
     [ENHANCEMENTS]
-    
+
+    * [3017571] Add LLDP support for NetSNMP device class (begemot) 
     * [3418918] Extreme devices now report OS as either extremeware or xos
     * [2809045] Strip preceding netscreen from model name in L3::Netscreen
     
