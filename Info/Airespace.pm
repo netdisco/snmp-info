@@ -421,11 +421,12 @@ sub i_mac {
             next unless defined $mac;
             $i_mac{$iid} = $mac;
         }
-
-        # Don't grab AP MACs - we want the AP to show up on edge switch
-        # ports
+        elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
+            $index =~ s/\.\d+$//;
+            next unless defined $index;
+            $i_mac{$iid} = $index;
+        }
         # Some switch interfaces have MACs, virtuals report 00:00:00:00:00:00
-
         else {
             my $mac = $if_mac->{$iid};
             next unless defined $mac;
@@ -657,6 +658,60 @@ sub i_ssidbcast {
     }
 
     return \%i_ssidbcast;
+}
+
+# Secret decoder ring for BSSID: https://supportforums.cisco.com/docs/DOC-2935
+# We need radio base MAC, SSID index, radio band, and whether AP is
+# VxWorks or IOS based then we can do the arithmetic
+
+sub i_ssidmac {
+    my $airespace = shift;
+    my $partial   = shift;
+
+    my $ssidlist  = $airespace->i_ssidlist($partial)  || {};
+    my $apif_type = $airespace->airespace_apif_type() || {};
+    my $ap_ios    = $airespace->bsnAPIOSVersion()     || {};
+
+    my %i_ssidmac;
+    foreach my $oid ( keys %$ssidlist ) {
+
+        my @parts    = split( /\./, $oid );
+        my $ssid_idx = pop (@parts);
+        my $slot     = pop (@parts);
+        my $last     = pop (@parts);
+
+        my $iid = $oid;
+        # Get radio band
+        $iid =~ s/\.\d+$//;
+        my $ap_type = $apif_type->{$iid};
+        # Determine if IOS based
+        $iid =~ s/\.\d+$//;
+        my $ios = $ap_ios->{$iid} || '';
+        
+        # Four cases:
+        # IOS and 2.4Ghz count up, starts at zero
+        if ($ios and $ap_type =~ /b$/) {
+            $last = $last + ($ssid_idx - 1);
+        }
+        # IOS and 5Ghz - count down from maximum of 16
+        elsif ($ios and $ap_type =~ /a$/) {
+            $last = $last + (16 - $ssid_idx);
+        }
+        # VxWorks and 5Ghz - count up, starts at zero
+        elsif ($ios and $ap_type =~ /a$/) {
+            $last = $last + ($ssid_idx - 1);
+        }
+        # VxWorks and 2.4Ghz - count down from maximum of 16
+        else {
+            $last = $last + (16 - $ssid_idx);
+        }
+        
+       push (@parts, $last);
+       my $bssid = join( ':', map { sprintf( "%02x", $_ ) } @parts );
+       $i_ssidmac{$oid} = $bssid;
+    }
+
+   return \%i_ssidmac;
 }
 
 sub i_80211channel {
