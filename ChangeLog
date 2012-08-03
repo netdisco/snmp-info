@@ -4,6 +4,8 @@ version 2.09
 
     [NEW FEATURES]
 
+    * New method i_ssidmac() to get BSSID's from AP's with initial support
+      in L2::Aironet and Airespace classes
     * Support for Avaya Secure Routers in new class L3::Tasman
     * Add EDP and LLDP L2 Topology to L3::Extreme 
     * [3185393] Support for Juniper SSL VPN in new class L7::Neoteris

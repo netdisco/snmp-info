@@ -437,6 +437,26 @@ sub i_ssidbcast {
     return $i_ssidbcast;
 }
 
+sub i_ssidmac {
+    my $aironet    = shift;
+    my $partial    = shift;
+    my $mbss_mac_addr = $aironet->mbss_mac_addr();
+
+    # Same logic as i_ssidbcast to return same indexes as i_ssidlist 
+    my $map = {};
+    foreach my $key ( keys %$mbss_mac_addr ) {
+        my ( $interface, @idx ) = split( /\./, $key );
+        $map->{ pack( "C*", @idx ) } = $mbss_mac_addr->{$key};
+    }
+
+    my $i_ssidlist  = $aironet->i_ssidlist();
+    my $i_ssidmac = {};
+    foreach my $key ( keys %$i_ssidlist ) {
+        $i_ssidmac->{$key} = $map->{ $i_ssidlist->{$key} };
+    }
+    return $i_ssidmac;
+}
+
 1;
 __END__
 
@@ -622,6 +642,11 @@ to which they belong.
 
 With the same keys as i_ssidlist, returns whether the given SSID is
 being broadcast.
+
+=item $aironet->i_ssidmac()
+
+With the same keys as i_ssidlist, returns the Basic service set
+identification (BSSID), MAC address, the AP is using for the SSID. 
 
 =back
 
