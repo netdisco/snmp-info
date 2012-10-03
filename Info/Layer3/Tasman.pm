@@ -230,7 +230,7 @@ Grabs the os version from C<nnsysVersion>
 
 =item $tasman->serial()
 
-Tries both (C<nnchassisOperStatus>) and (C<nnchassisSerialNumber) as OID's
+Tries both (C<nnchassisOperStatus>) and (C<nnchassisSerialNumber>) as OID's
 were redefined between versions.
 
 =back
