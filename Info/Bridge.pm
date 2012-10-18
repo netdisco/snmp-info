@@ -631,7 +631,7 @@ identifier (iid)
 
 Returns reference to hash of forwarding table entries status
 
-(C<dot2dTpFdbStatus>)
+(C<dot1dTpFdbStatus>)
 
 =back
 
