@@ -17,6 +17,7 @@ version 2.09
     * [3017571] Add LLDP support for NetSNMP device class (begemot) 
     * [3418918] Extreme devices now report OS as either extremeware or xos
     * [2809045] Strip preceding netscreen from model name in L3::Netscreen
+    * [] Classify Linksys 2024 as L3::Dell (Rogier Krieger)
     
     [BUG FIXES]
     

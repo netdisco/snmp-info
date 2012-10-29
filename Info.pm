@@ -1483,10 +1483,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Dell'
             if ( $desc =~ /^IBM Gigabit Ethernet Switch Module$/ );
 
-        # Linksys 2048
+        # Linksys 2024/2048
         $objtype = 'SNMP::Info::Layer3::Dell'
             if (
-            $desc =~ /^48-Port 10\/100\/1000 Gigabit Switch with WebView$/ );
+            $desc =~ /^(24|48)-Port 10\/100\/1000 Gigabit Switch (with |w\/)WebView$/ );
 
         #  Centillion ATM
         $objtype = 'SNMP::Info::Layer2::Centillion' if ( $desc =~ /MCP/ );
