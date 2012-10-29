@@ -22,7 +22,8 @@ version 2.09
     
     * Fixed logic to return cached data for table methods when available and
       not a partial fetch
-    * Fix typo in PoD for Bridge.pm (William Bulley)
+    * Fix typo in PoD for Bridge.pm and CiscoConfig.pm (William Bulley)
+    * Fix/improve IPv6 neighbor cache handling, especially for Cisco Nexus
 
 version 2.08 (2012-07-15)
 

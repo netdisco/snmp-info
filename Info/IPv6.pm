@@ -137,8 +137,17 @@ sub ipv6_n2p_addr {
             }
             if ($addrtype == 2) { # IPv6
                 my $v6_packed = pack("C*", split(/\./, $v6addr));
-                $v6addr = join(':', map { sprintf("%04x", $_) } unpack("n*", $v6_packed) );
-                $return->{$row} = $v6addr;
+                if (length($v6_packed) == 15) {
+                    # Workaround for some some IP-MIB implementations, eg on Cisco Nexus: no explicit addrsize, 
+                    # so what we've collected in that variable is actually the first byte of the address.
+                    $v6_packed = pack('C', $addrsize) . $v6_packed;
+                }
+                if (length($v6_packed) == 16) {
+                    $v6addr = join(':', map { sprintf("%04x", $_) } unpack("n*", $v6_packed) );
+                    $return->{$row} = $v6addr;
+                } else {
+                    printf("Invalid size for IPv6 address: expected 16 bytes, got %d (%s = %s)\n", length($v6_packed), $row, $net_addr->{$row});
+                }
             }
         }
     }

@@ -449,7 +449,7 @@ devices running older code revisions.
 
  Example:
  $ciscoconfig->copy_run_tftp('1.2.3.4', 'myconfig') 
-    or die Couldn't save config. ",$ciscoconfig->error(1);
+    or die "Couldn't save config. ",$ciscoconfig->error(1);
 
 =item $ciscoconfig->copy_run_start()
 
