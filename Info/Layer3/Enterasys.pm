@@ -166,6 +166,12 @@ sub fw_port {
 }
 
 #  Use CDP and/or LLDP
+#
+#  LLDP table timefilter implementation continuously increments when walked
+#  and we may never reach the end of the table.  This behavior can be
+#  modified with the "set snmp timefilter break disable" command,
+#  unfortunately it is not the default.  Query with a partial value of zero
+#  which means no time filter.
 
 sub hasCDP {
     my $enterasys = shift;
@@ -178,7 +184,7 @@ sub c_ip {
     my $partial   = shift;
 
     my $cdp  = $enterasys->SUPER::c_ip($partial) || {};
-    my $lldp = $enterasys->lldp_ip($partial)     || {};
+    my $lldp = $enterasys->lldp_ip(0)            || {};
 
     my %c_ip;
     foreach my $iid ( keys %$cdp ) {
@@ -201,7 +207,7 @@ sub c_if {
     my $enterasys = shift;
     my $partial   = shift;
 
-    my $lldp = $enterasys->lldp_if($partial)     || {};
+    my $lldp = $enterasys->lldp_if(0)            || {};
     my $cdp  = $enterasys->SUPER::c_if($partial) || {};
 
     my %c_if;
@@ -225,7 +231,7 @@ sub c_port {
     my $enterasys = shift;
     my $partial   = shift;
 
-    my $lldp = $enterasys->lldp_port($partial)     || {};
+    my $lldp = $enterasys->lldp_port(0)            || {};
     my $cdp  = $enterasys->SUPER::c_port($partial) || {};
 
     my %c_port;
@@ -249,7 +255,7 @@ sub c_id {
     my $enterasys = shift;
     my $partial   = shift;
 
-    my $lldp = $enterasys->lldp_id($partial)     || {};
+    my $lldp = $enterasys->lldp_id(0)            || {};
     my $cdp  = $enterasys->SUPER::c_id($partial) || {};
 
     my %c_id;
@@ -273,7 +279,7 @@ sub c_platform {
     my $enterasys = shift;
     my $partial   = shift;
 
-    my $lldp = $enterasys->lldp_rem_sysdesc($partial)  || {};
+    my $lldp = $enterasys->lldp_rem_sysdesc(0)         || {};
     my $cdp  = $enterasys->SUPER::c_platform($partial) || {};
 
     my %c_platform;
