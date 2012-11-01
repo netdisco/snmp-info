@@ -95,7 +95,7 @@ sub hasLLDP {
 
 sub lldp_if {
     my $lldp    = shift;
-    my $partial = shift || 0;
+    my $partial = shift;
 
     my $addr    = $lldp->lldp_rem_pid($partial) || {};
     my $i_descr = $lldp->i_description() || {};
@@ -122,7 +122,7 @@ sub lldp_if {
 
 sub lldp_ip {
     my $lldp    = shift;
-    my $partial = shift || 0;
+    my $partial = shift;
 
     my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
 
@@ -138,7 +138,7 @@ sub lldp_ip {
 
 sub lldp_addr {
     my $lldp    = shift;
-    my $partial = shift || 0;
+    my $partial = shift;
 
     my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
 
@@ -153,7 +153,7 @@ sub lldp_addr {
 
 sub lldp_port {
     my $lldp    = shift;
-    my $partial = shift || 0;
+    my $partial = shift;
 
     my $pdesc = $lldp->lldp_rem_desc($partial)     || {};
     my $pid   = $lldp->lldp_rem_pid($partial)      || {};
@@ -188,7 +188,7 @@ sub lldp_port {
 
 sub lldp_id {
     my $lldp    = shift;
-    my $partial = shift || 0;
+    my $partial = shift;
 
     my $ch_type = $lldp->lldp_rem_id_type($partial) || {};
     my $ch      = $lldp->lldp_rem_id($partial)      || {};
@@ -399,10 +399,6 @@ capability and nothing else."
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-Methods accessing the (C<lldpRemTable>) table use a partial value of zero if 
-not provided to set the (C<lldpRemTimeMark>) TimeMark instance to a known value
-as per RFC 2021.
 
 =over
 
