@@ -10,6 +10,7 @@
 
 package SNMP::Info;
 
+use warnings;
 use strict;
 use Exporter;
 use SNMP;
@@ -989,7 +990,7 @@ sub new {
 
     # load references to all the subclass data structures
     {
-        no strict 'refs';    ## no critic
+        no strict 'refs';    ## no critic (ProhibitNoStrict ProhibitProlongedStrictureOverride)
         $new_obj->{init}    = \${ $class . '::INIT' };
         $new_obj->{mibs}    = \%{ $class . '::MIBS' };
         $new_obj->{globals} = \%{ $class . '::GLOBALS' };
@@ -1855,6 +1856,17 @@ Lans (VLANs) such as the Loopback interface, or the CPU interface.
 sub if_ignore {
     my %nothing;
     return \%nothing;
+}
+
+=item $info->bulkwalk_no()
+
+Returns 0.  Is an overridable method used for turn off bulkwalk for the
+device class. 
+
+=cut
+
+sub bulkwalk_no {
+    return 0;
 }
 
 =item $info->i_index()
@@ -3139,96 +3151,88 @@ sub store {
 
 =item $info->_global()
 
-Used internally by AUTOLOAD to load dynamic methods from %GLOBALS. 
+Used internally by AUTOLOAD to create dynamic methods from %GLOBALS.
 
-Example: $info->name() calls autoload which calls $info->_global('name').
+Example: $info->name() on the first call dispatches to AUTOLOAD() which
+calls $info->_global('name') creating the method name().
 
 =cut
 
 sub _global {
-    my $self = shift;
-    my $attr = shift;
-    my $sess = $self->session();
-    return unless defined $sess;
+    my $method = shift;
+    my $oid    = shift;
 
-    my $globals = $self->globals();
+    return sub {
+        my $self = shift;
 
-    my $oid;
-    if ( exists $globals->{$attr} ) {
-        $oid = $globals->{$attr};
-        unless ( $oid =~ /\.\d+$/ ) {
-            $oid .= ".0";
+        my $sess = $self->session();
+        return unless defined $sess;
+
+        my $load = $method =~ /^load/;
+        my $raw  = $method =~ /raw$/;
+
+        my $attr = $method;
+        $attr =~ s/^load_//;
+        $attr =~ s/_raw$//;
+
+        # Get the callback hash for data munging
+        my $munge = $self->munge();
+
+        # Return cached data unless loading
+        # We now store in raw format so munge before returning
+        # unless expecting raw data
+        if ( defined $self->{"_$attr"} && !$load ) {
+            if ( defined $munge->{$attr} && !$raw ) {
+                my $val    = $self->{"_$attr"};
+                my $subref = $munge->{$attr};
+                return &$subref($val);
+            } else{
+                return $self->{"_$attr"};
+            } 
         }
 
-        # Check for fully qualified attr
-        if ( $oid =~ /__/ ) {
-            $oid =~ s/__/::/;
-            $oid =~ s/_/-/g;
+        print "SNMP::Info::_global $method : $oid\n" if $self->debug();
+        my $val = $sess->get($oid);
 
-            # Need to translate fully qualified attr to full oid
-            $oid = &SNMP::translateObj($oid);
-            unless ( defined $oid ) {
-                $self->error_throw(
-                    "SNMP::Info::_load_attr: Can't translate $globals->{$attr}.  Missing MIB?\n"
-                );
-                return;
-            }
+        # Mark as gotten. Even if it fails below, we don't want to keep failing.
+        $self->{"_$attr"} = undef;
+
+        if ( $sess->{ErrorStr} ) {
+            $self->error_throw(
+                "SNMP::Info::_global($method) $sess->{ErrorStr}");
+            return;
         }
+
+        if ( defined $val and $val eq 'NOSUCHOBJECT' ) {
+            $self->error_throw("SNMP::Info::_global($method) NOSUCHOBJECT");
+            return;
+        }
+
+        if ( defined $val and $val eq 'NOSUCHINSTANCE' ) {
+            $self->error_throw("SNMP::Info::_global($method) NOSUCHINSTANCE");
+            return;
+        }
+
+        # Save Cached Value
+        $self->{"_$attr"} = $val;
+
+        # Data Munging
+        if ( defined $munge->{$attr} && !$raw ) {
+            my $subref = $munge->{$attr};
+            $val = &$subref($val);
+        }
+
+        return $val;
     }
-    else {
-        $oid = $attr;
-    }
-
-    # Tag on .0 unless the leaf ends in .number
-    unless ( $oid =~ /\.\d+$/ ) {
-        $oid .= ".0";
-    }
-
-    print "SNMP::Info::_global $attr : $oid\n" if $self->debug();
-    my $val = $sess->get($oid);
-
-    # mark as gotten. Even if it fails below, we don't want to keep failing.
-    $self->{"_$attr"} = undef;
-
-    if ( $sess->{ErrorStr} ) {
-        $self->error_throw("SNMP::Info::_global($attr) $sess->{ErrorStr}");
-        return;
-    }
-
-    if ( defined $val and $val eq 'NOSUCHOBJECT' ) {
-        $self->error_throw("SNMP::Info::_global($attr) NOSUCHOBJECT");
-        return;
-    }
-
-    if ( defined $val and $val eq 'NOSUCHINSTANCE' ) {
-        $self->error_throw("SNMP::Info::_global($attr) NOSUCHINSTANCE");
-        return;
-    }
-
-    # Get the callback hash for data munging
-    my $munge = $self->munge();
-
-    # Data Munging
-    if ( defined $munge->{$attr} ) {
-        my $subref = $munge->{$attr};
-        $val = &$subref($val);
-    }
-
-    # Save Cached Value
-    $self->{"_$attr"} = $val;
-
-    return $val;
 }
 
 =item $info->_set(attr,val,iid,type)
 
-Used internally by AUTOLOAD to run an SNMP set command for dynamic methods
-listed in either %GLOBALS or %FUNCS or a valid mib leaf from a loaded MIB or
-the set_multi() method to set multiple variable in one command.  When run
+Used internally by set_multi() to run an SNMP set command.  When run
 clears attr cache.
 
-Attr is passed as either a scalar for dynamic methods or a reference to an
-array or array of arrays when used with set_multi().
+Attr can be passed as either a scalar or a reference to an array or array
+of arrays when used with set_multi().
 
 Example:  $info->set_name('dog',3) uses autoload to resolve to
 $info->_set('name','dog',3);
@@ -3314,6 +3318,50 @@ sub _set {
     }
 
     return $rv;
+}
+
+=item $info->_make_setter(val,iid)
+
+Used internally by AUTOLOAD to create dynamic methods from either %GLOBALS,
+%FUNCS, or a valid mib leaf from a loaded MIB which runs an SNMP set command.  
+When run clears the attribute cache.
+
+Example:  $info->set_name('dog',3) dispatches to autoload to resolve to
+$info->_set('name','dog',3) and _make_setter creates the set_name() method.
+
+=cut
+
+sub _make_setter {
+    my $method = shift;
+    my $oid    = shift;
+
+    return sub {
+        my $self = shift;
+        my $val  = shift;
+        my $iid  = shift;
+
+        $iid = defined $iid ? $iid : '.0';
+
+        # prepend dot if necessary to $iid
+        $iid = ".$iid" unless $iid =~ /^\./;
+
+        my $sess = $self->session();
+        return unless defined $sess;
+
+        $oid .= $iid;
+
+        $self->debug()
+            and print "SNMP::Info::_set $method$iid ($oid) = $val\n";
+        delete $self->{"_$method"};
+
+        my $rv = $sess->set( $oid, $val );
+
+        if ( $sess->{ErrorStr} ) {
+            $self->error_throw("SNMP::Info::_set $sess->{ErrorStr}");
+            return;
+        }
+        return $rv;
+        }
 }
 
 =item $info->set_multi(arrayref)
@@ -3409,212 +3457,209 @@ sub all {
 
 =item $info->_load_attr()
 
-Used internally by AUTOLOAD to fetch data called from methods listed in %FUNCS
-or a MIB Leaf node name.
+Used internally by AUTOLOAD to create dynamic methods from %FUNCS 
+or a MIB Leaf node name which fetches data.
 
 Supports partial table fetches and single instance table fetches.
 See L<SNMP::Info/"Partial Table Fetches">.
 
-Called from $info->load_METHOD();
-
 =cut
 
 sub _load_attr {
-    my $self = shift;
-    my ( $attr, $leaf, $partial ) = @_;
+    my $method = shift;
+    my $oid    = shift;
 
-    my $ver    = $self->snmp_ver();
-    my $nosuch = $self->nosuch();
-    my $sess   = $self->session();
-    my $store  = $self->store();
-    my $munge  = $self->munge();
-    return unless defined $sess;
+    return sub {
+        my $self    = shift;
+        my $partial = shift;
 
-    my $varleaf = $leaf;
+        my $sess = $self->session();
+        return unless defined $sess;
 
-    # Check for fully qualified attr
-    if ( $leaf =~ /__/ ) {
-        $leaf =~ s/__/::/;
-        $leaf =~ s/_/-/g;
-        $varleaf = $leaf;
-    }
+        my $ver    = $self->snmp_ver();
+        my $nosuch = $self->nosuch();
+        my $store  = $self->store();
+        my $munge  = $self->munge();
 
-    # Deal with partial entries.
-    if ( defined $partial ) {
+        my $load = $method =~ /^load/;
+        my $raw  = $method =~ /raw$/;
 
-        # If we aren't supplied an OID translate
-        if ( $leaf !~ /^[.\d]*$/ ) {
+        my $attr = $method;
+        $attr =~ s/^load_//;
+        $attr =~ s/_raw$//;
 
-            # VarBind will not resolve mixed OID and leaf entries like
-            #   "ipRouteMask.255.255".  So we convert to full OID
-            my $oid = &SNMP::translateObj($leaf);
-            unless ( defined $oid ) {
+        # Return cached data unless loading or partial
+        # We now store in raw format so munge before returning
+        # unless expecting raw data
+        return $self->_show_attr($attr, $raw)
+            if ( defined $self->{"_${attr}"}
+            && !$load
+            && !defined $partial );
+
+        my $leaf_name = SNMP::translateObj($oid) || '';
+        my $varleaf   = defined $partial ? "$oid.$partial" : "$oid";
+
+        $self->debug()
+            and print "SNMP::Info::_load_attr $method : $oid",
+            defined $partial ? "($partial)" : '', "\n";
+
+        my $var = new SNMP::Varbind( [$varleaf] );
+
+        # So devices speaking SNMP v.1 are not supposed to give out
+        # data from SNMP2, but most do.  Net-SNMP, being very precise
+        # will tell you that the SNMP OID doesn't exist for the device.
+        # They have a flag RetryNoSuch that is used for get() operations,
+        # but not for getnext().  We set this flag normally, and if we're
+        # using V1, let's try and fetch the data even if we get one of those.
+
+        my $localstore = undef;
+        my $errornum   = 0;
+        my %seen       = ();
+
+        my $vars = [];
+        my $bulkwalk_no
+            = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
+        my $bulkwalk_on = defined $self->{BulkWalk} ? $self->{BulkWalk} : 1;
+        my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
+        my $repeaters = $self->{BulkRepeaters} || $REPEATERS;
+        my $bulkwalk = $can_bulkwalk && $ver != 1;
+        my $loopdetect
+            = defined $self->{LoopDetect} ? $self->{LoopDetect} : 1;
+
+        if ( defined $partial ) {
+
+            # Try a GET, in case the partial is a leaf OID.
+            # Would like to only do this if we know the OID is
+            # long enough; implementing that would require a
+            # lot of MIB mucking.
+            my $try = $sess->get($var);
+            $errornum = $sess->{ErrorNum};
+            if ( defined($try) && $errornum == 0 && $try !~ /^NOSUCH/ ) {
+                $var->[2] = $try;
+                $vars     = [$var];
+                $bulkwalk = 1;        # fake a bulkwalk return
+            }
+
+            # We want to execute the while loop below for the getnext request.
+            if (    $ver == 1
+                and $sess->{ErrorNum}
+                and $sess->{ErrorStr} =~ /nosuch/i )
+            {
+                $errornum = 0;
+            }
+        }
+
+        # Use BULKWALK if we can because its faster
+        if ( $bulkwalk && @$vars == 0 ) {
+            ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
+            if ( $sess->{ErrorNum} ) {
                 $self->error_throw(
-                    "SNMP::Info::_load_attr: Can't translate $leaf.$partial.  Missing MIB?\n"
-                );
+                    "SNMP::Info::_load_atrr: BULKWALK " . $sess->{ErrorStr},
+                    "\n" );
                 return;
             }
-            $varleaf = "$oid.$partial";
-        }
-        else {
-            $varleaf = "$leaf.$partial";
-        }
-    }
-
-    $self->debug()
-        and print "SNMP::Info::_load_attr $attr : $leaf",
-        defined $partial ? "($partial / $varleaf)" : '', "\n";
-
-    my $var = new SNMP::Varbind( [$varleaf] );
-
-    # So devices speaking SNMP v.1 are not supposed to give out
-    # data from SNMP2, but most do.  Net-SNMP, being very precise
-    # will tell you that the SNMP OID doesn't exist for the device.
-    # They have a flag RetryNoSuch that is used for get() operations,
-    # but not for getnext().  We set this flag normally, and if we're
-    # using V1, let's try and fetch the data even if we get one of those.
-
-    my $localstore = undef;
-    my $errornum   = 0;
-    my %seen       = ();
-
-    my $vars         = [];
-    my $bulkwalk_no  = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
-    my $bulkwalk_on  = defined $self->{BulkWalk} ? $self->{BulkWalk} : 1;
-    my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
-    my $repeaters    = $self->{BulkRepeaters} || $REPEATERS;
-    my $bulkwalk     = $can_bulkwalk && $ver != 1;
-    my $loopdetect   = defined $self->{LoopDetect} ? $self->{LoopDetect} : 1;
-
-    if ( defined $partial ) {
-
-        # Try a GET, in case the partial is a leaf OID.
-        # Would like to only do this if we know the OID is
-        # long enough; implementing that would require a
-        # lot of MIB mucking.
-        my $try = $sess->get($var);
-        $errornum = $sess->{ErrorNum};
-        if ( defined($try) && $errornum == 0 && $try !~ /^NOSUCH/ ) {
-            $var->[2] = $try;
-            $vars     = [$var];
-            $bulkwalk = 1;        # fake a bulkwalk return
         }
 
-        # We want to execute the while loop below for the getnext request.
-        if (    $ver == 1
-            and $sess->{ErrorNum}
-            and $sess->{ErrorStr} =~ /nosuch/i )
-        {
-            $errornum = 0;
-        }
-    }
-
-    # Use BULKWALK if we can because its faster
-    if ( $bulkwalk && @$vars == 0 ) {
-        ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
-        if ( $sess->{ErrorNum} ) {
-            $self->error_throw(
-                "SNMP::Info::_load_atrr: BULKWALK " . $sess->{ErrorStr},
-                "\n" );
-            return;
-        }
-    }
-
-    while ( !$errornum ) {
-        if ($bulkwalk) {
-            $var = shift @$vars or last;
-        }
-        else {
-
-            # GETNEXT instead of BULKWALK
-            $sess->getnext($var);
-            $errornum = $sess->{ErrorNum};
-        }
-
-        if ( $self->debug() > 1 ) {
-            use Data::Dumper;
-            print "SNMP::Info::_load_attr $attr : leaf = $leaf , var = ",
-                Dumper($var);
-        }
-
-        # Check if we've left the requested subtree
-        last if $var->[0] ne $leaf;
-        my $iid = $var->[1];
-        my $val = $var->[2];
-
-        unless ( defined $iid ) {
-            $self->error_throw("SNMP::Info::_load_attr: $attr not here");
-            next;
-        }
-
-        # Check to make sure we are still in partial land
-        if (    defined $partial
-            and $iid !~ /^$partial$/
-            and $iid !~ /^$partial\./ )
-        {
-            $self->debug() and print "$iid makes us leave partial land.\n";
-            last;
-        }
-
-        # Check if last element, V2 devices may report ENDOFMIBVIEW even if
-        # instance or object doesn't exist.
-        if ( $val eq 'ENDOFMIBVIEW' ) {
-            last;
-        }
-
-        # Similarly for SNMPv1 - noSuchName return results in both $iid
-        # and $val being empty strings.
-        if ( $val eq '' and $iid eq '' ) {
-            last;
-        }
-
-        # Another check for SNMPv1 - noSuchName return may results in an $iid
-        # we've already seen and $val an empty string.  If we don't catch
-        # this here we erronously report a loop below.
-        if ( defined $seen{$iid} and $seen{$iid} and $val eq '' ) {
-            last;
-        }
-
-        if ($loopdetect) {
-
-            # Check to see if we've already seen this IID (looping)
-            if ( defined $seen{$iid} and $seen{$iid} ) {
-                $self->error_throw("Looping on: $attr iid:$iid. ");
-                last;
+        while ( !$errornum ) {
+            if ($bulkwalk) {
+                $var = shift @$vars or last;
             }
             else {
-                $seen{$iid}++;
+
+                # GETNEXT instead of BULKWALK
+                $sess->getnext($var);
+                $errornum = $sess->{ErrorNum};
             }
+
+            if ( $self->debug() > 1 ) {
+                use Data::Dumper;
+                print "SNMP::Info::_load_attr $method : leaf = $oid , var = ",
+                    Dumper($var);
+            }
+
+            # Check if we've left the requested subtree
+            last if $var->[0] ne $leaf_name;
+            my $iid = $var->[1];
+            my $val = $var->[2];
+
+            unless ( defined $iid ) {
+                $self->error_throw(
+                    "SNMP::Info::_load_attr: $method not here");
+                next;
+            }
+
+            # Check to make sure we are still in partial land
+            if (    defined $partial
+                and $iid !~ /^$partial$/
+                and $iid !~ /^$partial\./ )
+            {
+                $self->debug()
+                    and print "$iid makes us leave partial land.\n";
+                last;
+            }
+
+           # Check if last element, V2 devices may report ENDOFMIBVIEW even if
+           # instance or object doesn't exist.
+            if ( $val eq 'ENDOFMIBVIEW' ) {
+                last;
+            }
+
+            # Similarly for SNMPv1 - noSuchName return results in both $iid
+            # and $val being empty strings.
+            if ( $val eq '' and $iid eq '' ) {
+                last;
+            }
+
+         # Another check for SNMPv1 - noSuchName return may results in an $iid
+         # we've already seen and $val an empty string.  If we don't catch
+         # this here we erronously report a loop below.
+            if ( defined $seen{$iid} and $seen{$iid} and $val eq '' ) {
+                last;
+            }
+
+            if ($loopdetect) {
+
+                # Check to see if we've already seen this IID (looping)
+                if ( defined $seen{$iid} and $seen{$iid} ) {
+                    $self->error_throw("Looping on: $method iid:$iid. ");
+                    last;
+                }
+                else {
+                    $seen{$iid}++;
+                }
+            }
+
+            if ( $val eq 'NOSUCHOBJECT' ) {
+                $self->error_throw(
+                    "SNMP::Info::_load_attr: $method :  NOSUCHOBJECT");
+                next;
+            }
+            if ( $val eq 'NOSUCHINSTANCE' ) {
+                $self->error_throw(
+                    "SNMP::Info::_load_attr: $method :  NOSUCHINSTANCE");
+                next;
+            }
+
+            $localstore->{$iid} = $val;
+
         }
 
-        if ( $val eq 'NOSUCHOBJECT' ) {
-            $self->error_throw(
-                "SNMP::Info::_load_attr: $attr :  NOSUCHOBJECT");
-            next;
-        }
-        if ( $val eq 'NOSUCHINSTANCE' ) {
-            $self->error_throw(
-                "SNMP::Info::_load_attr: $attr :  NOSUCHINSTANCE");
-            next;
+        # Cache data if we are not getting partial data:
+        if ( !defined $partial ) {
+            $self->{"_${attr}"}++;
+            $store->{$attr} = $localstore;
         }
 
         # Data Munging
-        #   Checks for an entry in %munge and runs the subroutine
-        if ( defined $munge->{$attr} ) {
+        # Checks for an entry in %munge and munges values unless we expect
+        # raw data
+        if ( defined $munge->{$attr} && !$raw ) {
             my $subref = $munge->{$attr};
-            $val = &$subref($val);
+            my %munged = map { $_ => &$subref( $localstore->{$_} ) } keys %$localstore;
+            return \%munged;
         }
-
-        $localstore->{$iid} = $val;
+        return $localstore;
     }
-
-    # Cache data if we are not getting partial data:
-    if ( !defined $partial ) {
-        $self->{"_${attr}"}++;
-        $store->{$attr} = $localstore;
-    }
-
-    return $localstore;
 }
 
 =item $info->_show_attr()
@@ -3631,10 +3676,21 @@ Every time after it will return cached data.
 sub _show_attr {
     my $self = shift;
     my $attr = shift;
+    my $raw  = shift;
 
     my $store = $self->store();
 
-    return $store->{$attr};
+    # Get the callback hash for data munging
+    my $munge = $self->munge();
+
+    if ( defined $munge->{$attr} && !$raw ) {
+        my $subref = $munge->{$attr};
+        my %munged = map { $_ => &$subref( $store->{$attr}{$_} ) } keys $store->{$attr};
+        return \%munged;
+    }
+    else {
+        return $store->{$attr};
+    }
 }
 
 =item $info->snmp_connect_ip(ip) 
@@ -3704,43 +3760,168 @@ sub modify_port_list {
     return pack( "B*", join( '', @$portlist ) );
 }
 
-=back
+=item _validate_autoload_method(method)
 
-=head2 AUTOLOAD
-
-Each entry in either %FUNCS, %GLOBALS, or MIB Leaf node names present in
-loaded MIBs are used by AUTOLOAD() to create dynamic methods.
-
-Note that this AUTOLOAD is going to be run for all the classes listed in the
-@ISA array in a subclass, so will be called with a variety of package names.
-We check the %FUNCS and %GLOBALS of the package that is doing the calling at
-this given instant.
+Used internally by AUTOLOAD to validate that a dynamic method should be
+created.  Returns the OID of the MIB leaf node the method will get or set.
 
 =over 
 
 =item 1. Returns unless method is listed in %FUNCS, %GLOBALS, or is MIB Leaf
 node name in a loaded MIB for given class.
 
-=item 2. Checks for load_ prefix and if present runs $info->_global(method)
-for methods which exist in %GLOBALS or are a single instance MIB Leaf node
-name, otherwise runs $info->_load_attr(method) for methods which exist in
-%FUNCS or are MIB Leaf node name contained within a table.  This always
-forces reloading and does not use cached data.
+=item 2. Translates the MIB Leaf node name to an OID.
 
-=item 3. Check for set_ prefix and if present runs $info->_set(method).
-
-=item 4. If the method exists in %GLOBALS or is a single instance MIB Leaf
-node name it runs $info->_global(method) unless already cached.
-
-=item 5. If the method exists in %FUNCS or is MIB Leaf node name contained
-within a table it runs $info->_load_attr(method) if not cached.
-
-=item 6. Otherwise return $info->_show_attr(method).
+=item 3. Checks to see if the method access type is allowed for the resolved
+OID.  Write access for set_ methods, read access for others.
 
 =back
 
-Override any dynamic method listed in one of these hashes by creating a
-subroutine with the same name.
+=cut
+
+sub _validate_autoload_method {
+    my $self   = shift;
+    my $method = shift;
+
+    my $attr = $method;
+    $attr =~ s/^(load|set|orig)_//;
+    $attr =~ s/_raw$//;
+
+    my $globals = $self->globals();
+    my $funcs   = $self->funcs();
+
+    my $leaf_name = $globals->{$attr} || $funcs->{$attr} || $attr;
+
+    # Check for fully qualified name
+    if ( $leaf_name =~ /__/ ) {
+        $leaf_name =~ s/__/::/;
+        $leaf_name =~ s/_/-/g;
+    }
+
+    if ($leaf_name && $globals->{$attr}) {
+        # Tag on .0 unless the leaf ends in a digit
+        unless ( $leaf_name =~ /\d$/ ) {
+            $leaf_name .= ".0";
+        }
+    }
+    
+    # Translate MIB leaf node name to OID
+    my $oid = SNMP::translateObj($leaf_name);
+
+    if ( $leaf_name =~ /^[.]?\d[\.\d]+$/ ) {
+        $oid = $leaf_name;
+    }
+
+    unless ( defined $oid ) {
+        print
+            "SNMP::Info::_validate_autoload_method($leaf_name) Unable to resolve method.\n"
+            if $self->debug();
+        return;
+    }
+
+    # Validate that we have proper access for the operation
+    my $access = $SNMP::MIB{$oid}{'access'} || '';
+    # If we were given a fully qualified OID because we don't have the MIB
+    # file, it will translate above but we won't be able to check access so
+    # skip the check and return
+    if ($access) {
+        if ( $method =~ /^set/ && $access =~ /Write|Create/ ) {
+            return $oid;
+        }
+        elsif ( $access =~ /Read|Create/ ) {
+            return $oid;
+        }
+        else {
+            print
+                "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessable for requested operation.\n"
+                if $self->debug();
+            return;
+        }
+    }
+    return $oid;
+}
+
+=item $info->can()
+
+Overrides UNIVERSAL::can() so that objects will correctly report thier
+capabilities to include dynamic methods generated at runtime via AUTOLOAD.
+
+Calls parent can() first to see if method exists, if not validates that a
+method should be created then dispatches to the appropriate internal method
+for creation.  The newly created method is inserted into the symbol table
+returning to AUTOLOAD only for the inital method call.
+
+Returns undef if the method does not exist and can not be created.
+
+=cut
+
+sub can {
+    my $self   = shift;
+    my $method = shift;
+    my $super  = shift;
+
+    # use results of parent can()
+    my $meth_ref = $self->SUPER::can($method);
+
+    # Don't return if passed $super as it means we were called
+    # from AUTOLOAD for a method that hasn't been generated yet.
+    return $meth_ref if ( !$super && $meth_ref );
+
+    my $oid = $self->_validate_autoload_method($method);
+    return unless $oid;
+
+    # _validate_autoload_method validates, so we need to check for
+    # set_ , globals, and everything else goes to _load_attr
+    my $globals = $self->globals();
+
+    # We need to resolve globals with a prefix or suffix
+    my $g_method = $method;
+    $g_method =~ s/^(load|orig)_//;
+    $g_method =~ s/_raw$//;
+
+    no strict 'refs';    ## no critic (ProhibitNoStrict )
+
+    # Check for set_ ing.
+    if ( $method =~ /^set_/ ) {
+        return *{$method} = _make_setter( $method, $oid, @_ );
+    }
+    elsif ( defined $globals->{$g_method} ) {
+        return *{$method} = _global( $method, $oid );
+    }
+    else {
+        return *{$method} = _load_attr( $method, $oid, @_ );
+    }
+}
+
+=back
+
+=head2 AUTOLOAD
+
+Each entry in either %FUNCS, %GLOBALS, or MIB Leaf node names present in
+loaded MIBs are used by AUTOLOAD() to create dynamic methods.  Generated
+methods are inserted into the symbol table so that subsequent calls can avoid
+AUTOLOAD() and dispatch directly.
+
+=over 
+
+=item 1. Returns unless method is listed in %FUNCS, %GLOBALS, or is MIB Leaf
+node name in a loaded MIB for given class.
+
+=item 2. If the method exists in %GLOBALS, _global() generates the method. 
+
+=item 3. If a set_ prefix is present _make_setter() generates the method.
+
+=item 4. If the method exists in %FUNCS or is MIB Leaf node name in a
+loaded MIB, _load_attr() generates the method.
+
+=item 5. A load_ prefix forces reloading of data and does not use cached data.
+
+=item 6. A _raw suffix returns data ignoring any munge routines.
+
+=back
+
+Override any dynamic method listed in %GLOBALS, %FUNCS, or MIB Leaf node
+name a by creating a subroutine with the same name.
 
 For example to override $info->name() create `` sub name {...}'' in your
 subclass.
@@ -3748,19 +3929,10 @@ subclass.
 =cut
 
 sub AUTOLOAD {
-    my $self     = shift;
-    my $sub_name = $AUTOLOAD;
+    my $self = shift;
+    my ($super, $sub_name) = $AUTOLOAD =~ /(SUPER)?::(\w+)$/;
 
     return if $sub_name =~ /DESTROY$/;
-
-    # package is the first part
-    ( my $package = $sub_name ) =~ s/[^:]*$//;
-
-    # Sub name is the last part
-    $sub_name =~ s/.*://;
-
-    #  Enable calls to SUPER class to find autoloaded methods
-    $package =~ s/SUPER::$//;
 
     # Typos in function calls in SNMP::Info subclasses turn into
     # AUTOLOAD requests for non-methods.  While this is deprecated,
@@ -3775,97 +3947,9 @@ sub AUTOLOAD {
         );
     }
 
-    my $attr = $sub_name;
-    $attr =~ s/^(load|set)_//;
-    $attr =~ s/^orig_//;
+    return unless my $meth_ref = $self->can($sub_name, $super, @_);
+    return $self->$meth_ref;
 
-    # Let's use the %GLOBALS and %FUNCS from the class that
-    #   inherited us.
-    my ( %funcs, %globals );
-    {
-        no strict 'refs';    ## no critic
-        %funcs   = %{ $package . 'FUNCS' };
-        %globals = %{ $package . 'GLOBALS' };
-    }
-
-    # Check if we were called with a MIB leaf node name
-    my $trans = SNMP::translateObj($attr);
-
-    my $mib_leaf   = 0;
-    my $table_leaf = 0;
-    if ( defined($trans) ) {
-        my $mib = $SNMP::MIB{$trans};
-
-        # We're not a leaf if we don't have access attribute
-        # Don't bother if not-accessable
-        my $access = $$mib{'access'};
-        $mib_leaf = 1 if ( defined $access && $access !~ /NoAccess/ );
-        if ( $self->debug() and !$mib_leaf ) {
-            print "SNMP::Info::AUTOLOAD($attr) Leaf not accessable.\n";
-        }
-
-        # If we're a leaf check to see if we are in a table
-        if ($mib_leaf) {
-            my $indexes = $$mib{'parent'}{'indexes'};
-            $table_leaf = 1
-                if ( defined $indexes && scalar( @{$indexes} ) > 0 );
-        }
-    }
-
-    unless ( defined $funcs{$attr}
-        or defined $globals{$attr}
-        or defined $mib_leaf )
-    {
-        $self->error_throw(
-            "SNMP::Info::AUTOLOAD($attr) Attribute not found in this device class."
-        );
-        return;
-    }
-
-    # Check for load_ ing.
-    if ( $sub_name =~ /^load_/ ) {
-        if ( defined $globals{$attr} ) {
-            return $self->_global($attr);
-        }
-        if ( defined $funcs{$attr} ) {
-            return $self->_load_attr( $attr, $funcs{$attr}, @_ );
-        }
-        if ( $mib_leaf and !$table_leaf ) {
-            return $self->_global($attr);
-        }
-        if ($table_leaf) {
-            return $self->_load_attr( $attr, $attr, @_ );
-        }
-    }
-
-    # Check for set_ ing.
-    if ( $sub_name =~ /^set_/ ) {
-        return $self->_set( $attr, @_ );
-    }
-
-    # Next check for entry in %GLOBALS
-    if ( defined $globals{$attr} or ( $mib_leaf and !$table_leaf ) ) {
-
-        # Return Cached Value if exists
-        return $self->{"_${attr}"} if exists $self->{"_${attr}"};
-
-        # Fetch New Value
-        return $self->_global($attr);
-    }
-
-    # Otherwise we must be listed in %FUNCS
-
-    # Load data if it both not cached and we are not requesting partial info.
-    if ( defined $funcs{$attr} ) {
-        return $self->_load_attr( $attr, $funcs{$attr}, @_ )
-            unless ( defined $self->{"_${attr}"} and !defined $_[0] );
-    }
-    if ($table_leaf) {
-        return $self->_load_attr( $attr, $attr, @_ )
-            unless ( defined $self->{"_${attr}"} and !defined $_[0] );
-    }
-
-    return $self->_show_attr($attr);
 }
 1;
 
