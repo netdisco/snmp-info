@@ -165,138 +165,45 @@ sub fw_port {
     return $enterasys->qb_fw_port($partial);
 }
 
-#  Use CDP and/or LLDP
-#
 #  LLDP table timefilter implementation continuously increments when walked
 #  and we may never reach the end of the table.  This behavior can be
 #  modified with the "set snmp timefilter break disable" command,
 #  unfortunately it is not the default.  Query with a partial value of zero
 #  which means no time filter.
 
-sub hasCDP {
+sub lldp_ip {
     my $enterasys = shift;
+    my $partial   = shift || 0;
 
-    return $enterasys->hasLLDP() || $enterasys->SUPER::hasCDP();
+    return $enterasys->SUPER::lldp_ip($partial);
 }
 
-sub c_ip {
+sub lldp_if {
     my $enterasys = shift;
-    my $partial   = shift;
+    my $partial   = shift || 0;
 
-    my $cdp  = $enterasys->SUPER::c_ip($partial) || {};
-    my $lldp = $enterasys->lldp_ip(0)            || {};
-
-    my %c_ip;
-    foreach my $iid ( keys %$cdp ) {
-        my $ip = $cdp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $ip = $lldp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-    return \%c_ip;
+    return $enterasys->SUPER::lldp_if($partial);
 }
 
-sub c_if {
+sub lldp_port {
     my $enterasys = shift;
-    my $partial   = shift;
+    my $partial   = shift || 0;
 
-    my $lldp = $enterasys->lldp_if(0)            || {};
-    my $cdp  = $enterasys->SUPER::c_if($partial) || {};
-
-    my %c_if;
-    foreach my $iid ( keys %$cdp ) {
-        my $if = $cdp->{$iid};
-        next unless defined $if;
-
-        $c_if{$iid} = $if;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $if = $lldp->{$iid};
-        next unless defined $if;
-
-        $c_if{$iid} = $if;
-    }
-    return \%c_if;
+    return $enterasys->SUPER::lldp_port($partial);
 }
 
-sub c_port {
+sub lldp_id {
     my $enterasys = shift;
-    my $partial   = shift;
+    my $partial   = shift || 0;
 
-    my $lldp = $enterasys->lldp_port(0)            || {};
-    my $cdp  = $enterasys->SUPER::c_port($partial) || {};
-
-    my %c_port;
-    foreach my $iid ( keys %$cdp ) {
-        my $port = $cdp->{$iid};
-        next unless defined $port;
-
-        $c_port{$iid} = $port;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $port = $lldp->{$iid};
-        next unless defined $port;
-
-        $c_port{$iid} = $port;
-    }
-    return \%c_port;
+    return  $enterasys->SUPER::lldp_id($partial);
 }
 
-sub c_id {
+sub lldp_platform {
     my $enterasys = shift;
-    my $partial   = shift;
+    my $partial   = shift || 0;
 
-    my $lldp = $enterasys->lldp_id(0)            || {};
-    my $cdp  = $enterasys->SUPER::c_id($partial) || {};
-
-    my %c_id;
-    foreach my $iid ( keys %$cdp ) {
-        my $id = $cdp->{$iid};
-        next unless defined $id;
-
-        $c_id{$iid} = $id;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $id = $lldp->{$iid};
-        next unless defined $id;
-
-        $c_id{$iid} = $id;
-    }
-    return \%c_id;
-}
-
-sub c_platform {
-    my $enterasys = shift;
-    my $partial   = shift;
-
-    my $lldp = $enterasys->lldp_rem_sysdesc(0)         || {};
-    my $cdp  = $enterasys->SUPER::c_platform($partial) || {};
-
-    my %c_platform;
-    foreach my $iid ( keys %$cdp ) {
-        my $platform = $cdp->{$iid};
-        next unless defined $platform;
-
-        $c_platform{$iid} = $platform;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $platform = $lldp->{$iid};
-        next unless defined $platform;
-
-        $c_platform{$iid} = $platform;
-    }
-    return \%c_platform;
+    return  $enterasys->SUPER::lldp_rem_sysdesc($partial);
 }
 
 1;
@@ -399,12 +306,6 @@ Returns base mac
 
 =back
 
-=head2 Overrides
-
-=over
-
-=back
-
 =head2 Globals imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
@@ -463,52 +364,25 @@ identifier (iid).
 
 =back
 
-=head2 Topology information
+=head2 Link Layer Discovery Protocol (LLDP) Overrides
 
-Based upon the firmware version Enterasys devices may support Cabletron
-Discovery Protocol (CTRON CDP), Cisco Discovery Protocol (CDP), Link Layer
-Discovery Protocol (LLDP), or all.  This module currently supports CDP and
-LLDP, but not CTRON CDP.  These methods will query both CDP and LLDP and
-return the combination of all information.  As a result, there may be
-identical topology information returned from the two protocols
-causing duplicate entries.  It is the calling program's responsibility to
-identify any duplicate entries and remove duplicates if necessary.
+The LLDP table timefilter implementation continuously increments when
+walked and we may never reach the end of the table.  This behavior can be
+modified with the "set snmp timefilter break disable" command,
+unfortunately it is not the default.  These methods are overriden to
+supply a partial value of zero which means no time filter.
 
 =over
 
-=item $enterasys->hasCDP()
+=item $enterasys->lldp_if()
 
-Returns true if the device is running either CDP or LLDP.
+=item $enterasys->lldp_ip()
 
-=item $enterasys->c_if()
+=item $enterasys->lldp_port()
 
-Returns reference to hash.  Key: iid Value: local device port (interfaces)
+=item $enterasys->lldp_id()
 
-=item $enterasys->c_ip()
-
-Returns reference to hash.  Key: iid Value: remote IPv4 address
-
-If multiple entries exist with the same local port, c_if(), with the same IPv4
-address, c_ip(), it may be a duplicate entry.
-
-If multiple entries exist with the same local port, c_if(), with different
-IPv4 addresses, c_ip(), there is either a non-CDP/LLDP device in between two
-or more devices or multiple devices which are not directly connected.  
-
-Use the data from the Layer2 Topology Table below to dig deeper.
-
-=item $enterasys->c_port()
-
-Returns reference to hash. Key: iid Value: remote port (interfaces)
-
-=item $enterasys->c_id()
-
-Returns reference to hash. Key: iid Value: string value used to identify the
-chassis component associated with the remote system.
-
-=item $enterasys->c_platform()
-
-Returns reference to hash.  Key: iid Value: Remote Device Type
+=item $enterasys->lldp_platform()
 
 =back
 

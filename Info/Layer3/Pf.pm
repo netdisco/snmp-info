@@ -118,42 +118,6 @@ sub os_ver {
     return $os_ver;
 }
 
-# Use LLDP
-sub hasCDP {
-    my $pf = shift;
-    return $pf->hasLLDP();
-}
-
-sub c_ip {
-    my $pf  = shift;
-    my $partial = shift;
-    return $pf->lldp_ip($partial);
-}
-
-sub c_if {
-    my $pf  = shift;
-    my $partial = shift;
-    return $pf->lldp_if($partial);
-}
-
-sub c_port {
-    my $pf  = shift;
-    my $partial = shift;
-    return $pf->lldp_port($partial);
-}
-
-sub c_id {
-    my $pf  = shift;
-    my $partial = shift;
-    return $pf->lldp_id($partial);
-}
-
-sub c_platform {
-    my $pf  = shift;
-    my $partial = shift;
-    return $pf->lldp_rem_sysdesc($partial);
-}
-
 1;
 __END__
 
@@ -230,10 +194,6 @@ These are methods that return scalar values from SNMP
 
     Returns 'FreeBSD'
 
-=item $pf->hasCDP()
-
-    Returns whether LLDP is enabled.
-
 =item $pf->model()
 
 Grabs the os version from C<sysDescr>
@@ -258,30 +218,6 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=over
-
-=item $pf->c_id()
-
-Returns LLDP information.
-
-=item $pf->c_if()
-
-Returns LLDP information.
-
-=item $pf->c_ip()
-
-Returns LLDP information.
-
-=item $pf->c_platform()
-
-Returns LLDP information.
-
-=item $pf->c_port()
-
-Returns LLDP information.
-
-=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

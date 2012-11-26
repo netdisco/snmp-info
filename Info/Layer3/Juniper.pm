@@ -248,49 +248,6 @@ sub fw_port {
     return $juniper->qb_fw_port($partial);
 }
 
-# Use LLDP
-
-sub hasCDP {
-    my $juniper = shift;
-
-    return $juniper->hasLLDP();
-}
-
-sub c_ip {
-    my $juniper  = shift;
-    my $partial = shift;
-
-    return $juniper->lldp_ip($partial);
-}
-
-sub c_if {
-    my $juniper  = shift;
-    my $partial = shift;
-
-    return $juniper->lldp_if($partial);
-}
-
-sub c_port {
-    my $juniper  = shift;
-    my $partial = shift;
-
-    return $juniper->lldp_port($partial);
-}
-
-sub c_id {
-    my $juniper  = shift;
-    my $partial = shift;
-
-    return $juniper->lldp_id($partial);
-}
-
-sub c_platform {
-    my $juniper  = shift;
-    my $partial = shift;
-
-    return $juniper->lldp_rem_sysdesc($partial);
-}
-
 # Pseudo ENTITY-MIB methods
 
 # This class supports both virtual chassis (stackable) and physical chassis
@@ -670,10 +627,6 @@ to in a unique fashion.
 
 (C<dot1dBaseBridgeAddress>)
 
-=item $juniper->hasCDP()
-
-Returns whether LLDP is enabled.
-
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -715,35 +668,6 @@ Returns a mapping between C<ifIndex> and the PVID or default VLAN.
 
 Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
 IDs.  These are the VLANs which are members of the egress list for the port.
-
-=back
-
-=head2 Topology information
-
-These methods return Link Layer Discovery Protocol (LLDP) information.  See
-documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
-
-=over
-
-=item $juniper->c_id()
-
-Returns C<lldp_id>
-
-=item $juniper->c_if()
-
-Returns C<lldp_if>
-
-=item $juniper->c_ip()
-
-Returns C<lldp_ip>
-
-=item $juniper->c_platform()
-
-Returns C<lldp_rem_sysdesc>
-
-=item $juniper->c_port()
-
-Returns C<lldp_port>
 
 =back
 

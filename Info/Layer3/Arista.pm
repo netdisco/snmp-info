@@ -120,49 +120,6 @@ sub fw_port {
     return $arista->qb_fw_port($partial);
 }
 
-# Use LLDP
-
-sub hasCDP {
-    my $arista = shift;
-
-    return $arista->hasLLDP();
-}
-
-sub c_ip {
-    my $arista  = shift;
-    my $partial = shift;
-
-    return $arista->lldp_ip($partial);
-}
-
-sub c_if {
-    my $arista  = shift;
-    my $partial = shift;
-
-    return $arista->lldp_if($partial);
-}
-
-sub c_port {
-    my $arista  = shift;
-    my $partial = shift;
-
-    return $arista->lldp_port($partial);
-}
-
-sub c_id {
-    my $arista  = shift;
-    my $partial = shift;
-
-    return $arista->lldp_id($partial);
-}
-
-sub c_platform {
-    my $arista  = shift;
-    my $partial = shift;
-
-    return $arista->lldp_rem_sysdesc($partial);
-}
-
 1;
 __END__
 
@@ -232,10 +189,6 @@ These are methods that return scalar values from SNMP
 
     Returns 'Arista Networks, Inc.'
 
-=item $arista->hasCDP()
-
-    Returns whether LLDP is enabled.
-
 =item $arista->model()
 
 Tries to reference $arista->id() to one of the product MIBs listed above
@@ -278,26 +231,6 @@ Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
 =item $arista->fw_port()
 
 Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
-
-=item $arista->c_id()
-
-Returns LLDP information.
-
-=item $arista->c_if()
-
-Returns LLDP information.
-
-=item $arista->c_ip()
-
-Returns LLDP information.
-
-=item $arista->c_platform()
-
-Returns LLDP information.
-
-=item $arista->c_port()
-
-Returns LLDP information.
 
 =item $arista->i_duplex_admin()
 
