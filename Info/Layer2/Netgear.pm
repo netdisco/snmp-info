@@ -105,49 +105,6 @@ sub serial {
     return $self->ng_serial();
 }
 
-#  Use LLDP
-
-sub hasCDP {
-    my $netgear = shift;
-    return $netgear->hasLLDP();
-}
-
-sub c_ip {
-    my $netgear = shift;
-    my $partial  = shift;
-
-    return $netgear->lldp_ip($partial);
-}
-
-sub c_if {
-    my $netgear = shift;
-    my $partial  = shift;
-
-    return $netgear->lldp_if($partial);
-}
-
-sub c_port {
-    my $netgear = shift;
-    my $partial  = shift;
-
-    return $netgear->lldp_port($partial);
-}
-
-sub c_id {
-    my $netgear = shift;
-    my $partial  = shift;
-
-    return $netgear->lldp_id($partial);
-}
-
-sub c_platform {
-    my $netgear = shift;
-    my $partial  = shift;
-
-    return $netgear->lldp_rem_sysdesc($partial);
-}
-
-
 1;
 
 __END__
@@ -271,51 +228,12 @@ C<Q-BRIDGE-MIB> doesn't return anything.
 
 =back
 
-=head2 Topology information
-
-Based upon the software version devices may support Link Layer Discovery 
-Protocol (LLDP).
-
-=over
-
-=item $netgear->hasCDP()
-
-Returns true if the device is running LLDP.
-
-=item $netgear->c_if()
-
-Returns reference to hash.  Key: iid Value: local device port (interfaces)
-
-=item $netgear->c_ip()
-
-Returns reference to hash.  Key: iid Value: remote IPv4 address
-
-If multiple entries exist with the same local port, c_if(), with the same IPv4
-address, c_ip(), it may be a duplicate entry.
-
-If multiple entries exist with the same local port, c_if(), with different
-IPv4 addresses, c_ip(), there is either a non-LLDP device in between two or
-more devices or multiple devices which are not directly connected.  
-
-Use the data from the Layer2 Topology Table below to dig deeper.
-
-=item $netgear->c_port()
-
-Returns reference to hash. Key: iid Value: remote port (interfaces)
-
-=item $netgear->c_id()
-
-Returns reference to hash. Key: iid Value: string value used to identify the
-chassis component associated with the remote system.
-
-=item $netgear->c_platform()
-
-Returns reference to hash.  Key: iid Value: Remote Device Type
-
-=back
-
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut
