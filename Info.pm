@@ -2275,6 +2275,245 @@ Reference to MIB definition specific to routing protocol.
 
 =back
 
+=head2 Topology Information
+
+Based upon the manufacturer and software version devices may support some 
+combination of Layer 2 topology protocol information.  SNMP::Info
+supports querying Link Layer Discovery Protocol (LLDP), Cisco Discovery
+Protocol (CDP), SynOptics/Bay/Nortel/Avaya Network Management Protocol
+(SONMP), Foundry/Brocade Discovery Protocol (FDP), and Extreme Discovery
+Protocol (EDP). 
+
+For protocol specific information and implementation:
+
+=over
+
+=item LLDP: See L<SNMP::Info::LLDP> for details.
+
+=item CDP: See L<SNMP::Info::CDP> for details.
+
+=item SONMP: See L<SNMP::Info::SONMP> for details.
+
+=item FDP: See L<SNMP::Info::FDP> for details.
+
+=item EDP: See L<SNMP::Info::EDP> for details.
+
+=back
+
+=head3 Topology Capabilties
+
+$info->has_topo()
+
+Reports Layer 2 topology protocols which are supported and running on
+a device.
+
+Returns either a reference to an array of protocols, possible values
+being: 'lldp', 'cdp, 'sonmp', 'fdp','edp' or 'undef' if no protocols are
+supported or running.
+
+=cut
+
+sub has_topo {
+    my $self = shift;
+
+    my @topo_cap;
+    push( @topo_cap, 'lldp' )
+        if ( $self->can('hasLLDP') && $self->hasLLDP() );
+    push( @topo_cap, 'cdp' ) if $self->can('hasCDP') && $self->hasCDP();
+    push( @topo_cap, 'sonmp' )
+        if $self->can('hasSONMP') && $self->hasSONMP();
+    push( @topo_cap, 'fdp' ) if $self->can('hasFDP') && $self->hasFDP();
+    push( @topo_cap, 'edp' ) if $self->can('hasEDP') && $self->hasEDP();
+
+    if (@topo_cap) {
+        return \@topo_cap;
+    }
+    else {
+        return;
+    }
+}
+
+sub _get_topo_data {
+    my $self     = shift;
+    my $partial  = shift;
+    my $topo_cap = shift;
+    my $method   = shift;
+
+    return unless $method =~ /(ip|if|port|id|platform)/;
+
+    my %t_data;
+    foreach my $proto (@$topo_cap) {
+        next unless $proto =~ /(lldp|cdp|sonmp|fdp|edp)/;
+        my $method_name = "$proto" . "_$method";
+        my $cdp = $self->$method_name($partial) || {};
+
+        foreach my $iid ( keys %$cdp ) {
+            my $ip = $cdp->{$iid};
+            next unless defined $ip;
+
+            $t_data{$iid} = $ip;
+        }
+    }
+    return \%t_data; 
+}
+
+=head3 Topology Table Information
+
+The generic topology table methods below will query the
+device for information from the specified topology protocols and return a
+single hash combining all information. As a result, there may be identical
+topology information returned from the two protocols causing duplicate
+entries.  It is the calling program's responsibility to identify any
+duplicate entries and remove duplicates if necessary.  If it is necessary
+to understand which protocol provided the information, utilize the protocol
+specific methods directly rather than the generic methods.
+
+The methods support partial table fetches by providing a partial as the
+first argument.
+
+If a reference to an array is provided as the second argument, those
+protocols will be queried for information.  The supported array values are:
+'lldp', 'cdp, 'sonmp', 'fdp','edp'
+
+If nothing is passed in as the second argument, the methods will call
+has_topo() to determine supported and running topology protocols on the
+device. 
+
+=over
+
+=item $info->c_ip(partial, topology_protocol_arrayref)
+
+Returns reference to hash.  Key: iid, Value: remote IPv4 address
+
+If multiple entries exist with the same local port, c_if(), with the
+same IPv4 address, c_ip(), it may be a duplicate entry.
+
+If multiple entries exist with the same local port, c_if(), with different
+IPv4 addresses, c_ip(), there is either a device in between two or
+more devices utilizing a different topology protocol or multiple devices
+which are not directly connected.  
+
+Use the protocol specific methods to dig deeper.
+
+=cut
+
+sub c_ip {
+    my $self     = shift;
+    my $partial  = shift;
+    my $topo_cap = shift;
+
+    # Default to old behavior if not called with topo_cap
+    if ( !$topo_cap ) {
+        my $topo_test = $self->has_topo();
+        if ($topo_test) {
+            $topo_cap = $topo_test;
+        }
+        else {
+            return;
+        }
+    }
+    return _get_topo_data ($self, $partial, $topo_cap, 'ip');
+}
+
+=item $info->c_if(partial, topology_protocol_arrayref)
+
+Returns reference to hash.  Key: iid, Value: local device port (interfaces)
+
+=cut
+
+sub c_if {
+    my $self     = shift;
+    my $partial  = shift;
+    my $topo_cap = shift;
+
+    # Default to old behavior if not called with topo_cap
+    if ( !$topo_cap ) {
+        my $topo_test = $self->has_topo();
+        if ($topo_test) {
+            $topo_cap = $topo_test;
+        }
+        else {
+            return;
+        }
+    }
+    return _get_topo_data ($self, $partial, $topo_cap, 'if');
+}
+
+=item $info->c_port(partial, topology_protocol_arrayref)
+
+Returns reference to hash. Key: iid, Value: remote port (interfaces)
+
+=cut
+
+sub c_port {
+    my $self     = shift;
+    my $partial  = shift;
+    my $topo_cap = shift;
+
+    # Default to old behavior if not called with topo_cap
+    if ( !$topo_cap ) {
+        my $topo_test = $self->has_topo();
+        if ($topo_test) {
+            $topo_cap = $topo_test;
+        }
+        else {
+            return;
+        }
+    }
+    return _get_topo_data ($self, $partial, $topo_cap, 'port');
+}
+
+=item $info->c_id(partial, topology_protocol_arrayref)
+
+Returns reference to hash. Key: iid, Value: string value used to identify the
+chassis component associated with the remote system.
+
+=cut
+
+sub c_id {
+    my $self     = shift;
+    my $partial  = shift;
+    my $topo_cap = shift;
+
+    # Default to old behavior if not called with topo_cap
+    if ( !$topo_cap ) {
+        my $topo_test = $self->has_topo();
+        if ($topo_test) {
+            $topo_cap = $topo_test;
+        }
+        else {
+            return;
+        }
+    }
+    return _get_topo_data ($self, $partial, $topo_cap, 'id');
+}
+
+=item $info->c_platform(partial, topology_protocol_arrayref)
+
+Returns reference to hash.  Key: iid, Value: Remote Device Type
+
+=cut
+
+sub c_platform {
+    my $self     = shift;
+    my $partial  = shift;
+    my $topo_cap = shift;
+
+    # Default to old behavior if not called with topo_cap
+    if ( !$topo_cap ) {
+        my $topo_test = $self->has_topo();
+        if ($topo_test) {
+            $topo_cap = $topo_test;
+        }
+        else {
+            return;
+        }
+    }
+    return _get_topo_data ($self, $partial, $topo_cap, 'platform');
+}
+
+=back
+
 =head1 SETTING DATA VIA SNMP
 
 This section explains how to use SNMP::Info to do SNMP Set operations.
