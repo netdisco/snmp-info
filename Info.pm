@@ -3894,7 +3894,13 @@ sub _load_attr {
         # raw data
         if ( defined $munge->{$attr} && !$raw ) {
             my $subref = $munge->{$attr};
-            my %munged = map { $_ => &$subref( $localstore->{$_} ) } keys %$localstore;
+            my %munged;
+            foreach my $key ( keys %$localstore ) {
+                my $value = $localstore->{$key};
+                next unless $key;
+                my $munged_value = &$subref($value);
+                $munged{$key} = $munged_value;
+            }
             return \%munged;
         }
         return $localstore;
@@ -3923,8 +3929,15 @@ sub _show_attr {
     my $munge = $self->munge();
 
     if ( defined $munge->{$attr} && !$raw ) {
+        my $localstore = $store->{$attr};
         my $subref = $munge->{$attr};
-        my %munged = map { $_ => &$subref( $store->{$attr}{$_} ) } keys $store->{$attr};
+        my %munged;
+        foreach my $key ( keys %$localstore ) {
+            my $value = $localstore->{$key};
+            next unless $key;
+            my $munged_value = &$subref($value);
+            $munged{$key} = $munged_value;
+        }
         return \%munged;
     }
     else {
