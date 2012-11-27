@@ -55,10 +55,14 @@ $VERSION = '2.09';
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::MAU::GLOBALS,
-    'ps1_type'   => 'nnenvPwrsupType.1',
-    'ps1_status' => 'nnenvPwrsupStatus.1',
-    'ps2_type'   => 'nnenvPwrsupType.2',
-    'ps2_status' => 'nnenvPwrsupStatus.2',
+    'ps1_type'      => 'nnenvPwrsupType.1',
+    'ps1_status'    => 'nnenvPwrsupStatus.1',
+    'ps2_type'      => 'nnenvPwrsupType.2',
+    'ps2_status'    => 'nnenvPwrsupStatus.2',
+    'nn_sys_ver'    => 'nnsysVersion',
+    'nn_ch_model'   => 'nnchassisModel',
+    'nn_ch_op_stat' => 'nnchassisOperStatus',
+    'nn_ch_serial'  => 'nnchassisSerialNumber',
 );
 
 %FUNCS = (
@@ -87,7 +91,7 @@ sub os {
 
 sub os_ver {
     my $tasman  = shift;
-    my $version = $tasman->nnsysVersion() || "";
+    my $version = $tasman->nn_sys_ver() || "";
     my $descr   = $tasman->description()  || "";
 
     # Newer versions
@@ -102,7 +106,7 @@ sub model {
     my $tasman = shift;
 
     my $id        = $tasman->id();
-    my $ch_model = $tasman->nnchassisModel();
+    my $ch_model = $tasman->nn_ch_model();
     
     return $ch_model if $ch_model;
 
@@ -118,12 +122,12 @@ sub serial {
 
     # Newer versions of the software redefined the MIB in a non-backwards
     # compatible manner.  Try the old OID first.
-    my $serial = $tasman->nnchassisOperStatus();
+    my $serial = $tasman->nn_ch_op_stat();
     # Newer versions populate status, serial should contain some numbers
     return $serial if ($serial !~ /^\D+$/);
 
     # Unfortunately newer versions don't seem to populate the newer OID.
-    return $tasman->nnchassisSerialNumber();
+    return $tasman->nn_ch_serial();
 }
 
 1;
@@ -225,8 +229,24 @@ Grabs the os version from C<nnsysVersion>
 (C<nnenvPwrsupType.2>)
 
 =item $tasman->ps2_status()
-
+ 
 (C<nnenvPwrsupStatus.2>)
+
+=item $tasman->nn_sys_ver()
+
+(C<nnsysVersion.0>)
+
+=item $tasman->nn_ch_model()
+
+(C<nnchassisModel.0>)
+
+=item $tasman->nn_ch_op_stat()
+
+(C<nnchassisOperStatus.0>)
+
+=item $tasman->nn_ch_serial()
+
+(C<nnchassisSerialNumber.0>)
 
 =item $tasman->serial()
 
