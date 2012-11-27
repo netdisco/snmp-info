@@ -3413,7 +3413,7 @@ sub _global {
         my $raw  = $method =~ /raw$/;
 
         my $attr = $method;
-        $attr =~ s/^load_//;
+        $attr =~ s/^(load|orig)_//;
         $attr =~ s/_raw$//;
 
         # Get the callback hash for data munging
@@ -3726,7 +3726,7 @@ sub _load_attr {
         my $raw  = $method =~ /raw$/;
 
         my $attr = $method;
-        $attr =~ s/^load_//;
+        $attr =~ s/^(load|orig)_//;
         $attr =~ s/_raw$//;
 
         # Return cached data unless loading or partial
