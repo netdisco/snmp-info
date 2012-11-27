@@ -260,7 +260,7 @@ Time in seconds that CDP messages are kept.
 
 (C<cdpGlobalHoldTime>)
 
-=item  $cdp->cdp_id() 
+=item  $cdp->cdp_gid() 
 
 Returns CDP device ID.  
 

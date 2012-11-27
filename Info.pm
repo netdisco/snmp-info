@@ -2468,6 +2468,8 @@ sub c_port {
 Returns reference to hash. Key: iid, Value: string value used to identify the
 chassis component associated with the remote system.
 
+Note: SONMP does not return this information.
+
 =cut
 
 sub c_id {
