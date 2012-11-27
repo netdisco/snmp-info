@@ -80,19 +80,18 @@ $VERSION = '2.08';
     %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::EDP::FUNCS,
     'fan_state' => 'extremeFanOperational',
-
     # EXTREME-FDB-MIB:extremeFdbMacFdbTable
     'ex_fw_mac'    => 'extremeFdbMacFdbMacAddress',
     'ex_fw_port'   => 'extremeFdbMacFdbPortIfIndex',
     'ex_fw_status' => 'extremeFdbMacFdbStatus',
-
     # EXTREME-VLAN-MIB:extremeVlanIfTable
     'ex_vlan_descr'     => 'extremeVlanIfDescr',
     'ex_vlan_global_id' => 'extremeVlanIfGlobalIdentifier',
-
     # EXTREME-VLAN-MIB:extremeVlanEncapsIfTable
     'ex_vlan_encap_tag' => 'extremeVlanEncapsIfTag',
-
+    # EXTREME-POE-MIB::extremePethPseSlotTable
+    'peth_power_watts'  => 'extremePethSlotPowerLimit',
+    # EXTREME-POE-MIB::extremePethPsePortTable
     'peth_port_power'   => 'extremePethPortMeasuredPower',
 );
 
@@ -781,7 +780,14 @@ F<EXTREME-FDB-MIB> rather than F<BRIDGE-MIB>.
 =item $extreme->peth_port_power()
 
 Power supplied by PoE ports, in milliwatts
-("extremePethPortMeasuredPower")
+
+(C<extremePethPortMeasuredPower>)
+
+=item $extreme->peth_power_watts()
+
+The configured maximum amount of inline power available to the slot.
+
+(C<extremePethSlotPowerLimit>)
 
 =back
 
