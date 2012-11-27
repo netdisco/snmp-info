@@ -53,8 +53,9 @@ $VERSION = '2.08';
 
 %GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, 
 	     %SNMP::Info::LLDP::GLOBALS,
-	     'serial' => 'jnxBoxSerialNo.0',
-	     'mac'    => 'dot1dBaseBridgeAddress',
+	     'serial'    => 'jnxBoxSerialNo.0',
+	     'mac'       => 'dot1dBaseBridgeAddress',
+	     'box_descr' => 'jnxBoxDescr'
 	     );
 
 %FUNCS = ( %SNMP::Info::Layer3::FUNCS, 
@@ -363,7 +364,7 @@ sub e_descr {
     my $juniper = shift;
 
     my $e_index    = $juniper->e_index() || {};
-    my $box_descr  = $juniper->jnxBoxDescr || 0;
+    my $box_descr  = $juniper->box_descr;
     my $contents   = $juniper->jnxContentsDescr() || {};
     my $containers = $juniper->jnxContainersDescr() || {};
 
@@ -620,12 +621,18 @@ Returns serial number
 
 (C<jnxBoxSerialNo.0>)
 
-=item $juniper->serial()
+=item $juniper->mac()
 
 Returns the MAC address used by this bridge when it must be referred
 to in a unique fashion.
 
 (C<dot1dBaseBridgeAddress>)
+
+=item $juniper->box_descr()
+
+The name, model, or detailed description of the device.
+
+(C<jnxBoxDescr.0>)
 
 =back
 
