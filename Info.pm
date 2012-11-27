@@ -2357,9 +2357,9 @@ sub _get_topo_data {
     return \%t_data; 
 }
 
-=head3 Topology Table Information
+=head3 Common Topology Table Information
 
-The generic topology table methods below will query the
+The common topology table methods below will query the
 device for information from the specified topology protocols and return a
 single hash combining all information. As a result, there may be identical
 topology information returned from the two protocols causing duplicate
@@ -2491,6 +2491,8 @@ sub c_id {
 =item $info->c_platform(partial, topology_protocol_arrayref)
 
 Returns reference to hash.  Key: iid, Value: Remote Device Type
+
+Note:  LLDP and EDP do not provide this information.
 
 =cut
 
