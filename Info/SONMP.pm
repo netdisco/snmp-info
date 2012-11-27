@@ -47,7 +47,7 @@ $VERSION = '2.08';
 );
 
 %GLOBALS = (
-    'sonmp_id'  => 's5EnMsTopIpAddr',
+    'sonmp_gid' => 's5EnMsTopIpAddr',
     'sonmp_run' => 's5EnMsTopStatus',
 );
 
@@ -315,7 +315,7 @@ Returns the offset if port numbering does not start at 0.  Defaults to 0.
 
 Is SONMP is active in this device?
 
-=item $sonmp->sonmp_id()
+=item $sonmp->sonmp_gid()
 
 Returns the IP that the device is sending out for its Nmm topology info.
 
