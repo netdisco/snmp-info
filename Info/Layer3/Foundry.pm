@@ -65,6 +65,7 @@ $VERSION = '2.08';
     'ps1_type'   => 'snChasPwrSupplyDescription.1',
     'ps1_status' => 'snChasPwrSupplyOperStatus.1',
     'fan'        => 'snChasFanOperStatus.1',
+    'img_ver'    => 'snAgImgVer',
 
 );
 
@@ -165,7 +166,7 @@ sub vendor {
 sub os_ver {
     my $foundry = shift;
 
-    return $foundry->snAgImgVer() if ( defined $foundry->snAgImgVer() );
+    return $foundry->img_ver() if ( defined $foundry->img_ver() );
 
     # Some older ones don't have this value,so we cull it from the description
     my $descr = $foundry->description();
@@ -398,6 +399,12 @@ Returns the status of the power supply.
 Returns the status of the chassis fan.
 
 (C<snChasFanOperStatus.1>)
+
+=item $foundry->img_ver()
+
+Returns device image version.
+
+(C<snAgImgVer.0>)
 
 =back
 
