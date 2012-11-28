@@ -31,7 +31,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 2.08
+SNMP::Info - Version 2.09
 
 =head1 AUTHOR
 

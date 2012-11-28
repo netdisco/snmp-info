@@ -64,7 +64,7 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 @SNMP::Info::Layer3::C3550::EXPORT_OK = qw//;
 
-$VERSION = '2.08';
+$VERSION = '2.09';
 
 # NOTE: Order creates precedence
 #       Example: v_name exists in Bridge.pm and CiscoVTP.pm
