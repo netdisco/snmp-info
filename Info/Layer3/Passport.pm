@@ -1,7 +1,6 @@
 # SNMP::Info::Layer3::Passport
-# $Id$
 #
-# Copyright (c) 2008 Eric Miller
+# Copyright (c) 2012 Eric Miller
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,6 +29,7 @@
 
 package SNMP::Info::Layer3::Passport;
 
+use warnings;
 use strict;
 use Exporter;
 use SNMP::Info::SONMP;
@@ -80,7 +80,7 @@ sub model {
 
     return $id unless defined $model;
 
-    $model =~ s/^rcA//i;
+    $model =~ s/^rc(A)?//i;
     return $model;
 }
 
@@ -126,9 +126,9 @@ sub i_index {
 
     # Get VLAN Virtual Router Interfaces
     if (!defined $partial
-        or (defined $model
-            and (  ( $partial > 2000 and $model =~ /(86|83|81|16)/ )
-                or ( $partial > 256 and $model =~ /(105|11[05]0|12[05])/ ) )
+        || (defined $model
+            && (  ( $partial > 2000 && $model =~ /(86|83|81|16|VSP)/ )
+                || ( $partial > 256 && $model =~ /(105|11[05]0|12[05])/ ) )
         )
         )
     {
@@ -182,9 +182,9 @@ sub interfaces {
     my $vlan_id = {};
 
     if (!defined $partial
-        or (defined $model
-            and (  ( $partial > 2000 and $model =~ /(86|83|81|16)/ )
-                or ( $partial > 256 and $model =~ /(105|11[05]0|12[05])/ ) )
+        || (defined $model
+            && (  ( $partial > 2000 && $model =~ /(86|83|81|16|VSP)/ )
+                || ( $partial > 256 && $model =~ /(105|11[05]0|12[05])/ ) )
         )
         )
     {
@@ -214,7 +214,7 @@ sub interfaces {
             $if{$index} = 'Cpu.6';
         }
 
-        elsif (( $index > 2000 and $model =~ /(86|83|81|16)/ )
+        elsif (( $index > 2000 and $model =~ /(86|83|81|16|VSP)/ )
             or ( $index > 256 and $model =~ /(105|11[05]0|12[05])/ ) )
         {
 
@@ -255,9 +255,9 @@ sub i_mac {
 
     # Get VLAN Virtual Router Interfaces
     if (!defined $partial
-        or (defined $model
-            and (  ( $partial > 2000 and $model =~ /(86|83|81|16)/ )
-                or ( $partial > 256 and $model =~ /(105|11[05]0|12[05])/ ) )
+        || (defined $model
+            && (  ( $partial > 2000 && $model =~ /(86|83|81|16|VSP)/ )
+                || ( $partial > 256 && $model =~ /(105|11[05]0|12[05])/ ) )
         )
         )
     {
@@ -329,9 +329,9 @@ sub i_description {
 
     # Get VLAN Virtual Router Interfaces
     if (!defined $partial
-        or (defined $model
-            and (  ( $partial > 2000 and $model =~ /(86|83|81|16)/ )
-                or ( $partial > 256 and $model =~ /(105|11[05]0|12[05])/ ) )
+        || (defined $model
+            && (  ( $partial > 2000 && $model =~ /(86|83|81|16|VSP)/ )
+                || ( $partial > 256 && $model =~ /(105|11[05]0|12[05])/ ) )
         )
         )
     {
@@ -365,9 +365,9 @@ sub i_name {
     my %reverse_vlan;
 
     if (!defined $partial
-        or (defined $model
-            and (  ( $partial > 2000 and $model =~ /(86|83|81|16)/ )
-                or ( $partial > 256 and $model =~ /(105|11[05]0|12[05])/ ) )
+        || (defined $model
+            && (  ( $partial > 2000 && $model =~ /(86|83|81|16|VSP)/ )
+                || ( $partial > 256 && $model =~ /(105|11[05]0|12[05])/ ) )
         )
         )
     {
@@ -402,8 +402,8 @@ sub i_name {
                 and $model =~ /(105|11[05]0|12[05])/ )
             )
         {
-            my $vlan_index = $reverse_vlan{$iid};
-            my $vlan_name  = $v_name->{$vlan_index};
+            my $vlan_idx = $reverse_vlan{$iid};
+            my $vlan_name  = $v_name->{$vlan_idx};
             next unless defined $vlan_name;
 
             $i_name{$iid} = $vlan_name;
@@ -510,7 +510,7 @@ sub root_ip {
     my $sonmp_topo_ip   = $passport->sonmp_topo_ip();
 
     # Only 8600 and 1600 have CLIP or Management Virtual IP
-    if ( defined $model and $model =~ /(86|16)/ ) {
+    if ( defined $model and $model =~ /(86|16|VSP)/ ) {
 
         # Return CLIP (CircuitLess IP)
         foreach my $iid ( keys %$rc_ip_type ) {
@@ -683,7 +683,7 @@ sub e_descr {
 
     my $model = $passport->model();
     my $rc_ps = $passport->rc_ps_detail() || {};
-    my $rc_ch = $passport->rcChasType();
+    my $rc_ch = $passport->chassis();
     $rc_ch =~ s/a//;
 
     my %rc_e_descr;
@@ -752,7 +752,7 @@ sub e_type {
 
     my $model = $passport->model();
     my $rc_ps = $passport->rc_ps_type() || {};
-    my $rc_ch = $passport->rcChasType();
+    my $rc_ch = $passport->chassis();
 
     my %rc_e_type;
 
