@@ -181,6 +181,10 @@ These are methods that return scalar value from SNMP
 
 =over
 
+=item $netscreen->model()
+
+(C<chassisModel>)
+
 =item $netscreen->vendor()
 
 Returns 'netscreen'

@@ -135,6 +135,7 @@ sub os_ver {
     my $descr = $nexus->description();
     
     return $1 if ( $descr =~ /\),\s+Version\s+(.+?),/ );
+    return $descr;
 }
 
 sub serial {

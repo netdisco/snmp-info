@@ -1243,6 +1243,11 @@ interface.
 Returns reference to hash.  Current transmit power, in milliwatts, of the
 radio interface.
 
+=item $airespace->i_ssidmac()
+
+With the same keys as i_ssidlist, returns the Basic service set
+identification (BSSID), MAC address, the AP is using for the SSID. 
+
 =back
 
 =head2 Dot11 Ess Table  (C<bsnDot11EssTable>)

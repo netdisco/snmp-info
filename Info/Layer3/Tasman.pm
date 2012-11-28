@@ -248,6 +248,25 @@ See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
+=over 4
+
+=item $stack->i_duplex_admin()
+
+Returns reference to hash of iid to administrative duplex setting.
+
+First checks for fixed gigabit ports which are always full duplex. Next checks
+the port administrative speed (C<portAdminSpeed>) which if set to
+autonegotiate then the duplex will also autonegotiate, otherwise it uses the
+reported port duplex (C<portDuplex>).
+
+=item $stack->i_speed_admin()
+
+Returns reference to hash of iid to administrative speed setting.
+
+C<portAdminSpeed>
+
+=back
+
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
