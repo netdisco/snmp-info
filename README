@@ -5,7 +5,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 2.08
+    SNMP::Info - Version 2.09
 
 AUTHOR
 
@@ -275,6 +275,11 @@ SUBCLASSES
         CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
 
         See documentation in SNMP::Info::CiscoVTP for details.
+
+    SNMP::Info::EDP
+        Extreme Discovery Protocol. EXTREME-EDP-MIB
+
+        See documentation in SNMP::Info::EDP for details.
 
     SNMP::Info::Entity
         ENTITY-MIB. Used for device info in Cisco and other vendors.
@@ -642,6 +647,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Netscreen for details.
 
+        SNMP::Info::Layer3::Nexus
+            Subclass for Cisco Nexus devices running NX-OS
+
+            See documentation in SNMP::Info::Layer3::Nexus for details.
+
         SNMP::Info::Layer3::PacketFront
             Subclass for PacketFront DRG series CPE.
 
@@ -668,6 +678,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Sun for details.
 
+        SNMP::Info::Layer3::Tasman
+            Subclass for Avaya Secure Routers.
+
+            See documentation in SNMP::Info::Layer3::Tasman for details.
+
         SNMP::Info::Layer3::Timetra
             Alcatel-Lucent SR Class.
 
@@ -682,6 +697,11 @@ SUBCLASSES
             SNMP Interface to APC UPS devices
 
             See documentation in SNMP::Info::Layer7::APC for details.
+
+        SNMP::Info::Layer7::Neoteris
+            SNMP Interface to Juniper SSL VPN appliances
+
+            See documentation in SNMP::Info::Layer7::Neoteris for details.
 
 Thanks
 
