@@ -66,6 +66,7 @@ $VERSION = '2.08';
     'ps1_status' => 'snChasPwrSupplyOperStatus.1',
     'fan'        => 'snChasFanOperStatus.1',
     'img_ver'    => 'snAgImgVer',
+    'ch_serial'  => 'snChasSerNum',
 
 );
 
@@ -205,10 +206,10 @@ sub serial {
     my $foundry = shift;
 
     # Return chassis serial number if available
-    return $foundry->snChasSerNum() if ( $foundry->snChasSerNum() );
+    return $foundry->ch_serial() if ( $foundry->ch_serial() );
 
     # If no chassis serial use first module serial
-    my $mod_serials = $foundry->snAgentConfigModuleSerialNumber();
+    my $mod_serials = $foundry->snAgentConfigModuleSerialNumber() || {};
 
     foreach my $mod ( sort keys %$mod_serials ) {
         my $serial = $mod_serials->{$mod} || '';
@@ -405,6 +406,12 @@ Returns the status of the chassis fan.
 Returns device image version.
 
 (C<snAgImgVer.0>)
+
+=item $foundry->ch_serial()
+
+Returns chassis serial number.
+
+(C<snChasSerNum.0>)
 
 =back
 
