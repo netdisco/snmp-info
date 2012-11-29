@@ -53,37 +53,37 @@ $VERSION = '2.09';
     'cdp_run'      => 'cdpGlobalRun',
     'cdp_interval' => 'cdpGlobalMessageInterval',
     'cdp_holdtime' => 'cdpGlobalHoldTime',
-    'cdp_id'       => 'cdpGlobalDeviceId',
+    'cdp_gid'       => 'cdpGlobalDeviceId',
 );
 
 %FUNCS = (
-    'c_index'        => 'cdpCacheIfIndex',
-    'c_proto'        => 'cdpCacheAddressType',
-    'c_addr'         => 'cdpCacheAddress',
-    'c_ver'          => 'cdpCacheVersion',
-    'c_id'           => 'cdpCacheDeviceId',
-    'c_port'         => 'cdpCacheDevicePort',
-    'c_platform'     => 'cdpCachePlatform',
-    'c_capabilities' => 'cdpCacheCapabilities',
-    'c_domain'       => 'cdpCacheVTPMgmtDomain',
-    'c_vlan'         => 'cdpCacheNativeVLAN',
-    'c_duplex'       => 'cdpCacheDuplex',
-    'c_power'        => 'cdpCachePowerConsumption',
-    'c_pri_mgmt_type'=> 'cdpCachePrimaryMgmtAddrType',
-    'c_pri_mgmt_addr'=> 'cdpCachePrimaryMgmtAddr',
-    'c_sec_mgmt_type'=> 'cdpCacheSecondaryMgmtAddrType',
-    'c_sec_mgmt_addr'=> 'cdpCacheSecondaryMgmtAddr',
+    'cdp_index'        => 'cdpCacheIfIndex',
+    'cdp_proto'        => 'cdpCacheAddressType',
+    'cdp_addr'         => 'cdpCacheAddress',
+    'cdp_ver'          => 'cdpCacheVersion',
+    'cdp_id'           => 'cdpCacheDeviceId',
+    'cdp_port'         => 'cdpCacheDevicePort',
+    'cdp_platform'     => 'cdpCachePlatform',
+    'cdp_capabilities' => 'cdpCacheCapabilities',
+    'cdp_domain'       => 'cdpCacheVTPMgmtDomain',
+    'cdp_vlan'         => 'cdpCacheNativeVLAN',
+    'cdp_duplex'       => 'cdpCacheDuplex',
+    'cdp_power'        => 'cdpCachePowerConsumption',
+    'cdp_pri_mgmt_type'=> 'cdpCachePrimaryMgmtAddrType',
+    'cdp_pri_mgmt_addr'=> 'cdpCachePrimaryMgmtAddr',
+    'cdp_sec_mgmt_type'=> 'cdpCacheSecondaryMgmtAddrType',
+    'cdp_sec_mgmt_addr'=> 'cdpCacheSecondaryMgmtAddr',
 );
 
 %MUNGE = (
-    'c_capabilities' => \&SNMP::Info::munge_caps,
-    'c_platform'     => \&SNMP::Info::munge_null,
-    'c_domain'       => \&SNMP::Info::munge_null,
-    'c_port'         => \&SNMP::Info::munge_null,
-    'c_id'           => \&SNMP::Info::munge_null,
-    'c_ver'          => \&SNMP::Info::munge_null,
-    'c_ip'           => \&SNMP::Info::munge_ip,
-    'c_power'        => \&munge_power,
+    'cdp_capabilities' => \&SNMP::Info::munge_caps,
+    'cdp_platform'     => \&SNMP::Info::munge_null,
+    'cdp_domain'       => \&SNMP::Info::munge_null,
+    'cdp_port'         => \&SNMP::Info::munge_null,
+    'cdp_id'           => \&SNMP::Info::munge_null,
+    'cdp_ver'          => \&SNMP::Info::munge_null,
+    'cdp_ip'           => \&SNMP::Info::munge_ip,
+    'cdp_power'        => \&munge_power,
 
 );
 
@@ -101,63 +101,63 @@ sub hasCDP {
 
     # SNMP v1 clients dont have the globals
     if ( defined $ver and $ver == 1 ) {
-        my $c_ip = $cdp->c_ip();
+        my $cdp_ip = $cdp->cdp_ip();
 
         # See if anything in cdp cache, if so we have cdp
-        return 1 if ( defined $c_ip and scalar( keys %$c_ip ) );
+        return 1 if ( defined $cdp_ip and scalar( keys %$cdp_ip ) );
         return;
     }
 
     return $cdp->cdp_run();
 }
 
-sub c_if {
+sub cdp_if {
     my $cdp = shift;
 
     # See if by some miracle Cisco implemented the cdpCacheIfIndex entry
-    my $c_index = $cdp->c_index();
-    return $c_index if defined $c_index;
+    my $cdp_index = $cdp->cdp_index();
+    return $cdp_index if defined $cdp_index;
 
     # Nope, didn't think so. Now we fake it.
-    my $c_ip = $cdp->c_ip();
-    unless ( defined $c_ip ) {
+    my $cdp_ip = $cdp->cdp_ip();
+    unless ( defined $cdp_ip ) {
         $cdp->error_throw(
-            "SNMP::Info::CDP:c_if() - Device doesn't have cdp_ip() data.  Can't fake cdp_index()"
+            "SNMP::Info::CDP:cdp_if() - Device doesn't have cdp_ip() data.  Can't fake cdp_index()"
         );
         return;
     }
 
-    my %c_if;
-    foreach my $key ( keys %$c_ip ) {
+    my %cdp_if;
+    foreach my $key ( keys %$cdp_ip ) {
         next unless defined $key;
         my $iid = $key;
 
         # Truncate .1 from cdp cache entry
         $iid =~ s/\.\d+$//;
-        $c_if{$key} = $iid;
+        $cdp_if{$key} = $iid;
     }
 
-    return \%c_if;
+    return \%cdp_if;
 }
 
-sub c_ip {
+sub cdp_ip {
     my $cdp     = shift;
     my $partial = shift;
 
-    my $c_addr  = $cdp->c_addr($partial)  || {};
-    my $c_proto = $cdp->c_proto($partial) || {};
+    my $cdp_addr  = $cdp->cdp_addr($partial)  || {};
+    my $cdp_proto = $cdp->cdp_proto($partial) || {};
 
-    my %c_ip;
-    foreach my $key ( keys %$c_addr ) {
-        my $addr  = $c_addr->{$key};
-        my $proto = $c_proto->{$key};
+    my %cdp_ip;
+    foreach my $key ( keys %$cdp_addr ) {
+        my $addr  = $cdp_addr->{$key};
+        my $proto = $cdp_proto->{$key};
         next unless defined $addr;
         next if ( defined $proto and $proto ne 'ip' );
 
         my $ip = join( '.', unpack( 'C4', $addr ) );
-        $c_ip{$key} = $ip;
+        $cdp_ip{$key} = $ip;
     }
-    return \%c_ip;
+    return \%cdp_ip;
 }
 
 1;
@@ -188,15 +188,15 @@ Max Baker
 
  # Print out a map of device ports with CDP neighbors:
  my $interfaces = $cdp->interfaces();
- my $c_if       = $cdp->c_if();
- my $c_ip       = $cdp->c_ip();
- my $c_port     = $cdp->c_port();
+ my $cdp_if       = $cdp->cdp_if();
+ my $cdp_ip       = $cdp->cdp_ip();
+ my $cdp_port     = $cdp->cdp_port();
 
- foreach my $cdp_key (keys %$c_ip){
-    my $iid           = $c_if->{$cdp_key};
+ foreach my $cdp_key (keys %$cdp_ip){
+    my $iid           = $cdp_if->{$cdp_key};
     my $port          = $interfaces->{$iid};
-    my $neighbor      = $c_ip->{$cdp_key};
-    my $neighbor_port = $c_port->{$cdp_key};
+    my $neighbor      = $cdp_ip->{$cdp_key};
+    my $neighbor_port = $cdp_port->{$cdp_key};
     print "Port : $port connected to $neighbor / $neighbor_port\n";
  }
 
@@ -260,7 +260,7 @@ Time in seconds that CDP messages are kept.
 
 (C<cdpGlobalHoldTime>)
 
-=item  $cdp->cdp_id() 
+=item  $cdp->cdp_gid() 
 
 Returns CDP device ID.  
 
@@ -280,7 +280,7 @@ to a hash.
 
 =over
 
-=item $cdp->c_capabilities()
+=item $cdp->cdp_capabilities()
 
 Returns Device Functional Capabilities.  Results are munged into an ascii
 binary string, 7 digits long, MSB.  Each digit represents a bit from the
@@ -319,108 +319,108 @@ information.
 
 (C<cdpCacheCapabilities>)
 
-=item $cdp->c_domain()
+=item $cdp->cdp_domain()
 
 Returns remote VTP Management Domain as defined in
 C<CISCO-VTP-MIB::managementDomainName>
 
 (C<cdpCacheVTPMgmtDomain>)
 
-=item $cdp->c_duplex() 
+=item $cdp->cdp_duplex() 
 
 Returns the port duplex status from remote devices.
 
 (C<cdpCacheDuplex>)
 
-=item $cdp->c_id()
+=item $cdp->cdp_id()
 
 Returns remote device id string
 
 (C<cdpCacheDeviceId>)
 
-=item $cdp->c_if()
+=item $cdp->cdp_if()
 
 Returns the mapping to the SNMP Interface Table.
 
-Note that a lot devices don't implement $cdp->c_index(),  So if it isn't
+Note that a lot devices don't implement $cdp->cdp_index(),  So if it isn't
 around, we fake it. 
 
 In order to map the cdp table entry back to the interfaces() entry, we
 truncate the last number off of it :
 
   # it exists, yay.
-  my $c_index     = $device->c_index();
-  return $c_index if defined $c_index;
+  my $cdp_index     = $device->cdp_index();
+  return $cdp_index if defined $cdp_index;
 
   # if not, let's fake it
-  my $c_ip       = $device->c_ip();
+  my $cdp_ip       = $device->cdp_ip();
     
-  my %c_if
-  foreach my $key (keys %$c_ip){
+  my %cdp_if
+  foreach my $key (keys %$cdp_ip){
       $iid = $key;
       ## Truncate off .1 from cdp response
       $iid =~ s/\.\d+$//;
-      $c_if{$key} = $iid;
+      $cdp_if{$key} = $iid;
   }
  
-  return \%c_if;
+  return \%cdp_if;
 
 
-=item $cdp->c_index()
+=item $cdp->cdp_index()
 
 Returns the mapping to the SNMP2 Interface table for CDP Cache Entries. 
 
-Most devices don't implement this, so you probably want to use $cdp->c_if()
+Most devices don't implement this, so you probably want to use $cdp->cdp_if()
 instead.
 
-See c_if() entry.
+See cdp_if() entry.
 
 (C<cdpCacheIfIndex>)
 
-=item  $cdp->c_ip()
+=item  $cdp->cdp_ip()
 
-If $cdp->c_proto() is supported, returns remote IPV4 address only.  Otherwise
+If $cdp->cdp_proto() is supported, returns remote IPV4 address only.  Otherwise
 it will return all addresses.
 
 (C<cdpCacheAddress>)
 
-=item  $cdp->c_addr()
+=item  $cdp->cdp_addr()
 
 Returns remote address
 
 (C<cdpCacheAddress>)
 
-=item $cdp->c_platform() 
+=item $cdp->cdp_platform() 
 
 Returns remote platform id 
 
 (C<cdpCachePlatform>)
 
-=item $cdp->c_port()
+=item $cdp->cdp_port()
 
 Returns remote port ID
 
 (C<cdpDevicePort>)
 
-=item  $cdp->c_proto()
+=item  $cdp->cdp_proto()
 
 Returns remote address type received.  Usually IP.
 
 (C<cdpCacheAddressType>)
 
-=item $cdp->c_ver() 
+=item $cdp->cdp_ver() 
 
 Returns remote hardware version
 
 (C<cdpCacheVersion>)
 
-=item $cdp->c_vlan()
+=item $cdp->cdp_vlan()
 
 Returns the remote interface native VLAN.
 
 (C<cdpCacheNativeVLAN>)
 
-=item $cdp->c_power()
+=item $cdp->cdp_power()
 
 Returns the amount of power consumed by remote device in milliwatts munged
 for decimal placement.

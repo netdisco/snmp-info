@@ -130,42 +130,6 @@ sub i_ignore {
     return \%i_ignore;
 }
 
-# Use LLDP
-sub hasCDP {
-    my $netsnmp = shift;
-    return $netsnmp->hasLLDP();
-}
-
-sub c_ip {
-    my $netsnmp  = shift;
-    my $partial = shift;
-    return $netsnmp->lldp_ip($partial);
-}
-
-sub c_if {
-    my $netsnmp  = shift;
-    my $partial = shift;
-    return $netsnmp->lldp_if($partial);
-}
-
-sub c_port {
-    my $netsnmp  = shift;
-    my $partial = shift;
-    return $netsnmp->lldp_port($partial);
-}
-
-sub c_id {
-    my $netsnmp  = shift;
-    my $partial = shift;
-    return $netsnmp->lldp_id($partial);
-}
-
-sub c_platform {
-    my $netsnmp  = shift;
-    my $partial = shift;
-    return $netsnmp->lldp_rem_sysdesc($partial);
-}
-
 1;
 __END__
 
@@ -275,46 +239,6 @@ to a hash.
 Returns reference to hash.  Increments value of IID if port is to be ignored.
 
 Ignores loopback
-
-=back
-
-=head2 Topology information
-
-Link Layer Discovery Protocol (LLDP) support.  The device must be running
-an optional LLDP agent, such as lldpd, which can integrate with the SNMP agent. 
-
-=over
-
-=item $netsnmp->hasCDP()
-
-Returns true if the device is running LLDP.
-
-=item $netsnmp->c_if()
-
-Returns reference to hash.  Key: iid Value: local device port (interfaces)
-
-=item $netsnmp->c_ip()
-
-Returns reference to hash.  Key: iid Value: remote IPv4 address
-
-If multiple entries exist with the same local port, c_if(), with different
-IPv4 addresses, c_ip(), there is either a non-LLDP device in between two
-or more devices or multiple devices which are not directly connected.  
-
-Use the data from the Layer2 Topology Table below to dig deeper.
-
-=item $netsnmp->c_port()
-
-Returns reference to hash. Key: iid Value: remote port (interfaces)
-
-=item $netsnmp->c_id()
-
-Returns reference to hash. Key: iid Value: string value used to identify the
-chassis component associated with the remote system.
-
-=item $netsnmp->c_platform()
-
-Returns reference to hash.  Key: iid Value: Remote Device Type
 
 =back
 

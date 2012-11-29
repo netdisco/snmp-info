@@ -1,7 +1,6 @@
 # SNMP::Info::SONMP
-# $Id$
 #
-# Copyright (c) 2008 Eric Miller
+# Copyright (c) 2012 Eric Miller
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,6 +29,7 @@
 
 package SNMP::Info::SONMP;
 
+use warnings;
 use strict;
 use Exporter;
 use SNMP::Info;
@@ -47,8 +47,8 @@ $VERSION = '2.09';
 );
 
 %GLOBALS = (
-    'cdp_id'  => 's5EnMsTopIpAddr',
-    'cdp_run' => 's5EnMsTopStatus',
+    'sonmp_gid' => 's5EnMsTopIpAddr',
+    'sonmp_run' => 's5EnMsTopStatus',
 );
 
 %FUNCS = (
@@ -77,12 +77,14 @@ sub port_offset {
     return 0;
 }
 
-sub hasCDP {
+sub hasSONMP {
     my $sonmp = shift;
-    return $sonmp->cdp_run();
+
+    return 1 if defined $sonmp->sonmp_run();
+    return;
 }
 
-sub c_if {
+sub sonmp_if {
     my $sonmp   = shift;
     my $partial = shift;
 
@@ -93,7 +95,7 @@ sub c_if {
     my $port_offset     = $sonmp->port_offset();
     my $model           = $sonmp->model();
 
-    my %c_if;
+    my %sonmp_if;
     foreach my $entry ( keys %$sonmp_topo_port ) {
         my $port = $sonmp_topo_port->{$entry};
         next unless defined $port;
@@ -118,31 +120,31 @@ sub c_if {
         my $index = ( ( $slot - $slot_offset ) * $index_factor )
             + ( $port - $port_offset );
 
-        $c_if{$entry} = $index;
+        $sonmp_if{$entry} = $index;
     }
-    return \%c_if;
+    return \%sonmp_if;
 }
 
-sub c_ip {
+sub sonmp_ip {
     my $sonmp   = shift;
     my $partial = shift;
 
     my $sonmp_topo_port = $sonmp->sonmp_topo_port($partial) || {};
     my $sonmp_topo_ip   = $sonmp->sonmp_topo_ip($partial)   || {};
 
-    my %c_ip;
+    my %sonmp_ip;
     foreach my $entry ( keys %$sonmp_topo_ip ) {
         my $port = $sonmp_topo_port->{$entry};
         next unless defined $port;
         next if $port == 0;
 
         my $ip = $sonmp_topo_ip->{$entry};
-        $c_ip{$entry} = $ip;
+        $sonmp_ip{$entry} = $ip;
     }
-    return \%c_ip;
+    return \%sonmp_ip;
 }
 
-sub c_port {
+sub sonmp_port {
     my $sonmp   = shift;
     my $partial = shift;
 
@@ -150,7 +152,7 @@ sub c_port {
     my $sonmp_topo_seg      = $sonmp->sonmp_topo_seg($partial)      || {};
     my $sonmp_topo_platform = $sonmp->sonmp_topo_platform($partial) || {};
 
-    my %c_port;
+    my %sonmp_port;
     foreach my $entry ( keys %$sonmp_topo_seg ) {
         my $port = $sonmp_topo_port->{$entry};
         next unless defined $port;
@@ -161,12 +163,12 @@ sub c_port {
 
         # AP-222x Series does not adhere to port numbering
         if ( $platform =~ /AccessPoint/i ) {
-            $c_port{$entry} = 'dp0';
+            $sonmp_port{$entry} = 'dp0';
         }
 
         # BayHubs send the lower three bytes of the MAC not the slot/port
         elsif ( $seg > 4000 ) {
-            $c_port{$entry} = 'unknown';
+            $sonmp_port{$entry} = 'unknown';
         }
         else {
 
@@ -174,20 +176,20 @@ sub c_port {
             my $remote_port = $seg % 256;
             my $remote_slot = int( $seg / 256 );
 
-            $c_port{$entry} = "$remote_slot.$remote_port";
+            $sonmp_port{$entry} = "$remote_slot.$remote_port";
         }
     }
-    return \%c_port;
+    return \%sonmp_port;
 }
 
-sub c_platform {
+sub sonmp_platform {
     my $sonmp   = shift;
     my $partial = shift;
 
     my $sonmp_topo_port     = $sonmp->sonmp_topo_port($partial)     || {};
     my $sonmp_topo_platform = $sonmp->sonmp_topo_platform($partial) || {};
 
-    my %c_platform;
+    my %sonmp_platform;
     foreach my $entry ( keys %$sonmp_topo_platform ) {
         my $port = $sonmp_topo_port->{$entry};
         next unless defined $port;
@@ -195,9 +197,9 @@ sub c_platform {
 
         my $platform = $sonmp_topo_platform->{$entry};
 
-        $c_platform{$entry} = $platform;
+        $sonmp_platform{$entry} = $platform;
     }
-    return \%c_platform;
+    return \%sonmp_platform;
 }
 
 sub mac {
@@ -242,19 +244,19 @@ Eric Miller
  my $class = $sonmp->class();
  print " Using device sub class : $class\n";
 
- $hascdp   = $sonmp->hasCDP() ? 'yes' : 'no';
+ $hassonmp   = $sonmp->hasSONMP() ? 'yes' : 'no';
 
  # Print out a map of device ports with CDP neighbors:
  my $interfaces = $sonmp->interfaces();
- my $c_if       = $sonmp->c_if();
- my $c_ip       = $sonmp->c_ip();
- my $c_port     = $sonmp->c_port();
+ my $sonmp_if       = $sonmp->sonmp_if();
+ my $sonmp_ip       = $sonmp->sonmp_ip();
+ my $sonmp_port     = $sonmp->sonmp_port();
 
- foreach my $cdp_key (keys %$c_ip){
-    my $iid           = $c_if->{$cdp_key};
+ foreach my $sonmp_key (keys %$sonmp_ip){
+    my $iid           = $sonmp_if->{$sonmp_key};
     my $port          = $interfaces->{$iid};
-    my $neighbor      = $c_ip->{$cdp_key};
-    my $neighbor_port = $c_port->{$cdp_key};
+    my $neighbor      = $sonmp_ip->{$sonmp_key};
+    my $neighbor_port = $sonmp_port->{$sonmp_key};
     print "Port : $port connected to $neighbor / $neighbor_port\n";
  }
 
@@ -266,8 +268,8 @@ through SNMP.
 
 SONMP is a Layer 2 protocol that supplies topology information of devices that
 also speak SONMP, mostly switches and hubs.  SONMP is implemented in
-SynOptics, Bay, and Nortel devices.  SONMP has been rebranded by Bay then
-Nortel and is know by several different names, most recently Nortel
+SynOptics, Bay, Nortel, and Avaya devices.  SONMP has been rebranded by Bay
+then Nortel and may be referred to by several different names, including Nortel
 Discovery Protocol (NDP).
 
 Create or use a device subclass that inherits this class.  Do not use
@@ -309,17 +311,17 @@ Returns the offset if slot numbering does not start at 0.  Defaults to 1.
 
 Returns the offset if port numbering does not start at 0.  Defaults to 0. 
 
-=item  $cdp->hasCDP()
+=item  $sonmp->hasSONMP()
 
 Is SONMP is active in this device?
 
-=item $sonmp->cdp_id()
+=item $sonmp->sonmp_gid()
 
 Returns the IP that the device is sending out for its Nmm topology info.
 
 (C<s5EnMsTopIpAddr>)
 
-=item $sonmp->cdp_run()
+=item $sonmp->sonmp_run()
 
 Returns true if SONMP is on for this device. 
 
@@ -386,31 +388,31 @@ bay_topo_seg() is local.
 
 =back
 
-=head2 Pseudo CDP information
+=head2 Common topology information
 
 All entries with port=0 are local and ignored.
 
 =over
 
-=item $sonmp->c_if()
+=item $sonmp->sonmp_if()
 
 Returns reference to hash.  Key: IID, Value: Local port (interfaces)
 
-=item $sonmp->c_ip()
+=item $sonmp->sonmp_ip()
 
 Returns reference to hash.  Key: IID, Value: Remote IP address
 
-If multiple entries exist with the same local port, c_if(), with different
-IPv4 addresses, c_ip(), there is either a non SONMP device in between two or
+If multiple entries exist with the same local port, sonmp_if(), with different
+IPv4 addresses, sonmp_ip(), there is either a non SONMP device in between two or
 more devices or multiple devices which are not directly connected.  
 
 Use the data from the Layer2 Topology Table below to dig deeper.
 
-=item $sonmp->c_port()
+=item $sonmp->sonmp_port()
 
 Returns reference to hash. Key: IID, Value: Remote port (interfaces)
 
-=item $sonmp->c_platform()
+=item $sonmp->sonmp_platform()
 
 Returns reference to hash. Key: IID, Value: Remote device type
 

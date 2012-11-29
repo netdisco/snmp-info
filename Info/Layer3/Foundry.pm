@@ -65,6 +65,8 @@ $VERSION = '2.09';
     'ps1_type'   => 'snChasPwrSupplyDescription.1',
     'ps1_status' => 'snChasPwrSupplyOperStatus.1',
     'fan'        => 'snChasFanOperStatus.1',
+    'img_ver'    => 'snAgImgVer',
+    'ch_serial'  => 'snChasSerNum',
 
 );
 
@@ -165,7 +167,7 @@ sub vendor {
 sub os_ver {
     my $foundry = shift;
 
-    return $foundry->snAgImgVer() if ( defined $foundry->snAgImgVer() );
+    return $foundry->img_ver() if ( defined $foundry->img_ver() );
 
     # Some older ones don't have this value,so we cull it from the description
     my $descr = $foundry->description();
@@ -204,10 +206,10 @@ sub serial {
     my $foundry = shift;
 
     # Return chassis serial number if available
-    return $foundry->snChasSerNum() if ( $foundry->snChasSerNum() );
+    return $foundry->ch_serial() if ( $foundry->ch_serial() );
 
     # If no chassis serial use first module serial
-    my $mod_serials = $foundry->snAgentConfigModuleSerialNumber();
+    my $mod_serials = $foundry->snAgentConfigModuleSerialNumber() || {};
 
     foreach my $mod ( sort keys %$mod_serials ) {
         my $serial = $mod_serials->{$mod} || '';
@@ -266,134 +268,6 @@ sub stp_p_state {
 
     return $foundry->SUPER::stp_p_state($partial) || {};
 
-}
-
-#  Use FDP and/or LLDP
-
-sub hasCDP {
-    my $foundry = shift;
-
-    return $foundry->hasLLDP() || $foundry->hasFDP();
-}
-
-sub c_ip {
-    my $foundry = shift;
-    my $partial = shift;
-
-    my $cdp  = $foundry->SUPER::c_ip($partial) || {};
-    my $lldp = $foundry->lldp_ip($partial)     || {};
-
-    my %c_ip;
-    foreach my $iid ( keys %$cdp ) {
-        my $ip = $cdp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $ip = $lldp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-    return \%c_ip;
-}
-
-sub c_if {
-    my $foundry = shift;
-    my $partial = shift;
-
-    my $lldp = $foundry->lldp_if($partial)     || {};
-    my $cdp  = $foundry->SUPER::c_if($partial) || {};
-
-    my %c_if;
-    foreach my $iid ( keys %$cdp ) {
-        my $if = $cdp->{$iid};
-        next unless defined $if;
-
-        $c_if{$iid} = $if;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $if = $lldp->{$iid};
-        next unless defined $if;
-
-        $c_if{$iid} = $if;
-    }
-    return \%c_if;
-}
-
-sub c_port {
-    my $foundry = shift;
-    my $partial = shift;
-
-    my $lldp = $foundry->lldp_port($partial)     || {};
-    my $cdp  = $foundry->SUPER::c_port($partial) || {};
-
-    my %c_port;
-    foreach my $iid ( keys %$cdp ) {
-        my $port = $cdp->{$iid};
-        next unless defined $port;
-
-        $c_port{$iid} = $port;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $port = $lldp->{$iid};
-        next unless defined $port;
-
-        $c_port{$iid} = $port;
-    }
-    return \%c_port;
-}
-
-sub c_id {
-    my $foundry = shift;
-    my $partial = shift;
-
-    my $lldp = $foundry->lldp_id($partial)     || {};
-    my $cdp  = $foundry->SUPER::c_id($partial) || {};
-
-    my %c_id;
-    foreach my $iid ( keys %$cdp ) {
-        my $id = $cdp->{$iid};
-        next unless defined $id;
-
-        $c_id{$iid} = $id;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $id = $lldp->{$iid};
-        next unless defined $id;
-
-        $c_id{$iid} = $id;
-    }
-    return \%c_id;
-}
-
-sub c_platform {
-    my $foundry = shift;
-    my $partial = shift;
-
-    my $lldp = $foundry->lldp_rem_sysdesc($partial)  || {};
-    my $cdp  = $foundry->SUPER::c_platform($partial) || {};
-
-    my %c_platform;
-    foreach my $iid ( keys %$cdp ) {
-        my $platform = $cdp->{$iid};
-        next unless defined $platform;
-
-        $c_platform{$iid} = $platform;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $platform = $lldp->{$iid};
-        next unless defined $platform;
-
-        $c_platform{$iid} = $platform;
-    }
-    return \%c_platform;
 }
 
 1;
@@ -527,6 +401,18 @@ Returns the status of the chassis fan.
 
 (C<snChasFanOperStatus.1>)
 
+=item $foundry->img_ver()
+
+Returns device image version.
+
+(C<snAgImgVer.0>)
+
+=item $foundry->ch_serial()
+
+Returns chassis serial number.
+
+(C<snChasSerNum.0>)
+
 =back
 
 =head2 Global Methods imported from SNMP::Info::Layer3
@@ -604,54 +490,6 @@ Returns reference to hash.  Current Port Type .
 Returns reference to hash.  Current Port Speed. 
 
 (C<snSwPortInfoSpeed>)
-
-=back
-
-=head2 Topology information
-
-Based upon the software version devices may support Foundry Discovery
-Protocol (FDP) and Link Layer Discovery Protocol (LLDP). These
-methods will query both and return the combination of all information. As a
-result, there may be identical topology information returned from the two
-protocols causing duplicate entries.  It is the calling program's
-responsibility to identify any duplicate entries and remove duplicates if
-necessary.
-
-=over
-
-=item $foundry->hasCDP()
-
-Returns true if the device is running either FDP or LLDP.
-
-=item $foundry->c_if()
-
-Returns reference to hash.  Key: iid Value: local device port (interfaces)
-
-=item $foundry->c_ip()
-
-Returns reference to hash.  Key: iid Value: remote IPv4 address
-
-If multiple entries exist with the same local port, c_if(), with the same IPv4
-address, c_ip(), it may be a duplicate entry.
-
-If multiple entries exist with the same local port, c_if(), with different
-IPv4 addresses, c_ip(), there is either a non-FDP/LLDP device in between two
-or more devices or multiple devices which are not directly connected.  
-
-Use the data from the Layer2 Topology Table below to dig deeper.
-
-=item $foundry->c_port()
-
-Returns reference to hash. Key: iid Value: remote port (interfaces)
-
-=item $foundry->c_id()
-
-Returns reference to hash. Key: iid Value: string value used to identify the
-chassis component associated with the remote system.
-
-=item $foundry->c_platform()
-
-Returns reference to hash.  Key: iid Value: Remote Device Type
 
 =back
 

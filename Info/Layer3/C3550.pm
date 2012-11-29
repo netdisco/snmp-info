@@ -236,141 +236,6 @@ sub cisco_comm_indexing {
     return 1;
 }
 
-#  Use CDP and/or LLDP
-sub hasCDP {
-    my $c3550 = shift;
-    return $c3550->hasLLDP() || $c3550->SUPER::hasCDP();
-}
-
-sub c_ip {
-    my $c3550      = shift;
-    my $partial = shift;
-
-    my $cdp  = $c3550->SUPER::c_ip($partial) || {};
-    my $lldp = $c3550->lldp_ip($partial)     || {};
-
-    my %c_ip;
-    foreach my $iid ( keys %$cdp ) {
-        my $ip = $cdp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $ip = $lldp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-    return \%c_ip;
-}
-
-sub c_if {
-    my $c3550      = shift;
-    my $partial = shift;
-
-    my $cdp  = $c3550->SUPER::c_if($partial)  || {};
-
-    my %c_if;
-    foreach my $iid ( keys %$cdp ) {
-        my $if = $cdp->{$iid};
-        next unless defined $if;
-
-        $c_if{$iid} = $if;
-    }
-
-    # We need to match the lldp key with the ifIndex
-    # via lldpLocPortId and ifName
-    my $i_name = $c3550->ifName($partial) || {};
-    my $i_name_rev = {};
-    while ( my($key,$val) = each %$i_name ){
-	$i_name_rev->{$val} = $key;
-    }
-    my $loc_port_id = $c3550->lldpLocPortId($partial) || {};
-    my $lldp = $c3550->lldp_if($partial) || {};
-
-    foreach my $iid ( keys %$lldp ) {
-        my $if = $lldp->{$iid} || next;
-	my $name = $loc_port_id->{$if} || next;
-	my $i_index = $i_name_rev->{$name} || next;
-        $c_if{$iid} = $i_index;
-    }
-    return \%c_if;
-}
-
-sub c_port {
-    my $c3550   = shift;
-    my $partial = shift;
-
-    my $lldp = $c3550->lldp_port($partial)     || {};
-    my $cdp  = $c3550->SUPER::c_port($partial) || {};
-
-    my %c_port;
-    foreach my $iid ( keys %$cdp ) {
-        my $port = $cdp->{$iid};
-        next unless defined $port;
-
-        $c_port{$iid} = $port;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $port = $lldp->{$iid};
-        next unless defined $port;
-        $c_port{$iid} = $port;
-    }
-    return \%c_port;
-}
-
-sub c_id {
-    my $c3550   = shift;
-    my $partial = shift;
-
-    my $lldp = $c3550->lldp_id($partial)     || {};
-    my $cdp  = $c3550->SUPER::c_id($partial) || {};
-
-    my %c_id;
-    foreach my $iid ( keys %$cdp ) {
-        my $id = $cdp->{$iid};
-        next unless defined $id;
-	
-        $c_id{$iid} = $id;
-    }
-    
-    foreach my $iid ( keys %$lldp ) {
-	my $id = $lldp->{$iid};
-	next unless defined $id;
-	
-	$c_id{$iid} = $id;
-    }
-    return \%c_id;
-}
-
-sub c_platform {
-    my $c3550      = shift;
-    my $partial = shift;
-
-    my $lldp = $c3550->lldp_rem_sysdesc($partial)  || {};
-    my $cdp  = $c3550->SUPER::c_platform($partial) || {};
-
-    my %c_platform;
-    foreach my $iid ( keys %$cdp ) {
-        my $platform = $cdp->{$iid};
-        next unless defined $platform;
-
-        $c_platform{$iid} = $platform;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $platform = $lldp->{$iid};
-        next unless defined $platform;
-
-        $c_platform{$iid} = $platform;
-    }
-    return \%c_platform;
-}
-
-
 1;
 __END__
 
@@ -494,23 +359,6 @@ Returns 1.  Use vlan indexing.
 
 =back
 
-=head2 Topology information
-
-Based upon the firmware version Cisco devices may support Link Layer Discovery 
-Protocol (LLDP) in addition to Cisco Discovery Protocol (CDP).  These methods
-will query both and return the combination of all information.  As a result,
-there may be identical topology information returned from the two protocols
-causing duplicate entries.  It is the calling program's responsibility to
-identify any duplicate entries and remove duplicates if necessary.
-
-=over
-
-=item $c3550->hasCDP()
-
-Returns true if the device is running either CDP or LLDP.
-
-=back
-
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
@@ -555,40 +403,6 @@ See documentation in L<SNMP::Info::CiscoImage/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=over 
-
-=item $c3550->c_if()
-
-Returns reference to hash.  Key: iid Value: local device port (interfaces)
-
-=item $c3550->c_ip()
-
-Returns reference to hash.  Key: iid Value: remote IPv4 address
-
-If multiple entries exist with the same local port, c_if(), with the same IPv4
-address, c_ip(), it may be a duplicate entry.
-
-If multiple entries exist with the same local port, c_if(), with different
-IPv4 addresses, c_ip(), there is either a non-CDP/LLDP device in between two
-or more devices or multiple devices which are not directly connected.  
-
-Use the data from the Layer2 Topology Table below to dig deeper.
-
-=item $c3550->c_port()
-
-Returns reference to hash. Key: iid Value: remote port (interfaces)
-
-=item $c3550->c_id()
-
-Returns reference to hash. Key: iid Value: string value used to identify the
-chassis component associated with the remote system.
-
-=item $c3550->c_platform()
-
-Returns reference to hash.  Key: iid Value: Remote Device Type
-
-=back 
 
 =head2 Overrides
 

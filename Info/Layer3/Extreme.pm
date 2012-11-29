@@ -80,19 +80,18 @@ $VERSION = '2.09';
     %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::EDP::FUNCS,
     'fan_state' => 'extremeFanOperational',
-
     # EXTREME-FDB-MIB:extremeFdbMacFdbTable
     'ex_fw_mac'    => 'extremeFdbMacFdbMacAddress',
     'ex_fw_port'   => 'extremeFdbMacFdbPortIfIndex',
     'ex_fw_status' => 'extremeFdbMacFdbStatus',
-
     # EXTREME-VLAN-MIB:extremeVlanIfTable
     'ex_vlan_descr'     => 'extremeVlanIfDescr',
     'ex_vlan_global_id' => 'extremeVlanIfGlobalIdentifier',
-
     # EXTREME-VLAN-MIB:extremeVlanEncapsIfTable
     'ex_vlan_encap_tag' => 'extremeVlanEncapsIfTag',
-
+    # EXTREME-POE-MIB::extremePethPseSlotTable
+    'peth_power_watts'  => 'extremePethSlotPowerLimit',
+    # EXTREME-POE-MIB::extremePethPsePortTable
     'peth_port_power'   => 'extremePethPortMeasuredPower',
 );
 
@@ -549,125 +548,6 @@ sub set_add_i_vlan_tagged {
     return $rv;
 }
 
-#  Use EDP and/or LLDP
-sub hasCDP {
-    my $extreme = shift;
-
-    return $extreme->hasLLDP() || $extreme->hasEDP();
-}
-
-sub c_ip {
-    my $extreme = shift;
-    my $partial = shift;
-
-    my $edp  = $extreme->edp_ip() || {};
-    my $lldp = $extreme->lldp_ip($partial) || {};
-
-    my %c_ip;
-    foreach my $iid ( keys %$edp ) {
-        my $ip = $edp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $ip = $lldp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-    return \%c_ip;
-}
-
-sub c_if {
-    my $extreme = shift;
-    my $partial = shift;
-
-    my $lldp = $extreme->lldp_if($partial) || {};
-    my $edp  = $extreme->edp_if() || {};
-
-    my %c_if;
-    foreach my $iid ( keys %$edp ) {
-        my $if = $edp->{$iid};
-        next unless defined $if;
-
-        $c_if{$iid} = $if;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $if = $lldp->{$iid};
-        next unless defined $if;
-
-        $c_if{$iid} = $if;
-    }
-    return \%c_if;
-}
-
-sub c_port {
-    my $extreme      = shift;
-    my $partial = shift;
-
-    my $lldp = $extreme->lldp_port($partial) || {};
-    my $edp  = $extreme->edp_port() || {};
-
-    my %c_port;
-    foreach my $iid ( keys %$edp ) {
-        my $port = $edp->{$iid};
-        next unless defined $port;
-
-        $c_port{$iid} = $port;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $port = $lldp->{$iid};
-        next unless defined $port;
-        $c_port{$iid} = $port;
-    }
-    return \%c_port;
-}
-
-sub c_id {
-    my $extreme      = shift;
-    my $partial = shift;
-
-    my $lldp = $extreme->lldp_id($partial) || {};
-    my $edp  = $extreme->edp_id() || {};
-
-    my %c_id;
-    foreach my $iid ( keys %$edp ) {
-        my $id = $edp->{$iid};
-        next unless defined $id;
-	
-        $c_id{$iid} = $id;
-    }
-    
-    foreach my $iid ( keys %$lldp ) {
-	my $id = $lldp->{$iid};
-	next unless defined $id;
-	
-	$c_id{$iid} = $id;
-    }
-    return \%c_id;
-}
-
-sub c_platform {
-    my $extreme      = shift;
-    my $partial = shift;
-
-    my $lldp = $extreme->lldp_rem_sysdesc($partial)  || {};
-
-    my %c_platform;
-
-    foreach my $iid ( keys %$lldp ) {
-        my $platform = $lldp->{$iid};
-        next unless defined $platform;
-
-        $c_platform{$iid} = $platform;
-    }
-    return \%c_platform;
-}
-
 1;
 
 __END__
@@ -900,59 +780,14 @@ F<EXTREME-FDB-MIB> rather than F<BRIDGE-MIB>.
 =item $extreme->peth_port_power()
 
 Power supplied by PoE ports, in milliwatts
-("extremePethPortMeasuredPower")
 
-=back
+(C<extremePethPortMeasuredPower>)
 
-=head2 Topology information
+=item $extreme->peth_power_watts()
 
-Based upon the firmware version Extreme devices may support Extreme Discovery
-Protocol (EDP), Link Layer Discovery Protocol (LLDP), or both.  These methods
-will query both and return the combination of all information.  As a result,
-there may be identical topology information returned from the two protocols
-causing duplicate entries.  It is the calling program's responsibility to
-identify any duplicate entries and remove duplicates if necessary.
+The configured maximum amount of inline power available to the slot.
 
-=over
-
-=item $extreme->hasCDP()
-
-Returns true if the device is running either EDP or LLDP.
-
-=item $extreme->c_if()
-
-Returns reference to hash.  Key: iid Value: local device port (interfaces)
-
-=item $extreme->c_ip()
-
-Returns reference to hash.  Key: iid Value: remote IPv4 address
-
-If multiple entries exist with the same local port, c_if(), with the same IPv4
-address, c_ip(), it may be a duplicate entry.
-
-With EDP multiple entries may exist with the same local port, c_if(), and
-different IPv4 addresses, c_ip(), as EDP reports addresses for each VLAN
-transported across the trunk.  In the case of LLDP with multiple addresses
-there is either a non-LLDP device in between two or more devices or multiple
-devices which are not directly connected.  
-
-Use the data from the Layer2 Topology Table below to dig deeper.
-
-=item $extreme->c_port()
-
-Returns reference to hash. Key: iid Value: remote port (interfaces)
-
-=item $extreme->c_id()
-
-Returns reference to hash. Key: iid Value: string value used to identify the
-chassis component associated with the remote system.
-
-=item $extreme->c_platform()
-
-Returns reference to hash.  Key: iid Value: Remote Device Type
-
-This information is only available from LLDP.  EDP does not provide an 
-equivalent.
+(C<extremePethSlotPowerLimit>)
 
 =back
 

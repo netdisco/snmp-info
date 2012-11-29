@@ -232,47 +232,6 @@ sub _vendor {
     }
 }
 
-# lldp support
-sub hasCDP {
-    my $dell = shift;
-    return $dell->hasLLDP();
-}
-
-sub c_ip {
-    my $dell    = shift;
-    my $partial = shift;
-
-    return $dell->lldp_ip($partial);
-}
-
-sub c_if {
-    my $dell    = shift;
-    my $partial = shift;
-
-    return $dell->lldp_if($partial);
-}
-
-sub c_port {
-    my $dell    = shift;
-    my $partial = shift;
-
-    return $dell->lldp_port($partial);
-}
-
-sub c_id {
-    my $dell    = shift;
-    my $partial = shift;
-
-    return $dell->lldp_id($partial);
-}
-
-sub c_platform {
-    my $dell    = shift;
-    my $partial = shift;
-
-    return $dell->lldp_rem_sysdesc($partial);
-}
-
 1;
 __END__
 
@@ -368,10 +327,6 @@ id().  Defaults to 'dlink'.
 Returns 'dell', 'dlink', or 'ibm' based upon the IANA enterprise number in
 id().  Defaults to 'dlink'.
 
-=item $dell->hasCDP()
-
-Returns whether LLDP is enabled.
-
 =back
 
 =head2 Overrides
@@ -388,6 +343,10 @@ otherwise uses the Layer3 serial method.
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -464,30 +423,14 @@ Some devices don't implement the C<BRIDGE-MIB> forwarding table, so we use
 the C<Q-BRIDGE-MIB> forwarding table.  Fall back to the C<BRIDGE-MIB> if
 C<Q-BRIDGE-MIB> doesn't return anything.
 
-=item $dell->c_id()
-
-Returns LLDP information.
-
-=item $dell->c_if()
-
-Returns LLDP information.
-
-=item $dell->c_ip()
-
-Returns LLDP information.
-
-=item $dell->c_platform()
-
-Returns LLDP information.
-
-=item $dell->c_port()
-
-Returns LLDP information.
-
 =back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut

@@ -152,10 +152,6 @@ sub os {
     return 'altiga';
 }
 
-sub hasCDP {
-    return 0;
-}
-
 # $altiga->interfaces() - Map the Interfaces to their physical names
 # Add interface number to interface name to prevent duplicate ifDescr
 # Included statically configured VPN tunnels if ($int_include_vpn)
@@ -349,10 +345,6 @@ Tries to determine OS version from the C<sysDescr.0> field. Returns version or C
 =item $altiga->fan()
 
 Combines results from C<fan1_alarm>, C<fan2_alarm>, and C<fam3_alarm> methods.
-
-=item $altiga->hasCDP()
-
-No.
 
 =item $altiga->ps1_status()
 

@@ -79,26 +79,19 @@ $SNMP::Info::SPEED_MAP{2_000_000_000} = '1.0 Gbps';
 
 sub os {
     my $baystack = shift;
-    my $descr    = $baystack->description();
-    my $model    = $baystack->model();
+    my $descr    = $baystack->description() || "";
+    my $model    = $baystack->model() || "";
 
-    if ( ( defined $descr and $descr =~ /Business Ethernet Switch.*SW:v/i ) )
-    {
+    if ( $descr =~ /Business Ethernet Switch.*SW:v/i ) {
         return 'bes';
     }
-    if (
-        (
-           (defined $model and $model =~ /(420|425|BPS)/ )
-        and
-           (defined $descr and $descr =~ m/SW:v[1-2]/i )
-        )
-        or
-        (
-            (defined $model and $model =~ /(410|450|380)/ )
-        )
-       )
+    if (   ( ( $model =~ /(420|425|BPS)/ ) and ( $descr =~ m/SW:v[1-2]/i ) )
+        or ( ( $model =~ /(410|450|380)/ ) ) )
     {
         return 'baystack';
+    }
+    if ( $model =~ /VSP/ ) {
+        return 'vsp';
     }
 
     return 'boss';
@@ -126,7 +119,7 @@ sub os_bin {
 }
 
 sub vendor {
-    return 'nortel';
+    return 'avaya';
 }
 
 sub model {
@@ -141,9 +134,11 @@ sub model {
     return '303' if ( defined $descr and $descr =~ /\D303\D/ );
     return '304' if ( defined $descr and $descr =~ /\D304\D/ );
     return 'BPS' if ( $model =~ /BPS2000/i );
-    return $2
-        if ( $model
-        =~ /(ES|ERS|BayStack|EthernetRoutingSwitch|EthernetSwitch)-?(\d+)/ );
+    
+    # Pull sreg- from all
+    $model =~ s/^sreg-//;
+    # Strip ES/ERS/BayStack etc. from those families
+    $model =~ s/^(E(R)?S|BayStack|Ethernet(Routing)?Switch)-?//;
 
     return $model;
 }
@@ -214,7 +209,7 @@ sub i_name {
 
 sub index_factor {
     my $baystack = shift;
-    my $model    = $baystack->model();
+    my $model    = $baystack->model() || "";
     my $os       = $baystack->os();
     my $os_ver   = $baystack->os_ver();
     my $op_mode  = $baystack->ns_op_mode();
@@ -228,142 +223,16 @@ sub index_factor {
 
     my $index_factor = 32;
     $index_factor = 64
-        if ( ( defined $model and $model =~ /(470)/ )
+        if ( ( $model =~ /(470)/ )
         or ( $os =~ m/(boss|bes)/ ) and ( $op_mode eq 'pure' ) );
     $index_factor = 128
-        if ( ( defined $model and $model =~ /(5[56]\d\d)/ )
+        if ( ( $model =~ /(5[56]\d\d)|VSP/ )
         and ( $os_ver >= 6 ) );
 
     return $index_factor;
 }
 
-#  Use SONMP and/or LLDP
 
-sub hasCDP {
-    my $baystack = shift;
-
-    return $baystack->hasLLDP() || $baystack->SUPER::hasCDP();
-}
-
-sub c_ip {
-    my $baystack = shift;
-    my $partial  = shift;
-
-    my $cdp  = $baystack->SUPER::c_ip($partial) || {};
-    my $lldp = $baystack->lldp_ip($partial)     || {};
-
-    my %c_ip;
-    foreach my $iid ( keys %$cdp ) {
-        my $ip = $cdp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $ip = $lldp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-    return \%c_ip;
-}
-
-sub c_if {
-    my $baystack = shift;
-    my $partial  = shift;
-
-    my $lldp = $baystack->lldp_if($partial)     || {};
-    my $cdp  = $baystack->SUPER::c_if($partial) || {};
-
-    my %c_if;
-    foreach my $iid ( keys %$cdp ) {
-        my $if = $cdp->{$iid};
-        next unless defined $if;
-
-        $c_if{$iid} = $if;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $if = $lldp->{$iid};
-        next unless defined $if;
-
-        $c_if{$iid} = $if;
-    }
-    return \%c_if;
-}
-
-sub c_port {
-    my $baystack = shift;
-    my $partial  = shift;
-
-    my $lldp = $baystack->lldp_port($partial)     || {};
-    my $cdp  = $baystack->SUPER::c_port($partial) || {};
-
-    my %c_port;
-    foreach my $iid ( keys %$cdp ) {
-        my $port = $cdp->{$iid};
-        next unless defined $port;
-
-        $c_port{$iid} = $port;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $port = $lldp->{$iid};
-        next unless defined $port;
-
-        $c_port{$iid} = $port;
-    }
-    return \%c_port;
-}
-
-sub c_id {
-    my $baystack = shift;
-    my $partial  = shift;
-
-    my $lldp = $baystack->lldp_id($partial)     || {};
-    my $cdp  = $baystack->SUPER::c_id($partial) || {};
-
-    my %c_id;
-    foreach my $iid ( keys %$cdp ) {
-        my $id = $cdp->{$iid};
-        next unless defined $id;
-
-        $c_id{$iid} = $id;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $id = $lldp->{$iid};
-        next unless defined $id;
-
-        $c_id{$iid} = $id;
-    }
-    return \%c_id;
-}
-
-sub c_platform {
-    my $baystack = shift;
-    my $partial  = shift;
-
-    my $lldp = $baystack->lldp_rem_sysdesc($partial)  || {};
-    my $cdp  = $baystack->SUPER::c_platform($partial) || {};
-
-    my %c_platform;
-    foreach my $iid ( keys %$cdp ) {
-        my $platform = $cdp->{$iid};
-        next unless defined $platform;
-
-        $c_platform{$iid} = $platform;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $platform = $lldp->{$iid};
-        next unless defined $platform;
-
-        $c_platform{$iid} = $platform;
-    }
-    return \%c_platform;
-}
 
 # Newer devices support ENTITY-MIB, use if available otherwise use proprietary
 # methods.
@@ -475,8 +344,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Baystack - SNMP Interface to Nortel Ethernet (Baystack)
-Switches
+SNMP::Info::Layer2::Baystack - SNMP Interface to Avaya Ethernet (Baystack)
+and VSP 7000 series switches
 
 =head1 AUTHOR
 
@@ -499,8 +368,8 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a Nortel 
-Ethernet Switch (Baystack) through SNMP. 
+Provides abstraction to the configuration information obtainable from an
+Avaya Ethernet Switch (Baystack) and VSP 7000 series through SNMP. 
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 
@@ -520,12 +389,6 @@ my $baystack = new SNMP::Info::Layer2::Baystack(...);
 =item SNMP::Info::LLDP
 
 =item SNMP::Info::Layer3
-
-=back
-
-=head2 Required MIBs
-
-=over
 
 =back
 
@@ -549,7 +412,7 @@ These are methods that return scalar value from SNMP
 
 =item $baystack->vendor()
 
-Returns 'nortel'
+Returns 'avaya'
 
 =item $baystack->model()
 
@@ -716,54 +579,6 @@ ns_e_type().
 
 If the device doesn't support C<entPhysicalMfgName>, this will try
 ns_e_vendor().
-
-=back
-
-=head2 Topology information
-
-Based upon the software version devices may support SynOptics Network
-Management Protocol (SONMP) and Link Layer Discovery Protocol (LLDP). These
-methods will query both and return the combination of all information. As a
-result, there may be identical topology information returned from the two
-protocols causing duplicate entries.  It is the calling program's
-responsibility to identify any duplicate entries and remove duplicates if
-necessary.
-
-=over
-
-=item $baystack->hasCDP()
-
-Returns true if the device is running either SONMP or LLDP.
-
-=item $baystack->c_if()
-
-Returns reference to hash.  Key: iid Value: local device port (interfaces)
-
-=item $baystack->c_ip()
-
-Returns reference to hash.  Key: iid Value: remote IPv4 address
-
-If multiple entries exist with the same local port, c_if(), with the same IPv4
-address, c_ip(), it may be a duplicate entry.
-
-If multiple entries exist with the same local port, c_if(), with different
-IPv4 addresses, c_ip(), there is either a non-SONMP/LLDP device in between two or
-more devices or multiple devices which are not directly connected.  
-
-Use the data from the Layer2 Topology Table below to dig deeper.
-
-=item $baystack->c_port()
-
-Returns reference to hash. Key: iid Value: remote port (interfaces)
-
-=item $baystack->c_id()
-
-Returns reference to hash. Key: iid Value: string value used to identify the
-chassis component associated with the remote system.
-
-=item $baystack->c_platform()
-
-Returns reference to hash.  Key: iid Value: Remote Device Type
 
 =back
 
