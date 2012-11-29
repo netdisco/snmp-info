@@ -4114,14 +4114,16 @@ Returns undef if the method does not exist and can not be created.
 sub can {
     my $self   = shift;
     my $method = shift;
-    my $super  = shift;
 
     # use results of parent can()
     my $meth_ref = $self->SUPER::can($method);
 
     # Don't return if passed $super as it means we were called
     # from AUTOLOAD for a method that hasn't been generated yet.
-    return $meth_ref if ( !$super && $meth_ref );
+    if ($meth_ref) {
+        return $meth_ref
+            unless ( defined $AUTOLOAD && $AUTOLOAD =~ /SUPER::$method$/ );
+    }
 
     my $oid = $self->_validate_autoload_method($method);
     return unless $oid;
@@ -4185,8 +4187,8 @@ subclass.
 =cut
 
 sub AUTOLOAD {
-    my $self = shift;
-    my ($super, $sub_name) = $AUTOLOAD =~ /(SUPER)?::(\w+)$/;
+    my $self    = shift;
+    my ($sub_name) = $AUTOLOAD =~ /::(\w+)$/;
 
     return if $sub_name =~ /DESTROY$/;
 
@@ -4203,8 +4205,8 @@ sub AUTOLOAD {
         );
     }
 
-    return unless my $meth_ref = $self->can($sub_name, $super, @_);
-    return $self->$meth_ref;
+    return unless my $meth_ref = $self->can($sub_name, @_);
+    return $self->$meth_ref(@_);
 
 }
 1;
