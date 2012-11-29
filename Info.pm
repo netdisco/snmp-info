@@ -581,6 +581,12 @@ Subclass for Netgear switches
 
 See documentation in L<SNMP::Info::Layer2::Netgear> for details.
 
+=item SNMP::Info::Layer2::NWSS2300
+
+SNMP Interface to Avaya (Trapeze) Wireless Controllers
+
+See documentation in L<SNMP::Info::Layer2::NWSS2300> for details.
+
 =item SNMP::Info::Layer2::Orinoco
 
 Subclass for Orinoco/Proxim wireless access points.
@@ -1598,6 +1604,10 @@ sub device_type {
         # HP VirtualConnect blade switches
         $objtype = 'SNMP::Info::Layer2::HPVC'
             if ( $desc =~ /HP\sVC\s/ );
+
+        # Nortel (Trapeze) WSS 2300 Series
+        $objtype = 'SNMP::Info::Layer2::NWSS2300'    
+            if ( $desc =~ /\bWireless\sSecurity\sSwitch\s23[568][012]\b/);
 
         # Generic device classification based upon sysObjectID
         if ( defined($id) and $objtype eq 'SNMP::Info') {
