@@ -493,10 +493,10 @@ Depreciated.  Use BayStack.
 
 =item SNMP::Info::Layer2::Baystack
 
-Subclass for Nortel/Bay Ethernet Switch/Baystack switches.  This includes 303,
-304, 350, 380, 410, 420, 425, 450, 460, 470 series, 2500 series, 4500 series,
-5500 series, Business Ethernet Switch (BES), Business Policy Switch (BPS)
-and probably others.
+Subclass for Avaya/Nortel/Bay Ethernet Switch/Baystack switches.  This
+includes 303, 304, 350, 380, 410, 420, 425, 450, 460, 470 series,
+2500 series, 4500 series, 5500 series, Business Ethernet Switch (BES),
+Business Policy Switch (BPS), VSP 7000 series, and probably others.
 
 See documentation in L<SNMP::Info::Layer2::Baystack> for details.
 
@@ -1289,6 +1289,7 @@ sub device_type {
         11   => 'SNMP::Info::Layer2::HP',
         18   => 'SNMP::Info::Layer3::BayRS',
         42   => 'SNMP::Info::Layer3::Sun',
+        45   => 'SNMP::Info::Layer2::Baystack',
         171  => 'SNMP::Info::Layer3::Dell',
         311  => 'SNMP::Info::Layer3::Microsoft',
         674  => 'SNMP::Info::Layer3::Dell',
@@ -1314,6 +1315,7 @@ sub device_type {
     my %l2sysoidmap = (
         9     => 'SNMP::Info::Layer2::Cisco',
         11    => 'SNMP::Info::Layer2::HP',
+        45   => 'SNMP::Info::Layer2::Baystack',
         171   => 'SNMP::Info::Layer3::Dell',
         207   => 'SNMP::Info::Layer2::Allied',
         674   => 'SNMP::Info::Layer3::Dell',

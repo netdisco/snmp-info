@@ -79,26 +79,19 @@ $SNMP::Info::SPEED_MAP{2_000_000_000} = '1.0 Gbps';
 
 sub os {
     my $baystack = shift;
-    my $descr    = $baystack->description();
-    my $model    = $baystack->model();
+    my $descr    = $baystack->description() || "";
+    my $model    = $baystack->model() || "";
 
-    if ( ( defined $descr and $descr =~ /Business Ethernet Switch.*SW:v/i ) )
-    {
+    if ( $descr =~ /Business Ethernet Switch.*SW:v/i ) {
         return 'bes';
     }
-    if (
-        (
-           (defined $model and $model =~ /(420|425|BPS)/ )
-        and
-           (defined $descr and $descr =~ m/SW:v[1-2]/i )
-        )
-        or
-        (
-            (defined $model and $model =~ /(410|450|380)/ )
-        )
-       )
+    if (   ( ( $model =~ /(420|425|BPS)/ ) and ( $descr =~ m/SW:v[1-2]/i ) )
+        or ( ( $model =~ /(410|450|380)/ ) ) )
     {
         return 'baystack';
+    }
+    if ( $model =~ /VSP/ ) {
+        return 'vsp';
     }
 
     return 'boss';
@@ -126,7 +119,7 @@ sub os_bin {
 }
 
 sub vendor {
-    return 'nortel';
+    return 'avaya';
 }
 
 sub model {
@@ -141,9 +134,11 @@ sub model {
     return '303' if ( defined $descr and $descr =~ /\D303\D/ );
     return '304' if ( defined $descr and $descr =~ /\D304\D/ );
     return 'BPS' if ( $model =~ /BPS2000/i );
-    return $2
-        if ( $model
-        =~ /(ES|ERS|BayStack|EthernetRoutingSwitch|EthernetSwitch)-?(\d+)/ );
+    
+    # Pull sreg- from all
+    $model =~ s/^sreg-//;
+    # Strip ES/ERS/BayStack etc. from those families
+    $model =~ s/^(E(R)?S|BayStack|Ethernet(Routing)?Switch)-?//;
 
     return $model;
 }
@@ -214,7 +209,7 @@ sub i_name {
 
 sub index_factor {
     my $baystack = shift;
-    my $model    = $baystack->model();
+    my $model    = $baystack->model() || "";
     my $os       = $baystack->os();
     my $os_ver   = $baystack->os_ver();
     my $op_mode  = $baystack->ns_op_mode();
@@ -228,10 +223,10 @@ sub index_factor {
 
     my $index_factor = 32;
     $index_factor = 64
-        if ( ( defined $model and $model =~ /(470)/ )
+        if ( ( $model =~ /(470)/ )
         or ( $os =~ m/(boss|bes)/ ) and ( $op_mode eq 'pure' ) );
     $index_factor = 128
-        if ( ( defined $model and $model =~ /(5[56]\d\d)/ )
+        if ( ( $model =~ /(5[56]\d\d)|VSP/ )
         and ( $os_ver >= 6 ) );
 
     return $index_factor;
@@ -349,8 +344,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Baystack - SNMP Interface to Nortel Ethernet (Baystack)
-Switches
+SNMP::Info::Layer2::Baystack - SNMP Interface to Avaya Ethernet (Baystack)
+and VSP 7000 series switches
 
 =head1 AUTHOR
 
@@ -373,8 +368,8 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a Nortel 
-Ethernet Switch (Baystack) through SNMP. 
+Provides abstraction to the configuration information obtainable from an
+Avaya Ethernet Switch (Baystack) and VSP 7000 series through SNMP. 
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 
@@ -417,7 +412,7 @@ These are methods that return scalar value from SNMP
 
 =item $baystack->vendor()
 
-Returns 'nortel'
+Returns 'avaya'
 
 =item $baystack->model()
 
