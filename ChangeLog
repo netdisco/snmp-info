@@ -32,6 +32,8 @@ version 3.00
     
     [BUG FIXES]
     
+    * [3564920] - lldp_if gives wrong data for Enterasys
+    
 
 version 2.09 (2012-11-28)
 

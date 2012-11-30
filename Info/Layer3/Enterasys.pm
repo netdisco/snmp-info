@@ -178,11 +178,33 @@ sub lldp_ip {
     return $enterasys->SUPER::lldp_ip($partial);
 }
 
+# [3564920] LLDP-MIB::lldpLocPortDesc isn't always unique,
+# use LLDP-MIB::lldpLocPortId this cross references to ifName
 sub lldp_if {
-    my $enterasys = shift;
-    my $partial   = shift || 0;
+    my $lldp    = shift;
+    my $partial = shift || 0;
 
-    return $enterasys->SUPER::lldp_if($partial);
+    my $addr    = $lldp->lldp_rem_pid($partial) || {};
+    my $i_descr = $lldp->i_name() || {};
+    my %r_i_descr = reverse %$i_descr;
+    
+    my %lldp_if;
+    foreach my $key ( keys %$addr ) {
+        my @aOID = split( '\.', $key );
+        my $port = $aOID[1];
+        next unless $port;
+        # Local LLDP port may not equate to ifIndex
+        # Cross reference lldpLocPortId with ifName to get ifIndex
+        my $lldp_desc = $lldp->lldpLocPortId($port);
+        my $desc = $lldp_desc->{$port};
+        # If cross reference is successful use it, otherwise stick with lldpRemLocalPortNum
+        if ( exists $r_i_descr{$desc} ) {
+            $port = $r_i_descr{$desc};
+        }
+        
+        $lldp_if{$key} = $port;
+    }
+    return \%lldp_if;
 }
 
 sub lldp_port {
