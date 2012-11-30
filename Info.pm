@@ -3446,7 +3446,11 @@ sub _global {
             } 
         }
 
-        print "SNMP::Info::_global $method : $oid\n" if $self->debug();
+        if ( $self->debug() ) {
+            # Let's get the MIB Module and leaf name along with the OID
+            my $qual_leaf = SNMP::translateObj($oid,0,1) || '';
+            print "SNMP::Info::_global $method : $qual_leaf : $oid\n";
+        }
         my $val = $sess->get($oid);
 
         # Mark as gotten. Even if it fails below, we don't want to keep failing.
@@ -3751,14 +3755,27 @@ sub _load_attr {
             && !$load
             && !defined $partial );
 
-        my $leaf_name = SNMP::translateObj($oid) || '';
-        my $varleaf   = defined $partial ? "$oid.$partial" : "$oid";
+        # We want the qualified leaf name so that we can
+        # specify the Module (MIB) in the case of private leaf naming
+        # conflicts.  Example: ALTEON-TIGON-SWITCH-MIB::agSoftwareVersion
+        # and ALTEON-CHEETAH-SWITCH-MIB::agSoftwareVersion
+        # Third argument to translateObj specifies the Module prefix
+        
+        my $qual_leaf = SNMP::translateObj($oid,0,1) || '';
+        
+        # We still want just the leaf since a SNMP get in the case of a
+        # partial fetch may strip the Module portion upon return.  We need
+        # the match to make sure we didn't leave the table during getnext
+        # requests
+        
+        my ($leaf) = $qual_leaf =~ /::(\w+)$/;
 
         $self->debug()
-            and print "SNMP::Info::_load_attr $method : $oid",
-            defined $partial ? "($partial)" : '', "\n";
+            and print "SNMP::Info::_load_attr $method : $qual_leaf",
+            defined $partial ? "($partial)" : '', " : $oid" ,
+            defined $partial ? ".$partial" : '', "\n";
 
-        my $var = new SNMP::Varbind( [$varleaf] );
+        my $var = new SNMP::Varbind( [$qual_leaf, $partial] );
 
         # So devices speaking SNMP v.1 are not supposed to give out
         # data from SNMP2, but most do.  Net-SNMP, being very precise
@@ -3833,7 +3850,7 @@ sub _load_attr {
             }
 
             # Check if we've left the requested subtree
-            last if $var->[0] ne $leaf_name;
+            last if $var->[0] !~ /$leaf$/;
             my $iid = $var->[1];
             my $val = $var->[2];
 
