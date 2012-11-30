@@ -628,8 +628,8 @@ See documentation in L<SNMP::Info::Layer3::AlcatelLucent> for details.
 
 =item SNMP::Info::Layer3::AlteonAD
 
-Subclass for Nortel Alteon Series Layer 2-7 load balancing switches
-and Nortel BladeCenter Layer2-3 GbE Switch Modules.
+Subclass for Radware Alteon Series ADC switches and Nortel BladeCenter
+Layer2-3 GbE Switch Modules.
 
 See documentation in L<SNMP::Info::Layer3::AlteonAD> for details.
 
@@ -1299,6 +1299,7 @@ sub device_type {
         171  => 'SNMP::Info::Layer3::Dell',
         311  => 'SNMP::Info::Layer3::Microsoft',
         674  => 'SNMP::Info::Layer3::Dell',
+        1872 => 'SNMP::Info::Layer3::AlteonAD',
         1916 => 'SNMP::Info::Layer3::Extreme',
         1991 => 'SNMP::Info::Layer3::Foundry',
         2021 => 'SNMP::Info::Layer3::NetSNMP',
@@ -1325,6 +1326,7 @@ sub device_type {
         171   => 'SNMP::Info::Layer3::Dell',
         207   => 'SNMP::Info::Layer2::Allied',
         674   => 'SNMP::Info::Layer3::Dell',
+        1872 => 'SNMP::Info::Layer3::AlteonAD',
         1916  => 'SNMP::Info::Layer3::Extreme',
         1991  => 'SNMP::Info::Layer3::Foundry',
         2272  => 'SNMP::Info::Layer3::Passport',
@@ -1412,10 +1414,6 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::Baystack'
             if ( $desc
             =~ /^(BayStack|Ethernet\s+Routing\s+Switch)\s[2345](\d){2,3}/i );
-
-        # Nortel Alteon AD Series
-        $objtype = 'SNMP::Info::Layer3::AlteonAD'
-            if $desc =~ /Alteon\s[1A][8D]/;
 
         # Nortel Contivity
         $objtype = 'SNMP::Info::Layer3::Contivity' if $desc =~ /(\bCES\b|\bNVR\sV\d)/;

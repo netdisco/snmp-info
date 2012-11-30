@@ -66,6 +66,10 @@ $VERSION = '2.09';
     'new_tftp_result' => 'ALTEON_CHEETAH_SWITCH_MIB__agTftpLastActionStatus',
     'old_ip_max'      => 'ALTEON_TS_NETWORK_MIB__ipInterfaceTableMax',
     'new_ip_max'      => 'ALTEON_CHEETAH_NETWORK_MIB__ipInterfaceTableMax',
+    'fan'             => 'ALTEON_CHEETAH_SWITCH_MIB__hwFanStatus',
+    'old_ps1_stat'    => 'ALTEON_TIGON_SWITCH_MIB__hwPowerSupplyStatus',
+    'old_ps2_stat'    => 'ALTEON_TIGON_SWITCH_MIB__hwRedundantPSStatus',
+    'new_ps_stat'     => 'ALTEON_CHEETAH_SWITCH_MIB__hwPowerSupplyStatus',
 );
 
 %FUNCS = (
@@ -132,7 +136,7 @@ sub model {
 
     return $id unless defined $model;
 
-    $model =~ s/^aceswitch//;
+    $model =~ s/^(aceswitch|aws|ods)//;
     $model =~ s/^acedirector/AD/;
     $model =~ s/^(copper|fiber)Module/BladeCenter GbESM/;
 
@@ -140,7 +144,7 @@ sub model {
 }
 
 sub vendor {
-    return 'nortel';
+    return 'radware';
 }
 
 sub os {
@@ -153,6 +157,36 @@ sub os_ver {
     return unless defined $version;
 
     return $version;
+}
+
+sub ps1_status {
+    my $alteon = shift;
+    my $old_ps = $alteon->old_ps1_stat();
+    my $new_ps = $alteon->new_ps_stat();
+    
+    return $old_ps if $old_ps;
+    
+    if ($new_ps) {
+        return 'ok' if ($new_ps eq 'singlePowerSupplyOk');
+        return 'failed' if ($new_ps eq 'firstPowerSupplyFailed');
+    }
+    
+    return;
+}
+
+sub ps2_status {
+    my $alteon = shift;
+    my $old_ps = $alteon->old_ps2_stat();
+    my $new_ps = $alteon->new_ps_stat();
+    
+    return $old_ps if $old_ps;
+    
+    if ($new_ps) {
+        return 'ok' if ($new_ps eq 'doublePowerSupplyOk');
+        return 'failed' if ($new_ps eq 'secondPowerSupplyFailed');
+    }
+
+    return;
 }
 
 sub interfaces {
@@ -174,6 +208,7 @@ sub interfaces {
         # varies by switch model
         elsif ( defined $ip_max and $iid > $ip_max ) {
             $desc = ( $iid % $ip_max );
+            $desc = 'mgmt' if $desc == 231;
         }
         $interfaces{$iid} = $desc;
     }
@@ -207,39 +242,48 @@ sub i_duplex {
 sub i_duplex_admin {
     my $alteon = shift;
 
-    my $ag_pref = $alteon->new_ag_p_cfg_pref()
+    my $ag_pref 
+        = $alteon->new_ag_p_cfg_pref()
         || $alteon->old_ag_p_cfg_pref()
         || {};
-    my $ag_fe_auto = $alteon->new_ag_p_cfg_fe_auto()
+    my $ag_fe_auto 
+        = $alteon->new_ag_p_cfg_fe_auto()
         || $alteon->old_ag_p_cfg_fe_auto()
         || {};
-    my $ag_fe_mode = $alteon->new_ag_p_cfg_fe_mode()
+    my $ag_fe_mode 
+        = $alteon->new_ag_p_cfg_fe_mode()
         || $alteon->old_ag_p_cfg_fe_mode()
         || {};
-    my $ag_ge_auto = $alteon->new_ag_p_cfg_ge_auto()
+    my $ag_ge_auto 
+        = $alteon->new_ag_p_cfg_ge_auto()
         || $alteon->old_ag_p_cfg_ge_auto()
         || {};
-    my $ip_max = $alteon->new_ip_max() || $alteon->old_ip_max();
+    my $ip_max  = $alteon->new_ip_max() || $alteon->old_ip_max();
+    my $i_speed = $alteon->i_speed()    || {};
 
     my %i_duplex_admin;
-    foreach my $if ( keys %$ag_pref ) {
-        my $pref = $ag_pref->{$if};
-        next unless defined $pref;
+    foreach my $if ( keys %$ag_ge_auto ) {
+        my $pref    = $ag_pref->{$if}    || '';
+        my $speed   = $i_speed->{$if}    || '';
+        my $ge_auto = $ag_ge_auto->{$if} || '';
+        my $fe_auto = $ag_fe_auto->{$if} || '';
+        my $fe_mode = $ag_fe_mode->{$if} || '';
 
-        my $string = 'other';
-        if ( $pref =~ /gigabit/i ) {
-            my $ge_auto = $ag_ge_auto->{$if};
-            $string = 'full' if ( $ge_auto =~ /off/i );
-            $string = 'auto' if ( $ge_auto =~ /on/i );
+        # Default to auto
+        my $string = 'auto';
+
+        if ( $ge_auto =~ /off/i
+            && ( $pref =~ /gigabit/i || $speed eq '1.0 Gbps' ) )
+        {
+            $string = 'full';
         }
-        elsif ( $pref =~ /fast/i ) {
-            my $fe_auto = $ag_fe_auto->{$if};
-            my $fe_mode = $ag_fe_mode->{$if};
+        if ( $fe_auto =~ /off/i
+            && ( $pref =~ /fast/i || $speed =~ /100?\sMbps/ ) )
+        {
             $string = 'half'
-                if ( $fe_mode =~ /half/i and $fe_auto =~ /off/i );
+                if ( $fe_mode =~ /half/i );
             $string = 'full'
-                if ( $fe_mode =~ /full/i and $fe_auto =~ /off/i );
-            $string = 'auto' if $fe_auto =~ /on/i;
+                if ( $fe_mode =~ /full/i );
         }
 
         my $idx;
@@ -365,7 +409,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::AlteonAD - SNMP Interface to Nortel Alteon Layer 2-7
+SNMP::Info::Layer3::AlteonAD - SNMP Interface to Radware Alteon ADC
 Switches.
 
 =head1 AUTHOR
@@ -389,8 +433,8 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Nortel Alteon Series Layer 2-7 load balancing
-switches and Nortel BladeCenter Layer2-3 GbE Switch Modules.
+Abstraction subclass for Radware Alteon Series ADC switches and
+Nortel BladeCenter Layer2-3 GbE Switch Modules.
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 
@@ -438,12 +482,12 @@ These are methods that return scalar value from SNMP
 =item $alteon->model()
 
 Returns model type.  Checks $alteon->id() against the F<ALTEON-ROOT-MIB> and
-then parses out C<aceswitch>, replaces C<acedirector> with AD, and replaces
-copperModule/fiberModule with BladeCenter GbESM.
+then parses out C<aceswitch>, C<aws>, and C<ods> replaces C<acedirector>
+with AD, and replaces copperModule/fiberModule with BladeCenter GbESM.
 
 =item $alteon->vendor()
 
-Returns 'nortel'
+Returns 'radware'
 
 =item $alteon->os()
 
@@ -469,6 +513,18 @@ Returns the software version reported by C<agSoftwareVersion>
 
 (C<agTftpLastActionStatus>)
 
+=item $alteon->fan()
+
+(C<hwFanStatus>)
+
+=item $alteon->ps1_status()
+
+Returns status of primary power supply
+
+=item $alteon->ps2_status()
+
+Returns status of redundant power supply
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -477,8 +533,8 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
-These are methods that return tables of information in the form of a reference
-to a hash.
+These are methods that return tables of information in the form of a
+reference to a hash.
 
 =head2 Overrides
 
