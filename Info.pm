@@ -3404,10 +3404,13 @@ sub store {
 
 =item $info->_global()
 
-Used internally by AUTOLOAD to create dynamic methods from %GLOBALS.
+Used internally by AUTOLOAD to create dynamic methods from %GLOBALS or a
+single instance MIB Leaf node name from a loaded MIB.
 
 Example: $info->name() on the first call dispatches to AUTOLOAD() which
 calls $info->_global('name') creating the method name().
+
+These methods return data as a scalar.
 
 =cut
 
@@ -3715,10 +3718,12 @@ sub all {
 =item $info->_load_attr()
 
 Used internally by AUTOLOAD to create dynamic methods from %FUNCS 
-or a MIB Leaf node name which fetches data.
+or a MIB Leaf node name contained within a table of a loaded MIB.
 
 Supports partial table fetches and single instance table fetches.
 See L<SNMP::Info/"Partial Table Fetches">.
+
+These methods return data as a reference to a hash.
 
 =cut
 
@@ -4081,13 +4086,6 @@ sub _validate_autoload_method {
         $leaf_name =~ s/_/-/g;
     }
 
-    if ($leaf_name && $globals->{$attr}) {
-        # Tag on .0 unless the leaf ends in a digit
-        unless ( $leaf_name =~ /\d$/ ) {
-            $leaf_name .= ".0";
-        }
-    }
-    
     # Translate MIB leaf node name to OID
     my $oid = SNMP::translateObj($leaf_name);
 
@@ -4104,24 +4102,38 @@ sub _validate_autoload_method {
 
     # Validate that we have proper access for the operation
     my $access = $SNMP::MIB{$oid}{'access'} || '';
+
     # If we were given a fully qualified OID because we don't have the MIB
     # file, it will translate above but we won't be able to check access so
     # skip the check and return
     if ($access) {
-        if ( $method =~ /^set/ && $access =~ /Write|Create/ ) {
-            return $oid;
-        }
-        elsif ( $access =~ /Read|Create/ ) {
-            return $oid;
-        }
-        else {
+        unless ( ( $method =~ /^set/ && $access =~ /Write|Create/ )
+            || $access =~ /Read|Create/ )
+        {
             print
                 "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessable for requested operation.\n"
                 if $self->debug();
             return;
         }
     }
-    return $oid;
+    my $indexes    = $SNMP::MIB{$oid}{'parent'}{'indexes'};
+    my $table_leaf = 0;
+
+    if ( !$globals->{$attr} && (defined $indexes && scalar( @{$indexes} ) > 0 )) {
+        $table_leaf = 1;
+    }
+
+    # Tag on .0 for %GLOBALS and single instance MIB leafs unless
+    # the leaf ends in a digit
+    if ( $table_leaf == 0 && ( $globals->{$attr} || $leaf_name ne $oid ) ) {
+
+        unless ( $leaf_name =~ /\d$/ ) {
+            $oid .= ".0";
+        }
+    }
+
+    my $return = [ $oid, $table_leaf ];
+    return $return;
 }
 
 =item $info->can()
@@ -4152,17 +4164,19 @@ sub can {
             unless ( defined $AUTOLOAD && $AUTOLOAD =~ /SUPER::$method$/ );
     }
 
-    my $oid = $self->_validate_autoload_method($method);
-    return unless $oid;
+    my $validated = $self->_validate_autoload_method($method);
+    return unless $validated;
+
+    my ($oid, $table) = @$validated;
 
     # _validate_autoload_method validates, so we need to check for
     # set_ , globals, and everything else goes to _load_attr
-    my $globals = $self->globals();
+    my $funcs = $self->funcs();
 
     # We need to resolve globals with a prefix or suffix
-    my $g_method = $method;
-    $g_method =~ s/^(load|orig)_//;
-    $g_method =~ s/_raw$//;
+    my $f_method = $method;
+    $f_method =~ s/^(load|orig)_//;
+    $f_method =~ s/_raw$//;
 
     no strict 'refs';    ## no critic (ProhibitNoStrict )
 
@@ -4170,11 +4184,11 @@ sub can {
     if ( $method =~ /^set_/ ) {
         return *{$method} = _make_setter( $method, $oid, @_ );
     }
-    elsif ( defined $globals->{$g_method} ) {
-        return *{$method} = _global( $method, $oid );
+    elsif ( defined $funcs->{$f_method} || $table ) {
+        return *{$method} = _load_attr( $method, $oid, @_ );
     }
     else {
-        return *{$method} = _load_attr( $method, $oid, @_ );
+        return *{$method} = _global( $method, $oid );
     }
 }
 
@@ -4189,15 +4203,16 @@ AUTOLOAD() and dispatch directly.
 
 =over 
 
-=item 1. Returns unless method is listed in %FUNCS, %GLOBALS, or is MIB Leaf
-node name in a loaded MIB for given class.
+=item 1. Returns unless method is listed in %FUNCS, %GLOBALS, or is a MIB
+Leaf node name in a loaded MIB for given class.
 
-=item 2. If the method exists in %GLOBALS, _global() generates the method. 
+=item 2. If the method exists in %GLOBALS or is a single instance MIB Leaf
+node name from a loaded MIB, _global() generates the method. 
 
 =item 3. If a set_ prefix is present _make_setter() generates the method.
 
-=item 4. If the method exists in %FUNCS or is MIB Leaf node name in a
-loaded MIB, _load_attr() generates the method.
+=item 4. If the method exists in %FUNCS or is a MIB Leaf node name contained
+within a table from a loaded MIB, _load_attr() generates the method.
 
 =item 5. A load_ prefix forces reloading of data and does not use cached data.
 

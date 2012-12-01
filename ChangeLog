@@ -3,11 +3,6 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 version 3.00
 
     [API Changes]
-    * AUTOLOAD no longer tries to determine if a MIB leaf is a single
-      instance or part of a table.  As a result all MIB leafs provided as a
-      method call to be resolved by AUTOLOAD return data as a reference to
-      a hash with the instance id as the key and the data as the value.  If
-      you would rather a scalar be returned you must define within %GLOBALS.
     * The methods c_ip(), c_if(), c_port(), c_id(), and c_platform() now
       represent common topology methods and will try to return a combined
       hash of data from all L2 topology protocols either running on the
@@ -27,7 +22,7 @@ version 3.00
     [ENHANCEMENTS]
 
     * UNIVERSAL::can() now works with dynamic methods 
-    * Dynamically generated methods to symbol table to avoid
+    * Dynamically generated methods are added to symbol table to avoid
       AUTOLOAD on subsequent calls
     
     [BUG FIXES]
