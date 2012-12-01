@@ -4116,10 +4116,14 @@ sub _validate_autoload_method {
             return;
         }
     }
+
+    # If the parent of the leaf has indexes it is contained within a table
     my $indexes    = $SNMP::MIB{$oid}{'parent'}{'indexes'};
     my $table_leaf = 0;
 
-    if ( !$globals->{$attr} && (defined $indexes && scalar( @{$indexes} ) > 0 )) {
+    if ( !$globals->{$attr}
+        && ( defined $indexes && scalar( @{$indexes} ) > 0 ) )
+    {
         $table_leaf = 1;
     }
 
@@ -4170,10 +4174,10 @@ sub can {
     my ($oid, $table) = @$validated;
 
     # _validate_autoload_method validates, so we need to check for
-    # set_ , globals, and everything else goes to _load_attr
+    # set_ , funcs, table leafs, and everything else goes to _global
     my $funcs = $self->funcs();
 
-    # We need to resolve globals with a prefix or suffix
+    # We need to resolve funcs with a prefix or suffix
     my $f_method = $method;
     $f_method =~ s/^(load|orig)_//;
     $f_method =~ s/_raw$//;
