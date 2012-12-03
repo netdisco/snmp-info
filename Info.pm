@@ -1316,6 +1316,7 @@ sub device_type {
         9303 => 'SNMP::Info::Layer3::PacketFront',
         12325 => 'SNMP::Info::Layer3::Pf',
         14988 => 'SNMP::Info::Layer3::Mikrotik',
+        25506 => 'SNMP::Info::Layer3::H3C',
         30065 => 'SNMP::Info::Layer3::Arista',
     );
 
