@@ -185,7 +185,7 @@ sub lldp_if {
     my $partial = shift || 0;
 
     my $addr    = $lldp->lldp_rem_pid($partial) || {};
-    my $i_descr = $lldp->i_name() || {};
+    my $i_descr = $lldp->ifName() || {};
     my %r_i_descr = reverse %$i_descr;
     
     my %lldp_if;
