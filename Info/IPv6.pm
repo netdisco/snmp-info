@@ -59,7 +59,7 @@ $VERSION = '2.09';
 %FUNCS = ( 
     'ip_n2p_phys_addr'  => 'ipNetToPhysicalPhysAddress',    # IP-MIB
     'c_inet_phys_addr'  => 'cInetNetToMediaPhysAddress',    # CISCO-IETF-IP-MIB
-    'i6_n2p_phys_addr'  => 'ipv6NetToMediaNetAddress',      # IPV6-MIB
+    'i6_n2p_phys_addr'  => 'ipv6NetToMediaPhysAddress',     # IPV6-MIB
 
     'ip_n2p_phys_type'  => 'ipNetToPhysicalType',           # IP-MIB
     'c_inet_phys_type'  => 'cInetNetToMediaType',           # CISCO-IETF-IP-MIB
