@@ -24,7 +24,7 @@ use vars
     qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '2.09';
+$VERSION = '3.00_001';
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ SNMP::Info - Object Oriented Perl5 Interface to Network devices and MIBs through
 
 =head1 VERSION
 
-SNMP::Info - Version 2.09
+SNMP::Info - Version 3.00_001
 
 =head1 AUTHOR
 
@@ -865,16 +865,17 @@ README!
 
 Creates a new object and connects via SNMP::Session. 
 
- my $info = new SNMP::Info( 'Debug'         => 1,
-                            'AutoSpecify'   => 1,
-                            'BigInt'        => 1,
-                            'BulkWalk'      => 1,
-                            'BulkRepeaters' => 20,
-                            'LoopDetect'    => 1,
-                            'DestHost'      => 'myrouter',
-                            'Community'     => 'public',
-                            'Version'       => 2,
-                            'MibDirs'       => ['dir1','dir2','dir3'],
+ my $info = new SNMP::Info( 'Debug'            => 1,
+                            'AutoSpecify'      => 1,
+                            'BigInt'           => 1,
+                            'BulkWalk'         => 1,
+                            'BulkRepeaters'    => 20,
+                            'IgnoreNetSNMPConf => 1,
+                            'LoopDetect'       => 1,
+                            'DestHost'         => 'myrouter',
+                            'Community'        => 'public',
+                            'Version'          => 2,
+                            'MibDirs'          => ['dir1','dir2','dir3'],
                           ) or die;
 
 SNMP::Info Specific Arguments :
@@ -918,7 +919,20 @@ operation, Net-SNMP's internal bulkwalk function must detect the loop.
 
 Set to C<0> to turn off loop detection.
 
-(default 1, which measn "on")
+(default 1, which means "on")
+
+=item IgnoreNetSNMPConf
+
+Net-SNMP version 5.0 and higher read configuration files, snmp.conf or
+snmp.local.conf, from /etc/snmp, /usr/share/snmp, /usr/lib(64)/snmp, or
+$HOME/.snmp and uses those settings to automatically parse MIB files, etc.
+
+Set to C<1> "on" to ignore Net-SNMP configuration files by overriding the
+C<SNMPCONFPATH> environmental varible during object initialization. Note:
+MibDirs must be defined or Net-SNMP will not be able to load MIB's and
+initalize the object.
+
+(default 0, which means "off")
 
 =item Debug
 
@@ -929,7 +943,7 @@ Pass 2 to print even more debugging messages.
 
 =item DebugSNMP
 
-Set $SNMP::debugging  level for Net-SNMP.
+Set $SNMP::debugging level for Net-SNMP.
 
 See F<SNMP> for more details.
 
@@ -1039,6 +1053,11 @@ sub new {
         delete $sess_args{LoopDetect};
     }
 
+    if ( defined $args{IgnoreNetSNMPConf} ) {
+        $new_obj->{IgnoreNetSNMPConf} = $args{IgnoreNetSNMPConf} || 0;
+        delete $sess_args{IgnoreNetSNMPConf};
+    }
+
     my $sess = undef;
     if ( defined $args{Session} ) {
         $sess = $args{Session};
@@ -1124,6 +1143,7 @@ sub update {
     delete $sess_args{BulkRepeaters};
     delete $sess_args{BulkWalk};
     delete $sess_args{LoopDetect};
+    delete $sess_args{IgnoreNetSNMPConf};
     delete $sess_args{BigInt};
     delete $sess_args{MibDirs};
 
@@ -1316,7 +1336,6 @@ sub device_type {
         9303 => 'SNMP::Info::Layer3::PacketFront',
         12325 => 'SNMP::Info::Layer3::Pf',
         14988 => 'SNMP::Info::Layer3::Mikrotik',
-        25506 => 'SNMP::Info::Layer3::H3C',
         30065 => 'SNMP::Info::Layer3::Arista',
     );
 
@@ -3236,7 +3255,22 @@ Used internally.  Loads all entries in %MIBS.
 sub init {
     my $self = shift;
 
-    &SNMP::initMib;
+    # Get MibDirs if provided
+    my $mibdirs = $self->{mibdirs} || [];
+    
+    # SNMP::initMib and SNMP::addMibDirs both look for some inital MIBs
+    # so if we are not using Net-SNMP configuration files we need to
+    # specify where the MIBs are before those calls.
+
+    # Ignore snmp.conf and snmp.local.conf files if IgnoreNetSNMPConf
+    # specified
+    local $ENV{'SNMPCONFPATH'} = '' if $self->{IgnoreNetSNMPConf};
+    # We need to provide MIBDIRS if we are not getting them from a
+    # configuration file
+    my $mibdir = join (':', @$mibdirs);
+    local $ENV{'MIBDIRS'} = "$mibdir" if $self->{IgnoreNetSNMPConf};
+
+    SNMP::initMib;
 
     my $version = $SNMP::VERSION;
     my ( $major, $minor, $rev ) = split( '\.', $version );
@@ -3250,16 +3284,13 @@ sub init {
 
         # This is a bug in net-snmp 5.0.1 perl module
         # see http://groups.google.com/groups?th=47aed6bf7be6a0f5
-        &SNMP::init_snmp("perl");
+        SNMP::init_snmp("perl");
     }
-
-    # Add MibDirs
-    my $mibdirs = $self->{mibdirs} || [];
 
     foreach my $d (@$mibdirs) {
         next unless -d $d;
         print "SNMP::Info::init() - Adding new mibdir:$d\n" if $self->debug();
-        &SNMP::addMibDirs($d);
+        SNMP::addMibDirs($d);
     }
 
     my $mibs = $self->mibs();
@@ -3267,7 +3298,7 @@ sub init {
     foreach my $mib ( keys %$mibs ) {
 
         #print "SNMP::Info::init() - Loading mib:$mib\n" if $self->debug();
-        &SNMP::loadModules("$mib");
+        SNMP::loadModules("$mib");
 
         unless ( defined $SNMP::MIB{ $mibs->{$mib} } ) {
             croak "The $mib did not load. See README for $self->{class}\n";

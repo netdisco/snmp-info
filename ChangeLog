@@ -19,6 +19,8 @@ version 3.00
     * Support for newer Radware Alteon ADC switches 4408/4416/5412/5224 and
       older AWS 2000/3000 series in existing L3::AlteonAD
     * Support for H3C & HP A-series in new class L3::H3C
+    * New configuration option IgnoreNetSNMPConf will ignore Net-SNMP
+      configuration files on object initialization
     
     [ENHANCEMENTS]
 
