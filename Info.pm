@@ -834,6 +834,12 @@ SNMP Interface to APC UPS devices
 
 See documentation in L<SNMP::Info::Layer7::APC> for details.
 
+=item SNMP::Info::Layer7::Netscaler
+
+SNMP Interface to Citrix Netscaler appliances
+
+See documentation in L<SNMP::Info::Layer7::Netscaler> for details.
+
 =item SNMP::Info::Layer7::Neoteris
 
 SNMP Interface to Juniper SSL VPN appliances
@@ -1343,11 +1349,11 @@ sub device_type {
     my %l2sysoidmap = (
         9     => 'SNMP::Info::Layer2::Cisco',
         11    => 'SNMP::Info::Layer2::HP',
-        45   => 'SNMP::Info::Layer2::Baystack',
+        45    => 'SNMP::Info::Layer2::Baystack',
         171   => 'SNMP::Info::Layer3::Dell',
         207   => 'SNMP::Info::Layer2::Allied',
         674   => 'SNMP::Info::Layer3::Dell',
-        1872 => 'SNMP::Info::Layer3::AlteonAD',
+        1872  => 'SNMP::Info::Layer3::AlteonAD',
         1916  => 'SNMP::Info::Layer3::Extreme',
         1991  => 'SNMP::Info::Layer3::Foundry',
         2272  => 'SNMP::Info::Layer3::Passport',
@@ -1361,6 +1367,7 @@ sub device_type {
 
     my %l7sysoidmap = (
         318   => 'SNMP::Info::Layer7::APC',
+        5951  => 'SNMP::Info::Layer7::Netscaler',
         12532 => 'SNMP::Info::Layer7::Neoteris',
     );
 
