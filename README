@@ -5,7 +5,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 2.09
+    SNMP::Info - Version 2.10
 
 AUTHOR
 
@@ -603,6 +603,11 @@ SUBCLASSES
             Subclass for Extreme Networks switches.
 
             See documentation in SNMP::Info::Layer3::Extreme for details.
+
+        SNMP::Info::Layer3::Force10
+            Subclass for Force10 devices.
+
+            See documentation in SNMP::Info::Layer3::Force10 for details.
 
         SNMP::Info::Layer3::Foundry
             Subclass for Foundry Network devices.
