@@ -170,7 +170,6 @@ sub cd11_txrate {
 	elsif ( $rate =~ /^m/ ) {
 	    my $band = $protos->{$idx};
 	    my $bw   = $bws->{$band};
-	    #print "IDX: $idx Rate: $rate Band: $band BW: $bw\n";
 	    $cd11_txrate->{$idx} = [ $mcs_index->{$bw}->{$rate} || '0.0' ];
 	}
 	else {
