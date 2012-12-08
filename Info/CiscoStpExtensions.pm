@@ -35,7 +35,9 @@ use SNMP::Info;
 use SNMP::Info::Bridge;
 
 use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT $INIT/;
-$VERSION = '2.09';
+
+$VERSION = '3.00_001';
+
 @SNMP::Info::CiscoStpExtensions::ISA = qw/SNMP::Info::Bridge SNMP::Info Exporter/;
 @SNMP::Info::CiscoStpExtensions::EXPORT_OK = qw//;
 
@@ -75,7 +77,7 @@ $VERSION = '2.09';
 sub stp_ver {
      my $self = shift;
      my $stp_ver = $self->SUPER::stp_ver();
-     if ( $stp_ver eq 'unknown' ){
+     if ( !defined($stp_ver) || $stp_ver eq 'unknown' ){
          if ( defined $self->stpx_stp_type() ){
              $stp_ver = $self->stpx_stp_type();
          }
