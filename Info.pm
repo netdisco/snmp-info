@@ -710,6 +710,12 @@ Subclass for Extreme Networks switches.
 
 See documentation in L<SNMP::Info::Layer3::Extreme> for details.
 
+=item SNMP::Info::Layer3::Force10
+
+Subclass for Force10 devices.
+
+See documentation in L<SNMP::Info::Layer3::Force10> for details.
+
 =item SNMP::Info::Layer3::Foundry
 
 Subclass for Foundry Network devices.
