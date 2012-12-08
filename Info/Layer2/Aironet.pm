@@ -576,7 +576,7 @@ Returns radio interfaces.
 
 =item $aironet->cd11_mac()
 
-Returns radio interface MAC addresses.
+Returns client radio interface MAC addresses.
 
 =item $aironet->cd11_ssid()
 
