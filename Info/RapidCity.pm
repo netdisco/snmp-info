@@ -39,7 +39,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '2.09';
+$VERSION = '2.10';
 
 %MIBS = ( 'RAPID-CITY' => 'rapidCity', );
 
