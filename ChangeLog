@@ -28,6 +28,7 @@ version 3.00
     * UNIVERSAL::can() now works with dynamic methods 
     * Dynamically generated methods are added to symbol table to avoid
       AUTOLOAD on subsequent calls
+    * L2::Airspace now supports 802.11n client tx rates
     
     [BUG FIXES]
     

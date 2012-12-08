@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Airespace
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 #
@@ -46,8 +45,8 @@ $VERSION = '2.09';
 %MIBS = (
     %SNMP::Info::MIBS,      %SNMP::Info::Bridge::MIBS,
     %SNMP::Info::CDP::MIBS, %SNMP::Info::Airespace::MIBS,
-    'AIRESPACE-SWITCHING-MIB' => 'agentInterfaceVlanId',
     'CISCO-LWAPP-DOT11-CLIENT-MIB' => 'cldcClientCurrentTxRateSet',
+    'CISCO-LWAPP-DOT11-MIB'        => 'cldHtDot11nChannelBandwidth',
 );
 
 %GLOBALS = (
@@ -61,24 +60,70 @@ $VERSION = '2.09';
 
     # This needs to be cleaned up, but for now we pretend to
     # have the CISCO-DOT11-MIB for signal strengths, etc.
-    'cd11_sigstrength' => 'bsnMobileStationRSSI',	# kinda
-    'cd11_sigqual'     => 'bsnMobileStationSnr',	# kinda
+    'cd11_sigstrength' => 'bsnMobileStationRSSI', # kinda
+    'cd11_sigqual'     => 'bsnMobileStationSnr',  # kinda
     'cd11_rxbyte'      => 'bsnMobileStationBytesReceived',
     'cd11_txbyte'      => 'bsnMobileStationBytesSent',
     'cd11_rxpkt'       => 'bsnMobileStationPacketsReceived',
     'cd11_txpkt'       => 'bsnMobileStationPacketsSent',
-    'cd11_txrate'      => 'cldcClientCurrentTxRateSet',
+    'client_txrate'    => 'cldcClientCurrentTxRateSet',
+    'cd11_proto'       => 'cldcClientProtocol',
     'cd11_rateset'     => 'cldcClientDataRateSet',
+    'cd11n_ch_bw'      => 'cldHtDot11nChannelBandwidth',
+
 );
 
 %MUNGE = (
     %SNMP::Info::MUNGE,      %SNMP::Info::Bridge::MUNGE,
     %SNMP::Info::CDP::MUNGE, %SNMP::Info::Airespace::MUNGE,
-    'cd11_rxpkt'	=> \&munge_64bits,
-    'cd11_txpkt'	=> \&munge_64bits,
-    'cd11_txrate'       => \&munge_cd11_txrate,
+    'cd11_rxpkt'        => \&munge_64bits,
+    'cd11_txpkt'        => \&munge_64bits,
+    'cd11n_ch_bw'       => \&munge_cd11n_ch_bw,
     'cd11_rateset'      => \&munge_cd11_rateset,
+    'cd11_proto'        => \&munge_cd11_proto,
 );
+
+# 802.11n Modulation and Coding Scheme (MCS)
+my $mcs_index = {
+    20 => {
+	m0  => '6.5',
+	m1  => '13',
+	m2  => '19.5',
+	m3  => '26',
+	m4  => '39',
+	m5  => '52',
+	m6  => '58.5',
+	m7  => '65',
+	m8  => '13',
+	m9  => '26',
+	m10 => '39',
+	m11 => '52',
+	m12 => '78',
+	m13 => '104',
+	m14 => '117',
+	m15 => '130',
+	# This is a cheat for 802.11a bonded
+	m108 => '108',
+    },
+    40 => {
+	m0  => '15',
+	m1  => '30',
+	m2  => '45',
+	m3  => '60',
+	m4  => '90',
+	m5  => '120',
+	m6  => '135',
+	m7  => '157.5',
+	m8  => '30',
+	m9  => '60',
+	m10 => '90',
+	m11 => '120',
+	m12 => '180',
+	m13 => '240',
+	m14 => '270',
+	m15 => '300',
+    }
+};
 
 sub os {
     return 'cisco';
@@ -96,9 +141,6 @@ sub model {
     return $model;
 }
 
-# vlan:
-# AIRESPACE-SWITCHING-MIB::agentInterfaceVlanId
-
 sub cd11_mac {
     my $airespace = shift;
     my $cd11_sigstrength = $airespace->cd11_sigstrength();
@@ -111,13 +153,47 @@ sub cd11_mac {
     return $ret;
 }
 
-sub munge_cd11_txrate {
-    my $rate = shift;
-    if ( $rate ) {
-        return [ $rate * 1.0 ];
-    } else {
-        return [ 0.0 ];
+sub cd11_txrate {
+    my $airespace = shift;
+    
+    my $rates  = $airespace->client_txrate() || {};
+    my $protos = $airespace->cd11_proto()    || {};
+    my $bws    = $airespace->cd11n_ch_bw()   || {};
+    
+    my $cd11_txrate = {};
+    foreach my $idx ( keys %$rates ) {
+	my $rate = $rates->{$idx} || '0.0';
+	
+	if ( $rate =~ /^\d+/ ) {
+            $cd11_txrate->{$idx} = [ $rate * 1.0 ];
+	}
+	elsif ( $rate =~ /^m/ ) {
+	    my $band = $protos->{$idx};
+	    my $bw   = $bws->{$band};
+	    #print "IDX: $idx Rate: $rate Band: $band BW: $bw\n";
+	    $cd11_txrate->{$idx} = [ $mcs_index->{$bw}->{$rate} || '0.0' ];
+	}
+	else {
+	    $cd11_txrate->{$idx} = [ $rate ];
+	}
     }
+}
+
+sub munge_cd11n_ch_bw {
+    my $bw = shift;
+    
+    if ( $bw =~ /forty/ ) {
+	return 40;
+    }
+    return 20;
+}
+
+sub munge_cd11_proto {
+    my $bw = shift;
+    
+    return 2 if ( $bw eq 'dot11n5' );
+
+    return 1;
 }
 
 sub munge_cd11_rateset {
@@ -187,6 +263,10 @@ my $airespace = new SNMP::Info::Layer2::Airespace(...);
 
 =over
 
+=item F<CISCO-LWAPP-DOT11-CLIENT-MIB>
+
+=item F<CISCO-LWAPP-DOT11-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Airespace/"Required MIBs"> for its own MIB requirements.
@@ -238,6 +318,12 @@ to a hash.
 
 =item cd11_mac()
 
+Returns client radio interface MAC addresses.
+
+=item cd11_txrate()
+
+Returns client transmission speed in Mbs.
+
 =back 
 
 =head2 Overrides
@@ -254,15 +340,26 @@ See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
 
 See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
-=head1 MUNGES
+=head1 Data Munging Callback Subroutines
 
 =over
 
-=item munge_64bits()
+=item munge_cd11n_ch_bw()
+
+Converts 802.11n channel bandwidth to either 20 or 40.
+
+=item munge_cd11n_proto()
+
+Converts 802.11n 2.4Ghz to 1 and 5Ghz to 2 to correspond to the
+(C<cldHtMacOperationsTable>) index.
 
 =item munge_cd11_rateset()
 
-=item munge_cd11_txrate()
+Converts rateset to array.
+
+=item munge_64bits()
+
+Truncate packet values to 32 bits.
 
 =back
 
