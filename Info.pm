@@ -3640,6 +3640,21 @@ sub _make_setter {
         my $val  = shift;
         my $iid  = shift;
 
+        my $set_oid = $oid;
+        my $globals = $self->globals();
+        my $attr = $method;
+        $attr =~ s/^set_//;
+        
+        # The only thing which may give us the iid in $oid should be
+        # a %GLOBALS entry appended with a number.  In that case strip it
+        # from the OID and use it as $iid
+        if ( defined $globals->{$attr} && $globals->{$attr} =~ /(\.\d+$)/ ) {
+            $iid = $1;
+            $set_oid =~ s/$iid//;
+        }
+
+        # If we don't have $iid now we should be a %GLOBALS entry or single
+        # instance MIB leaf so default to zero
         $iid = defined $iid ? $iid : '.0';
 
         # prepend dot if necessary to $iid
@@ -3648,20 +3663,20 @@ sub _make_setter {
         my $sess = $self->session();
         return unless defined $sess;
 
-        $oid .= $iid;
+        $set_oid .= "$iid";
 
         $self->debug()
-            and print "SNMP::Info::_set $method$iid ($oid) = $val\n";
-        delete $self->{"_$method"};
+            and print "SNMP::Info::_set $method$iid ($set_oid) = $val\n";
+        delete $self->{"_$attr"};
 
-        my $rv = $sess->set( $oid, $val );
+        my $rv = $sess->set( $set_oid, $val );
 
         if ( $sess->{ErrorStr} ) {
             $self->error_throw("SNMP::Info::_set $sess->{ErrorStr}");
             return;
         }
         return $rv;
-        }
+    }
 }
 
 =item $info->set_multi(arrayref)
@@ -4111,6 +4126,7 @@ sub _validate_autoload_method {
     my $self   = shift;
     my $method = shift;
 
+    my $setter = $method =~ /^set/;
     my $attr = $method;
     $attr =~ s/^(load|set|orig)_//;
     $attr =~ s/_raw$//;
@@ -4168,10 +4184,10 @@ sub _validate_autoload_method {
     }
 
     # Tag on .0 for %GLOBALS and single instance MIB leafs unless
-    # the leaf ends in a digit
+    # the leaf ends in a digit or we are going to use for a set operation
     if ( $table_leaf == 0 && ( $globals->{$attr} || $leaf_name ne $oid ) ) {
 
-        unless ( $leaf_name =~ /\d$/ ) {
+        unless ( $leaf_name =~ /\d$/ || $setter ) {
             $oid .= ".0";
         }
     }
