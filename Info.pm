@@ -717,6 +717,12 @@ Subclass for Extreme Networks switches.
 
 See documentation in L<SNMP::Info::Layer3::Extreme> for details.
 
+=item SNMP::Info::Layer3::Force10
+
+Subclass for Force10 devices.
+
+See documentation in L<SNMP::Info::Layer3::Force10> for details.
+
 =item SNMP::Info::Layer3::Foundry
 
 Subclass for Foundry Network devices.
@@ -1336,6 +1342,7 @@ sub device_type {
         3417 => 'SNMP::Info::Layer3::BlueCoatSG',
         4526 => 'SNMP::Info::Layer2::Netgear',
         5624 => 'SNMP::Info::Layer3::Enterasys',
+        6027 => 'SNMP::Info::Layer3::Force10',
         6486 => 'SNMP::Info::Layer3::AlcatelLucent',
         6527 => 'SNMP::Info::Layer3::Timetra',
         8072 => 'SNMP::Info::Layer3::NetSNMP',

@@ -68,6 +68,7 @@ Info/Layer3/Contivity.pm
 Info/Layer3/Dell.pm
 Info/Layer3/Enterasys.pm
 Info/Layer3/Extreme.pm
+Info/Layer3/Force10.pm
 Info/Layer3/Foundry.pm
 Info/Layer3/HP9300.pm
 Info/Layer3/Juniper.pm
