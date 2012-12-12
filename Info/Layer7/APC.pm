@@ -173,7 +173,7 @@ C<POWERNET-MIB::experimental.2.4.1.4.1>
 
 =item $apc->serial()
 
-Combines the UPS serial C<upsAdvIdentSerialNumber.0> with the managment
+Combines the UPS serial C<upsAdvIdentSerialNumber.0> with the management
 card serial C<POWERNET-MIB::experimental.2.4.1.2.1> into a pretty string.
 
 =item $apc->vendor()
