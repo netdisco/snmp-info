@@ -51,6 +51,7 @@ $VERSION = '2.11';
     'OLD-CISCO-SYSTEM-MIB'  => 'writeMem',
     'CISCO-PRODUCTS-MIB'    => 'sysName',
     'ENTITY-MIB'            => 'entPhysicalSoftwareRev',
+    'CISCO-IMAGE-MIB'       => 'ciscoImageString',
 
     # some older catalysts live here
     'CISCO-STACK-MIB'                 => 'wsc1900sysID',
@@ -100,7 +101,8 @@ sub os {
     my $descr = $l2->description() || '';
 
     # order here matters - there are Catalysts that run IOS and have catalyst
-    # in their description field.
+    # in their description field, as well as Catalysts that run IOS-XE.
+    return 'ios-xe'   if ( $descr =~ /IOS-XE/ );
     return 'ios'      if ( $descr =~ /IOS/ );
     return 'catalyst' if ( $descr =~ /catalyst/i );
     return 'css'      if ( $descr =~ /Content Switch SW/ );
@@ -201,6 +203,15 @@ sub os_ver {
         and $descr =~ m/Version (\d+\.\d+\([^)]+\)[^,\s]*)(,|\s)+/ )
     {
         return $1;
+    }
+
+    # Generic fallback: try to determine running image from CISCO-IMAGE-MIB
+    my $image_info = $l2->ciscoImageString() || {};
+    foreach my $row (keys %$image_info) {
+        my $info_string = $image_info->{$row};
+        if ($info_string =~ /CW_VERSION\$([^$]+)\$/) {
+            return $1;
+        }
     }
 
     return;
@@ -358,6 +369,8 @@ None.
 
 =item F<ENTITY-MIB>
 
+=item F<CISCO-IMAGE-MIB>
+
 =back
 
 MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
@@ -388,7 +401,7 @@ Returns mem_free() + mem_used()
 
 =item $ciscostats->os()
 
-Tries to parse if device is running IOS or CatOS from description()
+Tries to parse if device is running IOS, CatOS, IOS-XE or something else from description()
 
 Available values :
 
@@ -435,7 +448,8 @@ Cisco Content Switch Secure Content Acceleration
 
 =item $ciscostats->os_ver()
 
-Tries to parse device operating system version from description()
+Tries to parse device operating system version from description(), falls back
+to parsing C<CISCO-IMAGE-MIB::ciscoImageString> if needed
 
 =item $ciscostats->os_bin()
 
