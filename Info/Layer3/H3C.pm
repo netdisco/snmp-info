@@ -47,6 +47,8 @@ $VERSION = '2.09';
     'HH3C-LswDEVM-MIB'     => 'hh3cDevMFanStatus',
     'HH3C-LswINF-MIB'      => 'hh3cSlotPortMax',
     'HH3C-LSW-DEV-ADM-MIB' => 'hh3cLswSysVersion',
+    'HH3C-PRODUCT-ID-MIB'  => 'hh3c-s5500-28C-EI',
+    'HH3C-ENTITY-VENDORTYPE-OID-MIB' => 'hh3cevtOther',
 );
 
 %GLOBALS = (
@@ -156,6 +158,10 @@ Subclass for H3C & HP A-series devices
 =item F<HH3C-LswINF-MIB>
 
 =item F<HH3C-LSW-DEV-ADM-MIB>
+
+=item F<HH3C-PRODUCT-ID-MIB>
+
+=item F<HH3C-ENTITY-VENDORTYPE-OID-MIB>
 
 =over
 
