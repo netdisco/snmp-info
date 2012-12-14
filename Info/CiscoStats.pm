@@ -407,6 +407,14 @@ Available values :
 
 =over
 
+=item ios
+
+Cisco IOS
+
+=item ios-xe
+
+Cisco IOS XE
+
 =item pix
 
 Cisco PIX

@@ -29,7 +29,8 @@ version 3.00
     * Dynamically generated methods are added to symbol table to avoid
       AUTOLOAD on subsequent calls
     * L2::Airspace now supports 802.11n client tx rates
-    * CiscoStats improvements to determine IOS-XE versions properly
+    * CiscoStats improvements to determine os versions, eg IOS XE ver on Sup7L-E
+    * CiscoStats now reports 'ios-xe' if the device runs IOS XE (used to be 'ios')
     
     [BUG FIXES]
     
