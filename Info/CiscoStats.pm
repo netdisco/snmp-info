@@ -209,7 +209,7 @@ sub os_ver {
     my $image_info = $l2->ciscoImageString() || {};
     foreach my $row (keys %$image_info) {
         my $info_string = $image_info->{$row};
-        if ($info_string =~ /CW_VERSION\$([^$]+)\$/) {
+        if ($info_string =~ /CW_VERSION\$([^\$]+)\$/) {
             return $1;
         }
     }
