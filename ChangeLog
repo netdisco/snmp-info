@@ -28,7 +28,8 @@ version 3.00
     * UNIVERSAL::can() now works with dynamic methods 
     * Dynamically generated methods are added to symbol table to avoid
       AUTOLOAD on subsequent calls
-    * L2::Airspace now supports 802.11n client tx rates
+    * L2::Airespace now supports 802.11n client tx rates
+    * L2::Airespace now reports AP Ethernet MAC as port MAC for radio ports
     * CiscoStats improvements to determine os versions, eg IOS XE ver on Sup7L-E
     * CiscoStats now reports 'ios-xe' if the device runs IOS XE (used to be 'ios')
     

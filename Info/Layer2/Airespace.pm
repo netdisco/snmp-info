@@ -47,6 +47,7 @@ $VERSION = '2.11';
     %SNMP::Info::CDP::MIBS, %SNMP::Info::Airespace::MIBS,
     'CISCO-LWAPP-DOT11-CLIENT-MIB' => 'cldcClientCurrentTxRateSet',
     'CISCO-LWAPP-DOT11-MIB'        => 'cldHtDot11nChannelBandwidth',
+    'CISCO-LWAPP-AP-MIB'           => 'cLApIfMacAddress',
 );
 
 %GLOBALS = (
@@ -57,7 +58,8 @@ $VERSION = '2.11';
 %FUNCS = (
     %SNMP::Info::FUNCS,      %SNMP::Info::Bridge::FUNCS,
     %SNMP::Info::CDP::FUNCS, %SNMP::Info::Airespace::FUNCS,
-
+    # CISCO-LWAPP-AP-MIB::cLApTable
+    'ap_if_mac'        => 'cLApIfMacAddress',
     # This needs to be cleaned up, but for now we pretend to
     # have the CISCO-DOT11-MIB for signal strengths, etc.
     'cd11_sigstrength' => 'bsnMobileStationRSSI', # kinda
@@ -76,6 +78,7 @@ $VERSION = '2.11';
 %MUNGE = (
     %SNMP::Info::MUNGE,      %SNMP::Info::Bridge::MUNGE,
     %SNMP::Info::CDP::MUNGE, %SNMP::Info::Airespace::MUNGE,
+    'ap_if_mac'         => \&SNMP::Info::munge_mac,
     'cd11_rxpkt'        => \&munge_64bits,
     'cd11_txpkt'        => \&munge_64bits,
     'cd11n_ch_bw'       => \&munge_cd11n_ch_bw,
@@ -207,6 +210,31 @@ sub munge_64bits {
     return $value & 0xffffffff;
 }
 
+# Cisco provides the AP's Ethernet MAC via
+# CISCO-LWAPP-AP-MIB::cLApIfMacAddress this was not available pre-Cisco
+sub i_mac {
+    my $airespace = shift;
+    my $partial   = shift;
+
+    my $i_index = $airespace->i_index($partial)  || {};
+    my $ap_mac  = $airespace->ap_if_mac()        || {};
+
+    my $i_mac = $airespace->SUPER::i_mac() || {};
+    foreach my $iid ( keys %$i_index ) {
+	my $index = $i_index->{$iid};
+	next unless defined $index;
+
+	if ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
+	    $index =~ s/\.\d+$//;
+	    next unless defined $index;
+	    my $sys_mac = join( '.', map { hex($_) } split( ':', $index ) );
+	    my $mac = $ap_mac->{$sys_mac};
+	    $i_mac->{$iid} = $mac;
+	}
+    }
+    return $i_mac;
+}
+
 1;
 __END__
 
@@ -265,6 +293,8 @@ my $airespace = new SNMP::Info::Layer2::Airespace(...);
 =item F<CISCO-LWAPP-DOT11-CLIENT-MIB>
 
 =item F<CISCO-LWAPP-DOT11-MIB>
+
+=item F<CISCO-LWAPP-AP-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -326,6 +356,14 @@ Returns client transmission speed in Mbs.
 =back 
 
 =head2 Overrides
+
+=over
+
+=item i_mac()
+
+Adds AP Ethernet MAC as port mac on radio ports from C<CISCO-LWAPP-AP-MIB>.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Airespace
 
