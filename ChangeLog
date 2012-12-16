@@ -32,6 +32,7 @@ version 3.00
     * L2::Airespace now reports AP Ethernet MAC as port MAC for radio ports
     * CiscoStats improvements to determine os versions, eg IOS XE ver on Sup7L-E
     * CiscoStats now reports 'ios-xe' if the device runs IOS XE (used to be 'ios')
+    * Improved support of XOS based Extreme devices
     
     [BUG FIXES]
     
