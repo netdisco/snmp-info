@@ -417,7 +417,7 @@ with the remote system.
 
 =item $lldp->lldp_if()
 
-Returns the mapping to the SNMP Interface Table.  Triess to cross reference 
+Returns the mapping to the SNMP Interface Table. Tries to cross reference 
 (C<lldpLocPortDesc>) with (C<ifDescr>) and (C<ifAlias>) to get (C<ifIndex>), 
 if unable defaults to (C<lldpRemLocalPortNum>).
 
