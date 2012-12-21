@@ -113,6 +113,22 @@ sub i_ignore {
     return \%i_ignore;
 }
 
+# Use Q-BRIDGE-MIB
+
+sub fw_mac {
+    my $l3  = shift;
+    my $partial = shift;
+
+    return $l3->qb_fw_mac($partial);
+}
+
+sub fw_port {
+    my $l3  = shift;
+    my $partial = shift;
+
+    return $l3->qb_fw_port($partial);
+}
+
 1;
 __END__
 
@@ -149,9 +165,13 @@ Subclass for H3C & HP A-series devices
 
 =item SNMP::Info::Layer3
 
+=item SNMP::Info::LLDP
+
 =back
 
 =head2 Required MIBs
+
+=over
 
 =item F<HH3C-LswDEVM-MIB>
 
@@ -162,8 +182,6 @@ Subclass for H3C & HP A-series devices
 =item F<HH3C-PRODUCT-ID-MIB>
 
 =item F<HH3C-ENTITY-VENDORTYPE-OID-MIB>
-
-=over
 
 =item Inherited Classes' MIBs
 
@@ -216,6 +234,14 @@ to a hash.
 Returns reference to hash.  Increments value of IID if port is to be ignored.
 
 Ignores loopback
+
+=item $h3c->fw_mac()
+
+Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
+
+=item $h3c->fw_port()
+
+Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
 
 =back
 
