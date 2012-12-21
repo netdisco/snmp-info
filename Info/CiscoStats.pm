@@ -109,6 +109,7 @@ sub os {
     return 'css-sca'  if ( $descr =~ /Cisco Systems Inc CSS-SCA-/ );
     return 'pix'      if ( $descr =~ /Cisco PIX Security Appliance/ );
     return 'asa'      if ( $descr =~ /Cisco Adaptive Security Appliance/ );
+    return 'san-os'   if ( $descr =~ /Cisco SAN-OS/ );
 
     if ( $descr =~ /Application Control Engine Service Module/ ) {
         # Only the admin context implements the entity MIB
@@ -451,6 +452,10 @@ Cisco Content Switch
 =item css-sca
 
 Cisco Content Switch Secure Content Acceleration
+
+=item san-os
+
+Cisco SAN-OS
 
 =back
 
