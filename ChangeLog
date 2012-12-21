@@ -20,6 +20,7 @@ version 3.00
       older AWS 2000/3000 series in existing L3::AlteonAD
     * Support for H3C & HP A-series in new class L3::H3C
     * Support for Citrix Netscaler appliances in new class L7::Netscaler
+    * [3185391] Support for F5 devices in new class L3::F5
     * New configuration option IgnoreNetSNMPConf will ignore Net-SNMP
       configuration files on object initialization
     

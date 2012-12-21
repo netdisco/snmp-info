@@ -717,6 +717,12 @@ Subclass for Extreme Networks switches.
 
 See documentation in L<SNMP::Info::Layer3::Extreme> for details.
 
+=item SNMP::Info::Layer3::F5
+
+Subclass for F5 devices.
+
+See documentation in L<SNMP::Info::Layer3::F5> for details.
+
 =item SNMP::Info::Layer3::Force10
 
 Subclass for Force10 devices.
@@ -1339,6 +1345,7 @@ sub device_type {
         2636 => 'SNMP::Info::Layer3::Juniper',
         2925 => 'SNMP::Info::Layer1::Cyclades',
         3076 => 'SNMP::Info::Layer3::Altiga',
+        3375 => 'SNMP::Info::Layer3::F5',
         3417 => 'SNMP::Info::Layer3::BlueCoatSG',
         4526 => 'SNMP::Info::Layer2::Netgear',
         5624 => 'SNMP::Info::Layer3::Enterasys',
@@ -1365,6 +1372,7 @@ sub device_type {
         1991  => 'SNMP::Info::Layer3::Foundry',
         2272  => 'SNMP::Info::Layer3::Passport',
         2925  => 'SNMP::Info::Layer1::Cyclades',
+        3375  => 'SNMP::Info::Layer3::F5',
         4526  => 'SNMP::Info::Layer2::Netgear',
         5624  => 'SNMP::Info::Layer3::Enterasys',
         11898 => 'SNMP::Info::Layer2::Orinoco',
