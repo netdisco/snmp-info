@@ -158,6 +158,19 @@ sub qb_fw_mac {
     return $qb_fw_mac;
 }
 
+sub qb_fw_vlan {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    my $qb_fw_port = $bridge->qb_fw_port($partial);
+    my $qb_fw_vlan = {};
+    foreach my $idx ( keys %$qb_fw_port ) {
+        my ( $fdb_id, $mac ) = _qb_fdbtable_index($idx);
+        $qb_fw_vlan->{$idx} = $fdb_id;
+    }
+    return $qb_fw_vlan;
+}
+
 sub qb_i_vlan_t {
     my $bridge  = shift;
     my $partial = shift;
@@ -854,6 +867,10 @@ Returns reference to hash of forwarding table entries port interface
 identifier (iid)
 
 (C<dot1qTpFdbPort>)
+
+=item $bridge->qb_fw_vlan()
+
+Returns reference to hash of forwarding table entries VLAN ID
 
 =item $bridge->qb_fw_status()
 

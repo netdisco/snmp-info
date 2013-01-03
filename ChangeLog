@@ -23,6 +23,7 @@ version 3.00
     * [3185391] Support for F5 devices in new class L3::F5
     * New configuration option IgnoreNetSNMPConf will ignore Net-SNMP
       configuration files on object initialization
+    * [3599277] - Q-BRIDGE Support to collect VLAN in macsuck
     
     [ENHANCEMENTS]
 
