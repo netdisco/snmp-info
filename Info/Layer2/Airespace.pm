@@ -60,17 +60,11 @@ $VERSION = '2.11';
     %SNMP::Info::CDP::FUNCS, %SNMP::Info::Airespace::FUNCS,
     # CISCO-LWAPP-AP-MIB::cLApTable
     'ap_if_mac'        => 'cLApIfMacAddress',
-    # This needs to be cleaned up, but for now we pretend to
-    # have the CISCO-DOT11-MIB for signal strengths, etc.
-    'cd11_sigstrength' => 'bsnMobileStationRSSI', # kinda
-    'cd11_sigqual'     => 'bsnMobileStationSnr',  # kinda
-    'cd11_rxbyte'      => 'bsnMobileStationBytesReceived',
-    'cd11_txbyte'      => 'bsnMobileStationBytesSent',
-    'cd11_rxpkt'       => 'bsnMobileStationPacketsReceived',
-    'cd11_txpkt'       => 'bsnMobileStationPacketsSent',
+    # CISCO-LWAPP-DOT11-CLIENT-MIB::cldcClientTable
     'client_txrate'    => 'cldcClientCurrentTxRateSet',
     'cd11_proto'       => 'cldcClientProtocol',
     'cd11_rateset'     => 'cldcClientDataRateSet',
+    # CISCO-LWAPP-DOT11-MIB::cldHtMacOperationsTable
     'cd11n_ch_bw'      => 'cldHtDot11nChannelBandwidth',
 
 );
@@ -79,8 +73,6 @@ $VERSION = '2.11';
     %SNMP::Info::MUNGE,      %SNMP::Info::Bridge::MUNGE,
     %SNMP::Info::CDP::MUNGE, %SNMP::Info::Airespace::MUNGE,
     'ap_if_mac'         => \&SNMP::Info::munge_mac,
-    'cd11_rxpkt'        => \&munge_64bits,
-    'cd11_txpkt'        => \&munge_64bits,
     'cd11n_ch_bw'       => \&munge_cd11n_ch_bw,
     'cd11_rateset'      => \&munge_cd11_rateset,
     'cd11_proto'        => \&munge_cd11_proto,
@@ -179,6 +171,7 @@ sub cd11_txrate {
 	    $cd11_txrate->{$idx} = [ $rate ];
 	}
     }
+    return $cd11_txrate;
 }
 
 sub munge_cd11n_ch_bw {
@@ -201,13 +194,6 @@ sub munge_cd11_proto {
 sub munge_cd11_rateset {
     my $rates = shift;
     return [ map { $_ * 1.0 } split /,/, $rates ];
-}
-
-sub munge_64bits {
-    # The controller sometimes hands off a ridiculous value for packets.
-    # Just truncate it to 32 bits.
-    my $value = shift;
-    return $value & 0xffffffff;
 }
 
 # Cisco provides the AP's Ethernet MAC via
@@ -393,10 +379,6 @@ Converts 802.11n 2.4Ghz to 1 and 5Ghz to 2 to correspond to the
 =item munge_cd11_rateset()
 
 Converts rateset to array.
-
-=item munge_64bits()
-
-Truncate packet values to 32 bits.
 
 =back
 

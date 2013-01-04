@@ -148,6 +148,16 @@ $VERSION = '2.11';
     # AIRESPACE-SWITCHING-MIB::agentPortConfigTable
     'airespace_duplex_admin' => 'agentPortPhysicalMode',
     'airespace_duplex'       => 'agentPortPhysicalStatus',
+
+    # This needs to be cleaned up, but for now we pretend to
+    # have the CISCO-DOT11-MIB for signal strengths, etc.
+    'cd11_sigstrength' => 'bsnMobileStationRSSI', # kinda
+    'cd11_sigqual'     => 'bsnMobileStationSnr',  # kinda
+    'cd11_rxbyte'      => 'bsnMobileStationBytesReceived',
+    'cd11_txbyte'      => 'bsnMobileStationBytesSent',
+    'cd11_rxpkt'       => 'bsnMobileStationPacketsReceived',
+    'cd11_txpkt'       => 'bsnMobileStationPacketsSent',
+    'cd11_ssid'        => 'bsnMobileStationSsid',
 );
 
 %MUNGE = (
@@ -158,6 +168,8 @@ $VERSION = '2.11';
     'airespace_bl_mac'      => \&SNMP::Info::munge_mac,
     'airespace_if_mac'      => \&SNMP::Info::munge_mac,
     'airespace_sta_mac'     => \&SNMP::Info::munge_mac,
+    'cd11_rxpkt'            => \&munge_64bits,
+    'cd11_txpkt'            => \&munge_64bits,
 );
 
 sub layers {
@@ -1031,6 +1043,13 @@ sub at_netaddr {
     return $ret;
 }
 
+sub munge_64bits {
+    # The controller sometimes hands off a ridiculous value for packets.
+    # Just truncate it to 32 bits.
+    my $value = shift;
+    return $value & 0xffffffff;
+}
+
 1;
 __END__
 
@@ -1080,7 +1099,7 @@ Do not use directly.
 
 =over
 
-None.
+=item None.
 
 =back
 
@@ -1787,6 +1806,16 @@ Returns reference to hash.  Key: IID, Value: Software revision.
 
 Returns reference to hash.  Key: IID, Value: The value of e_index() for the
 entity which 'contains' this entity.
+
+=back
+
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item munge_64bits()
+
+Truncate packet values to 32 bits.
 
 =back
 
