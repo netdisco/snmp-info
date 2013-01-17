@@ -4257,13 +4257,13 @@ sub can {
 
     # Check for set_ ing.
     if ( $method =~ /^set_/ ) {
-        return *{$method} = _make_setter( $method, $oid, @_ );
+        return *{$AUTOLOAD} = _make_setter( $method, $oid, @_ );
     }
     elsif ( defined $funcs->{$f_method} || $table ) {
-        return *{$method} = _load_attr( $method, $oid, @_ );
+        return *{$AUTOLOAD} = _load_attr( $method, $oid, @_ );
     }
     else {
-        return *{$method} = _global( $method, $oid );
+        return *{$AUTOLOAD} = _global( $method, $oid );
     }
 }
 
