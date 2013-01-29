@@ -203,7 +203,7 @@ sub i_ignore {
     my %i_ignore;
     foreach my $if ( keys %$i_description ) {
         if ( $i_description->{$if}
-            =~ /^(802.1Q Encapsulation Tag \d+|VLAN \d+|lo\d+)/i )
+            =~ /^(802.1Q Encapsulation Tag \d+|VLAN \d+|lo\d+|VirtualRouter\d+)/i )
         {
             $i_ignore{$if}++;
         }
@@ -386,15 +386,15 @@ sub i_vlan {
 
     # Some devices support Q-Bridge, if so short circuit and return it
     my $q_bridge = $extreme->SUPER::i_vlan($partial);
-    return $q_bridge if (keys $q_bridge);
+    return $q_bridge if (keys %$q_bridge);
 
     # Next we try extremeVlanOpaqueTable
     my $xos = $extreme->xos_i_vlan($partial);
-    return $xos if (keys $xos);
+    return $xos if (keys %$xos);
     
     # Try older ifStack method
     my $extremeware = $extreme->extremeware_i_vlan($partial);
-    return $extremeware if (keys $extremeware);
+    return $extremeware if (keys %$extremeware);
     
     return;
 }
