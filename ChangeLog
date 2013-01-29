@@ -13,6 +13,8 @@ version 3.00
     [NEW FEATURES]
 
     * [3160037] - Support _raw suffix on methods to skip munging
+    * [3185391] - Support for F5 devices in new class L3::F5
+    * [3599277] - Q-BRIDGE Support to collect VLAN in macsuck
     * Support for Avaya VSP 9000 series in L3::Passport
     * Support for Avaya VSP 7000 series in L2::Baystack
     * Support Avaya (Trapeze) Wireless Controllers in new class L2::NWSS2300
@@ -20,10 +22,12 @@ version 3.00
       older AWS 2000/3000 series in existing L3::AlteonAD
     * Support for H3C & HP A-series in new class L3::H3C
     * Support for Citrix Netscaler appliances in new class L7::Netscaler
-    * [3185391] Support for F5 devices in new class L3::F5
     * New configuration option IgnoreNetSNMPConf will ignore Net-SNMP
       configuration files on object initialization
-    * [3599277] - Q-BRIDGE Support to collect VLAN in macsuck
+    * Two new utilities added in t/util to assist in developing device
+      support; make_snmpdata.pl gathers SNMP data (snmpwalk) in a format that
+      can be used with test_class_mocked.pl which mocks an SNMP agent to
+      enable testing with no network access to a device.
     
     [ENHANCEMENTS]
 
