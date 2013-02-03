@@ -789,19 +789,46 @@ device: 3124,3324XL,3400cl,3500,3500yl
 device: 4100GL,4200vl,5300XL,5400yy,5400zl
 device: 6108,6200yl,6400cl,6410cl,6600,6600ml,8200zl
 
-
 #
 # Juniper
 #
 device-vendor: Juniper
 arpnip: yes
+cdp: yes
+duplex: link
+macsuck: yes
+modules: yes
+portmac: yes
+vlan: yes
+class: Layer3::Juniper
+
+device-family: EX-series switches
+device: All
+
+device-family: J-series router
+device: All
 
 device-family: M-series router
-class: Layer3::Juniper
 device: All
 
 device-family: NetScreen
+cdp: no
+duplex: no
+modules: no
+vlan: no
 class: Layer3::Netscreen
+device: All
+
+device-family: SA-series SSL VPN appliances
+arpnip: no
+cdp: no
+duplex: no
+modules: no
+vlan: no
+class: Layer7::Neoteris
+device: All
+
+device-family: SRX-series router
 device: All
 
 #
@@ -841,6 +868,12 @@ device: All
 # NetScreen
 #
 device-vendor: NetScreen
+note: See Juniper
+
+#
+# Neoteris
+#
+device-vendor: Neoteris
 note: See Juniper
 
 #
