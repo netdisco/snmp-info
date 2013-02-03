@@ -178,8 +178,7 @@ interface to FDP information through SNMP.
 FDP is a Layer 2 protocol that supplies topology information of
 devices that also speak FDP, mostly switches and routers.  It has
 similar functionality to Cisco's CDP, and the SNMP interface is
-virtually identical.  FDP is implemented in Foundry devices, including
-the Bigiron and Fastiron range.
+virtually identical.  FDP is implemented in Brocade (Foundry) devices.
 
 Create or use a device subclass that inherits this class.  Do not use
 directly.

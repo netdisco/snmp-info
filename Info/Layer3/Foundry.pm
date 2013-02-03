@@ -157,11 +157,11 @@ sub model {
 }
 
 sub os {
-    return 'foundry';
+    return 'brocade';
 }
 
 sub vendor {
-    return 'foundry';
+    return 'brocade';
 }
 
 sub os_ver {
@@ -275,7 +275,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Foundry - SNMP Interface to Foundry Network Devices
+SNMP::Info::Layer3::Foundry - SNMP Interface to Brocade (Foundry) Network
+Devices
 
 =head1 AUTHOR
 
@@ -299,7 +300,7 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Foundry Networks devices.
+Abstraction subclass for Brocade (Foundry) Networks devices.
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above.
@@ -351,11 +352,11 @@ and removes 'C<sn>'.  EdgeIron models determined through F<ENTITY-MIB>.
 
 =item $foundry->vendor()
 
-Returns 'foundry'
+Returns 'brocade'
 
 =item $foundry->os()
 
-Returns 'foundry'
+Returns 'brocade'
 
 =item $foundry->os_ver()
 

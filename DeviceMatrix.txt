@@ -336,6 +336,40 @@ device-vendor: Bay
 note: See Avaya
 
 #
+# Brocade
+#
+device-vendor: Brocade
+arpnip: yes
+cdp: yes
+duplex: link
+macsuck: yes
+modules: no
+portmac: yes
+vlan: yes
+class: Layer3::Foundry
+
+device-family: EdgeIron
+device: EdgeIron 24G
+note: Bug where spanning tree stuff loops forever when polled by SNMP.
+
+device-family: FastIron
+ver: 1
+note: Support very limited
+device: FastIron 4802
+
+device-family: FastIron CX (ICX) series
+device: 6430,6450,6610
+
+device-family: FastIron LS (FLS) series
+device: All
+
+device-family: FastIron WorkGroup Switch (FWS) series
+device: All
+
+device-family: ServerIron GT series
+device: All
+
+#
 # CISCO
 #
 device-vendor: Cisco
@@ -718,36 +752,7 @@ note: LLDP support might be available. See note in Layer3::Pf
 # Foundry
 #
 device-vendor: Foundry Networks
-vlan: yes
-modules: no
-
-device-family: FastIron
-class: Layer3::Foundry
-ver: 1
-note: Support very limited
-
-device: FastIron 4802
-
-device-family: EdgeIron
-ver: 2
-class: Layer3::Foundry
-cdp: yes
-duplex: yes
-macsuck: yes
-device: EdgeIron 24G
-note: Bug where spanning tree stuff loops forever when polled by SNMP.
-
-device-family: IronWare
-class: Layer3::Foundry
-ver: 2
-cdp: yes
-note: FDP enabled.
-duplex: yes
-macsuck: yes
-arpnip: yes
-device: FWSX424 
-device: ServerIronGT
-device: FLS624, FLS648
+note: See Brocade
 
 #
 # HP

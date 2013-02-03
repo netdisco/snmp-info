@@ -343,7 +343,7 @@ See documentation in L<SNMP::Info::EtherLike> for details.
 
 =item SNMP::Info::FDP
 
-Foundry Discovery Protocol.  F<FOUNDRY-SN-SWITCH-GROUP-MIB>
+Foundry (Brocade) Discovery Protocol.  F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
 See documentation in L<SNMP::Info::FDP> for details.
 
@@ -731,7 +731,7 @@ See documentation in L<SNMP::Info::Layer3::Force10> for details.
 
 =item SNMP::Info::Layer3::Foundry
 
-Subclass for Foundry Network devices.
+Subclass for Brocade (Foundry) Network devices.
 
 See documentation in L<SNMP::Info::Layer3::Foundry> for details.
 
