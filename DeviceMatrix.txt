@@ -923,18 +923,27 @@ device: WavePOINT-II
 # Radware
 #
 device-vendor: Radware
-device-family: Alteon AD
 arpnip: yes
-duplex: both
 cdp: no
-vlan: yes
+duplex: both
+macsuck: yes
 modules: no
+portmac: yes
+vlan: yes
 class: Layer3::AlteonAD
+
+device-family: Alteon AceDirector and AceSwitch series
 note: !Some versions have issues with continuous SNMP polling. Upgrade to 10.0.30.7 or higher.
+device: All
 
-device: AD2,AD3,AD4
+device-family: Web Switch Module for IBM L2/L3 BladeCenter 
+device: All
 
-device: 180,183,184
+device-family: Radware Alteon Application switches (AWS 2000 and 3000 series)
+device: All
+
+device-family: Radware Alteon switches
+device: 4408,4416,5412,5224
 
 # 
 # SonicWALL
