@@ -85,7 +85,7 @@ sub model {
 }
 
 sub vendor {
-    return 'nortel';
+    return 'avaya';
 }
 
 sub os {
@@ -927,7 +927,7 @@ sub e_vendor {
 
     my %rc_e_vendor;
     foreach my $iid ( keys %$rc_e_idx ) {
-        $rc_e_vendor{$iid} = 'nortel';
+        $rc_e_vendor{$iid} = 'avaya';
     }
     return \%rc_e_vendor;
 }
@@ -1051,8 +1051,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Passport - SNMP Interface to modular Nortel Ethernet Routing
-Switches (formerly Passport / Accelar)
+SNMP::Info::Layer3::Passport - SNMP Interface to modular Avaya
+Ethernet Routing Switch 8000 Series and VSP 9000 Series switches.
 
 =head1 AUTHOR
 
@@ -1075,10 +1075,10 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Abstraction subclass for modular Nortel Ethernet Routing Switches (formerly
-Passport and Accelar Series Switches).
+Abstraction subclass for modular Avaya Ethernet Routing Switch 8000 Series
+(formerly Nortel/Bay Passport/Accelar) and VSP 9000 Series switches.
 
-These devices have some of the same characteristics as the stackable Nortel 
+These devices have some of the same characteristics as the stackable Avaya 
 Ethernet Switches (Baystack).  For example, extended interface information is 
 gleaned from F<RAPID-CITY>.
 
@@ -1126,7 +1126,7 @@ F<RAPID-CITY-MIB> and then parses out C<rcA>.
 
 =item $passport->vendor()
 
-Returns 'nortel'
+Returns 'avaya'
 
 =item $passport->os()
 
@@ -1273,7 +1273,7 @@ Returns reference to hash.  Key: IID, Value: Hardware version.
 
 =item $passport->e_vendor()
 
-Returns reference to hash.  Key: IID, Value: nortel.
+Returns reference to hash.  Key: IID, Value: avaya.
 
 =item $passport->e_serial()
 

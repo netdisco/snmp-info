@@ -572,7 +572,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::RapidCity - SNMP Interface to the Nortel RapidCity MIB
+SNMP::Info::RapidCity - SNMP Interface to the Avaya/Nortel RapidCity MIB
 
 =head1 AUTHOR
 
@@ -597,9 +597,9 @@ Eric Miller
 =head1 DESCRIPTION
 
 SNMP::Info::RapidCity is a subclass of SNMP::Info that provides an interface
-to the C<RAPID-CITY> MIB.  This MIB is used across the Nortel Ethernet Routing
-Switch and Ethernet Switch product lines (Formerly known as Passport,
-BayStack, and Accelar).
+to the C<RAPID-CITY> MIB.  This MIB is used across the Avaya/Nortel Ethernet
+Routing Switch and Ethernet Switch product lines (Formerly known as Passport,
+BayStack, and Accelar), as well as, the VSP 9000 and 7000 series.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 

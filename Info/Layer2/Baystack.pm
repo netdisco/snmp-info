@@ -344,8 +344,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Baystack - SNMP Interface to Avaya Ethernet (Baystack)
-and VSP 7000 series switches
+SNMP::Info::Layer2::Baystack - SNMP Interface to Avaya Ethernet Switch
+(Baystack) and VSP 7000 series switches
 
 =head1 AUTHOR
 
@@ -369,7 +369,8 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from an
-Avaya Ethernet Switch (Baystack) and VSP 7000 series through SNMP. 
+Avaya Ethernet Switch (formerly Nortel/Bay Baystack) and VSP 7000 series
+through SNMP. 
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 

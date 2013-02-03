@@ -93,7 +93,7 @@ sub model {
 }
 
 sub vendor {
-    return 'nortel';
+    return 'avaya';
 }
 
 sub os {
@@ -174,7 +174,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::N1600 - SNMP Interface to Nortel 16XX Network Devices
+SNMP::Info::Layer3::N1600 - SNMP Interface to Avaya/Nortel 16XX Network
+Devices
 
 =head1 AUTHOR
 
@@ -198,8 +199,8 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a Nortel 
-N16XX device through SNMP. 
+Provides abstraction to the configuration information obtainable from an
+Avaya/Nortel N16XX device through SNMP. 
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 
@@ -247,7 +248,7 @@ F<RAPID-CITY-MIB> and then parses out C<rcA>.
 
 =item $n1600->vendor()
 
-Returns 'nortel'
+Returns 'avaya'
 
 =item $n1600->os()
 

@@ -181,7 +181,7 @@ sub lldp_port {
             }
         }
 
-        # Nortel lldpRemPortDesc doesn't match ifDescr, but we can still
+        # Avaya/Nortel lldpRemPortDesc doesn't match ifDescr, but we can still
         # figure out slot.port based upon lldpRemPortDesc
         if ( $port =~ /^(Unit\s+(\d+)\s+)?Port\s+(\d+)$/ ) {
             $port = defined $1 ? "$2.$3" : "$3";

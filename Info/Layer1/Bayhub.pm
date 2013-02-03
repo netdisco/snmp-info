@@ -93,7 +93,7 @@ sub os {
 }
 
 sub vendor {
-    return 'nortel';
+    return 'avaya';
 }
 
 sub model {
@@ -469,7 +469,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer1::Bayhub - SNMP Interface to Bay / Nortel Hubs
+SNMP::Info::Layer1::Bayhub - SNMP Interface to Bay/Nortel/Avaya Hubs
 
 =head1 AUTHOR
 
@@ -541,7 +541,7 @@ These are methods that return scalar value from SNMP
 
 =item $bayhub->vendor()
 
-Returns 'nortel'
+Returns 'avaya'
 
 =item $bayhub->os()
 

@@ -313,7 +313,7 @@ sub ns_e_vendor {
 
     my %ns_e_vendor;
     foreach my $iid ( keys %$ns_e_idx ) {
-        my $vendor = 'nortel';
+        my $vendor = 'avaya';
 
         $ns_e_vendor{$iid} = $vendor;
     }
@@ -549,8 +549,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::NortelStack - SNMP Interface to the Nortel F<S5-AGENT-MIB> and
-F<S5-CHASSIS-MIB>
+SNMP::Info::NortelStack - SNMP Interface to the Avaya/Nortel F<S5-AGENT-MIB>
+and F<S5-CHASSIS-MIB>
 
 =head1 AUTHOR
 
@@ -576,7 +576,7 @@ Eric Miller
 
 SNMP::Info::NortelStack is a subclass of SNMP::Info that provides an interface
 to F<S5-AGENT-MIB> and F<S5-CHASSIS-MIB>.  These MIBs are used across the
-Nortel Stackable Ethernet Switches (BayStack), as well as, older Nortel
+Avaya/Nortel Stackable Ethernet Switches (BayStack), as well as, older Nortel
 devices such as the Centillion family of ATM switches.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
@@ -857,7 +857,7 @@ Returns reference to hash.  Key: IID, Value: Hardware version
 
 =item $stack->ns_e_vendor()
 
-Returns reference to hash.  Key: IID, Value: nortel
+Returns reference to hash.  Key: IID, Value: avaya
 
 =item $stack->ns_e_serial()
 

@@ -68,7 +68,7 @@ sub layers {
 }
 
 sub vendor {
-    return 'nortel';
+    return 'avaya';
 }
 
 sub model {
@@ -162,8 +162,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Contivity - SNMP Interface to Nortel VPN Routers
-(Contivity Extranet Switches).
+SNMP::Info::Layer3::Contivity - SNMP Interface to Avaya/Nortel VPN Routers
+(formerly Contivity Extranet Switches).
 
 =head1 AUTHOR
 
@@ -186,7 +186,8 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Nortel VPN Routers (Contivity Extranet Switch).  
+Abstraction subclass for Avaya/Nortel VPN Routers (formerly Contivity
+Extranet Switch).  
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 
@@ -227,7 +228,7 @@ These are methods that return scalar value from SNMP
 
 =item $contivity->vendor()
 
-Returns 'Nortel'
+Returns 'avaya'
 
 =item $contivity->model()
 

@@ -390,15 +390,15 @@ See documentation in L<SNMP::Info::PowerEthernet> for details.
 
 =item SNMP::Info::RapidCity
 
-F<RAPID-CITY>.  Inherited by Nortel switches for duplex and VLAN information.
+F<RAPID-CITY>.  Inherited by Avaya switches for duplex and VLAN information.
 
 See documentation in L<SNMP::Info::RapidCity> for details.
 
 =item SNMP::Info::SONMP
 
-F<SYNOPTICS-ROOT-MIB>, F<S5-ETH-MULTISEG-TOPOLOGY-MIB>.  Provides translation
-from Nortel Topology Table information to CDP.  Inherited by
-Nortel/Bay/Synoptics switches and hubs.
+SynOptics Network Management Protocol (SONMP) F<SYNOPTICS-ROOT-MIB>,
+F<S5-ETH-MULTISEG-TOPOLOGY-MIB>.  Inherited by 
+Avaya/Nortel/Bay/Synoptics switches and hubs.
 
 See documentation in L<SNMP::Info::SONMP> for details.
 
@@ -495,7 +495,7 @@ Depreciated.  Use BayStack.
 
 Subclass for Avaya/Nortel/Bay Ethernet Switch/Baystack switches.  This
 includes 303, 304, 350, 380, 410, 420, 425, 450, 460, 470 series,
-2500 series, 4500 series, 5500 series, Business Ethernet Switch (BES),
+2500 series, 4000 series, 5000 series, Business Ethernet Switch (BES),
 Business Policy Switch (BPS), VSP 7000 series, and probably others.
 
 See documentation in L<SNMP::Info::Layer2::Baystack> for details.
@@ -649,8 +649,8 @@ See documentation in L<SNMP::Info::Layer3::Aruba> for details.
 
 =item SNMP::Info::Layer3::BayRS
 
-Subclass for Nortel Multiprotocol/BayRS routers.  This includes BCN, BLN, ASN,
-ARN, AN, 2430, and 5430 routers.
+Subclass for Avaya/Nortel/Bay Multiprotocol/BayRS routers.  This includes
+BCN, BLN, ASN, ARN, AN, 2430, and 5430 routers.
 
 See documentation in L<SNMP::Info::Layer3::BayRS> for details.
 
@@ -693,7 +693,7 @@ See documentation in L<SNMP::Info::Layer3::CiscoFWSM> for details.
 
 =item SNMP::Info::Layer3::Contivity
 
-Subclass for Nortel Contivity/VPN Routers.  
+Subclass for Avaya/Nortel Contivity/VPN Routers.  
 
 See documentation in L<SNMP::Info::Layer3::Contivity> for details.
 
@@ -762,7 +762,7 @@ See documentation in L<SNMP::Info::Layer3::Mikrotik> for details.
 
 =item SNMP::Info::Layer3::N1600
 
-Subclass for Nortel Ethernet Routing Switch 1600 series.
+Subclass for Avaya/Nortel Ethernet Routing Switch 1600 series.
 
 See documentation in L<SNMP::Info::Layer3::N1600> for details.
 
@@ -792,8 +792,8 @@ See documentation in L<SNMP::Info::Layer3::PacketFront> for details.
 
 =item SNMP::Info::Layer3::Passport
 
-Subclass for Nortel Ethernet Routing Switch/Passport 8000 series and Accelar
-series switches.
+Subclass for Avaya/Nortel Ethernet Routing Switch/Passport 8000 series,
+Accelar, and VSP 9000 series switches.
 
 See documentation in L<SNMP::Info::Layer3::Passport> for details.
 

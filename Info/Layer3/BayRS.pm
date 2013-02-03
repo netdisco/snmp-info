@@ -545,7 +545,7 @@ sub model {
 }
 
 sub vendor {
-    return 'nortel';
+    return 'avaya';
 }
 
 sub os {
@@ -1191,7 +1191,7 @@ sub e_vendor {
 
     my %wf_e_vendor;
     foreach my $iid ( keys %$wf_e_idx ) {
-        $wf_e_vendor{$iid} = 'nortel';
+        $wf_e_vendor{$iid} = 'avaya';
     }
     return \%wf_e_vendor;
 }
@@ -1378,7 +1378,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::BayRS - SNMP Interface to Nortel routers running BayRS.
+SNMP::Info::Layer3::BayRS - SNMP Interface to Avaya/Nortel routers running
+BayRS.
 
 =head1 AUTHOR
 
@@ -1401,7 +1402,7 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Abstraction subclass for routers running Nortel BayRS.  
+Abstraction subclass for routers running Avaya/Nortel BayRS.  
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 
@@ -1474,7 +1475,7 @@ and the common model with this map :
 
 =item $bayrs->vendor()
 
-Returns 'nortel'
+Returns 'avaya'
 
 =item $bayrs->os()
 
@@ -1583,7 +1584,7 @@ Returns reference to hash.  Key: IID, Value: Hardware version.
 
 =item $bayrs->e_vendor()
 
-Returns reference to hash.  Key: IID, Value: nortel.
+Returns reference to hash.  Key: IID, Value: avaya.
 
 =item $bayrs->e_serial()
 

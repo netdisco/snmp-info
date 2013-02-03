@@ -4,8 +4,6 @@
 # This file is meant to detail the cababilities
 # of network devices to supply data via SNMP.  
 
-# $Id$
-
 #
 # Airespace (pre-Cisco)
 #
@@ -64,6 +62,12 @@ macsuck: yes
 device: All
 
 #
+# Alteon
+#
+device-vendor: Alteon
+note: See Radware
+
+#
 # Altiga
 #
 device-vendor: Altiga
@@ -110,10 +114,226 @@ device-family: Asante Hubs
 device: 1012
 
 #
+# Avaya
+#
+device-vendor: Avaya
+macsuck: yes
+cdp: proprietary
+note: SONMP Discovery Protocol Supported
+
+device-family: BayStack Hub
+duplex: both
+ver: 1
+modules: yes
+class: Layer1::Bayhub
+note: Uses proprietary MIBs to provide MAC to port mapping.
+note: !Requires Advanced or Advanced Analyzer NMM
+
+device: 102
+
+device: System 5000
+
+device-family: Ethernet Switch/Baystack Switch
+macsuck: yes
+duplex: both
+vlan: write
+modules: yes
+class: Layer2::Baystack
+
+device: 303, 304, 350, 380, 410, 420, 425, 460, 470
+
+device: 450
+note: !Some versions > 4.X in stacked configuration have SNMP timeout issues. 
+note: Labels full duplex as 20Mbit connection.
+
+device: Business Policy Switch (BPS)
+
+device-family: Ethernet Routing Switch/Baystack Switch
+arpnip: yes
+duplex: write
+vlan: write
+modules: yes
+class: Layer2::Baystack
+
+device: 3510,3524,3526
+
+device: 2526,2550
+
+device: 4524,4526,4548,4550,4826,4850
+
+device: 5510,5520,5530,5632,5650,5698
+
+device-family: Virtual Services Platform (VSP) 7000 
+arpnip: yes
+duplex: write
+vlan: write
+modules: yes
+class: Layer2::Baystack
+
+device: 7024
+
+device-family: Business Ethernet Switch
+arpnip: yes
+duplex: write
+vlan: write
+modules: yes
+class: Layer2::Baystack
+
+device: 50,110,120,210,220,1010,1020 
+
+device-family: Centillion
+duplex: both
+vlan: yes
+class: Layer2::Centillion
+note: !Must be on version 4.x or 5.x (VLAN based) software.
+
+device: 5000BH, 5005BH
+device: C50,C100
+
+device-family: AP222x
+duplex: both
+modules: no
+class: Layer2::NAP222x
+note: !Upgrade to version 1.3 or higher.
+note: Sends out topology packets if enabled but does not build neighbor table.
+
+device: AP-2220, AP-2221
+
+device-family: Multiprotocol Router/BayRS
+arpnip: yes
+portmac: yes
+duplex: both
+cdp: no
+vlan: yes
+modules: yes
+class: Layer3::BayRS
+
+device: AN,ARN,ASN,BLN,BCN
+
+device: 2430,5430
+
+device-family: Secure Router
+arpnip: yes
+portmac: yes
+duplex: no
+cdp: no
+vlan: no
+modules: no
+class: Layer3::Tasman
+
+device: 1001/1001S,1002,1004,2330,3120,4134
+
+device-family: VPN Router/Contivity
+arpnip: yes
+macsuck: no
+portmac: yes
+duplex: no
+cdp: no
+modules: yes
+class: Layer3::Contivity
+
+device: 100,400,600
+
+device: 1000,1010,1050
+
+device: 1500,1600,1700,1740,1750
+
+device: 2500,2600,2700
+
+device: 4500,4600,5000
+
+device-family: Ethernet Routing Switch/Passport/Accelar LAN
+arpnip: yes
+macsuck: yes
+portmac: yes
+duplex: write
+cdp: proprietary
+vlan: write
+modules: yes
+class: Layer3::Passport
+note: !8600 Code versions < 3.2 vlan based mac-suck and are unsupported.  Upgrade code.
+note: !8600 3.2 code versions < 3.2.2.2 have Bridge MIB loop.  Upgrade code.
+
+device: 8803,8806,8810,8810co,8603,8606,8610,8610co,8106,8110
+
+device: 1050,1100,1150,1200
+
+device-family: Virtual Services Platform (VSP) 9000
+arpnip: yes
+macsuck: yes
+portmac: yes
+duplex: write
+cdp: proprietary
+vlan: write
+modules: yes
+class: Layer3::Passport
+
+device: 9000
+
+device-family: Ethernet Routing Switch/Passport 1600 (Software < 2.1)
+arpnip: yes
+macsuck: yes
+portmac: yes
+duplex: both
+cdp: proprietary
+vlan: write
+class: Layer3::N1600
+
+device: 1612,1624,1648
+
+device-family: Ethernet Routing Switch/Passport 1600 (Software >= 2.1)
+arpnip: yes
+macsuck: yes
+portmac: yes
+duplex: write
+cdp: proprietary
+vlan: write
+class: Layer3::Passport
+
+device: 1612,1624,1648
+
+device-family: Synoptics
+macsuck: yes
+duplex: both
+cdp: proprietary
+ver: 1
+class: Layer1::S3000
+note: Uses proprietary MIBs to provide MAC to port mapping.
+note: !Requires Advanced or Advanced Analyzer NMM
+
+device: 281X
+
+device: System 3000
+
+device-family: Wireless Switch 2270
+arpnip: yes
+macsuck: yes
+portmac: yes
+duplex: both
+cdp: proprietary
+modules: yes
+class: Layer2::N2270
+note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+
+device: 2270
+
+device-family: Wireless Security Switches 2300 Series 
+arpnip: yes
+macsuck: yes
+portmac: yes
+duplex: both
+cdp: no
+modules: yes
+class: Layer2::NWSS2300
+note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+
+device: 2350,2360,2361,2380,2382
+
+#
 # Bay
 #
 device-vendor: Bay
-note: See Nortel
+note: See Avaya
 
 #
 # CISCO
@@ -640,195 +860,16 @@ device:  BSD routers
 #
 # Kentrox
 #
-device-vendor: Kentrox
-note: MIB not yet shipped
+#device-vendor: Kentrox
+#note: MIB not yet shipped
 
-device: Kentrox DataSMART DSU/CSU
+#device: Kentrox DataSMART DSU/CSU
 
 #
 # NORTEL
 #
 device-vendor: Nortel
-macsuck: yes
-cdp: proprietary
-note: SONMP Discovery Protocol Supported
-
-device-family: BayStack Hub
-duplex: both
-ver: 1
-modules: yes
-class: Layer1::Bayhub
-note: Uses proprietary MIBs to provide MAC to port mapping.
-note: !Requires Advanced or Advanced Analyzer NMM
-
-device: 102
-
-device: System 5000
-
-device-family: Ethernet Switch/Baystack Switch
-macsuck: yes
-duplex: both
-vlan: write
-modules: yes
-class: Layer2::Baystack
-
-device: 303, 304, 350, 380, 410, 420, 425, 460, 470
-
-device: 450
-note: !Some versions > 4.X in stacked configuration have SNMP timeout issues. 
-note: Labels full duplex as 20Mbit connection.
-
-device: Business Policy Switch (BPS)
-
-device-family: Ethernet Routing Switch/Baystack Switch
-arpnip: yes
-duplex: write
-vlan: write
-modules: yes
-class: Layer2::Baystack
-
-device: 3510
-
-device: 2526,2550
-
-device: 4524,4526,4548,4550
-
-device: 5510,5520,5530
-
-device-family: Business Ethernet Switch
-arpnip: yes
-duplex: write
-vlan: write
-modules: yes
-class: Layer2::Baystack
-
-device: 50,110,120,210,220,1010,1020 
-
-device-family: Centillion
-duplex: both
-vlan: yes
-class: Layer2::Centillion
-note: !Must be on version 4.x or 5.x (VLAN based) software.
-
-device: 5000BH, 5005BH
-device: C50,C100
-
-device-family: AP222x
-duplex: both
-modules: no
-class: Layer2::NAP222x
-note: !Upgrade to version 1.3 or higher.
-note: Sends out topology packets if enabled but does not build neighbor table.
-
-device: AP-2220, AP-2221
-
-device-family: Alteon AD
-arpnip: yes
-duplex: both
-cdp: no
-vlan: yes
-modules: no
-class: Layer3::AlteonAD
-note: !Some versions have issues with continuous SNMP polling. Upgrade to 10.0.30.7 or higher.
-
-device: AD2,AD3,AD4
-
-device: 180,183,184
-
-device-family: Multiprotocol Router/BayRS
-arpnip: yes
-portmac: yes
-duplex: both
-cdp: no
-vlan: yes
-modules: yes
-class: Layer3::BayRS
-
-device: AN,ARN,ASN,BLN,BCN
-
-device: 2430,5430
-
-device-family: VPN Router/Contivity
-arpnip: yes
-macsuck: no
-portmac: yes
-duplex: no
-cdp: no
-modules: yes
-class: Layer3::Contivity
-
-device: 100,400,600
-
-device: 1000,1010,1050
-
-device: 1500,1600,1700,1740,1750
-
-device: 2500,2600,2700
-
-device: 4500,4600,5000
-
-device-family: Ethernet Routing Switch/Passport/Accelar LAN
-arpnip: yes
-macsuck: yes
-portmac: yes
-duplex: write
-cdp: proprietary
-vlan: write
-modules: yes
-class: Layer3::Passport
-note: !8600 Code versions < 3.2 vlan based mac-suck and are unsupported.  Upgrade code.
-note: !8600 3.2 code versions < 3.2.2.2 have Bridge MIB loop.  Upgrade code.
-
-device: 8603,8606,8610, 8610co, 8106, 8110
-
-device: 1050,1100,1150,1200
-
-device-family: Ethernet Routing Switch/Passport 1600 (Software < 2.1)
-arpnip: yes
-macsuck: yes
-portmac: yes
-duplex: both
-cdp: proprietary
-vlan: write
-class: Layer3::N1600
-
-device: 1612,1624,1648
-
-device-family: Ethernet Routing Switch/Passport 1600 (Software >= 2.1)
-arpnip: yes
-macsuck: yes
-portmac: yes
-duplex: write
-cdp: proprietary
-vlan: write
-class: Layer3::Passport
-
-device: 1612,1624,1648
-
-device-family: Synoptics
-macsuck: yes
-duplex: both
-cdp: proprietary
-ver: 1
-class: Layer1::S3000
-note: Uses proprietary MIBs to provide MAC to port mapping.
-note: !Requires Advanced or Advanced Analyzer NMM
-
-device: 281X
-
-device: System 3000
-
-device-family: Wireless Switch 2270
-arpnip: no
-macsuck: yes
-portmac: yes
-duplex: both
-cdp: proprietary
-modules: yes
-class: Layer2::N2270
-note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
-
-device: 2270
+note: See Avaya
 
 #
 # Proxim
@@ -844,6 +885,23 @@ device-family: Orinoco
 device: AP-1000,AP-2000,AP-4000
 
 device: WavePOINT-II
+
+#
+# Radware
+#
+device-vendor: Radware
+device-family: Alteon AD
+arpnip: yes
+duplex: both
+cdp: no
+vlan: yes
+modules: no
+class: Layer3::AlteonAD
+note: !Some versions have issues with continuous SNMP polling. Upgrade to 10.0.30.7 or higher.
+
+device: AD2,AD3,AD4
+
+device: 180,183,184
 
 # 
 # SonicWALL
@@ -865,7 +923,7 @@ device: Sun routers
 # Synoptics
 #
 device-vendor: Synoptics
-note: See Nortel
+note: See Avaya
 
 #
 # Zyxel
