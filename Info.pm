@@ -487,10 +487,6 @@ Allied Telesis switches.
 
 See documentation in L<SNMP::Info::Layer2::Allied> for details.
 
-=item SNMP::Info::Layer2::Bay
-
-Depreciated.  Use BayStack.
-
 =item SNMP::Info::Layer2::Baystack
 
 Subclass for Avaya/Nortel/Bay Ethernet Switch/Baystack switches.  This
@@ -536,10 +532,6 @@ Generic Cisco subclass for layer2 devices that are not yet supported
 in more specific subclasses.
 
 See documentation in L<SNMP::Info::Layer2::Cisco> for details.
-
-=item SNMP::Info::Layer2::Foundry
-
-Depreciated.  Use SNMP::Info::Layer3::Foundry.
 
 =item SNMP::Info::Layer2::HP
 

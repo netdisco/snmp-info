@@ -3,12 +3,16 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 version 3.00
 
     [API Changes]
+
     * The methods c_ip(), c_if(), c_port(), c_id(), and c_platform() now
       represent common topology methods and will try to return a combined
       hash of data from all L2 topology protocols either running on the
       device or specified in the method call.  The topology specific methods
       have been been prefixed with the protocol name in lowercase so that
       they can be called directly, sonmp_ip(), cdp_ip(), etc.
+    * L2::Bay and L2::Foundry have been removed from the distribution.  Both
+      classes were depreciated and all functionality is available through
+      L2::Baystack and L3::Foundry. 
 
     [NEW FEATURES]
 
@@ -28,7 +32,7 @@ version 3.00
       support; make_snmpdata.pl gathers SNMP data (snmpwalk) in a format that
       can be used with test_class_mocked.pl which mocks an SNMP agent to
       enable testing with no network access to a device.
-    
+
     [ENHANCEMENTS]
 
     * UNIVERSAL::can() now works with dynamic methods 
@@ -39,11 +43,11 @@ version 3.00
     * CiscoStats improvements to determine os versions, eg IOS XE ver on Sup7L-E
     * CiscoStats now reports 'ios-xe' if the device runs IOS XE (used to be 'ios')
     * Improved support of XOS based Extreme devices
-    
+
     [BUG FIXES]
-    
+
     * [3564920] - lldp_if gives wrong data for Enterasys
-    
+
 version 2.11 (2012-12-09)
 
     [BUG FIXES]
