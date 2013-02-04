@@ -666,6 +666,22 @@ class: Layer3::CiscoFWSM
 arpnip: yes
 
 #
+# Citrix
+#
+device-vendor: Citrix
+arpnip: no
+cdp: no
+duplex: no
+macsuck: no
+modules: no
+portmac: yes
+vlan: no
+class: Layer7::Netscaler
+
+device-family: Netscaler
+device: All
+
+#
 # Cyclades
 #
 device-vendor: Cyclades
