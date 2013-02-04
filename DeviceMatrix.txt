@@ -742,17 +742,19 @@ device: Matrix N-Series DFE
 #
 device-vendor: Extreme Networks
 arpnip: yes
-macsuck: yes
+cdp: yes
 duplex: both
-vlan: yes
-cdp: no
+macsuck: yes
 modules: yes
+portmac: yes
+vlan: yes
 class: Layer3::Extreme
 
-device-family: Alpine and Summit
+device-family: ExtremeWare based devices
+device: All
 
-device: Alpine 3808
-device: Summit 7i, 48si
+device-family: XOS based devices
+device: All
 
 #
 # FreeBSD
