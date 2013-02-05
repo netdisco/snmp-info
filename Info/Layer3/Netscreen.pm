@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Netscreen
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -33,8 +32,9 @@ package SNMP::Info::Layer3::Netscreen;
 use strict;
 use Exporter;
 use SNMP::Info::Layer3;
+use SNMP::Info::IEEE802dot11;
 
-@SNMP::Info::Layer3::Netscreen::ISA       = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Netscreen::ISA       = qw/SNMP::Info::Layer3 SNMP::Info::IEEE802dot11 Exporter/;
 @SNMP::Info::Layer3::Netscreen::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
@@ -43,20 +43,41 @@ $VERSION = '2.11';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::IEEE802dot11::MIBS,
     'NETSCREEN-SMI'           => 'netscreenSetting',
     'NETSCREEN-PRODUCTS-MIB'  => 'netscreenGeneric',
     'NETSCREEN-INTERFACE-MIB' => 'nsIfIndex',
     'NETSCREEN-SET-GEN-MIB'   => 'nsSetGenSwVer',
+    'NETSCREEN-IP-ARP-MIB'    => 'nsIpArpAOD',
 );
 
-%GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, 'os_version' => 'nsSetGenSwVer', );
+%GLOBALS = (
+    %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::IEEE802dot11::GLOBALS,
+    'os_version' => 'nsSetGenSwVer',
+);
 
-%FUNCS = ( %SNMP::Info::Layer3::FUNCS, );
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::IEEE802dot11::FUNCS,
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
+    ns_i_index       => 'nsIfIndex',
+    ns_i_name        => 'nsIfName',
+    ns_i_description => 'nsIfDescr',
+    ns_i_mac         => 'nsIfMAC',
+    ns_i_up          => 'nsIfStatus',
+    ns_ip_table      => 'nsIfIp',
+    ns_ip_netmask    => 'nsIfNetmask',
+    at_index         => 'nsIpArpIfIdx',
+    at_paddr         => 'nsIpArpMac',
+    at_netaddr       => 'nsIpArpIp',
+    bp_index         => 'nsIfInfo',
+);
+
+%MUNGE = ( %SNMP::Info::Layer3::MUNGE, %SNMP::Info::IEEE802dot11::MUNGE, );
 
 sub layers {
-    return '01001100';
+    return '01001110';
 }
 
 sub vendor {
@@ -110,6 +131,332 @@ sub model {
 
     $model =~ s/^netscreen//i;
     return $model;
+}
+
+# provides mapping from IF-MIB to nsIf interfaces - many to 1 (!)
+# - on WLAN devices wireless0/0(|-[ag]) -> wireless0/0 !!
+sub if_nsif_map {
+    my $netscreen   = shift;
+    my $i_descr     = $netscreen->SUPER::i_description;
+    my $ns_descr    = $netscreen->ns_i_description;
+    my %if_nsif_map = ();
+    my @ikeys       = sort { $a <=> $b } keys %$i_descr;
+    my @nskeys      = sort { $a <=> $b } keys %$ns_descr;
+    my $i           = 0;
+    my $n           = 0;
+
+    # assumes descriptions are in the same order from both walks
+    while ( $i < @ikeys && $n < @nskeys ) {
+
+        # find matching sub interfaces
+        while (
+            $i < @ikeys
+            && substr(
+                $i_descr->{ $ikeys[$i] },
+                0,
+                length $ns_descr->{ $nskeys[$n] }
+            ) eq $ns_descr->{ $nskeys[$n] }
+            )
+        {
+
+            $if_nsif_map{ $ikeys[$i] } = $nskeys[$n];
+            $i++;
+        }
+
+        $n++;
+
+        # skip non-matching interfaces (e.g. tunnel.N)
+        while (
+            $i < @ikeys
+            && substr(
+                $i_descr->{ $ikeys[$i] },
+                0,
+                length $ns_descr->{ $nskeys[$n] }
+            ) ne $ns_descr->{ $nskeys[$n] }
+            && $n < @nskeys
+            )
+        {
+
+            $if_nsif_map{ $ikeys[$i] } = 0;    # no matching interface
+            $i++;
+        }
+    }
+
+    return \%if_nsif_map;
+}
+
+sub nsif_if_map {
+    my $netscreen = shift;
+    my $native    = shift
+        || 0
+        ; # return only mappings for IF-MIB interfaces or all netscreen interfaces
+    my $i_descr     = $netscreen->SUPER::i_description;
+    my $ns_descr    = $netscreen->ns_i_description;
+    my %nsif_if_map = ();
+    my @ikeys       = sort { $a <=> $b } keys %$i_descr;
+    my @nskeys      = sort { $a <=> $b } keys %$ns_descr;
+    my $i           = 0;
+    my $n           = 0;
+
+    # assumes descriptions are in the same order from both walks
+    while ( $i < @ikeys && $n < @nskeys ) {
+
+        # find matching sub interfaces
+        while (
+            $n < @nskeys
+            && substr(
+                $ns_descr->{ $nskeys[$n] },
+                0,
+                length $i_descr->{ $ikeys[$i] }
+            ) eq $i_descr->{ $ikeys[$i] }
+            )
+        {
+
+            $nsif_if_map{ $nskeys[$n] } = $ikeys[$i]
+                if !$native
+                    || $ns_descr->{ $nskeys[$n] } eq $i_descr->{ $ikeys[$i] };
+            $n++;
+        }
+
+        $i++;
+
+        # skip non-matching interfaces (e.g. tunnel.N)
+        while (
+            $n < @nskeys
+            && substr(
+                $ns_descr->{ $nskeys[$n] },
+                0,
+                length $i_descr->{ $ikeys[$i] }
+            ) ne $i_descr->{ $ikeys[$i] }
+            && $i < @ikeys
+            )
+        {
+
+            $nsif_if_map{ $nskeys[$n] } = 0
+                unless $native;    # no matching interface
+            $n++;
+        }
+    }
+
+    return \%nsif_if_map;
+}
+
+sub interfaces {
+    my $netscreen = shift;
+    return $netscreen->i_description;
+}
+
+sub i_index {
+    my $netscreen = shift;
+    return $netscreen->ns_i_index;
+}
+
+sub i_name {
+    my $netscreen = shift;
+    return $netscreen->ns_i_name;
+}
+
+sub i_description {
+    my $netscreen = shift;
+    # Versions prior to 5.4 do not support nsIfDescr but do have nsIfName
+    return $netscreen->ns_i_description() || $netscreen->ns_i_name();
+}
+
+sub i_mac {
+    my $netscreen = shift;
+    my %i_mac     = ();
+    my $ns_mac    = $netscreen->ns_i_mac;
+
+    foreach my $iid ( keys %$ns_mac ) {
+        $i_mac{$iid} = &SNMP::Info::munge_mac( $ns_mac->{$iid} );
+    }
+
+    return \%i_mac;
+}
+
+sub i_up {
+    my $netscreen = shift;
+    return $netscreen->ns_i_up;
+}
+
+sub i_up_admin {
+    my $netscreen  = shift;
+    my $i_up       = $netscreen->i_up;
+    my $i_up_admin = $netscreen->SUPER::i_up_admin;
+    my $ns_i_map   = $netscreen->nsif_if_map;
+    my %i_up_admin;
+
+    foreach my $iid ( keys %$ns_i_map ) {
+        $i_up_admin{$iid} 
+            = $i_up->{$iid} eq "up" && "up"
+            || $i_up_admin->{ $ns_i_map->{$iid} }
+            || 0;
+    }
+
+    return \%i_up_admin;
+}
+
+sub i_type {
+    my $netscreen = shift;
+    my $i_type    = $netscreen->SUPER::i_type;
+    my $ns_i_map  = $netscreen->nsif_if_map;
+    my %i_type;
+
+    foreach my $iid ( keys %$ns_i_map ) {
+        $i_type{$iid} = $i_type->{ $ns_i_map->{$iid} } || "tunnel";
+    }
+
+    return \%i_type;
+}
+
+sub i_ignore {
+    return;
+}
+
+sub i_speed {
+    my $netscreen = shift;
+    my $i_speed   = $netscreen->SUPER::i_speed;
+    my $i_name    = $netscreen->i_name;
+    my $ns_i_map  = $netscreen->nsif_if_map;
+    my %i_speed;
+
+    foreach my $iid ( keys %$ns_i_map ) {
+        $i_speed{$iid} 
+            = $i_speed->{ $ns_i_map->{$iid} }
+            || $i_name->{$iid} =~ /tunnel/ && "vpn"
+            || 0;
+    }
+
+    return \%i_speed;
+}
+
+sub mac_map {
+    my $netscreen = shift;
+    my %mac_map   = ();
+    my $arp_mac   = $netscreen->nsIpArpMac;
+
+    foreach my $iid ( keys %$arp_mac ) {
+        my $oid = join( ".", ( unpack( "C6", $arp_mac->{$iid} ) ) );
+        $mac_map{$oid} = $iid;
+    }
+    return \%mac_map;
+}
+
+sub ip_index {
+    my $netscreen = shift;
+    my %ip_index  = ();
+    my $ns_ip     = $netscreen->ns_ip_table;
+
+    foreach my $iid ( keys %$ns_ip ) {
+        $ip_index{ $ns_ip->{$iid} } = $iid if $ns_ip->{$iid} ne "0.0.0.0";
+    }
+
+    return \%ip_index;
+}
+
+sub ip_table {
+    my $netscreen = shift;
+    my $ip_index  = $netscreen->ip_index;
+    my %ip_table  = ();
+
+    foreach my $iid ( keys %$ip_index ) {
+        $ip_table{$iid} = $iid;
+    }
+
+    return \%ip_table;
+}
+
+sub ip_netmask {
+    my $netscreen  = shift;
+    my $ip_index   = $netscreen->ip_index;
+    my $ns_netmask = $netscreen->ns_ip_netmask;
+    my %ip_netmask = ();
+
+    foreach my $iid ( keys %$ip_index ) {
+        $ip_netmask{$iid} = $ns_netmask->{ $ip_index->{$iid} };
+    }
+
+    return \%ip_netmask;
+}
+
+sub fw_index {
+    my $netscreen = shift;
+    my %fw_index  = ();
+    my $arp_mac   = $netscreen->nsIpArpMac;
+
+    foreach my $iid ( keys %$arp_mac ) {
+        my $oid = join( ".", ( unpack( "C6", $arp_mac->{$iid} ) ) );
+        $fw_index{$iid} = $oid;
+    }
+
+    return \%fw_index;
+}
+
+sub fw_mac {
+    my $netscreen = shift;
+    my %fw_mac    = ();
+    my $mac_map   = $netscreen->mac_map;
+
+    foreach my $oid ( keys %$mac_map ) {
+        my $mac
+            = join( ":", ( map { sprintf "%lx", $_ } split( /\./, $oid ) ) );
+        $fw_mac{$oid} = $mac;
+    }
+
+    return \%fw_mac;
+}
+
+sub bp_index {
+    my $netscreen = shift;
+    my $if_info   = $netscreen->nsIfInfo;
+    my %bp_index  = ();
+
+    foreach my $iid ( keys %$if_info ) {
+        $bp_index{ $if_info->{$iid} } = $iid;
+    }
+
+    return \%bp_index;
+}
+
+sub fw_port {
+    my $netscreen = shift;
+    my %fw_port;
+    my $fw_index = $netscreen->fw_index;
+    my $arp_if   = $netscreen->nsIpArpIfIdx;
+
+    foreach my $iid ( keys %$arp_if ) {
+        $fw_port{ $fw_index->{$iid} } = $arp_if->{$iid}
+            if defined $fw_index->{$iid};
+    }
+
+    return \%fw_port;
+}
+
+# need to remap from IF-MIB index to nsIf index
+sub i_ssidlist {
+    my $netscreen  = shift;
+    my $i_ssidlist = $netscreen->SUPER::i_ssidlist;
+    my $ns_i_map   = $netscreen->if_nsif_map;
+    my %i_ssidlist;
+
+    foreach my $iid ( keys %$i_ssidlist ) {
+        $i_ssidlist{ $ns_i_map->{$iid} } = $i_ssidlist->{$iid};
+    }
+
+    return \%i_ssidlist;
+}
+
+sub i_80211channel {
+    my $netscreen      = shift;
+    my $i_80211channel = $netscreen->SUPER::i_80211channel;
+    my $ns_i_map       = $netscreen->if_nsif_map;
+    my %i_80211channel;
+
+    foreach my $iid ( keys %$i_80211channel ) {
+        $i_80211channel{ $ns_i_map->{$iid} } = $i_80211channel->{$iid};
+    }
+
+    return \%i_80211channel;
 }
 
 1;

@@ -1337,6 +1337,7 @@ sub device_type {
         2636 => 'SNMP::Info::Layer3::Juniper',
         2925 => 'SNMP::Info::Layer1::Cyclades',
         3076 => 'SNMP::Info::Layer3::Altiga',
+        3224 => 'SNMP::Info::Layer3::Netscreen',
         3375 => 'SNMP::Info::Layer3::F5',
         3417 => 'SNMP::Info::Layer3::BlueCoatSG',
         4526 => 'SNMP::Info::Layer2::Netgear',
@@ -1364,6 +1365,7 @@ sub device_type {
         1991  => 'SNMP::Info::Layer3::Foundry',
         2272  => 'SNMP::Info::Layer3::Passport',
         2925  => 'SNMP::Info::Layer1::Cyclades',
+        3224  => 'SNMP::Info::Layer3::Netscreen',
         3375  => 'SNMP::Info::Layer3::F5',
         4526  => 'SNMP::Info::Layer2::Netgear',
         5624  => 'SNMP::Info::Layer3::Enterasys',
@@ -1621,10 +1623,6 @@ sub device_type {
         # Alcatel-Lucent branded Aruba
         $objtype = 'SNMP::Info::Layer3::Aruba'
             if ( $desc =~ /^AOS-W/ );
-
-        #Juniper NetScreen
-        $objtype = 'SNMP::Info::Layer3::Netscreen'
-            if ( $desc =~ /NetScreen|SSG/i );
 
         # Cisco PIX
         $objtype = 'SNMP::Info::Layer3::Cisco'
