@@ -251,21 +251,12 @@ sub html_tail {
 [<SPAN CLASS="family">Family Attribute</SPAN>]
 [<SPAN CLASS="vendor">Vendor Attribute</SPAN>]
 <h1>Attribute Key</h1>
-A value of <B>-</B> signifies the information is not specified and can
+A value of <B>-</B> signifies the information is not specified and can not
 be assumed working.
 <TABLE BORDER=1>
 <TR>
     <TD>Arpnip</TD>
     <TD>Ability to collect ARP tables for MAC to IP translation.</TD>
-</TR>
-<TR>
-    <TD>CDP</TD>
-    <TD>Cisco Discovery Protocol usable.
-        <UL>
-            <LI><tt>Yes</tt> - Has CDP information through CISCO-CDP-MIB
-            <LI><tt>Proprietary</tt> means the device has its own L2 Discovery Protocol.
-        </UL>
-    </TD>
 </TR>
 <TR>
     <TD>Class</TD>
@@ -304,6 +295,16 @@ be assumed working.
     <TD>Portmac</TD>
     <TD>Whether the device will list the MAC address of the switch port on each
         switch port when doing a Macsuck.
+    </TD>
+</TR>
+<TR>
+    <TD>Topo</TD>
+    <TD>Ability to get Layer 2 Topology Information from device if the
+        protocol is enabled.  SNMP::Info supports querying Link Layer
+        Discovery Protocol (LLDP), Cisco Discovery Protocol (CDP),
+        SynOptics/Bay/Nortel/Avaya Network Management Protocol (SONMP),
+        Foundry/Brocade Discovery Protocol (FDP), and Extreme Discovery
+        Protocol (EDP). 
     </TD>
 </TR>
 <TR>

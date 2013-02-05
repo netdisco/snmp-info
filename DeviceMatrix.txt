@@ -8,20 +8,21 @@
 # Airespace (pre-Cisco)
 #
 device-vendor: Airespace
-cdp:no
-arpnip: no
-macsuck: yes
-portmac: yes
+arpnip: yes
+topo:no
 duplex: both
-vlan: yes
+macsuck: yes
 modules: yes
+portmac: yes
+vlan: yes
 class: Layer2::Airespace
 
 device-family: Airespace Wireless Controllers
 note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+note: Arpnip is emulated by gathering the MAC to IP mappings from controller snooping.
 note: Device will only communicate with SNMP version configured in the controller.
 
-device: 3500, 4101, 4102
+device: All
 
 #
 # Alcatel-Lucent
@@ -44,7 +45,7 @@ device: All
 # Allied
 #
 device-vendor: Allied Telesis
-cdp:no
+topo:no
 class: Layer1::Allied
 ver: 1
 arpnip: no
@@ -71,8 +72,16 @@ note: See Radware
 # Altiga
 #
 device-vendor: Altiga
-class: Layer3::Altiga
 note: See Cisco/Altiga
+
+#
+# APC
+#
+device-vendor: APC
+class: Layer7::APC
+device-family: UPS
+device: All
+note:  Must be SNMP management enabled.
 
 #
 # Arista
@@ -118,8 +127,7 @@ device: 1012
 #
 device-vendor: Avaya
 macsuck: yes
-cdp: proprietary
-note: SONMP Discovery Protocol Supported
+topo: yes
 
 device-family: BayStack Hub
 duplex: both
@@ -148,20 +156,14 @@ note: Labels full duplex as 20Mbit connection.
 
 device: Business Policy Switch (BPS)
 
-device-family: Ethernet Routing Switch/Baystack Switch
+device-family: Ethernet Routing Switch
 arpnip: yes
 duplex: write
 vlan: write
 modules: yes
 class: Layer2::Baystack
 
-device: 3510,3524,3526
-
-device: 2526,2550
-
-device: 4524,4526,4548,4550,4826,4850
-
-device: 5510,5520,5530,5632,5650,5698
+device: 2500, 3500, 4500, 4800, 5500, and 5600 series
 
 device-family: Virtual Services Platform (VSP) 7000 
 arpnip: yes
@@ -179,7 +181,7 @@ vlan: write
 modules: yes
 class: Layer2::Baystack
 
-device: 50,110,120,210,220,1010,1020 
+device: All 
 
 device-family: Centillion
 duplex: both
@@ -187,8 +189,7 @@ vlan: yes
 class: Layer2::Centillion
 note: !Must be on version 4.x or 5.x (VLAN based) software.
 
-device: 5000BH, 5005BH
-device: C50,C100
+device: C50, C100, 5000BH, and 5005BH
 
 device-family: AP222x
 duplex: both
@@ -203,20 +204,18 @@ device-family: Multiprotocol Router/BayRS
 arpnip: yes
 portmac: yes
 duplex: both
-cdp: no
+topo: no
 vlan: yes
 modules: yes
 class: Layer3::BayRS
 
-device: AN,ARN,ASN,BLN,BCN
-
-device: 2430,5430
+device: AN, ARN, ASN, BLN, BCN, 2430, and 5430
 
 device-family: Secure Router
 arpnip: yes
 portmac: yes
 duplex: no
-cdp: no
+topo: no
 vlan: no
 modules: no
 class: Layer3::Tasman
@@ -228,42 +227,33 @@ arpnip: yes
 macsuck: no
 portmac: yes
 duplex: no
-cdp: no
+topo: no
 modules: yes
 class: Layer3::Contivity
 
-device: 100,400,600
-
-device: 1000,1010,1050
-
-device: 1500,1600,1700,1740,1750
-
-device: 2500,2600,2700
-
-device: 4500,4600,5000
+device: All
 
 device-family: Ethernet Routing Switch/Passport/Accelar LAN
 arpnip: yes
-macsuck: yes
 portmac: yes
 duplex: write
-cdp: proprietary
 vlan: write
 modules: yes
 class: Layer3::Passport
 note: !8600 Code versions < 3.2 vlan based mac-suck and are unsupported.  Upgrade code.
 note: !8600 3.2 code versions < 3.2.2.2 have Bridge MIB loop.  Upgrade code.
 
-device: 8803,8806,8810,8810co,8603,8606,8610,8610co,8106,8110
+device: 8100, 8300, 8600, and 8800 series 
 
-device: 1050,1100,1150,1200
+device: Passport 1600 series
+note: Software >= 2.1
+
+device: Accelar 1050,1100,1150,1200
 
 device-family: Virtual Services Platform (VSP) 9000
 arpnip: yes
-macsuck: yes
 portmac: yes
 duplex: write
-cdp: proprietary
 vlan: write
 modules: yes
 class: Layer3::Passport
@@ -272,30 +262,15 @@ device: 9000
 
 device-family: Ethernet Routing Switch/Passport 1600 (Software < 2.1)
 arpnip: yes
-macsuck: yes
 portmac: yes
 duplex: both
-cdp: proprietary
 vlan: write
 class: Layer3::N1600
 
 device: 1612,1624,1648
 
-device-family: Ethernet Routing Switch/Passport 1600 (Software >= 2.1)
-arpnip: yes
-macsuck: yes
-portmac: yes
-duplex: write
-cdp: proprietary
-vlan: write
-class: Layer3::Passport
-
-device: 1612,1624,1648
-
 device-family: Synoptics
-macsuck: yes
 duplex: both
-cdp: proprietary
 ver: 1
 class: Layer1::S3000
 note: Uses proprietary MIBs to provide MAC to port mapping.
@@ -307,27 +282,27 @@ device: System 3000
 
 device-family: Wireless Switch 2270
 arpnip: yes
-macsuck: yes
-portmac: yes
 duplex: both
-cdp: proprietary
 modules: yes
+portmac: yes
+vlan: yes
 class: Layer2::N2270
 note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+note: Arpnip is emulated by gathering the MAC to IP mappings from controller snooping.
 
 device: 2270
 
 device-family: Wireless Security Switches 2300 Series 
 arpnip: yes
-macsuck: yes
 portmac: yes
 duplex: both
-cdp: no
+topo: no
 modules: yes
 class: Layer2::NWSS2300
 note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+note: Arpnip is emulated by gathering the MAC to IP mappings from controller snooping.
 
-device: 2350,2360,2361,2380,2382
+device: All
 
 #
 # Bay
@@ -340,7 +315,7 @@ note: See Avaya
 #
 device-vendor: Brocade
 arpnip: yes
-cdp: yes
+topo: yes
 duplex: link
 macsuck: yes
 modules: no
@@ -370,10 +345,19 @@ device-family: ServerIron GT series
 device: All
 
 #
+# Bluecoat
+#
+device-vendor: Bluecoat
+class: Layer3::Bluecoat
+
+device-family: BlueCoat SG Series
+device: All
+
+#
 # CISCO
 #
 device-vendor: Cisco
-cdp: yes
+topo: yes
 ver: 2
 modules: yes
 
@@ -645,15 +629,16 @@ device: VG200
 
 device-family: Wireless Controllers
 class: Layer2::Airespace
-cdp:no
-arpnip: no
+arpnip: yes
+duplex: both
 macsuck: yes
 portmac: yes
-duplex: both
+vlan: yes
 note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+note: Arpnip is emulated by gathering the MAC to IP mappings from controller snooping.
 note: Device will only communicate with SNMP version configured in the controller.
 
-device: 2006, 4112, 4124, 4136, 4402, 4404
+device: 2000, 2100, 2500, 4100, 4400, and 5500 series
 
 device-family: Firewall
 class: Layer3::Cisco
@@ -670,7 +655,7 @@ arpnip: yes
 #
 device-vendor: Citrix
 arpnip: no
-cdp: no
+topo: no
 duplex: no
 macsuck: no
 modules: no
@@ -697,7 +682,7 @@ arpnip: no
 macsuck: yes
 duplex: both
 vlan: yes
-cdp: no
+topo: yes
 modules: yes
 class: Layer3::Dell
 
@@ -725,7 +710,7 @@ arpnip: yes
 macsuck: yes
 duplex: both
 vlan: yes
-cdp: yes
+topo: yes
 modules: yes
 class: Layer3::Enterasys
 
@@ -742,7 +727,7 @@ device: Matrix N-Series DFE
 #
 device-vendor: Extreme Networks
 arpnip: yes
-cdp: yes
+topo: yes
 duplex: both
 macsuck: yes
 modules: yes
@@ -760,11 +745,13 @@ device: All
 # FreeBSD
 #
 device-vendor: FreeBSD
-device-famly: Pf
-class: Layer3::Pf
 arpnip: yes
-cdp: no
+topo: no
+class: Layer3::Pf
+
 note: LLDP support might be available. See note in Layer3::Pf
+device-family: Pf
+device: All
 
 #
 # Foundry
@@ -785,7 +772,7 @@ class:  Layer2::HP4000
 duplex: both
 macsuck: yes
 arpnip: no
-cdp: yes
+topo: yes
 vlan: write
 note: devices in this class only have CDP support
 note: VLAN info in HP-VLAN MIB
@@ -799,7 +786,7 @@ class:  Layer2::HP
 duplex: both
 macsuck: yes
 arpnip: no
-cdp: yes
+topo: yes
 vlan: write
 note: old firmware versions only have CDP support, more recent have LLDP
 note: VLAN info in Q-BRIDGE-MIB
@@ -817,7 +804,7 @@ device: 6108,6200yl,6400cl,6410cl,6600,6600ml,8200zl
 #
 device-vendor: Juniper
 arpnip: yes
-cdp: yes
+topo: yes
 duplex: link
 macsuck: yes
 modules: yes
@@ -835,7 +822,7 @@ device-family: M-series router
 device: All
 
 device-family: NetScreen
-cdp: no
+topo: no
 duplex: no
 modules: no
 vlan: no
@@ -844,7 +831,7 @@ device: All
 
 device-family: SA-series SSL VPN appliances
 arpnip: no
-cdp: no
+topo: no
 duplex: no
 modules: no
 vlan: no
@@ -852,6 +839,15 @@ class: Layer7::Neoteris
 device: All
 
 device-family: SRX-series router
+device: All
+
+#
+# Kentrox
+#
+device-vendor: Kentrox
+class: Layer2::Kentrox
+
+device-family: Kentrox DataSMART DSU/CSU
 device: All
 
 #
@@ -870,21 +866,31 @@ device-family: 2048
 class: Layer3::Dell
 device: All
 
-
 #
 # Microsoft
 #
 device-vendor: Microsoft
-device-family: Windows
 class: Layer3::Microsoft
+
+device-family: Windows
 device: Windows Router
+
+#
+# Mikrotik
+#
+device-vendor: Mikrotik
+class: Layer3::Mikrotik
+
+device-family: RouterOS
+device: All
 
 #
 # Netgear
 #
 device-vendor: NetGear
-device-family: Switches
 class: Layer2::Netgear
+
+device-family: Switches
 device: All
 
 #
@@ -914,18 +920,19 @@ device-family: BSD
 device:  BSD routers
 
 #
-# Kentrox
-#
-#device-vendor: Kentrox
-#note: MIB not yet shipped
-
-#device: Kentrox DataSMART DSU/CSU
-
-#
 # NORTEL
 #
 device-vendor: Nortel
 note: See Avaya
+
+#
+# PacketFront
+#
+device-vendor: PacketFront
+class: Layer3::PacketFront
+
+device-family: DRG
+device: All
 
 #
 # Proxim
@@ -933,7 +940,7 @@ note: See Avaya
 device-vendor: Proxim
 macsuck: yes
 duplex: no
-cdp: no
+topo: no
 class: Layer2::Orinoco
 
 device-family: Orinoco
@@ -947,7 +954,7 @@ device: WavePOINT-II
 #
 device-vendor: Radware
 arpnip: yes
-cdp: no
+topo: no
 duplex: both
 macsuck: yes
 modules: no
