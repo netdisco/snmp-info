@@ -280,7 +280,9 @@ sub mock_getnext {
 	    # with a fully qualified leaf and potentially a partial
 	    ( $leaf, $iid ) = @{$vars};
 
-	    $iid ||= 0;
+	    unless (defined $iid) {
+		$iid = -1;
+	    }
 	    my $new_iid = $iid;
 	    my $val     = $EMPTY;
 	    my $data    = $c_data->{$leaf};
