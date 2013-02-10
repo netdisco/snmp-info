@@ -5,7 +5,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 2.11
+    SNMP::Info - Version 3.00_001
 
 AUTHOR
 
@@ -197,7 +197,7 @@ SUBCLASSES
     SNMP::Info::AdslLine
         SNMP Interface to the ADSL-LINE-MIB for ADSL interfaces.
 
-        Requires the ADSL-LINE-MIB, downloadable from Cisco.
+        Requires the ADSL-LINE-MIB, down loadable from Cisco.
 
         See documentation in SNMP::Info::AdslLine for details.
 
@@ -293,14 +293,14 @@ SUBCLASSES
         See documentation in SNMP::Info::EtherLike for details.
 
     SNMP::Info::FDP
-        Foundry Discovery Protocol. FOUNDRY-SN-SWITCH-GROUP-MIB
+        Foundry (Brocade) Discovery Protocol. FOUNDRY-SN-SWITCH-GROUP-MIB
 
         See documentation in SNMP::Info::FDP for details.
 
     SNMP::Info::IPv6
         SNMP Interface for obtaining configured IPv6 addresses and mapping
-        IPv6 addresses to MACs and interfaces, using information from
-        IP-MIB, IPV6-MIB and/or CISCO-IETF-IP-MIB.
+        IPv6 addresses to MAC addresses and interfaces, using information
+        from IP-MIB, IPV6-MIB and/or CISCO-IETF-IP-MIB.
 
         See documentation in SNMP::Info::IPv6 for details.
 
@@ -333,15 +333,15 @@ SUBCLASSES
         See documentation in SNMP::Info::PowerEthernet for details.
 
     SNMP::Info::RapidCity
-        RAPID-CITY. Inherited by Nortel switches for duplex and VLAN
+        RAPID-CITY. Inherited by Avaya switches for duplex and VLAN
         information.
 
         See documentation in SNMP::Info::RapidCity for details.
 
     SNMP::Info::SONMP
-        SYNOPTICS-ROOT-MIB, S5-ETH-MULTISEG-TOPOLOGY-MIB. Provides
-        translation from Nortel Topology Table information to CDP. Inherited
-        by Nortel/Bay/Synoptics switches and hubs.
+        SynOptics Network Management Protocol (SONMP) SYNOPTICS-ROOT-MIB,
+        S5-ETH-MULTISEG-TOPOLOGY-MIB. Inherited by
+        Avaya/Nortel/Bay/Synoptics switches and hubs.
 
         See documentation in SNMP::Info::SONMP for details.
 
@@ -410,14 +410,12 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::Allied for details.
 
-        SNMP::Info::Layer2::Bay
-            Depreciated. Use BayStack.
-
         SNMP::Info::Layer2::Baystack
-            Subclass for Nortel/Bay Ethernet Switch/Baystack switches. This
-            includes 303, 304, 350, 380, 410, 420, 425, 450, 460, 470
-            series, 2500 series, 4500 series, 5500 series, Business Ethernet
-            Switch (BES), Business Policy Switch (BPS) and probably others.
+            Subclass for Avaya/Nortel/Bay Ethernet Switch/Baystack switches.
+            This includes 303, 304, 350, 380, 410, 420, 425, 450, 460, 470
+            series, 2500 series, 4000 series, 5000 series, Business Ethernet
+            Switch (BES), Business Policy Switch (BPS), VSP 7000 series, and
+            probably others.
 
             See documentation in SNMP::Info::Layer2::Baystack for details.
 
@@ -456,9 +454,6 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::Cisco for details.
 
-        SNMP::Info::Layer2::Foundry
-            Depreciated. Use SNMP::Info::Layer3::Foundry.
-
         SNMP::Info::Layer2::HP
             Subclass for more recent HP Procurve Switches
 
@@ -474,7 +469,7 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer2::HP4000 for details.
 
         SNMP::Info::Layer2::HPVC
-            Subclass for HP VirtualConnect Switches
+            Subclass for HP Virtual Connect Switches
 
             See documentation in SNMP::Info::Layer2::HPVC for details.
 
@@ -492,6 +487,11 @@ SUBCLASSES
             Subclass for Netgear switches
 
             See documentation in SNMP::Info::Layer2::Netgear for details.
+
+        SNMP::Info::Layer2::NWSS2300
+            SNMP Interface to Avaya (Trapeze) Wireless Controllers
+
+            See documentation in SNMP::Info::Layer2::NWSS2300 for details.
 
         SNMP::Info::Layer2::Orinoco
             Subclass for Orinoco/Proxim wireless access points.
@@ -527,8 +527,8 @@ SUBCLASSES
             details.
 
         SNMP::Info::Layer3::AlteonAD
-            Subclass for Nortel Alteon Series Layer 2-7 load balancing
-            switches and Nortel BladeCenter Layer2-3 GbE Switch Modules.
+            Subclass for Radware Alteon Series ADC switches and Nortel
+            BladeCenter Layer2-3 GbE Switch Modules.
 
             See documentation in SNMP::Info::Layer3::AlteonAD for details.
 
@@ -544,8 +544,8 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::Aruba for details.
 
         SNMP::Info::Layer3::BayRS
-            Subclass for Nortel Multiprotocol/BayRS routers. This includes
-            BCN, BLN, ASN, ARN, AN, 2430, and 5430 routers.
+            Subclass for Avaya/Nortel/Bay Multiprotocol/BayRS routers. This
+            includes BCN, BLN, ASN, ARN, AN, 2430, and 5430 routers.
 
             See documentation in SNMP::Info::Layer3::BayRS for details.
 
@@ -583,7 +583,7 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::CiscoFWSM for details.
 
         SNMP::Info::Layer3::Contivity
-            Subclass for Nortel Contivity/VPN Routers.
+            Subclass for Avaya/Nortel Contivity/VPN Routers.
 
             See documentation in SNMP::Info::Layer3::Contivity for details.
 
@@ -604,15 +604,25 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Extreme for details.
 
+        SNMP::Info::Layer3::F5
+            Subclass for F5 devices.
+
+            See documentation in SNMP::Info::Layer3::F5 for details.
+
         SNMP::Info::Layer3::Force10
             Subclass for Force10 devices.
 
             See documentation in SNMP::Info::Layer3::Force10 for details.
 
         SNMP::Info::Layer3::Foundry
-            Subclass for Foundry Network devices.
+            Subclass for Brocade (Foundry) Network devices.
 
             See documentation in SNMP::Info::Layer3::Foundry for details.
+
+        SNMP::Info::Layer3::H3C
+            SNMP Interface to Layer 3 Devices, H3C & HP A-series.
+
+            See documentation in SNMP::Info::Layer3::H3C for details.
 
         SNMP::Info::Layer3::HP9300
             Subclass for HP network devices which Foundry Networks was the
@@ -638,7 +648,7 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::Mikrotik for details.
 
         SNMP::Info::Layer3::N1600
-            Subclass for Nortel Ethernet Routing Switch 1600 series.
+            Subclass for Avaya/Nortel Ethernet Routing Switch 1600 series.
 
             See documentation in SNMP::Info::Layer3::N1600 for details.
 
@@ -664,8 +674,8 @@ SUBCLASSES
             details.
 
         SNMP::Info::Layer3::Passport
-            Subclass for Nortel Ethernet Routing Switch/Passport 8000 series
-            and Accelar series switches.
+            Subclass for Avaya/Nortel Ethernet Routing Switch/Passport 8000
+            series, Accelar, and VSP 9000 series switches.
 
             See documentation in SNMP::Info::Layer3::Passport for details.
 
@@ -703,6 +713,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer7::APC for details.
 
+        SNMP::Info::Layer7::Netscaler
+            SNMP Interface to Citrix Netscaler appliances
+
+            See documentation in SNMP::Info::Layer7::Netscaler for details.
+
         SNMP::Info::Layer7::Neoteris
             SNMP Interface to Juniper SSL VPN appliances
 
@@ -726,16 +741,17 @@ USAGE
     new()
         Creates a new object and connects via SNMP::Session.
 
-         my $info = new SNMP::Info( 'Debug'         => 1,
-                                    'AutoSpecify'   => 1,
-                                    'BigInt'        => 1,
-                                    'BulkWalk'      => 1,
-                                    'BulkRepeaters' => 20,
-                                    'LoopDetect'    => 1,
-                                    'DestHost'      => 'myrouter',
-                                    'Community'     => 'public',
-                                    'Version'       => 2,
-                                    'MibDirs'       => ['dir1','dir2','dir3'],
+         my $info = new SNMP::Info( 'Debug'             => 1,
+                                    'AutoSpecify'       => 1,
+                                    'BigInt'            => 1,
+                                    'BulkWalk'          => 1,
+                                    'BulkRepeaters'     => 20,
+                                    'IgnoreNetSNMPConf' => 1,
+                                    'LoopDetect'        => 1,
+                                    'DestHost'          => 'myrouter',
+                                    'Community'         => 'public',
+                                    'Version'           => 2,
+                                    'MibDirs'           => ['dir1','dir2','dir3'],
                                   ) or die;
 
         SNMP::Info Specific Arguments :
@@ -774,7 +790,20 @@ USAGE
 
             Set to 0 to turn off loop detection.
 
-            (default 1, which measn "on")
+            (default 1, which means "on")
+
+        IgnoreNetSNMPConf
+            Net-SNMP version 5.0 and higher read configuration files,
+            snmp.conf or snmp.local.conf, from /etc/snmp, /usr/share/snmp,
+            /usr/lib(64)/snmp, or $HOME/.snmp and uses those settings to
+            automatically parse MIB files, etc.
+
+            Set to 1 "on" to ignore Net-SNMP configuration files by
+            overriding the "SNMPCONFPATH" environmental variable during
+            object initialization. Note: MibDirs must be defined or Net-SNMP
+            will not be able to load MIBs and initialize the object.
+
+            (default 0, which means "off")
 
         Debug
             Prints Lots of debugging messages. Pass 2 to print even more
@@ -1024,6 +1053,10 @@ USAGE
         Ignored interfaces are ones that are usually not physical ports or
         Virtual Lans (VLANs) such as the Loopback interface, or the CPU
         interface.
+
+    $info->bulkwalk_no()
+        Returns 0. Is an overridable method used for turn off bulkwalk for
+        the device class.
 
     $info->i_index()
         Default SNMP IID to Interface index.
@@ -1334,6 +1367,86 @@ USAGE
         Reference to MIB definition specific to routing protocol.
 
         ("ipRouteInfo")
+
+  Topology Information
+
+    Based upon the manufacturer and software version devices may support
+    some combination of Layer 2 topology protocol information. SNMP::Info
+    supports querying Link Layer Discovery Protocol (LLDP), Cisco Discovery
+    Protocol (CDP), SynOptics/Bay/Nortel/Avaya Network Management Protocol
+    (SONMP), Foundry/Brocade Discovery Protocol (FDP), and Extreme Discovery
+    Protocol (EDP).
+
+    For protocol specific information and implementation:
+
+    LLDP: See SNMP::Info::LLDP for details.
+    CDP: See SNMP::Info::CDP for details.
+    SONMP: See SNMP::Info::SONMP for details.
+    FDP: See SNMP::Info::FDP for details.
+    EDP: See SNMP::Info::EDP for details.
+
+   Topology Capabilities
+
+    $info->has_topo()
+        Reports Layer 2 topology protocols which are supported and running
+        on a device.
+
+        Returns either a reference to an array of protocols, possible values
+        being: "lldp", "cdp", "sonmp", "fdp", "edp" or "undef" if no
+        protocols are supported or running.
+
+   Common Topology Table Information
+
+    The common topology table methods below will query the device for
+    information from the specified topology protocols and return a single
+    hash combining all information. As a result, there may be identical
+    topology information returned from the two protocols causing duplicate
+    entries. It is the calling program's responsibility to identify any
+    duplicate entries and remove duplicates if necessary. If it is necessary
+    to understand which protocol provided the information, utilize the
+    protocol specific methods directly rather than the generic methods.
+
+    The methods support partial table fetches by providing a partial as the
+    first argument.
+
+    If a reference to an array is provided as the second argument, those
+    protocols will be queried for information. The supported array values
+    are: "lldp", "cdp", "sonmp", "fdp", "edp".
+
+    If nothing is passed in as the second argument, the methods will call
+    has_topo() to determine supported and running topology protocols on the
+    device.
+
+    $info->c_ip(partial, topology_protocol_arrayref)
+        Returns reference to hash. Key: iid, Value: remote IPv4 address
+
+        If multiple entries exist with the same local port, c_if(), with the
+        same IPv4 address, c_ip(), it may be a duplicate entry.
+
+        If multiple entries exist with the same local port, c_if(), with
+        different IPv4 addresses, c_ip(), there is either a device in
+        between two or more devices utilizing a different topology protocol
+        or multiple devices which are not directly connected.
+
+        Use the protocol specific methods to dig deeper.
+
+    $info->c_if(partial, topology_protocol_arrayref)
+        Returns reference to hash. Key: iid, Value: local device port
+        (interfaces)
+
+    $info->c_port(partial, topology_protocol_arrayref)
+        Returns reference to hash. Key: iid, Value: remote port (interfaces)
+
+    $info->c_id(partial, topology_protocol_arrayref)
+        Returns reference to hash. Key: iid, Value: string value used to
+        identify the chassis component associated with the remote system.
+
+        Note: SONMP does not return this information.
+
+    $info->c_platform(partial, topology_protocol_arrayref)
+        Returns reference to hash. Key: iid, Value: Remote Device Type
+
+        Note: LLDP and EDP do not provide this information.
 
 SETTING DATA VIA SNMP
 
@@ -1711,22 +1824,32 @@ SNMP::INFO INTERNALS
         };
 
     $info->_global()
-        Used internally by AUTOLOAD to load dynamic methods from %GLOBALS.
+        Used internally by AUTOLOAD to create dynamic methods from %GLOBALS
+        or a single instance MIB Leaf node name from a loaded MIB.
 
-        Example: $info->name() calls autoload which calls
-        $info->_global('name').
+        Example: $info->name() on the first call dispatches to AUTOLOAD()
+        which calls $info->_global('name') creating the method name().
+
+        These methods return data as a scalar.
 
     $info->_set(attr,val,iid,type)
-        Used internally by AUTOLOAD to run an SNMP set command for dynamic
-        methods listed in either %GLOBALS or %FUNCS or a valid mib leaf from
-        a loaded MIB or the set_multi() method to set multiple variable in
-        one command. When run clears attr cache.
+        Used internally by set_multi() to run an SNMP set command. When run
+        clears attr cache.
 
-        Attr is passed as either a scalar for dynamic methods or a reference
-        to an array or array of arrays when used with set_multi().
+        Attr can be passed as either a scalar or a reference to an array or
+        array of arrays when used with set_multi().
 
         Example: $info->set_name('dog',3) uses autoload to resolve to
         $info->_set('name','dog',3);
+
+    $info->_make_setter(val,iid)
+        Used internally by AUTOLOAD to create dynamic methods from either
+        %GLOBALS, %FUNCS, or a valid mib leaf from a loaded MIB which runs
+        an SNMP set command. When run clears the attribute cache.
+
+        Example: $info->set_name('dog',3) dispatches to autoload to resolve
+        to $info->_set('name','dog',3) and _make_setter creates the
+        set_name() method.
 
     $info->set_multi(arrayref)
         Used to run an SNMP set command on several new values in the one
@@ -1775,13 +1898,13 @@ SNMP::INFO INTERNALS
         Note return value has changed since version 0.3
 
     $info->_load_attr()
-        Used internally by AUTOLOAD to fetch data called from methods listed
-        in %FUNCS or a MIB Leaf node name.
+        Used internally by AUTOLOAD to create dynamic methods from %FUNCS or
+        a MIB Leaf node name contained within a table of a loaded MIB.
 
         Supports partial table fetches and single instance table fetches.
         See "Partial Table Fetches" in SNMP::Info.
 
-        Called from $info->load_METHOD();
+        These methods return data as a reference to a hash.
 
     $info->_show_attr()
         Used internally by AUTOLOAD to return data called by methods listed
@@ -1799,32 +1922,49 @@ SNMP::INFO INTERNALS
         Replaces the specified bit in a port_list array and returns the
         packed bitmask
 
+    _validate_autoload_method(method)
+        Used internally by AUTOLOAD to validate that a dynamic method should
+        be created. Returns the OID of the MIB leaf node the method will get
+        or set.
+
+        1. Returns unless method is listed in %FUNCS, %GLOBALS, or is MIB
+        Leaf node name in a loaded MIB for given class.
+        2. Translates the MIB Leaf node name to an OID.
+        3. Checks to see if the method access type is allowed for the
+        resolved OID. Write access for set_ methods, read access for others.
+
+    $info->can()
+        Overrides UNIVERSAL::can() so that objects will correctly report
+        their capabilities to include dynamic methods generated at run time
+        via AUTOLOAD.
+
+        Calls parent can() first to see if method exists, if not validates
+        that a method should be created then dispatches to the appropriate
+        internal method for creation. The newly created method is inserted
+        into the symbol table returning to AUTOLOAD only for the initial
+        method call.
+
+        Returns undef if the method does not exist and can not be created.
+
   AUTOLOAD
 
     Each entry in either %FUNCS, %GLOBALS, or MIB Leaf node names present in
-    loaded MIBs are used by AUTOLOAD() to create dynamic methods.
+    loaded MIBs are used by AUTOLOAD() to create dynamic methods. Generated
+    methods are inserted into the symbol table so that subsequent calls can
+    avoid AUTOLOAD() and dispatch directly.
 
-    Note that this AUTOLOAD is going to be run for all the classes listed in
-    the @ISA array in a subclass, so will be called with a variety of
-    package names. We check the %FUNCS and %GLOBALS of the package that is
-    doing the calling at this given instant.
-
-    1. Returns unless method is listed in %FUNCS, %GLOBALS, or is MIB Leaf
+    1. Returns unless method is listed in %FUNCS, %GLOBALS, or is a MIB Leaf
     node name in a loaded MIB for given class.
-    2. Checks for load_ prefix and if present runs $info->_global(method)
-    for methods which exist in %GLOBALS or are a single instance MIB Leaf
-    node name, otherwise runs $info->_load_attr(method) for methods which
-    exist in %FUNCS or are MIB Leaf node name contained within a table. This
-    always forces reloading and does not use cached data.
-    3. Check for set_ prefix and if present runs $info->_set(method).
-    4. If the method exists in %GLOBALS or is a single instance MIB Leaf
-    node name it runs $info->_global(method) unless already cached.
-    5. If the method exists in %FUNCS or is MIB Leaf node name contained
-    within a table it runs $info->_load_attr(method) if not cached.
-    6. Otherwise return $info->_show_attr(method).
+    2. If the method exists in %GLOBALS or is a single instance MIB Leaf
+    node name from a loaded MIB, _global() generates the method.
+    3. If a set_ prefix is present _make_setter() generates the method.
+    4. If the method exists in %FUNCS or is a MIB Leaf node name contained
+    within a table from a loaded MIB, _load_attr() generates the method.
+    5. A load_ prefix forces reloading of data and does not use cached data.
+    6. A _raw suffix returns data ignoring any munge routines.
 
-    Override any dynamic method listed in one of these hashes by creating a
-    subroutine with the same name.
+    Override any dynamic method listed in %GLOBALS, %FUNCS, or MIB Leaf node
+    name a by creating a subroutine with the same name.
 
     For example to override $info->name() create `` sub name {...}'' in your
     subclass.
