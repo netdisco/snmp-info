@@ -433,31 +433,39 @@ sub i_ssidlist {
     my $partial  = shift;
 
     my $apif_bssid = $nwss2300->nwss2300_apif_bssid($partial) || {};
-    my $i_index    = $nwss2300->i_index($partial)  || {};
+    my $i_index    = $nwss2300->i_index($partial)             || {};
 
     my %i_ssidlist;
     foreach my $iid ( keys %$i_index ) {
+
 	# Skip non-radio interfaces
 	next if $iid =~ /^\d+$/;
-	
-	foreach my $idx ( keys %$apif_bssid) {
-	    next unless ($idx =~ /^$iid\./);
+
+	foreach my $idx ( keys %$apif_bssid ) {
+	    next unless ( $idx =~ /^$iid\./ );
 	    my $bssid_mac = $apif_bssid->{$idx};
 	    next unless $bssid_mac;
+
 	    # Give the SSID a numeric value based upon tail of BSSID
-	    my $id = hex $1 if $bssid_mac =~ /:([0-9A-F]{1,2})$/i;
-	    next unless (defined $id and $id =~ /\d+/);
+	    my $id;
+	    if ( $bssid_mac =~ /:([0-9A-F]{1,2})$/i ) {
+		$id = hex $1;
+	    }
+	    next unless ( defined $id and $id =~ /\d+/ );
 	    my $ssid_oid = $idx;
-            $ssid_oid =~ s/^$iid\.//;
-    
-            my $ssid = join( '', map { sprintf "%c", $_ } split /\./, $ssid_oid );
+	    $ssid_oid =~ s/^$iid\.//;
+
+	    my $ssid
+		= join( '', map { sprintf "%c", $_ } split /\./, $ssid_oid );
+
 	    # Remove any control characters including nulls
-            $ssid =~ s/[\c@-\c_]//g; 
-            $i_ssidlist{"$iid.$id"} = $ssid;
+	    $ssid =~ s/[\c@-\c_]//g;
+	    $i_ssidlist{"$iid.$id"} = $ssid;
 	}
     }
     return \%i_ssidlist;
 }
+
 
 # Can't find in MIB
 #
