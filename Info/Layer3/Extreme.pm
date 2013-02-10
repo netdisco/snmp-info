@@ -389,17 +389,17 @@ sub i_vlan {
     return $q_bridge if (keys %$q_bridge);
 
     # Next we try extremeVlanOpaqueTable
-    my $xos = $extreme->xos_i_vlan($partial);
+    my $xos = $extreme->_xos_i_vlan($partial);
     return $xos if (keys %$xos);
     
     # Try older ifStack method
-    my $extremeware = $extreme->extremeware_i_vlan($partial);
+    my $extremeware = $extreme->_extremeware_i_vlan($partial);
     return $extremeware if (keys %$extremeware);
     
     return;
 }
 
-sub xos_i_vlan {
+sub _xos_i_vlan {
     my $extreme = shift;
     my $partial = shift;
 
@@ -434,7 +434,7 @@ sub xos_i_vlan {
     return $i_vlan;
 }
 
-sub extremeware_i_vlan {
+sub _extremeware_i_vlan {
     my $extreme    = shift;
     my $partial    = shift;
     my $stack      = $extreme->ifStackStatus($partial);
@@ -468,17 +468,17 @@ sub i_vlan_membership {
     return $q_bridge if (keys $q_bridge);
 
     # Next we try extremeVlanOpaqueTable
-    my $xos = $extreme->xos_i_vlan_membership($partial);
+    my $xos = $extreme->_xos_i_vlan_membership($partial);
     return $xos if (keys $xos);
     
     # Try older ifStack method
-    my $extremeware = $extreme->extremeware_i_vlan_membership($partial);
+    my $extremeware = $extreme->_extremeware_i_vlan_membership($partial);
     return $extremeware if (keys $extremeware);
     
     return;
 }
 
-sub xos_i_vlan_membership {
+sub _xos_i_vlan_membership {
     my $extreme = shift;
     my $partial = shift;
 
@@ -518,7 +518,7 @@ sub xos_i_vlan_membership {
     return $i_vlan_membership;
 }
 
-sub extremeware_i_vlan_membership {
+sub _extremeware_i_vlan_membership {
     my $extreme    = shift;
     my $partial    = shift;
     my $stack      = $extreme->ifStackStatus($partial);
@@ -911,6 +911,11 @@ Ignores VLAN meta interfaces and loopback
 =item $extreme->fw_status()
 
 (C<extremeFdbMacFdbStatus>)
+
+=item $extreme->lldp_if()
+
+Returns the mapping to the SNMP Interface Table. Extreme LLDP uses the
+bridge index rather than ifIndex.
 
 =item $extreme->i_vlan()
 
