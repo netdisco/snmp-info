@@ -633,7 +633,7 @@ Returns bytes of used memory
 Returns the model number of the HP Switch.  Will translate between the HP Part
 number and the common model number with this map :
 
-%MODEL_MAP = (
+ %MODEL_MAP = (
     'J8131A' => 'WAP-420-WW',
     'J8130A' => 'WAP-420-NA',
     'J8133A' => 'AP520WL',
@@ -730,7 +730,7 @@ number and the common model number with this map :
     'J9450A' => '1810G-24',
     'J9029A' => '1800-8G',
     'J9028A' => '1800-24G',
-);
+ );
 
 =item $hp->os()
 
@@ -776,12 +776,12 @@ Power supply 2 status
 =item $hp->peth_port_power()
 
 Power supplied by PoE ports, in milliwatts
-("hpicfPoePethPsePortPower")
+(C<hpicfPoePethPsePortPower>)
 
 =item $hp->stp_ver()
 
 Returns what version of STP the device is running.
-("hpicfBridgeRstpForceVersion" with fallback to inherited stp_ver())
+(C<hpicfBridgeRstpForceVersion> with fallback to inherited stp_ver())
 
 =back
 
@@ -820,7 +820,8 @@ Returns reference to hash of IIDs to admin duplex setting.
 
 =item $hp->vendor_i_type()
 
-Returns reference to hash of IIDs to HP specific port type (hpSwitchPortType).
+Returns reference to hash of IIDs to HP specific port type
+(C<hpSwitchPortType>).
 
 =item $hp->i_name()
 

@@ -544,11 +544,11 @@ Tries to reference $netscreen->id() to F<NETSCREEN-PRODUCTS-MIB>
 
 =item $netscreen->vendor()
 
-Returns 'juniper'
+Returns C<'juniper'>
 
 =item $netscreen->os()
 
-Returns 'screenos'
+Returns C<'screenos'>
 
 =item $netscreen->os_ver()
 

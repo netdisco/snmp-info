@@ -175,7 +175,7 @@ These are methods that return scalar value from SNMP
 
 =item $pfront->vendor()
 
-Returns 'packetfront'.
+Returns C<'packetfront'>.
 
 =item $pfront->os()
 
@@ -187,7 +187,7 @@ Returns the software version extracted from C<sysDescr>.
 
 =item $pfront->serial()
 
-Returns the value of productSerialNo. 
+Returns the value of C<productSerialNo>. 
 
 =back
 

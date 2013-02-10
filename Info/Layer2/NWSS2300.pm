@@ -863,7 +863,7 @@ Returns 'trapeze'
 
 Tries to reference $nwss2300->id() to F<NTWS-REGISTRATION-DEVICES-MIB>
 
-Removes 'ntwsSwitch' for readability.
+Removes C<'ntwsSwitch'> for readability.
 
 =item $nwss2300->serial()
 
@@ -1170,7 +1170,7 @@ for Ethernet interfaces, nwss2300_ap_name() for thin AP interfaces.
 =item $nwss2300->i_type()
 
 Returns reference to map of IIDs to interface descriptions.  Returns
-C<ifType> for Ethernet interfaces and 'capwapWtpVirtualRadio' for thin AP
+C<ifType> for Ethernet interfaces and C<'capwapWtpVirtualRadio'> for thin AP
 interfaces.
 
 =item $nwss2300->i_up()

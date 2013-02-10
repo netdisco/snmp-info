@@ -652,7 +652,8 @@ Returns reference to hash of IIDs to admin duplex setting.
 
 =item $hp->vendor_i_type()
 
-Returns reference to hash of IIDs to HP specific port type (hpSwitchPortType).
+Returns reference to hash of IIDs to HP specific port type
+(C<hpSwitchPortType>).
 
 =item $hp->i_name()
 

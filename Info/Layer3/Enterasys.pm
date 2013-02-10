@@ -388,10 +388,10 @@ identifier (iid).
 
 =head2 Link Layer Discovery Protocol (LLDP) Overrides
 
-The LLDP table timefilter implementation continuously increments when
+The LLDP table time filter implementation continuously increments when
 walked and we may never reach the end of the table.  This behavior can be
-modified with the "set snmp timefilter break disable" command,
-unfortunately it is not the default.  These methods are overriden to
+modified with the C<"set snmp timefilter break disable"> command,
+unfortunately it is not the default.  These methods are overridden to
 supply a partial value of zero which means no time filter.
 
 =over

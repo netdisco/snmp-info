@@ -378,7 +378,7 @@ Converts 802.11n 2.4Ghz to 1 and 5Ghz to 2 to correspond to the
 
 =item munge_cd11_rateset()
 
-Converts rateset to array.
+Converts rate set to array.
 
 =back
 

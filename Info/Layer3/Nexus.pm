@@ -280,11 +280,11 @@ Returns 'cisco'
 
 =item $nexus->os()
 
-Returns 'nx-os'
+Returns C<'nx-os'>
 
 =item $nexus->os_ver()
 
-Returns operating system version extracted fron C<sysDescr>.
+Returns operating system version extracted from C<sysDescr>.
 
 =item $nexus->serial()
 
@@ -294,7 +294,7 @@ Returns the serial number of the chassis from F<ENTITY-MIB>.
 
 Tries to reference $nexus->id() to F<CISCO-ENTITY-VENDORTYPE-OID-MIB>
 
-Removes 'cevChassis' for readability.
+Removes C<'cevChassis'> for readability.
 
 =item $nexus->mac()
 

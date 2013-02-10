@@ -575,7 +575,7 @@ Subclass for Juniper Devices running JUNOS
 
 =over
 
-=item F<JUNIPER-VLAN-MIB> dated "200901090000Z" -- Fri Jan 09 00:00:00 2009 UTC or later.
+=item F<JUNIPER-VLAN-MIB> dated "200901090000Z" or later.
 
 =item F<JUNIPER-CHASSIS-DEFINES-MIB>
 

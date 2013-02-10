@@ -405,7 +405,7 @@ Returns the human set port name if exists.
 
 =item $f5->i_type()
 
-Returns 'ethernetCsmacd' for each C<ifIndex>.
+Returns C<'ethernetCsmacd'> for each C<ifIndex>.
 
 =back
 

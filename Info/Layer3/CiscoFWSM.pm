@@ -202,17 +202,17 @@ to a hash.
 =item $fwsm->at_paddr()
 
 This function derives the at_paddr information from the n2p_paddr() table as
-the MIB to provide that information isn't supported on FWSMs.
+the MIB to provide that information isn't supported on FWSM.
 
 =item $fwsm->at_netaddr()
 
 This function derives the at_netaddr information from the n2p_paddr() table as
-the MIB to provide that information isn't supported on FWSMs.
+the MIB to provide that information isn't supported on FWSM.
 
 =item $fwsm->at_ifaddr()
 
 This function derives the at_ifaddr information from the n2p_paddr() table as
-the MIB to provide that information isn't supported on FWSMs.
+the MIB to provide that information isn't supported on FWSM.
 
 =back
 

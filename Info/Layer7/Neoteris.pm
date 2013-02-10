@@ -132,7 +132,7 @@ Returns 'juniper'.
 
 =item $neoteris->os()
 
-Returns 'ive'.
+Returns C<'ive'>.
 
 =item $neoteris->os_ver()
 

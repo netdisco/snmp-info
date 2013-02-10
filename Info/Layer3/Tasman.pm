@@ -199,18 +199,18 @@ These are methods that return scalar values from SNMP
 
 =item $tasman->vendor()
 
-Returns 'avaya'
+Returns C<'avaya'>
 
 =item $tasman->model()
 
 Tries to get the model from C<nnchassisModel> and if not available 
 cross references $tasman->id() to F<NT-ENTERPRISE-DATA-MIB>.
 
-Substitutes 'SR' for 'ntSecureRouter' in the name for readability.
+Substitutes 'SR' for C<'ntSecureRouter'> in the name for readability.
 
 =item $tasman->os()
 
-Returns 'tasman'
+Returns C<'tasman'>
 
 =item $tasman->os_ver()
 
@@ -250,8 +250,8 @@ Grabs the os version from C<nnsysVersion>
 
 =item $tasman->serial()
 
-Tries both (C<nnchassisOperStatus>) and (C<nnchassisSerialNumber>) as OID's
-were redefined between versions.
+Tries both (C<nnchassisOperStatus>) and (C<nnchassisSerialNumber>) as oid
+was redefined between versions.
 
 =back
 

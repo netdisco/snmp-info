@@ -294,11 +294,11 @@ These are methods that return scalar values from SNMP:
 
 =item $force10->vendor()
 
-    Returns 'force10'
+Returns C<'force10'>
 
 =item $force10->hasCDP()
 
-    Returns whether LLDP is enabled.
+Returns whether LLDP is enabled.
 
 =item $force10->model()
 
@@ -306,7 +306,7 @@ Tries to reference $force10->id() to the Force10 product MIB listed above.
 
 =item $force10->os()
 
-Returns 'ftos'
+Returns C<'ftos'>.
 
 =item $force10->os_ver()
 

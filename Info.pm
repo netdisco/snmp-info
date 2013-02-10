@@ -231,7 +231,7 @@ For more info run C<perldoc> on any of the following module names.
 
 SNMP Interface to the ADSL-LINE-MIB for ADSL interfaces.
 
-Requires the F<ADSL-LINE-MIB>, downloadable from Cisco.
+Requires the F<ADSL-LINE-MIB>, down loadable from Cisco.
 
 See documentation in L<SNMP::Info::AdslLine> for details.
 
@@ -350,7 +350,7 @@ See documentation in L<SNMP::Info::FDP> for details.
 =item SNMP::Info::IPv6
 
 SNMP Interface for obtaining configured IPv6 addresses and mapping IPv6
-addresses to MACs and interfaces, using information from F<IP-MIB>,
+addresses to MAC addresses and interfaces, using information from F<IP-MIB>,
 F<IPV6-MIB> and/or F<CISCO-IETF-IP-MIB>.
 
 See documentation in L<SNMP::Info::IPv6> for details.
@@ -551,7 +551,7 @@ See documentation in L<SNMP::Info::Layer2::HP4000> for details.
 
 =item SNMP::Info::Layer2::HPVC
 
-Subclass for HP VirtualConnect Switches
+Subclass for HP Virtual Connect Switches
 
 See documentation in L<SNMP::Info::Layer2::HPVC> for details.
 
@@ -727,6 +727,12 @@ Subclass for Brocade (Foundry) Network devices.
 
 See documentation in L<SNMP::Info::Layer3::Foundry> for details.
 
+=item SNMP::Info::Layer3::H3C
+
+SNMP Interface to Layer 3 Devices, H3C & HP A-series.
+
+See documentation in L<SNMP::Info::Layer3::H3C> for details.
+
 =item SNMP::Info::Layer3::HP9300
 
 Subclass for HP network devices which Foundry Networks was the
@@ -875,17 +881,17 @@ README!
 
 Creates a new object and connects via SNMP::Session. 
 
- my $info = new SNMP::Info( 'Debug'            => 1,
-                            'AutoSpecify'      => 1,
-                            'BigInt'           => 1,
-                            'BulkWalk'         => 1,
-                            'BulkRepeaters'    => 20,
-                            'IgnoreNetSNMPConf => 1,
-                            'LoopDetect'       => 1,
-                            'DestHost'         => 'myrouter',
-                            'Community'        => 'public',
-                            'Version'          => 2,
-                            'MibDirs'          => ['dir1','dir2','dir3'],
+ my $info = new SNMP::Info( 'Debug'             => 1,
+                            'AutoSpecify'       => 1,
+                            'BigInt'            => 1,
+                            'BulkWalk'          => 1,
+                            'BulkRepeaters'     => 20,
+                            'IgnoreNetSNMPConf' => 1,
+                            'LoopDetect'        => 1,
+                            'DestHost'          => 'myrouter',
+                            'Community'         => 'public',
+                            'Version'           => 2,
+                            'MibDirs'           => ['dir1','dir2','dir3'],
                           ) or die;
 
 SNMP::Info Specific Arguments :
@@ -938,9 +944,9 @@ snmp.local.conf, from /etc/snmp, /usr/share/snmp, /usr/lib(64)/snmp, or
 $HOME/.snmp and uses those settings to automatically parse MIB files, etc.
 
 Set to C<1> "on" to ignore Net-SNMP configuration files by overriding the
-C<SNMPCONFPATH> environmental varible during object initialization. Note:
-MibDirs must be defined or Net-SNMP will not be able to load MIB's and
-initalize the object.
+C<SNMPCONFPATH> environmental variable during object initialization. Note:
+MibDirs must be defined or Net-SNMP will not be able to load MIBs and
+initialize the object.
 
 (default 0, which means "off")
 
@@ -1470,7 +1476,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Tasman'
             if ( $desc =~ /^(avaya|nortel)\s+(SR|secure\srouter)\s+\d{4}/i );
 
-        # HP VirtualConnect blade switches
+        # HP Virtual Connect blade switches
         $objtype = 'SNMP::Info::Layer2::HPVC'
             if ( $desc =~ /HP\sVC\s/ );
 
@@ -1579,7 +1585,7 @@ sub device_type {
             if (
             $desc =~ /Nortel\s+(Networks\s+)??WLAN\s+-\s+Security\s+Switch/ );
 
-        # HP VirtualConnect blade switches
+        # HP Virtual Connect blade switches
         $objtype = 'SNMP::Info::Layer2::HPVC'
             if ( $desc =~ /HP\sVC\s/ );
 
@@ -1632,7 +1638,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Cisco'
             if ( $desc =~ /Cisco Adaptive Security Appliance/i );
 
-        # HP VirtualConnect blade switches
+        # HP Virtual Connect blade switches
         $objtype = 'SNMP::Info::Layer2::HPVC'
             if ( $desc =~ /HP\sVC\s/ );
 
@@ -2343,7 +2349,7 @@ For protocol specific information and implementation:
 
 =back
 
-=head3 Topology Capabilties
+=head3 Topology Capabilities
 
 =over
 
@@ -3275,7 +3281,7 @@ sub init {
     # Get MibDirs if provided
     my $mibdirs = $self->{mibdirs} || [];
     
-    # SNMP::initMib and SNMP::addMibDirs both look for some inital MIBs
+    # SNMP::initMib and SNMP::addMibDirs both look for some initial MIBs
     # so if we are not using Net-SNMP configuration files we need to
     # specify where the MIBs are before those calls.
 
@@ -4207,13 +4213,13 @@ sub _validate_autoload_method {
 
 =item $info->can()
 
-Overrides UNIVERSAL::can() so that objects will correctly report thier
-capabilities to include dynamic methods generated at runtime via AUTOLOAD.
+Overrides UNIVERSAL::can() so that objects will correctly report their
+capabilities to include dynamic methods generated at run time via AUTOLOAD.
 
 Calls parent can() first to see if method exists, if not validates that a
 method should be created then dispatches to the appropriate internal method
 for creation.  The newly created method is inserted into the symbol table
-returning to AUTOLOAD only for the inital method call.
+returning to AUTOLOAD only for the initial method call.
 
 Returns undef if the method does not exist and can not be created.
 

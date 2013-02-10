@@ -402,62 +402,25 @@ Returns mem_free() + mem_used()
 
 =item $ciscostats->os()
 
-Tries to parse if device is running IOS, CatOS, IOS-XE or something else from description()
+Tries to parse if device is running 'IOS', 'CatOS', 'IOS-XE' or something else
+from description()
 
-Available values :
+Available values:
 
-=over
-
-=item ios
-
-Cisco IOS
-
-=item ios-xe
-
-Cisco IOS XE
-
-=item pix
-
-Cisco PIX
-
-=item asa
-
-Cisco ASA
-
-=item fwsm
-
-Single-mode FWSM
-
-=item fwsm-admin
-
-Admin context of multi-context FWSM
-
-=item fwsm-context
-
-Standard context of multi-context FWSM
-
-=item ace-admin
-
-Admin context of ACE module
-
-=item ace-context
-
-Standard context of ACE module (NB: No OS version detection
-is available, but will be the same as it's 'ace admin')
-
-=item css
-
-Cisco Content Switch
-
-=item css-sca
-
-Cisco Content Switch Secure Content Acceleration
-
-=item san-os
-
-Cisco SAN-OS
-
-=back
+ 'ios'          for Cisco IOS
+ 'ios-xe'       for Cisco IOS XE
+ 'pix'          for Cisco PIX
+ 'asa'          for Cisco ASA
+ 'fwsm'         for Single-mode FWSM
+ 'fwsm-admin'   for Admin context of multi-context FWSM
+ 'fwsm-context' for Standard context of multi-context FWSM
+ 'ace-admin'    for Admin context of ACE module
+ 'ace-context'  for Standard context of ACE module (NB: No OS version
+                     detection is available, but will be the same as it's
+                     'ace admin')
+ 'css'          for Cisco Content Switch
+ 'css-sca'      for Cisco Content Switch Secure Content Acceleration
+ 'san-os'       for Cisco SAN-OS
 
 =item $ciscostats->os_ver()
 
@@ -466,7 +429,7 @@ to parsing C<CISCO-IMAGE-MIB::ciscoImageString> if needed
 
 =item $ciscostats->os_bin()
 
-Tries to parse ROMMON version from rom_id() string
+Tries to parse C<ROMMON> version from rom_id() string
 
 =item $ciscostats->ios_cpu()
 

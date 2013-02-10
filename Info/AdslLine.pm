@@ -65,7 +65,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::AdslLine - SNMP Interface to the ADSL-LINE-MIB
+SNMP::Info::AdslLine - SNMP Interface to the F<ADSL-LINE-MIB>
 
 =head1 AUTHOR
 
@@ -120,7 +120,7 @@ MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 =head2 ATUC channel table (C<adslAtucChanTable>)
 
 This table provides one row for each ATUC channel.
-ADSL channel interfaces are those ifEntries where ifType
+ADSL channel interfaces are those C<ifEntries> where C<ifType>
 is equal to adslInterleave(124) or adslFast(125).
 
 =over
@@ -146,7 +146,7 @@ is equal to adslInterleave(124) or adslFast(125).
 =head2 ATUR channel table (C<adslAturChanTable>)
 
 This table provides one row for each ATUR channel.
-ADSL channel interfaces are those ifEntries where ifType
+ADSL channel interfaces are those C<ifEntries> where C<ifType>
 is equal to adslInterleave(124) or adslFast(125).
 
 =over

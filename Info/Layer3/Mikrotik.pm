@@ -134,11 +134,11 @@ These are methods that return scalar value from SNMP
 
 =item $mikrotik->vendor()
 
-Returns 'mikrotik'.
+Returns C<'mikrotik'>.
 
 =item $mikrotik->os()
 
-Returns 'routeros'.
+Returns C<'routeros'>.
 
 =item $mikrotik->model()
 

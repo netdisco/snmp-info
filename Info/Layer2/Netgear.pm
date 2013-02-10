@@ -115,8 +115,8 @@ SNMP::Info::Layer2::Netgear - SNMP Interface to Netgear switches
 
 =head1 AUTHOR
 
-Bill Fenner and Zoltan Erszenyi, 
-Hacked in LLDP support from Baystack.pm by 
+ Bill Fenner and Zoltan Erszenyi, 
+ Hacked in LLDP support from Baystack.pm by 
  Nic Bernstein <nic@onlight.com>
 
 =head1 SYNOPSIS

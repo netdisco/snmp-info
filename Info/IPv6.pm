@@ -394,8 +394,9 @@ Jeroen van Ingen and Carlos Vicente
 =head1 DESCRIPTION
 
 The SNMP::Info::IPv6 class implements functions to for mapping IPv6 addresses 
-to MAC addresses, interfaces and more. It will use data from the IP-MIB, IPV6-MIB 
-or the CISCO-IETF-IP-MIB, whichever is supported by the device.
+to MAC addresses, interfaces and more. It will use data from the F<IP-MIB>,
+F<IPV6-MIB>, or the F<CISCO-IETF-IP-MIB>, whichever is supported by the
+device.
 
 This class is inherited by Info::Layer3 to provide IPv6 node tracking across  
 device classes.

@@ -175,7 +175,7 @@ Maps the C<pethPsePortTable> to C<ifIndex> by way of the F<ENTITY-MIB>.
 =item $poe->peth_port_power()
 
 Power supplied by PoE ports, in milliwatts
-("cpeExtPsePortPwrConsumption")
+(C<cpeExtPsePortPwrConsumption>)
  
 =back
 
@@ -185,8 +185,8 @@ Power supplied by PoE ports, in milliwatts
 
 =item $poe->peth_port_neg_power()
 
-Power negotiated using CDP, in milliwats
-("cdpCachePowerConsumption")
+Power negotiated using CDP, in milliwatts
+(C<cdpCachePowerConsumption>)
 
 =back
 

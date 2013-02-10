@@ -957,7 +957,7 @@ Power supplied by PoE ports, in milliwatts
 
 =item $extreme->peth_power_watts()
 
-The configured maximum amount of inline power available to the slot.
+The configured maximum amount of in-line power available to the slot.
 
 (C<extremePethSlotPowerLimit>)
 

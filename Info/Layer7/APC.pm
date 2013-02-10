@@ -161,7 +161,7 @@ These are methods that return scalar value from SNMP
 
 =item $apc->os()
 
-Returns 'aos'
+Returns C<'aos'>
 
 =item $apc->os_bin()
 
@@ -178,7 +178,7 @@ card serial C<POWERNET-MIB::experimental.2.4.1.2.1> into a pretty string.
 
 =item $apc->vendor()
 
-apc
+Returns C<'apc'>
 
 =item $apc->model()
 
