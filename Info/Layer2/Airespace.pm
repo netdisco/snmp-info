@@ -371,7 +371,7 @@ See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
 Converts 802.11n channel bandwidth to either 20 or 40.
 
-=item munge_cd11n_proto()
+=item munge_cd11_proto()
 
 Converts 802.11n 2.4Ghz to 1 and 5Ghz to 2 to correspond to the
 (C<cldHtMacOperationsTable>) index.
