@@ -39,7 +39,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT/;
 
-$VERSION = '2.11';
+$VERSION = '3.00_001';
 
 %MIBS = ( 'CISCO-STACK-MIB' => 'ciscoStackMIB', );
 
