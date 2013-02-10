@@ -2345,14 +2345,18 @@ For protocol specific information and implementation:
 
 =head3 Topology Capabilties
 
-$info->has_topo()
+=over
+
+=item $info->has_topo()
 
 Reports Layer 2 topology protocols which are supported and running on
 a device.
 
 Returns either a reference to an array of protocols, possible values
-being: 'lldp', 'cdp, 'sonmp', 'fdp','edp' or 'undef' if no protocols are
-supported or running.
+being: C<lldp>, C<cdp>, C<sonmp>, C<fdp>, C<edp> or C<undef> if no protocols
+are supported or running.
+
+=back
 
 =cut
 
@@ -2416,7 +2420,7 @@ first argument.
 
 If a reference to an array is provided as the second argument, those
 protocols will be queried for information.  The supported array values are:
-'lldp', 'cdp, 'sonmp', 'fdp','edp'
+C<lldp>, C<cdp>, C<sonmp>, C<fdp>, C<edp>.
 
 If nothing is passed in as the second argument, the methods will call
 has_topo() to determine supported and running topology protocols on the
