@@ -759,6 +759,12 @@ Subclass for Juniper devices
 
 See documentation in L<SNMP::Info::Layer3::Juniper> for details.
 
+=item SNMP::Info::Layer3::Lantronix
+
+Subclass for Lantronix devices
+
+See documentation in L<SNMP::Info::Layer3::Lantronix> for details.
+
 =item SNMP::Info::Layer3::Microsoft
 
 Subclass for Generic Microsoft Routers running Microsoft Windows OS.
@@ -1346,6 +1352,7 @@ sub device_type {
         42   => 'SNMP::Info::Layer3::Sun',
         45   => 'SNMP::Info::Layer2::Baystack',
         171  => 'SNMP::Info::Layer3::Dell',
+        244  => 'SNMP::Info::Layer3::Lantronix',
         311  => 'SNMP::Info::Layer3::Microsoft',
         674  => 'SNMP::Info::Layer3::Dell',
         1872 => 'SNMP::Info::Layer3::AlteonAD',

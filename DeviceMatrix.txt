@@ -859,6 +859,15 @@ device-family: Kentrox DataSMART DSU/CSU
 device: All
 
 #
+# Lantronix
+#
+device-vendor: Lantronix
+class: Layer3::Lantronix
+
+device-family: Terminal Servers
+device: All
+
+#
 # Linksys
 #
 device-vendor: Linksys

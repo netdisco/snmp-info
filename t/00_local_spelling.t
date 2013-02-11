@@ -63,6 +63,7 @@ bes
 bgp
 bigint
 bigiron
+Binks
 bitmask
 bladecenter
 bln
@@ -113,6 +114,7 @@ erszenyi
 ess
 etherlike
 ethernet
+EvolutionOS
 extranet
 fastiron
 fdb
@@ -154,6 +156,8 @@ Kentrox
 kramarov
 ladvd
 lans
+Lantronix
+lantronix
 linksys
 lldp
 loopback
