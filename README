@@ -5,7 +5,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.00_001
+    SNMP::Info - Version 3.00_002
 
 AUTHOR
 
@@ -206,6 +206,12 @@ SUBCLASSES
         devices based on the Airespace wireless platform.
 
         See documentation in SNMP::Info::Airespace for details.
+
+    SNMP::Info::AMAP
+        ALCATEL-IND1-INTERSWITCH-PROTOCOL-MIB. Alcatel Mapping Adjacency
+        Protocol (AMAP) Support.
+
+        See documentation in SNMP::Info::AMAP for details.
 
     SNMP::Info::Bridge
         BRIDGE-MIB (RFC1286). QBRIDGE-MIB. Inherited by devices with Layer2
@@ -498,6 +504,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::Orinoco for details.
 
+        SNMP::Info::Layer2::Trapeze
+            SNMP Interface to Juniper (Trapeze) Wireless Controllers
+
+            See documentation in SNMP::Info::Layer2::Trapeze for details.
+
         SNMP::Info::Layer2::ZyXEL_DSLAM
             Zyxel DSLAMs. Need I say more?
 
@@ -635,6 +646,11 @@ SUBCLASSES
             Subclass for Juniper devices
 
             See documentation in SNMP::Info::Layer3::Juniper for details.
+
+        SNMP::Info::Layer3::Lantronix
+            Subclass for Lantronix devices
+
+            See documentation in SNMP::Info::Layer3::Lantronix for details.
 
         SNMP::Info::Layer3::Microsoft
             Subclass for Generic Microsoft Routers running Microsoft Windows
@@ -1374,8 +1390,8 @@ USAGE
     some combination of Layer 2 topology protocol information. SNMP::Info
     supports querying Link Layer Discovery Protocol (LLDP), Cisco Discovery
     Protocol (CDP), SynOptics/Bay/Nortel/Avaya Network Management Protocol
-    (SONMP), Foundry/Brocade Discovery Protocol (FDP), and Extreme Discovery
-    Protocol (EDP).
+    (SONMP), Foundry/Brocade Discovery Protocol (FDP), Extreme Discovery
+    Protocol (EDP), and Alcatel Mapping Adjacency Protocol (AMAP).
 
     For protocol specific information and implementation:
 
@@ -1384,6 +1400,7 @@ USAGE
     SONMP: See SNMP::Info::SONMP for details.
     FDP: See SNMP::Info::FDP for details.
     EDP: See SNMP::Info::EDP for details.
+    AMAP: See SNMP::Info::AMAP for details.
 
    Topology Capabilities
 
@@ -1392,7 +1409,7 @@ USAGE
         on a device.
 
         Returns either a reference to an array of protocols, possible values
-        being: "lldp", "cdp", "sonmp", "fdp", "edp" or "undef" if no
+        being: "lldp", "cdp", "sonmp", "fdp", "edp", "amap" or "undef" if no
         protocols are supported or running.
 
    Common Topology Table Information
@@ -1411,7 +1428,7 @@ USAGE
 
     If a reference to an array is provided as the second argument, those
     protocols will be queried for information. The supported array values
-    are: "lldp", "cdp", "sonmp", "fdp", "edp".
+    are: "lldp", "cdp", "sonmp", "fdp", "edp", "amap".
 
     If nothing is passed in as the second argument, the methods will call
     has_topo() to determine supported and running topology protocols on the
