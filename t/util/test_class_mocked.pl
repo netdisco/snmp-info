@@ -142,7 +142,7 @@ foreach my $fn (@vlan) {
 
 print "\nFetching topology info...\n\n";
 
-my @topo = qw/c_if c_ip c_port/;
+my @topo = qw/c_if c_ip c_port c_id c_platform/;
 
 foreach my $fn (@topo) {
     test_fn( $dev, $fn );
