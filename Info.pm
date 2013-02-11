@@ -592,6 +592,12 @@ Subclass for Orinoco/Proxim wireless access points.
 
 See documentation in L<SNMP::Info::Layer2::Orinoco> for details.
 
+=item SNMP::Info::Layer2::Trapeze
+
+SNMP Interface to Juniper (Trapeze) Wireless Controllers
+
+See documentation in L<SNMP::Info::Layer2::Trapeze> for details.
+
 =item SNMP::Info::Layer2::ZyXEL_DSLAM
 
 Zyxel DSLAMs.  Need I say more?
@@ -1361,6 +1367,7 @@ sub device_type {
         8072 => 'SNMP::Info::Layer3::NetSNMP',
         9303 => 'SNMP::Info::Layer3::PacketFront',
         12325 => 'SNMP::Info::Layer3::Pf',
+        14525 => 'SNMP::Info::Layer2::Trapeze',
         14988 => 'SNMP::Info::Layer3::Mikrotik',
         25506 => 'SNMP::Info::Layer3::H3C',
         30065 => 'SNMP::Info::Layer3::Arista',
@@ -1384,12 +1391,14 @@ sub device_type {
         5624  => 'SNMP::Info::Layer3::Enterasys',
         11898 => 'SNMP::Info::Layer2::Orinoco',
         14179 => 'SNMP::Info::Layer2::Airespace',
+        14525 => 'SNMP::Info::Layer2::Trapeze',
         14823 => 'SNMP::Info::Layer3::Aruba',
     );
 
     my %l7sysoidmap = (
         318   => 'SNMP::Info::Layer7::APC',
         5951  => 'SNMP::Info::Layer7::Netscaler',
+        14525 => 'SNMP::Info::Layer2::Trapeze',
         12532 => 'SNMP::Info::Layer7::Neoteris',
     );
 

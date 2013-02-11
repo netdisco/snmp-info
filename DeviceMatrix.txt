@@ -841,6 +841,14 @@ device: All
 device-family: SRX-series router
 device: All
 
+device-family: Wireless LAN Controllers (Trapeze)
+duplex: both
+class: Layer2::Trapeze
+note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+note: Arpnip is emulated by gathering the MAC to IP mappings from controller snooping.
+
+device: All
+
 #
 # Kentrox
 #
@@ -996,6 +1004,12 @@ device: Sun routers
 #
 device-vendor: Synoptics
 note: See Avaya
+
+#
+# Trapeze
+#
+device-vendor: Trapeze
+note: See Juniper
 
 #
 # Zyxel
