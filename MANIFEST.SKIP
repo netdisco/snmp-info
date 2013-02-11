@@ -10,6 +10,7 @@
 ^Makefile$
 ^blib/
 ^MakeMaker-\d
+pm_to_blib
 
 # Temp, old and emacs backup files.
 ~$

@@ -465,15 +465,15 @@ sub i_vlan_membership {
 
     # Some devices support Q-Bridge, if so short circuit and return it
     my $q_bridge = $extreme->SUPER::i_vlan_membership($partial);
-    return $q_bridge if (keys $q_bridge);
+    return $q_bridge if (ref {} eq ref $q_bridge and scalar keys %$q_bridge);
 
     # Next we try extremeVlanOpaqueTable
     my $xos = $extreme->_xos_i_vlan_membership($partial);
-    return $xos if (keys $xos);
+    return $xos if (ref {} eq ref $xos and scalar keys %$xos);
     
     # Try older ifStack method
     my $extremeware = $extreme->_extremeware_i_vlan_membership($partial);
-    return $extremeware if (keys $extremeware);
+    return $extremeware if (ref {} eq ref $extremeware and scalar keys %$extremeware);
     
     return;
 }
