@@ -303,8 +303,8 @@ be assumed working.
         protocol is enabled.  SNMP::Info supports querying Link Layer
         Discovery Protocol (LLDP), Cisco Discovery Protocol (CDP),
         SynOptics/Bay/Nortel/Avaya Network Management Protocol (SONMP),
-        Foundry/Brocade Discovery Protocol (FDP), and Extreme Discovery
-        Protocol (EDP). 
+        Foundry/Brocade Discovery Protocol (FDP), Extreme Discovery
+        Protocol (EDP), and Alcatel Mapping Adjacency Protocol (AMAP). 
     </TD>
 </TR>
 <TR>

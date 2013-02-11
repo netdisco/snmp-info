@@ -34,6 +34,7 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
+use SNMP::Info::AMAP;
 # Use LLDP
 # (or at least try.  The versions I've seen have two problems:
 # 1. they report ifIndex values as 'local'; we don't support ifIndex
@@ -42,8 +43,8 @@ use SNMP::Info::MAU;
 # )
 use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::AlcatelLucent::ISA = qw/SNMP::Info::LLDP SNMP::Info::MAU
-    SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::AlcatelLucent::ISA = qw/SNMP::Info::AMAP SNMP::Info::LLDP
+    SNMP::Info::MAU SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::AlcatelLucent::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
@@ -54,6 +55,7 @@ $VERSION = '3.00_001';
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
     %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::AMAP::MIBS,
     'ALCATEL-IND1-DEVICES'     => 'familyOmniSwitch7000',
     'ALCATEL-IND1-CHASSIS-MIB' => 'chasEntPhysOperStatus',
     'ALU-POWER-ETHERNET-MIB'   => 'pethPsePortDetectionStatus',
@@ -70,17 +72,17 @@ delete $MIBS{'POWER-ETHERNET-MIB'};
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::MAU::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS, %SNMP::Info::AMAP::GLOBALS,
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS, %SNMP::Info::MAU::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
+    %SNMP::Info::LLDP::FUNCS, %SNMP::Info::AMAP::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE, %SNMP::Info::MAU::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::LLDP::MUNGE, %SNMP::Info::AMAP::MUNGE,
 );
 
 # use MAU-MIB for admin. duplex and admin. speed

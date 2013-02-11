@@ -30,6 +30,7 @@ alcatel
 alteon
 Altiga
 altiga
+AMAP
 anycast
 AOS
 ap

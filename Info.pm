@@ -242,6 +242,13 @@ devices based on the Airespace wireless platform.
 
 See documentation in L<SNMP::Info::Airespace> for details.
 
+=item SNMP::Info::AMAP
+
+F<ALCATEL-IND1-INTERSWITCH-PROTOCOL-MIB>.  Alcatel Mapping Adjacency
+Protocol (AMAP) Support.
+
+See documentation in L<SNMP::Info::AMAP> for details.
+
 =item SNMP::Info::Bridge
 
 F<BRIDGE-MIB> (RFC1286).  F<QBRIDGE-MIB>. Inherited by devices with Layer2
@@ -2330,8 +2337,8 @@ Based upon the manufacturer and software version devices may support some
 combination of Layer 2 topology protocol information.  SNMP::Info
 supports querying Link Layer Discovery Protocol (LLDP), Cisco Discovery
 Protocol (CDP), SynOptics/Bay/Nortel/Avaya Network Management Protocol
-(SONMP), Foundry/Brocade Discovery Protocol (FDP), and Extreme Discovery
-Protocol (EDP). 
+(SONMP), Foundry/Brocade Discovery Protocol (FDP), Extreme Discovery
+Protocol (EDP), and Alcatel Mapping Adjacency Protocol (AMAP). 
 
 For protocol specific information and implementation:
 
@@ -2347,6 +2354,8 @@ For protocol specific information and implementation:
 
 =item EDP: See L<SNMP::Info::EDP> for details.
 
+=item AMAP: See L<SNMP::Info::AMAP> for details.
+
 =back
 
 =head3 Topology Capabilities
@@ -2359,8 +2368,8 @@ Reports Layer 2 topology protocols which are supported and running on
 a device.
 
 Returns either a reference to an array of protocols, possible values
-being: C<lldp>, C<cdp>, C<sonmp>, C<fdp>, C<edp> or C<undef> if no protocols
-are supported or running.
+being: C<lldp>, C<cdp>, C<sonmp>, C<fdp>, C<edp>, C<amap> or C<undef> if
+no protocols are supported or running.
 
 =back
 
@@ -2377,6 +2386,7 @@ sub has_topo {
         if $self->can('hasSONMP') && $self->hasSONMP();
     push( @topo_cap, 'fdp' ) if $self->can('hasFDP') && $self->hasFDP();
     push( @topo_cap, 'edp' ) if $self->can('hasEDP') && $self->hasEDP();
+    push( @topo_cap, 'amap' ) if $self->can('hasAMAP') && $self->hasAMAP();
 
     if (@topo_cap) {
         return \@topo_cap;
@@ -2396,7 +2406,7 @@ sub _get_topo_data {
 
     my %t_data;
     foreach my $proto (@$topo_cap) {
-        next unless $proto =~ /(lldp|cdp|sonmp|fdp|edp)/;
+        next unless $proto =~ /(lldp|cdp|sonmp|fdp|edp|amap)/;
         my $method_name = "$proto" . "_$method";
         my $cdp = $self->$method_name($partial) || {};
 
@@ -2426,7 +2436,7 @@ first argument.
 
 If a reference to an array is provided as the second argument, those
 protocols will be queried for information.  The supported array values are:
-C<lldp>, C<cdp>, C<sonmp>, C<fdp>, C<edp>.
+C<lldp>, C<cdp>, C<sonmp>, C<fdp>, C<edp>, C<amap>.
 
 If nothing is passed in as the second argument, the methods will call
 has_topo() to determine supported and running topology protocols on the
