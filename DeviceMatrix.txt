@@ -381,6 +381,10 @@ class: Layer3::Altiga
 device: VPN3000
 note: The Cisco 3000 device can return duplicate interface names, while Netdisco expects unique interface names.  To ensure unique device names I append numbers only when an interface name would not be unique without one. Interfaces with unique names keep their ifDescr name.
 
+device: ASA
+note: The Cisco ASA is the successor of the PIX which was bought from Altiga Networks.
+Class: Layer3::CiscoASA
+
 device-family: 1000
 duplex: no
 ver: 1

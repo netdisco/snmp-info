@@ -690,6 +690,12 @@ This is a simple wrapper around Layer3 for IOS devices.  It adds on CiscoVTP.
 
 See documentation in L<SNMP::Info::Layer3::Cisco> for details.
 
+=item SNMP::Info::Layer3::CiscoASA
+
+Subclass for Cisco Adaptive Security Appliances.
+
+See documentation in L<SNMP::Info::Layer3::CiscoASA> for details.
+
 =item SNMP::Info::Layer3::CiscoFWSM
 
 Subclass for Cisco Firewall Services Modules.
@@ -1657,8 +1663,8 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Cisco'
             if ( $desc =~ /Cisco PIX Security Appliance/i );
 
-        # Cisco ASA
-        $objtype = 'SNMP::Info::Layer3::Cisco'
+        # Cisco ASA, older version which doesn't report layer 3 functionality
+        $objtype = 'SNMP::Info::Layer3::CiscoASA'
             if ( $desc =~ /Cisco Adaptive Security Appliance/i );
 
         # HP Virtual Connect blade switches
