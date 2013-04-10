@@ -91,6 +91,21 @@ sub b_mac {
        return @macs[0];
 }
 
+sub i_description {
+    my $self = shift;
+    my $partial   = shift;
+
+    my $i_descr = $self->orig_i_description($partial) || {};
+
+    foreach my $ifindex ( keys %$i_descr ) {
+        $i_descr->{$ifindex} =~ /'(.*)'/;
+        $i_descr->{$ifindex} = $1
+            if defined $1;
+    }
+
+    return $i_descr;
+}
+
 1;
 __END__
 
@@ -150,8 +165,14 @@ These are methods that return scalar value from SNMP
 
 =item $asa->b_mac()
 
-       Returns base mac.
-       Overrides base mac function in Layer3.
+Returns base mac.
+Overrides base mac function in L<SNMP::Info::Layer3>.
+
+=item $asa->i_description()
+
+Overrides base interface description function in L<SNMP::Info> to return the
+configured interface name instead of "Adaptive Security Appliance
+'$configured interface name' interface".
 
 =back
 
