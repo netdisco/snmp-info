@@ -1497,6 +1497,11 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::Allied'
             if ( $desc =~ /Allied.*AT-80\d{2}\S*/i );
 
+        # Cisco ASA, newer versions which report layer 3 functionality
+        # version >= 8.2 are known to do this
+        $objtype = 'SNMP::Info::Layer3::CiscoASA'
+            if ( $desc =~ /Cisco Adaptive Security Appliance/i );
+
         # Cisco FWSM
         $objtype = 'SNMP::Info::Layer3::CiscoFWSM'
             if ( $desc =~ /Cisco Firewall Services Module/i );
