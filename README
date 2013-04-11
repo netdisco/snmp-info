@@ -5,7 +5,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.00_003
+    SNMP::Info - Version 3.00_004
 
 AUTHOR
 
@@ -587,6 +587,11 @@ SUBCLASSES
             on CiscoVTP.
 
             See documentation in SNMP::Info::Layer3::Cisco for details.
+
+        SNMP::Info::Layer3::CiscoASA
+            Subclass for Cisco Adaptive Security Appliances.
+
+            See documentation in SNMP::Info::Layer3::CiscoASA for details.
 
         SNMP::Info::Layer3::CiscoFWSM
             Subclass for Cisco Firewall Services Modules.

@@ -64,6 +64,7 @@ Info/Layer3/C3550.pm
 Info/Layer3/C4000.pm
 Info/Layer3/C6500.pm
 Info/Layer3/Cisco.pm
+Info/Layer3/CiscoASA.pm
 Info/Layer3/CiscoFWSM.pm
 Info/Layer3/Contivity.pm
 Info/Layer3/Dell.pm
