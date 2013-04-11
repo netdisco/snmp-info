@@ -44,14 +44,14 @@ use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 use SNMP::Info::Layer3::Cisco;
 
-@SNMP::Info::Layer3::ASA::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
+@SNMP::Info::Layer3::CiscoASA::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
     SNMP::Info::CiscoStats SNMP::Info::CiscoImage
     SNMP::Info::CiscoRTT  SNMP::Info::CiscoQOS
     SNMP::Info::CiscoConfig SNMP::Info::CiscoPower
     SNMP::Info::Layer3::Cisco
     SNMP::Info::Layer3
     Exporter/;
-@SNMP::Info::Layer3::ASA::EXPORT_OK = qw//;
+@SNMP::Info::Layer3::CiscoASA::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
