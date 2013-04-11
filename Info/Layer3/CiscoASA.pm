@@ -88,7 +88,7 @@ sub b_mac {
                @macs = sort( @macs );
        }
        # return the least mac
-       return @macs[0];
+       return $macs[0];
 }
 
 sub i_description {
