@@ -24,6 +24,7 @@ version 3.00
     * [3033731] - Alcatel-Lucent OmniSwich AMAP Support in new AMAP class
     * [3598896] - Lantronix device support (J R Binks)
     * [3598337] - Lantronix SLC support
+    * Support for Cisco ASA in L3::CiscoASA (Kraus/Hartmaier/Bernstein)
     * Support for Avaya VSP 9000 series in L3::Passport
     * Support for Avaya VSP 7000 series in L2::Baystack
     * Support Avaya (Trapeze) Wireless Controllers in new class L2::NWSS2300
