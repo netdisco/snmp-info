@@ -39,7 +39,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.00_003';
+$VERSION = '3.00_004';
 
 %MIBS = ( 'CISCO-RTTMON-MIB' => 'rttMonCtrlAdminOwner', );
 
