@@ -47,7 +47,8 @@ $VERSION = '3.01';
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::LLDP::GLOBALS,
     ng_serial => '.1.3.6.1.4.1.4526.10.1.1.1.4.0',
-    ng_osver  => '.1.3.6.1.4.1.4526.10.1.1.1.13.0',
+    ng_gsmosver  => '.1.3.6.1.4.1.4526.10.1.1.1.13.0',
+    ng_gsosver  =>  '.1.3.6.1.2.1.32.2.1.1.1.0',
 );
 
 %FUNCS = ( %SNMP::Info::Layer2::FUNCS, %SNMP::Info::LLDP::FUNCS, );
@@ -95,13 +96,13 @@ sub fw_port {
 # https://sourceforge.net/tracker/?func=detail&aid=3085413&group_id=70362&atid=527529
 sub os_ver {
     my $self = shift;
-    return if $self->model and $self->model =~ m/GS\d/i;
-    return $self->ng_osver();
+    return $self->ng_gsosver if defined $self->model and $self->model =~ m/GS\d/i;
+    return $self->ng_gsmosver();
 }
 
 sub serial {
     my $self = shift;
-    return if $self->model and $self->model =~ m/GS\d/i;
+    return if defined $self->model and $self->model =~ m/GS\d/i;
     return $self->ng_serial();
 }
 
