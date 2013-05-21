@@ -1,5 +1,12 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.02
+
+    [ENHANCEMENTS]
+
+    * Properly pull os_ver from Netgear GS series switches.
+    * Support Alcatel devices with layer3 features.
+
 version 3.01
 
     [API Changes]
