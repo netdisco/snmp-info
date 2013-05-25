@@ -1604,7 +1604,7 @@ sub device_type {
 
         #  Aironet - IOS
         $objtype = 'SNMP::Info::Layer2::Aironet'
-            if ($desc =~ /\b(C1100|C1130|AP1200|C350|C1200|C1240|C1250)\b/
+            if ($desc =~ /\b(C1100|C1130|C1140|AP1200|C350|C1200|C1240|C1250)\b/
             and $desc =~ /\bIOS\b/ );
 
         # Aironet - non IOS
