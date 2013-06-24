@@ -101,8 +101,11 @@ portmac: yes
 duplex: no
 class: Layer3::Aruba
 
-device-family: Aruba Wireless Controllers
+device-family: Aruba Wireless Controllers and LAN switches
 note: Uses proprietary MIBs to provide MAC to port mapping.  APs appear as switch ports.
+note: On LAN switches, hosts connected to "trusted" switch ports in "access" mode may be mapped to incorrect ports.
+
+device: 3500
 
 device: 5000
 

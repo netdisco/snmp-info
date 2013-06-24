@@ -322,6 +322,8 @@ sub i_ssidbcast {
 }
 
 # Wireless switches do not support the standard Bridge MIB
+# Wired switches currently (AOS 7.2.0.0) do, but it seems only for
+# dot1q ports or access ports that are 'untrusted' ?
 sub bp_index {
     my $aruba   = shift;
     my $partial = shift;
@@ -329,10 +331,14 @@ sub bp_index {
     my $i_index  = $aruba->orig_i_index($partial)  || {};
     my $ap_index = $aruba->aruba_ap_name($partial) || {};
 
-    my %bp_index;
+    # Collect standard bp_index first
+    my $wired_bp_index = $aruba->SUPER::bp_index($partial) || {};
+    my %bp_index = %$wired_bp_index;
+
     foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
+        next if exists $bp_index{$iid}; # Only augment bp_index, don't overwrite any existing mappings 
 
         $bp_index{$iid} = $index;
     }
@@ -355,7 +361,9 @@ sub fw_port {
 
     my $fw_idx = $aruba->fw_user($partial) || {};
 
-    my %fw_port;
+    my $wired_fw_port = $aruba->SUPER::qb_fw_port($partial) || {};
+    my %fw_port = %$wired_fw_port;
+
     foreach my $iid ( keys %$fw_idx ) {
         if ( $iid
             =~ /(\d+\.\d+\.\d+\.\d+\.\d+\.\d+).(\d+\.\d+\.\d+\.\d+\.\d+\.\d+)/
@@ -378,7 +386,9 @@ sub fw_mac {
 
     my $fw_idx = $aruba->fw_user($partial) || {};
 
-    my %fw_mac;
+    my $wired_fw_mac = $aruba->SUPER::qb_fw_mac($partial) || {};
+    my %fw_mac = %$wired_fw_mac;
+
     foreach my $iid ( keys %$fw_idx ) {
         if ( $iid
             =~ /(\d+\.\d+\.\d+\.\d+\.\d+\.\d+).(\d+\.\d+\.\d+\.\d+\.\d+\.\d+)/
