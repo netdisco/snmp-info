@@ -1,6 +1,6 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
-version 3.02
+version 3.02 ()
 
     [ENHANCEMENTS]
 
@@ -8,7 +8,7 @@ version 3.02
     * Support Alcatel devices with layer3 features.
     * Identify Cisco Aironet 1140 APs as Layer2::Aironet
 
-version 3.01
+version 3.01 (2013-04-13)
 
     [API Changes]
 
