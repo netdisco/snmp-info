@@ -1444,10 +1444,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Aironet'
             if ( $desc =~ /Aironet/ and $desc =~ /\D(AP4800)\D/ );
 
-	# Cat6k with older SUPs (hybrid CatOS/IOS?)
+        # Cat6k with older SUPs (hybrid CatOS/IOS?)
         $objtype = 'SNMP::Info::Layer3::C6500' if $desc =~ /(c6sup2|c6sup1)/;
 
-	# Cat6k with Sup720, Sup720 or Sup2T (and Sup2 running native IOS?)
+        # Cat6k with Sup720, Sup720 or Sup2T (and Sup2 running native IOS?)
         $objtype = 'SNMP::Info::Layer3::C6500'
             if $desc =~ /(s72033_rp|s3223_rp|s32p3_rp|s222_rp|s2t54)/;
 
