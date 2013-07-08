@@ -1455,6 +1455,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500'
             if ( $desc =~ /cisco/i and $desc =~ /3750/ );
 
+        # IOS 15.x on Catalyst 3850
+        $objtype = 'SNMP::Info::Layer3::C6500'
+            if ( $desc =~ /cisco/i and $desc =~ /CAT3K/ );
+
         #   Cisco 2970
         $objtype = 'SNMP::Info::Layer3::C6500'
             if ( $desc =~ /(C2970|C2960)/ );

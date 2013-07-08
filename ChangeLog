@@ -8,6 +8,7 @@ version 3.02 ()
     * Support Alcatel devices with layer3 features.
     * Identify Cisco Aironet 1140 APs as Layer2::Aironet
     * LAN switch support added to Layer3::Aruba class
+    * [RT#86725] - Identify Cisco Catalyst 3850 as Layer3::C6500 (C. Causer)
 
 version 3.01 (2013-04-13)
 
