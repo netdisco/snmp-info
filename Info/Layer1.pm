@@ -41,7 +41,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
 
-$VERSION = '3.01';
+$VERSION = '3.02';
 
 %MIBS = ( %SNMP::Info::MIBS, 'SNMP-REPEATER-MIB' => 'rptrPortGroupIndex' );
 

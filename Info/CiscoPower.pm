@@ -39,7 +39,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.01';
+$VERSION = '3.02';
 
 %MIBS = ( 'CISCO-POWER-ETHERNET-EXT-MIB' => 'cpeExtPsePortEntPhyIndex',
           'CISCO-CDP-MIB' => 'cdpCachePowerConsumption' );
