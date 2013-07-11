@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.03 (2013-07-11)
+
+    [BUG FIXES]
+
+    * Add missing =back to POD (A. Hartmaier)
+
 version 3.02 (2013-07-08)
 
     [ENHANCEMENTS]

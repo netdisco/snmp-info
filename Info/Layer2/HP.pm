@@ -869,4 +869,6 @@ operations.
 
 =item set_i_vlan_tagged()
 
+=back
+
 =cut
