@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.04 ()
+
+   [ENHANCEMENTS]
+
+   * [#47] Add model info on HP 2530 and HP 2920 series
+
 version 3.03 (2013-07-11)
 
     [BUG FIXES]
