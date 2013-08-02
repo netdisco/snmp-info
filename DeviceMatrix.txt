@@ -657,6 +657,12 @@ note: !Arpnip only available for 4.x software releases.
 class: Layer3::CiscoFWSM
 arpnip: yes
 
+device: Sx300, Sx500 series
+device-family: Small Business switches
+class: Layer2::CiscoSB
+arpnip: no
+macsuck: yes
+
 #
 # Citrix
 #

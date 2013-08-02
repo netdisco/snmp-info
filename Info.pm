@@ -540,6 +540,13 @@ in more specific subclasses.
 
 See documentation in L<SNMP::Info::Layer2::Cisco> for details.
 
+=item SNMP::Info::Layer2::CiscoSB
+
+Subclass for Cisco's "Small Business" product line, acquired from 
+Linksys.  This currently comprises the Sx300/500 line of switches.
+
+See documentation in L<SNMP::Info::Layer2::CiscoSB> for details.
+
 =item SNMP::Info::Layer2::HP
 
 Subclass for more recent HP Procurve Switches
@@ -1348,6 +1355,7 @@ sub device_type {
     }
 
     my $id = $info->id() || 'undef';
+    my $soid = $id;
 
     # Hash for generic fallback to a device class if unable to determine using
     # the sysDescr regex.
@@ -1560,6 +1568,11 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C6500'
             if ( $desc =~ /(C2970|C2960)/ );
 
+        #   Cisco Small Business (300 500) series override
+        #   This is for enterprises(1).cisco(9).otherEnterprises(6).ciscosb(1)
+        $objtype = 'SNMP::Info::Layer2::CiscoSB'
+            if ( $soid =~ /^\.1\.3\.6\.1\.4\.1\.9\.6\.1/ );
+        
         # HP, older ProCurve models (1600, 2400, 2424m, 4000, 8000)
         $objtype = 'SNMP::Info::Layer2::HP4000'
             if $desc =~ /\b(J4093A|J4110A|J4120A|J4121A|J4122A|J4122B)\b/;
