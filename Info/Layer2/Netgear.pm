@@ -46,8 +46,9 @@ $VERSION = '3.03';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::LLDP::GLOBALS,
-    ng_serial => '.1.3.6.1.4.1.4526.10.1.1.1.4.0',
+    ng_gsmserial => '.1.3.6.1.4.1.4526.10.1.1.1.4.0',
     ng_gsmosver  => '.1.3.6.1.4.1.4526.10.1.1.1.13.0',
+    ng_gsserial => '.1.3.6.1.2.1.47.1.1.1.1.11.1',
     ng_gsosver  =>  '.1.3.6.1.2.1.32.2.1.1.1.0',
 );
 
@@ -73,6 +74,17 @@ sub model {
     return $netgear->description();
 }
 
+# ifDescr is the same for all interfaces in a class, but the ifName is
+# unique, so let's use that for port name.
+sub interfaces {
+    my $netgear = shift;
+    my $partial = shift;
+
+    my $interfaces = $netgear->i_name($partial);
+
+    return $interfaces;
+}
+
 #
 # This is model-dependent.  Some netgear brand devices don't implement
 # the bridge MIB forwarding table, so we use the Q-BRIDGE-MIB forwarding
@@ -95,16 +107,145 @@ sub fw_port {
 # these seem to work for GSM models but not GS
 # https://sourceforge.net/tracker/?func=detail&aid=3085413&group_id=70362&atid=527529
 sub os_ver {
-    my $self = shift;
-    return $self->ng_gsosver if defined $self->model and $self->model =~ m/GS\d/i;
-    return $self->ng_gsmosver();
+    my $netgear = shift;
+    return $netgear->ng_gsosver if defined $netgear->model and $netgear->model =~ m/GS\d/i;
+    return $netgear->ng_gsmosver();
 }
 
 sub serial {
-    my $self = shift;
-    return if defined $self->model and $self->model =~ m/GS\d/i;
-    return $self->ng_serial();
+    my $netgear = shift;
+    return $netgear->ng_gsserial if defined $netgear->model and $netgear->model =~ m/GS\d/i;
+    return $netgear->ng_gsmserial();
 }
+
+#  Use LLDP
+
+sub hasCDP {
+    my $netgear = shift;
+
+    return $netgear->hasLLDP() || $netgear->SUPER::hasCDP();
+}
+
+sub c_ip {
+    my $netgear = shift;
+    my $partial  = shift;
+
+    my $cdp  = $netgear->SUPER::c_ip($partial) || {};
+    my $lldp = $netgear->lldp_ip($partial)     || {};
+
+    my %c_ip;
+    foreach my $iid ( keys %$cdp ) {
+        my $ip = $cdp->{$iid};
+        next unless defined $ip;
+
+        $c_ip{$iid} = $ip;
+    }
+
+    foreach my $iid ( keys %$lldp ) {
+        my $ip = $lldp->{$iid};
+        next unless defined $ip;
+
+        $c_ip{$iid} = $ip;
+    }
+    return \%c_ip;
+}
+
+sub c_if {
+    my $netgear = shift;
+    my $partial  = shift;
+
+    my $lldp = $netgear->lldp_if($partial)     || {};
+    my $cdp  = $netgear->SUPER::c_if($partial) || {};
+
+    my %c_if;
+    foreach my $iid ( keys %$cdp ) {
+        my $if = $cdp->{$iid};
+        next unless defined $if;
+
+        $c_if{$iid} = $if;
+    }
+
+    foreach my $iid ( keys %$lldp ) {
+        my $if = $lldp->{$iid};
+        next unless defined $if;
+
+        $c_if{$iid} = $if;
+    }
+    return \%c_if;
+}
+
+sub c_port {
+    my $netgear = shift;
+    my $partial  = shift;
+
+    my $lldp = $netgear->lldp_port($partial)     || {};
+    my $cdp  = $netgear->SUPER::c_port($partial) || {};
+
+    my %c_port;
+    foreach my $iid ( keys %$cdp ) {
+        my $port = $cdp->{$iid};
+        next unless defined $port;
+
+        $c_port{$iid} = $port;
+    }
+
+    foreach my $iid ( keys %$lldp ) {
+        my $port = $lldp->{$iid};
+        next unless defined $port;
+
+        $c_port{$iid} = $port;
+    }
+    return \%c_port;
+}
+
+sub c_id {
+    my $netgear = shift;
+    my $partial  = shift;
+
+    my $lldp = $netgear->lldp_id($partial)     || {};
+    my $cdp  = $netgear->SUPER::c_id($partial) || {};
+
+    my %c_id;
+    foreach my $iid ( keys %$cdp ) {
+        my $id = $cdp->{$iid};
+        next unless defined $id;
+
+        $c_id{$iid} = $id;
+    }
+
+    foreach my $iid ( keys %$lldp ) {
+        my $id = $lldp->{$iid};
+        next unless defined $id;
+
+        $c_id{$iid} = $id;
+    }
+    return \%c_id;
+}
+
+sub c_platform {
+    my $netgear = shift;
+    my $partial  = shift;
+
+    my $lldp = $netgear->lldp_rem_sysdesc($partial)  || {};
+    my $cdp  = $netgear->SUPER::c_platform($partial) || {};
+
+    my %c_platform;
+    foreach my $iid ( keys %$cdp ) {
+        my $platform = $cdp->{$iid};
+        next unless defined $platform;
+
+        $c_platform{$iid} = $platform;
+    }
+
+    foreach my $iid ( keys %$lldp ) {
+        my $platform = $lldp->{$iid};
+        next unless defined $platform;
+
+        $c_platform{$iid} = $platform;
+    }
+    return \%c_platform;
+}
+
 
 1;
 
@@ -226,6 +367,53 @@ identifier (iid)
 Some devices don't implement the C<BRIDGE-MIB> forwarding table, so we use
 the C<Q-BRIDGE-MIB> forwarding table.  Fall back to the C<BRIDGE-MIB> if
 C<Q-BRIDGE-MIB> doesn't return anything.
+
+=item $netgear->interfaces()
+
+Uses the i_name() field.
+
+=back
+
+=head2 Topology information
+
+Based upon the software version devices may support Link Layer Discovery 
+Protocol (LLDP).
+
+=over
+
+=item $netgear->hasCDP()
+
+Returns true if the device is running LLDP.
+
+=item $netgear->c_if()
+
+Returns reference to hash.  Key: iid Value: local device port (interfaces)
+
+=item $netgear->c_ip()
+
+Returns reference to hash.  Key: iid Value: remote IPv4 address
+
+If multiple entries exist with the same local port, c_if(), with the same IPv4
+address, c_ip(), it may be a duplicate entry.
+
+If multiple entries exist with the same local port, c_if(), with different
+IPv4 addresses, c_ip(), there is either a non-LLDP device in between two or
+more devices or multiple devices which are not directly connected.  
+
+Use the data from the Layer2 Topology Table below to dig deeper.
+
+=item $netgear->c_port()
+
+Returns reference to hash. Key: iid Value: remote port (interfaces)
+
+=item $netgear->c_id()
+
+Returns reference to hash. Key: iid Value: string value used to identify the
+chassis component associated with the remote system.
+
+=item $netgear->c_platform()
+
+Returns reference to hash.  Key: iid Value: Remote Device Type
 
 =back
 

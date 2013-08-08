@@ -5,6 +5,10 @@ version 3.04 ()
    [ENHANCEMENTS]
 
    * [#47] Add model info on HP 2530 and HP 2920 series
+   * Add proper LLDP support to Netgear.pm
+   * Netgear.pm now properly reports interfaces() using ifName
+     rather than ifDescr, as the former is unique per interface
+     while the latter is not.
 
 version 3.03 (2013-07-11)
 
