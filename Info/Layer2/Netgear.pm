@@ -33,28 +33,30 @@ package SNMP::Info::Layer2::Netgear;
 use strict;
 use Exporter;
 use SNMP::Info::Layer2;
+use SNMP::Info::Entity;
 use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer2::Netgear::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::Netgear::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Entity SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Netgear::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '3.03';
 
-%MIBS = ( %SNMP::Info::Layer2::MIBS, %SNMP::Info::LLDP::MIBS, );
+our $index = undef;
+
+%MIBS = ( %SNMP::Info::Layer2::MIBS, %SNMP::Info::Entity::MIBS, %SNMP::Info::LLDP::MIBS, );
 
 %GLOBALS = (
-    %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::Entity::GLOBALS, %SNMP::Info::LLDP::GLOBALS,
+    ng_fsosver   => '.1.3.6.1.4.1.4526.11.11.1.0',
     ng_gsmserial => '.1.3.6.1.4.1.4526.10.1.1.1.4.0',
     ng_gsmosver  => '.1.3.6.1.4.1.4526.10.1.1.1.13.0',
-    ng_gsserial => '.1.3.6.1.2.1.47.1.1.1.1.11.1',
-    ng_gsosver  =>  '.1.3.6.1.2.1.32.2.1.1.1.0',
 );
 
-%FUNCS = ( %SNMP::Info::Layer2::FUNCS, %SNMP::Info::LLDP::FUNCS, );
+%FUNCS = ( %SNMP::Info::Layer2::FUNCS, %SNMP::Info::Entity::FUNCS, %SNMP::Info::LLDP::FUNCS, );
 
-%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::LLDP::MUNGE, );
+%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::Entity::MUNGE, %SNMP::Info::LLDP::MUNGE, );
 
 sub vendor {
     return 'netgear';
@@ -64,23 +66,79 @@ sub os {
     return 'netgear';
 }
 
+# We will attempt to use Entity-MIB if present.  In that case, we will
+# also set the shared variable $index, which is used by other functions
+# to index within Entity-MIB tables. This assumes, of course, that there
+# is only one serial number (entPhysicalSerialNum) present in the table.
+sub serial {
+    my $netgear = shift;
+    my $serial = undef;
+    
+    my $e_serial = $netgear->e_serial();
+    if (defined($e_serial)) { # This unit sports the Entity-MIB
+        # Find entity table entry for this unit
+        foreach my $e ( keys %$e_serial ) {
+            if (defined ($e_serial->{$e}) and $e_serial->{$e} !~ /^\s*$/) {
+                $index = $e;
+                last;
+            }
+        }
+        return $e_serial->{$index} if defined $index;
+    }
+
+    # Without Enitity-MIB, we've got to work our way through a bunch of
+    # different locales...
+    return $netgear->ng_gsmserial() if defined $netgear->model and $netgear->model =~ m/GSM\d/i;;
+    return 'none';
+}
+
 # Wish the OID-based method worked, but netgear scatters
 # the sysObjectID values across all the device MIBs, and
 # makes the device MIBs state secrets.
 # They seem to set sysDescr to the model number, though,
 # so we'll use that.
+# NB: We could use $e_model{$index} but that creates a chicken-and-egg
+# condition with serial number.
 sub model {
     my $netgear = shift;
+    if (defined($index)) {
+        my $model   = $netgear->e_descr();
+        my $e_hwver = $netgear->e_hwver();
+
+        $model = "$model->{$index} $e_hwver->{$index}";
+        return $model;
+    }
     return $netgear->description();
 }
 
 # ifDescr is the same for all interfaces in a class, but the ifName is
-# unique, so let's use that for port name.
+# unique, so let's use that for port name.  If all else fails, 
+# concatentate ifDesc and ifIndex.
 sub interfaces {
     my $netgear = shift;
     my $partial = shift;
 
-    my $interfaces = $netgear->i_name($partial);
+    my $interfaces = $netgear->i_index($partial)       || {};
+    my $i_descr    = $netgear->i_description($partial) || {};
+    my $i_name     = $netgear->i_name($partial);
+    my $i_isset    = ();
+    # Replace the description with the ifName field, if set
+    foreach my $iid ( keys %$i_name ) {
+        my $name = $i_name->{$iid};
+        next unless defined $name;
+        if (defined $name and $name !~ /^\s*$/) {
+            $interfaces->{$iid} = $name;
+            $i_isset->{$iid} = 1;
+        }
+    }
+    # Replace the Index with the ifDescr field, appended with index
+    # number, to deal with devices with non-unique ifDescr.
+    foreach my $iid ( keys %$i_descr ) {
+        my $port = $i_descr->{$iid} . '-' . $iid;
+        next unless defined $port;
+        next if (defined $i_isset->{$iid} and $i_isset->{$iid} == 1);
+        $interfaces->{$iid} = $port;
+    }
 
     return $interfaces;
 }
@@ -108,14 +166,13 @@ sub fw_port {
 # https://sourceforge.net/tracker/?func=detail&aid=3085413&group_id=70362&atid=527529
 sub os_ver {
     my $netgear = shift;
-    return $netgear->ng_gsosver if defined $netgear->model and $netgear->model =~ m/GS\d/i;
-    return $netgear->ng_gsmosver();
-}
+    my $serial  = $netgear->serial(); # Make sure that index gets primed
+    my $os_ver  = $netgear->e_swver();
+    return $os_ver->{$index} if defined $os_ver;
 
-sub serial {
-    my $netgear = shift;
-    return $netgear->ng_gsserial if defined $netgear->model and $netgear->model =~ m/GS\d/i;
-    return $netgear->ng_gsmserial();
+    return $netgear->ng_gsosver() if defined $netgear->model and $netgear->model =~ m/GS\d/i;
+    return $netgear->ng_gsmosver() if defined  $netgear->model and $netgear->model =~ m/GSM\d/i;
+    return $netgear->ng_fsosver() if defined  $netgear->model and $netgear->model =~ m/FS\d/i;
 }
 
 #  Use LLDP
