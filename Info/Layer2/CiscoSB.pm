@@ -52,12 +52,9 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 $VERSION = '3.03';
 
-# NB - This is a huge hack.  This is our index into the various
-# Entity MIB tables.  This should be devined by using the entPhysicalContainsTable
-# and working from there, but the current Entity.pm doesn't provide
-# direct support for the entityMapping branch of the MIB.
-# This must be revisited.
-our $magic_number = 67108992;
+# This will be filled in with the device's index into the EntPhysicalEntry
+# table by the serial() function.
+our $index = undef;
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
@@ -101,29 +98,41 @@ sub vendor {
     return 'cisco';
 }
 
+# Walk the entPhysicalSerialNum table and return both the first serial
+# number found as well as the index of that entry.
 sub serial {
-    my $ciscosb = shift;
-    my $serial  = $ciscosb->e_serial();
+    my $ciscosb  = shift;
+    my $serial   = undef;  
+    my $e_serial = $ciscosb->e_serial();
 
-    return $serial->{$magic_number};
+    # Find entity table entry for this unit
+    foreach my $e ( keys %$e_serial ) {
+        if (defined ($e_serial->{$e}) and $e_serial->{$e} !~ /^\s*$/) {
+            $index = $e;
+            last;
+        }
+    }
+    return $e_serial->{$index} if defined $index;
 }
 
 sub os_ver {
     my $ciscosb = shift;
     my $os_ver  = $ciscosb->e_swver();
 
-    return $os_ver->{$magic_number};
+    return $os_ver->{$index} if defined $index;
 }
   
 # Grab e_model from Entity and tag on e_hwver
 sub model {
     my $ciscosb = shift;
-    my $model   = $ciscosb->e_model();
+    my $e_model   = $ciscosb->e_model();
     my $e_hwver = $ciscosb->e_hwver();
 
-    $model = "$model->{$magic_number} $e_hwver->{$magic_number}";
-
-    return $model;
+    if (defined ($index)) {
+        my $model = "$e_model->{$index} $e_hwver->{$index}";
+        return $model;
+    }
+    return $ciscosb->description();
 }
 
 # ifDescr is the same for all interfaces in a class, but the ifName is
@@ -168,10 +177,6 @@ Nic Bernstein (shamelessly stolen from Max Baker's Aironet code)
 
 Provides interface to SNMP Data available on Cisco Small Business (nee LinkSys)
 managed switches. [i.e. those matching enterprises(1).cisco(9).otherEnterprises(6).ciscosb(1)]
-
-Currently implemented via a "magic number" which is our index into the
-Entity MIB tables.  This is a hack, but this number seems to be constant
-between various models, and a work around will take time.
 
 =head2 Inherited Classes
 
