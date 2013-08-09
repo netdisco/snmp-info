@@ -43,6 +43,8 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '3.03';
 
+# This will be filled in with the device's index into the EntPhysicalEntry
+# table by the serial() function.
 our $index = undef;
 
 %MIBS = ( %SNMP::Info::Layer2::MIBS, %SNMP::Info::Entity::MIBS, %SNMP::Info::LLDP::MIBS, );
@@ -92,13 +94,8 @@ sub serial {
     return 'none';
 }
 
-# Wish the OID-based method worked, but netgear scatters
-# the sysObjectID values across all the device MIBs, and
-# makes the device MIBs state secrets.
-# They seem to set sysDescr to the model number, though,
-# so we'll use that.
-# NB: We could use $e_model{$index} but that creates a chicken-and-egg
-# condition with serial number.
+# If device supports Entity-MIB, index into that to divine model and
+# hardware version, otherwise default to sysDescr.
 sub model {
     my $netgear = shift;
     if (defined($index)) {
@@ -143,7 +140,7 @@ sub interfaces {
     return $interfaces;
 }
 
-#
+
 # This is model-dependent.  Some netgear brand devices don't implement
 # the bridge MIB forwarding table, so we use the Q-BRIDGE-MIB forwarding
 # table.  Fall back to the orig functions if the qb versions don't
@@ -167,10 +164,10 @@ sub fw_port {
 sub os_ver {
     my $netgear = shift;
     my $serial  = $netgear->serial(); # Make sure that index gets primed
-    my $os_ver  = $netgear->e_swver();
-    return $os_ver->{$index} if defined $os_ver;
-
-    return $netgear->ng_gsosver() if defined $netgear->model and $netgear->model =~ m/GS\d/i;
+    if (defined($index)) {
+        my $os_ver  = $netgear->e_swver();
+        return $os_ver->{$index} if defined $os_ver;
+    }
     return $netgear->ng_gsmosver() if defined  $netgear->model and $netgear->model =~ m/GSM\d/i;
     return $netgear->ng_fsosver() if defined  $netgear->model and $netgear->model =~ m/FS\d/i;
 }
@@ -179,13 +176,12 @@ sub os_ver {
 
 sub hasCDP {
     my $netgear = shift;
-
     return $netgear->hasLLDP() || $netgear->SUPER::hasCDP();
 }
 
 sub c_ip {
     my $netgear = shift;
-    my $partial  = shift;
+    my $partial = shift;
 
     my $cdp  = $netgear->SUPER::c_ip($partial) || {};
     my $lldp = $netgear->lldp_ip($partial)     || {};
@@ -344,6 +340,7 @@ inherited methods.
 =over
 
 =item SNMP::Info::Layer2
+=item SNMP::Info::Entity
 =item SNMP::Info::LLDP
 
 =back
@@ -356,6 +353,8 @@ inherited methods.
 
 MIBs listed in L<SNMP::Info::Layer2/"Required MIBs"> and its inherited
 classes.
+
+See L<SNMP::Info::Entity/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::LLDP/"Required MIBs"> for its MIB requirements.
 
@@ -379,7 +378,8 @@ Returns 'netgear'
 
 =item $netgear->model()
 
-Returns description()
+Returns concatenation of $e_model and $e_hwver if Entity MIB present, 
+otherwise returns description()
 
 =item $netgear->os_ver()
 
@@ -387,13 +387,18 @@ Returns OS Version.
 
 =item $netgear->serial()
 
-Returns Serial Number.
+Returns Serial Number if available (older FS switches have no accessible
+serial number).
 
 =back
 
 =head2 Global Methods imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::Entity
+
+See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::LLDP
 
@@ -477,6 +482,10 @@ Returns reference to hash.  Key: iid Value: Remote Device Type
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::Entity
+
+See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::LLDP
 
