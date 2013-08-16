@@ -40,7 +40,7 @@ use SNMP::Info::IEEE802dot11;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.03';
+$VERSION = '3.04_001';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,

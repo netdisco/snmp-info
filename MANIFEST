@@ -40,6 +40,7 @@ Info/Layer2/C2900.pm
 Info/Layer2/Catalyst.pm
 Info/Layer2/Centillion.pm
 Info/Layer2/Cisco.pm
+Info/Layer2/CiscoSB.pm
 Info/Layer2/HP.pm
 Info/Layer2/HP4000.pm
 Info/Layer2/HPVC.pm

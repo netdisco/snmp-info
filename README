@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.03
+    SNMP::Info - Version 3.04_001
 
 AUTHOR
 
@@ -458,6 +458,13 @@ SUBCLASSES
             supported in more specific subclasses.
 
             See documentation in SNMP::Info::Layer2::Cisco for details.
+
+        SNMP::Info::Layer2::CiscoSB
+            Subclass for Cisco's "Small Business" product line, acquired
+            from Linksys. This currently comprises the Sx300/500 line of
+            switches.
+
+            See documentation in SNMP::Info::Layer2::CiscoSB for details.
 
         SNMP::Info::Layer2::HP
             Subclass for more recent HP Procurve Switches

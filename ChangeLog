@@ -1,6 +1,6 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
-version 3.04 ()
+version 3.04_001 (2013-08-16)
 
    [ENHANCEMENTS]
 
@@ -9,13 +9,13 @@ version 3.04 ()
       Layer2/CiscoSB class
     * Add proper LLDP support to Netgear.pm
     * Change $netgear->interfaces() to use ifName rather than ifDescr
-	    as the former is unique per interface while the latter is not.  
-	    If ifName is not present, concatenate ifDescr and ifIndex
-	    to achieve a unique value.
+      as the former is unique per interface while the latter is not.  
+      If ifName is not present, concatenate ifDescr and ifIndex
+      to achieve a unique value.
     * Properly report hardware version, Serial No. and OS Version for
       Netgear.
     
->>>>>>> c3a727
+
 version 3.03 (2013-07-11)
 
     [BUG FIXES]
