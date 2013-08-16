@@ -46,7 +46,7 @@ use SNMP::Info::CDP;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE/;
 
-$VERSION = '3.04_001';
+$VERSION = '3.05';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
