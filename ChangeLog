@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.06 ()
+
+   [BUG FIXES]
+
+   * [#48] Switch duplicate J9624A for J9626A in Layer2/HP (R. Kerr)
+
 version 3.05 (2013-08-16)
 
    [ENHANCEMENTS]
