@@ -87,6 +87,7 @@ Info/Layer3/Nexus.pm
 Info/Layer3/PacketFront.pm
 Info/Layer3/Passport.pm
 Info/Layer3/Pf.pm
+Info/Layer3/Pica8.pm
 Info/Layer3/SonicWALL.pm
 Info/Layer3/Sun.pm
 Info/Layer3/Tasman.pm

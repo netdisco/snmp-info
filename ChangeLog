@@ -2,6 +2,10 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 3.06 ()
 
+   [ENHANCEMENTS]
+
+    * Support for Pica8 switches in L3::Pica8
+
    [BUG FIXES]
 
    * [#48] Switch duplicate J9624A for J9626A in Layer2/HP (R. Kerr)
