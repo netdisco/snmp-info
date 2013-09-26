@@ -1106,6 +1106,16 @@ sub new {
         delete $sess_args{IgnoreNetSNMPConf};
     }
 
+    if ( exists $args{StoreSession} ) {
+        $new_obj->{StoreSession} = ($args{StoreSession} ? 1 : 0);
+        delete $sess_args{StoreSession};
+    }
+
+    if ( defined $args{SessionDataFile} ) {
+        $new_obj->{SessionDataFile} = $args{SessionDataFile};
+        delete $sess_args{SessionDataFile};
+    }
+
     my $sess = undef;
     if ( defined $args{Session} ) {
         $sess = $args{Session};
@@ -1191,6 +1201,8 @@ sub update {
     delete $sess_args{BulkRepeaters};
     delete $sess_args{BulkWalk};
     delete $sess_args{LoopDetect};
+    delete $sess_args{StoreSession};
+    delete $sess_args{SessionDataFile};
     delete $sess_args{IgnoreNetSNMPConf};
     delete $sess_args{BigInt};
     delete $sess_args{MibDirs};
@@ -3542,27 +3554,25 @@ sub _global {
         $attr =~ s/^(load|orig)_//;
         $attr =~ s/_raw$//;
 
-        # Get the callback hash for data munging
-        my $munge = $self->munge();
-
         # Return cached data unless loading
         # We now store in raw format so munge before returning
         # unless expecting raw data
         if ( defined $self->{"_$attr"} && !$load ) {
-            if ( defined $munge->{$attr} && !$raw ) {
-                my $val    = $self->{"_$attr"};
-                my $subref = $munge->{$attr};
-                return &$subref($val);
+            my $val = $self->{"_$attr"};
+
+            if ( !$raw ) {
+                return $self->_munge($attr, $val);
             } else{
-                return $self->{"_$attr"};
+                return $val;
             } 
         }
 
-        if ( $self->debug() ) {
-            # Let's get the MIB Module and leaf name along with the OID
-            my $qual_leaf = SNMP::translateObj($oid,0,1) || '';
-            print "SNMP::Info::_global $method : $qual_leaf : $oid\n";
-        }
+        # Let's get the MIB Module and leaf name along with the OID
+        my $qual_leaf = SNMP::translateObj($oid,0,1) || '';
+
+        print "SNMP::Info::_global $method : $qual_leaf : $oid\n"
+            if $self->debug();
+
         my $val = $sess->get($oid);
 
         # Mark as gotten. Even if it fails below, we don't want to keep failing.
@@ -3585,12 +3595,11 @@ sub _global {
         }
 
         # Save Cached Value
-        $self->{"_$attr"} = $val;
+        $self->_cache($qual_leaf, $attr, $val);
 
         # Data Munging
-        if ( defined $munge->{$attr} && !$raw ) {
-            my $subref = $munge->{$attr};
-            $val = &$subref($val);
+        if ( !$raw ) {
+            $self->_munge($attr, $val);
         }
 
         return $val;
@@ -3867,7 +3876,6 @@ sub _load_attr {
         my $ver    = $self->snmp_ver();
         my $nosuch = $self->nosuch();
         my $store  = $self->store();
-        my $munge  = $self->munge();
 
         my $load = $method =~ /^load/;
         my $raw  = $method =~ /raw$/;
@@ -4047,24 +4055,14 @@ sub _load_attr {
 
         # Cache data if we are not getting partial data:
         if ( !defined $partial ) {
-            $self->{"_${attr}"}++;
-            $store->{$attr} = $localstore;
+            $self->_cache($qual_leaf, $attr, $localstore);
         }
 
         # Data Munging
-        # Checks for an entry in %munge and munges values unless we expect
-        # raw data
-        if ( defined $munge->{$attr} && !$raw ) {
-            my $subref = $munge->{$attr};
-            my %munged;
-            foreach my $key ( keys %$localstore ) {
-                my $value = $localstore->{$key};
-                next unless $key;
-                my $munged_value = &$subref($value);
-                $munged{$key} = $munged_value;
-            }
-            return \%munged;
+        if ( !$raw ) {
+            $localstore = $self->_munge($attr, $localstore);
         }
+
         return $localstore;
     }
 }
@@ -4072,11 +4070,6 @@ sub _load_attr {
 =item $info->_show_attr()
 
 Used internally by AUTOLOAD to return data called by methods listed in %FUNCS.
-
-Called like $info->METHOD().
-
-The first time ran, it will call $info->load_METHOD().  
-Every time after it will return cached data.
 
 =cut
 
@@ -4087,20 +4080,9 @@ sub _show_attr {
 
     my $store = $self->store();
 
-    # Get the callback hash for data munging
-    my $munge = $self->munge();
-
-    if ( defined $munge->{$attr} && !$raw ) {
+    if ( !$raw ) {
         my $localstore = $store->{$attr};
-        my $subref = $munge->{$attr};
-        my %munged;
-        foreach my $key ( keys %$localstore ) {
-            my $value = $localstore->{$key};
-            next unless $key;
-            my $munged_value = &$subref($value);
-            $munged{$key} = $munged_value;
-        }
-        return \%munged;
+        return $self->_munge($attr, $localstore);
     }
     else {
         return $store->{$attr};
@@ -4172,6 +4154,105 @@ sub modify_port_list {
     print "Modified port list: @$portlist \n" if $self->debug();
 
     return pack( "B*", join( '', @$portlist ) );
+}
+
+=item $info->_cache(qual_leaf, attr, data)
+
+Cache retrieved data so that if it's asked for again, we use the cache instead
+of going back to Net-SNMP. Data is cached inside the blessed hashref C<$self>.
+
+Accepts the qualified leaf, unqualified leaf, and value. Does not return
+anything useful.
+
+See also C<< $info->store_session() >> which allows dumping raw received data
+into a text file for debugging or troubleshooting.
+
+=cut
+
+sub _cache {
+    my $self = shift;
+    my ($qual_leaf, $attr, $data) = @_;
+    my $store = $self->store();
+
+    if (ref {} eq ref $data) {
+        $self->{"_${attr}"}++;
+        $store->{$attr} = $data;
+    }
+    else {
+        $self->{"_$attr"} = $data;
+    }
+
+    $self->store_session($qual_leaf, $data);
+}
+
+=item $info->_munge(attr, data)
+
+Raw data returned from Net-SNMP might not be formatted correctly or might have
+platform-specific bugs or mistakes. The MUNGE feature of SNMP::Info allows for
+fixups to take place.
+
+Accepts the leaf and value (scalar, or hashref for a table) and returns the raw
+or the munged data, as appropriate. That is, you do not need to know whether
+MUNGE is installed, and it's safe to call this method regardless.
+
+=cut
+
+sub _munge {
+    my $self = shift;
+    my ($attr, $data) = @_;
+    my $munge = $self->munge();
+
+    return $data unless defined $munge->{$attr};
+
+    if (ref {} eq ref $data) {
+        my $subref = $munge->{$attr};
+        my %munged;
+        foreach my $key ( keys %$data ) {
+            my $value = $data->{$key};
+            $munged{$key} = $subref->($value);
+        }
+        return \%munged;
+    }
+    else {
+        my $subref = $munge->{$attr};
+        return $subref->($data);
+    }
+}
+
+=item $info->store_session(leaf, data)
+
+As well as maintaining an internal cache of retrieved data, SNMP::Info can
+store SNMP responses to a file on disk. This is used for testing and
+development work.
+
+This feature is enabled by setting the C<StoreSession> parameter to true in
+C<new()>. Data is written to a file named "C<< <DestHost>.txt >>" unless you
+pass a name in the C<SessionDataFile> parameter. On instantiation SNMP::Info
+will overwrite any pre-existing file.
+
+The data stored by this method is a simple "leaf = val" text format, and is
+not retrieved by any part of SNMP::Info. To have the store also be retrieved
+and thereby allow SNMP::Info to operate "offline", see L<SNMP::Info::Offline>.
+
+=cut
+
+sub store_session {
+    my ($self, $leaf, $data) = @_;
+    return unless $self->{StoreSession} and $leaf and $data;
+
+    if (!exists $self->{SessionData}) {
+        $self->{SessionDataFile} ||= $self->session->{DestHost} .'.txt';
+        open $self->{SessionData}, '>', $self->{SessionDataFile}
+            or return;
+    }
+
+    if (ref {} eq ref $data) {
+        print {$self->{SessionData}} "${leaf}.$_ = $data->{$_}\n"
+            for sort keys %$data;
+    }
+    else {
+        print {$self->{SessionData}} "$leaf = $data\n";
+    }
 }
 
 =item _validate_autoload_method(method)
