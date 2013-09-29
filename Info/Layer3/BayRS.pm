@@ -43,7 +43,7 @@ use SNMP::Info::Bridge;
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE %MODEL_MAP
     %MODID_MAP %PROCID_MAP/;
 
-$VERSION = '3.05';
+$VERSION = '3.06_001';
 
 %MIBS = (
     %SNMP::Info::MIBS,

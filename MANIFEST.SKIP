@@ -4,6 +4,7 @@
 ,v$
 \B\.svn\b
 \B\.git\b
+.gitignore
 
 # Makemaker generated files and dirs.
 ^MANIFEST\.
@@ -11,6 +12,7 @@
 ^blib/
 ^MakeMaker-\d
 pm_to_blib
+MYMETA.*
 
 # Temp, old and emacs backup files.
 ~$

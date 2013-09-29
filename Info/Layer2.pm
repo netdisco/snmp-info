@@ -45,7 +45,7 @@ use SNMP::Info::PowerEthernet;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
 
-$VERSION = '3.05';
+$VERSION = '3.06_001';
 
 %MIBS = (
     %SNMP::Info::MIBS,         %SNMP::Info::Bridge::MIBS,

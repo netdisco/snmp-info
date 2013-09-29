@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.05
+    SNMP::Info - Version 3.06_001
 
 AUTHOR
 
@@ -1938,17 +1938,30 @@ SNMP::INFO INTERNALS
         Used internally by AUTOLOAD to return data called by methods listed
         in %FUNCS.
 
-        Called like $info->METHOD().
-
-        The first time ran, it will call $info->load_METHOD(). Every time
-        after it will return cached data.
-
     $info->snmp_connect_ip(ip)
         Returns true or false based upon snmp connectivity to an IP.
 
     modify_port_list(portlist,offset,replacement)
         Replaces the specified bit in a port_list array and returns the
         packed bitmask
+
+    $info->_cache(attr, data)
+        Cache retrieved data so that if it's asked for again, we use the
+        cache instead of going back to Net-SNMP. Data is cached inside the
+        blessed hashref $self.
+
+        Accepts the leaf and value (scalar, or hashref for a table). Does
+        not return anything useful.
+
+    $info->_munge(attr, data)
+        Raw data returned from Net-SNMP might not be formatted correctly or
+        might have platform-specific bugs or mistakes. The MUNGE feature of
+        SNMP::Info allows for fixups to take place.
+
+        Accepts the leaf and value (scalar, or hashref for a table) and
+        returns the raw or the munged data, as appropriate. That is, you do
+        not need to know whether MUNGE is installed, and it's safe to call
+        this method regardless.
 
     _validate_autoload_method(method)
         Used internally by AUTOLOAD to validate that a dynamic method should
