@@ -833,6 +833,12 @@ Subclass for FreeBSD-Based Firewalls using Pf /Pf Sense
 
 See documentation in L<SNMP::Info::Layer3::Pf> for details.
 
+=item SNMP::Info::Layer3::Pica8
+
+Subclass for Pica8 devices.
+
+See documentation in L<SNMP::Info::Layer3::Pica8> for details.
+
 =item SNMP::Info::Layer3::SonicWALL
 
 Subclass for generic SonicWALL devices. See documentation in
