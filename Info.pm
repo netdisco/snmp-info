@@ -1106,16 +1106,6 @@ sub new {
         delete $sess_args{IgnoreNetSNMPConf};
     }
 
-    if ( exists $args{StoreSession} ) {
-        $new_obj->{StoreSession} = ($args{StoreSession} ? 1 : 0);
-        delete $sess_args{StoreSession};
-    }
-
-    if ( defined $args{SessionDataFile} ) {
-        $new_obj->{SessionDataFile} = $args{SessionDataFile};
-        delete $sess_args{SessionDataFile};
-    }
-
     my $sess = undef;
     if ( defined $args{Session} ) {
         $sess = $args{Session};
@@ -1201,8 +1191,6 @@ sub update {
     delete $sess_args{BulkRepeaters};
     delete $sess_args{BulkWalk};
     delete $sess_args{LoopDetect};
-    delete $sess_args{StoreSession};
-    delete $sess_args{SessionDataFile};
     delete $sess_args{IgnoreNetSNMPConf};
     delete $sess_args{BigInt};
     delete $sess_args{MibDirs};
@@ -3567,12 +3555,11 @@ sub _global {
             } 
         }
 
-        # Let's get the MIB Module and leaf name along with the OID
-        my $qual_leaf = SNMP::translateObj($oid,0,1) || '';
-
-        print "SNMP::Info::_global $method : $qual_leaf : $oid\n"
-            if $self->debug();
-
+        if ( $self->debug() ) {
+            # Let's get the MIB Module and leaf name along with the OID
+            my $qual_leaf = SNMP::translateObj($oid,0,1) || '';
+            print "SNMP::Info::_global $method : $qual_leaf : $oid\n";
+        }
         my $val = $sess->get($oid);
 
         # Mark as gotten. Even if it fails below, we don't want to keep failing.
@@ -3595,11 +3582,11 @@ sub _global {
         }
 
         # Save Cached Value
-        $self->_cache($qual_leaf, $attr, $val);
+        $self->_cache($attr, $val);
 
         # Data Munging
         if ( !$raw ) {
-            $self->_munge($attr, $val);
+            $val = $self->_munge($attr, $val);
         }
 
         return $val;
@@ -4055,7 +4042,7 @@ sub _load_attr {
 
         # Cache data if we are not getting partial data:
         if ( !defined $partial ) {
-            $self->_cache($qual_leaf, $attr, $localstore);
+            $self->_cache($attr, $localstore);
         }
 
         # Data Munging
@@ -4156,22 +4143,19 @@ sub modify_port_list {
     return pack( "B*", join( '', @$portlist ) );
 }
 
-=item $info->_cache(qual_leaf, attr, data)
+=item $info->_cache(attr, data)
 
 Cache retrieved data so that if it's asked for again, we use the cache instead
 of going back to Net-SNMP. Data is cached inside the blessed hashref C<$self>.
 
-Accepts the qualified leaf, unqualified leaf, and value. Does not return
+Accepts the leaf and value (scalar, or hashref for a table). Does not return
 anything useful.
-
-See also C<< $info->store_session() >> which allows dumping raw received data
-into a text file for debugging or troubleshooting.
 
 =cut
 
 sub _cache {
     my $self = shift;
-    my ($qual_leaf, $attr, $data) = @_;
+    my ($attr, $data) = @_;
     my $store = $self->store();
 
     if (ref {} eq ref $data) {
@@ -4181,8 +4165,6 @@ sub _cache {
     else {
         $self->{"_$attr"} = $data;
     }
-
-    $self->store_session($qual_leaf, $data);
 }
 
 =item $info->_munge(attr, data)
@@ -4216,42 +4198,6 @@ sub _munge {
     else {
         my $subref = $munge->{$attr};
         return $subref->($data);
-    }
-}
-
-=item $info->store_session(leaf, data)
-
-As well as maintaining an internal cache of retrieved data, SNMP::Info can
-store SNMP responses to a file on disk. This is used for testing and
-development work.
-
-This feature is enabled by setting the C<StoreSession> parameter to true in
-C<new()>. Data is written to a file named "C<< <DestHost>.txt >>" unless you
-pass a name in the C<SessionDataFile> parameter. On instantiation SNMP::Info
-will overwrite any pre-existing file.
-
-The data stored by this method is a simple "leaf = val" text format, and is
-not retrieved by any part of SNMP::Info. To have the store also be retrieved
-and thereby allow SNMP::Info to operate "offline", see L<SNMP::Info::Offline>.
-
-=cut
-
-sub store_session {
-    my ($self, $leaf, $data) = @_;
-    return unless $self->{StoreSession} and $leaf and $data;
-
-    if (!exists $self->{SessionData}) {
-        $self->{SessionDataFile} ||= $self->session->{DestHost} .'.txt';
-        open $self->{SessionData}, '>', $self->{SessionDataFile}
-            or return;
-    }
-
-    if (ref {} eq ref $data) {
-        print {$self->{SessionData}} "${leaf}.$_ = $data->{$_}\n"
-            for sort keys %$data;
-    }
-    else {
-        print {$self->{SessionData}} "$leaf = $data\n";
     }
 }
 
