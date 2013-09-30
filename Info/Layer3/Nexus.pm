@@ -141,11 +141,13 @@ sub os_ver {
 sub serial {
     my $nexus = shift;
 
-    my $e_class = $nexus->e_class();
+    my $e_class  = $nexus->e_class();
+    my $e_parent = $nexus->e_parent();
 
     foreach my $iid ( keys %$e_class ) {
         my $class = $e_class->{$iid} || '';
-        if ($class =~ /chassis/) {
+	my $parent = $e_parent->{$iid} || 1;
+        if ($class =~ /chassis/ && $e_parent == 0) {
 	    my $serial = $nexus->e_serial($iid);
 	    return $serial->{$iid};
 	}
@@ -172,6 +174,73 @@ sub model {
 
     $model =~ s/^cevChassis//i;
     return $model;
+}
+
+# Reported version 6.x of NX-OS doesn't use the IPv4 address as index
+# override methods in ipAddrTable
+sub ip_table {
+    my $nexus         = shift;
+    my $orig_ip_table = $nexus->orig_ip_table();
+
+    my %ip_table;
+    foreach my $iid ( keys %$orig_ip_table ) {
+	my $ip = $orig_ip_table->{$iid};
+	next unless defined $ip;
+
+	$ip_table{$ip} = $ip;
+    }
+    return \%ip_table;
+}
+
+sub ip_index {
+    my $nexus         = shift;
+    my $orig_ip_table = $nexus->orig_ip_table();
+    my $orig_ip_index = $nexus->orig_ip_index();
+
+    my %ip_index;
+    foreach my $iid ( keys %$orig_ip_table ) {
+	my $ip    = $orig_ip_table->{$iid};
+	my $index = $orig_ip_index->{$iid};
+
+	next unless ( defined $ip && defined $index );
+
+	$ip_index{$ip} = $index;
+    }
+    return \%ip_index;
+}
+
+sub ip_netmask {
+    my $nexus           = shift;
+    my $orig_ip_table   = $nexus->orig_ip_table();
+    my $orig_ip_netmask = $nexus->orig_ip_netmask();
+
+    my %ip_netmask;
+    foreach my $iid ( keys %$orig_ip_table ) {
+	my $ip      = $orig_ip_table->{$iid};
+	my $netmask = $orig_ip_netmask->{$iid};
+
+	next unless ( defined $ip && defined $netmask );
+
+	$ip_netmask{$ip} = $netmask;
+    }
+    return \%ip_netmask;
+}
+
+sub ip_broadcast {
+    my $nexus             = shift;
+    my $orig_ip_table     = $nexus->orig_ip_table();
+    my $orig_ip_broadcast = $nexus->orig_ip_broadcast();
+
+    my %ip_broadcast;
+    foreach my $iid ( keys %$orig_ip_table ) {
+	my $ip        = $orig_ip_table->{$iid};
+	my $broadcast = $orig_ip_broadcast->{$iid};
+
+	next unless ( defined $ip && defined $broadcast );
+
+	$ip_broadcast{$ip} = $broadcast;
+    }
+    return \%ip_broadcast;
 }
 
 1;
@@ -303,6 +372,42 @@ C<dot1dBaseBridgeAddress>
 =item $nexus->cisco_comm_indexing()
 
 Returns 1.  Use vlan indexing.
+
+=back
+
+=head2 Overrides
+
+=head3 IP Address Table
+
+Each entry in this table is an IP address in use on this device.  Some 
+versions do not index the table with the IPv4 address in accordance with
+the MIB definition, these overrides correct that behavior.
+
+=over
+
+=item $nexus->ip_index()
+
+Maps the IP Table to the IID
+
+(C<ipAdEntIfIndex>)
+
+=item $nexus->ip_table()
+
+Maps the Table to the IP address
+
+(C<ipAdEntAddr>)
+
+=item $nexus->ip_netmask()
+
+Gives netmask setting for IP table entry.
+
+(C<ipAdEntNetMask>)
+
+=item $nexus->ip_broadcast()
+
+Gives broadcast address for IP table entry.
+
+(C<ipAdEntBcastAddr>)
 
 =back
 
