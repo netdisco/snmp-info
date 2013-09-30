@@ -141,13 +141,11 @@ sub os_ver {
 sub serial {
     my $nexus = shift;
 
-    my $e_class  = $nexus->e_class();
     my $e_parent = $nexus->e_parent();
 
-    foreach my $iid ( keys %$e_class ) {
-        my $class = $e_class->{$iid} || '';
-	my $parent = $e_parent->{$iid} || 1;
-        if ($class =~ /chassis/ && $e_parent == 0) {
+    foreach my $iid ( keys %$e_parent ) {
+	my $parent = $e_parent->{$iid};
+        if ($parent eq '0') {
 	    my $serial = $nexus->e_serial($iid);
 	    return $serial->{$iid};
 	}
