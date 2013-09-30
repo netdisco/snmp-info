@@ -9,6 +9,10 @@ version 3.06 ()
    [BUG FIXES]
 
    * [#48] Switch duplicate J9624A for J9626A in Layer2/HP (R. Kerr)
+   * Correct device serial number reporting for Nexus devices
+   * Override ipAddrTable methods in L3::Nexus as some versions do not
+     index the table with the IPv4 address in accordance with the MIB
+     definition.
 
 version 3.05 (2013-08-16)
 
