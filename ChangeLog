@@ -1,10 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
-version 3.06 ()
+version 3.07 ()
 
    [ENHANCEMENTS]
 
     * Support for Pica8 switches in L3::Pica8
+    * Factor out cache/munge code from global/attr methods
 
    [BUG FIXES]
 

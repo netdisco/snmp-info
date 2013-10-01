@@ -24,7 +24,7 @@ use vars
     qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '3.05';
+$VERSION = '3.07';
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.05
+SNMP::Info - Version 3.07
 
 =head1 AUTHOR
 
@@ -832,6 +832,12 @@ See documentation in L<SNMP::Info::Layer3::Passport> for details.
 Subclass for FreeBSD-Based Firewalls using Pf /Pf Sense
 
 See documentation in L<SNMP::Info::Layer3::Pf> for details.
+
+=item SNMP::Info::Layer3::Pica8
+
+Subclass for Pica8 devices.
+
+See documentation in L<SNMP::Info::Layer3::Pica8> for details.
 
 =item SNMP::Info::Layer3::SonicWALL
 
@@ -3542,19 +3548,16 @@ sub _global {
         $attr =~ s/^(load|orig)_//;
         $attr =~ s/_raw$//;
 
-        # Get the callback hash for data munging
-        my $munge = $self->munge();
-
         # Return cached data unless loading
         # We now store in raw format so munge before returning
         # unless expecting raw data
         if ( defined $self->{"_$attr"} && !$load ) {
-            if ( defined $munge->{$attr} && !$raw ) {
-                my $val    = $self->{"_$attr"};
-                my $subref = $munge->{$attr};
-                return &$subref($val);
+            my $val = $self->{"_$attr"};
+
+            if ( !$raw ) {
+                return $self->_munge($attr, $val);
             } else{
-                return $self->{"_$attr"};
+                return $val;
             } 
         }
 
@@ -3585,12 +3588,11 @@ sub _global {
         }
 
         # Save Cached Value
-        $self->{"_$attr"} = $val;
+        $self->_cache($attr, $val);
 
         # Data Munging
-        if ( defined $munge->{$attr} && !$raw ) {
-            my $subref = $munge->{$attr};
-            $val = &$subref($val);
+        if ( !$raw ) {
+            $val = $self->_munge($attr, $val);
         }
 
         return $val;
@@ -3867,7 +3869,6 @@ sub _load_attr {
         my $ver    = $self->snmp_ver();
         my $nosuch = $self->nosuch();
         my $store  = $self->store();
-        my $munge  = $self->munge();
 
         my $load = $method =~ /^load/;
         my $raw  = $method =~ /raw$/;
@@ -4047,24 +4048,14 @@ sub _load_attr {
 
         # Cache data if we are not getting partial data:
         if ( !defined $partial ) {
-            $self->{"_${attr}"}++;
-            $store->{$attr} = $localstore;
+            $self->_cache($attr, $localstore);
         }
 
         # Data Munging
-        # Checks for an entry in %munge and munges values unless we expect
-        # raw data
-        if ( defined $munge->{$attr} && !$raw ) {
-            my $subref = $munge->{$attr};
-            my %munged;
-            foreach my $key ( keys %$localstore ) {
-                my $value = $localstore->{$key};
-                next unless $key;
-                my $munged_value = &$subref($value);
-                $munged{$key} = $munged_value;
-            }
-            return \%munged;
+        if ( !$raw ) {
+            $localstore = $self->_munge($attr, $localstore);
         }
+
         return $localstore;
     }
 }
@@ -4072,11 +4063,6 @@ sub _load_attr {
 =item $info->_show_attr()
 
 Used internally by AUTOLOAD to return data called by methods listed in %FUNCS.
-
-Called like $info->METHOD().
-
-The first time ran, it will call $info->load_METHOD().  
-Every time after it will return cached data.
 
 =cut
 
@@ -4087,20 +4073,9 @@ sub _show_attr {
 
     my $store = $self->store();
 
-    # Get the callback hash for data munging
-    my $munge = $self->munge();
-
-    if ( defined $munge->{$attr} && !$raw ) {
+    if ( !$raw ) {
         my $localstore = $store->{$attr};
-        my $subref = $munge->{$attr};
-        my %munged;
-        foreach my $key ( keys %$localstore ) {
-            my $value = $localstore->{$key};
-            next unless $key;
-            my $munged_value = &$subref($value);
-            $munged{$key} = $munged_value;
-        }
-        return \%munged;
+        return $self->_munge($attr, $localstore);
     }
     else {
         return $store->{$attr};
@@ -4172,6 +4147,64 @@ sub modify_port_list {
     print "Modified port list: @$portlist \n" if $self->debug();
 
     return pack( "B*", join( '', @$portlist ) );
+}
+
+=item $info->_cache(attr, data)
+
+Cache retrieved data so that if it's asked for again, we use the cache instead
+of going back to Net-SNMP. Data is cached inside the blessed hashref C<$self>.
+
+Accepts the leaf and value (scalar, or hashref for a table). Does not return
+anything useful.
+
+=cut
+
+sub _cache {
+    my $self = shift;
+    my ($attr, $data) = @_;
+    my $store = $self->store();
+
+    if (ref {} eq ref $data) {
+        $self->{"_${attr}"}++;
+        $store->{$attr} = $data;
+    }
+    else {
+        $self->{"_$attr"} = $data;
+    }
+}
+
+=item $info->_munge(attr, data)
+
+Raw data returned from Net-SNMP might not be formatted correctly or might have
+platform-specific bugs or mistakes. The MUNGE feature of SNMP::Info allows for
+fixups to take place.
+
+Accepts the leaf and value (scalar, or hashref for a table) and returns the raw
+or the munged data, as appropriate. That is, you do not need to know whether
+MUNGE is installed, and it's safe to call this method regardless.
+
+=cut
+
+sub _munge {
+    my $self = shift;
+    my ($attr, $data) = @_;
+    my $munge = $self->munge();
+
+    return $data unless defined $munge->{$attr};
+
+    if (ref {} eq ref $data) {
+        my $subref = $munge->{$attr};
+        my %munged;
+        foreach my $key ( keys %$data ) {
+            my $value = $data->{$key};
+            $munged{$key} = $subref->($value);
+        }
+        return \%munged;
+    }
+    else {
+        my $subref = $munge->{$attr};
+        return $subref->($data);
+    }
 }
 
 =item _validate_autoload_method(method)
