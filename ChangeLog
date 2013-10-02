@@ -5,7 +5,7 @@ version 3.08 ()
    [ENHANCEMENTS]
 
     * [#66] Support for VSS via CISCO-VIRTUAL-SWITCH-MIB in L3::6500
-
+    * [#64] Add i_speed_admin() to L2::2900 (psychiatric)
 
 version 3.07 (2013-10-01)
 
