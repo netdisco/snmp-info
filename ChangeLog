@@ -1,6 +1,13 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
-version 3.07 ()
+version 3.08 ()
+
+   [ENHANCEMENTS]
+
+    * [#66] Support for VSS via CISCO-VIRTUAL-SWITCH-MIB in L3::6500
+
+
+version 3.07 (2013-10-01)
 
    [ENHANCEMENTS]
 

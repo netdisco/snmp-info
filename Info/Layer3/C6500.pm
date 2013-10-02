@@ -75,12 +75,18 @@ $VERSION = '3.07';
 # The @ISA order should match these orders.
 
 %MIBS = (
-    %SNMP::Info::Layer3::MIBS,             %SNMP::Info::CiscoPower::MIBS,
-    %SNMP::Info::CiscoConfig::MIBS,        %SNMP::Info::CiscoPortSecurity::MIBS,
-    %SNMP::Info::CiscoImage::MIBS,         %SNMP::Info::CiscoStats::MIBS,
-    %SNMP::Info::CDP::MIBS,                %SNMP::Info::LLDP::MIBS,
-    %SNMP::Info::CiscoStack::MIBS,         %SNMP::Info::CiscoStpExtensions::MIBS, 
-    %SNMP::Info::CiscoVTP::MIBS,    
+    %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::CiscoPower::MIBS,
+    %SNMP::Info::CiscoConfig::MIBS,
+    %SNMP::Info::CiscoPortSecurity::MIBS,
+    %SNMP::Info::CiscoImage::MIBS,
+    %SNMP::Info::CiscoStats::MIBS,
+    %SNMP::Info::CDP::MIBS,
+    %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::CiscoStack::MIBS,
+    %SNMP::Info::CiscoStpExtensions::MIBS,
+    %SNMP::Info::CiscoVTP::MIBS,
+    'CISCO-VIRTUAL-SWITCH-MIB' => 'cvsSwitchMode',
 );
 
 %GLOBALS = (
