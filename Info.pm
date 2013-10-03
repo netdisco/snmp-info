@@ -3299,15 +3299,15 @@ sub munge_port_list {
 
 =item munge_null()
 
-Removes nulls from a string
+Removes control characters from a string
 
 =cut
 
-# munge_null() - removes nulls (\0)
+# munge_null() - removes nulls (\0) and other control characters
 sub munge_null {
     my $text = shift || return;
 
-    $text =~ s/\0//g;
+    $text =~ s/[[:cntrl:]]//g;
     return $text;
 }
 
