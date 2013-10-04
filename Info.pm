@@ -1534,6 +1534,13 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::HPVC'
             if ( $desc =~ /HP\sVC\s/ );
 
+        # Aironet - IOS
+        # Starting with IOS 15, Aironet reports sysServices 6, even though
+        # it still is the same layer2 access point.
+        $objtype = 'SNMP::Info::Layer2::Aironet'
+            if ($desc =~ /\b(C1100|C1130|C1140|AP1200|C350|C1200|C1240|C1250)\b/
+            and $desc =~ /\bIOS\b/ );
+
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer3' )
             and ( defined($id) )
