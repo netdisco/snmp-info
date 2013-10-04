@@ -4,8 +4,14 @@ version 3.08 ()
 
    [ENHANCEMENTS]
 
+    * Rewrite of L3::Aruba, now supports pseudo ENTITY-MIB methods to gather
+      module information, more interface information for APs, more
+      wireless information to include client stats, and arpnip information
+      from wireless clients.  WARNING: AP device interfaces are now based on
+      AP MAC and radio versus BSSID to align with other wireless classes.
     * [#66] Support for VSS via CISCO-VIRTUAL-SWITCH-MIB in L3::6500
     * [#64] Add i_speed_admin() to L2::2900 (psychiatric)
+    * munge_null() now removes all non-printable control characters
 
 version 3.07 (2013-10-01)
 

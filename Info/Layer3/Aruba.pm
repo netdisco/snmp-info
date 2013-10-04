@@ -1,7 +1,7 @@
 # SNMP::Info::Layer3::Aruba
 # $Id$
 #
-# Copyright (c) 2008 Eric Miller
+# Copyright (c) 2013 Eric Miller
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -43,43 +43,106 @@ $VERSION = '3.07';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    'WLSX-SWITCH-MIB'         => 'wlsxHostname',
-    'WLSX-WLAN-MIB'           => 'wlanAPFQLN',
-    'WLSR-AP-MIB'             => 'wlsrHideSSID',
+    'WLSR-AP-MIB'        => 'wlsrHideSSID',
+    'WLSX-IFEXT-MIB'     => 'ifExtVlanName',
+    'WLSX-SWITCH-MIB'    => 'wlsxHostname',
+    'WLSX-SYSTEMEXT-MIB' => 'wlsxSysExtSwitchBaseMacaddress',
+    'WLSX-USER-MIB'      => 'nUserCurrentVlan',
+    'WLSX-WLAN-MIB'      => 'wlanAPFQLN',
+
     #'ALCATEL-IND1-TP-DEVICES' => 'familyOmniAccessWireless',
 );
 
-%GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, );
+%GLOBALS = (
+    %SNMP::Info::Layer3::GLOBALS,
+    'aruba_serial' => 'wlsxSwitchLicenseSerialNumber',
+    'aruba_model'  => 'wlsxModelName',
+    'mac'          => 'wlsxSysExtSwitchBaseMacaddress',
+);
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
 
-    # WLSX-SWITCH-MIB::wlsxSwitchAccessPointTable
-    # Table index leafs do not return information
-    # therefore unable to use apBSSID.  We extract
-    # the information from the IID instead.
-    'aruba_ap_name'      => 'apLocation',
-    'aruba_ap_ip'        => 'apIpAddress',
-    'aruba_ap_essid'     => 'apESSID',
+    # WLSR-AP-MIB::wlsrConfigTable
     'aruba_ap_ssidbcast' => 'wlsrHideSSID',
 
-    # WLSX-WLAN-MIB::wlsxWlanAPTable
-    'aruba_perap_fqln'   => 'wlanAPFQLN',
+    # WLSX-IFEXT-MIB::wlsxIfExtPortTable
+    'aruba_if_idx'    => 'ifExtPortIfIndex',
+    'aruba_if_mode'   => 'ifExtMode',
+    'aruba_if_pvid'   => 'ifExtTrunkNativeVlanId',
+    'aruba_if_duplex' => 'ifExtPortDuplex',
 
-    # WLSR-AP-MIB::wlsrConfigTable
-    'aruba_ap_channel' => 'apCurrentChannel',
+    # WLSX-IFEXT-MIB::wlsxIfExtVlanMemberTable
+    'aruba_if_vlan_member' => 'ifExtVlanMemberStatus',
 
+    # WLSX-IFEXT-MIB::::wlsxIfExtVlanTable
+    'v_name' => 'ifExtVlanName',
+
+    # Other cd11_ methods are indexed by staPhyAddress, we need to
+    # strip staAccessPointBSSID from the aruba_cd11_ methods.
+    # wlanStaRSSI and staSignalToNoiseRatio don't appear to be reporting
+    # distinct values.
     # WLSX-SWITCH-MIB::wlsxSwitchStationMgmtTable
-    # Table index leafs do not return information
-    # therefore unable to use staAccessPointBSSID
-    # or staPhyAddress.  We extract the information from
-    # the IID instead.
-    #'fw_port'             => 'staAccessPointBSSID',
-    #'fw_mac'              => 'staPhyAddress',
-    'fw_user' => 'staUserName',
+    'aruba_cd11_sigqual' => 'staSignalToNoiseRatio',
+    'aruba_cd11_txrate'  => 'staTransmitRate',
+
+    # WLSX-SWITCH-MIB::wlsxSwitchStationStatsTable
+    'aruba_cd11_rxbyte' => 'staRxBytes',
+    'aruba_cd11_txbyte' => 'staTxBytes',
+    'aruba_cd11_rxpkt'  => 'staRxPackets',
+    'aruba_cd11_txpkt'  => 'staTxPackets',
+
+    # WLSX-SYSTEMEXT-MIB::wlsxSysExtCardTable
+    'aruba_card_type'   => 'sysExtCardType',
+    'aruba_card_serial' => 'sysExtCardSerialNo',
+    'aruba_card_hw'     => 'sysExtCardHwRevision',
+    'aruba_card_fpga'   => 'sysExtCardFpgaRevision',
+    'aruba_card_no'     => 'sysExtCardAssemblyNo',
+
+    # WLSX-USER-MIB::wlsxUserTable
+    'aruba_user_vlan'  => 'nUserCurrentVlan',
+    'aruba_user_bssid' => 'nUserApBSSID',
+    'aruba_user_name'  => 'userName',
+
+    # WLSX-WLAN-MIB::wlsxWlanRadioTable
+    'aruba_apif_ch_num' => 'wlanAPRadioChannel',
+    'aruba_apif_power'  => 'wlanAPRadioTransmitPower',
+    'aruba_apif_type'   => 'wlanAPRadioType',
+    'aruba_apif_name'   => 'wlanAPRadioAPName',
+
+    # WLSX-WLAN-MIB::wlsxWlanAPTable
+    'aruba_ap_fqln'   => 'wlanAPFQLN',
+    'aruba_ap_status' => 'wlanAPStatus',
+    'aruba_ap_type'   => 'wlanAPModel',
+    'aruba_ap_serial' => 'wlanAPSerialNumber',
+    'aruba_ap_model'  => 'wlanAPModelName',
+    'aruba_ap_name'   => 'wlanAPName',
+    'aruba_ap_ip'     => 'wlanAPIpAddress',
+
+    # WLSX-WLAN-MIB::wlsxWlanESSIDVlanPoolTable
+    'aruba_ssid_vlan' => 'wlanESSIDVlanPoolStatus',
+
+    # WLSX-WLAN-MIB::wlsxWlanAPBssidTable
+    'aruba_ap_bssid_ssid' => 'wlanAPESSID',
+
+    # We pretend to have the CISCO-DOT11-MIB for signal strengths, etc.
+    # WLSX-WLAN-MIB::wlsxWlanStationTable
+    'cd11_sigstrength' => 'wlanStaRSSI',
+    'cd11_ssid'        => 'wlanStaAccessPointESSID',
+    'cd11_uptime'      => 'wlanStaUpTime',
+
 );
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
+%MUNGE = (
+    %SNMP::Info::Layer3::MUNGE,
+    'aruba_ap_fqln'       => \&munge_aruba_fqln,
+    'aruba_ap_type'       => \&SNMP::Info::munge_e_type,
+    'aruba_card_type'     => \&SNMP::Info::munge_e_type,
+    'aruba_ap_bssid_ssid' => \&SNMP::Info::munge_null,
+    'aruba_user_bssid'    => \&SNMP::Info::munge_mac,
+    'cd11_ssid'           => \&SNMP::Info::munge_null,
+
+);
 
 sub layers {
     return '00000111';
@@ -87,25 +150,21 @@ sub layers {
 
 sub os {
     my $aruba = shift;
-    my %osmap = (
-        'alcatel-lucent' => 'aos-w',
-                );
-    return $osmap{$aruba->vendor()} || 'airos';
+    my %osmap = ( 'alcatel-lucent' => 'aos-w', );
+    return $osmap{ $aruba->vendor() } || 'airos';
 }
 
 sub vendor {
-    my $aruba = shift;
+    my $aruba  = shift;
     my $id     = $aruba->id() || 'undef';
-    my %oidmap = (
-                  6486 => 'alcatel-lucent',
-                );
-    $id = $1 if (defined($id) && $id =~ /^\.1\.3\.6\.1\.4\.1\.(\d+)/);
+    my %oidmap = ( 6486 => 'alcatel-lucent', );
+    $id = $1 if ( defined($id) && $id =~ /^\.1\.3\.6\.1\.4\.1\.(\d+)/ );
 
-    if (defined($id) and exists($oidmap{$id})) {
-        return $oidmap{$id};
+    if ( defined($id) and exists( $oidmap{$id} ) ) {
+	return $oidmap{$id};
     }
     else {
-        return 'aruba';
+	return 'aruba';
     }
 }
 
@@ -115,7 +174,7 @@ sub os_ver {
     return unless defined $descr;
 
     if ( $descr =~ m/Version\s+(\d+\.\d+\.\d+\.\d+)/ ) {
-        return $1;
+	return $1;
     }
 
     return;
@@ -131,34 +190,42 @@ sub model {
     return $model;
 }
 
+sub serial {
+    my $aruba = shift;
+
+    return $aruba->aruba_serial();
+}
+
 # Thin APs do not support ifMIB requirement
-#
-# We return all BSSIDs as pseudo-ports on the controller.
 
 sub i_index {
     my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index  = $aruba->orig_i_index($partial)  || {};
-    my $ap_index = $aruba->aruba_ap_name($partial) || {};
+    my $i_index  = $aruba->orig_i_index($partial)      || {};
+    my $ap_index = $aruba->aruba_apif_ch_num($partial) || {};
 
     my %if_index;
     foreach my $iid ( keys %$i_index ) {
-        my $index = $i_index->{$iid};
-        next unless defined $index;
+	my $index = $i_index->{$iid};
+	next unless defined $index;
 
-        $if_index{$iid} = $index;
+	$if_index{$iid} = $index;
     }
 
     # Get Attached APs as Interfaces
     foreach my $ap_id ( keys %$ap_index ) {
 
-        # Convert the 0.254.123.456 index entry to a MAC address.
-        my $mac = join( ':',
-            map { sprintf( "%02x", $_ ) } split( /\./, $ap_id ) );
+	if ( $ap_id =~ /(\d+\.\d+\.\d+\.\d+\.\d+\.\d+)\.(\d+)/ ) {
+	    my $mac = join( ':',
+		map { sprintf( "%02x", $_ ) } split( /\./, $1 ) );
+	    my $radio = $2;
+	    next unless ( ( defined $mac ) and ( defined $radio ) );
 
-        $if_index{$ap_id} = $mac;
+	    $if_index{$ap_id} = "$mac.$radio";
+	}
     }
+
     return \%if_index;
 }
 
@@ -166,159 +233,387 @@ sub interfaces {
     my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index = $aruba->i_index($partial)       || {};
-    my $i_descr = $aruba->i_description($partial) || {};
+    my $i_index = $aruba->i_index($partial)     || {};
+    my $i_name  = $aruba->orig_i_name($partial) || {};
 
     my %if;
     foreach my $iid ( keys %$i_index ) {
-        my $index = $i_index->{$iid};
-        next unless defined $index;
+	my $index = $i_index->{$iid};
+	next unless defined $index;
 
-        if ( $index =~ /^\d+$/ ) {
+	if ( $index =~ /^\d+$/ ) {
 
-            # Replace the Index with the ifDescr field.
-            my $port = $i_descr->{$iid};
-            next unless defined $port;
-            $if{$iid} = $port;
-        }
+	    # Replace the Index with the ifName field.
+	    my $port = $i_name->{$iid};
+	    next unless defined $port;
+	    $if{$iid} = $port;
+	}
 
-        elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
-            $if{$index} = $index;
-        }
-
-        else {
-            next;
-        }
+	else {
+	    $if{$iid} = $index;
+	}
     }
     return \%if;
-}
-
-# Most items are indexed by BSSID.
-# aruba_perap_fqln is indexed by AP, so we use the
-# [haven't decided yet] index to figure out all of the
-# BSSIDs served by a given radio.
-sub aruba_ap_fqln {
-    my $aruba  = shift;
-    # I don't think $partial is meaningful in this context
-
-    my $perap_fqln = $aruba->aruba_perap_fqln();
-    my $channel = $aruba->wlanAPBssidChannel();
-    my $aruba_ap_fqln = {};
-
-    # Channel index is: AP, radio, BSSID
-    foreach my $idx (keys %$channel) {
-	my @oid = split(/\./, $idx );
-	my $ap = join(".", @oid[0..5]);
-        my $bssid = join(".", @oid[7..12]);
-	$aruba_ap_fqln->{$bssid} = $perap_fqln->{$ap};
-    }
-
-    return $aruba_ap_fqln;
 }
 
 sub i_name {
     my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index = $aruba->i_index($partial)       || {};
-    my $i_name2 = $aruba->orig_i_name($partial)   || {};
-    my $ap_name = $aruba->aruba_ap_name($partial) || {};
-    my $ap_fqln = $aruba->aruba_ap_fqln($partial) || {};
+    my $i_index = $aruba->i_index($partial)         || {};
+    my $i_name  = $aruba->orig_i_name($partial)     || {};
+    my $ap_name = $aruba->aruba_apif_name($partial) || {};
 
     my %i_name;
     foreach my $iid ( keys %$i_index ) {
-        my $index = $i_index->{$iid};
-        next unless defined $index;
+	my $index = $i_index->{$iid};
+	next unless defined $index;
 
-        if ( $index =~ /^\d+$/ ) {
-            my $name = $i_name2->{$iid};
-            next unless defined $name;
-            $i_name{$index} = $name;
-        }
+	if ( $index =~ /^\d+$/ ) {
+	    my $name = $i_name->{$iid};
+	    next unless defined $name;
+	    $i_name{$iid} = $name;
+	}
 
-        elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
-            my $name = $ap_fqln->{$iid} || $ap_name->{$iid};
-            next unless defined $name;
-            $i_name{$index} = $name;
-        }
-        else {
-            next;
-        }
+	elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
+	    my $name = $ap_name->{$iid};
+	    next unless defined $name;
+	    $i_name{$iid} = $name;
+	}
+
+	else {
+	    $i_name{$iid} = $index;
+	}
     }
     return \%i_name;
 }
 
-sub i_ssidlist {
+sub i_description {
     my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index = $aruba->i_index($partial)        || {};
-    my $ap_ssid = $aruba->aruba_ap_essid($partial) || {};
+    my $i_descr  = $aruba->orig_i_description($partial) || {};
+    my $ap_index = $aruba->aruba_apif_ch_num($partial)  || {};
+    my $ap_loc   = $aruba->aruba_ap_fqln($partial)      || {};
 
-    my %i_ssid;
-    foreach my $iid ( keys %$i_index ) {
-        my $index = $i_index->{$iid};
-        next unless defined $index;
-
-        if ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
-            my $ssid = $ap_ssid->{$iid};
-            next unless defined $ssid;
-            $i_ssid{$index} = $ssid;
-        }
-        else {
-            next;
-        }
+    my %descr;
+    foreach my $iid ( keys %$i_descr ) {
+	my $descr = $i_descr->{$iid};
+	next unless defined $descr;
+	$descr{$iid} = $descr;
     }
-    return \%i_ssid;
+
+    foreach my $iid ( keys %$ap_index ) {
+	my @parts = split( /\./, $iid );
+	my $idx = join( ".", @parts[ 0 .. 5 ] );
+	my $loc = $ap_loc->{$idx};
+	next unless defined $loc;
+
+	$descr{$iid} = $loc;
+    }
+
+    return \%descr;
+}
+
+sub i_type {
+    my $aruba   = shift;
+    my $partial = shift;
+
+    my $i_type    = $aruba->orig_i_type($partial)     || {};
+    my $apif_type = $aruba->aruba_apif_type($partial) || {};
+
+    my %i_type;
+    foreach my $iid ( keys %$i_type ) {
+	my $type = $i_type->{$iid};
+	next unless defined $type;
+	$i_type{$iid} = $type;
+    }
+
+    foreach my $iid ( keys %$apif_type ) {
+	my $type = $apif_type->{$iid};
+	next unless defined $type;
+
+	$i_type{$iid} = $type;
+    }
+
+    return \%i_type;
+}
+
+sub i_up {
+    my $aruba   = shift;
+    my $partial = shift;
+
+    my $i_up     = $aruba->orig_i_up($partial)         || {};
+    my $ap_index = $aruba->aruba_apif_ch_num($partial) || {};
+    my $ap_up    = $aruba->aruba_ap_status($partial)   || {};
+
+    my %i_up;
+    foreach my $iid ( keys %$i_up ) {
+	my $status = $i_up->{$iid};
+	next unless defined $status;
+	$i_up{$iid} = $status;
+    }
+
+    foreach my $iid ( keys %$ap_index ) {
+	my @parts = split( /\./, $iid );
+	my $idx = join( ".", @parts[ 0 .. 5 ] );
+	my $status = $ap_up->{$idx};
+	next unless defined $status;
+
+	$i_up{$iid} = $status;
+    }
+
+    return \%i_up;
+}
+
+# Fake this for AP's since admin up if operationally up
+sub i_up_admin {
+    my $aruba   = shift;
+    my $partial = shift;
+
+    my $i_up     = $aruba->orig_i_up_admin($partial)   || {};
+    my $ap_index = $aruba->aruba_apif_ch_num($partial) || {};
+    my $ap_up    = $aruba->aruba_ap_status($partial)   || {};
+
+    my %i_up;
+    foreach my $iid ( keys %$i_up ) {
+	my $status = $i_up->{$iid};
+	next unless defined $status;
+	$i_up{$iid} = $status;
+    }
+
+    foreach my $iid ( keys %$ap_index ) {
+	my @parts = split( /\./, $iid );
+	my $idx = join( ".", @parts[ 0 .. 5 ] );
+	my $status = $ap_up->{$idx};
+	next unless defined $status;
+
+	$i_up{$iid} = $status;
+    }
+
+    return \%i_up;
+}
+
+sub i_mac {
+    my $aruba   = shift;
+    my $partial = shift;
+
+    my $i_index = $aruba->i_index($partial)    || {};
+    my $i_mac   = $aruba->orig_i_mac($partial) || {};
+
+    my %i_mac;
+    foreach my $iid ( keys %$i_index ) {
+	my $index = $i_index->{$iid};
+	next unless defined $index;
+
+	if ( $index =~ /^\d+$/ ) {
+	    my $mac = $i_mac->{$iid};
+	    next unless defined $mac;
+	    $i_mac{$iid} = $mac;
+	}
+	elsif ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
+	    $index =~ s/\.\d+$//;
+	    next unless defined $index;
+	    $i_mac{$iid} = $index;
+	}
+    }
+    return \%i_mac;
+}
+
+sub i_duplex {
+    my $aruba   = shift;
+    my $partial = shift;
+
+    my $index = $aruba->aruba_if_idx();
+
+    if ($partial) {
+	my %r_index = reverse %$index;
+	$partial = $r_index{$partial};
+    }
+
+    my $ap_duplex = $aruba->aruba_if_duplex($partial) || {};
+    my %i_duplex;
+
+    foreach my $if ( keys %$ap_duplex ) {
+	my $duplex = $ap_duplex->{$if};
+	next unless defined $duplex;
+	my $ifindex = $index->{$if};
+	next unless defined $ifindex;
+
+	$duplex = 'half' if $duplex =~ /half/i;
+	$duplex = 'full' if $duplex =~ /full/i;
+	$duplex = 'auto' if $duplex =~ /auto/i;
+	$i_duplex{$ifindex} = $duplex;
+    }
+    return \%i_duplex;
+}
+
+sub v_index {
+    my $aruba   = shift;
+    my $partial = shift;
+
+    my $v_name = $aruba->v_name($partial);
+    my %v_index;
+    foreach my $idx ( keys %$v_name ) {
+	$v_index{$idx} = $idx;
+    }
+    return \%v_index;
+}
+
+sub i_vlan {
+    my $aruba   = shift;
+    my $partial = shift;
+
+    my $index = $aruba->aruba_if_idx();
+
+    if ($partial) {
+	my %r_index = reverse %$index;
+	$partial = $r_index{$partial};
+    }
+
+    my $i_pvid = $aruba->aruba_if_pvid($partial) || {};
+    my %i_vlan;
+
+    foreach my $port ( keys %$i_pvid ) {
+	my $vlan    = $i_pvid->{$port};
+	my $ifindex = $index->{$port};
+	next unless defined $ifindex;
+
+	$i_vlan{$ifindex} = $vlan;
+    }
+
+    return \%i_vlan;
+}
+
+sub i_vlan_membership {
+    my $aruba = shift;
+
+    my $essid_ssid = $aruba->aruba_ap_bssid_ssid();
+    my $ssid_vlans = $aruba->aruba_ssid_vlan();
+    my $if_vlans   = $aruba->aruba_if_vlan_member();
+
+    my %vlan_essid;
+
+    # Create a hash of vlan and textual ssid
+    # Possible to have more than one vlan per ssid
+    foreach my $oid ( keys %$ssid_vlans ) {
+	my @parts   = split( /\./, $oid );
+	my $ssidlen = shift(@parts);
+	my $ssid    = pack( "C*", splice( @parts, 0, $ssidlen ) );
+
+	# Remove any control chars
+	$ssid =~ s/[[:cntrl:]]//g;
+	my $vlan = shift(@parts);
+
+	$vlan_essid{$vlan} = $ssid;
+    }
+
+    my $i_vlan_membership = {};
+
+    # Handle physical ports first
+    foreach my $oid ( keys %$if_vlans ) {
+	my @parts   = split( /\./, $oid );
+	my $vlan    = shift(@parts);
+	my $ifindex = shift(@parts);
+	push( @{ $i_vlan_membership->{$ifindex} }, $vlan );
+    }
+
+    foreach my $oid ( keys %$essid_ssid ) {
+	my $ssid  = $essid_ssid->{$oid};
+	my @parts = split( /\./, $oid );
+	my $idx   = join( ".", @parts[ 0 .. 6 ] );
+
+	my @vlans = grep { $vlan_essid{$_} eq $ssid } keys %vlan_essid;
+	foreach my $vlan (@vlans) {
+	    push( @{ $i_vlan_membership->{$idx} }, $vlan );
+	}
+    }
+    return $i_vlan_membership;
 }
 
 sub i_80211channel {
     my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index = $aruba->i_index($partial)          || {};
-    my $ap_ch   = $aruba->aruba_ap_channel($partial) || {};
+    return $aruba->aruba_apif_ch_num($partial);
+}
 
-    my %i_ch;
-    foreach my $iid ( keys %$i_index ) {
-        my $index = $i_index->{$iid};
-        next unless defined $index;
+sub dot11_cur_tx_pwr_mw {
+    my $aruba   = shift;
+    my $partial = shift;
 
-        if ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
-            my $ch = $ap_ch->{$iid};
-            next unless defined $ch;
-            $i_ch{$index} = $ch;
-        }
-        else {
-            next;
-        }
+    return $aruba->aruba_apif_power($partial);
+}
+
+sub i_ssidlist {
+    my $aruba   = shift;
+    my $partial = shift;
+
+    my $essid_ssid = $aruba->aruba_ap_bssid_ssid($partial) || {};
+
+    my %i_ssidlist;
+
+    foreach my $oid ( keys %$essid_ssid ) {
+	my $ssid = $essid_ssid->{$oid};
+	my @parts = split( /\./, $oid );
+
+	# Give the SSID a numeric value based upon tail of BSSID
+	my $id = pop(@parts);
+
+	# Get i_index
+	my $iid = join( ".", @parts[ 0 .. 6 ] );
+
+	$i_ssidlist{"$iid.$id"} = $ssid;
     }
-    return \%i_ch;
+
+    return \%i_ssidlist;
 }
 
 sub i_ssidbcast {
     my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index = $aruba->i_index($partial)            || {};
-    my $ap_bc   = $aruba->aruba_ap_ssidbcast($partial) || {};
+    my $essid_ssid = $aruba->aruba_ap_bssid_ssid($partial) || {};
+    my $ap_bc      = $aruba->aruba_ap_ssidbcast($partial)  || {};
 
     my %i_bc;
-    foreach my $iid ( keys %$i_index ) {
-        my $index = $i_index->{$iid};
-        next unless defined $index;
+    foreach my $oid ( keys %$essid_ssid ) {
+	my @parts = split( /\./, $oid );
 
-        if ( $index =~ /(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/ ) {
-            my $bc = $ap_bc->{$iid};
-            next unless defined $bc;
-            $bc = ( $bc ? 0 : 1 );
-            $i_bc{$index} = $bc;
-        }
-        else {
-            next;
-        }
+	# Give the SSID a numeric value based upon tail of BSSID
+	my $id    = $parts[-1];
+	my $iid   = join( ".", splice( @parts, 0, 7 ) );
+	my $bssid = join( ':', @parts );
+
+	my $bc = $ap_bc->{$bssid};
+	next unless defined $bc;
+	$bc = ( $bc ? 0 : 1 );
+	$i_bc{"$iid.$id"} = $bc;
     }
+
     return \%i_bc;
+}
+
+sub i_ssidmac {
+    my $aruba   = shift;
+    my $partial = shift;
+
+    my $essid_ssid = $aruba->aruba_ap_bssid_ssid($partial) || {};
+
+    my %i_ssidmac;
+
+    foreach my $oid ( keys %$essid_ssid ) {
+	my @parts = split( /\./, $oid );
+
+	# Give the SSID a numeric value based upon tail of BSSID
+	my $id    = $parts[-1];
+	my $iid   = join( ".", splice( @parts, 0, 7 ) );
+	my $bssid = join( ':', map { sprintf( "%02x", $_ ) } @parts );
+
+	$i_ssidmac{"$iid.$id"} = $bssid;
+    }
+
+    return \%i_ssidmac;
 }
 
 # Wireless switches do not support the standard Bridge MIB
@@ -328,29 +623,30 @@ sub bp_index {
     my $aruba   = shift;
     my $partial = shift;
 
-    my $i_index  = $aruba->orig_i_index($partial)  || {};
-    my $ap_index = $aruba->aruba_ap_name($partial) || {};
+    my $i_index    = $aruba->orig_i_index($partial)        || {};
+    my $essid_ssid = $aruba->aruba_ap_bssid_ssid($partial) || {};
 
     # Collect standard bp_index first
     my $wired_bp_index = $aruba->SUPER::bp_index($partial) || {};
     my %bp_index = %$wired_bp_index;
 
     foreach my $iid ( keys %$i_index ) {
-        my $index = $i_index->{$iid};
-        next unless defined $index;
-        next if exists $bp_index{$iid}; # Only augment bp_index, don't overwrite any existing mappings 
+	my $index = $i_index->{$iid};
+	next unless defined $index;
 
-        $bp_index{$iid} = $index;
+	# Only augment bp_index, don't overwrite any existing mappings
+	next if exists $bp_index{$iid};
+
+	$bp_index{$iid} = $index;
     }
 
     # Get Attached APs as Interfaces
-    foreach my $ap_id ( keys %$ap_index ) {
+    foreach my $oid ( keys %$essid_ssid ) {
+	my @parts = split( /\./, $oid );
+	my $iid = join( ".", splice( @parts, 0, 7 ) );
+	my $bssid = join( '.', @parts );
 
-        # Convert the 0.254.123.456 index entry to a MAC address.
-        my $mac = join( ':',
-            map { sprintf( "%02x", $_ ) } split( /\./, $ap_id ) );
-
-        $bp_index{$mac} = $mac;
+	$bp_index{$bssid} = $iid;
     }
     return \%bp_index;
 }
@@ -359,24 +655,19 @@ sub fw_port {
     my $aruba   = shift;
     my $partial = shift;
 
-    my $fw_idx = $aruba->fw_user($partial) || {};
+    my $fw_idx = $aruba->aruba_user_bssid($partial) || {};
 
     my $wired_fw_port = $aruba->SUPER::qb_fw_port($partial) || {};
     my %fw_port = %$wired_fw_port;
 
-    foreach my $iid ( keys %$fw_idx ) {
-        if ( $iid
-            =~ /(\d+\.\d+\.\d+\.\d+\.\d+\.\d+).(\d+\.\d+\.\d+\.\d+\.\d+\.\d+)/
-            )
-        {
-            my $port = join( ':',
-                map { sprintf( "%02x", $_ ) } split( /\./, $2 ) );
-            $fw_port{$iid} = $port;
-        }
-        else {
-            next;
-        }
+    foreach my $idx ( keys %$fw_idx ) {
+	my $port = $fw_idx->{$idx};
+	next unless $port;
+	my $iid = join( '.', map { hex($_) } split( ':', $port ) );
+
+	$fw_port{$idx} = $iid;
     }
+
     return \%fw_port;
 }
 
@@ -384,45 +675,448 @@ sub fw_mac {
     my $aruba   = shift;
     my $partial = shift;
 
-    my $fw_idx = $aruba->fw_user($partial) || {};
+    my $fw_idx = $aruba->aruba_user_bssid($partial) || {};
 
     my $wired_fw_mac = $aruba->SUPER::qb_fw_mac($partial) || {};
     my %fw_mac = %$wired_fw_mac;
 
-    foreach my $iid ( keys %$fw_idx ) {
-        if ( $iid
-            =~ /(\d+\.\d+\.\d+\.\d+\.\d+\.\d+).(\d+\.\d+\.\d+\.\d+\.\d+\.\d+)/
-            )
-        {
-            my $mac = join( ':',
-                map { sprintf( "%02x", $_ ) } split( /\./, $1 ) );
-            $fw_mac{$iid} = $mac;
-        }
-        else {
-            next;
-        }
+    foreach my $idx ( keys %$fw_idx ) {
+	my @parts = split( /\./, $idx );
+	my $mac = join( ':', map { sprintf( "%02x", $_ ) } @parts[ 0 .. 5 ] );
+
+	$fw_mac{$idx} = $mac;
     }
     return \%fw_mac;
 }
 
-# Return the BSSID in i_mac.
-sub i_mac {
-    my $aruba = shift;
+sub qb_fw_vlan {
+    my $aruba   = shift;
     my $partial = shift;
 
-    # Start with the i_mac entries for the physical ports.
-    my $i_mac = $aruba->orig_i_mac($partial) || {};
+    my $vlans = $aruba->aruba_user_vlan($partial) || {};
 
-    # Add in all the BSSID entries.
-    my $i_index  = $aruba->i_index($partial) || {};
-    foreach my $iid (keys %$i_index) {
-        my $index = $i_index->{$iid};
-	if ($index =~ /:/) {
-	    $i_mac->{$index} = $index;
+    my $wired_fw_vlan = $aruba->SUPER::qb_fw_vlan($partial) || {};
+    my %fw_vlan = %$wired_fw_vlan;
+
+    foreach my $idx ( keys %$vlans ) {
+	my $vlan = $vlans->{$idx};
+	next unless $vlan;
+
+	$fw_vlan{$idx} = $vlan;
+    }
+    return \%fw_vlan;
+}
+
+sub cd11_mac {
+    my $aruba            = shift;
+    my $cd11_sigstrength = $aruba->cd11_sigstrength();
+
+    my $ret = {};
+    foreach my $idx ( keys %$cd11_sigstrength ) {
+	my $mac = join( ":", map { sprintf "%02x", $_ } split /\./, $idx );
+	$ret->{$idx} = $mac;
+    }
+    return $ret;
+}
+
+sub cd11_sigqual {
+    my $aruba        = shift;
+    my $cd11_sigqual = $aruba->aruba_cd11_sigqual();
+
+    my $ret = {};
+    foreach my $idx ( keys %$cd11_sigqual ) {
+	my $value = $cd11_sigqual->{$idx};
+	$idx =~ s/(.\d+){6}$//;
+
+	$ret->{$idx} = $value;
+    }
+    return $ret;
+}
+
+sub cd11_txrate {
+    my $aruba       = shift;
+    my $cd11_txrate = $aruba->aruba_cd11_txrate();
+
+    my $ret = {};
+    foreach my $idx ( keys %$cd11_txrate ) {
+	my $value = $cd11_txrate->{$idx};
+	my @rates;
+	if ( $value =~ /(\d+)Mbps/ ) {
+	    push @rates, $1;
 	}
+	$idx =~ s/(.\d+){6}$//;
+
+	$ret->{$idx} = \@rates;
+    }
+    return $ret;
+}
+
+sub cd11_rxbyte {
+    my $aruba       = shift;
+    my $cd11_rxbyte = $aruba->aruba_cd11_rxbyte();
+
+    my $ret = {};
+    foreach my $idx ( keys %$cd11_rxbyte ) {
+	my $value = $cd11_rxbyte->{$idx};
+	$idx =~ s/(.\d+){6}$//;
+
+	$ret->{$idx} = $value;
+    }
+    return $ret;
+}
+
+sub cd11_txbyte {
+    my $aruba       = shift;
+    my $cd11_txbyte = $aruba->aruba_cd11_txbyte();
+
+    my $ret = {};
+    foreach my $idx ( keys %$cd11_txbyte ) {
+	my $value = $cd11_txbyte->{$idx};
+	$idx =~ s/(.\d+){6}$//;
+
+	$ret->{$idx} = $value;
+    }
+    return $ret;
+}
+
+sub cd11_rxpkt {
+    my $aruba      = shift;
+    my $cd11_rxpkt = $aruba->aruba_cd11_rxpkt();
+
+    my $ret = {};
+    foreach my $idx ( keys %$cd11_rxpkt ) {
+	my $value = $cd11_rxpkt->{$idx};
+	$idx =~ s/(.\d+){6}$//;
+
+	$ret->{$idx} = $value;
+    }
+    return $ret;
+}
+
+sub cd11_txpkt {
+    my $aruba      = shift;
+    my $cd11_txpkt = $aruba->aruba_cd11_txpkt();
+
+    my $ret = {};
+    foreach my $idx ( keys %$cd11_txpkt ) {
+	my $value = $cd11_txpkt->{$idx};
+	$idx =~ s/(.\d+){6}$//;
+
+	$ret->{$idx} = $value;
+    }
+    return $ret;
+}
+
+# Pseudo ENTITY-MIB methods
+
+sub e_index {
+    my $aruba = shift;
+
+    my $ap_model = $aruba->aruba_ap_model()    || {};
+    my $ap_cards = $aruba->aruba_card_serial() || {};
+    my %e_index;
+
+    # Chassis
+    $e_index{0} = 1;
+
+    # Cards
+    foreach my $idx ( keys %$ap_cards ) {
+	$e_index{$idx} = $idx + 1;
     }
 
-    return $i_mac;
+    # We're going to hack an index to capture APs
+    foreach my $idx ( keys %$ap_model ) {
+
+       # Create the integer index by joining the last three octets of the MAC.
+       # Hopefully, this will be unique since the manufacturer should be
+       # limited to Aruba.  We can't use the entire MAC since
+       # we would exceed the integer size limit.
+	if ( $idx =~ /(\d+\.\d+\.\d+)$/ ) {
+	    my $index = int(
+		join( '', map { sprintf "%03d", $_ } split /\./, $1 ) );
+	    $e_index{$idx} = $index;
+	}
+    }
+    return \%e_index;
+}
+
+sub e_class {
+    my $aruba = shift;
+
+    my $e_idx = $aruba->e_index() || {};
+
+    my %e_class;
+    foreach my $iid ( keys %$e_idx ) {
+	if ( $iid eq 0 ) {
+	    $e_class{$iid} = 'chassis';
+	}
+	elsif ( $iid =~ /\d+/ ) {
+	    $e_class{$iid} = 'module';
+	}
+
+	# This isn't a valid PhysicalClass, but we're hacking this anyway
+	else {
+	    $e_class{$iid} = 'ap';
+	}
+    }
+    return \%e_class;
+}
+
+sub e_name {
+    my $aruba = shift;
+
+    my $e_idx = $aruba->e_index() || {};
+
+    my %e_name;
+    foreach my $iid ( keys %$e_idx ) {
+	if ( $iid eq 0 ) {
+	    $e_name{$iid} = 'WLAN Controller';
+	}
+	elsif ( $iid =~ /^\d+$/ ) {
+	    $e_name{$iid} = "Card $iid";
+	}
+	else {
+
+	    # APs
+	    $e_name{$iid} = 'AP';
+	}
+    }
+    return \%e_name;
+}
+
+sub e_descr {
+    my $aruba = shift;
+
+    my $ap_model  = $aruba->aruba_ap_model()  || {};
+    my $ap_name   = $aruba->aruba_ap_name()   || {};
+    my $ap_loc    = $aruba->aruba_ap_fqln()   || {};
+    my $card_type = $aruba->aruba_card_type() || {};
+    my $card_assy = $aruba->aruba_card_no()   || {};
+
+    my %e_descr;
+
+    # Chassis
+    $e_descr{0} = $aruba->aruba_model();
+
+    #Cards
+    foreach my $iid ( keys %$card_type ) {
+	my $card = $card_type->{$iid};
+	next unless defined $card;
+	my $assy = $card_assy->{$iid} || 'unknown';
+
+	$e_descr{$iid} = "$card Assembly: $assy";
+    }
+
+    # APs
+    foreach my $iid ( keys %$ap_name ) {
+	my $name = $ap_name->{$iid};
+	next unless defined $name;
+	my $model = $ap_model->{$iid} || 'AP';
+	my $loc   = $ap_loc->{$iid}   || 'unknown';
+
+	$e_descr{$iid} = "$model: $name ($loc)";
+    }
+    return \%e_descr;
+}
+
+sub e_model {
+    my $aruba = shift;
+
+    my $ap_model   = $aruba->aruba_ap_model()  || {};
+    my $card_model = $aruba->aruba_card_type() || {};
+
+    my %e_model;
+
+    # Chassis
+    $e_model{0} = $aruba->aruba_model();
+
+    #Cards
+    foreach my $iid ( keys %$card_model ) {
+	my $card = $card_model->{$iid};
+	next unless defined $card;
+
+	$e_model{$iid} = $card;
+    }
+
+    # APs
+    foreach my $iid ( keys %$ap_model ) {
+	my $model = $ap_model->{$iid};
+	next unless defined $model;
+
+	$e_model{$iid} = $model;
+    }
+    return \%e_model;
+}
+
+sub e_type {
+    my $aruba = shift;
+
+    return $aruba->aruba_ap_type() || {};
+}
+
+sub e_hwver {
+    my $aruba = shift;
+
+    my $ap_hw   = $aruba->aruba_card_hw()   || {};
+    my $ap_fpga = $aruba->aruba_card_fpga() || {};
+
+    my %e_hwver;
+
+    # Cards
+    foreach my $iid ( keys %$ap_hw ) {
+	my $hw = $ap_hw->{$iid};
+	next unless defined $hw;
+	my $fpga = $ap_fpga->{$iid} || 'unknown';
+
+	$e_hwver{$iid} = "$hw $fpga";
+    }
+    return \%e_hwver;
+}
+
+sub e_vendor {
+    my $aruba = shift;
+
+    my $e_idx = $aruba->e_index() || {};
+
+    my %e_vendor;
+    foreach my $iid ( keys %$e_idx ) {
+	$e_vendor{$iid} = 'aruba';
+    }
+    return \%e_vendor;
+}
+
+sub e_serial {
+    my $aruba = shift;
+
+    my $ap_serial   = $aruba->aruba_ap_serial()   || {};
+    my $card_serial = $aruba->aruba_card_serial() || {};
+
+    my %e_serial;
+
+    # Chassis
+    $e_serial{0} = $aruba->aruba_serial();
+
+    # Cards
+    foreach my $iid ( keys %$card_serial ) {
+	my $serial = $card_serial->{$iid};
+	next unless defined $serial;
+
+	$e_serial{$iid} = $serial;
+    }
+
+    # APs
+    foreach my $iid ( keys %$ap_serial ) {
+	my $serial = $ap_serial->{$iid};
+	next unless defined $serial;
+
+	$e_serial{$iid} = $serial;
+    }
+    return \%e_serial;
+}
+
+sub e_pos {
+    my $aruba = shift;
+
+    my $e_idx = $aruba->e_index() || {};
+
+    my %e_pos;
+
+    # $pos is for AP's, set it high enough that cards come first
+    my $pos = 100;
+    foreach my $iid ( sort keys %$e_idx ) {
+	if ( $iid eq 0 ) {
+	    $e_pos{$iid} = -1;
+	    next;
+	}
+	elsif ( $iid =~ /^\d+$/ ) {
+	    $e_pos{$iid} = $iid;
+	    next;
+	}
+	else {
+	    $pos++;
+	    $e_pos{$iid} = $pos;
+	}
+    }
+    return \%e_pos;
+}
+
+sub e_parent {
+    my $aruba = shift;
+
+    my $e_idx = $aruba->e_index() || {};
+
+    my %e_parent;
+    foreach my $iid ( sort keys %$e_idx ) {
+	if ( $iid eq 0 ) {
+	    $e_parent{$iid} = 0;
+	    next;
+	}
+	else {
+	    $e_parent{$iid} = 1;
+	}
+    }
+    return \%e_parent;
+}
+
+# arpnip:
+#
+# This is the controller snooping on the MAC->IP mappings.
+# Pretending this is arpnip data allows us to get MAC->IP
+# mappings even for stations that only communicate locally.
+
+# We could also use the controller's knowledge of the APs' MAC and
+# IP addresses to augment the data, but since we are including the
+# AP MAC as a port MAC they should be included in the ip_table
+
+sub at_paddr {
+    my $aruba    = shift;
+    my $user_mac = $aruba->aruba_user_bssid();
+
+    #    my $ap_ip      = $aruba->aruba_ap_ip();
+
+    my %at_paddr;
+    foreach my $idx ( keys %$user_mac ) {
+	$idx =~ s/(.\d+){4}$//;
+	my $mac = join( ":", map { sprintf "%02x", $_ } split /\./, $idx );
+	next unless $mac;
+	$at_paddr{$idx} = $mac;
+    }
+
+    #    foreach my $idx ( keys %$ap_ip ) {
+    #	next if ( $ap_ip->{$idx} eq '0.0.0.0' );
+    #	my $mac = join( ":", map { sprintf "%02x", $_ } split /\./, $idx );
+    #	$at_paddr{$idx} = $mac;
+    #    }
+    return \%at_paddr;
+}
+
+sub at_netaddr {
+    my $aruba    = shift;
+    my $user_mac = $aruba->aruba_user_bssid();
+
+    #    my $ap_ip      = $aruba->aruba_ap_ip();
+
+    my %at_netaddr;
+
+    #    foreach my $idx ( keys %$ap_ip ) {
+    #	next if ( $ap_ip->{$idx} eq '0.0.0.0' );
+    #	$at_netaddr{$idx} = $ap_ip->{$idx};
+    #    }
+    foreach my $idx ( keys %$user_mac ) {
+	my @parts = split( /\./, $idx );
+	my $iid = join( ".", splice( @parts, 0, 6 ) );
+	my $ip = join( ".", @parts );
+	next unless ( $ip =~ /^(\d+\.){3}(\d+)$/ );
+	next if ( $idx eq '0.0.0.0' );
+	$at_netaddr{$iid} = $ip;
+    }
+    return \%at_netaddr;
+}
+
+sub munge_aruba_fqln {
+    my $loc = shift;
+    $loc =~ s/\\\.0//g;
+    return $loc;
 }
 
 1;
@@ -440,12 +1134,12 @@ Eric Miller
 =head1 SYNOPSIS
 
     my $aruba = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          DestHost    => 'myswitch',
-                          Community   => 'public',
-                          Version     => 2
-                        ) 
+			  AutoSpecify => 1,
+			  Debug       => 1,
+			  DestHost    => 'myswitch',
+			  Community   => 'public',
+			  Version     => 2
+			) 
 
     or die "Can't connect to DestHost.\n";
 
@@ -480,9 +1174,17 @@ after determining a more specific class using the method above.
 
 =over
 
+=item F<WLSR-AP-MIB>
+
+=item F<WLSX-IFEXT-MIB>
+
 =item F<WLSX-SWITCH-MIB>
 
-=item F<WLSR-AP-MIB>
+=item F<WLSX-SYSTEMEXT-MIB>
+
+=item F<WLSX-USER-MIB>
+
+=item F<WLSX-WLAN-MIB>
 
 =back
 
@@ -521,8 +1223,13 @@ Returns the software version extracted from C<sysDescr>
 
 =item $aruba->layers()
 
-Returns 00000011.  Class emulates Layer 2 functionality for Thin APs through
-proprietary MIBs.
+Returns 00000111.  Class emulates Layer 2 and Layer 3functionality for
+Thin APs through proprietary MIBs.
+
+=item $aruba->serial()
+
+Returns the device serial number extracted
+from C<wlsxSwitchLicenseSerialNumber>
 
 =back
 
@@ -535,49 +1242,27 @@ See L<SNMP::Info::Layer3/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2 Overrides
-
 =over
 
-=item $aruba->i_index()
+=item $aruba->i_80211channel()
 
-Returns reference to map of IIDs to Interface index. 
+Returns reference to hash.  Current operating frequency channel of the radio
+interface.
 
-Extends C<ifIndex> to support thin APs as device interfaces.
+(C<wlanAPRadioChannel>)
 
-=item $aruba->interfaces()
+=item $aruba->dot11_cur_tx_pwr_mw()
 
-Returns reference to map of IIDs to ports.  Thin APs are implemented as device 
-interfaces.  The thin AP BSSID is used as the port identifier.
+Returns reference to hash.  Current transmit power, in milliwatts, of the
+radio interface.
 
-=item $aruba->i_name()
-
-Interface name.  Returns (C<ifName>) for Ethernet interfaces and
-(C<wlanAPFQLN> or C<apLocation>) for thin AP interfaces.
-
-=item $aruba->i_mac()
-
-Interface MAC address.  Returns interface MAC address for Ethernet
-interfaces and BSSID for thin AP interfaces.
-
-=item $aruba->bp_index()
-
-Simulates bridge MIB by returning reference to a hash containing the index for
-both the keys and values.
-
-=item $aruba->fw_port()
-
-(C<staAccessPointBSSID>) as extracted from the IID.
-
-=item $aruba->fw_mac()
-
-(C<staPhyAddress>) as extracted from the IID.
+(C<wlanAPRadioTransmitPower>)
 
 =item $aruba->i_ssidlist()
 
 Returns reference to hash.  SSID's recognized by the radio interface.
 
-(C<apESSID>)
+(C<wlanAPESSID>)
 
 =item $aruba->i_ssidbcast()
 
@@ -586,73 +1271,223 @@ false.
 
 (C<wlsrHideSSID>)
 
-=item $aruba->i_80211channel()
+=item $aruba->i_ssidmac()
 
-Returns reference to hash.  Current operating frequency channel of the radio
-interface.
+With the same keys as i_ssidlist, returns the Basic service set
+identification (BSSID), MAC address, the AP is using for the SSID. 
 
-(C<apCurrentChannel>)
+=item $aruba->cd11_mac()
 
-=item $aruba->aruba_ap_fqln()
+Returns client radio interface MAC addresses.
 
-Returns F<aruba_perap_fqln> indexed by BSSID instead of by AP.
+=item $aruba->cd11_sigqual()
 
-=back
+Returns client signal quality.
 
-=head2 Aruba Switch AP Table  (C<wlsxSwitchAccessPointTable>)
+=item $aruba->cd11_txrate()
 
-=over
+Returns to hash of arrays.  Client transmission speed in Mbs.
 
-=item $aruba->aruba_ap_name()
+=item $aruba->cd11_rxbyte()
 
-(C<apLocation>)
+Total bytes received by the wireless client.
 
-=item $aruba->aruba_ap_ip()
+=item $aruba->cd11_txbyte()
 
-(C<apIpAddress>)
+Total bytes transmitted by the wireless client.
 
-=item $aruba->aruba_ap_essid()
+=item $aruba->cd11_rxpkt()
 
-(C<apESSID>)
+Total packets received by the wireless client.
 
-=item $aruba->aruba_ap_ssidbcast()
+=item $aruba->cd11_txpkt()
 
-(C<wlsrHideSSID>)
-
-=back
-
-=head2 Aruba AP Table (C<wlsxWlanAPTable>)
-
-=over
-
-=item $aruba->aruba_perap_fqln()
-
-(C<wlanAPFQLN>)
+Total packets transmitted by the wireless client.
 
 =back
 
-=head2 Aruba Switch Station Management Table (C<wlsxSwitchStationMgmtTable>)
+=head2 Overrides
 
 =over
 
-=item $aruba->fw_user()
+=item $aruba->i_index()
 
-(C<staUserName>)
+Returns reference to map of IIDs to Interface index. 
+
+Extends C<ifIndex> to support APs as device interfaces.
+
+=item $aruba->interfaces()
+
+Returns reference to map of IIDs to ports.  Thin APs are implemented as
+device interfaces.  The thin AP MAC address and radio number
+(C<wlanAPRadioNumber>) are combined as the port identifier.
+
+=item $aruba->i_name()
+
+Interface name.  Returns (C<ifName>) for Ethernet interfaces and
+(C<wlanAPRadioAPName>) for AP interfaces.
+
+=item $aruba->i_description()
+
+Returns reference to map of IIDs to interface descriptions.  Returns
+C<ifDescr> for Ethernet interfaces and the Fully Qualified Location Name
+(C<wlanAPFQLN>) for AP interfaces.
+
+=item $aruba->i_type()
+
+Returns reference to map of IIDs to interface types.  Returns
+C<ifType> for Ethernet interfaces and C<wlanAPRadioType> for AP
+interfaces.
+
+=item $aruba->i_up()
+
+Returns reference to map of IIDs to link status of the interface.  Returns
+C<ifOperStatus> for Ethernet interfaces and C<wlanAPStatus> for AP
+interfaces.
+
+=item $aruba->i_up_admin()
+
+Returns reference to map of IIDs to administrative status of the interface.
+Returns C<ifAdminStatus> for Ethernet interfaces and C<wlanAPStatus> 
+for AP interfaces.
+
+=item $aruba->i_mac()
+
+Interface MAC address.  Returns interface MAC address for Ethernet
+interfaces of ports and APs.
+
+=item $aruba->i_duplex()
+
+Returns reference to map of IIDs to current link duplex.  Ethernet interfaces
+only.
+
+=item $aruba->v_index()
+
+Returns VLAN IDs
+
+=item $aruba->i_vlan()
+
+Returns reference to map of IIDs to VLAN ID of the interface.
+
+=item $aruba->i_vlan_membership()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs for which the port is a member.
+
+=item $aruba->bp_index()
+
+Augments the bridge MIB by returning reference to a hash containing the
+index mapping of BSSID to device port (AP).
+
+=item $aruba->fw_port()
+
+Augments the bridge MIB by including the BSSID a wireless end station is
+communicating through (C<nUserApBSSID>).
+
+=item $aruba->fw_mac()
+
+Augments the bridge MIB by including the wireless end station MAC
+(C<nUserApBSSID>) as extracted from the IID.
+
+=item $aruba->qb_fw_vlan()
+
+Augments the bridge MIB by including wireless end station VLANs
+(C<nUserCurrentVlan>).
 
 =back
 
-=head2 Aruba Wireless AP Configuration Table (C<wlsrConfigTable>)
+=head2 Pseudo F<ENTITY-MIB> information
+
+These methods emulate F<ENTITY-MIB> Physical Table methods using
+F<WLSX-WLAN-MIB> and F<WLSX-SYSTEMEXT-MIB>.  APs are included as
+subcomponents of the wireless controller.
 
 =over
 
-=item $aruba->aruba_ap_channel()
+=item $aruba->e_index()
 
-(C<apCurrentChannel>)
+Returns reference to hash.  Key: IID and Value: Integer. The index for APs is
+created with an integer representation of the last three octets of the
+AP MAC address.
+
+=item $aruba->e_class()
+
+Returns reference to hash.  Key: IID, Value: General hardware type.  Returns
+'ap' for wireless access points.
+
+=item $aruba->e_name()
+
+More computer friendly name of entity.  Name is 'WLAN Controller' for the
+chassis, Card # for modules, or 'AP'.
+
+=item $aruba->e_descr()
+
+Returns reference to hash.  Key: IID, Value: Human friendly name.
+
+=item $aruba->e_model()
+
+Returns reference to hash.  Key: IID, Value: Model name.
+
+=item $aruba->e_type()
+
+Returns reference to hash.  Key: IID, Value: Type of component.
+
+=item $aruba->e_hwver()
+
+Returns reference to hash.  Key: IID, Value: Hardware revision.
+
+=item $aruba->e_vendor()
+
+Returns reference to hash.  Key: IID, Value: aruba.
+
+=item $aruba->e_serial()
+
+Returns reference to hash.  Key: IID, Value: Serial number.
+
+=item $aruba->e_pos()
+
+Returns reference to hash.  Key: IID, Value: The relative position among all
+entities sharing the same parent. Chassis cards are ordered to come before
+APs.
+
+=item $aruba->e_parent()
+
+Returns reference to hash.  Key: IID, Value: The value of e_index() for the
+entity which 'contains' this entity.
+
+=back
+
+=head2 Arp Cache Table Augmentation
+
+The controller has knowledge of MAC->IP mappings for wireless clients.
+Augmenting the arp cache data with these MAC->IP mappings enables visibility
+for stations that only communicate locally.
+
+=over
+
+=item $aruba->at_paddr()
+
+Adds MAC addresses extracted from the index of C<nUserApBSSID>.
+
+=item $aruba->at_netaddr()
+
+Adds IP addresses extracted from the index of C<nUserApBSSID>.
 
 =back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item $aruba->munge_aruba_fqln()
+
+Remove nulls encoded as '\.0' from the Fully Qualified Location Name
+(C<wlanAPFQLN>).
+
+=back
 
 =cut
