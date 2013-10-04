@@ -120,7 +120,9 @@ fastiron
 fdb
 fdp
 fenner
+fixups
 FreeBSD
+FS
 fsm
 FTOS
 FWSM
@@ -154,6 +156,7 @@ jeroen
 junos
 Kentrox
 kramarov
+Kraus
 ladvd
 lans
 Lantronix
@@ -196,6 +199,7 @@ netmask
 Netscaler
 netscaler
 netscreen
+Nic
 nmm
 nopassword
 nortel
@@ -206,6 +210,7 @@ ofdm
 oid
 oids
 OmniSwitch
+OO
 os
 osi
 ospf

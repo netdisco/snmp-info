@@ -1225,11 +1225,8 @@ switch.
 
 =item $airespace->layers()
 
-Returns 00000011.  Class emulates Layer 2 functionality for Thin APs through
+Returns 00000111.  Class emulates Layer 2 functionality for Thin APs through
 proprietary MIBs.
-
-=item $airespace->at_netaddr()
-=item $airespace->at_paddr()
 
 =item $airespace->serial()
 
@@ -1257,7 +1254,7 @@ Returns reference to hash.  Indicates whether the SSID is broadcast.
 Returns reference to hash.  Current operating frequency channel of the radio
 interface.
 
-=item $dot11->dot11_cur_tx_pwr_mw()
+=item $airespace->dot11_cur_tx_pwr_mw()
 
 Returns reference to hash.  Current transmit power, in milliwatts, of the
 radio interface.
@@ -1678,15 +1675,15 @@ airespace_if_name() for virtual interfaces.
 
 =item $airespace->i_description()
 
-Returns reference to map of IIDs to interface types.  Returns C<ifDescr>
-for Ethernet interfaces, airespace_ap_loc() for thin AP interfaces, and
-airespace_if_name() for virtual interfaces.
+Returns reference to map of IIDs to interface descriptions.  Returns
+C<ifDescr> for Ethernet interfaces, airespace_ap_loc() for thin AP
+interfaces, and airespace_if_name() for virtual interfaces.
 
 =item $airespace->i_type()
 
-Returns reference to map of IIDs to interface descriptions.  Returns
-C<ifType> for Ethernet interfaces, airespace_apif_type() for thin AP
-interfaces, and airespace_if_type() for virtual interfaces.
+Returns reference to map of IIDs to interface types.  Returns C<ifType>
+for Ethernet interfaces, airespace_apif_type() for thin AP interfaces, and
+airespace_if_type() for virtual interfaces.
 
 =item $airespace->i_up()
 
@@ -1806,6 +1803,24 @@ Returns reference to hash.  Key: IID, Value: Software revision.
 
 Returns reference to hash.  Key: IID, Value: The value of e_index() for the
 entity which 'contains' this entity.
+
+=back
+
+=head2 Arp Cache Table Augmentation
+
+The controller has knowledge of MAC->IP mappings for wireless clients.
+Augmenting the arp cache data with these MAC->IP mappings enables visibility
+for stations that only communicate locally.
+
+=over
+
+=item $airespace->at_paddr()
+
+Adds MAC addresses extracted from the index of C<bsnMobileStationIpAddress>.
+
+=item $airespace->at_netaddr()
+
+Adds IP addresses from C<bsnMobileStationIpAddress>.
 
 =back
 

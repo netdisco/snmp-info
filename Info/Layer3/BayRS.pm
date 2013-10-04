@@ -1635,11 +1635,11 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =over
 
-=item $extreme->munge_hw_rev()
+=item $bayrs->munge_hw_rev()
 
 Converts octets to a decimal major.minor string.
 
-=item $extreme->munge_wf_serial()
+=item $bayrs->munge_wf_serial()
 
 Coverts octets to a decimal string.
 

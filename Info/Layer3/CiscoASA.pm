@@ -135,7 +135,7 @@ Moe Kraus
 
 =head1 DESCRIPTION
 
-Subclass for Cisco ASAs
+Subclass for Cisco ASA Devices
 
 =head2 Inherited Classes
 
