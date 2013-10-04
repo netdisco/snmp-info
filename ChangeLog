@@ -11,6 +11,7 @@ version 3.08 ()
       AP MAC and radio versus BSSID to align with other wireless classes.
     * [#66] Support for VSS via CISCO-VIRTUAL-SWITCH-MIB in L3::6500
     * [#64] Add i_speed_admin() to L2::2900 (psychiatric)
+    * [#69] set speed and duplex on Cisco VSS system (psychiatric)
     * munge_null() now removes all non-printable control characters
 
 version 3.07 (2013-10-01)

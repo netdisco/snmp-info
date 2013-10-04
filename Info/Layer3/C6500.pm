@@ -43,6 +43,7 @@ use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 use SNMP::Info::CiscoStpExtensions;
 use SNMP::Info::CiscoVTP;
+use SNMP::Info::MAU;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
@@ -59,6 +60,7 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
     SNMP::Info::CiscoConfig
     SNMP::Info::CiscoPower
     SNMP::Info::Layer3
+    SNMP::Info::MAU
     Exporter
 /;
 
@@ -75,6 +77,7 @@ $VERSION = '3.07';
 # The @ISA order should match these orders.
 
 %MIBS = (
+    %SNMP::Info::MAU::MIBS,
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::CiscoPower::MIBS,
     %SNMP::Info::CiscoConfig::MIBS,
@@ -90,6 +93,7 @@ $VERSION = '3.07';
 );
 
 %GLOBALS = (
+    %SNMP::Info::MAU::GLOBALS,
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::CiscoPower::GLOBALS,
     %SNMP::Info::CiscoConfig::GLOBALS,
@@ -104,22 +108,21 @@ $VERSION = '3.07';
 );
 
 %FUNCS = (
-    %SNMP::Info::Layer3::FUNCS,             %SNMP::Info::CiscoPower::FUNCS,
-    %SNMP::Info::CiscoConfig::FUNCS,        %SNMP::Info::CiscoPortSecurity::FUNCS,
-    %SNMP::Info::CiscoImage::FUNCS,         %SNMP::Info::CiscoStats::FUNCS,
-    %SNMP::Info::CDP::FUNCS,                %SNMP::Info::LLDP::FUNCS,
-    %SNMP::Info::CiscoStack::FUNCS,         %SNMP::Info::CiscoStpExtensions::FUNCS, 
-    %SNMP::Info::CiscoVTP::FUNCS,    
+    %SNMP::Info::MAU::FUNCS,                %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::CiscoPower::FUNCS,         %SNMP::Info::CiscoConfig::FUNCS,
+    %SNMP::Info::CiscoPortSecurity::FUNCS,  %SNMP::Info::CiscoImage::FUNCS,
+    %SNMP::Info::CiscoStats::FUNCS,         %SNMP::Info::CDP::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,               %SNMP::Info::CiscoStack::FUNCS,
+    %SNMP::Info::CiscoStpExtensions::FUNCS, %SNMP::Info::CiscoVTP::FUNCS,
 );
 
-
 %MUNGE = (
-    %SNMP::Info::Layer3::MUNGE,             %SNMP::Info::CiscoPower::MUNGE,
-    %SNMP::Info::CiscoConfig::MUNGE,        %SNMP::Info::CiscoPortSecurity::MUNGE,
-    %SNMP::Info::CiscoImage::MUNGE,         %SNMP::Info::CiscoStats::MUNGE,
-    %SNMP::Info::CDP::MUNGE,                %SNMP::Info::LLDP::MUNGE,
-    %SNMP::Info::CiscoStack::MUNGE,         %SNMP::Info::CiscoStpExtensions::MUNGE, 
-    %SNMP::Info::CiscoVTP::MUNGE,    
+    %SNMP::Info::MAU::MUNGE,                %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::CiscoPower::MUNGE,         %SNMP::Info::CiscoConfig::MUNGE,
+    %SNMP::Info::CiscoPortSecurity::MUNGE,  %SNMP::Info::CiscoImage::MUNGE,
+    %SNMP::Info::CiscoStats::MUNGE,         %SNMP::Info::CDP::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,               %SNMP::Info::CiscoStack::MUNGE,
+    %SNMP::Info::CiscoStpExtensions::MUNGE, %SNMP::Info::CiscoVTP::MUNGE,
 );
 
 sub vendor {
@@ -185,6 +188,16 @@ sub i_duplex_admin {
     }
 }
 
+sub is_virtual_switch {
+    my $cvs = shift;
+    my $cvsSwM = $cvs->cvsSwitchMode() || '';
+
+    if ( $cvsSwM eq 'multiNode' ) {
+        return 1;
+    }
+    return 0;
+}
+
 sub set_i_duplex_admin {
 
     # map a textual duplex to an integer one the switch understands
@@ -192,6 +205,20 @@ sub set_i_duplex_admin {
 
     my $c6500 = shift;
     my ( $duplex, $iid ) = @_;
+ 
+    if ( $c6500->is_virtual_switch() ) {
+
+        # VSS -> MAU
+        # Due to VSS bug
+        # 1. Set the ifMauDefaultType
+        # 2. Disable ifMauAutoNegAdminStatus
+        # If the second set is not done, this is not going to be
+        # working... Cisco Bug id CSCty97033.
+        # SXI is not working (up to at least relase SXI9).
+        # SXJ is working at SXJ3 (not before).
+
+        return $c6500->mau_set_i_duplex_admin( $duplex, $iid );
+    }
 
     my $el_duplex = $c6500->el_duplex($iid);
 
@@ -209,7 +236,31 @@ sub set_i_duplex_admin {
         return $c6500->set_p_duplex( $duplexes{$duplex}, $iid );
     }
     else {
-        return $c6500->SUPER::set_i_duplex_admin;
+        return $c6500->SUPER::set_i_duplex_admin( $duplex, $iid );
+    }
+}
+
+sub set_i_speed_admin {
+    my $c6500   = shift;
+    my ( $speed, $iid ) = @_;
+
+    if ( $c6500->is_virtual_switch() ) {
+
+        # VSS -> MAU
+        # Due to VSS bug
+        # 1. Set the ifMauDefaultType
+        # 2. Disable ifMauAutoNegAdminStatus
+        # If the second set is not done, this is not going to be working...
+        # Cisco Bug id CSCty97033.
+        # SXI is not working (at least up to relase SXI9).
+        # SXJ is working at SXJ3 (not before).
+
+        return $c6500->mau_set_i_speed_admin( $speed, $iid );
+    }
+    else {
+
+        # normal behavior using the CiscoStack method
+        return $c6500->SUPER::set_i_speed_admin( $speed, $iid );
     }
 }
 
@@ -323,6 +374,14 @@ These are methods that return scalar value from SNMP
 
 Returns 1.  Use vlan indexing.
 
+=item $c6500->cvsSwitchMode()
+
+Returns the Switch status: multiNode or standalone.
+
+=item $c6500->is_virtual_switch()
+
+Return 1 if the switch (C<cvsSwitchMode>) is in multimode (VSS).
+
 =back
 
 =head2 Global Methods imported from SNMP::Info::CiscoVTP
@@ -408,6 +467,14 @@ Crosses $c6500->p_port() with $c6500->p_duplex() to utilize port C<ifIndex>.
     $c6500->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'}) 
         or die "Couldn't change port duplex. ",$c6500->error(1);
 
+=item $c6500->set_i_speed_admin(speed, ifIndex)
+
+Sets port speed, must be supplied with speed and port C<ifIndex>.
+
+Speed choices are '10', '100', '1000'.
+
+Crosses $c6500->p_port() with $c6500->p_speed() to utilize port C<ifIndex>.
+
 =back
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
@@ -445,11 +512,12 @@ See documentation in L<SNMP::Info::CiscoPower/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoStpExtensions
 
+See documentation in L<SNMP::Info::CiscoStpExtensions/"TABLE METHODS"> for
+details.
+
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
-
-See documentation in L<SNMP::Info::CiscoStpExtensions/"TABLE METHODS"> for details.
 
 =cut
 
