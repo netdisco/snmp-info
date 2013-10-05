@@ -14,6 +14,11 @@ version 3.08 ()
     * [#69] set speed and duplex on Cisco VSS system (psychiatric)
     * munge_null() now removes all non-printable control characters
 
+   [BUG FIXES]
+
+    * [#68] Fix device_port entries for switches with non-unique
+      ifDesc (Nic Bernstein)
+
 version 3.07 (2013-10-01)
 
    [ENHANCEMENTS]

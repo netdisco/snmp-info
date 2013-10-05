@@ -123,8 +123,11 @@ sub serial {
     # precedence
     #   serial2,chassis parse,serial1
     return $serial2 if ( defined $serial2 and $serial2 !~ /^\s*$/ );
-    return $1
-        if ( defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i );
+
+    if ( defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i ) {
+        return $1;
+    }
+
     return $serial1 if ( defined $serial1 and $serial1 !~ /^\s*$/ );
 
     return;
@@ -155,10 +158,18 @@ sub interfaces {
     my $i_descr    = $l2->i_description($partial) || {};
 
     # Replace the Index with the ifDescr field.
+    # Check for duplicates in ifDescr, if so uniquely identify by adding
+    # ifIndex to repeated values
+    my %seen;
     foreach my $iid ( keys %$i_descr ) {
         my $port = $i_descr->{$iid};
         next unless defined $port;
-        $interfaces->{$iid} = $port;
+        if ( $seen{$port}++ ) {
+            $interfaces->{$iid} = sprintf( "%s (%d)", $port, $iid );
+        }
+        else {
+            $interfaces->{$iid} = $port;
+        }
     }
     return $interfaces;
 }
