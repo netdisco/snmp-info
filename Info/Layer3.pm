@@ -132,11 +132,11 @@ $VERSION = '3.07';
     'bgp_peer_out_upd'        => 'bgpPeerOutUpdates',
 
     # IP-MIB Net to Physical Table (ARP Cache)
-    'n2p_paddr' => 'ipNetToPhysicalPhysAddress',
+    'n2p_paddr'      => 'ipNetToPhysicalPhysAddress',
     'n2p_lastupdate' => 'ipNetToPhysicalLastUpdated',
-    'n2p_ptype' => 'ipNetToPhysicalType',
-    'n2p_pstate' => 'ipNetToPhysicalState',
-    'n2p_pstatus' => 'ipNetToPhysicalRowStatus',
+    'n2p_ptype'      => 'ipNetToPhysicalType',
+    'n2p_pstate'     => 'ipNetToPhysicalState',
+    'n2p_pstatus'    => 'ipNetToPhysicalRowStatus',
 
 );
 
@@ -152,7 +152,7 @@ $VERSION = '3.07';
     %SNMP::Info::IPv6::MUNGE,
     'old_at_paddr' => \&SNMP::Info::munge_mac,
     'at_paddr'     => \&SNMP::Info::munge_mac,
-    'n2p_paddr' => \&SNMP::Info::munge_mac,
+    'n2p_paddr'    => \&SNMP::Info::munge_mac,
 );
 
 # Method OverRides
@@ -163,12 +163,12 @@ sub root_ip {
     my $router_ip = $l3->router_ip();
     my $ospf_ip   = $l3->ospf_ip();
 
-    # if the router ip exists and is a route advertised by the device we prefer
-    # it over the others
+   # if the router ip exists and is a route advertised by the device we prefer
+   # it over the others
     return $router_ip
         if (( defined $router_ip )
         and ( $router_ip ne '0.0.0.0' )
-        and ( grep { $ospf_ip->{$_} eq $router_ip } (keys %$ospf_ip))
+        and ( grep { $ospf_ip->{$_} eq $router_ip } ( keys %$ospf_ip ) )
         and ( $l3->snmp_connect_ip($router_ip) ) );
 
     # return the first one found here (should be only one)
@@ -215,8 +215,11 @@ sub serial {
     # precedence
     #   serial2,chassis parse,serial1
     return $serial2 if ( defined $serial2 and $serial2 !~ /^\s*$/ );
-    return $1
-        if ( defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i );
+
+    if ( defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i ) {
+        return $1;
+    }
+
     return $serial1 if ( defined $serial1 and $serial1 !~ /^\s*$/ );
 
     return;
@@ -293,30 +296,35 @@ sub interfaces {
     my $l3      = shift;
     my $partial = shift;
 
-    my $interfaces   = $l3->i_index($partial);
-    my $descriptions = $l3->i_description($partial);
+    my $interfaces = $l3->i_index($partial);
+    my $i_descr    = $l3->i_description($partial);
 
-    my %interfaces = ();
-    foreach my $iid ( keys %$interfaces ) {
-        my $desc = $descriptions->{$iid};
-        next unless defined $desc;
-
-        $interfaces{$iid} = $desc;
+    # Check for duplicates in ifDescr, if so uniquely identify by adding
+    # ifIndex to repeated values
+    my %seen;
+    foreach my $iid ( keys %$i_descr ) {
+        my $port = $i_descr->{$iid};
+        next unless defined $port;
+        if ( $seen{$port}++ ) {
+            $interfaces->{$iid} = sprintf( "%s (%d)", $port, $iid );
+        }
+        else {
+            $interfaces->{$iid} = $port;
+        }
     }
-
-    return \%interfaces;
+    return $interfaces;
 }
 
 sub vendor {
     my $l3 = shift;
 
     my $descr = $l3->description();
-    my $id = $l3->id();
+    my $id    = $l3->id();
 
     # .1.3.6.1.4.1.9.1 is the CISCO-PRODUCTS-MIB
     # .1.3.6.1.4.1.9.9.368.4 is an old tree that Cisco CSSs were numbered from
-    return 'cisco'   if $id =~ /^\Q.1.3.6.1.4.1.9.1.\E\d+$/;
-    return 'cisco'   if $id =~ /^\Q.1.3.6.1.4.1.9.9.368.4.\E\d+/;
+    return 'cisco' if $id =~ /^\Q.1.3.6.1.4.1.9.1.\E\d+$/;
+    return 'cisco' if $id =~ /^\Q.1.3.6.1.4.1.9.9.368.4.\E\d+/;
     return 'cisco'   if ( $descr =~ /(cisco|\bios\b)/i );
     return 'brocade' if ( $descr =~ /foundry/i );
 

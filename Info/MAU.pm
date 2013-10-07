@@ -43,7 +43,7 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 $VERSION = '3.07';
 
-%MIBS = ( 'MAU-MIB' => 'mauMod' );
+%MIBS = ( 'MAU-MIB' => 'mauMod', 'IANA-MAU-MIB' => 'dot3MauType' );
 
 %GLOBALS = ();
 
@@ -235,10 +235,10 @@ sub mau_i_duplex_admin_old {
 
     my %i_duplex_admin;
     foreach my $iid ( keys %$interfaces ) {
-        my $mau_index = $mau_reverse{$iid};
-        next unless defined $mau_index;
+        my $mau_idx = $mau_reverse{$iid};
+        next unless defined $mau_idx;
 
-        my $autostat = $mau_autostat->{$mau_index};
+        my $autostat = $mau_autostat->{$mau_idx};
 
         # HP25xx has this value
         if ( defined $autostat and $autostat =~ /enabled/i ) {
@@ -246,7 +246,7 @@ sub mau_i_duplex_admin_old {
             next;
         }
 
-        my $type = $mau_autosent->{$mau_index};
+        my $type = $mau_autosent->{$mau_idx};
 
         next unless defined $type;
 
@@ -258,7 +258,7 @@ sub mau_i_duplex_admin_old {
         my $full = $mau->_isfullduplex($type);
         my $half = $mau->_ishalfduplex($type);
 
-        if ( $full and !$half ) {
+        if ( $full && !$half ) {
             $i_duplex_admin{$iid} = 'full';
         }
         elsif ($half) {
@@ -267,6 +267,182 @@ sub mau_i_duplex_admin_old {
     }
 
     return \%i_duplex_admin;
+}
+
+sub mau_set_i_speed_admin {
+    my $mau          = shift;
+    my $speed    = shift;
+    my $iid = shift;
+
+    my $rv;
+
+    $speed = lc($speed);
+    if ( !( $speed =~ /(10|100|1000|auto)/io and $iid =~ /\d+/o ) ) {
+        return;
+    }
+
+    # map a speed value to an integer the switch understands based on duplex
+    my %speeds;
+
+    # 10 = dot3MauType10BaseTHD, 15 = dot3MauType100BaseTXHD
+    # 29 = dot3MauType1000BaseTHD from IANA-MAU-MIB
+    %{ $speeds{'HD'} } = qw/10 10 100 15 1000 29/;    # half duplex settings
+         # 11 = dot3MauType10BaseTFD, 16 = dot3MauType100BaseTXFD
+         # 30 = dot3MauType1000BaseTFD from IANA-MAU-MIB
+    %{ $speeds{'FD'} } = qw/10 11 100 16 1000 30/;    # full duplex settings
+
+    my $myhash    = $mau->mau_autostat;
+    my $key       = $iid . '.1';
+    my $i_autoneg = $myhash->{$key};
+
+    my $myduplex;
+
+    my $i_mau_def_type
+        = &SNMP::translateObj( $mau->mau_type_admin($iid)->{ $iid . '.1' } );
+
+    if ( $i_mau_def_type =~ /^dot3MauType.*Base.*(..)$/
+        && ( $1 eq "HD" or $1 eq "FD" ) )
+    {
+        $myduplex = $1;
+    }
+    else {
+
+        # this is not a valid speed known, assuming auto
+        $myduplex = "auto";
+    }
+
+    if ( $speed eq "auto" && $i_autoneg eq "enabled" ) {
+        return (1);
+    }
+    elsif ( $speed eq "auto" ) {
+        $rv = $mau->set_mau_autostat( 'enabled', $iid . '.1' );
+        return ($rv);
+    }
+    else {
+        if ( $i_autoneg eq "enabled" ) {
+            $mau->set_mau_autostat( 'disabled', $iid . '.1' );
+        }
+        $rv
+            = $mau->set_mau_type_admin(
+            '.1.3.6.1.2.1.26.4.' . $speeds{$myduplex}{$speed},
+            $iid . '.1' );
+
+        return ($rv);
+    }
+}
+
+sub mau_set_i_duplex_admin {
+    my $mau = shift;
+    my $duplex = shift;
+    my $iid = shift;
+
+    my $rv;
+
+    $duplex = lc($duplex);
+
+    if ( !( $duplex =~ /(full|half|auto)/i and $iid =~ /\d+/ ) ) {
+        return;
+    }
+
+ # map a textual duplex setting to an integer value the switch will understand
+    my %duplexes;
+    %{ $duplexes{'10'} }   = qw/full 11 half 10/;
+    %{ $duplexes{'100'} }  = qw/full 16 half 15/;
+    %{ $duplexes{'1000'} } = qw/full 30 half 29/;
+
+    # current port values:
+    my $myhash    = $mau->mau_autostat;
+    my $key       = $iid . '.1';
+    my $i_autoneg = $myhash->{$key};
+
+    my $i_speed
+        = &SNMP::translateObj( $mau->mau_type_admin($iid)->{ $iid . '.1' } );
+
+    if ( $i_speed =~ /^dot3MauType(.*)Base/ && $_mau_i_speed_map{$1} ) {
+        $i_speed = $1;
+    }
+    else {
+
+        # this is not a valid speed setting, assuming auto
+        $duplex = "auto";
+    }
+
+    if ( $duplex eq "auto" && $i_autoneg eq "enabled" ) {
+        return (1);
+    }
+    elsif ( $duplex eq "auto" ) {
+        $rv = $mau->set_mau_autostat( 'enabled', $iid . '.1' );
+        return ($rv);
+    }
+    else {
+
+        # Can't always do it here, if not...
+        if ( $i_autoneg eq "enabled"
+            && defined( $duplexes{$i_speed}{$duplex} ) )
+        {
+            $mau->set_mau_autostat( 'disabled', $iid . '.1' );
+        }
+        $rv
+            = $mau->set_mau_type_admin(
+            '.1.3.6.1.2.1.26.4.' . $duplexes{$i_speed}{$duplex},
+            $iid . '.1' );
+        return ($rv);
+    }
+}
+
+#
+# mau_set_i_speed_duplex_admin() accepts the following values for speed/duplex
+#
+
+# auto/auto (special case)
+# 10/half
+# 10/full
+# 100/half
+# 100/full
+# 1000/half
+# 1000/full
+
+sub mau_set_i_speed_duplex_admin {
+    my $mau = shift;
+    my $speed = shift;
+    my $duplex = shift;
+    my $iid = shift;
+
+    my $rv;
+
+    $speed  = lc($speed);
+    $duplex = lc($duplex);
+
+    if (   ( $speed !~ m/auto|10|100|1000/io )
+        or ( $duplex !~ m/full|half|auto/io )
+        or ( $iid !~ /\d+/ ) )
+    {
+        return ("bad arguments");
+    }
+
+    # map input speed and duplex paramters to 'mau_type_admin' settings
+    # From IANA-MAU-MIB
+    # 11 = dot3MauType10BaseTFD, 10 = dot3MauType10BaseTHD,
+    # 16 = dot3MauType100BaseTXFD, 15 = dot3MauType100BaseTXHD
+    # 30 = dot3MauType1000BaseTFD, 29 = dot3MauType1000BaseTHD
+    my %params;
+    %{ $params{'10'} }   = qw/full 11 half 10/;
+    %{ $params{'100'} }  = qw/full 16 half 15/;
+    %{ $params{'1000'} } = qw/full 30 half 29/;
+
+    # if given "auto/auto", set 'mau_autostat' to "enable" and exit
+
+    if ( ( $speed eq "auto" ) or ( $duplex eq "auto" ) ) {
+        $rv = $mau->set_mau_autostat( 'enabled', $iid . '.1' );
+        return ($rv);
+    }
+
+    $rv
+        = $mau->set_mau_type_admin(
+        '.1.3.6.1.2.1.26.4.' . $params{$speed}{$duplex},
+        $iid . '.1' );
+    $rv = $mau->set_mau_autostat( 'disabled', $iid . '.1' );
+    return ($rv);
 }
 
 1;
@@ -335,9 +511,8 @@ These are methods that return scalar value from SNMP
 
 =head1 TABLE METHODS
 
-These are methods that return tables of information in the form of a reference
-to a hash.
-
+These are methods that return tables of information in the form
+of a reference to a hash.
 
 =over
 
@@ -367,7 +542,7 @@ Returns admin speed setting for all the interfaces.
 
 =back
 
-=head2 MAU INTERFACE TABLE METHODS
+=head2 MAU Interface Table Methods
 
 =over
 
@@ -433,11 +608,13 @@ of the port from a MAU POV.
 
 (C<ifMauDefaultType>)
 
-=item $mau->mau_auto() - Returns status of auto-negotiation mode for ports.
+=item $mau->mau_auto() - Indicates whether or not auto-negotiation is
+supported.
 
-(C<ifMauAutoNegAdminStatus>)
+(C<ifMauAutoNegSupported>)
 
-=item $mau->mau_autostat()
+=item $mau->mau_autostat() - Returns status of auto-negotiation mode for
+ports.
 
 (C<ifMauAutoNegAdminStatus>)
 
@@ -457,6 +634,54 @@ capabilities of the device on the other end.
 
 =back
 
+=head1 SET METHODS
+
+These are methods that provide SNMP set functionality for overridden methods
+or provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
+operations.
+
+=over 
+
+=item $mau->mau_set_i_speed_admin(speed, ifIndex)
+
+Sets port speed, must be supplied with speed and port C<ifIndex>.
+
+Note that this method has some limitations since there is no way
+to reliably set the port speed independently of the port duplex
+setting on certain devices, notably the Cisco Cat4k series.
+
+Speed choices are '10', '100', '1000', 'auto'.
+
+=item $mau->mau_set_i_duplex_admin(duplex, ifIndex)
+
+Sets port duplex, must be supplied with duplex and port C<ifIndex>.
+
+Note that this method has some limitations since there is no way
+to reliably set the port duplex independently of the port speed
+setting on certain devices, notably the Cisco Cat4k series.
+
+Duplex choices are 'auto', 'half', 'full'.
+
+=item $mau->mau_set_i_speed_duplex_admin(speed, duplex, ifIndex)
+
+Sets port speed and duplex settings, must be supplied with speed,
+duplex and port C<ifIndex>.
+
+Accepts the following values for speed and duplex:
+
+        Speed/Duplex
+        ------------
+        auto/auto (this is a special case)
+        10/half
+        10/full
+        100/half
+        100/full
+        1000/half
+        1000/full
+
+=back
+
 =head1 Utility Functions
 
 =over 
@@ -469,7 +694,7 @@ capabilities of the device on the other end.
     are     high.  Currently bits 11,13,16,18,20.
 
 =item $mau->_ishalfduplex(bitstring)
-    
+
     Boolean.  Checks to see if any of the half_duplex types from mau_type()
     are high.  Currently bits 10,12,15,17,19.
 
