@@ -14,6 +14,10 @@ version 3.08 ()
     * [#67] Add the possibility to set speed for Layer3::C4000 (psychiatric)
     * [#69] set speed and duplex on Cisco VSS system (psychiatric)
     * munge_null() now removes all non-printable control characters
+    * Support Aironet standalone access points (Layer2::Aironet) running IOS15
+    * lldp_port() returns port ID instead of port description if the port ID
+      subtype is "interface name".  This improves the ability to correlate
+      ports by name when a port description is also set.
 
    [BUG FIXES]
 
