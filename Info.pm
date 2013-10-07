@@ -2691,6 +2691,38 @@ Beware, calling $info->error() clears the error.
 
 =head1 EXTENDING SNMP::INFO
 
+To support a new class (vendor or platform) of device, add a Perl package with
+the data structures and methods listed below.
+
+If this seems a little scary, then the SNMP::Info developers are usually happy
+to accept the SNMP data from your device and make an attempt at the class
+themselves. Usually a "beta" release will go to CPAN for you to verify the
+implementation.
+
+=head2 Gathering MIB data for SNMP::Info Developers
+
+The preference is to open a feature request in the SourceForge project.  This
+allows all developers to have visibility into the request.  Please include
+pointers to the applicable platform MIBs.  For development we will need an
+C<snmpwalk> of the device.  There is a tool now included in the SNMP::Info
+distribution to help with this task, although you'll most likely need to
+download the distribution from CPAN as it's included in the "C<t/util>"
+directory.
+
+The utility is named C<make_snmpdata.pl>. Run it with a command line like:
+
+ ./make_snmpdata.pl -c community -i -d device_ip \
+  -m /home/netdisco-mibs/rfc:/home/netdisco-mibs/net-snmp:/home/netdisco-mibs/dir3 \
+  SNMPv2-MIB IF-MIB EtherLike-MIB BRIDGE-MIB Q-BRIDGE-MIB ENTITY-MIB \
+  POWER-ETHERNET-MIB IPV6-MIB LLDP-MIB DEVICE-SPECIFIC-MIB-NAME(s) > output.txt
+
+This will print to the file every MIB entry with data in a format that the
+developers can use to emulate read operations without needing access to the
+device.  Preference would be to mask any sensitive data in the output, zip the
+file, and upload as an attachment to the Sourceforge tracker.  However, if you
+do not feel comfortable  uploading the output to the tracker you could e-mail
+it to the developer that has claimed the ticket.
+
 =head2 Data Structures required in new Subclass
 
 A class inheriting this class must implement these data structures : 

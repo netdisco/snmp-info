@@ -18,6 +18,7 @@ version 3.08 ()
     * lldp_port() returns port ID instead of port description if the port ID
       subtype is "interface name".  This improves the ability to correlate
       ports by name when a port description is also set.
+    * Add docs note about make_snmpdata.pl under EXTENDING SNMP::Info
 
    [BUG FIXES]
 
