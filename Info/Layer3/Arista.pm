@@ -120,6 +120,27 @@ sub fw_port {
     return $arista->qb_fw_port($partial);
 }
 
+# The LLDP MIB leaves it up in the air what the index means.
+# On EOS, it's a dot1d port.
+sub lldp_if {
+    my $arista  = shift;
+    my $partial = shift;
+
+    # We pick a column that someone else is likely to want,
+    # so that the cache means that hopefully this doesn't
+    # cause any more SNMP transactions in total.
+    my $desc     = $arista->lldp_rem_desc($partial) || {};
+    my $bp_index = $arista->bp_index() || {};
+
+    my $lldp_if = {};
+    foreach my $key ( keys %$desc ) {
+        my @aOID = split( '\.', $key );
+        my $port = $aOID[1];
+        $lldp_if->{$key} = $bp_index->{$port};
+    }
+    return $lldp_if;
+}
+
 1;
 __END__
 
