@@ -120,6 +120,48 @@ sub fw_port {
     return $arista->qb_fw_port($partial);
 }
 
+# The LLDP MIB leaves it up in the air what the index means.
+# On EOS, it's a dot1d port.
+sub lldp_if {
+    my $arista  = shift;
+    my $partial = shift;
+
+    # We pick a column that someone else is likely to want,
+    # so that the cache means that hopefully this doesn't
+    # cause any more SNMP transactions in total.
+    my $desc     = $arista->lldp_rem_desc($partial) || {};
+    my $bp_index = $arista->bp_index() || {};
+
+    my $lldp_if = {};
+    foreach my $key ( keys %$desc ) {
+        my @aOID = split( '\.', $key );
+        my $port = $aOID[1];
+        $lldp_if->{$key} = $bp_index->{$port};
+    }
+    return $lldp_if;
+}
+
+# XXX This belongs somewhere else.
+sub agg_ports {
+    my $dev = shift;
+    my $partial = shift;
+
+    my $ifStack = $dev->ifStackStatus();
+    # TODO: if we want to do partial, we need to use inverse status
+    my $ifType = $dev->ifType();
+
+    my $ret = {};
+
+    foreach my $idx ( keys %$ifStack ) {
+        my ( $higher, $lower ) = split /\./, $idx;
+        next if ( $higher == 0 or $lower == 0 );
+        if ( $ifType->{ $higher } eq 'ieee8023adLag' ) {
+            $ret->{ $lower } = $higher;
+        }
+    }
+    return $ret;
+}
+
 1;
 __END__
 
