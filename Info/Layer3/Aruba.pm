@@ -1064,15 +1064,14 @@ sub e_parent {
 # Pretending this is arpnip data allows us to get MAC->IP
 # mappings even for stations that only communicate locally.
 
-# We could also use the controller's knowledge of the APs' MAC and
-# IP addresses to augment the data, but since we are including the
-# AP MAC as a port MAC they should be included in the ip_table
+# We also use the controller's knowledge of the APs' MAC and
+# IP addresses to augment the data.
 
 sub at_paddr {
     my $aruba    = shift;
     my $user_mac = $aruba->aruba_user_bssid();
 
-    #    my $ap_ip      = $aruba->aruba_ap_ip();
+    my $ap_ip      = $aruba->aruba_ap_ip();
 
     my %at_paddr;
     foreach my $idx ( keys %$user_mac ) {
@@ -1082,11 +1081,11 @@ sub at_paddr {
 	$at_paddr{$idx} = $mac;
     }
 
-    #    foreach my $idx ( keys %$ap_ip ) {
-    #	next if ( $ap_ip->{$idx} eq '0.0.0.0' );
-    #	my $mac = join( ":", map { sprintf "%02x", $_ } split /\./, $idx );
-    #	$at_paddr{$idx} = $mac;
-    #    }
+    foreach my $idx ( keys %$ap_ip ) {
+        next if ( $ap_ip->{$idx} eq '0.0.0.0' );
+	my $mac = join( ":", map { sprintf "%02x", $_ } split /\./, $idx );
+	$at_paddr{$idx} = $mac;
+    }
     return \%at_paddr;
 }
 
@@ -1094,14 +1093,14 @@ sub at_netaddr {
     my $aruba    = shift;
     my $user_mac = $aruba->aruba_user_bssid();
 
-    #    my $ap_ip      = $aruba->aruba_ap_ip();
+    my $ap_ip      = $aruba->aruba_ap_ip();
 
     my %at_netaddr;
 
-    #    foreach my $idx ( keys %$ap_ip ) {
-    #	next if ( $ap_ip->{$idx} eq '0.0.0.0' );
-    #	$at_netaddr{$idx} = $ap_ip->{$idx};
-    #    }
+    foreach my $idx ( keys %$ap_ip ) {
+	next if ( $ap_ip->{$idx} eq '0.0.0.0' );
+	$at_netaddr{$idx} = $ap_ip->{$idx};
+    }
     foreach my $idx ( keys %$user_mac ) {
 	my @parts = split( /\./, $idx );
 	my $iid = join( ".", splice( @parts, 0, 6 ) );
@@ -1461,7 +1460,8 @@ entity which 'contains' this entity.
 
 The controller has knowledge of MAC->IP mappings for wireless clients.
 Augmenting the arp cache data with these MAC->IP mappings enables visibility
-for stations that only communicate locally.
+for stations that only communicate locally.  We also capture the AP MAC->IP
+mappings.
 
 =over
 
