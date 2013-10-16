@@ -27,6 +27,7 @@ version 3.08 ()
 
     * [#68] Fix device_port entries for switches with non-unique
       ifDesc (Nic Bernstein)
+    * Don't try to munge undef values
 
 version 3.07 (2013-10-01)
 

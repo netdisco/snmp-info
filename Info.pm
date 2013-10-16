@@ -4236,11 +4236,13 @@ sub _munge {
         my %munged;
         foreach my $key ( keys %$data ) {
             my $value = $data->{$key};
+            next unless $value;
             $munged{$key} = $subref->($value);
         }
         return \%munged;
     }
     else {
+        return unless $data;
         my $subref = $munge->{$attr};
         return $subref->($data);
     }
