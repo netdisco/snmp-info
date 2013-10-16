@@ -21,6 +21,7 @@ version 3.08 ()
     * Add docs note about make_snmpdata.pl under EXTENDING SNMP::Info
     * [#46] Brocade (Foundry) Module Support
     * Brocade (Foundry) POE Support
+    * Support peth_port_power() power supplied by PoE ports in L2::Baystack
 
    [BUG FIXES]
 
