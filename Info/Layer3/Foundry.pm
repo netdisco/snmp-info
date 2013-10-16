@@ -53,6 +53,8 @@ $VERSION = '3.07';
     'FOUNDRY-SN-ROOT-MIB'         => 'foundry',
     'FOUNDRY-SN-AGENT-MIB'        => 'snChasPwrSupplyDescription',
     'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snSwGroupOperMode',
+    'FOUNDRY-SN-STACKING-MIB'     => 'snStackingOperUnitRole',
+    'FOUNDRY-POE-MIB'             => 'snAgentPoeGblPowerCapacityTotal',
 );
 
 %GLOBALS = (
@@ -81,11 +83,20 @@ $VERSION = '3.07';
     'sw_duplex' => 'snSwPortInfoChnMode',
     'sw_type'   => 'snSwPortInfoMediaType',
     'sw_speed'  => 'snSwPortInfoSpeed',
+
+    # FOUNDRY-SN-AGENT-MIB::snAgentConfigModule2Table
+    'ag_mod2_type' => 'snAgentConfigModule2Type',
+
+    # FOUNDRY-SN-AGENT-MIB::snAgentConfigModuleTable
+    'ag_mod_type' => 'snAgentConfigModuleType',
+
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE, %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::FDP::MUNGE,
+    'ag_mod2_type' => \&SNMP::Info::munge_e_type,
+    'ag_mod_type'  => \&SNMP::Info::munge_e_type,
 );
 
 sub i_ignore {
@@ -270,6 +281,509 @@ sub stp_p_state {
 
 }
 
+# Entity MIB is supported on the Brocade NetIron XMR, NetIron MLX, MLXe,
+# NetIron CES, NetIron CER, and older EdgeIron series devices.
+# Try Entity MIB methods first and fall back to Pseudo ENTITY-MIB methods for
+# other devices.
+# e_fwver, e_hwver, e_swver not supported in psuedo methods, no need to
+# override
+
+sub e_index {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::e_index($partial)
+        || $foundry->brcd_e_index($partial);
+}
+
+sub e_class {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::e_class($partial)
+        || $foundry->brcd_e_class($partial);
+}
+
+sub e_descr {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::e_descr($partial)
+        || $foundry->brcd_e_descr($partial);
+}
+
+sub e_name {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::e_name($partial)
+        || $foundry->brcd_e_name($partial);
+}
+
+sub e_parent {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::e_parent($partial)
+        || $foundry->brcd_e_parent($partial);
+}
+
+sub e_pos {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::e_pos($partial) || $foundry->brcd_e_pos($partial);
+}
+
+sub e_serial {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::e_serial($partial)
+        || $foundry->brcd_e_serial($partial);
+}
+
+sub e_type {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::e_type($partial)
+        || $foundry->brcd_e_type($partial);
+}
+
+sub e_vendor {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::e_vendor($partial)
+        || $foundry->brcd_e_vendor($partial);
+}
+
+# Pseudo ENTITY-MIB methods
+
+# This class supports both stackable and chassis based switches, identify if
+# we have a stackable so that we return appropriate entPhysicalClass
+
+# Identify if the stackable is actually a stack vs. single switch
+sub _brcd_stack_master {
+    my $foundry = shift;
+
+    my $roles = $foundry->snStackingOperUnitRole() || {};
+
+    foreach my $iid ( keys %$roles ) {
+        my $role = $roles->{$iid};
+        next unless $role;
+        if ( $role eq 'active' ) {
+            return $iid;
+        }
+    }
+    return;
+}
+
+sub brcd_e_index {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $stack_master = $foundry->_brcd_stack_master();
+    my $brcd_e_idx 
+        = $foundry->snAgentConfigModule2Description($partial)
+        || $foundry->snAgentConfigModuleDescription($partial)
+        || {};
+
+    my %brcd_e_index;
+    if ($stack_master) {
+
+        # Stack Entity
+        $brcd_e_index{0} = 1;
+    }
+
+    foreach my $iid ( keys %$brcd_e_idx ) {
+
+        my $index = $iid;
+
+        # Format into consistent integer format so that numeric sorting works
+        if ( $iid =~ /(\d+)\.(\d+)/ ) {
+            $index = "$1" . sprintf "%02d", $2;
+        }
+        $brcd_e_index{$iid} = $index;
+    }
+    return \%brcd_e_index;
+}
+
+sub brcd_e_class {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $e_idx = $foundry->brcd_e_index($partial) || {};
+
+    my %e_class;
+    foreach my $iid ( keys %$e_idx ) {
+        if ( $iid == 0 ) {
+            $e_class{$iid} = 'stack';
+        }
+
+        # Were going to assume chassis at slot/index 1
+        # If this turns out to be false in some cases we can check
+        # snAgentConfigModuleNumberOfCpus as other modules won't have cpus?
+        elsif ( $iid =~ /1$/ ) {
+            $e_class{$iid} = 'chassis';
+        }
+        else {
+            $e_class{$iid} = 'module';
+        }
+    }
+    return \%e_class;
+}
+
+sub brcd_e_descr {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $brcd_e_idx = $foundry->brcd_e_index($partial) || {};
+    my $m_descrs 
+        = $foundry->snAgentConfigModule2Description($partial)
+        || $foundry->snAgentConfigModuleDescription($partial)
+        || {};
+
+    my %brcd_e_descr;
+    foreach my $iid ( keys %$brcd_e_idx ) {
+
+        if ( $iid == 0 ) {
+            $brcd_e_descr{$iid} = $foundry->description();
+        }
+
+        my $descr = $m_descrs->{$iid};
+        next unless defined $descr;
+
+        $brcd_e_descr{$iid} = $descr;
+    }
+    return \%brcd_e_descr;
+}
+
+sub brcd_e_name {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $stack_master = $foundry->_brcd_stack_master();
+    my $e_idx = $foundry->brcd_e_index($partial) || {};
+
+    my %brcd_e_name;
+    foreach my $iid ( keys %$e_idx ) {
+        if ( $iid == 0 ) {
+            $brcd_e_name{$iid} = 'Stack Master Unit';
+        }
+
+        elsif ( $stack_master && $iid =~ /(\d+)\.1$/ ) {
+            $brcd_e_name{$iid} = "Switch Stack Unit $1";
+        }
+        elsif ( $iid =~ /1$/ ) {
+            $brcd_e_name{$iid} = "Switch";
+        }
+        else {
+            $brcd_e_name{$iid} = 'Module';
+        }
+    }
+    return \%brcd_e_name;
+}
+
+sub brcd_e_vendor {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $e_idx = $foundry->brcd_e_index($partial) || {};
+
+    my %brcd_e_vendor;
+    foreach my $iid ( keys %$e_idx ) {
+        my $vendor = 'brocade';
+
+        $brcd_e_vendor{$iid} = $vendor;
+    }
+    return \%brcd_e_vendor;
+}
+
+sub brcd_e_serial {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $e_idx = $foundry->brcd_e_index($partial) || {};
+    my $serials 
+        = $foundry->snAgentConfigModule2SerialNumber($partial)
+        || $foundry->snAgentConfigModuleSerialNumber($partial)
+        || {};
+
+    my %brcd_e_serial;
+    foreach my $iid ( keys %$e_idx ) {
+
+        if ( $iid == 0 ) {
+            $brcd_e_serial{$iid} = $foundry->serial();
+        }
+
+        my $serial = $serials->{$iid};
+        next unless defined $serial;
+
+        $brcd_e_serial{$iid} = $serial;
+    }
+    return \%brcd_e_serial;
+}
+
+sub brcd_e_type {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $e_idx = $foundry->brcd_e_index($partial) || {};
+    my $types 
+        = $foundry->ag_mod2_type($partial)
+        || $foundry->ag_mod_type($partial)
+        || {};
+
+    my %brcd_e_type;
+    foreach my $iid ( keys %$e_idx ) {
+
+        if ( $iid == 0 ) {
+            $brcd_e_type{$iid} = $foundry->model();
+        }
+
+        my $type = $types->{$iid};
+        next unless defined $type;
+
+        $brcd_e_type{$iid} = $type;
+    }
+    return \%brcd_e_type;
+}
+
+sub brcd_e_pos {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $e_idx = $foundry->brcd_e_index($partial) || {};
+
+    my %brcd_e_pos;
+    foreach my $iid ( keys %$e_idx ) {
+
+        my $pos;
+        if ( $iid == 0 ) {
+            $pos = -1;
+        }
+        elsif ( $iid =~ /(\d+)\.1$/ ) {
+            $pos = $1;
+        }
+        elsif ( $iid =~ /(\d+)$/ ) {
+            $pos = $1;
+        }
+
+        $brcd_e_pos{$iid} = $pos;
+    }
+    return \%brcd_e_pos;
+}
+
+sub brcd_e_parent {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $stack_master = $foundry->_brcd_stack_master();
+    my $e_idx = $foundry->brcd_e_index($partial) || {};
+
+    my %brcd_e_parent;
+    foreach my $iid ( keys %$e_idx ) {
+
+        if ( $iid == 0 ) {
+            $brcd_e_parent{$iid} = 0;
+        }
+        elsif ( $stack_master && $iid =~ /(\d+)\.1$/ ) {
+            $brcd_e_parent{$iid} = 1;
+        }
+        elsif ( $iid =~ /1$/ ) {
+            $brcd_e_parent{$iid} = 0;
+        }
+        elsif ( $iid =~ /(\d+).\d+/ ) {
+            $brcd_e_parent{$iid} = "$1" . "01";
+        }
+
+        # assume non-stacked and chassis at index 1
+        else {
+            $brcd_e_parent{$iid} = 1;
+        }
+    }
+    return \%brcd_e_parent;
+}
+
+# The index of snAgentPoePortTable is snAgentPoePortNumber which equals
+# ifIndex; however, to emulate POWER-ETHERNET-MIB we need a "module.port"
+# index.  If ifDescr has the format x/x/x use it to determine the module
+# otherwise default to 1.  Unfortunately, this means we can't map any
+# snAgentPoePortTable leafs directly and partials will not be supported.
+sub peth_port_ifindex {
+    my $foundry = shift;
+
+    my $indexes = $foundry->snAgentPoePortNumber();
+    my $descrs  = $foundry->i_description();
+
+    my $peth_port_ifindex = {};
+    foreach my $i ( keys %$indexes ) {
+        my $descr = $descrs->{$i};
+        next unless $descr;
+
+        my $new_idx = "1.$i";
+
+        if ( $descr =~ /(\d+)\/\d+\/\d+/ ) {
+            $new_idx = "$1.$i";
+        }
+        $peth_port_ifindex->{$new_idx} = $i;
+    }
+    return $peth_port_ifindex;
+}
+
+sub peth_port_admin {
+    my $foundry = shift;
+
+    my $p_index      = $foundry->peth_port_ifindex()     || {};
+    my $admin_states = $foundry->snAgentPoePortControl() || {};
+
+    my $peth_port_admin = {};
+    foreach my $i ( keys %$p_index ) {
+        my ( $module, $port ) = split( /\./, $i );
+        my $state = $admin_states->{$port};
+
+        if ( $state =~ /enable/ ) {
+            $peth_port_admin->{$i} = 'true';
+        }
+        else {
+            $peth_port_admin->{$i} = 'false';
+        }
+    }
+    return $peth_port_admin;
+}
+
+sub peth_port_neg_power {
+    my $foundry = shift;
+
+    my $p_index         = $foundry->peth_port_ifindex()   || {};
+    my $peth_port_class = $foundry->snAgentPoePortClass() || {};
+
+    my $poemax = {
+        '0' => 12950,
+        '1' => 3840,
+        '2' => 6490,
+        '3' => 12950,
+        '4' => 25500
+    };
+
+    my $peth_port_neg_power = {};
+    foreach my $i ( keys %$p_index ) {
+        my ( $module, $port ) = split( /\./, $i );
+        my $power = $poemax->{ $peth_port_class->{$port} };
+        next unless $power;
+
+        $peth_port_neg_power->{$i} = $power;
+    }
+    return $peth_port_neg_power;
+}
+
+sub peth_port_power {
+    my $foundry = shift;
+
+    my $p_index       = $foundry->peth_port_ifindex()      || {};
+    my $port_consumed = $foundry->snAgentPoePortConsumed() || {};
+
+    my $peth_port_power = {};
+    foreach my $i ( keys %$p_index ) {
+        my ( $module, $port ) = split( /\./, $i );
+        my $power = $port_consumed->{$port};
+        next unless $power;
+
+        $peth_port_power->{$i} = $power;
+    }
+    return $peth_port_power;
+}
+
+sub peth_port_class {
+    my $foundry = shift;
+
+    my $p_index    = $foundry->peth_port_ifindex()   || {};
+    my $port_class = $foundry->snAgentPoePortClass() || {};
+
+    my $peth_port_class = {};
+    foreach my $i ( keys %$p_index ) {
+        my ( $module, $port ) = split( /\./, $i );
+        my $power = $port_class->{$port};
+        next unless $power;
+
+        $peth_port_class->{$i} = "class$power";
+    }
+    return $peth_port_class;
+}
+
+sub peth_port_status {
+    my $foundry = shift;
+
+    my $p_index      = $foundry->peth_port_ifindex()     || {};
+    my $admin_states = $foundry->snAgentPoePortControl() || {};
+
+    my $peth_port_status = {};
+    foreach my $i ( keys %$p_index ) {
+        my ( $module, $port ) = split( /\./, $i );
+        my $state = $admin_states->{$port};
+
+        if ( $state =~ /enable/ ) {
+            $peth_port_status->{$i} = 'deliveringPower';
+        }
+        else {
+            $peth_port_status->{$i} = 'disabled';
+        }
+    }
+    return $peth_port_status;
+}
+
+sub peth_power_status {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $watts = $foundry->snAgentPoeUnitPowerCapacityTotal($partial) || {};
+
+    my $peth_power_status = {};
+    foreach my $i ( keys %$watts ) {
+        $peth_power_status->{$i} = 'on';
+    }
+    return $peth_power_status;
+}
+
+sub peth_power_watts {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $watts_total = $foundry->snAgentPoeUnitPowerCapacityTotal($partial)
+        || {};
+
+    my $peth_power_watts = {};
+    foreach my $i ( keys %$watts_total ) {
+        my $total = $watts_total->{$i};
+        next unless $total;
+
+        $peth_power_watts->{$i} = $total / 1000;
+    }
+    return $peth_power_watts;
+}
+
+sub peth_power_consumption {
+    my $foundry = shift;
+    my $partial = shift;
+
+    my $watts_total = $foundry->snAgentPoeUnitPowerCapacityTotal($partial)
+        || {};
+    my $watts_free = $foundry->snAgentPoeUnitPowerCapacityFree($partial)
+        || {};
+
+    my $peth_power_consumed = {};
+    foreach my $i ( keys %$watts_total ) {
+        my $total = $watts_total->{$i};
+        next unless $total;
+        my $free = $watts_free->{$i} || 0;
+
+        $peth_power_consumed->{$i} = ( $total - $free ) / 1000;
+    }
+    return $peth_power_consumed;
+}
+
 1;
 __END__
 
@@ -328,6 +842,10 @@ after determining a more specific class using the method above.
 =item F<FOUNDRY-SN-AGENT-MIB>
 
 =item F<FOUNDRY-SN-SWITCH-GROUP-MIB>
+
+=item F<FOUNDRY-SN-STACKING-MIB>
+
+=item F<FOUNDRY-POE-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -430,8 +948,8 @@ See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
-These are methods that return tables of information in the form of a reference
-to a hash.
+These are methods that return tables of information in the form of a
+reference to a hash.
 
 =head2 Overrides
 
@@ -464,6 +982,130 @@ Skipped if device is an EdgeIron 24G due to reports of hangs.
 
 =back
 
+=head2 F<ENTITY-MIB> Information
+
+F<ENTITY-MIB> is supported on the Brocade NetIron XMR, NetIron MLX, MLXe,
+NetIron CES, NetIron CER, and older EdgeIron series devices.  For other
+devices which do not support it, these methods emulate Physical Table methods
+using F<FOUNDRY-SN-AGENT-MIB>.  See Pseudo F<ENTITY-MIB> information below
+for details on brcd_e_* methods.
+
+=over
+
+=item $foundry->e_index() 
+
+If the device doesn't support C<entPhysicalDescr>, this will
+try brcd_e_index().
+
+Note that this is based on C<entPhysicalDescr> due to implementation
+details of SNMP::Info::Entity::e_index().
+
+=item $foundry->e_class() 
+
+If the device doesn't support C<entPhysicalClass>, this will try
+brcd_e_class().
+
+=item $foundry->e_descr() 
+
+If the device doesn't support C<entPhysicalDescr>, this will try
+brcd_e_descr().
+
+=item $foundry->e_name() 
+
+If the device doesn't support C<entPhysicalName>, this will try
+brcd_e_name().
+
+=item $foundry->e_parent() 
+
+If the device doesn't support C<entPhysicalContainedIn>, this will try
+brcd_e_parent().
+
+=item $foundry->e_pos() 
+
+If the device doesn't support C<entPhysicalParentRelPos>, this will try
+brcd_e_pos().
+
+=item $foundry->e_serial() 
+
+If the device doesn't support C<entPhysicalSerialNum>, this will try
+brcd_e_serial().
+
+=item $foundry->e_type() 
+
+If the device doesn't support C<entPhysicalVendorType>, this will try
+brcd_e_type().
+
+=item $foundry->e_vendor() 
+
+If the device doesn't support C<entPhysicalMfgName>, this will try
+brcd_e_vendor().
+
+=back
+
+=head2 Pseudo F<ENTITY-MIB> information
+
+These methods emulate F<ENTITY-MIB> Physical Table methods using
+F<FOUNDRY-SN-AGENT-MIB>. 
+
+=over
+
+=item $foundry->brcd_e_index()
+
+Returns reference to hash.  Key: IID, Value: Integer, Indices are combined
+into an integer, each index is two digits padded with leading zero if
+required.
+
+=item $foundry->brcd_e_class()
+
+Returns reference to hash.  Key: IID, Value: General hardware type.
+
+Returns 'stack' for the stack master in an active stack, 'chassis' for
+base switches that contain modules, and 'module' for others.
+
+=item $foundry->brcd_e_descr()
+
+Returns reference to hash.  Key: IID, Value: Human friendly name
+
+(C<snAgentConfigModule2Description>) or
+(C<snAgentConfigModuleDescription>) 
+
+=item $foundry->brcd_e_name()
+
+Returns reference to hash.  Key: IID, Value: Human friendly name
+
+=item $foundry->brcd_e_vendor()
+
+Returns reference to hash.  Key: IID, Value: brocade
+
+=item $foundry->brcd_e_serial()
+
+Returns reference to hash.  Key: IID, Value: Serial number
+
+Serial number is $foundry->serial() for a stack master unit and 
+(C<snAgentConfigModule2SerialNumber>) or
+(C<snAgentConfigModuleSerialNumber>) for all others.
+
+=item $foundry->brcd_e_type()
+
+Returns reference to hash.  Key: IID, Value: Type of component/sub-component
+as defined under C<snAgentConfigModule2Type> or C<snAgentConfigModule2Type> 
+in F<FOUNDRY-SN-AGENT-MIB>.
+
+=item $foundry->brcd_e_pos()
+
+Returns reference to hash.  Key: IID, Value: The relative position among all
+entities sharing the same parent.
+
+(C<s5ChasComSubIndx>)
+
+=item $foundry->brcd_e_parent()
+
+Returns reference to hash.  Key: IID, Value: The value of brcd_e_index()
+for the entity which 'contains' this entity.  A value of zero indicates
+this entity is not contained in any other entity.
+
+=back
+
 =head2 Foundry Switch Port Information Table (C<snSwPortIfTable>)
 
 =over
@@ -491,6 +1133,70 @@ Returns reference to hash.  Current Port Type .
 Returns reference to hash.  Current Port Speed. 
 
 (C<snSwPortInfoSpeed>)
+
+=back
+
+=head2 Power Over Ethernet Port Table
+
+These methods emulate the F<POWER-ETHERNET-MIB> Power Source Entity (PSE)
+Port Table C<pethPsePortTable> methods using the F<FOUNDRY-POE-MIB> Power
+over Ethernet Port Table C<snAgentPoePortTable>.
+
+=over
+
+=item $foundry->peth_port_ifindex()
+
+Creates an index of module.port to align with the indexing of the
+C<pethPsePortTable> with a value of C<ifIndex>.  The module defaults 1
+if otherwise unknown.
+
+=item $foundry->peth_port_admin()
+
+Administrative status: is this port permitted to deliver power?
+
+C<pethPsePortAdminEnable>
+
+=item $foundry->peth_port_status()
+
+Current status: is this port delivering power.
+
+=item $foundry->peth_port_class()
+
+Device class: if status is delivering power, this represents the 802.3af
+class of the device being powered.
+
+=item $foundry->peth_port_neg_power()
+
+The power, in milliwatts, that has been committed to this port.
+This value is derived from the 802.3af class of the device being
+powered.
+
+=item $foundry->peth_port_power()
+
+The power, in milliwatts, that the port is delivering.
+
+=back
+
+=head2 Power Over Ethernet Module Table
+
+These methods emulate the F<POWER-ETHERNET-MIB> Main Power Source Entity
+(PSE) Table C<pethMainPseTable> methods using the F<FOUNDRY-POE-MIB> Power
+over Ethernet Port Table C<snAgentPoeModuleTable >.
+
+=over
+
+=item $foundry->peth_power_watts()
+
+The power supply's capacity, in watts.
+
+=item $foundry->peth_power_status()
+
+The power supply's operational status.
+
+=item $foundry->peth_power_consumption()
+
+How much power, in watts, this power supply has been committed to
+deliver.
 
 =back
 

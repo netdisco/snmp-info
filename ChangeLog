@@ -19,6 +19,8 @@ version 3.08 ()
       subtype is "interface name".  This improves the ability to correlate
       ports by name when a port description is also set.
     * Add docs note about make_snmpdata.pl under EXTENDING SNMP::Info
+    * [#46] Brocade (Foundry) Module Support
+    * Brocade (Foundry) POE Support
 
    [BUG FIXES]
 
