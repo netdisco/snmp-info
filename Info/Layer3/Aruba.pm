@@ -33,8 +33,9 @@ package SNMP::Info::Layer3::Aruba;
 use strict;
 use Exporter;
 use SNMP::Info::Layer3;
+use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::Aruba::ISA       = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Aruba::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Aruba::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
@@ -43,6 +44,7 @@ $VERSION = '3.07';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::LLDP::MIBS,
     'WLSR-AP-MIB'        => 'wlsrHideSSID',
     'WLSX-IFEXT-MIB'     => 'ifExtVlanName',
     'WLSX-SWITCH-MIB'    => 'wlsxHostname',
@@ -55,6 +57,7 @@ $VERSION = '3.07';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
     'aruba_serial' => 'wlsxSwitchLicenseSerialNumber',
     'aruba_model'  => 'wlsxModelName',
     'mac'          => 'wlsxSysExtSwitchBaseMacaddress',
@@ -62,6 +65,7 @@ $VERSION = '3.07';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
 
     # WLSR-AP-MIB::wlsrConfigTable
     'aruba_ap_ssidbcast' => 'wlsrHideSSID',
@@ -135,6 +139,7 @@ $VERSION = '3.07';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
     'aruba_ap_fqln'       => \&munge_aruba_fqln,
     'aruba_ap_type'       => \&SNMP::Info::munge_e_type,
     'aruba_card_type'     => \&SNMP::Info::munge_e_type,
