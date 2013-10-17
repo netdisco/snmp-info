@@ -49,7 +49,7 @@ use SNMP::Info::Layer2;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.07';
+$VERSION = '3.07_001';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,     %SNMP::Info::CiscoPortSecurity::MIBS,

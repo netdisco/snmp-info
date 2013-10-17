@@ -22,6 +22,10 @@ version 3.08 ()
     * [#46] Brocade (Foundry) Module Support
     * Brocade (Foundry) POE Support
     * Support peth_port_power() power supplied by PoE ports in L2::Baystack
+    * Update test_class.pl utility to allow ignore of snmp.conf and test
+      summarize more standard class methods
+    * On EOS, the LLDP port ID is a dot1d port
+    * Use LLDP in Layer3::Aruba, for switches
 
    [BUG FIXES]
 
