@@ -52,6 +52,7 @@ $VERSION = '3.07';
     %SNMP::Info::Layer3::MIBS,    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::RapidCity::MIBS, %SNMP::Info::NortelStack::MIBS,
     %SNMP::Info::SONMP::MIBS,
+    'BAY-STACK-PETH-EXT-MIB' => 'bspePethPsePortExtMeasuredPower',
 );
 
 %GLOBALS = (
@@ -64,6 +65,7 @@ $VERSION = '3.07';
     %SNMP::Info::Layer3::FUNCS,    %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::RapidCity::FUNCS, %SNMP::Info::NortelStack::FUNCS,
     %SNMP::Info::SONMP::FUNCS,
+    'peth_port_power' => 'bspePethPsePortExtMeasuredPower',
 );
 
 # 450's report full duplex as speed = 20mbps?!
@@ -393,6 +395,14 @@ my $baystack = new SNMP::Info::Layer2::Baystack(...);
 
 =back
 
+=head2 Required MIBs
+
+=over
+
+=item F<BAY-STACK-PETH-EXT-MIBB>
+
+=back
+
 =head2 Inherited MIBs
 
 See L<SNMP::Info::SONMP/"Required MIBs"> for its MIB requirements.
@@ -509,9 +519,15 @@ revisions of Baystack firmware report all zeros for each port mac.
 Crosses C<ifName> with C<ifAlias> and returns the human set port name if
 exists.
 
-=item $poe->peth_port_ifindex()
+=item $baystack->peth_port_ifindex()
 
 Maps the C<pethPsePortTable> to C<ifIndex> by way of the F<ENTITY-MIB>.
+
+=item $baystack->peth_port_power()
+
+Power supplied by PoE ports, in milliwatts
+
+(C<bspePethPsePortExtMeasuredPower>)
 
 =back
 

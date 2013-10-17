@@ -19,11 +19,15 @@ version 3.08 ()
       subtype is "interface name".  This improves the ability to correlate
       ports by name when a port description is also set.
     * Add docs note about make_snmpdata.pl under EXTENDING SNMP::Info
+    * [#46] Brocade (Foundry) Module Support
+    * Brocade (Foundry) POE Support
+    * Support peth_port_power() power supplied by PoE ports in L2::Baystack
 
    [BUG FIXES]
 
     * [#68] Fix device_port entries for switches with non-unique
       ifDesc (Nic Bernstein)
+    * Don't try to munge undef values
 
 version 3.07 (2013-10-01)
 

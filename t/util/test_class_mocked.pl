@@ -71,8 +71,8 @@ if ( $ignore && !defined $mibdirs ) {
     pod2usage(1);
 }
 
-if ($ignore) { local $ENV{'SNMPCONFPATH'} = $EMPTY }
-if ($ignore) { local $ENV{'MIBDIRS'}      = "$mibdirs" }
+local $ENV{'SNMPCONFPATH'} = $EMPTY     if $ignore;
+local $ENV{'MIBDIRS'}      = "$mibdirs" if $ignore;
 
 if ( defined $mibdirs ) {
     SNMP::addMibDirs($mibdirs);
@@ -99,7 +99,6 @@ my $dev = $class->new(
     'AutoSpecify' => 0,
     'BulkWalk'    => 0,
     'Debug'       => $debug,
-    'MibDirs'     => $mibdirs,
     'Session'     => $mocked,
 ) or die "\n";
 
