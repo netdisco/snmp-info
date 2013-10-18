@@ -683,7 +683,7 @@ sub e_descr {
 
     my $model = $passport->model();
     my $rc_ps = $passport->rc_ps_detail() || {};
-    my $rc_ch = $passport->chassis();
+    my $rc_ch = $passport->chassis() || '';
     $rc_ch =~ s/a//;
 
     my %rc_e_descr;
