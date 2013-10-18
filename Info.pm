@@ -4360,14 +4360,7 @@ sub can {
     my $method = shift;
 
     # use results of parent can()
-    my $meth_ref = $self->SUPER::can($method);
-
-    # Don't return if passed $super as it means we were called
-    # from AUTOLOAD for a method that hasn't been generated yet.
-    if ($meth_ref) {
-        return $meth_ref
-            unless ( defined $AUTOLOAD && $AUTOLOAD =~ /SUPER::$method$/ );
-    }
+    return $self->SUPER::can($method) if $self->SUPER::can($method);
 
     my $validated = $self->_validate_autoload_method($method);
     return unless $validated;
@@ -4434,7 +4427,7 @@ subclass.
 =cut
 
 sub AUTOLOAD {
-    my $self    = shift;
+    my $self = shift;
     my ($sub_name) = $AUTOLOAD =~ /::(\w+)$/;
 
     return if $sub_name =~ /DESTROY$/;
@@ -4452,10 +4445,19 @@ sub AUTOLOAD {
         );
     }
 
+    # This enables us to use SUPER:: for AUTOLOAD methods as well
+    # as the true OO methods.  Method needs to be renamed to prevent
+    # namespace collision when we insert into the symbol table later.
+    if ( $AUTOLOAD =~ /SUPER::$sub_name$/ ) {
+        $AUTOLOAD =~ s/SUPER::$sub_name/orig_$sub_name/;
+        $sub_name = "orig_$sub_name";
+    }
+
     return unless my $meth_ref = $self->can($sub_name, @_);
     return $self->$meth_ref(@_);
 
 }
+
 1;
 
 =head1 COPYRIGHT AND LICENSE
