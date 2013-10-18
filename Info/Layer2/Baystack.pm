@@ -141,6 +141,7 @@ sub model {
     $model =~ s/^sreg-//;
     # Strip ES/ERS/BayStack etc. from those families
     $model =~ s/^(E(R)?S|BayStack|Ethernet(Routing)?Switch)-?//;
+    $model =~ s/-ethSwitchNMM//;
 
     return $model;
 }

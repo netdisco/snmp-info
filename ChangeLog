@@ -26,6 +26,7 @@ version 3.08 ()
       summarize more standard class methods
     * On EOS, the LLDP port ID is a dot1d port
     * Use LLDP in Layer3::Aruba, for switches
+    * Clean up more model names in L2::Baystack
 
    [BUG FIXES]
 
