@@ -766,6 +766,13 @@ Original Equipment Manufacturer (OEM) such as the HP ProCurve 9300 and 6300 seri
 
 See documentation in L<SNMP::Info::Layer3::HP9300> for details.
 
+=item SNMP::Info::Layer3::IBMGbTor
+
+SNMP Interface to IBM Rackswitch (formerly Blade Network Technologies)
+network devices.
+
+See documentation in L<SNMP::Info::Layer3::IBMGbTor> for details.
+
 =item SNMP::Info::Layer3::Juniper
 
 Subclass for Juniper devices
@@ -1397,6 +1404,7 @@ sub device_type {
         14525 => 'SNMP::Info::Layer2::Trapeze',
         14988 => 'SNMP::Info::Layer3::Mikrotik',
         25506 => 'SNMP::Info::Layer3::H3C',
+        26543 => 'SNMP::Info::Layer3::IBMGbTor',
         30065 => 'SNMP::Info::Layer3::Arista',
         35098 => 'SNMP::Info::Layer3::Pica8',
     );
@@ -1422,6 +1430,7 @@ sub device_type {
         14179 => 'SNMP::Info::Layer2::Airespace',
         14525 => 'SNMP::Info::Layer2::Trapeze',
         14823 => 'SNMP::Info::Layer3::Aruba',
+        26543 => 'SNMP::Info::Layer3::IBMGbTor',
     );
 
     my %l7sysoidmap = (
