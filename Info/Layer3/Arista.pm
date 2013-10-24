@@ -43,7 +43,7 @@ use SNMP::Info::LLDP;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.07_001';
+$VERSION = '3.08';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -260,6 +260,10 @@ Returns info from F<MAU-MIB>
 =item $arista->i_speed_admin()
 
 Returns info from F<MAU-MIB>
+
+=item $arista->lldp_if()
+
+Returns the mapping to the SNMP Interface Table.
 
 =back
 

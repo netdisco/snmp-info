@@ -7,7 +7,6 @@ version 3.09 ()
     * [#45] IBM (Blade Network Technologies) Rackswitch support in new class
       L3::IBMGbTor
 
-
 version 3.08 (2013-10-22)
 
    [ENHANCEMENTS]
