@@ -121,7 +121,7 @@ sub lldp_ip {
     foreach my $key ( keys %$rman_addr ) {
         my $type = $rman_type->{$key};
         next unless defined $type;
-        next unless $type == 1;
+        next unless $type eq 'ipV4';
         if ( $key =~ /^(\d+)\./ ) {
             $lldp_ip{$1} = $rman_addr->{$key};
         }
