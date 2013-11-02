@@ -143,6 +143,9 @@ sub v_index {
     return \%v_index;
 }
 
+sub i_pvid { goto &i_vlan }
+sub i_untagged { goto &i_vlan }
+
 sub i_vlan {
     my $vtp     = shift;
     my $partial = shift;
@@ -304,6 +307,19 @@ sub set_i_vlan {
     }
     $vtp->error_throw("Can't find ifIndex: $ifindex - Is it an access port?");
     return;
+}
+
+sub set_i_untagged {
+    my $vtp = shift;
+    my ( $vlan_id, $ifindex ) = @_;
+
+    my $trunking = eval { $vtp->vtp_trunk_dyn($ifindex)->{$ifindex} };
+    if ($trunking and (($trunking eq 'on') or ($trunking eq 'onNoNegotiate'))) {
+        return $vtp->set_i_pvid(@_);
+    }
+    else {
+        return $vtp->set_i_vlan(@_);
+    }
 }
 
 sub set_add_i_vlan_tagged {
@@ -539,6 +555,14 @@ Your device will only implement a subset of these methods.
 
 Returns a mapping between C<ifIndex> and assigned VLAN ID for access ports
 and the default VLAN ID for trunk ports.
+
+=item $vtp->i_pvid()
+
+An alias for C<i_vlan>.
+
+=item $vtp->i_untagged()
+
+An alias for C<i_vlan>.
 
 =item $vtp->i_vlan_membership()
 
@@ -834,6 +858,12 @@ port C<ifIndex>.  This method should only be used on trunk ports.
   my %if_map = reverse %{$vtp->interfaces()};
   $vtp->set_i_pvid('2', $if_map{'FastEthernet0/1'}) 
     or die "Couldn't change port default VLAN. ",$vtp->error(1);
+
+=item $vtp->set_i_untagged ( vlan, ifIndex )
+
+This method attempts to work out whether the port referenced by ifIndex is
+trunking, and if so will return the value of C<set_i_pvid>. Otherwise, the
+value of C<set_i_vlan> is returned.
 
 =item $vtp->set_add_i_vlan_tagged ( vlan, ifIndex )
 
