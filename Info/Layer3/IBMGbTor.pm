@@ -80,7 +80,7 @@ $VERSION = '3.07_001';
 
     # IBM-GbTOR-10G-L2L3-MIB::lldpInfoRemoteDevicesTable
     'lldp_rem_id_type'  => 'lldpInfoRemoteDevicesChassisSubtype',
-    'lldp_rem_id'       => 'lldpInfoRemoteDevicesChassisId',
+    'lldp_rem_id'       => 'lldpInfoRemoteDevicesSystemName',
     'lldp_rem_pid_type' => 'lldpInfoRemoteDevicesPortSubtype',
     'lldp_rem_pid'      => 'lldpInfoRemoteDevicesPortId',
     'lldp_rem_desc'     => 'lldpInfoRemoteDevicesPortDescription',
@@ -146,9 +146,10 @@ sub lldp_if {
     # prefer ifAlias over ifDescr since MIB says 'alias'.
         my $desc = $lldp_desc->{$key};
         next unless $desc;
-        my $port;
+        my $port = $desc;
 
-# If cross reference is successful use it, otherwise stick with lldpRemLocalPortNum
+    # If cross reference is successful use it, otherwise stick with
+    # lldpRemLocalPortNum
         if ( exists $r_i_alias{$desc} ) {
             $port = $r_i_alias{$desc};
         }
@@ -159,6 +160,13 @@ sub lldp_if {
         $lldp_if{$key} = $port;
     }
     return \%lldp_if;
+}
+
+sub lldp_platform {
+    my $ibm = shift;
+    my $partial = shift;
+
+    return $ibm->lldpInfoRemoteDevicesSystemDescription($partial);
 }
 
 sub i_ignore {
@@ -334,17 +342,6 @@ the device would not return any useful topology information.
 
 Checks to see if at least one interface is enabled to receive LLDP packets.
 
-=item $lldp->lldp_if()
-
-Returns the mapping to the SNMP Interface Table. Tries to cross reference 
-(C<lldpInfoRemoteDevicesLocalPort>) with (C<ifDescr>) and (C<ifAlias>)
-to get (C<ifIndex>).
-
-=item  $lldp->lldp_ip()
-
-Returns remote IPv4 address.  Returns for all other address types, use
-lldp_addr if you want any return address type.
-
 =back
 
 =head2 Global Methods imported from SNMP::Info::Layer3
@@ -379,6 +376,23 @@ Ignores interfaces with descriptions of tunnel, loopback, and null.
 Returns reference to hash of interface link duplex status. 
 
 (C<portInfoMode>)
+
+=item $ibm->lldp_if()
+
+Returns the mapping to the SNMP Interface Table. Tries to cross reference 
+(C<lldpInfoRemoteDevicesLocalPort>) with (C<ifDescr>) and (C<ifAlias>)
+to get (C<ifIndex>).
+
+=item $ibm->lldp_ip()
+
+Returns remote IPv4 address.  Returns for all other address types, use
+lldp_addr if you want any return address type.
+
+=item $ibm->lldp_platform()
+
+Returns remote device system description.
+
+(C<lldpInfoRemoteDevicesSystemDescription>)
 
 =back
 
