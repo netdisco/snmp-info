@@ -143,9 +143,6 @@ sub v_index {
     return \%v_index;
 }
 
-sub i_pvid { goto &i_vlan }
-sub i_untagged { goto &i_vlan }
-
 sub i_vlan {
     my $vtp     = shift;
     my $partial = shift;
@@ -192,6 +189,22 @@ sub i_vlan {
     }
 
     return \%i_vlans;
+}
+
+sub i_untagged {
+    my $vtp = shift;
+    my ( $ifindex ) = @_;
+
+    # cannot defer to i_vlan - vtp_trunk_dyn_stat is not useful for down ports
+    # so we use vtp_trunk_dyn as a hint to use i_pvid
+
+    my $trunking = eval { $vtp->vtp_trunk_dyn($ifindex)->{$ifindex} };
+    if ($trunking and (($trunking eq 'on') or ($trunking eq 'onNoNegotiate'))) {
+        return $vtp->i_pvid(@_);
+    }
+    else {
+        return $vtp->i_vlan(@_);
+    }
 }
 
 sub i_vlan_membership {
@@ -312,6 +325,9 @@ sub set_i_vlan {
 sub set_i_untagged {
     my $vtp = shift;
     my ( $vlan_id, $ifindex ) = @_;
+
+    # cannot defer to i_vlan - vtp_trunk_dyn_stat is not useful for down ports
+    # so we use vtp_trunk_dyn as a hint to use i_pvid
 
     my $trunking = eval { $vtp->vtp_trunk_dyn($ifindex)->{$ifindex} };
     if ($trunking and (($trunking eq 'on') or ($trunking eq 'onNoNegotiate'))) {
@@ -555,10 +571,6 @@ Your device will only implement a subset of these methods.
 
 Returns a mapping between C<ifIndex> and assigned VLAN ID for access ports
 and the default VLAN ID for trunk ports.
-
-=item $vtp->i_pvid()
-
-An alias for C<i_vlan>.
 
 =item $vtp->i_untagged()
 

@@ -308,6 +308,8 @@ sub i_vlan {
     return $i_vlan;
 }
 
+sub i_untagged { goto &i_vlan }
+
 sub i_vlan_membership {
     my $bridge  = shift;
     my $partial = shift;
@@ -364,6 +366,8 @@ sub set_i_vlan {
     $bridge->error_throw("VLAN set not supported.");
     return;
 }
+
+sub set_i_untagged { goto &set_i_vlan }
 
 sub set_add_i_vlan_tagged {
     my $bridge = shift;
@@ -596,6 +600,10 @@ to a hash.
 =item $bridge->i_vlan()
 
 Returns a mapping between C<ifIndex> and the PVID or default VLAN.
+
+=item $vtp->i_untagged()
+
+An alias for C<i_vlan>.
 
 =item $bridge->i_vlan_membership()
 
@@ -892,6 +900,10 @@ operations.
 =item $bridge->set_i_vlan(vlan, ifIndex)
 
 Currently unsupported.  Throws an error and returns.
+
+=item $bridge->set_i_untagged(vlan, ifIndex)
+
+An alias for C<set_i_vlan>.
 
 =item $bridge->set_i_pvid(pvid, ifIndex)
 
