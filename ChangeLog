@@ -8,6 +8,11 @@ version 3.09 ()
       L3::IBMGbTor
     * [] set_i_untagged combines both set_i_vlan and set_i_pvid in one method
 
+   [BUG FIXES]
+
+    * Modify _xos_i_vlan_membership() in L3::Extreme to only include tagged
+      ports
+
 version 3.08 (2013-10-22)
 
    [ENHANCEMENTS]
