@@ -688,42 +688,52 @@ sub i_ssidmac {
     foreach my $oid ( keys %$ssidlist ) {
 
         my @parts    = split( /\./, $oid );
-        my $ssid_idx = pop (@parts);
-        my $slot     = pop (@parts);
-        my $last     = pop (@parts);
+        my $ssid_idx = pop(@parts);
+        my $slot     = pop(@parts);
+        my $last     = pop(@parts);
 
         my $iid = $oid;
+
         # Get radio band
         $iid =~ s/\.\d+$//;
         my $ap_type = $apif_type->{$iid};
+
         # Determine if IOS based
         $iid =~ s/\.\d+$//;
         my $ios = $ap_ios->{$iid} || '';
-        
-        # Four cases:
-        # IOS and 2.4Ghz count up, starts at zero
-        if ($ios and $ap_type =~ /b$/) {
-            $last = $last + ($ssid_idx - 1);
+
+        # 17 can be used as index for 3rd Party AP's.  We only have one
+        # hexadecimal digit to work with so skip if outside the range
+        if ( $ssid_idx > 0 and $ssid_idx < 17 ) {
+
+            # Four cases:
+            # IOS and 2.4Ghz count up, starts at zero
+            if ( $ios and $ap_type =~ /b$/ ) {
+                $last = $last + ( $ssid_idx - 1 );
+            }
+
+            # IOS and 5Ghz - count down from maximum of 16
+            elsif ( $ios and $ap_type =~ /a$/ ) {
+                $last = $last + ( 16 - $ssid_idx );
+            }
+
+            # VxWorks and 5Ghz - count up, starts at zero
+            elsif ( $ios and $ap_type =~ /a$/ ) {
+                $last = $last + ( $ssid_idx - 1 );
+            }
+
+            # VxWorks and 2.4Ghz - count down from maximum of 16
+            else {
+                $last = $last + ( 16 - $ssid_idx );
+            }
         }
-        # IOS and 5Ghz - count down from maximum of 16
-        elsif ($ios and $ap_type =~ /a$/) {
-            $last = $last + (16 - $ssid_idx);
-        }
-        # VxWorks and 5Ghz - count up, starts at zero
-        elsif ($ios and $ap_type =~ /a$/) {
-            $last = $last + ($ssid_idx - 1);
-        }
-        # VxWorks and 2.4Ghz - count down from maximum of 16
-        else {
-            $last = $last + (16 - $ssid_idx);
-        }
-        
-       push (@parts, $last);
-       my $bssid = join( ':', map { sprintf( "%02x", $_ ) } @parts );
-       $i_ssidmac{$oid} = $bssid;
+
+        push( @parts, $last );
+        my $bssid = join( ':', map { sprintf( "%02x", $_ ) } @parts );
+        $i_ssidmac{$oid} = $bssid;
     }
 
-   return \%i_ssidmac;
+    return \%i_ssidmac;
 }
 
 sub i_80211channel {

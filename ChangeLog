@@ -16,6 +16,9 @@ version 3.09 ()
 
     * Modify _xos_i_vlan_membership() in L3::Extreme to only include tagged
       ports
+    * When determining the BSSID in Airespace there is only one hexadecimal
+      digit available so skip if outside the range of 1-16, 17 is reserved
+      for 3rd party AP's.
 
 version 3.08 (2013-10-22)
 
