@@ -8,6 +8,10 @@ version 3.09 ()
       L3::IBMGbTor
     * [] set_i_untagged combines both set_i_vlan and set_i_pvid in one method
 
+   [ENHANCEMENTS]
+
+    * Remove "Switch" from model name in L3::Foundry
+
    [BUG FIXES]
 
     * Modify _xos_i_vlan_membership() in L3::Extreme to only include tagged
