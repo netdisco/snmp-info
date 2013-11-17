@@ -205,19 +205,24 @@ sub i_ignore {
 sub serial {
     my $l3 = shift;
 
-    my $serial1  = $l3->serial1();
-    my $e_descr  = $l3->e_descr() || {};
-    my $e_serial = $l3->e_serial() || {};
+    my $serial1 = $l3->serial1();
+    my $e_parent = $l3->e_parent() || {};
 
-    my $serial2 = $e_serial->{1} || undef;
-    my $chassis = $e_descr->{1}  || undef;
-
-    # precedence
-    #   serial2,chassis parse,serial1
-    return $serial2 if ( defined $serial2 and $serial2 !~ /^\s*$/ );
-
-    if ( defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i ) {
-        return $1;
+    foreach my $iid ( keys %$e_parent ) {
+        my $parent = $e_parent->{$iid};
+        if ( $parent eq '0' ) {
+            my $serial = $l3->e_serial($iid);
+            if ( $serial ) {
+                return $serial->{$iid};
+            }
+            else {
+                my $descr = $l3->e_descr($iid);
+                if ( $descr and $descr =~ /serial#?:\s*([a-z0-9]+)/i )
+                {
+                    return $1;
+                }
+            }
+        }
     }
 
     return $serial1 if ( defined $serial1 and $serial1 !~ /^\s*$/ );
