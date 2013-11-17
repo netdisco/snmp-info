@@ -103,6 +103,7 @@ sub os {
     # order here matters - there are Catalysts that run IOS and have catalyst
     # in their description field, as well as Catalysts that run IOS-XE.
     return 'ios-xe'   if ( $descr =~ /IOS-XE/ );
+    return 'ios-xr'   if ( $descr =~ /IOS XR/ );
     return 'ios'      if ( $descr =~ /IOS/ );
     return 'catalyst' if ( $descr =~ /catalyst/i );
     return 'css'      if ( $descr =~ /Content Switch SW/ );
@@ -198,6 +199,13 @@ sub os_ver {
         return $1;
     }
 
+    if ( defined $os
+        and $os eq 'ios-xr'
+        and defined $descr
+        and $descr =~ m/Version (\d+[\.\d]+)/ )
+    {
+        return $1;
+    }
 
     # Newer Catalysts and IOS devices
     if ( defined $descr
@@ -409,6 +417,7 @@ Available values:
 
  'ios'          for Cisco IOS
  'ios-xe'       for Cisco IOS XE
+ 'ios-xr'       for Cisco IOS XR
  'pix'          for Cisco PIX
  'asa'          for Cisco ASA
  'fwsm'         for Single-mode FWSM
