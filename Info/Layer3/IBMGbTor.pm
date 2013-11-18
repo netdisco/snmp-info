@@ -302,8 +302,8 @@ These are methods that return scalar value from SNMP
 
 =item $ibm->model()
 
-Returns model type.  Attemps to pull model from device description.
-Otherwsie checks $ibm->id() against the F<IBM-GbTOR-10G-L2L3-MIB>.
+Returns model type.  Attempts to pull model from device description.
+Otherwise checks $ibm->id() against the F<IBM-GbTOR-10G-L2L3-MIB>.
 
 =item $ibm->vendor()
 
