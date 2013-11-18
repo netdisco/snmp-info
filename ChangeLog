@@ -7,11 +7,13 @@ version 3.09 ()
     * [#45] IBM (Blade Network Technologies) Rackswitch support in new class
       L3::IBMGbTor
     * [] set_i_untagged combines both set_i_vlan and set_i_pvid in one method
+    * [#41] Riverbed Steelhead support added in new class L3::Steelhead
 
    [ENHANCEMENTS]
 
     * Remove "Switch" from model name in L3::Foundry
-    * Add identification of IOS XR and version in CiscoStats
+    * [#49] IOS-XR support, add identification of IOS XR and version in
+      CiscoStats
 
    [BUG FIXES]
 

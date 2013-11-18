@@ -851,6 +851,11 @@ See documentation in L<SNMP::Info::Layer3::Pica8> for details.
 Subclass for generic SonicWALL devices. See documentation in
 L<SNMP::Info::Layer3::SonicWALL> for details.
 
+=item SNMP::Info::Layer3::Steelhead
+
+Subclass for  Riverbed Steelhead WAN optimization appliances. See
+documentation in L<SNMP::Info::Layer3::Steelhead> for details.
+
 =item SNMP::Info::Layer3::Sun
 
 Subclass for Generic Sun Routers running SunOS.
@@ -1403,6 +1408,7 @@ sub device_type {
         12325 => 'SNMP::Info::Layer3::Pf',
         14525 => 'SNMP::Info::Layer2::Trapeze',
         14988 => 'SNMP::Info::Layer3::Mikrotik',
+        17163 => 'SNMP::Info::Layer3::Steelhead',
         25506 => 'SNMP::Info::Layer3::H3C',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
         30065 => 'SNMP::Info::Layer3::Arista',
@@ -1430,6 +1436,7 @@ sub device_type {
         14179 => 'SNMP::Info::Layer2::Airespace',
         14525 => 'SNMP::Info::Layer2::Trapeze',
         14823 => 'SNMP::Info::Layer3::Aruba',
+        17163 => 'SNMP::Info::Layer3::Steelhead',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
     );
 
