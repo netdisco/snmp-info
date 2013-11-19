@@ -625,35 +625,49 @@ sub i_ssidmac {
 # Wired switches currently (AOS 7.2.0.0) do, but it seems only for
 # dot1q ports or access ports that are 'untrusted' ?
 sub bp_index {
-    my $aruba   = shift;
-    my $partial = shift;
+	my $aruba   = shift;
+	my $partial = shift;
 
-    my $i_index    = $aruba->orig_i_index($partial)        || {};
-    my $essid_ssid = $aruba->aruba_ap_bssid_ssid($partial) || {};
+	my $i_index    = $aruba->ifExtPortIfIndex($partial)    || {};
+	my $essid_ssid = $aruba->aruba_ap_bssid_ssid($partial) || {};
 
-    # Collect standard bp_index first
-    my $wired_bp_index = $aruba->SUPER::bp_index($partial) || {};
-    my %bp_index = %$wired_bp_index;
+	# Collect standard bp_index first
+	my $wired_bp_index = $aruba->SUPER::bp_index($partial) || {};
+	my %bp_index;
+	my %offset;
 
-    foreach my $iid ( keys %$i_index ) {
-	my $index = $i_index->{$iid};
-	next unless defined $index;
+	foreach my $iid ( keys %$wired_bp_index ) {
+		my $index = $wired_bp_index->{$iid};
+		my $delta = $iid - $index;
 
-	# Only augment bp_index, don't overwrite any existing mappings
-	next if exists $bp_index{$iid};
+		$offset{$delta}++;
+		$bp_index{$iid} = $index;
+	}
 
-	$bp_index{$iid} = $index;
-    }
+	# If the offset between dot1dBasePortIfIndex and ifIndex is consistent
+	# add potentially missing mappings
+	if ( keys %offset == 1 ) {
+		foreach my $iid ( keys %$i_index ) {
+			my $index = $i_index->{$iid};
+			next unless defined $index;
 
-    # Get Attached APs as Interfaces
-    foreach my $oid ( keys %$essid_ssid ) {
-	my @parts = split( /\./, $oid );
-	my $iid = join( ".", splice( @parts, 0, 7 ) );
-	my $bssid = join( '.', @parts );
+			# Only augment bp_index, don't overwrite any existing mappings
+			my $iid = (keys %offset)[0] + $index;
+			next if exists $bp_index{$iid};
 
-	$bp_index{$bssid} = $iid;
-    }
-    return \%bp_index;
+			$bp_index{$iid} = $index;
+		}
+	}
+
+	# Get Attached APs as Interfaces
+	foreach my $oid ( keys %$essid_ssid ) {
+		my @parts = split( /\./, $oid );
+		my $iid = join( ".", splice( @parts, 0, 7 ) );
+		my $bssid = join( '.', @parts );
+
+		$bp_index{$bssid} = $iid;
+	}
+	return \%bp_index;
 }
 
 sub fw_port {
