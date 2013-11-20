@@ -47,6 +47,7 @@ $VERSION = '3.08';
     %SNMP::Info::LLDP::MIBS,
     'WLSR-AP-MIB'        => 'wlsrHideSSID',
     'WLSX-IFEXT-MIB'     => 'ifExtVlanName',
+    'WLSX-POE-MIB'       => 'wlsxPseSlotPowerAvailable',
     'WLSX-SWITCH-MIB'    => 'wlsxHostname',
     'WLSX-SYSTEMEXT-MIB' => 'wlsxSysExtSwitchBaseMacaddress',
     'WLSX-USER-MIB'      => 'nUserCurrentVlan',
@@ -58,9 +59,10 @@ $VERSION = '3.08';
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
-    'aruba_serial' => 'wlsxSwitchLicenseSerialNumber',
-    'aruba_model'  => 'wlsxModelName',
-    'mac'          => 'wlsxSysExtSwitchBaseMacaddress',
+    'aruba_serial_old' => 'wlsxSwitchLicenseSerialNumber',
+    'aruba_serial_new' => 'wlsxSysExtLicenseSerialNumber',
+    'aruba_model'      => 'wlsxModelName',
+    'mac'              => 'wlsxSysExtSwitchBaseMacaddress',
 );
 
 %FUNCS = (
@@ -80,7 +82,7 @@ $VERSION = '3.08';
     'aruba_if_vlan_member' => 'ifExtVlanMemberStatus',
 
     # WLSX-IFEXT-MIB::::wlsxIfExtVlanTable
-    'v_name' => 'ifExtVlanName',
+    'aruba_v_name' => 'ifExtVlanName',
 
     # Other cd11_ methods are indexed by staPhyAddress, we need to
     # strip staAccessPointBSSID from the aruba_cd11_ methods.
@@ -198,7 +200,7 @@ sub model {
 sub serial {
     my $aruba = shift;
 
-    return $aruba->aruba_serial();
+    return $aruba->aruba_serial_old() || $aruba->aruba_serial_new();
 }
 
 # Thin APs do not support ifMIB requirement
@@ -454,86 +456,103 @@ sub i_duplex {
 }
 
 sub v_index {
-    my $aruba   = shift;
-    my $partial = shift;
+	my $aruba   = shift;
+	my $partial = shift;
 
-    my $v_name = $aruba->v_name($partial);
-    my %v_index;
-    foreach my $idx ( keys %$v_name ) {
-	$v_index{$idx} = $idx;
-    }
-    return \%v_index;
+	return $aruba->SUPER::v_index($partial)
+		if keys %{ $aruba->SUPER::v_index($partial) };
+
+	my $v_name = $aruba->v_name($partial);
+	my %v_index;
+	foreach my $idx ( keys %$v_name ) {
+		$v_index{$idx} = $idx;
+	}
+	return \%v_index;
+}
+
+sub v_name {
+	my $aruba   = shift;
+	my $partial = shift;
+
+	return $aruba->SUPER::v_name() || $aruba->aruba_v_name();
 }
 
 sub i_vlan {
-    my $aruba   = shift;
-    my $partial = shift;
+	my $aruba   = shift;
+	my $partial = shift;
 
-    my $index = $aruba->aruba_if_idx();
+	return $aruba->SUPER::i_vlan($partial)
+		if keys %{ $aruba->SUPER::i_vlan($partial) };
 
-    if ($partial) {
-	my %r_index = reverse %$index;
-	$partial = $r_index{$partial};
-    }
+	my $index = $aruba->aruba_if_idx();
 
-    my $i_pvid = $aruba->aruba_if_pvid($partial) || {};
-    my %i_vlan;
+	if ($partial) {
+		my %r_index = reverse %$index;
+		$partial = $r_index{$partial};
+	}
 
-    foreach my $port ( keys %$i_pvid ) {
-	my $vlan    = $i_pvid->{$port};
-	my $ifindex = $index->{$port};
-	next unless defined $ifindex;
+	my $i_pvid = $aruba->aruba_if_pvid($partial) || {};
+	my %i_vlan;
 
-	$i_vlan{$ifindex} = $vlan;
-    }
+	foreach my $port ( keys %$i_pvid ) {
+		my $vlan    = $i_pvid->{$port};
+		my $ifindex = $index->{$port};
+		next unless defined $ifindex;
 
-    return \%i_vlan;
+		$i_vlan{$ifindex} = $vlan;
+	}
+
+	return \%i_vlan;
 }
 
 sub i_vlan_membership {
-    my $aruba = shift;
+	my $aruba   = shift;
+	my $partial = shift;
 
-    my $essid_ssid = $aruba->aruba_ap_bssid_ssid();
-    my $ssid_vlans = $aruba->aruba_ssid_vlan();
-    my $if_vlans   = $aruba->aruba_if_vlan_member();
+	return $aruba->SUPER::i_vlan_membership($partial)
+		if keys %{ $aruba->SUPER::i_vlan_membership($partial) };
 
-    my %vlan_essid;
+	my $essid_ssid = $aruba->aruba_ap_bssid_ssid();
+	my $ssid_vlans = $aruba->aruba_ssid_vlan();
+	my $if_vlans   = $aruba->aruba_if_vlan_member();
 
-    # Create a hash of vlan and textual ssid
-    # Possible to have more than one vlan per ssid
-    foreach my $oid ( keys %$ssid_vlans ) {
-	my @parts   = split( /\./, $oid );
-	my $ssidlen = shift(@parts);
-	my $ssid    = pack( "C*", splice( @parts, 0, $ssidlen ) );
+	my %vlan_essid;
 
-	# Remove any control chars
-	$ssid =~ s/[[:cntrl:]]//g;
-	my $vlan = shift(@parts);
+	# Create a hash of vlan and textual ssid
+	# Possible to have more than one vlan per ssid
+	foreach my $oid ( keys %$ssid_vlans ) {
+		my @parts   = split( /\./, $oid );
+		my $ssidlen = shift(@parts);
+		my $ssid    = pack( "C*", splice( @parts, 0, $ssidlen ) );
 
-	$vlan_essid{$vlan} = $ssid;
-    }
+		# Remove any control chars
+		$ssid =~ s/[[:cntrl:]]//g;
+		my $vlan = shift(@parts);
 
-    my $i_vlan_membership = {};
-
-    # Handle physical ports first
-    foreach my $oid ( keys %$if_vlans ) {
-	my @parts   = split( /\./, $oid );
-	my $vlan    = shift(@parts);
-	my $ifindex = shift(@parts);
-	push( @{ $i_vlan_membership->{$ifindex} }, $vlan );
-    }
-
-    foreach my $oid ( keys %$essid_ssid ) {
-	my $ssid  = $essid_ssid->{$oid};
-	my @parts = split( /\./, $oid );
-	my $idx   = join( ".", @parts[ 0 .. 6 ] );
-
-	my @vlans = grep { $vlan_essid{$_} eq $ssid } keys %vlan_essid;
-	foreach my $vlan (@vlans) {
-	    push( @{ $i_vlan_membership->{$idx} }, $vlan );
+		$vlan_essid{$vlan} = $ssid;
 	}
-    }
-    return $i_vlan_membership;
+
+	my $i_vlan_membership = {};
+
+	# Handle physical ports first
+	foreach my $oid ( keys %$if_vlans ) {
+		my @parts   = split( /\./, $oid );
+		my $vlan    = shift(@parts);
+		my $ifindex = shift(@parts);
+		push( @{ $i_vlan_membership->{$ifindex} }, $vlan );
+	}
+
+	foreach my $oid ( keys %$essid_ssid ) {
+		my $ssid  = $essid_ssid->{$oid};
+		my @parts = split( /\./, $oid );
+		my $idx   = join( ".", @parts[ 0 .. 6 ] );
+
+		my @vlans = grep { $vlan_essid{$_} eq $ssid } keys %vlan_essid;
+		foreach my $vlan (@vlans) {
+			push( @{ $i_vlan_membership->{$idx} }, $vlan );
+		}
+	}
+	return $i_vlan_membership;
 }
 
 sub i_80211channel {
@@ -1013,7 +1032,7 @@ sub e_serial {
     my %e_serial;
 
     # Chassis
-    $e_serial{0} = $aruba->aruba_serial();
+    $e_serial{0} = $aruba->serial() || '';
 
     # Cards
     foreach my $iid ( keys %$card_serial ) {
@@ -1137,6 +1156,175 @@ sub munge_aruba_fqln {
     return $loc;
 }
 
+# The index of wlsxPsePortTable is wlsxPsePortIndex which equals
+# ifIndex; however, to emulate POWER-ETHERNET-MIB we need a "module.port"
+# index.  If ifDescr has the format x/x/x use it to determine the module
+# otherwise default to 1.  Unfortunately, this means we can't map any
+# wlsxPsePortTable leafs directly and partials will not be supported.
+sub peth_port_ifindex {
+    my $aruba = shift;
+
+    my $indexes = $aruba->wlsxPsePortAdminStatus();
+    my $descrs  = $aruba->i_description();
+
+    my $peth_port_ifindex = {};
+    foreach my $i ( keys %$indexes ) {
+        my $descr = $descrs->{$i};
+        next unless $descr;
+
+        my $new_idx = "1.$i";
+
+        if ( $descr =~ /(\d+)\/\d+\/\d+/ ) {
+            $new_idx = "$1.$i";
+        }
+        $peth_port_ifindex->{$new_idx} = $i;
+    }
+    return $peth_port_ifindex;
+}
+
+sub peth_port_admin {
+    my $aruba = shift;
+
+    my $p_index      = $aruba->peth_port_ifindex()     || {};
+    my $admin_states = $aruba->wlsxPsePortAdminStatus() || {};
+
+    my $peth_port_admin = {};
+    foreach my $i ( keys %$p_index ) {
+        my ( $module, $port ) = split( /\./, $i );
+        my $state = $admin_states->{$port};
+
+        if ( $state =~ /enable/ ) {
+            $peth_port_admin->{$i} = 'true';
+        }
+        else {
+            $peth_port_admin->{$i} = 'false';
+        }
+    }
+    return $peth_port_admin;
+}
+
+sub peth_port_neg_power {
+    my $aruba = shift;
+
+    my $p_index    = $aruba->peth_port_ifindex()         || {};
+    my $port_alloc = $aruba->wlsxPsePortPowerAllocated() || {};
+
+    my $peth_port_neg_power = {};
+    foreach my $i ( keys %$p_index ) {
+        my ( $module, $port ) = split( /\./, $i );
+        my $power = $port_alloc->{$port};
+        next unless $power;
+
+        $peth_port_neg_power->{$i} = $power;
+    }
+    return $peth_port_neg_power;
+}
+
+sub peth_port_power {
+    my $aruba = shift;
+
+    my $p_index       = $aruba->peth_port_ifindex()        || {};
+    my $port_consumed = $aruba->wlsxPsePortPowerConsumed() || {};
+
+    my $peth_port_power = {};
+    foreach my $i ( keys %$p_index ) {
+        my ( $module, $port ) = split( /\./, $i );
+        my $power = $port_consumed->{$port};
+        next unless $power;
+
+        $peth_port_power->{$i} = $power;
+    }
+    return $peth_port_power;
+}
+
+sub peth_port_class {
+    my $aruba = shift;
+
+    my $p_index    = $aruba->peth_port_ifindex()  || {};
+    my $port_class = $aruba->wlsxPsePortPdClass() || {};
+
+    my $peth_port_class = {};
+    foreach my $i ( keys %$p_index ) {
+        my ( $module, $port ) = split( /\./, $i );
+        my $power = $port_class->{$port};
+        next unless $power;
+
+        $peth_port_class->{$i} = $power;
+    }
+    return $peth_port_class;
+}
+
+sub peth_port_status {
+    my $aruba = shift;
+
+    my $p_index      = $aruba->peth_port_ifindex() || {};
+    my $admin_states = $aruba->wlsxPsePortState()  || {};
+
+    my $peth_port_status = {};
+    foreach my $i ( keys %$p_index ) {
+        my ( $module, $port ) = split( /\./, $i );
+        my $state = $admin_states->{$port};
+
+        if ( $state eq 'on' ) {
+            $peth_port_status->{$i} = 'deliveringPower';
+        }
+        else {
+            $peth_port_status->{$i} = 'disabled';
+        }
+    }
+    return $peth_port_status;
+}
+
+sub peth_power_status {
+    my $aruba   = shift;
+    my $partial = shift;
+
+    my $watts = $aruba->wlsxPseSlotPowerAvailable($partial) || {};
+
+	my $offset = (exists $watts->{0}) ? 1 : 0;
+
+    my $peth_power_status = {};
+    foreach my $i ( keys %$watts ) {
+        $peth_power_status->{"$i + $offset"} = 'on';
+    }
+    return $peth_power_status;
+}
+
+sub peth_power_watts {
+    my $aruba   = shift;
+    my $partial = shift;
+
+    my $watts_total = $aruba->wlsxPseSlotPowerAvailable($partial) || {};
+
+    my $offset = (exists $watts_total->{0}) ? 1 : 0;
+
+    my $peth_power_watts = {};
+    foreach my $i ( keys %$watts_total ) {
+        my $total = $watts_total->{$i};
+        next unless $total;
+
+        $peth_power_watts->{"$i + $offset"} = $total;
+    }
+    return $peth_power_watts;
+}
+
+sub peth_power_consumption {
+    my $aruba   = shift;
+
+    my $watts = $aruba->wlsxPseSlotPowerConsumption() || {};
+
+    my $offset = (exists $watts->{0}) ? 1 : 0;
+
+    my $peth_power_consumed = {};
+    foreach my $i ( keys %$watts ) {
+        my $total = $watts->{$i};
+        next unless $total;
+
+        $peth_power_consumed->{$i + $offset} = $total;
+    }
+    return $peth_power_consumed;
+}
+
 1;
 
 __END__
@@ -1196,6 +1384,8 @@ after determining a more specific class using the method above.
 
 =item F<WLSX-IFEXT-MIB>
 
+=item F<WLSX-POE-MIB>
+
 =item F<WLSX-SWITCH-MIB>
 
 =item F<WLSX-SYSTEMEXT-MIB>
@@ -1247,7 +1437,7 @@ Thin APs through proprietary MIBs.
 =item $aruba->serial()
 
 Returns the device serial number extracted
-from C<wlsxSwitchLicenseSerialNumber>
+from C<wlsxSwitchLicenseSerialNumber> or C<wlsxSysExtLicenseSerialNumber>
 
 =back
 
@@ -1381,7 +1571,11 @@ only.
 
 =item $aruba->v_index()
 
-Returns VLAN IDs
+Returns VLAN IDs.
+
+=item $aruba->v_name()
+
+Human-entered name for vlans.
 
 =item $aruba->i_vlan()
 
@@ -1472,6 +1666,70 @@ APs.
 
 Returns reference to hash.  Key: IID, Value: The value of e_index() for the
 entity which 'contains' this entity.
+
+=back
+
+=head2 Power Over Ethernet Port Table
+
+These methods emulate the F<POWER-ETHERNET-MIB> Power Source Entity (PSE)
+Port Table C<pethPsePortTable> methods using the F<WLSX-POE-MIB> Power
+over Ethernet Port Table C<wlsxPsePortTable>.
+
+=over
+
+=item $aruba->peth_port_ifindex()
+
+Creates an index of module.port to align with the indexing of the
+C<wlsxPsePortTable> with a value of C<ifIndex>.  The module defaults 1
+if otherwise unknown.
+
+=item $aruba->peth_port_admin()
+
+Administrative status: is this port permitted to deliver power?
+
+C<wlsxPsePortAdminStatus>
+
+=item $aruba->peth_port_status()
+
+Current status: is this port delivering power.
+
+=item $aruba->peth_port_class()
+
+Device class: if status is delivering power, this represents the 802.3af
+class of the device being powered.
+
+=item $aruba->peth_port_neg_power()
+
+The power, in milliwatts, that has been committed to this port.
+This value is derived from the 802.3af class of the device being
+powered.
+
+=item $aruba->peth_port_power()
+
+The power, in milliwatts, that the port is delivering.
+
+=back
+
+=head2 Power Over Ethernet Module Table
+
+These methods emulate the F<POWER-ETHERNET-MIB> Main Power Source Entity
+(PSE) Table C<pethMainPseTable> methods using the F<WLSX-POE-MIB> Power
+over Ethernet Port Table C<wlsxPseSlotTable>.
+
+=over
+
+=item $aruba->peth_power_watts()
+
+The power supply's capacity, in watts.
+
+=item $aruba->peth_power_status()
+
+The power supply's operational status.
+
+=item $aruba->peth_power_consumption()
+
+How much power, in watts, this power supply has been committed to
+deliver.
 
 =back
 

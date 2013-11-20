@@ -14,6 +14,9 @@ version 3.09 ()
     * Remove "Switch" from model name in L3::Foundry
     * [#49] IOS-XR support, add identification of IOS XR and version in
       CiscoStats
+    * Aruba POE Support
+    * Aruba utilizes Q-BRIDGE-MIB when available for VLAN information to
+      better support wired switches
 
    [BUG FIXES]
 
@@ -23,6 +26,7 @@ version 3.09 ()
       digit available so skip if outside the range of 1-16, 17 is reserved
       for 3rd party AP's
     * Don't assume entity index 1 is the chassis and has serial in Layer3
+    * Capture serial number on newer Aruba devices 
 
 version 3.08 (2013-10-22)
 
