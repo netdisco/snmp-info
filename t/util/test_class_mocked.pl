@@ -286,7 +286,7 @@ sub mock_getnext {
 	    my $val     = $EMPTY;
 	    my $data    = $c_data->{$leaf};
 	    my $count   = scalar keys %{$data} || 0;
-	    if ( $count > 1 ) {
+	    if ( $count ) {
 		my $found = 0;
 		foreach my $d_iid ( sort keys %{$data} ) {
 		    if ( $d_iid gt $iid && !$found ) {
