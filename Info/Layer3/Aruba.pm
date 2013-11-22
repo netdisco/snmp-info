@@ -1285,7 +1285,7 @@ sub peth_power_status {
 
     my $peth_power_status = {};
     foreach my $i ( keys %$watts ) {
-        $peth_power_status->{"$i + $offset"} = 'on';
+        $peth_power_status->{$i + $offset} = 'on';
     }
     return $peth_power_status;
 }
@@ -1303,7 +1303,7 @@ sub peth_power_watts {
         my $total = $watts_total->{$i};
         next unless $total;
 
-        $peth_power_watts->{"$i + $offset"} = $total;
+        $peth_power_watts->{$i + $offset} = $total;
     }
     return $peth_power_watts;
 }
