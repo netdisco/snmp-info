@@ -2632,7 +2632,8 @@ sub c_id {
 
 Returns reference to hash.  Key: iid, Value: Remote Device Type
 
-Note:  LLDP and EDP do not provide this information.
+Note:  EDP does not provide this information.  LLDP uses (C<lldpRemSysDesc>)
+as the closest match.
 
 =cut
 

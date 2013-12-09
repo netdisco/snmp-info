@@ -227,6 +227,13 @@ sub lldp_id {
     return \%lldp_id;
 }
 
+sub lldp_platform {
+    my $lldp    = shift;
+    my $partial = shift;
+
+    return $lldp->lldp_rem_sysdesc($partial);
+}
+
 #sub root_ip {
 #    my $lldp = shift;
 #
@@ -439,6 +446,10 @@ Currently only returns IPv4 or MAC addresses.
 =item $lldp->lldp_port()
 
 Returns remote port ID
+
+=item $lldp->lldp_platform()
+
+Alias for C<lldp_rem_sysdesc()>.
 
 =back
 

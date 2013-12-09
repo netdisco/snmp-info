@@ -17,6 +17,8 @@ version 3.09 ()
     * Aruba POE Support
     * Aruba utilizes Q-BRIDGE-MIB when available for VLAN information to
       better support wired switches
+    * Alias lldp_rem_sysdesc() as lldp_platform() to provide a clue to type
+      of remote LLDP capable device.
 
    [BUG FIXES]
 
