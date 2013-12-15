@@ -67,6 +67,7 @@ $VERSION = '3.08';
     'lldp_rem_sysname'  => 'lldpRemSysName',
     'lldp_rem_sysdesc'  => 'lldpRemSysDesc',
     'lldp_rem_sys_cap'  => 'lldpRemSysCapEnabled',
+    'lldp_rem_cap_spt'  => 'lldpRemSysCapSupported',
 
     # LLDP-MIB::lldpRemManAddrTable
     'lldp_rman_addr' => 'lldpRemManAddrIfSubtype',
@@ -80,6 +81,7 @@ $VERSION = '3.08';
     'lldp_rem_port_desc' => \&SNMP::Info::munge_null,
     'lldp_sys_cap'       => \&SNMP::Info::munge_bits,
     'lldp_rem_sys_cap'   => \&SNMP::Info::munge_bits,
+    'lldp_rem_cap_spt'   => \&SNMP::Info::munge_bits,
 );
 
 sub hasLLDP {
@@ -240,6 +242,35 @@ sub lldp_platform {
         $lldp_platform{$key} = $desc->{$key} || $name->{$key};
     }
     return \%lldp_platform;
+}
+
+sub lldp_cap {
+    my $lldp     = shift;
+    my $partial = shift;
+
+    my $lldp_caps  = $lldp->lldp_rem_cap_spt($partial)  || {};
+    
+    # Encoded as BITS which Perl Net-SNMP implementation doesn't seem to
+    # be able to enumerate for us, so we have to get it from the MIB
+    # and enumerate ourselves
+    my $oid = SNMP::translateObj('lldpRemSysCapEnabled',0,1) || '';
+    my $enums = keys $SNMP::MIB{$oid}{'enums'} ? $SNMP::MIB{$oid}{'enums'} : {};
+    my %r_enums = reverse %$enums;
+
+    my %lldp_cap;
+    foreach my $key ( keys %$lldp_caps ) {
+        my $cap_bits = $lldp_caps->{$key};
+        next unless $cap_bits;
+        
+        my $count = 0;
+        foreach my $bit (split //,$cap_bits) {
+            if ( $bit ) {
+                push ( @{$lldp_cap{$key}}, $r_enums{$count});
+            }
+            $count++;
+        }
+    }
+    return \%lldp_cap;
 }
 
 #sub root_ip {
@@ -462,6 +493,14 @@ C<lldp_rem_sysname()>.
 
 =back
 
+=item  $lldp->lldp_cap() 
+
+Returns hash of arrays with each array containing the system capabilities
+supported by the remote system.  Possible elements in the array are
+enumerated from C<LldpSystemCapabilitiesMap>.
+
+=back
+
 =head2 LLDP Remote Table (C<lldpRemTable>)
 
 =over
@@ -523,9 +562,9 @@ Nulls are removed before the value is returned.
 
 =item  $lldp->lldp_rem_sys_cap() 
 
-Returns which system capabilities are enabled on the local system.  Results
-are munged into an ascii binary string, LSB.  Each digit
-represents a bit from the table below:
+Returns which system capabilities are enabled on the remote system.  Results
+are munged into an ascii binary string, LSB.  Each digit represents a bit
+from the table below:
 
 =over
 
