@@ -2633,7 +2633,7 @@ sub c_id {
 Returns reference to hash.  Key: iid, Value: Remote Device Type
 
 Note:  EDP does not provide this information.  LLDP uses (C<lldpRemSysDesc>)
-as the closest match.
+or C<lldp_rem_sysname> as the closest match.
 
 =cut
 
@@ -2653,6 +2653,34 @@ sub c_platform {
         }
     }
     return _get_topo_data ($self, $partial, $topo_cap, 'platform');
+}
+
+=item $info->c_cap(partial, topology_protocol_arrayref)
+
+Returns reference to hash of arrays.  Key: iid, Value: Array of capabilities 
+supported by the device.  See the specific protocol class for string values
+which could be elements within the array. 
+
+Note:  Only CDP and LLDP support this method.
+
+=cut
+
+sub c_cap {
+    my $self     = shift;
+    my $partial  = shift;
+    my $topo_cap = shift;
+
+    # Default to old behavior if not called with topo_cap
+    if ( !$topo_cap ) {
+        my $topo_test = $self->has_topo();
+        if ($topo_test) {
+            $topo_cap = $topo_test;
+        }
+        else {
+            return;
+        }
+    }
+    return _get_topo_data ($self, $partial, $topo_cap, 'cap');
 }
 
 =back
