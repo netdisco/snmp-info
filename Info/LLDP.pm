@@ -231,7 +231,15 @@ sub lldp_platform {
     my $lldp    = shift;
     my $partial = shift;
 
-    return $lldp->lldp_rem_sysdesc($partial);
+    my $rid  = $lldp->lldp_rem_id($partial) || {};
+    my $desc = $lldp->lldp_rem_sysdesc($partial) || {};
+    my $name = $lldp->lldp_rem_sysname($partial) || {};
+    
+    my %lldp_platform;
+    foreach my $key (keys %$rid) {
+        $lldp_platform{$key} = $desc->{$key} || $name->{$key};
+    }
+    return \%lldp_platform;
 }
 
 #sub root_ip {
@@ -449,7 +457,8 @@ Returns remote port ID
 
 =item $lldp->lldp_platform()
 
-Alias for C<lldp_rem_sysdesc()>.
+Tries to return something useful from C<lldp_rem_sysdesc()> or
+C<lldp_rem_sysname()>.
 
 =back
 
