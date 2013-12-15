@@ -3283,20 +3283,6 @@ sub munge_bits {
     return unpack( "B*", $bits );
 }
 
-=item munge_caps
-
-Takes an octet string and returns an ascii binary string, 7 digits long, MSB.
-
-=cut
-
-sub munge_caps {
-    my $caps = shift;
-    return unless defined $caps;
-
-    my $bits = substr( unpack( "B*", $caps ), -7 );
-    return $bits;
-}
-
 =item munge_counter64
 
 If $BIGINT is set to true, then a Math::BigInt object is returned.
