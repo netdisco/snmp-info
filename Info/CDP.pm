@@ -40,7 +40,8 @@ use SNMP::Info;
 @SNMP::Info::CDP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CDP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT/;
+use vars
+    qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT %CDP_CAPABILITIES/;
 
 $VERSION = '3.08';
 
@@ -65,6 +66,7 @@ $VERSION = '3.08';
     'cdp_port'         => 'cdpCacheDevicePort',
     'cdp_platform'     => 'cdpCachePlatform',
     'cdp_capabilities' => 'cdpCacheCapabilities',
+    'cdp_cap_hex'      => 'cdpCacheCapabilities',
     'cdp_domain'       => 'cdpCacheVTPMgmtDomain',
     'cdp_vlan'         => 'cdpCacheNativeVLAN',
     'cdp_duplex'       => 'cdpCacheDuplex',
@@ -76,7 +78,8 @@ $VERSION = '3.08';
 );
 
 %MUNGE = (
-    'cdp_capabilities' => \&SNMP::Info::munge_caps,
+    'cdp_cap_hex'      => \&SNMP::Info::munge_octet2hex,
+    'cdp_capabilities' => \&SNMP::Info::munge_bits,
     'cdp_platform'     => \&SNMP::Info::munge_null,
     'cdp_domain'       => \&SNMP::Info::munge_null,
     'cdp_port'         => \&SNMP::Info::munge_null,
@@ -85,6 +88,20 @@ $VERSION = '3.08';
     'cdp_ip'           => \&SNMP::Info::munge_ip,
     'cdp_power'        => \&munge_power,
 
+);
+
+%CDP_CAPABILITIES = (
+    'Router'                  => 0x001,
+    'Trans-Bridge'            => 0x002,
+    'Source-Route-Bridge'     => 0x004,
+    'Switch'                  => 0x008,
+    'Host'                    => 0x010,
+    'IGMP'                    => 0x020,
+    'Repeater'                => 0x040,
+    'VoIP-Phone'              => 0x080,
+    'Remotely-Managed-Device' => 0x100,
+    'Supports-STP-Dispute'    => 0x200,
+    'Two-port Mac Relay'      => 0x400,
 );
 
 sub munge_power {
@@ -158,6 +175,26 @@ sub cdp_ip {
         $cdp_ip{$key} = $ip;
     }
     return \%cdp_ip;
+}
+
+sub cdp_cap {
+    my $cdp     = shift;
+    my $partial = shift;
+
+    my $cdp_caps  = $cdp->cdp_cap_hex($partial)  || {};
+
+    my %cdp_cap;
+    foreach my $key ( keys %$cdp_caps ) {
+        my $cap_hex = $cdp_caps->{$key};
+        next unless $cap_hex;
+
+        foreach my $capability (keys %CDP_CAPABILITIES) {
+            if ( (hex $cap_hex) & $CDP_CAPABILITIES{$capability}) {
+                push ( @{$cdp_cap{$key}}, $capability);
+            }
+        }
+    }
+    return \%cdp_cap;
 }
 
 1;
@@ -283,39 +320,48 @@ to a hash.
 =item $cdp->cdp_capabilities()
 
 Returns Device Functional Capabilities.  Results are munged into an ascii
-binary string, 7 digits long, MSB.  Each digit represents a bit from the
-table below.
-
-From L<http://www.cisco.com/univercd/cc/td/doc/product/lan/trsrb/frames.htm#18843>:
+binary string, MSB.  Each digit represents a bit from the table below from 
+the CDP Capabilities Mapping to Smartport Type table within the
+Cisco Small Business 200 Series Smart Switch Administration Guide, 
+L<http://www.cisco.com/c/en/us/support/switches/small-business-200-series-smart-switches/products-maintenance-guides-list.html>:
 
 (Bit) - Description
 
 =over
 
-=item (0x40) - Provides level 1 functionality.
+=item (0x400) - Two-Port MAC Relay.
 
-=item (0x20) - The bridge or switch does not forward IGMP Report packets on
+=item (0x200) - CAST Phone Port / CVTA / Supports-STP-Dispute depending
+                upon platform.
+
+=item (0x100) - Remotely-Managed Device.
+
+=item (0x80)  - VoIP Phone.
+
+=item (0x40)  - Provides level 1 functionality.
+
+=item (0x20)  - The bridge or switch does not forward IGMP Report packets on
 non router ports.
 
-=item (0x10) - Sends and receives packets for at least one network layer
+=item (0x10)  - Sends and receives packets for at least one network layer
 protocol. If the device is routing the protocol, this bit should not be set.
 
-=item (0x08) - Performs level 2 switching. The difference between this bit
+=item (0x08)  - Performs level 2 switching. The difference between this bit
 and bit 0x02 is that a switch does not run the Spanning-Tree Protocol. This
 device is assumed to be deployed in a physical loop-free topology.
 
-=item (0x04) - Performs level 2 source-route bridging. A source-route bridge
+=item (0x04)  - Performs level 2 source-route bridging. A source-route bridge
 would set both this bit and bit 0x02.
 
-=item (0x02) - Performs level 2 transparent bridging.
+=item (0x02)  - Performs level 2 transparent bridging.
 
-=item (0x01) - Performs level 3 routing for at least one network layer
+=item (0x01)  - Performs level 3 routing for at least one network layer
 protocol.
 
 =back
 
-Thanks to Martin Lorensen C<martin -at- lorensen.dk> for a pointer to this
-information.
+Thanks to Martin Lorensen for a pointer to the original information and
+CPAN user Alex for updates.
 
 (C<cdpCacheCapabilities>)
 
@@ -426,6 +472,14 @@ Returns the amount of power consumed by remote device in milliwatts munged
 for decimal placement.
 
 (C<cdpCachePowerConsumption>)
+
+=item  $cdp->cdp_cap() 
+
+Returns hash of arrays with each array containing the system capabilities
+supported by the remote system.  Possible elements in the array are
+C<Router>, C<Trans-Bridge>, C<Source-Route-Bridge>, C<Switch>, C<Host>,
+C<IGMP>, C<Repeater>, C<VoIP-Phone>, C<Remotely-Managed-Device>,
+C<Supports-STP-Dispute>, and C<Two-port Mac Relay>.
 
 =back
 
