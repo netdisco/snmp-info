@@ -8,6 +8,9 @@ version 3.09 ()
       L3::IBMGbTor
     * [] set_i_untagged combines both set_i_vlan and set_i_pvid in one method
     * [#41] Riverbed Steelhead support added in new class L3::Steelhead
+    * New c_cap(), cdp_cap(), and lldp_cap() methods which return a hash of
+      arrays with each array containing the system capabilities reported as
+      supported by the remote system via CDP or LLDP.
 
    [ENHANCEMENTS]
 
@@ -17,8 +20,10 @@ version 3.09 ()
     * Aruba POE Support
     * Aruba utilizes Q-BRIDGE-MIB when available for VLAN information to
       better support wired switches
-    * Alias lldp_rem_sysdesc() as lldp_platform() to provide a clue to type
-      of remote LLDP capable device.
+    * Add lldp_platform() method which uses lldp_rem_sysdesc() or
+      lldp_rem_sysname() to provide a clue to type of remote LLDP capable
+      device.
+    * [RT#78232] Extend cdpCacheCapabilities to show more CDP bits
 
    [BUG FIXES]
 
@@ -28,7 +33,8 @@ version 3.09 ()
       digit available so skip if outside the range of 1-16, 17 is reserved
       for 3rd party AP's
     * Don't assume entity index 1 is the chassis and has serial in Layer3
-    * Capture serial number on newer Aruba devices 
+    * Capture serial number on newer Aruba devices
+    * munge_bits() correctly unpacks BITS
 
 version 3.08 (2013-10-22)
 
