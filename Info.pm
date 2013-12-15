@@ -2477,7 +2477,7 @@ sub _get_topo_data {
     my $topo_cap = shift;
     my $method   = shift;
 
-    return unless $method =~ /(ip|if|port|id|platform)/;
+    return unless $method =~ /(ip|if|port|id|platform|cap)/;
 
     my %t_data;
     foreach my $proto (@$topo_cap) {
