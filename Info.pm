@@ -3280,7 +3280,7 @@ sub munge_bits {
     my $bits = shift;
     return unless defined $bits;
 
-    return unpack( "b*", $bits );
+    return unpack( "B*", $bits );
 }
 
 =item munge_caps
