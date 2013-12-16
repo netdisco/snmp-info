@@ -1,6 +1,6 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
-version 3.09 ()
+version 3.09 (2013-12-15)
 
    [NEW FEATURES]
 
@@ -36,6 +36,8 @@ version 3.09 ()
     * Capture serial number on newer Aruba devices
     * munge_bits() correctly unpacks BITS
     * Data values of zero are now sent to munge method instead of skipped
+    * Fix for single instance table leafs in test_class_mocked.pl
+    * Fix power module indexing
 
 version 3.08 (2013-10-22)
 

@@ -40,7 +40,7 @@ use SNMP::Info::LLDP;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
 
-$VERSION = '3.08';
+$VERSION = '3.09';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,

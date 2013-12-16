@@ -39,7 +39,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.08';
+$VERSION = '3.09';
 
 %MIBS = (
     'LLDP-MIB'          => 'lldpLocSysCapEnabled',
@@ -254,7 +254,7 @@ sub lldp_cap {
     # be able to enumerate for us, so we have to get it from the MIB
     # and enumerate ourselves
     my $oid = SNMP::translateObj('lldpRemSysCapEnabled',0,1) || '';
-    my $enums = keys $SNMP::MIB{$oid}{'enums'} ? $SNMP::MIB{$oid}{'enums'} : {};
+    my $enums = ((ref {} eq ref $SNMP::MIB{$oid}{'enums'}) ? $SNMP::MIB{$oid}{'enums'} : {});
     my %r_enums = reverse %$enums;
 
     my %lldp_cap;
@@ -490,8 +490,6 @@ Returns remote port ID
 
 Tries to return something useful from C<lldp_rem_sysdesc()> or
 C<lldp_rem_sysname()>.
-
-=back
 
 =item  $lldp->lldp_cap() 
 

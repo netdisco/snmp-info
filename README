@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.08
+    SNMP::Info - Version 3.09
 
 AUTHOR
 
@@ -653,6 +653,12 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::HP9300 for details.
 
+        SNMP::Info::Layer3::IBMGbTor
+            SNMP Interface to IBM Rackswitch (formerly Blade Network
+            Technologies) network devices.
+
+            See documentation in SNMP::Info::Layer3::IBMGbTor for details.
+
         SNMP::Info::Layer3::Juniper
             Subclass for Juniper devices
 
@@ -719,6 +725,10 @@ SUBCLASSES
         SNMP::Info::Layer3::SonicWALL
             Subclass for generic SonicWALL devices. See documentation in
             SNMP::Info::Layer3::SonicWALL for details.
+
+        SNMP::Info::Layer3::Steelhead
+            Subclass for Riverbed Steelhead WAN optimization appliances. See
+            documentation in SNMP::Info::Layer3::Steelhead for details.
 
         SNMP::Info::Layer3::Sun
             Subclass for Generic Sun Routers running SunOS.
@@ -1479,7 +1489,15 @@ USAGE
     $info->c_platform(partial, topology_protocol_arrayref)
         Returns reference to hash. Key: iid, Value: Remote Device Type
 
-        Note: LLDP and EDP do not provide this information.
+        Note: EDP does not provide this information. LLDP uses
+        ("lldpRemSysDesc") or "lldp_rem_sysname" as the closest match.
+
+    $info->c_cap(partial, topology_protocol_arrayref)
+        Returns reference to hash of arrays. Key: iid, Value: Array of
+        capabilities supported by the device. See the specific protocol
+        class for string values which could be elements within the array.
+
+        Note: Only CDP and LLDP support this method.
 
 SETTING DATA VIA SNMP
 
@@ -1817,10 +1835,6 @@ SNMP::INFO INTERNALS
 
     munge_bits
         Takes a SNMP2 'BITS' field and returns the ASCII bit string
-
-    munge_caps
-        Takes an octet string and returns an ascii binary string, 7 digits
-        long, MSB.
 
     munge_counter64
         If $BIGINT is set to true, then a Math::BigInt object is returned.
