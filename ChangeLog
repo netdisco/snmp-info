@@ -35,6 +35,7 @@ version 3.09 ()
     * Don't assume entity index 1 is the chassis and has serial in Layer3
     * Capture serial number on newer Aruba devices
     * munge_bits() correctly unpacks BITS
+    * Data values of zero are now sent to munge method instead of skipped
 
 version 3.08 (2013-10-22)
 

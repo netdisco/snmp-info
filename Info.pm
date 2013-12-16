@@ -4267,7 +4267,7 @@ sub _munge {
         my %munged;
         foreach my $key ( keys %$data ) {
             my $value = $data->{$key};
-            next unless $value;
+            next unless defined $value;
             $munged{$key} = $subref->($value);
         }
         return \%munged;
