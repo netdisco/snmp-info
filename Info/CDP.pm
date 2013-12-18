@@ -66,7 +66,6 @@ $VERSION = '3.10';
     'cdp_port'         => 'cdpCacheDevicePort',
     'cdp_platform'     => 'cdpCachePlatform',
     'cdp_capabilities' => 'cdpCacheCapabilities',
-    'cdp_cap_hex'      => 'cdpCacheCapabilities',
     'cdp_domain'       => 'cdpCacheVTPMgmtDomain',
     'cdp_vlan'         => 'cdpCacheNativeVLAN',
     'cdp_duplex'       => 'cdpCacheDuplex',
@@ -78,7 +77,6 @@ $VERSION = '3.10';
 );
 
 %MUNGE = (
-    'cdp_cap_hex'      => \&SNMP::Info::munge_octet2hex,
     'cdp_capabilities' => \&SNMP::Info::munge_bits,
     'cdp_platform'     => \&SNMP::Info::munge_null,
     'cdp_domain'       => \&SNMP::Info::munge_null,
@@ -181,17 +179,32 @@ sub cdp_cap {
     my $cdp     = shift;
     my $partial = shift;
 
-    my $cdp_caps  = $cdp->cdp_cap_hex($partial)  || {};
+    # Some devices return a hex-string, others return a space separated
+    # string, we need the raw data to determine return value and
+    # take appropriate action
+    my $cdp_caps = $cdp->cdp_capabilities_raw($partial) || {};
 
     my %cdp_cap;
     foreach my $key ( keys %$cdp_caps ) {
-        my $cap_hex = $cdp_caps->{$key};
-        next unless $cap_hex;
+        my $cap_raw = $cdp_caps->{$key};
+        next unless $cap_raw;
 
-        foreach my $capability (keys %CDP_CAPABILITIES) {
-            if ( (hex $cap_hex) & $CDP_CAPABILITIES{$capability}) {
-                push ( @{$cdp_cap{$key}}, $capability);
+        # Simple check, smallest single string is either Host or IGMP with a
+        # space added on the end for a length of 5, hex string is normally
+        # 4 bytes, but since only one byte was traditionally needed process
+        # as hex for a length of 4 or less
+        if ( length $cap_raw < 5 ) {
+            my $cap_hex = join( '',
+                map { sprintf "%x", $_ } unpack( 'C*', $cap_raw ) );
+            foreach my $capability ( keys %CDP_CAPABILITIES ) {
+                if ( ( hex $cap_hex ) & $CDP_CAPABILITIES{$capability} ) {
+                    push( @{ $cdp_cap{$key} }, $capability );
+                }
             }
+        }
+        else {
+            my @caps = split /\s/, $cap_raw;
+            push( @{ $cdp_cap{$key} }, @caps );
         }
     }
     return \%cdp_cap;

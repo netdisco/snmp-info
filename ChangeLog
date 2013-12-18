@@ -1,5 +1,12 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.11 
+
+   [BUG FIXES]
+
+    * Modify cdp_cap() to handle devices which return space delimited strings
+      for cdpCacheCapabilities rather than hex strings
+
 version 3.10 (2013-12-16)
 
    [BUG FIXES]
