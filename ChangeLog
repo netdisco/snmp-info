@@ -6,6 +6,9 @@ version 3.11
 
     * Modify cdp_cap() to handle devices which return space delimited strings
       for cdpCacheCapabilities rather than hex strings
+    * [#51] Netdisco shows broken topology for devices with no alias entry
+      for primary IP - Collect nsIfMngIp when getting IP interfaces in
+      L3::Netscreen
 
 version 3.10 (2013-12-16)
 

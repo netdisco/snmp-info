@@ -345,14 +345,21 @@ sub _mac_map {
     return \%mac_map;
 }
 
+# Interfaces can have two addresses, we want to capture both the network
+# address and the management address
 sub ip_index {
     my $netscreen = shift;
 
-    my $ns_ip = $netscreen->ns_ip_table() || {};
+    my $ns_ip     = $netscreen->ns_ip_table() || {};
+    my $if_mng_ip = $netscreen->nsIfMngIp()   || {};
 
     my %ip_index = ();
     foreach my $iid ( keys %$ns_ip ) {
         $ip_index{ $ns_ip->{$iid} } = $iid if $ns_ip->{$iid} ne "0.0.0.0";
+    }
+    foreach my $iid ( keys %$if_mng_ip ) {
+        $ip_index{ $if_mng_ip->{$iid} } = $iid
+            if $if_mng_ip->{$iid} ne "0.0.0.0";
     }
     return \%ip_index;
 }
@@ -360,15 +367,25 @@ sub ip_index {
 sub ip_table {
     my $netscreen = shift;
 
-    my $ip_index = $netscreen->ip_index() || {};
+    my $ip_index  = $netscreen->ip_index()  || {};
+    my $if_mng_ip = $netscreen->nsIfMngIp() || {};
 
     my %ip_table = ();
     foreach my $iid ( keys %$ip_index ) {
-        $ip_table{$iid} = $iid;
+        my $mgmt_ip = $if_mng_ip->{$iid};
+
+        if ( defined $mgmt_ip && $mgmt_ip ne '0.0.0.0' ) {
+            $ip_table{$iid} = $mgmt_ip;
+        }
+        else {
+            $ip_table{$iid} = $iid;
+        }
     }
     return \%ip_table;
 }
 
+# There is only one netmask for the interface both network and management
+# addresses should have the same netmask
 sub ip_netmask {
     my $netscreen = shift;
 
