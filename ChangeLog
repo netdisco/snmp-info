@@ -9,6 +9,8 @@ version 3.11
     * [#51] Netdisco shows broken topology for devices with no alias entry
       for primary IP - Collect nsIfMngIp when getting IP interfaces in
       L3::Netscreen
+    * Fix Extreme XOS i_vlan_membership - Revert [28bbe0], fix bug with
+      untagged being added to @ret twice (Robert Kerr)
 
 version 3.10 (2013-12-16)
 
