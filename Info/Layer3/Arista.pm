@@ -104,22 +104,6 @@ sub model {
     return $model;
 }
 
-# Use Q-BRIDGE-MIB
-
-sub fw_mac {
-    my $arista  = shift;
-    my $partial = shift;
-
-    return $arista->qb_fw_mac($partial);
-}
-
-sub fw_port {
-    my $arista  = shift;
-    my $partial = shift;
-
-    return $arista->qb_fw_port($partial);
-}
-
 # The LLDP MIB leaves it up in the air what the index means.
 # On EOS, it's a dot1d port.
 sub lldp_if {
@@ -244,14 +228,6 @@ These are methods that return tables of information in the form of a reference
 to a hash.
 
 =over
-
-=item $arista->fw_mac()
-
-Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
-
-=item $arista->fw_port()
-
-Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
 
 =item $arista->i_duplex_admin()
 

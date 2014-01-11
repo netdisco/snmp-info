@@ -290,9 +290,6 @@ sub fw_mac {
     my $b = $extreme->SUPER::fw_mac();
     return $b if (keys %$b);
 
-    my $qb = $extreme->qb_fw_mac();
-    return $qb if (keys %$qb);
-    
     return $extreme->ex_fw_mac();
 }
 
@@ -301,9 +298,6 @@ sub fw_port {
     
     my $b = $extreme->SUPER::fw_port();
     return $b if (keys %$b);
-
-    my $qb = $extreme->qb_fw_port();
-    return $qb if (keys %$qb);
     
     return $extreme->ex_fw_port();
 }
@@ -313,9 +307,6 @@ sub fw_status {
 
     my $b = $extreme->SUPER::fw_status();
     return $b if (keys %$b);
-
-    my $qb = $extreme->qb_fw_status();
-    return $qb if (keys %$qb);
 
     return $extreme->ex_fw_status();
 }

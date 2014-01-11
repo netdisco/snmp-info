@@ -140,25 +140,6 @@ sub interfaces {
     return $interfaces;
 }
 
-
-# This is model-dependent.  Some netgear brand devices don't implement
-# the bridge MIB forwarding table, so we use the Q-BRIDGE-MIB forwarding
-# table.  Fall back to the orig functions if the qb versions don't
-# return anything.
-sub fw_mac {
-    my $netgear = shift;
-    my $ret     = $netgear->qb_fw_mac();
-    $ret = $netgear->orig_fw_mac() if ( !defined($ret) );
-    return $ret;
-}
-
-sub fw_port {
-    my $netgear = shift;
-    my $ret     = $netgear->qb_fw_port();
-    $ret = $netgear->orig_fw_port() if ( !defined($ret) );
-    return $ret;
-}
-
 # these seem to work for GSM models but not GS
 # https://sourceforge.net/tracker/?func=detail&aid=3085413&group_id=70362&atid=527529
 sub os_ver {
@@ -299,7 +280,6 @@ sub c_platform {
     return \%c_platform;
 }
 
-
 1;
 
 __END__
@@ -412,23 +392,6 @@ a reference to a hash.
 =head2 Overrides
 
 =over
-
-=item $netgear->fw_mac()
-
-Returns reference to hash of forwarding table MAC Addresses.
-
-Some devices don't implement the C<BRIDGE-MIB> forwarding table, so we use
-the C<Q-BRIDGE-MIB> forwarding table.  Fall back to the C<BRIDGE-MIB> if
-C<Q-BRIDGE-MIB> doesn't return anything.
-
-=item $netgear->fw_port()
-
-Returns reference to hash of forwarding table entries port interface
-identifier (iid)
-
-Some devices don't implement the C<BRIDGE-MIB> forwarding table, so we use
-the C<Q-BRIDGE-MIB> forwarding table.  Fall back to the C<BRIDGE-MIB> if
-C<Q-BRIDGE-MIB> doesn't return anything.
 
 =item $netgear->interfaces()
 

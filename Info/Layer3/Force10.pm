@@ -104,22 +104,6 @@ sub model {
     return $model;
 }
 
-# Use Q-BRIDGE-MIB
-
-sub fw_mac {
-    my $force10 = shift;
-    my $partial = shift;
-
-    return $force10->qb_fw_mac($partial);
-}
-
-sub fw_port {
-    my $force10 = shift;
-    my $partial = shift;
-
-    return $force10->qb_fw_port($partial);
-}
-
 sub v_name {
     my $force10 = shift;
     my $partial = shift;
@@ -299,14 +283,6 @@ Currently not implemented.
 Returns reference to hash of arrays:
 key = C<ifIndex>, value = array of VLAN IDs.
 These are the VLANs which are members of the egress list for the port.
-
-=item $force10->fw_mac()
-
-Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
-
-=item $force10->fw_port()
-
-Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
 
 =item $force10->i_duplex_admin()
 

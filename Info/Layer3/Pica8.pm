@@ -89,22 +89,6 @@ sub model {
     return;
 }
 
-# Use Q-BRIDGE-MIB
-
-sub fw_mac {
-    my $l3  = shift;
-    my $partial = shift;
-
-    return $l3->qb_fw_mac($partial);
-}
-
-sub fw_port {
-    my $l3  = shift;
-    my $partial = shift;
-
-    return $l3->qb_fw_port($partial);
-}
-
 1;
 __END__
 
@@ -195,20 +179,6 @@ See documentation in L<SNMP::Info::LLDP> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=head2 Overrides
-
-=over
-
-=item $pica8->fw_mac()
-
-Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
-
-=item $pica8->fw_port()
-
-Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
-
-=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

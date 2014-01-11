@@ -149,22 +149,6 @@ sub i_duplex_admin {
     return $enterasys->mau_i_duplex_admin($partial);
 }
 
-# Normal BRIDGE-MIB has issues on some devices, duplicates and
-# non-increasing oids, Use Q-BRIDGE-MIB for macsuck
-sub fw_mac {
-    my $enterasys = shift;
-    my $partial   = shift;
-
-    return $enterasys->qb_fw_mac($partial);
-}
-
-sub fw_port {
-    my $enterasys = shift;
-    my $partial   = shift;
-
-    return $enterasys->qb_fw_port($partial);
-}
-
 #  LLDP table timefilter implementation continuously increments when walked
 #  and we may never reach the end of the table.  This behavior can be
 #  modified with the "set snmp timefilter break disable" command,
@@ -372,17 +356,6 @@ See documentation for mau_i_duplex() in L<SNMP::Info::MAU/"TABLE METHODS">.
 
 See documentation for mau_i_duplex_admin() in
 L<SNMP::Info::MAU/"TABLE METHODS">.
-
-=item $enterasys->fw_mac()
-
-Returns reference to hash of forwarding table MAC Addresses.
-
-=item $enterasys->fw_port()
-
-Returns reference to hash of forwarding table entries port interface
-identifier (iid).
-
-(C<dot1qTpFdbPort>)
 
 =back
 

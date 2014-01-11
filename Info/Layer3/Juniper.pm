@@ -234,21 +234,6 @@ sub i_vlan_membership {
     return $i_vlan_membership;
 }
 
-# Use Q-BRIDGE-MIB for bridge forwarding tables
-sub fw_mac {
-    my $juniper  = shift;
-    my $partial = shift;
-
-    return $juniper->qb_fw_mac($partial);
-}
-
-sub fw_port {
-    my $juniper  = shift;
-    my $partial = shift;
-
-    return $juniper->qb_fw_port($partial);
-}
-
 # Pseudo ENTITY-MIB methods
 
 # This class supports both virtual chassis (stackable) and physical chassis
@@ -677,25 +662,6 @@ Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
 IDs.  These are the VLANs which are members of the egress list for the port.
 
 =back
-
-=head2 Forwarding Table (C<dot1dTpFdbEntry>)
-
-=over 
-
-=item $juniper->fw_mac()
-
-Returns reference to hash of forwarding table MAC Addresses
-
-(C<dot1dTpFdbAddress>)
-
-=item $juniper->fw_port()
-
-Returns reference to hash of forwarding table entries port interface
-identifier (iid)
-
-(C<dot1dTpFdbPort>)
-
-=back 
 
 =head2 Pseudo F<ENTITY-MIB> information
 

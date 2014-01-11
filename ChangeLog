@@ -2,6 +2,11 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 3.11 
 
+   [ENHANCEMENTS]
+
+    * Use Q-BRIDGE-MIB as default with fallback to BRIDGE-MIB across all
+      classes for the fw_mac, fw_port, and fw_status methods
+
    [BUG FIXES]
 
     * Modify cdp_cap() to handle devices which return space delimited strings

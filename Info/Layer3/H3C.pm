@@ -113,22 +113,6 @@ sub i_ignore {
     return \%i_ignore;
 }
 
-# Use Q-BRIDGE-MIB
-
-sub fw_mac {
-    my $l3  = shift;
-    my $partial = shift;
-
-    return $l3->qb_fw_mac($partial);
-}
-
-sub fw_port {
-    my $l3  = shift;
-    my $partial = shift;
-
-    return $l3->qb_fw_port($partial);
-}
-
 1;
 __END__
 
@@ -234,14 +218,6 @@ to a hash.
 Returns reference to hash.  Increments value of IID if port is to be ignored.
 
 Ignores loopback
-
-=item $h3c->fw_mac()
-
-Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
-
-=item $h3c->fw_port()
-
-Use the F<Q-BRIDGE-MIB> instead of F<BRIDGE-MIB>
 
 =back
 
