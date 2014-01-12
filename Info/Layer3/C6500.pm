@@ -43,12 +43,14 @@ use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 use SNMP::Info::CiscoStpExtensions;
 use SNMP::Info::CiscoVTP;
+use SNMP::Info::Aggregate::Cisco;
 use SNMP::Info::MAU;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 # NOTE : Top-most items gets precedence for @ISA
 @SNMP::Info::Layer3::C6500::ISA = qw/
+    SNMP::Info::Aggregate::Cisco
     SNMP::Info::CiscoVTP 
     SNMP::Info::CiscoStpExtensions
     SNMP::Info::CiscoStack
@@ -89,6 +91,7 @@ $VERSION = '3.10';
     %SNMP::Info::CiscoStack::MIBS,
     %SNMP::Info::CiscoStpExtensions::MIBS,
     %SNMP::Info::CiscoVTP::MIBS,
+    %SNMP::Info::Aggregate::Cisco::MIBS,
     'CISCO-VIRTUAL-SWITCH-MIB' => 'cvsSwitchMode',
 );
 
