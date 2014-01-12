@@ -37,9 +37,15 @@ use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::FDP;
 use SNMP::Info::LLDP;
+use SNMP::Info::Aggregate::Foundry;
 
-@SNMP::Info::Layer3::Foundry::ISA = qw/SNMP::Info::FDP SNMP::Info::LLDP
-    SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Foundry::ISA = qw/
+    SNMP::Info::Aggregate::Foundry
+    SNMP::Info::FDP
+    SNMP::Info::LLDP
+    SNMP::Info::Layer3
+    Exporter
+/;
 @SNMP::Info::Layer3::Foundry::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
@@ -50,6 +56,8 @@ $VERSION = '3.10';
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::FDP::MIBS,
+    %SNMP::Info::Aggregate::Foundry::MIBS,
+
     'FOUNDRY-SN-ROOT-MIB'         => 'foundry',
     'FOUNDRY-SN-AGENT-MIB'        => 'snChasPwrSupplyDescription',
     'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snSwGroupOperMode',
@@ -61,6 +69,7 @@ $VERSION = '3.10';
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::FDP::GLOBALS,
+
     'mac'        => 'ifPhysAddress.1',
     'chassis'    => 'entPhysicalDescr.1',
     'temp'       => 'snChasActualTemperature',
@@ -93,8 +102,10 @@ $VERSION = '3.10';
 );
 
 %MUNGE = (
-    %SNMP::Info::Layer3::MUNGE, %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::FDP::MUNGE,
+
     'ag_mod2_type' => \&SNMP::Info::munge_e_type,
     'ag_mod_type'  => \&SNMP::Info::munge_e_type,
 );
