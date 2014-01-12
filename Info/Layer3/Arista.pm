@@ -36,9 +36,14 @@ use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
 use SNMP::Info::LLDP;
+use SNMP::Info::Aggregate::Arista;
 
-@SNMP::Info::Layer3::Arista::ISA = qw/SNMP::Info::LLDP SNMP::Info::MAU
-    SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Arista::ISA = qw/
+    SNMP::Info::Aggregate::Arista
+    SNMP::Info::LLDP
+    SNMP::Info::MAU
+    SNMP::Info::Layer3 Exporter
+/;
 @SNMP::Info::Layer3::Arista::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
@@ -49,6 +54,7 @@ $VERSION = '3.10';
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
     %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::Aggregate::Arista::MIBS,
     'ARISTA-PRODUCTS-MIB' => 'aristaProducts',
 );
 

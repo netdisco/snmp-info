@@ -34,7 +34,7 @@ use Exporter;
 use SNMP::Info;
 
 @SNMP::Info::Aggregate::ISA       = qw/SNMP::Info Exporter/;
-@SNMP::Info::Aggregate::EXPORT_OK = qw//;
+@SNMP::Info::Aggregate::EXPORT_OK = qw/agg_ports_ifstack/;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
@@ -47,6 +47,27 @@ $VERSION = '3.10';
 %FUNCS = ();
 
 %MUNGE = ();
+
+sub agg_ports_ifstack {
+  my $dev = shift;
+  my $partial = shift;
+
+  my $ifStack = $dev->ifStackStatus();
+  # TODO: if we want to do partial, we need to use inverse status
+  my $ifType = $dev->ifType();
+
+  my $ret = {};
+
+  foreach my $idx ( keys %$ifStack ) {
+      my ( $higher, $lower ) = split /\./, $idx;
+      next if ( $higher == 0 or $lower == 0 );
+      if ( $ifType->{ $higher } eq 'ieee8023adLag' ) {
+          $ret->{ $lower } = $higher;
+      }
+  }
+
+  return $ret;
+}
 
 1;
 
