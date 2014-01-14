@@ -324,6 +324,13 @@ sub bp_index {
     return \%bp_index;
 }
 
+sub fw_mac {
+    my $s3000 = shift;
+    my $partial   = shift;
+
+    return $s3000->SUPER::fw_mac($partial);
+}
+
 sub fw_port {
     my $s3000   = shift;
     my $partial = shift;

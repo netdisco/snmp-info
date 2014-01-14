@@ -334,6 +334,13 @@ sub bp_index {
     return \%bp_index;
 }
 
+sub fw_mac {
+    my $bayhub = shift;
+    my $partial   = shift;
+
+    return $bayhub->SUPER::fw_mac($partial);
+}
+
 sub fw_port {
     my $bayhub  = shift;
     my $partial = shift;

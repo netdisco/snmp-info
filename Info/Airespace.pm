@@ -577,6 +577,13 @@ sub bp_index {
     return \%bp_index;
 }
 
+sub fw_mac {
+    my $airespace = shift;
+    my $partial   = shift;
+
+    return $airespace->SUPER::fw_mac($partial);
+}
+
 sub fw_port {
     my $airespace = shift;
     my $partial   = shift;

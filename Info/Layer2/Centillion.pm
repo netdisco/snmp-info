@@ -246,6 +246,20 @@ sub slot_offset {
     return 0;
 }
 
+sub fw_mac {
+    my $centillion = shift;
+    my $partial   = shift;
+
+    return $centillion->SUPER::fw_mac($partial);
+}
+
+sub fw_port {
+    my $centillion = shift;
+    my $partial   = shift;
+
+    return $centillion->SUPER::fw_port($partial);
+}
+
 1;
 __END__
 
