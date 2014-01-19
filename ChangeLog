@@ -2,6 +2,12 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 3.11 
 
+   [NEW FEATURES]
+
+    * [#31] port-channel (aggregate) support.  Aggregate support added in new
+      agg_ports() method.  Inital support added for Arista (ifStack),
+      Avaya (MLT), Brocade (MST), and Cisco (802.3ag).
+
    [ENHANCEMENTS]
 
     * Use Q-BRIDGE-MIB as default with fallback to BRIDGE-MIB across all

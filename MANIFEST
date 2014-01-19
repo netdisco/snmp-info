@@ -4,10 +4,12 @@ DEVELOP
 DeviceMatrix.txt
 Info.pm
 Info/AdslLine.pm
+Info/Aggregate.pm
 Info/Airespace.pm
 Info/AMAP.pm
 Info/Bridge.pm
 Info/CDP.pm
+Info/CiscoAgg.pm
 Info/CiscoConfig.pm
 Info/CiscoImage.pm
 Info/CiscoPortSecurity.pm
@@ -23,6 +25,7 @@ Info/Entity.pm
 Info/EtherLike.pm
 Info/FDP.pm
 Info/IEEE802dot11.pm
+Info/IEEE802dot3ag.pm
 Info/IPv6.pm
 Info/Layer1.pm
 Info/Layer1/Allied.pm
