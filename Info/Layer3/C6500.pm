@@ -43,14 +43,14 @@ use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 use SNMP::Info::CiscoStpExtensions;
 use SNMP::Info::CiscoVTP;
-use SNMP::Info::Aggregate::Cisco;
+use SNMP::Info::CiscoAgg;
 use SNMP::Info::MAU;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 # NOTE : Top-most items gets precedence for @ISA
 @SNMP::Info::Layer3::C6500::ISA = qw/
-    SNMP::Info::Aggregate::Cisco
+    SNMP::Info::CiscoAgg
     SNMP::Info::CiscoVTP 
     SNMP::Info::CiscoStpExtensions
     SNMP::Info::CiscoStack
@@ -91,7 +91,7 @@ $VERSION = '3.10';
     %SNMP::Info::CiscoStack::MIBS,
     %SNMP::Info::CiscoStpExtensions::MIBS,
     %SNMP::Info::CiscoVTP::MIBS,
-    %SNMP::Info::Aggregate::Cisco::MIBS,
+    %SNMP::Info::CiscoAgg::MIBS,
     'CISCO-VIRTUAL-SWITCH-MIB' => 'cvsSwitchMode',
 );
 
@@ -312,6 +312,8 @@ after determining a more specific class using the method above.
 
 =over
 
+=item SNMP::Info::CiscoAgg
+
 =item SNMP::Info::CiscoVTP
 
 =item SNMP::Info::CiscoStack
@@ -339,6 +341,8 @@ after determining a more specific class using the method above.
 =over
 
 =item Inherited Classes' MIBs
+
+See L<SNMP::Info::CiscoAgg/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
 
