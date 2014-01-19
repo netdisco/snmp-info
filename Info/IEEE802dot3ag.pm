@@ -1,4 +1,4 @@
-# SNMP::Info::Aggregate::Cisco
+# SNMP::Info::IEEE802dot3ag
 #
 # Copyright (c) 2014 SNMP::Info Developers
 # All rights reserved.
@@ -27,18 +27,18 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package SNMP::Info::Aggregate::Cisco;
+package SNMP::Info::IEEE802dot3ag;
 
 use strict;
 use Exporter;
-use SNMP::Info::Aggregate::IEEE802dot3 'agg_ports_lag';
+use SNMP::Info::Aggregate;
 
-@SNMP::Info::Aggregate::Cisco::ISA = qw/
-  SNMP::Info::Aggregate::IEEE802dot3
+@SNMP::Info::IEEE802dot3ag::ISA = qw/
+  SNMP::Info::Aggregate
   Exporter
 /;
-@SNMP::Info::Aggregate::Cisco::EXPORT_OK = qw/
-  agg_ports
+@SNMP::Info::IEEE802dot3ag::EXPORT_OK = qw/
+  agg_ports_lag
 /;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
@@ -46,8 +46,8 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 $VERSION = '3.10';
 
 %MIBS = (
-  %SNMP::Info::Aggregate::IEEE802dot3::MIBS,
-  'CISCO-PAGP-MIB'   => 'pagpGroupIfIndex',
+  %SNMP::Info::Aggregate::MIBS,
+  'IEEE8023-LAG-MIB' => 'dot3adAggPortSelectedAggID',
 );
 
 %GLOBALS = ();
@@ -56,11 +56,29 @@ $VERSION = '3.10';
 
 %MUNGE = ();
 
-# until someone using PAgP sends us a patch
-sub agg_ports_pagp { {} }
+sub agg_ports_lag {
+  my $dev = shift;
 
-# until we have PAgP data and need to combine with LAG data
-sub agg_ports { return agg_ports_lag(@_) }
+  # TODO: implement partial
+  my $masters = $dev->dot3adAggActorOperKey;
+  my $slaves  = $dev->dot3adAggPortActorOperKey;
+
+  return {} unless
+    ref {} eq ref $masters and scalar keys %$masters
+    and ref {} eq ref $slaves and scalar keys %$slaves;
+
+  my $ret = {};
+  foreach my $s (keys %$slaves) {
+      next if $slaves->{$s} == 0;
+      foreach my $m (keys %$masters) {
+          next unless $masters->{$m} == $slaves->{$s};
+          $ret->{$s} = $m;
+          last;
+      }
+  }
+
+  return $ret;
+}
 
 1;
 
@@ -68,7 +86,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Aggregate::Cisco - SNMP Interface to Cisco Aggregated Links
+SNMP::Info::IEEE802dot3ag - SNMP Interface to IEEE Aggregated Links
 
 =head1 AUTHOR
 
@@ -91,38 +109,32 @@ SNMP::Info Developers
 
 =head1 DESCRIPTION
 
-This class provides access to Aggregated Links configuration on Cisco devices.
-It combines Cisco PAgP and IEEE 802.3ad information.
+This class provides access to Aggregated Links configuration on devices
+implementing C<IEEE8023-LAG-MIB>.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
 =head2 Inherited Classes
 
-L<SNMP::Info::Aggregate::IEEE802dot3>
+L<SNMP::Info::Aggregate>
 
 =head2 Required MIBs
 
 =over
 
-=item F<CISCO-PAGP-MIB>
+=item F<IEEE8023-LAG-MIB>
 
 =back
-
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =head1 METHODS
 
 =over 4
 
-=item C<agg_ports>
+=item C<agg_ports_lag>
 
 Returns a HASH reference mapping from slave to master port for each member of
 a port bundle on the device. Keys are ifIndex of the slave ports, Values are
 ifIndex of the corresponding master ports.
-
-=item C<agg_ports_pagp>
-
-Unimplemented. Returns an empty HASH reference.
 
 =back
 
