@@ -381,11 +381,11 @@ standards based 802.11 wireless devices.
 
 See documentation in L<SNMP::Info::IEEE802dot11> for details.
 
-=item SNMP::Info::IEEE802dot3ag
+=item SNMP::Info::IEEE802dot3ad
 
 SNMP Interface to IEEE Aggregated Links.  F<IEEE8023-LAG-MIB>
 
-See documentation in L<SNMP::Info::IEEE802dot3ag> for details.
+See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
 
 =item SNMP::Info::LLDP
 

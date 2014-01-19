@@ -1,4 +1,4 @@
-# SNMP::Info::IEEE802dot3ag
+# SNMP::Info::IEEE802dot3ad
 #
 # Copyright (c) 2014 SNMP::Info Developers
 # All rights reserved.
@@ -27,17 +27,17 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package SNMP::Info::IEEE802dot3ag;
+package SNMP::Info::IEEE802dot3ad;
 
 use strict;
 use Exporter;
 use SNMP::Info::Aggregate;
 
-@SNMP::Info::IEEE802dot3ag::ISA = qw/
+@SNMP::Info::IEEE802dot3ad::ISA = qw/
   SNMP::Info::Aggregate
   Exporter
 /;
-@SNMP::Info::IEEE802dot3ag::EXPORT_OK = qw/
+@SNMP::Info::IEEE802dot3ad::EXPORT_OK = qw/
   agg_ports_lag
 /;
 
@@ -86,7 +86,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::IEEE802dot3ag - SNMP Interface to IEEE Aggregated Links
+SNMP::Info::IEEE802dot3ad - SNMP Interface to IEEE Aggregated Links
 
 =head1 AUTHOR
 

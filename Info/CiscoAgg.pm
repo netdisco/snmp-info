@@ -31,10 +31,10 @@ package SNMP::Info::CiscoAgg;
 
 use strict;
 use Exporter;
-use SNMP::Info::IEEE802dot3ag 'agg_ports_lag';
+use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 @SNMP::Info::CiscoAgg::ISA = qw/
-  SNMP::Info::IEEE802dot3ag
+  SNMP::Info::IEEE802dot3ad
   Exporter
 /;
 @SNMP::Info::CiscoAgg::EXPORT_OK = qw/
@@ -46,7 +46,7 @@ use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 $VERSION = '3.10';
 
 %MIBS = (
-  %SNMP::Info::IEEE802dot3ag::MIBS,
+  %SNMP::Info::IEEE802dot3ad::MIBS,
   'CISCO-PAGP-MIB'   => 'pagpGroupIfIndex',
 );
 
@@ -98,7 +98,7 @@ Use or create in a subclass of SNMP::Info.  Do not use directly.
 
 =head2 Inherited Classes
 
-L<SNMP::Info::IEEE802dot3ag>
+L<SNMP::Info::IEEE802dot3ad>
 
 =head2 Required MIBs
 

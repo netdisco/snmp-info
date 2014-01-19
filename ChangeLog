@@ -6,7 +6,7 @@ version 3.11
 
     * [#31] port-channel (aggregate) support.  Aggregate support added in new
       agg_ports() method.  Inital support added for Arista (ifStack),
-      Avaya (MLT), Brocade (MST), and Cisco (802.3ag).
+      Avaya (MLT), Brocade (MST), and Cisco (802.3ad).
 
    [ENHANCEMENTS]
 

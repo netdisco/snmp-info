@@ -25,7 +25,7 @@ Info/Entity.pm
 Info/EtherLike.pm
 Info/FDP.pm
 Info/IEEE802dot11.pm
-Info/IEEE802dot3ag.pm
+Info/IEEE802dot3ad.pm
 Info/IPv6.pm
 Info/Layer1.pm
 Info/Layer1/Allied.pm
