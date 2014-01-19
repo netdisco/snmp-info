@@ -148,6 +148,11 @@ $VERSION = '3.10';
     'rc2k_mda_part'   => 'rc2kMdaCardPartNumber',
     'rc2k_mda_date'   => 'rc2kMdaCardDateCode',
     'rc2k_mda_dev'    => 'rc2kMdaCardDeviations',
+    
+    # From RAPID-CITY::rcMltTable
+    'rc_mlt_ports'    => 'rcMltPortMembers',
+    'rc_mlt_index'    => 'rcMltIfIndex',
+    'rc_mlt_dp'       => 'rcMltDesignatedPort',
 );
 
 %MUNGE = (
@@ -156,6 +161,7 @@ $VERSION = '3.10';
     'rc_cpu_mac'      => \&SNMP::Info::munge_mac,
     'rc_vlan_members' => \&SNMP::Info::munge_port_list,
     'rc_vlan_no_join' => \&SNMP::Info::munge_port_list,
+    'rc_mlt_ports'    => \&SNMP::Info::munge_port_list,
 );
 
 # Need to override here since overridden in Layer2 and Layer3 classes
@@ -566,6 +572,35 @@ sub _validate_vlan_param {
     return 1;
 }
 
+sub agg_ports {
+    my $rapidcity = shift;
+
+    # TODO: implement partial
+    my $ports  = $rapidcity->rc_mlt_ports;
+    my $trunks = $rapidcity->rc_mlt_index;
+    my $dps    = $rapidcity->rc_mlt_dp || {};
+
+    return {}
+        unless ref {} eq ref $trunks
+            and scalar keys %$trunks
+            and ref {} eq ref $ports
+            and scalar keys %$ports;
+
+    my $ret = {};
+    foreach my $m ( keys %$trunks ) {
+        my $idx = $trunks->{$m};
+        next unless $idx;
+        $idx = $dps->{$m} ? $dps->{$m} : $idx;
+        my $portlist = $ports->{$m};
+        next unless $portlist;
+        for ( my $i = 0; $i <= scalar(@$portlist); $i++ ) {
+            $ret->{$i} = $idx if ( @$portlist[$i] );
+        }
+    }
+
+    return $ret;
+}
+
 1;
 
 __END__
@@ -716,6 +751,12 @@ IDs.  These are the VLANs which are members of the egress list for the port.
 Returns VLAN IDs
 
 (C<rcVlanId>)
+
+=item $rapidcity->agg_ports()
+
+Returns a HASH reference mapping from slave to master port for each member of
+a port bundle (MLT) on the device. Keys are ifIndex of the slave ports,
+Values are ifIndex of the corresponding master ports.
 
 =back
 
