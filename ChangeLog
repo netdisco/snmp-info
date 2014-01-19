@@ -12,6 +12,7 @@ version 3.11
 
     * Use Q-BRIDGE-MIB as default with fallback to BRIDGE-MIB across all
       classes for the fw_mac, fw_port, and fw_status methods
+    * Additional support for Avaya 8800 series in L3::Passport
 
    [BUG FIXES]
 
