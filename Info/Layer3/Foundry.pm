@@ -38,8 +38,12 @@ use SNMP::Info::Layer3;
 use SNMP::Info::FDP;
 use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::Foundry::ISA = qw/SNMP::Info::FDP SNMP::Info::LLDP
-    SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Foundry::ISA = qw/
+    SNMP::Info::FDP
+    SNMP::Info::LLDP
+    SNMP::Info::Layer3
+    Exporter
+/;
 @SNMP::Info::Layer3::Foundry::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
@@ -50,17 +54,20 @@ $VERSION = '3.10';
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::FDP::MIBS,
+
     'FOUNDRY-SN-ROOT-MIB'         => 'foundry',
     'FOUNDRY-SN-AGENT-MIB'        => 'snChasPwrSupplyDescription',
     'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snSwGroupOperMode',
     'FOUNDRY-SN-STACKING-MIB'     => 'snStackingOperUnitRole',
     'FOUNDRY-POE-MIB'             => 'snAgentPoeGblPowerCapacityTotal',
+    'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snSwGroupOperMode',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::FDP::GLOBALS,
+
     'mac'        => 'ifPhysAddress.1',
     'chassis'    => 'entPhysicalDescr.1',
     'temp'       => 'snChasActualTemperature',
@@ -93,8 +100,10 @@ $VERSION = '3.10';
 );
 
 %MUNGE = (
-    %SNMP::Info::Layer3::MUNGE, %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::FDP::MUNGE,
+
     'ag_mod2_type' => \&SNMP::Info::munge_e_type,
     'ag_mod_type'  => \&SNMP::Info::munge_e_type,
 );
@@ -785,6 +794,29 @@ sub peth_power_consumption {
     return $peth_power_consumed;
 }
 
+sub agg_ports {
+  my $dev = shift;
+
+  # TODO: implement partial
+  my $trunks = $dev->snMSTrunkPortList;
+  my $ports  = $dev->snSwPortIfIndex; # sw_index()
+
+  return {} unless
+    ref {} eq ref $trunks and scalar keys %$trunks
+    and ref {} eq ref $ports and scalar keys %$ports;
+
+  my $ret = {};
+  foreach my $m (keys %$trunks) {
+      my $skip = 0;
+      while (my $s = unpack("x${skip}n2", $trunks->{$m})) {
+          $ret->{ $ports->{$s} } = $m;
+          $skip += 2;
+      }
+  }
+
+  return $ret;
+}
+
 1;
 __END__
 
@@ -847,6 +879,8 @@ after determining a more specific class using the method above.
 =item F<FOUNDRY-SN-STACKING-MIB>
 
 =item F<FOUNDRY-POE-MIB>
+
+=item F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -981,6 +1015,12 @@ Protocol.
 Skipped if device is an EdgeIron 24G due to reports of hangs.
 
 (C<dot1dStpPortState>)
+
+=item $foundry->agg_ports()
+
+Returns a HASH reference mapping from slave to master port for each member of
+a port bundle on the device. Keys are ifIndex of the slave ports, Values are
+ifIndex of the corresponding master ports.
 
 =back
 

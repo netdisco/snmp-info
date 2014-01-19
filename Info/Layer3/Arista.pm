@@ -36,9 +36,14 @@ use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
 use SNMP::Info::LLDP;
+use SNMP::Info::Aggregate;
 
-@SNMP::Info::Layer3::Arista::ISA = qw/SNMP::Info::LLDP SNMP::Info::MAU
-    SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Arista::ISA = qw/
+    SNMP::Info::Aggregate
+    SNMP::Info::LLDP
+    SNMP::Info::MAU
+    SNMP::Info::Layer3 Exporter
+/;
 @SNMP::Info::Layer3::Arista::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
@@ -49,6 +54,7 @@ $VERSION = '3.10';
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
     %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::Aggregate::MIBS,
     'ARISTA-PRODUCTS-MIB' => 'aristaProducts',
 );
 
@@ -125,6 +131,8 @@ sub lldp_if {
     return $lldp_if;
 }
 
+sub agg_ports { return agg_ports_ifstack(@_) }
+
 1;
 __END__
 
@@ -160,6 +168,8 @@ Subclass for Arista Networks EOS-based devices
 
 =over
 
+=item SNMP::Info::Aggregate
+
 =item SNMP::Info::Layer3
 
 =item SNMP::Info::MAU
@@ -177,6 +187,8 @@ Subclass for Arista Networks EOS-based devices
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::Aggregate/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::MAU/"Required MIBs"> for its own MIB requirements.
 
@@ -240,6 +252,12 @@ Returns info from F<MAU-MIB>
 =item $arista->lldp_if()
 
 Returns the mapping to the SNMP Interface Table.
+
+=item C<agg_ports>
+
+Returns a HASH reference mapping from slave to master port for each member of
+a port bundle on the device. Keys are ifIndex of the slave ports, Values are
+ifIndex of the corresponding master ports.
 
 =back
 

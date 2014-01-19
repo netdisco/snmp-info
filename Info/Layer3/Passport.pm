@@ -583,6 +583,20 @@ sub bp_index {
     foreach my $iid ( keys %$if_index ) {
         $bp_index{$iid} = $iid;
     }
+
+    # If we have MLT's map them to the designated port
+    my $trunks = $passport->rc_mlt_index;
+    my $dps    = $passport->rc_mlt_dp || {};
+
+    if ( ref {} eq ref $trunks and scalar keys %$trunks ) {
+        foreach my $m ( keys %$trunks ) {
+            my $m_idx = $trunks->{$m};
+            next unless $m_idx;
+            my $i_idx = $dps->{$m} ? $dps->{$m} : $m_idx;
+            $bp_index{$m_idx} = $i_idx;
+        }
+    }
+
     return \%bp_index;
 }
 
