@@ -433,6 +433,10 @@ sub ip_index {
     foreach my $ip ( keys %$ip_index ) {
         my $iid = $ip_index->{$ip};
         next unless defined $iid;
+        # Skip VSP default CPU addresses
+        next if ($ip =~ /^192\.168\.1\.1/);
+        # Skip default CPU addresses
+        next if ($ip =~ /^192\.168\.168\.16[89]/);
 
         $ip_index{$ip} = $iid;
     }
@@ -447,6 +451,8 @@ sub ip_index {
         foreach my $cid ( keys %$cpu_ip ) {
             my $c_ip = $cpu_ip->{$cid};
             next unless defined $c_ip;
+            # Skip default CPU addresses
+            next if ($c_ip =~ /192\.168\.168\.16[89]/);
 
             $ip_index{$c_ip} = $cid;
         }
@@ -467,6 +473,10 @@ sub ip_netmask {
 
     my %ip_index;
     foreach my $iid ( keys %$ip_mask ) {
+        # Skip VSP default CPU addresses
+        next if ($iid =~ /^192\.168\.1\./);
+        # Skip default CPU addresses
+        next if ($iid =~ /^192\.168\.168\.16[89]/);
         my $mask = $ip_mask->{$iid};
         next unless defined $mask;
 
@@ -485,6 +495,8 @@ sub ip_netmask {
         foreach my $iid ( keys %$cpu_mask ) {
             my $c_ip = $cpu_ip->{$iid};
             next unless defined $c_ip;
+            # Skip default CPU addresses
+            next if ($c_ip =~ /192\.168\.168\.16[89]/);
             my $c_mask = $cpu_mask->{$iid};
             next unless defined $c_mask;
 

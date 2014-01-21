@@ -23,6 +23,8 @@ version 3.11
       L3::Netscreen
     * Fix Extreme XOS i_vlan_membership - Revert [28bbe0], fix bug with
       untagged being added to @ret twice (Robert Kerr)
+    * Skip default CPU management addresses on VSP and 8800/8600 series in
+      L3::Passport to prevent erroneous duplicate addresses
 
 version 3.10 (2013-12-16)
 
