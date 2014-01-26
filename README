@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.10
+    SNMP::Info - Version 3.11
 
 AUTHOR
 
@@ -200,6 +200,11 @@ SUBCLASSES
 
         See documentation in SNMP::Info::AdslLine for details.
 
+    SNMP::Info::Aggregate
+        SNMP Interface to IF-MIB "ifStackTable" Aggregated Links
+
+        See documentation in SNMP::Info::Aggregate for details.
+
     SNMP::Info::Airespace
         AIRESPACE-WIRELESS-MIB and AIRESPACE-SWITCHING-MIB. Inherited by
         devices based on the Airespace wireless platform.
@@ -217,6 +222,11 @@ SUBCLASSES
         support.
 
         See documentation in SNMP::Info::Bridge for details.
+
+    SNMP::Info::CiscoAgg
+        SNMP Interface to Cisco Aggregated Links
+
+        See documentation in SNMP::Info::CiscoAgg for details.
 
     SNMP::Info::CDP
         CISCO-CDP-MIB. Cisco Discovery Protocol (CDP) Support. Inherited by
@@ -314,6 +324,11 @@ SUBCLASSES
         standards based 802.11 wireless devices.
 
         See documentation in SNMP::Info::IEEE802dot11 for details.
+
+    SNMP::Info::IEEE802dot3ad
+        SNMP Interface to IEEE Aggregated Links. IEEE8023-LAG-MIB
+
+        See documentation in SNMP::Info::IEEE802dot3ad for details.
 
     SNMP::Info::LLDP
         LLDP-MIB, LLDP-EXT-DOT1-MIB, and LLDP-EXT-DOT3-MIB. Link Layer
