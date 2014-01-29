@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.12 
+
+   [BUG FIXES]
+
+    * [#52] NETSCREEN-IP-ARP-MIB considered harmful
+
 version 3.11 (2014-01-26)
 
    [NEW FEATURES]

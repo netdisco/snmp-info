@@ -69,17 +69,17 @@ $VERSION = '3.11';
     ns_i_up          => 'nsIfStatus',
     ns_ip_table      => 'nsIfIp',
     ns_ip_netmask    => 'nsIfNetmask',
-    at_index         => 'nsIpArpIfIdx',
-    at_paddr         => 'nsIpArpMac',
-    at_netaddr       => 'nsIpArpIp',
     bp_index         => 'nsIfInfo',
+    std_at_paddr     => 'ipNetToMediaPhysAddress',
+    ns_at_paddr      => 'nsIpArpMac',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::IEEE802dot11::MUNGE,
-    'ns_i_mac' => \&SNMP::Info::munge_mac,
-    'at_paddr' => \&SNMP::Info::munge_mac,
+    'ns_i_mac'     => \&SNMP::Info::munge_mac,
+    'ns_at_paddr'  => \&SNMP::Info::munge_mac,
+    'std_at_paddr' => \&SNMP::Info::munge_mac,
 );
 
 sub layers {
@@ -478,6 +478,33 @@ sub i_80211channel {
     return \%i_80211channel;
 }
 
+sub at_index {
+    my $netscreen = shift;
+
+    my $std = $netscreen->ipNetToMediaIfIndex();
+    return $std if (ref {} eq ref $std and scalar keys %$std);
+
+    return $netscreen->nsIpArpIfIdx();
+}
+
+sub at_paddr {
+    my $netscreen = shift;
+
+    my $std = $netscreen->std_at_paddr();
+    return $std if (ref {} eq ref $std and scalar keys %$std);
+
+    return $netscreen->ns_at_paddr();
+}
+
+sub at_netaddr {
+    my $netscreen = shift;
+
+    my $std = $netscreen->ipNetToMediaNetAddress();
+    return $std if (ref {} eq ref $std and scalar keys %$std);
+
+    return $netscreen->nsIpArpIp();
+}
+
 1;
 
 __END__
@@ -724,6 +751,33 @@ identifier (IID).
 
 Returns reference to hash of bridge port table entries map back to interface
 identifier (IID).
+
+=back
+
+=head2 Arp Cache Table
+
+=over
+
+=item $netscreen->at_index()
+
+Returns reference to hash.  Maps ARP table entries to Interface IIDs 
+
+If the device doesn't support C<ipNetToMediaIfIndex>, this will try
+the proprietary C<nsIpArpIfIdx>.
+
+=item $netscreen->at_paddr()
+
+Returns reference to hash.  Maps ARP table entries to MAC addresses. 
+
+If the device doesn't support C<ipNetToMediaPhysAddress>, this will try
+the proprietary C<nsIpArpMac>.
+
+=item $netscreen->at_netaddr()
+
+Returns reference to hash.  Maps ARP table entries to IP addresses. 
+
+If the device doesn't support C<ipNetToMediaNetAddress>, this will try
+the proprietary C<nsIpArpIp>.
 
 =back
 
