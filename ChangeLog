@@ -2,6 +2,12 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 3.12 
 
+   [ENHANCEMENTS]
+
+    * Modify L3::Passport to obtain forwarding table information from
+      RAPID-CITY if information is not available in either Q-BRIDGE-MIB or
+      BRIDGE-MIB.  Needed for VSP 9000 prior to version 4.x (Tobias Gerlach)
+
    [BUG FIXES]
 
     * [#52] NETSCREEN-IP-ARP-MIB considered harmful

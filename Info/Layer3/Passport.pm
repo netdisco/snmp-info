@@ -612,6 +612,69 @@ sub bp_index {
     return \%bp_index;
 }
 
+# We have devices which support BRIDGE-MIB, Q-BRIDGE-MIB, and RAPID-CITY
+# exclusively.  Use standards-based first and fall back to RAPID-CITY.
+sub fw_mac {
+    my $passport  = shift;
+    my $partial   = shift;
+
+    my $qb = $passport->SUPER::fw_mac($partial);
+    return $qb if (ref {} eq ref $qb and scalar keys %$qb);
+
+    my $qb_fw_port = $passport->rcBridgeTpFdbPort($partial);
+    my $qb_fw_mac  = {};
+    foreach my $idx ( keys %$qb_fw_port ) {
+        my ( $fdb_id, $mac ) = _rc_fdbtable_index($idx);
+        $qb_fw_mac->{$idx} = $mac;
+    }
+    return $qb_fw_mac;
+}
+
+sub fw_port {
+    my $passport  = shift;
+    my $partial   = shift;
+
+    my $qb = $passport->SUPER::fw_port($partial);
+    return $qb if (ref {} eq ref $qb and scalar keys %$qb);
+
+    return $passport->rcBridgeTpFdbPort($partial);
+}
+
+sub fw_status {
+    my $passport  = shift;
+    my $partial   = shift;
+
+    my $qb = $passport->SUPER::fw_status($partial);
+    return $qb if (ref {} eq ref $qb and scalar keys %$qb);
+    
+    return $passport->rcBridgeTpFdbStatus($partial);
+}
+
+sub qb_fw_vlan {
+    my $passport  = shift;
+    my $partial   = shift;
+
+    my $qb = $passport->SUPER::qb_fw_vlan($partial);
+    return $qb if (ref {} eq ref $qb and scalar keys %$qb);
+
+    my $qb_fw_port = $passport->rcBridgeTpFdbPort($partial);
+    my $qb_fw_vlan = {};
+    foreach my $idx ( keys %$qb_fw_port ) {
+        my ( $fdb_id, $mac ) = _rc_fdbtable_index($idx);
+        $qb_fw_vlan->{$idx} = $fdb_id;
+    }
+    return $qb_fw_vlan;
+}
+
+# break up the rcBridgeTpFdbEntry INDEX into FDB ID and MAC Address.
+sub _rc_fdbtable_index {
+    my $idx    = shift;
+    my @values = split( /\./, $idx );
+    my $fdb_id = shift(@values);
+    return ( $fdb_id, join( ':', map { sprintf "%02x", $_ } @values ) );
+}
+
+
 # Pseudo ENTITY-MIB methods
 
 sub e_index {
@@ -1263,6 +1326,40 @@ identifier (iid)
 
 Returns (C<ifIndex>) for both key and value since some devices seem to have
 problems with F<BRIDGE-MIB>
+
+=back
+
+=head2 Forwarding Table
+
+These methods utilize, in order; F<Q-BRIDGE-MIB>, F<BRIDGE-MIB>, and
+F<RAPID-CITY> to obtain the forwarding table information.
+
+=over 
+
+=item $passport->fw_mac()
+
+Returns reference to hash of forwarding table MAC Addresses
+
+(C<dot1qTpFdbAddress>), (C<dot1dTpFdbAddress>), (C<rcBridgeTpFdbAddress>)
+
+=item $passport->fw_port()
+
+Returns reference to hash of forwarding table entries port interface
+identifier (iid)
+
+(C<dot1qTpFdbPort>), (C<dot1dTpFdbPort>), (C<rcBridgeTpFdbPort>)
+
+=item $passport->fw_status()
+
+Returns reference to hash of forwarding table entries status
+
+(C<dot1qTpFdbStatus>), (C<dot1dTpFdbStatus>), (C<rcBridgeTpFdbStatus>)
+
+=item $passport->qb_fw_vlan()
+
+Returns reference to hash of forwarding table entries VLAN ID
+
+(C<dot1qFdbId>), (C<rcBridgeTpFdbVlanId>)
 
 =back
 
