@@ -809,7 +809,7 @@ sub agg_ports {
   foreach my $m (keys %$trunks) {
       my $skip = 0;
       while (my $s = unpack("x${skip}n2", $trunks->{$m})) {
-          $ret->{ $ports->{$s} } = $m;
+          $ret->{ $ports->{$s} } = $ports->{$m};
           $skip += 2;
       }
   }
