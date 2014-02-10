@@ -40,7 +40,7 @@ use SNMP::Info::Layer3;
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE 
             $int_include_vpn $fake_idx $type_class/;
 
-$VERSION = '3.11';
+$VERSION = '3.12';
 
 %MIBS = (
             %SNMP::Info::Layer3::MIBS,
