@@ -259,7 +259,7 @@ sub i_lastchange {
     my %i_lastchange;
 
     foreach my $iid ( keys %$ns_i_map ) {
-        $i_lastchange{$iid} = $if_i_lastchange->{ $ns_i_map->{$iid} };
+        $i_lastchange{$iid} = $if_i_lastchange->{ $ns_i_map->{$iid} } || 0;
     }
     return \%i_lastchange;
 }
