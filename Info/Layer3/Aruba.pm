@@ -544,6 +544,8 @@ sub i_vlan_membership {
 
 	foreach my $oid ( keys %$essid_ssid ) {
 		my $ssid  = $essid_ssid->{$oid};
+		next if(!defined $ssid);
+
 		my @parts = split( /\./, $oid );
 		my $idx   = join( ".", @parts[ 0 .. 6 ] );
 
@@ -579,6 +581,7 @@ sub i_ssidlist {
 
     foreach my $oid ( keys %$essid_ssid ) {
 	my $ssid = $essid_ssid->{$oid};
+	next if(!defined $ssid);
 	my @parts = split( /\./, $oid );
 
 	# Give the SSID a numeric value based upon tail of BSSID
