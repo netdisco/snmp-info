@@ -992,7 +992,7 @@ sub e_model {
 sub e_type {
     my $aruba = shift;
 
-    return $aruba->aruba_ap_type() || {};
+    return {%{$aruba->e_model()}, %{$aruba->aruba_ap_type()}} || {};
 }
 
 sub e_hwver {
