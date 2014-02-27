@@ -56,11 +56,31 @@ $VERSION = '3.12';
 
 %MUNGE = ();
 
-# until someone using PAgP sends us a patch
-sub agg_ports_pagp { {} }
+sub agg_ports_pagp {
+  my $dev = shift;
+
+  # Note that this mapping will miss any interfaces that are down during
+  # polling. If one of the members is up, we could use
+  # pagpAdminGroupCapability to figure things out, but if they're all
+  # down, we're hosed. Since we could be hosed anyway, we skip the fancy
+  # stuff.
+  my $mapping = {};
+  my $group = $dev->pagpGroupIfIndex;
+  for my $slave (keys %$group) {
+    my $master = $group->{$slave};
+    next if($master == 0 || $slave == $master);
+
+    $mapping->{$slave} = $master;
+  }
+
+  return $mapping;
+}
 
 # until we have PAgP data and need to combine with LAG data
-sub agg_ports { return agg_ports_lag(@_) }
+sub agg_ports {
+  my $ret = {%{agg_ports_pagp(@_)}, %{agg_ports_lag(@_)}};
+  return $ret;
+}
 
 1;
 
