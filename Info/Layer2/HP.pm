@@ -38,10 +38,16 @@ use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
 use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
+use SNMP::Info::Aggregate;
 
-@SNMP::Info::Layer2::HP::ISA
-    = qw/SNMP::Info::Layer3 SNMP::Info::MAU SNMP::Info::LLDP
-    SNMP::Info::CDP Exporter/;
+@SNMP::Info::Layer2::HP::ISA = qw/
+    SNMP::Info::Aggregate
+    SNMP::Info::Layer3 
+    SNMP::Info::MAU 
+    SNMP::Info::LLDP
+    SNMP::Info::CDP 
+    Exporter
+/;
 @SNMP::Info::Layer2::HP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE/;
@@ -53,6 +59,7 @@ $VERSION = '3.12';
     %SNMP::Info::MAU::MIBS,
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::CDP::MIBS,
+    %SNMP::Info::Aggregate::MIBS,
     'RFC1271-MIB'    => 'logDescription',
     'HP-ICF-OID'     => 'hpSwitch4000',
     'STATISTICS-MIB' => 'hpSwitchCpuStat',
@@ -69,6 +76,7 @@ $VERSION = '3.12';
     %SNMP::Info::MAU::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
+    %SNMP::Info::Aggregate::GLOBALS,
     'serial1'      => 'entPhysicalSerialNum.1',
     'serial2'      => 'hpHttpMgSerialNumber.0',
     'hp_cpu'       => 'hpSwitchCpuStat.0',
@@ -87,6 +95,7 @@ $VERSION = '3.12';
     %SNMP::Info::MAU::FUNCS,
     %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::CDP::FUNCS,
+    %SNMP::Info::Aggregate::FUNCS,
     'i_type2'   => 'ifType',
 
     # RFC1271
@@ -112,6 +121,7 @@ $VERSION = '3.12';
     %SNMP::Info::MAU::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::CDP::MUNGE,
+    %SNMP::Info::Aggregate::MUNGE,
     'c_id'   => \&munge_hp_c_id,
 );
 
@@ -523,6 +533,8 @@ sub set_i_vlan_tagged {
     }
     return;
 }
+
+sub agg_ports { return agg_ports_ifstack(@_) }
 
 1;
 __END__
