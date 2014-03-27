@@ -5,6 +5,7 @@ version 3.13 (2014-03-27)
    [ENHANCEMENTS]
 
     * Cisco PAgP support added to LAG method
+    * HP ProCurve LAG support by inheriting Info::Aggregate class
 
 version 3.12 (2014-02-10)
 

@@ -43,7 +43,7 @@ use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.12';
+$VERSION = '3.13';
 
 %MIBS = (
   %SNMP::Info::IEEE802dot3ad::MIBS,
@@ -142,7 +142,8 @@ ifIndex of the corresponding master ports.
 
 =item C<agg_ports_pagp>
 
-Unimplemented. Returns an empty HASH reference.
+Implements the PAgP LAG info retrieval. Merged into C<agg_ports> data
+automatically.
 
 =back
 

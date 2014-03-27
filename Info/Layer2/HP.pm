@@ -52,7 +52,7 @@ use SNMP::Info::Aggregate;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE/;
 
-$VERSION = '3.12';
+$VERSION = '3.13';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -824,7 +824,7 @@ to a hash.
 
 =head2 Overrides
 
-=over
+=over 4
 
 =item $hp->interfaces() 
 
@@ -851,6 +851,12 @@ Crosses i_name() with $hp->e_name() using $hp->e_port() and i_alias()
 
 Returns reference to hash of power Ethernet port table entries map back to
 interface index (c<ifIndex>)
+
+=item C<agg_ports>
+
+Returns a HASH reference mapping from slave to master port for each member of
+a port bundle on the device. Keys are ifIndex of the slave ports, Values are
+ifIndex of the corresponding master ports.
 
 =back
 
