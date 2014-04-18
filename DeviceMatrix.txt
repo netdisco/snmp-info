@@ -386,7 +386,7 @@ note: The Cisco 3000 device can return duplicate interface names, while Netdisco
 
 device: ASA
 note: The Cisco ASA is the successor of the PIX which was bought from Altiga Networks.
-Class: Layer3::CiscoASA
+class: Layer3::CiscoASA
 
 device-family: 1000
 duplex: no

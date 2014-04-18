@@ -50,15 +50,28 @@ $VERSION = '3.13';
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     'hrSystemUptime' => 'hrSystemUptime',
+    'os_level'       => 'mtxrLicLevel',
     'os_ver'         => 'mtxrLicVersion',
+    'serial1'        => 'mtxrSystem.3.0',
+    'firmware'       => 'mtxrSystem.4.0',
+    'fan_type'       => 'mtxrHlActiveFan',
 );
 
-%FUNCS = ( %SNMP::Info::Layer3::FUNCS, );
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,
+);
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
+%MUNGE = (
+    %SNMP::Info::Layer3::MUNGE,
+);
 
 sub vendor {
     return 'mikrotik';
+}
+
+sub serial {
+    my $mikrotik = shift;
+    return $mikrotik->serial1;
 }
 
 sub model {
@@ -71,6 +84,18 @@ sub model {
 
 sub os {
     return 'routeros';
+}
+
+sub board_temp {
+    my $mikrotik = shift;
+    my $temp = $mikrotik->mtxrHlTemperature;
+    return $temp / 10.0;
+}
+
+sub cpu_temp {
+    my $mikrotik = shift;
+    my $temp = $mikrotik->mtxrHlProcessorTemperature;
+    return $temp / 10.0;
 }
 
 1;
@@ -147,6 +172,23 @@ Tries to extract the device model from C<sysDescr>.
 =item $mikrotik->os_ver()
 
 Returns the value of C<mtxrLicVersion>.
+
+=item $mikrotik->os_level()
+
+Returns the value of RouterOS level C<mtxrLicLevel>
+
+=item $mikrotik->board_temp()
+=item $mikrotik->cpu_temp()
+
+Returns the appropriate temperature values
+
+=item $mikrotik->serial()
+
+Returns the device serial.
+
+=item $mikrotik->firmware()
+
+Returns the firmware version of hardware.
 
 =back
 

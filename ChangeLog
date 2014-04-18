@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.14 ()
+
+   [ENHANCEMENTS]
+
+    * Improvements to Mikrotik module (Alex Z)
+
 version 3.13 (2014-03-27)
 
    [ENHANCEMENTS]

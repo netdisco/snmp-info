@@ -108,7 +108,7 @@ See L<http://netdisco.org/doc/DeviceMatrix.html> or L<DeviceMatrix.txt> for more
 =head1 SUPPORT
 
 Please direct all support, help, and bug requests to the snmp-info-users
-Mailing List at <http://lists.sourceforge.net/lists/listinfo/snmp-info-users>.
+Mailing List at L<http://lists.sourceforge.net/lists/listinfo/snmp-info-users>.
 
 =head1 DESCRIPTION 
 
