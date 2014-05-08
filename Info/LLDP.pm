@@ -298,7 +298,7 @@ sub _lldp_addr_index {
     my @oids   = split( /\./, $idx );
     my $index  = join( '.', splice( @oids, 0, 3 ) );
     my $proto  = shift(@oids);
-    my $length = shift(@oids);
+    my $length = shift(@oids) if scalar @oids > 4;
 
     # IPv4
     if ( $proto == 1 ) {

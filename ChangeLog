@@ -5,6 +5,7 @@ version 3.14 ()
    [ENHANCEMENTS]
 
     * Improvements to Mikrotik module (Alex Z)
+    * Don't unshift length from broken lldpRemManAddrTable implementations (G. Shtern)
 
 version 3.13 (2014-03-27)
 
