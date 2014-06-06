@@ -33,9 +33,10 @@ package SNMP::Info::Layer2::HPVC;
 use strict;
 use Exporter;
 use SNMP::Info::Layer2;
+use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer2::HPVC::ISA
-    = qw/SNMP::Info::Layer2 Exporter/;
+    = qw/SNMP::Info::Layer2 SNMP::Info::LLDP Exporter/;
 @SNMP::Info::Layer2::HPVC::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
@@ -44,6 +45,7 @@ $VERSION = '3.13';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
+    %SNMP::Info::LLDP::MIBS,
     'HPVC-MIB'       => 'vcDomainName',
     'CPQSINFO-MIB'   => 'cpqSiSysSerialNum',
     'HPVCMODULE-MIB' => 'vcModuleDomainName',
@@ -51,6 +53,7 @@ $VERSION = '3.13';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
     'serial1'      => 'cpqSiSysSerialNum.0',
     'os_ver'       => 'cpqHoSWRunningVersion.1',
     'os_bin'       => 'cpqHoFwVerVersion.1',
@@ -59,12 +62,14 @@ $VERSION = '3.13';
 
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
     
 );
 
 %MUNGE = (
     # Inherit all the built in munging
     %SNMP::Info::Layer2::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
 );
 
 
