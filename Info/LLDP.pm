@@ -90,8 +90,12 @@ sub hasLLDP {
     # We may be have LLDP, but nothing in lldpRemoteSystemsData Tables
     # so we could be running LLDP but not return any useful information
     my $lldp_cap = $lldp->lldp_sys_cap();
-
     return 1 if defined $lldp_cap;
+
+    # If the device doesn't return local system capabilities, fallback by checking if it would report neighbors
+    my $lldp_rem = $lldp->lldp_rem_id() || {};
+    return 1 if scalar keys %$lldp_rem;
+    
     return;
 }
 
