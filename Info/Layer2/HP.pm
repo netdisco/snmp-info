@@ -827,6 +827,12 @@ Power supplied by PoE ports, in milliwatts
 Returns what version of STP the device is running.
 (C<hpicfBridgeRstpForceVersion> with fallback to inherited stp_ver())
 
+=item $hp->qb_fw_vlan()
+
+Returns reference to hash of forwarding table entries VLAN ID
+
+(C<dot1qFdbId>), (C<rcBridgeTpFdbVlanId>)
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer2
