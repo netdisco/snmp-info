@@ -33,9 +33,17 @@ use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::LLDP;
+use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
-@SNMP::Info::Layer3::H3C::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
-@SNMP::Info::Layer3::H3C::EXPORT_OK = qw//;
+@SNMP::Info::Layer3::H3C::ISA = qw/
+  SNMP::Info::IEEE802dot3ad
+  SNMP::Info::LLDP
+  SNMP::Info::Layer3
+  Exporter
+/;
+@SNMP::Info::Layer3::H3C::EXPORT_OK = qw/
+  agg_ports
+/;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
@@ -44,6 +52,7 @@ $VERSION = '3.13';
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::IEEE802dot3ad::MIBS,
     'HH3C-LswDEVM-MIB'     => 'hh3cDevMFanStatus',
     'HH3C-LswINF-MIB'      => 'hh3cSlotPortMax',
     'HH3C-LSW-DEV-ADM-MIB' => 'hh3cLswSysVersion',
@@ -112,6 +121,8 @@ sub i_ignore {
     }
     return \%i_ignore;
 }
+
+sub agg_ports { return agg_ports_lag(@_) }
 
 1;
 __END__
@@ -218,6 +229,12 @@ to a hash.
 Returns reference to hash.  Increments value of IID if port is to be ignored.
 
 Ignores loopback
+
+=item C<agg_ports>
+
+Returns a HASH reference mapping from slave to master port for each member of
+a port bundle on the device. Keys are ifIndex of the slave ports, Values are
+ifIndex of the corresponding master ports.
 
 =back
 

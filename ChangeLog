@@ -1,11 +1,17 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
-version 3.14 ()
+version 3.14 (2014-06-07)
 
    [ENHANCEMENTS]
 
     * Improvements to Mikrotik module (Alex Z)
     * Don't unshift length from broken lldpRemManAddrTable implementations (G. Shtern)
+    * 802.3ad LAG support in Layer3::H3C
+    * Add LLDP capabilities to Layer2::HPVC class
+
+   [BUG FIXES]
+
+    * Return correct VLAN info with qb_fw_table() on Layer2::HP
 
 version 3.13 (2014-03-27)
 
