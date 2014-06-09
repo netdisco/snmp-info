@@ -42,6 +42,7 @@ my $EMPTY = q{};
 my $class  = $EMPTY;
 my @dump   = ();
 my $debug  = 0;
+my $cache  = 0;
 my $device = '';
 my $comm   = '';
 my $ver    = 2;
@@ -58,9 +59,10 @@ GetOptions(
     'v|ver=i'    => \$ver,
     'i|ignore'   => \$ignore,
     'p|print=s'  => \@dump,
-    'x|debug+'   => \$debug,
     'm|mibdir=s' => \$mibdirs,
     'n|nobulk'   => \$nobulk,
+    'x|debug+'   => \$debug,
+    'k|cache'    => \$cache,
     'h|?|help'   => sub { pod2usage(1); },
 );
 
@@ -170,6 +172,15 @@ foreach my $fn (@dump) {
     if ( !$dumped{$fn} ) { test_fn( $dev, $fn ) }
 }
 
+if ($cache) {
+    eval {
+        require Data::Printer;
+    } && eval {
+        print "\nDumping cache...\n\n";
+        Data::Printer::p $dev;
+    };
+}
+
 #--------------------------------
 
 sub test_global {
@@ -244,10 +255,11 @@ Options:
     -s|comm     SNMP community
     -v|ver      SNMP version
     -p|print    Print values 
-    -x|debug    Debugging flag
     -i|ignore   Ignore Net-SNMP configuration file
     -m|mibdir   Directory containing MIB Files
     -n|nobulk   Disable bulkwalk
+    -x|debug    Debugging flag
+    -k|cache    Dump cache (requires Data::Printer to be installed)
     -h|?|help   Brief help message
 
 =head1 OPTIONS
@@ -286,12 +298,6 @@ multiple times.
 
 -print i_description -print i_type
 
-=item B<-debug>
-
-Turns on SNMP::Info debug.
-
--debug
-
 =item B<-ignore >
 
 Ignore Net-SNMP configuration file snmp.conf.  If this used mibdirs must be
@@ -311,6 +317,19 @@ colon ':'.
 Disable SNMP bulkwalk. Default bulkwalk is on and utilized with version 2.
 
 -nobulk
+
+=item B<-debug>
+
+Turns on SNMP::Info debug.
+
+-debug
+
+=item B<-cache>
+
+Dumps the table and leaf cache at the end of running. Requires that the
+L<Data::Printer> module be installed, otherwise does nothing.
+
+-cache
 
 =item B<-help>
 

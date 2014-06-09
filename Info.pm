@@ -1053,6 +1053,20 @@ SNMP::Session object to use instead of connecting on own.
 
 (default creates session automatically)
 
+=item Offline
+
+Causes SNMP::Info to avoid network activity and return data only from its
+cache. If you ask for something not in the cache, an error is thrown.  See
+also the C<cache()> and C<offline()> methods.
+
+(default 0, which means "online")
+
+=item Cache
+
+Pass in a HashRef to prime the cache of retrieved data. Useful for creating an
+instance in C<Offline> mode from a previously dumped cache. See also the
+C<cache()> method to retrieve a cache after running actial queries.
+
 =item OTHER
 
 All other arguments are passed to SNMP::Session.
@@ -1140,6 +1154,16 @@ sub new {
     if ( defined $args{IgnoreNetSNMPConf} ) {
         $new_obj->{IgnoreNetSNMPConf} = $args{IgnoreNetSNMPConf} || 0;
         delete $sess_args{IgnoreNetSNMPConf};
+    }
+
+    if ( defined $args{Offline} ) {
+        $new_obj->{Offline} = $args{Offline} || 0;
+        delete $sess_args{Offline};
+    }
+
+    if ( defined $args{Cache} and ref {} eq ref $args{Cache} ) {
+        $new_obj->{$_} = $args{Cache}->{$_} for keys %{$args{Cache}};
+        delete $sess_args{Cache};
     }
 
     my $sess = undef;
@@ -1266,6 +1290,9 @@ data from a method.
 Run $info->clear_cache() to clear the cache to allow reload of both globals
 and table methods.
 
+The cache can be retreved or set using the $info->cache() method. This works
+together with the C<Offline> option.
+
 =head2 Object Scalar Methods
 
 These are for package related data, not directly supplied
@@ -1312,6 +1339,50 @@ sub debug {
     }
 
     return $self->{debug};
+}
+
+=item $info->offline([1|0])
+
+Returns if offline mode is currently turned on for this object.
+
+Optionally sets the Offline parameter.
+
+=cut
+
+sub offline {
+    my $self = shift;
+    my $ol   = shift;
+
+    if ( defined $ol ) {
+        $self->{Offline} = $ol;
+    }
+    return $self->{Offline};
+}
+
+=item $info->cache([new_cache])
+
+Returns a HashRef of all cached data in this object. There will be a C<store>
+key for table data and then one key for each leaf.
+
+Optionally sets the cache parameters if passed a HashRef.
+
+=cut
+
+sub cache {
+    my $self = shift;
+    my $data = shift;
+
+    if ( defined $data and ref {} eq ref $data ) {
+        $self->{$_} = $data->{$_} for keys %$data;
+    }
+
+    my $cache = { store => $self->{store} };
+    foreach my $key ( keys %$self ) {
+        next unless defined $key;
+        next unless $key =~ /^_/;
+        $cache->{$key} = $self->{$key};
+    }
+    return $cache;
 }
 
 =item $info->bulkwalk([1|0])
@@ -3649,6 +3720,12 @@ sub _global {
             } 
         }
 
+        if ( $self->{Offline} ) {
+            $self->error_throw(
+                "SNMP::Info::_global: Offline but $attr is not in cache\n" );
+            return;
+        }
+
         if ( $self->debug() ) {
             # Let's get the MIB Module and leaf name along with the OID
             my $qual_leaf = SNMP::translateObj($oid,0,1) || '';
@@ -3973,6 +4050,12 @@ sub _load_attr {
             && !$load
             && !defined $partial );
 
+        if ( $self->{Offline} ) {
+            $self->error_throw(
+                "SNMP::Info::_load_atrr: Offline but $attr is not in cache\n" );
+            return;
+        }
+
         # We want the qualified leaf name so that we can
         # specify the Module (MIB) in the case of private leaf naming
         # conflicts.  Example: ALTEON-TIGON-SWITCH-MIB::agSoftwareVersion
@@ -4182,6 +4265,7 @@ sub snmp_connect_ip {
     my $ver  = $self->snmp_ver();
     my $comm = $self->snmp_comm();
 
+    return if $self->{Offline};
     return if ( $ip eq '0.0.0.0' ) or ( $ip =~ /^127\./ );
 
     # Create session object
