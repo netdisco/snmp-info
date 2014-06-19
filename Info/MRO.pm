@@ -155,17 +155,29 @@ sub all_methods {
     my $class = (ref $self ? ref $self : $self);
 
     my $results = subroutines( $class );
+    $results = { map { $_ => [ $results->{$_}, [], [] ] }
+                     keys %$results };
 
     my $globals = globals( $class );
     foreach my $key (keys %$globals) {
-        next if exists $results->{$key};
-        $results->{$key} = [ map { keys %$_ } @{ $globals->{$key} } ];
+        my $data = [ map { keys %$_ } @{ $globals->{$key} } ];
+        if (exists $results->{$key}) {
+            $results->{$key}->[1] = $data;
+        }
+        else {
+            $results->{$key} = [ [], $data, [] ];
+        }
     }
 
     my $funcs = funcs( $class );
     foreach my $key (keys %$funcs) {
-        next if exists $results->{$key};
-        $results->{$key} = [ map { keys %$_ } @{ $funcs->{$key} } ];
+        my $data = [ map { keys %$_ } @{ $funcs->{$key} } ];
+        if (exists $results->{$key}) {
+            $results->{$key}->[1] = $data;
+        }
+        else {
+            $results->{$key} = [ [], [], $data ];
+        }
     }
 
     return $results;
@@ -349,7 +361,7 @@ Oliver Gorwits <oliver@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
  
-This software is copyright (c) 2014 by The Netdisco Project.
+This software is copyright (c) 2014 by The SNMP::Info Project.
   
  # Redistribution and use in source and binary forms, with or without
  # modification, are permitted provided that the following conditions are met:
