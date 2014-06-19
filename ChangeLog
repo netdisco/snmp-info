@@ -4,7 +4,7 @@ version 3.16
 
    [ENHANCEMENTS]
 
-    * Add superclass discovery methods (super_path and print_super_path)
+    * Add method resolution discovery in SNMP::Info::MRO helper module
 
 version 3.15 (2014-07-10)
 

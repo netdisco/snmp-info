@@ -1223,56 +1223,6 @@ sub new {
     return $auto_specific ? $new_obj->specify() : $new_obj;
 }
 
-=item super_path()
-
-Returns the list (in order) of the names of classes Perl will search to find
-methods for this SNMP::Info class or object instance.
-
-Can be called as either a class or object method:
-
- # class method:
- my @list = SNMP::Info::Layer3::Juniper->super_path();
- # object method:
- my @list = $info->super_path();
-
-Note this B<requires> the L<Class:ISA> distribution to be installed.
-
-=cut
-
-sub super_path {
-    my $self = shift;
-    my $class = (ref $self ? ref $self : $self);
-
-    # Load Class::ISA, if we can
-    eval { require Class::ISA };    ## no critic
-    if ($@) {
-        croak "SNMP::Info::super_path() Failed to load Class::ISA (is it installed?). $@\n";
-    }
-    else {
-        return Class::ISA::self_and_super_path( $class );
-    }
-}
-
-=item print_super_path()
-
-Prints the list (in order) of the names of classes Perl will search to find
-methods for this SNMP::Info class or object instance.
-
-Can be called as either a class or object method:
-
- # class method:
- SNMP::Info::Layer3::Juniper->print_super_path();
- # object method:
- $info->print_super_path();
-
-Note this B<requires> the L<Class:ISA> distribution to be installed.
-
-=cut
-
-sub print_super_path {
-    print join ("\n", (shift)->super_path), "\n";
-}
-
 =item update()
 
 Replace the existing session with a new one with updated values,
