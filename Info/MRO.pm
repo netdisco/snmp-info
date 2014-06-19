@@ -46,10 +46,10 @@ sub _walk_global_data {
             my $extract = (($leaf =~ m/^&/) ? 'symbol' : 'string');
 
             unshift @{ $results->{$token} },
-                     { $class => $leaf->$extract }
+                     [ $class => $leaf->$extract ]
               # we can sometimes see the same package twice
               unless scalar grep { $_ eq $class }
-                            map  { keys %{ $_ } }
+                            map  { $_->[0] }
                                  @{ $results->{$token} };
         }
         elsif ($tok->isa('PPI::Token::Symbol')) {
@@ -71,8 +71,8 @@ sub _print_global_data {
 
         my $first = 0;
         while (my $classdef = splice(@defs, 0, 1)) {
-            my ($class) = keys %$classdef;
-            my ($meth)  = values %$classdef;
+            my $class = $classdef->[0];
+            my $meth  = $classdef->[1];
 
             if ($first) {
                 printf "     %s ( %s )\n", $meth, $class;
@@ -133,8 +133,8 @@ or C<%FUNCS> configuration. The data structure looks like:
    method_name => {
      subs => [],
      globals => [
-       'Package::Name',
-       'Other::Package::Name',
+       [ Package::Name        => 'mib_leaf.0' ],
+       [ Other::Package::Name => '1.3.6.1.4.1.9.2.1.58.0' ],
      ],
      funcs => [],
    },
@@ -143,7 +143,9 @@ or C<%FUNCS> configuration. The data structure looks like:
        'Package::Name',
      ],
      globals => [],
-     funcs => [],
+     funcs => [
+       [ Package::Name => 'mib_leaf_name' ],
+     ],
    ],
  }
 
@@ -170,14 +172,12 @@ sub all_methods {
 
     my $globals = globals( $class );
     foreach my $key (keys %$globals) {
-        $results->{$key}->{globals} = [ map { keys %$_ }
-                                            @{ $globals->{$key} } ];
+        $results->{$key}->{globals} = $globals->{$key};
     }
 
     my $funcs = funcs( $class );
     foreach my $key (keys %$funcs) {
-        $results->{$key}->{funcs} = [ map { keys %$_ }
-                                          @{ $funcs->{$key} } ];
+        $results->{$key}->{funcs} = $funcs->{$key};
     }
 
     foreach my $key (keys %$results) {
@@ -241,11 +241,11 @@ The data structure looks like:
 
  {
    method_name => [
-     { Package::Name        => 'mib_leaf_name' },
-     { Other::Package::Name => '1.3.6.1.4.1.9.2.1.58.0' },
+     [ Package::Name        => 'mib_leaf_name' ],
+     [ Other::Package::Name => '1.3.6.1.4.1.9.2.1.58.0' ],
    ],
    other_method_name => [
-     { Package::Name => 'mib_leaf.0' },
+     [ Package::Name => 'mib_leaf.0' ],
    ],
  }
 
@@ -278,11 +278,11 @@ The data structure looks like:
 
  {
    method_name => [
-     { Package::Name        => '&subroutine' },
-     { Other::Package::Name => '&Other::Package::subroutine' },
+     [ Package::Name        => '&subroutine' ],
+     [ Other::Package::Name => '&Other::Package::subroutine' ],
    ],
    other_method_name => [
-     { Package::Name => '&subroutine' },
+     [ Package::Name => '&subroutine' ],
    ],
  }
 
