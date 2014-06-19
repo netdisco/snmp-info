@@ -125,28 +125,38 @@ either the name of a Perl module, or an object instance of SNMP::Info.
 
 =item all_methods( $module )
 
-Returns the set of methods defined in C<$module> and all its ancestor
+Returns the location of methods defined in C<$module> and all its ancestor
 classes (superclasses), either as Perl subroutines or via C<%GLOBALS>
-and C<%MUNGE> configuration. The data structure looks like:
+or C<%FUNCS> configuration. The data structure looks like:
 
  {
-   method_name => [
-     'Package::Name',
-     'Other::Package::Name',
-   ],
+   method_name => {
+     subs => [],
+     globals => [
+       'Package::Name',
+       'Other::Package::Name',
+     ],
+     funcs => [],
+   },
    other_method_name => [
-     'Package::Name',
+     subs => [
+       'Package::Name',
+     ],
+     globals => [],
+     funcs => [],
    ],
  }
 
-If a method has been defined as a Perl subroutine, you'll see the list of
-classes where this was done, with the package used at runtime being first.
-If the method is created via C<%GLOBALS> or C<%MUNGE> then in a similar way
-you'll see the list of modules where this was done. However if a method
-is defined I<both> ways, then only the Perl subroutine definitions are shown.
-Therefore, the defining class or module at runtime is always:
+It should be noted that the order of method resolution in SNMP::Info is to
+first look for a defined subroutine (this is done by Perl), then the 
+AUTOLOAD sequence will search for a definition in C<%GLOBALS> followed by
+C<%FUNCS>.
 
- $data->{method_name}->[0];
+The defining class or module at runtime is always the first entry in the
+list, if it exists:
+
+ $data->{method_name}->{subs}->[0]
+   if scalar @{ $data->{method_name}->{subs} };
 
 =cut
 
@@ -155,29 +165,25 @@ sub all_methods {
     my $class = (ref $self ? ref $self : $self);
 
     my $results = subroutines( $class );
-    $results = { map { $_ => [ $results->{$_}, [], [] ] }
+    $results = { map { $_ => { subs => $results->{$_} } }
                      keys %$results };
 
     my $globals = globals( $class );
     foreach my $key (keys %$globals) {
-        my $data = [ map { keys %$_ } @{ $globals->{$key} } ];
-        if (exists $results->{$key}) {
-            $results->{$key}->[1] = $data;
-        }
-        else {
-            $results->{$key} = [ [], $data, [] ];
-        }
+        $results->{$key}->{globals} = [ map { keys %$_ }
+                                            @{ $globals->{$key} } ];
     }
 
     my $funcs = funcs( $class );
     foreach my $key (keys %$funcs) {
-        my $data = [ map { keys %$_ } @{ $funcs->{$key} } ];
-        if (exists $results->{$key}) {
-            $results->{$key}->[1] = $data;
-        }
-        else {
-            $results->{$key} = [ [], [], $data ];
-        }
+        $results->{$key}->{funcs} = [ map { keys %$_ }
+                                          @{ $funcs->{$key} } ];
+    }
+
+    foreach my $key (keys %$results) {
+        $results->{$key}->{subs}    ||= [];
+        $results->{$key}->{globals} ||= [];
+        $results->{$key}->{funcs}   ||= [];
     }
 
     return $results;
