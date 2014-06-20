@@ -89,6 +89,13 @@ sub _print_global_data {
 
 SNMP::Info::MRO - Method resolution introspection for SNMP::Info
 
+=head1 SYNOPSIS
+
+ use SNMP::Info::MRO;
+ use Data::Printer;
+ 
+ p SNMP::Info::MRO::all_methods('SNMP::Info::Layer3::Juniper');
+
 =head1 DESCRIPTION
 
 This is a set of helpers to show where a given method in SNMP::Info has been
@@ -131,18 +138,15 @@ or C<%FUNCS> configuration. The data structure looks like:
 
  {
    method_name => {
-     subs => [],
      globals => [
        [ Package::Name        => 'mib_leaf.0' ],
        [ Other::Package::Name => '1.3.6.1.4.1.9.2.1.58.0' ],
      ],
-     funcs => [],
    },
    other_method_name => [
      subs => [
        'Package::Name',
      ],
-     globals => [],
      funcs => [
        [ Package::Name => 'mib_leaf_name' ],
      ],
@@ -158,7 +162,7 @@ The defining class or module at runtime is always the first entry in the
 list, if it exists:
 
  $data->{method_name}->{subs}->[0]
-   if scalar @{ $data->{method_name}->{subs} };
+   if exists $data->{method_name}->{subs};
 
 =cut
 
@@ -180,11 +184,11 @@ sub all_methods {
         $results->{$key}->{funcs} = $funcs->{$key};
     }
 
-    foreach my $key (keys %$results) {
-        $results->{$key}->{subs}    ||= [];
-        $results->{$key}->{globals} ||= [];
-        $results->{$key}->{funcs}   ||= [];
-    }
+    #foreach my $key (keys %$results) {
+    #    $results->{$key}->{subs}    ||= [];
+    #    $results->{$key}->{globals} ||= [];
+    #    $results->{$key}->{funcs}   ||= [];
+    #}
 
     return $results;
 }
