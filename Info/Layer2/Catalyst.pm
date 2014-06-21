@@ -34,17 +34,10 @@ package SNMP::Info::Layer2::Catalyst;
 use strict;
 use Exporter;
 use SNMP::Info::CiscoStack;
-use SNMP::Info::CiscoVTP;
-use SNMP::Info::CDP;
-use SNMP::Info::CiscoStats;
-use SNMP::Info::CiscoPortSecurity;
-use SNMP::Info::Layer2;
+use SNMP::Info::Layer2::Cisco;
 
 @SNMP::Info::Layer2::Catalyst::ISA
-    = qw/SNMP::Info::CiscoStack SNMP::Info::CiscoVTP
-    SNMP::Info::CDP SNMP::Info::CiscoStats
-    SNMP::Info::CiscoPortSecurity
-    SNMP::Info::Layer2 Exporter/;
+    = qw/SNMP::Info::CiscoStack SNMP::Info::Layer2::Cisco Exporter/;
 @SNMP::Info::Layer2::Catalyst::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
@@ -52,30 +45,23 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 $VERSION = '3.15';
 
 %MIBS = (
-    %SNMP::Info::Layer2::MIBS,     %SNMP::Info::CiscoPortSecurity::MIBS,
-    %SNMP::Info::CiscoStats::MIBS, %SNMP::Info::CDP::MIBS,
-    %SNMP::Info::CiscoVTP::MIBS,   %SNMP::Info::CiscoStack::MIBS,
+    %SNMP::Info::Layer2::Cisco::MIBS,
+    %SNMP::Info::CiscoStack::MIBS,
 );
 
 %GLOBALS = (
-    %SNMP::Info::Layer2::GLOBALS,
-    %SNMP::Info::CiscoPortSecurity::GLOBALS,
-    %SNMP::Info::CiscoStats::GLOBALS,
-    %SNMP::Info::CDP::GLOBALS,
-    %SNMP::Info::CiscoVTP::GLOBALS,
+    %SNMP::Info::Layer2::Cisco::GLOBALS,
     %SNMP::Info::CiscoStack::GLOBALS,
 );
 
 %FUNCS = (
-    %SNMP::Info::Layer2::FUNCS,     %SNMP::Info::CiscoPortSecurity::FUNCS,
-    %SNMP::Info::CiscoStats::FUNCS, %SNMP::Info::CDP::FUNCS,
-    %SNMP::Info::CiscoVTP::FUNCS,   %SNMP::Info::CiscoStack::FUNCS,
+    %SNMP::Info::Layer2::Cisco::FUNCS,
+    %SNMP::Info::CiscoStack::FUNCS,
 );
 
 %MUNGE = (
-    %SNMP::Info::Layer2::MUNGE,     %SNMP::Info::CiscoPortSecurity::MUNGE,
-    %SNMP::Info::CiscoStats::MUNGE, %SNMP::Info::CDP::MUNGE,
-    %SNMP::Info::CiscoVTP::MUNGE,   %SNMP::Info::CiscoStack::MUNGE,
+    %SNMP::Info::Layer2::Cisco::MUNGE,
+    %SNMP::Info::CiscoStack::MUNGE,
 );
 
 # Overidden Methods
@@ -228,17 +214,9 @@ after determining a more specific class using the method above.
 
 =over
 
+=item SNMP::Info::Layer2::Cisco
+
 =item SNMP::Info::CiscoStack
-
-=item SNMP::Info::CiscoVTP
-
-=item SNMP::Info::CDP
-
-=item SNMP::Info::CiscoStats
-
-=item SNMP::Info::CiscoPortSecurity
-
-=item SNMP::Info::Layer2
 
 =back
 
@@ -248,18 +226,9 @@ after determining a more specific class using the method above.
 
 =item Inherited Classes' MIBs
 
+See L<SNMP::Info::Layer2::Cisco/"Required MIBs"> for its own MIB requirements.
+
 See L<SNMP::Info::CiscoStack/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB
-requirements.
-
-See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -290,29 +259,13 @@ Returns 1.  Use vlan indexing.
 
 =back
 
+=head2 Global Methods imported from SNMP::Info::Layer2::Cisco
+
+See documentation in L<SNMP::Info::Layer2::Cisco/"GLOBALS"> for details.
+
 =head2 Global Methods imported from SNMP::Info::CiscoStack
 
 See documentation in L<SNMP::Info::CiscoStack/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::CiscoVTP
-
-See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
-
-=head2 Global Methods imported from SNMP::Info::CDP
-
-See documentation in L<SNMP::Info::CDP/"GLOBALS"> for details.
-
-=head2 Global Methods imported from SNMP::Info::CiscoStats
-
-See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
-
-=head2 Global Methods imported from SNMP::Info::CiscoPortSecurity
-
-See documentation in L<SNMP::Info::CiscoPortSecurity/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::Layer2
-
-See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -348,29 +301,12 @@ have problems with F<BRIDGE-MIB>
 
 =back
 
+=head2 Table Methods imported from SNMP::Info::Layer2::Cisco
+
+See documentation in L<SNMP::Info::Layer2::Cisco/"TABLE METHODS"> for details.
+
 =head2 Table Methods imported from SNMP::Info::CiscoStack
 
 See documentation in L<SNMP::Info::CiscoStack/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::CiscoVTP
-
-See documentation in L<SNMP::Info::CiscoVTP/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::CDP
-
-See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::CiscoStats
-
-See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::CiscoPortSecurity
-
-See documentation in L<SNMP::Info::CiscoPortSecurity/"TABLE METHODS"> for
-details.
-
-=head2 Table Methods imported from SNMP::Info::Layer2
-
-See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =cut
