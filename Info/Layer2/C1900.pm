@@ -37,10 +37,12 @@ use Exporter;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoConfig;
+use SNMP::Info::CiscoStpExtensions;
+use SNMP::Info::CiscoAgg;
 use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer2::C1900::ISA = qw/SNMP::Info::CDP SNMP::Info::CiscoStats
-    SNMP::Info::CiscoConfig SNMP::Info::Layer2
+    SNMP::Info::CiscoConfig SNMP::Info::CiscoStpExtensions SNMP::Info::CiscoAgg SNMP::Info::Layer2
     Exporter/;
 @SNMP::Info::Layer2::C1900::EXPORT_OK = qw//;
 
@@ -50,6 +52,8 @@ $VERSION = '3.15';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
+    %SNMP::Info::CiscoAgg::GLOBALS,
+    %SNMP::Info::CiscoStpExtensions::GLOBALS,
     %SNMP::Info::CiscoConfig::GLOBALS,
     %SNMP::Info::CiscoStats::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
@@ -58,6 +62,8 @@ $VERSION = '3.15';
 
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
+    %SNMP::Info::CiscoAgg::FUNCS,
+    %SNMP::Info::CiscoStpExtensions::FUNCS,
     %SNMP::Info::CiscoConfig::FUNCS,
     %SNMP::Info::CiscoStats::FUNCS,
     %SNMP::Info::CDP::FUNCS,
@@ -75,6 +81,8 @@ $VERSION = '3.15';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
+    %SNMP::Info::CiscoAgg::MIBS,
+    %SNMP::Info::CiscoStpExtensions::MIBS,
     %SNMP::Info::CiscoConfig::MIBS,
     %SNMP::Info::CiscoStats::MIBS,
     %SNMP::Info::CDP::MIBS,
@@ -84,8 +92,9 @@ $VERSION = '3.15';
 );
 
 %MUNGE = (
-    %SNMP::Info::Layer2::MUNGE,     %SNMP::Info::CiscoConfig::MUNGE,
-    %SNMP::Info::CiscoStats::MUNGE, %SNMP::Info::CDP::MUNGE,
+    %SNMP::Info::Layer2::MUNGE,             %SNMP::Info::CiscoAgg::MUNGE,
+    %SNMP::Info::CiscoStpExtensions::MUNGE, %SNMP::Info::CiscoConfig::MUNGE,
+    %SNMP::Info::CiscoStats::MUNGE,         %SNMP::Info::CDP::MUNGE,
 );
 
 sub bulkwalk_no         { return 1; }
@@ -203,7 +212,8 @@ sub i_vlan {
     my $partial = shift;
 
     # Overlap allows more than one VLAN per port.  Unable to determine default
-    my $overlap = $c1900->bridgeGroupAllowMembershipOverlap()
+    my $overlap 
+        = $c1900->bridgeGroupAllowMembershipOverlap()
         || $c1900->vlanAllowMembershipOverlap()
         || 'disabled';
 
@@ -258,7 +268,7 @@ sub bp_index {
     my $if_index = $c1900->i_index($partial);
     my $index = $c1900->orig_bp_index($partial) || {};
     foreach my $iid ( keys %$if_index ) {
-        $index->{$iid} = $iid if(!defined $index->{$iid});
+        $index->{$iid} = $iid if ( !defined $index->{$iid} );
     }
     return $index;
 }
@@ -312,6 +322,10 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::CiscoConfig
 
+=item SNMP::Info::CiscoStpExtensions
+
+=item SNMP::Info::CiscoAgg
+
 =item SNMP::Info::Layer2
 
 =back
@@ -335,6 +349,10 @@ See L<SNMP::Info::CDP/"Required MIBs"> for its MIB requirements.
 See L<SNMP::Info::CiscoStats/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::CiscoConfig/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::CiscoStpExtensions/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::CiscoAgg/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
@@ -393,6 +411,14 @@ See L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
 =head2 Globals imported from SNMP::Info::CiscoConfig
 
 See L<SNMP::Info::CiscoConfig/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::CiscoStpExtensions
+
+See L<SNMP::Info::CiscoStpExtensions/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::CiscoAgg
+
+See L<SNMP::Info::CiscoAgg/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer2
 
@@ -512,6 +538,14 @@ See L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::CiscoConfig
 
 See L<SNMP::Info::CiscoConfig/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoStpExtensions
+
+See L<SNMP::Info::CiscoStpExtensions/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoAgg
+
+See L<SNMP::Info::CiscoAgg/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
