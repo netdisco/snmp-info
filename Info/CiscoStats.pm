@@ -88,6 +88,9 @@ $VERSION = '3.15';
 
     # CISCO-FLASH-MIB::ciscoFlashDeviceTable
     'cisco_flash_size' => 'ciscoFlashDeviceSize',
+    
+    # CISCO-IMAGE-MIB
+    'ci_images' => 'ciscoImageString',
 );
 
 %MUNGE = ();
@@ -536,6 +539,18 @@ Total size of the Flash device.  For a removable device, the size will be
 zero if the device has been removed.
 
 (C<ciscoFlashDeviceSize>)
+
+=back
+
+=head2 Cisco Image Table (C<ciscoImageTable>)
+
+=over
+
+=item $ci->ci_images()
+
+Returns the table of image strings.
+
+C<ciscoImageString>
 
 =back
 
