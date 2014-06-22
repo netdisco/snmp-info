@@ -31,34 +31,31 @@
 package SNMP::Info::Layer3::CiscoFWSM;
 
 use strict;
+use warnings;
 use Exporter;
-use SNMP::Info::Layer3::Cisco;
+use SNMP::Info::CiscoStack;
+use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::CiscoFWSM::ISA = qw/SNMP::Info::Layer3::Cisco
-    Exporter/;
+@SNMP::Info::Layer3::CiscoFWSM::ISA = qw/SNMP::Info::CiscoStack
+	SNMP::Info::Layer3
+	Exporter/;
 @SNMP::Info::Layer3::CiscoFWSM::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '3.15';
 
-%MIBS = (
-    %SNMP::Info::Layer3::Cisco::MIBS,
-);
+%MIBS = ( %SNMP::Info::Layer3::MIBS, %SNMP::Info::CiscoStack::MIBS, );
 
-%GLOBALS = (
-    %SNMP::Info::Layer3::Cisco::GLOBALS,
-);
+%GLOBALS
+	= ( %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::CiscoStack::GLOBALS, );
 
 %FUNCS = (
-    %SNMP::Info::Layer3::Cisco::FUNCS,
-
+	%SNMP::Info::Layer3::FUNCS,
+	%SNMP::Info::CiscoStack::FUNCS,
 );
 
-%MUNGE = (
-    %SNMP::Info::Layer3::Cisco::MUNGE,
-);
-
+%MUNGE = ( %SNMP::Info::Layer3::MUNGE, %SNMP::Info::CiscoStack::MUNGE, );
 
 # For FWSMs, the ipNetToPhysicalPhysAddress table appears to be of the form:
 # $ifindex.$inetaddresstype.$proto.$ip_address -> $mac_address
@@ -69,65 +66,65 @@ $VERSION = '3.15';
 # This doesn't really line up to what at_* return, so we munge it
 
 sub at_paddr {
-    my ($fwsm)    = shift;
-    my ($partial)  = shift;
+	my ($fwsm)    = shift;
+	my ($partial) = shift;
 
-    my $paddrs = $fwsm->n2p_paddr($partial);
-    my $n_paddrs = {};
-    
-    foreach my $key (keys %$paddrs) {
-        my $paddr = $paddrs->{$key};
-        my @parts = split /\./, $key;
-	my ($ifindex, $addrtype, $proto) = splice @parts, 0, 3;
-	my $ip = join ".", @parts;
+	my $paddrs   = $fwsm->n2p_paddr($partial);
+	my $n_paddrs = {};
 
-	next if($proto != 4); # at_paddr doesn't support non-IPv4
+	foreach my $key ( keys %$paddrs ) {
+		my $paddr = $paddrs->{$key};
+		my @parts = split /\./, $key;
+		my ( $ifindex, $addrtype, $proto ) = splice @parts, 0, 3;
+		my $ip = join ".", @parts;
 
-        $n_paddrs->{"$ifindex.$ip"} = $paddr;
-    }
-    return $n_paddrs;
+		next if ( $proto != 4 );    # at_paddr doesn't support non-IPv4
+
+		$n_paddrs->{"$ifindex.$ip"} = $paddr;
+	}
+	return $n_paddrs;
 }
 
 sub at_netaddr {
-    my ($fwsm)    = shift;
-    my ($partial)  = shift;
+	my ($fwsm)    = shift;
+	my ($partial) = shift;
 
-    my $paddrs = $fwsm->n2p_paddr($partial);
+	my $paddrs = $fwsm->n2p_paddr($partial);
 
-    my $netaddrs = {};
-    
-    foreach my $key (keys %$paddrs) {
-        my $paddr = $paddrs->{$key};
-        my @parts = split /\./, $key;
-	my ($ifindex, $addrtype, $proto) = splice @parts, 0, 3;
-	my $ip = join ".", @parts;
+	my $netaddrs = {};
 
-	next if($proto != 4); # at_netaddr doesn't support non-IPv4
+	foreach my $key ( keys %$paddrs ) {
+		my $paddr = $paddrs->{$key};
+		my @parts = split /\./, $key;
+		my ( $ifindex, $addrtype, $proto ) = splice @parts, 0, 3;
+		my $ip = join ".", @parts;
 
-        $netaddrs->{"$ifindex.$ip"} = $ip;
-    }
-    return $netaddrs;
+		next if ( $proto != 4 );    # at_netaddr doesn't support non-IPv4
+
+		$netaddrs->{"$ifindex.$ip"} = $ip;
+	}
+	return $netaddrs;
 }
 
 sub at_ifaddr {
-    my ($fwsm)    = shift;
-    my ($partial)  = shift;
+	my ($fwsm)    = shift;
+	my ($partial) = shift;
 
-    my $paddrs = $fwsm->n2p_paddr($partial);
+	my $paddrs = $fwsm->n2p_paddr($partial);
 
-    my $ifaddrs = {};
-    
-    foreach my $key (keys %$paddrs) {
-        my $paddr = $paddrs->{$key};
-        my @parts = split /\./, $key;
-	my ($ifindex, $addrtype, $proto) = splice @parts, 0, 3;
-	my $ip = join ".", @parts;
+	my $ifaddrs = {};
 
-	next if($proto != 4); # at_ifaddr doesn't support non-IPv4
+	foreach my $key ( keys %$paddrs ) {
+		my $paddr = $paddrs->{$key};
+		my @parts = split /\./, $key;
+		my ( $ifindex, $addrtype, $proto ) = splice @parts, 0, 3;
+		my $ip = join ".", @parts;
 
-        $ifaddrs->{"$ifindex.$ip"} = $ip;
-    }
-    return $ifaddrs;
+		next if ( $proto != 4 );    # at_ifaddr doesn't support non-IPv4
+
+		$ifaddrs->{"$ifindex.$ip"} = $ip;
+	}
+	return $ifaddrs;
 }
 
 1;
@@ -135,8 +132,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::CiscoFWSM - SNMP Interface to Firewall Services Modules for
-features not covered elsewhere.
+SNMP::Info::Layer3::CiscoFWSM - SNMP Interface to Firewall Services Modules
+for features not covered elsewhere.
 
 =head1 AUTHOR
 
@@ -146,14 +143,14 @@ Brian De Wolf
 
  # Let SNMP::Info determine the correct subclass for you. 
  my $fwsm = new SNMP::Info(
-                        AutoSpecify => 1,
-                        Debug       => 1,
-                        # These arguments are passed directly to SNMP::Session
-                        DestHost    => 'myswitch',
-                        Community   => 'public',
-                        Version     => 2
-                        ) 
-    or die "Can't connect to DestHost.\n";
+						AutoSpecify => 1,
+						Debug       => 1,
+						# These arguments are passed directly to SNMP::Session
+						DestHost    => 'myswitch',
+						Community   => 'public',
+						Version     => 2
+						) 
+	or die "Can't connect to DestHost.\n";
 
  my $class      = $fwsm->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
@@ -166,7 +163,9 @@ Subclass for Cisco Firewall Services Modules
 
 =over
 
-=item SNMP::Info::Layer3::Cisco
+=item SNMP::Info::CiscoStack
+
+=item SNMP::Info::Layer3
 
 =back
 
@@ -176,15 +175,21 @@ Subclass for Cisco Firewall Services Modules
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::Layer3::Cisco/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CiscoStack/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 =back
 
 =head1 GLOBALS
 
-=head2 Global Methods imported from SNMP::Info::Layer3::Cisco
+=head2 Globals imported from SNMP::Info::CiscoStack
 
-See documentation in L<SNMP::Info::Layer3::Cisco/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::CiscoStack/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -216,8 +221,12 @@ the MIB to provide that information isn't supported on FWSM.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info::Layer3::Cisco
+=head2 Table Methods imported from SNMP::Info::CiscoStack
 
-See documentation in L<SNMP::Info::Layer3::Cisco/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::CiscoStack/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =cut
