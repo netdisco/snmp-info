@@ -172,8 +172,7 @@ sub i_vlan {
     }
 
     # Check in CISCO-VLAN-IFTABLE-RELATION-MIB
-    # Is this only for Aironet???  If so, it needs
-    # to be removed from this class
+    # Used for traditional Cisco Routers and Aironet
 
     my $v_cvi_if = $vtp->v_cvi_if();
     if ( defined $v_cvi_if ) {
