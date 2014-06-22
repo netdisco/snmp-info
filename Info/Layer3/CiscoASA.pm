@@ -36,7 +36,6 @@ use Exporter;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
-use SNMP::Info::CiscoImage;
 use SNMP::Info::CiscoRTT;
 use SNMP::Info::CiscoQOS;
 use SNMP::Info::CiscoConfig;
@@ -45,7 +44,7 @@ use SNMP::Info::Layer3;
 use SNMP::Info::Layer3::Cisco;
 
 @SNMP::Info::Layer3::CiscoASA::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
-    SNMP::Info::CiscoStats SNMP::Info::CiscoImage
+    SNMP::Info::CiscoStats
     SNMP::Info::CiscoRTT  SNMP::Info::CiscoQOS
     SNMP::Info::CiscoConfig SNMP::Info::CiscoPower
     SNMP::Info::Layer3::Cisco
@@ -57,43 +56,41 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '3.15';
 
-%MIBS = (
-       %SNMP::Info::Layer3::Cisco::MIBS,
-);
+%MIBS = ( %SNMP::Info::Layer3::Cisco::MIBS, );
 
-%GLOBALS = (
-       %SNMP::Info::Layer3::Cisco::GLOBALS,
-);
+%GLOBALS = ( %SNMP::Info::Layer3::Cisco::GLOBALS, );
 
-%FUNCS = (
-       %SNMP::Info::Layer3::Cisco::FUNCS,
-    'mac_table' => 'ifPhysAddress',
-);
+%FUNCS
+    = ( %SNMP::Info::Layer3::Cisco::FUNCS, 'mac_table' => 'ifPhysAddress', );
 
 %MUNGE = (
-       %SNMP::Info::Layer3::Cisco::MUNGE,
-    'mac_table'  => \&SNMP::Info::munge_mac, );
+    %SNMP::Info::Layer3::Cisco::MUNGE,
+    'mac_table' => \&SNMP::Info::munge_mac,
+);
 
 sub b_mac {
-       my ($asa) = shift;
-       my $macs = $asa->mac_table();
-       my @macs;
-       # gather physical addresses
-       foreach my $i ( keys %$macs ) {
-               my $mac = $macs->{$i};
-               # don't catch the bad macs with zeroed OUI
-               if ( $mac !~ m/(0{1,2}:){3}/ ) {
-                       push( @macs, $mac);
-               }
-               @macs = sort( @macs );
-       }
-       # return the least mac
-       return $macs[0];
+    my ($asa) = shift;
+    my $macs = $asa->mac_table();
+    my @macs;
+
+    # gather physical addresses
+    foreach my $i ( keys %$macs ) {
+        my $mac = $macs->{$i};
+
+        # don't catch the bad macs with zeroed OUI
+        if ( $mac !~ m/(0{1,2}:){3}/ ) {
+            push( @macs, $mac );
+        }
+        @macs = sort(@macs);
+    }
+
+    # return the least mac
+    return $macs[0];
 }
 
 sub i_description {
-    my $self = shift;
-    my $partial   = shift;
+    my $self    = shift;
+    my $partial = shift;
 
     my $i_descr = $self->orig_i_description($partial) || {};
 
@@ -188,10 +185,6 @@ See documentation in L<SNMP::Info::CDP/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::CiscoImage
-
-See documentation in L<SNMP::Info::CiscoImage/"GLOBALS"> for details.
-
 =head2 Globals imported from SNMP::Info::CiscoRTT
 
 See documentation in L<SNMP::Info::CiscoRTT/"GLOBALS"> for details.
@@ -232,10 +225,6 @@ See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
 See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::CiscoImage
-
-See documentation in L<SNMP::Info::CiscoImage/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoRTT
 

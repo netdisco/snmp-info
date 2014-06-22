@@ -282,12 +282,6 @@ These OIDs facilitate the writing of configuration files.
 
 See documentation in L<SNMP::Info::CiscoConfig> for details.
 
-=item SNMP::Info::CiscoImage
-
-F<CISCO-IMAGE-MIB>. A collection of OIDs providing IOS image characteristics.
-
-See documentation in L<SNMP::Info::CiscoImage> for details.
-
 =item SNMP::Info::CiscoPortSecurity
 
 F<CISCO-PORT-SECURITY-MIB> and F<CISCO-PAE-MIB>.

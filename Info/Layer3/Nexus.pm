@@ -33,7 +33,6 @@ use strict;
 use Exporter;
 use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
-use SNMP::Info::CiscoImage;
 use SNMP::Info::CiscoPortSecurity;
 use SNMP::Info::CiscoConfig;
 use SNMP::Info::CiscoPower;
@@ -49,7 +48,6 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
     SNMP::Info::CiscoStpExtensions
     SNMP::Info::LLDP
     SNMP::Info::CDP 
-    SNMP::Info::CiscoImage
     SNMP::Info::CiscoPortSecurity
     SNMP::Info::CiscoConfig
     SNMP::Info::CiscoPower
@@ -74,7 +72,6 @@ $VERSION = '3.15';
     %SNMP::Info::CiscoPower::MIBS,
     %SNMP::Info::CiscoConfig::MIBS,
     %SNMP::Info::CiscoPortSecurity::MIBS,
-    %SNMP::Info::CiscoImage::MIBS,
     %SNMP::Info::CDP::MIBS,
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::CiscoStpExtensions::MIBS, 
@@ -87,7 +84,6 @@ $VERSION = '3.15';
     %SNMP::Info::CiscoPower::GLOBALS,
     %SNMP::Info::CiscoConfig::GLOBALS,
     %SNMP::Info::CiscoPortSecurity::GLOBALS,
-    %SNMP::Info::CiscoImage::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::CiscoStpExtensions::GLOBALS,
@@ -100,7 +96,6 @@ $VERSION = '3.15';
     %SNMP::Info::CiscoPower::FUNCS,
     %SNMP::Info::CiscoConfig::FUNCS,
     %SNMP::Info::CiscoPortSecurity::FUNCS,
-    %SNMP::Info::CiscoImage::FUNCS,
     %SNMP::Info::CDP::FUNCS,
     %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::CiscoStpExtensions::FUNCS, 
@@ -113,7 +108,6 @@ $VERSION = '3.15';
     %SNMP::Info::CiscoPower::MUNGE,
     %SNMP::Info::CiscoConfig::MUNGE,
     %SNMP::Info::CiscoPortSecurity::MUNGE,
-    %SNMP::Info::CiscoImage::MUNGE,         
     %SNMP::Info::CDP::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::CiscoStpExtensions::MUNGE, 
@@ -288,8 +282,6 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::CDP
 
-=item SNMP::Info::CiscoImage
-
 =item SNMP::Info::CiscoPortSecurity
 
 =item SNMP::Info::CiscoConfig
@@ -319,8 +311,6 @@ See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CiscoImage/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB
 requirements.
@@ -421,10 +411,6 @@ See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::CDP/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::CiscoImage
-
-See documentation in L<SNMP::Info::CiscoImage/"GLOBALS"> for details.
-
 =head2 Globals imported from SNMP::Info::CiscoPortSecurity
 
 See documentation in L<SNMP::Info::CiscoPortSecurity/"GLOBALS"> for details.
@@ -465,10 +451,6 @@ See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
 See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::CiscoImage
-
-See documentation in L<SNMP::Info::CiscoImage/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoPortSecurity
 

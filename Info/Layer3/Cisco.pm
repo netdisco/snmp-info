@@ -35,7 +35,6 @@ use Exporter;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
-use SNMP::Info::CiscoImage;
 use SNMP::Info::CiscoRTT;
 use SNMP::Info::CiscoQOS;
 use SNMP::Info::CiscoConfig;
@@ -43,7 +42,7 @@ use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 
 @SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
-    SNMP::Info::CiscoStats SNMP::Info::CiscoImage
+    SNMP::Info::CiscoStats 
     SNMP::Info::CiscoRTT  SNMP::Info::CiscoQOS
     SNMP::Info::CiscoConfig SNMP::Info::CiscoPower
     SNMP::Info::Layer3
@@ -60,7 +59,6 @@ $VERSION = '3.15';
     %SNMP::Info::CiscoConfig::MIBS,
     %SNMP::Info::CiscoQOS::MIBS,
     %SNMP::Info::CiscoRTT::MIBS,
-    %SNMP::Info::CiscoImage::MIBS,
     %SNMP::Info::CiscoStats::MIBS,
     %SNMP::Info::CDP::MIBS,
     %SNMP::Info::CiscoVTP::MIBS,
@@ -70,7 +68,7 @@ $VERSION = '3.15';
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,      %SNMP::Info::CiscoPower::GLOBALS,
     %SNMP::Info::CiscoConfig::GLOBALS, %SNMP::Info::CiscoQOS::GLOBALS,
-    %SNMP::Info::CiscoRTT::GLOBALS,    %SNMP::Info::CiscoImage::GLOBALS,
+    %SNMP::Info::CiscoRTT::GLOBALS, 
     %SNMP::Info::CiscoStats::GLOBALS,  %SNMP::Info::CDP::GLOBALS,
     %SNMP::Info::CiscoVTP::GLOBALS, 'eigrp_id' => 'cEigrpAsRouterId',
 );
@@ -81,7 +79,6 @@ $VERSION = '3.15';
     %SNMP::Info::CiscoConfig::FUNCS,
     %SNMP::Info::CiscoQOS::FUNCS,
     %SNMP::Info::CiscoRTT::FUNCS,
-    %SNMP::Info::CiscoImage::FUNCS,
     %SNMP::Info::CiscoStats::FUNCS,
     %SNMP::Info::CDP::FUNCS,
     %SNMP::Info::CiscoVTP::FUNCS,
@@ -96,7 +93,6 @@ $VERSION = '3.15';
     %SNMP::Info::CiscoConfig::MUNGE,
     %SNMP::Info::CiscoQOS::MUNGE,
     %SNMP::Info::CiscoRTT::MUNGE,
-    %SNMP::Info::CiscoImage::MUNGE,
     %SNMP::Info::CiscoStats::MUNGE,
     %SNMP::Info::CDP::MUNGE,
     %SNMP::Info::CiscoVTP::MUNGE,
@@ -163,8 +159,6 @@ Subclass for Generic Cisco Routers running IOS
 
 =item SNMP::Info::CiscoStats
 
-=item SNMP::Info::CiscoImage
-
 =item SNMP::Info::CiscoRTT
 
 =item SNMP::Info::CiscoQOS
@@ -190,8 +184,6 @@ See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
 See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CiscoImage/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoRTT/"Required MIBs"> for its own MIB requirements.
 
@@ -232,10 +224,6 @@ See documentation in L<SNMP::Info::CDP/"GLOBALS"> for details.
 =head2 Globals imported from SNMP::Info::CiscoStats
 
 See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::CiscoImage
-
-See documentation in L<SNMP::Info::CiscoImage/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::CiscoRTT
 
@@ -287,10 +275,6 @@ See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::CiscoStats
 
 See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::CiscoImage
-
-See documentation in L<SNMP::Info::CiscoImage/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CiscoRTT
 
