@@ -328,6 +328,10 @@ devices.
 
 See documentation in L<SNMP::Info::CiscoStats> for details.
 
+=item SNMP::Info::Layer3::CiscoSwitch
+
+Base class for L3 Cisco switches
+
 =item SNMP::Info::CiscoVTP
 
 F<CISCO-VTP-MIB>, F<CISCO-VLAN-MEMBERSHIP-MIB>,
