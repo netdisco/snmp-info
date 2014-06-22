@@ -41,8 +41,8 @@ use SNMP::Info::CiscoConfig;
 use SNMP::Info::CiscoPower;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::CiscoVTP SNMP::Info::CDP
-    SNMP::Info::CiscoStats 
+@SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::CiscoVTP
+    SNMP::Info::CDP SNMP::Info::CiscoStats
     SNMP::Info::CiscoRTT  SNMP::Info::CiscoQOS
     SNMP::Info::CiscoConfig SNMP::Info::CiscoPower
     SNMP::Info::Layer3
@@ -54,23 +54,19 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 $VERSION = '3.15';
 
 %MIBS = (
-    %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::CiscoPower::MIBS,
-    %SNMP::Info::CiscoConfig::MIBS,
-    %SNMP::Info::CiscoQOS::MIBS,
-    %SNMP::Info::CiscoRTT::MIBS,
-    %SNMP::Info::CiscoStats::MIBS,
-    %SNMP::Info::CDP::MIBS,
-    %SNMP::Info::CiscoVTP::MIBS,
+    %SNMP::Info::Layer3::MIBS,      %SNMP::Info::CiscoPower::MIBS,
+    %SNMP::Info::CiscoConfig::MIBS, %SNMP::Info::CiscoQOS::MIBS,
+    %SNMP::Info::CiscoRTT::MIBS,    %SNMP::Info::CiscoStats::MIBS,
+    %SNMP::Info::CDP::MIBS,         %SNMP::Info::CiscoVTP::MIBS,
     'CISCO-EIGRP-MIB' => 'cEigrpAsRouterId',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,      %SNMP::Info::CiscoPower::GLOBALS,
     %SNMP::Info::CiscoConfig::GLOBALS, %SNMP::Info::CiscoQOS::GLOBALS,
-    %SNMP::Info::CiscoRTT::GLOBALS, 
-    %SNMP::Info::CiscoStats::GLOBALS,  %SNMP::Info::CDP::GLOBALS,
-    %SNMP::Info::CiscoVTP::GLOBALS, 'eigrp_id' => 'cEigrpAsRouterId',
+    %SNMP::Info::CiscoRTT::GLOBALS,    %SNMP::Info::CiscoStats::GLOBALS,
+    %SNMP::Info::CDP::GLOBALS,         %SNMP::Info::CiscoVTP::GLOBALS,
+    'eigrp_id' => 'cEigrpAsRouterId',
 );
 
 %FUNCS = (
@@ -100,21 +96,23 @@ $VERSION = '3.15';
 );
 
 sub i_vlan {
-    my ($cisco)   = shift;
-    my ($partial) = shift;
+    my $cisco   = shift;
+    my $partial = shift;
 
-    my ($i_type)  = $cisco->i_type($partial);
-    my ($i_descr) = $cisco->i_description($partial);
-    my %i_vlan;
+    my $i_type  = $cisco->i_type($partial);
+    my $i_descr = $cisco->i_description($partial);
+    my $i_vlan  = $cisco->SUPER::i_vlan($partial);
 
     foreach my $idx ( keys %$i_descr ) {
-        if ( $i_type->{$idx} eq 'l2vlan' || $i_type->{$idx} eq 135 ) {
+        if (   $i_type->{$idx} eq 'l2vlan'
+            || $i_type->{$idx} eq '135' && !defined $i_vlan->{$idx} )
+        {
             if ( $i_descr->{$idx} =~ /\.(\d+)$/ ) {
-                $i_vlan{$idx} = $1;
+                $i_vlan->{$idx} = $1;
             }
         }
     }
-    return \%i_vlan;
+    return $i_vlan;
 }
 
 1;
