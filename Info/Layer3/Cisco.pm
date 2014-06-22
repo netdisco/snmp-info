@@ -31,20 +31,24 @@
 package SNMP::Info::Layer3::Cisco;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::CiscoVTP;
+use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoRTT;
 use SNMP::Info::CiscoQOS;
 use SNMP::Info::CiscoConfig;
 use SNMP::Info::CiscoPower;
+use SNMP::Info::CiscoStpExtensions;
 use SNMP::Info::Layer3;
 
 @SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::CiscoVTP
-    SNMP::Info::CDP SNMP::Info::CiscoStats
-    SNMP::Info::CiscoRTT  SNMP::Info::CiscoQOS
-    SNMP::Info::CiscoConfig SNMP::Info::CiscoPower
+    SNMP::Info::LLDP SNMP::Info::CDP
+    SNMP::Info::CiscoStats SNMP::Info::CiscoRTT
+    SNMP::Info::CiscoQOS SNMP::Info::CiscoConfig
+    SNMP::Info::CiscoPower SNMP::Info::CiscoStpExtensions
     SNMP::Info::Layer3
     Exporter/;
 @SNMP::Info::Layer3::Cisco::EXPORT_OK = qw//;
@@ -54,29 +58,43 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 $VERSION = '3.15';
 
 %MIBS = (
-    %SNMP::Info::Layer3::MIBS,      %SNMP::Info::CiscoPower::MIBS,
-    %SNMP::Info::CiscoConfig::MIBS, %SNMP::Info::CiscoQOS::MIBS,
-    %SNMP::Info::CiscoRTT::MIBS,    %SNMP::Info::CiscoStats::MIBS,
-    %SNMP::Info::CDP::MIBS,         %SNMP::Info::CiscoVTP::MIBS,
+    %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::CiscoStpExtensions::MIBS,
+    %SNMP::Info::CiscoPower::MIBS,
+    %SNMP::Info::CiscoConfig::MIBS,
+    %SNMP::Info::CiscoQOS::MIBS,
+    %SNMP::Info::CiscoRTT::MIBS,
+    %SNMP::Info::CiscoStats::MIBS,
+    %SNMP::Info::CDP::MIBS,
+    %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::CiscoVTP::MIBS,
     'CISCO-EIGRP-MIB' => 'cEigrpAsRouterId',
 );
 
 %GLOBALS = (
-    %SNMP::Info::Layer3::GLOBALS,      %SNMP::Info::CiscoPower::GLOBALS,
-    %SNMP::Info::CiscoConfig::GLOBALS, %SNMP::Info::CiscoQOS::GLOBALS,
-    %SNMP::Info::CiscoRTT::GLOBALS,    %SNMP::Info::CiscoStats::GLOBALS,
-    %SNMP::Info::CDP::GLOBALS,         %SNMP::Info::CiscoVTP::GLOBALS,
+    %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::CiscoStpExtensions::GLOBALS,
+    %SNMP::Info::CiscoPower::GLOBALS,
+    %SNMP::Info::CiscoConfig::GLOBALS,
+    %SNMP::Info::CiscoQOS::GLOBALS,
+    %SNMP::Info::CiscoRTT::GLOBALS,
+    %SNMP::Info::CiscoStats::GLOBALS,
+    %SNMP::Info::CDP::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::CiscoVTP::GLOBALS,
     'eigrp_id' => 'cEigrpAsRouterId',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::CiscoStpExtensions::FUNCS,
     %SNMP::Info::CiscoPower::FUNCS,
     %SNMP::Info::CiscoConfig::FUNCS,
     %SNMP::Info::CiscoQOS::FUNCS,
     %SNMP::Info::CiscoRTT::FUNCS,
     %SNMP::Info::CiscoStats::FUNCS,
     %SNMP::Info::CDP::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::CiscoVTP::FUNCS,
 
     # EIGRP
@@ -85,12 +103,14 @@ $VERSION = '3.15';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::CiscoStpExtensions::MUNGE,
     %SNMP::Info::CiscoPower::MUNGE,
     %SNMP::Info::CiscoConfig::MUNGE,
     %SNMP::Info::CiscoQOS::MUNGE,
     %SNMP::Info::CiscoRTT::MUNGE,
     %SNMP::Info::CiscoStats::MUNGE,
     %SNMP::Info::CDP::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::CiscoVTP::MUNGE,
     'eigrp_peers' => \&SNMP::Info::munge_ip,
 );
@@ -153,6 +173,8 @@ Subclass for Generic Cisco Routers running IOS
 
 =item SNMP::Info::CiscoVTP
 
+=item SNMP::Info::LLDP
+
 =item SNMP::Info::CDP
 
 =item SNMP::Info::CiscoStats
@@ -164,6 +186,8 @@ Subclass for Generic Cisco Routers running IOS
 =item SNMP::Info::CiscoConfig
 
 =item SNMP::Info::Power
+
+=item SNMP::Info::CiscoStpExtensions
 
 =item SNMP::Info::Layer3
 
@@ -179,6 +203,8 @@ Subclass for Generic Cisco Routers running IOS
 
 See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
 
+See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
+
 See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
@@ -190,6 +216,8 @@ See L<SNMP::Info::CiscoQOS/"Required MIBs"> for its own MIB requirements.
 See L<SNMP::Info::CiscoConfig/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CiscoPower/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::CiscoStpExtensions/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
@@ -215,6 +243,10 @@ These are methods that return scalar value from SNMP
 
 See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
 
+=head2 Globals imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
+
 =head2 Globals imported from SNMP::Info::CDP
 
 See documentation in L<SNMP::Info::CDP/"GLOBALS"> for details.
@@ -238,6 +270,10 @@ See documentation in L<SNMP::Info::CiscoConfig/"GLOBALS"> for details.
 =head2 Globals imported from SNMP::Info::CiscoPower
 
 See documentation in L<SNMP::Info::CiscoPower/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::CiscoStpExtensions
+
+See documentation in L<SNMP::Info::CiscoStpExtensions/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer3
 
@@ -266,6 +302,10 @@ Returns a mapping between C<ifIndex> and the PVID or default VLAN.
 
 See documentation in L<SNMP::Info::CiscoVTP/"TABLE METHODS"> for details.
 
+=head2 Table Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
+
 =head2 Table Methods imported from SNMP::Info::CDP
 
 See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
@@ -289,6 +329,10 @@ See documentation in L<SNMP::Info::CiscoConfig/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::CiscoPower
 
 See documentation in L<SNMP::Info::CiscoPower/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::CiscoStpExtensions
+
+See documentation in L<SNMP::Info::CiscoStpExtensions/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
