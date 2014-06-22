@@ -31,35 +31,18 @@
 package SNMP::Info::Layer3::C6500;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::CiscoStack;
-use SNMP::Info::LLDP;
-use SNMP::Info::CDP;
-use SNMP::Info::CiscoStats;
-use SNMP::Info::CiscoPortSecurity;
-use SNMP::Info::CiscoConfig;
-use SNMP::Info::CiscoPower;
-use SNMP::Info::Layer3;
-use SNMP::Info::CiscoStpExtensions;
-use SNMP::Info::CiscoVTP;
-use SNMP::Info::CiscoAgg;
+use SNMP::Info::Layer3::CiscoSwitch;
 use SNMP::Info::MAU;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 # NOTE : Top-most items gets precedence for @ISA
 @SNMP::Info::Layer3::C6500::ISA = qw/
-    SNMP::Info::CiscoAgg
-    SNMP::Info::CiscoVTP 
-    SNMP::Info::CiscoStpExtensions
     SNMP::Info::CiscoStack
-    SNMP::Info::LLDP
-    SNMP::Info::CDP 
-    SNMP::Info::CiscoStats
-    SNMP::Info::CiscoPortSecurity
-    SNMP::Info::CiscoConfig
-    SNMP::Info::CiscoPower
-    SNMP::Info::Layer3
+    SNMP::Info::Layer3::CiscoSwitch
     SNMP::Info::MAU
     Exporter
 /;
@@ -78,57 +61,32 @@ $VERSION = '3.15';
 
 %MIBS = (
     %SNMP::Info::MAU::MIBS,
-    %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::CiscoPower::MIBS,
-    %SNMP::Info::CiscoConfig::MIBS,
-    %SNMP::Info::CiscoPortSecurity::MIBS,
-    %SNMP::Info::CiscoStats::MIBS,
-    %SNMP::Info::CDP::MIBS,
-    %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::Layer3::CiscoSwitch::MIBS,
     %SNMP::Info::CiscoStack::MIBS,
-    %SNMP::Info::CiscoStpExtensions::MIBS,
-    %SNMP::Info::CiscoVTP::MIBS,
-    %SNMP::Info::CiscoAgg::MIBS,
     'CISCO-VIRTUAL-SWITCH-MIB' => 'cvsSwitchMode',
 );
 
 %GLOBALS = (
     %SNMP::Info::MAU::GLOBALS,
-    %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::CiscoPower::GLOBALS,
-    %SNMP::Info::CiscoConfig::GLOBALS,
-    %SNMP::Info::CiscoPortSecurity::GLOBALS,
-    %SNMP::Info::CiscoStats::GLOBALS,
-    %SNMP::Info::CDP::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::Layer3::CiscoSwitch::GLOBALS,
     %SNMP::Info::CiscoStack::GLOBALS,
-    %SNMP::Info::CiscoStpExtensions::GLOBALS,
-    %SNMP::Info::CiscoVTP::GLOBALS,
 );
 
 %FUNCS = (
-    %SNMP::Info::MAU::FUNCS,                %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::CiscoPower::FUNCS,         %SNMP::Info::CiscoConfig::FUNCS,
-    %SNMP::Info::CiscoPortSecurity::FUNCS, 
-    %SNMP::Info::CiscoStats::FUNCS,         %SNMP::Info::CDP::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,               %SNMP::Info::CiscoStack::FUNCS,
-    %SNMP::Info::CiscoStpExtensions::FUNCS, %SNMP::Info::CiscoVTP::FUNCS,
+    %SNMP::Info::MAU::FUNCS,
+    %SNMP::Info::Layer3::CiscoSwitch::FUNCS,
+    %SNMP::Info::CiscoStack::FUNCS,
 );
 
 %MUNGE = (
-    %SNMP::Info::MAU::MUNGE,                %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::CiscoPower::MUNGE,         %SNMP::Info::CiscoConfig::MUNGE,
-    %SNMP::Info::CiscoPortSecurity::MUNGE, 
-    %SNMP::Info::CiscoStats::MUNGE,         %SNMP::Info::CDP::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,               %SNMP::Info::CiscoStack::MUNGE,
-    %SNMP::Info::CiscoStpExtensions::MUNGE, %SNMP::Info::CiscoVTP::MUNGE,
+    %SNMP::Info::MAU::MUNGE,
+    %SNMP::Info::Layer3::CiscoSwitch::MUNGE,
+    %SNMP::Info::CiscoStack::MUNGE,
 );
 
 sub vendor {
     return 'cisco';
 }
-
-sub cisco_comm_indexing { return 1; }
 
 sub serial {
     my $c6500 = shift;
@@ -325,25 +283,11 @@ after determining a more specific class using the method above.
 
 =over
 
-=item SNMP::Info::CiscoAgg
-
-=item SNMP::Info::CiscoVTP
-
 =item SNMP::Info::CiscoStack
 
-=item SNMP::Info::CDP
+=item SNMP::Info::Layer3::CiscoSwitch
 
-=item SNMP::Info::CiscoStats
-
-=item SNMP::Info::CiscoPortSecurity
-
-=item SNMP::Info::CiscoConfig
-
-=item SNMP::Info::CiscoPower
-
-=item SNMP::Info::Layer3
-
-=item SNMP::Info::CiscoStpExtensions
+=item SNMP::Info::MAU
 
 =back
 
@@ -353,26 +297,12 @@ after determining a more specific class using the method above.
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::CiscoAgg/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
-
 See L<SNMP::Info::CiscoStack/"Required MIBs"> for its own MIB requirements.
 
-See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CiscoPortSecurity/"Required MIBs"> for its own MIB
+See L<SNMP::Info::Layer3::CiscoSwitch/"Required MIBs"> for its own MIB
 requirements.
 
-See L<SNMP::Info::CiscoConfig/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CiscoPower/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::CiscoStpExtensions/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::MAU/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -385,10 +315,6 @@ These are methods that return scalar value from SNMP
 =item $c6500->vendor()
 
     Returns 'cisco'
-
-=item $c6500->cisco_comm_indexing()
-
-Returns 1.  Use vlan indexing.
 
 =item $c6500->cvsSwitchMode()
 
@@ -404,41 +330,17 @@ Returns serial number of unit (falls back to C<entPhysicalSerialNum>).
 
 =back
 
-=head2 Global Methods imported from SNMP::Info::CiscoVTP
-
-See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
-
-=head2 Global Methods imported from SNMP::Info::CiscoStack
+=head2 Globals imported from SNMP::Info::CiscoStack
 
 See documentation in L<SNMP::Info::CiscoStack/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::CDP
+=head2 Globals imported from SNMP::Info::Layer3::CiscoSwitch
 
-See documentation in L<SNMP::Info::CDP/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::Layer3::CiscoSwitch/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::CiscoStats
+=head2 Globals imported from SNMP::Info::MAU
 
-See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::CiscoPortSecurity
-
-See documentation in L<SNMP::Info::CiscoPortSecurity/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::CiscoConfig
-
-See documentation in L<SNMP::Info::CiscoConfig/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::CiscoPower
-
-See documentation in L<SNMP::Info::CiscoPower/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::Layer3
-
-See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::CiscoStpExtensions
-
-See documentation in L<SNMP::Info::CiscoStpExtensions/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -493,43 +395,19 @@ Crosses $c6500->p_port() with $c6500->p_speed() to utilize port C<ifIndex>.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info::CiscoVTP
-
-See documentation in L<SNMP::Info::CiscoVTP/"TABLE METHODS"> for details.
-
 =head2 Table Methods imported from SNMP::Info::CiscoStack
 
 See documentation in L<SNMP::Info::CiscoStack/"TABLE METHODS"> for details.
 
-=head2 Table Methods imported from SNMP::Info::CDP
 
-See documentation in L<SNMP::Info::CDP/"TABLE METHODS"> for details.
+=head2 Table Methods imported from SNMP::Info::Layer3::CiscoSwitch
 
-=head2 Table Methods imported from SNMP::Info::CiscoStats
-
-See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::CiscoPortSecurity
-
-See documentation in L<SNMP::Info::CiscoPortSecurity/"TABLE METHODS"> for
+See documentation in L<SNMP::Info::Layer3::CiscoSwitch/"TABLE METHODS"> for
 details.
 
-=head2 Table Methods imported from SNMP::Info::CiscoConfig
 
-See documentation in L<SNMP::Info::CiscoConfig/"TABLE METHODS"> for details.
+=head2 Table Methods imported from SNMP::Info::MAU
 
-=head2 Table Methods imported from SNMP::Info::CiscoPower
-
-See documentation in L<SNMP::Info::CiscoPower/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::CiscoStpExtensions
-
-See documentation in L<SNMP::Info::CiscoStpExtensions/"TABLE METHODS"> for
-details.
-
-=head2 Table Methods imported from SNMP::Info::Layer3
-
-See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
 
 =cut
-
