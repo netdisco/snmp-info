@@ -11,7 +11,6 @@ Info/Bridge.pm
 Info/CDP.pm
 Info/CiscoAgg.pm
 Info/CiscoConfig.pm
-Info/CiscoImage.pm
 Info/CiscoPortSecurity.pm
 Info/CiscoPower.pm
 Info/CiscoQOS.pm
@@ -70,6 +69,7 @@ Info/Layer3/C6500.pm
 Info/Layer3/Cisco.pm
 Info/Layer3/CiscoASA.pm
 Info/Layer3/CiscoFWSM.pm
+Info/Layer3/CiscoSwitch.pm
 Info/Layer3/Contivity.pm
 Info/Layer3/Dell.pm
 Info/Layer3/Enterasys.pm
@@ -103,6 +103,7 @@ Info/Layer7/Neoteris.pm
 Info/Layer7/Netscaler.pm
 Info/LLDP.pm
 Info/MAU.pm
+Info/MRO.pm
 Info/NortelStack.pm
 Info/PowerEthernet.pm
 Info/RapidCity.pm

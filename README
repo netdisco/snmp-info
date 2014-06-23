@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.12
+    SNMP::Info - Version 3.16
 
 AUTHOR
 
@@ -240,12 +240,6 @@ SUBCLASSES
 
         See documentation in SNMP::Info::CiscoConfig for details.
 
-    SNMP::Info::CiscoImage
-        CISCO-IMAGE-MIB. A collection of OIDs providing IOS image
-        characteristics.
-
-        See documentation in SNMP::Info::CiscoImage for details.
-
     SNMP::Info::CiscoPortSecurity
         CISCO-PORT-SECURITY-MIB and CISCO-PAE-MIB.
 
@@ -469,8 +463,9 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer2::Centillion for details.
 
         SNMP::Info::Layer2::Cisco
-            Generic Cisco subclass for layer2 devices that are not yet
-            supported in more specific subclasses.
+            Generic Cisco subclass for layer 2 devices that are not yet
+            supported in more specific subclassesand the base layer 2 Cisco
+            class for other device specific layer 2 Cisco classes.
 
             See documentation in SNMP::Info::Layer2::Cisco for details.
 
@@ -604,8 +599,9 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::C6500 for details.
 
         SNMP::Info::Layer3::Cisco
-            This is a simple wrapper around Layer3 for IOS devices. It adds
-            on CiscoVTP.
+            This is a simple wrapper around layer 3 for IOS devices and the
+            base layer 3 Cisco class for other device specific layer 3 Cisco
+            classes.
 
             See documentation in SNMP::Info::Layer3::Cisco for details.
 
@@ -618,6 +614,10 @@ SUBCLASSES
             Subclass for Cisco Firewall Services Modules.
 
             See documentation in SNMP::Info::Layer3::CiscoFWSM for details.
+
+        SNMP::Info::Layer3::CiscoSwitch
+            Base class for L3 Cisco switches. See documentation in
+            SNMP::Info::Layer3::CiscoSwitch for details.
 
         SNMP::Info::Layer3::Contivity
             Subclass for Avaya/Nortel Contivity/VPN Routers.
@@ -893,6 +893,19 @@ USAGE
 
             (default creates session automatically)
 
+        Offline
+            Causes SNMP::Info to avoid network activity and return data only
+            from its cache. If you ask for something not in the cache, an
+            error is thrown. See also the "cache()" and "offline()" methods.
+
+            (default 0, which means "online")
+
+        Cache
+            Pass in a HashRef to prime the cache of retrieved data. Useful
+            for creating an instance in "Offline" mode from a previously
+            dumped cache. See also the "cache()" method to retrieve a cache
+            after running actial queries.
+
         OTHER
             All other arguments are passed to SNMP::Session.
 
@@ -941,6 +954,9 @@ USAGE
     Run $info->clear_cache() to clear the cache to allow reload of both
     globals and table methods.
 
+    The cache can be retreved or set using the $info->cache() method. This
+    works together with the "Offline" option.
+
   Object Scalar Methods
 
     These are for package related data, not directly supplied from SNMP.
@@ -952,6 +968,17 @@ USAGE
     $info->debug(1)
         Returns current debug status, and optionally toggles debugging info
         for this object.
+
+    $info->offline([1|0])
+        Returns if offline mode is currently turned on for this object.
+
+        Optionally sets the Offline parameter.
+
+    $info->cache([new_cache])
+        Returns a HashRef of all cached data in this object. There will be a
+        "store" key for table data and then one key for each leaf.
+
+        Optionally sets the cache parameters if passed a HashRef.
 
     $info->bulkwalk([1|0])
         Returns if bulkwalk is currently turned on for this object.

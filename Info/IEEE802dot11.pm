@@ -38,7 +38,7 @@ use Exporter;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.15';
+$VERSION = '3.16';
 
 %MIBS = ( 'IEEE802dot11-MIB' => 'dot11DesiredSSID', );
 
