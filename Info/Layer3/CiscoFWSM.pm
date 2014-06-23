@@ -43,7 +43,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.16';
+$VERSION = '3.17';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS, %SNMP::Info::CiscoStack::MIBS, );
 

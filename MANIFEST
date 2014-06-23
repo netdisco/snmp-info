@@ -114,8 +114,6 @@ README
 t/00-load.t
 t/docmunge
 t/make_dev_matrix.pl
-t/pod-coverage.t
-t/pod.t
 t/prereq.t
 t/push_ver
 t/run_test
