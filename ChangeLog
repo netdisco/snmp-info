@@ -5,6 +5,17 @@ version 3.16
    [ENHANCEMENTS]
 
     * Add method resolution discovery in SNMP::Info::MRO helper module
+    * Consolidate CiscoImage class into CiscoStats class
+    * Clean up inheritance for Cisco classes.  With this change
+      all applicable classes now inherit CiscoAgg, CiscoStpExtensions,
+      CiscoPortSecurity, CiscoPower, and LLDP classes.
+    * Remove inheritance of classes the devices do not support in L3::FWSM
+      andL3::CiscoASA
+
+   [BUG FIXES]
+
+    * Use CiscoVTP methods to get interface VLAN in L3::Cisco rather than
+      solely relying on the interface description. 
 
 version 3.15 (2014-07-10)
 

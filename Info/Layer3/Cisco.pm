@@ -141,7 +141,9 @@ __END__
 =head1 NAME
 
 SNMP::Info::Layer3::Cisco - SNMP Interface to L3 and L2+L3 IOS Cisco Device
-that are not covered in other classes.
+that are not covered in other classes and the base L3 Cisco class for other
+device specific L3 Cisco classes.
+
 
 =head1 AUTHOR
 
@@ -165,7 +167,8 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Subclass for Generic Cisco Routers running IOS
+Subclass for Generic Cisco Routers running IOS and the base L3 Cisco class
+for other device specific L3 Cisco classes.
 
 =head2 Inherited Classes
 
@@ -228,10 +231,6 @@ See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 These are methods that return scalar value from SNMP
 
 =over
-
-=item $cisco->vendor()
-
-    Returns 'cisco'
 
 =item $cisco->eigrp_id()
 

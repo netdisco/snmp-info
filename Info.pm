@@ -328,10 +328,6 @@ devices.
 
 See documentation in L<SNMP::Info::CiscoStats> for details.
 
-=item SNMP::Info::Layer3::CiscoSwitch
-
-Base class for L3 Cisco switches
-
 =item SNMP::Info::CiscoVTP
 
 F<CISCO-VTP-MIB>, F<CISCO-VLAN-MEMBERSHIP-MIB>,
@@ -551,8 +547,9 @@ See documentation in L<SNMP::Info::Layer2::Centillion> for details.
 
 =item SNMP::Info::Layer2::Cisco
 
-Generic Cisco subclass for layer2 devices that are not yet supported
-in more specific subclasses.
+Generic Cisco subclass for layer 2 devices that are not yet supported
+in more specific subclassesand the base layer 2 Cisco class for
+other device specific layer 2 Cisco classes.
 
 See documentation in L<SNMP::Info::Layer2::Cisco> for details.
 
@@ -709,7 +706,8 @@ See documentation in L<SNMP::Info::Layer3::C6500> for details.
 
 =item SNMP::Info::Layer3::Cisco
 
-This is a simple wrapper around Layer3 for IOS devices.  It adds on CiscoVTP.
+This is a simple wrapper around layer 3 for IOS devices and the base layer 3
+Cisco class for other device specific layer 3 Cisco classes.
 
 See documentation in L<SNMP::Info::Layer3::Cisco> for details.
 
@@ -724,6 +722,11 @@ See documentation in L<SNMP::Info::Layer3::CiscoASA> for details.
 Subclass for Cisco Firewall Services Modules.
 
 See documentation in L<SNMP::Info::Layer3::CiscoFWSM> for details.
+
+=item SNMP::Info::Layer3::CiscoSwitch
+
+Base class for L3 Cisco switches.  See documentation in
+L<SNMP::Info::Layer3::CiscoSwitch> for details.
 
 =item SNMP::Info::Layer3::Contivity
 
