@@ -129,6 +129,12 @@ sub ip_table {
 
 		$ip_table{$ip} = $ip;
 	}
+
+	my $local_addrs = $nexus->_local_addr();
+	foreach my $addr (keys %$local_addrs) {
+		$ip_table{$addr} = $addr unless exists $ip_table{$addr};
+	}
+
 	return \%ip_table;
 }
 
@@ -146,6 +152,12 @@ sub ip_index {
 
 		$ip_index{$ip} = $index;
 	}
+
+	my $local_addrs = $nexus->_local_addr();
+	foreach my $addr (keys %$local_addrs) {
+		$ip_index{$addr} = 0 unless exists $ip_index{$addr};
+	}
+
 	return \%ip_index;
 }
 
@@ -163,6 +175,12 @@ sub ip_netmask {
 
 		$ip_netmask{$ip} = $netmask;
 	}
+
+	my $local_addrs = $nexus->_local_addr();
+	foreach my $addr (keys %$local_addrs) {
+		$ip_netmask{$addr} = $local_addrs->{$addr} unless exists $ip_netmask{$addr};
+	}
+
 	return \%ip_netmask;
 }
 
@@ -180,7 +198,27 @@ sub ip_broadcast {
 
 		$ip_broadcast{$ip} = $broadcast;
 	}
+
+	my $local_addrs = $nexus->_local_addr();
+	foreach my $addr (keys %$local_addrs) {
+		$ip_broadcast{$addr} = $addr unless exists $ip_broadcast{$addr};
+	}
+
 	return \%ip_broadcast;
+}
+
+sub _local_addr {
+	my $nexus = shift;
+	my $listen_addr = $nexus->udpLocalAddress() || {};
+	my %local_addr;
+	foreach my $sock (keys %$listen_addr) {
+		my $addr = $listen_addr->{$sock};
+		next if ($addr =~ /^127\./); # localhost
+		next if ($addr eq '0.0.0.0'); # "any"
+		next if ($addr =~ /^(\d+)\./ and $1 ge 224); # Class D or E space: Multicast or Experimental
+		$local_addr{$addr} = '255.255.255.255'; # Fictional netmask
+	}
+	return \%local_addr;
 }
 
 1;
@@ -282,6 +320,13 @@ C<dot1dBaseBridgeAddress>
 Each entry in this table is an IP address in use on this device.  Some 
 versions do not index the table with the IPv4 address in accordance with
 the MIB definition, these overrides correct that behavior.
+
+Also, the table is augmented with IP addresses in use by UDP sockets on the 
+device, as determined by checking F<RFC1213-MIB::udpLocalAddress>. Valid 
+addresses from this table (any IPv4 that is not localhost, 0.0.0.0, Class D
+(multicast) or Class E (experimental) are added as a /32 on interface ID 0.
+This is a workaround to determine possible VPC Keepalive IP adresses on the
+device, which are probably advertised by CDP/LLDP to neighbors.
 
 =over
 
