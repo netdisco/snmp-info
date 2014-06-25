@@ -385,11 +385,6 @@ Returns 'Centillion'
 
 =over
 
-=item $centillion->layers()
-
-Returns 00000011.  Class emulates Layer 2 functionality through proprietary
-MIBs.
-
 =item  $centillion->index_factor()
 
 Required by SNMP::Info::SONMP.  Number representing the number of ports
