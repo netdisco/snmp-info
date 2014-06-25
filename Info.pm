@@ -1496,7 +1496,9 @@ sub device_type {
         8072 => 'SNMP::Info::Layer3::NetSNMP',
         9303 => 'SNMP::Info::Layer3::PacketFront',
         12325 => 'SNMP::Info::Layer3::Pf',
+        14179 => 'SNMP::Info::Layer2::Airespace',
         14525 => 'SNMP::Info::Layer2::Trapeze',
+        14823 => 'SNMP::Info::Layer3::Aruba',
         14988 => 'SNMP::Info::Layer3::Mikrotik',
         17163 => 'SNMP::Info::Layer3::Steelhead',
         25506 => 'SNMP::Info::Layer3::H3C',
@@ -1512,6 +1514,7 @@ sub device_type {
         171   => 'SNMP::Info::Layer3::Dell',
         207   => 'SNMP::Info::Layer2::Allied',
         674   => 'SNMP::Info::Layer3::Dell',
+        890   => 'SNMP::Info::Layer2::ZyXEL_DSLAM',
         1872  => 'SNMP::Info::Layer3::AlteonAD',
         1916  => 'SNMP::Info::Layer3::Extreme',
         1991  => 'SNMP::Info::Layer3::Foundry',
@@ -1528,6 +1531,10 @@ sub device_type {
         14823 => 'SNMP::Info::Layer3::Aruba',
         17163 => 'SNMP::Info::Layer3::Steelhead',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
+    );
+
+    my %l1sysoidmap = (
+        2925  => 'SNMP::Info::Layer1::Cyclades',
     );
 
     my %l7sysoidmap = (
@@ -1647,6 +1654,20 @@ sub device_type {
             if ($desc =~ /\b(C1100|C1130|C1140|AP1200|C350|C1200|C1240|C1250)\b/
             and $desc =~ /\bIOS\b/ );
 
+        # Airespace (WLC) Module
+        $objtype = 'SNMP::Info::Layer2::Airespace'
+            if ( $desc =~ /^Cisco Controller$/ );
+
+        #Nortel 2270
+        $objtype = 'SNMP::Info::Layer2::N2270'
+            if (
+            $desc =~ /Nortel\s+(Networks\s+)??WLAN\s+-\s+Security\s+Switch/ );
+
+        # Nortel (Trapeze) WSS 2300 Series
+        $objtype = 'SNMP::Info::Layer2::NWSS2300'    
+            if (
+            $desc =~ /^(Nortel\s)??Wireless\sSecurity\sSwitch\s23[568][012]\b/);
+
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer3' )
             and ( defined($id) )
@@ -1663,6 +1684,18 @@ sub device_type {
         return $objtype unless ( defined $desc and $desc !~ /^\s*$/ );
 
         # Device Type Overrides
+
+        #  Bay Hub (Needed here for layers override)
+        $objtype = 'SNMP::Info::Layer1::Bayhub'
+            if ( $desc =~ /\bNMM.*Agent/ );
+        $objtype = 'SNMP::Info::Layer1::Bayhub'
+            if ( $desc =~ /\bBay\s*Stack.*Hub/i );
+
+        #  Synoptics Hub (Needed here for layers override)
+        #  This will override Bay Hub only for specific devices supported
+        #  by this class
+        $objtype = 'SNMP::Info::Layer1::S3000'
+            if ( $desc =~ /\bNMM\s+(281|3000|3030)/i );
 
         #   Catalyst 1900 series override
         $objtype = 'SNMP::Info::Layer2::C1900'
@@ -1750,7 +1783,7 @@ sub device_type {
 
         # Airespace (WLC) Module
         $objtype = 'SNMP::Info::Layer2::Airespace'
-            if ( $desc =~ /Cisco Controller/ );
+            if ( $desc =~ /^Cisco Controller$/ );
 
         #Nortel 2270
         $objtype = 'SNMP::Info::Layer2::N2270'
@@ -1784,12 +1817,20 @@ sub device_type {
             if ( $desc =~ /\bBay\s*Stack.*Hub/i );
 
         #  Synoptics Hub
-        #  This will override Bay Hub only for specific devices supported by this class
+        #  This will override Bay Hub only for specific devices supported
+        #  by this class
         $objtype = 'SNMP::Info::Layer1::S3000'
             if ( $desc =~ /\bNMM\s+(281|3000|3030)/i );
 
-        # These devices don't claim to have Layer1-3 but we like em anyways.
+        # Generic device classification based upon sysObjectID
+        if (    ( $objtype eq 'SNMP::Info::Layer1' )
+            and ( defined($id) )
+            and ( exists( $l1sysoidmap{$id} ) ) )
+        {
+            $objtype = $l1sysoidmap{$id};
+        }
     }
+    # These devices don't claim to have Layer1-3 but we like em anyways.
     else {
         $objtype = 'SNMP::Info::Layer2::ZyXEL_DSLAM'
             if ( $desc =~ /8-port .DSL Module\(Annex .\)/i );
@@ -1816,7 +1857,8 @@ sub device_type {
 
         # Nortel (Trapeze) WSS 2300 Series
         $objtype = 'SNMP::Info::Layer2::NWSS2300'    
-            if ( $desc =~ /\bWireless\sSecurity\sSwitch\s23[568][012]\b/);
+            if (
+            $desc =~ /^(Nortel\s)??Wireless\sSecurity\sSwitch\s23[568][012]\b/);
 
         # Generic device classification based upon sysObjectID
         if ( defined($id) and $objtype eq 'SNMP::Info') {
