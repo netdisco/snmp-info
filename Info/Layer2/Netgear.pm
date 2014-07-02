@@ -33,10 +33,9 @@ package SNMP::Info::Layer2::Netgear;
 use strict;
 use Exporter;
 use SNMP::Info::Layer2;
-use SNMP::Info::Entity;
 use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer2::Netgear::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Entity SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::Netgear::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Netgear::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
@@ -47,18 +46,18 @@ $VERSION = '3.17';
 # table by the serial() function.
 our $index = undef;
 
-%MIBS = ( %SNMP::Info::Layer2::MIBS, %SNMP::Info::Entity::MIBS, %SNMP::Info::LLDP::MIBS, );
+%MIBS = ( %SNMP::Info::Layer2::MIBS, %SNMP::Info::LLDP::MIBS, );
 
 %GLOBALS = (
-    %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::Entity::GLOBALS, %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::LLDP::GLOBALS,
     ng_fsosver   => '.1.3.6.1.4.1.4526.11.11.1.0',
     ng_gsmserial => '.1.3.6.1.4.1.4526.10.1.1.1.4.0',
     ng_gsmosver  => '.1.3.6.1.4.1.4526.10.1.1.1.13.0',
 );
 
-%FUNCS = ( %SNMP::Info::Layer2::FUNCS, %SNMP::Info::Entity::FUNCS, %SNMP::Info::LLDP::FUNCS, );
+%FUNCS = ( %SNMP::Info::Layer2::FUNCS, %SNMP::Info::LLDP::FUNCS, );
 
-%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::Entity::MUNGE, %SNMP::Info::LLDP::MUNGE, );
+%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::LLDP::MUNGE, );
 
 sub vendor {
     return 'netgear';
@@ -151,133 +150,6 @@ sub os_ver {
     }
     return $netgear->ng_gsmosver() if defined  $netgear->model and $netgear->model =~ m/GSM\d/i;
     return $netgear->ng_fsosver() if defined  $netgear->model and $netgear->model =~ m/FS\d/i;
-}
-
-#  Use LLDP
-
-sub hasCDP {
-    my $netgear = shift;
-    return $netgear->hasLLDP() || $netgear->SUPER::hasCDP();
-}
-
-sub c_ip {
-    my $netgear = shift;
-    my $partial = shift;
-
-    my $cdp  = $netgear->SUPER::c_ip($partial) || {};
-    my $lldp = $netgear->lldp_ip($partial)     || {};
-
-    my %c_ip;
-    foreach my $iid ( keys %$cdp ) {
-        my $ip = $cdp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $ip = $lldp->{$iid};
-        next unless defined $ip;
-
-        $c_ip{$iid} = $ip;
-    }
-    return \%c_ip;
-}
-
-sub c_if {
-    my $netgear = shift;
-    my $partial  = shift;
-
-    my $lldp = $netgear->lldp_if($partial)     || {};
-    my $cdp  = $netgear->SUPER::c_if($partial) || {};
-
-    my %c_if;
-    foreach my $iid ( keys %$cdp ) {
-        my $if = $cdp->{$iid};
-        next unless defined $if;
-
-        $c_if{$iid} = $if;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $if = $lldp->{$iid};
-        next unless defined $if;
-
-        $c_if{$iid} = $if;
-    }
-    return \%c_if;
-}
-
-sub c_port {
-    my $netgear = shift;
-    my $partial  = shift;
-
-    my $lldp = $netgear->lldp_port($partial)     || {};
-    my $cdp  = $netgear->SUPER::c_port($partial) || {};
-
-    my %c_port;
-    foreach my $iid ( keys %$cdp ) {
-        my $port = $cdp->{$iid};
-        next unless defined $port;
-
-        $c_port{$iid} = $port;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $port = $lldp->{$iid};
-        next unless defined $port;
-
-        $c_port{$iid} = $port;
-    }
-    return \%c_port;
-}
-
-sub c_id {
-    my $netgear = shift;
-    my $partial  = shift;
-
-    my $lldp = $netgear->lldp_id($partial)     || {};
-    my $cdp  = $netgear->SUPER::c_id($partial) || {};
-
-    my %c_id;
-    foreach my $iid ( keys %$cdp ) {
-        my $id = $cdp->{$iid};
-        next unless defined $id;
-
-        $c_id{$iid} = $id;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $id = $lldp->{$iid};
-        next unless defined $id;
-
-        $c_id{$iid} = $id;
-    }
-    return \%c_id;
-}
-
-sub c_platform {
-    my $netgear = shift;
-    my $partial  = shift;
-
-    my $lldp = $netgear->lldp_rem_sysdesc($partial)  || {};
-    my $cdp  = $netgear->SUPER::c_platform($partial) || {};
-
-    my %c_platform;
-    foreach my $iid ( keys %$cdp ) {
-        my $platform = $cdp->{$iid};
-        next unless defined $platform;
-
-        $c_platform{$iid} = $platform;
-    }
-
-    foreach my $iid ( keys %$lldp ) {
-        my $platform = $lldp->{$iid};
-        next unless defined $platform;
-
-        $c_platform{$iid} = $platform;
-    }
-    return \%c_platform;
 }
 
 1;
@@ -396,49 +268,6 @@ a reference to a hash.
 =item $netgear->interfaces()
 
 Uses the i_name() field.
-
-=back
-
-=head2 Topology information
-
-Based upon the software version devices may support Link Layer Discovery 
-Protocol (LLDP).
-
-=over
-
-=item $netgear->hasCDP()
-
-Returns true if the device is running LLDP.
-
-=item $netgear->c_if()
-
-Returns reference to hash.  Key: iid Value: local device port (interfaces)
-
-=item $netgear->c_ip()
-
-Returns reference to hash.  Key: iid Value: remote IPv4 address
-
-If multiple entries exist with the same local port, c_if(), with the same IPv4
-address, c_ip(), it may be a duplicate entry.
-
-If multiple entries exist with the same local port, c_if(), with different
-IPv4 addresses, c_ip(), there is either a non-LLDP device in between two or
-more devices or multiple devices which are not directly connected.  
-
-Use the data from the Layer2 Topology Table below to dig deeper.
-
-=item $netgear->c_port()
-
-Returns reference to hash. Key: iid Value: remote port (interfaces)
-
-=item $netgear->c_id()
-
-Returns reference to hash. Key: iid Value: string value used to identify the
-chassis component associated with the remote system.
-
-=item $netgear->c_platform()
-
-Returns reference to hash.  Key: iid Value: Remote Device Type
 
 =back
 

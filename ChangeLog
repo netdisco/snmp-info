@@ -6,6 +6,8 @@ version 3.18
 
     * Pseudo ENTITY-MIB methods added to L3::Tasman for hardware information
     * Capture VPC Keepalive IP addresses in L3::Nexus (jeroenvi)
+    * L2::Netgear inheritance clean up and removal of unnecessary c_* methods
+      defined in Info base class
 
    [BUG FIXES]
 
