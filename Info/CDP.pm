@@ -62,7 +62,7 @@ $VERSION = '3.17';
     'cdp_proto'        => 'cdpCacheAddressType',
     'cdp_addr'         => 'cdpCacheAddress',
     'cdp_ver'          => 'cdpCacheVersion',
-    'cdp_id'           => 'cdpCacheDeviceId',
+    'cdp_dev_id'       => 'cdpCacheDeviceId',
     'cdp_port'         => 'cdpCacheDevicePort',
     'cdp_platform'     => 'cdpCachePlatform',
     'cdp_capabilities' => 'cdpCacheCapabilities',
@@ -81,7 +81,6 @@ $VERSION = '3.17';
     'cdp_platform'     => \&SNMP::Info::munge_null,
     'cdp_domain'       => \&SNMP::Info::munge_null,
     'cdp_port'         => \&SNMP::Info::munge_null,
-    'cdp_id'           => \&SNMP::Info::munge_null,
     'cdp_ver'          => \&SNMP::Info::munge_null,
     'cdp_ip'           => \&SNMP::Info::munge_ip,
     'cdp_power'        => \&munge_power,
@@ -208,6 +207,22 @@ sub cdp_cap {
         }
     }
     return \%cdp_cap;
+}
+
+sub cdp_id {
+    my $cdp    = shift;
+    my $partial = shift;
+
+    my $ch = $cdp->cdp_dev_id($partial) || {};
+
+    my %cdp_id;
+    foreach my $key ( sort keys %$ch ) {
+        my $id = $ch->{$key};
+        next unless $id;
+        $id = SNMP::Info::munge_mac($id) || SNMP::Info::munge_null($id);
+        $cdp_id{$key} = $id;
+    }
+    return \%cdp_id;
 }
 
 1;
