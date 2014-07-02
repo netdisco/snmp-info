@@ -33,10 +33,10 @@ package SNMP::Info::Layer3::CiscoFWSM;
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info::CiscoStack;
+use SNMP::Info::CiscoStats;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::CiscoFWSM::ISA = qw/SNMP::Info::CiscoStack
+@SNMP::Info::Layer3::CiscoFWSM::ISA = qw/SNMP::Info::CiscoStats
 	SNMP::Info::Layer3
 	Exporter/;
 @SNMP::Info::Layer3::CiscoFWSM::EXPORT_OK = qw//;
@@ -45,17 +45,17 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '3.17';
 
-%MIBS = ( %SNMP::Info::Layer3::MIBS, %SNMP::Info::CiscoStack::MIBS, );
+%MIBS = ( %SNMP::Info::Layer3::MIBS, %SNMP::Info::CiscoStats::MIBS, );
 
 %GLOBALS
-	= ( %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::CiscoStack::GLOBALS, );
+	= ( %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::CiscoStats::GLOBALS, );
 
 %FUNCS = (
 	%SNMP::Info::Layer3::FUNCS,
-	%SNMP::Info::CiscoStack::FUNCS,
+	%SNMP::Info::CiscoStats::FUNCS,
 );
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, %SNMP::Info::CiscoStack::MUNGE, );
+%MUNGE = ( %SNMP::Info::Layer3::MUNGE, %SNMP::Info::CiscoStats::MUNGE, );
 
 # For FWSMs, the ipNetToPhysicalPhysAddress table appears to be of the form:
 # $ifindex.$inetaddresstype.$proto.$ip_address -> $mac_address
@@ -163,7 +163,7 @@ Subclass for Cisco Firewall Services Modules
 
 =over
 
-=item SNMP::Info::CiscoStack
+=item SNMP::Info::CiscoStats
 
 =item SNMP::Info::Layer3
 
@@ -175,7 +175,7 @@ Subclass for Cisco Firewall Services Modules
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::CiscoStack/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
@@ -183,9 +183,9 @@ See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 =head1 GLOBALS
 
-=head2 Globals imported from SNMP::Info::CiscoStack
+=head2 Globals imported from SNMP::Info::CiscoStats
 
-See documentation in L<SNMP::Info::CiscoStack/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::Layer3
 
@@ -221,9 +221,9 @@ the MIB to provide that information isn't supported on FWSM.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info::CiscoStack
+=head2 Table Methods imported from SNMP::Info::CiscoStats
 
-See documentation in L<SNMP::Info::CiscoStack/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

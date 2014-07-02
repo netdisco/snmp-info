@@ -34,7 +34,7 @@ package SNMP::Info::Layer3::CiscoASA;
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info::CiscoStack;
+use SNMP::Info::CiscoStats;
 use SNMP::Info::Layer3;
 
 @SNMP::Info::Layer3::CiscoASA::ISA = qw/
@@ -47,20 +47,20 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '3.17';
 
-%MIBS = ( %SNMP::Info::Layer3::MIBS, %SNMP::Info::CiscoStack::MIBS, );
+%MIBS = ( %SNMP::Info::Layer3::MIBS, %SNMP::Info::CiscoStats::MIBS, );
 
 %GLOBALS
-    = ( %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::CiscoStack::GLOBALS, );
+    = ( %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::CiscoStats::GLOBALS, );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::CiscoStack::FUNCS,
+    %SNMP::Info::CiscoStats::FUNCS,
     'mac_table' => 'ifPhysAddress',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::CiscoStack::MUNGE,
+    %SNMP::Info::CiscoStats::MUNGE,
     'mac_table' => \&SNMP::Info::munge_mac,
 );
 
@@ -134,7 +134,7 @@ Subclass for Cisco ASA Devices
 
 =over
 
-=item SNMP::Info::CiscoStack
+=item SNMP::Info::CiscoStats
 
 =item SNMP::Info::Layer3
 
@@ -146,7 +146,7 @@ Subclass for Cisco ASA Devices
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::CiscoStack/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
@@ -171,9 +171,9 @@ configured interface name instead of "Adaptive Security Appliance
 
 =back
 
-=head2 Globals imported from SNMP::Info::CiscoStack
+=head2 Globals imported from SNMP::Info::CiscoStats
 
-See documentation in L<SNMP::Info::CiscoStack/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::Layer3
 
@@ -184,9 +184,9 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a
 reference to a hash.
 
-=head2 Table Methods imported from SNMP::Info::CiscoStack
+=head2 Table Methods imported from SNMP::Info::CiscoStats
 
-See documentation in L<SNMP::Info::CiscoStack/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

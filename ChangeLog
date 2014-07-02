@@ -9,7 +9,8 @@ version 3.18
    [BUG FIXES]
 
     * Correctly identify device type (class) for instantiated objects which
-      have overridden layers. 
+      have overridden layers.
+    * [#58] Fix inheritance in L3::FWSM and L3::CiscoASA
 
 version 3.17 (2014-06-23)
 
@@ -27,7 +28,7 @@ version 3.16 (2014-06-23)
       all applicable classes now inherit CiscoAgg, CiscoStpExtensions,
       CiscoPortSecurity, CiscoPower, and LLDP classes.
     * Remove inheritance of classes the devices do not support in L3::FWSM
-      andL3::CiscoASA
+      and L3::CiscoASA
 
    [BUG FIXES]
 
