@@ -15,7 +15,7 @@ version 3.18
       have overridden layers.
     * [#58] Fix inheritance in L3::FWSM and L3::CiscoASA
     * [#71] Don't try to match on a false port description in lldp_if
-    * [#54] Posible bad values returned for cdp_id with some HP
+    * [#54] Possible bad values returned for cdp_id and lldp_port with some HP
       gear (Joel Leonhardt)
 
 version 3.17 (2014-06-23)

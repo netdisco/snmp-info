@@ -170,6 +170,7 @@ sub lldp_port {
     my $pdesc = $lldp->lldp_rem_desc($partial)     || {};
     my $pid   = $lldp->lldp_rem_pid($partial)      || {};
     my $ptype = $lldp->lldp_rem_pid_type($partial) || {};
+    my $vendor = $lldp->vendor();
 
     my %lldp_port;
     foreach my $key ( sort keys %$pid ) {
@@ -194,7 +195,7 @@ sub lldp_port {
 
         # Avaya/Nortel lldpRemPortDesc doesn't match ifDescr, but we can still
         # figure out slot.port based upon lldpRemPortDesc
-        if ( $port =~ /^(Unit\s+(\d+)\s+)?Port\s+(\d+)$/ ) {
+        if ( $vendor eq 'avaya' && $port =~ /^(Unit\s+(\d+)\s+)?Port\s+(\d+)$/ ) {
             $port = defined $1 ? "$2.$3" : "$3";
         }
 
