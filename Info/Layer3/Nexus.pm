@@ -325,7 +325,7 @@ Also, the table is augmented with IP addresses in use by UDP sockets on the
 device, as determined by checking F<RFC1213-MIB::udpLocalAddress>. Valid 
 addresses from this table (any IPv4 that is not localhost, 0.0.0.0, Class D
 (multicast) or Class E (experimental) are added as a /32 on interface ID 0.
-This is a workaround to determine possible VPC Keepalive IP adresses on the
+This is a workaround to determine possible VPC Keepalive IP addresses on the
 device, which are probably advertised by CDP/LLDP to neighbors.
 
 =over
