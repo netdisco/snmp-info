@@ -50,7 +50,7 @@ use SNMP::Info::CDP;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.17';
+$VERSION = '3.18';
 
 # This will be filled in with the device's index into the EntPhysicalEntry
 # table by the serial() function.

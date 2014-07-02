@@ -39,7 +39,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.17';
+$VERSION = '3.18';
 
 %MIBS = (
     'SYNOPTICS-ROOT-MIB'           => 'synoptics',
