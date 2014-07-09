@@ -95,7 +95,7 @@ sub hasLLDP {
     # If the device doesn't return local system capabilities, fallback by checking if it would report neighbors
     my $lldp_rem = $lldp->lldp_rem_id() || {};
     return 1 if scalar keys %$lldp_rem;
-    
+
     return;
 }
 
@@ -104,11 +104,11 @@ sub lldp_if {
     my $partial = shift;
 
     my $addr    = $lldp->lldp_rem_pid($partial) || {};
-    my $i_descr = $lldp->i_description() || {};
-    my $i_alias = $lldp->i_alias() || {};
+    my $i_descr = $lldp->i_description()        || {};
+    my $i_alias = $lldp->i_alias()              || {};
     my %r_i_descr = reverse %$i_descr;
     my %r_i_alias = reverse %$i_alias;
-    
+
     my %lldp_if;
     foreach my $key ( keys %$addr ) {
         my @aOID = split( '\.', $key );
@@ -119,14 +119,15 @@ sub lldp_if {
         # prefer ifDescr over ifAlias because using cross ref with description is correct behavior 
         # according to the LLDP-MIB. Some devices (eg H3C gear) seem to use ifAlias though.
         my $lldp_desc = $lldp->lldpLocPortDesc($port);
-        my $desc = $lldp_desc->{$port};
+        my $desc      = $lldp_desc->{$port};
         # If cross reference is successful use it, otherwise stick with lldpRemLocalPortNum
         if ( $desc && exists $r_i_descr{$desc} ) {
             $port = $r_i_descr{$desc};
-        } elsif ( $desc && exists $r_i_alias{$desc} ) {
+        }
+        elsif ( $desc && exists $r_i_alias{$desc} ) {
             $port = $r_i_alias{$desc};
         }
-        
+
         $lldp_if{$key} = $port;
     }
     return \%lldp_if;
@@ -170,13 +171,14 @@ sub lldp_port {
     my $pdesc = $lldp->lldp_rem_desc($partial)     || {};
     my $pid   = $lldp->lldp_rem_pid($partial)      || {};
     my $ptype = $lldp->lldp_rem_pid_type($partial) || {};
-    my $vendor = $lldp->vendor();
+    my $desc  = $lldp->lldp_rem_sysdesc($partial)  || {};
 
     my %lldp_port;
     foreach my $key ( sort keys %$pid ) {
         my $port = $pdesc->{$key};
         my $type = $ptype->{$key};
         if ( $type and $type eq 'interfaceName' ) {
+
             # If the pid claims to be an interface name,
             # believe it.
             $port = $pid->{$key};
@@ -195,8 +197,12 @@ sub lldp_port {
 
         # Avaya/Nortel lldpRemPortDesc doesn't match ifDescr, but we can still
         # figure out slot.port based upon lldpRemPortDesc
-        if ( $vendor eq 'avaya' && $port =~ /^(Unit\s+(\d+)\s+)?Port\s+(\d+)$/ ) {
-            $port = defined $1 ? "$2.$3" : "$3";
+        if ( defined $desc->{$key}
+            && $desc->{$key}
+            =~ /^Ethernet\s(?:Routing\s)?Switch\s\d|^Virtual\sServices\sPlatform\s\d/
+            && $port =~ /^(Unit\s+(\d+)\s+)?Port\s+(\d+)$/ )
+        {
+            $port = defined $1 ? "$2.$3" : "1.$3";
         }
 
         $lldp_port{$key} = $port;
@@ -222,10 +228,13 @@ sub lldp_id {
         if ( $type =~ /mac/ ) {
             $id = join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $id ) );
         }
-        elsif ($type eq 'networkAddress') {
-            if ( length(unpack('H*', $id)) == 10 ) {
+        elsif ( $type eq 'networkAddress' ) {
+            if ( length( unpack( 'H*', $id ) ) == 10 ) {
+
                 # IP address (first octet is sign, I guess)
-                my @octets = (map { sprintf "%02x",$_ } unpack('C*', $id))[1..4];
+                my @octets
+                    = ( map { sprintf "%02x", $_ } unpack( 'C*', $id ) )
+                    [ 1 .. 4 ];
                 $id = join '.', map { hex($_) } @octets;
             }
         }
@@ -238,39 +247,43 @@ sub lldp_platform {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $rid  = $lldp->lldp_rem_id($partial) || {};
+    my $rid  = $lldp->lldp_rem_id($partial)      || {};
     my $desc = $lldp->lldp_rem_sysdesc($partial) || {};
     my $name = $lldp->lldp_rem_sysname($partial) || {};
-    
+
     my %lldp_platform;
-    foreach my $key (keys %$rid) {
+    foreach my $key ( keys %$rid ) {
         $lldp_platform{$key} = $desc->{$key} || $name->{$key};
     }
     return \%lldp_platform;
 }
 
 sub lldp_cap {
-    my $lldp     = shift;
+    my $lldp    = shift;
     my $partial = shift;
 
-    my $lldp_caps  = $lldp->lldp_rem_cap_spt($partial)  || {};
-    
+    my $lldp_caps = $lldp->lldp_rem_cap_spt($partial) || {};
+
     # Encoded as BITS which Perl Net-SNMP implementation doesn't seem to
     # be able to enumerate for us, so we have to get it from the MIB
     # and enumerate ourselves
-    my $oid = SNMP::translateObj('lldpRemSysCapEnabled',0,1) || '';
-    my $enums = ((ref {} eq ref $SNMP::MIB{$oid}{'enums'}) ? $SNMP::MIB{$oid}{'enums'} : {});
+    my $oid = SNMP::translateObj( 'lldpRemSysCapEnabled', 0, 1 ) || '';
+    my $enums = (
+        ( ref {} eq ref $SNMP::MIB{$oid}{'enums'} )
+        ? $SNMP::MIB{$oid}{'enums'}
+        : {}
+    );
     my %r_enums = reverse %$enums;
 
     my %lldp_cap;
     foreach my $key ( keys %$lldp_caps ) {
         my $cap_bits = $lldp_caps->{$key};
         next unless $cap_bits;
-        
+
         my $count = 0;
-        foreach my $bit (split //,$cap_bits) {
-            if ( $bit ) {
-                push ( @{$lldp_cap{$key}}, $r_enums{$count});
+        foreach my $bit ( split //, $cap_bits ) {
+            if ($bit) {
+                push( @{ $lldp_cap{$key} }, $r_enums{$count} );
             }
             $count++;
         }

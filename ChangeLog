@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.19
+
+   [BUG FIXES]
+
+    * Fix Avaya detection lldp_port()
+
 version 3.18 (2014-07-02)
 
    [ENHANCEMENTS]
