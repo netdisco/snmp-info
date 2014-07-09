@@ -5,6 +5,7 @@ version 3.19
    [BUG FIXES]
 
     * Fix Avaya detection lldp_port()
+    * Silence uninitialized value warning in L3::Cisco
 
 version 3.18 (2014-07-02)
 
