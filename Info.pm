@@ -1472,6 +1472,7 @@ sub device_type {
         11   => 'SNMP::Info::Layer2::HP',
         18   => 'SNMP::Info::Layer3::BayRS',
         42   => 'SNMP::Info::Layer3::Sun',
+       43   => 'SNMP::Info::Layer2::3Com',
         45   => 'SNMP::Info::Layer2::Baystack',
         171  => 'SNMP::Info::Layer3::Dell',
         244  => 'SNMP::Info::Layer3::Lantronix',
@@ -1510,6 +1511,7 @@ sub device_type {
     my %l2sysoidmap = (
         9     => 'SNMP::Info::Layer2::Cisco',
         11    => 'SNMP::Info::Layer2::HP',
+       43    => 'SNMP::Info::Layer2::3Com',
         45    => 'SNMP::Info::Layer2::Baystack',
         171   => 'SNMP::Info::Layer3::Dell',
         207   => 'SNMP::Info::Layer2::Allied',
