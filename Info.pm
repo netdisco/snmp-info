@@ -1495,6 +1495,7 @@ sub device_type {
         6527 => 'SNMP::Info::Layer3::Timetra',
         8072 => 'SNMP::Info::Layer3::NetSNMP',
         9303 => 'SNMP::Info::Layer3::PacketFront',
+        10002 => 'SNMP::Info::Layer2::Ubiquiti',
         12325 => 'SNMP::Info::Layer3::Pf',
         14179 => 'SNMP::Info::Layer2::Airespace',
         14525 => 'SNMP::Info::Layer2::Trapeze',
