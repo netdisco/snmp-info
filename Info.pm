@@ -487,6 +487,12 @@ See documentation in L<SNMP::Info::Layer2> for details.
 
 =over
 
+=item SNMP::Info::Layer2::3Com
+
+SNMP::Info::Layer2::3Com - SNMP Interface to L2 3Com Switches
+
+See documentation in L<SNMP::Info::Layer2::3Com> for details.
+
 =item SNMP::Info::Layer2::Airespace
 
 Subclass for Cisco (Airespace) wireless controllers.
@@ -617,6 +623,12 @@ See documentation in L<SNMP::Info::Layer2::Orinoco> for details.
 SNMP Interface to Juniper (Trapeze) Wireless Controllers
 
 See documentation in L<SNMP::Info::Layer2::Trapeze> for details.
+
+=item SNMP::Info::Layer2::Ubiquiti
+
+SNMP Interface to Ubiquiti Access Points
+
+See documentation in L<SNMP::Info::Layer2::Ubiquiti> for details.
 
 =item SNMP::Info::Layer2::ZyXEL_DSLAM
 
@@ -1472,7 +1484,7 @@ sub device_type {
         11   => 'SNMP::Info::Layer2::HP',
         18   => 'SNMP::Info::Layer3::BayRS',
         42   => 'SNMP::Info::Layer3::Sun',
-       43   => 'SNMP::Info::Layer2::3Com',
+        43   => 'SNMP::Info::Layer2::3Com',
         45   => 'SNMP::Info::Layer2::Baystack',
         171  => 'SNMP::Info::Layer3::Dell',
         244  => 'SNMP::Info::Layer3::Lantronix',
@@ -1512,7 +1524,7 @@ sub device_type {
     my %l2sysoidmap = (
         9     => 'SNMP::Info::Layer2::Cisco',
         11    => 'SNMP::Info::Layer2::HP',
-       43    => 'SNMP::Info::Layer2::3Com',
+        43    => 'SNMP::Info::Layer2::3Com',
         45    => 'SNMP::Info::Layer2::Baystack',
         171   => 'SNMP::Info::Layer3::Dell',
         207   => 'SNMP::Info::Layer2::Allied',

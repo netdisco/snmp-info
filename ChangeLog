@@ -2,10 +2,16 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 3.19
 
+   [NEW FEATURES]
+
+    * Support for Ubiquiti Access Points in new class L2::Ubiquiti (begemot)
+    * Preliminary support for 3Com switches in new class L2::3Com (begemot)
+
    [BUG FIXES]
 
     * Fix Avaya detection lldp_port()
     * Silence uninitialized value warning in L3::Cisco
+    * H3C fixes (begemot)
 
 version 3.18 (2014-07-02)
 
