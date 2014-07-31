@@ -133,13 +133,23 @@ These are methods that return scalar value from SNMP
 
 =item $device->vendor()
 
+Returns '3Com'
+
 =item $device->os()
+
+Returns '3Com'
 
 =item $device->os_ver()
 
+Return os version
+
 =item $device->model()
 
+Returns device model extracted from description
+
 =item $device->serial()
+
+Returns serial number
 
 =back
 
@@ -151,12 +161,6 @@ See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=head2 Overrides
-
-=over
-
-=back
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
