@@ -1529,7 +1529,6 @@ sub device_type {
         171   => 'SNMP::Info::Layer3::Dell',
         207   => 'SNMP::Info::Layer2::Allied',
         674   => 'SNMP::Info::Layer3::Dell',
-        890   => 'SNMP::Info::Layer2::ZyXEL_DSLAM',
         1872  => 'SNMP::Info::Layer3::AlteonAD',
         1916  => 'SNMP::Info::Layer3::Extreme',
         1991  => 'SNMP::Info::Layer3::Foundry',
@@ -1808,6 +1807,9 @@ sub device_type {
         # HP Virtual Connect blade switches
         $objtype = 'SNMP::Info::Layer2::HPVC'
             if ( $desc =~ /HP\sVC\s/ );
+
+        $objtype = 'SNMP::Info::Layer2::ZyXEL_DSLAM'
+            if ( $desc =~ /8-port .DSL Module\(Annex .\)/i );
 
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer2' )

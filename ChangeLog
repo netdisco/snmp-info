@@ -12,6 +12,7 @@ version 3.19
     * Fix Avaya detection lldp_port()
     * Silence uninitialized value warning in L3::Cisco
     * H3C fixes (begemot)
+    * Only use L2::ZyXEL_DSLAM for ZyXEL DSL modules
 
 version 3.18 (2014-07-02)
 
