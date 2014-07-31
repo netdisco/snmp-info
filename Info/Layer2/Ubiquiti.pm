@@ -121,11 +121,7 @@ after determining a more specific class using the method above.
 
 =head2 Required MIBs
 
-=over
-
 None.
-
-=back
 
 =head2 Inherited MIBs
 
