@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.18
+    SNMP::Info - Version 3.19
 
 AUTHOR
 
@@ -408,6 +408,11 @@ SUBCLASSES
 
         See documentation in SNMP::Info::Layer2 for details.
 
+        SNMP::Info::Layer2::3Com
+            SNMP::Info::Layer2::3Com - SNMP Interface to L2 3Com Switches
+
+            See documentation in SNMP::Info::Layer2::3Com for details.
+
         SNMP::Info::Layer2::Airespace
             Subclass for Cisco (Airespace) wireless controllers.
 
@@ -524,6 +529,11 @@ SUBCLASSES
             SNMP Interface to Juniper (Trapeze) Wireless Controllers
 
             See documentation in SNMP::Info::Layer2::Trapeze for details.
+
+        SNMP::Info::Layer2::Ubiquiti
+            SNMP Interface to Ubiquiti Access Points
+
+            See documentation in SNMP::Info::Layer2::Ubiquiti for details.
 
         SNMP::Info::Layer2::ZyXEL_DSLAM
             Zyxel DSLAMs. Need I say more?
