@@ -33,6 +33,7 @@ Info/Layer1/Bayhub.pm
 Info/Layer1/Cyclades.pm
 Info/Layer1/S3000.pm
 Info/Layer2.pm
+Info/Layer2/3Com.pm
 Info/Layer2/Airespace.pm
 Info/Layer2/Aironet.pm
 Info/Layer2/Allied.pm
@@ -53,6 +54,7 @@ Info/Layer2/Netgear.pm
 Info/Layer2/NWSS2300.pm
 Info/Layer2/Orinoco.pm
 Info/Layer2/Trapeze.pm
+Info/Layer2/Ubiquiti.pm
 Info/Layer2/ZyXEL_DSLAM.pm
 Info/Layer3.pm
 Info/Layer3/Aironet.pm
