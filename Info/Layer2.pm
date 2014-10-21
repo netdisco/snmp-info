@@ -133,23 +133,6 @@ sub serial {
     return;
 }
 
-sub i_ignore {
-    my $l2      = shift;
-    my $partial = shift;
-
-    my $i_type = $l2->i_type($partial) || {};
-
-    my %i_ignore = ();
-
-    foreach my $if ( keys %$i_type ) {
-        my $type = $i_type->{$if};
-        $i_ignore{$if}++
-            if $type =~ /(loopback|other|cpu)/i;
-    }
-
-    return \%i_ignore;
-}
-
 sub interfaces {
     my $l2      = shift;
     my $partial = shift;
@@ -303,12 +286,6 @@ Creates a map between the interface identifier (iid) and the physical port
 name.
 
 Defaults to C<ifDescr> but checks and overrides with C<ifName>
-
-=item $l2->i_ignore()
-
-Returns reference to hash.  Increments value of IID if port is to be ignored.
-
-Ignores ports with C<ifType> of loopback, propvirtual, other, and cpu
 
 =back
 

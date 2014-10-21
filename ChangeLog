@@ -1,5 +1,13 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.21 ()
+
+   [ENHANCEMENTS]
+
+    * No longer ignore interfaces based on name, in base L2/L3/L7 device
+     classes. For several device classes SNMP::Info will now return tunnel
+     interfaces and/or loopbacks, if present.
+
 version 3.20 (2014-09-08)
 
    [NEW FEATURES]

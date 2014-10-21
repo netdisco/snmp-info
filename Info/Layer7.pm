@@ -100,23 +100,6 @@ sub interfaces {
     return $interfaces;
 }
 
-sub i_ignore {
-    my $l7      = shift;
-    my $partial = shift;
-
-    my $i_type = $l7->i_type($partial) || {};
-
-    my %i_ignore = ();
-
-    foreach my $if ( keys %$i_type ) {
-        my $type = $i_type->{$if};
-        $i_ignore{$if}++
-            if $type =~ /(loopback|other|cpu)/i;
-    }
-
-    return \%i_ignore;
-}
-
 1;
 __END__
 
@@ -228,12 +211,6 @@ to a hash.
 =item $l7->interfaces()
 
 Returns reference to the map between IID and physical Port.
-
-=item $l7->i_ignore()
-
-Returns reference to hash.  Increments value of IID if port is to be ignored.
-
-Ignores loopback, other, and cpu
 
 =back
 
