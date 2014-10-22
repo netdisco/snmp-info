@@ -2,6 +2,11 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 3.21 ()
 
+   [NEW FEATURES]
+
+    * Support obtaining FDB in Avaya SPBM edge deployments in L2::Baystack
+      NOTE: This requires a RAPID-CITY MIB with the rcBridgeSpbmMacTable
+
    [ENHANCEMENTS]
 
     * No longer ignore interfaces based on name, in base L2/L3/L7 device

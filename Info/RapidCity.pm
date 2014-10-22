@@ -1,7 +1,7 @@
 # SNMP::Info::RapidCity
 # $Id$
 #
-# Copyright (c) 2008 Eric Miller
+# Copyright (c) 2014 Eric Miller
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -153,6 +153,11 @@ $VERSION = '3.20';
     'rc_mlt_ports'    => 'rcMltPortMembers',
     'rc_mlt_index'    => 'rcMltIfIndex',
     'rc_mlt_dp'       => 'rcMltDesignatedPort',
+
+    # From RAPID-CITY::rcBridgeSpbmMacTable
+    'rc_spbm_fw_port'   => 'rcBridgeSpbmMacCPort',
+    'rc_spbm_fw_status' => 'rcBridgeSpbmMacStatus',
+    'rc_spbm_fw_vlan'   => 'rcBridgeSpbmMacCVlanId',
 );
 
 %MUNGE = (
@@ -599,6 +604,40 @@ sub agg_ports {
     }
 
     return $ret;
+}
+
+# break up the rcBridgeSpbmMacEntry INDEX into ISID and MAC Address.
+sub _spbm_fdbtable_index {
+    my $idx    = shift;
+    my @values = split( /\./, $idx );
+    my $isid = shift(@values);
+    return ( $isid, join( ':', map { sprintf "%02x", $_ } @values ) );
+}
+
+sub rc_spbm_fw_mac {
+    my $rapidcity  = shift;
+    my $partial = shift;
+
+    my $spbm_fw_ports = $rapidcity->rc_spbm_fw_port($partial);
+    my $spbm_fw_mac  = {};
+    foreach my $idx ( keys %$spbm_fw_ports ) {
+        my ( $isid, $mac ) = _spbm_fdbtable_index($idx);
+        $spbm_fw_mac->{$idx} = $mac;
+    }
+    return $spbm_fw_mac;
+}
+
+sub rc_spbm_fw_isid {
+    my $rapidcity  = shift;
+    my $partial = shift;
+
+    my $spbm_fw_ports = $rapidcity->rc_spbm_fw_port($partial);
+    my $spbm_fw_isid  = {};
+    foreach my $idx ( keys %$spbm_fw_ports ) {
+        my ( $isid, $mac ) = _spbm_fdbtable_index($idx);
+        $spbm_fw_isid->{$idx} = $isid;
+    }
+    return $spbm_fw_isid;
 }
 
 1;
@@ -1087,6 +1126,43 @@ Values are ifIndex of the corresponding master ports.
 =item $rapidcity->rc2k_mda_dev()
 
 (C<rc2kMdaCardDeviations>)
+
+=back
+
+=head2 RAPID-CITY Bridge SPBM MAC Table (C<rcBridgeSpbmMacTable>)
+
+=over
+
+=item $bridge->rc_spbm_fw_mac()
+
+Returns reference to hash of forwarding table MAC Addresses
+
+(C<rcBridgeSpbmMacAddr>)
+
+=item $rapidcity->rc_spbm_fw_port()
+
+Returns reference to hash of forwarding table entries port interface
+identifier (iid)
+
+(C<rcBridgeSpbmMacCPort>)
+
+=item $rapidcity->rc_spbm_fw_status()
+
+Returns reference to hash of forwarding table entries status
+
+(C<rcBridgeSpbmMacStatus>)
+
+=item $rapidcity->rc_spbm_fw_vlan()
+
+Returns reference to hash of forwarding table entries Customer VLAN ID
+
+(C<rcBridgeSpbmMacCVlanId>)
+
+=item $rapidcity->rc_spbm_fw_isid()
+
+Returns reference to hash of forwarding table entries ISID
+
+(C<rcBridgeSpbmMacIsid>)
 
 =back
 
