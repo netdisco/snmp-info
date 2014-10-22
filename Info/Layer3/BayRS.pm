@@ -732,6 +732,8 @@ sub i_vlan {
     return \%i_vlan;
 }
 
+sub i_pvid { goto &i_vlan }
+
 sub root_ip {
     my $bayrs = shift;
 
