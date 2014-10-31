@@ -10,12 +10,18 @@ version 3.21 ()
    [ENHANCEMENTS]
 
     * No longer ignore interfaces based on name, in base L2/L3/L7 device
-     classes. For several device classes SNMP::Info will now return tunnel
-     interfaces and/or loopbacks, if present.
+      classes. For several device classes SNMP::Info will now return tunnel
+      interfaces and/or loopbacks, if present.
+    * Use dot1qVlanCurrentTable if available to capture dynamic and static
+      VLANs, fall back to dot1qVlanStaticTable if not available.
+    * New method i_vlan_membership_untagged() for VLANs transmitted as
+      untagged frames.
 
    [BUG FIXES]
 
     * [#64] Misdetection: Wireless APs, add products MIB to L2::3Com
+    * Use FDB ID to VID mapping if available to determine end station VLAN
+      rather than assuming they are the same.
 
 version 3.20 (2014-09-08)
 

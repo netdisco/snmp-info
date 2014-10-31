@@ -99,6 +99,7 @@ $VERSION = '3.20';
     'qb_i_vlan_in_flt' => 'dot1qPortIngressFiltering',
 
     # Q-BRIDGE-MIB : dot1qVlanCurrentTable
+    'qb_cv_fdb_id'   => 'dot1qVlanFdbId',
     'qb_cv_egress'   => 'dot1qVlanCurrentEgressPorts',
     'qb_cv_untagged' => 'dot1qVlanCurrentUntaggedPorts',
     'qb_cv_stat'     => 'dot1qVlanStatus',
@@ -134,6 +135,7 @@ $VERSION = '3.20';
     'qb_v_egress'      => \&SNMP::Info::munge_port_list,
     'qb_v_fbdn_egress' => \&SNMP::Info::munge_port_list,
     'qb_v_untagged'    => \&SNMP::Info::munge_port_list,
+    'qb_cv_untagged'   => \&SNMP::Info::munge_port_list,
 
 );
 
@@ -163,10 +165,21 @@ sub qb_fw_vlan {
     my $partial = shift;
 
     my $qb_fw_port = $bridge->qb_fw_port($partial);
+    # Some devices may not implement TimeFilter in a standard manner
+    # appearing to loop on this request.  Override in the device class,
+    # see Enterasys for example.
+    my $qb_fdb_ids = $bridge->qb_cv_fdb_id() || {};
+
     my $qb_fw_vlan = {};
     foreach my $idx ( keys %$qb_fw_port ) {
         my ( $fdb_id, $mac ) = _qb_fdbtable_index($idx);
-        $qb_fw_vlan->{$idx} = $fdb_id;
+        # Many devices do not populate the dot1qVlanCurrentTable, so default
+        # to FDB ID = VID, but if we have a mapping use it.  
+        my $vlan = $fdb_id;
+        if ($qb_fdb_ids->{$fdb_id}) {
+            $vlan = $qb_fdb_ids->{$fdb_id};
+        }
+        $qb_fw_vlan->{$idx} = $vlan;
     }
     return $qb_fw_vlan;
 }
@@ -343,20 +356,31 @@ sub i_vlan_membership {
     my $bridge  = shift;
     my $partial = shift;
 
-    my $index = $bridge->bp_index();
+    # Use VlanCurrentTable if available since it will include dynamic
+    # VLANs.  However, some devices do not populate the table.
+    my $v_ports = $bridge->qb_cv_egress() || $bridge->qb_v_egress();
+
+    return $bridge->_vlan_hoa($v_ports, $partial);
+}
+
+sub i_vlan_membership_untagged {
+    my $bridge  = shift;
+    my $partial = shift;
 
     # Use VlanCurrentTable if available since it will include dynamic
     # VLANs.  However, some devices do not populate the table.
+    my $v_ports = $bridge->qb_cv_untagged() || $bridge->qb_v_untagged();
 
-    # 11/07 - Todo: Issue with some devices trying to query VlanCurrentTable
-    # as table may grow very large with frequent VLAN changes.
-    # 06/08 - VlanCurrentTable may be due to timefilter, should query with
-    # zero partial for no time filter.
-    # my $v_ports = $bridge->qb_cv_egress() || $bridge->qb_v_egress();
+    return $bridge->_vlan_hoa($v_ports, $partial);
+}
 
-    my $v_ports = $bridge->qb_v_egress() || {};
+sub _vlan_hoa {
+    my $bridge = shift;
+    my ( $v_ports, $partial ) = @_;
 
-    my $i_vlan_membership = {};
+    my $index = $bridge->bp_index();
+
+    my $vlan_hoa = {};
     foreach my $idx ( keys %$v_ports ) {
         next unless ( defined $v_ports->{$idx} );
         my $portlist = $v_ports->{$idx};
@@ -376,10 +400,10 @@ sub i_vlan_membership {
             my $ifindex = $index->{$port};
             next unless ( defined($ifindex) );    # shouldn't happen
             next if ( defined $partial and $ifindex !~ /^$partial$/ );
-            push( @{ $i_vlan_membership->{$ifindex} }, $vlan );
+            push( @{ $vlan_hoa->{$ifindex} }, $vlan );
         }
     }
-    return $i_vlan_membership;
+    return $vlan_hoa;
 }
 
 sub set_i_pvid {
@@ -648,6 +672,12 @@ IDs.  These are the VLANs which are members of the egress list for the port.
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
     print "Port: $port VLAN: $vlan\n";
   }
+
+=item $bridge->i_vlan_membership_untagged()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the untagged egress list for
+the port.
 
 =item $bridge->qb_i_vlan_t()
 

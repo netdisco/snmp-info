@@ -149,11 +149,54 @@ sub i_duplex_admin {
     return $enterasys->mau_i_duplex_admin($partial);
 }
 
-#  LLDP table timefilter implementation continuously increments when walked
+#  TimeFilter implementation continuously increments when walked
 #  and we may never reach the end of the table.  This behavior can be
 #  modified with the "set snmp timefilter break disable" command,
 #  unfortunately it is not the default.  Query with a partial value of zero
-#  which means no time filter.
+#  which means no time filter for tables with and index containing a
+#  TimeFilter
+
+sub qb_fw_vlan {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    my $qb_fw_port = $bridge->qb_fw_port($partial);
+    # dot1qVlanCurrentTable TimeFilter index
+    my $qb_fdb_ids = $bridge->qb_cv_fdb_id(0) || {};
+
+    my $qb_fw_vlan = {};
+    foreach my $idx ( keys %$qb_fw_port ) {
+        my ( $fdb_id, $mac ) = _qb_fdbtable_index($idx);
+        # Many devices do not populate the dot1qVlanCurrentTable, so default
+        # to FDB ID = VID, but if we have a mapping use it.  
+        my $vlan = $fdb_id;
+        if ($qb_fdb_ids->{$fdb_id}) {
+            $vlan = $qb_fdb_ids->{$fdb_id};
+        }
+        $qb_fw_vlan->{$idx} = $vlan;
+    }
+    return $qb_fw_vlan;
+}
+
+sub i_vlan_membership {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    # dot1qVlanCurrentTable TimeFilter index
+    my $v_ports = $bridge->qb_cv_egress(0) || $bridge->qb_v_egress();
+
+    return $bridge->_vlan_hoa($v_ports, $partial);
+}
+
+sub i_vlan_membership_untagged {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    # dot1qVlanCurrentTable TimeFilter index
+    my $v_ports = $bridge->qb_cv_untagged(0) || $bridge->qb_v_untagged();
+
+    return $bridge->_vlan_hoa($v_ports, $partial);
+}
 
 sub lldp_ip {
     my $enterasys = shift;
