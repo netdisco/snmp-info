@@ -536,30 +536,6 @@ sub set_i_vlan_tagged {
 
 sub agg_ports { return agg_ports_ifstack(@_) }
 
-sub qb_fw_vlan {
-    my $hp = shift;
-    my $partial = shift;
-    my $qb_fw_vlan = $hp->SUPER::qb_fw_vlan($partial);
-
-    my $fdb_to_dot1q = {};
-    my $fdb_id = $hp->dot1qVlanFdbId(0);
-    foreach my $fdb_entry (keys %$fdb_id) {
-        my ($timemark, $vlan_id) = split(/\./, $fdb_entry);
-        $fdb_to_dot1q->{$fdb_id->{$fdb_entry}} = $vlan_id;
-    }
-    foreach my $learn (keys %$qb_fw_vlan) {
-        my $fdb_idx = $qb_fw_vlan->{$learn};
-        if (exists $fdb_to_dot1q->{$fdb_idx}) {
-            $qb_fw_vlan->{$learn} = $fdb_to_dot1q->{$fdb_idx}; 
-        }
-    }
-
-    return $qb_fw_vlan;
-}
-
-
-
-
 1;
 __END__
 
@@ -826,12 +802,6 @@ Power supplied by PoE ports, in milliwatts
 
 Returns what version of STP the device is running.
 (C<hpicfBridgeRstpForceVersion> with fallback to inherited stp_ver())
-
-=item $hp->qb_fw_vlan()
-
-Returns reference to hash of forwarding table entries VLAN ID
-
-(C<dot1qFdbId>), (C<rcBridgeTpFdbVlanId>)
 
 =back
 
