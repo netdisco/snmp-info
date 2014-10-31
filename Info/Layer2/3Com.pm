@@ -16,6 +16,7 @@ $VERSION = '3.20';
 %MIBS = (
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::Layer2::MIBS,
+    'A3Com-products-MIB' => 'wlanAP7760',
 );
 
 %GLOBALS = (
@@ -116,6 +117,8 @@ Subclass for 3Com L2 devices
 =head2 Required MIBs
 
 =over
+
+=item F<A3Com-products-MIB>
 
 =item Inherited Classes' MIBs
 
