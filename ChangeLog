@@ -6,6 +6,7 @@ version 3.21 ()
 
     * Support obtaining FDB in Avaya SPBM edge deployments in L2::Baystack
       NOTE: This requires a RAPID-CITY MIB with the rcBridgeSpbmMacTable
+    * Support for Fortinet devices in new class L3::Fortinet
 
    [ENHANCEMENTS]
 

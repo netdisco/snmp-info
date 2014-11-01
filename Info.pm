@@ -778,6 +778,12 @@ Subclass for Force10 devices.
 
 See documentation in L<SNMP::Info::Layer3::Force10> for details.
 
+=item SNMP::Info::Layer3::Fortinet
+
+Subclass for Fortinet devices.
+
+See documentation in L<SNMP::Info::Layer3::Fortinet> for details.
+
 =item SNMP::Info::Layer3::Foundry
 
 Subclass for Brocade (Foundry) Network devices.
@@ -1510,6 +1516,7 @@ sub device_type {
         9303 => 'SNMP::Info::Layer3::PacketFront',
         10002 => 'SNMP::Info::Layer2::Ubiquiti',
         12325 => 'SNMP::Info::Layer3::Pf',
+        12356 => 'SNMP::Info::Layer3::Fortinet',
         14179 => 'SNMP::Info::Layer2::Airespace',
         14525 => 'SNMP::Info::Layer2::Trapeze',
         14823 => 'SNMP::Info::Layer3::Aruba',
