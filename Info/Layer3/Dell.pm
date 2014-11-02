@@ -213,6 +213,10 @@ sub _vendor {
     }
 }
 
+# dot1qTpFdbTable uses dot1qVlanIndex rather than dot1qFdbId as index,
+# so pretend we don't have the mapping
+sub qb_fdb_index {return}
+
 1;
 __END__
 
@@ -386,6 +390,10 @@ sometimes not unique.
 
 Returns reference to hash of iid to current link administrative duplex
 setting.
+
+=item $dell->qb_fdb_index()
+
+Returns nothing to work around incorrect indexing of C<dot1qTpFdbTable>
 
 =back
 
