@@ -156,26 +156,19 @@ sub i_duplex_admin {
 #  which means no time filter for tables with and index containing a
 #  TimeFilter
 
-sub qb_fw_vlan {
+sub qb_fdb_index {
     my $bridge  = shift;
-    my $partial = shift;
 
-    my $qb_fw_port = $bridge->qb_fw_port($partial);
-    # dot1qVlanCurrentTable TimeFilter index
-    my $qb_fdb_ids = $bridge->qb_cv_fdb_id(0) || {};
+    my $qb_fdb_ids = $bridge->dot1qVlanFdbId(0) || {};
 
-    my $qb_fw_vlan = {};
-    foreach my $idx ( keys %$qb_fw_port ) {
-        my ( $fdb_id, $mac ) = _qb_fdbtable_index($idx);
-        # Many devices do not populate the dot1qVlanCurrentTable, so default
-        # to FDB ID = VID, but if we have a mapping use it.  
-        my $vlan = $fdb_id;
-        if ($qb_fdb_ids->{$fdb_id}) {
-            $vlan = $qb_fdb_ids->{$fdb_id};
-        }
-        $qb_fw_vlan->{$idx} = $vlan;
+    # Strip the TimeFilter
+    my $vl_fdb_index = {};
+    for my $orig (keys(%$qb_fdb_ids)) {
+        (my $new = $orig) =~ s/^\d+\.//;
+        $vl_fdb_index->{$new} = $qb_fdb_ids->{$orig};
     }
-    return $qb_fw_vlan;
+
+    return $vl_fdb_index;
 }
 
 sub i_vlan_membership {
@@ -402,15 +395,21 @@ L<SNMP::Info::MAU/"TABLE METHODS">.
 
 =back
 
-=head2 Link Layer Discovery Protocol (LLDP) Overrides
+=head2 Time Filter Table Index Overrides
 
-The LLDP table time filter implementation continuously increments when
+The time filter C<TimeFilter> implementation continuously increments when
 walked and we may never reach the end of the table.  This behavior can be
 modified with the C<"set snmp timefilter break disable"> command,
 unfortunately it is not the default.  These methods are overridden to
 supply a partial value of zero which means no time filter.
 
 =over
+
+=item $enterasys->qb_fdb_index()
+
+=item $enterasys->i_vlan_membership()
+
+=item $enterasys->i_vlan_membership_untagged()
 
 =item $enterasys->lldp_if()
 

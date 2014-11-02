@@ -99,7 +99,6 @@ $VERSION = '3.20';
     'qb_i_vlan_in_flt' => 'dot1qPortIngressFiltering',
 
     # Q-BRIDGE-MIB : dot1qVlanCurrentTable
-    'qb_cv_fdb_id'   => 'dot1qVlanFdbId',
     'qb_cv_egress'   => 'dot1qVlanCurrentEgressPorts',
     'qb_cv_untagged' => 'dot1qVlanCurrentUntaggedPorts',
     'qb_cv_stat'     => 'dot1qVlanStatus',
@@ -165,10 +164,8 @@ sub qb_fw_vlan {
     my $partial = shift;
 
     my $qb_fw_port = $bridge->qb_fw_port($partial);
-    # Some devices may not implement TimeFilter in a standard manner
-    # appearing to loop on this request.  Override in the device class,
-    # see Enterasys for example.
-    my $qb_fdb_ids = $bridge->qb_cv_fdb_id() || {};
+    my $qb_fdb_ids = $bridge->qb_fdb_index() || {};
+
 
     my $qb_fw_vlan = {};
     foreach my $idx ( keys %$qb_fw_port ) {
@@ -200,6 +197,25 @@ sub qb_i_vlan_t {
         $i_vlan->{$if} = $tagged eq 'admitOnlyVlanTagged' ? 'trunk' : $vlan;
     }
     return $i_vlan;
+}
+
+sub qb_fdb_index {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    # Some devices may not implement TimeFilter in a standard manner
+    # appearing to loop on this request.  Override in the device class,
+    # see Enterasys for example.
+    my $qb_fdb_ids = $bridge->dot1qVlanFdbId() || {};
+
+    # Strip the TimeFilter
+    my $vl_fdb_index = {};
+    for my $orig (keys(%$qb_fdb_ids)) {
+        (my $new = $orig) =~ s/^\d+\.//;
+        $vl_fdb_index->{$new} = $qb_fdb_ids->{$orig};
+    }
+
+    return $vl_fdb_index;
 }
 
 # Most devices now support Q-BRIDGE-MIB, fall back to 
@@ -683,6 +699,10 @@ the port.
 
 Returns reference to hash: key = C<dot1dBasePort>, value = either 'trunk' for
 tagged ports or the VLAN ID.
+
+=item $bridge->qb_fdb_index()
+
+Returns reference to hash: key = VLAN ID, value = FDB ID.
 
 =item $bridge->v_index()
 
