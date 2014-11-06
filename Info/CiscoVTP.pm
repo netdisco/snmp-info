@@ -610,6 +610,12 @@ IDs.  These are the VLANs which are members of enabled VLAN list for the port.
     print "Port: $port VLAN: $vlan\n";
   }
 
+=item $vtp->i_vlan_membership_untagged()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the untagged egress list for
+the port.
+
 =back
 
 =head2 VLAN Table (C<CISCO-VTP-MIB::vtpVlanTable>)
