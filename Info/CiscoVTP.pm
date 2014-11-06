@@ -287,7 +287,14 @@ sub i_vlan_membership_untagged {
     my $vtp  = shift;
     my $partial = shift;
 
-    return $vtp->i_vlan($partial);
+    my $vlans = $vtp->i_vlan($partial);
+    my $i_vlan_membership = {};
+    foreach my $port (keys %$vlans) {
+        my $vlan = $vlans->{$port};
+        push( @{ $i_vlan_membership->{$port} }, $vlan );
+    }
+    
+    return $i_vlan_membership;
 }
 
 sub set_i_pvid {
