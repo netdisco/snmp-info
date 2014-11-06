@@ -23,6 +23,8 @@ version 3.21 ()
     * [#64] Misdetection: Wireless APs, add products MIB to L2::3Com
     * Use FDB ID to VID mapping if available to determine end station VLAN
       rather than assuming they are the same.
+    * Capture port VLANs on Cisco interfaces which are configured for
+      trunking but are not in operational trunking mode
 
 version 3.20 (2014-09-08)
 
