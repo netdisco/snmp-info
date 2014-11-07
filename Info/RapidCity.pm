@@ -333,6 +333,71 @@ sub i_vlan_membership {
     return $i_vlan_membership;
 }
 
+sub i_vlan_membership_untagged {
+    my $rapidcity = shift;
+
+    # Traditionally access ports have one VLAN untagged and trunk ports have
+    # one or more VLANs all tagged
+    # Newer VOSS device trunks have PerformTagging true or false and also can
+    # UntagDefaultVlan
+    # Newer BOSS device trunks have four PerformTagging options true, false,
+    # tagPvidOnly, and untagPvidOnly
+
+    my $p_members = $rapidcity->i_vlan_membership();
+    my $i_vlan = $rapidcity->i_vlan();
+    my $p_tag_opt = $rapidcity->rcVlanPortPerformTagging() || {};
+    my $p_untag_def = $rapidcity->rcVlanPortUntagDefaultVlan() || {};
+    my $p_type = $rapidcity->rcVlanPortType() || {};
+
+    my $members_untagged = {};
+    foreach my $port ( keys %$p_type ) {
+        my $type = $p_type->{$port};
+        next unless $type;
+
+        # Easiest case first access ports
+        if ($type eq 'access') {
+            # Access ports should only have one VLAN and it should be
+            # untagged
+            $members_untagged->{$port} = $p_members->{$port};
+        }
+        else {
+            # If PerformTagging has a value do all checks otherwise we're
+            # just a trunk and everything is tagged
+            if ($p_tag_opt->{$port}) {
+                if ($p_tag_opt->{$port} eq 'untagPvidOnly') {
+                    my $vlan = $i_vlan->{$port};
+                    push( @{ $members_untagged->{$port} }, $vlan );                    
+                }
+                elsif (($p_tag_opt->{$port} eq 'true') and
+                       ($p_untag_def->{$port} and $p_untag_def->{$port} eq 'true'))
+                {
+                    my $vlan = $i_vlan->{$port};
+                    push( @{ $members_untagged->{$port} }, $vlan );                     
+                }
+                elsif ($p_tag_opt->{$port} eq 'tagPvidOnly') {
+                    my $vlan = $i_vlan->{$port};
+                    my @arr = $p_members->{$port};
+                    my $index = 0;
+                    my $count = scalar @arr;
+                    $index++ until $arr[$index] eq $vlan or $index==$count;
+                    splice(@arr, $index, 1);
+                    $members_untagged->{$port} = @arr;
+                }
+                # Don't know if this is a legal configuration, but included
+                # for completeness
+                elsif ($p_tag_opt->{$port} eq 'false') {
+                    $members_untagged->{$port} = $p_members->{$port};
+                }
+                else {
+                    next;
+                }
+            }
+        }
+    }
+ 
+    return $members_untagged;
+}
+
 sub set_i_pvid {
     my $rapidcity = shift;
     my ( $vlan_id, $ifindex ) = @_;
@@ -784,6 +849,12 @@ IDs.  These are the VLANs which are members of the egress list for the port.
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
     print "Port: $port VLAN: $vlan\n";
   }
+
+=item $rapidcity->i_vlan_membership_untagged()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the untagged egress list for
+the port.
 
 =item $rapidcity->v_index()
 
