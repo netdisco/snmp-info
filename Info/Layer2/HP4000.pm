@@ -376,6 +376,20 @@ sub i_vlan_membership {
     return $i_vlan_membership;
 }
 
+sub i_vlan_membership_untagged {
+    my $hp  = shift;
+    my $partial = shift;
+
+    my $vlans = $hp->i_vlan($partial);
+    my $i_vlan_membership = {};
+    foreach my $port (keys %$vlans) {
+        my $vlan = $vlans->{$port};
+        push( @{ $i_vlan_membership->{$port} }, $vlan );
+    }
+    
+    return $i_vlan_membership;
+}
+
 sub set_i_vlan {
     my $hp = shift;
     my $rv;
@@ -679,6 +693,12 @@ It is the union of tagged, untagged, and auto ports.
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
     print "Port: $port VLAN: $vlan\n";
   }
+
+=item $hp->i_vlan_membership_untagged()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the untagged egress list for
+the port.
 
 =item $hp->v_index()
 

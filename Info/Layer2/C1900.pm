@@ -261,6 +261,8 @@ sub i_vlan_membership {
     return $i_vlan_membership;
 }
 
+sub i_vlan_membership_untagged { return; }
+
 sub bp_index {
     my $c1900   = shift;
     my $partial = shift;
@@ -470,6 +472,9 @@ bridge group IDs.
     print "Port: $port VLAN: $vlan\n";
   }
 
+=item $c1900->i_vlan_membership_untagged()
+
+Unsupported, returns nothing.
 
 =item $c1900->bp_index()
 

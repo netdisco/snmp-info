@@ -255,6 +255,37 @@ sub i_vlan_membership {
     return $i_vlan_membership;
 }
 
+sub i_vlan_membership_untagged {
+    my $f5      = shift;
+    my $partial = shift;
+
+    my $index  = $f5->i_index($partial) || {};
+    my $tagged = $f5->sys_vm_tagged()   || {};
+    my $vlans  = $f5->v_index()         || {};
+
+    my $i_vlan_membership = {};
+    foreach my $iid ( keys %$tagged ) {
+        
+        next unless $tagged->{$iid} eq 'false';
+        # IID is length.vlan name index.length.interface index
+        # Split out and use as the IID to get the VLAN ID and ifIndex
+        my @iid_array = split /\./, $iid;
+        my $len       = $iid_array[0];
+        my $v_idx     = join '.', ( splice @iid_array, 0, $len + 1 );
+        my $idx       = join '.', @iid_array;
+
+        # Check to make sure we can map to a port
+        my $p_idx = $index->{$idx};
+        next unless $p_idx;
+
+        my $vlan = $vlans->{$v_idx};
+        next unless $vlan;
+
+        push( @{ $i_vlan_membership->{$idx} }, $vlan );
+    }
+    return $i_vlan_membership;
+}
+
 1;
 __END__
 
@@ -390,6 +421,12 @@ IDs.
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
     print "Port: $port VLAN: $vlan\n";
   }
+
+=item $f5->i_vlan_membership_untagged()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the untagged egress list for
+the port.
 
 =item $f5->v_index()
 
