@@ -385,6 +385,20 @@ sub i_vlan_membership {
     return $i_vlan_membership;
 }
 
+sub i_vlan_membership_untagged {
+    my $alteon  = shift;
+    my $partial = shift;
+
+    my $vlans = $alteon->i_vlan($partial);
+    my $i_vlan_membership = {};
+    foreach my $port (keys %$vlans) {
+        my $vlan = $vlans->{$port};
+        push( @{ $i_vlan_membership->{$port} }, $vlan );
+    }
+    
+    return $i_vlan_membership;
+}
+
 # Bridge MIB does not map Bridge Port to ifIndex correctly on some code
 # versions
 sub bp_index {
@@ -573,6 +587,12 @@ IDs.  These are the VLANs which are members of the egress list for the port.
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
     print "Port: $port VLAN: $vlan\n";
   }
+
+=item $alteon->i_vlan_membership_untagged()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the untagged egress list for
+the port.
 
 =item $alteon->v_index()
 
