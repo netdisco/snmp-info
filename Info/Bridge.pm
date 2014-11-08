@@ -173,7 +173,8 @@ sub qb_fw_vlan {
         # Many devices do not populate the dot1qVlanCurrentTable, so default
         # to FDB ID = VID, but if we have a mapping use it.  
         my $vlan = $fdb_id;
-        if ($qb_fdb_ids->{$fdb_id}) {
+        # defined as test since some devices have a vlan 0
+        if (defined $qb_fdb_ids->{$fdb_id}) {
             $vlan = $qb_fdb_ids->{$fdb_id};
         }
         $qb_fw_vlan->{$idx} = $vlan;
