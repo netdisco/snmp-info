@@ -542,6 +542,78 @@ sub _extremeware_i_vlan_membership {
     return \%i_vlan_membership;
 }
 
+sub i_vlan_membership_untagged {
+    my $extreme = shift;
+    my $partial = shift;
+
+    # Some devices support Q-Bridge, if so short circuit and return it
+    my $q_bridge = $extreme->SUPER::i_vlan_membership_untagged($partial);
+    return $q_bridge if (ref {} eq ref $q_bridge and scalar keys %$q_bridge);
+
+    # Next we try extremeVlanOpaqueTable
+    my $xos = $extreme->_xos_i_vlan_membership_untagged($partial);
+    return $xos if (ref {} eq ref $xos and scalar keys %$xos);
+    
+    # Try older ifStack method
+    my $extremeware = $extreme->_extremeware_i_vlan_membership_untagged($partial);
+    return $extremeware if (ref {} eq ref $extremeware and scalar keys %$extremeware);
+    
+    return;
+}
+
+sub _xos_i_vlan_membership_untagged {
+    my $extreme = shift;
+    my $partial = shift;
+
+    my $index   = $extreme->i_index();
+    my $vlans   = $extreme->ex_vlan_id();
+    my $slotx   = $extreme->_slot_factor() || 1000;
+    my $u_ports = $extreme->ex_vlan_untagged() || {};
+
+    my $i_vlan_membership = {};
+    foreach my $idx ( keys %$u_ports ) {
+        next unless ( defined $u_ports->{$idx} );
+        my $u_portlist = $u_ports->{$idx};
+        my $ret        = [];
+
+        my ( $vlan_if, $slot ) = $idx =~ /^(\d+)\.(\d+)/;
+        my $vlan = $vlans->{$vlan_if} || '';
+
+        foreach my $portlist ( $u_portlist ) {
+
+            # Convert portlist bit array to bp_index array
+            for ( my $i = 0; $i <= $#$portlist; $i++ ) {
+                push( @{$ret}, ( $slotx * $slot + $i + 1 ) )
+                    if ( @$portlist[$i] );
+            }
+        }
+
+        #Create HoA ifIndex -> VLAN array
+        foreach my $port ( @{$ret} ) {
+            my $ifindex = $index->{$port};
+            next unless ( defined($ifindex) );    # shouldn't happen
+            next if ( defined $partial and $ifindex !~ /^$partial$/ );
+            push( @{ $i_vlan_membership->{$ifindex} }, $vlan );
+        }
+    }
+    return $i_vlan_membership;
+}
+
+# Assuming Cisco-like trunk behavior that native VLAN is transmitted untagged
+sub _extremeware_i_vlan_membership_untagged {
+    my $extreme  = shift;
+    my $partial = shift;
+
+    my $vlans = $extreme->_extremeware_i_vlan($partial);
+    my $i_vlan_membership = {};
+    foreach my $port (keys %$vlans) {
+        my $vlan = $vlans->{$port};
+        push( @{ $i_vlan_membership->{$port} }, $vlan );
+    }
+
+    return $i_vlan_membership;
+}
+
 # VLAN management.
 # See extreme-vlan.mib for a detailed description of
 # Extreme's use of ifStackTable and EXTREME-VLAN-MIB.
@@ -926,6 +998,14 @@ IDs.  These are the VLANs which are members of the egress list for the port.
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
     print "Port: $port VLAN: $vlan\n";
   }
+
+=item $extreme->i_vlan_membership_untagged()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the untagged egress list for
+the port.
+
+=back
 
 =item $extreme->v_index()
 
