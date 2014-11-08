@@ -163,6 +163,13 @@ sub i_trunk {
     return \%i_trunk;
 }
 
+sub qb_fdb_index {
+    my $juniper  = shift;
+    my $partial = shift;
+
+    return $juniper->jnxExVlanTag($partial);
+}
+
 # 'v_type'     => 'jnxExVlanType',
 sub v_type {
     my $juniper = shift;
@@ -214,22 +221,24 @@ sub i_vlan {
     return $i_vlan;
 }
 
-sub i_vlan_membership {
-    my $juniper  = shift;
-    my $partial = shift;
+# Index doesn't use VLAN ID, so override the HOA private method here to
+# correct the mapping 
+sub _vlan_hoa {
+    my $juniper = shift;
+    my ( $v_ports, $partial ) = @_;
 
-    my $index = $juniper->bp_index();
-    my ($v_index)  = $juniper->jnxExVlanTag($partial);
+    my $index    = $juniper->bp_index();
+    my $v_index  = $juniper->jnxExVlanTag($partial);
 
-    my $v_ports = $juniper->qb_v_egress() || {};
-
-    my $i_vlan_membership = {};
-
-    foreach my $idx ( sort keys %$v_ports ) {
+    my $vlan_hoa = {};
+    foreach my $idx ( keys %$v_ports ) {
         next unless ( defined $v_ports->{$idx} );
-        my $portlist = $v_ports->{$idx}; # is an array reference
+        my $portlist = $v_ports->{$idx};
         my $ret      = [];
-        my $vlan_ndx = $idx;
+        my $vlan_ndx;
+
+        # Strip TimeFilter if we're using VlanCurrentTable
+        ( $vlan_ndx = $idx ) =~ s/^\d+\.//;
 
         # Convert portlist bit array to bp_index array
         for ( my $i = 0; $i <= $#$portlist; $i++ ) {
@@ -241,11 +250,10 @@ sub i_vlan_membership {
             my $ifindex = $index->{$port};
             next unless ( defined($ifindex) );    # shouldn't happen
             next if ( defined $partial and $ifindex !~ /^$partial$/ );
-            push ( @{ $i_vlan_membership->{$ifindex} }, $v_index->{$vlan_ndx} );
+            push( @{ $vlan_hoa->{$ifindex} }, $v_index->{$vlan_ndx} );
         }
     }
-
-    return $i_vlan_membership;
+    return $vlan_hoa;
 }
 
 # Pseudo ENTITY-MIB methods
@@ -655,6 +663,10 @@ to a hash.
 
 =over
 
+=item $juniper->qb_fdb_index()
+
+Returns reference to hash: key = VLAN ID, value = FDB ID.
+
 =item $juniper->v_index()
 
 (C<jnxExVlanTag>)
@@ -674,11 +686,6 @@ to a hash.
 =item $juniper->i_vlan()
 
 Returns a mapping between C<ifIndex> and the PVID or default VLAN.
-
-=item $juniper->i_vlan_membership()
-
-Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
-IDs.  These are the VLANs which are members of the egress list for the port.
 
 =back
 
