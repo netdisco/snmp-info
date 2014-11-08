@@ -557,7 +557,6 @@ sub i_vlan_membership {
 	return $i_vlan_membership;
 }
 
-
 sub i_vlan_membership_untagged {
 	my $aruba   = shift;
 	my $partial = shift;
@@ -1614,6 +1613,12 @@ Returns reference to map of IIDs to VLAN ID of the interface.
 
 Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
 IDs.  These are the VLANs for which the port is a member.
+
+=item $aruba->i_vlan_membership_untagged()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the untagged egress list for
+the port.
 
 =item $aruba->bp_index()
 
