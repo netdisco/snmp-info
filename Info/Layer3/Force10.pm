@@ -121,28 +121,24 @@ sub i_vlan {
     return $i_vlan;
 }
 
-sub i_vlan_membership {
+# Apparently index doesn't use VLAN ID, so override the HOA private
+# method here to correct the mapping 
+sub _vlan_hoa {
     my $force10 = shift;
-    my $partial = shift;
+    my ( $v_ports, $partial ) = @_;
 
-    my $index = $force10->bp_index();
+    my $index   = $force10->bp_index();
     my $v_index = $force10->v_index();
 
-    my $v_ports  = $force10->qb_v_egress();
-
-    # If given a partial it will be an ifIndex, we need to use dot1dBasePort
-    if ($partial) {
-        my %r_index = reverse %$index;
-        $partial    = $r_index{$partial};
-    }
-
-    my $i_vlan_membership = {};
-
+    my $vlan_hoa = {};
     foreach my $idx ( sort keys %{$v_ports} ) {
         next unless ( defined $v_ports->{$idx} );
         my $portlist = $v_ports->{$idx}; # is an array reference
         my $ret      = [];
         my $vlan_ndx = $idx;
+
+        # Strip TimeFilter if we're using VlanCurrentTable
+        ( $vlan_ndx = $idx ) =~ s/^\d+\.//;
 
         # Convert portlist bit array to bp_index array
         for ( my $i = 0; $i <= $#$portlist; $i++ ) {
@@ -160,11 +156,10 @@ sub i_vlan_membership {
             # the mapping from Q-BRIDGE-MIB::dot1qVlanFdbId 
             my $mod = $vlan_tag % 4096;
 
-            push ( @{ $i_vlan_membership->{$ifindex} }, ($mod) );
+            push ( @{ $vlan_hoa->{$ifindex} }, ($mod) );
         }
     }
-
-    return $i_vlan_membership;
+    return $vlan_hoa;
 }
 
 1;
@@ -277,12 +272,6 @@ Returns the VLAN names.
 =item $force10->i_vlan()
 
 Currently not implemented.
-
-=item $force10->i_vlan_membership()
-
-Returns reference to hash of arrays:
-key = C<ifIndex>, value = array of VLAN IDs.
-These are the VLANs which are members of the egress list for the port.
 
 =item $force10->i_duplex_admin()
 
