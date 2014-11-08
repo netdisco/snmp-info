@@ -124,6 +124,7 @@ $VERSION = '3.20';
     'aruba_ap_model'  => 'wlanAPModelName',
     'aruba_ap_name'   => 'wlanAPName',
     'aruba_ap_ip'     => 'wlanAPIpAddress',
+    'aruba_ap_hw_ver' => 'wlanAPHwVersion',
 
     # WLSX-WLAN-MIB::wlsxWlanESSIDVlanPoolTable
     'aruba_ssid_vlan' => 'wlanESSIDVlanPoolStatus',
@@ -1023,8 +1024,9 @@ sub e_type {
 sub e_hwver {
     my $aruba = shift;
 
-    my $ap_hw   = $aruba->aruba_card_hw()   || {};
-    my $ap_fpga = $aruba->aruba_card_fpga() || {};
+    my $ap_hw     = $aruba->aruba_card_hw()   || {};
+    my $ap_fpga   = $aruba->aruba_card_fpga() || {};
+    my $ap_hw_ver = $aruba->aruba_ap_hw_ver() || {};
 
     my %e_hwver;
 
@@ -1036,6 +1038,15 @@ sub e_hwver {
 
 	$e_hwver{$iid} = "$hw $fpga";
     }
+
+    # APs
+    foreach my $idx ( keys %$ap_hw_ver ) {
+	my $hw_ver = $ap_hw_ver->{$idx};
+	next unless defined $hw_ver;
+
+	$e_hwver{$idx} = "$hw_ver";
+    }
+
     return \%e_hwver;
 }
 
