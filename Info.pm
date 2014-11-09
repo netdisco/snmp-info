@@ -3411,7 +3411,7 @@ sub munge_mac {
 
 =item munge_prio_mac()
 
-Takes an 8-byte octet stream (HEX-STRING) and returns a colon separated ASCII
+Takes an 2-byte octet stream (HEX-STRING) and returns a colon separated ASCII
 hex string.
 
 =cut
@@ -3422,6 +3422,22 @@ sub munge_prio_mac {
     return unless length $mac;
     $mac = join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $mac ) );
     return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){7}[0-9A-F][0-9A-F]$/i;
+    return;
+}
+
+=item munge_prio_port()
+
+Takes an 8-byte octet stream (HEX-STRING) and returns a colon separated ASCII
+hex string.
+
+=cut
+
+sub munge_prio_port {
+    my $mac = shift;
+    return unless defined $mac;
+    return unless length $mac;
+    $mac = join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $mac ) );
+    return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){1}[0-9A-F][0-9A-F]$/i;
     return;
 }
 
