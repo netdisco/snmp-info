@@ -26,8 +26,8 @@ version 3.21 ()
       rather than assuming they are the same.
     * Capture port VLANs on Cisco interfaces which are configured for
       trunking but are not in operational trunking mode
-    * Correct munging of dot1dStpPortDesignatedPort in stp_p_port() and
-      i_stp_port() methods
+    * Correct munging of stp_p_port(), i_stp_port(), and stp_root() methods
+      in Bridge
 
 version 3.20 (2014-09-08)
 
