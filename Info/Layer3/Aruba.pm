@@ -125,6 +125,7 @@ $VERSION = '3.20';
     'aruba_ap_name'   => 'wlanAPName',
     'aruba_ap_ip'     => 'wlanAPIpAddress',
     'aruba_ap_hw_ver' => 'wlanAPHwVersion',
+    'aruba_ap_sw_ver' => 'wlanAPSwVersion',
 
     # WLSX-WLAN-MIB::wlsxWlanESSIDVlanPoolTable
     'aruba_ssid_vlan' => 'wlanESSIDVlanPoolStatus',
@@ -1050,6 +1051,24 @@ sub e_hwver {
     return \%e_hwver;
 }
 
+sub e_swver {
+    my $aruba = shift;
+
+    my $ap_sw_ver = $aruba->aruba_ap_hw_ver() || {};
+
+    my %e_swver;
+
+    # APs
+    foreach my $idx ( keys %$ap_sw_ver ) {
+	my $sw_ver = $ap_sw_ver->{$idx};
+	next unless defined $sw_ver;
+
+	$e_swver{$idx} = "$sw_ver";
+    }
+
+    return \%e_swver;
+}
+
 sub e_vendor {
     my $aruba = shift;
 
@@ -1692,6 +1711,10 @@ Returns reference to hash.  Key: IID, Value: Type of component.
 =item $aruba->e_hwver()
 
 Returns reference to hash.  Key: IID, Value: Hardware revision.
+
+=item $aruba->e_swver()
+
+Returns reference to hash.  Key: IID, Value: Software revision.
 
 =item $aruba->e_vendor()
 

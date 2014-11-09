@@ -17,7 +17,7 @@ version 3.21 ()
       VLANs, fall back to dot1qVlanStaticTable if not available.
     * New method i_vlan_membership_untagged() for VLANs transmitted as
       untagged frames.
-    * Capture Aruba AP hardware version when available 
+    * Capture Aruba AP hardware and software version when available 
 
    [BUG FIXES]
 
