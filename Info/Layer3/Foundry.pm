@@ -124,7 +124,7 @@ $VERSION = '3.20';
 
     'ag_mod2_type' => \&SNMP::Info::munge_e_type,
     'ag_mod_type'  => \&SNMP::Info::munge_e_type,
-    'stp_i_mac'    => \&SNMP::Info::munge_prio_mac,
+    'stp_i_mac'    => \&SNMP::Info::munge_mac,
     'stp_i_root'   => \&SNMP::Info::munge_prio_mac,
     'stp_p_root'   => \&SNMP::Info::munge_prio_mac,
     'stp_p_bridge' => \&SNMP::Info::munge_prio_mac,

@@ -88,6 +88,7 @@ $VERSION = '3.20';
     # to return a hash reference to ease API compatibility with
     # MST and PVST implementations indexed by a spanning tree
     # instance id
+    'stp_i_mac'       => 'dot1dBaseBridgeAddress',
     'stp_i_time'      => 'dot1dStpTimeSinceTopologyChange',
     'stp_i_ntop'      => 'dot1dStpTopChanges',
     'stp_i_root'      => 'dot1dStpDesignatedRoot',
@@ -136,6 +137,7 @@ $VERSION = '3.20';
     'fw_mac'           => \&SNMP::Info::munge_mac,
     'bs_mac'           => \&SNMP::Info::munge_mac,
     'stp_root'         => \&SNMP::Info::munge_prio_mac,
+    'stp_i_mac'        => \&SNMP::Info::munge_mac,
     'stp_i_root'       => \&SNMP::Info::munge_prio_mac,
     'stp_p_root'       => \&SNMP::Info::munge_prio_mac,
     'stp_p_bridge'     => \&SNMP::Info::munge_prio_mac,

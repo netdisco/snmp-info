@@ -167,6 +167,7 @@ $VERSION = '3.20';
 
     # From RAPID-CITY::rcStgTable
     'stp_i_id'        => 'rcStgId',
+    'stp_i_mac'       => 'rcStgBridgeAddress',
     'stp_i_time'      => 'rcStgTimeSinceTopologyChange',
     'stp_i_ntop'      => 'rcStgTopChanges',
     'stp_i_root'      => 'rcStgDesignatedRoot',
@@ -191,6 +192,7 @@ $VERSION = '3.20';
     'rc_vlan_members' => \&SNMP::Info::munge_port_list,
     'rc_vlan_no_join' => \&SNMP::Info::munge_port_list,
     'rc_mlt_ports'    => \&SNMP::Info::munge_port_list,
+    'stp_i_mac'       => \&SNMP::Info::munge_mac,
     'stp_i_root'      => \&SNMP::Info::munge_prio_mac,
     'stp_p_root'      => \&SNMP::Info::munge_prio_mac,
     'stp_p_bridge'    => \&SNMP::Info::munge_prio_mac,
@@ -755,11 +757,11 @@ sub i_bpduguard_enabled {
 }
 
 sub i_stp_state {
-    my $bridge  = shift;
-    my $partial = shift;
+    my $rapidcity = shift;
+    my $partial   = shift;
 
-    my $bp_index    = $bridge->bp_index($partial);
-    my $stp_p_state = $bridge->dot1dStpPortState($partial);
+    my $bp_index    = $rapidcity->bp_index($partial);
+    my $stp_p_state = $rapidcity->dot1dStpPortState($partial);
 
     my %i_stp_state;
 
