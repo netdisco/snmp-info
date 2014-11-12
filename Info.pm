@@ -395,6 +395,12 @@ F<MAU-MIB> (RFC2668).  Some Layer2 devices use this for extended Ethernet
 
 See documentation in L<SNMP::Info::MAU> for details.
 
+=item SNMP::Info::MRO
+
+Method resolution introspection for SNMP::Info
+
+See documentation in L<SNMP::Info::MRO> for details.
+
 =item SNMP::Info::NortelStack
 
 F<S5-AGENT-MIB>, F<S5-CHASSIS-MIB>.

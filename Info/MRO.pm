@@ -3,6 +3,9 @@ package SNMP::Info::MRO;
 use warnings;
 use strict;
 
+use vars qw/$VERSION/;
+$VERSION = '3.20';
+ 
 use PPI;
 use Class::ISA;
 use Module::Info;
@@ -267,7 +270,7 @@ sub globals { _walk_global_data(shift, 'GLOBALS') }
 Returns a data structure showing how L<SNMP::Info> will resolve MIB Tables
 configured through the C<%FUNCS> hashes in C<$module>.
 
-See L</globals> for further detail.
+See L<SNMP::Info::Layer3/"GLOBALS"> for further detail.
 
 =cut
 
@@ -370,9 +373,9 @@ sub print_superclasses {
 Oliver Gorwits <oliver@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
- 
+
 This software is copyright (c) 2014 by The SNMP::Info Project.
-  
+
  # Redistribution and use in source and binary forms, with or without
  # modification, are permitted provided that the following conditions are met:
  #
