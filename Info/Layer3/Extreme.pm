@@ -1005,8 +1005,6 @@ Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
 IDs.  These are the VLANs which are members of the untagged egress list for
 the port.
 
-=back
-
 =item $extreme->v_index()
 
 Returns VLAN IDs
