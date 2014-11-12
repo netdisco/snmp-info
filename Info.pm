@@ -1678,7 +1678,7 @@ sub device_type {
         # Starting with IOS 15, Aironet reports sysServices 6, even though
         # it still is the same layer2 access point.
         $objtype = 'SNMP::Info::Layer2::Aironet'
-            if ($desc =~ /\b(C1100|C1130|C1140|AP1200|C350|C1200|C1240|C1250)\b/
+            if ($desc =~ /\b(C1100|C1130|C1140|AP1200|C350|C1200|C1240|C1250|C2700|C3700)\b/
             and $desc =~ /\bIOS\b/ );
 
         # Airespace (WLC) Module
