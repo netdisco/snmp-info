@@ -41,7 +41,13 @@ use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
 $VERSION = '3.20';
 
-%MIBS = ( 'RAPID-CITY' => 'rapidCity', );
+%MIBS = (
+    'RAPID-CITY' => 'rapidCity',
+    # These are distinct from RAPID-CITY but are potentially used by
+    # classes which inherit the RAPID-CITY class
+    'NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB'    => 'nnRstDot1dStpVersion',
+    'NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB' => 'nnMstBrgAddress',
+);
 
 %GLOBALS = (
     'rc_serial'    => 'rcChasSerialNumber',
@@ -158,6 +164,24 @@ $VERSION = '3.20';
     'rc_spbm_fw_port'   => 'rcBridgeSpbmMacCPort',
     'rc_spbm_fw_status' => 'rcBridgeSpbmMacStatus',
     'rc_spbm_fw_vlan'   => 'rcBridgeSpbmMacCVlanId',
+
+    # From RAPID-CITY::rcStgTable
+    'stp_i_id'        => 'rcStgId',
+    'stp_i_time'      => 'rcStgTimeSinceTopologyChange',
+    'stp_i_ntop'      => 'rcStgTopChanges',
+    'stp_i_root'      => 'rcStgDesignatedRoot',
+    'stp_i_root_port' => 'rcStgRootPort',
+    'stp_i_priority'  => 'rcStgPriority',
+
+    # From RAPID-CITY::rcStgPortTable
+    'stp_p_id'       => 'rcStgPort',
+    'stp_p_stg_id'   => 'rcStgPortStgId',
+    'stp_p_priority' => 'rcStgPortPriority',
+    'stp_p_state'    => 'rcStgPortState',
+    'stp_p_cost'     => 'rcStgPortPathCost',
+    'stp_p_root'     => 'rcStgPortDesignatedRoot',
+    'stp_p_bridge'   => 'rcStgPortDesignatedBridge',
+    'stp_p_port'     => 'rcStgPortDesignatedPort',
 );
 
 %MUNGE = (
@@ -167,6 +191,10 @@ $VERSION = '3.20';
     'rc_vlan_members' => \&SNMP::Info::munge_port_list,
     'rc_vlan_no_join' => \&SNMP::Info::munge_port_list,
     'rc_mlt_ports'    => \&SNMP::Info::munge_port_list,
+    'stp_i_root'      => \&SNMP::Info::munge_prio_mac,
+    'stp_p_root'      => \&SNMP::Info::munge_prio_mac,
+    'stp_p_bridge'    => \&SNMP::Info::munge_prio_mac,
+    'stp_p_port'      => \&SNMP::Info::munge_prio_port,
 );
 
 # Need to override here since overridden in Layer2 and Layer3 classes
@@ -705,6 +733,47 @@ sub rc_spbm_fw_isid {
     return $spbm_fw_isid;
 }
 
+sub stp_ver {
+    my $rapidcity = shift;
+
+    return $rapidcity->rcSysSpanningTreeOperMode()
+      || $rapidcity->SUPER::stp_ver();
+}
+
+sub mst_vlan2instance {
+    my $rapidcity = shift;
+    my $partial   = shift;
+
+    return $rapidcity->rcVlanStgId($partial);
+}
+
+sub i_bpduguard_enabled {
+    my $rapidcity    = shift;
+    my $partial = shift;
+
+    return $rapidcity->rcPortBpduFilteringOperEnabled();
+}
+
+sub i_stp_state {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    my $bp_index    = $bridge->bp_index($partial);
+    my $stp_p_state = $bridge->dot1dStpPortState($partial);
+
+    my %i_stp_state;
+
+    foreach my $index ( keys %$stp_p_state ) {
+        my $state = $stp_p_state->{$index};
+        my $iid   = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $state;
+        $i_stp_state{$iid} = $state;
+    }
+
+    return \%i_stp_state;
+}
+
 1;
 
 __END__
@@ -814,6 +883,14 @@ These are methods that return scalar values from SNMP
 
 Returns serial number of the chassis
 
+=item $rapidcity->stp_ver()
+
+Returns the particular STP version running on this device.  
+
+Values: C<nortelStpg>, C<pvst>, C<rstp>, C<mstp>, C<ieee8021d>
+
+(C<rcSysSpanningTreeOperMode>)
+
 =back
 
 =head1 TABLE METHODS
@@ -867,6 +944,25 @@ Returns VLAN IDs
 Returns a HASH reference mapping from slave to master port for each member of
 a port bundle (MLT) on the device. Keys are ifIndex of the slave ports,
 Values are ifIndex of the corresponding master ports.
+
+=item $rapidcity->i_stp_state()
+ 
+Returns the mapping of (C<dot1dStpPortState>) to the interface
+index (iid).
+
+=item $rapidcity->mst_vlan2instance()
+
+Returns the mapping of VLAN to Spanning Tree Group (STG) instance in the
+form of a hash reference with key = VLAN id, value = STG instance
+
+(C<rcVlanStgId>)
+
+=item $rapidcity->i_bpduguard_enabled()
+
+Returns true or false depending on whether C<BpduGuard> is enabled on a given
+port.  Format is a hash reference with key = C<ifIndex>, value = [true|false]
+
+(C<rcPortBpduFilteringOperEnabled>)
 
 =back
 

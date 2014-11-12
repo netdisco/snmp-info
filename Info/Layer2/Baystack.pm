@@ -387,6 +387,14 @@ sub qb_fw_vlan {
     return $qb_fw_vlan;
 }
 
+# Baystack uses S5-AGENT-MIB (loaded in NortelStack) versus RAPID-CITY
+sub stp_ver {
+    my $rapidcity = shift;
+
+    return $rapidcity->s5AgSysSpanningTreeOperMode()
+      || $rapidcity->SUPER::stp_ver();
+}
+
 1;
 
 __END__
@@ -489,6 +497,14 @@ Returns 'baystack' or 'boss' depending on software version.
 =item $baystack->os_bin()
 
 Returns the firmware version extracted from C<sysDescr>.
+
+=item $baystack->stp_ver()
+
+Returns the particular STP version running on this device.  
+
+Values: C<nortelStpg>, C<pvst>, C<rstp>, C<mstp>, C<ieee8021d>
+
+(C<s5AgSysSpanningTreeOperMode>)
 
 =back
 
