@@ -1551,6 +1551,10 @@ interfaces.
 
 Returns reference to hash.  Maps port VLAN ID to IIDs.
 
+=item $bayrs->i_pvid()
+
+Returns reference to hash.  Maps port VLAN ID to IIDs.
+
 =back
 
 =head2 Pseudo F<ENTITY-MIB> information
