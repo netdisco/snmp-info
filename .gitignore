@@ -1,3 +1,9 @@
 *.db
 SNMP
 *.komodo*
+blib/
+META.*
+MYMETA.*
+Makefile
+Makefile.old
+pm_to_blib
