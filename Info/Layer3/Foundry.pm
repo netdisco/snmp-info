@@ -97,6 +97,24 @@ $VERSION = '3.20';
     # FOUNDRY-SN-AGENT-MIB::snAgentConfigModuleTable
     'ag_mod_type' => 'snAgentConfigModuleType',
 
+    # FOUNDRY-SN-AGENT-MIB::snVLanByPortTable
+    'stp_i_id'        => 'snVLanByPortVLanId',
+    'stp_i_mac'       => 'snVLanByPortBaseBridgeAddress',
+    'stp_i_time'      => 'snVLanByPortStpTimeSinceTopologyChange',
+    'stp_i_ntop'      => 'snVLanByPortStpTopChanges',
+    'stp_i_root'      => 'snVLanByPortStpDesignatedRoot',
+    'stp_i_root_port' => 'snVLanByPortStpRootPort',
+    'stp_i_priority'  => 'snVLanByPortStpPriority',
+
+    # FOUNDRY-SN-AGENT-MIB::snPortStpTable
+    'stp_p_id'       => 'snPortStpPortNum',
+    'stp_p_stg_id'   => 'snPortStpVLanId',
+    'stp_p_priority' => 'snPortStpPortPriority',
+    'stp_p_state'    => 'snPortStpPortState',
+    'stp_p_cost'     => 'snPortStpPortDesignatedCost',
+    'stp_p_root'     => 'snPortStpPortDesignatedRoot',
+    'stp_p_bridge'   => 'snPortStpPortDesignatedBridge',
+    'stp_p_port'     => 'snPortStpPortDesignatedPort',
 );
 
 %MUNGE = (
@@ -106,6 +124,11 @@ $VERSION = '3.20';
 
     'ag_mod2_type' => \&SNMP::Info::munge_e_type,
     'ag_mod_type'  => \&SNMP::Info::munge_e_type,
+    'stp_i_mac'    => \&SNMP::Info::munge_prio_mac,
+    'stp_i_root'   => \&SNMP::Info::munge_prio_mac,
+    'stp_p_root'   => \&SNMP::Info::munge_prio_mac,
+    'stp_p_bridge' => \&SNMP::Info::munge_prio_mac,
+    'stp_p_port'   => \&SNMP::Info::munge_prio_port,
 );
 
 sub i_ignore {
@@ -275,20 +298,6 @@ sub interfaces {
     }
 
     return $i_descr;
-}
-
-# Reported hangs on a EdgeIron 24G
-sub stp_p_state {
-    my $foundry = shift;
-    my $partial = shift;
-
-    my $descr = $foundry->description();
-    if ( $descr =~ m/\bEdgeIron 24G\b/ ) {
-        return;
-    }
-
-    return $foundry->SUPER::stp_p_state($partial) || {};
-
 }
 
 # Entity MIB is supported on the Brocade NetIron XMR, NetIron MLX, MLXe,
@@ -817,6 +826,26 @@ sub agg_ports {
   return $ret;
 }
 
+sub i_stp_state {
+    my $foundry  = shift;
+    my $partial = shift;
+
+    my $bp_index    = $foundry->bp_index($partial);
+    my $stp_p_state = $foundry->dot1dStpPortState($partial);
+
+    my %i_stp_state;
+
+    foreach my $index ( keys %$stp_p_state ) {
+        my $state = $stp_p_state->{$index};
+        my $iid   = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $state;
+        $i_stp_state{$iid} = $state;
+    }
+
+    return \%i_stp_state;
+}
+
 1;
 __END__
 
@@ -1007,14 +1036,10 @@ Returns reference to hash of interface link duplex status.
 
 Crosses $foundry->sw_duplex() with $foundry->sw_index()
 
-=item $foundry->stp_p_state()
-
-"The port's current state as defined by application of the Spanning Tree
-Protocol.
-
-Skipped if device is an EdgeIron 24G due to reports of hangs.
-
-(C<dot1dStpPortState>)
+=item $foundry->i_stp_state()
+ 
+Returns the mapping of (C<dot1dStpPortState>) to the interface
+index (iid).
 
 =item $foundry->agg_ports()
 
