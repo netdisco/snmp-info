@@ -84,6 +84,16 @@ $VERSION = '3.20';
     'bs_to'     => 'dot1dStaticAllowedToGoTo',
     'bs_status' => 'dot1dStaticStatus',
 
+    # These leafs are not part of a table, but placed here
+    # to return a hash reference to ease API compatibility with
+    # MST and PVST implementations indexed by a spanning tree
+    # instance id
+    'stp_i_time'      => 'dot1dStpTimeSinceTopologyChange',
+    'stp_i_ntop'      => 'dot1dStpTopChanges',
+    'stp_i_root'      => 'dot1dStpDesignatedRoot',
+    'stp_i_root_port' => 'dot1dStpRootPort',
+    'stp_i_priority'  => 'dot1dStpPriority',
+
     # Spanning Tree Protocol Table : dot1dStpPortTable
     'stp_p_id'       => 'dot1dStpPort',
     'stp_p_priority' => 'dot1dStpPortPriority',
@@ -126,6 +136,7 @@ $VERSION = '3.20';
     'fw_mac'           => \&SNMP::Info::munge_mac,
     'bs_mac'           => \&SNMP::Info::munge_mac,
     'stp_root'         => \&SNMP::Info::munge_prio_mac,
+    'stp_i_root'       => \&SNMP::Info::munge_prio_mac,
     'stp_p_root'       => \&SNMP::Info::munge_prio_mac,
     'stp_p_bridge'     => \&SNMP::Info::munge_prio_mac,
     'stp_p_port'       => \&SNMP::Info::munge_prio_port,
@@ -755,6 +766,48 @@ on the same bridge, this object contains the name of an	object instance unique
 to this port.
 
 (C<dot1dBasePortCircuit>)
+
+=back
+
+=head2 Spanning Tree Instance Globals
+
+These are not part of a table, but return a hash reference to ease API
+compatibility with MST and PVST implementations indexed by a spanning tree
+instance id.
+
+=over
+
+=item $bridge->stp_i_time()
+
+Returns time since last topology change detected. (100ths/second)
+
+(C<dot1dStpTimeSinceTopologyChange>)
+
+=item $bridge->stp_i_time()
+
+Returns the total number of topology changes detected.
+
+(C<dot1dStpTopChanges>)
+
+=item $bridge->stp_i_root()
+
+Returns root of STP.
+
+(C<dot1dStpDesignatedRoot>)
+
+=item $bridge->stp_i_root_port()
+
+Returns the port number of the port that offers the lowest cost path
+to the root bridge.
+
+(C<dot1dStpRootPort>)
+
+=item $bridge->stp_i_priority()
+
+Returns the port number of the port that offers the lowest cost path
+to the root bridge.
+
+(C<dot1dStpPriority>)
 
 =back
 
