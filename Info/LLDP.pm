@@ -39,7 +39,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.20';
+$VERSION = '3.21_001';
 
 %MIBS = (
     'LLDP-MIB'          => 'lldpLocSysCapEnabled',
@@ -316,7 +316,7 @@ sub _lldp_addr_index {
     my @oids   = split( /\./, $idx );
     my $index  = join( '.', splice( @oids, 0, 3 ) );
     my $proto  = shift(@oids);
-    my $length = shift(@oids) if scalar @oids > 4;
+    shift(@oids) if scalar @oids > 4; # $length
 
     # IPv4
     if ( $proto == 1 ) {
