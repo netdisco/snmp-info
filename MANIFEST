@@ -78,6 +78,7 @@ Info/Layer3/Enterasys.pm
 Info/Layer3/Extreme.pm
 Info/Layer3/F5.pm
 Info/Layer3/Force10.pm
+Info/Layer3/Fortinet.pm
 Info/Layer3/Foundry.pm
 Info/Layer3/H3C.pm
 Info/Layer3/HP9300.pm

@@ -1,6 +1,6 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
-version 3.21 ()
+version 3.21_001 (2014-11-14)
 
    [NEW FEATURES]
 
@@ -28,6 +28,7 @@ version 3.21 ()
       trunking but are not in operational trunking mode
     * Correct munging of stp_p_port(), i_stp_port(), and stp_root() methods
       in Bridge
+    * In LLDP.pm don't create a variable in a conditional
 
 version 3.20 (2014-09-08)
 
