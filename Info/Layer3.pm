@@ -41,11 +41,13 @@ use SNMP::Info::Entity;
 use SNMP::Info::PowerEthernet;
 use SNMP::Info::IPv6;
 use SNMP::Info::AdslLine;
+use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer3::ISA = qw/
     SNMP::Info::PowerEthernet SNMP::Info::IPv6
     SNMP::Info::Entity SNMP::Info::EtherLike
     SNMP::Info::Bridge SNMP::Info::AdslLine
+    SNMP::Info::LLDP
     SNMP::Info Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
 
@@ -61,6 +63,7 @@ $VERSION = '3.21_001';
     %SNMP::Info::Entity::MIBS,
     %SNMP::Info::PowerEthernet::MIBS,
     %SNMP::Info::IPv6::MIBS,
+    %SNMP::Info::LLDP::MIBS,
     'IP-MIB'   => 'ipNetToMediaIfIndex',
     'OSPF-MIB' => 'ospfRouterId',
     'BGP4-MIB' => 'bgpIdentifier',
@@ -76,6 +79,7 @@ $VERSION = '3.21_001';
     %SNMP::Info::Entity::GLOBALS,
     %SNMP::Info::PowerEthernet::GLOBALS,
     %SNMP::Info::IPv6::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
     'mac' => 'ifPhysAddress.1',
     'serial1' =>
         '.1.3.6.1.4.1.9.3.6.3.0',    # OLD-CISCO-CHASSIS-MIB::chassisId.0
@@ -92,6 +96,7 @@ $VERSION = '3.21_001';
     %SNMP::Info::Entity::FUNCS,
     %SNMP::Info::PowerEthernet::FUNCS,
     %SNMP::Info::IPv6::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
 
     # Obsolete Address Translation Table (ARP Cache)
     'old_at_index'   => 'atIfIndex',
@@ -150,6 +155,7 @@ $VERSION = '3.21_001';
     %SNMP::Info::Entity::MUNGE,
     %SNMP::Info::PowerEthernet::MUNGE,
     %SNMP::Info::IPv6::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
     'old_at_paddr' => \&SNMP::Info::munge_mac,
     'at_paddr'     => \&SNMP::Info::munge_mac,
     'n2p_paddr'    => \&SNMP::Info::munge_mac,
@@ -410,6 +416,8 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::IPv6
 
+=item SNMP::Info::LLDP
+
 =back
 
 =head2 Required MIBs
@@ -437,6 +445,8 @@ See L<SNMP::Info::Entity/"Required MIBs"> for its MIB requirements.
 See L<SNMP::Info::PowerEthernet/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::IPv6/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::LLDP/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -510,6 +520,10 @@ See L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 =head2 Global Methods imported from SNMP::Info::Entity
 
 See L<SNMP::Info::Entity/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::LLDP
+
+See L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -779,5 +793,9 @@ See L<SNMP::Info::PowerEthernet/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::IPv6
 
 See L<SNMP::Info::IPv6/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::LLDP
+
+See L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut
