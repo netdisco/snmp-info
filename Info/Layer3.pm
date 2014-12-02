@@ -521,6 +521,14 @@ See L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 
 See L<SNMP::Info::Entity/"GLOBALS"> for details.
 
+=head2 Global Methods imported from SNMP::Info:PowerEthernet
+
+See L<SNMP::Info::PowerEthernet/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::IPv6
+
+See L<SNMP::Info::IPv6/"GLOBALS"> for details.
+
 =head2 Global Methods imported from SNMP::Info::LLDP
 
 See L<SNMP::Info::LLDP/"GLOBALS"> for details.
