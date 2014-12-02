@@ -38,9 +38,10 @@ use SNMP::Info;
 use SNMP::Info::Bridge;
 use SNMP::Info::Entity;
 use SNMP::Info::PowerEthernet;
+use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer2::ISA
-    = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet Exporter/;
+    = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet SNMP::Info::LLDP Exporter/;
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
@@ -50,6 +51,7 @@ $VERSION = '3.21_001';
 %MIBS = (
     %SNMP::Info::MIBS,         %SNMP::Info::Bridge::MIBS,
     %SNMP::Info::Entity::MIBS, %SNMP::Info::PowerEthernet::MIBS,
+    %SNMP::Info::LLDP::MIBS,
 );
 
 %GLOBALS = (
@@ -57,6 +59,7 @@ $VERSION = '3.21_001';
     %SNMP::Info::Bridge::GLOBALS,
     %SNMP::Info::Entity::GLOBALS,
     %SNMP::Info::PowerEthernet::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
     'serial1' =>
         '.1.3.6.1.4.1.9.3.6.3.0',    # OLD-CISCO-CHASSIS-MIB::chassisId.0
 );
@@ -64,6 +67,7 @@ $VERSION = '3.21_001';
 %FUNCS = (
     %SNMP::Info::FUNCS,         %SNMP::Info::Bridge::FUNCS,
     %SNMP::Info::Entity::FUNCS, %SNMP::Info::PowerEthernet::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
 );
 
 %MUNGE = (
@@ -73,6 +77,7 @@ $VERSION = '3.21_001';
     %SNMP::Info::Bridge::MUNGE,
     %SNMP::Info::Entity::MUNGE,
     %SNMP::Info::PowerEthernet::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
 );
 
 # Method OverRides
@@ -218,6 +223,8 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::Entity
 
+=item SNMP::Info::LLDP
+
 =back
 
 =head2 Required MIBs
@@ -271,6 +278,10 @@ See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
+=head2 Globals imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
+
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
@@ -300,5 +311,9 @@ See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::Entity
 
 See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut
