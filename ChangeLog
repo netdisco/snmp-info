@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.23
+
+   [ENHANCEMENTS]
+
+    * Update MIB used in L1::Asante
+
 version 3.22 (2014-12-02)
 
    [ENHANCEMENTS]
