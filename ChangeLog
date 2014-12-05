@@ -5,6 +5,7 @@ version 3.23
    [ENHANCEMENTS]
 
     * Update MIB used in L1::Asante
+    * Enhanced STP support for L3::Extreme
 
 version 3.22 (2014-12-02)
 
@@ -26,7 +27,10 @@ version 3.22 (2014-12-02)
       VLANs, fall back to dot1qVlanStaticTable if not available.
     * New method i_vlan_membership_untagged() for VLANs transmitted as
       untagged frames.
-    * Capture Aruba AP hardware and software version when available 
+    * Capture Aruba AP hardware and software version when available
+    * New STP methods to support gathering information from devices running
+      mutiple STP instances such as PVST and MST
+    * Enhanced STP support for Avaya and Foundry classes
 
    [BUG FIXES]
 

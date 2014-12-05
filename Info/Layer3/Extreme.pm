@@ -53,11 +53,12 @@ $VERSION = '3.22';
     %SNMP::Info::MAU::MIBS,
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::EDP::MIBS,
-    'EXTREME-BASE-MIB'   => 'extremeAgent',
-    'EXTREME-SYSTEM-MIB' => 'extremeSystem',
-    'EXTREME-FDB-MIB'    => 'extremeSystem',
-    'EXTREME-VLAN-MIB'   => 'extremeVlan',
-    'EXTREME-POE-MIB'    => 'extremePethSystemAdminEnable',
+    'EXTREME-BASE-MIB'           => 'extremeAgent',
+    'EXTREME-SYSTEM-MIB'         => 'extremeSystem',
+    'EXTREME-FDB-MIB'            => 'extremeFdbMacFdbMacAddress',
+    'EXTREME-VLAN-MIB'           => 'extremeVlan',
+    'EXTREME-POE-MIB'            => 'extremePethSystemAdminEnable',
+    'EXTREME-STP-EXTENSIONS-MIB' => 'extremeStpDomainBridgeId',
 );
 
 %GLOBALS = (
@@ -97,6 +98,20 @@ $VERSION = '3.22';
     'peth_power_watts'  => 'extremePethSlotPowerLimit',
     # EXTREME-POE-MIB::extremePethPsePortTable
     'peth_port_power'   => 'extremePethPortMeasuredPower',
+    # EXTREME-STP-EXTENSIONS-MIB::extremeStpDomainTable
+    'stp_i_time'      => 'extremeStpDomainTimeSinceTopologyChange',
+    'stp_i_ntop'      => 'extremeStpDomainTopChanges',
+    'stp_i_root'      => 'extremeStpDomainDesignatedRoot',
+    'stp_i_root_port' => 'extremeStpDomainRootPortIfIndex',
+    'stp_i_priority'  => 'extremeStpDomainBridgePriority',
+    'ex_stp_i_mac'    => 'extremeStpDomainBridgeId',
+    # EXTREME-STP-EXTENSIONS-MIB::extremeStpPortTable
+    'stp_p_priority' => 'extremeStpPortPortPriority',
+    'stp_p_state'    => 'extremeStpPortPortState',
+    'stp_p_cost'     => 'extremeStpPortPathCost',
+    'stp_p_root'     => 'extremeStpPortDesignatedRoot',
+    'stp_p_bridge'   => 'extremeStpPortDesignatedBridge',
+    'stp_p_port'     => 'extremeStpPortDesignatedPort',
 );
 
 %MUNGE = (
@@ -114,6 +129,11 @@ $VERSION = '3.22';
     'fan_state'        => \&munge_true_ok,
     'ex_vlan_untagged' => \&SNMP::Info::munge_port_list,
     'ex_vlan_tagged'   => \&SNMP::Info::munge_port_list,
+    'ex_stp_i_mac'     => \&SNMP::Info::munge_prio_mac,
+    'stp_i_root'       => \&SNMP::Info::munge_prio_mac,
+    'stp_p_root'       => \&SNMP::Info::munge_prio_mac,
+    'stp_p_bridge'     => \&SNMP::Info::munge_prio_mac,
+    'stp_p_port'       => \&SNMP::Info::munge_prio_port,
 );
 
 # Method OverRides
@@ -783,6 +803,75 @@ sub lldp_if {
     return \%lldp_if;
 }
 
+# extremeStpDomainStpdInstance not accessible, so we need to extract from iid
+sub stp_i_id {
+    my $extreme  = shift;
+    my $partial  = shift;
+
+    my $stp_i_roots = $extreme->stp_i_root($partial);
+
+    my %stp_i_id;
+    foreach my $iid ( keys %$stp_i_roots ) {
+        $stp_i_id{$iid} = $iid;
+    }
+    return \%stp_i_id;
+}
+
+# extremeStpDomainBridgeId returns priority and mac,
+# for cross class compatibility we just need mac
+sub stp_i_mac {
+    my $extreme  = shift;
+    my $partial  = shift;
+
+    my $stp_i_bids = $extreme->ex_stp_i_mac($partial);
+
+    my %stp_i_mac;
+    foreach my $iid ( keys %$stp_i_bids ) {
+        my $mac = $stp_i_bids->{$iid};
+        next unless $mac;
+        
+        $mac =~ s/^([0-9A-F][0-9A-F]:){2}//;
+        
+        $stp_i_mac{$iid} = $mac;
+    }
+    return \%stp_i_mac;
+}
+
+# Break up the extremeStpPortEntry INDEX into Stpd Instance and IfIndex.
+sub _ex_stpport_index {
+    my $idx    = shift;
+    my ( $id, $ifindex ) = split( /\./, $idx);
+    return ($id, $ifindex);
+}
+
+# extremeStpPortPortIfIndex not-accessible, extract from iid
+sub stp_p_id {
+    my $extreme  = shift;
+    my $partial  = shift;
+
+    my $stp_port = $extreme->stp_p_root($partial);
+    my $stp_p_id  = {};
+    foreach my $idx ( keys %$stp_port ) {
+        my ( $id, $ifindex ) = _ex_stpport_index($idx);
+        $stp_p_id->{$idx} = $ifindex;
+    }
+    return $stp_p_id;
+}
+
+# extremeStpDomainStpdInstance not-accessible, extract from iid
+sub stp_p_stg_id {
+    my $extreme  = shift;
+    my $partial  = shift;
+
+    my $stp_port = $extreme->stp_p_root($partial);
+    my $stp_p_stg_id  = {};
+    foreach my $idx ( keys %$stp_port ) {
+        my ( $id, $ifindex ) = _ex_stpport_index($idx);
+        $stp_p_stg_id->{$idx} = $id;
+    }
+    return $stp_p_stg_id;
+}
+
 1;
 
 __END__
@@ -1034,6 +1123,98 @@ Power supplied by PoE ports, in milliwatts
 The configured maximum amount of in-line power available to the slot.
 
 (C<extremePethSlotPowerLimit>)
+
+=back
+
+=head2 Spanning Tree Instance Globals
+
+=over
+
+=item $extreme->stp_i_mac()
+
+Returns the MAC extracted from (C<extremeStpDomainBridgeId>).
+
+=item $extreme->stp_i_id()
+
+Returns the unique identifier of the STP domain.
+
+(C<extremeStpDomainStpdInstance>)
+
+=item $extreme->stp_i_time()
+
+Returns time since last topology change detected. (100ths/second)
+
+(C<extremeStpDomainTimeSinceTopologyChange>)
+
+=item $extreme->stp_i_time()
+
+Returns time since last topology change detected. (100ths/second)
+
+(C<extremeStpDomainTimeSinceTopologyChange>)
+
+=item $extreme->stp_i_time()
+
+Returns the total number of topology changes detected.
+
+(C<extremeStpDomainTopChanges>)
+
+=item $extreme->stp_i_root()
+
+Returns root of STP.
+
+(C<extremeStpDomainDesignatedRoot>)
+
+=item $extreme->stp_i_root_port()
+
+Returns the port number of the port that offers the lowest cost path
+to the root bridge.
+
+(C<extremeStpDomainRootPortIfIndex>)
+
+=item $extreme->stp_i_priority()
+
+Returns the port number of the port that offers the lowest cost path
+to the root bridge.
+
+(C<extremeStpDomainBridgePriority>)
+
+=back
+
+=head2 Spanning Tree Protocol Port Table
+
+=over
+
+=item $extreme->stp_p_id()
+
+(C<extremeStpPortPortIfIndex>)
+
+=item $extreme->stp_p_stg_id()
+
+(C<extremeStpDomainStpdInstance>)
+
+=item $extreme->stp_p_priority()
+
+(C<extremeStpPortPortPriority>)
+
+=item $extreme->stp_p_state()
+
+(C<extremeStpPortPortState>)
+
+=item $extreme->stp_p_cost()
+
+(C<extremeStpPortPathCost>)
+
+=item $extreme->stp_p_root()
+
+(C<extremeStpPortDesignatedRoot>)
+
+=item $extreme->stp_p_bridge()
+
+(C<extremeStpPortDesignatedBridge>)
+
+=item $extreme->stp_p_port()
+
+(C<extremeStpPortDesignatedPort>)
 
 =back
 
