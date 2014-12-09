@@ -4,7 +4,7 @@ use warnings;
 use strict;
 
 use vars qw/$VERSION/;
-$VERSION = '3.22';
+$VERSION = '3.23';
  
 use PPI;
 use Class::ISA;
