@@ -7,6 +7,12 @@ version 3.23
     * Update MIB used in L1::Asante
     * Enhanced STP support for L3::Extreme
 
+   [BUG FIXES]
+
+    * Fix Cisco VLAN membership issue introduced in 3.22 related to capturing
+      port VLANs on Cisco interfaces which are configured for trunking but
+      are not in operational trunking mode
+
 version 3.22 (2014-12-02)
 
    [ENHANCEMENTS]
