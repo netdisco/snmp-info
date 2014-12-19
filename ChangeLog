@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.24
+
+   [BUG FIXES]
+
+    * Fix single instance leafs defined in %FUNCS to behave like table leafs
+
 version 3.23 (2014-12-09)
 
    [ENHANCEMENTS]
@@ -15,17 +21,17 @@ version 3.23 (2014-12-09)
 
 version 3.22 (2014-12-02)
 
-   [ENHANCEMENTS]
+   [NEW FEATURES]
 
-    * Include LLDP support in base Layer2 and Layer3 classes. Due to the
-      widespread adoption of LLDP, this should improve mapping networks
-      when devices aren't supported in a more specific class.
     * Support obtaining FDB in Avaya SPBM edge deployments in L2::Baystack
       NOTE: This requires a RAPID-CITY MIB with the rcBridgeSpbmMacTable
     * Support for Fortinet devices in new class L3::Fortinet
 
    [ENHANCEMENTS]
 
+    * Include LLDP support in base Layer2 and Layer3 classes. Due to the
+      widespread adoption of LLDP, this should improve mapping networks
+      when devices aren't supported in a more specific class.
     * No longer ignore interfaces based on name, in base L2/L3/L7 device
       classes. For several device classes SNMP::Info will now return tunnel
       interfaces and/or loopbacks, if present.

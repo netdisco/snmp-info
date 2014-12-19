@@ -4545,7 +4545,8 @@ sub _validate_autoload_method {
     my $table_leaf = 0;
 
     if ( !$globals->{$attr}
-        && ( defined $indexes && scalar( @{$indexes} ) > 0 ) )
+        && ( ( defined $indexes && scalar( @{$indexes} ) > 0 )
+            || $funcs->{$attr} ))
     {
         $table_leaf = 1;
     }
