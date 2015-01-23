@@ -5,6 +5,7 @@ version 3.24
    [BUG FIXES]
 
     * Fix single instance leafs defined in %FUNCS to behave like table leafs
+    * Fix incorrect FDB ID to VLAN ID mapping in Bridge and L3:Enterasys
 
 version 3.23 (2014-12-09)
 
