@@ -2,6 +2,10 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 3.24
 
+   [ENHANCEMENTS]
+
+    * Support RSTP and ieee8021d STP operating modes in RapidCity
+
    [BUG FIXES]
 
     * Fix single instance leafs defined in %FUNCS to behave like table leafs

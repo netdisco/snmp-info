@@ -166,23 +166,23 @@ $VERSION = '3.23';
     'rc_spbm_fw_vlan'   => 'rcBridgeSpbmMacCVlanId',
 
     # From RAPID-CITY::rcStgTable
-    'stp_i_id'        => 'rcStgId',
-    'stp_i_mac'       => 'rcStgBridgeAddress',
-    'stp_i_time'      => 'rcStgTimeSinceTopologyChange',
-    'stp_i_ntop'      => 'rcStgTopChanges',
-    'stp_i_root'      => 'rcStgDesignatedRoot',
-    'stp_i_root_port' => 'rcStgRootPort',
-    'stp_i_priority'  => 'rcStgPriority',
+    'stp_i_id'           => 'rcStgId',
+    'rc_stp_i_mac'       => 'rcStgBridgeAddress',
+    'rc_stp_i_time'      => 'rcStgTimeSinceTopologyChange',
+    'rc_stp_i_ntop'      => 'rcStgTopChanges',
+    'rc_stp_i_root'      => 'rcStgDesignatedRoot',
+    'rc_stp_i_root_port' => 'rcStgRootPort',
+    'rc_stp_i_priority'  => 'rcStgPriority',
 
     # From RAPID-CITY::rcStgPortTable
-    'stp_p_id'       => 'rcStgPort',
-    'stp_p_stg_id'   => 'rcStgPortStgId',
-    'stp_p_priority' => 'rcStgPortPriority',
-    'stp_p_state'    => 'rcStgPortState',
-    'stp_p_cost'     => 'rcStgPortPathCost',
-    'stp_p_root'     => 'rcStgPortDesignatedRoot',
-    'stp_p_bridge'   => 'rcStgPortDesignatedBridge',
-    'stp_p_port'     => 'rcStgPortDesignatedPort',
+    'rc_stp_p_id'       => 'rcStgPort',
+    'stp_p_stg_id'      => 'rcStgPortStgId',
+    'rc_stp_p_priority' => 'rcStgPortPriority',
+    'rc_stp_p_state'    => 'rcStgPortState',
+    'rc_stp_p_cost'     => 'rcStgPortPathCost',
+    'rc_stp_p_root'     => 'rcStgPortDesignatedRoot',
+    'rc_stp_p_bridge'   => 'rcStgPortDesignatedBridge',
+    'rc_stp_p_port'     => 'rcStgPortDesignatedPort',
 );
 
 %MUNGE = (
@@ -192,11 +192,11 @@ $VERSION = '3.23';
     'rc_vlan_members' => \&SNMP::Info::munge_port_list,
     'rc_vlan_no_join' => \&SNMP::Info::munge_port_list,
     'rc_mlt_ports'    => \&SNMP::Info::munge_port_list,
-    'stp_i_mac'       => \&SNMP::Info::munge_mac,
-    'stp_i_root'      => \&SNMP::Info::munge_prio_mac,
-    'stp_p_root'      => \&SNMP::Info::munge_prio_mac,
-    'stp_p_bridge'    => \&SNMP::Info::munge_prio_mac,
-    'stp_p_port'      => \&SNMP::Info::munge_prio_port,
+    'rc_stp_i_mac'       => \&SNMP::Info::munge_mac,
+    'rc_stp_i_root'      => \&SNMP::Info::munge_prio_mac,
+    'rc_stp_p_root'      => \&SNMP::Info::munge_prio_mac,
+    'rc_stp_p_bridge'    => \&SNMP::Info::munge_prio_mac,
+    'rc_stp_p_port'      => \&SNMP::Info::munge_prio_port,
 );
 
 # Need to override here since overridden in Layer2 and Layer3 classes
@@ -742,6 +742,99 @@ sub stp_ver {
       || $rapidcity->SUPER::stp_ver();
 }
 
+# RSTP and ieee8021d operating modes do not populate RAPID-CITY::rcStgTable
+# or RAPID-CITY::rcStgPortTable but do populate BRIDGE-MIB so check both
+sub stp_i_mac {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_i_mac()
+      || $rapidcity->SUPER::stp_i_mac();
+}
+
+sub stp_i_time {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_i_time()
+      || $rapidcity->SUPER::stp_i_time();
+}
+
+sub stp_i_ntop {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_i_ntop()
+      || $rapidcity->SUPER::stp_i_ntop();
+}
+
+sub stp_i_root {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_i_root()
+      || $rapidcity->SUPER::stp_i_root();
+}
+
+sub stp_i_root_port {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_i_root_port()
+      || $rapidcity->SUPER::stp_i_root_port();
+}
+
+sub stp_i_priority {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_i_priority()
+      || $rapidcity->SUPER::stp_i_priority();
+}
+
+sub stp_p_id {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_p_id()
+      || $rapidcity->SUPER::stp_p_id();
+}
+
+sub stp_p_priority {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_p_priority()
+      || $rapidcity->SUPER::stp_p_priority();
+}
+
+sub stp_p_state {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_p_state()
+      || $rapidcity->SUPER::stp_p_state();
+}
+
+sub stp_p_cost {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_p_cost()
+      || $rapidcity->SUPER::stp_p_cost();
+}
+
+sub stp_p_root {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_p_root()
+      || $rapidcity->SUPER::stp_p_root();
+}
+
+sub stp_p_bridge {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_p_bridge()
+      || $rapidcity->SUPER::stp_p_bridge();
+}
+
+sub stp_p_port {
+    my $rapidcity = shift;
+
+    return $rapidcity->rc_stp_p_port()
+      || $rapidcity->SUPER::stp_p_port();
+}
+
 sub mst_vlan2instance {
     my $rapidcity = shift;
     my $partial   = shift;
@@ -948,7 +1041,7 @@ a port bundle (MLT) on the device. Keys are ifIndex of the slave ports,
 Values are ifIndex of the corresponding master ports.
 
 =item $rapidcity->i_stp_state()
- 
+
 Returns the mapping of (C<dot1dStpPortState>) to the interface
 index (iid).
 
@@ -1302,7 +1395,7 @@ port.  Format is a hash reference with key = C<ifIndex>, value = [true|false]
 
 =over
 
-=item $bridge->rc_spbm_fw_mac()
+=item $rapidcity->rc_spbm_fw_mac()
 
 Returns reference to hash of forwarding table MAC Addresses
 
@@ -1332,6 +1425,89 @@ Returns reference to hash of forwarding table entries Customer VLAN ID
 Returns reference to hash of forwarding table entries ISID
 
 (C<rcBridgeSpbmMacIsid>)
+
+=back
+
+=head2 Spanning Tree Instance Globals
+
+C<RSTP> and C<ieee8021d> operating modes do not populate the
+C<RAPID-CITY::rcStgTable> but do populate F<BRIDGE-MIB>.  These methods check
+F<RAPID-CITY> first and fall back to F<BRIDGE-MIB>.
+
+=over
+
+=item $rapidcity->stp_i_mac()
+
+Returns the bridge address
+
+=item $rapidcity->stp_i_time()
+
+Returns time since last topology change detected. (100ths/second)
+
+=item $rapidcity->stp_i_ntop()
+
+Returns the total number of topology changes detected.
+
+=item $rapidcity->stp_i_root()
+
+Returns root of STP.
+
+=item $rapidcity->stp_i_root_port()
+
+Returns the port number of the port that offers the lowest cost path
+to the root bridge.
+
+=item $rapidcity->stp_i_priority()
+
+Returns the port number of the port that offers the lowest cost path
+to the root bridge.
+
+=back
+
+=head2 Spanning Tree Protocol Port Table
+
+C<RSTP> and C<ieee8021d> operating modes do not populate the
+C<RAPID-CITY::rcStgPortTable> but do populate F<BRIDGE-MIB>.  These methods
+check F<RAPID-CITY> first and fall back to F<BRIDGE-MIB>.
+
+=over
+
+=item $rapidcity->stp_p_id()
+
+"The port number of the port for which this entry contains Spanning Tree
+Protocol management information."
+
+=item $rapidcity->stp_p_priority()
+
+"The value of the priority field which is contained in the first
+(in network byte order) octet of the (2 octet long) Port ID.  The other octet
+of the Port ID is given by the value of C<dot1dStpPort>."
+
+=item $rapidcity->stp_p_state()
+
+"The port's current state as defined by application of the Spanning Tree
+Protocol."  
+
+=item $rapidcity->stp_p_cost()
+
+"The contribution of this port to the path cost of paths towards the spanning
+tree root which include this port."
+
+=item $rapidcity->stp_p_root()
+
+"The unique Bridge Identifier of the Bridge recorded as the Root in the
+Configuration BPDUs transmitted by the Designated Bridge for the segment to
+which the port is attached."
+
+=item $rapidcity->stp_p_bridge()
+
+"The Bridge Identifier of the bridge which this port considers to be the
+Designated Bridge for this port's segment."
+
+=item $rapidcity->stp_p_port()
+
+"The Port Identifier of the port on the Designated Bridge for this port's
+segment."
 
 =back
 
