@@ -40,7 +40,7 @@ use SNMP::Info::LLDP;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.23';
+$VERSION = '3.24';
 
 # This will be filled in with the device's index into the EntPhysicalEntry
 # table by the serial() function.

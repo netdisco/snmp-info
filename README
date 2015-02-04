@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.20
+    SNMP::Info - Version 3.24
 
 AUTHOR
 
@@ -336,6 +336,11 @@ SUBCLASSES
 
         See documentation in SNMP::Info::MAU for details.
 
+    SNMP::Info::MRO
+        Method resolution introspection for SNMP::Info
+
+        See documentation in SNMP::Info::MRO for details.
+
     SNMP::Info::NortelStack
         S5-AGENT-MIB, S5-CHASSIS-MIB.
 
@@ -660,6 +665,11 @@ SUBCLASSES
             Subclass for Force10 devices.
 
             See documentation in SNMP::Info::Layer3::Force10 for details.
+
+        SNMP::Info::Layer3::Fortinet
+            Subclass for Fortinet devices.
+
+            See documentation in SNMP::Info::Layer3::Fortinet for details.
 
         SNMP::Info::Layer3::Foundry
             Subclass for Brocade (Foundry) Network devices.
@@ -1876,6 +1886,10 @@ SNMP::INFO INTERNALS
         ASCII hex string.
 
     munge_prio_mac()
+        Takes an 2-byte octet stream (HEX-STRING) and returns a colon
+        separated ASCII hex string.
+
+    munge_prio_port()
         Takes an 8-byte octet stream (HEX-STRING) and returns a colon
         separated ASCII hex string.
 
