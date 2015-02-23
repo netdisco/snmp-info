@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.25 (TBD)
+
+  [ENHANCEMENTS]
+
+    * Add new model name mappings for to Layer2::HP
+
 version 3.24 (2015-02-04)
 
    [ENHANCEMENTS]
