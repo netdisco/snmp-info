@@ -153,6 +153,48 @@ sub serial {
     return $dell->SUPER::serial();
 }
 
+# check all fans, and report overall status
+sub fan {
+    my $dell = shift;
+
+    my $fan   = $dell->dell_fan_desc()  || {};
+    my $state = $dell->dell_fan_state() || {};
+    my @messages = ();
+
+    foreach my $k (keys %$fan) {
+        next if $state->{$k} and $state->{$k} eq 'normal';
+        push @messages, "$fan->{$k}: $state->{$k}";
+    }
+
+    push @messages, ((scalar keys %$fan). " fans OK")
+      if scalar @messages == 0;
+
+    return (join ", ", @messages);
+}
+
+sub _ps_status {
+    my ($dell, $unit) = @_;
+
+    my $status = 'unknown';
+    return $status if !defined $unit;
+
+    my $desc  = $dell->dell_pwr_desc()  || {};
+    my $state = $dell->dell_pwr_state() || {};
+
+    foreach my $k (keys %$desc) {
+        next unless $desc->{$k} and $desc->{$k} eq "ps1_unit$unit";
+        return ($state->{$k} || $status);
+    }
+
+    return $status;
+}
+
+sub ps1_type { return 'internalRedundant' }
+sub ps2_type { return 'internalRedundant' }
+
+sub ps1_status { return (shift)->_ps_status(1) }
+sub ps2_status { return (shift)->_ps_status(2) }
+
 sub interfaces {
     my $dell    = shift;
     my $partial = shift;
@@ -311,6 +353,26 @@ id().  Defaults to 'dlink'.
 
 Returns 'dell', 'dlink', or 'ibm' based upon the IANA enterprise number in
 id().  Defaults to 'dlink'.
+
+=item $dell->fan()
+
+Return the status of all fans from the F<Dell-Vendor-MIB>
+
+=item $dell->ps1_type()
+
+Return the type of the first power supply from the F<Dell-Vendor-MIB>
+
+=item $dell->ps2_type()
+
+Return the type of the second power supply from the F<Dell-Vendor-MIB>
+
+=item $dell->ps1_status()
+
+Return the status of the first power supply from the F<Dell-Vendor-MIB>
+
+=item $dell->ps2_status()
+
+Return the status of the second power supply from the F<Dell-Vendor-MIB>
 
 =back
 
