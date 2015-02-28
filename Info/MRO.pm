@@ -363,7 +363,7 @@ Pretty print the output of C<superclasses()>.
 =cut
 
 sub print_superclasses {
-    print join ("\n", (shift)->superclasses), "\n";
+    print join ("\n", superclasses(@_)), "\n";
 }
 
 =back

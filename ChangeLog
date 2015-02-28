@@ -4,7 +4,11 @@ version 3.26 ()
 
   [ENHANCEMENTS]
 
-    * Add fan and psu reporting to Layer3::Dell
+  * Add fan and psu reporting to Layer3::Dell
+
+  [BUG FIXES]
+
+  * Fix typo in MRO::print_superclasses
 
 version 3.25 (2015-02-25)
 
