@@ -228,6 +228,7 @@ sub i_vlan_membership {
     my $i_vlan         = $vtp->i_vlan2($partial)            || {};
     my $trunk_dyn_stat = $vtp->vtp_trunk_dyn_stat($partial) || {};
     my $trunk_dyn      = $vtp->vtp_trunk_dyn($partial)      || {};
+    my $i_voice_vlan   = $vtp->i_voice_vlan($partial)       || {};
 
     my $i_vlan_membership = {};
 
@@ -241,8 +242,17 @@ sub i_vlan_membership {
         }
     }
 
-    # Get trunk ports
+    # Get voice VLANs
+    foreach my $port ( keys %$i_voice_vlan ) {
+        my $vlan = $i_voice_vlan->{$port};
+        next unless defined $vlan;
+        my $dyn = $trunk_dyn->{$port};
+        unless ($dyn and (($dyn eq 'on') or ($dyn eq 'onNoNegotiate'))) {
+            push( @{ $i_vlan_membership->{$port} }, $vlan );
+        }
+    }
 
+    # Get trunk ports
     my %oper_vlans;
     foreach my $iid ( keys %$vtp_vlans ) {
         my $vlan    = 0;

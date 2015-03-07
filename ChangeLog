@@ -5,6 +5,7 @@ version 3.26 ()
   [ENHANCEMENTS]
 
   * Add fan and psu reporting to Layer3::Dell
+  * Include Voice VLANs in (tagged) VLAN Membership on Cisco devices
 
   [BUG FIXES]
 
