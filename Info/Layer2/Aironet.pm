@@ -60,7 +60,8 @@ $VERSION = '3.26';
     %SNMP::Info::CiscoConfig::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
     'serial' => 'entPhysicalSerialNum.1',
-    'descr'  => 'sysDescr'
+    'descr'  => 'sysDescr',
+    'ps1_type' => 'cpoePdCurrentPowerSource'
 );
 
 %FUNCS = (
@@ -97,6 +98,7 @@ $VERSION = '3.26';
     'CISCO-DOT11-ASSOCIATION-MIB'         => 'cDot11ClientSubIfIndex',
     'CISCO-DOT11-SSID-SECURITY-MIB'       => 'cdot11SecVlanNameId',
     'CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB' => 'cviRoutedVlanIfIndex',
+    'CISCO-POE-PD-MIB'                    => 'cpoePdCurrentPowerSource',
 );
 
 %MUNGE = (
@@ -455,6 +457,18 @@ sub i_ssidmac {
         $i_ssidmac->{$key} = $map->{ $i_ssidlist->{$key} };
     }
     return $i_ssidmac;
+}
+
+###
+# PoE status.  The ps1_type is the PoE injector type, which is just
+# a scalar; the status is a little more complex.
+sub ps1_status {
+    my $aironet = shift;
+    my $idx = $aironet->cpoePdCurrentPowerLevel();
+    my $mw = $aironet->cpoePdSupportedPower( $idx );
+    my $descr = $aironet->cpoePdSupportedPowerMode( $idx );
+
+    return sprintf( "%.2fW (%s)", $mw->{$idx} * 0.001, $descr->{$idx} );
 }
 
 1;
