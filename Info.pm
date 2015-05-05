@@ -3622,7 +3622,8 @@ sub init {
 
     foreach my $d (@$mibdirs) {
         next unless -d $d;
-        print "SNMP::Info::init() - Adding new mibdir:$d\n" if $self->debug();
+        print "SNMP::Info::init() - Adding new mibdir:$d\n"
+          if $self->debug() > 1;
         SNMP::addMibDirs($d);
     }
 

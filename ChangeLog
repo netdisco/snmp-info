@@ -5,6 +5,7 @@ version 3.27 ()
   [ENHANCEMENTS]
 
   * Cisco Aironet PSU information
+  * Only log adding mibdirs at debug level 2
 
   [BUG FIXES]
 
