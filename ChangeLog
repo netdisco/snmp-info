@@ -1,5 +1,15 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.27 ()
+
+  [ENHANCEMENTS]
+
+  * Cisco Aironet PSU information
+
+  [BUG FIXES]
+
+  * [#221] Drop Cisco Voice VLAN 4096
+
 version 3.26 (2015-03-07)
 
   [ENHANCEMENTS]
