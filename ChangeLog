@@ -5,6 +5,8 @@ version 3.28 (TBD)
   [ENHANCEMENTS]
 
   * Add Layer3::Huawei class for Huawei Quidway switches
+  * Modified generic Layer3::Cisco class: use community based indexing if
+    the device returns a value for vtpVersion
 
 version 3.27 (2015-05-05)
 

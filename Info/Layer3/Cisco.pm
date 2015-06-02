@@ -136,6 +136,13 @@ sub i_vlan {
     return $i_vlan;
 }
 
+sub cisco_comm_indexing { 
+    my $cisco = shift;
+    # If we get a VTP version, it's *extremely* likely that the device needs community based indexing
+    my $vtp = $cisco->vtp_version() || '0';
+    return ($vtp ne '0');
+}
+
 1;
 __END__
 
@@ -236,6 +243,11 @@ These are methods that return scalar value from SNMP
 =item $cisco->eigrp_id()
 
 (C<cEigrpAsRouterId>)
+
+=item $switch->cisco_comm_indexing()
+
+Returns 1 when the device is likely to need vlan indexing.
+Determined by checking C<vtpVersion>.
 
 =back
 
