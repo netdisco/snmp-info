@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.28 (TBD)
+
+  [ENHANCEMENTS]
+
+  * Add Layer3::Huawei class for Huawei Quidway switches
+
 version 3.27 (2015-05-05)
 
   [ENHANCEMENTS]

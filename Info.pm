@@ -809,6 +809,12 @@ Original Equipment Manufacturer (OEM) such as the HP ProCurve 9300 and 6300 seri
 
 See documentation in L<SNMP::Info::Layer3::HP9300> for details.
 
+=item SNMP::Info::Layer3::Huawei
+
+SNMP Interface to Huawei Layer 3 switches and routers.
+
+See documentation in L<SNMP::Info::Layer3::Huawei> for details.
+
 =item SNMP::Info::Layer3::IBMGbTor
 
 SNMP Interface to IBM Rackswitch (formerly Blade Network Technologies)
@@ -1505,6 +1511,7 @@ sub device_type {
         1872 => 'SNMP::Info::Layer3::AlteonAD',
         1916 => 'SNMP::Info::Layer3::Extreme',
         1991 => 'SNMP::Info::Layer3::Foundry',
+        2011 => 'SNMP::Info::Layer3::Huawei',
         2021 => 'SNMP::Info::Layer3::NetSNMP',
         2272 => 'SNMP::Info::Layer3::Passport',
         2636 => 'SNMP::Info::Layer3::Juniper',
@@ -1545,6 +1552,7 @@ sub device_type {
         1872  => 'SNMP::Info::Layer3::AlteonAD',
         1916  => 'SNMP::Info::Layer3::Extreme',
         1991  => 'SNMP::Info::Layer3::Foundry',
+        2011  => 'SNMP::Info::Layer3::Huawei',
         2272  => 'SNMP::Info::Layer3::Passport',
         2925  => 'SNMP::Info::Layer1::Cyclades',
         3224  => 'SNMP::Info::Layer3::Netscreen',
