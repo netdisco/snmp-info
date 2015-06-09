@@ -554,17 +554,13 @@ These are methods that return scalar value from SNMP
 
 =over
 
-=item $aironet->discription()
-
-Adds info from method e_descr() from SNMP::Info::Entity
-
 =item $aironet->vendor()
 
 Returns 'cisco'
 
 =item $aironet->description()
 
-System description
+System description. Adds info from method e_descr() from SNMP::Info::Entity
 
 =back
 
@@ -661,6 +657,11 @@ being broadcast.
 
 With the same keys as i_ssidlist, returns the Basic service set
 identification (BSSID), MAC address, the AP is using for the SSID. 
+
+=item $aironet ps1_status()
+
+Returns the PoE injector status based on C<cpoePdSupportedPower> and 
+C<cpoePdSupportedPowerMode>.
 
 =back
 
