@@ -53,6 +53,7 @@ $VERSION = '3.27';
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
+    'HUAWEI-MIB' => 'quidway',
 );
 
 %GLOBALS = (
@@ -156,6 +157,8 @@ Subclass for Huawei Quidway switches
 =head2 Required MIBs
 
 =over
+
+=item F<HUAWEI-MIB>
 
 =item Inherited Classes' MIBs
 
