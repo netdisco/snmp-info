@@ -573,6 +573,9 @@ sub index_factor {
     # Older Accelar models use base 16 instead of 64
     $index_factor = 16
         if ( defined $model and $model =~ /^1[012][05]0/ );
+    # Newer VSP 4K uses 192?
+    $index_factor = 192
+        if ( defined $model and $model =~ /^VSP4/ );
     return $index_factor;
 }
 

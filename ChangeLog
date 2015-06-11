@@ -8,6 +8,10 @@ version 3.28 (TBD)
   * Modified generic Layer3::Cisco class: use community based indexing if
     the device returns a value for vtpVersion
 
+  [BUG FIXES]
+
+  * Correct port indexing of VSP 4K in L3::Passport
+
 version 3.27 (2015-05-05)
 
   [ENHANCEMENTS]
