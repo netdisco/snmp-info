@@ -82,6 +82,7 @@ Info/Layer3/Fortinet.pm
 Info/Layer3/Foundry.pm
 Info/Layer3/H3C.pm
 Info/Layer3/HP9300.pm
+Info/Layer3/Huawei.pm
 Info/Layer3/IBMGbTor.pm
 Info/Layer3/Juniper.pm
 Info/Layer3/Lantronix.pm

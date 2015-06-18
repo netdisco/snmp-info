@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.27
+    SNMP::Info - Version 3.28
 
 AUTHOR
 
@@ -687,6 +687,11 @@ SUBCLASSES
             9300 and 6300 series.
 
             See documentation in SNMP::Info::Layer3::HP9300 for details.
+
+        SNMP::Info::Layer3::Huawei
+            SNMP Interface to Huawei Layer 3 switches and routers.
+
+            See documentation in SNMP::Info::Layer3::Huawei for details.
 
         SNMP::Info::Layer3::IBMGbTor
             SNMP Interface to IBM Rackswitch (formerly Blade Network

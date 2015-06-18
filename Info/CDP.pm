@@ -43,7 +43,7 @@ use SNMP::Info;
 use vars
     qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT %CDP_CAPABILITIES/;
 
-$VERSION = '3.27';
+$VERSION = '3.28';
 
 # Five data structures required by SNMP::Info
 %MIBS = ( 'CISCO-CDP-MIB' => 'cdpGlobalRun' );
