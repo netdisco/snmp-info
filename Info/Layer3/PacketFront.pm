@@ -108,6 +108,21 @@ sub i_ignore {
     return \%i_ignore;
 }
 
+sub layers {
+    my $pfront = shift;
+    
+    my $layers = $pfront->SUPER::layers();
+    # Some models or softwware versions don't report L2 properly
+    # so add L2 capability to the output if the device has bridge ports.
+    my $bports = $pfront->b_ports();
+    
+    if ($bports) {
+        my $l = substr $layers, 6, 1, "1";
+    }
+
+    return $layers;
+}
+
 1;
 __END__
 
@@ -209,6 +224,11 @@ to a hash.
 Returns reference to hash.  Increments value of IID if port is to be ignored.
 
 Ignores loopback
+
+=item $pfront->layers()
+
+L2 capability isn't always reported correctly by the device itself; what the 
+device reports is augmented with L2 capability if the device has bridge ports.
 
 =back
 
