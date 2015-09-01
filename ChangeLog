@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.29 ()
+
+  [ENHANCEMENTS]
+
+  * Add IPv6::ipv6_addr() method to map IPv6 interface address indexes to actual addresses
+
 version 3.28 (2015-06-18)
 
   [ENHANCEMENTS]

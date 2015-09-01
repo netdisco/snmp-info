@@ -321,6 +321,29 @@ sub ipv6_addr_prefix {
     return $return;
 }
 
+sub ipv6_addr {
+    my $info = shift;
+    my $return;
+    my $indexes = $info->ipv6_index();
+    foreach my $row (keys %$indexes) {
+        my @parts = split(/\./, $row);
+        my $is_valid = 0;
+        if (scalar @parts == 18) {
+            my $addrtype = shift @parts;
+            $is_valid = 1;
+        } elsif (scalar @parts == 17) {
+            $is_valid = 1;
+        }
+        my $addrsize = shift @parts; # First element now is addrsize, should be 16
+        if ($is_valid && $addrsize == 16) {
+            $return->{$row} = join(':', unpack('(H4)*', pack('C*', @parts)));
+        } else {
+            warn sprintf("%s: unable to decode table index to IPv6 address. Raw data is [%s].\n", &_my_sub_name, $row);
+        }
+    }
+    return $return;
+}
+
 sub _method_used {
     my $info = shift;
     my $return = 'none of the MIBs';
@@ -458,6 +481,10 @@ Maps an IPv6 prefix with its origin (manual, well-known, dhcp, etc.)
 =item $info->ipv6_addr_prefix() 
 
 Maps IPv6 addresses with their prefixes
+
+=item $info->ipv6_addr()
+
+Maps a table instance to an IPv6 address
 
 =back
 
