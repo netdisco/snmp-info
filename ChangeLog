@@ -5,6 +5,9 @@ version 3.29 ()
   [ENHANCEMENTS]
 
   * Add IPv6::ipv6_addr() method to map IPv6 interface address indexes to actual addresses
+  * Add support for (remote) IPv6 addresses to LLDP::lldp_addr()
+  * Add LLDP::lldp_ipv6() and LLDP::lldp_mac() so that remote management
+    addresses of specific types can be requested
 
 version 3.28 (2015-06-18)
 

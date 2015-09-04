@@ -149,6 +149,38 @@ sub lldp_ip {
     return \%lldp_ip;
 }
 
+sub lldp_ipv6 {
+    my $lldp    = shift;
+    my $partial = shift;
+
+    my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
+
+    my %lldp_ipv6;
+    foreach my $key ( keys %$rman_addr ) {
+        my ( $index, $proto, $addr ) = _lldp_addr_index($key);
+        next unless defined $index;
+        next unless $proto == 2;
+        $lldp_ipv6{$index} = $addr;
+    }
+    return \%lldp_ipv6;
+}
+
+sub lldp_mac {
+    my $lldp    = shift;
+    my $partial = shift;
+
+    my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
+
+    my %lldp_ipv6;
+    foreach my $key ( keys %$rman_addr ) {
+        my ( $index, $proto, $addr ) = _lldp_addr_index($key);
+        next unless defined $index;
+        next unless $proto == 6;
+        $lldp_ipv6{$index} = $addr;
+    }
+    return \%lldp_ipv6;
+}
+
 sub lldp_addr {
     my $lldp    = shift;
     my $partial = shift;
@@ -323,13 +355,19 @@ sub _lldp_addr_index {
         return ( $index, $proto, join( '.', @oids ) );
     }
 
+    # IPv6
+    elsif ( $proto == 2 ) {
+        return ( $index, $proto,
+            join(':', unpack('(H4)*', pack('C*', @oids)) ) );
+    }
+
     # MAC
     elsif ( $proto == 6 ) {
         return ( $index, $proto,
             join( ':', map { sprintf "%02x", $_ } @oids ) );
     }
 
-    # TODO - Need to handle other protocols, i.e. IPv6
+    # TODO - Other protocols may be used as well; implement when needed?
     else {
         return;
     }
@@ -495,10 +533,24 @@ if unable defaults to (C<lldpRemLocalPortNum>).
 Returns remote IPv4 address.  Returns for all other address types, use
 lldp_addr if you want any return address type.
 
+=item  $lldp->lldp_ipv6()
+
+Returns remote IPv6 address, if known.  Returns for all other address types,
+use lldp_addr if you don't care about return address type.
+
+=item  $lldp->lldp_mac()
+
+Returns remote (management) MAC address, if known.  Returns for all other 
+address types, use lldp_addr if you don't care about return address type.
+
 =item  $lldp->lldp_addr()
 
 Returns remote address.  Type may be any IANA Address Family Number.
-Currently only returns IPv4 or MAC addresses.
+Currently only returns IPv4, IPv6 or MAC addresses. If the remote device
+returns more than one address type, this method will give only one. Which one
+is returned is decided by chance, phase of the moon and Perl hash ordering.
+
+Use lldp_mac, lldp_ip or lldp_ipv6 if you want a specific address type.
 
 =item $lldp->lldp_port()
 
@@ -530,7 +582,7 @@ the remote system.
 
 =item $lldp->lldp_rem_id()
 
-Returns the string value used to identify the chassis component    associated
+Returns the string value used to identify the chassis component associated
 with the remote system.
 
 (C<lldpRemChassisId>)
