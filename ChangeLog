@@ -1,6 +1,6 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
-version 3.29 ()
+version 3.29 (2015-10-13)
 
   [ENHANCEMENTS]
 
