@@ -168,7 +168,7 @@ install by hand.
 SNMP::Info operates on textual descriptors found in MIBs.
 
 If you are using SNMP::Info separate from Netdisco, 
-download the Netdisco MIB package at L<http://sourceforge.net/project/showfiles.php?group_id=80033&package_id=135517>
+download the Netdisco MIB package at L<http://sourceforge.net/projects/netdisco/files/netdisco-mibs/latest-snapshot/>
 
 Make sure that your snmp.conf is updated to point to your MIB directory
 and that the MIBs are world-readable.
