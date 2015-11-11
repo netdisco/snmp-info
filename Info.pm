@@ -1539,6 +1539,7 @@ sub device_type {
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
         30065 => 'SNMP::Info::Layer3::Arista',
         35098 => 'SNMP::Info::Layer3::Pica8',
+        41112 => 'SNMP::Info::Layer2::Ubiquiti',
     );
 
     my %l2sysoidmap = (
