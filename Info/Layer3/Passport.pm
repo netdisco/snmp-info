@@ -177,6 +177,7 @@ sub interfaces {
     my $model        = $passport->model();
     my $index_factor = $passport->index_factor();
     my $port_offset  = $passport->port_offset();
+    my $slot_offset  = $passport->slot_offset();
     my $vlan_index   = {};
     my %reverse_vlan;
     my $vlan_id = {};
@@ -200,6 +201,10 @@ sub interfaces {
 
         if ( ( $index == 1 ) and ( $model =~ /^8[86]/ ) ) {
             $if{$index} = 'Cpu.Virtual';
+        }
+
+        elsif ( ( $iid == 64 ) and ( $model =~ /^VSP[48]/ ) ) {
+            $if{$index} = 'Mgmt.1';
         }
 
         elsif ( ( $index == 192 ) and ( $model =~ /^8[86]03/ ) ) {
@@ -227,7 +232,7 @@ sub interfaces {
 
         else {
             my $port = ( $index % $index_factor ) + $port_offset;
-            my $slot = int( $index / $index_factor );
+            my $slot = int( $index / $index_factor ) + $slot_offset;
 
             my $slotport = "$slot.$port";
             $if{$iid} = $slotport;
@@ -381,6 +386,10 @@ sub i_name {
 
         if ( ( $iid == 1 ) and ( $model =~ /^8[86]/ ) ) {
             $i_name{$iid} = 'CPU Virtual Management IP';
+        }
+
+        elsif ( ( $iid == 64 ) and ( $model =~ /^VSP[48]/ ) ) {
+            $i_name{$iid} = 'Mgmt Port';
         }
 
         elsif ( ( $iid == 192 ) and ( $model =~ /^8[86]03/ ) ) {
@@ -573,13 +582,17 @@ sub index_factor {
     # Older Accelar models use base 16 instead of 64
     $index_factor = 16
         if ( defined $model and $model =~ /^1[012][05]0/ );
-    # Newer VSP 4K uses 192?
-    $index_factor = 192
-        if ( defined $model and $model =~ /^VSP4/ );
+
     return $index_factor;
 }
 
 sub slot_offset {
+    my $passport     = shift;
+    my $model        = $passport->model();
+    # Newer VSP 4K and 8K start at an index of 192 ~ slot 3 but really slot 1
+    return -2
+        if ( defined $model and $model =~ /^VSP[48]/ );
+
     return 0;
 }
 
