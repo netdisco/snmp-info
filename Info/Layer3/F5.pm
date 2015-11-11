@@ -72,10 +72,14 @@ $VERSION = '3.29';
     'i_up'          => 'sysInterfaceStatus',
 
     # sysIfxStatTable
-    'i_octet_in'       => 'sysIfxStatHcInOctets',
-    'i_octet_out'      => 'sysIfxStatHcOutOctets',
-    'i_pkts_ucast_in'  => 'sysIfxStatHcInUcastPkts',
-    'i_pkts_ucast_out' => 'sysIfxStatHcOutUcastPkts',
+    'i_octet_in64'       => 'sysIfxStatHcInOctets',
+    'i_octet_out64'      => 'sysIfxStatHcOutOctets',
+    'i_pkts_ucast_in64'  => 'sysIfxStatHcInUcastPkts',
+    'i_pkts_ucast_out64' => 'sysIfxStatHcOutUcastPkts',
+    'i_pkts_mutli_in64'  => 'sysIfxStatInMulticastPkts',
+    'i_pkts_multi_out64' => 'sysIfxStatOutMulticastPkts',
+    'i_pkts_bcast_in64'  => 'sysIfxStatInBroadcastPkts',
+    'i_pkts_bcast_out64' => 'sysIfxStatOutBroadcastPkts',
 
     # sysInterfaceStatTable
     'i_discards_in'  => 'sysInterfaceStatDropsIn',
@@ -115,8 +119,8 @@ sub fan {
     my $ret       = "";
     my $s         = "";
     foreach my $i ( sort { $a <=> $b } keys %$fan_state ) {
-        $ret .= $s . $i . ": " . $fan_state->{$i};
-        $s = ", ";
+        $ret .= $s . $i . ': ' . $fan_state->{$i};
+        $s = ', ';
     }
     return if ( $s eq "" );
     return $ret;
