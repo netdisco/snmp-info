@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.29
+    SNMP::Info - Version 3.30
 
 AUTHOR
 
@@ -143,8 +143,8 @@ REQUIREMENTS
 
         If you are using SNMP::Info separate from Netdisco, download the
         Netdisco MIB package at
-        <http://sourceforge.net/project/showfiles.php?group_id=80033&package
-        _id=135517>
+        <http://sourceforge.net/projects/netdisco/files/netdisco-mibs/latest
+        -snapshot/>
 
         Make sure that your snmp.conf is updated to point to your MIB
         directory and that the MIBs are world-readable.

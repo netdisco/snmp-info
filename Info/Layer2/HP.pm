@@ -50,7 +50,7 @@ use SNMP::Info::Aggregate;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE/;
 
-$VERSION = '3.29';
+$VERSION = '3.30';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,

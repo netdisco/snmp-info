@@ -1,8 +1,17 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.30 (2015-11-16)
+
+  [ENHANCEMENTS]
+
+  * RT #106254: Add new sysObjectID mapping for Ubiquiti
+
   [BUG FIXES]
 
   * Correct link to MIB tarball
+  * Correct port indexing of newer VSP 4K and 8K in L3::Passport
+  * Statistics in the sysIfxStatTable are 64-bit counters, so they should
+    override the 64-bit methods.
 
 version 3.29 (2015-10-13)
 

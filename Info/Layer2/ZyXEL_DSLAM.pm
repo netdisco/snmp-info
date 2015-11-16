@@ -39,7 +39,7 @@ use SNMP::Info::Layer2;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.29';
+$VERSION = '3.30';
 
 # Set for No CDP
 %GLOBALS = ( %SNMP::Info::Layer2::GLOBALS );
