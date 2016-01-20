@@ -1,6 +1,6 @@
 # SNMP::Info::Layer3::Passport
 #
-# Copyright (c) 2012 Eric Miller
+# Copyright (c) 2016 Eric Miller
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -174,6 +174,7 @@ sub interfaces {
     my $partial  = shift;
 
     my $i_index      = $passport->i_index($partial);
+    my $i_descr      = $passport->orig_i_description($partial) || {};
     my $model        = $passport->model();
     my $index_factor = $passport->index_factor();
     my $port_offset  = $passport->port_offset();
@@ -203,7 +204,7 @@ sub interfaces {
             $if{$index} = 'Cpu.Virtual';
         }
 
-        elsif ( ( $iid == 64 ) and ( $model =~ /^VSP[48]/ ) ) {
+        elsif ( ( $iid == 64 ) and ( $model =~ /^VSP[478]/ ) ) {
             $if{$index} = 'Mgmt.1';
         }
 
@@ -231,11 +232,18 @@ sub interfaces {
         }
 
         else {
-            my $port = ( $index % $index_factor ) + $port_offset;
-            my $slot = int( $index / $index_factor ) + $slot_offset;
+            if ($model =~ /VSP/ and $i_descr->{$iid} and $i_descr->{$iid} =~ m<Port\s+(\d+(?:/\d+)*)>) {
+                my $ps = $1;
+                $ps =~ s|/|.|g;
+                $if{$iid} = $ps;
+            }
+            else {
+                my $port = ( $index % $index_factor ) + $port_offset;
+                my $slot = int( $index / $index_factor ) + $slot_offset;
 
-            my $slotport = "$slot.$port";
-            $if{$iid} = $slotport;
+                my $slotport = "$slot.$port";
+                $if{$iid} = $slotport;
+            }
         }
 
     }
@@ -388,7 +396,7 @@ sub i_name {
             $i_name{$iid} = 'CPU Virtual Management IP';
         }
 
-        elsif ( ( $iid == 64 ) and ( $model =~ /^VSP[48]/ ) ) {
+        elsif ( ( $iid == 64 ) and ( $model =~ /^VSP[478]/ ) ) {
             $i_name{$iid} = 'Mgmt Port';
         }
 
@@ -591,7 +599,7 @@ sub slot_offset {
     my $model        = $passport->model();
     # Newer VSP 4K and 8K start at an index of 192 ~ slot 3 but really slot 1
     return -2
-        if ( defined $model and $model =~ /^VSP[48]/ );
+        if ( defined $model and $model =~ /^VSP[478]/ );
 
     return 0;
 }
