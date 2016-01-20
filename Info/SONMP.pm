@@ -1,6 +1,6 @@
 # SNMP::Info::SONMP
 #
-# Copyright (c) 2012 Eric Miller
+# Copyright (c) 2016 Eric Miller
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,7 @@ $VERSION = '3.30';
 
 %FUNCS = (
 
-    # From S5-ETH-MULTISEG-TOPOLOGY-MIB::TopNmmTable
+    # From S5-ETH-MULTISEG-TOPOLOGY-MIB::s5EnMsTopNmmTable
     'sonmp_topo_slot'     => 's5EnMsTopNmmSlot',
     'sonmp_topo_port'     => 's5EnMsTopNmmPort',
     'sonmp_topo_ip'       => 's5EnMsTopNmmIpAddr',
@@ -61,9 +61,17 @@ $VERSION = '3.30';
     'sonmp_topo_mac'      => 's5EnMsTopNmmMacAddr',
     'sonmp_topo_platform' => 's5EnMsTopNmmChassisType',
     'sonmp_topo_localseg' => 's5EnMsTopNmmLocalSeg',
+
+    # From S5-ETH-MULTISEG-TOPOLOGY-MIB::s5EnMsTopNmmEnhancedTable
+    # Note: indexes are not-accessible in enhanced table
+    'sonmp_topo_e_mac'      => 's5EnMsTopNmmEnhancedMacAddr',
+    'sonmp_topo_e_platform' => 's5EnMsTopNmmEnhancedChassisType',
 );
 
-%MUNGE = ( 'sonmp_topo_mac' => \&SNMP::Info::munge_mac );
+%MUNGE = (
+    'sonmp_topo_mac'   => \&SNMP::Info::munge_mac,
+    'sonmp_topo_e_mac' => \&SNMP::Info::munge_mac
+);
 
 sub index_factor {
     return 32;
@@ -84,23 +92,46 @@ sub hasSONMP {
     return;
 }
 
+# Break up the s5EnMsTopNmmEntry or s5EnMsTopNmmEnhancedEntry INDEX
+# into Port, SubPort, IP, and Segment Id.
+sub _sonmp_topnmm_index {
+    my @values = split( /\./, shift );
+    my $seg    = pop(@values);
+    my $s      = shift(@values);
+    my $p      = shift(@values);
+    my $sp     = 0;
+
+    if ( scalar @values > 4 ) {
+        $sp = shift(@values);
+    }
+
+    return ( $s, $p, $sp, join( '.', @values ), $seg );
+}
+
+# Note: Using platform to get the index because it's commonly accessible and
+# will be cached after first method call, we now extract the other values
+# from the index.
 sub sonmp_if {
     my $sonmp   = shift;
     my $partial = shift;
 
-    my $sonmp_topo_port = $sonmp->sonmp_topo_port($partial) || {};
-    my $sonmp_topo_slot = $sonmp->sonmp_topo_slot($partial) || {};
-    my $index_factor    = $sonmp->index_factor();
-    my $slot_offset     = $sonmp->slot_offset();
-    my $port_offset     = $sonmp->port_offset();
-    my $model           = $sonmp->model();
+    my $sonmp_topo_idx
+        = $sonmp->sonmp_topo_platform($partial)
+        || $sonmp->sonmp_topo_e_platform($partial)
+        || {};
+    my $interfaces   = $sonmp->interfaces() || {};
+    my %r_interfaces  = reverse %$interfaces;
+    my $index_factor = $sonmp->index_factor();
+    my $slot_offset  = $sonmp->slot_offset();
+    my $port_offset  = $sonmp->port_offset();
+    my $model        = $sonmp->model();
 
     my %sonmp_if;
-    foreach my $entry ( keys %$sonmp_topo_port ) {
-        my $port = $sonmp_topo_port->{$entry};
+    foreach my $idx ( keys %$sonmp_topo_idx ) {
+        my ( $slot, $port, $sub_port, $ip, $seg_id )
+            = _sonmp_topnmm_index($idx);
         next unless defined $port;
         next if $port == 0;
-        my $slot = $sonmp_topo_slot->{$entry} || 0;
 
         if ( $model eq 'Baystack Hub' ) {
             my $comidx = $slot;
@@ -116,11 +147,18 @@ sub sonmp_if {
                 $port = 26;
             }
         }
+        
+        my $index;
+        my $int = $sub_port ? "$slot.$port.$sub_port" : "$slot.$port";
 
-        my $index = ( ( $slot - $slot_offset ) * $index_factor )
-            + ( $port - $port_offset );
-
-        $sonmp_if{$entry} = $index;
+        if ( exists $r_interfaces{$int} ) {
+            $index = $r_interfaces{$int};
+        }
+        else {
+            $index = ( ( $slot - $slot_offset ) * $index_factor )
+                + ( $port - $port_offset );
+        }
+        $sonmp_if{$idx} = $index;
     }
     return \%sonmp_if;
 }
@@ -129,17 +167,19 @@ sub sonmp_ip {
     my $sonmp   = shift;
     my $partial = shift;
 
-    my $sonmp_topo_port = $sonmp->sonmp_topo_port($partial) || {};
-    my $sonmp_topo_ip   = $sonmp->sonmp_topo_ip($partial)   || {};
+    my $sonmp_topo_idx
+        = $sonmp->sonmp_topo_platform($partial)
+        || $sonmp->sonmp_topo_e_platform($partial)
+        || {};
 
     my %sonmp_ip;
-    foreach my $entry ( keys %$sonmp_topo_ip ) {
-        my $port = $sonmp_topo_port->{$entry};
+    foreach my $idx ( keys %$sonmp_topo_idx ) {
+        my ( $slot, $port, $sub_port, $ip, $seg_id )
+            = _sonmp_topnmm_index($idx);
         next unless defined $port;
         next if $port == 0;
 
-        my $ip = $sonmp_topo_ip->{$entry};
-        $sonmp_ip{$entry} = $ip;
+        $sonmp_ip{$idx} = $ip;
     }
     return \%sonmp_ip;
 }
@@ -148,35 +188,48 @@ sub sonmp_port {
     my $sonmp   = shift;
     my $partial = shift;
 
+    my $sonmp_topo_idx
+        = $sonmp->sonmp_topo_platform($partial)
+        || $sonmp->sonmp_topo_e_platform($partial)
+        || {};
+
     my $sonmp_topo_port     = $sonmp->sonmp_topo_port($partial)     || {};
     my $sonmp_topo_seg      = $sonmp->sonmp_topo_seg($partial)      || {};
     my $sonmp_topo_platform = $sonmp->sonmp_topo_platform($partial) || {};
 
     my %sonmp_port;
-    foreach my $entry ( keys %$sonmp_topo_seg ) {
-        my $port = $sonmp_topo_port->{$entry};
+    foreach my $idx ( keys %$sonmp_topo_idx ) {
+        my ( $slot, $port, $sub_port, $ip, $seg_id )
+            = _sonmp_topnmm_index($idx);
         next unless defined $port;
         next if $port == 0;
 
-        my $seg      = $sonmp_topo_seg->{$entry};
-        my $platform = $sonmp_topo_platform->{$entry};
+        my $platform = $sonmp_topo_idx->{$idx};
 
         # AP-222x Series does not adhere to port numbering
         if ( $platform =~ /AccessPoint/i ) {
-            $sonmp_port{$entry} = 'dp0';
+            $sonmp_port{$idx} = 'dp0';
         }
 
         # BayHubs send the lower three bytes of the MAC not the slot/port
-        elsif ( $seg > 4000 ) {
-            $sonmp_port{$entry} = 'unknown';
+        elsif ( $platform =~ /BayStack[E12]/ ) {
+            $sonmp_port{$idx} = 'unknown';
         }
         else {
 
             # Segment id is (256 * remote slot_num) + (remote_port)
-            my $remote_port = $seg % 256;
-            my $remote_slot = int( $seg / 256 );
+            # Enhanced is subport +((256 * slot) + port)
+            my $subport = 0;
+            if ( $seg_id > 65535 ) {
+                $subport = int( $seg_id / 65536 );
+                $seg_id  = $seg_id % 65536;
+            }
 
-            $sonmp_port{$entry} = "$remote_slot.$remote_port";
+            my $port = $seg_id % 256;
+            my $slot = int( $seg_id / 256 );
+
+            $sonmp_port{$idx}
+                = $subport ? "$slot.$port.$subport" : "$slot.$port";
         }
     }
     return \%sonmp_port;
@@ -186,18 +239,21 @@ sub sonmp_platform {
     my $sonmp   = shift;
     my $partial = shift;
 
-    my $sonmp_topo_port     = $sonmp->sonmp_topo_port($partial)     || {};
-    my $sonmp_topo_platform = $sonmp->sonmp_topo_platform($partial) || {};
+    my $sonmp_topo_idx
+        = $sonmp->sonmp_topo_platform($partial)
+        || $sonmp->sonmp_topo_e_platform($partial)
+        || {};
 
     my %sonmp_platform;
-    foreach my $entry ( keys %$sonmp_topo_platform ) {
-        my $port = $sonmp_topo_port->{$entry};
+    foreach my $idx ( keys %$sonmp_topo_idx ) {
+        my ( $slot, $port, $sub_port, $ip, $seg_id )
+            = _sonmp_topnmm_index($idx);
         next unless defined $port;
         next if $port == 0;
 
-        my $platform = $sonmp_topo_platform->{$entry};
+        my $platform = $sonmp_topo_idx->{$idx};
 
-        $sonmp_platform{$entry} = $platform;
+        $sonmp_platform{$idx} = $platform;
     }
     return \%sonmp_platform;
 }
@@ -205,13 +261,16 @@ sub sonmp_platform {
 sub mac {
     my $sonmp = shift;
 
-    my $sonmp_topo_port = $sonmp->sonmp_topo_port();
-    my $sonmp_topo_mac  = $sonmp->sonmp_topo_mac();
+    my $sonmp_topo_idx
+        = $sonmp->sonmp_topo_mac()
+        || $sonmp->sonmp_topo_e_mac()
+        || {};
 
-    foreach my $entry ( keys %$sonmp_topo_port ) {
-        my $port = $sonmp_topo_port->{$entry};
+    foreach my $idx ( keys %$sonmp_topo_idx ) {
+        my ( $slot, $port, $sub_port, $ip, $seg_id )
+            = _sonmp_topnmm_index($idx);
         next unless $port == 0;
-        my $mac = $sonmp_topo_mac->{$entry};
+        my $mac = $sonmp_topo_idx->{$idx};
         return $mac;
     }
 
@@ -329,7 +388,7 @@ Returns true if SONMP is on for this device.
 
 =item $sonmp->mac()
 
-Returns MAC of the advertised IP address of the device. 
+Returns MAC of the advertised IP address of this device. 
 
 =back
 
@@ -385,6 +444,24 @@ Returns reference to hash.  Key: Table entry, Value: Boolean, if
 bay_topo_seg() is local.
 
 (C<s5EnMsTopNmmLocalSeg>)
+
+=back
+
+=head2 Layer2 Topology info (C<s5EnMsTopNmmEnhancedTable>)
+
+=over
+
+=item $sonmp->sonmp_topo_e_mac()
+
+(C<s5EnMsTopNmmEnhancedMacAddr>)
+
+Returns reference to hash.  Key: Table entry, Value:Remote MAC address
+
+=item $sonmp->sonmp_topo_e_platform
+
+Returns reference to hash.  Key: Table entry, Value:Remote Device Type
+
+(C<s5EnMsTopNmmEnhancedChassisType>)
 
 =back
 

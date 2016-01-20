@@ -5,6 +5,7 @@ version 3.31 ()
   [ENHANCEMENTS]
 
   * Support for CiscoSB OS and Version (D. Tuecks)
+  * SONMP support for Enhanced Topology Table
 
   [BUG FIXES]
 
