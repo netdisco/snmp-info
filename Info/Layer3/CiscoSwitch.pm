@@ -50,7 +50,7 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.30';
+$VERSION = '3.31';
 
 %MIBS = (
     %SNMP::Info::Layer3::Cisco::MIBS,
