@@ -3304,6 +3304,7 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '54000000'   => '54 Mbps',
                 '64000000'   => '64 Mbps',
                 '100000000'  => '100 Mbps',
+                '200000000'  => '200 Mbps',
                 '149760000'  => 'ATM on OC-3',
                 '155000000'  => 'OC-3',
                 '155519000'  => 'OC-3',
@@ -3313,6 +3314,7 @@ Makes human friendly speed ratings using %SPEED_MAP
                 '622000000'  => 'OC-12',
                 '622080000'  => 'OC-12',
                 '1000000000' => '1.0 Gbps',
+                '2000000000' => '2.0 Gbps',
                 '2488000000' => 'OC-48',
              )
 
@@ -3349,6 +3351,7 @@ munge_highspeed(). SNMP::Info can return speeds up to terabit levels this way.
     '54000000'   => '54 Mbps',
     '64000000'   => '64 Mbps',
     '100000000'  => '100 Mbps',
+    '200000000'  => '200 Mbps',
     '149760000'  => 'ATM on OC-3',
     '155000000'  => 'OC-3',
     '155519000'  => 'OC-3',
@@ -3358,6 +3361,7 @@ munge_highspeed(). SNMP::Info can return speeds up to terabit levels this way.
     '622000000'  => 'OC-12',
     '622080000'  => 'OC-12',
     '1000000000' => '1.0 Gbps',
+    '2000000000' => '2.0 Gbps',
     '2488000000' => 'OC-48',
 );
 
