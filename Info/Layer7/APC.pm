@@ -49,6 +49,7 @@ $VERSION = '3.31';
 
 %GLOBALS = (
     %SNMP::Info::Layer7::GLOBALS,
+    'mac'        => 'ifPhysAddress.2',
     'ups_serial'   => 'upsAdvIdentSerialNumber.0',
     'mgmt_serial'  => 'experimental.2.4.1.2.1',
     'os_ver'       => 'experimental.2.4.1.4.1',
