@@ -5,6 +5,7 @@ version 3.32 ()
   [BUG FIXES]
 
   * Support undefined (noSuchIntance) values in Offline mode
+  * Do not init table cache if Cache provided by user
 
 version 3.31 (2016-01-22)
 

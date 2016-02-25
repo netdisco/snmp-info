@@ -1240,11 +1240,8 @@ sub new {
         return;
     }
 
-    # Table function store
-    my $store = {};
-
     # Save Args for later
-    $new_obj->{store}     = $store;
+    $new_obj->{store}     ||= {};
     $new_obj->{sess}      = $sess;
     $new_obj->{args}      = \%args;
     $new_obj->{snmp_ver}  = $args{Version} || 2;
