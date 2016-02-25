@@ -3814,7 +3814,7 @@ sub _global {
         # Return cached data unless loading
         # We now store in raw format so munge before returning
         # unless expecting raw data
-        if ( defined $self->{"_$attr"} && !$load ) {
+        if ( exists $self->{"_$attr"} && !$load ) {
             my $val = $self->{"_$attr"};
 
             if ( !$raw ) {

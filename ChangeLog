@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.32 ()
+
+  [BUG FIXES]
+
+  * Support undefined (noSuchIntance) values in Offline mode
+
 version 3.31 (2016-01-22)
 
   [ENHANCEMENTS]
