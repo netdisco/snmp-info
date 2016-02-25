@@ -4,8 +4,9 @@ version 3.32 ()
 
   [BUG FIXES]
 
-  * Support undefined (noSuchIntance) values in Offline mode
-  * Do not init table cache if Cache provided by user
+  * Support undefined (noSuchInstance) values in Offline mode
+  * Do not init table cache if Cache provided by usera
+  * Avoid deep recusion when AUTOLOAD and carp collide
 
 version 3.31 (2016-01-22)
 

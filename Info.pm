@@ -3794,6 +3794,7 @@ These methods return data as a scalar.
 sub _global {
     my $method = shift;
     my $oid    = shift;
+    return sub {} if $method eq 'CARP_TRACE';
 
     return sub {
         my $self = shift;
@@ -4519,6 +4520,11 @@ sub _validate_autoload_method {
     if ( $leaf_name =~ /__/ ) {
         $leaf_name =~ s/__/::/;
         $leaf_name =~ s/_/-/g;
+    }
+
+    # skip if offline
+    if ( $self->{Offline} ) {
+        return [1,(exists $self->{store}->{$method} ? 1: 0)];
     }
 
     # Translate MIB leaf node name to OID
