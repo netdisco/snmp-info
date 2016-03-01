@@ -72,10 +72,10 @@ $VERSION = '3.31';
     'ip_pfx_origin'     => 'ipAddressPrefixOrigin',         # IP-MIB
     'c_pfx_origin'      => 'cIpAddressPfxOrigin',           # CISCO-IETF-IP-MIB 
 
-    'ip_addr6_pfx'      => 'ipAddressPrefix',              # IP-MIB 
+    'ip_addr6_pfx'      => 'ipAddressPrefix',               # IP-MIB 
     'c_addr6_pfx'       => 'cIpAddressPrefix',              # CISCO-IETF-IP-MIB 
 
-    'ip_addr6_index'    => 'ipAddressIfIndex',              # IP-MIBw
+    'ip_addr6_index'    => 'ipAddressIfIndex',              # IP-MIB
     'c_addr6_index'     => 'cIpAddressIfIndex',             # CISCO-IETF-IP-MIB 
 
     'ip_addr6_type'     => 'ipAddressType',                 # IP-MIB
@@ -141,6 +141,12 @@ sub ipv6_n2p_addr {
                     # Workaround for some some IP-MIB implementations, eg on Cisco Nexus: no explicit addrsize, 
                     # so what we've collected in that variable is actually the first byte of the address.
                     $v6_packed = pack('C', $addrsize) . $v6_packed;
+                }
+                if (length($v6_packed) == 17) {
+                    # Workaround for IPV6-MIB on Windows 2012: if the address is one byte too long, the SNMP agent probably has an incorrect
+                    # implementation where a length field precedes the actual IPv6 address.
+                    # In that case, the first character should be chr(16), ie 0x10; strip it if that's the case.
+                    $v6_packed =~ s/^\x10//;
                 }
                 if (length($v6_packed) == 16) {
                     $v6addr = join(':', map { sprintf("%04x", $_) } unpack("n*", $v6_packed) );
