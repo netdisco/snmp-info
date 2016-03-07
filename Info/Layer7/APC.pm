@@ -51,10 +51,12 @@ $VERSION = '3.31';
     %SNMP::Info::Layer7::GLOBALS,
     'mac'        => 'ifPhysAddress.2',
     'ups_serial'   => 'upsAdvIdentSerialNumber.0',
+    'pdu_serial'   => 'rPDUIdentSerialNumber.0',
     'mgmt_serial'  => 'experimental.2.4.1.2.1',
     'os_ver'       => 'experimental.2.4.1.4.1',
     'os_bin'       => 'experimental.2.4.1.4.2',
     'ups_model'    => 'upsBasicIdentModel.0',
+    'pdu_model'    => 'rPDUIdentModelNumber.0',
     'ps1_status'   => 'upsBasicOutputStatus.0',
     'ps2_status'   => 'upsBasicBatteryStatus.0',
 );
@@ -82,7 +84,7 @@ sub vendor {
 
 sub model {
     my $apc = shift;
-    return $apc->ups_model();
+    return $apc->ups_model() || $apc->pdu_model();
 }
 
 sub serial {
