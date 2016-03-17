@@ -1534,6 +1534,7 @@ sub device_type {
         14988 => 'SNMP::Info::Layer3::Mikrotik',
         17163 => 'SNMP::Info::Layer3::Steelhead',
         25506 => 'SNMP::Info::Layer3::H3C',
+        25461 => 'SNMP::Info::Layer3::PaloAlto',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
         30065 => 'SNMP::Info::Layer3::Arista',
         35098 => 'SNMP::Info::Layer3::Pica8',
