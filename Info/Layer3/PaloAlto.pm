@@ -79,7 +79,7 @@ sub os {
 }
 
 sub layers {
-    return '01001110';
+    return '01001100';
 }
 
 # TODO:
