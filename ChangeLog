@@ -7,6 +7,7 @@ version 3.32 ()
   * Support undefined (noSuchInstance) values in Offline mode
   * Do not init table cache if Cache provided by usera
   * Avoid deep recusion when AUTOLOAD and carp collide
+  * Detect Cisco VG350s as L3 devices instead of APs
 
 version 3.31 (2016-01-22)
 

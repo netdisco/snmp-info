@@ -1608,6 +1608,9 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Aironet'
             if ( $desc =~ /Aironet/ and $desc =~ /\D(AP4800)\D/ );
 
+	# Override voice gateway device (VG350) showing up as Aironet
+        $objtype = 'SNMP::Info::Layer3::Cisco' if $desc =~ /VG350/;
+
         # Cat6k with older SUPs (hybrid CatOS/IOS?)
         $objtype = 'SNMP::Info::Layer3::C6500' if $desc =~ /(c6sup2|c6sup1)/;
 
