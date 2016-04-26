@@ -38,7 +38,7 @@ use Exporter;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PAECAPABILITIES/;
 
-$VERSION = '3.31';
+$VERSION = '3.32';
 
 %MIBS = (
     'CISCO-PORT-SECURITY-MIB' => 'ciscoPortSecurityMIB',

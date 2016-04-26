@@ -40,7 +40,7 @@ use SNMP::Info::Airespace;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.31';
+$VERSION = '3.32';
 
 %MIBS = (
     %SNMP::Info::MIBS,      %SNMP::Info::Bridge::MIBS,

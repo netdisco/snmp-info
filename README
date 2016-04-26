@@ -4,7 +4,7 @@ NAME
 
 VERSION
 
-    SNMP::Info - Version 3.31
+    SNMP::Info - Version 3.32
 
 AUTHOR
 
@@ -19,8 +19,10 @@ AUTHOR
 
 DEVICES SUPPORTED
 
-    See <http://netdisco.org/doc/DeviceMatrix.html> or DeviceMatrix.txt for
-    more details.
+    There are now generic classes for most types of device and so the
+    authors recommend loading SNMP::Info with AutoSpecify, and then
+    reporting to the mail list any missing functionality (such as neighbor
+    discovery tables).
 
 SYNOPSIS
 
@@ -1028,10 +1030,6 @@ USAGE
         If the device still can be connected to via SNMP::Info, then
         SNMP::Info is returned.
 
-        See <http://netdisco.org/doc/DeviceMatrix.html> or DeviceMatrix.txt
-        for more details about device support, or view "device_type()" in
-        Info.pm.
-
     $info->error(no_clear)
         Returns Error message if there is an error, or undef if there is
         not.
@@ -1862,6 +1860,7 @@ SNMP::INFO INTERNALS
                         '54000000'   => '54 Mbps',
                         '64000000'   => '64 Mbps',
                         '100000000'  => '100 Mbps',
+                        '200000000'  => '200 Mbps',
                         '149760000'  => 'ATM on OC-3',
                         '155000000'  => 'OC-3',
                         '155519000'  => 'OC-3',
@@ -1871,6 +1870,7 @@ SNMP::INFO INTERNALS
                         '622000000'  => 'OC-12',
                         '622080000'  => 'OC-12',
                         '1000000000' => '1.0 Gbps',
+                        '2000000000' => '2.0 Gbps',
                         '2488000000' => 'OC-48',
                      )
 

@@ -93,6 +93,7 @@ Info/Layer3/Netscreen.pm
 Info/Layer3/NetSNMP.pm
 Info/Layer3/Nexus.pm
 Info/Layer3/PacketFront.pm
+Info/Layer3/PaloAlto.pm
 Info/Layer3/Passport.pm
 Info/Layer3/Pf.pm
 Info/Layer3/Pica8.pm
@@ -101,6 +102,7 @@ Info/Layer3/Steelhead.pm
 Info/Layer3/Sun.pm
 Info/Layer3/Tasman.pm
 Info/Layer3/Timetra.pm
+Info/Layer3/VMware.pm
 Info/Layer7.pm
 Info/Layer7/APC.pm
 Info/Layer7/Neoteris.pm
