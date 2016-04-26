@@ -47,7 +47,9 @@ by Max Baker.
 
 =head1 DEVICES SUPPORTED
 
-See L<http://netdisco.org/doc/DeviceMatrix.html> or L<DeviceMatrix.txt> for more details.
+There are now generic classes for most types of device and so the authors
+recommend loading SNMP::Info with AutoSpecify, and then reporting to the mail
+list any missing functionality (such as neighbor discovery tables).
 
 =head1 SYNOPSIS
 
@@ -1462,9 +1464,6 @@ SNMP::Info::Layer3 subclasses.
 
 If the device still can be connected to via SNMP::Info, then 
 SNMP::Info is returned.  
-
-See L<http://netdisco.org/doc/DeviceMatrix.html> or L<DeviceMatrix.txt> for more details
-about device support, or view C<device_type()> in F<Info.pm>.
 
 =cut
 

@@ -10,6 +10,7 @@ version 3.32 ()
   * Support for propMultiplexor as ifType
   * Add device MAC to APC UPS
   * [#61] Report APC model for PDU products
+  * Removed DeviceMatrix from the distribution
 
   [BUG FIXES]
 
