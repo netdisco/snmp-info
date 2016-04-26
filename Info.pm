@@ -4681,7 +4681,7 @@ sub AUTOLOAD {
     # Typos in function calls in SNMP::Info subclasses turn into
     # AUTOLOAD requests for non-methods.  While this is deprecated,
     # we'll still get called, so report a less confusing error.
-    if ( ref($self) !~ /^SNMP::Info/ ) {
+    if ( ref($self) !~ /SNMP::Info/ ) {
 
         # croak reports one level too high.  die reports here.
         # I would really like to get the place that's likely to

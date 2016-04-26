@@ -19,6 +19,7 @@ version 3.32 ()
   * Detect Cisco VG350s as L3 devices instead of APs
   * fix for 'Use of inherited AUTOLOAD for non-method SNMP::Info::Layer2::HP::agg_ports_ifstack() is deprecated'
   * Workaround in IPv6.pm to deal with possibly incorrect IPV6-MIB implementations
+  * AUTOLOAD typo-catcher search for SNMP::Info no longer anchored
 
 version 3.31 (2016-01-22)
 
