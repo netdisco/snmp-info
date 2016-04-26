@@ -1244,9 +1244,9 @@ sub new {
     $new_obj->{store}     ||= {};
     $new_obj->{sess}      = $sess;
     $new_obj->{args}      = \%args;
-    $new_obj->{snmp_ver}  = $args{Version} || 2;
-    $new_obj->{snmp_comm} = $args{Community} || 'public';
-    $new_obj->{snmp_user} = $args{SecName} || 'initial';
+    $new_obj->{snmp_ver}  = $sess->{Version}   || $args{Version}   || 2;
+    $new_obj->{snmp_comm} = $sess->{Community} || $args{Community} || 'public';
+    $new_obj->{snmp_user} = $sess->{SecName}   || $args{SecName}   || 'initial';
 
     return $auto_specific ? $new_obj->specify() : $new_obj;
 }

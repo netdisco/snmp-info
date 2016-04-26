@@ -9,7 +9,7 @@ version 3.32 ()
   * Add VMware support
   * Support for propMultiplexor as ifType
   * Add device MAC to APC UPS
-  * Report APC model for PDU products (#61)
+  * [#61] Report APC model for PDU products
 
   [BUG FIXES]
 
@@ -19,7 +19,8 @@ version 3.32 ()
   * Detect Cisco VG350s as L3 devices instead of APs
   * fix for 'Use of inherited AUTOLOAD for non-method SNMP::Info::Layer2::HP::agg_ports_ifstack() is deprecated'
   * Workaround in IPv6.pm to deal with possibly incorrect IPV6-MIB implementations
-  * AUTOLOAD typo-catcher search for SNMP::Info no longer anchored
+  * [#71] AUTOLOAD typo-catcher search for SNMP::Info no longer anchored
+  * [#70] Respect version/comm/secname on passed Session obj
 
 version 3.31 (2016-01-22)
 
