@@ -2,12 +2,23 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 3.32 ()
 
+  [ENHANCEMENTS]
+
+  * Add 200 Mbps and 2.0 Gbps aliases to SPEED_MAP
+  * Add Palo Alto support
+  * Add VMware support
+  * Support for propMultiplexor as ifType
+  * Add device MAC to APC UPS
+  * Report APC model for PDU products (#61)
+
   [BUG FIXES]
 
   * Support undefined (noSuchInstance) values in Offline mode
-  * Do not init table cache if Cache provided by usera
+  * Do not init table cache if Cache provided by user
   * Avoid deep recusion when AUTOLOAD and carp collide
   * Detect Cisco VG350s as L3 devices instead of APs
+  * fix for 'Use of inherited AUTOLOAD for non-method SNMP::Info::Layer2::HP::agg_ports_ifstack() is deprecated'
+  * Workaround in IPv6.pm to deal with possibly incorrect IPV6-MIB implementations
 
 version 3.31 (2016-01-22)
 
