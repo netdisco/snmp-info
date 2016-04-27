@@ -1312,7 +1312,7 @@ sub update {
 =head2 Data is Cached
 
 Methods and subroutines requesting data from a device will only load the data
-once, and then return cached versions of that data. 
+once, and then return cached versions of that data.
 
 Run $info->load_METHOD() where method is something like 'i_name' to reload
 data from a method.
@@ -1320,7 +1320,7 @@ data from a method.
 Run $info->clear_cache() to clear the cache to allow reload of both globals
 and table methods.
 
-The cache can be retreved or set using the $info->cache() method. This works
+The cache can be retrieved or set using the $info->cache() method. This works
 together with the C<Offline> option.
 
 =head2 Object Scalar Methods

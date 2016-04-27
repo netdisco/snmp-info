@@ -981,7 +981,7 @@ USAGE
     Run $info->clear_cache() to clear the cache to allow reload of both
     globals and table methods.
 
-    The cache can be retreved or set using the $info->cache() method. This
+    The cache can be retrieved or set using the $info->cache() method. This
     works together with the "Offline" option.
 
   Object Scalar Methods
