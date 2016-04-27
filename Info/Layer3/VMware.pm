@@ -179,6 +179,12 @@ to a hash.
 
 =over
 
+=item C<agg_ports>
+
+Returns a HASH reference mapping from slave to master port for each member of
+a port bundle on the device. Keys are ifIndex of the slave ports, Values are
+ifIndex of the corresponding master ports.
+
 =back
 
 =head2 Table Methods imported from SNMP::Info::Layer3

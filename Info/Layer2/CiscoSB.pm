@@ -121,7 +121,7 @@ sub os_ver {
         }
     }
 }
-  
+
 # Grab e_model from Entity and tag on e_hwver
 sub model {
     my $ciscosb = shift;
@@ -162,14 +162,14 @@ Nic Bernstein (shamelessly stolen from Max Baker's Aironet code)
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $ciscosb = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $ciscosb->class();
@@ -215,6 +215,10 @@ These are methods that return scalar value from SNMP
 =item $ciscosb->vendor()
 
 Returns 'cisco'
+
+=item $ciscosb->os()
+
+Returns 'ros'
 
 =item $ciscosb->os_ver()
 

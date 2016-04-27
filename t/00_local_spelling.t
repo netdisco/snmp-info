@@ -277,6 +277,7 @@ retreved
 retrynosuch
 Robbert
 rom
+ros
 RouterOS
 rtt
 rttmon
