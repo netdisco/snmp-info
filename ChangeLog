@@ -1,5 +1,10 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+  [ENHANCEMENTS]
+
+  * Move author-only tests to xt directory so they aren't run on installation
+    by users
+
   [BUG FIXES]
 
   * Correct device serial number reporting for Cisco Nexus 5k switches with
