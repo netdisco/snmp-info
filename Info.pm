@@ -878,6 +878,12 @@ Subclass for PacketFront DRG series CPE.
 
 See documentation in L<SNMP::Info::Layer3::PacketFront> for details.
 
+=item SNMP::Info::Layer3::PaloAlto
+
+Subclass for Palo Alto firewalls.
+
+See documentation in L<SNMP::Info::Layer3::PaloAlto> for details.
+
 =item SNMP::Info::Layer3::Passport
 
 Subclass for Avaya/Nortel Ethernet Routing Switch/Passport 8000 series,
@@ -924,6 +930,12 @@ See documentation in L<SNMP::Info::Layer3::Tasman> for details.
 Alcatel-Lucent SR Class.
 
 See documentation in L<SNMP::Info::Layer3::Timetra> for details.
+
+=item SNMP::Info::Layer3::VMware
+
+Subclass for VMware ESXi hosts.
+
+See documentation in L<SNMP::Info::Layer3::VMware> for details.
 
 =back
 
