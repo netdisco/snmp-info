@@ -1,5 +1,7 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.33 (2016-04-27)
+
   [ENHANCEMENTS]
 
   * Move author-only tests to xt directory so they aren't run on installation
