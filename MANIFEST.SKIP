@@ -21,7 +21,7 @@ MYMETA.*
 ^\.#
 
 # Private Regression Tests
-\d+_local_
+^xt/
 \.?perl\w+\.?rc$
 
 # Komodo project file
