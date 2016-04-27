@@ -80,18 +80,49 @@ sub os_ver {
 	return $descr;
 }
 
+sub _get_snmpid_chassis {
+    my $self = shift;
+
+    my $snmpid_chassis;
+    my $position;
+
+    my $entity_entry = $self->e_class;
+    for ( keys %$entity_entry ) {
+        # filter by class, chassis is 3
+        if ( $entity_entry->{$_} == 3 ) {
+	    print " SNMP::Info::Layer3::Nexus::_get_snmpid_chassis() - ",
+                "chassis with id $_ found, position ",
+                $self->snmpinfo->e_pos->{$_}
+	        if $self->debug();
+
+            # and if it's the topmost one
+            if ( !defined $position
+                || $self->e_pos->{$_} < $position ) {
+                $snmpid_chassis = $_;
+                $position       = $self->e_pos->{$_};
+            }
+        }
+    }
+    if ( defined $snmpid_chassis && defined $position ) {
+        print " SNMP::Info::Layer3::Nexus::_get_snmpid_chassis() - ",
+            "chassis with id $snmpid_chassis, position $position selected";
+    }
+    else {
+        print " SNMP::Info::Layer3::Nexus::_get_snmpid_chassis() - ",
+            "no chassis found";
+    }
+
+    return $snmpid_chassis;
+}
+
 sub serial {
 	my $nexus = shift;
 
-	my $e_parent = $nexus->e_parent();
+        my $snmpid_chassis = $nexus->_get_snmpid_chassis;
 
-	foreach my $iid ( keys %$e_parent ) {
-		my $parent = $e_parent->{$iid};
-		if ( $parent eq '0' ) {
-			my $serial = $nexus->e_serial($iid);
-			return $serial->{$iid};
-		}
-	}
+        return $nexus->e_serial($snmpid_chassis)->{$snmpid_chassis}
+            if defined $snmpid_chassis;
+
 	return;
 }
 
