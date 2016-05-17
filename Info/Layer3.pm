@@ -201,7 +201,7 @@ sub serial {
         my $parent = $e_parent->{$iid};
         if ( $parent eq '0' ) {
             my $serial = $l3->e_serial($iid);
-            if ( $serial ) {
+            if ( $serial && $serial->{$iid} ) {
                 return $serial->{$iid};
             }
             else {

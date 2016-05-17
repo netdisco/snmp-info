@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.34 ()
+
+  [BUG FIXES]
+
+  * Serial number on Nexus 9372 (genereic check for ID before using) (M. Caines)
+
 version 3.33 (2016-04-27)
 
   [ENHANCEMENTS]
