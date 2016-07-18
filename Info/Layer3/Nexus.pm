@@ -81,48 +81,38 @@ sub os_ver {
 }
 
 sub _get_snmpid_chassis {
-    my $self = shift;
+	my $self = shift;
+	my $funcname = (caller(0))[3]; # Name of this sub, including package, used for debug logging
 
-    my $snmpid_chassis;
-    my $position;
+	my $snmpid_chassis;
+	my $position;
 
-    my $entity_entry = $self->e_class;
-    for ( keys %$entity_entry ) {
-        # filter by class, chassis is 3
-        if ( $entity_entry->{$_} == 3 ) {
-	    print " SNMP::Info::Layer3::Nexus::_get_snmpid_chassis() - ",
-                "chassis with id $_ found, position ",
-                $self->snmpinfo->e_pos->{$_}
-	        if $self->debug();
+	my $entity_entry = $self->e_class;
+	for ( keys %$entity_entry ) {
+		# filter by class (chassis is 3, but with proper MIBs loaded we should get the translated textual value)
+		if ( ($entity_entry->{$_} eq 'chassis') or ($entity_entry->{$_} eq '3') ) {
+		printf("%s - chassis with id %s found, position %s\n", $funcname, $_, $self->snmpinfo->e_pos->{$_}) if $self->debug();
 
-            # and if it's the topmost one
-            if ( !defined $position
-                || $self->e_pos->{$_} < $position ) {
-                $snmpid_chassis = $_;
-                $position       = $self->e_pos->{$_};
-            }
-        }
-    }
-    if ( defined $snmpid_chassis && defined $position ) {
-        print " SNMP::Info::Layer3::Nexus::_get_snmpid_chassis() - ",
-            "chassis with id $snmpid_chassis, position $position selected";
-    }
-    else {
-        print " SNMP::Info::Layer3::Nexus::_get_snmpid_chassis() - ",
-            "no chassis found";
-    }
+			# and if it's the topmost one
+			if ( !defined $position || $self->e_pos->{$_} < $position ) {
+				$snmpid_chassis = $_;
+				$position = $self->e_pos->{$_};
+			}
+		}
+	}
+	if ( defined $snmpid_chassis && defined $position ) {
+		printf(" %s - chassis with id %s, position %s selected\n", $funcname, $snmpid_chassis, $position);
+	} else {
+		printf(" %s - no chassis found\n", $funcname);
+	}
 
-    return $snmpid_chassis;
+	return $snmpid_chassis;
 }
 
 sub serial {
 	my $nexus = shift;
-
         my $snmpid_chassis = $nexus->_get_snmpid_chassis;
-
-        return $nexus->e_serial($snmpid_chassis)->{$snmpid_chassis}
-            if defined $snmpid_chassis;
-
+        return $nexus->e_serial($snmpid_chassis)->{$snmpid_chassis} if defined $snmpid_chassis;
 	return;
 }
 
@@ -133,9 +123,7 @@ sub model {
 	my $id    = $nexus->id();
 
 	unless ( defined $id ) {
-		print
-			" SNMP::Info::Layer3::Nexus::model() - Device does not support sysObjectID\n"
-			if $nexus->debug();
+		print " SNMP::Info::Layer3::Nexus::model() - Device does not support sysObjectID\n" if $nexus->debug();
 		return;
 	}
 
