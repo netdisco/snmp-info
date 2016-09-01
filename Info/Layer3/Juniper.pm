@@ -109,7 +109,7 @@ sub os_ver {
     my $descr        = $juniper->description() || '';
     my $lldp_descr   = $juniper->lldp_sysdesc() || '';
 
-    if ( $descr =~ m/kernel JUNOS (\S+)/ ) {
+    if ( $descr =~ m/kernel JUNOS ([^,\s]+)/ ) {
         return $1;
     }
     elsif ( $lldp_descr =~ m/version\s(\S+)\s/ ) {
