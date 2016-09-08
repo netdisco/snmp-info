@@ -48,21 +48,19 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '3.33';
 
-%MIBS = ( %SNMP::Info::Layer3::MIBS, %SNMP::Info::Entity::MIBS, );
+%MIBS = ( %SNMP::Info::Layer7::MIBS, %SNMP::Info::Entity::MIBS, );
 
 %GLOBALS
-    = ( %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::Entity::GLOBALS, );
+    = ( %SNMP::Info::Layer7::GLOBALS, %SNMP::Info::Entity::GLOBALS, );
 
 %FUNCS = (
     %SNMP::Info::Layer7::FUNCS,
     %SNMP::Info::Entity::FUNCS,
-    'mac_table' => 'ifPhysAddress',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer7::MUNGE,
     %SNMP::Info::Entity::MUNGE,
-    'mac_table' => \&SNMP::Info::munge_mac,
 );
 
 my ($serial, $descr, $model);
@@ -107,10 +105,15 @@ sub model {
     return $descr;
 }
 
+sub  productname {
+    my $self = shift;
+    return $self->model;
+}
+
 sub b_mac {
     my ( $self ) = shift;
     
-    foreach my $mac ( values %{$self->mac_table()} ){
+    foreach my $mac ( values %{$self->i_mac()} ){
 
         next unless defined $mac;
         next unless $mac =~ m/^e4:d3:f1/;
@@ -151,15 +154,15 @@ Moe Kraus
 
 =head1 DESCRIPTION
 
-Subclass for Cisco ASA Devices
+Subclass for Cisco IPS Module 
 
 =head2 Inherited Classes
 
 =over
 
-=item SNMP::Info::CiscoStats
+=item SNMP::Info::Entity
 
-=item SNMP::Info::Layer3
+=item SNMP::Info::Layer7
 
 =back
 
@@ -169,11 +172,10 @@ Subclass for Cisco ASA Devices
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::CiscoStats/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
+See classes listed above for their required MIBs.
 
 =back
+
 
 =head1 GLOBALS
 
@@ -181,38 +183,29 @@ These are methods that return scalar value from SNMP
 
 =over
 
-=item $asa->b_mac()
+=item $self->b_mac()
 
-Returns base mac.
-Overrides base mac function in L<SNMP::Info::Layer3>.
+Returns base mac. Matches only on e4:d3:f1
 
-=item $asa->i_description()
+=item $self->serial()
 
-Overrides base interface description function in L<SNMP::Info> to return the
-configured interface name instead of "Adaptive Security Appliance
-'$configured interface name' interface".
+Fetches serial from Module
 
 =back
 
-=head2 Globals imported from SNMP::Info::CiscoStats
 
-See documentation in L<SNMP::Info::CiscoStats/"GLOBALS"> for details.
+=head2 Global Methods imported from SNMP::Info::Layer7
 
-=head2 Global Methods imported from SNMP::Info::Layer3
-
-See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::Layer7/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a
 reference to a hash.
 
-=head2 Table Methods imported from SNMP::Info::CiscoStats
 
-See documentation in L<SNMP::Info::CiscoStats/"TABLE METHODS"> for details.
+=head2 Table Methods imported from SNMP::Info::Layer7
 
-=head2 Table Methods imported from SNMP::Info::Layer3
-
-See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::Layer7/"TABLE METHODS"> for details.
 
 =cut
