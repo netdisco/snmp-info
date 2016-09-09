@@ -208,7 +208,7 @@ sub i_vlan {
 
     foreach my $bport ( keys %$i_pvid ) {
         my $q_vlan  = $i_pvid->{$bport};
-	my $vlan    = $v_index->{$q_vlan};
+	my $vlan    = $v_index->{$q_vlan} || $q_vlan;
         my $ifindex = $index->{$bport};
         unless ( defined $ifindex ) {
             print "  Port $bport has no bp_index mapping. Skipping.\n"
