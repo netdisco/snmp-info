@@ -262,6 +262,7 @@ sub qb_fw_vlan {
     my $qb_fw_vlan = $juniper->SUPER::qb_fw_vlan();
     my $jnxL2aldVlanFdbId = $juniper->jnxL2aldVlanFdbId();
     my $jnxL2aldVlanTag = $juniper->jnxL2aldVlanTag();
+    return $qb_fw_vlan unless $jnxL2aldVlanFdbId && $jnxL2aldVlanTag;
     my %fdb_id_to_tag = reverse %$jnxL2aldVlanFdbId;
 
     foreach my $key (keys %$qb_fw_vlan) {
