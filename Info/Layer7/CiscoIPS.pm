@@ -125,7 +125,11 @@ sub b_mac {
 
 sub e_index {
     my $self = shift();
-    return $self->e_id;
+    my %index;
+    foreach my $id ( keys %{$self->e_id} ){
+        %index->{$id} = $id;
+    }
+    return \%index;
 }
 
 1;
