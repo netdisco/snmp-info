@@ -256,6 +256,22 @@ sub _vlan_hoa {
     return $vlan_hoa;
 }
 
+sub qb_fw_vlan {
+    my $juniper = shift;
+
+    my $qb_fw_vlan = $juniper->SUPER::qb_fw_vlan();
+    my $jnxL2aldVlanFdbId = $juniper->jnxL2aldVlanFdbId();
+    my $jnxL2aldVlanTag = $juniper->jnxL2aldVlanTag();
+    my %fdb_id_to_tag = reverse %$jnxL2aldVlanFdbId;
+
+    foreach my $key (keys %$qb_fw_vlan) {
+        my $v = $qb_fw_vlan->{$key};
+        $qb_fw_vlan->{$key} = $jnxL2aldVlanTag->{$fdb_id_to_tag{$v}};
+    }
+
+    return $qb_fw_vlan;
+}
+
 # Pseudo ENTITY-MIB methods
 
 # This class supports both virtual chassis (stackable) and physical chassis
