@@ -123,7 +123,10 @@ sub b_mac {
     return '';
 }
 
-
+sub e_index {
+    my $self = shift();
+    return $self->e_id;
+}
 
 1;
 __END__
