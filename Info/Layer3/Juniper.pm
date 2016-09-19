@@ -49,6 +49,7 @@ $VERSION = '3.33';
     'JUNIPER-MIB'                 => 'jnxBoxAnatomy',
     'JUNIPER-VIRTUALCHASSIS-MIB'  => 'jnxVirtualChassisMemberTable',
     'JUNIPER-VLAN-MIB'            => 'jnxVlanMIBObjects',
+    'JUNIPER-L2ALD-MIB'           => 'jnxL2aldVlanFdbId',
 );
 
 %GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, 
@@ -73,6 +74,9 @@ $VERSION = '3.33';
            'e_contents_type'   => 'jnxContentsType',
            'e_containers_type' => 'jnxContainersType',
            'e_hwver'           => 'jnxContentsRevision',
+
+           'v_fdb_id'          => 'jnxL2aldVlanFdbId',
+           'v_vlan_tag'        => 'jnxL2aldVlanTag',
 );
 
 %MUNGE = ( %SNMP::Info::Layer3::MUNGE, 
@@ -256,18 +260,33 @@ sub _vlan_hoa {
     return $vlan_hoa;
 }
 
+sub i_vlan_membership {
+    my $juniper  = shift;
+    my $partial = shift;
+
+    my $res;
+
+    my $dot1qVlanStaticEgressPorts = $juniper->dot1qVlanCurrentEgressPorts($partial) || $juniper->dot1qVlanStaticEgressPorts($partial);
+    my $bp_index = $juniper->bp_index();
+    foreach my $vlan (keys %$dot1qVlanStaticEgressPorts) {
+        my @bp_indexes = split /,/, $dot1qVlanStaticEgressPorts->{$vlan};
+        push @{$res->{$bp_index->{$_}}}, $vlan for @bp_indexes;
+    }
+    return $res;
+}
+
 sub qb_fw_vlan {
     my $juniper = shift;
 
     my $qb_fw_vlan = $juniper->SUPER::qb_fw_vlan();
-    my $jnxL2aldVlanFdbId = $juniper->jnxL2aldVlanFdbId();
-    my $jnxL2aldVlanTag = $juniper->jnxL2aldVlanTag();
-    return $qb_fw_vlan unless $jnxL2aldVlanFdbId && $jnxL2aldVlanTag;
-    my %fdb_id_to_tag = reverse %$jnxL2aldVlanFdbId;
+    my $v_fdb_id   = $juniper->v_fdb_id();
+    my $v_vlan_tag = $juniper->v_vlan_tag();
+    return $qb_fw_vlan unless $v_fdb_id && $v_vlan_tag;
+    my %fdb_id_to_tag = reverse %$v_fdb_id;
 
     foreach my $key (keys %$qb_fw_vlan) {
         my $v = $qb_fw_vlan->{$key};
-        $qb_fw_vlan->{$key} = $jnxL2aldVlanTag->{$fdb_id_to_tag{$v}};
+        $qb_fw_vlan->{$key} = $v_vlan_tag->{$fdb_id_to_tag{$v}};
     }
 
     return $qb_fw_vlan;
