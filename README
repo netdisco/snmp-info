@@ -806,6 +806,11 @@ SUBCLASSES
             SNMP Interface to APC UPS devices
 
             See documentation in SNMP::Info::Layer7::APC for details.
+            
+        SNMP::Info::Layer7::CiscoIPS
+            SNMP Interface to Cisco IPS Module on ASA
+            
+            See documentation in SNMP::Info::Layer7::CiscoIPS for details.
 
         SNMP::Info::Layer7::Netscaler
             SNMP Interface to Citrix Netscaler appliances

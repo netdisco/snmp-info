@@ -85,6 +85,7 @@ sub _fetch_info {
 sub layers {
     return '01001000';
 }
+
 sub serial {
     my $self = shift;
     _fetch_info($self) unless defined $serial;
@@ -105,7 +106,7 @@ sub model {
     return $descr;
 }
 
-sub  productname {
+sub productname {
     my $self = shift;
     return $self->model;
 }
@@ -137,7 +138,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer7::CiscoASA - Cisco Adaptive Security Appliance
+SNMP::Info::Layer7::CiscoIPS - Cisco Adaptive Security Appliance IPS module
 
 =head1 AUTHOR
 
@@ -146,11 +147,11 @@ Moe Kraus
 =head1 SYNOPSIS
 
  # Let SNMP::Info determine the correct subclass for you.
- my $cisco = new SNMP::Info(
+ my $info = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
                         # These arguments are passed directly to SNMP::Session
-                        DestHost    => 'myswitch',
+                        DestHost    => 'myIPS',
                         Community   => 'public',
                         Version     => 2
                         )
@@ -190,29 +191,59 @@ These are methods that return scalar value from SNMP
 
 =over
 
-=item $self->b_mac()
+=item $info->b_mac()
 
 Returns base mac. Matches only on e4:d3:f1
 
-=item $self->serial()
+=item $info->serial()
 
 Fetches serial from Module
 
-=back
+=item $info->e_index()
 
+overrides Entity->e_index() since entity table the IPS delivering is buggy.
+
+=item $info->layers
+
+Returns '01001000'
+
+=item $info->model
+
+Returns model name
+
+=item $info->productname
+
+Retruns the product name
+
+=item $info->serial
+
+Returns the serial number
+
+=item $info->sysdescr
+
+Returns the system description
+
+=back
 
 =head2 Global Methods imported from SNMP::Info::Layer7
 
 See documentation in L<SNMP::Info::Layer7/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::Entity
+
+See documentation in L<SNMP::Info::Entitiy/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a
 reference to a hash.
 
-
 =head2 Table Methods imported from SNMP::Info::Layer7
 
 See documentation in L<SNMP::Info::Layer7/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::Entity
+
+See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 
 =cut
