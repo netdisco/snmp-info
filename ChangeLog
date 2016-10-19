@@ -2,6 +2,10 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 3.34 ()
 
+  [ENHANCEMENTS]
+
+  * Support Cisco IPS Modules homed on the Cisco ASA (M. Kraus)
+
   [BUG FIXES]
 
   * Serial number on Nexus 9372 (genereic check for ID before using) (M. Caines)
