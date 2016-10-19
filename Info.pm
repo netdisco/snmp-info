@@ -1912,6 +1912,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::NWSS2300'    
             if (
             $desc =~ /^(Nortel\s)??Wireless\sSecurity\sSwitch\s23[568][012]\b/);
+            
+        # Cisco IPS, older version which doesn't report layer 3 functionality
+        $objtype = 'SNMP::Info::Layer7::CiscoIPS'
+            if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.9\.1\.1545/i );
 
         # Generic device classification based upon sysObjectID
         if ( defined($id) and $objtype eq 'SNMP::Info') {
