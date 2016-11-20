@@ -43,7 +43,7 @@ use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.33';
+$VERSION = '3.34';
 
 %MIBS = (
   %SNMP::Info::IEEE802dot3ad::MIBS,
