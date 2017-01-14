@@ -24,7 +24,7 @@ use vars
     qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '3.33';
+$VERSION = '3.34';
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.33
+SNMP::Info - Version 3.34
 
 =head1 AUTHOR
 
@@ -1912,6 +1912,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::NWSS2300'    
             if (
             $desc =~ /^(Nortel\s)??Wireless\sSecurity\sSwitch\s23[568][012]\b/);
+            
+        # Cisco IPS, older version which doesn't report layer 3 functionality
+        $objtype = 'SNMP::Info::Layer7::CiscoIPS'
+            if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.9\.1\.1545/i );
 
         # Generic device classification based upon sysObjectID
         if ( defined($id) and $objtype eq 'SNMP::Info') {

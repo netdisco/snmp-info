@@ -105,6 +105,7 @@ Info/Layer3/Timetra.pm
 Info/Layer3/VMware.pm
 Info/Layer7.pm
 Info/Layer7/APC.pm
+Info/Layer7/CiscoIPS.pm
 Info/Layer7/Neoteris.pm
 Info/Layer7/Netscaler.pm
 Info/LLDP.pm
@@ -115,7 +116,7 @@ Info/PowerEthernet.pm
 Info/RapidCity.pm
 Info/SONMP.pm
 Makefile.PL
-MANIFEST			This list of files
+MANIFEST
 README
 t/00-load.t
 t/docmunge
