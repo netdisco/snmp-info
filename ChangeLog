@@ -5,6 +5,7 @@ version 3.35 ()
   [BUG FIXES]
 
   * #180 support CiscoConfig on Nexus (sf.net:scratchfury)
+  * #50 remove interface specific part from vrf interfaces on IOS (W. Vandersmissen)
 
 version 3.34 (2016-11-20)
 
