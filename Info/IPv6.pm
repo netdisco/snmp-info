@@ -313,7 +313,9 @@ sub ipv6_addr_prefix {
     foreach my $row (keys %$ipv6_addr_prefix){
         if ($row =~ /^(\d+)\.[\d\.]+$/) {
             my $type = $1;
-            if ($type == 2) { # IPv6
+	    if (($type == 2) or ($type == 4)) { # IPv6
+		# Remove interface specific part from vrf interfaces
+		if ($row =~ /^((\d+\.){17}\d+)/) { $row = $1 }
 		# Remove the OID part from the value
 		my $val = $ipv6_addr_prefix->{$row};
 		if ( $val =~ /^.+?((?:\d+\.){19}\d+)$/ ){
