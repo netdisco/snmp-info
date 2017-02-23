@@ -1,0 +1,50 @@
+sudo: required
+language: perl
+os:
+  - linux
+perl:
+#   - 'blead'
+   - '5.22-shrplib'
+#   - '5.22'
+#   - '5.20'
+#   - '5.18'
+#   - '5.16'
+#   - '5.14'
+#   - '5.12'
+#   - '5.10'
+#   - '5.8'
+matrix:
+#   allow_failures:
+#      - perl: 'blead'
+#      - perl: '5.8'
+   fast_finish: true
+#   include:
+#      - perl: '5.20'
+#        env: COVERAGE=1
+before_install:
+  - git config --global user.name "TravisCI"
+  - git config --global user.email $HOSTNAME":not-for-mail@travis-ci.org"
+install:
+# Net-SNMP needs to built from scratch as libsnmp-dev links against system perl
+  - wget -q https://downloads.sourceforge.net/project/net-snmp/net-snmp/5.7.3/net-snmp-5.7.3.tar.gz
+  - tar zxvf net-snmp-5.7.3.tar.gz
+  - cd net-snmp-5.7.3
+  - ./configure --with-default-snmp-version="3" --with-sys-contact="@@no.where" --with-sys-location="Unknown" --with-logfile="/var/log/snmpd.log" --with-persistent-directory="/var/net-snmp"
+  - make
+  - sudo make install
+  - sudo chown -R travis:travis .
+  - sudo chown -R travis:travis /home/travis/perl5
+  - cd perl
+  - cpanm --verbose --notest .
+  - cpanm --notest Crypt::DES   Crypt::Rijndael  Digest::HMAC  Digest::SHA1  Socket6
+  - cpanm --quiet --notest --skip-satisfied Dist::Zilla
+  - cd ../..
+  - wget -q https://downloads.sourceforge.net/project/netdisco/netdisco-mibs/latest-snapshot/netdisco-mibs-snapshot.tar.gz
+  - mkdir -p ~/.snmp/mibs
+  - tar xfz netdisco-mibs-snapshot.tar.gz -C ~/.snmp/mibs/ --strip 1
+  - echo "mibs +ALL" > ~/.snmp/snmp.conf
+  - "dzil authordeps          --missing | grep -vP '[^\\w:]' | xargs -n 5 -P 10 cpanm --quiet --notest"
+  - "dzil listdeps   --author --missing | grep -vP '[^\\w:]' | cpanm --quiet"
+script:
+  - dzil smoke --release --author
+
