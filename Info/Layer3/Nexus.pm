@@ -91,7 +91,7 @@ sub _get_snmpid_chassis {
 	for ( keys %$entity_entry ) {
 		# filter by class (chassis is 3, but with proper MIBs loaded we should get the translated textual value)
 		if ( ($entity_entry->{$_} eq 'chassis') or ($entity_entry->{$_} eq '3') ) {
-		printf("%s - chassis with id %s found, position %s\n", $funcname, $_, $self->snmpinfo->e_pos->{$_}) if $self->debug();
+		printf("%s - chassis with id %s found, position %s\n", $funcname, $_, $self->e_pos->{$_}) if $self->debug();
 
 			# and if it's the topmost one
 			if ( !defined $position || $self->e_pos->{$_} < $position ) {
