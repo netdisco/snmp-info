@@ -33,10 +33,9 @@ package SNMP::Info::Layer3::IBMGbTor;
 use strict;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer3::IBMGbTor::ISA
-    = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
+    = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::IBMGbTor::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
@@ -45,129 +44,23 @@ $VERSION = '3.34';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-
-    # LLDP MIBs not loaded to prevent possible unqualified namespace conflict
-    # with IBM definitions
     'IBM-GbTOR-10G-L2L3-MIB' => 'lldpInfoRemoteDevicesLocalPort',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'temp' => 'hwTempSensors',
     'fan'  => 'hwFanSpeed',
-
-    # Can't find the equivalent in IBM-GbTOR-10G-L2L3-MIB
-    # use a different strategy for lldp_sys_cap in hasLLDP()
-    #'lldp_sysname' => 'lldpLocSysName',
-    #'lldp_sysdesc' => 'lldpLocSysDesc',
-    #'lldp_sys_cap' => 'lldpLocSysCapEnabled',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 
     # IBM-GbTOR-10G-L2L3-MIB::portInfoTable
     'sw_duplex' => 'portInfoMode',
-
-    # Can't find the equivalent in IBM-GbTOR-10G-L2L3-MIB
-    # not currently used in LLDP class
-    #'lldp_lman_addr' => 'lldpLocManAddrIfId',
-
-    # IBM-GbTOR-10G-L2L3-MIB::lldpInfoPortTable
-    'lldp_port_status' => 'lldpInfoPortAdminStatus',
-
-    # IBM-GbTOR-10G-L2L3-MIB::lldpInfoRemoteDevicesTable
-    'lldp_rem_id_type'  => 'lldpInfoRemoteDevicesChassisSubtype',
-    'lldp_rem_id'       => 'lldpInfoRemoteDevicesSystemName',
-    'lldp_rem_pid_type' => 'lldpInfoRemoteDevicesPortSubtype',
-    'lldp_rem_pid'      => 'lldpInfoRemoteDevicesPortId',
-    'lldp_rem_desc'     => 'lldpInfoRemoteDevicesPortDescription',
-    'lldp_rem_sysname'  => 'lldpInfoRemoteDevicesSystemName',
-    'lldp_rem_sysdesc'  => 'lldpInfoRemoteDevicesSystemDescription',
-    'lldp_rem_sys_cap'  => 'lldpInfoRemoteDevicesSystemCapEnabled',
-
-    # IBM-GbTOR-10G-L2L3-MIB::lldpInfoRemoteDevicesManAddrTable
-    'lldp_rman_type' => 'lldpInfoRemoteDevicesManAddrSubtype',
-    'lldp_rman_addr' => 'lldpInfoRemoteDevicesManAddr',
 );
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, %SNMP::Info::LLDP::MUNGE, );
-
-sub hasLLDP {
-    my $ibm = shift;
-
-    # We may be have LLDP, but nothing in lldpRemoteSystemsData Tables
-    # Look to see if LLDP Rx enabled on any port
-    my $lldp_cap = $ibm->lldp_port_status();
-
-    foreach my $if ( keys %$lldp_cap ) {
-        if ( $lldp_cap->{$if} =~ /enabledRx/i ) {
-            return 1;
-        }
-    }
-    return;
-}
-
-sub lldp_ip {
-    my $ibm     = shift;
-    my $partial = shift;
-
-    my $rman_type = $ibm->lldp_rman_type($partial) || {};
-    my $rman_addr = $ibm->lldp_rman_addr($partial) || {};
-
-    my %lldp_ip;
-    foreach my $key ( keys %$rman_addr ) {
-        my $type = $rman_type->{$key};
-        next unless defined $type;
-        next unless $type eq 'ipV4';
-        if ( $key =~ /^(\d+)\./ ) {
-            $lldp_ip{$1} = $rman_addr->{$key};
-        }
-    }
-    return \%lldp_ip;
-}
-
-sub lldp_if {
-    my $lldp    = shift;
-    my $partial = shift;
-
-    my $lldp_desc = $lldp->lldpInfoRemoteDevicesLocalPort($partial) || {};
-    my $i_descr   = $lldp->i_description()                          || {};
-    my $i_alias   = $lldp->i_alias()                                || {};
-    my %r_i_descr = reverse %$i_descr;
-    my %r_i_alias = reverse %$i_alias;
-
-    my %lldp_if;
-    foreach my $key ( keys %$lldp_desc ) {
-
-    # Cross reference lldpLocPortDesc with ifDescr and ifAlias to get ifIndex,
-    # prefer ifAlias over ifDescr since MIB says 'alias'.
-        my $desc = $lldp_desc->{$key};
-        next unless $desc;
-        my $port = $desc;
-
-    # If cross reference is successful use it, otherwise stick with
-    # lldpRemLocalPortNum
-        if ( exists $r_i_alias{$desc} ) {
-            $port = $r_i_alias{$desc};
-        }
-        elsif ( exists $r_i_descr{$desc} ) {
-            $port = $r_i_descr{$desc};
-        }
-
-        $lldp_if{$key} = $port;
-    }
-    return \%lldp_if;
-}
-
-sub lldp_platform {
-    my $ibm = shift;
-    my $partial = shift;
-
-    return $ibm->lldpInfoRemoteDevicesSystemDescription($partial);
-}
+%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
 
 sub i_ignore {
     my $ibm     = shift;
@@ -278,8 +171,6 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::Layer3;
 
-=item SNMP::Info::LLDP;
-
 =back
 
 =head2 Required MIBs
@@ -329,21 +220,6 @@ Returns the software version
 
 =back
 
-=head2 Overrides
-
-=over
-
-=item $ibm->hasLLDP()
-
-Is LLDP is active in this device?  
-
-Note:  LLDP may be active, but nothing in C<lldpRemoteSystemsData> Tables so
-the device would not return any useful topology information.
-
-Checks to see if at least one interface is enabled to receive LLDP packets.
-
-=back
-
 =head2 Global Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
@@ -377,31 +253,10 @@ Returns reference to hash of interface link duplex status.
 
 (C<portInfoMode>)
 
-=item $ibm->lldp_if()
-
-Returns the mapping to the SNMP Interface Table. Tries to cross reference 
-(C<lldpInfoRemoteDevicesLocalPort>) with (C<ifDescr>) and (C<ifAlias>)
-to get (C<ifIndex>).
-
-=item $ibm->lldp_ip()
-
-Returns remote IPv4 address.  Returns for all other address types, use
-lldp_addr if you want any return address type.
-
-=item $ibm->lldp_platform()
-
-Returns remote device system description.
-
-(C<lldpInfoRemoteDevicesSystemDescription>)
-
 =back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut
