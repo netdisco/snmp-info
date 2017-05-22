@@ -20,13 +20,14 @@ $VERSION = '3.34';
     'SWPRIMGMT-DES3200-MIB' => 'dlink-des3200SeriesProd',
     'SWPRIMGMT-DES30XXP-MIB' => 'dlink-des30xxproductProd',
     'SWPRIMGMT-DES1228ME-MIB' => 'dlink-des1228MEproductProd',
+    'SWDES3528-52PRIMGMT-MIB' => 'dlink-Des3500Series', 
     'DES-1210-28-AX' => 'des-1210-28ax',
     'DES-1210-10MEbx' => 'des-1210-10mebx',
     'DES-1210-26MEbx' => 'des-1210-26mebx',
     'DES-1210-52-BX' => 'des-1210-52bx',
     'DES-1210-52-CX' => 'des-1210-52-cx',
     'DGS-1210-24-AX' => 'dgs-1210-24ax',
-    'SWDES3528-52PRIMGMT-MIB' => 'dlink-Des3500Series', 
+
 );
 
 %GLOBALS = (
