@@ -66,7 +66,7 @@ sub serial {
 	#Due to the zoo of MIB from DLink by 1210 series
 	$serial = $dlink->session()->get($id.'.1.30.0');
     } else {
-	$fw = $dlink->dlink_fw();
+	$serial = $dlink->dlink_serial_no();
     }
 
     return $serial if ( defined $serial and $serial !~ /^\s*$/ and $serial !~ 'NOSUCHOBJECT' );
