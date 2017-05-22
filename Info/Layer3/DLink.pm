@@ -54,6 +54,7 @@ sub model {
     if (defined $model && $model !~ /dlink-products/) {
 	return $model;
     } else {
+    	#If don't have a device MIB
 	return $dlink->description();
     }
 }
