@@ -51,8 +51,13 @@ sub model {
     my $id = $dlink->id();
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
-    return $model;
+    if (defined $model && $model !~ /dlink-products/) {
+	return $model;
+    } else {
+	return $dlink->description();
+    }
 }
+
 
 sub vendor {
     return 'dlink';
