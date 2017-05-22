@@ -62,7 +62,7 @@ sub serial {
     my $model = $dlink->model();
     my $id = $dlink->id();
     my $serial;
-    if ($model =~ /d(?:e|g)s-1210-(?:a|b|c)*\d\d-*(me)*(?:a|b|c)*x/) {
+    if ($model =~ /1210/) {
 	#Due to the zoo of MIB from DLink by 1210 series
 	$serial = $dlink->session()->get($id.'.1.30.0');
     } else {
