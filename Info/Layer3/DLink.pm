@@ -117,10 +117,10 @@ sub stp_i_root_port {
 	#Due to the zoo of MIB from DLink by 1210 series
 	$stp_i_root_port->{0} = $dlink->session()->get($id.'.6.1.13.0');
     } else {
-	$stp_i_root_port = $dlink->SUPER::stp_i_root_port();
+	$stp_i_root_port = $dlink->dlink_stp_i_root_port();
     }
     return $stp_i_root_port if ( defined $stp_i_root_port->{0} and $stp_i_root_port->{0} !~ /^\s*$/ and $stp_i_root_port->{0} !~ 'NOSUCHOBJECT');
-    return $dlink->dlink_stp_i_root_port();
+    return $dlink->SUPER::stp_i_root_port();
 }
 
 1;
