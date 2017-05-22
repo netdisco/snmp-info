@@ -65,7 +65,10 @@ sub serial {
     if ($model =~ /d(?:e|g)s-1210-(?:a|b|c)*\d\d-*(me)*(?:a|b|c)*x/) {
 	#Due to the zoo of MIB from DLink by 1210 series
 	$serial = $dlink->session()->get($id.'.1.30.0');
+    } else {
+	$fw = $dlink->dlink_fw();
     }
+
     return $serial if ( defined $serial and $serial !~ /^\s*$/ and $serial !~ 'NOSUCHOBJECT' );
     return $dlink->SUPER::serial();
 }
