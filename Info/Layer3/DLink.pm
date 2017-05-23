@@ -112,7 +112,7 @@ sub stp_i_root_port {
     my $model = $dlink->model();
     my $id = $dlink->id();
     my $stp_i_root_port;
-    if ($model =~ /1210(?!-52)/) {
+    if ($model =~ /1210-(?:10|26)/) {
 	#Due to the zoo of MIB from DLink by 1210 series
 	$stp_i_root_port->{0} = $dlink->session()->get($id.'.6.1.13.0');
     } else {
