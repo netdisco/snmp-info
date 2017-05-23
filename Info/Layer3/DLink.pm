@@ -70,12 +70,12 @@ sub serial {
     my $serial;
     if ($model =~ /1210/) {
 	#Due to the zoo of MIB from DLink by 1210 series
-	$serial = $dlink->session()->get($id.'.1.30.0');
+	$serial->{0} = $dlink->session()->get($id.'.1.30.0');
     } else {
 	$serial = $dlink->dlink_serial_no();
     }
 
-    return $serial if ( defined $serial and $serial !~ /^\s*$/ and $serial !~ 'NOSUCHOBJECT' );
+    return $serial->{0} if ( defined $serial->{0} and $serial->{0} !~ /^\s*$/ and $serial->{0} !~ 'NOSUCHOBJECT' );
     return $dlink->SUPER::serial();
 }
 
