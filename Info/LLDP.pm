@@ -43,6 +43,7 @@ $VERSION = '3.34';
 
 %MIBS = (
     'LLDP-MIB'          => 'lldpLocSysCapEnabled',
+    'LLDP-EXT-MED-MIB'  => 'lldpXMedMIB',
     'LLDP-EXT-DOT1-MIB' => 'lldpXdot1MIB',
     'LLDP-EXT-DOT3-MIB' => 'lldpXdot3MIB',
 );
@@ -434,6 +435,8 @@ None.
 =over
 
 =item F<LLDP-MIB>
+
+=item F<LLDP-EXT-MED-MIB>
 
 =item F<LLDP-EXT-DOT1-MIB>
 

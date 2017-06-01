@@ -2,6 +2,10 @@ SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
 version 3.35 ()
 
+  [ENHANCEMENTS]
+
+  * Include loading of LLDP-EXT-MED-MIB in LLDP.pm
+
   [BUG FIXES]
 
   * #180 support CiscoConfig on Nexus (sf.net:scratchfury)
