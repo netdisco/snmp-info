@@ -26,5 +26,8 @@ MYMETA.*
 
 # Komodo project file
 \.kpf$
-# github
-\.github
+# Avoid MYMETA files
+^MYMETA\.
+.github
+.travis
+README.md
