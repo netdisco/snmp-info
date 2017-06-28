@@ -16,6 +16,7 @@ foreach my $p (@pms) {
 
     while (<O>) {
         s/^\s*\$VERSION\s+=\s*'[^']+'\s*;/\$VERSION = '$new_version';/;
+        s/^SNMP::Info - Version [\d.]+$/SNMP::Info - Version $new_version/;
         print P;
     }
 

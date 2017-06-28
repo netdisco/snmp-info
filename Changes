@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.36 (2017-06-28)
+
+  [ENHANCEMENTS]
+
+  * Migrate to Module::Build for distribution maintenance
+
 version 3.35 (2017-06-28)
 
   [ENHANCEMENTS]
