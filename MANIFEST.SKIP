@@ -26,3 +26,5 @@ MYMETA.*
 
 # Komodo project file
 \.kpf$
+# github
+\.github

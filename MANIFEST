@@ -74,6 +74,7 @@ Info/Layer3/CiscoFWSM.pm
 Info/Layer3/CiscoSwitch.pm
 Info/Layer3/Contivity.pm
 Info/Layer3/Dell.pm
+Info/Layer3/DLink.pm
 Info/Layer3/Enterasys.pm
 Info/Layer3/Extreme.pm
 Info/Layer3/F5.pm
@@ -116,7 +117,7 @@ Info/PowerEthernet.pm
 Info/RapidCity.pm
 Info/SONMP.pm
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
 README
 t/00-load.t
 t/docmunge
