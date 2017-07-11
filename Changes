@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.37 (2017-07-11)
+
+  [ENHANCEMENTS]
+
+  * Layer3::Juniper fixed to return os_ver for JUNOS 14.x and higher
+
 version 3.36 (2017-06-28)
 
   [ENHANCEMENTS]
