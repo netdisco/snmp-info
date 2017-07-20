@@ -73,8 +73,8 @@ sub b_mac {
     foreach my $i ( keys %$macs ) {
         my $mac = $macs->{$i};
 
-        # don't catch the bad macs with zeroed OUI
-        if ( $mac !~ m/(0{1,2}:){3}/ ) {
+        # don't catch the bad macs with bogus OUI
+        if ( $mac !~ m/(0{1,2}:){2}(00|01)/ )
             push( @macs, $mac );
         }
         @macs = sort(@macs);
