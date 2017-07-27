@@ -97,6 +97,14 @@ my $mcs_index = {
 	m13 => '104',
 	m14 => '117',
 	m15 => '130',
+	m16 => '19.5',
+	m17 => '39',
+	m18 => '58.5',
+	m19 => '78',
+	m20 => '117',
+	m21 => '156',
+	m22 => '175.5',
+	m23 => '195',
 	# This is a cheat for 802.11a bonded
 	m108 => '108',
     },
@@ -117,6 +125,14 @@ my $mcs_index = {
 	m13 => '240',
 	m14 => '270',
 	m15 => '300',
+	m16 => '45',
+	m17 => '90',
+	m18 => '135',
+	m19 => '180',
+	m20 => '270',
+	m21 => '360',
+	m22 => '405',
+	m23 => '450',
     }
 };
 
@@ -165,6 +181,7 @@ sub cd11_txrate {
 	elsif ( $rate =~ /^m/ ) {
 	    my $band = $protos->{$idx};
 	    my $bw   = $bws->{$band};
+	    # FIXME throw some kind of error if we get an index/rate that we haven't implemented yet? Now we simply return "0.0"...
 	    $cd11_txrate->{$idx} = [ $mcs_index->{$bw}->{$rate} || '0.0' ];
 	}
 	else {

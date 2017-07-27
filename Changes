@@ -1,5 +1,11 @@
 SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
 
+version 3.38 ()
+
+  [ENHANCEMENTS]
+
+  * Layer2::Airespace several newer 802.11 data rates added
+
 version 3.37 (2017-07-11)
 
   [ENHANCEMENTS]
