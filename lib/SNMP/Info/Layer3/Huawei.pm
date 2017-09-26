@@ -75,39 +75,65 @@ sub vendor {
     return "Huawei";
 }
 
-sub os {
-    my $huawei = shift;
-    my $descr  = $huawei->description();
+sub model {
+  my $huawei = shift;
+  my $descr = $huawei->description() || '';
+  my $model = undef;
 
-    return $1 if ( $descr =~ /\b(VRP)\b/ );
-    return "huawei";
+  $model = $1 if ( $descr =~ /Quidway (.+)/i );
+  $model = $1 if ( $descr =~ /Quidway Series Router (.+)/i );
+  $model = $1 if ( $descr =~ /Quidway Router (.+)\.Copy/ );
+  $model = $1 if ( $descr =~ /Quidway (.+) Product/ );+
+  $model = $1 if ( $descr =~ /Huawei (.+) Huawei Versatile/ );
+  $model = $1 if ( $descr =~ /^([A-Z0-9]+-[A-Z]+)/ );
+
+  return $model;
+}
+
+sub os {
+  my $huawei = shift;
+  my $descr  = $huawei->description();
+
+  return $1 if ( $descr =~ /\b(VRP)\b/ );
+  return "huawei";
 }
 
 sub os_ver {
-    my $huawei = shift;
-    my $descr  = $huawei->description();
-    my $os_ver = undef;
+  my $huawei = shift;
+  my $descr  = $huawei->description();
+  my $os_ver = undef;
 
-    $os_ver = "$1" if ( $descr =~ /\bVersion ([0-9.]+)/i );
+  if ( $descr =~ /Version ([\d\.]+)/i )  {
+    $os_ver = $1;
+  }
+  if ( $descr =~ /Version ([\d\.]+), [A-z]+ ([\dPL]+)/i )  {
+    $os_ver = $1 . "-" . $2;
+  }
+  if ( $descr =~ /Version ([\d\.]+) \((.+)\)/i )  {
+    $os_ver = $1 . "-" . $2;
+  }
 
-    return $os_ver;
+  if ( $descr =~ /Version ([\d\.]+) \(.+ Copyright/i )  {
+    $os_ver = $1;
+  }
+
+  return $os_ver;
 }
 
 sub i_ignore {
-    my $l3      = shift;
-    my $partial = shift;
+  my $l3      = shift;
+  my $partial = shift;
 
-    my $interfaces = $l3->interfaces($partial) || {};
+  my $interfaces = $l3->interfaces($partial) || {};
 
-    my %i_ignore;
-    foreach my $if ( keys %$interfaces ) {
-
-        # lo0 etc
-        if ( $interfaces->{$if} =~ /\b(inloopback|console)\d*\b/i ) {
-            $i_ignore{$if}++;
-        }
+  my %i_ignore;
+  foreach my $if ( keys %$interfaces ) {
+    # lo0 etc
+    if ( $interfaces->{$if} =~ /\b(inloopback|console)\d*\b/i ) {
+      $i_ignore{$if}++;
     }
-    return \%i_ignore;
+  }
+  return \%i_ignore;
 }
 
 sub agg_ports { return agg_ports_lag(@_) }
@@ -125,14 +151,14 @@ Jeroen van Ingen
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $huawei = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $huawei->class();
@@ -187,6 +213,10 @@ Returns 'VRP' if contained in C<sysDescr>, 'huawei' otherwise.
 =item $huawei->os_ver()
 
 Returns the software version extracted from C<sysDescr>.
+
+=item $huawei->model()
+
+Returns the hardware model extracted from C<sysDescr>.
 
 =back
 
