@@ -50,7 +50,7 @@ $VERSION = '3.37';
     'fdp_run'      => 'snFdpGlobalRun',
     'fdp_interval' => 'snFdpGlobalMessageInterval',
     'fdp_holdtime' => 'snFdpGlobalHoldTime',
-    'fdp_id'       => 'snFdpGlobalDeviceId',
+    'fdp_gid'      => 'snFdpGlobalDeviceId',
 );
 
 %FUNCS = (
@@ -231,7 +231,7 @@ Time in seconds that FDP messages are kept.
 
 (C<fdpGlobalHoldTime>)
 
-=item  $fdp->fdp_id() 
+=item  $fdp->fdp_gid()
 
 Returns FDP device ID.  
 
