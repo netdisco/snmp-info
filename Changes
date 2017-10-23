@@ -6,6 +6,10 @@ version 3.38 ()
 
   * Layer2::Airespace several newer 802.11 data rates added
 
+  [BUG FIXES]
+
+  * #232 Improve generic Info::Layer3 serial number detection
+
 version 3.37 (2017-07-11)
 
   [ENHANCEMENTS]
