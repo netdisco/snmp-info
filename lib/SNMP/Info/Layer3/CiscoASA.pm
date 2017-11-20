@@ -74,7 +74,7 @@ sub b_mac {
         my $mac = $macs->{$i};
 
         # don't catch the bad macs with bogus OUI
-        if ( $mac !~ m/(0{1,2}:){2}(00|01)/ )
+        if ( $mac !~ m/(0{1,2}:){2}(00|01)/ ) {
             push( @macs, $mac );
         }
         @macs = sort(@macs);
