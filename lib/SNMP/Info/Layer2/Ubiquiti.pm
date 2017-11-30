@@ -97,9 +97,9 @@ sub vendor {
 }
 
 sub model {
-    my $dot11 = shift;
+    my $ubnt = shift;
 
-    my $names = $dot11->dot11_prod_name();
+    my $names = $ubnt->dot11_prod_name();
 
     foreach my $iid ( keys %$names ) {
         my $prod = $names->{$iid};
@@ -107,28 +107,56 @@ sub model {
         return $prod;
     }
     
-    my $ver = $dot11->description() || '';
+    my $desc = $ubnt->description() || '';
     
     ## Pull Model from beginning of description, separated by comma (EdgeSwitch)
-    if($ver =~ /,/){    
-        my @myver = split(/, /, $ver);
-        return $myver[0];
+    if($desc =~ /,/){    
+        my @mydesc = split(/, /, $desc);
+        return $mydesc[0];
     }
 
-    ## Pull Model from the end of description, separated by space (EdgeRouter)
-    ## only works if SNMP configuration is adjusted according to this post-config.d script:
-=begin comment
-place the following into a file with executable writes in the "/config/scripts/post-config.d" directory
-#!/bin/bash
+    if(!((lc $desc) =~ /edgeos/)){
+        # Not sure what type of device this is to get Model
+        return 'test';
+    }else{
+        ## do some logic to determine ER model based on tech specs from ubnt:
+        ## https://help.ubnt.com/hc/en-us/articles/219652227--EdgeRouter-Which-EdgeRouter-Should-I-Use-#tech%20specs
+        my $ethCount = 0;
+        my $switchCount = 0;
+        #my $sfpCount = 0;
+        #my $poeCount = 0;  
+        my $memTotalReal = $ubnt->memTotalReal;   
+        my $cpuLoad = $ubnt->hrProcessorLoad;
+        my $cpuCount = 0;
+        foreach my $iid ( keys %$cpuLoad ) {
+            $cpuCount++;
+        }
+        
+        my $ifDescs = $ubnt->ifDescr;
+        foreach my $iid ( keys %$ifDescs ) {
+            my $ifDesc = $ifDescs->{$iid};
+            next unless defined $ifDesc;
+            if((lc $ifDesc) =~ /^eth/){
+                $ethCount++;
+            }elsif((lc $ifDesc) =~ /^switch/){
+                $switchCount++;
+            }
+        }
 
-# updating snmp description to include system model
-sed 's/print "sysDescr Edge.*/print "sysDescr EdgeOS \$version " . \`\/usr\/sbin\/ubnt-hal show-version | grep "^HW S\/N" | sed "s\/.* \/\/g" | tr -d "\\n"\` . " " . \`\/usr\/sbin\/ubnt-hal getBoardName\` . "\\n";/' /opt/vyatta/sbin/vyatta-snmp.pl -i
-=end comment
-
-=cut
-
-    my @myver = split(/ /, $ver);
-    return join(' ', @myver[3..8]);
+        if($ethCount eq 8){
+            return "EdgeRouter 8-Port"
+        }elsif($ethCount eq 5 and $cpuCount eq 4){
+            return "EdgeRouter X 5-Port"
+        }elsif($ethCount eq 5){
+            return "EdgeRouter PoE 5-Port"
+        }elsif($ethCount eq 3 and $cpuCount eq 2){
+            return "EdgeRouter LITE 3-Port"
+        }else{
+            ## failback string
+            return "EdgeRouter eth-$ethCount switch-$switchCount mem-$memTotalReal cpuNum-$cpuCount";
+        }
+        
+    }
 }
 
 
