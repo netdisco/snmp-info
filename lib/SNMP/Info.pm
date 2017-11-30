@@ -634,7 +634,7 @@ See documentation in L<SNMP::Info::Layer2::Trapeze> for details.
 
 =item SNMP::Info::Layer2::Ubiquiti
 
-SNMP Interface to Ubiquiti Access Points
+SNMP Interface to Ubiquiti Access Points and other devices
 
 See documentation in L<SNMP::Info::Layer2::Ubiquiti> for details.
 
@@ -1550,6 +1550,7 @@ sub device_type {
         30065 => 'SNMP::Info::Layer3::Arista',
         35098 => 'SNMP::Info::Layer3::Pica8',
         41112 => 'SNMP::Info::Layer2::Ubiquiti',
+        4413 => 'SNMP::Info::Layer2::Ubiquiti',
     );
 
     my %l2sysoidmap = (

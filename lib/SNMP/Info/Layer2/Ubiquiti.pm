@@ -8,6 +8,10 @@ use strict;
 use Exporter;
 use SNMP::Info::IEEE802dot11;
 use SNMP::Info::Layer2;
+use SNMP::Info::Layer3;
+
+
+
 
 @SNMP::Info::Layer2::Ubiquiti::ISA
     = qw/SNMP::Info::IEEE802dot11 SNMP::Info::Layer2 Exporter/;
@@ -35,7 +39,30 @@ $VERSION = '3.38';
 %MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::IEEE802dot11::MUNGE, );
 
 sub os {
-    return 'Ubiquiti';
+    my $ubnt = shift;
+
+    my $names = $ubnt->dot11_prod_name();
+
+    foreach my $iid ( keys %$names ) {
+        my $prod = $names->{$iid};
+        next unless defined $prod;
+        # Product names that match AirOS products
+                if((lc $prod) =~ /station/ or (lc $prod) =~ /beam/ or (lc $prod) =~ /grid/){
+                        return 'AirOS';
+                # Product names that match UAP
+                }elsif((lc $prod) =~ /uap/){
+                        return 'UniFi';
+                }else{
+                    # Continue below to find OS name
+                }
+    }
+
+    ## EdgeMAX OS name is first field split by space
+    my $ver = $ubnt->description() || '';
+
+    my @myver = split(/ /, $ver);
+
+    return $myver[0];
 }
 
 sub os_ver {
@@ -46,13 +73,23 @@ sub os_ver {
     foreach my $iid ( keys %$versions ) {
         my $ver = $versions->{$iid};
         next unless defined $ver;
-	return $ver;
+	    return $ver;
         if ( $ver =~ /([\d\.]+)/ ) {
             return $1;
         }
     }
+    my $ver = $dot11->description() || '';
+    if($ver =~ /,/){
+        ## EdgeSwitch OS version is second field split by comma
+        my @myver = split(/, /, $ver);
 
-    return;
+        return $myver[1];
+    }
+
+    ## EdgeRouter OS version is second field split by space
+    my @myver = split(/ /, $ver);
+
+    return $myver[1];
 }
 
 sub vendor {
@@ -69,9 +106,66 @@ sub model {
         next unless defined $prod;
         return $prod;
     }
-    return;
+    
+    my $ver = $dot11->description() || '';
+    
+    ## Pull Model from beginning of description, separated by comma (EdgeSwitch)
+    if($ver =~ /,/){    
+        my @myver = split(/, /, $ver);
+        return $myver[0];
+    }
+
+    ## Pull Model from the end of description, separated by space (EdgeRouter)
+    ## only works if SNMP configuration is adjusted according to this post-config.d script:
+=begin comment
+place the following into a file with executable writes in the "/config/scripts/post-config.d" directory
+#!/bin/bash
+
+# updating snmp description to include system model
+sed 's/print "sysDescr Edge.*/print "sysDescr EdgeOS \$version " . \`\/usr\/sbin\/ubnt-hal show-version | grep "^HW S\/N" | sed "s\/.* \/\/g" | tr -d "\\n"\` . " " . \`\/usr\/sbin\/ubnt-hal getBoardName\` . "\\n";/' /opt/vyatta/sbin/vyatta-snmp.pl -i
+=end comment
+
+=cut
+
+    my @myver = split(/ /, $ver);
+    return join(' ', @myver[3..8]);
 }
 
+
+sub serial {
+    my $ubnt = shift;
+
+    my $serial = uc $ubnt->mac();
+    if($serial){
+        $serial =~ s/://g;
+        return $serial;
+    }
+    return ;
+}
+
+sub mac {
+    my $ubnt = shift;
+    my $ifDescs = $ubnt->ifDescr;
+
+    foreach my $iid ( keys %$ifDescs ) {
+        my $ifDesc = $ifDescs->{$iid};
+        next unless defined $ifDesc;
+        ## CPU Interface will have the primary MAC for EdgeSwitch
+        ## eth0 will have primary MAC for linux-based UBNT devices
+        if($ifDesc =~ /CPU/ or $ifDesc eq 'eth0'){
+            my $mac = $ubnt->ifPhysAddress->{$iid};
+
+            $mac = lc join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $mac ) );
+            
+            return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){5}[0-9A-F][0-9A-F]$/i;
+            
+        }
+    }
+    
+    # MAC malformed or missing
+    return;
+
+}
 
 1;
 __END__
