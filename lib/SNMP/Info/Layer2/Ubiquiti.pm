@@ -149,7 +149,10 @@ sub model {
         }
 
         ## If people have other models to further fine-tune this logic that would be great. 
-        if($ethCount eq 8){
+        if($ethCount eq 9){
+            ## Should be ER Infinity
+            return "EdgeRouter Infinity"
+        }if($ethCount eq 8){
             ## Could be ER-8 Pro, ER-8, or EP-R8
             return "EdgeRouter 8-Port"
         }elsif($ethCount eq 5 and $cpuCount eq 4){
