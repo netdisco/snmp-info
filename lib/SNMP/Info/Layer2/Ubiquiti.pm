@@ -72,7 +72,8 @@ sub os_ver {
     foreach my $iid ( keys %$versions ) {
         my $ver = $versions->{$iid};
         next unless defined $ver;
-	    return $ver;
+        return $ver;
+        ## Not sure what this function does, it seems to be extraneous being in the same code block after a return statement?
         if ( $ver =~ /([\d\.]+)/ ) {
             return $1;
         }
