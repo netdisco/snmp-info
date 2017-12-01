@@ -8,8 +8,7 @@ use strict;
 use Exporter;
 use SNMP::Info::IEEE802dot11;
 use SNMP::Info::Layer2;
-use SNMP::Info::Layer3;
-
+use SNMP::Info::Layer3;  # only used in sub mac()
 
 
 
@@ -57,7 +56,7 @@ sub os {
                 }
     }
 
-    ## EdgeMAX OS name is first field split by space
+    ## EdgeMAX OS (EdgeSwitch and EdgeRouter) name is first field split by space
     my $ver = $ubnt->description() || '';
 
     my @myver = split(/ /, $ver);
@@ -79,7 +78,7 @@ sub os_ver {
         }
     }
     my $ver = $dot11->description() || '';
-    if($ver =~ /,/){
+    if($ver =~ /^edgeswitch/){
         ## EdgeSwitch OS version is second field split by comma
         my @myver = split(/, /, $ver);
 
@@ -110,17 +109,20 @@ sub model {
     my $desc = $ubnt->description() || '';
     
     ## Pull Model from beginning of description, separated by comma (EdgeSwitch)
-    if($desc =~ /,/){    
+    if((lc $desc) =~ /^edgeswitch/){    
         my @mydesc = split(/, /, $desc);
         return $mydesc[0];
     }
 
     if(!((lc $desc) =~ /edgeos/)){
         # Not sure what type of device this is to get Model
-        return 'test';
+        # Wireless devices report dot11_prod_name
+        # EdgeSwitch includes mode directly and edgeos logic is in else statement
+        return ;
     }else{
         ## do some logic to determine ER model based on tech specs from ubnt:
         ## https://help.ubnt.com/hc/en-us/articles/219652227--EdgeRouter-Which-EdgeRouter-Should-I-Use-#tech%20specs
+        ## Would be nice if UBNT simply adds the model string to their SNMP daemon directly
         my $ethCount = 0;
         my $switchCount = 0;
         #my $sfpCount = 0;
@@ -128,6 +130,7 @@ sub model {
         my $memTotalReal = $ubnt->memTotalReal;   
         my $cpuLoad = $ubnt->hrProcessorLoad;
         my $cpuCount = 0;
+        ## My perl is lacking. Not sure if there's a more efficient way to find the cpu count
         foreach my $iid ( keys %$cpuLoad ) {
             $cpuCount++;
         }
@@ -136,16 +139,20 @@ sub model {
         foreach my $iid ( keys %$ifDescs ) {
             my $ifDesc = $ifDescs->{$iid};
             next unless defined $ifDesc;
-            if((lc $ifDesc) =~ /^eth/){
+
+            if((lc $ifDesc) =~ /^eth\d+$/){ # exclude vlan interfaces. Ex: eth1.5
                 $ethCount++;
             }elsif((lc $ifDesc) =~ /^switch/){
                 $switchCount++;
             }
         }
 
+        ## If people have other models to further fine-tune this logic that would be great. 
         if($ethCount eq 8){
+            ## Could be ER-8 Pro, ER-8, or EP-R8
             return "EdgeRouter 8-Port"
         }elsif($ethCount eq 5 and $cpuCount eq 4){
+            ## Could be ER-X or ER-X-SFP
             return "EdgeRouter X 5-Port"
         }elsif($ethCount eq 5){
             return "EdgeRouter PoE 5-Port"
@@ -159,18 +166,19 @@ sub model {
     }
 }
 
-
+## simply take the MAC and clean it up
 sub serial {
     my $ubnt = shift;
 
-    my $serial = uc $ubnt->mac();
+    my $serial = $ubnt->mac();
     if($serial){
         $serial =~ s/://g;
-        return $serial;
+        return uc $serial;
     }
     return ;
 }
 
+## UBNT doesn't put the primary-mac interface at index 1
 sub mac {
     my $ubnt = shift;
     my $ifDescs = $ubnt->ifDescr;
@@ -183,9 +191,9 @@ sub mac {
         if($ifDesc =~ /CPU/ or $ifDesc eq 'eth0'){
             my $mac = $ubnt->ifPhysAddress->{$iid};
 
+            # syntax stolen from sub munge_mac in SNMP::Info
             $mac = lc join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $mac ) );
-            
-            return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){5}[0-9A-F][0-9A-F]$/i;
+            return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){5}[0-9A-F][0-9A-F]$/i;  
             
         }
     }
@@ -263,15 +271,15 @@ Returns 'Ubiquiti Networks, Inc.'
 
 =item $ubnt->model()
 
-Returns the model extracted from C<dot11manufacturerProductName>.
+Returns the model extracted from C<dot11manufacturerProductName>, with failback to some complex logic for EdgeMax devices
 
 =item $ubnt->os()
 
-Returns 'Ubiquiti'
+Returns 'Ubiquiti Networks, Inc.'
 
 =item $ubnt->os_ver()
 
-Returns the software version extracted from C<dot11manufacturerProductVersion>.
+Returns the software version extracted from C<dot11manufacturerProductVersion>, with failback to description splitting for EdgeMax devices
 
 =back
 
