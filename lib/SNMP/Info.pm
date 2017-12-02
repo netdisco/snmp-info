@@ -2940,7 +2940,7 @@ allows all developers to have visibility into the request.  Please include
 pointers to the applicable platform MIBs.  For development we will need an
 C<snmpwalk> of the device.  There is a tool now included in the SNMP::Info
 distribution to help with this task, although you'll most likely need to
-download the distribution from CPAN as it's included in the "C<t/util>"
+download the distribution from CPAN as it's included in the "C<contrib/util>"
 directory.
 
 The utility is named C<make_snmpdata.pl>. Run it with a command line like:
