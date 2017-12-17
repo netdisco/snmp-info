@@ -39,7 +39,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.38';
+$VERSION = '3.39';
 
 %MIBS = (
     'LLDP-MIB'          => 'lldpLocSysCapEnabled',

@@ -49,7 +49,7 @@ use SNMP::Info::IEEE802dot11;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.38';
+$VERSION = '3.39';
 
 %GLOBALS = (
     %SNMP::Info::IEEE802dot11::GLOBALS,
