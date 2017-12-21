@@ -1522,6 +1522,7 @@ sub device_type {
         2011 => 'SNMP::Info::Layer3::Huawei',
         2021 => 'SNMP::Info::Layer3::NetSNMP',
         2272 => 'SNMP::Info::Layer3::Passport',
+        2620 => 'SNMP::Info::Layer3::Checkpoint',
         2636 => 'SNMP::Info::Layer3::Juniper',
         2925 => 'SNMP::Info::Layer1::Cyclades',
         3076 => 'SNMP::Info::Layer3::Altiga',
