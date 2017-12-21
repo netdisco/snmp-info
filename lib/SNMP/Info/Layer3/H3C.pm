@@ -85,6 +85,20 @@ sub vendor {
     return $mfg->{1} || "H3C";
 }
 
+sub model {
+    my $h3c = shift;
+    
+    my $descr = $h3c->description();
+    if ($descr =~ /^.*\n(.*)\n/) {
+        return $1;
+    } elsif ($h3c->entPhysicalClass(2)->{2} =~ /^(3|chassis)$/) {
+        return $h3c->entPhysicalName(2)->{2};
+    } else {
+        my $id = $h3c->id();
+        return &SNMP::translateObj($id) || $id;
+    }
+}
+
 sub os {
     my $h3c = shift;
     my $descr   = $h3c->description();
