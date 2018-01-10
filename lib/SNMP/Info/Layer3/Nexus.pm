@@ -101,9 +101,9 @@ sub _get_snmpid_chassis {
 		}
 	}
 	if ( defined $snmpid_chassis && defined $position ) {
-		printf(" %s - chassis with id %s, position %s selected\n", $funcname, $snmpid_chassis, $position);
+		printf(" %s - chassis with id %s, position %s selected\n", $funcname, $snmpid_chassis, $position) if $self->debug();
 	} else {
-		printf(" %s - no chassis found\n", $funcname);
+		printf(" %s - no chassis found\n", $funcname) if $self->debug();
 	}
 
 	return $snmpid_chassis;
