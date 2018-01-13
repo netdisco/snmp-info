@@ -56,7 +56,9 @@ $VERSION = '3.39';
 	     %SNMP::Info::LLDP::GLOBALS,
 	     'serial'    => 'jnxBoxSerialNo.0',
 	     'mac'       => 'dot1dBaseBridgeAddress',
-	     'box_descr' => 'jnxBoxDescr'
+	     'box_descr' => 'jnxBoxDescr',
+             'version'   => 'jnxVirtualChassisMemberSWVersion.0',
+             'vc_model'   => 'jnxVirtualChassisMemberModel.0',
 	     );
 
 %FUNCS = ( %SNMP::Info::Layer3::FUNCS, 
@@ -65,7 +67,7 @@ $VERSION = '3.39';
 	   # JUNIPER-VLAN-MIB::jnxExVlanTable
 	   'v_index'    => 'jnxExVlanTag',
 	   'v_type'     => 'jnxExVlanType',
-	   'v_name'     => 'jnxExVlanName',
+	   'vlan_name'     => 'jnxExVlanName',
 	   
 	   # JUNIPER-VLAN-MIB::jnxExVlanPortGroupTable
 	   'i_trunk'    => 'jnxExVlanPortAccessMode',
@@ -77,6 +79,7 @@ $VERSION = '3.39';
 
            'v_fdb_id'          => 'jnxL2aldVlanFdbId',
            'v_vlan_tag'        => 'jnxL2aldVlanTag',
+           'v_vlan_name'        => 'jnxL2aldVlanName',
 );
 
 %MUNGE = ( %SNMP::Info::Layer3::MUNGE, 
@@ -113,6 +116,10 @@ sub os_ver {
     my $sys_descr  = $juniper->description()  || '';
     my $lldp_descr = $juniper->lldp_sysdesc() || '';
 
+    my $ver = $juniper->version() || '';
+    if (not $ver eq '')  {
+        return $ver;
+    }
     foreach my $descr ($sys_descr, $lldp_descr) {
         if ( $descr =~ m/kernel JUNOS ([^,\s]+)/ ) {
             return $1;
@@ -121,14 +128,19 @@ sub os_ver {
             return $1;
         }
     }
-
     return;
 }
 
 sub model {
     my $l3 = shift;
     my $id = $l3->id();
+    # Query the junos device model.
+    my $mod = uc $l3->vc_model() || '';
 
+    if  (not $mod eq '') { 
+        return $mod;
+    }
+    # Fallback to old method
     unless ( defined $id ) {
         print
             " SNMP::Info::Layer3::Juniper::model() - Device does not support sysObjectID\n"
@@ -193,8 +205,10 @@ sub v_index {
     my ($partial) = shift;
 
     my ($v_index)  = $juniper->jnxExVlanTag($partial);
+    my ($v_vlan_index) = $juniper->v_vlan_tag($partial);
 
-    return $v_index;
+    return $v_index unless $v_vlan_index;
+    return $v_vlan_index;
 }
 
 sub i_vlan {
@@ -224,8 +238,13 @@ sub i_vlan {
         }
         $i_vlan->{$ifindex} = $vlan;
     }
-
     return $i_vlan;
+}
+sub v_name { 
+    my $juniper = shift;
+    my $name = $juniper->v_vlan_name();
+    return $juniper->vlan_name() unless $name;
+    return $name;
 }
 
 # Index doesn't use VLAN ID, so override the HOA private method here to
