@@ -73,8 +73,6 @@ sub model {
     my $descr = $dsmodel->description();
     if ( $descr =~ /^([\S ]+) Software.*/){
         return $1;
-    } else {
-        return $descr;
     }
 }
 
