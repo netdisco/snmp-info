@@ -130,9 +130,8 @@ sub model {
 
     foreach my $e ( sort keys %$e_model ) {
         if (defined $e_model->{$e} and $e_model->{$e} !~ /^\s*$/) {
-            return $e_model->{$e};
-            #my $model = "$e_model->{$e} $e_hwver->{$e}";
-            #return $model;
+            my $model = "$e_model->{$e} $e_hwver->{$e}";
+            return $model;
         }
     }
     return $ciscosb->description();
