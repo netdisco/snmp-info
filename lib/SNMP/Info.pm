@@ -501,6 +501,12 @@ SNMP::Info::Layer2::3Com - SNMP Interface to L2 3Com Switches
 
 See documentation in L<SNMP::Info::Layer2::3Com> for details.
 
+=item SNMP::Info::Layer2::Adtran
+
+Subclass for Adtran devices.
+
+See documentation in L<SNMP::Info::Layer2::Adtran> for details.
+
 =item SNMP::Info::Layer2::Airespace
 
 Subclass for Cisco (Airespace) wireless controllers.
@@ -724,6 +730,12 @@ This class covers Catalyst 6500s in native mode, hybrid mode.  Catalyst
 
 See documentation in L<SNMP::Info::Layer3::C6500> for details.
 
+=item SNMP::Info::Layer3::Checkpoint
+
+Subclass for Checkpoint devices
+
+See documentation in L<SNMP::Info::Layer3::Checkpoint> for details.
+
 =item SNMP::Info::Layer3::Cisco
 
 This is a simple wrapper around layer 3 for IOS devices and the base layer 3
@@ -753,6 +765,12 @@ L<SNMP::Info::Layer3::CiscoSwitch> for details.
 Subclass for Avaya/Nortel Contivity/VPN Routers.  
 
 See documentation in L<SNMP::Info::Layer3::Contivity> for details.
+
+=item SNMP::Info::Layer3::DLink
+
+Subclass for DLink devices.  
+
+See documentation in L<SNMP::Info::Layer3::DLink> for details.
 
 =item SNMP::Info::Layer3::Dell
 
@@ -931,6 +949,12 @@ Alcatel-Lucent SR Class.
 
 See documentation in L<SNMP::Info::Layer3::Timetra> for details.
 
+=item SNMP::Info::Layer3::VyOS
+
+Subclass for VyOS routers.
+
+See documentation in L<SNMP::Info::Layer3::VyOS> for details.
+
 =item SNMP::Info::Layer3::VMware
 
 Subclass for VMware ESXi hosts.
@@ -956,6 +980,12 @@ See documentation in L<SNMP::Info::Layer7> for details.
 SNMP Interface to APC UPS devices
 
 See documentation in L<SNMP::Info::Layer7::APC> for details.
+
+=item SNMP::Info::Layer7::CiscoIPS
+
+SNMP Interface to Cisco IPS devices
+
+See documentation in L<SNMP::Info::Layer7::Cisco IPS> for details.
 
 =item SNMP::Info::Layer7::Netscaler
 

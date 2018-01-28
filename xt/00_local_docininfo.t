@@ -15,7 +15,7 @@ plan qw(no_plan);
 
 my %Items;
 # Grab all the =item's from Info.pm
-open (I,"blib/lib/SNMP/Info.pm") or fail("Can't open Info.pm");
+open (I,"lib/SNMP/Info.pm") or fail("Can't open Info.pm");
 while (<I>) {
     next unless /^\s*=item\s*(\S+)/;
     $Items{$1}++;
@@ -25,11 +25,11 @@ close I;
 #warn "items : ",join(', ',keys %Items),"\n";
 
 # Check that each package is represented in Info.pm docs
-find({wanted => \&check_version, no_chdir => 1}, 'blib');
+find({wanted => \&check_version, no_chdir => 1}, 'lib');
 
 sub check_version {
     # $_ is the full path to the file
-    return unless (m{blib/lib/}xms and m{\.pm \z}xms);
+    return unless (m{lib/}xms and m{\.pm \z}xms);
 
     my $content = read_file($_);
 
