@@ -1,0 +1,39 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Test::More 1.302083;
+
+use SNMP::Info;
+use Path::Class 'dir';
+
+my $info = SNMP::Info->new(
+  AutoSpecify => 1,
+  DestHost    => 'demo.snmplabs.com',
+  Community   => 'public',
+  Version     => 2,
+  MibDirs     => [ _build_mibdirs() ],
+  IgnoreNetSNMPConf => 1,
+  #Debug       => 1,
+  #DebugSNMP   => 1,
+);
+
+ok($info, 'SNMP::Info instantiated');
+ok((!defined $info->error()), 'No error on initial connection');
+
+is($info->name(),  'Reboot', 'name is Reboot');
+is($info->class(), 'SNMP::Info::Layer3::NetSNMP', 'class is Layer3::NetSNMP');
+
+done_testing;
+
+sub _build_mibdirs {
+  my $home = dir($ENV{HOME}, 'netdisco-mibs');
+  return map { dir($home, $_)->stringify } @{ _get_mibdirs_content($home) };
+}
+
+sub _get_mibdirs_content {
+  my $home = shift;
+  my @list = map {s|$home/||; $_} grep {m/[a-z0-9]/} grep {-d} glob("$home/*");
+  return \@list;
+}
