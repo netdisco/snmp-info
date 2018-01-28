@@ -40,6 +40,7 @@ lib/SNMP/Info/Layer1/Cyclades.pm
 lib/SNMP/Info/Layer1/S3000.pm
 lib/SNMP/Info/Layer2.pm
 lib/SNMP/Info/Layer2/3Com.pm
+lib/SNMP/Info/Layer2/Adtran.pm
 lib/SNMP/Info/Layer2/Airespace.pm
 lib/SNMP/Info/Layer2/Aironet.pm
 lib/SNMP/Info/Layer2/Allied.pm
@@ -74,6 +75,7 @@ lib/SNMP/Info/Layer3/BlueCoatSG.pm
 lib/SNMP/Info/Layer3/C3550.pm
 lib/SNMP/Info/Layer3/C4000.pm
 lib/SNMP/Info/Layer3/C6500.pm
+lib/SNMP/Info/Layer3/Checkpoint.pm
 lib/SNMP/Info/Layer3/Cisco.pm
 lib/SNMP/Info/Layer3/CiscoASA.pm
 lib/SNMP/Info/Layer3/CiscoFWSM.pm
@@ -110,6 +112,7 @@ lib/SNMP/Info/Layer3/Sun.pm
 lib/SNMP/Info/Layer3/Tasman.pm
 lib/SNMP/Info/Layer3/Timetra.pm
 lib/SNMP/Info/Layer3/VMware.pm
+lib/SNMP/Info/Layer3/VyOS.pm
 lib/SNMP/Info/Layer7.pm
 lib/SNMP/Info/Layer7/APC.pm
 lib/SNMP/Info/Layer7/CiscoIPS.pm
