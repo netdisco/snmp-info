@@ -1523,6 +1523,7 @@ sub device_type {
         2011 => 'SNMP::Info::Layer3::Huawei',
         2021 => 'SNMP::Info::Layer3::NetSNMP',
         2272 => 'SNMP::Info::Layer3::Passport',
+        2620 => 'SNMP::Info::Layer3::Checkpoint',
         2636 => 'SNMP::Info::Layer3::Juniper',
         2925 => 'SNMP::Info::Layer1::Cyclades',
         3076 => 'SNMP::Info::Layer3::Altiga',
@@ -1693,6 +1694,11 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::CiscoFWSM'
             if ( $desc =~ /Cisco Firewall Services Module/i );
         
+        #   Cisco Small Business (300 500) series override
+        #   This is for enterprises(1).cisco(9).otherEnterprises(6).ciscosb(1)
+        $objtype = 'SNMP::Info::Layer2::CiscoSB'
+            if ( $soid =~ /^\.?1\.3\.6\.1\.4\.1\.9\.6\.1/ );
+
         # Avaya Secure Router
         $objtype = 'SNMP::Info::Layer3::Tasman'
             if ( $desc =~ /^(avaya|nortel)\s+(SR|secure\srouter)\s+\d{4}/i );
