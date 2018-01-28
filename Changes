@@ -1,4 +1,18 @@
-SNMP::Info - Friendly OO-style interface to Network devices using SNMP.
+version 3.40 (2018-01-28)
+
+  [ENHANCEMENTS]
+
+  * #240 Support for Checkpoint devies through SNMP
+  * #240 Cisco SB switches fixup
+  * #244 Add Adtran support
+  * #241 Vyatta/VyOS support
+  * #246 Nexus VRF support (works with Netdisco)
+  * #244 Improve Juniper model reporting
+  * #240 Improve H3C reporting
+
+  [BUG FIXES]
+
+  * #243 Nexus additional debug lines should be hidden
 
 version 3.39 (2017-12-17)
 
