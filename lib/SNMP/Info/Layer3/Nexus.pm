@@ -56,7 +56,8 @@ $VERSION = '3.39';
 
 %MIBS = (
 	%SNMP::Info::Layer3::CiscoSwitch::MIBS,
-	'CISCO-ENTITY-VENDORTYPE-OID-MIB' => 'cevMIBObjects',
+	'CISCO-ENTITY-VENDORTYPE-OID-MIB'   => 'cevMIBObjects',
+    'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
 );
 
 %GLOBALS = (
@@ -64,7 +65,10 @@ $VERSION = '3.39';
 	'mac' => 'dot1dBaseBridgeAddress',
 );
 
-%FUNCS = ( %SNMP::Info::Layer3::CiscoSwitch::FUNCS, );
+%FUNCS = ( 
+    %SNMP::Info::Layer3::CiscoSwitch::FUNCS, 
+    'vrf_name' => 'cContextMappingVrfName',
+);
 
 %MUNGE = ( %SNMP::Info::Layer3::CiscoSwitch::MUNGE, );
 
