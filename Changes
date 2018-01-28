@@ -2,7 +2,7 @@ version 3.40 (2018-01-28)
 
   [ENHANCEMENTS]
 
-  * #240 Support for Checkpoint devies through SNMP
+  * #240 Support for CheckPoint devies through SNMP
   * #240 Cisco SB switches fixup
   * #244 Add Adtran support
   * #241 Vyatta/VyOS support

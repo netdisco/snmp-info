@@ -730,11 +730,11 @@ This class covers Catalyst 6500s in native mode, hybrid mode.  Catalyst
 
 See documentation in L<SNMP::Info::Layer3::C6500> for details.
 
-=item SNMP::Info::Layer3::Checkpoint
+=item SNMP::Info::Layer3::CheckPoint
 
-Subclass for Checkpoint devices
+Subclass for CheckPoint devices
 
-See documentation in L<SNMP::Info::Layer3::Checkpoint> for details.
+See documentation in L<SNMP::Info::Layer3::CheckPoint> for details.
 
 =item SNMP::Info::Layer3::Cisco
 
@@ -1553,7 +1553,7 @@ sub device_type {
         2011 => 'SNMP::Info::Layer3::Huawei',
         2021 => 'SNMP::Info::Layer3::NetSNMP',
         2272 => 'SNMP::Info::Layer3::Passport',
-        2620 => 'SNMP::Info::Layer3::Checkpoint',
+        2620 => 'SNMP::Info::Layer3::CheckPoint',
         2636 => 'SNMP::Info::Layer3::Juniper',
         2925 => 'SNMP::Info::Layer1::Cyclades',
         3076 => 'SNMP::Info::Layer3::Altiga',

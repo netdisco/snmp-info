@@ -218,8 +218,8 @@ provides:
   SNMP::Info::Layer3::C6500:
     file: lib/SNMP/Info/Layer3/C6500.pm
     version: '3.40'
-  SNMP::Info::Layer3::Checkpoint:
-    file: lib/SNMP/Info/Layer3/Checkpoint.pm
+  SNMP::Info::Layer3::CheckPoint:
+    file: lib/SNMP/Info/Layer3/CheckPoint.pm
     version: '3.40'
   SNMP::Info::Layer3::Cisco:
     file: lib/SNMP/Info/Layer3/Cisco.pm

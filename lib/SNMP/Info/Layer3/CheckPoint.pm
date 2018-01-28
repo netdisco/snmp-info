@@ -1,4 +1,4 @@
-# SNMP::Info::Layer3::Checkpoint
+# SNMP::Info::Layer3::CheckPoint
 # $Id$
 #
 # Copyright (c) 2008 Bill Fenner
@@ -28,15 +28,15 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package SNMP::Info::Layer3::Checkpoint;
+package SNMP::Info::Layer3::CheckPoint;
 
 use strict;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::Checkpoint::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
-@SNMP::Info::Layer3::Checkpoint::EXPORT_OK = qw//;
+@SNMP::Info::Layer3::CheckPoint::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::CheckPoint::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
@@ -64,7 +64,7 @@ $VERSION = '3.40';
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::LLDP::FUNCS,
 
-    # Net-SNMP Extend table that could but customize to add a the Checkpoint version
+    # Net-SNMP Extend table that could but customize to add a the CheckPoint version
     'extend_output_table' => 'nsExtendOutputFull',
 );
 
@@ -176,7 +176,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Checkpoint - SNMP Interface to Checkpoint Devices
+SNMP::Info::Layer3::CheckPoint - SNMP Interface to CheckPoint Devices
 
 =head1 AUTHORS
 
@@ -203,7 +203,7 @@ Subclass for Generic Net-SNMP devices
 
 =head2 WARNING
 
-To correctly and completelly work, you should add the following line in the file C</etc/snmp/snmpd.local.conf> on each of your Checkpoint devices:
+To correctly and completelly work, you should add the following line in the file C</etc/snmp/snmpd.local.conf> on each of your CheckPoint devices:
 
  # Netdisco SNMP configuration
  extend  ckpVersion /opt/CPsuite-R77/fw1/bin/fw ver
@@ -247,7 +247,7 @@ Returns 'checkpoint'.
 
 =item $ckp>model()
 
-Return the model type of the Checkpoint device (Based on the sysObjectOID translation).
+Return the model type of the CheckPoint device (Based on the sysObjectOID translation).
 
 =item $ckp->os()
 
