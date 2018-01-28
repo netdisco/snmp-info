@@ -1551,6 +1551,7 @@ sub device_type {
         35098 => 'SNMP::Info::Layer3::Pica8',
         41112 => 'SNMP::Info::Layer2::Ubiquiti',
         4413 => 'SNMP::Info::Layer2::Ubiquiti',
+        30803 => 'SNMP::Info::Layer3::VyOS',
     );
 
     my %l2sysoidmap = (
