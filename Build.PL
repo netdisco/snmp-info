@@ -20,6 +20,10 @@ Module::Build->new(
   # },
   test_requires => {
     'Test::More' => '0.88',
+    'PPI' => '0',
+    'Class:ISA' => '0',
+    'Module::Info' => '0',
+    'Module::Load' => '0',
     'File::Slurp' => '0',
     'Test::Distribution' => '0',
   },
