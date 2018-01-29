@@ -14,11 +14,12 @@ install: |
     Alien::OpenSSL::Static \
     Alien::SNMP::MAXTC
   mkdir ~/netdisco-mibs && cd ~/netdisco-mibs && \
-    curl -sL https://api.github.com/repos/netdisco/netdisco-mibs/tags | \
+    curl -L https://api.github.com/repos/netdisco/netdisco-mibs/tags | \
       jq '.[]|.tarball_url|select(test("tarball/\\d+\\.\\d+$"))' | \
       sort -rg | head -n1 | xargs -n1 curl -sL | tar --strip-components=1 -zxf -
 script: |
-  perl Build.PL && \
+  cd $TRAVIS_BUILD_DIR && \
+    perl Build.PL && \
     ./Build && \
     PERL_MM_USE_DEFAULT=1 ./Build installdeps --cpan_client 'cpanm --quiet --notest' && \
     ./Build test --test_files t/ --test_files xt/
