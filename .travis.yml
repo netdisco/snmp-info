@@ -12,7 +12,7 @@ install: |
   cpanm --quiet --notest PkgConfig Test::CChecker \
     Alien::zlib::Static \
     Alien::OpenSSL::Static \
-    Alien::SNMP::MAXTC
+    Alien::SNMP::MAXTC && \
   mkdir ~/netdisco-mibs && cd ~/netdisco-mibs && \
     curl -sL https://api.github.com/repos/netdisco/netdisco-mibs/tags | \
       jq '.[]|.tarball_url|select(test("tarball/\\d+\\.\\d+$"))' | \
