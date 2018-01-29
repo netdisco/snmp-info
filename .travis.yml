@@ -3,6 +3,7 @@ addons:
   apt:
     packages:
       - libsnmp-dev
+      - libsnmp-perl
 branches:
   only:
     - /^3\.\d{2}$/
