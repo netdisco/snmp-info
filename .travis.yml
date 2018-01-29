@@ -2,20 +2,28 @@ language: perl
 addons:
   apt:
     packages:
+      - jq
       - libsnmp-dev
-      - libsnmp-perl
 branches:
   only:
     - /^3\.\d{2}$/
     - 'master'
-install: true
+install: |
+  cpanm --quiet --notest PkgConfig Test::CChecker \
+    Alien::zlib::Static \
+    Alien::OpenSSL::Static \
+    Alien::SNMP::MAXTC
+  mkdir ~/netdisco-mibs && cd ~/netdisco-mibs && \
+    curl -sL https://api.github.com/repos/netdisco/netdisco-mibs/tags | \
+      jq '.[]|.tarball_url|select(test("tarball/\\d+\\.\\d+$"))' | \
+      sort -rg | head -n1 | xargs -n1 curl -sL | tar --strip-components=1 -zxf -
 script: |
   perl Build.PL && \
-  ./Build && \
-  PERL_MM_USE_DEFAULT=1 ./Build installdeps --cpan_client 'cpanm --quiet --notest' && \
-  ./Build test --test_files t/ --test_files xt/
-notifications:
-  irc:
-    on_success: always
-    channels:
-      - 'chat.freenode.net#netdisco'
+    ./Build && \
+    PERL_MM_USE_DEFAULT=1 ./Build installdeps --cpan_client 'cpanm --quiet --notest' && \
+    ./Build test --test_files t/ --test_files xt/
+#notifications:
+#  irc:
+#    on_success: always
+#    channels:
+#      - 'chat.freenode.net#netdisco'
