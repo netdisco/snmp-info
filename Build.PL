@@ -20,6 +20,8 @@ Module::Build->new(
   # },
   test_requires => {
     'Test::More' => '0.88',
+    'File::Slurp' => '0',
+    'Test::Distribution' => '0',
   },
   # script_files => [
   # ],

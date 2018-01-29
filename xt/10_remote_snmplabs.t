@@ -15,8 +15,8 @@ my $info = SNMP::Info->new(
   Version     => 2,
   MibDirs     => [ _build_mibdirs() ],
   IgnoreNetSNMPConf => 1,
-  #Debug       => 1,
-  #DebugSNMP   => 1,
+  Debug       => 1,
+  DebugSNMP   => 1,
 );
 
 ok($info, 'SNMP::Info instantiated');
