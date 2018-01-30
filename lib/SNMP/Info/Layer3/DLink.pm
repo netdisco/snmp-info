@@ -124,3 +124,90 @@ sub stp_i_root_port {
 
 1;
 __END__
+
+=head1 NAME
+
+SNMP::Info::Layer3::DLink - SNMP Interface to DLink Devices
+
+=head1 SYNOPSIS
+
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $dlink = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          DestHost    => 'myrouter',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
+
+ my $class      = $dlink->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+Subclass for Vyatta Devices running dlink.
+
+=head2 Inherited Classes
+
+=over
+
+=item SNMP::Info::Layer3
+
+=item SNMP::Info::LLDP
+
+=back
+
+=head2 Inherited Classes' MIBs
+
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
+
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=over
+
+=item $dlink->model()
+
+Returns the ID or else description.
+
+=item $dlink->vendor()
+
+Returns 'dlink'.
+
+=item $dlink->serial()
+
+Returns serial number.
+
+=item $dlink->fwver()
+
+Returns the firmware version.
+
+=item $dlink->hwver()
+
+Returns the hardware version.
+
+=item $dlink->stp_i_root_port()
+
+Returns the STP root port.
+
+=back
+
+=head2 Globals imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
+
+See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
+
+=head1 TABLE METHODS
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+
+See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
+
+=cut
