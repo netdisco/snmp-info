@@ -11,11 +11,10 @@ branches:
 before_install:
   - mkdir ~/netdisco-mibs
   - cd ~/netdisco-mibs
-  - 'curl -L https://api.github.com/repos/netdisco/netdisco-mibs/tags'
-  - 'curl -L https://api.github.com/repos/netdisco/netdisco-mibs/tags 2>&1'
+  - 'curl -L https://api.github.com/repos/netdisco/netdisco-mibs/tags >/dev/null'
   - >
     curl -sL https://api.github.com/repos/netdisco/netdisco-mibs/tags |
-      jq '.[]|.tarball_url|select(test("tarball/\\\\d+\\\\.\\\\d+$"))' |
+      jq '.[]|.tarball_url|select(test("tarball/\\d+\\.\\d+$"))' |
       sort -rg | head -n1 | xargs -n1 curl -sL | tar --strip-components=1 -zxf -
   - >
     cpanm --quiet --notest PkgConfig Test::CChecker
