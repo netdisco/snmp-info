@@ -27,6 +27,12 @@
       },
       "test" : {
          "requires" : {
+            "Class::ISA" : "0",
+            "File::Slurp" : "0",
+            "Module::Info" : "0",
+            "Module::Load" : "0",
+            "PPI" : "0",
+            "Test::Distribution" : "0",
             "Test::More" : "0.88"
          }
       }

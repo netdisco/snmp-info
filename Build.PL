@@ -7,6 +7,7 @@ Module::Build->new(
   license     => 'bsd',
   dist_author => 'Eric A. Miller <emiller@cpan.org>',
   # dynamic_config => 1,
+  create_readme => 1,
   configure_requires => {
     'Module::Build' => '0.42',
   },

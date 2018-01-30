@@ -3,6 +3,12 @@ abstract: 'OO Interface to Network devices and MIBs through SNMP'
 author:
   - 'Eric A. Miller <emiller@cpan.org>'
 build_requires:
+  Class::ISA: '0'
+  File::Slurp: '0'
+  Module::Info: '0'
+  Module::Load: '0'
+  PPI: '0'
+  Test::Distribution: '0'
   Test::More: '0.88'
 configure_requires:
   Module::Build: '0.42'

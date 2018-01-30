@@ -129,6 +129,7 @@ LICENSE
 MANIFEST			This list of files
 META.json
 META.yml
+README
 t/00_load.t
 xt/.perltidyrc
 xt/00_local_distribution.t
@@ -139,3 +140,4 @@ xt/00_local_pod.t
 xt/00_local_prereq.t
 xt/00_local_spelling.t
 xt/00_local_versionsync.t
+xt/10_remote_snmplabs.t
