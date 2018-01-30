@@ -11,13 +11,14 @@ branches:
 before_install:
   - mkdir ~/netdisco-mibs
   - cd ~/netdisco-mibs
+install:
   - >
     curl -sL https://downloads.sourceforge.net/project/netdisco/netdisco-mibs/latest-snapshot/netdisco-mibs-snapshot.tar.gz |
       tar --strip-components=1 -zxf -
   - cpanm --quiet --notest PkgConfig Test::CChecker Alien::zlib::Static Alien::OpenSSL::Static Alien::SNMP::MAXTC
-install: true
 before_script:
   - 'cd ${TRAVIS_BUILD_DIR}'
+  - echo "mibs +ALL" > ~/.snmp/snmp.conf
 script:
   - >
     perl Build.PL &&
