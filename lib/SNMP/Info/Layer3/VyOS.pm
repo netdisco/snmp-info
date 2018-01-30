@@ -99,3 +99,82 @@ sub serial {
 
 1;
 __END__
+
+=head1 NAME
+
+SNMP::Info::Layer3::VyOS - SNMP Interface to Vyatta Devices
+
+=head1 SYNOPSIS
+
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $vyos = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          DestHost    => 'myrouter',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
+
+ my $class      = $vyos->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+Subclass for Vyatta Devices running VyOS.
+
+=head2 Inherited Classes
+
+=over
+
+=item SNMP::Info::Layer3
+
+=back
+
+=head2 Inherited Classes' MIBs
+
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
+
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=over
+
+=item $vyos->layers()
+
+Returns support for 3, 4 and 7.
+
+=item $vyos->os()
+
+Returns 'VyOS' or 'Vyatta'.
+
+=item $vyos->model()
+
+Returns the OS.
+
+=item $vyos->vendor()
+
+Returns the OS.
+
+=item $vyos->os_ver()
+
+Returns the software version extracted from C<sysDescr>.
+
+=item $vyos->serial()
+
+Returns serial number.
+
+=back
+
+=head2 Globals imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
+
+=head1 TABLE METHODS
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+
+=cut
