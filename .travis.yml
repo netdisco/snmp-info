@@ -23,8 +23,8 @@ script:
     perl Build.PL &&
     PERL_MM_USE_DEFAULT=1 ./Build installdeps --cpan_client 'cpanm --quiet --notest' &&
     ./Build test --test_files t/ --test_files xt/
-#notifications:
-#  irc:
-#    on_success: always
-#    channels:
-#      - 'chat.freenode.net#netdisco'
+notifications:
+  irc:
+    on_success: always
+    channels:
+      - 'chat.freenode.net#netdisco'
