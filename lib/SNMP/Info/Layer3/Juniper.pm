@@ -725,6 +725,10 @@ to a hash.
 
 Returns reference to hash: key = VLAN ID, value = FDB ID.
 
+=item $juniper->qb_fw_vlan()
+
+Returns reference to hash of forwarding table entries VLAN ID
+
 =item $juniper->v_index()
 
 (C<jnxExVlanTag>)
@@ -744,6 +748,11 @@ Returns reference to hash: key = VLAN ID, value = FDB ID.
 =item $juniper->i_vlan()
 
 Returns a mapping between C<ifIndex> and the PVID or default VLAN.
+
+=item $juniper->i_vlan_membership()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the egress list for the port.
 
 =back
 

@@ -277,6 +277,14 @@ Returns 'Ubiquiti Networks, Inc.'
 
 Returns the model extracted from C<dot11manufacturerProductName>, with failback to some complex logic for EdgeMax devices
 
+=item $ubnt->serial()
+
+Serial Number.
+
+=item $ubnt->mac()
+
+Bridge MAC address.
+
 =item $ubnt->os()
 
 Returns 'Ubiquiti Networks, Inc.'

@@ -207,6 +207,10 @@ These are methods that return scalar value from SNMP
 
 =over
 
+=item $h3c->model()
+
+Returns the model from C<sysObjectID> or C<entPhysicalClass>.
+
 =item $h3c->vendor()
 
 Returns value for C<entPhysicalMfgName.1>.
