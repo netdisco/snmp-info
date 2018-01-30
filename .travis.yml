@@ -18,7 +18,6 @@ install:
   - cpanm --quiet --notest PkgConfig Test::CChecker Alien::zlib::Static Alien::OpenSSL::Static Alien::SNMP::MAXTC
 before_script:
   - 'cd ${TRAVIS_BUILD_DIR}'
-  - echo "mibs +ALL" > ~/.snmp/snmp.conf
 script:
   - >
     perl Build.PL &&
