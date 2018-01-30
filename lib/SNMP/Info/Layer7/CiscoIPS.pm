@@ -128,7 +128,7 @@ sub e_index {
     my $self = shift();
     my %index;
     foreach my $id ( keys %{$self->e_id} ){
-        %index->{$id} = $id;
+        $index{$id} = $id;
     }
     return \%index;
 }
