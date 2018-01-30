@@ -8,6 +8,7 @@ use Test::More 1.302083;
 use SNMP::Info;
 use Path::Class 'dir';
 
+# needed when running with Alien::SNMP::MAXTC
 %SNMP::Info::MIBS = ('RFC1213-MIB' => 'sysName');
 
 my $info = SNMP::Info->new(
@@ -17,8 +18,8 @@ my $info = SNMP::Info->new(
   Version     => 2,
   MibDirs     => [ _build_mibdirs() ],
   IgnoreNetSNMPConf => 1,
-  Debug       => 1,
-  DebugSNMP   => 1,
+#  Debug       => 1,
+#  DebugSNMP   => 1,
 );
 
 ok($info, 'SNMP::Info instantiated');
