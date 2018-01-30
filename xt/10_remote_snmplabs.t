@@ -8,6 +8,8 @@ use Test::More 1.302083;
 use SNMP::Info;
 use Path::Class 'dir';
 
+%SNMP::Info::MIBS = ('RFC1213-MIB' => 'sysName');
+
 my $info = SNMP::Info->new(
   AutoSpecify => 1,
   DestHost    => 'demo.snmplabs.com',
@@ -16,7 +18,7 @@ my $info = SNMP::Info->new(
   MibDirs     => [ _build_mibdirs() ],
   IgnoreNetSNMPConf => 1,
   Debug       => 1,
-  DebugSNMP   => 2,
+  DebugSNMP   => 1,
 );
 
 ok($info, 'SNMP::Info instantiated');
