@@ -164,3 +164,123 @@ sub v_name {
     $v_index->{$adtran->ad_mgmtevcvid()} = 'system-management-evc';
     return $v_index;
 }
+
+1;
+__END__
+
+=head1 NAME
+
+SNMP::Info::Layer2::Adtran - SNMP Interface to Adtran Devices
+
+=head1 SYNOPSIS
+
+ # Let SNMP::Info determine the correct subclass for you. 
+ my $adtran = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          DestHost    => 'myrouter',
+                          Community   => 'public',
+                          Version     => 2
+                        ) 
+    or die "Can't connect to DestHost.\n";
+
+ my $class      = $adtran->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+Subclass for adtran Devices running JUNOS
+
+=head2 Inherited Classes
+
+=over
+
+=item SNMP::Info::Layer3
+
+=item SNMP::Info::LLDP
+
+=back
+
+=head2 Inherited Classes' MIBs
+
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
+
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=over
+
+=item $adtran->vendor()
+
+Returns 'adtran'
+
+=item $adtran->os()
+
+Returns 'aos'
+
+=item $adtran->layers()
+
+Ensures that layer two is reported, at least.
+
+=item $adtran->os_ver()
+
+Returns the software version extracted first from C<adProdSwVersion> or
+C<adAOSDeviceVersion>.
+
+=item $adtran->model()
+
+Returns the model extracted first from C<adProdName> or
+C<adAOSDeviceProductName>.
+
+=item $adtran->serial()
+
+Returns serial number.
+
+=back
+
+=head2 Globals imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
+
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=over
+
+=item $adtran->v_name()
+
+VLAN names table.
+
+=item $adtran->i_name()
+
+Interface names table.
+
+=item $adtran->i_vlan()
+
+Returns a mapping between C<ifIndex> and the PVID or default VLAN.
+
+=item $adtran->i_vlan_membership()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the egress list for the port.
+
+=back
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::LLDP
+
+See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
+
+=cut
