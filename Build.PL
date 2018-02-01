@@ -17,15 +17,15 @@ Module::Build->new(
     'SNMP' => '0',
     'Math::BigInt' => '0',
   },
-  # recommends => {
-  # },
-  test_requires => {
-    'Test::More' => '0.88',
+  recommends => {
     'PPI' => '0',
     'Class::ISA' => '0',
     'Module::Info' => '0',
     'Module::Load' => '0',
     'File::Slurp' => '0',
+  },
+  test_requires => {
+    'Test::More' => '0.88',
     'Test::Distribution' => '0',
   },
   # script_files => [
