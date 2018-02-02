@@ -1,3 +1,9 @@
+version 3.43 (2018-02-02)
+
+  [BUG FIXES]
+
+  * Fix identification of Brocade CES
+
 version 3.42 (2018-02-02)
 
   [ENHANCEMENTS]
