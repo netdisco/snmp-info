@@ -1,3 +1,13 @@
+version 3.42 (2018-02-02)
+
+  [ENHANCEMENTS]
+
+  * IPv6 Prefix Length support via IPv6::ipv6_addr_prefixlength
+
+  [BUG FIXES]
+
+  * Fix test for updated snmplabs.com data
+
 version 3.41 (2018-02-01)
 
   [BUG FIXES]
