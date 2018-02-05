@@ -335,30 +335,25 @@ sub ipv6_addr_prefix {
 sub ipv6_addr_prefixlength {
     my $info = shift;
     my $return;
-    my $index = $info->ipv6_index or return;
-    my $ipv6_addr_prefixlength = &_test_methods( $info, {
-        ip_addr6_pfxlen  => IPMIB,
-        c_addr6_pfxlen   => CISCO,
-        i6_addr_pfxlen   => IPV6MIB,
+    my $ipv6_addr_prefix = &_test_methods( $info, {
+        ip_addr6_pfx  => IPMIB,
+        c_addr6_pfx   => CISCO,
     });
-    return unless defined $ipv6_addr_prefixlength;
-    # might be returned with ipv6_index value at the start instead
-    # of type+bits, so we need to map via ipv6_index
-    foreach my $row (keys %$ipv6_addr_prefixlength){
-        my $new_row = undef;
-        # only if ipv6_index value at the start
-        if ($row =~ m/^(\d+)\.((?:\d+\.){15}\d+)/) {
-            my ($iid, $addr) = ($1, $2);
-            foreach my $i (keys %$index) {
-                if ($index->{$i} eq $iid and $i =~ m/\.${addr}$/) {
-                    $new_row = $i;
-                    last;
+    return unless defined $ipv6_addr_prefix;
+    foreach my $row (keys %$ipv6_addr_prefix) {
+        if ($row =~ /^(\d+)\.[\d\.]+$/) {
+            my $type = $1;
+            if (($type == 2) or ($type == 4)) { # IPv6
+                # Remove interface specific part from vrf interfaces
+                if ($row =~ /^((\d+\.){17}\d+)/) { $row = $1 }
+                # Remove the OID part from the value
+                my $val = $ipv6_addr_prefix->{$row};
+                if ( $val =~ /^.+?((?:\d+\.){19}(\d+))$/ ) {
+                    $val = $2;
+                    $return->{$row} = $val;
                 }
             }
-            next unless $new_row;
         }
-        # this should alow IPMIB and CISCO to pass through unmunged
-        $return->{$new_row || $row} = $ipv6_addr_prefixlength->{$row};
     }
     printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
