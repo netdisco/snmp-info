@@ -1,3 +1,10 @@
+version 3.44 (2018-02-12)
+
+  [ENHANCEMENTS]
+
+  * Improve F10 OS version detection (laelly)
+  * Better IPv6 prefix derivation
+
 version 3.43 (2018-02-02)
 
   [BUG FIXES]
