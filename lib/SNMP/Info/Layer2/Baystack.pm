@@ -229,7 +229,7 @@ sub index_factor {
         if ( ( $model =~ /(470)/ )
         or ( $os =~ m/(boss|bes)/ ) and ( $op_mode eq 'pure' ) );
     $index_factor = 128
-        if ( ( $model =~ /(5[56]\d\d)|VSP/ )
+        if ( ( $model =~ /(5[56]\d\d)|VSP|4950|59100/ )
         and ( $os_ver >= 6 ) );
 
     return $index_factor;
