@@ -24,7 +24,7 @@ use vars
     qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '3.44';
+$VERSION = '3.45';
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.44
+SNMP::Info - Version 3.45
 
 =head1 AUTHOR
 
@@ -439,7 +439,7 @@ interface to data obtainable from network devices.
 All the required MIB files are included in the netdisco-mib package.
 (See Above).
 
-=over
+=over 4
 
 =item SNMP::Info::Layer1
 
@@ -447,7 +447,7 @@ Generic Layer1 Device subclass.
 
 See documentation in L<SNMP::Info::Layer1> for details.
 
-=over 
+=over 4
 
 =item SNMP::Info::Layer1::Allied
 
