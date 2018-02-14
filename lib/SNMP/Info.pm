@@ -1547,6 +1547,7 @@ sub device_type {
         311  => 'SNMP::Info::Layer3::Microsoft',
         664   => 'SNMP::Info::Layer2::Adtran',
         674  => 'SNMP::Info::Layer3::Dell',
+        1588 => 'SNMP::Info::Layer3::Foundry',
         1872 => 'SNMP::Info::Layer3::AlteonAD',
         1916 => 'SNMP::Info::Layer3::Extreme',
         1991 => 'SNMP::Info::Layer3::Foundry',

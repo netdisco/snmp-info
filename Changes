@@ -1,5 +1,9 @@
 version 3.45 ()
 
+  [ENHANCEMENTS]
+
+  * Enable Layer3::Foundry for Brocade VDX platform
+
   [BUG FIXES]
 
   * #222 #238 #239 handle BayStack switches with port index 128 (zoeloe)
