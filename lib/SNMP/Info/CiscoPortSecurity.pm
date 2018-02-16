@@ -44,6 +44,7 @@ $VERSION = '3.45';
     'CISCO-PORT-SECURITY-MIB' => 'ciscoPortSecurityMIB',
     'CISCO-PAE-MIB'           => 'ciscoPaeMIB',
     'IEEE8021-PAE-MIB'        => 'dot1xAuthLastEapolFrameSource',
+    'CISCO-ERR-DISABLE-MIB'   => 'ciscoErrDisableMIB',
 );
 
 %GLOBALS = (
@@ -99,6 +100,9 @@ $VERSION = '3.45';
     # IEEE8021-PAE-MIB::dot1xPaePortEntry
     'pae_i_capabilities'            => 'dot1xPaePortCapabilities',
     'pae_i_last_eapol_frame_source' => 'dot1xAuthLastEapolFrameSource',
+
+    # CISCO-ERR-DISABLE-MIB::cErrDisableIfStatusEntry
+    'cerr_i_cause' => 'cErrDisableIfStatusCause',
 );
 
 %MUNGE = (
@@ -123,13 +127,29 @@ sub munge_pae_capabilities {
     return join( ' ', @vals );
 }
 
+# Define a generic method to show the cause for a port to be err-disabled.
+# Cisco indexes cErrDisableIfStatusCause by {ifindex,vlan}, but for a more
+# generic method, using ifIndex only makes it easier to implement across
+# device classes. Besides, several (most?) err-disable features will disable
+# the whole interface anyway, and not just a vlan on the interface.
+sub i_err_disable_cause {
+    my $cps = shift;
+    my $ret;
+    my $causes = $cps->cerr_i_cause() || {};
+    foreach my $interfacevlan (keys %$causes) {
+        my ($iid, $vid) = split(/\./, $interfacevlan);
+        $ret->{$iid} = $causes->{$interfacevlan};
+    }
+    return $ret;
+}
+
 1;
 __END__
 
 =head1 NAME
 
 SNMP::Info::CiscoPortSecurity - SNMP Interface to data from
-F<CISCO-PORT-SECURITY-MIB> and F<CISCO-PAE-MIB>
+F<CISCO-PORT-SECURITY-MIB>, F<CISCO-PAE-MIB> and F<CISCO-ERR-DISABLE-MIB>.
 
 =head1 AUTHOR
 
@@ -153,8 +173,9 @@ Eric Miller
 =head1 DESCRIPTION
 
 SNMP::Info::CiscoPortSecurity is a subclass of SNMP::Info that provides
-an interface to the F<CISCO-PORT-SECURITY-MIB> and F<CISCO-PAE-MIB>.  These
-MIBs are used across the Catalyst family under CatOS and IOS.
+an interface to the F<CISCO-PORT-SECURITY-MIB>, F<CISCO-PAE-MIB> and
+F<CISCO-ERR-DISABLE-MIB>. These MIBs are used across the Catalyst
+family under CatOS and IOS.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
@@ -171,6 +192,8 @@ None.
 =item F<CISCO-PAE-MIB>
 
 =item F<IEEE8021-PAE-MIB>
+
+=item F<CISCO-ERR-DISABLE-MIB>
 
 =back
 
@@ -371,6 +394,31 @@ C<'dot1xPaePortAuthCapable'> or C<'dot1xPaePortSuppCapable'>.
 C<dot1xAuthLastEapolFrameSource>
 
 The source MAC address carried in the most recently received EAPOL frame.
+
+=back
+
+=head2 C<CISCO-ERR-DISABLE-MIB::cErrDisableIfStatusEntry>
+
+=over
+
+=item $cps->cerr_i_cause()
+
+C<cErrDisableIfStatusCause>
+
+Indicates the feature/event that caused the {interface, vlan} (or the entire
+interface) to be error-disabled.
+
+=back
+
+=head1 METHODS
+
+=over
+
+=item C<i_err_disable_cause>
+
+Returns a HASH reference mapping ifIndex to err-disabled cause. The returned
+data is sparse, so if the ifIndex is not present in the return value, the port
+is not err-disabled.
 
 =back
 
