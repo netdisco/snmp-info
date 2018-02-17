@@ -1,3 +1,9 @@
+version 3.46 ()
+
+  [ENHANCEMENTS]
+
+  * Add method to get err-disable cause for interfaces on Cisco
+
 version 3.45 (2018-02-14)
 
   [ENHANCEMENTS]
