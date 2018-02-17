@@ -3,7 +3,7 @@
 
 use File::Glob qw/bsd_glob/;
 
-my @pms = glob_rec("../../lib");
+my @pms = glob_rec("./lib");
 
 $new_version = shift @ARGV || die "missing new version\n";
 
