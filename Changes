@@ -1,3 +1,9 @@
+version 3.47 (2018-02-27)
+
+  [ENHANCEMENTS]
+
+  * Add LLDP-MIB::lldpXMedRemInventoryTable methods
+
 version 3.46 (2018-02-17)
 
   [ENHANCEMENTS]

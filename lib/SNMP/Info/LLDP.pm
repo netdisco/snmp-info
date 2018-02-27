@@ -70,6 +70,18 @@ $VERSION = '3.46';
     'lldp_rem_sys_cap'  => 'lldpRemSysCapEnabled',
     'lldp_rem_cap_spt'  => 'lldpRemSysCapSupported',
 
+    # LLDP-MIB::lldpXMedRemInventoryTable
+    'lldp_rem_hw_rev' => 'lldpXMedRemHardwareRev',
+    'lldp_rem_fw_rev' => 'lldpXMedRemFirmwareRev',
+    'lldp_rem_sw_rev' => 'lldpXMedRemSoftwareRev',
+    'lldp_rem_serial' => 'lldpXMedRemSerialNum',
+    'lldp_rem_vendor' => 'lldpXMedRemMfgName',
+    'lldp_rem_model'  => 'lldpXMedRemModelName',
+    'lldp_rem_asset'  => 'lldpXMedRemAssetID',
+
+    'lldp_rem_media_cap'     => 'lldpXMedRemCapCurrent',
+    'lldp_rem_media_cap_spt' => 'lldpXMedRemCapSupported',
+
     # LLDP-MIB::lldpRemManAddrTable
     'lldp_rman_addr' => 'lldpRemManAddrIfSubtype',
 );
@@ -83,6 +95,17 @@ $VERSION = '3.46';
     'lldp_sys_cap'       => \&SNMP::Info::munge_bits,
     'lldp_rem_sys_cap'   => \&SNMP::Info::munge_bits,
     'lldp_rem_cap_spt'   => \&SNMP::Info::munge_bits,
+
+    'lldp_rem_hw_rev' => \&SNMP::Info::munge_null,
+    'lldp_rem_fw_rev' => \&SNMP::Info::munge_null,
+    'lldp_rem_sw_rev' => \&SNMP::Info::munge_null,
+    'lldp_rem_serial' => \&SNMP::Info::munge_null,
+    'lldp_rem_vendor' => \&SNMP::Info::munge_null,
+    'lldp_rem_model'  => \&SNMP::Info::munge_null,
+    'lldp_rem_asset'  => \&SNMP::Info::munge_null,
+
+    'lldp_rem_media_cap'     => \&SNMP::Info::munge_bits,
+    'lldp_rem_media_cap_spt' => \&SNMP::Info::munge_bits,
 );
 
 sub hasLLDP {
@@ -301,6 +324,39 @@ sub lldp_cap {
     # be able to enumerate for us, so we have to get it from the MIB
     # and enumerate ourselves
     my $oid = SNMP::translateObj( 'lldpRemSysCapEnabled', 0, 1 ) || '';
+    my $enums = (
+        ( ref {} eq ref $SNMP::MIB{$oid}{'enums'} )
+        ? $SNMP::MIB{$oid}{'enums'}
+        : {}
+    );
+    my %r_enums = reverse %$enums;
+
+    my %lldp_cap;
+    foreach my $key ( keys %$lldp_caps ) {
+        my $cap_bits = $lldp_caps->{$key};
+        next unless $cap_bits;
+
+        my $count = 0;
+        foreach my $bit ( split //, $cap_bits ) {
+            if ($bit) {
+                push( @{ $lldp_cap{$key} }, $r_enums{$count} );
+            }
+            $count++;
+        }
+    }
+    return \%lldp_cap;
+}
+
+sub lldp_media_cap {
+    my $lldp    = shift;
+    my $partial = shift;
+
+    my $lldp_caps = $lldp->lldp_rem_media_cap_spt($partial) || {};
+
+    # Encoded as BITS which Perl Net-SNMP implementation doesn't seem to
+    # be able to enumerate for us, so we have to get it from the MIB
+    # and enumerate ourselves
+    my $oid = SNMP::translateObj( 'lldpXMedRemCapCurrent', 0, 1 ) || '';
     my $enums = (
         ( ref {} eq ref $SNMP::MIB{$oid}{'enums'} )
         ? $SNMP::MIB{$oid}{'enums'}
@@ -570,6 +626,12 @@ Returns hash of arrays with each array containing the system capabilities
 supported by the remote system.  Possible elements in the array are
 enumerated from C<LldpSystemCapabilitiesMap>.
 
+=item  $lldp->lldp_media_cap() 
+
+Returns hash of arrays with each array containing the media capabilities
+supported by the remote system.  Possible elements in the array are
+enumerated from C<LldpXMedCapabilities>.
+
 =back
 
 =head2 LLDP Remote Table (C<lldpRemTable>)
@@ -630,6 +692,65 @@ remote system.
 Nulls are removed before the value is returned. 
 
 (C<lldpRemSysDesc>)
+
+=item $lldp->lldp_rem_hw_rev()
+
+Returns the string value used to identify the hardware revision of the
+remote system. Nulls are removed before the value is returned. 
+
+(C<lldpXMedRemHardwareRev>)
+
+=item $lldp->lldp_rem_fw_rev()
+
+Returns the string value used to identify the firmware revision of the
+remote system. Nulls are removed before the value is returned. 
+
+(C<lldpXMedRemHardwareRev>)
+
+=item $lldp->lldp_rem_sw_rev()
+
+Returns the string value used to identify the software revision of the
+remote system. Nulls are removed before the value is returned. 
+
+(C<lldpXMedRemSoftwareRev>)
+
+=item $lldp->lldp_rem_serial()
+
+Returns the string value used to identify the serial number of the
+remote system. Nulls are removed before the value is returned. 
+
+(C<lldpXMedRemSerialNum>)
+
+=item $lldp->lldp_rem_vendor()
+
+Returns the string value used to identify the manufacturer of the
+remote system. Nulls are removed before the value is returned. 
+
+(C<lldpXMedRemMfgName>)
+
+=item $lldp->lldp_rem_asset()
+
+Returns the string value used to identify the asset number of the
+remote system. Nulls are removed before the value is returned. 
+
+(C<lldpXMedRemAssetID>)
+
+=item $lldp->lldp_rem_model()
+
+Returns the string value used to identify the model of the
+remote system. Nulls are removed before the value is returned. 
+
+(C<lldpXMedRemModelName>)
+
+=item  $lldp->lldp_rem_media_cap_spt() 
+
+Returns which media capabilities are supported on the remote system. Results
+are munged into an ascii binary string, LSB.
+
+=item  $lldp->lldp_rem_media_cap() 
+
+Returns which media capabilities are enabled on the remote system. Results
+are munged into an ascii binary string, LSB.
 
 =item  $lldp->lldp_rem_sys_cap() 
 
