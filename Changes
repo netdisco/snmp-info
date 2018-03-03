@@ -1,3 +1,13 @@
+version 3.49 (2018-03-03)
+
+  [ENHANCEMENTS]
+
+  * Better Layer3::Cumulus interface naming
+
+  [BUG FIXES]
+
+  * Use GitHub for MIBs download for testing, instead of sf.net
+
 version 3.48 (2018-03-03)
 
   [ENHANCEMENTS]
