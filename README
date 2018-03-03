@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.47
+    SNMP::Info - Version 3.48
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -635,6 +635,11 @@ SUBCLASSES
             Subclass for Avaya/Nortel Contivity/VPN Routers.
 
             See documentation in SNMP::Info::Layer3::Contivity for details.
+
+        SNMP::Info::Layer3::Cumulus
+            Subclass for Cumulus Networks Routers.
+
+            See documentation in SNMP::Info::Layer3::Cumulus for details.
 
         SNMP::Info::Layer3::DLink
             Subclass for DLink devices.

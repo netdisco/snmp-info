@@ -81,6 +81,7 @@ lib/SNMP/Info/Layer3/CiscoASA.pm
 lib/SNMP/Info/Layer3/CiscoFWSM.pm
 lib/SNMP/Info/Layer3/CiscoSwitch.pm
 lib/SNMP/Info/Layer3/Contivity.pm
+lib/SNMP/Info/Layer3/Cumulus.pm
 lib/SNMP/Info/Layer3/Dell.pm
 lib/SNMP/Info/Layer3/DLink.pm
 lib/SNMP/Info/Layer3/Enterasys.pm
