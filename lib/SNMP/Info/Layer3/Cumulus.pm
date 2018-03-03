@@ -112,22 +112,22 @@ sub uptime {
     return $netsnmp->SUPER::uptime();
 }
 
-sub i_ignore {
-    my $l3      = shift;
-    my $partial = shift;
-
-    my $interfaces = $l3->interfaces($partial) || {};
-
-    my %i_ignore;
-    foreach my $if ( keys %$interfaces ) {
-
-        # lo0 etc
-        if ( $interfaces->{$if} =~ /\blo\d*\b/i ) {
-            $i_ignore{$if}++;
-        }
-    }
-    return \%i_ignore;
-}
+#sub i_ignore {
+#    my $l3      = shift;
+#    my $partial = shift;
+#
+#    my $interfaces = $l3->interfaces($partial) || {};
+#
+#    my %i_ignore;
+#    foreach my $if ( keys %$interfaces ) {
+#
+#        # lo0 etc
+#        if ( $interfaces->{$if} =~ /\blo\d*\b/i ) {
+#            $i_ignore{$if}++;
+#        }
+#    }
+#    return \%i_ignore;
+#}
 
 sub agg_ports { return agg_ports_lag(@_) }
 
@@ -145,7 +145,7 @@ Oliver Gorwits - based on Layer3::NetSNMP implementation
 =head1 SYNOPSIS
 
  # Let SNMP::Info determine the correct subclass for you. 
- my $netsnmp = new SNMP::Info(
+ my $cumulus = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
@@ -154,12 +154,12 @@ Oliver Gorwits - based on Layer3::NetSNMP implementation
                         ) 
     or die "Can't connect to DestHost.\n";
 
- my $class      = $netsnmp->class();
+ my $class      = $cumulus->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
 
-Subclass for Generic Net-SNMP devices
+Subclass for Cumulus Networks devices
 
 =head2 Inherited Classes
 
@@ -185,6 +185,8 @@ See L<SNMP::Info::Layer3> for its own MIB requirements.
 
 See L<SNMP::Info::LLDP> for its own MIB requirements.
 
+See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
+
 =back
 
 =head1 GLOBALS
@@ -193,28 +195,27 @@ These are methods that return scalar value from SNMP
 
 =over
 
-=item $netsnmp->vendor()
+=item $cumulus->vendor()
 
-Returns 'Net-SNMP'.
+Returns 'Cumulus Networks'.
 
-=item $netsnmp->os()
+=item $cumulus->os()
 
-Returns the OS extracted from C<sysDescr>.
+Returns 'cumulus'.
 
-=item $netsnmp->os_ver()
+=item $cumulus->os_ver()
 
-Returns the software version extracted from C<sysDescr>, along
-with the Net-SNMP version.
+Returns the software version extracted from C<sysDescr>.
 
-=item $netsnmp->uptime()
+=item $cumulus->uptime()
 
 Returns the system uptime instead of the agent uptime.
 NOTE: discontinuity timers and other Time Stamp based objects
 are based on agent uptime, so use orig_uptime().
 
-=item $netsnmp->serial()
+=item $l3->model()
 
-Returns ''.
+Returns the chassis type.
 
 =back
 
@@ -226,20 +227,32 @@ See documentation in L<SNMP::Info::Layer3> for details.
 
 See documentation in L<SNMP::Info::LLDP> for details.
 
+=head2 Globals imported from SNMP::Info::IEEE802dot3ad
+
+See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
+
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
 to a hash.
 
+=cut
+
+#=item $cumulus->i_ignore()
+#
+#Returns reference to hash.  Increments value of IID if port is to be ignored.
+#
+#Ignores loopback
+
 =head2 Overrides
 
 =over
 
-=item $netsnmp->i_ignore()
+=item C<agg_ports>
 
-Returns reference to hash.  Increments value of IID if port is to be ignored.
-
-Ignores loopback
+Returns a HASH reference mapping from slave to master port for each member of
+a port bundle on the device. Keys are ifIndex of the slave ports, Values are
+ifIndex of the corresponding master ports.
 
 =back
 
@@ -251,23 +264,8 @@ See documentation in L<SNMP::Info::Layer3> for details.
 
 See documentation in L<SNMP::Info::LLDP> for details.
 
-=head1 NOTES
+=head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
 
-In order to cause SNMP::Info to classify your device into this class, it
-may be necessary to put a configuration line into your F<snmpd.conf>
-similar to
-
-  sysobjectid .1.3.6.1.4.1.8072.3.2.N
-
-where N is the object ID for your OS from the C<NET-SNMP-TC> MIB (or
-255 if not listed).  Some Net-SNMP installations default to an
-incorrect return value for C<system.sysObjectId>.
-
-In order to recognize a Net-SNMP device as Layer3, it may be necessary
-to put a configuration line similar to
-
-  sysservices 76
-
-in your F<snmpd.conf>.
+See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
 
 =cut

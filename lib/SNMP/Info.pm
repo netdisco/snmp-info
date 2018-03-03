@@ -766,6 +766,12 @@ Subclass for Avaya/Nortel Contivity/VPN Routers.
 
 See documentation in L<SNMP::Info::Layer3::Contivity> for details.
 
+=item SNMP::Info::Layer3::Cumulus
+
+Subclass for Cumulus Networks Routers.  
+
+See documentation in L<SNMP::Info::Layer3::Cumulus> for details.
+
 =item SNMP::Info::Layer3::DLink
 
 Subclass for DLink devices.  
