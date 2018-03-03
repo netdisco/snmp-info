@@ -112,22 +112,55 @@ sub uptime {
     return $netsnmp->SUPER::uptime();
 }
 
-#sub i_ignore {
-#    my $l3      = shift;
-#    my $partial = shift;
-#
-#    my $interfaces = $l3->interfaces($partial) || {};
-#
-#    my %i_ignore;
-#    foreach my $if ( keys %$interfaces ) {
-#
-#        # lo0 etc
-#        if ( $interfaces->{$if} =~ /\blo\d*\b/i ) {
-#            $i_ignore{$if}++;
-#        }
-#    }
-#    return \%i_ignore;
-#}
+# ifDescr is the same for all interfaces in a class, but the ifName is
+# unique, so let's use that for port name.  If all else fails, 
+# concatentate ifDesc and ifIndex.
+# (code from SNMP/Info/Layer2/Netgear.pm)
+sub interfaces {
+    my $netgear = shift;
+    my $partial = shift;
+
+    my $interfaces = $netgear->i_index($partial)       || {};
+    my $i_descr    = $netgear->i_description($partial) || {};
+    my $i_name     = $netgear->i_name($partial);
+    my $i_isset    = ();
+    # Replace the description with the ifName field, if set
+    foreach my $iid ( keys %$i_name ) {
+        my $name = $i_name->{$iid};
+        next unless defined $name;
+        if (defined $name and $name !~ /^\s*$/) {
+            $interfaces->{$iid} = $name;
+            $i_isset->{$iid} = 1;
+        }
+    }
+    # Replace the Index with the ifDescr field, appended with index
+    # number, to deal with devices with non-unique ifDescr.
+    foreach my $iid ( keys %$i_descr ) {
+        my $port = $i_descr->{$iid} . '-' . $iid;
+        next unless defined $port;
+        next if (defined $i_isset->{$iid} and $i_isset->{$iid} == 1);
+        $interfaces->{$iid} = $port;
+    }
+
+    return $interfaces;
+}
+
+sub i_ignore {
+    my $l3      = shift;
+    my $partial = shift;
+
+    my $interfaces = $l3->interfaces($partial) || {};
+
+    my %i_ignore;
+    foreach my $if ( keys %$interfaces ) {
+
+        # vlan1@br0 or peerlink.4094@peerlink
+        if ( $interfaces->{$if} =~ /@/i ) {
+            $i_ignore{$if}++;
+        }
+    }
+    return \%i_ignore;
+}
 
 sub agg_ports { return agg_ports_lag(@_) }
 
@@ -236,17 +269,25 @@ See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=cut
-
-#=item $cumulus->i_ignore()
-#
-#Returns reference to hash.  Increments value of IID if port is to be ignored.
-#
-#Ignores loopback
-
 =head2 Overrides
 
 =over
+
+=item $cumulus->interfaces()
+
+Uses the i_name() field.
+
+=item $cumulus->i_ignore()
+
+Returns reference to hash.  Increments value of IID if port is to be ignored.
+
+Ignores interfaces with an "@" in them.
+
+=item $cumulus->i_ignore()
+
+Returns reference to hash.  Increments value of IID if port is to be ignored.
+
+Ignores loopback
 
 =item C<agg_ports>
 
