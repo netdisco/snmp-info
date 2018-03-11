@@ -1,3 +1,9 @@
+version 3.50
+
+  [BUG FIXES]
+
+  * Fix SNMP::Info::IEEE802dot3ad when more than 1 LAG 
+
 version 3.49 (2018-03-03)
 
   [ENHANCEMENTS]

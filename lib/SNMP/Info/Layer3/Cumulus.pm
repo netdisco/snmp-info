@@ -68,11 +68,13 @@ $VERSION = '3.49';
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::LLDP::FUNCS,
+    %SNMP::Info::IEEE802dot3ad::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
 sub vendor { return 'Cumulus Networks' }

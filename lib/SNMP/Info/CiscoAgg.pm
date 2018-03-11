@@ -1,6 +1,6 @@
 # SNMP::Info::CiscoAgg
 #
-# Copyright (c) 2014 SNMP::Info Developers
+# Copyright (c) 2018 SNMP::Info Developers
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,9 +52,13 @@ $VERSION = '3.49';
 
 %GLOBALS = ();
 
-%FUNCS = ();
+%FUNCS = (
+  %SNMP::Info::IEEE802dot3ad::FUNCS,
+);
 
-%MUNGE = ();
+%MUNGE = (
+  %SNMP::Info::IEEE802dot3ad::MUNGE,
+);
 
 sub agg_ports_pagp {
   my $dev = shift;
@@ -146,5 +150,9 @@ Implements the PAgP LAG info retrieval. Merged into C<agg_ports> data
 automatically.
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
+
+See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
 
 =cut

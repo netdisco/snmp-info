@@ -1,6 +1,6 @@
 # SNMP::Info::IEEE802dot3ad
 #
-# Copyright (c) 2014 SNMP::Info Developers
+# Copyright (c) 2018 SNMP::Info Developers
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,29 +52,30 @@ $VERSION = '3.49';
 
 %GLOBALS = ();
 
-%FUNCS = ();
+%FUNCS = (
+  'ad_lag_ports'    => 'dot3adAggPortListPorts',
+ );
 
-%MUNGE = ();
+%MUNGE = (
+  'ad_lag_ports' => \&SNMP::Info::munge_port_list,
+ );
 
 sub agg_ports_lag {
   my $dev = shift;
 
   # TODO: implement partial
-  my $masters = $dev->dot3adAggActorOperKey;
-  my $slaves  = $dev->dot3adAggPortActorOperKey;
+  my $ports  = $dev->ad_lag_ports;
 
-  return {} unless
-    ref {} eq ref $masters and scalar keys %$masters
-    and ref {} eq ref $slaves and scalar keys %$slaves;
+  return {} unless ref {} eq ref $ports and scalar keys %$ports;
 
   my $ret = {};
-  foreach my $s (keys %$slaves) {
-      next if $slaves->{$s} == 0;
-      foreach my $m (keys %$masters) {
-          next unless $masters->{$m} == $slaves->{$s};
-          $ret->{$s} = $m;
-          last;
-      }
+  foreach my $m ( keys %$ports ) {
+    my $idx = $m;
+    my $portlist = $ports->{$m};
+    next unless $portlist;
+    for ( my $i = 0; $i <= scalar(@$portlist); $i++ ) {
+      $ret->{$i+1} = $idx if ( @$portlist[$i] );
+    }
   }
 
   return $ret;
