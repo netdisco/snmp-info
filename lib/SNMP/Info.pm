@@ -3983,16 +3983,6 @@ sub _set {
         # Instance is 0 for scalars without a supplied instance
         $var_list->[1] = $list_iid = defined $list_iid ? $list_iid : '0';
 
-        # Check if this method is from a sub or from the tables.
-        if ( $self->can($list_attr) ) {
-            $self->error_throw(
-                "SNMP::Info::_set($list_attr,$list_val) - Failed. $list_attr is generated in a sub(). set_$list_attr sub required."
-            );
-
-            # if sub set_attr() existed, we wouldn't have gotten this far.
-            return;
-        }
-
         # Lookup oid
         my $oid = undef;
         $oid = $list_attr             if SNMP::translateObj($list_attr);
