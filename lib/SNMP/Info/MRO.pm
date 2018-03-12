@@ -7,7 +7,7 @@ use vars qw/$VERSION/;
 $VERSION = '3.49';
  
 use PPI;
-use Class::ISA;
+use Class::ISA;  ## no critic
 use Module::Info;
 use Module::Load ();
 # use Data::Printer;
@@ -228,7 +228,7 @@ sub subroutines {
     foreach my $parent (reverse @super) {
         my %sh = Module::Info->new_from_module( $parent )->subroutines;
         my @subs = grep { $_ !~ m/^_/ }
-                   map { $_ =~ s/^.+:://; $_ }
+                   map { $_ =~ s/^.+:://; $_ }  ## no critic
                    keys %sh;
 
         foreach my $sub (@subs) {
