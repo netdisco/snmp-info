@@ -13,6 +13,7 @@ use Path::Class 'dir';
 
 my $info = SNMP::Info->new(
   AutoSpecify => 1,
+  Debug       => 1,
   DestHost    => 'demo.snmplabs.com',
   Community   => 'public',
   Version     => 2,
@@ -25,7 +26,7 @@ my $info = SNMP::Info->new(
 ok($info, 'SNMP::Info instantiated');
 ok((!defined $info->error()), 'No error on initial connection');
 
-is($info->name(),  '25', 'name is "new system name"');
+is($info->name(),  '434', 'name is "new system name"');
 is($info->class(), 'SNMP::Info::Layer3::NetSNMP', 'class is Layer3::NetSNMP');
 
 done_testing;
