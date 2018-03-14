@@ -65,3 +65,6 @@
 .github
 .travis
 README.md
+
+# Avoid Komodo project file
+\.komodoproject$

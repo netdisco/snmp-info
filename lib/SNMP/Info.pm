@@ -983,25 +983,31 @@ See documentation in L<SNMP::Info::Layer7> for details.
 
 =item SNMP::Info::Layer7::APC
 
-SNMP Interface to APC UPS devices
+Subclass for  APC UPS devices
 
 See documentation in L<SNMP::Info::Layer7::APC> for details.
 
 =item SNMP::Info::Layer7::CiscoIPS
 
-SNMP Interface to Cisco IPS devices
+Subclass for Cisco IPS devices
 
 See documentation in L<SNMP::Info::Layer7::Cisco IPS> for details.
 
+=item SNMP::Info::Layer7::Gigamon
+
+Subclass for Gigamon devices
+
+See documentation in L<SNMP::Info::Layer7::Gigamon> for details.
+
 =item SNMP::Info::Layer7::Netscaler
 
-SNMP Interface to Citrix Netscaler appliances
+Subclass for Citrix Netscaler appliances
 
 See documentation in L<SNMP::Info::Layer7::Netscaler> for details.
 
 =item SNMP::Info::Layer7::Neoteris
 
-SNMP Interface to Juniper SSL VPN appliances
+Subclass for Juniper SSL VPN appliances
 
 See documentation in L<SNMP::Info::Layer7::Neoteris> for details.
 
@@ -1632,6 +1638,7 @@ sub device_type {
         5951  => 'SNMP::Info::Layer7::Netscaler',
         14525 => 'SNMP::Info::Layer2::Trapeze',
         12532 => 'SNMP::Info::Layer7::Neoteris',
+        26866 => 'SNMP::Info::Layer7::Gigamon',
     );
 
     # Get just the enterprise number for generic mapping

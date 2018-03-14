@@ -1,5 +1,9 @@
 version 3.50
 
+  [ENHANCEMENTS]
+
+  * #198 Add Support for Gigamon devices
+
   [BUG FIXES]
 
   * #226 Avaya VSP devices - no ifAlias
