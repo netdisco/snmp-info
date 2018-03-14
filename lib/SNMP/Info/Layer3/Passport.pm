@@ -372,6 +372,7 @@ sub i_name {
     my $model      = $passport->model();
     my $i_index    = $passport->i_index($partial) || {};
     my $rc_alias   = $passport->rc_alias($partial) || {};
+    my $i_alias    = $passport->i_alias($partial) || {};
     my $i_name2    = $passport->orig_i_name($partial) || {};
     my $v_name     = {};
     my $vlan_index = {};
@@ -427,8 +428,13 @@ sub i_name {
         }
 
         else {
-            my $name  = $i_name2->{$iid};
-            my $alias = $rc_alias->{$iid};
+            my $name      = $i_name2->{$iid};
+            my $pp_alias  = $rc_alias->{$iid};
+            my $std_alias = $i_alias->{$iid};
+            my $alias
+                = ( defined $pp_alias and $pp_alias !~ /^\s*$/ )
+                ? $pp_alias
+                : $std_alias;
             $i_name{$iid}
                 = ( defined $alias and $alias !~ /^\s*$/ )
                 ? $alias
