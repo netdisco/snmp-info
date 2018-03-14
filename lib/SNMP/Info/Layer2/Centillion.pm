@@ -43,7 +43,7 @@ use SNMP::Info::SONMP;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.49';
+$VERSION = '3.50';
 
 %MIBS = (
     %SNMP::Info::MIBS,

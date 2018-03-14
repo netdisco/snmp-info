@@ -44,7 +44,7 @@ use SNMP::Info::MAU;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.49';
+$VERSION = '3.50';
 
 %MIBS = (
     %SNMP::Info::MAU::MIBS,
