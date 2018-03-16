@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # test_class_mocked.pl
 #
@@ -33,7 +33,7 @@ use strict;
 use warnings;
 use Carp;
 use FindBin;
-use lib "$FindBin::Bin/../../..";
+use lib "$FindBin::Bin/../../lib";
 use File::Slurp qw(slurp);
 use Getopt::Long;
 use Pod::Usage;
