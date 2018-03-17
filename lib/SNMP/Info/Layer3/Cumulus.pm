@@ -119,12 +119,12 @@ sub uptime {
 # concatentate ifDesc and ifIndex.
 # (code from SNMP/Info/Layer2/Netgear.pm)
 sub interfaces {
-    my $netgear = shift;
+    my $netsnmp = shift;
     my $partial = shift;
 
-    my $interfaces = $netgear->i_index($partial)       || {};
-    my $i_descr    = $netgear->i_description($partial) || {};
-    my $i_name     = $netgear->i_name($partial);
+    my $interfaces = $netsnmp->i_index($partial)       || {};
+    my $i_descr    = $netsnmp->i_description($partial) || {};
+    my $i_name     = $netsnmp->i_name($partial);
     my $i_isset    = ();
     # Replace the description with the ifName field, if set
     foreach my $iid ( keys %$i_name ) {

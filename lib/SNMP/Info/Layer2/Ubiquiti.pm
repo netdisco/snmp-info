@@ -207,6 +207,46 @@ sub mac {
 
 }
 
+sub interfaces {
+    my $netgear = shift;
+    my $partial = shift;
+
+    my $interfaces = $netgear->i_index($partial)       || {};
+    my $i_descr    = $netgear->i_description($partial) || {};
+    my $return = {};
+
+    foreach my $iid ( keys %$i_descr ) {
+        # Slot: 0 Port: 4 Gigabit - Level
+        if ($i_descr->{$iid} =~ m/([0-9]+)[^0-9]+([0-9]+)/) {
+            $return->{$iid} = $1 .'/'. $2;
+        }
+        # Link Aggregate 4
+        if ($i_descr->{$iid} =~ m/Link Aggregate (\d+)/) {
+            $return->{$iid} = '3/'. $1;
+        }
+    }
+
+    return $return;
+}
+
+sub i_ignore {
+    my $l2      = shift;
+    my $partial = shift;
+
+    my $interfaces = $l2->interfaces($partial) || {};
+    my $i_descr    = $l2->i_description($partial) || {};
+
+    my %i_ignore;
+    foreach my $if ( keys %$interfaces ) {
+
+        # CPU Interface
+        if ( $i_descr->{$if} =~ /CPU Interface/i ) {
+            $i_ignore{$if}++;
+        }
+    }
+    return \%i_ignore;
+}
+
 1;
 __END__
 
