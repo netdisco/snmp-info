@@ -281,15 +281,7 @@ Uses the i_name() field.
 
 =item $cumulus->i_ignore()
 
-Returns reference to hash.  Increments value of IID if port is to be ignored.
-
 Ignores interfaces with an "@" in them.
-
-=item $cumulus->i_ignore()
-
-Returns reference to hash.  Increments value of IID if port is to be ignored.
-
-Ignores loopback
 
 =item C<agg_ports>
 

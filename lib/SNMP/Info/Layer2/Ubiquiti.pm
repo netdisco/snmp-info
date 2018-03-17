@@ -348,6 +348,20 @@ See L<SNMP::Info::IEEE802dot11/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
+=head2 Overrides
+
+=over
+
+=item $ubiquiti->interfaces()
+
+Uses the i_name() field.
+
+=item $ubiquiti->i_ignore()
+
+Ignores interfaces with "CPU Interface" in them.
+
+=back
+
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
