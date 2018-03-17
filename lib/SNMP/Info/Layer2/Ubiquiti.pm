@@ -219,11 +219,15 @@ sub interfaces {
         # Slot: 0 Port: 4 Gigabit - Level
         if ($i_descr->{$iid} =~ m/([0-9]+)[^0-9]+([0-9]+)/) {
             $return->{$iid} = $1 .'/'. $2;
+            next;
         }
         # Link Aggregate 4
         if ($i_descr->{$iid} =~ m/Link Aggregate (\d+)/) {
             $return->{$iid} = '3/'. $1;
+            next;
         }
+        # else
+        $return->{$iid} = $i_descr->{$iid};
     }
 
     return $return;
