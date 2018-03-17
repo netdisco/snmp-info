@@ -2,17 +2,17 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.50
+    SNMP::Info - Version 3.51
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
     Miller, Bill Fenner, Max Baker, Jeroen van Ingen and Oliver Gorwits.
 
-    Please visit <http://sourceforge.net/projects/snmp-info/> for most
+    Please visit http://sourceforge.net/projects/snmp-info/ for most
     up-to-date list of developers.
 
     SNMP::Info was originally created at UCSC for the Netdisco project
-    <http://netdisco.org> by Max Baker.
+    http://netdisco.org by Max Baker.
 
 DEVICES SUPPORTED
     There are now generic classes for most types of device and so the
@@ -78,7 +78,7 @@ SYNOPSIS
 SUPPORT
     Please direct all support, help, and bug requests to the snmp-info-users
     Mailing List at
-    <http://lists.sourceforge.net/lists/listinfo/snmp-info-users>.
+    http://lists.sourceforge.net/lists/listinfo/snmp-info-users.
 
 DESCRIPTION
     SNMP::Info gives an object oriented interface to information obtained
@@ -116,9 +116,9 @@ REQUIREMENTS
         The SNMP module is matched to an install of net-snmp, and must be
         installed from the net-snmp source tree.
 
-        The Perl module "SNMP" is found inside the net-snmp distribution. Go
+        The Perl module `SNMP' is found inside the net-snmp distribution. Go
         to the perl/ directory of the distribution to install it, or run
-        "./configure --with-perl-modules" from the top directory of the
+        `./configure --with-perl-modules' from the top directory of the
         net-snmp distribution.
 
         Net-SNMP can be found at http://net-snmp.sourceforge.net
@@ -137,27 +137,24 @@ REQUIREMENTS
 
         If you are using SNMP::Info separate from Netdisco, download the
         Netdisco MIB package at
-        <http://sourceforge.net/projects/netdisco/files/netdisco-mibs/latest
-        -snapshot/>
+        http://sourceforge.net/projects/netdisco/files/netdisco-mibs/latest-
+        snapshot/
 
         Make sure that your snmp.conf is updated to point to your MIB
         directory and that the MIBs are world-readable.
 
 DESIGN GOALS
     1. Use of textual MIB leaf identifier and enumerated values
-
-        *   All values are retrieved via MIB Leaf node names
-
+        * All values are retrieved via MIB Leaf node names
             For example SNMP::Info has an entry in its %GLOBALS hash for
             ``sysName'' instead of 1.3.6.1.2.1.1.5.
 
-        *   Data returned is in the enumerated value form.
-
+        * Data returned is in the enumerated value form.
             For Example instead of looking up 1.3.6.1.2.1.2.2.1.3 and
-            getting back 23
+            getting back `23'
 
-            SNMP::Info will ask for "RFC1213-MIB::ifType" and will get back
-            "ppp".
+            SNMP::Info will ask for `RFC1213-MIB::ifType' and will get back
+            `ppp'.
 
     2. SNMP::Info is easily extended to new devices
         You can create a new subclass for a device by providing four hashes
@@ -182,7 +179,7 @@ SUBCLASSES
     These subclasses implement method to access one or more MIBs. These are
     not used directly, but rather inherited from device subclasses.
 
-    For more info run "perldoc" on any of the following module names.
+    For more info run `perldoc' on any of the following module names.
 
     SNMP::Info::AdslLine
         SNMP Interface to the ADSL-LINE-MIB for ADSL interfaces.
@@ -192,7 +189,7 @@ SUBCLASSES
         See documentation in SNMP::Info::AdslLine for details.
 
     SNMP::Info::Aggregate
-        SNMP Interface to IF-MIB "ifStackTable" Aggregated Links
+        SNMP Interface to IF-MIB `ifStackTable' Aggregated Links
 
         See documentation in SNMP::Info::Aggregate for details.
 
@@ -456,7 +453,7 @@ SUBCLASSES
 
         SNMP::Info::Layer2::Catalyst
             Subclass for Cisco Catalyst switches running CatOS. These
-            switches usually report a model number that starts with "wsc".
+            switches usually report a model number that starts with `wsc'.
             Note that this class does not support everything that has the
             name Catalyst.
 
@@ -823,8 +820,7 @@ SUBCLASSES
         SNMP::Info::Layer7::CiscoIPS
             Subclass for Cisco IPS devices
 
-            See documentation in "SNMP::Info::Layer7::Cisco IPS" for
-            details.
+            See documentation in SNMP::Info::Layer7::Cisco IPS for details.
 
         SNMP::Info::Layer7::Gigamon
             Subclass for Gigamon devices
@@ -883,7 +879,7 @@ USAGE
             (default 0, which means "off")
 
         BulkWalk
-            Set to 0 to turn off BULKWALK commands for SNMPv2 connections.
+            Set to `0' to turn off BULKWALK commands for SNMPv2 connections.
 
             Note that BULKWALK is turned off for Net-SNMP versions 5.1.x
             because of a bug.
@@ -891,8 +887,8 @@ USAGE
             (default 1, which means "on")
 
         BulkRepeaters
-            Set number of MaxRepeaters for BULKWALK operation. See "perldoc
-            SNMP" -> bulkwalk() for more info.
+            Set number of MaxRepeaters for BULKWALK operation. See `perldoc
+            SNMP' -> bulkwalk() for more info.
 
             (default 20)
 
@@ -903,7 +899,7 @@ USAGE
             detect loops during a bulkwalk operation, Net-SNMP's internal
             bulkwalk function must detect the loop.
 
-            Set to 0 to turn off loop detection.
+            Set to `0' to turn off loop detection.
 
             (default 1, which means "on")
 
@@ -913,8 +909,8 @@ USAGE
             /usr/lib(64)/snmp, or $HOME/.snmp and uses those settings to
             automatically parse MIB files, etc.
 
-            Set to 1 "on" to ignore Net-SNMP configuration files by
-            overriding the "SNMPCONFPATH" environmental variable during
+            Set to `1' "on" to ignore Net-SNMP configuration files by
+            overriding the `SNMPCONFPATH' environmental variable during
             object initialization. Note: MibDirs must be defined or Net-SNMP
             will not be able to load MIBs and initialize the object.
 
@@ -954,14 +950,14 @@ USAGE
         Offline
             Causes SNMP::Info to avoid network activity and return data only
             from its cache. If you ask for something not in the cache, an
-            error is thrown. See also the "cache()" and "offline()" methods.
+            error is thrown. See also the `cache()' and `offline()' methods.
 
             (default 0, which means "online")
 
         Cache
             Pass in a HashRef to prime the cache of retrieved data. Useful
-            for creating an instance in "Offline" mode from a previously
-            dumped cache. See also the "cache()" method to retrieve a cache
+            for creating an instance in `Offline' mode from a previously
+            dumped cache. See also the `cache()' method to retrieve a cache
             after running actial queries.
 
         OTHER
@@ -998,7 +994,7 @@ USAGE
         This is useful, e.g., when a device supports multiple contexts (via
         changes to the Community string, or via the SNMPv3 Context
         parameter), but a context that you want to access does not support
-        the objects (e.g., "sysObjectID", "sysDescr") that we use to
+        the objects (e.g., `sysObjectID', `sysDescr') that we use to
         identify the device.
 
   Data is Cached
@@ -1012,7 +1008,7 @@ USAGE
     globals and table methods.
 
     The cache can be retrieved or set using the $info->cache() method. This
-    works together with the "Offline" option.
+    works together with the `Offline' option.
 
   Object Scalar Methods
     These are for package related data, not directly supplied from SNMP.
@@ -1032,7 +1028,7 @@ USAGE
 
     $info->cache([new_cache])
         Returns a HashRef of all cached data in this object. There will be a
-        "store" key for table data and then one key for each leaf.
+        `store' key for table data and then one key for each leaf.
 
         Optionally sets the cache parameters if passed a HashRef.
 
@@ -1047,7 +1043,7 @@ USAGE
         Optionally sets the loopdetect parameter.
 
     $info->device_type()
-        Returns the Subclass name for this device. "SNMP::Info" is returned
+        Returns the Subclass name for this device. `SNMP::Info' is returned
         if no more specific class is available.
 
         First the device is checked for Layer 3 support and a specific
@@ -1094,8 +1090,8 @@ USAGE
         calls on certain Cisco devices.
 
         See
-        <ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-community
-        Indexing.html>
+        ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityI
+        ndexing.html
 
   Globals (Scalar Methods)
     These are methods to return scalar data from RFC1213.
@@ -1106,16 +1102,16 @@ USAGE
     $info->uptime()
         Uptime in hundredths of seconds since device became available.
 
-        ("sysUpTime")
+        (`sysUpTime')
 
     $info->contact()
-        ("sysContact")
+        (`sysContact')
 
     $info->name()
-        ("sysName")
+        (`sysName')
 
     $info->location()
-        ("sysLocation")
+        (`sysLocation')
 
     $info->layers()
         This returns a binary encoded string where each digit represents a
@@ -1128,7 +1124,7 @@ USAGE
 
         See $info->has_layer()
 
-        ("sysServices")
+        (`sysServices')
 
     $info->ports()
         Number of interfaces available on this device.
@@ -1136,14 +1132,14 @@ USAGE
         Not too useful as the number of SNMP interfaces usually does not
         correspond with the number of physical ports
 
-        ("ifNumber")
+        (`ifNumber')
 
     $info->ipforwarding()
         The indication of whether the entity is acting as an IP gateway
 
         Returns either forwarding or not-forwarding
 
-        ("ipForwarding")
+        (`ipForwarding')
 
   Table Methods
     Each of these methods returns a hash_reference to a hash keyed on the
@@ -1166,7 +1162,7 @@ USAGE
 
         $local_routes = $info->ipr_route('192.168.0');
 
-    This will only fetch entries in the table that start with 192.168.0,
+    This will only fetch entries in the table that start with `192.168.0',
     which in this case are routes on the local network.
 
     Remember that you must supply the partial IID (a numeric OID).
@@ -1193,79 +1189,79 @@ USAGE
     $info->i_index()
         Default SNMP IID to Interface index.
 
-        ("ifIndex")
+        (`ifIndex')
 
     $info->i_description()
         Description of the interface. Usually a little longer single word
         name that is both human and machine friendly. Not always.
 
-        ("ifDescr")
+        (`ifDescr')
 
     $info->i_type()
         Interface type, such as Vlan, Ethernet, Serial
 
-        ("ifType")
+        (`ifType')
 
     $info->i_mtu()
         INTEGER. Interface MTU value.
 
-        ("ifMtu")
+        (`ifMtu')
 
     $info->i_speed()
         Speed of the link, human format. See munge_speed() later in document
         for details.
 
-        ("ifSpeed", "ifHighSpeed" if necessary)
+        (`ifSpeed', `ifHighSpeed' if necessary)
 
     $info->i_speed_raw()
         Speed of the link in bits per second without munging. If
         i_speed_high is available it will be used and multiplied by
         1_000_000.
 
-        ("ifSpeed", "ifHighSpeed" if necessary)
+        (`ifSpeed', `ifHighSpeed' if necessary)
 
     $info->i_speed_high()
         Speed of a high-speed link, human format. See munge_highspeed()
         later in document for details. You should not need to call this
         directly, as i_speed() will call it if it needs to.
 
-        ("ifHighSpeed")
+        (`ifHighSpeed')
 
     $info->i_mac()
         MAC address of the interface. Note this is just the MAC of the port,
         not anything connected to it.
 
-        ("ifPhysAddress")
+        (`ifPhysAddress')
 
     $info->i_up()
         Link Status of the interface. Typical values are 'up' and 'down'.
 
-        ("ifOperStatus")
+        (`ifOperStatus')
 
     $info->i_up_admin()
         Administrative status of the port. Typical values are 'enabled' and
         'disabled'.
 
-        ("ifAdminStatus")
+        (`ifAdminStatus')
 
     $info->i_lastchange()
-        The value of "sysUpTime" when this port last changed states
+        The value of `sysUpTime' when this port last changed states
         (up,down).
 
-        ("ifLastChange")
+        (`ifLastChange')
 
     $info->i_name()
         Interface Name field. Supported by a smaller subset of devices, this
         fields is often human set.
 
-        ("ifName")
+        (`ifName')
 
     $info->i_alias()
         Interface Name field. For certain devices this is a more human
         friendly form of i_description(). For others it is a human set field
         like i_name().
 
-        ("ifAlias")
+        (`ifAlias')
 
   Interface Statistics
     $info->i_octet_in(), $info->i_octets_out(), $info->i_octet_in64(),
@@ -1282,13 +1278,13 @@ USAGE
         global $SNMP::Info::BIGINT to 1 , or pass the BigInt value to new()
         if you want SNMP::Info to do it for you.
 
-        ("ifInOctets") ("ifOutOctets") ("ifHCInOctets") ("ifHCOutOctets")
+        (`ifInOctets') (`ifOutOctets') (`ifHCInOctets') (`ifHCOutOctets')
 
     $info->i_errors_in(), $info->i_errors_out()
         Number of packets that contained an error preventing delivery. See
-        "IF-MIB" for more info.
+        `IF-MIB' for more info.
 
-        ("ifInErrors") ("ifOutErrors")
+        (`ifInErrors') (`ifOutErrors')
 
     $info->i_pkts_ucast_in(), $info->i_pkts_ucast_out(),
     $info->i_pkts_ucast_in64(), $info->i_pkts_ucast_out64()
@@ -1296,17 +1292,17 @@ USAGE
 
         64 bit version may not exist on all devices.
 
-        ("ifInUcastPkts") ("ifOutUcastPkts") ("ifHCInUcastPkts")
-        ("ifHCOutUcastPkts")
+        (`ifInUcastPkts') (`ifOutUcastPkts') (`ifHCInUcastPkts')
+        (`ifHCOutUcastPkts')
 
     $info->i_pkts_nucast_in(), $info->i_pkts_nucast_out(),
         Number of packets sent to a multicast or broadcast address.
 
         These methods are deprecated by i_pkts_multi_in() and
-        i_pkts_bcast_in() according to "IF-MIB". Actual device usage may
+        i_pkts_bcast_in() according to `IF-MIB'. Actual device usage may
         vary.
 
-        ("ifInNUcastPkts") ("ifOutNUcastPkts")
+        (`ifInNUcastPkts') (`ifOutNUcastPkts')
 
     $info->i_pkts_multi_in() $info->i_pkts_multi_out(),
     $info->i_pkts_multi_in64(), $info->i_pkts_multi_out64()
@@ -1314,8 +1310,8 @@ USAGE
 
         64 bit version may not exist on all devices.
 
-        ("ifInMulticastPkts") ("ifOutMulticastPkts") ("ifHCInMulticastPkts")
-        ("ifHCOutMulticastPkts")
+        (`ifInMulticastPkts') (`ifOutMulticastPkts') (`ifHCInMulticastPkts')
+        (`ifHCOutMulticastPkts')
 
     $info->i_pkts_bcast_in() $info->i_pkts_bcast_out(),
     $info->i_pkts_bcast_in64() $info->i_pkts_bcast_out64()
@@ -1323,17 +1319,17 @@ USAGE
 
         64 bit version may not exist on all devices.
 
-        ("ifInBroadcastPkts") ("ifOutBroadcastPkts") ("ifHCInBroadcastPkts")
-        ("ifHCOutBroadcastPkts")
+        (`ifInBroadcastPkts') (`ifOutBroadcastPkts') (`ifHCInBroadcastPkts')
+        (`ifHCOutBroadcastPkts')
 
     $info->i_discards_in() $info->i_discards_out()
         "The number of inbound packets which were chosen to be discarded
         even though no errors had been detected to prevent their being
         deliverable to a higher-layer protocol. One possible reason for
         discarding such a packet could be to free up buffer space."
-        ("IF-MIB")
+        (`IF-MIB')
 
-        ("ifInDiscards") ("ifOutDiscards")
+        (`ifInDiscards') (`ifOutDiscards')
 
     $info->i_bad_proto_in()
         "For packet-oriented interfaces, the number of packets received via
@@ -1345,17 +1341,17 @@ USAGE
         that does not support protocol multiplexing, this counter will
         always be 0."
 
-        ("ifInUnknownProtos")
+        (`ifInUnknownProtos')
 
     $info->i_qlen_out()
         "The length of the output packet queue (in packets)."
 
-        ("ifOutQLen")
+        (`ifOutQLen')
 
     $info->i_specific()
-        See "IF-MIB" for full description
+        See `IF-MIB' for full description
 
-        ("ifSpecific")
+        (`ifSpecific')
 
   IP Address Table
     Each entry in this table is an IP address in use on this device. Usually
@@ -1364,53 +1360,53 @@ USAGE
     $info->ip_index()
         Maps the IP Table to the IID
 
-        ("ipAdEntIfIndex")
+        (`ipAdEntIfIndex')
 
     $info->ip_table()
         Maps the Table to the IP address
 
-        ("ipAdEntAddr")
+        (`ipAdEntAddr')
 
     $info->ip_netmask()
         Gives netmask setting for IP table entry.
 
-        ("ipAdEntNetMask")
+        (`ipAdEntNetMask')
 
     $info->ip_broadcast()
         Gives broadcast address for IP table entry.
 
-        ("ipAdEntBcastAddr")
+        (`ipAdEntBcastAddr')
 
   IP Routing Table
     $info->ipr_route()
         The route in question. A value of 0.0.0.0 is the default gateway
         route.
 
-        ("ipRouteDest")
+        (`ipRouteDest')
 
     $info->ipr_if()
         The interface (IID) that the route is on. Use interfaces() to map.
 
-        ("ipRouteIfIndex")
+        (`ipRouteIfIndex')
 
     $info->ipr_1()
         Primary routing metric for this route.
 
-        ("ipRouteMetric1")
+        (`ipRouteMetric1')
 
     $info->ipr_2()
         If metrics are not used, they should be set to -1
 
-        ("ipRouteMetric2")
+        (`ipRouteMetric2')
 
     $info->ipr_3()
-        ("ipRouteMetric3")
+        (`ipRouteMetric3')
 
     $info->ipr_4()
-        ("ipRouteMetric4")
+        (`ipRouteMetric4')
 
     $info->ipr_5()
-        ("ipRouteMetric5")
+        (`ipRouteMetric5')
 
     $info->ipr_dest()
         From RFC1213:
@@ -1421,7 +1417,7 @@ USAGE
           of this field is the agent's IP address on that
           interface.)"
 
-        ("ipRouteNextHop")
+        (`ipRouteNextHop')
 
     $info->ipr_type()
         From RFC1213:
@@ -1432,7 +1428,6 @@ USAGE
             direct(3),       -- connected (sub-)network
                              -- route to a non-local
             indirect(4)      -- host/network/sub-network
-
 
               "The type of route.  Note that the values
               direct(3) and indirect(4) refer to the notion of
@@ -1453,7 +1448,7 @@ USAGE
               Proper interpretation of such entries requires
               examination of the relevant ipRouteType object."
 
-        ("ipRouteType")
+        (`ipRouteType')
 
     $info->ipr_proto()
         From RFC1213:
@@ -1480,22 +1475,22 @@ USAGE
             ospf(13),
             bgp(14)
 
-        ("ipRouteProto")
+        (`ipRouteProto')
 
     $info->ipr_age()
         Seconds since route was last updated or validated.
 
-        ("ipRouteAge")
+        (`ipRouteAge')
 
     $info->ipr_mask()
         Subnet Mask of route. 0.0.0.0 for default gateway.
 
-        ("ipRouteMask")
+        (`ipRouteMask')
 
     $info->ipr_info()
         Reference to MIB definition specific to routing protocol.
 
-        ("ipRouteInfo")
+        (`ipRouteInfo')
 
   Topology Information
     Based upon the manufacturer and software version devices may support
@@ -1514,16 +1509,16 @@ USAGE
     EDP: See SNMP::Info::EDP for details.
     AMAP: See SNMP::Info::AMAP for details.
 
-   Topology Capabilities
+    Topology Capabilities
     $info->has_topo()
         Reports Layer 2 topology protocols which are supported and running
         on a device.
 
         Returns either a reference to an array of protocols, possible values
-        being: "lldp", "cdp", "sonmp", "fdp", "edp", "amap" or "undef" if no
+        being: `lldp', `cdp', `sonmp', `fdp', `edp', `amap' or `undef' if no
         protocols are supported or running.
 
-   Common Topology Table Information
+    Common Topology Table Information
     The common topology table methods below will query the device for
     information from the specified topology protocols and return a single
     hash combining all information. As a result, there may be identical
@@ -1538,7 +1533,7 @@ USAGE
 
     If a reference to an array is provided as the second argument, those
     protocols will be queried for information. The supported array values
-    are: "lldp", "cdp", "sonmp", "fdp", "edp", "amap".
+    are: `lldp', `cdp', `sonmp', `fdp', `edp', `amap'.
 
     If nothing is passed in as the second argument, the methods will call
     has_topo() to determine supported and running topology protocols on the
@@ -1574,7 +1569,7 @@ USAGE
         Returns reference to hash. Key: iid, Value: Remote Device Type
 
         Note: EDP does not provide this information. LLDP uses
-        ("lldpRemSysDesc") or "lldp_rem_sysname" as the closest match.
+        (`lldpRemSysDesc') or `lldp_rem_sysname' as the closest match.
 
     $info->c_cap(partial, topology_protocol_arrayref)
         Returns reference to hash of arrays. Key: iid, Value: Array of
@@ -1605,7 +1600,7 @@ SETTING DATA VIA SNMP
          $info->set_i_up_admin('down', $if_map{'FastEthernet0/0'}) 
             or die "Couldn't disable the port. ",$info->error(1);
 
-    NOTE: You must be connected to your device with a "ReadWrite" community
+    NOTE: You must be connected to your device with a `ReadWrite' community
     string in order for set operations to work.
 
     NOTE: This will only set data listed in %FUNCS and %GLOBALS. For data
@@ -1639,12 +1634,12 @@ EXTENDING SNMP::INFO
     The preference is to open a feature request in the SourceForge project.
     This allows all developers to have visibility into the request. Please
     include pointers to the applicable platform MIBs. For development we
-    will need an "snmpwalk" of the device. There is a tool now included in
+    will need an `snmpwalk' of the device. There is a tool now included in
     the SNMP::Info distribution to help with this task, although you'll most
     likely need to download the distribution from CPAN as it's included in
-    the ""contrib/util"" directory.
+    the "`contrib/util'" directory.
 
-    The utility is named "make_snmpdata.pl". Run it with a command line
+    The utility is named `make_snmpdata.pl'. Run it with a command line
     like:
 
      ./make_snmpdata.pl -c community -i -d device_ip \
@@ -1684,7 +1679,7 @@ EXTENDING SNMP::INFO
 
     %FUNCS
         Contains a hash in the form ( method_name => SNMP MIB leaf name)
-        These are table entries, such as the "ifIndex"
+        These are table entries, such as the `ifIndex'
 
         To resolve MIB leaf name conflicts between private MIBs, you may
         prefix the leaf name with the MIB replacing each - (dash) and :
@@ -1759,7 +1754,6 @@ EXTENDING SNMP::INFO
                  'super_hero_name'   => 'SuperHeroIfName',
                  'super_hero_powers' => 'SuperHeroIfPowers'
                 );
-
 
      %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
                  %SNMP::Info::CiscoVTP::MUNGE,
@@ -1836,7 +1830,7 @@ SNMP::INFO INTERNALS
         SNMP::Session. Or see method in new() to do it on an object scope.
 
     $REPEATERS
-        Default 20. MaxRepeaters for BULKWALK operations. See "perldoc SNMP"
+        Default 20. MaxRepeaters for BULKWALK operations. See `perldoc SNMP'
         for more info. Can change by passing BulkRepeaters option in new()
 
   Data Munging Callback Subroutines
@@ -1884,13 +1878,13 @@ SNMP::INFO INTERNALS
                      )
 
         Note: high speed interfaces (usually 1 Gbps or faster) have their
-        link speed in "ifHighSpeed". i_speed() automatically determines
-        whether to use "ifSpeed" or "ifHighSpeed"; if the latter is used,
+        link speed in `ifHighSpeed'. i_speed() automatically determines
+        whether to use `ifSpeed' or `ifHighSpeed'; if the latter is used,
         the value is munged by munge_highspeed(). SNMP::Info can return
         speeds up to terabit levels this way.
 
     munge_highspeed()
-        Makes human friendly speed ratings for "ifHighSpeed"
+        Makes human friendly speed ratings for `ifHighSpeed'
 
     munge_ip()
         Takes a binary IP and makes it dotted ASCII
@@ -1921,8 +1915,8 @@ SNMP::INFO INTERNALS
         See Math::BigInt for details.
 
     munge_i_up
-        Net-SNMP tends to load "RFC1213-MIB" first, and so ignores the
-        updated enumeration for "ifOperStatus" in "IF-MIB". This munge
+        Net-SNMP tends to load `RFC1213-MIB' first, and so ignores the
+        updated enumeration for `ifOperStatus' in `IF-MIB'. This munge
         handles the "newer" definitions for the enumeration in IF-MIB.
 
         TODO: Get the precedence of MIBs and overriding of MIB data in
@@ -2062,7 +2056,7 @@ SNMP::INFO INTERNALS
         a MIB Leaf node name contained within a table of a loaded MIB.
 
         Supports partial table fetches and single instance table fetches.
-        See "Partial Table Fetches" in SNMP::Info.
+        See SNMP::Info.
 
         These methods return data as a reference to a hash.
 
@@ -2080,7 +2074,7 @@ SNMP::INFO INTERNALS
     $info->_cache(attr, data)
         Cache retrieved data so that if it's asked for again, we use the
         cache instead of going back to Net-SNMP. Data is cached inside the
-        blessed hashref $self.
+        blessed hashref `$self'.
 
         Accepts the leaf and value (scalar, or hashref for a table). Does
         not return anything useful.
