@@ -1,3 +1,11 @@
+version 3.52 (2018-03-19)
+
+  [ENHANCEMENTS]
+
+  * set fallback for nonmatching interfaces in Cumulus class
+  * better interface naming for Ubiquiti
+  * modify mock utility to work under a perlbrew environment
+
 version 3.50 (2018-03-14)
 
   [ENHANCEMENTS]
