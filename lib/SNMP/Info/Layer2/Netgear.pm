@@ -89,7 +89,7 @@ sub serial {
 
     # Without Enitity-MIB, we've got to work our way through a bunch of
     # different locales...
-    return $netgear->ng_gsmserial() if defined $netgear->model and $netgear->model =~ m/[F|G]SM\d/i;;
+    return $netgear->ng_gsmserial() if defined $netgear->model and $netgear->model =~ m/[FG]SM\d/i;;
     return 'none';
 }
 
@@ -148,7 +148,7 @@ sub os_ver {
         my $os_ver  = $netgear->e_swver();
         return $os_ver->{$index} if defined $os_ver;
     }
-    return $netgear->ng_gsmosver() if defined  $netgear->model and $netgear->model =~ m/[F|G]SM\d/i;
+    return $netgear->ng_gsmosver() if defined  $netgear->model and $netgear->model =~ m/[FG]SM\d/i;
     return $netgear->ng_fsosver() if defined  $netgear->model and $netgear->model =~ m/FS\d/i;
 }
 
