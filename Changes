@@ -1,5 +1,9 @@
 Version 3.53 ()
 
+  [NEW FEATURES]
+
+  * #12 add Cisco PortFast support via CiscoStpExtensions::i_faststart_enabled
+
   [ENHANCEMENTS]
 
   * Report serial/version on Netgear FSM (paecker)

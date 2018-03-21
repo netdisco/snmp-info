@@ -47,6 +47,7 @@ $VERSION = '3.52';
 %MIBS = (
     'BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',
     'Q-BRIDGE-MIB' => 'dot1qPvid',
+    'RSTP-MIB'     => 'dot1dStpPortOperEdgePort',
 );
 
 %GLOBALS = (
@@ -103,6 +104,10 @@ $VERSION = '3.52';
     'stp_p_root'     => 'dot1dStpPortDesignatedRoot',
     'stp_p_bridge'   => 'dot1dStpPortDesignatedBridge',
     'stp_p_port'     => 'dot1dStpPortDesignatedPort',
+
+    # Rapid Spanning Tree Protocol Table : dot1dStpExtPortEntry
+    'is_edgeport_admin' => 'dot1dStpPortAdminEdgePort',
+    'is_edgeport_oper'  => 'dot1dStpPortOperEdgePort',
 
     # Q-BRIDGE-MIB : dot1qPortVlanTable
     'qb_i_vlan'        => 'dot1qPvid',
