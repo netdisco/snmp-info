@@ -1277,7 +1277,7 @@ sub new {
     }
 
     # Connects to device unless open session is provided.
-    $sess = new SNMP::Session(
+    $sess = SNMP::Session->new(
         'UseEnums' => 1,
         %sess_args, 'RetryNoSuch' => $new_obj->{nosuch}
     ) unless defined $sess;
@@ -1339,7 +1339,7 @@ sub update {
     delete $sess_args{BigInt};
     delete $sess_args{MibDirs};
 
-    my $sess = new SNMP::Session(
+    my $sess = SNMP::Session->new(
         'UseEnums' => 1,
         %sess_args, 'RetryNoSuch' => $obj->{nosuch}
     );
@@ -2721,7 +2721,7 @@ sub _get_topo_data {
     my $self     = shift;
     my $partial  = shift;
     my $topo_cap = shift;
-    my $method   = shift;
+    my $method   = shift || '';
 
     return unless $method =~ /(ip|if|port|id|platform|cap)/;
 
@@ -3056,7 +3056,9 @@ the SNMP::Info methods.
     'name'         => 'sysName',
     'location'     => 'sysLocation',
     'layers'       => 'sysServices',
+    # IF-MIB
     'ports'        => 'ifNumber',
+    # IP-MIB
     'ipforwarding' => 'ipForwarding',
 );
 
@@ -3074,7 +3076,9 @@ ALTEON-TS-PHYSICAL-MIB::agPortCurCfgPortName.
 =cut
 
 %FUNCS = (
+    # IF-MIB::IfEntry
     'interfaces' => 'ifIndex',
+    # IF-MIB::IfEntry
     'i_name'     => 'ifName',
 
     # IF-MIB::IfEntry
@@ -3104,13 +3108,13 @@ ALTEON-TS-PHYSICAL-MIB::agPortCurCfgPortName.
     # IF-MIB::IfStackTable
     'i_stack_status'    => 'ifStackStatus',
 
-    # IP Address Table
+    # IP::MIB::ipAddrTable (deprecated IPv4 address table)
     'ip_index'     => 'ipAdEntIfIndex',
     'ip_table'     => 'ipAdEntAddr',
     'ip_netmask'   => 'ipAdEntNetMask',
     'ip_broadcast' => 'ipAdEntBcastAddr',
 
-    # ifXTable - Extension Table
+    # IF-MIB::ifXTable - Extension Table
     'i_speed_high'       => 'ifHighSpeed',
     'i_pkts_multi_in'    => 'ifInMulticastPkts',
     'i_pkts_multi_out'   => 'ifOutMulticastPkts',
@@ -3126,7 +3130,7 @@ ALTEON-TS-PHYSICAL-MIB::agPortCurCfgPortName.
     'i_pkts_bcast_out64' => 'ifHCOutBroadcastPkts',
     'i_alias'            => 'ifAlias',
 
-    # IP Routing Table
+    # RFC-1213::ipRoute (deprecated Table IP Routing Table)
     'ipr_route' => 'ipRouteDest',
     'ipr_if'    => 'ipRouteIfIndex',
     'ipr_1'     => 'ipRouteMetric1',
@@ -3157,7 +3161,13 @@ $info->init() will throw an exception if a MIB does not load.
 
 %MIBS = (
 
-    # The "main" MIBs are automagically loaded in Net-SNMP now.
+    # Include these here for cases where the Net-SNMP default MIB list has
+    # been overridden during the compliation of the local Net-SNMP library.
+    # These cover the globals and funcs defined in this file.
+    'SNMPv2-MIB'  => 'sysObjectID',
+    'RFC1213-MIB' => 'ipRouteIfIndex',
+    'IP-MIB'      => 'ipAdEntAddr',
+    'IF-MIB'      => 'ifIndex',
 );
 
 =item %MUNGE
@@ -4237,7 +4247,7 @@ sub _load_attr {
         # partial fetch may strip the Module portion upon return.  We need
         # the match to make sure we didn't leave the table during getnext
         # requests
-        
+
         my ($leaf) = $qual_leaf =~ /::(\w+)$/;
 
         $self->debug()
@@ -4245,7 +4255,7 @@ sub _load_attr {
             defined $partial ? "($partial)" : '', " : $oid" ,
             defined $partial ? ".$partial" : '', "\n";
 
-        my $var = new SNMP::Varbind( [$qual_leaf, $partial] );
+        my $var = SNMP::Varbind->new( [$qual_leaf, $partial] );
 
         # So devices speaking SNMP v.1 are not supposed to give out
         # data from SNMP2, but most do.  Net-SNMP, being very precise
@@ -4438,7 +4448,7 @@ sub snmp_connect_ip {
     return if ( $ip eq '0.0.0.0' ) or ( $ip =~ /^127\./ );
 
     # Create session object
-    my $snmp_test = new SNMP::Session(
+    my $snmp_test = SNMP::Session->new(
         'DestHost'  => $ip,
         'Community' => $comm,
         'Version'   => $ver
@@ -4680,21 +4690,27 @@ sub can {
     my $funcs = $self->funcs();
 
     # We need to resolve funcs with a prefix or suffix
-    my $f_method = $method;
-    $f_method =~ s/^(load|orig)_//;
-    $f_method =~ s/_raw$//;
+    my $base_method = $method;
+    $base_method =~ s/^(load|orig)_//;
+    $base_method =~ s/_raw$//;
 
     no strict 'refs';    ## no critic (ProhibitNoStrict )
 
+    # We could add load_/orig_/_raw alternatives to symbol table here on
+    # first call of any type for a global or func since they all use the same
+    # destination code, but they aren't used heavily in main code base so
+    # we’ll just create if/when they are called rather than pollute the
+    # symbol table with entries that never get called.
+
     # Check for set_ ing.
     if ( $method =~ /^set_/ ) {
-        return *{$AUTOLOAD} = _make_setter( $method, $oid, @_ );
+        return *{$method} = _make_setter( $method, $oid, @_ );
     }
-    elsif ( defined $funcs->{$f_method} || $table ) {
-        return *{$AUTOLOAD} = _load_attr( $method, $oid, @_ );
+    elsif ( defined $funcs->{$base_method} || $table ) {
+        return *{$method} = _load_attr( $method, $oid, @_ );
     }
     else {
-        return *{$AUTOLOAD} = _global( $method, $oid );
+        return *{$method} = _global( $method, $oid );
     }
 }
 
@@ -4734,11 +4750,11 @@ subclass.
 
 =cut
 
+our $AUTOLOAD;
+
 sub AUTOLOAD {
     my $self = shift;
     my ($sub_name) = $AUTOLOAD =~ /::(\w+)$/;
-
-    return if $sub_name =~ /DESTROY$/;
 
     # Typos in function calls in SNMP::Info subclasses turn into
     # AUTOLOAD requests for non-methods.  While this is deprecated,
@@ -4765,6 +4781,9 @@ sub AUTOLOAD {
     return $self->$meth_ref(@_);
 
 }
+
+# Skip AUTOLOAD()
+sub DESTROY {}
 
 1;
 
