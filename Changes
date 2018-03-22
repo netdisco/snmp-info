@@ -1,4 +1,4 @@
-Version 3.53 ()
+Version 3.53 (2018-03-22)
 
   [NEW FEATURES]
 
@@ -8,6 +8,7 @@ Version 3.53 ()
 
   * Report serial/version on Netgear FSM (paecker)
   * Add test harness and expand developer test coverage
+  * Add back the base (RFC) MIBs for when net-snmp does not have them builtin
 
   [BUG FIXES]
 
