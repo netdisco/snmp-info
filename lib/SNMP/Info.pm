@@ -2721,7 +2721,7 @@ sub _get_topo_data {
     my $self     = shift;
     my $partial  = shift;
     my $topo_cap = shift;
-    my $method   = shift;
+    my $method   = shift || '';
 
     return unless $method =~ /(ip|if|port|id|platform|cap)/;
 
