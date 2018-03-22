@@ -7,6 +7,12 @@ Version 3.53 ()
   [ENHANCEMENTS]
 
   * Report serial/version on Netgear FSM (paecker)
+  * Add test harness and expand developer test coverage
+
+  [BUG FIXES]
+
+  *  Fix AUTOLOAD / can() bug that could result in DESTROY being redefined and
+     dynamic methods not being added to the symbol table.
 
 version 3.52 (2018-03-19)
 
