@@ -31,7 +31,8 @@ Module::Build->new(
     'Test::MockObject::Extends' => '0',
     'File::Find' => '0',
     'Path::Class' => '0',
-    'File::Slurper' => '0', 
+    'File::Slurper' => '0',
+    'Test::Exception' => '0.43',
   },
   # script_files => [
   # ],
