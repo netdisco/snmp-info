@@ -4690,21 +4690,27 @@ sub can {
     my $funcs = $self->funcs();
 
     # We need to resolve funcs with a prefix or suffix
-    my $f_method = $method;
-    $f_method =~ s/^(load|orig)_//;
-    $f_method =~ s/_raw$//;
+    my $base_method = $method;
+    $base_method =~ s/^(load|orig)_//;
+    $base_method =~ s/_raw$//;
 
     no strict 'refs';    ## no critic (ProhibitNoStrict )
 
+    # We could add load_/orig_/_raw alternatives to symbol table here on
+    # first call of any type for a global or func since they all use the same
+    # destination code, but they aren't used heavily in main code base so
+    # we’ll just create if/when they are called rather than pollute the
+    # symbol table with entries that never get called.
+
     # Check for set_ ing.
     if ( $method =~ /^set_/ ) {
-        return *{$AUTOLOAD} = _make_setter( $method, $oid, @_ );
+        return *{$method} = _make_setter( $method, $oid, @_ );
     }
-    elsif ( defined $funcs->{$f_method} || $table ) {
-        return *{$AUTOLOAD} = _load_attr( $method, $oid, @_ );
+    elsif ( defined $funcs->{$base_method} || $table ) {
+        return *{$method} = _load_attr( $method, $oid, @_ );
     }
     else {
-        return *{$AUTOLOAD} = _global( $method, $oid );
+        return *{$method} = _global( $method, $oid );
     }
 }
 
@@ -4744,11 +4750,11 @@ subclass.
 
 =cut
 
+our $AUTOLOAD;
+
 sub AUTOLOAD {
     my $self = shift;
     my ($sub_name) = $AUTOLOAD =~ /::(\w+)$/;
-
-    return if $sub_name =~ /DESTROY$/;
 
     # Typos in function calls in SNMP::Info subclasses turn into
     # AUTOLOAD requests for non-methods.  While this is deprecated,
@@ -4775,6 +4781,9 @@ sub AUTOLOAD {
     return $self->$meth_ref(@_);
 
 }
+
+# Skip AUTOLOAD()
+sub DESTROY {}
 
 1;
 
