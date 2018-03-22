@@ -620,6 +620,12 @@ Subclass for Netgear switches
 
 See documentation in L<SNMP::Info::Layer2::Netgear> for details.
 
+=item SNMP::Info::Layer2::Nexans
+
+Subclass for Nexans switches
+
+See documetion in L<SNMP::Info::Layer2::Nexans> for details.
+
 =item SNMP::Info::Layer2::NWSS2300
 
 SNMP Interface to Avaya (Trapeze) Wireless Controllers
@@ -1607,6 +1613,7 @@ sub device_type {
         45    => 'SNMP::Info::Layer2::Baystack',
         171   => 'SNMP::Info::Layer3::DLink',
         207   => 'SNMP::Info::Layer2::Allied',
+        266   => 'SNMP::Info::Layer2::Nexans',
         664   => 'SNMP::Info::Layer2::Adtran',
         674   => 'SNMP::Info::Layer3::Dell',
         1872  => 'SNMP::Info::Layer3::AlteonAD',
