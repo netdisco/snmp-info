@@ -1277,7 +1277,7 @@ sub new {
     }
 
     # Connects to device unless open session is provided.
-    $sess = new SNMP::Session(
+    $sess = SNMP::Session->new(
         'UseEnums' => 1,
         %sess_args, 'RetryNoSuch' => $new_obj->{nosuch}
     ) unless defined $sess;
@@ -1339,7 +1339,7 @@ sub update {
     delete $sess_args{BigInt};
     delete $sess_args{MibDirs};
 
-    my $sess = new SNMP::Session(
+    my $sess = SNMP::Session->new(
         'UseEnums' => 1,
         %sess_args, 'RetryNoSuch' => $obj->{nosuch}
     );
@@ -4247,7 +4247,7 @@ sub _load_attr {
         # partial fetch may strip the Module portion upon return.  We need
         # the match to make sure we didn't leave the table during getnext
         # requests
-        
+
         my ($leaf) = $qual_leaf =~ /::(\w+)$/;
 
         $self->debug()
@@ -4255,7 +4255,7 @@ sub _load_attr {
             defined $partial ? "($partial)" : '', " : $oid" ,
             defined $partial ? ".$partial" : '', "\n";
 
-        my $var = new SNMP::Varbind( [$qual_leaf, $partial] );
+        my $var = SNMP::Varbind->new( [$qual_leaf, $partial] );
 
         # So devices speaking SNMP v.1 are not supposed to give out
         # data from SNMP2, but most do.  Net-SNMP, being very precise
@@ -4448,7 +4448,7 @@ sub snmp_connect_ip {
     return if ( $ip eq '0.0.0.0' ) or ( $ip =~ /^127\./ );
 
     # Create session object
-    my $snmp_test = new SNMP::Session(
+    my $snmp_test = SNMP::Session->new(
         'DestHost'  => $ip,
         'Community' => $comm,
         'Version'   => $ver
