@@ -9,3 +9,4 @@ Makefile*
 Build
 _build
 blib
+cover_db
