@@ -97,23 +97,25 @@ sub funcs : Tests(2) {
 # or context as described in documentation
 
 # TODO - Commented out as causing problems during CI build
-#sub update : Tests(4) {
-#  my $test = shift;
+sub update : Tests(4) {
+  my $test = shift;
 
   # Starting community
-#  is($test->{info}{sess}{Community}, 'public', 'original community');
+  is($test->{info}{sess}{Community}, 'public', 'original community');
 
   # Change community
-#  $test->{info}->update('Community' => 'new_community',);
-#  is($test->{info}{sess}{Community}, 'new_community', 'community changed');
+  my %update_args = ('Community' => 'new_community',);
+  $test->{info}->update(%update_args);
+  is($test->{info}{sess}{Community}, 'new_community', 'community changed');
 
   # Starting context
-#  is($test->{info}{sess}{Context}, '', 'original context');
+  is($test->{info}{sess}{Context}, '', 'original context');
 
   # Change context
-#  $test->{info}->update('Context' => 'new_context',);
-#  is($test->{info}->{sess}->{Context}, 'new_context', 'context changed');
-#}
+  %update_args = ('Context' => 'new_context',);
+  $test->{info}->update(%update_args);
+  is($test->{info}->{sess}->{Context}, 'new_context', 'context changed');
+}
 
 sub cache_and_clear_cache : Tests(9) {
   my $test = shift;
@@ -676,5 +678,87 @@ sub munge_i_up : Tests(4) {
   is(SNMP::Info::munge_i_up(4), 'unknown',        'Unknown status');
   is(SNMP::Info::munge_i_up(7), 'lowerLayerDown', 'Lower layer down status');
 }
+
+sub munge_port_list : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_port_list');
+
+  # These are typically longer bit strings to cover the all ports in a switch
+  my $bit_string = '01010101010101010101010101010101';
+  my $bits = pack("B*", $bit_string);
+
+  # We are going to get a reference of array of bits back so convert the
+  # string to an array
+  my $expected = [];
+  for my $value (split //, $bit_string) {
+    $expected->[++$#$expected] = $value;
+  }
+  is_deeply(SNMP::Info::munge_port_list($bits),
+    $expected, 'Portlist octet string coverted to ASCII bit array');
+}
+
+sub munge_null : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_null');
+
+  # See if all possible control characters and nulls are removed
+  my $cntl_string = "Test\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09";
+  $cntl_string .= "This\x0A\x0B\x0C\x0D\x0E\x0F";
+  $cntl_string .= "Crazy\x11\x12\x13\x14\x15\x16\x17\x18\x19";
+  $cntl_string .= "Cntl\x1A\x1B\x1C\x1D\x1E\x1F";
+  $cntl_string .= "\x7FString";
+
+  # This is layers munge, use L3 test case
+  is(SNMP::Info::munge_null($cntl_string),
+    'TestThisCrazyCntlString', 'Null and control characters removed');
+}
+
+sub munge_e_type : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_e_type');
+
+  # This is just calling SNMP::translateOb, so rather than loading another MIB
+  # let's just resolve an OID we don't use from a loaded MIB.
+  is(SNMP::Info::munge_e_type('.1.3.6.1.2.1.11.4'),
+    'snmpInBadCommunityNames', 'OID translated properly');
+
+  # Bogus OID
+  is(SNMP::Info::munge_e_type('.100.3.6.1.2.1.11.4'),
+    '.100.3.6.1.2.1.11.4', 'OID returned when unable to translate');
+}
+
+sub init : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'init');
+
+  # When the test info object was created init() was called so all of the
+  # entries in %MIBS should be loaded
+  subtest 'Base MIBs loaded subtest' => sub {
+
+    my $base_mibs = $test->{info}->mibs();
+
+    foreach my $key (keys %$base_mibs) {
+      my $qual_name = "$key" . '::' . "$base_mibs->{$key}";
+      ok(defined $SNMP::MIB{$base_mibs->{$key}}, "$qual_name defined");
+      like(SNMP::translateObj($qual_name),
+        qr/^(\.\d+)+$/, "$qual_name translates to a OID");
+    }
+  };
+  
+  # Get SNMP::Version so we can restore
+  my $netsnmp_ver = $SNMP::VERSION;
+  local $SNMP::VERSION = '5.0.1';
+  
+  warnings_like { $test->{info}->init() }
+  [{carped => qr/Net-SNMP\s5.0.1\sseems\sto\sbe\srather\sbuggy/x}],
+    'Use of bad Net-SNMP gives warning';
+  
+  $SNMP::VERSION = $netsnmp_ver;
+}
+
 
 1;
