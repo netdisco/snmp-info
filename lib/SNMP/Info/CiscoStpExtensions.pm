@@ -36,7 +36,7 @@ use SNMP::Info::Bridge;
 
 use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT $INIT/;
 
-$VERSION = '3.51';
+$VERSION = '3.53';
 
 @SNMP::Info::CiscoStpExtensions::ISA = qw/SNMP::Info::Bridge SNMP::Info Exporter/;
 @SNMP::Info::CiscoStpExtensions::EXPORT_OK = qw//;
@@ -54,12 +54,15 @@ $VERSION = '3.51';
             'stpx_stp_type'          => 'stpxSpanningTreeType',
             'stpx_bpduguard_enable'  => 'stpxFastStartBpduGuardEnable',
             'stpx_bpdufilter_enable' => 'stpxFastStartBpduFilterEnable',
+            'stpx_faststart_default' => 'stpxFastStartGlobalDefaultMode',
            );
 
 %FUNCS   = (
             %SNMP::Info::Bridge::FUNCS,
             'stpx_rootguard_enabled'      => 'stpxRootGuardConfigEnabled',
             'stpx_loopguard_enabled'      => 'stpxLoopGuardConfigEnabled',
+            'stpx_faststart_enabled'      => 'stpxFastStartPortEnable',
+            'stpx_faststart_operational'  => 'stpxFastStartPortMode',
             'stpx_port_bpduguard_mode'    => 'stpxFastStartPortBpduGuardMode',
             'stpx_port_bpdufilter_mode'   => 'stpxFastStartPortBpduFilterMode',
             'stpx_smst_root'              => 'stpxSMSTInstanceCISTRegionalRoot',
@@ -69,7 +72,7 @@ $VERSION = '3.51';
 
 %MUNGE   = (
             %SNMP::Info::Bridge::MUNGE,
-           'stpx_mst_config_digest'     => \&SNMP::Info::CiscoStpExtensions::oct2str,
+           'stpx_mst_config_digest'      => \&SNMP::Info::CiscoStpExtensions::oct2str,
            );
 
 
@@ -225,6 +228,36 @@ sub i_bpdufilter_enabled {
     return \%res;
 }
 
+sub i_faststart_enabled {
+    my $self    = shift;
+    my $partial = shift;
+
+    my $faststart_default = $self->stpx_faststart_default();
+    my $bp_index          = $self->bp_index($partial);
+    my $faststart         = $self->stpx_faststart_enabled();
+    my $faststart_oper    = $self->stpx_faststart_operational();
+
+    my %res;
+    # stpxFastStartPortEnable is deprecated in favour of stpxFastStartPortMode
+    # see https://github.com/netdisco/netdisco/issues/12
+    foreach my $index ( keys %$faststart, keys %$faststart_oper ){
+        my $mode = $faststart_oper->{$index} || $faststart->{$index};
+        my $iid  = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $mode;
+        if ( $mode eq 'default' ){
+            $res{$iid} =  $faststart_default;
+        }else{
+            $res{$iid} = $mode;
+        }
+        $res{$iid} = 'enable'  if $res{$iid} eq 'true';
+        $res{$iid} = 'disable' if $res{$iid} eq 'false';
+        $res{$iid} = 1 if $res{$iid} =~ m/enable/i; # enableForTrunk
+        $res{$iid} = 0 if $res{$iid} eq 'disable';
+    }
+    return \%res;
+}
+
 
 sub oct2str {
     my ($v) = @_;
@@ -339,6 +372,13 @@ Returns 1 or 0 depending on whether C<BpduFilter> is enabled on a given port.
 Format is a hash reference with key = C<ifIndex>, value = [1|0]
 
 (C<stpxFastStartBpduFilterEnable>)
+
+=item $stpx->i_faststart_enabled()
+
+Returns 1 or 0 depending on whether FastStart (aka PortFast) is enabled on a
+given port.  Format is a hash reference with key = C<ifIndex>, value = [1|0]
+
+(C<stpxFastStartPortEnable> and C<stpxFastStartPortMode>)
 
 =back
 

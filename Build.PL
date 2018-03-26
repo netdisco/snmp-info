@@ -27,6 +27,12 @@ Module::Build->new(
   test_requires => {
     'Test::More' => '0.88',
     'Test::Distribution' => '0',
+    'Test::Class::Most'  => '0',
+    'Test::MockObject::Extends' => '0',
+    'File::Find' => '0',
+    'Path::Class' => '0',
+    'File::Slurper' => '0',
+    'Test::Exception' => '0.43',
   },
   # script_files => [
   # ],

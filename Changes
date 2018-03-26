@@ -1,3 +1,28 @@
+Version 3.53 (2018-03-22)
+
+  [NEW FEATURES]
+
+  * #12 add Cisco PortFast support via CiscoStpExtensions::i_faststart_enabled
+
+  [ENHANCEMENTS]
+
+  * Report serial/version on Netgear FSM (paecker)
+  * Add test harness and expand developer test coverage
+  * Add back the base (RFC) MIBs for when net-snmp does not have them builtin
+
+  [BUG FIXES]
+
+  *  Fix AUTOLOAD / can() bug that could result in DESTROY being redefined and
+     dynamic methods not being added to the symbol table.
+
+version 3.52 (2018-03-19)
+
+  [ENHANCEMENTS]
+
+  * set fallback for nonmatching interfaces in Cumulus class
+  * better interface naming for Ubiquiti
+  * modify mock utility to work under a perlbrew environment
+
 version 3.50 (2018-03-14)
 
   [ENHANCEMENTS]
