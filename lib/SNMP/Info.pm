@@ -4212,8 +4212,6 @@ sub _load_attr {
         return unless defined $sess;
 
         my $ver    = $self->snmp_ver();
-        my $nosuch = $self->nosuch();
-        my $store  = $self->store();
 
         my $load = $method =~ /^load/;
         my $raw  = $method =~ /raw$/;
