@@ -3881,7 +3881,7 @@ These methods return data as a scalar.
 sub _global {
     my $method = shift;
     my $oid    = shift;
-    return sub {} if $method eq 'CARP_TRACE';
+    return if $method eq 'CARP_TRACE';
 
     return sub {
         my $self = shift;
