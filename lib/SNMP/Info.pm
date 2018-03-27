@@ -3979,8 +3979,9 @@ sub _set {
     }
     else {
         $self->error_throw(
-            "SNMP::Info::_set($attr,$val) - Failed. Invalid argument for attr."
+            "SNMP::Info::_set - Failed. Invalid arguments"
         );
+        return;
     }
 
     my $sess = $self->session();
