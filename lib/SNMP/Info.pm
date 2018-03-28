@@ -4625,7 +4625,7 @@ sub _validate_autoload_method {
     # skip the check and return
     if ($access) {
         unless ( ( $method =~ /^set/ && $access =~ /Write|Create/ )
-            || $access =~ /Read|Create/ )
+            || ($method !~ /^set/ && $access =~ /Read|Create/) )
         {
             print
                 "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessable for requested operation.\n"
