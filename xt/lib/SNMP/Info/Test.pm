@@ -76,12 +76,6 @@ sub update : Tests(9) {
   # Starting community
   is($test->{info}{sess}{Community}, 'public', q(Original community 'public'));
 
-  # Starting context
-  ok(!exists $test->{info}{sess}{Context}, q(Context doesn't exist));
-
-#TODO: {
-#    todo_skip "CI issues with update() tests", 6 if 1;
-
   # Change community
   my %update_args = ('Community' => 'new_community',);
   delete $test->{info}{args}{Session};
@@ -89,12 +83,31 @@ sub update : Tests(9) {
   is($test->{info}->error(),         undef,           '... and no error');
   is($test->{info}{sess}{Community}, 'new_community', 'Community changed');
 
+#TODO: {
+#    todo_skip "CI issues with update() tests", 3 if 1;
+
+  my $class = $test->class;
+
+  my $v3_info = $class->new(
+    'AutoSpecify' => 0,
+    'BulkWalk'    => 0,
+    'UseEnums'    => 1,
+    'RetryNoSuch' => 1,
+    'DestHost'    => '127.0.0.1',
+    'SecName'     => 'initial',
+    'SecLevel'    => 'noAuthNoPriv',
+    'Context'     => '',
+    'Version'     => 3,
+  );
+
+  # Starting context
+  is($v3_info->{sess}{Context}, '', q(Context doesn't exist));
+
   # Change context
-  $test->{info}{args}{Version} = 3;
-  %update_args = ('Context' => 'new_context',);
-  ok($test->{info}->update(%update_args), 'Update Context');
-  is($test->{info}->error(),       undef,         '... and no error');
-  is($test->{info}{sess}{Context}, 'new_context', 'Context changed');
+  %update_args = ('Context' => 'vlan-100');
+  ok($v3_info->update(%update_args), 'Update Context');
+  is($v3_info->error(),         undef,      '... and no error');
+  is($v3_info->{sess}{Context}, 'vlan-100', 'Context changed');
 
 #  }
 }
