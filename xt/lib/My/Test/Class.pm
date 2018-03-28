@@ -58,11 +58,26 @@ sub setup : Tests(setup) {
   my $class = $test->class;
   my $sess  = $test->mock_session;
 
-  $test->{info}
-    = $class->new('AutoSpecify' => 0, 'BulkWalk' => 0, 'Session' => $sess,);
+  $test->{info} = $class->new(
+    'AutoSpecify' => 0,
+    'BulkWalk'    => 0,
+    'UseEnums'    => 1,
+    'RetryNoSuch' => 1,
+    'DestHost'    => '127.0.0.1',
+    'Community'   => 'public',
+    'Version'     => 2,
+    'Session'     => $sess,
+  );
 }
 
-sub teardown : Tests(teardown) { my $test = shift; $test->{info} = undef; }
+sub teardown : Tests(teardown) {
+  my $test = shift;
+  my $sess = $test->mock_session;
+
+  # Make sure we start clear object and any mocked session data after each test
+  $test->{info} = undef;
+  $sess->{Data} = {};
+}
 
 sub create_mock_session {
 
@@ -137,10 +152,14 @@ sub mock_get {
         ($leaf, $iid) = $oid_name =~ /^(\S+::\w+)[.]?(\S+)*$/x;
       }
 
+      # This is a lot of indirection, but we need the base OID, it may be
+      # passed with a zero for non table leaf
+      my $oid_base = SNMP::translateObj($leaf);
+
       $iid ||= 0;
       my $new_iid = $iid;
       my $val     = $EMPTY;
-      my $data    = $c_data->{$leaf} || {};
+      my $data    = $c_data->{$leaf} || $c_data->{$oid_base} || {};
       my $count   = scalar keys %{$data} || 0;
       if ($count > 1) {
         my $found = 0;
@@ -233,7 +252,17 @@ sub mock_getnext {
 }
 
 # For testing purposes assume sets worked
-sub mock_set {1}
+sub mock_set {
+  my $mock_session = shift;
+
+  $mock_session->mock(
+    'set',
+    sub {
+      return 1;
+    }
+  );
+  return;
+}
 
 # Utility to load snmpwalk from a file to use for mock sessions
 sub load_snmpdata {
@@ -257,15 +286,20 @@ sub load_snmpdata {
   return $snmp_data;
 }
 
-# Grab the symbol table for verification that
-# dynamic methods via AUTOLOAD and can() have been inserted
-sub symbols {
-  my $test  = shift;
-  my $class = $test->class;
+# Returns 1 if the method is defined in the symbol table 0 otherwise, used for
+# verification that dynamic methods via AUTOLOAD and can() have been inserted
+# into the symbol table
+sub symbol_test {
+  my $test   = shift;
+  my $method = shift;
+
+  my $class   = $test->class;
+  my %symbols = ();
   {
     no strict 'refs';    ## no critic (ProhibitNoStrict)
-    return \%{$class . '::'};
+    %symbols = %{$class . '::'};
   }
+  return (defined($symbols{$method}) ? 1 : 0);
 }
 
 1;
