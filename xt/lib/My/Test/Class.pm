@@ -106,7 +106,20 @@ sub constructor : Tests(8) {
     scalar keys %{$test->{info}{munge}},
     'Munge subclass data structure initialized'
   );
-  is_deeply($test->{info}{store}, {}, 'Store initialized');
+  ok(exists $test->{info}{store}, 'Store initialized');
+}
+
+sub device_type : Tests(2) {
+  my $test = shift;
+  my $class = $test->class;
+
+  can_ok($test->{info}, 'device_type');
+
+  # This depends on cache or mocked session data being provided.
+  # Recommendation is to extend the existing setup method in the
+  # subclass to provide the common data.
+  is($test->{info}->device_type(),
+    $class, qq(Device type is $class));
 }
 
 sub globals : Tests(2) {

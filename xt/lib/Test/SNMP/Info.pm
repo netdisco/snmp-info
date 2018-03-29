@@ -1,4 +1,4 @@
-# SNMP::Info::Test
+# Test::SNMP::Info
 #
 # Copyright (c) 2018 Eric Miller
 # All rights reserved.
@@ -59,13 +59,13 @@ sub update : Tests(9) {
 
 TODO: {
     # The update() method creates a new SNMP::Session, v1/2 do not actually
-    # need to contact the DestHost for sesssion creation while v3 does.
+    # need to contact the DestHost for session creation while v3 does.
     # It appears that Net-SNMP 5.8 changes the behavior of v3 session creation
     # so that it doesn't require contact with the DestHost to pass these tests
     # We also could connect to http://snmplabs.com v3 simulator but would
     # prefer to keep those tests isolated to 10_remote_snmplabs.t - we could
     # also move the update() tests to that file.
-    todo_skip "Revist v3 Context update() tests when using Net-SNMP 5.8+", 4
+    todo_skip "Revisit v3 Context update() tests when using Net-SNMP 5.8+", 4
       if 1;
 
     # Starting context
@@ -186,23 +186,13 @@ sub loopdetect : Tests(4) {
     'Loopdetect off');
 }
 
-sub device_type : Tests(8) {
+sub device_type : Tests(+6) {
   my $test = shift;
 
-  can_ok($test->{info}, 'device_type');
-
-  # Empty args and no SNMP data should result in undef
-  is($test->{info}->device_type(),
-    undef, 'No sysServices, no sysDescr results in undef');
-
-  # Populate cache for tests rather than mocking session to limit code hit
-  # on these tests
+  # No sysServices and unknown sysDescr results in SNMP::Info
   my $cache_data
     = {'_layers' => '00000000', '_description' => 'My-Test-sysDescr',};
   $test->{info}->cache($cache_data);
-
-  is($test->{info}->device_type(),
-    'SNMP::Info', 'No sysServices and unknown sysDescr results in SNMP::Info');
 
   $test->{info}->debug(1);
   warnings_like { $test->{info}->device_type() }
@@ -210,6 +200,10 @@ sub device_type : Tests(8) {
     'No sysServices and unknown sysDescr with debug on gives warning';
   $test->{info}->debug(0);
   $test->{info}->clear_cache();
+
+  # Cache has been cleared, empty args and no SNMP data result in undef
+  is($test->{info}->device_type(),
+    undef, 'No sysServices, no sysDescr results in undef');
 
   # Test one oid per layer hash just to verify oid mapping, no need to test
   # every hash key - chose an id that is unique per layer
@@ -261,7 +255,7 @@ sub device_type : Tests(8) {
     'SNMP::Info::Layer7::APC', 'Layer 1 device type by sysObjectID');
   $test->{info}->clear_cache();
 
-  # Add Regex tests if needed
+  # We will test each specific subclass, so no need to check that logic here
 }
 
 sub error : Tests(7) {
