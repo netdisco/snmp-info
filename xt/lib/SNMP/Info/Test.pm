@@ -65,9 +65,6 @@ sub constructor : Tests(11) {
   is($test->{info}{snmp_user}, 'initial', 'SNMP user arg saved');
 }
 
-# update() needs to be reworked to discard all args except community
-# or context as described in documentation
-
 sub update : Tests(9) {
   my $test = shift;
 
@@ -84,30 +81,26 @@ sub update : Tests(9) {
   is($test->{info}{sess}{Community}, 'new_community', 'Community changed');
 
 TODO: {
-    todo_skip "V3 Context update() test issues", 4 if 1;
+    # The update() method creates a new SNMP::Session, v1/2 do not actually
+    # need to contact the DestHost for sesssion creation while v3 does.
+    # It appears that Net-SNMP 5.8 changes the behavior of v3 session creation
+    # so that it doesn't require contact with the DestHost to pass these tests
+    # We also could connect to http://snmplabs.com v3 simulator but would
+    # prefer to keep those tests isolated to 10_remote_snmplabs.t - we could
+    # also move the update() tests to that file.
+    todo_skip "Revist v3 Context update() tests when using Net-SNMP 5.8+", 4
+      if 1;
 
-  my $class = $test->class;
+    # Starting context
+    ok(!defined $test->{info}{sess}{Context}, q(Context doesn't exist));
 
-  my $v3_info = $class->new(
-    'AutoSpecify' => 0,
-    'BulkWalk'    => 0,
-    'UseEnums'    => 1,
-    'RetryNoSuch' => 1,
-    'DestHost'    => '127.0.0.1',
-    'SecName'     => 'initial',
-    'SecLevel'    => 'noAuthNoPriv',
-    'Context'     => '',
-    'Version'     => 3,
-  );
-
-  # Starting context
-  is($v3_info->{sess}{Context}, undef, q(Context doesn't exist));
-
-  # Change context
-  %update_args = ('Context' => 'vlan-100');
-  ok($v3_info->update(%update_args), 'Update Context');
-  is($v3_info->error(),         undef,      '... and no error');
-  is($v3_info->{sess}{Context}, 'vlan-100', 'Context changed');
+    # Change context
+    # Since update() is actually creating new SNMP::Session we can put
+    # whatever session arguments needed in %update_args
+    %update_args = ('Context' => 'vlan-100', 'Version' => 3,);
+    ok($test->{info}->update(%update_args), 'Update Context');
+    is($test->{info}->error(),         undef,      '... and no error');
+    is($test->{info}->{sess}{Context}, 'vlan-100', 'Context changed');
 
   }
 }
