@@ -46,7 +46,7 @@ my $EMPTY = q{};
 
 sub startup : Tests( startup => 1 ) {
   my $test = shift;
-  (my $class = ref $test) =~ s/::Test$//x;
+  (my $class = ref $test) =~ s/^Test:://x;
   return ok 1, "$class loaded" if $class eq __PACKAGE__;
   use_ok $class or die;
   $test->class($class);
