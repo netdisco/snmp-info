@@ -33,32 +33,9 @@ use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info;
 
-sub constructor : Tests(11) {
-  my $test  = shift;
-  my $class = $test->class;
-  my $sess  = $test->mock_session;
-
-  can_ok $class, 'new';
-  isa_ok $test->{info}, $class, '... and the object it returns';
-
-  is(defined $test->{info}{init}, 1, 'MIBs initialized');
-  ok(
-    scalar keys %{$test->{info}{mibs}},
-    'MIBs subclass data structure initialized'
-  );
-  ok(
-    scalar keys %{$test->{info}{globals}},
-    'Globals subclass data structure initialized'
-  );
-  ok(
-    scalar keys %{$test->{info}{funcs}},
-    'Funcs subclass data structure initialized'
-  );
-  ok(
-    scalar keys %{$test->{info}{munge}},
-    'Munge subclass data structure initialized'
-  );
-  is_deeply($test->{info}{store}, {}, 'Store initialized');
+sub constructor : Tests(+3) {
+  my $test = shift;
+  $test->SUPER::constructor;
 
   is($test->{info}{snmp_comm}, 'public',  'SNMP comm arg saved');
   is($test->{info}{snmp_ver},  2,         'SNMP version arg saved');
@@ -898,66 +875,6 @@ sub error_throw : Tests(7) {
     "Test Error String\n",
     '... and error() returns error string of call'
   );
-}
-
-sub funcs : Tests(2) {
-  my $test = shift;
-
-  can_ok($test->{info}, 'funcs');
-
-  subtest 'Funcs can() subtest' => sub {
-
-    my $test_funcs = $test->{info}->funcs;
-    foreach my $key (keys %$test_funcs) {
-      can_ok($test->{info}, $key);
-    }
-  };
-}
-
-sub globals : Tests(2) {
-  my $test = shift;
-
-  can_ok($test->{info}, 'globals');
-
-  subtest 'Globals can() subtest' => sub {
-
-    my $test_globals = $test->{info}->globals;
-    foreach my $key (keys %$test_globals) {
-      can_ok($test->{info}, $key);
-    }
-  };
-}
-
-sub mibs : Tests(2) {
-  my $test = shift;
-
-  can_ok($test->{info}, 'mibs');
-
-  subtest 'MIBs loaded subtest' => sub {
-
-    my $mibs = $test->{info}->mibs();
-
-    foreach my $key (keys %$mibs) {
-      my $qual_name = "$key" . '::' . "$mibs->{$key}";
-      ok(defined $SNMP::MIB{$mibs->{$key}}, "$qual_name defined");
-      like(SNMP::translateObj($qual_name),
-        qr/^(\.\d+)+$/, "$qual_name translates to a OID");
-    }
-  };
-}
-
-sub munge : Tests(2) {
-  my $test = shift;
-
-  can_ok($test->{info}, 'munge');
-
-  subtest 'Munges subtest' => sub {
-
-    my $test_munges = $test->{info}->munge();
-    foreach my $key (keys %$test_munges) {
-      isa_ok($test_munges->{$key}, 'CODE', "$key munge");
-    }
-  };
 }
 
 sub nosuch : Tests(2) {
