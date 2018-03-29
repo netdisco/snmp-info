@@ -3078,7 +3078,7 @@ ALTEON-TS-PHYSICAL-MIB::agPortCurCfgPortName.
 %FUNCS = (
     # IF-MIB::IfEntry
     'interfaces' => 'ifIndex',
-    # IF-MIB::IfEntry
+    # IF-MIB::IfXEntry
     'i_name'     => 'ifName',
 
     # IF-MIB::IfEntry
