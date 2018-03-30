@@ -38,7 +38,7 @@ use File::Slurper 'read_lines';
 use base qw<Test::Class Class::Data::Inheritable>;
 
 # Don't run the base tests defined in this class, run them in subclasses only
-My::Test::Class->SKIP_CLASS( 1 );
+My::Test::Class->SKIP_CLASS(1);
 
 INIT { Test::Class->runtests }
 
@@ -110,7 +110,7 @@ sub constructor : Tests(8) {
 }
 
 sub device_type : Tests(2) {
-  my $test = shift;
+  my $test  = shift;
   my $class = $test->class;
 
   can_ok($test->{info}, 'device_type');
@@ -118,8 +118,7 @@ sub device_type : Tests(2) {
   # This depends on cache or mocked session data being provided.
   # Recommendation is to extend the existing setup method in the
   # subclass to provide the common data.
-  is($test->{info}->device_type(),
-    $class, qq(Device type is $class));
+  is($test->{info}->device_type(), $class, qq(Device type is $class));
 }
 
 sub globals : Tests(2) {
@@ -130,7 +129,7 @@ sub globals : Tests(2) {
   subtest 'Globals can() subtest' => sub {
 
     my $test_globals = $test->{info}->globals;
-    foreach my $key (keys %$test_globals) {
+    foreach my $key (sort (keys %$test_globals)) {
       can_ok($test->{info}, $key);
     }
   };
@@ -144,7 +143,7 @@ sub funcs : Tests(2) {
   subtest 'Funcs can() subtest' => sub {
 
     my $test_funcs = $test->{info}->funcs;
-    foreach my $key (keys %$test_funcs) {
+    foreach my $key (sort (keys %$test_funcs)) {
       can_ok($test->{info}, $key);
     }
   };
@@ -159,7 +158,7 @@ sub mibs : Tests(2) {
 
     my $mibs = $test->{info}->mibs();
 
-    foreach my $key (keys %$mibs) {
+    foreach my $key (sort(keys %$mibs)) {
       my $qual_name = "$key" . '::' . "$mibs->{$key}";
       ok(defined $SNMP::MIB{$mibs->{$key}}, "$qual_name defined");
       like(SNMP::translateObj($qual_name),
@@ -176,7 +175,7 @@ sub munge : Tests(2) {
   subtest 'Munges subtest' => sub {
 
     my $test_munges = $test->{info}->munge();
-    foreach my $key (keys %$test_munges) {
+    foreach my $key (sort(keys %$test_munges)) {
       isa_ok($test_munges->{$key}, 'CODE', "$key munge");
     }
   };
