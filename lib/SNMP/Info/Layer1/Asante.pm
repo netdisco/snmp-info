@@ -84,6 +84,7 @@ sub os_ver {
     if ( $descr =~ /software v(\d+\.\d+)/ ) {
         return $1;
     }
+    return;
 }
 
 sub vendor {
@@ -94,7 +95,7 @@ sub model {
     my $asante = shift;
 
     my $id    = $asante->id();
-    my $model = &SNMP::translateObj($id);
+    my $model = SNMP::translateObj($id);
 
     return $model;
 }
@@ -108,8 +109,8 @@ sub i_up {
     my $i_up = {};
     foreach my $port ( keys %$asante_up ) {
         my $up = $asante_up->{$port};
-        $i_up->{$port} = 'down' if $up =~ /on/;
-        $i_up->{$port} = 'up'   if $up =~ /off/;
+        $i_up->{$port} = 'down' if $up =~ /off/;
+        $i_up->{$port} = 'up'   if $up =~ /on/;
     }
 
     return $i_up;
@@ -149,7 +150,7 @@ sub i_name {
     my $asante  = shift;
     my $partial = shift;
 
-    my $i_name = $asante->orig_i_descr($partial) || {};
+    my $i_name = $asante->orig_i_description($partial) || {};
 
     my %i_name;
 
