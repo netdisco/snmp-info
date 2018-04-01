@@ -148,4 +148,5 @@ xt/lib/My/Test/Class.pm
 xt/lib/Test/SNMP/Info.pm
 xt/lib/Test/SNMP/Info/Layer1/Allied.pm
 xt/lib/Test/SNMP/Info/Layer1/Asante.pm
+xt/lib/Test/SNMP/Info/Layer1/Cyclades.pm
 xt/lib/Test/SNMP/Info/Layer3/Timetra.pm
