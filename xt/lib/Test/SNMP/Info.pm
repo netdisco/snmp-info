@@ -921,7 +921,7 @@ sub store : Tests(4) {
   );
 }
 
-sub private_global : Tests(15) {
+sub private_global : Tests(14) {
   my $test = shift;
 
   can_ok($test->{info}, '_global');
@@ -997,11 +997,6 @@ sub private_global : Tests(15) {
   );
   cmp_deeply($test->{info}->cache(),
     $expected_cache, 'Cache contains expected data');
-
-# Not sure if we need this anonymous sub, added by this commit
-# https://github.com/netdisco/snmp-info/commit/07605051f5886ffd05f65cfbc1804c316ed904ba
-  is(SNMP::Info::_global('CARP_TRACE'),
-    undef, 'CARP_TRACE passed to _global() returns undef');
 
   # Simulate session error, i.e. get fails
   $test->{info}{sess}{ErrorStr} = 'Get Failed';

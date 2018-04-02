@@ -3884,7 +3884,6 @@ These methods return data as a scalar.
 sub _global {
     my $method = shift;
     my $oid    = shift;
-    return if $method eq 'CARP_TRACE';
 
     return sub {
         my $self = shift;
@@ -4680,6 +4679,8 @@ sub can {
     # use results of parent can()
     return $self->SUPER::can($method) if $self->SUPER::can($method);
 
+    return if $method eq 'CARP_TRACE';
+
     my $validated = $self->_validate_autoload_method($method);
     return unless $validated;
 
@@ -4755,6 +4756,8 @@ our $AUTOLOAD;
 sub AUTOLOAD {
     my $self = shift;
     my ($sub_name) = $AUTOLOAD =~ /::(\w+)$/;
+
+   return if $sub_name eq 'CARP_TRACE';
 
     # Typos in function calls in SNMP::Info subclasses turn into
     # AUTOLOAD requests for non-methods.  While this is deprecated,
