@@ -128,6 +128,13 @@ sub setup : Tests(setup) {
     $test->{info}->cache($cache_data);
 }
 
+sub layers : Tests(2) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'layers' );
+    is( $test->{info}->layers(), '01000001', q(Layers returns '01000001') );
+}
+
 sub os : Tests(2) {
     my $test = shift;
 
