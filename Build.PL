@@ -33,6 +33,7 @@ Module::Build->new(
     'Path::Class' => '0',
     'File::Slurper' => '0',
     'Test::Exception' => '0.43',
+    'Class::Inspector' => '0',
   },
   # script_files => [
   # ],

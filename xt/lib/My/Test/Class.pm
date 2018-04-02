@@ -29,11 +29,12 @@
 
 package My::Test::Class;
 
-use Test::Class::Most attributes => [qw/class mock_session test_obj/];
+use Test::Class::Most attributes => [qw/class mock_session todo_methods/];
 use Test::MockObject::Extends;
 use File::Find 'find';
 use Path::Class 'dir';
 use File::Slurper 'read_lines';
+use Class::Inspector;
 
 use base qw<Test::Class Class::Data::Inheritable>;
 
@@ -51,6 +52,7 @@ sub startup : Tests( startup => 1 ) {
   use_ok $class or die;
   $test->class($class);
   $test->mock_session(create_mock_session());
+  $test->todo_methods(0);
   return;
 }
 
@@ -90,22 +92,11 @@ sub constructor : Tests(8) {
   isa_ok $test->{info}, $class, '... and the object it returns';
 
   is(defined $test->{info}{init}, 1, 'MIBs initialized');
-  ok(
-    scalar keys %{$test->{info}{mibs}},
-    'MIBs subclass data structure initialized'
-  );
-  ok(
-    scalar keys %{$test->{info}{globals}},
-    'Globals subclass data structure initialized'
-  );
-  ok(
-    scalar keys %{$test->{info}{funcs}},
-    'Funcs subclass data structure initialized'
-  );
-  ok(
-    scalar keys %{$test->{info}{munge}},
-    'Munge subclass data structure initialized'
-  );
+  ok(exists $test->{info}{mibs}, 'MIBs subclass data structure initialized');
+  ok(exists $test->{info}{globals},
+    'Globals subclass data structure initialized');
+  ok(exists $test->{info}{funcs}, 'Funcs subclass data structure initialized');
+  ok(exists $test->{info}{munge}, 'Munge subclass data structure initialized');
   ok(exists $test->{info}{store}, 'Store initialized');
 }
 
@@ -115,10 +106,15 @@ sub device_type : Tests(2) {
 
   can_ok($test->{info}, 'device_type');
 
-  # This depends on cache or mocked session data being provided.
-  # Recommendation is to extend the existing setup method in the
-  # subclass to provide the common data.
-  is($test->{info}->device_type(), $class, qq(Device type is $class));
+SKIP: {
+    skip "Device type not applicable to $class", 1
+      if $class !~ /Layer\d::\w+$/x;
+
+    # This depends on cache or mocked session data being provided.
+    # Recommendation is to extend the existing setup method in the
+    # subclass to provide the common data.
+    is($test->{info}->device_type(), $class, qq(Device type is $class));
+  }
 }
 
 sub globals : Tests(2) {
@@ -129,8 +125,14 @@ sub globals : Tests(2) {
   subtest 'Globals can() subtest' => sub {
 
     my $test_globals = $test->{info}->globals;
-    foreach my $key (sort (keys %$test_globals)) {
-      can_ok($test->{info}, $key);
+
+    if (scalar keys %$test_globals) {
+      foreach my $key (sort (keys %$test_globals)) {
+        can_ok($test->{info}, $key);
+      }
+    }
+    else {
+      $test->builder->skip("No globals to test");
     }
   };
 }
@@ -143,8 +145,14 @@ sub funcs : Tests(2) {
   subtest 'Funcs can() subtest' => sub {
 
     my $test_funcs = $test->{info}->funcs;
-    foreach my $key (sort (keys %$test_funcs)) {
-      can_ok($test->{info}, $key);
+
+    if (scalar keys %$test_funcs) {
+      foreach my $key (sort (keys %$test_funcs)) {
+        can_ok($test->{info}, $key);
+      }
+    }
+    else {
+      $test->builder->skip("No funcs to test");
     }
   };
 }
@@ -158,11 +166,16 @@ sub mibs : Tests(2) {
 
     my $mibs = $test->{info}->mibs();
 
-    foreach my $key (sort(keys %$mibs)) {
-      my $qual_name = "$key" . '::' . "$mibs->{$key}";
-      ok(defined $SNMP::MIB{$mibs->{$key}}, "$qual_name defined");
-      like(SNMP::translateObj($qual_name),
-        qr/^(\.\d+)+$/, "$qual_name translates to a OID");
+    if (scalar keys %$mibs) {
+      foreach my $key (sort(keys %$mibs)) {
+        my $qual_name = "$key" . '::' . "$mibs->{$key}";
+        ok(defined $SNMP::MIB{$mibs->{$key}}, "$qual_name defined");
+        like(SNMP::translateObj($qual_name),
+          qr/^(\.\d+)+$/, "$qual_name translates to a OID");
+      }
+    }
+    else {
+      $test->builder->skip("No MIBs to test");
     }
   };
 }
@@ -175,10 +188,49 @@ sub munge : Tests(2) {
   subtest 'Munges subtest' => sub {
 
     my $test_munges = $test->{info}->munge();
-    foreach my $key (sort(keys %$test_munges)) {
-      isa_ok($test_munges->{$key}, 'CODE', "$key munge");
+
+    if (scalar keys %$test_munges) {
+      foreach my $key (sort (keys %$test_munges)) {
+        isa_ok($test_munges->{$key}, 'CODE', "$key munge");
+      }
+    }
+    else {
+      $test->builder->skip("No munge to test");
     }
   };
+}
+
+sub method_coverage : Tests(1) {
+  my $test             = shift;
+  my $class            = $test->class;
+  my $class_regex      = $class . '::';
+  my $test_class       = "Test::$class";
+  my $test_class_regex = $test_class . '::';
+
+TODO: {
+    # SNMP::Info is returning unexpected methods, investigate at some point
+    # SNMP::Info has methods which must be renamed in test classes, i.e.
+    # AUTOLOAD, DESTROY, can, etc.
+    todo_skip 'Base class', 1 if ($class eq 'SNMP::Info');
+
+    # Skip if we have marked TODO, methods that need coverage will be
+    # identified with verbose output
+    local $TODO = "$class method coverage not complete" if $test->todo_methods;
+
+    my $methods = Class::Inspector->methods($class, 'full', 'public');
+    my @local_methods = grep { $_ =~ /^$class/ } @$methods;
+    s/$class_regex//x for @local_methods;
+
+    my $test_methods = Class::Inspector->methods($test_class, 'full', 'public');
+    my @local_test_methods = grep { $_ =~ /^$test_class/x } @$test_methods;
+    s/$test_class_regex//x for @local_test_methods;
+
+    cmp_deeply(
+      \@local_methods,
+      subsetof(@local_test_methods),
+      qq(All public $class methods have coverage)
+    );
+  }
 }
 
 #
