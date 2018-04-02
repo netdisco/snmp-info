@@ -43,7 +43,7 @@ $VERSION = '3.53';
 
 %MIBS = (
     'SYNOPTICS-ROOT-MIB'           => 'synoptics',
-    'S5-ETH-MULTISEG-TOPOLOGY-MIB' => 's5EnMsTop',
+    'S5-ETH-MULTISEG-TOPOLOGY-MIB' => 's5EnMsTopInfo',
 );
 
 %GLOBALS = (
