@@ -108,11 +108,11 @@ sub interfaces : Tests(3) {
   my $expected
     = {'1.1' => '1.1', '1.2' => '1.2', '2.1' => '2.1', '2.2' => '2.2'};
 
-  is_deeply($test->{info}->interfaces(),
+  cmp_deeply($test->{info}->interfaces(),
     $expected, q(Interface indices have expected values));
 
   $test->{info}->clear_cache();
-  is_deeply($test->{info}->interfaces(),
+  cmp_deeply($test->{info}->interfaces(),
     {}, q(Empty SNMP table results in empty hash));
 }
 
@@ -122,11 +122,11 @@ sub i_up : Tests(3) {
   can_ok($test->{info}, 'i_up');
   my $expected = {'1.2' => 'down', '2.1' => 'up', '2.2' => 'up'};
 
-  is_deeply($test->{info}->i_up(),
+  cmp_deeply($test->{info}->i_up(),
     $expected, q(Interface operational statuses have expected values));
 
   $test->{info}->clear_cache();
-  is_deeply($test->{info}->i_up(),
+  cmp_deeply($test->{info}->i_up(),
     {}, q(Empty SNMP table results in empty hash));
 }
 
@@ -138,7 +138,7 @@ sub i_speed : Tests(2) {
   # Munge in effect
   my $expected = {'1.2' => '10 Mbps'};
 
-  is_deeply($test->{info}->i_speed(),
+  cmp_deeply($test->{info}->i_speed(),
     $expected, q(Interface speeds have expected values));
 }
 
@@ -150,7 +150,7 @@ sub i_mac : Tests(2) {
   # Munge in effect
   my $expected = {'1.2' => '00:00:94:40:37:b3'};
 
-  is_deeply($test->{info}->i_mac(),
+  cmp_deeply($test->{info}->i_mac(),
     $expected, q(Interface speeds have expected values));
 }
 
@@ -170,7 +170,7 @@ sub i_name : Tests(2) {
   # Munge in effect
   my $expected = {'1.2' => 'AsanteHub 1012 SNMP port'};
 
-  is_deeply($test->{info}->i_name(),
+  cmp_deeply($test->{info}->i_name(),
     $expected, q(Interface names have expected values));
 }
 

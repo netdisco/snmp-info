@@ -386,7 +386,7 @@ sub if_ignore : Tests(2) {
   my $test = shift;
 
   can_ok $test->{info}, 'if_ignore';
-  is_deeply($test->{info}->if_ignore(),
+  cmp_deeply($test->{info}->if_ignore(),
     {}, 'No ignored interfaces for this class');
 }
 
@@ -419,7 +419,7 @@ sub i_speed : Tests(2) {
   };
   my $expected = {38 => 0, 49 => '32 Gbps', 501 => '1.0 Gbps',};
   $test->{info}{sess}{Data} = $data;
-  is_deeply($test->{info}->i_speed(),
+  cmp_deeply($test->{info}->i_speed(),
     $expected, 'High speed interface reported accurately');
 }
 
@@ -446,13 +446,13 @@ sub i_speed_raw : Tests(3) {
   my $expected     = {38 => 0, 49 => '32 Gbps',   501 => '1.0 Gbps',};
   my $expected_raw = {38 => 0, 49 => 32000000000, 501 => 1000000000,};
   $test->{info}{sess}{Data} = $data;
-  is_deeply($test->{info}->i_speed_raw(),
+  cmp_deeply($test->{info}->i_speed_raw(),
     $expected_raw, 'Raw high speed interface reported accurately');
 
   # Note the cache is populated unmunged data now - not sure if that is
   # expected behavior. Clear cache to get data to test that munges are restored.
   $test->{info}->clear_cache();
-  is_deeply($test->{info}->i_speed(),
+  cmp_deeply($test->{info}->i_speed(),
     $expected, 'Munges restored after i_speed_raw() call');
 }
 
@@ -742,9 +742,9 @@ sub munge_port_list : Tests(6) {
   for my $value (split //, $bit_string) {
     $expected->[++$#$expected] = $value;
   }
-  is_deeply(SNMP::Info::munge_port_list($bits_packed),
+  cmp_deeply(SNMP::Info::munge_port_list($bits_packed),
     $expected, 'Portlist packed bit string coverted to ASCII bit array');
-  is_deeply(SNMP::Info::munge_port_list($new_hex_string_packed),
+  cmp_deeply(SNMP::Info::munge_port_list($new_hex_string_packed),
     $expected, 'Portlist packed hex string coverted to ASCII bit array');
 }
 
@@ -827,7 +827,7 @@ sub args : Tests(2) {
   };
 
   can_ok($test->{info}, 'args');
-  is_deeply($test->{info}->args(),
+  cmp_deeply($test->{info}->args(),
     $args, 'Args returned match those passed to new()');
 }
 
@@ -883,7 +883,7 @@ sub session : Tests(4) {
   my $sess = $test->mock_session;
 
   can_ok($test->{info}, 'session');
-  is_deeply($test->{info}->session(), $sess, 'Session returned');
+  cmp_deeply($test->{info}->session(), $sess, 'Session returned');
 
   # This will not be a mocked_session so object type and session will be
   # different
@@ -892,7 +892,7 @@ sub session : Tests(4) {
     Community => 'new_public',
     Version   => 2,
   );
-  is_deeply($test->{info}->session($new_sess),
+  cmp_deeply($test->{info}->session($new_sess),
     $new_sess, 'New session returned');
   isa_ok($test->{info}->session(), 'SNMP::Session', 'New session object');
 }
@@ -911,7 +911,7 @@ sub store : Tests(4) {
 
   can_ok($test->{info}, 'store');
 
-  is_deeply($test->{info}->store(), {}, 'Store starts empty');
+  cmp_deeply($test->{info}->store(), {}, 'Store starts empty');
   ok($test->{info}->store($store_data), 'Insert test data into store');
   cmp_deeply(
     $store_data,
@@ -994,7 +994,7 @@ sub private_global : Tests(15) {
     'SNMP::Info::_global(load_name) NOSUCHINSTANCE',
     '... and throws error indicating NOSUCHINSTANCE'
   );
-  is_deeply($test->{info}->cache(),
+  cmp_deeply($test->{info}->cache(),
     $expected_cache, 'Cache contains expected data');
 
 # Not sure if we need this anonymous sub, added by this commit
@@ -1206,16 +1206,17 @@ sub load_all : Tests(6) {
       {10 => 'Test-Description-10', 20 => 'Test-Description-20'},
     };
 
-  is_deeply($test->{info}->store(), {}, 'Store starts empty');
+  cmp_deeply($test->{info}->store(), {}, 'Store starts empty');
   ok($test->{info}->store($store_data), 'Insert test data into store');
-  is_deeply($test->{info}->store(), $store_data, '... store now has test data');
+  cmp_deeply($test->{info}->store(), $store_data,
+    '... store now has test data');
 
   # Load the data for use in the mock session
   $test->{info}{sess}{Data} = $data;
 
-  is_deeply($test->{info}->load_all(),
+  cmp_deeply($test->{info}->load_all(),
     $expected_data, 'Call to load_all() returns expected data');
-  is_deeply($test->{info}->store(),
+  cmp_deeply($test->{info}->store(),
     $expected_data, '... and store now has expected data from load_all()');
 }
 
@@ -1254,23 +1255,24 @@ sub my_all : Tests(9) {
       {10 => 'Test-Description-10', 20 => 'Test-Description-20'},
     };
 
-  is_deeply($test->{info}->store(), {}, 'Store starts empty');
+  cmp_deeply($test->{info}->store(), {}, 'Store starts empty');
   ok($test->{info}->store($store_data), 'Insert test data into store');
-  is_deeply($test->{info}->store(), $store_data, '... store now has test data');
+  cmp_deeply($test->{info}->store(), $store_data,
+    '... store now has test data');
 
   # Load the data for use in the mock session
   $test->{info}{sess}{Data} = $data;
 
-  is_deeply($test->{info}->all(),
+  cmp_deeply($test->{info}->all(),
     $expected_data, 'Call to all() returns expected data');
-  is_deeply($test->{info}->store(),
+  cmp_deeply($test->{info}->store(),
     $expected_data, '... and store now has expected data from all()');
 
   ok($test->{info}->store($store_data), 'Re-insert test data into store');
-  is_deeply($test->{info}->store(),
+  cmp_deeply($test->{info}->store(),
     $store_data, '... store again has test data');
 
-  is_deeply($test->{info}->all(),
+  cmp_deeply($test->{info}->all(),
     $expected_data,
     '... call to all() returns test data, no call to load_all()');
 }
@@ -1350,28 +1352,28 @@ sub private_load_attr : Tests(16) {
   # Load the cache
   $test->{info}->cache($cache_data);
 
-  is_deeply(
+  cmp_deeply(
     $test->{info}->i_description(),
     $cache_data->{'store'}{'i_description'},
     'Call to i_description() loads cached data'
   );
-  is_deeply($test->{info}->i_up(),
+  cmp_deeply($test->{info}->i_up(),
     $expected_cache_munge_iup, 'Call to i_up() loads cached data and munges');
-  is_deeply(
+  cmp_deeply(
     $test->{info}->i_up_raw(),
     $cache_data->{'store'}{'i_up'},
     'Call to i_up_raw() loads cached data without munge'
   );
-  is_deeply($test->{info}->load_i_up(),
+  cmp_deeply($test->{info}->load_i_up(),
     $expected_load_munge_iup, 'Call to load_i_up() loads new data and munges');
-  is_deeply(
+  cmp_deeply(
     $test->{info}->i_up_raw(),
     $expected_cache->{'store'}{'i_up'},
     'Call to i_up_raw() loads new data without munge'
   );
 
   # Test ability to use MIB leaf
-  is_deeply(
+  cmp_deeply(
     $test->{info}->ifPromiscuousMode(),
     $data->{'IF-MIB::ifPromiscuousMode'},
     'Call to ifPromiscuousMode() resolves MIB leaf and returns data'
@@ -1396,19 +1398,19 @@ sub private_load_attr : Tests(16) {
   # 'ENDOFMIBVIEW' isn't an error condition, it just stops the walk
   # Ask for raw since don't want munge_counter64 to turn results into objects
   # and want to compare to what will be stored in cache at the end
-  is_deeply(
+  cmp_deeply(
     $test->{info}->i_octet_out64_raw(),
     $expected_cache->{'store'}{'i_octet_out64'},
     'Call to i_up_raw() loads new data without munge'
   );
 
   # Test partial fetches
-  is_deeply(
+  cmp_deeply(
     $test->{info}->i_octet_out64_raw(3),
     +{3 => 1002545943585},
     'Partial call to i_octet_out64_raw(3) data without munge'
   );
-  is_deeply(
+  cmp_deeply(
     $test->{info}->i_description(2),
     +{2 => '1/3/1, 10/100 Ethernet TX'},
     'Partial call to i_description(2) loads new data'
@@ -1416,7 +1418,7 @@ sub private_load_attr : Tests(16) {
   ok(!exists $test->{info}{store}{i_description}{2},
     '... and does not store it in cache');
 
-  is_deeply($test->{info}->cache(),
+  cmp_deeply($test->{info}->cache(),
     $expected_cache, 'Cache contains expected data');
 }
 
@@ -1434,9 +1436,9 @@ sub private_show_attr : Tests(3) {
   my $expected_munge = {10 => 'notPresent', 20 => 'lowerLayerDown'};
 
   # Minimal tests as this method is heavily covered in other testing
-  is_deeply($test->{info}->_show_attr('i_up'),
+  cmp_deeply($test->{info}->_show_attr('i_up'),
     $expected_munge, 'Shows munged data from cache without raw flag');
-  is_deeply(
+  cmp_deeply(
     $test->{info}->_show_attr('i_up', 1),
     $cache_data->{'store'}{'i_up'},
     'Shows unmunged data from cache with raw flag'
@@ -1507,18 +1509,18 @@ sub private_validate_autoload_method : Tests(8) {
 
     foreach my $prefix ('', 'load_', 'orig_') {
       my $test_global = "$prefix" . 'contact';
-      is_deeply(
+      cmp_deeply(
         $test->{info}->_validate_autoload_method("$test_global"),
         ['.1.3.6.1.2.1.1.4.0', 0],
         qq(Global '$test_global' validates)
       );
     }
-    is_deeply(
+    cmp_deeply(
       $test->{info}->_validate_autoload_method('set_contact'),
       ['.1.3.6.1.2.1.1.4', 0],
       q(Global 'set_contact' validates)
     );
-    is_deeply(
+    cmp_deeply(
       $test->{info}->_validate_autoload_method('contact_raw'),
       ['.1.3.6.1.2.1.1.4.0', 0],
       q(Global 'contact_raw' validates)
@@ -1532,18 +1534,18 @@ sub private_validate_autoload_method : Tests(8) {
 
     foreach my $prefix ('', 'load_', 'orig_') {
       my $test_global = "$prefix" . 'snmpEnableAuthenTraps';
-      is_deeply(
+      cmp_deeply(
         $test->{info}->_validate_autoload_method("$test_global"),
         ['.1.3.6.1.2.1.11.30.0', 0],
         qq(MIB leaf '$test_global' validates)
       );
     }
-    is_deeply(
+    cmp_deeply(
       $test->{info}->_validate_autoload_method('set_snmpEnableAuthenTraps'),
       ['.1.3.6.1.2.1.11.30', 0],
       q(MIB leaf 'set_snmpEnableAuthenTraps' validates)
     );
-    is_deeply(
+    cmp_deeply(
       $test->{info}->_validate_autoload_method('snmpEnableAuthenTraps_raw'),
       ['.1.3.6.1.2.1.11.30.0', 0],
       q(MIB leaf 'snmpEnableAuthenTraps_raw' validates)
@@ -1554,18 +1556,18 @@ sub private_validate_autoload_method : Tests(8) {
 
     foreach my $prefix ('', 'load_', 'orig_') {
       my $test_global = "$prefix" . 'i_alias';
-      is_deeply(
+      cmp_deeply(
         $test->{info}->_validate_autoload_method("$test_global"),
         ['.1.3.6.1.2.1.31.1.1.1.18', 1],
         qq(Func '$test_global' validates)
       );
     }
-    is_deeply(
+    cmp_deeply(
       $test->{info}->_validate_autoload_method('set_i_alias'),
       ['.1.3.6.1.2.1.31.1.1.1.18', 1],
       q(Func 'set_i_alias' validates)
     );
-    is_deeply(
+    cmp_deeply(
       $test->{info}->_validate_autoload_method('i_alias_raw'),
       ['.1.3.6.1.2.1.31.1.1.1.18', 1],
       q(Func 'i_alias_raw' validates)
@@ -1578,18 +1580,18 @@ sub private_validate_autoload_method : Tests(8) {
 
     foreach my $prefix ('', 'load_', 'orig_') {
       my $test_global = "$prefix" . 'ifPromiscuousMode';
-      is_deeply(
+      cmp_deeply(
         $test->{info}->_validate_autoload_method("$test_global"),
         ['.1.3.6.1.2.1.31.1.1.1.16', 1],
         qq(Func '$test_global' validates)
       );
     }
-    is_deeply(
+    cmp_deeply(
       $test->{info}->_validate_autoload_method('set_ifPromiscuousMode'),
       ['.1.3.6.1.2.1.31.1.1.1.16', 1],
       q(Func 'set_ifPromiscuousMode' validates)
     );
-    is_deeply(
+    cmp_deeply(
       $test->{info}->_validate_autoload_method('ifPromiscuousMode_raw'),
       ['.1.3.6.1.2.1.31.1.1.1.16', 1],
       q(Func 'ifPromiscuousMode_raw' validates)
@@ -1606,7 +1608,7 @@ sub private_validate_autoload_method : Tests(8) {
     q(Func 'i_lastchange' is read-only, 'set_i_lastchange' returns undef));
 
   # Check fully qualified MIB leaf w substitutions validates
-  is_deeply(
+  cmp_deeply(
     $test->{info}->_validate_autoload_method('IF_MIB__ifConnectorPresent'),
     ['.1.3.6.1.2.1.31.1.1.1.17', 1],
     q(Fully qualified 'IF_MIB__ifConnectorPresent' validates)

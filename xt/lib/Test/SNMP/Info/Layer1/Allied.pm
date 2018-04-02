@@ -76,7 +76,6 @@ sub os : Tests(2) {
   is($test->{info}->os(), 'allied', q(Vendor returns 'allied'));
 }
 
-
 sub os_ver : Tests(3) {
   my $test = shift;
 
@@ -92,19 +91,19 @@ sub model : Tests(3) {
 
   can_ok($test->{info}, 'model');
   is($test->{info}->model(), 'AT-1234T', q(Model is expected value));
-  
+
   $test->{info}->clear_cache();
-  is($test->{info}->model(), undef, q(No description returns undef model));  
+  is($test->{info}->model(), undef, q(No description returns undef model));
 }
 
-sub i_name : Tests(3) {
+sub i_name : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'i_name');
 
   my $expected = {'1' => '1 Port Name', '1.2' => '1.2 Port Name',};
 
-  is_deeply($test->{info}->i_name(),
+  cmp_deeply($test->{info}->i_name(),
     $expected, q(Interface names have expected values));
 }
 
@@ -115,7 +114,7 @@ sub i_up : Tests(2) {
 
   my $expected = {'1' => 'up', '1.1' => 'up', '1.2' => 'up', '1.3' => 'down'};
 
-  is_deeply($test->{info}->i_up(),
+  cmp_deeply($test->{info}->i_up(),
     $expected, q(Interface operational statuses have expected values));
 }
 
