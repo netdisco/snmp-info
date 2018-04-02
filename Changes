@@ -1,5 +1,9 @@
 Version 3.54
 
+  [NEW FEATURES]
+  * #141 Avocent ACS files for correct discovery in Netdisco
+  * Add support for Avocent ACS 5K/6K/8K terminal servers in Layer1::Cyclades
+
   [ENHANCEMENTS]
 
   * #215 Nokia/Alcatel-Lucent 7705 LLDP
