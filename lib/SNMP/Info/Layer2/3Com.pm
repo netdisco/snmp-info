@@ -49,6 +49,7 @@ sub serial {
             return $e_serial->{$e};
         }
     }
+    return;
 }
 
 sub os_ver {
@@ -61,6 +62,7 @@ sub os_ver {
             return $e_swver->{$e};
         }
     }
+    return;
 }
 
 sub vendor {
@@ -76,6 +78,7 @@ sub model {
     } else {
         return $descr;
     }
+    return;
 }
 
 1;
