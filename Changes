@@ -17,8 +17,8 @@ Version 3.54
   * Don't use MIB leafs that are not-accessible according to MIB
   * Fix logic for determining if MIB leaf supports set operations
     NOTE: Fixing this logic now results in methods starting with set_ on MIB
-    leafs without Write or Create access and ANY method on a MIB leaf that is
-    not-accessible failing validation in _validate_autoload_method()
+    leafs without Write or Create access failing validation in
+    _validate_autoload_method()
 
 Version 3.53 (2018-03-22)
 

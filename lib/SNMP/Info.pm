@@ -4626,15 +4626,13 @@ sub _validate_autoload_method {
     # If we were given a fully qualified OID because we don't have the MIB
     # file, it will translate above but we won't be able to check access so
     # skip the check and return
-    if ($access) {
-        unless ( ( $method =~ /^set/ && $access =~ /Write|Create/ )
-            || ($method !~ /^set/ && $access =~ /Read|Create/) )
-        {
+    if ($access && $method =~ /^set/ && $access !~ /Write|Create/) {
+
             print
                 "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessable for requested operation.\n"
                 if $self->debug();
             return;
-        }
+
     }
 
     # If the parent of the leaf has indexes it is contained within a table
