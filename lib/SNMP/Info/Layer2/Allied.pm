@@ -73,6 +73,7 @@ sub os_ver {
     if ( $descr =~ m/version (\d+\.\d+)/ ) {
         return $1;
     }
+    return;
 }
 
 sub model {
