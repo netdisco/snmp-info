@@ -33,8 +33,8 @@ use strict;
 use Exporter;
 use SNMP::Info;
 
-@SNMP::Info::LLDP::ISA       = qw/SNMP::Info Exporter/;
-@SNMP::Info::LLDP::EXPORT_OK = qw//;
+@SNMP::Info::AMAP::ISA       = qw/SNMP::Info Exporter/;
+@SNMP::Info::AMAP::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
