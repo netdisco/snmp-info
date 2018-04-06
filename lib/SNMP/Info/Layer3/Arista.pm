@@ -55,7 +55,7 @@ $VERSION = '3.54';
     %SNMP::Info::MAU::MIBS,
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::Aggregate::MIBS,
-    'ARISTA-PRODUCTS-MIB' => 'aristaProducts',
+    'ARISTA-PRODUCTS-MIB' => 'aristaDCS7124S',
 );
 
 %GLOBALS = (
