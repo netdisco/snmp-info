@@ -50,11 +50,9 @@ $VERSION = '3.54';
     'fdp_run'      => 'snFdpGlobalRun',
     'fdp_interval' => 'snFdpGlobalMessageInterval',
     'fdp_holdtime' => 'snFdpGlobalHoldTime',
-    'fdp_gid'      => 'snFdpGlobalDeviceId',
 );
 
 %FUNCS = (
-    'fdp_index'        => 'snFdpCacheIfIndex',
     'fdp_proto'        => 'snFdpCacheAddressType',
     'fdp_ip'           => 'snFdpCacheAddress',
     'fdp_ver'          => 'snFdpCacheVersion',
@@ -62,9 +60,7 @@ $VERSION = '3.54';
     'fdp_port'         => 'snFdpCacheDevicePort',
     'fdp_platform'     => 'snFdpCachePlatform',
     'fdp_capabilities' => 'snFdpCacheCapabilities',
-    'fdp_domain'       => 'snFdpCacheVTPMgmtDomain',
-    'fdp_vlan'         => 'snFdpCacheNativeVLAN',
-    'fdp_duplex'       => 'snFdpCacheDuplex',
+    'fdp_cache_type'   => 'snFdpCacheVendorId',
 );
 
 %MUNGE = (
@@ -84,9 +80,7 @@ sub fdp_run {
 sub hasFDP {
     my $fdp = shift;
 
-    my $ver = $fdp->{_version};
-
-    #my $ver = $fdp->fdp_ver;
+    my $ver = $fdp->snmp_ver();
 
     # SNMP v1 clients dont have the globals
     if ( defined $ver and $ver == 1 ) {
@@ -103,11 +97,6 @@ sub hasFDP {
 sub fdp_if {
     my $fdp = shift;
 
-    # See if by some miracle Cisco implemented the fdpCacheIfIndex entry
-    my $fdp_index = $fdp->fdp_index();
-    return $fdp_index if defined $fdp_index;
-
-    # Nope, didn't think so. Now we fake it.
     my $fdp_ip = $fdp->fdp_ip();
     unless ( defined $fdp_ip ) {
         $fdp->error_throw(
@@ -231,15 +220,6 @@ Time in seconds that FDP messages are kept.
 
 (C<fdpGlobalHoldTime>)
 
-=item  $fdp->fdp_gid()
-
-Returns FDP device ID.  
-
-This is the device id broadcast via FDP to other devices, and is what is
-retrieved from remote devices with $fdp->id().
-
-(C<fdpGlobalDeviceId>)
-
 =back
 
 =head2 Overrides
@@ -323,19 +303,6 @@ Thanks to Martin Lorensen for a pointer to this information.
 
 (C<fdpCacheCapabilities>)
 
-=item $fdp->fdp_domain()
-
-The CDP version of this returns remote VTP Management Domain as defined
-in C<CISCO-VTP-MIB::managementDomainName>
-
-(C<fdpCacheVTPMgmtDomain>)
-
-=item $fdp->fdp_duplex() 
-
-Returns the port duplex status from remote devices.
-
-(C<fdpCacheDuplex>)
-
 =item $fdp->fdp_id()
 
 Returns remote device id string
@@ -346,19 +313,11 @@ Returns remote device id string
 
 Returns the mapping to the SNMP Interface Table.
 
-Note that a lot devices don't implement $fdp->fdp_index(),  So if it isn't
-around, we fake it. 
-
 In order to map the fdp table entry back to the interfaces() entry, we
 truncate the last number off of it :
 
-  # it exists, yay.
-  my $fdp_index     = $device->fdp_index();
-  return $fdp_index if defined $fdp_index;
-
-  # if not, let's fake it
   my $fdp_ip       = $device->fdp_ip();
-    
+
   my %fdp_if
   foreach my $key (keys %$fdp_ip){
       $iid = $key;
@@ -366,20 +325,8 @@ truncate the last number off of it :
       $iid =~ s/\.\d+$//;
       $fdp_if{$key} = $iid;
   }
- 
+
   return \%fdp_if;
-
-
-=item $fdp->fdp_index()
-
-Returns the mapping to the SNMP2 Interface table for FDP Cache Entries. 
-
-Most devices don't implement this, so you probably want to use $fdp->fdp_if()
-instead.
-
-See fdp_if() entry.
-
-(C<fdpCacheIfIndex>)
 
 =item  $fdp->fdp_ip()
 
@@ -411,11 +358,11 @@ Returns remote hardware version
 
 (C<fdpCacheVersion>)
 
-=item $fdp->fdp_vlan()
+=item $fdp->fdp_cache_type() 
 
-Returns the remote interface native VLAN.
+Returns type of entry received, either FDP or CDP.
 
-(C<fdpCacheNativeVLAN>)
+(C<snFdpCacheVendorId>)
 
 =back
 
