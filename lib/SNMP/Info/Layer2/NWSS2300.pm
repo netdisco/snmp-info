@@ -49,6 +49,7 @@ $VERSION = '3.54';
     'NTWS-CLIENT-SESSION-MIB'       => 'ntwsClSessTotalSessions',
     'NTWS-SYSTEM-MIB'               => 'ntwsSysCpuAverageLoad',
     'NTWS-BASIC-MIB'                => 'ntwsVersionString',
+    'NTWS-AP-CONFIG-MIB'            => 'ntwsApConfServProfBeaconEnabled',
 );
 
 %GLOBALS = (

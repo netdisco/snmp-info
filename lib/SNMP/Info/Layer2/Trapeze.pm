@@ -51,6 +51,7 @@ $VERSION = '3.54';
     'TRAPEZE-NETWORKS-CLIENT-SESSION-MIB'       => 'trpzClSessTotalSessions',
     'TRAPEZE-NETWORKS-SYSTEM-MIB'               => 'trpzSysCpuAverageLoad',
     'TRAPEZE-NETWORKS-BASIC-MIB'                => 'trpzVersionString',
+    'TRAPEZE-NETWORKS-AP-CONFIG-MIB'  => 'trpzApConfServProfBeaconEnabled',
 );
 
 %GLOBALS = (
