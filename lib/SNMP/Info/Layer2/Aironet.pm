@@ -60,7 +60,6 @@ $VERSION = '3.54';
     %SNMP::Info::CiscoConfig::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
     'serial' => 'entPhysicalSerialNum.1',
-    'descr'  => 'sysDescr',
     'ps1_type' => 'cpoePdCurrentPowerSource'
 );
 
@@ -136,7 +135,7 @@ sub interfaces {
 # Tag on e_descr.1
 sub description {
     my $aironet = shift;
-    my $descr   = $aironet->descr();
+    my $descr   = $aironet->SUPER::description();
     my $e_descr = $aironet->e_descr();
 
     $descr = "$e_descr->{1}  $descr" if defined $e_descr->{1};
