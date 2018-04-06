@@ -46,8 +46,6 @@ $VERSION = '3.54';
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
     %SNMP::Info::IEEE802dot11::MIBS,
-
-    #'ORiNOCO-MIB' => 'orinoco',
 );
 
 %GLOBALS
@@ -56,12 +54,6 @@ $VERSION = '3.54';
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
     %SNMP::Info::IEEE802dot11::FUNCS,
-
-    # ORiNOCO-MIB:oriWirelessIfPropertiesTable
-    #'ori_ssid'       => 'oriWirelessIfNetworkName',
-    #'ori_channel'    => 'oriWirelessIfChannel',
-    #'ori_closed_sys' => 'oriWirelessIfClosedSystem',
-    # ORiNOCO-MIB:oriSystemInvMgmtComponentTable
 );
 
 %MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::IEEE802dot11::MUNGE, );
@@ -164,22 +156,6 @@ sub interfaces {
     }
     return \%interfaces;
 }
-
-#sub i_ssidbcast {
-#    my $orinoco = shift;
-#    my $partial = shift;
-#
-#    my $bcast = $orinoco->ori_closed_sys($partial) || {};
-#
-#    my %i_ssidbcast;
-#    foreach my $iid (keys %$bcast){
-#        my $bc   = $bcast->{$iid};
-#        next unless defined $bc;
-#
-#        $i_ssidbcast{$iid} = $bc;
-#    }
-#    return \%i_ssidbcast;
-#}
 
 1;
 __END__
