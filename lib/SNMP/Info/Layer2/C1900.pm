@@ -200,6 +200,8 @@ sub set_i_duplex_admin {
 
     my $iid = $c1900->c1900_p_ifindex($port);
 
+    return 0 unless $iid->{$port};
+
     $duplex = lc($duplex);
 
     return 0 unless defined $duplexes{$duplex};
@@ -212,17 +214,17 @@ sub i_vlan {
     my $partial = shift;
 
     # Overlap allows more than one VLAN per port.  Unable to determine default
-    my $overlap 
+    my $overlap
         = $c1900->bridgeGroupAllowMembershipOverlap()
         || $c1900->vlanAllowMembershipOverlap()
         || 'disabled';
 
     if ( $overlap eq 'enabled' ) {
-        return;
+        return {};
     }
 
     my $member_of = $c1900->bridgeGroupMemberPortOfBridgeGroup()
-        || $c1900->vlanMemberPortOfVlan();
+        || $c1900->vlanMemberPortOfVlan() || {};
 
     my $i_pvid = {};
     foreach my $idx ( keys %$member_of ) {
@@ -244,7 +246,7 @@ sub i_vlan_membership {
     my $partial = shift;
 
     my $member_of = $c1900->bridgeGroupMemberPortOfBridgeGroup()
-        || $c1900->vlanMemberPortOfVlan();
+        || $c1900->vlanMemberPortOfVlan() || {};
 
     my $i_vlan_membership = {};
     foreach my $idx ( keys %$member_of ) {
@@ -261,7 +263,7 @@ sub i_vlan_membership {
     return $i_vlan_membership;
 }
 
-sub i_vlan_membership_untagged { return; }
+sub i_vlan_membership_untagged { return {}; }
 
 sub bp_index {
     my $c1900   = shift;

@@ -66,6 +66,7 @@ sub os_ver {
     if ( $descr =~ /^\S+\s\S+\s\S+\s(\S+)/){
         return $1;
     }
+    return;
 }
 
 sub serial {
@@ -75,7 +76,7 @@ sub serial {
         my $str = substr($1,8,10);
         return $str;
     }
-
+    return;
 }
 sub vendor {
     return 'Kentrox';
@@ -87,6 +88,7 @@ sub model {
     if ( $descr =~ /^(\S+\s\S+)/){
         return $1;
     }
+    return;
 }
 
 1;

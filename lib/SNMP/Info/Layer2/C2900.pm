@@ -190,7 +190,7 @@ sub set_i_duplex_admin {
     return $c2900->set_c2900_p_duplex_admin( $duplexes{$duplex}, $iid );
 }
 
-# Use i_descritption for port key, cuz i_name can be manually entered.
+# Use i_description for port key, cuz i_name can be manually entered.
 sub interfaces {
     my $c2900   = shift;
     my $partial = shift;
