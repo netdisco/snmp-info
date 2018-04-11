@@ -44,7 +44,7 @@ use constant {
     IPV6MIB => 3,
 };
 
-$VERSION = '3.53';
+$VERSION = '3.54';
 
 
 
@@ -67,7 +67,7 @@ $VERSION = '3.53';
 
     'ip_n2p_phys_state' => 'ipNetToPhysicalState',          # IP-MIB
     'c_inet_phys_state' => 'cInetNetToMediaState',          # CISCO-IETF-IP-MIB
-    'i6_n2p_phys_state' => 'ipv6NetToMediaState',           # IPV6-MIB
+    'i6_n2p_phys_state' => 'ipv6IfNetToMediaState',         # IPV6-MIB
 
     'ip_pfx_origin'     => 'ipAddressPrefixOrigin',         # IP-MIB
     'c_pfx_origin'      => 'cIpAddressPfxOrigin',           # CISCO-IETF-IP-MIB 
@@ -75,8 +75,9 @@ $VERSION = '3.53';
     'ip_addr6_pfx'      => 'ipAddressPrefix',               # IP-MIB
     'c_addr6_pfx'       => 'cIpAddressPrefix',              # CISCO-IETF-IP-MIB 
 
-    'ip_addr6_pfxlen'   => 'ipAddressPrefixLength',         # IP-MIB
-    'c_addr6_pfxlen'    => 'cIpAddressPfxLength',           # CISCO-IETF-IP-MIB
+    # Commented out are not-accessible according to MIB
+    #'ip_addr6_pfxlen'   => 'ipAddressPrefixLength',        # IP-MIB
+    #'c_addr6_pfxlen'    => 'cIpAddressPfxLength',          # CISCO-IETF-IP-MIB
     'i6_addr_pfxlen'    => 'ipv6AddrPfxLength',             # IPV6-MIB
 
     'ip_addr6_index'    => 'ipAddressIfIndex',              # IP-MIB

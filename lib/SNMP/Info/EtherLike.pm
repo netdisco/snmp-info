@@ -41,7 +41,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.53';
+$VERSION = '3.54';
 
 %MIBS = ( 'EtherLike-MIB' => 'etherMIB' );
 
@@ -68,7 +68,6 @@ $VERSION = '3.53';
     'el_xmit_defer'      => 'dot3StatsDeferredTransmissions',
 
     # Ethernet-like Collision Statistics Group
-    'el_coll_count' => 'dot3CollCount',
     'el_coll_freq'  => 'dot3CollFrequencies'
 );
 

@@ -38,9 +38,10 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.53';
+$VERSION = '3.54';
 
-%MIBS = (); # IF-MIB
+# Load MIB for leafs referenced within class
+%MIBS = ('IF-MIB' => 'ifIndex',);
 
 %GLOBALS = ();
 

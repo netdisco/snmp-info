@@ -11,7 +11,7 @@ use SNMP::Info::CDP;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD/;
 
-$VERSION = '3.53';
+$VERSION = '3.54';
 
 %MIBS = (
     %SNMP::Info::LLDP::MIBS,
@@ -49,6 +49,7 @@ sub serial {
             return $e_serial->{$e};
         }
     }
+    return;
 }
 
 sub os_ver {
@@ -61,6 +62,7 @@ sub os_ver {
             return $e_swver->{$e};
         }
     }
+    return;
 }
 
 sub vendor {
@@ -76,6 +78,7 @@ sub model {
     } else {
         return $descr;
     }
+    return;
 }
 
 1;

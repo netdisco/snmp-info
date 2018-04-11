@@ -24,7 +24,7 @@ use vars
     qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '3.53';
+$VERSION = '3.54';
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.53
+SNMP::Info - Version 3.54
 
 =head1 AUTHOR
 
@@ -474,7 +474,7 @@ See documentation in L<SNMP::Info::Layer1::Bayhub> for details.
 
 =item SNMP::Info::Layer1::Cyclades
 
-Subclass for Cyclades terminal servers.
+Subclass for Cyclades/Avocent terminal servers.
 
 See documentation in L<SNMP::Info::Layer1::Cyclades> for details.
 
@@ -1588,6 +1588,7 @@ sub device_type {
         8072 => 'SNMP::Info::Layer3::NetSNMP',
         9303 => 'SNMP::Info::Layer3::PacketFront',
         10002 => 'SNMP::Info::Layer2::Ubiquiti',
+        10418 => 'SNMP::Info::Layer1::Cyclades',
         12325 => 'SNMP::Info::Layer3::Pf',
         12356 => 'SNMP::Info::Layer3::Fortinet',
         14179 => 'SNMP::Info::Layer2::Airespace',
@@ -1628,6 +1629,7 @@ sub device_type {
         5624  => 'SNMP::Info::Layer3::Enterasys',
         6486  => 'SNMP::Info::Layer3::AlcatelLucent',
         9303  => 'SNMP::Info::Layer3::PacketFront',
+        10418 => 'SNMP::Info::Layer1::Cyclades',
         11898 => 'SNMP::Info::Layer2::Orinoco',
         14179 => 'SNMP::Info::Layer2::Airespace',
         14525 => 'SNMP::Info::Layer2::Trapeze',
@@ -1638,6 +1640,7 @@ sub device_type {
 
     my %l1sysoidmap = (
         2925  => 'SNMP::Info::Layer1::Cyclades',
+        10418 => 'SNMP::Info::Layer1::Cyclades',
     );
 
     my %l7sysoidmap = (
@@ -3085,7 +3088,7 @@ ALTEON-TS-PHYSICAL-MIB::agPortCurCfgPortName.
 %FUNCS = (
     # IF-MIB::IfEntry
     'interfaces' => 'ifIndex',
-    # IF-MIB::IfEntry
+    # IF-MIB::IfXEntry
     'i_name'     => 'ifName',
 
     # IF-MIB::IfEntry
@@ -3888,7 +3891,6 @@ These methods return data as a scalar.
 sub _global {
     my $method = shift;
     my $oid    = shift;
-    return sub {} if $method eq 'CARP_TRACE';
 
     return sub {
         my $self = shift;
@@ -3986,8 +3988,9 @@ sub _set {
     }
     else {
         $self->error_throw(
-            "SNMP::Info::_set($attr,$val) - Failed. Invalid argument for attr."
+            "SNMP::Info::_set - Failed. Invalid arguments"
         );
+        return;
     }
 
     my $sess = $self->session();
@@ -4218,8 +4221,6 @@ sub _load_attr {
         return unless defined $sess;
 
         my $ver    = $self->snmp_ver();
-        my $nosuch = $self->nosuch();
-        my $store  = $self->store();
 
         my $load = $method =~ /^load/;
         my $raw  = $method =~ /raw$/;
@@ -4631,15 +4632,13 @@ sub _validate_autoload_method {
     # If we were given a fully qualified OID because we don't have the MIB
     # file, it will translate above but we won't be able to check access so
     # skip the check and return
-    if ($access) {
-        unless ( ( $method =~ /^set/ && $access =~ /Write|Create/ )
-            || $access =~ /Read|Create/ )
-        {
+    if ($access && $method =~ /^set/ && $access !~ /Write|Create/) {
+
             print
                 "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessable for requested operation.\n"
                 if $self->debug();
             return;
-        }
+
     }
 
     # If the parent of the leaf has indexes it is contained within a table
@@ -4686,6 +4685,8 @@ sub can {
 
     # use results of parent can()
     return $self->SUPER::can($method) if $self->SUPER::can($method);
+
+    return if $method eq 'CARP_TRACE';
 
     my $validated = $self->_validate_autoload_method($method);
     return unless $validated;
@@ -4762,6 +4763,8 @@ our $AUTOLOAD;
 sub AUTOLOAD {
     my $self = shift;
     my ($sub_name) = $AUTOLOAD =~ /::(\w+)$/;
+
+   return if $sub_name eq 'CARP_TRACE';
 
     # Typos in function calls in SNMP::Info subclasses turn into
     # AUTOLOAD requests for non-methods.  While this is deprecated,

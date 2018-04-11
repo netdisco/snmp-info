@@ -41,7 +41,7 @@ use SNMP::Info::Layer1;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.53';
+$VERSION = '3.54';
 
 # Set for No CDP
 %GLOBALS = ( %SNMP::Info::Layer1::GLOBALS, 'root_ip' => 'actualIPAddr', );
@@ -71,6 +71,7 @@ sub os_ver {
     if ( $descr =~ m/version (\d+\.\d+)/ ) {
         return $1;
     }
+    return;
 }
 
 sub model {

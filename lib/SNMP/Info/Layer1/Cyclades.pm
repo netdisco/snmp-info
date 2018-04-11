@@ -1,7 +1,7 @@
 # SNMP::Info::Layer1::Cyclades
 # $Id$
 #
-# Copyright (c) 2008 Eric Miller
+# Copyright (c) 2018 Eric Miller
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,38 +39,105 @@ use SNMP::Info::Layer1;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD/;
 
-$VERSION = '3.53';
+$VERSION = '3.54';
 
 %MIBS = (
     %SNMP::Info::Layer1::MIBS,
-    'CYCLADES-ACS-SYS-MIB'  => 'cyACSversion',
-    'CYCLADES-ACS-CONF-MIB' => 'cyEthIPaddr',
-    'CYCLADES-ACS-INFO-MIB' => 'cyISPortTty',
+    'CYCLADES-ACS-SYS-MIB'    => 'cyACSversion',
+    'CYCLADES-ACS5K-SYS-MIB'  => 'cyACS5Kversion',
+    'CYCLADES-ACS-CONF-MIB'   => 'cyACSConf',
+    'CYCLADES-ACS5K-CONF-MIB' => 'cyACS5KConf',
+    'CYCLADES-ACS-INFO-MIB'   => 'cyACSInfo',
+    'CYCLADES-ACS5K-INFO-MIB' => 'cyACS5KInfo',
+    'ACS-MIB'                 => 'acs6016',
+    'ACS8000-MIB'             => 'acs8048',
 );
 
 %GLOBALS = (
 
-    # CYCLADES-ACS-SYS-MIB
     %SNMP::Info::Layer1::GLOBALS,
-    'os_ver'     => 'cyACSversion',
-    'cy_model'   => 'cyACSpname',
-    'serial'     => 'cyACSDevId',
-    'root_ip'    => 'cyEthIPaddr',
-    'ps1_status' => 'cyACSPw1',
-    'ps2_status' => 'cyACSPw2',
+
+    # CYCLADES-ACS-SYS-MIB
+    'cy_os_ver'     => 'cyACSversion',
+    'cy_model'      => 'cyACSpname',
+    'cy_serial'     => 'cyACSDevId',
+    'cy_ps1_status' => 'cyACSPw1',
+    'cy_ps2_status' => 'cyACSPw2',
+
+    # CYCLADES-ACS-CONF-MIB
+    'cy_root_ip' => 'CYCLADES_ACS_CONF_MIB__cyEthIPaddr',
+
+    # CYCLADES-ACS5K-SYS-MIB
+    'cy5k_os_ver'     => 'cyACS5Kversion',
+    'cy5k_model'      => 'cyACS5Kpname',
+    'cy5k_serial'     => 'cyACS5KDevId',
+    'cy5k_ps1_status' => 'cyACS5KPw1',
+    'cy5k_ps2_status' => 'cyACS5KPw2',
+
+    # CYCLADES-ACS5K-CONF-MIB
+    'cy5k_root_ip'   => 'CYCLADES_ACS5K_CONF_MIB__cyEthIPaddr',
+
+    # ACS-MIB
+    'acs_os_ver'     => 'ACS_MIB__acsFirmwareVersion',
+    'acs_model'      => 'ACS_MIB__acsProductModel',
+    'acs_serial'     => 'ACS_MIB__acsSerialNumber',
+    'acs_ps1_status' => 'ACS_MIB__acsPowerSupplyStatePw1',
+    'acs_ps2_status' => 'ACS_MIB__acsPowerSupplyStatePw2',
+
+    # ACS8000-MIB
+    'acs8k_os_ver'     => 'ACS8000_MIB__acsFirmwareVersion',
+    'acs8k_model'      => 'ACS8000_MIB__acsProductModel',
+    'acs8k_serial'     => 'ACS8000_MIB__acsSerialNumber',
+    'acs8k_ps1_status' => 'ACS8000_MIB__acsPowerSupplyStatePw1',
+    'acs8k_ps2_status' => 'ACS8000_MIB__acsPowerSupplyStatePw2',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer1::FUNCS,
 
     # CYCLADES-ACS-INFO-MIB::cyInfoSerialTable
-    'cy_port_tty'   => 'cyISPortTty',
-    'cy_port_name'  => 'cyISPortName',
-    'cy_port_speed' => 'cyISPortSpeed',
-    'cy_port_cd'    => 'cyISPortSigCD',
+    'cy_port_tty'   => 'CYCLADES_ACS_INFO_MIB__cyISPortTty',
+    'cy_port_name'  => 'CYCLADES_ACS_INFO_MIB__cyISPortName',
+    'cy_port_speed' => 'CYCLADES_ACS_INFO_MIB__cyISPortSpeed',
+    'cy_port_cd'    => 'CYCLADES_ACS_INFO_MIB__cyISPortSigCD',
 
     # CYCLADES-ACS-CONF-MIB::cySerialPortTable
-    'cy_port_socket' => 'cySPortSocketPort',
+    'cy_port_socket' => 'CYCLADES_ACS_CONF_MIB__cySPortSocketPort',
+
+    # CYCLADES-ACS5K-INFO-MIB::cyInfoSerialTable
+    'cy5k_port_tty'   => 'CYCLADES_ACS5K_INFO_MIB__cyISPortTty',
+    'cy5k_port_name'  => 'CYCLADES_ACS5K_INFO_MIB__cyISPortName',
+    'cy5k_port_speed' => 'CYCLADES_ACS5K_INFO_MIB__cyISPortSpeed',
+    'cy5k_port_cd'    => 'CYCLADES_ACS5K_INFO_MIB__cyISPortSigCD',
+
+    # CYCLADES-ACS5K-CONF-MIB::cySerialPortTable
+    'cy5k_port_socket' => 'CYCLADES_ACS5K_CONF_MIB__cySPortSocketPort',
+
+    # ACS-MIB::acsSerialPortTable
+    'acs_port_tty'   => 'ACS_MIB__acsSerialPortTableDeviceName',
+    'acs_port_name'  => 'ACS_MIB__acsSerialPortTableName',
+    'acs_port_speed' => 'ACS_MIB__acsSerialPortTableComSpeed',
+    'acs_port_cd'    => 'ACS_MIB__acsSerialPortTableSignalStateDCD',
+
+    # Equivalent to cySPortSocketPort doesn't exist in ACS-MIB
+    # Use 'acsSerialPortTableDeviceName' as an equivalent, it just needs
+    # to be unique so that we can differentiate between the index in the
+    # acsSerialPortTable from ifIndex which are both integers
+    # ACS-MIB::acsSerialPortTableEntry
+    'acs_port_socket' => 'ACS_MIB__acsSerialPortTableDeviceName',
+
+    # ACS8000-MIB::acsSerialPortTable
+    'acs8k_port_tty'   => 'ACS8000_MIB__acsSerialPortTableDeviceName',
+    'acs8k_port_name'  => 'ACS8000_MIB__acsSerialPortTableName',
+    'acs8k_port_speed' => 'ACS8000_MIB__acsSerialPortTableComSpeed',
+    'acs8k_port_cd'    => 'ACS8000_MIB__acsSerialPortTableSignalStateDCD',
+
+    # Equivalent to cySPortSocketPort doesn't exist in ACS-MIB
+    # Use 'acsSerialPortTableDeviceName' as an equivalent, it just needs
+    # to be unique so that we can differentiate between the index in the
+    # acsSerialPortTable from ifIndex which are both integers
+    # ACS8000-MIB::acsSerialPortTableEntry
+    'acs8k_port_socket' => 'ACS8000_MIB__acsSerialPortTableDeviceName',
 );
 
 %MUNGE = ( %SNMP::Info::Layer1::MUNGE, );
@@ -82,21 +149,85 @@ sub layers {
 }
 
 sub os {
-    return 'cyclades';
+    return 'avocent';
+}
+
+# Use "short circuit" to return the first MIB instance that returns data to
+# reduce network communications
+# We'll try newest (acs*) first assuming those are most likely deployed
+sub os_ver {
+    my $cyclades = shift;
+
+    return
+           $cyclades->acs_os_ver()
+        || $cyclades->acs8k_os_ver()
+        || $cyclades->cy5k_os_ver()
+        || $cyclades->cy_os_ver()
+        || undef;
 }
 
 sub vendor {
-    return 'cyclades';
+    return 'vertiv';
 }
 
 sub model {
     my $cyclades = shift;
 
-    my $model = $cyclades->cy_model();
+    my $model
+        = $cyclades->acs_model()
+        || $cyclades->acs8k_model()
+        || $cyclades->cy5k_model()
+        || $cyclades->cy_model()
+        || undef;
 
-    return unless defined $model;
+    return lc($model) if ( defined $model );
 
-    return lc($model);
+    my $id   = $cyclades->id();
+    my $prod = SNMP::translateObj($id);
+
+    return $prod || $id;
+}
+
+sub serial {
+    my $cyclades = shift;
+
+    return
+           $cyclades->acs_serial()
+        || $cyclades->acs8k_serial()
+        || $cyclades->cy5k_serial()
+        || $cyclades->cy_serial()
+        || undef;
+}
+
+sub root_ip {
+    my $cyclades = shift;
+
+    return
+           $cyclades->cy5k_root_ip()
+        || $cyclades->cy_root_ip()
+        || undef;
+}
+
+sub ps1_status {
+    my $cyclades = shift;
+
+    return
+           $cyclades->acs_ps1_status()
+        || $cyclades->acs8k_ps1_status()
+        || $cyclades->cy5k_ps1_status()
+        || $cyclades->cy_ps1_status()
+        || undef;
+}
+
+sub ps2_status {
+    my $cyclades = shift;
+
+    return
+           $cyclades->acs_ps2_status()
+        || $cyclades->acs8k_ps2_status()
+        || $cyclades->cy5k_ps2_status()
+        || $cyclades->cy_ps2_status()
+        || undef;
 }
 
 # Extend interface methods to include serial ports
@@ -109,7 +240,12 @@ sub i_index {
     my $partial  = shift;
 
     my $orig_index = $cyclades->orig_i_index($partial) || {};
-    my $cy_index   = $cyclades->cy_port_socket()       || {};
+    my $cy_index
+        = $cyclades->acs_port_socket()
+        || $cyclades->acs8k_port_socket()
+        || $cyclades->cy5k_port_socket()
+        || $cyclades->cy_port_socket()
+        || {};
 
     my %i_index;
     foreach my $iid ( keys %$orig_index ) {
@@ -136,9 +272,19 @@ sub interfaces {
     my $cyclades = shift;
     my $partial  = shift;
 
-    my $i_descr  = $cyclades->orig_i_description($partial) || {};
-    my $cy_index = $cyclades->cy_port_socket()             || {};
-    my $cy_p_tty = $cyclades->cy_port_tty()                || {};
+    my $i_descr = $cyclades->orig_i_description($partial) || {};
+    my $cy_index
+        = $cyclades->acs_port_socket()
+        || $cyclades->acs8k_port_socket()
+        || $cyclades->cy5k_port_socket()
+        || $cyclades->cy_port_socket()
+        || {};
+    my $cy_p_tty
+        = $cyclades->acs_port_tty()
+        || $cyclades->acs8k_port_tty()
+        || $cyclades->cy5k_port_tty()
+        || $cyclades->cy_port_tty()
+        || {};
 
     my %if;
     foreach my $iid ( keys %$i_descr ) {
@@ -166,8 +312,18 @@ sub i_speed {
     my $partial  = shift;
 
     my $i_speed    = $cyclades->orig_i_speed($partial) || {};
-    my $cy_index   = $cyclades->cy_port_socket()       || {};
-    my $cy_p_speed = $cyclades->cy_port_speed()        || {};
+    my $cy_index
+        = $cyclades->acs_port_socket()
+        || $cyclades->acs8k_port_socket()
+        || $cyclades->cy5k_port_socket()
+        || $cyclades->cy_port_socket()
+        || {};
+    my $cy_p_speed
+        = $cyclades->acs_port_speed()
+        || $cyclades->acs8k_port_speed()
+        || $cyclades->cy5k_port_speed()
+        || $cyclades->cy_port_speed()
+        || {};
 
     my %i_speed;
     foreach my $iid ( keys %$i_speed ) {
@@ -195,8 +351,18 @@ sub i_up {
     my $partial  = shift;
 
     my $i_up     = $cyclades->orig_i_up($partial) || {};
-    my $cy_index = $cyclades->cy_port_socket()    || {};
-    my $cy_p_up  = $cyclades->cy_port_cd()        || {};
+    my $cy_index
+        = $cyclades->acs_port_socket()
+        || $cyclades->acs8k_port_socket()
+        || $cyclades->cy5k_port_socket()
+        || $cyclades->cy_port_socket()
+        || {};
+    my $cy_p_up
+        = $cyclades->acs_port_cd()
+        || $cyclades->acs8k_port_cd()
+        || $cyclades->cy5k_port_cd()
+        || $cyclades->cy_port_cd()
+        || {};
 
     my %i_up;
     foreach my $iid ( keys %$i_up ) {
@@ -224,8 +390,18 @@ sub i_description {
     my $partial  = shift;
 
     my $i_desc    = $cyclades->orig_i_description($partial) || {};
-    my $cy_index  = $cyclades->cy_port_socket()             || {};
-    my $cy_p_desc = $cyclades->cy_port_name()               || {};
+    my $cy_index
+        = $cyclades->acs_port_socket()
+        || $cyclades->acs8k_port_socket()
+        || $cyclades->cy5k_port_socket()
+        || $cyclades->cy_port_socket()
+        || {};
+    my $cy_p_desc
+        = $cyclades->acs_port_name()
+        || $cyclades->acs8k_port_name()
+        || $cyclades->cy5k_port_name()
+        || $cyclades->cy_port_name()
+        || {};
 
     my %descr;
     foreach my $iid ( keys %$i_desc ) {
@@ -253,8 +429,18 @@ sub i_name {
     my $partial  = shift;
 
     my $i_name    = $cyclades->orig_i_name($partial) || {};
-    my $cy_index  = $cyclades->cy_port_socket()      || {};
-    my $cy_p_desc = $cyclades->cy_port_name()        || {};
+    my $cy_index
+        = $cyclades->acs_port_socket()
+        || $cyclades->acs8k_port_socket()
+        || $cyclades->cy5k_port_socket()
+        || $cyclades->cy_port_socket()
+        || {};
+    my $cy_p_desc
+        = $cyclades->acs_port_name()
+        || $cyclades->acs8k_port_name()
+        || $cyclades->cy5k_port_name()
+        || $cyclades->cy_port_name()
+        || {};
 
     my %i_name;
     foreach my $iid ( keys %$i_name ) {
@@ -282,7 +468,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer1::Cyclades - SNMP Interface to Cyclades terminal servers
+SNMP::Info::Layer1::Cyclades - SNMP Interface to Cyclades/Avocent terminal
+servers
 
 =head1 AUTHOR
 
@@ -309,7 +496,7 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a 
-Cyclades device through SNMP.
+Cyclades/Avocent device through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above. 
@@ -334,6 +521,14 @@ my $cyclades = new SNMP::Info::Layer1::Cyclades(...);
 
 =item F<CYCLADES-ACS-INFO-MIB>
 
+=item F<CYCLADES-ACS5K-SYS-MIB>
+
+=item F<CYCLADES-ACS5K-CONF-MIB>
+
+=item F<CYCLADES-ACS5K-INFO-MIB>
+
+=item F<ACS6000-MIB>
+
 =back
 
 =head2 Inherited MIBs
@@ -348,11 +543,11 @@ These are methods that return scalar value from SNMP
 
 =item $cyclades->os_ver()
 
-(C<cyACSversion>)
+(C<acsFirmwareVersion>), (C<cyACS5Kversion>), or (C<cyACSversion>)
 
 =item $cyclades->serial()
 
-(C<cyACSDevId>)
+(C<acsSerialNumber>), (C<cyACS5KDevId>), or (C<cyACSDevId>)
 
 =item $cyclades->root_ip()
 
@@ -360,11 +555,11 @@ These are methods that return scalar value from SNMP
 
 =item $cyclades->ps1_status()
 
-(C<cyACSPw1>)
+(C<acsPowerSupplyStatePw1>), (C<cyACS5KPw1>), or (C<cyACSPw1>)
 
 =item $cyclades->ps2_status()
 
-(C<cyACSPw2>)
+(C<acsPowerSupplyStatePw2>), (C<cyACS5KPw2>), or (C<cyACSPw2>)
 
 =back
 
@@ -379,15 +574,16 @@ to poll for an ARP cache so turn off reported Layer 2 and Layer 3.
 
 =item $cyclades->vendor()
 
-Returns 'cyclades'
+Returns 'vertiv'
 
 =item $cyclades->os()
 
-Returns 'cyclades'
+Returns 'avocent'
 
 =item $cyclades->model()
 
-Returns lower case (C<cyACSpname>)
+Returns lower case (C<cyACSpname>) or (C<acsProductModel>) if it exists
+otherwise tries to reference $cyclades->id() to one of the MIBs listed above
 
 =back
 
@@ -409,31 +605,34 @@ to a hash.
 Returns reference to map of IIDs to Interface index. 
 
 Extended to include serial ports.  Serial ports are indexed with the
-alternative labeling system for the serial port, the listening socket port
-C<cySPortSocketPort> to avoid conflicts with C<ifIndex>.  
+alternative labeling system for the serial port, either the listening socket
+port C<cySPortSocketPort> or C<acsSerialPortTableDeviceName> name to avoid
+conflicts with C<ifIndex>.  
 
 =item $cyclades->interfaces()
 
 Returns reference to map of IIDs to physical ports.  Extended to include
-serial ports, C<cyISPortTty>.
+serial ports, C<acsSerialPortTableDeviceName> or C<cyISPortTty>.
 
 =item $cyclades->i_speed()
 
-Returns interface speed.  Extended to include serial ports, C<cyISPortSpeed>. 
+Returns interface speed.  Extended to include serial ports,
+C<acsSerialPortTableComSpeed> or C<cyISPortSpeed>. 
 
 =item $cyclades->i_up()
 
 Returns link status for each port.  Extended to include serial ports,
-C<cyISPortSigCD>.
+C<acsSerialPortTableSignalStateDCD> or C<cyISPortSigCD>.
 
 =item $cyclades->i_description()
 
 Returns description of each port.  Extended to include serial ports,
-C<cyISPortName>.
+C<acsSerialPortTableName> or C<cyISPortName>.
 
 =item $cyclades->i_name()
 
-Returns name of each port.  Extended to include serial ports, C<cyISPortName>.
+Returns name of each port.  Extended to include serial ports,
+C<acsSerialPortTableName> or C<cyISPortName>.
 
 =back
 

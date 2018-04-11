@@ -1,3 +1,25 @@
+Version 3.54 (2018-04-01)
+
+  [NEW FEATURES]
+  * #141 Avocent ACS files for correct discovery in Netdisco
+  * Add support for Avocent ACS 5K/6K/8K terminal servers in Layer1::Cyclades
+
+  [ENHANCEMENTS]
+
+  * #215 Nokia/Alcatel-Lucent 7705 LLDP
+  * #220 Alcatel-Lucent / Nokia SR 7750 missing neighbors
+  * Improve Layer3::Timetra model detection
+
+  [BUG FIXES]
+
+  * Fix logic in Layer1::Asante i_up() method
+  * Fix MIB leaf typo in IPv6
+  * Don't use MIB leafs that are not-accessible according to MIB
+  * Fix logic for determining if MIB leaf supports set operations
+    NOTE: Fixing this logic now results in methods starting with set_ on MIB
+    leafs without Write or Create access failing validation in
+    _validate_autoload_method()
+
 Version 3.53 (2018-03-22)
 
   [NEW FEATURES]
