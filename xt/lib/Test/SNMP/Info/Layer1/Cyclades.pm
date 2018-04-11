@@ -139,7 +139,7 @@ sub os : Tests(2) {
     my $test = shift;
 
     can_ok( $test->{info}, 'os' );
-    is( $test->{info}->os(), 'avocent', q(Vendor returns 'avocent') );
+    is( $test->{info}->os(), 'avocent', q(OS returns 'avocent') );
 }
 
 sub os_ver : Tests(6) {

@@ -60,7 +60,7 @@ sub os : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'os');
-  is($test->{info}->os(), 'ros', q(Vendor returns 'ros'));
+  is($test->{info}->os(), 'ros', q(OS returns 'ros'));
 }
 
 sub vendor : Tests(2) {

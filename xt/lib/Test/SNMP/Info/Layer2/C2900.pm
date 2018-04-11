@@ -130,7 +130,7 @@ sub i_speed_admin : Tests(3) {
   my $expected = {2 => 'auto', 3 => 'auto', 26 => '100 Mbps'};
 
   cmp_deeply($test->{info}->i_speed_admin(),
-    $expected, q(Interfaces have expected duplex admin values));
+    $expected, q(Interfaces have expected speed admin values));
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->i_speed_admin(),

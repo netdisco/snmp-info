@@ -73,7 +73,7 @@ sub os : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'os');
-  is($test->{info}->os(), 'allied', q(Vendor returns 'allied'));
+  is($test->{info}->os(), 'allied', q(OS returns 'allied'));
 }
 
 sub os_ver : Tests(3) {

@@ -56,7 +56,7 @@ sub os : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'os');
-  is($test->{info}->os(), '3Com', q(Vendor returns '3Com'));
+  is($test->{info}->os(), '3Com', q(OS returns '3Com'));
 }
 
 sub serial : Tests(3) {
