@@ -46,7 +46,7 @@ sub setup : Tests(setup) {
     '_id'           => '.1.3.6.1.4.1.890',
     '_ip_addresses' => 1,
     'store' =>
-      {'ip_addresses' => {'2.3.4.5' => '2.3.4.5'}, {'1.2.3.4' => '1.2.3.4'}},
+      {'ip_addresses' => {'2.3.4.5' => '2.3.4.5', '1.2.3.4' => '1.2.3.4'}},
   };
   $test->{info}->cache($cache_data);
 }
