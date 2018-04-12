@@ -32,8 +32,9 @@ package SNMP::Info::CiscoPortSecurity;
 
 use strict;
 use Exporter;
+use SNMP::Info;
 
-@SNMP::Info::CiscoPortSecurity::ISA       = qw/Exporter/;
+@SNMP::Info::CiscoPortSecurity::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoPortSecurity::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PAECAPABILITIES/;
@@ -82,20 +83,16 @@ $VERSION = '3.54';
     # CISCO-PORT-SECURITY-MIB::cpsIfVlanTable
     'cps_i_v_mac_count' => 'cpsIfVlanCurSecureMacAddrCount',
     'cps_i_v_mac_max'   => 'cpsIfVlanMaxSecureMacAddr',
-    'cps_i_v'           => 'cpsIfVlanIndex',
 
     # CISCO-PORT-SECURITY-MIB::cpsIfVlanSecureMacAddrTable
     'cps_i_v_mac_status' => 'cpsIfVlanSecureMacAddrRowStatus',
     'cps_i_v_mac_age'    => 'cpsIfVlanSecureMacAddrRemainAge',
     'cps_i_v_mac_type'   => 'cpsIfVlanSecureMacAddrType',
-    'cps_i_v_vlan'       => 'cpsIfVlanSecureVlanIndex',
-    'cps_i_v_mac'        => 'cpsIfVlanSecureMacAddress',
 
     # CISCO-PORT-SECURITY-MIB::cpsSecureMacAddressTable
     'cps_m_status' => 'cpsSecureMacAddrRowStatus',
     'cps_m_age'    => 'cpsSecureMacAddrRemainingAge',
     'cps_m_type'   => 'cpsSecureMacAddrType',
-    'cps_m_mac'    => 'cpsSecureMacAddress',
 
     # IEEE8021-PAE-MIB::dot1xPaePortEntry
     'pae_i_capabilities'            => 'dot1xPaePortCapabilities',
@@ -107,8 +104,6 @@ $VERSION = '3.54';
 
 %MUNGE = (
     'cps_i_mac'                     => \&SNMP::Info::munge_mac,
-    'cps_m_mac'                     => \&SNMP::Info::munge_mac,
-    'cps_i_v_mac'                   => \&SNMP::Info::munge_mac,
     'pae_i_last_eapol_frame_source' => \&SNMP::Info::munge_mac,
     'pae_i_capabilities'            => \&munge_pae_capabilities,
 );
@@ -323,10 +318,6 @@ These are methods that return scalar values from SNMP
 
 (C<cpsIfVlanMaxSecureMacAddr>)
 
-=item $cps->cps_i_v()
-
-(C<cpsIfVlanIndex>)
-
 =back
 
 =head2 C<CISCO-PORT-SECURITY-MIB::cpsIfVlanSecureMacAddrTable>
@@ -345,14 +336,6 @@ These are methods that return scalar values from SNMP
 
 (C<cpsIfVlanSecureMacAddrType>)
 
-=item $cps->cps_i_v_vlan()
-
-(C<cpsIfVlanSecureVlanIndex>)
-
-=item $cps->cps_i_v_mac()
-
-(C<cpsIfVlanSecureMacAddress>)
-
 =back
 
 =head2 C<CISCO-PORT-SECURITY-MIB::cpsSecureMacAddressTable>
@@ -370,10 +353,6 @@ These are methods that return scalar values from SNMP
 =item $cps->cps_m_type()
 
 (C<cpsSecureMacAddrType>)
-
-=item $cps->cps_m_mac()
-
-(C<cpsSecureMacAddress>)
 
 =back
 
