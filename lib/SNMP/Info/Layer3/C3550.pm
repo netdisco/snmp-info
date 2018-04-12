@@ -96,8 +96,8 @@ sub ports {
     my $c3550 = shift;
 
     my $id    = $c3550->id();
-    my $model = &SNMP::translateObj($id);
-    if ( $model =~ /(12|24|48)(C|T|TS|G|TS-E|TS-S|T-E)?$/ ) {
+    my $model = SNMP::translateObj($id);
+    if ( defined $model && $model =~ /(12|24|48)(C|T|TS|G|TS-E|TS-S|T-E)?$/ ) {
         return $1;
     }
 
