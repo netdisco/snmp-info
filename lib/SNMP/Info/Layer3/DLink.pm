@@ -39,8 +39,13 @@ $VERSION = '3.54';
     %SNMP::Info::LLDP::FUNCS,
     'dlink_fw' => 'probeSoftwareRev',
     'dlink_hw' => 'probeHardwareRev',
-    'dlink_stp_i_root_port' => 'MSTP_MIB__swMSTPInstRootPort',
-    'dlink_serial_no' => 'AGENT_GENERAL_MIB__agentSerialNumber',
+    # Replaced with OID since these MIBs are no longer in the netdisco-mibs
+    # collection. Commit reference of MIB removal in netdisco-mibs:
+    # d6ec3f15861e28d220a681e7fa3b222c21664fda
+    'dlink_stp_i_root_port' => '.1.3.6.1.4.1.171.12.15.2.3.1.18',
+    'dlink_serial_no' => '.1.3.6.1.4.1.171.12.1.1.12',
+    # TODO: hardcoded OIDs using get() in method calls below should be
+    # replaced similarly and use the library getter methods
 );
 
 %MUNGE = ( %SNMP::Info::Layer3::MUNGE, %SNMP::Info::LLDP::MUNGE, );
