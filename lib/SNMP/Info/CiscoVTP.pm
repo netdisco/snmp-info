@@ -61,7 +61,6 @@ $VERSION = '3.54';
 %FUNCS = (
 
     # CISCO-VTP-MIB::managementDomainTable
-    'vtp_d_index'     => 'managementDomainIndex',
     'vtp_d_name'      => 'managementDomainName',
     'vtp_d_mode'      => 'managementDomainLocalMode',
     'vtp_d_rev'       => 'managementDomainConfigRevNumber',
@@ -779,10 +778,6 @@ Each bit represents a VLAN.  This is 3072 through 4095
 =head2 Management Domain Table (C<CISCO-VTP-MIB::managementDomainTable>)
 
 =over
-
-=item $vtp->vtp_d_index()
-
-(C<managementDomainIndex>)
 
 =item $vtp->vtp_d_name()
 
