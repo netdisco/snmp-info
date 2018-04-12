@@ -101,7 +101,7 @@ sub mac {
     my $i_mac     = $contivity->i_mac();
 
     # Return Interface MAC
-    foreach my $entry ( keys %$i_mac ) {
+    foreach my $entry ( sort keys %$i_mac ) {
         my $sn = $i_mac->{$entry};
         next unless $sn;
         return $sn;
