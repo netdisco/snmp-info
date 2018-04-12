@@ -45,6 +45,7 @@ $VERSION = '3.54';
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::LLDP::MIBS,
+    'RADLAN-COPY-MIB'                => 'rlCopySourceLocation',
     'RADLAN-Physicaldescription-MIB' => 'rlPhdStackReorder',
     'RADLAN-rlInterfaces'            => 'rlIfNumOfLoopbackPorts',
     'RADLAN-HWENVIROMENT'            => 'rlEnvPhysicalDescription',
