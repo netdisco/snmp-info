@@ -53,7 +53,7 @@ $VERSION = '3.54';
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     'UCD-SNMP-MIB'       => 'versionTag',
-    'NET-SNMP-TC'        => 'netSnmpAgentOIDs',
+    'NET-SNMP-TC'        => 'netSnmpAliasDomain',
     'HOST-RESOURCES-MIB' => 'hrSystem',
 );
 
@@ -86,7 +86,7 @@ sub os_ver {
     my $descr   = $netsnmp->description();
 
 # STRING: "Cumulus Linux version 3.5.1 running on innotek GmbH VirtualBox"
-    return $1 if ( $descr =~ /^Cumulus Linux (\S+)\s+/ );
+    return $1 if ( $descr =~ /^Cumulus Linux.+(\d+\.\d+\.\d+)\s/ );
     return;
 }
 
