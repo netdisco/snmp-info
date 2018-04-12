@@ -58,7 +58,6 @@ $VERSION = '3.54';
 );
 
 %FUNCS = (
-    'cdp_index'        => 'cdpCacheIfIndex',
     'cdp_proto'        => 'cdpCacheAddressType',
     'cdp_addr'         => 'cdpCacheAddress',
     'cdp_ver'          => 'cdpCacheVersion',
@@ -128,11 +127,6 @@ sub hasCDP {
 sub cdp_if {
     my $cdp = shift;
 
-    # See if by some miracle Cisco implemented the cdpCacheIfIndex entry
-    my $cdp_index = $cdp->cdp_index();
-    return $cdp_index if defined $cdp_index;
-
-    # Nope, didn't think so. Now we fake it.
     my $cdp_ip = $cdp->cdp_ip();
     unless ( defined $cdp_ip ) {
         $cdp->error_throw(
