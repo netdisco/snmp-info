@@ -32,8 +32,9 @@ package SNMP::Info::CiscoStack;
 
 use strict;
 use Exporter;
+use SNMP::Info;
 
-@SNMP::Info::CiscoStack::ISA       = qw/Exporter/;
+@SNMP::Info::CiscoStack::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoStack::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT/;
@@ -194,7 +195,7 @@ sub i_duplex_admin {
         next if ( defined $partial and $iid !~ /^$partial$/ );
 
         # Test for gigabit
-        if ( defined $p_duplex_cap->{$port} and $p_duplex_cap->{$port} == 1 ) {
+        if ( defined $p_duplex_cap->{$port} and $p_duplex_cap->{$port} == 0 ) {
             $i_duplex_admin->{$iid} = 'full';
         }
 
