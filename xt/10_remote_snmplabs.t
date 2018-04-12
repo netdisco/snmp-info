@@ -29,6 +29,9 @@ ok((!defined $info->error()), 'No error on initial connection');
 like($info->name(),  qr/\w+/, 'name is "new system name"');
 is($info->class(), 'SNMP::Info::Layer3::NetSNMP', 'class is Layer3::NetSNMP');
 
+is($info->snmp_connect_ip('demo.snmplabs.com', 2, 'public'),
+    1, 'Connect to demo.snmplabs.com returns 1');
+
 done_testing;
 
 sub _build_mibdirs {

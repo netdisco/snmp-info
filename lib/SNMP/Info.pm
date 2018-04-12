@@ -4625,7 +4625,8 @@ sub _validate_autoload_method {
     # If we were given a fully qualified OID because we don't have the MIB
     # file, it will translate above but we won't be able to check access so
     # skip the check and return
-    if ($access && $method =~ /^set/ && $access !~ /Write|Create/) {
+    if ($access && ($method =~ /^set/ && $access !~ /Write|Create/)
+        || ($method !~ /^set/ && $access eq 'NoAccess')) {
 
             print
                 "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessable for requested operation.\n"

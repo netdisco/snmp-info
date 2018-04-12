@@ -1170,11 +1170,10 @@ sub load_all : Tests(6) {
       2 => '1/3/1, 10/100 Ethernet TX',
       3 => '1/3/2, 10/100 Ethernet TX'
     },
-    '.1.3.6.1.2.1.2.2.1.3' => {1 => 24,   2 => 6,         3 => 6},
-    '.1.3.6.1.2.1.2.2.1.4' => {1 => 1500, 2 => 1514,      3 => 1514},
-    '.1.3.6.1.2.1.2.2.1.5' => {1 => 0,    2 => 100000000, 3 => 1000000000,},
-    '.1.3.6.1.2.1.31.1.1.1.1'  => {1 => 'system', 2 => '1/3/1', 3 => '1/3/2'},
-    '.1.3.6.1.2.1.31.1.1.1.15' => {1 => 0,        2 => 100,     3 => 1000,},
+    '.1.3.6.1.2.1.2.2.1.3'     => {1 => 24,   2 => 6,         3 => 6},
+    '.1.3.6.1.2.1.2.2.1.4'     => {1 => 1500, 2 => 1514,      3 => 1514},
+    '.1.3.6.1.2.1.2.2.1.5'     => {1 => 0,    2 => 100000000, 3 => 1000000000,},
+    '.1.3.6.1.2.1.31.1.1.1.15' => {1 => 0,    2 => 100,       3 => 1000,},
   };
 
   # Data is stored unmunged, OID's will be resolved and cache entries stored
@@ -1186,11 +1185,10 @@ sub load_all : Tests(6) {
       2 => '1/3/1, 10/100 Ethernet TX',
       3 => '1/3/2, 10/100 Ethernet TX'
     },
-    'i_type'       => {1 => 24,       2 => 6,         3 => 6},
-    'i_mtu'        => {1 => 1500,     2 => 1514,      3 => 1514},
-    'i_speed'      => {1 => 0,        2 => 100000000, 3 => 1000000000,},
-    'i_name'       => {1 => 'system', 2 => '1/3/1',   3 => '1/3/2'},
-    'i_speed_high' => {1 => 0,        2 => 100,       3 => 1000,},
+    'i_type'       => {1 => 24,   2 => 6,         3 => 6},
+    'i_mtu'        => {1 => 1500, 2 => 1514,      3 => 1514},
+    'i_speed'      => {1 => 0,    2 => 100000000, 3 => 1000000000,},
+    'i_speed_high' => {1 => 0,    2 => 100,       3 => 1000,},
 
     # In base class defined as ifIndex
     'interfaces' => {1 => 1, 2 => 2, 3 => 3,},
@@ -1441,7 +1439,7 @@ sub private_show_attr : Tests(3) {
   );
 }
 
-sub snmp_connect_ip : Tests(4) {
+sub snmp_connect_ip : Tests(3) {
   my $test = shift;
 
   can_ok($test->{info}, 'snmp_connect_ip');
@@ -1451,8 +1449,7 @@ sub snmp_connect_ip : Tests(4) {
   is($test->{info}->snmp_connect_ip('0.0.0.0', 2, 'public'),
     undef, 'Connect to zeros returns undef');
 
-  is($test->{info}->snmp_connect_ip('demo.snmplabs.com', 2, 'public'),
-    1, 'Connect to demo.snmplabs.com returns 1');
+  # Live call moved to 10_remote_snmplabs.t
 }
 
 sub modify_port_list : Tests(4) {
@@ -1593,15 +1590,9 @@ sub private_validate_autoload_method : Tests(8) {
       q(Func 'ifPromiscuousMode_raw' validates)
     );
   };
-TODO: {
-    local $TODO
-      = "Check MIB access for non set methods in _validate_autoload_method"
-      if 1;
 
-    # Test that not-accessible leaf returns undef IF-MIB::ifStackHigherLayer
-    is($test->{info}->_validate_autoload_method('ifStackHigherLayer'),
-      undef, q(MIB leaf 'ifStackHigherLayer' not-accessible, returns undef));
-  }
+  is($test->{info}->_validate_autoload_method('ifStackHigherLayer'),
+    undef, q(MIB leaf 'ifStackHigherLayer' not-accessible, returns undef));
 
   # Test that read-only leaf won't validate set_
   is($test->{info}->_validate_autoload_method('set_i_lastchange'),
