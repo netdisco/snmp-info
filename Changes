@@ -1,6 +1,29 @@
+Version 3.55
+
+  [NEW FEATURES]
+  * #253 Nexans switch support (paecker)
+
+  [ENHANCEMENTS]
+
+  * Increase capture of i_vlan on router interfaces in L3::Cisco 
+
+  [BUG FIXES]
+
+  * #61 ZyXEL (X)GS1900 family MIB - Fix loop in layers method
+  * Fix ISA in AMAP and EDP classes
+  * Add missing MIB in L2::Trapeze, L2::NWSS2300, and L3::Dell
+  * Fix gigabit logic in i_duplex_admin() of CiscoStack
+  * Prevent potential undefined warnings in i_speed_admin() of L2::C2900 and
+    ports() of L3::C3550
+  * Correct validation and IID/key used in mau_set_i_speed_admin() and
+    mau_set_i_duplex_admin() of MAU
+  * Correct typo in MIB leaf names in L3::Aironet 
+  * Don't use MIB leafs that are not-accessible according to MIB
+
 Version 3.54 (2018-04-01)
 
   [NEW FEATURES]
+
   * #141 Avocent ACS files for correct discovery in Netdisco
   * Add support for Avocent ACS 5K/6K/8K terminal servers in Layer1::Cyclades
 

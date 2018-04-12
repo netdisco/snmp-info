@@ -143,10 +143,10 @@ Christoph Neuhaus
                             Version     => 2
                             ) 
     or die "Can't connect to DestHost.\n";
-    
+
     my $class = $nexans->class();
     print "SNMP::Info determined this device to fall under subclass : $class\n";
-    
+
 =head1 DESCRIPTION
 
 Abstraction subclass for Nexans network devices.
@@ -225,13 +225,9 @@ to a hash.
 
 =over 
 
-=item $nexans->i_duplex()
+=item $nexans->i_name()
 
-Return reference to hash of IIDs to current link duplex.
-
-=item $nexans->i_duplex_admin()
-
-Return reference to hash of IIDs to admin duplex setting.
+Returns reference to map of IIDs to human-set port name.
 
 =back
 
@@ -239,6 +235,19 @@ Return reference to hash of IIDs to admin duplex setting.
 
 See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
-=head2 
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item munge_i_duplex()
+
+Converts duplex returned by C<portLinkState> to either 'full' or 'half'.
+
+=item munge_i_duplex_admin()
+
+Converts duplex returned by C<portSpeedDuplexSetup> to either 'full', 'half',
+or 'auto'.
+
+=back
 
 =cut

@@ -58,6 +58,7 @@ lib/SNMP/Info/Layer2/Kentrox.pm
 lib/SNMP/Info/Layer2/N2270.pm
 lib/SNMP/Info/Layer2/NAP222x.pm
 lib/SNMP/Info/Layer2/Netgear.pm
+lib/SNMP/Info/Layer2/Nexans.pm
 lib/SNMP/Info/Layer2/NWSS2300.pm
 lib/SNMP/Info/Layer2/Orinoco.pm
 lib/SNMP/Info/Layer2/Trapeze.pm
@@ -194,6 +195,7 @@ xt/lib/Test/SNMP/Info/Layer2/Kentrox.pm
 xt/lib/Test/SNMP/Info/Layer2/N2270.pm
 xt/lib/Test/SNMP/Info/Layer2/NAP222x.pm
 xt/lib/Test/SNMP/Info/Layer2/Netgear.pm
+xt/lib/Test/SNMP/Info/Layer2/Nexans.pm
 xt/lib/Test/SNMP/Info/Layer2/NWSS2300.pm
 xt/lib/Test/SNMP/Info/Layer2/Orinoco.pm
 xt/lib/Test/SNMP/Info/Layer2/Trapeze.pm
