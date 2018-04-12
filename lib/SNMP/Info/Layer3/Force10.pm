@@ -49,7 +49,7 @@ $VERSION = '3.54';
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
     %SNMP::Info::LLDP::MIBS,
-    'F10-PRODUCTS-MIB' => 'f10Products',
+    'F10-PRODUCTS-MIB' => 'f10ESeriesProducts',
 );
 
 %GLOBALS = (

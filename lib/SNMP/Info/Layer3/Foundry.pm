@@ -61,7 +61,7 @@ $VERSION = '3.54';
     'FOUNDRY-SN-STACKING-MIB'     => 'snStackingOperUnitRole',
     'FOUNDRY-POE-MIB'             => 'snAgentPoeGblPowerCapacityTotal',
     'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snSwGroupOperMode',
-    'BROCADE-PRODUCTS-MIB'        => 'sysName',
+    'BROCADE-PRODUCTS-MIB'        => 'brocadeProducts',
 );
 
 %GLOBALS = (
