@@ -128,7 +128,12 @@ sub i_vlan {
         if (   $i_type->{$idx} eq 'l2vlan'
             || $i_type->{$idx} eq '135' && !defined $i_vlan->{$idx} )
         {
+            # Not sure where this regex came from, anchored at end?
             if ( $i_descr->{$idx} =~ /\.(\d+)$/ ) {
+                $i_vlan->{$idx} = $1;
+            }
+            # This matches 101 in 'Ethernet0.101-802.1Q vLAN subif'
+            elsif ( $i_descr->{$idx} =~ /\.(\d+)-/ ) {
                 $i_vlan->{$idx} = $1;
             }
         }
@@ -138,9 +143,10 @@ sub i_vlan {
 
 sub cisco_comm_indexing { 
     my $cisco = shift;
-    # If we get a VTP version, it's *extremely* likely that the device needs community based indexing
+    # If we get a VTP version, it's *extremely* likely that the device needs
+    # community based indexing
     my $vtp = $cisco->vtp_version() || '0';
-    return ($vtp ne '0');
+    return $vtp ? 1 : 0;
 }
 
 1;
