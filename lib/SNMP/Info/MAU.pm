@@ -277,7 +277,7 @@ sub mau_set_i_speed_admin {
     my $rv;
 
     $speed = lc($speed);
-    if ( !( $speed =~ /(10|100|1000|auto)/io and $iid =~ /\d+/o ) ) {
+    if ( !( $speed =~ /^(10|100|1000|auto)$/i and $iid =~ /\d+/ ) ) {
         return;
     }
 
@@ -298,7 +298,7 @@ sub mau_set_i_speed_admin {
     my $myduplex;
 
     my $i_mau_def_type
-        = &SNMP::translateObj( $mau->mau_type_admin($iid)->{ $iid . '.1' } );
+        = &SNMP::translateObj( $mau->mau_type_admin($key)->{ $key } );
 
     if ( $i_mau_def_type =~ /^dot3MauType.*Base.*(..)$/
         && ( $1 eq "HD" or $1 eq "FD" ) )
@@ -315,17 +315,17 @@ sub mau_set_i_speed_admin {
         return (1);
     }
     elsif ( $speed eq "auto" ) {
-        $rv = $mau->set_mau_autostat( 'enabled', $iid . '.1' );
+        $rv = $mau->set_mau_autostat( 'enabled', $key );
         return ($rv);
     }
     else {
         if ( $i_autoneg eq "enabled" ) {
-            $mau->set_mau_autostat( 'disabled', $iid . '.1' );
+            $mau->set_mau_autostat( 'disabled', $key );
         }
         $rv
             = $mau->set_mau_type_admin(
             '.1.3.6.1.2.1.26.4.' . $speeds{$myduplex}{$speed},
-            $iid . '.1' );
+            $key );
 
         return ($rv);
     }
@@ -340,7 +340,7 @@ sub mau_set_i_duplex_admin {
 
     $duplex = lc($duplex);
 
-    if ( !( $duplex =~ /(full|half|auto)/i and $iid =~ /\d+/ ) ) {
+    if ( !( $duplex =~ /^(full|half|auto)$/i and $iid =~ /\d+/ ) ) {
         return;
     }
 
@@ -356,7 +356,7 @@ sub mau_set_i_duplex_admin {
     my $i_autoneg = $myhash->{$key};
 
     my $i_speed
-        = &SNMP::translateObj( $mau->mau_type_admin($iid)->{ $iid . '.1' } );
+        = SNMP::translateObj( $mau->mau_type_admin($key)->{ $key } );
 
     if ( $i_speed =~ /^dot3MauType(.*)Base/ && $_mau_i_speed_map{$1} ) {
         $i_speed = $1;
@@ -371,7 +371,7 @@ sub mau_set_i_duplex_admin {
         return (1);
     }
     elsif ( $duplex eq "auto" ) {
-        $rv = $mau->set_mau_autostat( 'enabled', $iid . '.1' );
+        $rv = $mau->set_mau_autostat( 'enabled', $key );
         return ($rv);
     }
     else {
@@ -380,12 +380,12 @@ sub mau_set_i_duplex_admin {
         if ( $i_autoneg eq "enabled"
             && defined( $duplexes{$i_speed}{$duplex} ) )
         {
-            $mau->set_mau_autostat( 'disabled', $iid . '.1' );
+            $mau->set_mau_autostat( 'disabled', $key );
         }
         $rv
             = $mau->set_mau_type_admin(
             '.1.3.6.1.2.1.26.4.' . $duplexes{$i_speed}{$duplex},
-            $iid . '.1' );
+            $key );
         return ($rv);
     }
 }
