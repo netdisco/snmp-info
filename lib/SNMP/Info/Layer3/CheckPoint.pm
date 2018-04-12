@@ -47,7 +47,7 @@ $VERSION = '3.54';
     %SNMP::Info::LLDP::MIBS,
     'CHECKPOINT-MIB'      => 'fwProduct',
     'UCD-SNMP-MIB'        => 'versionTag',
-    'NET-SNMP-TC'         => 'netSnmpAgentOIDs',
+    'NET-SNMP-TC'         => 'netSnmpAliasDomain',
     'NET-SNMP-EXTEND-MIB' => 'nsExtendNumEntries',
     'HOST-RESOURCES-MIB'  => 'hrSystem',
 );

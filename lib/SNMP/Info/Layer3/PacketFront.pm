@@ -44,7 +44,7 @@ $VERSION = '3.54';
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     'UCD-SNMP-MIB'             => 'versionTag',
-    'NET-SNMP-TC'              => 'netSnmpAgentOIDs',
+    'NET-SNMP-TC'              => 'netSnmpAliasDomain',
     'HOST-RESOURCES-MIB'       => 'hrSystem',
     'PACKETFRONT-PRODUCTS-MIB' => 'drg100',
     'PACKETFRONT-DRG-MIB'      => 'productName',
