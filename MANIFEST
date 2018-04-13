@@ -87,6 +87,7 @@ lib/SNMP/Info/Layer3/Cumulus.pm
 lib/SNMP/Info/Layer3/Dell.pm
 lib/SNMP/Info/Layer3/DLink.pm
 lib/SNMP/Info/Layer3/Enterasys.pm
+lib/SNMP/Info/Layer3/ERX.pm
 lib/SNMP/Info/Layer3/Extreme.pm
 lib/SNMP/Info/Layer3/F5.pm
 lib/SNMP/Info/Layer3/Force10.pm

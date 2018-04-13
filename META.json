@@ -359,6 +359,10 @@
          "file" : "lib/SNMP/Info/Layer3/Enterasys.pm",
          "version" : "3.54"
       },
+      "SNMP::Info::Layer3::ERX" : {
+         "file" : "lib/SNMP/Info/Layer3/ERX.pm",
+         "version" : "3.54"
+      },
       "SNMP::Info::Layer3::Extreme" : {
          "file" : "lib/SNMP/Info/Layer3/Extreme.pm",
          "version" : "3.54"
