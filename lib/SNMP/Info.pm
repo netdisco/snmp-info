@@ -644,6 +644,12 @@ SNMP Interface to Juniper (Trapeze) Wireless Controllers
 
 See documentation in L<SNMP::Info::Layer2::Trapeze> for details.
 
+=item SNMP::Info::Layer2::Sixnet
+
+SNMP Interface to Sixnet industrial switches
+
+See documentation in L<SNMP::Info::Layer2::Sixnet> for details.
+
 =item SNMP::Info::Layer2::Ubiquiti
 
 SNMP Interface to Ubiquiti Access Points and other devices
@@ -1635,6 +1641,7 @@ sub device_type {
         14525 => 'SNMP::Info::Layer2::Trapeze',
         14823 => 'SNMP::Info::Layer3::Aruba',
         17163 => 'SNMP::Info::Layer3::Steelhead',
+        20540 => 'SNMP::Info::Layer2::Sixnet',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
     );
 

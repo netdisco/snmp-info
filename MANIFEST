@@ -61,6 +61,7 @@ lib/SNMP/Info/Layer2/Netgear.pm
 lib/SNMP/Info/Layer2/Nexans.pm
 lib/SNMP/Info/Layer2/NWSS2300.pm
 lib/SNMP/Info/Layer2/Orinoco.pm
+lib/SNMP/Info/Layer2/Sixnet.pm
 lib/SNMP/Info/Layer2/Trapeze.pm
 lib/SNMP/Info/Layer2/Ubiquiti.pm
 lib/SNMP/Info/Layer2/ZyXEL_DSLAM.pm
@@ -198,6 +199,7 @@ xt/lib/Test/SNMP/Info/Layer2/Netgear.pm
 xt/lib/Test/SNMP/Info/Layer2/Nexans.pm
 xt/lib/Test/SNMP/Info/Layer2/NWSS2300.pm
 xt/lib/Test/SNMP/Info/Layer2/Orinoco.pm
+xt/lib/Test/SNMP/Info/Layer2/Sixnet.pm
 xt/lib/Test/SNMP/Info/Layer2/Trapeze.pm
 xt/lib/Test/SNMP/Info/Layer2/Ubiquiti.pm
 xt/lib/Test/SNMP/Info/Layer2/ZyXEL_DSLAM.pm
