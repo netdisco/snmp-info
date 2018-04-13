@@ -307,6 +307,9 @@ provides:
   SNMP::Info::Layer3::Nexus:
     file: lib/SNMP/Info/Layer3/Nexus.pm
     version: '3.54'
+  SNMP::Info::Layer3::OneAccess:
+    file: lib/SNMP/Info/Layer3/OneAccess.pm
+    version: '3.54'
   SNMP::Info::Layer3::PacketFront:
     file: lib/SNMP/Info/Layer3/PacketFront.pm
     version: '3.54'
