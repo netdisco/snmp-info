@@ -349,6 +349,9 @@ provides:
   SNMP::Info::Layer7::APC:
     file: lib/SNMP/Info/Layer7/APC.pm
     version: '3.54'
+  SNMP::Info::Layer7::Arbor:
+    file: lib/SNMP/Info/Layer7/Arbor.pm
+    version: '3.54'
   SNMP::Info::Layer7::CiscoIPS:
     file: lib/SNMP/Info/Layer7/CiscoIPS.pm
     version: '3.54'

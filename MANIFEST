@@ -118,6 +118,7 @@ lib/SNMP/Info/Layer3/VMware.pm
 lib/SNMP/Info/Layer3/VyOS.pm
 lib/SNMP/Info/Layer7.pm
 lib/SNMP/Info/Layer7/APC.pm
+lib/SNMP/Info/Layer7/Arbor.pm
 lib/SNMP/Info/Layer7/CiscoIPS.pm
 lib/SNMP/Info/Layer7/Gigamon.pm
 lib/SNMP/Info/Layer7/Neoteris.pm
