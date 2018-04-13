@@ -41,7 +41,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.37';
+$VERSION = '3.54';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS
@@ -161,7 +161,7 @@ Returns 'OneAccess'.
 
 =item $OneAccess->os()
 
-Returns 'VRP' if contained in C<sysDescr>, 'OneAccess' otherwise.
+Returns 'oneos'.
 
 =item $OneAccess->os_ver()
 
@@ -169,7 +169,7 @@ Returns the software version extracted from C<sysDescr>.
 
 =item $OneAccess->model()
 
-Returns the hardware model extracted from C<sysDescr>.
+Returns the hardware model one300.
 
 =back
 
