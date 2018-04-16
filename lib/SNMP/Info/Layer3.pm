@@ -194,32 +194,18 @@ sub root_ip {
 sub serial {
     my $l3 = shift;
 
-    my $serial1 = $l3->serial1();
-    my $e_parent = $l3->e_parent() || {};
-    my $e_class  = $l3->e_class() || {};
-
-    foreach my $iid ( keys %$e_parent ) {
-        my $parent = $e_parent->{$iid};
-        my $class = $e_class->{$iid} || '';
-        # Only consider serial numbers for entries without a parent, or if they are of type "chassis"
-        if ( $parent eq '0' or $class eq 'chassis') {
-            my $serial = $l3->e_serial($iid);
-            if ( $serial && $serial->{$iid} ) {
-                return $serial->{$iid};
-            }
-            else {
-                my $descr = $l3->e_descr($iid);
-                if ( $descr and $descr =~ /serial#?:\s*([a-z0-9]+)/i )
-                {
-                    return $1;
-                }
-            }
-        }
+    my $entity_serial = $l3->entity_derived_serial();
+    if ( defined $entity_serial and $entity_serial !~ /^\s*$/ ){
+        return $entity_serial;
     }
 
-    return $serial1 if ( defined $serial1 and $serial1 !~ /^\s*$/ );
+    my $serial1 = $l3->serial1();
+    if ( defined $serial1 and $serial1 !~ /^\s*$/ ) {
+        return $serial1;
+    }
 
     return;
+
 }
 
 # $l3->model() - the sysObjectID returns an IID to an entry in
@@ -493,8 +479,7 @@ Removes 'cisco'  from cisco devices for readability.
 
 =item $l3->serial()
 
-Tries to cull a serial number from F<ENTITY-MIB>, description, and
-F<OLD-CISCO->... MIB.
+Returns a serial number if found from F<ENTITY-MIB> and F<OLD-CISCO->... MIB.
 
 =item $l3->vendor()
 

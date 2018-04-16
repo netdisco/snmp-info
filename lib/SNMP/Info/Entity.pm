@@ -109,6 +109,57 @@ sub e_port {
     return \%e_port;
 }
 
+sub entity_derived_serial {
+    my $entity  = shift;
+
+    my $e_parent = $entity->e_parent() || {};
+    my $e_class  = $entity->e_class() || {};
+
+    # Sort keys to return a consistent result between runs
+    foreach my $iid ( sort keys %$e_parent ) {
+        my $parent = $e_parent->{$iid};
+        my $class = $e_class->{$iid} || '';
+        # Only consider serial numbers for entries without a parent, or
+        # if they are of type "chassis"
+        if ( $parent eq '0' or $class eq 'chassis') {
+            my $serial = $entity->e_serial($iid);
+            if ( $serial && $serial->{$iid} ) {
+                return $serial->{$iid};
+            }
+            else {
+                my $descr = $entity->e_descr($iid);
+                if ( $descr and $descr->{$iid} =~ /serial#?:\s*([a-z0-9]+)/i )
+                {
+                    return $1;
+                }
+            }
+        }
+    }
+    return;
+}
+
+sub entity_derived_os_ver {
+    my $entity  = shift;
+
+    my $e_parent = $entity->e_parent() || {};
+    my $e_class  = $entity->e_class() || {};
+
+    # Sort keys to return a consistent result between runs
+    foreach my $iid ( sort keys %$e_parent ) {
+        my $parent = $e_parent->{$iid};
+        my $class = $e_class->{$iid} || '';
+        # Only consider serial numbers for entries without a parent, or
+        # if they are of type "chassis"
+        if ( $parent eq '0' or $class eq 'chassis') {
+            my $os_ver = $entity->e_swver($iid);
+            if ( $os_ver && $os_ver->{$iid} ) {
+                return $os_ver->{$iid};
+            }
+        }
+    }
+    return;
+}
+
 1;
 
 __END__
@@ -172,6 +223,23 @@ none.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=over
+
+=item $entity->entity_derived_serial()
+
+Tries to determine the device serial number from the F<ENTITY-MIB>. Only
+considers serial numbers for entries without a parent, or if they are of type
+chassis. Looks at C<entPhysicalSerialNum> and then C<entPhysicalDescr> for
+serial number.
+
+=item $entity->entity_derived_os_ver()
+
+Tries to determine the device OS version from the F<ENTITY-MIB>. Only
+considers serial numbers for entries without a parent, or if they are of type
+chassis. Looks at C<entPhysicalSoftwareRev> for the version.
+
+=back
 
 =head2 Entity Table
 

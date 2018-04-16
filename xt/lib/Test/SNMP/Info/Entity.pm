@@ -33,23 +33,131 @@ use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info::Entity;
 
-# Remove this startup override once we have full method coverage
-sub startup : Tests(startup => 1) {
-  my $test = shift;
-  $test->SUPER::startup();
-
-  $test->todo_methods(1);
-}
-
 sub setup : Tests(setup) {
   my $test = shift;
   $test->SUPER::setup;
 
   # Start with a common cache that will serve most tests
   my $cache_data = {
-    'store' => {},
+    '_entPhysicalDescr' => 1,
+    '_e_map'            => 1,
+    '_e_parent'         => 1,
+    '_e_class'          => 1,
+    'store'             => {
+      'entPhysicalDescr' => {1 => 1, 2 => 2, 3 => 3, 54 => 54, 55 => 55},
+      'e_map'            => {
+        '1019.0' => 'ifIndex.1',
+        '1031.0' => 'ifIndex.2',
+        '2019.0' => 'ifIndex.3',
+        '2031.0' => 'ifIndex.4'
+      },
+      'e_parent' => {1 => 0, 2 => 1, 3 => 2, 54 => 1, 55 => 54},
+      'e_class'  => {
+        1  => 'stack',
+        2  => 'chassis',
+        3  => 'module',
+        54 => 'chassis',
+        55 => 'module'
+      },
+    },
   };
   $test->{info}->cache($cache_data);
+}
+
+sub e_index : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'e_index');
+
+  my $expected = {1 => 1, 2 => 2, 3 => 3, 54 => 54, 55 => 55};
+
+  cmp_deeply($test->{info}->e_index(),
+    $expected, q(Entity Physical Index using 'entPhysicalDescr'));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->e_index(), undef, q(No data returns undef));
+}
+
+sub e_port : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'e_port');
+
+  my $expected = {1019 => 1, 1031 => 2, 2019 => 3, 2031 => 4};
+
+  cmp_deeply($test->{info}->e_port(),
+    $expected, q(Entity cross reference to 'ifIndex'));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->e_port(), {}, q(No data returns empty hash));
+}
+
+sub entity_derived_serial : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'entity_derived_serial');
+
+  # The call to SUPER::serial() will use the entity_derived_serial method
+  # which uses a partial fetch for e_serial which ignores the cache
+  # and reloads data therefore we must use the mocked session.
+  my $data = {
+    'ENTITY-MIB::entPhysicalSerialNum' => {
+      1  => undef,
+      2  => 'AB01CDE2345678901234F00',
+      3  => undef,
+      54 => 'AB01CDE2345678901234F01',
+      55 => undef
+    },
+  };
+  $test->{info}{sess}{Data} = $data;
+
+  is($test->{info}->entity_derived_serial(),
+    'AB01CDE2345678901234F00',
+    q(Serial has expected value using 'entPhysicalSerialNum'));
+
+  # Clear previous mock session data from cache and data
+  delete $test->{info}{_e_serial};
+  delete $test->{info}{store}{e_serial};
+  $test->{info}{sess}{Data} = {};
+
+  # New mock data for partial call
+  $data = {
+    'ENTITY-MIB::entPhysicalDescr' => {
+      1  => undef,
+      2  => 'AS5350 chassis, Hw Serial#: 12345, Hw Revision: T',
+      3  => undef,
+      54 => 'AS5350 Cpu Card,  Hw Serial#: 23456, Hw Revision: T',
+      55 => undef
+    },
+  };
+  $test->{info}{sess}{Data} = $data;
+  is($test->{info}->entity_derived_serial(),
+    '12345', q(Serial has expected value using 'entPhysicalDescr'));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->entity_derived_serial(),
+    undef, q(No data returns undef serial));
+}
+
+sub entity_derived_os_ver : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'entity_derived_os_ver');
+
+  # The call to SUPER::serial() will use the entity_derived_serial method
+  # which uses a partial fetch for e_serial which ignores the cache
+  # and reloads data therefore we must use the mocked session.
+  my $data
+    = {'ENTITY-MIB::entPhysicalSoftwareRev' =>
+      {1 => undef, 2 => '5.1.2.3', 3 => undef, 54 => '6.1.2.3', 55 => undef},
+    };
+  $test->{info}{sess}{Data} = $data;
+
+  is($test->{info}->entity_derived_os_ver(),
+    '5.1.2.3', q(OS version has expected value using 'entPhysicalSoftwareRev'));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->entity_derived_os_ver(), undef, q(No data returns undef));
 }
 
 1;

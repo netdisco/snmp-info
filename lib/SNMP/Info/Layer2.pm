@@ -118,24 +118,18 @@ sub vendor {
 sub serial {
     my $l2 = shift;
 
-    my $serial1  = $l2->serial1();
-    my $e_descr  = $l2->e_descr() || {};
-    my $e_serial = $l2->e_serial() || {};
-
-    my $serial2 = $e_serial->{1} || undef;
-    my $chassis = $e_descr->{1}  || undef;
-
-    # precedence
-    #   serial2,chassis parse,serial1
-    return $serial2 if ( defined $serial2 and $serial2 !~ /^\s*$/ );
-
-    if ( defined $chassis and $chassis =~ /serial#?:\s*([a-z0-9]+)/i ) {
-        return $1;
+    my $entity_serial = $l2->entity_derived_serial();
+    if ( defined $entity_serial and $entity_serial !~ /^\s*$/ ){
+        return $entity_serial;
     }
 
-    return $serial1 if ( defined $serial1 and $serial1 !~ /^\s*$/ );
+    my $serial1  = $l2->serial1();
+    if ( defined $serial1 and $serial1 !~ /^\s*$/ ) {
+        return $serial1;
+    }
 
     return;
+
 }
 
 sub interfaces {
@@ -262,7 +256,7 @@ Tries to discover the vendor from $l2->model() and $l2->description()
 
 =item $l2->serial()
 
-Returns serial number if available through SNMP
+Returns a serial number if found from F<ENTITY-MIB> and F<OLD-CISCO->... MIB.
 
 =back
 
