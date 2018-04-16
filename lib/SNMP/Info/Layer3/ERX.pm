@@ -41,7 +41,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.37';
+$VERSION = '3.54';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS
@@ -60,7 +60,7 @@ $VERSION = '3.37';
 );
 
 sub vendor {
-  return "ERX";
+  return "Juniper";
 }
 
 sub model {
@@ -157,7 +157,7 @@ These are methods that return scalar value from SNMP
 
 =item $ERX->vendor()
 
-Returns 'ERX'.
+Returns 'Juniper'.
 
 =item $ERX->os()
 
