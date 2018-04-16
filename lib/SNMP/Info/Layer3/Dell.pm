@@ -50,12 +50,13 @@ $VERSION = '3.54';
     'RADLAN-rlInterfaces'            => 'rlIfNumOfLoopbackPorts',
     'RADLAN-HWENVIROMENT'            => 'rlEnvPhysicalDescription',
     'Dell-Vendor-MIB'                => 'productIdentificationVersion',
+    'DELL-REF-MIB'                   => 'dell6224Switch',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
-    'os_ver'       => 'productIdentificationVersion',
+    'dell_os_ver'  => 'productIdentificationVersion',
     'dell_id_name' => 'productIdentificationDisplayName',
 );
 
@@ -115,16 +116,22 @@ sub model {
     my $dell = shift;
 
     my $name  = $dell->dell_id_name();
-    my $descr = $dell->description();
+    my $id    = $dell->id();
 
     if ( defined $name and $name =~ m/(\d+)/ ) {
         return $1;
     }
 
-    # Don't have a vendor MIB for D-Link
-    else {
-        return $descr;
+    return unless defined $id;
+
+    my $model = SNMP::translateObj($id);
+
+    if (defined $model) {
+        $model =~ s/^dell//;
+        $model =~ s/Switch$//;
+        return $model;
     }
+    return $id;
 }
 
 sub vendor {
@@ -139,19 +146,19 @@ sub os {
     return $dell->_vendor();
 }
 
-sub serial {
+sub os_ver {
     my $dell = shift;
 
-    my $numbers = $dell->dell_serial_no();
-
-    foreach my $key ( keys %$numbers ) {
-        my $serial = $numbers->{$key};
-        return $serial if ( defined $serial and $serial !~ /^\s*$/ );
-        next;
+    my $entity_os = $dell->entity_derived_os_ver();
+    if ( defined $entity_os and $entity_os !~ /^\s*$/ ){
+        return $entity_os;
     }
 
-    # Last resort
-    return $dell->SUPER::serial();
+    my $dell_os  = $dell->dell_os_ver();
+    if ( defined $dell_os and $dell_os !~ /^\s*$/ ) {
+        return $dell_os;
+    }
+    return;
 }
 
 # check all fans, and report overall status
@@ -160,41 +167,74 @@ sub fan {
 
     my $fan   = $dell->dell_fan_desc()  || {};
     my $state = $dell->dell_fan_state() || {};
-    my @messages = ();
+    
+    if (scalar keys %$fan) {
+        my @messages = ();
 
-    foreach my $k (keys %$fan) {
-        next if $state->{$k} and $state->{$k} eq 'normal';
-        push @messages, "$fan->{$k}: $state->{$k}";
-    }
+        foreach my $k (keys %$fan) {
+            next if $state->{$k} and $state->{$k} eq 'normal';
+            push @messages, "$fan->{$k}: $state->{$k}";
+        }
 
-    push @messages, ((scalar keys %$fan). " fans OK")
-      if scalar @messages == 0;
+        push @messages, ((scalar keys %$fan). " fans OK")
+            if scalar @messages == 0;
 
-    return (join ", ", @messages);
+        return (join ", ", @messages);
+        }
+    return;
 }
 
-sub _ps_status {
-    my ($dell, $unit) = @_;
+sub ps1_type {
+    my $dell = shift;
 
-    my $status = 'unknown';
-    return $status if !defined $unit;
+    my $src  = $dell->dell_pwr_src()  || {};
 
-    my $desc  = $dell->dell_pwr_desc()  || {};
-    my $state = $dell->dell_pwr_state() || {};
-
-    foreach my $k (keys %$desc) {
-        next unless $desc->{$k} and $desc->{$k} eq "ps1_unit$unit";
-        return ($state->{$k} || $status);
+    foreach my $k (sort keys %$src) {
+        next unless $src->{$k};
+        return $src->{$k};
     }
-
-    return $status;
+    return;
 }
 
-sub ps1_type { return 'internalRedundant' }
-sub ps2_type { return 'internalRedundant' }
+sub ps2_type {
+    my $dell = shift;
 
-sub ps1_status { return (shift)->_ps_status(1) }
-sub ps2_status { return (shift)->_ps_status(2) }
+    my $src  = $dell->dell_pwr_src()  || {};
+    
+    my $i = 0; 
+    foreach my $k (sort keys %$src) {
+        $i++;
+        next unless $src->{$k} and $i == 2;
+        return $src->{$k};
+    }
+    return;
+}
+
+sub ps1_status {
+    my $dell = shift;
+
+    my $status  = $dell->dell_pwr_state()  || {};
+
+    foreach my $k (sort keys %$status) {
+        next unless $status->{$k};
+        return $status->{$k};
+    }
+    return;
+}
+
+sub ps2_status {
+    my $dell = shift;
+
+    my $status  = $dell->dell_pwr_state()  || {};
+    
+    my $i = 0; 
+    foreach my $k (sort keys %$status) {
+        $i++;
+        next unless $status->{$k} and $i == 2;
+        return $status->{$k};
+    }
+    return;
+}
 
 sub interfaces {
     my $dell    = shift;
@@ -214,6 +254,23 @@ sub interfaces {
     return $i_descr;
 }
 
+sub i_duplex {
+    my $dell    = shift;
+    my $partial = shift;
+
+    my $dell_duplex = $dell->dell_duplex($partial) || {};
+
+    my %i_duplex;
+    foreach my $if ( keys %$dell_duplex ) {
+        my $duplex = $dell_duplex->{$if};
+        next unless defined $duplex;
+        next if $duplex eq 'unknown';
+
+        $i_duplex{$if} = $duplex;
+    }
+    return \%i_duplex;
+}
+
 sub i_duplex_admin {
     my $dell    = shift;
     my $partial = shift;
@@ -226,11 +283,11 @@ sub i_duplex_admin {
     foreach my $if ( keys %$interfaces ) {
         my $duplex = $dell_duplex->{$if};
         next unless defined $duplex;
-        my $auto = $dell_auto->{$if} || 'false';
+        my $auto = $dell_auto->{$if} || 'disabled';
 
-        $duplex = 'half' if ( $duplex =~ /half/i and $auto =~ /false/i );
-        $duplex = 'full' if ( $duplex =~ /half/i and $auto =~ /false/i );
-        $duplex = 'auto' if $auto =~ /true/i;
+        $duplex = 'half' if ( $duplex eq 'half' and $auto eq 'disabled' );
+        $duplex = 'full' if ( $duplex eq 'full' and $auto eq 'disabled' );
+        $duplex = 'auto' if $auto eq 'enabled';
         $i_duplex_admin{$if} = $duplex;
     }
     return \%i_duplex_admin;
@@ -242,7 +299,6 @@ sub _vendor {
     my $id = $dell->id() || 'undef';
     my %oidmap = (
         2    => 'ibm',
-        171  => 'dlink',
         674  => 'dell',
         3955 => 'linksys',
     );
@@ -252,7 +308,7 @@ sub _vendor {
         return $oidmap{$id};
     }
     else {
-        return 'dlink';
+        return $id;
     }
 }
 
@@ -448,6 +504,10 @@ to a hash.
 Returns the map between SNMP Interface Identifier (iid) and physical port
 name.  Uses name if available instead of description since descriptions are 
 sometimes not unique.
+
+=item $dell->i_duplex()
+
+Returns reference to map of IIDs to current link duplex.
 
 =item $dell->i_duplex_admin()
 

@@ -6,7 +6,13 @@ Version 3.55
 
   [ENHANCEMENTS]
 
-  * Increase capture of i_vlan on router interfaces in L3::Cisco 
+  * #196 Support for powerconnect 8164F
+  * Refactor Layer3::Dell for better support of newer models
+  * Increase capture of i_vlan on router interfaces in L3::Cisco
+  * Factor out logic to determine serial number from ENTITY-MIB in Layer2 and
+    Layer3 to new method entity_derived_serial in Entity class and added new
+    method entity_derived_os_ver in Entity class to determine OS version
+    in a similar manner
 
   [BUG FIXES]
 

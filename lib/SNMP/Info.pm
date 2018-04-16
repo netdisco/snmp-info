@@ -792,7 +792,7 @@ See documentation in L<SNMP::Info::Layer3::DLink> for details.
 
 =item SNMP::Info::Layer3::Dell
 
-Subclass for Dell PowerConnect switches. D-Link, the IBM BladeCenter
+Subclass for Dell PowerConnect switches. The IBM BladeCenter
 Gigabit Ethernet Switch Module and some Linksys switches
 also use this module based upon MIB support.
 
