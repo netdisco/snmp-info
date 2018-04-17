@@ -257,6 +257,7 @@ xt/lib/Test/SNMP/Info/Layer3/VMware.pm
 xt/lib/Test/SNMP/Info/Layer3/VyOS.pm
 xt/lib/Test/SNMP/Info/Layer7.pm
 xt/lib/Test/SNMP/Info/Layer7/APC.pm
+xt/lib/Test/SNMP/Info/Layer7/Arbor.pm
 xt/lib/Test/SNMP/Info/Layer7/CiscoIPS.pm
 xt/lib/Test/SNMP/Info/Layer7/Gigamon.pm
 xt/lib/Test/SNMP/Info/Layer7/Neoteris.pm

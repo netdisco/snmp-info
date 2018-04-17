@@ -97,6 +97,7 @@ sub os_ver {
 
 
 1;
+
 __END__
 
 =head1 NAME
@@ -180,10 +181,6 @@ See documentation in L<SNMP::Info::Layer7> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=over
-
-=back
 
 =head2 Table Methods imported from SNMP::Info::Layer7
 

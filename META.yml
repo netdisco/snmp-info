@@ -178,8 +178,14 @@ provides:
   SNMP::Info::Layer2::Netgear:
     file: lib/SNMP/Info/Layer2/Netgear.pm
     version: '3.54'
+  SNMP::Info::Layer2::Nexans:
+    file: lib/SNMP/Info/Layer2/Nexans.pm
+    version: '3.54'
   SNMP::Info::Layer2::Orinoco:
     file: lib/SNMP/Info/Layer2/Orinoco.pm
+    version: '3.54'
+  SNMP::Info::Layer2::Sixnet:
+    file: lib/SNMP/Info/Layer2/Sixnet.pm
     version: '3.54'
   SNMP::Info::Layer2::Trapeze:
     file: lib/SNMP/Info/Layer2/Trapeze.pm

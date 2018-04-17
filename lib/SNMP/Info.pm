@@ -995,9 +995,15 @@ See documentation in L<SNMP::Info::Layer7> for details.
 
 =item SNMP::Info::Layer7::APC
 
-Subclass for  APC UPS devices
+Subclass for APC UPS devices
 
 See documentation in L<SNMP::Info::Layer7::APC> for details.
+
+=item SNMP::Info::Layer7::Arbor
+
+Subclass for Arbor appliances
+
+See documentation in L<SNMP::Info::Layer7::Arbor> for details.
 
 =item SNMP::Info::Layer7::CiscoIPS
 
