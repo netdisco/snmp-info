@@ -1592,6 +1592,7 @@ sub device_type {
         3375 => 'SNMP::Info::Layer3::F5',
         3417 => 'SNMP::Info::Layer3::BlueCoatSG',
         4526 => 'SNMP::Info::Layer2::Netgear',
+        4874 => 'SNMP::Info::Layer3::ERX',
         5624 => 'SNMP::Info::Layer3::Enterasys',
         6027 => 'SNMP::Info::Layer3::Force10',
         6486 => 'SNMP::Info::Layer3::AlcatelLucent',
@@ -1685,6 +1686,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::C3550' if $desc =~ /(C3550|C3560)/;
         $objtype = 'SNMP::Info::Layer3::C4000' if $desc =~ /Catalyst 4[05]00/;
         $objtype = 'SNMP::Info::Layer3::Foundry' if $desc =~ /foundry/i;
+        $objtype = 'SNMP::Info::Layer3::ERX' if $desc =~ /erx/i;
 
         # Aironet - older non-IOS
         $objtype = 'SNMP::Info::Layer3::Aironet'
