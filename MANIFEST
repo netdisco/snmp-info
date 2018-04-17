@@ -105,6 +105,7 @@ lib/SNMP/Info/Layer3/N1600.pm
 lib/SNMP/Info/Layer3/Netscreen.pm
 lib/SNMP/Info/Layer3/NetSNMP.pm
 lib/SNMP/Info/Layer3/Nexus.pm
+lib/SNMP/Info/Layer3/OneAccess.pm
 lib/SNMP/Info/Layer3/PacketFront.pm
 lib/SNMP/Info/Layer3/PaloAlto.pm
 lib/SNMP/Info/Layer3/Passport.pm
