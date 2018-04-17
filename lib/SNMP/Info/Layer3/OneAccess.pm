@@ -64,13 +64,8 @@ sub vendor {
 }
 
 sub model {
-  my $OneAccess = shift;
-  my $descr = $OneAccess->description() || '';
-  my $model = undef;
+  return 'One300';
 
-  $model = 'One300';
-
-  return $model;
 }
 
 sub os {
@@ -142,6 +137,10 @@ Subclass for OneAccess Quidway switches
 =item SNMP::Info::Layer3
 
 =back
+
+=head2 Required MIBs
+
+=over
 
 =item Inherited Classes' MIBs
 

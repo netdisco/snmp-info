@@ -914,6 +914,12 @@ Subclass for Cisco Nexus devices running NX-OS
 
 See documentation in L<SNMP::Info::Layer3::Nexus> for details.
 
+=item SNMP::Info::Layer3::OneAccess
+
+Subclass for OneAccess Quidway switches
+
+See documentation in L<SNMP::Info::Layer3::OneAccess> for details.
+
 =item SNMP::Info::Layer3::PacketFront
 
 Subclass for PacketFront DRG series CPE.
