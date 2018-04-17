@@ -23,14 +23,14 @@ DEVICES SUPPORTED
 SYNOPSIS
      use SNMP::Info;
 
-     my $info = new SNMP::Info( 
+     my $info = new SNMP::Info(
                                 # Auto Discover more specific Device Class
                                 AutoSpecify => 1,
                                 Debug       => 1,
                                 # The rest is passed to SNMP::Session
                                 DestHost    => 'router',
                                 Community   => 'public',
-                                Version     => 2 
+                                Version     => 2
                               ) or die "Can't connect to device.\n";
 
      my $err = $info->error();
@@ -61,7 +61,7 @@ SYNOPSIS
         # The CDP Table has table entries different than the interface tables.
         # So we use c_if to get the map from cdp table to interface table.
 
-        my %c_map = reverse %$c_if; 
+        my %c_map = reverse %$c_if;
         my $c_key = $c_map{$iid};
         unless (defined $c_key) {
              print "\n\n";
@@ -515,6 +515,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::Netgear for details.
 
+        SNMP::Info::Layer2::Nexans
+            Subclass for Nexans switches
+
+            See documetion in SNMP::Info::Layer2::Nexans for details.
+
         SNMP::Info::Layer2::NWSS2300
             SNMP Interface to Avaya (Trapeze) Wireless Controllers
 
@@ -529,6 +534,11 @@ SUBCLASSES
             SNMP Interface to Juniper (Trapeze) Wireless Controllers
 
             See documentation in SNMP::Info::Layer2::Trapeze for details.
+
+        SNMP::Info::Layer2::Sixnet
+            SNMP Interface to Sixnet industrial switches
+
+            See documentation in SNMP::Info::Layer2::Sixnet for details.
 
         SNMP::Info::Layer2::Ubiquiti
             SNMP Interface to Ubiquiti Access Points and other devices
@@ -650,9 +660,9 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::DLink for details.
 
         SNMP::Info::Layer3::Dell
-            Subclass for Dell PowerConnect switches. D-Link, the IBM
-            BladeCenter Gigabit Ethernet Switch Module and some Linksys
-            switches also use this module based upon MIB support.
+            Subclass for Dell PowerConnect switches. The IBM BladeCenter
+            Gigabit Ethernet Switch Module and some Linksys switches also
+            use this module based upon MIB support.
 
             See documentation in SNMP::Info::Layer3::Dell for details.
 
@@ -819,6 +829,11 @@ SUBCLASSES
             Subclass for APC UPS devices
 
             See documentation in SNMP::Info::Layer7::APC for details.
+
+        SNMP::Info::Layer7::Arbor
+            Subclass for Arbor appliances
+
+            See documentation in SNMP::Info::Layer7::Arbor for details.
 
         SNMP::Info::Layer7::CiscoIPS
             Subclass for Cisco IPS devices
@@ -1121,7 +1136,7 @@ USAGE
         This returns a binary encoded string where each digit represents a
         layer of the OSI model served by the device.
 
-            eg: 01000010  means layers 2 (physical) and 7 (Application) 
+            eg: 01000010  means layers 2 (physical) and 7 (Application)
                           are served.
 
         Note: This string is 8 digits long.
@@ -1602,7 +1617,7 @@ SETTING DATA VIA SNMP
 
          # Disable a port administratively
          my %if_map = reverse %{$info->interfaces()}
-         $info->set_i_up_admin('down', $if_map{'FastEthernet0/0'}) 
+         $info->set_i_up_admin('down', $if_map{'FastEthernet0/0'})
             or die "Couldn't disable the port. ",$info->error(1);
 
     NOTE: You must be connected to your device with a "ReadWrite" community
@@ -1784,7 +1799,7 @@ EXTENDING SNMP::INFO
          return 'Fire' if $power =~ /reallyhot/i;
          return 'Ice'  if $power =~ /reallycold/i;
 
-         # Else 
+         # Else
          return $power;
      }
 
@@ -1848,12 +1863,12 @@ SNMP::INFO INTERNALS
                         '64000'      => '64 kbps',
                         '115000'     => '115 kpbs',
                         '1500000'    => '1.5 Mbps',
-                        '1536000'    => 'T1',      
+                        '1536000'    => 'T1',
                         '1544000'    => 'T1',
                         '2000000'    => '2.0 Mbps',
                         '2048000'    => '2.048 Mbps',
                         '3072000'    => 'Dual T1',
-                        '3088000'    => 'Dual T1',   
+                        '3088000'    => 'Dual T1',
                         '4000000'    => '4.0 Mbps',
                         '10000000'   => '10 Mbps',
                         '11000000'   => '11 Mbps',
@@ -1875,7 +1890,7 @@ SNMP::INFO INTERNALS
                         '155519000'  => 'OC-3',
                         '155520000'  => 'OC-3',
                         '400000000'  => '400 Mbps',
-                        '599040000'  => 'ATM on OC-12', 
+                        '599040000'  => 'ATM on OC-12',
                         '622000000'  => 'OC-12',
                         '622080000'  => 'OC-12',
                         '1000000000' => '1.0 Gbps',
@@ -2157,8 +2172,8 @@ COPYRIGHT AND LICENSE
         * Redistributions in binary form must reproduce the above copyright
           notice, this list of conditions and the following disclaimer in the
           documentation and/or other materials provided with the distribution.
-        * Neither the name of the University of California, Santa Cruz nor the 
-          names of its contributors may be used to endorse or promote products 
+        * Neither the name of the University of California, Santa Cruz nor the
+          names of its contributors may be used to endorse or promote products
           derived from this software without specific prior written permission.
 
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
