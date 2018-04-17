@@ -143,6 +143,10 @@ Subclass for Juniper ERX switches
 
 =back
 
+=head2 Required MIBs
+
+=over
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.

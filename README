@@ -671,6 +671,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Enterasys for details.
 
+        SNMP::Info::Layer3::ERX
+            Subclass for Juniper ERX switches.
+
+            See documentation in SNMP::Info::Layer3::ERX for details.
+
         SNMP::Info::Layer3::Extreme
             Subclass for Extreme Networks switches.
 

@@ -804,6 +804,12 @@ Subclass for Enterasys devices.
 
 See documentation in L<SNMP::Info::Layer3::Enterasys> for details.
 
+=item SNMP::Info::Layer3::ERX
+
+Subclass for Juniper ERX switches.
+
+See documentation in L<SNMP::Info::Layer3::ERX> for details.
+
 =item SNMP::Info::Layer3::Extreme
 
 Subclass for Extreme Networks switches.

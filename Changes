@@ -1,6 +1,7 @@
 Version 3.55
 
   [NEW FEATURES]
+  * #259 Add ERX (Old Juniper E-Series JunOSe) Support (robwwd)
   * #258 Add support for Arbor devices (robwwd)
   * #253 Nexans switch support (paecker)
   * #142 Sixnet Switch Support
