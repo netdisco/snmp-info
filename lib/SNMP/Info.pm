@@ -914,6 +914,12 @@ Subclass for Cisco Nexus devices running NX-OS
 
 See documentation in L<SNMP::Info::Layer3::Nexus> for details.
 
+=item SNMP::Info::Layer3::OneAccess
+
+Subclass for OneAccess Quidway switches
+
+See documentation in L<SNMP::Info::Layer3::OneAccess> for details.
+
 =item SNMP::Info::Layer3::PacketFront
 
 Subclass for PacketFront DRG series CPE.
@@ -1610,6 +1616,7 @@ sub device_type {
         10418 => 'SNMP::Info::Layer1::Cyclades',
         12325 => 'SNMP::Info::Layer3::Pf',
         12356 => 'SNMP::Info::Layer3::Fortinet',
+        13191 => 'SNMP::Info::Layer3::OneAccess',
         14179 => 'SNMP::Info::Layer2::Airespace',
         14525 => 'SNMP::Info::Layer2::Trapeze',
         14823 => 'SNMP::Info::Layer3::Aruba',

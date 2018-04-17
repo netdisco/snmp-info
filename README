@@ -765,6 +765,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Nexus for details.
 
+        SNMP::Info::Layer3::OneAccess
+            Subclass for OneAccess Quidway switches
+
+            See documentation in SNMP::Info::Layer3::OneAccess for details.
+
         SNMP::Info::Layer3::PacketFront
             Subclass for PacketFront DRG series CPE.
 
