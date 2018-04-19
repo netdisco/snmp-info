@@ -42,7 +42,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
 
-$VERSION = '3.54';
+$VERSION = '3.55';
 
 %MIBS = (
     'BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',

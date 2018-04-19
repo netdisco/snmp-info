@@ -38,7 +38,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.54';
+$VERSION = '3.55';
 
 %MIBS
     = ( 'ALCATEL-IND1-INTERSWITCH-PROTOCOL-MIB' => 'aipAMAPRemDeviceType', );

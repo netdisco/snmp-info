@@ -1,4 +1,4 @@
-Version 3.55
+Version 3.55 (2018-04-19)
 
   [NEW FEATURES]
   * #260 Oneaccess (robwwd)
@@ -31,6 +31,8 @@ Version 3.55
     mau_set_i_duplex_admin() of MAU
   * Correct typo in MIB leaf names in L3::Aironet 
   * Don't use MIB leafs that are not-accessible according to MIB
+    NOTE: Fixing this logic now results in methods on MIB leafs specified as
+    not-accessible failing validation in _validate_autoload_method()
 
 Version 3.54 (2018-04-01)
 
