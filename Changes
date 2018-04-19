@@ -20,6 +20,7 @@ Version 3.55
 
   [BUG FIXES]
 
+  * #67 Juniper EX4300 Missing/Wrong information
   * #61 ZyXEL (X)GS1900 family MIB - Fix loop in layers method
   * Fix ISA in AMAP and EDP classes
   * Add missing MIB in L2::Trapeze, L2::NWSS2300, and L3::Dell

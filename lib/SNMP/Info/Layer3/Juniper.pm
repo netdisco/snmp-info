@@ -52,40 +52,48 @@ $VERSION = '3.54';
     'JUNIPER-L2ALD-MIB'           => 'jnxL2aldVlanFdbId',
 );
 
-%GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, 
-	     %SNMP::Info::LLDP::GLOBALS,
-	     'serial'    => 'jnxBoxSerialNo.0',
-	     'mac'       => 'dot1dBaseBridgeAddress',
-	     'box_descr' => 'jnxBoxDescr',
-             'version'   => 'jnxVirtualChassisMemberSWVersion.0',
-             'vc_model'   => 'jnxVirtualChassisMemberModel.0',
-	     );
-
-%FUNCS = ( %SNMP::Info::Layer3::FUNCS, 
-	   %SNMP::Info::LLDP::FUNCS,
-	   
-	   # JUNIPER-VLAN-MIB::jnxExVlanTable
-	   'v_index'    => 'jnxExVlanTag',
-	   'v_type'     => 'jnxExVlanType',
-	   'vlan_name'     => 'jnxExVlanName',
-	   
-	   # JUNIPER-VLAN-MIB::jnxExVlanPortGroupTable
-	   'i_trunk'    => 'jnxExVlanPortAccessMode',
-	   
-	   # JUNPIER-MIB
-           'e_contents_type'   => 'jnxContentsType',
-           'e_containers_type' => 'jnxContainersType',
-           'e_hwver'           => 'jnxContentsRevision',
-
-           'v_fdb_id'          => 'jnxL2aldVlanFdbId',
-           'v_vlan_tag'        => 'jnxL2aldVlanTag',
-           'v_vlan_name'        => 'jnxL2aldVlanName',
+%GLOBALS = (
+    %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
+    'serial'    => 'jnxBoxSerialNo',
+    'mac'       => 'dot1dBaseBridgeAddress',
+    'box_descr' => 'jnxBoxDescr',
+    'version'   => 'jnxVirtualChassisMemberSWVersion',
+    'vc_model'  => 'jnxVirtualChassisMemberModel',
 );
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, 
-	   %SNMP::Info::LLDP::MUNGE,
-	   'e_containers_type' => \&SNMP::Info::munge_e_type,
-	   'e_contents_type' => \&SNMP::Info::munge_e_type,
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
+
+    # JUNIPER-VLAN-MIB::jnxExVlanPortGroupTable
+    'i_trunk' => 'jnxExVlanPortAccessMode',
+
+    # JUNIPER-MIB
+    'e_contents_type'   => 'jnxContentsType',
+    'e_containers_type' => 'jnxContainersType',
+    'e_hwver'           => 'jnxContentsRevision',
+
+    # JUNIPER-VLAN-MIB::jnxExVlanTable
+    'jnx_v_name'  => 'jnxExVlanName',
+    'jnx_v_index' => 'jnxExVlanTag',
+    'jnx_v_type'  => 'jnxExVlanType',
+
+    # JUNIPER-L2ALD-MIB::jnxL2aldVlanTable
+    # Used in Enhanced Layer 2 Software (ELS)
+    # replaces JUNIPER-VLAN-MIB::jnxExVlanTable
+    # in newer switches
+    'jnx_els_v_name'   => 'jnxL2aldVlanName',
+    'jnx_els_v_index'  => 'jnxL2aldVlanTag',
+    'jnx_els_v_type'   => 'jnxL2aldVlanType',
+    'jnx_els_v_fdb_id' => 'jnxL2aldVlanFdbId',
+);
+
+%MUNGE = (
+    %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
+    'e_containers_type' => \&SNMP::Info::munge_e_type,
+    'e_contents_type'   => \&SNMP::Info::munge_e_type,
 );
 
 sub vendor {
@@ -173,43 +181,60 @@ sub i_trunk {
 
     foreach (keys %$access)
     {
-	my $old_key = $_;
-	m/^\d+\.(\d+)$/o;
-	my $new_key = $1;
-	$i_trunk{$new_key} = $access->{$old_key};
+	    my $old_key = $_;
+	    my $new_key = $old_key;
+        $new_key = $1 if m/^\d+\.(\d+)$/;
+	    $i_trunk{$new_key} = $access->{$old_key};
     }
 
     return \%i_trunk;
 }
 
+# Note: For overridden VLAN methods where we have to distinguish between newer
+# ELS and older models we try the newer methods first assuming they will be
+# more common to save on network queries. Short circuit operation depends on
+# leaf not present and snmp query returning undef
 sub qb_fdb_index {
-    my $juniper  = shift;
+    my $juniper = shift;
     my $partial = shift;
 
-    return $juniper->jnxExVlanTag($partial);
+    # Lots of indirection here
+    my $v_index = $juniper->jnx_els_v_index($partial);
+
+    if ( ref {} eq ref $v_index and scalar keys %$v_index ) {
+        my $fdb_index    = $juniper->jnx_els_v_fdb_id($partial);
+        my $qb_fdb_index = {};
+        for my $key ( keys(%$v_index) ) {
+            my $vlan = $v_index->{$key};
+            next unless defined $vlan;
+            my $fdb = $fdb_index->{$key};
+            next unless defined $fdb;
+            $qb_fdb_index->{$fdb} = $vlan;
+        }
+        return $qb_fdb_index;
+
+    }
+
+    $juniper->jnx_v_index($partial);
 }
 
-# 'v_type'     => 'jnxExVlanType',
+
 sub v_type {
     my $juniper = shift;
     my $partial = shift;
 
-    my $v_type  = $juniper->jnxExVlanType($partial);
-
-    return $v_type;
+    return $juniper->jnx_els_v_type($partial)
+        || $juniper->jnx_v_type($partial);
 }
 
-# 'v_index'    => 'jnxExVlanTag',
 sub v_index {
     my ($juniper) = shift;
     my ($partial) = shift;
 
-    my ($v_index)  = $juniper->jnxExVlanTag($partial);
-    my ($v_vlan_index) = $juniper->v_vlan_tag($partial);
-
-    return $v_index unless $v_vlan_index;
-    return $v_vlan_index;
+    return $juniper->jnx_els_v_index($partial)
+        || $juniper->jnx_v_index($partial);
 }
+
 
 sub i_vlan {
     my $juniper = shift;
@@ -223,13 +248,15 @@ sub i_vlan {
         $partial = $r_index{$partial};
     }
 
-    my $v_index  = $juniper->jnxExVlanTag();
+    my $v_index  = $juniper->v_index();
     my $i_pvid   = $juniper->qb_i_vlan($partial) || {};
     my $i_vlan = {};
 
     foreach my $bport ( keys %$i_pvid ) {
         my $q_vlan  = $i_pvid->{$bport};
-	my $vlan    = $v_index->{$q_vlan} || $q_vlan;
+	    my $vlan    = $q_vlan;
+        # Use defined as check since VLAN can be zero
+        $vlan = $v_index->{$q_vlan} if defined $v_index->{$q_vlan};
         my $ifindex = $index->{$bport};
         unless ( defined $ifindex ) {
             print "  Port $bport has no bp_index mapping. Skipping.\n"
@@ -240,11 +267,11 @@ sub i_vlan {
     }
     return $i_vlan;
 }
+
 sub v_name { 
     my $juniper = shift;
-    my $name = $juniper->v_vlan_name();
-    return $juniper->vlan_name() unless $name;
-    return $name;
+
+    return $juniper->jnx_els_v_name() || $juniper->jnx_v_name();
 }
 
 # Index doesn't use VLAN ID, so override the HOA private method here to
@@ -254,7 +281,7 @@ sub _vlan_hoa {
     my ( $v_ports, $partial ) = @_;
 
     my $index    = $juniper->bp_index();
-    my $v_index  = $juniper->jnxExVlanTag($partial);
+    my $v_index  = $juniper->v_index($partial);
 
     my $vlan_hoa = {};
     foreach my $idx ( keys %$v_ports ) {
@@ -282,36 +309,58 @@ sub _vlan_hoa {
     return $vlan_hoa;
 }
 
+# Older switches use RFC 4363 standard PortList definition, newer ELS switches
+# return an ASCII-encoded, comma separated string of port indexes - wow
 sub i_vlan_membership {
-    my $juniper  = shift;
+    my $juniper = shift;
     my $partial = shift;
+
+    # Use presence of JUNIPER-VLAN-MIB::jnxExVlanTag to indicate if we should
+    # treat as RFC 4363 standard PortList
+    my $old_index = $juniper->jnx_v_index();
+
+    if ( scalar keys %$old_index ) {
+        return $juniper->SUPER::i_vlan_membership($partial);
+    }
 
     my $res;
 
-    my $dot1qVlanStaticEgressPorts = $juniper->dot1qVlanCurrentEgressPorts($partial) || $juniper->dot1qVlanStaticEgressPorts($partial);
+    # This isn't a PortList so use _raw to prevent munge
+    my $v_ports = $juniper->qb_cv_egress_raw($partial)
+        || $juniper->qb_v_egress_raw($partial);
     my $bp_index = $juniper->bp_index();
-    foreach my $vlan (keys %$dot1qVlanStaticEgressPorts) {
-        my @bp_indexes = split /,/, $dot1qVlanStaticEgressPorts->{$vlan};
-        push @{$res->{$bp_index->{$_}}}, $vlan for @bp_indexes;
+
+    foreach my $vlan ( keys %$v_ports ) {
+        my @bp_indexes = split /,/, $v_ports->{$vlan};
+        push @{ $res->{ $bp_index->{$_} } }, $vlan for @bp_indexes;
     }
     return $res;
 }
 
-sub qb_fw_vlan {
+sub i_vlan_membership_untagged {
     my $juniper = shift;
+    my $partial = shift;
 
-    my $qb_fw_vlan = $juniper->SUPER::qb_fw_vlan();
-    my $v_fdb_id   = $juniper->v_fdb_id();
-    my $v_vlan_tag = $juniper->v_vlan_tag();
-    return $qb_fw_vlan unless $v_fdb_id && $v_vlan_tag;
-    my %fdb_id_to_tag = reverse %$v_fdb_id;
+    # Use presence of JUNIPER-VLAN-MIB::jnxExVlanTag to indicate if we should
+    # treat as RFC 4363 standard PortList
+    my $old_index = $juniper->jnx_v_index();
 
-    foreach my $key (keys %$qb_fw_vlan) {
-        my $v = $qb_fw_vlan->{$key};
-        $qb_fw_vlan->{$key} = $v_vlan_tag->{$fdb_id_to_tag{$v}};
+    if ( scalar keys %$old_index ) {
+        return $juniper->SUPER::i_vlan_membership_untagged($partial);
     }
 
-    return $qb_fw_vlan;
+    my $res;
+
+    # This isn't a PortList so use _raw to prevent munge
+    my $v_ports = $juniper->qb_cv_untagged_raw($partial)
+        || $juniper->qb_v_untagged_raw($partial);
+    my $bp_index = $juniper->bp_index();
+
+    foreach my $vlan ( keys %$v_ports ) {
+        my @bp_indexes = split /,/, $v_ports->{$vlan};
+        push @{ $res->{ $bp_index->{$_} } }, $vlan for @bp_indexes;
+    }
+    return $res;
 }
 
 # Pseudo ENTITY-MIB methods
@@ -336,24 +385,27 @@ sub _e_is_virtual {
 sub _e_virtual_index {
     my $juniper = shift;
 
-    my $containers = $juniper->jnxContainersWithin() || {};
+    my $containers = $juniper->jnxContainersWithin()         || {};
     my $members    = $juniper->jnxVirtualChassisMemberRole() || {};
-    
+
     my %v_index;
-    foreach my $key (keys %$containers) {
-	foreach my $member ( keys %$members ) {
-	    # Virtual chassis members start at zero
-	    $member++;
-	    # We will be duplicating and eliminating some keys,
-	    # but this is for the benefit of e_parent()
-	    my $index  = sprintf ("%02d", $key) . sprintf ("%02d", $member) . "0000";
-	    my $iid = "$key\.$member\.0\.0";
-	    $v_index{$iid} = $index;
-	}
-	unless ($containers->{$key}) {
-	    my $index = sprintf ("%02d", $key) . "000000";
-	    $v_index{$key} = $index;
-	}
+    foreach my $key ( keys %$containers ) {
+        foreach my $member ( keys %$members ) {
+
+            # Virtual chassis members start at zero
+            $member++;
+
+            # We will be duplicating and eliminating some keys,
+            # but this is for the benefit of e_parent()
+            my $index = sprintf( "%02d", $key )
+                . sprintf( "%02d", $member ) . "0000";
+            my $iid = "$key\.$member\.0\.0";
+            $v_index{$iid} = $index;
+        }
+        unless ( $containers->{$key} ) {
+            my $index = sprintf( "%02d", $key ) . "000000";
+            $v_index{$key} = $index;
+        }
     }
     return \%v_index;
 }
@@ -398,7 +450,7 @@ sub e_class {
 	
 	my $type      = $fru_type->{$iid} || 0;
 	my $container = $c_type->{$iid} || 0;
-	
+
         if ( $type =~ /power/i  ) {
             $e_class{$iid} = 'powerSupply';
         }
@@ -438,7 +490,7 @@ sub e_descr {
 	
 	my $content_descr   = $contents->{$iid} || 0;
 	my $container_descr = $containers->{$iid} || 0;
-	
+
 	if ($content_descr) {
 	    $e_descr{$iid} = $content_descr;
 	}
@@ -554,41 +606,46 @@ sub e_vendor {
 sub e_pos {
     my $juniper = shift;
 
-    # We could look at index levels, but his will work as well
+    # We could look at index levels, but this will work as well
     return $juniper->e_index();
 }
 
 sub e_parent {
     my $juniper = shift;
 
-    my $e_idx      = $juniper->e_index() || {};
-    my $c_within   = $juniper->jnxContainersWithin() || {};
-    my $e_descr    = $juniper->e_descr() || {};
+    my $e_idx    = $juniper->e_index()             || {};
+    my $c_within = $juniper->jnxContainersWithin() || {};
+    my $e_descr  = $juniper->e_descr()             || {};
     my $is_virtual = $juniper->_e_is_virtual();
-    
+
     my %e_parent;
     foreach my $iid ( keys %$e_idx ) {
         next unless $iid;
-	
-	my ($idx, $l1,$l2, $l3) = split /\./, $iid;
-	my $within = $c_within->{$idx};
-	my $descr  = $e_descr->{$iid};
-	
-        if ( !$is_virtual and ($iid =~ /^(\d+)\.\d+/) ) {
-            $e_parent{$iid} = sprintf ("%02d", $1) . "000000";
+
+        my ( $idx, $l1, $l2, $l3 ) = split /\./, $iid;
+        my $within = $c_within->{$idx};
+        my $descr  = $e_descr->{$iid};
+
+        if ( !$is_virtual and ( $iid =~ /^(\d+)\.\d+/ ) ) {
+            $e_parent{$iid} = sprintf( "%02d", $1 ) . "000000";
         }
-	elsif ( $is_virtual and ($descr =~ /chassis/i) and ($iid =~ /^(\d+)\.(\d+)(\.0)+?/) ) {
-	    $e_parent{$iid} = sprintf ("%02d", $1) . "000000";
-	}
-	elsif ( $is_virtual and ($iid =~ /^(\d+)\.(\d+)(\.0)+?/) ) {
-	    $e_parent{$iid} = sprintf ("%02d", $within) . sprintf ("%02d", $2) . "0000";
-	}
-	elsif ( $is_virtual and ($iid =~ /^(\d+)\.(\d+)\.[1-9]+/) ) {
-	    $e_parent{$iid} = sprintf ("%02d", $1) . sprintf ("%02d", $2) . "0000";
-	}
-	elsif ( defined $within and $iid =~ /\d+/ ) {
-            $e_parent{$iid} = sprintf ("%02d", $within) . "000000";
-	}
+        elsif ( $is_virtual
+            and ( $descr =~ /chassis/i )
+            and ( $iid =~ /^(\d+)\.(\d+)(\.0)+?/ ) )
+        {
+            $e_parent{$iid} = sprintf( "%02d", $1 ) . "000000";
+        }
+        elsif ( $is_virtual and ( $iid =~ /^(\d+)\.(\d+)(\.0)+?/ ) ) {
+            $e_parent{$iid}
+                = sprintf( "%02d", $within ) . sprintf( "%02d", $2 ) . "0000";
+        }
+        elsif ( $is_virtual and ( $iid =~ /^(\d+)\.(\d+)\.[1-9]+/ ) ) {
+            $e_parent{$iid}
+                = sprintf( "%02d", $1 ) . sprintf( "%02d", $2 ) . "0000";
+        }
+        elsif ( defined $within and $iid =~ /\d+/ ) {
+            $e_parent{$iid} = sprintf( "%02d", $within ) . "000000";
+        }
         else {
             next;
         }
@@ -648,6 +705,8 @@ Subclass for Juniper Devices running JUNOS
 
 =item F<JUNIPER-VIRTUALCHASSIS-MIB>
 
+=item F<JUNIPER-L2ALD-MIB>
+
 =back
 
 =head2 Inherited Classes' MIBs
@@ -689,7 +748,7 @@ beginning.
 
 Returns serial number
 
-(C<jnxBoxSerialNo.0>)
+(C<jnxBoxSerialNo>)
 
 =item $juniper->mac()
 
@@ -702,7 +761,15 @@ to in a unique fashion.
 
 The name, model, or detailed description of the device.
 
-(C<jnxBoxDescr.0>)
+(C<jnxBoxDescr>)
+
+=item $juniper->version()
+
+(C<jnxVirtualChassisMemberSWVersion>)
+
+=item $juniper->vc_model()
+
+(C<jnxVirtualChassisMemberModel>)
 
 =back
 
@@ -723,23 +790,22 @@ to a hash.
 
 =item $juniper->qb_fdb_index()
 
-Returns reference to hash: key = VLAN ID, value = FDB ID.
-
-=item $juniper->qb_fw_vlan()
-
-Returns reference to hash of forwarding table entries VLAN ID
-
+Returns reference to hash: key = FDB ID, value = VLAN ID.
+    
 =item $juniper->v_index()
 
-(C<jnxExVlanTag>)
+Returns (C<jnxL2aldVlanTag>) or (C<jnxExVlanTag>) depending upon switch
+software version
 
 =item $juniper->v_name()
 
-(C<jnxExVlanName>)
+Returns (C<jnxL2aldVlanName>) or (C<jnxExVlanName>) depending upon switch
+software version
 
 =item $juniper->v_type()
 
-(C<jnxExVlanType>)
+Returns (C<jnxL2aldVlanType>) or (C<jnxExVlanType>) depending upon switch
+software version
 
 =item $juniper->i_trunk()
 
@@ -753,6 +819,12 @@ Returns a mapping between C<ifIndex> and the PVID or default VLAN.
 
 Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
 IDs.  These are the VLANs which are members of the egress list for the port.
+
+=item $juniper->i_vlan_membership_untagged()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.  These are the VLANs which are members of the untagged egress list for
+the port.
 
 =back
 
