@@ -57,15 +57,17 @@ $VERSION = '3.54';
     %SNMP::Info::MAU::MIBS,
     %SNMP::Info::CDP::MIBS,
     %SNMP::Info::Aggregate::MIBS,
-    'RFC1271-MIB'    => 'logDescription',
-    'HP-ICF-OID'     => 'hpSwitch4000',
-    'STATISTICS-MIB' => 'hpSwitchCpuStat',
-    'NETSWITCH-MIB'  => 'hpMsgBufFree',
-    'CONFIG-MIB'     => 'hpSwitchConfig',
-    'HP-ICF-CHASSIS' => 'hpicfSensorObjectId',
-    'HP-ICF-BRIDGE'  => 'hpicfBridgeRstpForceVersion',
-    'HP-ICF-POE-MIB' => 'hpicfPoePethPsePortCurrent',
-    'SEMI-MIB'       => 'hpHttpMgSerialNumber',
+    'RFC1271-MIB'            => 'logDescription',
+    'HP-ICF-OID'             => 'hpSwitch4000',
+    'STATISTICS-MIB'         => 'hpSwitchCpuStat',
+    'NETSWITCH-MIB'          => 'hpMsgBufFree',
+    'CONFIG-MIB'             => 'hpSwitchConfig',
+    'HP-ICF-CHASSIS'         => 'hpicfSensorObjectId',
+    'HP-ICF-BRIDGE'          => 'hpicfBridgeRstpForceVersion',
+    'HP-ICF-POE-MIB'         => 'hpicfPoePethPsePortCurrent',
+    'SEMI-MIB'               => 'hpHttpMgSerialNumber',
+    'HP-SWITCH-PL-MIB'       => 'hpSwitchProliant',
+    'BLADETYPE4-NETWORK-MIB' => 'hpProLiant-GbE2c-InterconnectSwitch',
 );
 
 %GLOBALS = (
@@ -623,6 +625,14 @@ Included in V2 mibs from Cisco
 =item F<HP-ICF-BRIDGE>
 
 =item F<HP-ICF-POE-MIB>
+
+=item F<HP-ICF-CHASSIS>
+
+=item F<SEMI-MIB>
+
+=item F<HP-SWITCH-PL-MIB>
+
+=item F<BLADETYPE4-NETWORK-MIB>
 
 =back
 

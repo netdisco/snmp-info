@@ -9,6 +9,7 @@ Version 3.55
 
   [ENHANCEMENTS]
 
+  * #117 Recognition for HP Blade switches (J R Binks)
   * #196 Support for powerconnect 8164F
   * Refactor Layer3::Dell for better support of newer models
   * Increase capture of i_vlan on router interfaces in L3::Cisco
