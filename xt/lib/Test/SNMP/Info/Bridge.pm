@@ -47,9 +47,26 @@ sub setup : Tests(setup) {
 
   # Start with a common cache that will serve most tests
   my $cache_data = {
-    'store' => {},
+    '_dot1qVlanFdbId' =>1,
+    'store' => {
+      'dot1qVlanFdbId' => { '0.1' => 0, '0.91' => 3, '0.112' => 1, '0.113' => 2}
+      },
   };
   $test->{info}->cache($cache_data);
+}
+
+
+sub qb_fdb_index : Tests(3) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'qb_fdb_index' );
+    
+    my $expected = { 0 => 1, 3 => 91, 1 => 112, 2 => 113 };
+    cmp_deeply( $test->{info}->qb_fdb_index(), $expected, q(FDB to VLAN index returned expected values));
+
+    $test->{info}->clear_cache();
+    cmp_deeply( $test->{info}->qb_fdb_index(),
+        {}, q(No data returns empty hash) );
 }
 
 1;

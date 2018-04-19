@@ -721,7 +721,7 @@ tagged ports or the VLAN ID.
 
 =item $bridge->qb_fdb_index()
 
-Returns reference to hash: key = VLAN ID, value = FDB ID.
+Returns reference to hash: key = FDB ID, value = VLAN ID.
 
 =item $bridge->v_index()
 
