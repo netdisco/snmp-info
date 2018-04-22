@@ -1271,7 +1271,7 @@ sub my_all : Tests(9) {
     '... call to all() returns test data, no call to load_all()');
 }
 
-sub private_load_attr : Tests(16) {
+sub private_load_attr : Tests(18) {
   my $test = shift;
 
   can_ok($test->{info}, '_load_attr');
@@ -1299,6 +1299,10 @@ sub private_load_attr : Tests(16) {
     'IF-MIB::ifCounterDiscontinuityTime' => {0 => 'NOSUCHINSTANCE'},
     'IF-MIB::ifHCOutOctets' =>
       {1 => 0, 2 => 1828306359704, 3 => 1002545943585, 4 => 'ENDOFMIBVIEW'},
+    
+    # Tables to test partial and full OIDs
+    '.1.3.6.1.4.1.171.12.1.1.12' => {1 => 'partial', 2 => 'oid', 3 => 'data'},
+    '.100.3.6.1.4.1.171.12.1.1.12' => {2 => 'full', 3 => 'oid', 4 => 'leaf'},
   };
 
   # Load cache with data to for initial tests
@@ -1414,6 +1418,23 @@ sub private_load_attr : Tests(16) {
 
   cmp_deeply($test->{info}->cache(),
     $expected_cache, 'Cache contains expected data');
+  
+  # Test OID based table fetches
+  # This is from Layer3::DLink will only partially resolve
+  $test->{info}{funcs}{partial_oid} = '.1.3.6.1.4.1.171.12.1.1.12';
+
+  my $expected_p_oid_data = {1 => 'partial', 2 => 'oid', 3 => 'data'};
+  
+  cmp_deeply($test->{info}->partial_oid(),
+    $expected_p_oid_data, 'Partial translated OID leaf returns expected data');
+
+  # This is a bogus OID will not translate at all
+  $test->{info}{funcs}{full_oid} = '.100.3.6.1.4.1.171.12.1.1.12';
+
+  my $expected_f_oid_data = {2 => 'full', 3 => 'oid', 4 => 'leaf'};
+  
+  cmp_deeply($test->{info}->full_oid(),
+    $expected_f_oid_data, 'Full OID leaf returns expected data');
 }
 
 sub private_show_attr : Tests(3) {
