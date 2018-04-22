@@ -41,7 +41,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.55';
+$VERSION = '3.56';
 
 %MIBS = (
     'CISCO-VTP-MIB'                       => 'vtpVlanName',
