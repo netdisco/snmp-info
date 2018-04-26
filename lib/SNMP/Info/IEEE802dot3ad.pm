@@ -64,7 +64,8 @@ sub agg_ports_lag {
   my $dev = shift;
 
   # TODO: implement partial
-  my $ports  = $dev->ad_lag_ports;
+  my $ports  = $dev->ad_lag_ports();
+  my $index  = $dev->bp_index() || {};
 
   return {} unless ref {} eq ref $ports and scalar keys %$ports;
 
@@ -73,9 +74,18 @@ sub agg_ports_lag {
     my $idx = $m;
     my $portlist = $ports->{$m};
     next unless $portlist;
+
+    # While dot3adAggTable is indexed by ifIndex, the portlist is indexed
+    # with a dot1dBasePort, so we need to use dot1dBasePortIfIndex to map to
+    # the ifIndex. If we don't have dot1dBasePortIfIndex assume
+    # dot1dBasePort = ifIndex
     for ( my $i = 0; $i <= scalar(@$portlist); $i++ ) {
-      $ret->{$i+1} = $idx if ( @$portlist[$i] );
-    }
+      my $ifindex = $i+1;
+      if ( exists($index->{$i+1}) and defined($index->{$i+1}) ) {
+        $ifindex = $index->{$i+1};       
+      }
+      $ret->{$ifindex} = $idx if ( @$portlist[$i] );
+    }   
   }
 
   return $ret;
