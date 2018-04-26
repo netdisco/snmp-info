@@ -33,23 +33,51 @@ use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info::PowerEthernet;
 
-# Remove this startup override once we have full method coverage
-sub startup : Tests(startup => 1) {
-  my $test = shift;
-  $test->SUPER::startup();
-
-  $test->todo_methods(1);
-}
-
 sub setup : Tests(setup) {
   my $test = shift;
   $test->SUPER::setup;
 
   # Start with a common cache that will serve most tests
   my $cache_data = {
-    'store' => {},
+    '_peth_port_status' => 1,
+    '_peth_port_class'  => 1,
+    'store' => {
+      'peth_port_status' => {'1.1' => 'searching', '1.3' => 'otherFault', '1.24' => 'deliveringPower'},
+      'peth_port_class'  => {'1.1' => 'class0', '1.3' => 'class0', '1.24' => 'class3'},      
+      },
   };
   $test->{info}->cache($cache_data);
+}
+
+sub peth_port_ifindex : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'peth_port_ifindex');
+
+  my $expected = {'1.1' => 1, '1.3' => 3, '1.24' => 24},;
+
+  cmp_deeply($test->{info}->peth_port_ifindex(),
+    $expected, q(POE port 'ifIndex' mapping returns expected values));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->peth_port_ifindex(),
+    {}, q(No data returns empty hash));
+}
+
+sub peth_port_neg_power : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'peth_port_neg_power');
+
+  my $expected
+    = {'1.24' => 12950};
+
+  cmp_deeply($test->{info}->peth_port_neg_power(),
+    $expected, q(POE port negotiated power returns expected values));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->peth_port_neg_power(),
+    {}, q(No data returns empty hash));
 }
 
 1;
