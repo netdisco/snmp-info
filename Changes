@@ -1,5 +1,11 @@
 Version 3.57
 
+  [ENHANCEMENTS]
+
+  * #145 Patch for Huawei (robwwd)
+  * #228 Huawei aggregate link support
+  * POE and duplex admin support added to L3::Huawei
+
   [BUG FIXES]
 
   * IEEE802dot3ad portlist is indexed with a dot1dBasePort, cross reference
