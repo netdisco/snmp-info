@@ -122,13 +122,19 @@ sub globals : Tests(2) {
 
   can_ok($test->{info}, 'globals');
 
-  subtest 'Globals can() subtest' => sub {
+  subtest 'Globals validate subtest' => sub {
 
     my $test_globals = $test->{info}->globals;
 
     if (scalar keys %$test_globals) {
       foreach my $key (sort (keys %$test_globals)) {
-        can_ok($test->{info}, $key);
+
+        # Note: was going to use can_ok() as test method, but can() will insert
+        # AUTOLOAD methods such as the Globals and Funcs into the symbol table.
+        # This causes conflicts with the library inheritance scheme and
+        # manifests itself seemingly random test failures
+        ok($test->{info}->_validate_autoload_method($key),
+           qq('$key' validates));
       }
     }
     else {
@@ -142,13 +148,19 @@ sub funcs : Tests(2) {
 
   can_ok($test->{info}, 'funcs');
 
-  subtest 'Funcs can() subtest' => sub {
+  subtest 'Funcs validate subtest' => sub {
 
     my $test_funcs = $test->{info}->funcs;
 
     if (scalar keys %$test_funcs) {
       foreach my $key (sort (keys %$test_funcs)) {
-        can_ok($test->{info}, $key);
+
+        # Note: was going to use can_ok() as test method, but can() will insert
+        # AUTOLOAD methods such as the Globals and Funcs into the symbol table.
+        # This causes conflicts with the library inheritance scheme and
+        # manifests itself seemingly random test failures
+        ok($test->{info}->_validate_autoload_method($key),
+           qq('$key' validates));
       }
     }
     else {
