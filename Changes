@@ -10,6 +10,8 @@ Version 3.57
 
   * IEEE802dot3ad portlist is indexed with a dot1dBasePort, cross reference
     with dot1dBasePortIfIndex
+  * Fix for macsuck in Cisco classes introduced in 3.55 caused by inheritance
+    issue in CiscoStack
 
 Version 3.56 (2018-04-22)
 

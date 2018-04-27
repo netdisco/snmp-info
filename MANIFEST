@@ -163,7 +163,6 @@ xt/lib/Test/SNMP/Info/CiscoPortSecurity.pm
 xt/lib/Test/SNMP/Info/CiscoPower.pm
 xt/lib/Test/SNMP/Info/CiscoQOS.pm
 xt/lib/Test/SNMP/Info/CiscoRTT.pm
-xt/lib/Test/SNMP/Info/CiscoStack.pm
 xt/lib/Test/SNMP/Info/CiscoStats.pm
 xt/lib/Test/SNMP/Info/CiscoStpExtensions.pm
 xt/lib/Test/SNMP/Info/CiscoVTP.pm
