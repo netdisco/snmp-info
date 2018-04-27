@@ -39,7 +39,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.56';
+$VERSION = '3.57';
 
 %MIBS = ( 'POWER-ETHERNET-MIB' => 'pethPsePortDetectionStatus' );
 

@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.56
+    SNMP::Info - Version 3.57
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
