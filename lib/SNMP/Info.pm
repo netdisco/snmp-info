@@ -4679,16 +4679,26 @@ sub _validate_autoload_method {
 
     }
 
-    # If the parent of the leaf has indexes it is contained within a table
-    my $indexes    = $SNMP::MIB{$oid}{'parent'}{'indexes'};
-    my $table_leaf = 0;
+     my $table_leaf = 0;
+ 
+    # This is an expensive check so we assume anything in the funcs and globals
+    # hashes are known. Only for actual MIB leafs should we have to check the
+    # MIB. If the parent of the leaf has indexes it is contained within a table.   
+    if ($funcs->{$attr}) {
+      $table_leaf = 1;
+     }
+    elsif (!$globals->{$attr}) {
 
-    if ( !$globals->{$attr}
-        && ( ( defined $indexes && scalar( @{$indexes} ) > 0 )
-            || $funcs->{$attr} ))
-    {
-        $table_leaf = 1;
-    }
+        # Prevent autovivification 
+        if (exists $SNMP::MIB{$oid} &&
+            exists $SNMP::MIB{$oid}{'parent'} &&
+            exists $SNMP::MIB{$oid}{'parent'}{'indexes'} &&
+            defined $SNMP::MIB{$oid}{'parent'}{'indexes'} &&
+            scalar( @{$SNMP::MIB{$oid}{'parent'}{'indexes'}} ) > 0)
+        {
+            $table_leaf = 1;    
+        }
+     }
 
     # Tag on .0 for %GLOBALS and single instance MIB leafs unless
     # the leaf ends in a digit or we are going to use for a set operation

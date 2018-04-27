@@ -5,6 +5,7 @@ Version 3.57
   * #145 Patch for Huawei (robwwd)
   * #228 Huawei aggregate link support
   * POE and duplex admin support added to L3::Huawei
+  * Significant performance improvement validating AUTOLOAD methods
 
   [BUG FIXES]
 
