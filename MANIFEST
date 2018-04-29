@@ -1,3 +1,4 @@
+.perltidyrc
 Build.PL
 Changes
 contrib/DEVELOP
@@ -41,6 +42,7 @@ lib/SNMP/Info/Layer1/S3000.pm
 lib/SNMP/Info/Layer2.pm
 lib/SNMP/Info/Layer2/3Com.pm
 lib/SNMP/Info/Layer2/Adtran.pm
+lib/SNMP/Info/Layer2/Aerohive.pm
 lib/SNMP/Info/Layer2/Airespace.pm
 lib/SNMP/Info/Layer2/Aironet.pm
 lib/SNMP/Info/Layer2/Allied.pm
@@ -181,6 +183,7 @@ xt/lib/Test/SNMP/Info/Layer1/Cyclades.pm
 xt/lib/Test/SNMP/Info/Layer1/S3000.pm
 xt/lib/Test/SNMP/Info/Layer2.pm
 xt/lib/Test/SNMP/Info/Layer2/3Com.pm
+xt/lib/Test/SNMP/Info/Layer2/Aerohive.pm
 xt/lib/Test/SNMP/Info/Layer2/Airespace.pm
 xt/lib/Test/SNMP/Info/Layer2/Aironet.pm
 xt/lib/Test/SNMP/Info/Layer2/Allied.pm

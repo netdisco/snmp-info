@@ -1,5 +1,9 @@
 Version 3.58
 
+  [NEW FEATURES]
+
+  * #202 Support for Aerohive access points
+
   [ENHANCEMENTS]
 
   * Add fan and power supply status to L3::Huawei

@@ -507,6 +507,12 @@ Subclass for Adtran devices.
 
 See documentation in L<SNMP::Info::Layer2::Adtran> for details.
 
+=item SNMP::Info::Layer2::Aerohive
+
+Subclass for Aerohive Access Points.
+
+See documentation in L<SNMP::Info::Layer2::Aerohive> for details.
+
 =item SNMP::Info::Layer2::Airespace
 
 Subclass for Cisco (Airespace) wireless controllers.
@@ -1629,6 +1635,7 @@ sub device_type {
         35098 => 'SNMP::Info::Layer3::Pica8',
         41112 => 'SNMP::Info::Layer2::Ubiquiti',
         4413 => 'SNMP::Info::Layer2::Ubiquiti',
+        26928 => 'SNMP::Info::Layer2::Aerohive',
         30803 => 'SNMP::Info::Layer3::VyOS',
         40310 => 'SNMP::Info::Layer3::Cumulus',
     );
@@ -1663,6 +1670,7 @@ sub device_type {
         17163 => 'SNMP::Info::Layer3::Steelhead',
         20540 => 'SNMP::Info::Layer2::Sixnet',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
+        26928 => 'SNMP::Info::Layer2::Aerohive',
     );
 
     my %l1sysoidmap = (
