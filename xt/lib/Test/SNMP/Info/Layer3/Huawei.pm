@@ -50,6 +50,7 @@ sub setup : Tests(setup) {
     '_id'                  => '.1.3.6.1.4.1.2011.2.239.12',
     '_i_index'             => 1,
     '_i_description'       => 1,
+    '_i_mtu'               => 1,
     '_hw_eth_duplex'       => 1,
     '_hw_eth_auto'         => 1,
     '_el_index'            => 1,
@@ -65,31 +66,47 @@ sub setup : Tests(setup) {
     '_hw_peth_port_status' => 1,
     '_hw_peth_port_class'  => 1,
     '_hw_peth_port_power'  => 1,
+    '_hw_fan_state'        => 1,
+    '_hw_fan_descr'        => 1,
+    '_hw_pwr_state'        => 1,
+    '_hw_pwr_descr'        => 1,
 
     'store' => {
-      'i_index'       => {1 => 1, 6 => 6, 7 => 7, 8 => 8},
+      'i_index'       => {1 => 1, 6 => 6, 7 => 7, 8 => 8, 108 => 108},
       'i_description' => {
-        1 => 'InLoopBack0',
-        6 => 'GigabitEthernet0/0/1',
-        7 => 'GigabitEthernet0/0/2',
-        8 => 'GigabitEthernet0/0/3'
+        1   => 'InLoopBack0',
+        6   => 'GigabitEthernet0/0/1',
+        7   => 'GigabitEthernet0/0/2',
+        8   => 'GigabitEthernet0/0/3',
+        108 => 'GigabitEthernet1/0/1'
       },
-      'hw_eth_duplex'   => {6 => 'full',    7  => 'full',     8 => 'half'},
-      'hw_eth_auto'     => {6 => 'enabled', 7  => 'disabled', 8 => 'disabled'},
-      'el_index'        => {9 => 9,         10 => 10},
-      'el_duplex'       => {9 => 'full',    10 => 'half'},
-      'hw_trunk_if_idx' => {0 => 121},
+      'i_mtu'            => {6 => 1500,      7  => 1500, 8 => 1500},
+      'hw_eth_frame_len' => {6 => 2000,      7  => 2000},
+      'hw_eth_duplex'    => {6 => 'full',    7  => 'full', 8 => 'half'},
+      'hw_eth_auto'      => {6 => 'enabled', 7  => 'disabled', 8 => 'disabled'},
+      'el_index'         => {9 => 9,         10 => 10},
+      'el_duplex'        => {9 => 'full',    10 => 'half'},
+      'hw_trunk_if_idx'  => {0 => 121},
       'hw_trunk_entry'   => {'0.55' => 'valid',   '0.110' => 'valid'},
       'ad_lag_ports'     => {34     => pack("H*", '00000060')},
       'hw_l2if_port_idx' => {26     => 30,        27      => 31},
       'bp_index'         => {2      => 1,         7       => 3},
-      'hw_phy_port_slot' => {6      => 0,         7       => 0, 8 => 0},
-      'hw_peth_power_watts' => {0 => 369600},
-      'hw_peth_port_admin' => {6 => 'enabled', 7 => 'disabled', 8 => 'enabled'},
+      'hw_phy_port_slot'    => {6 => 0,      7 => 0, 8 => 0, 108 => 1},
+      'hw_peth_power_watts' => {0 => 369600, 1 => 739200},
+      'hw_peth_port_admin' =>
+        {6 => 'enabled', 7 => 'disabled', 8 => 'enabled', 108 => 'enabled'},
       'hw_peth_port_status' =>
-        {6 => 'Powered', 7 => 'Disabled', 8 => 'Detecting'},
-      'hw_peth_port_class' => {6 => 3,    7 => 0, 8 => 0},
-      'hw_peth_port_power' => {6 => 3763, 7 => 0, 8 => 0},
+        {6 => 'Powered', 7 => 'Disabled', 8 => 'Detecting', 108 => 'Powered'},
+      'hw_peth_port_class' => {6 => 3,    7 => 0, 8 => 0, 108 => 4},
+      'hw_peth_port_power' => {6 => 3763, 7 => 0, 8 => 0, 108 => 8374},
+      'hw_fan_state' =>
+        {'1.1' => 'normal', '1.2' => 'abnormal', '2.1' => 'normal'},
+      'hw_fan_descr' =>
+        {'1.1' => 'slot1,FAN1', '1.2' => 'slot1,FAN2', '2.1' => 'slot2,FAN1'},
+      'hw_pwr_state' =>
+        {'1.1' => 'supply', '1.2' => 'notSupply', '2.1' => 'unknown'},
+      'hw_pwr_descr' =>
+        {'1.1' => 'slot1,PWR1', '1.2' => 'slot1,PWR2', '2.1' => 'slot2,PWR1'},
     },
   };
   $test->{info}->cache($cache_data);
@@ -254,7 +271,7 @@ sub peth_port_ifindex : Tests(3) {
 
   can_ok($test->{info}, 'peth_port_ifindex');
 
-  my $expected = {'0.6' => 6, '0.7' => 7, '0.8' => 8},;
+  my $expected = {'0.6' => 6, '0.7' => 7, '0.8' => 8, '1.108' => 108};
 
   cmp_deeply($test->{info}->peth_port_ifindex(),
     $expected, q(POE port 'ifIndex' mapping returns expected values));
@@ -269,7 +286,8 @@ sub peth_port_admin : Tests(3) {
 
   can_ok($test->{info}, 'peth_port_admin');
 
-  my $expected = {'0.6' => 'true', '0.7' => 'false', '0.8' => 'true'};
+  my $expected
+    = {'0.6' => 'true', '0.7' => 'false', '0.8' => 'true', '1.108' => 'true'};
 
   cmp_deeply($test->{info}->peth_port_admin(),
     $expected, q(POE port admin status returns expected values));
@@ -284,8 +302,12 @@ sub peth_port_status : Tests(3) {
 
   can_ok($test->{info}, 'peth_port_status');
 
-  my $expected
-    = {'0.6' => 'deliveringPower', '0.7' => 'disabled', '0.8' => 'searching'};
+  my $expected = {
+    '0.6'   => 'deliveringPower',
+    '0.7'   => 'disabled',
+    '0.8'   => 'searching',
+    '1.108' => 'deliveringPower'
+  };
 
   cmp_deeply($test->{info}->peth_port_status(),
     $expected, q(POE port status returns expected values));
@@ -300,7 +322,12 @@ sub peth_port_class : Tests(3) {
 
   can_ok($test->{info}, 'peth_port_class');
 
-  my $expected = {'0.6' => 'class3', '0.7' => 'class0', '0.8' => 'class0'};
+  my $expected = {
+    '0.6'   => 'class3',
+    '0.7'   => 'class0',
+    '0.8'   => 'class0',
+    '1.108' => 'class4'
+  };
 
   cmp_deeply($test->{info}->peth_port_class(),
     $expected, q(POE port class returns expected values));
@@ -315,7 +342,7 @@ sub peth_port_power : Tests(3) {
 
   can_ok($test->{info}, 'peth_port_power');
 
-  my $expected = {'0.6' => 3763, '0.7' => 0, '0.8' => 0};
+  my $expected = {'0.6' => 3763, '0.7' => 0, '0.8' => 0, '1.108' => 8374};
 
   cmp_deeply($test->{info}->peth_port_power(),
     $expected, q(POE port power returns expected values));
@@ -330,7 +357,7 @@ sub peth_port_neg_power : Tests(3) {
 
   can_ok($test->{info}, 'peth_port_neg_power');
 
-  my $expected = {'0.6' => 12950};
+  my $expected = {'0.6' => 12950, '1.108' => 25500};
 
   cmp_deeply($test->{info}->peth_port_neg_power(),
     $expected, q(POE port negotiated power returns expected values));
@@ -338,6 +365,70 @@ sub peth_port_neg_power : Tests(3) {
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->peth_port_neg_power(),
     {}, q(No data returns empty hash));
+}
+
+sub fan : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'fan');
+
+  my $expected = 'slot1,FAN2: abnormal';
+
+  is($test->{info}->fan(), $expected, q(Fan returns expected value));
+
+  # Change abnormal fan state to normal to test alternate message
+  $test->{info}{store}{hw_fan_state}{'1.2'} = 'normal';
+  $expected = '3 fans OK';
+
+  is($test->{info}->fan(), $expected, q(Fans OK returns expected value));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->fan(), undef, q(No data returns undef));
+}
+
+sub ps1_status : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ps1_status');
+
+  my $expected = 'slot1,PWR1: supply, slot2,PWR1: unknown';
+
+  is($test->{info}->ps1_status(), $expected, q(PS1 returns expected value));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->ps1_status(), undef, q(No data returns undef));
+}
+
+sub ps2_status : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ps2_status');
+
+  my $expected = 'slot1,PWR2: notSupply';
+
+  is($test->{info}->ps2_status(), $expected, q(PS2 returns expected value));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->ps2_status(), undef, q(No data returns undef));
+}
+
+sub i_mtu : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_mtu');
+
+  # Test with 'ifMtu' first, so we don't overwrite the i_mtu cache values
+  my $expected = {6 => 1500, 7 => 1500, 8 => 1500};
+  cmp_deeply($test->{info}->i_mtu(), $expected, q(MTU values using 'ifMtu'));
+
+  # Make the 'hw_eth_frame_len' cahce values visible
+  $test->{info}{'_hw_eth_frame_len'} = 1;
+  $expected = {6 => 2000, 7 => 2000, 8 => 1500};
+  cmp_deeply($test->{info}->i_mtu(),
+    $expected, q(MTU values using 'hwEthernetJumboframeMaxLength'));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->i_mtu(), {}, q(No mapping returns empty hash));
 }
 
 sub munge_hw_peth_admin : Tests(4) {

@@ -1,3 +1,14 @@
+Version 3.58
+
+  [ENHANCEMENTS]
+
+  * Add fan and power supply status to L3::Huawei
+  * Override ifMTU with max frame size when applicable in L3::Huawei
+
+  [BUG FIXES]
+
+  * Correct POE power module to port mapping in L3::Huawei
+
 Version 3.57 (2018-04-26)
 
   [ENHANCEMENTS]

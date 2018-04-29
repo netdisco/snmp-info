@@ -48,11 +48,12 @@ $VERSION = '3.57';
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
-    'HUAWEI-MIB'        => 'quidway',
-    'HUAWEI-PORT-MIB'   => 'hwEthernetDuplex',
-    'HUAWEI-IF-EXT-MIB' => 'hwTrunkIfIndex',
-    'HUAWEI-L2IF-MIB'   => 'hwL2IfPortIfIndex',
-    'HUAWEI-POE-MIB'    => 'hwPoePower',
+    'HUAWEI-MIB'               => 'quidway',
+    'HUAWEI-PORT-MIB'          => 'hwEthernetDuplex',
+    'HUAWEI-IF-EXT-MIB'        => 'hwTrunkIfIndex',
+    'HUAWEI-L2IF-MIB'          => 'hwL2IfPortIfIndex',
+    'HUAWEI-POE-MIB'           => 'hwPoePower',
+    'HUAWEI-ENTITY-EXTENT-MIB' => 'hwEntityFanState',
 );
 
 %GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, );
@@ -61,12 +62,13 @@ $VERSION = '3.57';
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
 
-    # HUAWEI-PORT-MIB::
+    # HUAWEI-PORT-MIB::hwEthernetTable
     'hw_eth_speed_admin' => 'hwEthernetSpeedSet',
     'hw_eth_duplex'      => 'hwEthernetDuplex',
     'hw_eth_auto'        => 'hwEthernetNegotiation',
+    'hw_eth_frame_len'   => 'hwEthernetJumboframeMaxLength',
 
-    # HUAWEI-PORT-MIB::
+    # HUAWEI-PORT-MIB::hwPhysicalPortTable
     'hw_phy_port_slot' => 'hwPhysicalPortInSlot',
 
     # HUAWEI-IF-EXT-MIB::hwTrunkIfTable
@@ -87,6 +89,13 @@ $VERSION = '3.57';
     'peth_power_consumption' => 'hwPoeSlotConsumingPower',
     'peth_power_threshold'   => 'hwPoeSlotPowerUtilizationThreshold',
 
+    # HUAWEI-ENTITY-EXTENT-MIB::hwFanStatusTable
+    'hw_fan_state' => 'hwEntityFanState',
+    'hw_fan_descr' => 'hwEntityFanDesc',
+
+    # HUAWEI-ENTITY-EXTENT-MIB::hwPwrStatusTable
+    'hw_pwr_state' => 'hwEntityPwrState',
+    'hw_pwr_descr' => 'hwEntityPwrDesc',
 );
 
 %MUNGE = (
@@ -109,7 +118,9 @@ sub os {
     my $huawei = shift;
     my $descr  = $huawei->description();
 
-    return $1 if ( $descr =~ /\b(VRP)\b/ );
+    if ( $descr =~ /\b(VRP)\b/ ) {
+        return $1;
+    }
     return "huawei";
 }
 
@@ -151,7 +162,7 @@ sub i_ignore {
     foreach my $if ( keys %$interfaces ) {
 
         # lo0 etc
-        if ( $interfaces->{$if} =~ /\b(inloopback|console)\d*\b/i ) {
+        if ( $interfaces->{$if} =~ /\b(inloopback|console)\d*\b/ix ) {
             $i_ignore{$if}++;
         }
     }
@@ -238,14 +249,12 @@ sub agg_ports {
 # The HUAWEI-POE-MIB only indexes by ifIndex, we need to match the standard
 # for so method calls across classes work the same
 #
-# Note: Only snmpwalks with single chassis / box with single power source
-# in slot zero. This may need to be revisited
-#
 sub peth_port_ifindex {
     my $huawei = shift;
 
     my $peth_port_status = $huawei->hw_peth_port_status() || {};
     my $peth_port_slot   = $huawei->hw_phy_port_slot()    || {};
+    my $i_descr          = $huawei->i_description()       || {};
 
     my $peth_port_ifindex = {};
 
@@ -255,6 +264,11 @@ sub peth_port_ifindex {
             && defined $peth_port_slot->{$i} )
         {
             $slot = $peth_port_slot->{$i};
+        }
+        elsif ( exists $i_descr->{$i}
+            && $i_descr->{$i} =~ /(\d+)(?:\/\d+){2,3}$/x )
+        {
+            $slot = $1;
         }
         $peth_port_ifindex->{"$slot.$i"} = $i;
     }
@@ -359,6 +373,79 @@ sub peth_port_neg_power {
     return $peth_port_neg_power;
 }
 
+sub fan {
+    my $huawei = shift;
+
+    my $fan   = $huawei->hw_fan_descr() || {};
+    my $state = $huawei->hw_fan_state() || {};
+
+    if ( scalar keys %$fan ) {
+        my @messages = ();
+
+        foreach my $k ( keys %$fan ) {
+            next if $state->{$k} and $state->{$k} eq 'normal';
+            push @messages, "$fan->{$k}: $state->{$k}";
+        }
+
+        push @messages, ( ( scalar keys %$fan ) . " fans OK" )
+            if scalar @messages == 0;
+
+        return ( join ", ", @messages );
+    }
+    return;
+}
+
+sub ps1_status {
+    my $huawei = shift;
+
+    my $pwr_state = $huawei->hw_pwr_state() || {};
+    my $pwr_descr = $huawei->hw_pwr_descr() || {};
+
+    my $ret = "";
+    my $s   = "";
+    foreach my $i ( sort keys %$pwr_state ) {
+        my ( $slot, $num ) = split( /\./, $i );
+        next unless $num == 1;
+        $ret .= $s . $pwr_descr->{$i} . ": " . $pwr_state->{$i};
+        $s = ", ";
+    }
+    return if ( $s eq "" );
+    return $ret;
+}
+
+sub ps2_status {
+    my $huawei = shift;
+
+    my $pwr_state = $huawei->hw_pwr_state() || {};
+    my $pwr_descr = $huawei->hw_pwr_descr() || {};
+
+    my $ret = "";
+    my $s   = "";
+    foreach my $i ( sort keys %$pwr_state ) {
+        my ( $slot, $num ) = split( /\./, $i );
+        next unless $num == 2;
+        $ret .= $s . $pwr_descr->{$i} . ": " . $pwr_state->{$i};
+        $s = ", ";
+    }
+    return if ( $s eq "" );
+    return $ret;
+}
+
+sub i_mtu {
+    my $huawei = shift;
+
+    my $mtus   = $huawei->SUPER::i_mtu()     || {};
+    my $frames = $huawei->hw_eth_frame_len() || {};
+
+    foreach my $idx ( keys %$mtus ) {
+        my $frame_sz = $frames->{$idx};
+        next unless $frame_sz;
+
+        $mtus->{$idx} = $frame_sz;
+    }
+    return $mtus;
+}
+
 sub munge_hw_peth_admin {
     my $admin = shift;
 
@@ -387,7 +474,7 @@ sub munge_hw_peth_status {
     # The status is an octet string rather than enum
     # so use regex rather than hash lookup
     $pwr = 'disabled'        if $pwr =~ /Disabled/i;
-    $pwr = 'searching'       if $pwr =~ /(Powering|Power-ready|Detecting)/i;
+    $pwr = 'searching'       if $pwr =~ /(Powering|Power-ready|Detecting)/ix;
     $pwr = 'deliveringPower' if $pwr =~ /Powered/i;
     $pwr = 'fault'           if $pwr =~ /fault/i;
 
@@ -449,6 +536,8 @@ Subclass for Huawei switches
 
 =item F<HUAWEI-POE-MIB>
 
+=item F<HUAWEI-ENTITY-EXTENT-MIB>
+    
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
@@ -475,6 +564,22 @@ Returns 'VRP' if contained in C<sysDescr>, 'huawei' otherwise.
 
 Returns the software version derived from the C<ENTITY-MIB> or
 extracted from C<sysDescr>.
+
+=item $huawei->fan()
+
+Return the status of all fans from the F<HUAWEI-ENTITY-EXTENT-MIB>. Returns
+a string indicating the number of fans 'OK' or identification of any fan without
+a 'normal' operating status
+
+=item $huawei->ps1_status()
+
+Return the status of the first power supply in each chassis or switch from
+the F<HUAWEI-ENTITY-EXTENT-MIB>
+
+=item $huawei->ps2_status()
+
+Return the status of the second power supply in each chassis or switch from
+the F<HUAWEI-ENTITY-EXTENT-MIB>
 
 =back
 
@@ -547,6 +652,11 @@ Returns a HASH reference mapping from slave to master port for each member of
 a port bundle on the device. Keys are ifIndex of the slave ports, Values are
 ifIndex of the corresponding master ports. Attempts to use C<hwTrunkIfTable>
 first and then C<dot3adAggPortListPorts> if that is unavailable.
+
+=item C<i_mtu>
+
+Interface MTU value. Overriden with corresponding frame size entry from
+C<hwEthernetJumboframeMaxLength> if one exists.
 
 =back
 
