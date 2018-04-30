@@ -6,6 +6,8 @@ Version 3.58
 
   [ENHANCEMENTS]
 
+  * #220 Alcatel-Lucent / Nokia SR 7750 missing port information. Add duplex,
+    fan, and power supply status, as well as, module inventory to L3::Timetra
   * Add fan and power supply status to L3::Huawei
   * Override ifMTU with max frame size when applicable in L3::Huawei
 
