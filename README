@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.57
+    SNMP::Info - Version 3.58
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -412,6 +412,11 @@ SUBCLASSES
             Subclass for Adtran devices.
 
             See documentation in SNMP::Info::Layer2::Adtran for details.
+
+        SNMP::Info::Layer2::Aerohive
+            Subclass for Aerohive Access Points.
+
+            See documentation in SNMP::Info::Layer2::Aerohive for details.
 
         SNMP::Info::Layer2::Airespace
             Subclass for Cisco (Airespace) wireless controllers.

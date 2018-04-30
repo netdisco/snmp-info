@@ -41,7 +41,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.57';
+$VERSION = '3.58';
 
 %MIBS = ( 'EtherLike-MIB' => 'etherMIB' );
 
