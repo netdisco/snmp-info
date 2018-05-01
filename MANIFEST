@@ -46,6 +46,7 @@ lib/SNMP/Info/Layer2/Aerohive.pm
 lib/SNMP/Info/Layer2/Airespace.pm
 lib/SNMP/Info/Layer2/Aironet.pm
 lib/SNMP/Info/Layer2/Allied.pm
+lib/SNMP/Info/Layer2/Atmedia.pm
 lib/SNMP/Info/Layer2/Baystack.pm
 lib/SNMP/Info/Layer2/C1900.pm
 lib/SNMP/Info/Layer2/C2900.pm
@@ -95,6 +96,7 @@ lib/SNMP/Info/Layer3/F5.pm
 lib/SNMP/Info/Layer3/Force10.pm
 lib/SNMP/Info/Layer3/Fortinet.pm
 lib/SNMP/Info/Layer3/Foundry.pm
+lib/SNMP/Info/Layer3/Genua.pm
 lib/SNMP/Info/Layer3/H3C.pm
 lib/SNMP/Info/Layer3/HP9300.pm
 lib/SNMP/Info/Layer3/Huawei.pm
@@ -125,6 +127,7 @@ lib/SNMP/Info/Layer7/APC.pm
 lib/SNMP/Info/Layer7/Arbor.pm
 lib/SNMP/Info/Layer7/CiscoIPS.pm
 lib/SNMP/Info/Layer7/Gigamon.pm
+lib/SNMP/Info/Layer7/Liebert.pm
 lib/SNMP/Info/Layer7/Neoteris.pm
 lib/SNMP/Info/Layer7/Netscaler.pm
 lib/SNMP/Info/LLDP.pm
@@ -187,6 +190,7 @@ xt/lib/Test/SNMP/Info/Layer2/Aerohive.pm
 xt/lib/Test/SNMP/Info/Layer2/Airespace.pm
 xt/lib/Test/SNMP/Info/Layer2/Aironet.pm
 xt/lib/Test/SNMP/Info/Layer2/Allied.pm
+xt/lib/Test/SNMP/Info/Layer2/Atmedia.pm
 xt/lib/Test/SNMP/Info/Layer2/Baystack.pm
 xt/lib/Test/SNMP/Info/Layer2/C1900.pm
 xt/lib/Test/SNMP/Info/Layer2/C2900.pm
@@ -236,6 +240,7 @@ xt/lib/Test/SNMP/Info/Layer3/F5.pm
 xt/lib/Test/SNMP/Info/Layer3/Force10.pm
 xt/lib/Test/SNMP/Info/Layer3/Fortinet.pm
 xt/lib/Test/SNMP/Info/Layer3/Foundry.pm
+xt/lib/Test/SNMP/Info/Layer3/Genua.pm
 xt/lib/Test/SNMP/Info/Layer3/H3C.pm
 xt/lib/Test/SNMP/Info/Layer3/HP9300.pm
 xt/lib/Test/SNMP/Info/Layer3/Huawei.pm
@@ -266,6 +271,7 @@ xt/lib/Test/SNMP/Info/Layer7/APC.pm
 xt/lib/Test/SNMP/Info/Layer7/Arbor.pm
 xt/lib/Test/SNMP/Info/Layer7/CiscoIPS.pm
 xt/lib/Test/SNMP/Info/Layer7/Gigamon.pm
+xt/lib/Test/SNMP/Info/Layer7/Liebert.pm
 xt/lib/Test/SNMP/Info/Layer7/Neoteris.pm
 xt/lib/Test/SNMP/Info/Layer7/Netscaler.pm
 xt/lib/Test/SNMP/Info/LLDP.pm

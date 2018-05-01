@@ -1,3 +1,9 @@
+Version 3.59
+
+  [NEW FEATURES]
+
+  * #214 SNMP::Info Device models Genua, ATMedia, Liebert
+
 Version 3.58 (2018-04-29)
 
   [NEW FEATURES]

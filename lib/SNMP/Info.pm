@@ -532,6 +532,12 @@ Allied Telesis switches.
 
 See documentation in L<SNMP::Info::Layer2::Allied> for details.
 
+=item SNMP::Info::Layer2::Atmedia
+
+Subclass for atmedia encryptors.
+
+See documentation in L<SNMP::Info::Layer2::Atmedia> for details.
+
 =item SNMP::Info::Layer2::Baystack
 
 Subclass for Avaya/Nortel/Bay Ethernet Switch/Baystack switches.  This
@@ -846,6 +852,12 @@ Subclass for Brocade (Foundry) Network devices.
 
 See documentation in L<SNMP::Info::Layer3::Foundry> for details.
 
+=item SNMP::Info::Layer3::Genua
+
+Subclass for Genua security devices.
+
+See documentation in L<SNMP::Info::Layer3::Genua> for details.
+
 =item SNMP::Info::Layer3::H3C
 
 SNMP Interface to Layer 3 Devices, H3C & HP A-series.
@@ -1034,6 +1046,12 @@ See documentation in L<SNMP::Info::Layer7::Cisco IPS> for details.
 Subclass for Gigamon devices
 
 See documentation in L<SNMP::Info::Layer7::Gigamon> for details.
+
+=item SNMP::Info::Layer7::Liebert
+
+Subclass for Liebert devices
+
+See documentation in L<SNMP::Info::Layer7::Liebert> for details.
 
 =item SNMP::Info::Layer7::Netscaler
 
@@ -1609,6 +1627,7 @@ sub device_type {
         3224 => 'SNMP::Info::Layer3::Netscreen',
         3375 => 'SNMP::Info::Layer3::F5',
         3417 => 'SNMP::Info::Layer3::BlueCoatSG',
+        3717 => 'SNMP::Info::Layer3::Genua',
         4526 => 'SNMP::Info::Layer2::Netgear',
         4874 => 'SNMP::Info::Layer3::ERX',
         5624 => 'SNMP::Info::Layer3::Enterasys',
@@ -1664,6 +1683,7 @@ sub device_type {
         9303  => 'SNMP::Info::Layer3::PacketFront',
         10418 => 'SNMP::Info::Layer1::Cyclades',
         11898 => 'SNMP::Info::Layer2::Orinoco',
+        13458 => 'SNMP::Info::Layer2::Atmedia',
         14179 => 'SNMP::Info::Layer2::Airespace',
         14525 => 'SNMP::Info::Layer2::Trapeze',
         14823 => 'SNMP::Info::Layer3::Aruba',
@@ -1680,6 +1700,7 @@ sub device_type {
 
     my %l7sysoidmap = (
         318   => 'SNMP::Info::Layer7::APC',
+        476   => 'SNMP::Info::Layer7::Liebert',
         5951  => 'SNMP::Info::Layer7::Netscaler',
         9694  => 'SNMP::Info::Layer7::Arbor',
         14525 => 'SNMP::Info::Layer2::Trapeze',
