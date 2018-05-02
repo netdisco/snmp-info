@@ -7,6 +7,8 @@ Version 3.59
   [ENHANCEMENTS]
 
   * Capture base MAC in L3::Huawei
+  * Change _lldp_addr_index to a method so it can be properly overridden in
+    subclasses
 
   [BUG FIXES]
 

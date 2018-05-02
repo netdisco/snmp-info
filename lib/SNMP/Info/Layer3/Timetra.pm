@@ -185,12 +185,11 @@ sub lldp_if {
 # The proprietary TIMETRA-LLDP-MIB tables are indexed differently than LLDP-MIB
 # We overwrite the private function so that the we don't have to replicate
 # the code in SNMP::Info::LLDP that uses it.
-#
-# We can't use inheritance to override since it is a function, not  a method
-# in SNMP::Info::LLDP. This brute force redefines the code in the symbol table.
 
-*SNMP::Info::LLDP::_lldp_addr_index = sub {
+sub _lldp_addr_index {
+    my $alu = shift;
     my $idx = shift;
+
     my @oids = split( /\./, $idx );
 
     # Index has extra field compared to LLDP-MIB

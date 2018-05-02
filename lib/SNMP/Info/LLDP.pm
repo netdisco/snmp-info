@@ -165,7 +165,7 @@ sub lldp_ip {
 
     my %lldp_ip;
     foreach my $key ( keys %$rman_addr ) {
-        my ( $index, $proto, $addr ) = _lldp_addr_index($key);
+        my ( $index, $proto, $addr ) = $lldp->_lldp_addr_index($key);
         next unless defined $index;
         next unless $proto == 1;
         $lldp_ip{$index} = $addr;
@@ -181,7 +181,7 @@ sub lldp_ipv6 {
 
     my %lldp_ipv6;
     foreach my $key ( keys %$rman_addr ) {
-        my ( $index, $proto, $addr ) = _lldp_addr_index($key);
+        my ( $index, $proto, $addr ) = $lldp->_lldp_addr_index($key);
         next unless defined $index;
         next unless $proto == 2;
         $lldp_ipv6{$index} = $addr;
@@ -197,7 +197,7 @@ sub lldp_mac {
 
     my %lldp_ipv6;
     foreach my $key ( keys %$rman_addr ) {
-        my ( $index, $proto, $addr ) = _lldp_addr_index($key);
+        my ( $index, $proto, $addr ) = $lldp->_lldp_addr_index($key);
         next unless defined $index;
         next unless $proto == 6;
         $lldp_ipv6{$index} = $addr;
@@ -213,7 +213,7 @@ sub lldp_addr {
 
     my %lldp_ip;
     foreach my $key ( keys %$rman_addr ) {
-        my ( $index, $proto, $addr ) = _lldp_addr_index($key);
+        my ( $index, $proto, $addr ) = $lldp->_lldp_addr_index($key);
         next unless defined $index;
         $lldp_ip{$index} = $addr;
     }
@@ -401,7 +401,9 @@ sub lldp_media_cap {
 # Break up the lldpRemManAddrTable INDEX into common index, protocol,
 # and address.
 sub _lldp_addr_index {
+    my $lldp   = shift;
     my $idx    = shift;
+
     my @oids   = split( /\./, $idx );
     my $index  = join( '.', splice( @oids, 0, 3 ) );
     my $proto  = shift(@oids);
