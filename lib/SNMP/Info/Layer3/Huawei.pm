@@ -581,6 +581,12 @@ Returns 'VRP' if contained in C<sysDescr>, 'huawei' otherwise.
 Returns the software version derived from the C<ENTITY-MIB> or
 extracted from C<sysDescr>.
 
+=item $huawei->mac()
+
+Base MAC of the device.
+
+(C<dot1dBaseBridgeAddress>)
+
 =item $huawei->fan()
 
 Return the status of all fans from the F<HUAWEI-ENTITY-EXTENT-MIB>. Returns
