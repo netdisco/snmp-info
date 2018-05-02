@@ -48,6 +48,7 @@ sub setup : Tests(setup) {
 
     # HUAWEI-MIB::ce6810-48S4Q-EI
     '_id'                  => '.1.3.6.1.4.1.2011.2.239.12',
+    '_b_mac'               => pack("H*", '0123456789AB'),
     '_i_index'             => 1,
     '_i_description'       => 1,
     '_i_mtu'               => 1,
@@ -177,6 +178,17 @@ sub model : Tests(2) {
 
   can_ok($test->{info}, 'model');
   is($test->{info}->model(), 'ce6810-48S4Q-EI', q(Model translates id));
+}
+
+sub mac : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mac');
+  is($test->{info}->mac(), '01:23:45:67:89:ab',
+    q(Base MAC has expected value ));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->mac(), undef, q(No data returns undef));
 }
 
 sub i_ignore : Tests(3) {
@@ -367,7 +379,7 @@ sub peth_port_neg_power : Tests(3) {
     {}, q(No data returns empty hash));
 }
 
-sub fan : Tests(4) {
+sub fan : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'fan');
@@ -375,6 +387,13 @@ sub fan : Tests(4) {
   my $expected = 'slot1,FAN2: abnormal';
 
   is($test->{info}->fan(), $expected, q(Fan returns expected value));
+
+  # Test missing fan description
+  delete $test->{info}{_hw_fan_descr};
+  $expected = 'Slot 1,Fan 2: abnormal';
+
+  is($test->{info}->fan(),
+    $expected, q(Fan returns expected value without descr));
 
   # Change abnormal fan state to normal to test alternate message
   $test->{info}{store}{hw_fan_state}{'1.2'} = 'normal';
@@ -386,7 +405,7 @@ sub fan : Tests(4) {
   is($test->{info}->fan(), undef, q(No data returns undef));
 }
 
-sub ps1_status : Tests(3) {
+sub ps1_status : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'ps1_status');
@@ -395,11 +414,18 @@ sub ps1_status : Tests(3) {
 
   is($test->{info}->ps1_status(), $expected, q(PS1 returns expected value));
 
+  # Test missing fan description
+  delete $test->{info}{_hw_pwr_descr};
+  $expected = 'Slot 1,PS 1: supply, Slot 2,PS 1: unknown';
+
+  is($test->{info}->ps1_status(),
+    $expected, q(PS1 returns expected value without descr));
+
   $test->{info}->clear_cache();
   is($test->{info}->ps1_status(), undef, q(No data returns undef));
 }
 
-sub ps2_status : Tests(3) {
+sub ps2_status : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'ps2_status');
@@ -407,6 +433,13 @@ sub ps2_status : Tests(3) {
   my $expected = 'slot1,PWR2: notSupply';
 
   is($test->{info}->ps2_status(), $expected, q(PS2 returns expected value));
+
+  # Test missing fan description
+  delete $test->{info}{_hw_pwr_descr};
+  $expected = 'Slot 1,PS 2: notSupply';
+
+  is($test->{info}->ps2_status(),
+    $expected, q(PS2 returns expected value without descr));
 
   $test->{info}->clear_cache();
   is($test->{info}->ps2_status(), undef, q(No data returns undef));

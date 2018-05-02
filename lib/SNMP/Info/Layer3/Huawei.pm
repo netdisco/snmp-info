@@ -152,6 +152,12 @@ sub os_ver {
     return $os_ver;
 }
 
+sub mac {
+    my $huawei  = shift;
+    
+    return $huawei->b_mac();
+}
+
 sub i_ignore {
     my $huawei  = shift;
     my $partial = shift;
@@ -379,15 +385,19 @@ sub fan {
     my $fan   = $huawei->hw_fan_descr() || {};
     my $state = $huawei->hw_fan_state() || {};
 
-    if ( scalar keys %$fan ) {
+    if ( scalar keys %$state ) {
         my @messages = ();
 
-        foreach my $k ( keys %$fan ) {
+        foreach my $k ( keys %$state ) {
             next if $state->{$k} and $state->{$k} eq 'normal';
-            push @messages, "$fan->{$k}: $state->{$k}";
+            my ($slot, $num) = split(/\./, $k);
+            my $descr = "Slot $slot,Fan $num";
+            $descr = $fan->{$k} if ($fan->{$k});
+            
+            push @messages, "$descr: $state->{$k}";
         }
 
-        push @messages, ( ( scalar keys %$fan ) . " fans OK" )
+        push @messages, ( ( scalar keys %$state ) . " fans OK" )
             if scalar @messages == 0;
 
         return ( join ", ", @messages );
@@ -406,7 +416,10 @@ sub ps1_status {
     foreach my $i ( sort keys %$pwr_state ) {
         my ( $slot, $num ) = split( /\./, $i );
         next unless $num == 1;
-        $ret .= $s . $pwr_descr->{$i} . ": " . $pwr_state->{$i};
+        my $descr = "Slot $slot,PS $num";
+        $descr = $pwr_descr->{$i} if ($pwr_descr->{$i});
+
+        $ret .= $s . $descr . ": " . $pwr_state->{$i};
         $s = ", ";
     }
     return if ( $s eq "" );
@@ -424,7 +437,10 @@ sub ps2_status {
     foreach my $i ( sort keys %$pwr_state ) {
         my ( $slot, $num ) = split( /\./, $i );
         next unless $num == 2;
-        $ret .= $s . $pwr_descr->{$i} . ": " . $pwr_state->{$i};
+        my $descr = "Slot $slot,PS $num";
+        $descr = $pwr_descr->{$i} if ($pwr_descr->{$i});
+
+        $ret .= $s . $descr . ": " . $pwr_state->{$i};
         $s = ", ";
     }
     return if ( $s eq "" );
