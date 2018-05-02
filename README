@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.58
+    SNMP::Info - Version 3.59
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -434,6 +434,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::Allied for details.
 
+        SNMP::Info::Layer2::Atmedia
+            Subclass for atmedia encryptors.
+
+            See documentation in SNMP::Info::Layer2::Atmedia for details.
+
         SNMP::Info::Layer2::Baystack
             Subclass for Avaya/Nortel/Bay Ethernet Switch/Baystack switches.
             This includes 303, 304, 350, 380, 410, 420, 425, 450, 460, 470
@@ -706,6 +711,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Foundry for details.
 
+        SNMP::Info::Layer3::Genua
+            Subclass for Genua security devices.
+
+            See documentation in SNMP::Info::Layer3::Genua for details.
+
         SNMP::Info::Layer3::H3C
             SNMP Interface to Layer 3 Devices, H3C & HP A-series.
 
@@ -860,6 +870,11 @@ SUBCLASSES
             Subclass for Gigamon devices
 
             See documentation in SNMP::Info::Layer7::Gigamon for details.
+
+        SNMP::Info::Layer7::Liebert
+            Subclass for Liebert devices
+
+            See documentation in SNMP::Info::Layer7::Liebert for details.
 
         SNMP::Info::Layer7::Netscaler
             Subclass for Citrix Netscaler appliances
