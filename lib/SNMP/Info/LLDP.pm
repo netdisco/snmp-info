@@ -233,7 +233,7 @@ sub lldp_port {
     foreach my $key ( sort keys %$pid ) {
         my $port = $pdesc->{$key};
         my $type = $ptype->{$key};
-        if ( $type and $type eq 'interfaceName' ) {
+        if ( $type and ($type eq 'interfaceName' or $type eq 'local') ) {
 
             # If the pid claims to be an interface name,
             # believe it.

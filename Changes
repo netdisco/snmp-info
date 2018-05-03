@@ -1,3 +1,9 @@
+Version 3.60
+
+  [BUG FIXES]
+
+  * #140 LLDP fixes - treat remote port type of 'local' as an interface name
+
 Version 3.59 (2018-05-01)
 
   [NEW FEATURES]
