@@ -1,7 +1,7 @@
 # SNMP::Info::LLDP
 # $Id$
 #
-# Copyright (c) 2008 Eric Miller
+# Copyright (c) 2018 Eric Miller
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -116,7 +116,8 @@ sub hasLLDP {
     my $lldp_cap = $lldp->lldp_sys_cap();
     return 1 if defined $lldp_cap;
 
-    # If the device doesn't return local system capabilities, fallback by checking if it would report neighbors
+    # If the device doesn't return local system capabilities, fallback
+    # by checking if it would report neighbors
     my $lldp_rem = $lldp->lldp_rem_id() || {};
     return 1 if scalar keys %$lldp_rem;
 
@@ -138,13 +139,18 @@ sub lldp_if {
         my @aOID = split( '\.', $key );
         my $port = $aOID[1];
         next unless $port;
-        # Local LLDP port may not equate to ifIndex, see LldpPortNumber TEXTUAL-CONVENTION in LLDP-MIB.
-        # Cross reference lldpLocPortDesc with ifDescr and ifAlias to get ifIndex,
-        # prefer ifDescr over ifAlias because using cross ref with description is correct behavior 
-        # according to the LLDP-MIB. Some devices (eg H3C gear) seem to use ifAlias though.
+
+        # Local LLDP port may not equate to ifIndex, see LldpPortNumber
+        # TEXTUAL-CONVENTION in LLDP-MIB. Cross reference lldpLocPortDesc 
+        # with ifDescr and ifAlias to get ifIndex, prefer ifDescr over
+        # ifAlias because using cross ref with description is correct
+        # behavior according to the LLDP-MIB. Some devices (eg H3C gear)
+        # seem to use ifAlias though.
         my $lldp_desc = $lldp->lldpLocPortDesc($port);
         my $desc      = $lldp_desc->{$port};
-        # If cross reference is successful use it, otherwise stick with lldpRemLocalPortNum
+
+        # If cross reference is successful use it, otherwise stick with
+        # lldpRemLocalPortNum
         if ( $desc && exists $r_i_descr{$desc} ) {
             $port = $r_i_descr{$desc};
         }
@@ -233,7 +239,10 @@ sub lldp_port {
     foreach my $key ( sort keys %$pid ) {
         my $port = $pdesc->{$key};
         my $type = $ptype->{$key};
-        if ( $type and ($type eq 'interfaceName' or $type eq 'local') ) {
+        if (    $type
+            and ( $type eq 'interfaceName' or $type eq 'local' )
+            and ( defined $pid->{$key} and $pid->{$key} !~ /^\d+$/ ) )
+        {
 
             # If the pid claims to be an interface name,
             # believe it.
@@ -287,7 +296,8 @@ sub lldp_id {
         elsif ( $type eq 'networkAddress' ) {
             if ( length( unpack( 'H*', $id ) ) == 10 ) {
 
-                # IP address (first octet is sign, I guess)
+                # IP address - first octet is IANA Address Family Number, need
+                # walk with IPv6
                 my @octets
                     = ( map { sprintf "%02x", $_ } unpack( 'C*', $id ) )
                     [ 1 .. 4 ];
@@ -401,13 +411,13 @@ sub lldp_media_cap {
 # Break up the lldpRemManAddrTable INDEX into common index, protocol,
 # and address.
 sub _lldp_addr_index {
-    my $lldp   = shift;
-    my $idx    = shift;
+    my $lldp = shift;
+    my $idx  = shift;
 
-    my @oids   = split( /\./, $idx );
-    my $index  = join( '.', splice( @oids, 0, 3 ) );
-    my $proto  = shift(@oids);
-    shift(@oids) if scalar @oids > 4; # $length
+    my @oids = split( /\./, $idx );
+    my $index = join( '.', splice( @oids, 0, 3 ) );
+    my $proto = shift(@oids);
+    shift(@oids) if scalar @oids > 4;    # $length
 
     # IPv4
     if ( $proto == 1 ) {
@@ -417,7 +427,7 @@ sub _lldp_addr_index {
     # IPv6
     elsif ( $proto == 2 ) {
         return ( $index, $proto,
-            join(':', unpack('(H4)*', pack('C*', @oids)) ) );
+            join( ':', unpack( '(H4)*', pack( 'C*', @oids ) ) ) );
     }
 
     # MAC
