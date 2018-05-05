@@ -106,7 +106,7 @@ sub model {
     my $aerohive = shift;
     my $descr    = $aerohive->description();
 
-    if ( $descr =~ m/\bHive(AP\d+)\b/ix ) {
+    if ( $descr =~ m/\b((Hive|)AP\d+)\b/ix ) {
         return $1;
     }
     return;
