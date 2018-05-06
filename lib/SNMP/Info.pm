@@ -16,6 +16,7 @@ use Exporter;
 use SNMP;
 use Carp;
 use Math::BigInt;
+use NetAddr::IP::Lite ':lower';
 
 @SNMP::Info::ISA       = qw/Exporter/;
 @SNMP::Info::EXPORT_OK = qw//;
@@ -1319,6 +1320,11 @@ sub new {
     if ( defined $args{MibDirs} ) {
         $new_obj->{mibdirs} = $args{MibDirs};
         delete $sess_args{MibDirs};
+    }
+    
+    # For IPv6 hosts set transport
+    if ( defined $sess_args{DestHost} ) {
+        $sess_args{DestHost} = resolve_desthost($sess_args{DestHost});
     }
 
     $new_obj->{nosuch} = $args{RetryNoSuch} || $NOSUCH;
@@ -3745,6 +3751,32 @@ sub munge_e_type {
 
 =over
 
+=item resolve_desthost()
+
+Takes the SNMP::Session C<DestHost> argument and determines if it is an
+'IPv4' or 'IPv6' host. 'IPv6' hosts are prefixed with the C<udp6:>
+C<transport-specifier> as required by the undelying C<Net-SNMP> library.
+If unable to determine the type of address or resolve a DNS name, 'undef'
+will be returned causing the session creation to fail.
+
+=cut
+
+sub resolve_desthost {
+    my $desthost = shift;
+
+    my $ip = NetAddr::IP::Lite->new($desthost);
+    
+    if ($ip and $ip->bits == 32) {
+        return $ip->addr;
+    }
+    elsif ($ip and $ip->bits == 128) {
+        return 'udp6:' . $ip->addr;        
+    }
+    else {
+       return;
+    }
+}
+
 =item $info->init()
 
 Used internally.  Loads all entries in %MIBS.
@@ -4514,6 +4546,9 @@ sub snmp_connect_ip {
     my $comm = $self->snmp_comm();
 
     return if $self->{Offline};
+    
+    $ip = resolve_desthost($ip);
+    return unless $ip;
     return if ( $ip eq '0.0.0.0' ) or ( $ip =~ /^127\./ );
 
     # Create session object
@@ -4543,7 +4578,6 @@ sub snmp_connect_ip {
     }
 
     return 1;
-
 }
 
 =item modify_port_list(portlist,offset,replacement)

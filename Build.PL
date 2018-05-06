@@ -16,6 +16,7 @@ Module::Build->new(
   requires => {
     'SNMP' => '0',
     'Math::BigInt' => '0',
+    'NetAddr::IP' => '4.068',
   },
   recommends => {
     'PPI' => '0',

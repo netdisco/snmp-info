@@ -1988,6 +1988,13 @@ SNMP::INFO INTERNALS
         Takes an OID and return the object name if the right MIB is loaded.
 
   Internally Used Functions
+    resolve_desthost()
+        Takes the SNMP::Session "DestHost" argument and determines if it is
+        an 'IPv4' or 'IPv6' host. 'IPv6' hosts are prefixed with the "udp6:"
+        "transport-specifier" as required by the undelying "Net-SNMP"
+        library. If unable to determine the type of address or resolve a DNS
+        name, 'undef' will be returned causing the session creation to fail.
+
     $info->init()
         Used internally. Loads all entries in %MIBS.
 

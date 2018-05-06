@@ -29,6 +29,7 @@
          },
          "requires" : {
             "Math::BigInt" : "0",
+            "NetAddr::IP" : "4.068",
             "SNMP" : "0"
          }
       },

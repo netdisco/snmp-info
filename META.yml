@@ -414,6 +414,7 @@ recommends:
   PPI: '0'
 requires:
   Math::BigInt: '0'
+  NetAddr::IP: '4.068'
   SNMP: '0'
 resources:
   IRC: irc://irc.freenode.org/#netdisco

@@ -781,6 +781,24 @@ sub munge_e_type : Tests(3) {
     '.100.3.6.1.2.1.11.4', 'OID returned when unable to translate');
 }
 
+sub resolve_desthost : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'resolve_desthost');
+
+  is(SNMP::Info::resolve_desthost('1.2.3.4'),
+    '1.2.3.4', 'IPv4 address returns unchanged');
+
+  is(SNMP::Info::resolve_desthost('::1.2.3.4'),
+    'udp6:0:0:0:0:0:0:102:304', q(IPv6 address returns with 'udp6:' prefix));
+
+  is(
+    SNMP::Info::resolve_desthost('fe80::2d0:b7ff:fe21:c6c0'),
+    'udp6:fe80:0:0:0:2d0:b7ff:fe21:c6c0',
+    q(Net-SNMP example IPv6 address returns with 'udp6:' prefix)
+  );
+}
+
 sub init : Tests(3) {
   my $test = shift;
 
@@ -1299,10 +1317,10 @@ sub private_load_attr : Tests(18) {
     'IF-MIB::ifCounterDiscontinuityTime' => {0 => 'NOSUCHINSTANCE'},
     'IF-MIB::ifHCOutOctets' =>
       {1 => 0, 2 => 1828306359704, 3 => 1002545943585, 4 => 'ENDOFMIBVIEW'},
-    
+
     # Tables to test partial and full OIDs
-    '.1.3.6.1.4.1.171.12.1.1.12' => {1 => 'partial', 2 => 'oid', 3 => 'data'},
-    '.100.3.6.1.4.1.171.12.1.1.12' => {2 => 'full', 3 => 'oid', 4 => 'leaf'},
+    '.1.3.6.1.4.1.171.12.1.1.12'   => {1 => 'partial', 2 => 'oid', 3 => 'data'},
+    '.100.3.6.1.4.1.171.12.1.1.12' => {2 => 'full',    3 => 'oid', 4 => 'leaf'},
   };
 
   # Load cache with data to for initial tests
@@ -1418,13 +1436,13 @@ sub private_load_attr : Tests(18) {
 
   cmp_deeply($test->{info}->cache(),
     $expected_cache, 'Cache contains expected data');
-  
+
   # Test OID based table fetches
   # This is from Layer3::DLink will only partially resolve
   $test->{info}{funcs}{partial_oid} = '.1.3.6.1.4.1.171.12.1.1.12';
 
   my $expected_p_oid_data = {1 => 'partial', 2 => 'oid', 3 => 'data'};
-  
+
   cmp_deeply($test->{info}->partial_oid(),
     $expected_p_oid_data, 'Partial translated OID leaf returns expected data');
 
@@ -1432,7 +1450,7 @@ sub private_load_attr : Tests(18) {
   $test->{info}{funcs}{full_oid} = '.100.3.6.1.4.1.171.12.1.1.12';
 
   my $expected_f_oid_data = {2 => 'full', 3 => 'oid', 4 => 'leaf'};
-  
+
   cmp_deeply($test->{info}->full_oid(),
     $expected_f_oid_data, 'Full OID leaf returns expected data');
 }
