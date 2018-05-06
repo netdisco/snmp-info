@@ -376,9 +376,11 @@ sub lldp_cap : Tests(4) {
 
   can_ok($test->{info}, 'lldp_cap');
 
-  my $expected = {'0.6.1' => ['bridge', 'router']};
-
-  cmp_deeply($test->{info}->lldp_cap(), $expected,
+  my $expected = ['bridge', 'router'];
+  
+  my $caps = $test->{info}->lldp_cap();
+ 
+  cmp_set($caps->{'0.6.1'}, $expected,
     q(Caps emumerated correctly));
 
   $test->{info}{store}{lldp_rem_cap_spt} = {'0.6.1' => pack("H*", '0000')};

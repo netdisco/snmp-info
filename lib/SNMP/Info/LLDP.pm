@@ -333,7 +333,8 @@ sub lldp_cap {
     # Encoded as BITS which Perl Net-SNMP implementation doesn't seem to
     # be able to enumerate for us, so we have to get it from the MIB
     # and enumerate ourselves
-    my $oid = SNMP::translateObj( 'lldpRemSysCapEnabled', 0, 1 ) || '';
+    my $oid
+        = SNMP::translateObj( 'LLDP-MIB::lldpRemSysCapEnabled', 0, 1 ) || '';
     my $enums = (
         ( ref {} eq ref $SNMP::MIB{$oid}{'enums'} )
         ? $SNMP::MIB{$oid}{'enums'}
