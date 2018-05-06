@@ -41,7 +41,7 @@ use SNMP::Info::Layer1;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.59';
+$VERSION = '3.60';
 
 # Set for No CDP
 %GLOBALS = ( %SNMP::Info::Layer1::GLOBALS, 'root_ip' => 'actualIPAddr', );

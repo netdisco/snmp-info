@@ -38,7 +38,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.59';
+$VERSION = '3.60';
 
 %MIBS = ( 'ADSL-LINE-MIB' => 'adslLineType' );
 
