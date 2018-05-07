@@ -3756,13 +3756,16 @@ sub munge_e_type {
 Takes the SNMP::Session C<DestHost> argument and determines if it is an
 'IPv4' or 'IPv6' host. 'IPv6' hosts are prefixed with the C<udp6:>
 C<transport-specifier> as required by the undelying C<Net-SNMP> library.
-If unable to determine the type of address or resolve a DNS name, 'undef'
-will be returned causing the session creation to fail.
+If unable to determine the type of address or resolve a DNS name, dies with
+C<croak>.
 
 =cut
 
 sub resolve_desthost {
     my $desthost = shift;
+
+    # If we have an IPv6 transport-specifier strip it
+    $desthost =~ s/^(?:udp6:|udpv6:|udpipv6:)//x;
 
     my $ip = NetAddr::IP::Lite->new($desthost);
     
@@ -3773,7 +3776,7 @@ sub resolve_desthost {
         return 'udp6:' . $ip->addr;        
     }
     else {
-       return;
+       croak "Unable to resolve DestHost: $desthost to an IP\n";
     }
 }
 
@@ -4548,7 +4551,6 @@ sub snmp_connect_ip {
     return if $self->{Offline};
     
     $ip = resolve_desthost($ip);
-    return unless $ip;
     return if ( $ip eq '0.0.0.0' ) or ( $ip =~ /^127\./ );
 
     # Create session object

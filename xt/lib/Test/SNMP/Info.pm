@@ -781,7 +781,7 @@ sub munge_e_type : Tests(3) {
     '.100.3.6.1.2.1.11.4', 'OID returned when unable to translate');
 }
 
-sub resolve_desthost : Tests(4) {
+sub resolve_desthost : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'resolve_desthost');
@@ -793,10 +793,18 @@ sub resolve_desthost : Tests(4) {
     'udp6:0:0:0:0:0:0:102:304', q(IPv6 address returns with 'udp6:' prefix));
 
   is(
+    SNMP::Info::resolve_desthost('udp6:fe80::2d0:b7ff:fe21:c6c0'),
+    'udp6:fe80:0:0:0:2d0:b7ff:fe21:c6c0',
+    q(Net-SNMP example with 'udp6:' prefix returns expected string)
+  );
+
+  is(
     SNMP::Info::resolve_desthost('fe80::2d0:b7ff:fe21:c6c0'),
     'udp6:fe80:0:0:0:2d0:b7ff:fe21:c6c0',
     q(Net-SNMP example IPv6 address returns with 'udp6:' prefix)
   );
+  
+  dies_ok { SNMP::Info::resolve_desthost('1.2.3.4.5') } 'Bad IP dies';
 }
 
 sub init : Tests(3) {
