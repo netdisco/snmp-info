@@ -46,11 +46,13 @@ sub setup : Tests(setup) {
     '_description' => $d_string,
 
     # CISCO-PRODUCTS-MIB::cisco1721
-    '_id'            => '.1.3.6.1.4.1.9.1.444',
-    '_vtp_version'   => 2,
-    '_i_type'        => 1,
-    '_i_description' => 1,
-    'store'          => {
+    '_id'                 => '.1.3.6.1.4.1.9.1.444',
+    '_vtp_version'        => 2,
+    '_i_type'             => 1,
+    '_i_description'      => 1,
+    '_c_eigrp_peers'      => 1,
+    '_c_eigrp_peer_types' => 1,
+    'store'               => {
       'i_type' => {
         1 => 'ppp',
         2 => 'ethernetCsmacd',
@@ -64,6 +66,20 @@ sub setup : Tests(setup) {
         3 => 'Null0',
         4 => 'FastEthernet0.101-802.1Q vLAN subif',
         5 => 'FastEthernet0.102-802.1Q vLAN subif'
+      },
+      'c_eigrp_peers' => {
+        '0.5.0'      => '1.2.3.4',
+        '0.5.1'      => pack("H*", '0A141E28'),
+        '0.10.1'     => 'host.my.dns',
+        '65536.10.2' => '::1.2.3.4',
+        '65536.10.3' => 'fe80::2d0:b7ff:fe21:c6c0'
+      },
+      'c_eigrp_peer_types' => {
+        '0.5.0'      => 'ipv4',
+        '0.5.1'      => 'ipv4',
+        '0.10.1'     => 'dns',
+        '65536.10.2' => 'ipv6',
+        '65536.10.3' => 'ipv6',
       },
     },
   };
@@ -96,6 +112,26 @@ sub cisco_comm_indexing : Tests(3) {
 
   $test->{info}->clear_cache();
   is($test->{info}->cisco_comm_indexing(), 0, 'Cisco community indexing off');
+}
+
+sub eigrp_peers : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'eigrp_peers');
+
+  my $expected = {
+    '0.5.0'      => '1.2.3.4',
+    '0.5.1'      => '10.20.30.40',
+    '65536.10.2' => '::1.2.3.4',
+    '65536.10.3' => 'fe80::2d0:b7ff:fe21:c6c0'
+  };
+
+  cmp_deeply($test->{info}->eigrp_peers(),
+    $expected, q(EIGRP peers have expected values));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->eigrp_peers(),
+    {}, q(No data data returns empty hash));
 }
 
 1;

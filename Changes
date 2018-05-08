@@ -7,6 +7,10 @@ Version 3.61
      IP-MIB::ipAddressTable if the deprecated IP-MIB::ipAddrTable doesn't
      return results
 
+  [BUG FIXES]
+
+  * #261 EIGRP Peer Neighbor Formatting / Munge
+
 Version 3.60 (2018-05-06)
 
   [ENHANCEMENTS]

@@ -97,22 +97,18 @@ $VERSION = '3.60';
     %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::CiscoVTP::FUNCS,
 
-    # EIGRP
-    'eigrp_peers' => 'cEigrpPeerAddr',
+    # CISCO-EIGRP-MIB::cEigrpPeerTable
+    'c_eigrp_peer_types' => 'cEigrpPeerAddrType',
+    'c_eigrp_peers'      => 'cEigrpPeerAddr',
+
 );
 
 %MUNGE = (
-    %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::CiscoStpExtensions::MUNGE,
-    %SNMP::Info::CiscoPower::MUNGE,
-    %SNMP::Info::CiscoConfig::MUNGE,
-    %SNMP::Info::CiscoQOS::MUNGE,
-    %SNMP::Info::CiscoRTT::MUNGE,
-    %SNMP::Info::CiscoStats::MUNGE,
-    %SNMP::Info::CDP::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
-    %SNMP::Info::CiscoVTP::MUNGE,
-    'eigrp_peers' => \&SNMP::Info::munge_ip,
+    %SNMP::Info::Layer3::MUNGE,     %SNMP::Info::CiscoStpExtensions::MUNGE,
+    %SNMP::Info::CiscoPower::MUNGE, %SNMP::Info::CiscoConfig::MUNGE,
+    %SNMP::Info::CiscoQOS::MUNGE,   %SNMP::Info::CiscoRTT::MUNGE,
+    %SNMP::Info::CiscoStats::MUNGE, %SNMP::Info::CDP::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,       %SNMP::Info::CiscoVTP::MUNGE,
 );
 
 sub i_vlan {
@@ -132,6 +128,7 @@ sub i_vlan {
             if ( $i_descr->{$idx} =~ /\.(\d+)$/ ) {
                 $i_vlan->{$idx} = $1;
             }
+
             # This matches 101 in 'Ethernet0.101-802.1Q vLAN subif'
             elsif ( $i_descr->{$idx} =~ /\.(\d+)-/ ) {
                 $i_vlan->{$idx} = $1;
@@ -141,12 +138,39 @@ sub i_vlan {
     return $i_vlan;
 }
 
-sub cisco_comm_indexing { 
+sub cisco_comm_indexing {
     my $cisco = shift;
+
     # If we get a VTP version, it's *extremely* likely that the device needs
     # community based indexing
     my $vtp = $cisco->vtp_version() || '0';
     return $vtp ? 1 : 0;
+}
+
+sub eigrp_peers {
+    my $cisco = shift;
+
+    my $peers = $cisco->c_eigrp_peers()      || {};
+    my $types = $cisco->c_eigrp_peer_types() || {};
+
+    my %eigrp_peers;
+    foreach my $idx ( keys %$peers ) {
+        my $type = $types->{$idx};
+        next unless $type;
+        my $peer = $peers->{$idx};
+        next unless $peer;
+
+        if ( ( $type eq 'ipv4' or $type eq 'ipv6' )
+            and $peer =~ /^(?:\w|\.|\:)+$/x )
+        {
+            $eigrp_peers{$idx} = $peer;
+        }
+        elsif ( $type eq 'ipv4' ) {
+            $eigrp_peers{$idx} = SNMP::Info::munge_ip($peer);
+        }
+        next;
+    }
+    return \%eigrp_peers;
 }
 
 1;
