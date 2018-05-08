@@ -508,8 +508,8 @@ sub ip_index {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $ip_index = $airespace->orig_ip_index($partial) || {};
-    my $if_ip    = $airespace->airespace_if_ip()       || {};
+    my $ip_index = $airespace->SUPER::ip_index($partial) || {};
+    my $if_ip    = $airespace->airespace_if_ip()         || {};
 
     my %ip_index;
     foreach my $ip ( keys %$ip_index ) {
@@ -534,9 +534,9 @@ sub ip_netmask {
     my $airespace = shift;
     my $partial   = shift;
 
-    my $ip_mask = $airespace->orig_ip_netmask($partial) || {};
-    my $if_ip   = $airespace->airespace_if_ip()         || {};
-    my $if_mask = $airespace->airespace_if_mask()       || {};
+    my $ip_mask = $airespace->SUPER::ip_netmask($partial) || {};
+    my $if_ip   = $airespace->airespace_if_ip()           || {};
+    my $if_mask = $airespace->airespace_if_mask()         || {};
 
     my %ip_netmask;
     foreach my $ip ( keys %$ip_mask ) {

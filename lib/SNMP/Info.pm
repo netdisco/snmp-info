@@ -2560,36 +2560,45 @@ See C<IF-MIB> for full description
 
 =back
 
-=head2 IP Address Table
+=head2 IPv4 Address Table
 
-Each entry in this table is an IP address in use on this device.  Usually
-this is implemented in Layer3 Devices.
+Each entry in this table is an IPv4 address in use on this device.  Usually
+this is implemented in Layer3 Devices. These methods try the deprecated IPv4
+address table C<IP-MIB::ipAddrTable> first due to its prevalence and will try
+the current C<IP-MIB::ipAddressTable> if it doesn't return any results.
+C<IP-MIB::ipAddressTable> results are filtered to only return IPv4 unicast
+addresses and modified to match the return format of the older table for
+backwards compatibility.
+
+See documentation in L<SNMP::Info::IPv6> for IPv6 Address Table.
 
 =over
 
 =item $info->ip_index()
 
-Maps the IP Table to the IID
+Maps the IPv4 addresses to the interface index
 
-(C<ipAdEntIfIndex>)
+(C<ipAdEntIfIndex>) or filtered and index modified (C<ipAddressIfIndex>) 
 
 =item $info->ip_table()
 
-Maps the Table to the IP address
+Maps the Table to the IPv4 address
 
-(C<ipAdEntAddr>)
+(C<ipAdEntAddr>) or address extracted from (C<ipAddressIfIndex>) 
 
 =item $info->ip_netmask()
 
-Gives netmask setting for IP table entry.
+Gives netmask setting for IPv4 table entry.
 
-(C<ipAdEntNetMask>)
+(C<ipAdEntNetMask>) or netmask calculated from (C<ipAddressPrefix>)
 
 =item $info->ip_broadcast()
 
-Gives broadcast address for IP table entry.
+Gives the value of the least-significant bit in the IPv4 broadcast address
+either 1 or 0.
 
-(C<ipAdEntBcastAddr>)
+(C<ipAdEntBcastAddr>), there is no equivalent from the
+C<IP-MIB::ipAddressTable>
 
 =back
 
@@ -2769,6 +2778,88 @@ no protocols are supported or running.
 =back
 
 =cut
+
+sub ip_index {
+    my $self = shift;
+
+    my $o_ip_idx = $self->old_ip_index();
+    return $o_ip_idx
+        if ( ref {} eq ref $o_ip_idx and scalar keys %$o_ip_idx );
+
+    # Since callers may be using the old iid to get the IP, strip protocol
+    # and length from the index
+    my $n_ip_idx  = $self->new_ip_index() || {};
+    my $n_ip_type = $self->new_ip_type()  || {};
+
+    my %ip_index;
+    foreach my $iid ( keys %$n_ip_idx ) {
+        next unless $n_ip_type->{$iid} and $n_ip_type->{$iid} eq 'unicast';
+        my @parts = split( /\./, $iid );
+        my $type  = shift(@parts);
+        my $len   = shift(@parts);
+        next unless ( ( $type == 1 ) and ( $len == 4 ) );
+
+        my $new_iid = join( ".", @parts );
+        $ip_index{$new_iid} = $n_ip_idx->{$iid};
+    }
+    return \%ip_index;
+}
+
+sub ip_table {
+    my $self = shift;
+
+    my $o_ip_table = $self->old_ip_table();
+    return $o_ip_table
+        if ( ref {} eq ref $o_ip_table and scalar keys %$o_ip_table );
+
+    my $n_ip_idx  = $self->new_ip_index() || {};
+    my $n_ip_type = $self->new_ip_type()  || {};
+
+    my %ip_table;
+    foreach my $iid ( keys %$n_ip_idx ) {
+        next unless $n_ip_type->{$iid} and $n_ip_type->{$iid} eq 'unicast';
+        my @parts = split( /\./, $iid );
+        my $type  = shift(@parts);
+        my $len   = shift(@parts);
+        next unless ( ( $type == 1 ) and ( $len == 4 ) );
+
+        my $new_iid = join( ".", @parts );
+        $ip_table{$new_iid} = $new_iid;
+    }
+    return \%ip_table;
+}
+
+sub ip_netmask {
+    my $self = shift;
+
+    my $o_ip_mask = $self->old_ip_netmask();
+    return $o_ip_mask
+        if ( ref {} eq ref $o_ip_mask and scalar keys %$o_ip_mask );
+
+    my $n_ip_pfx  = $self->new_ip_prefix() || {};
+    my $n_ip_type = $self->new_ip_type()   || {};
+
+    my %ip_netmask;
+    foreach my $iid ( keys %$n_ip_pfx ) {
+        next unless $n_ip_type->{$iid} and $n_ip_type->{$iid} eq 'unicast';
+        my @parts = split( /\./, $iid );
+        my $type  = shift(@parts);
+        my $len   = shift(@parts);
+        next unless ( ( $type == 1 ) and ( $len == 4 ) );
+
+        my $prefix = $n_ip_pfx->{$iid};
+        next if ( !$prefix || $prefix =~ /0\.0$/ );
+        if ( $prefix =~ /\.(\d+)$/ ) {
+            $prefix = $1;
+        }
+        my $new_iid = join( ".", @parts );
+        my $mask = NetAddr::IP::Lite->new( $new_iid . '/' . $prefix )->mask()
+            || undef;
+
+        $ip_netmask{$new_iid} = $mask;
+    }
+    return \%ip_netmask;
+}
 
 sub has_topo {
     my $self = shift;
@@ -3182,11 +3273,16 @@ ALTEON-TS-PHYSICAL-MIB::agPortCurCfgPortName.
     # IF-MIB::IfStackTable
     'i_stack_status'    => 'ifStackStatus',
 
-    # IP::MIB::ipAddrTable (deprecated IPv4 address table)
-    'ip_index'     => 'ipAdEntIfIndex',
-    'ip_table'     => 'ipAdEntAddr',
-    'ip_netmask'   => 'ipAdEntNetMask',
-    'ip_broadcast' => 'ipAdEntBcastAddr',
+    # IP-MIB::ipAddrTable (deprecated IPv4 address table)
+    'old_ip_index'     => 'ipAdEntIfIndex',
+    'old_ip_table'     => 'ipAdEntAddr',
+    'old_ip_netmask'   => 'ipAdEntNetMask',
+    'ip_broadcast'     => 'ipAdEntBcastAddr',
+
+    # IP-MIB::ipAddressTable
+    'new_ip_index'     => 'ipAddressIfIndex',
+    'new_ip_prefix'    => 'ipAddressPrefix',
+    'new_ip_type'      => 'ipAddressType',
 
     # IF-MIB::ifXTable - Extension Table
     'i_speed_high'       => 'ifHighSpeed',

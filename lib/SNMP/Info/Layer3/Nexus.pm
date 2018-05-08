@@ -143,7 +143,7 @@ sub model {
 # override methods in ipAddrTable
 sub ip_table {
 	my $nexus         = shift;
-	my $orig_ip_table = $nexus->orig_ip_table();
+	my $orig_ip_table = $nexus->SUPER::ip_table();
 
 	my %ip_table;
 	foreach my $iid ( keys %$orig_ip_table ) {
@@ -163,8 +163,8 @@ sub ip_table {
 
 sub ip_index {
 	my $nexus         = shift;
-	my $orig_ip_table = $nexus->orig_ip_table();
-	my $orig_ip_index = $nexus->orig_ip_index();
+	my $orig_ip_table = $nexus->SUPER::ip_table();
+	my $orig_ip_index = $nexus->SUPER::ip_index();
 
 	my %ip_index;
 	foreach my $iid ( keys %$orig_ip_table ) {
@@ -186,8 +186,8 @@ sub ip_index {
 
 sub ip_netmask {
 	my $nexus           = shift;
-	my $orig_ip_table   = $nexus->orig_ip_table();
-	my $orig_ip_netmask = $nexus->orig_ip_netmask();
+	my $orig_ip_table   = $nexus->SUPER::ip_table();
+	my $orig_ip_netmask = $nexus->SUPER::ip_netmask();
 
 	my %ip_netmask;
 	foreach my $iid ( keys %$orig_ip_table ) {
@@ -209,8 +209,8 @@ sub ip_netmask {
 
 sub ip_broadcast {
 	my $nexus             = shift;
-	my $orig_ip_table     = $nexus->orig_ip_table();
-	my $orig_ip_broadcast = $nexus->orig_ip_broadcast();
+	my $orig_ip_table     = $nexus->SUPER::ip_table();
+	my $orig_ip_broadcast = $nexus->SUPER::ip_broadcast();
 
 	my %ip_broadcast;
 	foreach my $iid ( keys %$orig_ip_table ) {

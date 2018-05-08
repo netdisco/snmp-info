@@ -457,6 +457,111 @@ sub i_speed_raw : Tests(3) {
     $expected, 'Munges restored after i_speed_raw() call');
 }
 
+sub ip_index : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ip_index');
+
+  my $cache_data = {
+    '_old_ip_index' => 1,    
+    '_new_ip_index' => 1,
+    '_new_ip_type'  => 1,
+    'store'        => {
+      'old_ip_index' =>
+        {'2.3.4.5' => 7, '2.2.2.2' => 11},
+      'new_ip_index' =>
+        {'1.4.1.2.3.4' => 6, '1.4.10.255.255.255' => 8, '1.4.8.8.8.8' => 10},
+      'new_ip_type' =>
+        {'1.4.1.2.3.4' => 'unicast', '1.4.10.255.255.255' => 'broadcast', '1.4.8.8.8.8' => 'unicast'},
+    }
+  };
+  $test->{info}->cache($cache_data);
+
+  my $expected = {'2.3.4.5' => 7, '2.2.2.2' => 11};
+
+  cmp_deeply($test->{info}->ip_index(),
+    $expected, q(IP addresses mapped to 'ifIndex' using old 'ipAddrTable'));
+
+  delete $test->{info}{_old_ip_index};
+  $expected = {'1.2.3.4' => 6, '8.8.8.8' => 10};
+
+  cmp_deeply($test->{info}->ip_index(),
+    $expected, q(IP addresses mapped to 'ifIndex' using new 'ipAddressTable'));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->ip_index(), {}, q(No data returns empty hash));
+}
+
+sub ip_table : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ip_table');
+
+  my $cache_data = {
+    '_old_ip_table' => 1,    
+    '_new_ip_index' => 1,
+    '_new_ip_type'  => 1,
+    'store'        => {
+      'old_ip_table' =>
+        {'2.3.4.5' => '2.3.4.5', '2.2.2.2' => '2.2.2.2'},
+      'new_ip_index' =>
+        {'1.4.1.2.3.4' => 6, '1.4.10.255.255.255' => 8, '1.4.8.8.8.8' => 10},
+      'new_ip_type' =>
+        {'1.4.1.2.3.4' => 'unicast', '1.4.10.255.255.255' => 'broadcast', '1.4.8.8.8.8' => 'unicast'},
+    }
+  };
+  $test->{info}->cache($cache_data);
+
+  my $expected = {'2.3.4.5' => '2.3.4.5', '2.2.2.2' => '2.2.2.2'};
+
+  cmp_deeply($test->{info}->ip_table(),
+    $expected, q(IP addresses using old 'ipAddrTable'));
+
+  delete $test->{info}{_old_ip_table};
+  $expected = {'1.2.3.4' => '1.2.3.4', '8.8.8.8' => '8.8.8.8'};
+
+  cmp_deeply($test->{info}->ip_table(),
+    $expected, q(IP addresses using new 'ipAddressTable'));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->ip_table(), {}, q(No data returns empty hash));
+}
+
+sub ip_netmask : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ip_netmask');
+
+  my $cache_data = {
+    '_old_ip_netmask' => 1,    
+    '_new_ip_prefix' => 1,
+    '_new_ip_type'  => 1,
+    'store'        => {
+      'old_ip_netmask' =>
+        {'2.3.4.5' => '255.255.255.0', '2.2.2.2' => '255.255.0.0'},
+      'new_ip_prefix' =>
+        {'1.4.1.2.3.4' => 'IP-MIB::ipAddressPrefixOrigin.2.ipv4."1.2.3.0".24', '1.4.10.2.3.4' => '.1.3.6.1.2.1.4.32.1.5.6.1.4.10.0.0.0.8', '1.4.8.8.8.8' => '.0.0'},
+      'new_ip_type' =>
+        {'1.4.1.2.3.4' => 'unicast', '1.4.10.2.3.4' => 'unicast', '1.4.8.8.8.8' => 'unicast'},
+    }
+  };
+  $test->{info}->cache($cache_data);
+
+  my $expected = {'2.3.4.5' => '255.255.255.0', '2.2.2.2' => '255.255.0.0'};
+
+  cmp_deeply($test->{info}->ip_netmask(),
+    $expected, q(IP netmask using old 'ipAddrTable'));
+
+  delete $test->{info}{_old_ip_netmask};
+  $expected = {'1.2.3.4' => '255.255.255.0', '10.2.3.4' => '255.0.0.0'};
+
+  cmp_deeply($test->{info}->ip_netmask(),
+    $expected, q(IP netmask using new 'ipAddressTable'));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->ip_netmask(), {}, q(No data returns empty hash));
+}
+
 # Topo routines will need to be tested in sub classes for conditionals
 sub has_topo : Tests(2) {
   my $test = shift;

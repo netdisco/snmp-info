@@ -55,8 +55,8 @@ $VERSION = '3.60';
 %FUNCS = (
     %SNMP::Info::Layer7::FUNCS,
     # IP Address Table - NS-ROOT-MIB::nsIpAddrTable
-    'ip_index'    => 'ipAddr',
-    'ip_netmask'  => 'ipNetmask',
+    'ns_ip_index'    => 'ipAddr',
+    'ns_ip_netmask'  => 'ipNetmask',
     # TODO VLAN - NS-ROOT-MIB::vlanTable
     'ns_vid'      =>'vlanId',
     'ns_vlan_mem' => 'vlanMemberInterfaces',
@@ -89,13 +89,24 @@ sub model {
 sub os_ver {
     my $ns    = shift;
     my $ver  = $ns->build_ver() || '';
-    
+
     if ($ver =~ /^.+\bNS(\d+\.\d+)/) {
         $ver = $1;
     }
     return $ver;
 }
 
+sub ip_index {
+    my $ns    = shift;
+
+    return $ns->ns_ip_index();
+}
+
+sub ip_netmask {
+    my $ns    = shift;
+
+    return $ns->ns_ip_netmask();
+}
 
 1;
 __END__

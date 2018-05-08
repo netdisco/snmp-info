@@ -2,7 +2,10 @@ Version 3.61
 
   [ENHANCEMENTS]
 
-  * #255 IPv6 support
+  * #255 IPv6 support - Set the transport-specifier if given an IPv6 address
+  * #195 IP address table - IPv4 Address Table will use the
+     IP-MIB::ipAddressTable if the deprecated IP-MIB::ipAddrTable doesn't
+     return results
 
 Version 3.60 (2018-05-06)
 
