@@ -64,7 +64,7 @@ sub setup : Tests(setup) {
         {'0.6.1' => 'C2960 Software (C2960-LANBASEK9-M), Version 12.2(37)SE'},
       'lldp_rem_sysname'       => {'0.6.1' => 'My C2960'},
       'lldp_rem_id_type'       => {'0.6.1' => 'macAddress'},
-      'lldp_rem_id'            => {'0.6.1' => pack("H*", 'ABCD123456')},
+      'lldp_rem_id'            => {'0.6.1' => pack("H*", 'ABCD12345678')},
       'lldp_rem_cap_spt'       => {'0.6.1' => pack("H*", '2800')},
       'lldp_rem_media_cap_spt' => {'0.6.1' => pack("H*", '4C')},
     }
@@ -286,10 +286,10 @@ sub lldp_port : Tests(10) {
   $test->{info}{store} = {
     lldp_rem_pid_type => {'0.16.1' => 'macAddress'},
     lldp_rem_desc     => {'0.16.1' => ''},
-    lldp_rem_pid      => {'0.16.1' => pack("H*", '2345678ABC')},
+    lldp_rem_pid      => {'0.16.1' => pack("H*", '2345678ABCDE')},
   };
 
-  $expected = {'0.16.1' => '23:45:67:8a:bc'};
+  $expected = {'0.16.1' => '23:45:67:8a:bc:de'};
 
   cmp_deeply($test->{info}->lldp_port(), $expected,
     q(Remote port type 'macAddress' no 'lldpRemPortDesc' uses 'lldpRemPortId'));
@@ -330,7 +330,7 @@ sub lldp_id : Tests(4) {
 
   can_ok($test->{info}, 'lldp_id');
 
-  my $expected = {'0.6.1' => 'ab:cd:12:34:56'};
+  my $expected = {'0.6.1' => 'ab:cd:12:34:56:78'};
 
   cmp_deeply($test->{info}->lldp_id(),
     $expected, q(Remote LLDP ID type 'macAddress' has expected value));

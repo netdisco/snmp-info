@@ -255,8 +255,7 @@ sub lldp_port {
 
           # May need to format other types in the future, i.e. Network address
             if ( $type =~ /mac/ ) {
-                $port = join( ':',
-                    map { sprintf "%02x", $_ } unpack( 'C*', $port ) );
+                $port = SNMP::Info::munge_mac($port)
             }
         }
 
@@ -291,7 +290,7 @@ sub lldp_id {
 
         # May need to format other types in the future
         if ( $type =~ /mac/ ) {
-            $id = join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $id ) );
+            $id = SNMP::Info::munge_mac($id)
         }
         elsif ( $type eq 'networkAddress' ) {
             if ( length( unpack( 'H*', $id ) ) == 10 ) {
