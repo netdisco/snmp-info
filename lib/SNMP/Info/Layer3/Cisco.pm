@@ -160,10 +160,10 @@ sub eigrp_peers {
         my $peer = $peers->{$idx};
         next unless $peer;
 
-        if ( ( $type eq 'ipv4' or $type eq 'ipv6' )
-            and $peer =~ /^(?:\w|\.|\:)+$/x )
-        {
-            $eigrp_peers{$idx} = $peer;
+        my $ip = NetAddr::IP::Lite->new($peer);
+
+        if ($ip) {
+            $eigrp_peers{$idx} = $ip->addr;
         }
         elsif ( $type eq 'ipv4' ) {
             $eigrp_peers{$idx} = SNMP::Info::munge_ip($peer);
