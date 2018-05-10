@@ -18,7 +18,7 @@ use SNMP::Info::Layer3;  # only used in sub mac()
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.60';
+$VERSION = '3.61';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,

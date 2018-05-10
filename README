@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.60
+    SNMP::Info - Version 3.61
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -1402,29 +1402,39 @@ USAGE
 
         ("ifSpecific")
 
-  IP Address Table
-    Each entry in this table is an IP address in use on this device. Usually
-    this is implemented in Layer3 Devices.
+  IPv4 Address Table
+    Each entry in this table is an IPv4 address in use on this device.
+    Usually this is implemented in Layer3 Devices. These methods try the
+    deprecated IPv4 address table "IP-MIB::ipAddrTable" first due to its
+    prevalence and will try the current "IP-MIB::ipAddressTable" if it
+    doesn't return any results. "IP-MIB::ipAddressTable" results are
+    filtered to only return IPv4 unicast addresses and modified to match the
+    return format of the older table for backwards compatibility.
+
+    See documentation in SNMP::Info::IPv6 for IPv6 Address Table.
 
     $info->ip_index()
-        Maps the IP Table to the IID
+        Maps the IPv4 addresses to the interface index
 
-        ("ipAdEntIfIndex")
+        ("ipAdEntIfIndex") or filtered and index modified
+        ("ipAddressIfIndex")
 
     $info->ip_table()
-        Maps the Table to the IP address
+        Maps the Table to the IPv4 address
 
-        ("ipAdEntAddr")
+        ("ipAdEntAddr") or address extracted from ("ipAddressIfIndex")
 
     $info->ip_netmask()
-        Gives netmask setting for IP table entry.
+        Gives netmask setting for IPv4 table entry.
 
-        ("ipAdEntNetMask")
+        ("ipAdEntNetMask") or netmask calculated from ("ipAddressPrefix")
 
     $info->ip_broadcast()
-        Gives broadcast address for IP table entry.
+        Gives the value of the least-significant bit in the IPv4 broadcast
+        address either 1 or 0.
 
-        ("ipAdEntBcastAddr")
+        ("ipAdEntBcastAddr"), there is no equivalent from the
+        "IP-MIB::ipAddressTable"
 
   IP Routing Table
     $info->ipr_route()
@@ -1993,7 +2003,7 @@ SNMP::INFO INTERNALS
         an 'IPv4' or 'IPv6' host. 'IPv6' hosts are prefixed with the "udp6:"
         "transport-specifier" as required by the undelying "Net-SNMP"
         library. If unable to determine the type of address or resolve a DNS
-        name, 'undef' will be returned causing the session creation to fail.
+        name, dies with "croak".
 
     $info->init()
         Used internally. Loads all entries in %MIBS.
