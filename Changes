@@ -10,6 +10,8 @@ Version 3.61
   [BUG FIXES]
 
   * #261 EIGRP Peer Neighbor Formatting / Munge
+  * #252 Unpack binary MAC if present in cdp_port
+  * Fix SNMPv1 cdp_run check
 
 Version 3.60 (2018-05-06)
 

@@ -54,7 +54,7 @@ $VERSION = '3.60';
     'cdp_run'      => 'cdpGlobalRun',
     'cdp_interval' => 'cdpGlobalMessageInterval',
     'cdp_holdtime' => 'cdpGlobalHoldTime',
-    'cdp_gid'       => 'cdpGlobalDeviceId',
+    'cdp_gid'      => 'cdpGlobalDeviceId',
 );
 
 %FUNCS = (
@@ -62,7 +62,7 @@ $VERSION = '3.60';
     'cdp_addr'         => 'cdpCacheAddress',
     'cdp_ver'          => 'cdpCacheVersion',
     'cdp_dev_id'       => 'cdpCacheDeviceId',
-    'cdp_port'         => 'cdpCacheDevicePort',
+    'cdp_dev_port'     => 'cdpCacheDevicePort',
     'cdp_platform'     => 'cdpCachePlatform',
     'cdp_capabilities' => 'cdpCacheCapabilities',
     'cdp_domain'       => 'cdpCacheVTPMgmtDomain',
@@ -79,7 +79,6 @@ $VERSION = '3.60';
     'cdp_capabilities' => \&SNMP::Info::munge_bits,
     'cdp_platform'     => \&SNMP::Info::munge_null,
     'cdp_domain'       => \&SNMP::Info::munge_null,
-    'cdp_port'         => \&SNMP::Info::munge_null,
     'cdp_ver'          => \&SNMP::Info::munge_null,
     'cdp_ip'           => \&SNMP::Info::munge_ip,
     'cdp_power'        => \&munge_power,
@@ -110,18 +109,16 @@ sub munge_power {
 sub hasCDP {
     my $cdp = shift;
 
-    my $ver = $cdp->{_version};
+    # Check the global that is supposed to indicate CDP is running
+    my $cdp_run = $cdp->cdp_run();
+    return 1 if $cdp_run;
 
-    # SNMP v1 clients dont have the globals
-    if ( defined $ver and $ver == 1 ) {
-        my $cdp_ip = $cdp->cdp_ip();
+    # SNMP v1 clients don't have the globals, fallback
+    # by checking if it would report neighbors
+    my $cdp_ip = $cdp->cdp_ip() || {};
+    return 1 if scalar keys %$cdp_ip;
 
-        # See if anything in cdp cache, if so we have cdp
-        return 1 if ( defined $cdp_ip and scalar( keys %$cdp_ip ) );
-        return;
-    }
-
-    return $cdp->cdp_run();
+    return;
 }
 
 sub cdp_if {
@@ -217,6 +214,22 @@ sub cdp_id {
         $cdp_id{$key} = $id;
     }
     return \%cdp_id;
+}
+
+sub cdp_port {
+    my $cdp    = shift;
+    my $partial = shift;
+
+    my $ch = $cdp->cdp_dev_port($partial) || {};
+
+    my %cdp_port;
+    foreach my $key ( sort keys %$ch ) {
+        my $port = $ch->{$key};
+        next unless $port;
+        $port = SNMP::Info::munge_mac($port) || SNMP::Info::munge_null($port);
+        $cdp_port{$key} = $port;
+    }
+    return \%cdp_port;
 }
 
 1;
