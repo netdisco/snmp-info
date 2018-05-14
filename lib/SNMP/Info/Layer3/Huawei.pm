@@ -677,7 +677,7 @@ first and then C<dot3adAggPortListPorts> if that is unavailable.
 
 =item C<i_mtu>
 
-Interface MTU value. Overriden with corresponding frame size entry from
+Interface MTU value. Overridden with corresponding frame size entry from
 C<hwEthernetJumboframeMaxLength> if one exists.
 
 =back
@@ -685,7 +685,7 @@ C<hwEthernetJumboframeMaxLength> if one exists.
 =head2 Power Port Table
 
 The index of these methods have been normalized to slot.port and values
-munged to provide compatability with the IEEE 802.3af F<POWER-ETHERNET-MIB>
+munged to provide compatibility with the IEEE 802.3af F<POWER-ETHERNET-MIB>
 and equivalent L<SNMP::Info::PowerEthernet> methods.
 
 =over
@@ -712,7 +712,7 @@ Power supplied the port, in milliwatts
 Returns an index of slot.port to an C<ifIndex>. Slot defaults to zero
 meaning chassis or box if there is no C<ifIndex> to slot mapping available in
 C<hwPhysicalPortInSlot>. Mapping the index to slot.port is a normalization
-function to provide compatability with the IEEE 802.3af F<POWER-ETHERNET-MIB>.
+function to provide compatibility with the IEEE 802.3af F<POWER-ETHERNET-MIB>.
 
 =item $huawei->peth_port_neg_power()
 
