@@ -653,6 +653,27 @@ sub e_parent {
     return \%e_parent;
 }
 
+sub peth_port_ifindex {
+    my $peth    = shift;
+    my $partial = shift;
+
+    my $peth_port_ifindex = {};
+    my $i_descr = $peth->i_description();
+
+    # Juniper doesn't have a translator, but the ports follow a standardized layout.
+    # Only the power status from the first member in a virtual chassis is reported.
+    foreach my $i ( keys %$i_descr ) {
+        # Juniper's port numbering is PHYS-FPC/PIC/PORT, only looking at PIC 0
+        if ($i_descr->{$i} =~ m/^(fe|ge|xe|et)-([0-9]+)\/([0]+)\/([0-9]+)$/) {
+            # Juniper port numbering begins at 0, but for PowerEthernet it begins at 1
+            my $mod = $2+1;
+            my $port = $4+1;
+            $peth_port_ifindex->{"$mod.$port"} = $i;
+        }
+    }
+    return $peth_port_ifindex;
+}
+
 1;
 __END__
 
