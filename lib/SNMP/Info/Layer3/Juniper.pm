@@ -664,7 +664,7 @@ sub peth_port_ifindex {
     # Only the power status from the first member in a virtual chassis is reported.
     foreach my $i ( keys %$i_descr ) {
         # Juniper's port numbering is PHYS-FPC/PIC/PORT, only looking at PIC 0
-        if ($i_descr->{$i} =~ m/^(fe|ge|xe|et)-([0-9]+)\/([0]+)\/([0-9]+)$/) {
+        if ($i_descr->{$i} =~ m/^(fe|ge|xe|et)-(\d+)\/(0)\/(\d+)$/) {
             # Juniper port numbering begins at 0, but for PowerEthernet it begins at 1
             my $mod = $2+1;
             my $port = $4+1;

@@ -79,8 +79,20 @@ sub setup : Tests(setup) {
     '_e_contents_type'             => 1,
     '_jnxContainersWithin'         => 1,
 
+    # For PoE port mapping test
+    '_i_description'       => 1,
 
     'store' => {
+      'peth_port_status' => {'1.1' => 'searching', '1.2' => 'otherFault', '1.3' => 'deliveringPower'},
+      'i_index'       => {504 => 504, 505 => 505, 506 => 506, 507 => 507, 508 => 508, 509 => 509},
+      'i_description' => {
+        504 => 'ge-0/0/0',
+        505 => 'ge-0/0/0.0',
+        506 => 'ge-0/0/1',
+        507 => 'ge-0/0/1.0',
+        508 => 'ge-0/0/2',
+        509 => 'ge-0/0/2.0',
+      },
       'jnxExVlanPortAccessMode' => {'2.514' => 'access', '7.513' => 'trunk'},
       'jnx_v_name'  => {2 => 'default', 3 => 'management'},
       'jnx_v_index' => {2 => 0,         3 => 120},
@@ -852,6 +864,21 @@ sub e_parent : Tests(3) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->e_parent(), {}, q(No data returns empty hash));
+}
+
+sub peth_port_ifindex : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'peth_port_ifindex');
+
+  my $expected = {'1.1' => 504, '1.2' => 506, '1.3' => 508};
+
+  cmp_deeply($test->{info}->peth_port_ifindex(),
+    $expected, q(POE port 'ifIndex' mapping returns expected values));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->peth_port_ifindex(),
+    {}, q(No data returns empty hash));
 }
 
 1;
