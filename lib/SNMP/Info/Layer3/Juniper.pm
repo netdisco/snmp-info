@@ -849,7 +849,10 @@ the port.
 
 =item $juniper->peth_port_ifindex()
 
-Returns reference to a hash: key= PowerEthernet MIB interface number, value = C<ifIndex>. As Juniper does not provide a mapping function, this does it manually. For example, ge-0/0/1 registers as PowerEthernet interface '1.2'.
+Returns reference to a hash: key= PowerEthernet MIB interface number,
+value = C<ifIndex>. As Juniper does not provide a mapping function,
+this does it manually.
+For example, ge-0/0/1 registers as PowerEthernet interface '1.2'
 
 =back
 
