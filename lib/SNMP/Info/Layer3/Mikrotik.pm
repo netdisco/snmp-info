@@ -79,6 +79,7 @@ sub model {
     my $descr = $mikrotik->description() || '';
     my $model = undef;
     $model = $1 if ( $descr =~ /^RouterOS\s+(\S+)$/i );
+    $model = $1 if ( $descr =~ /^RouterOS\s+(RB .*)$/i );
     return $model;
 }
 
