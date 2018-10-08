@@ -847,6 +847,10 @@ Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
 IDs.  These are the VLANs which are members of the untagged egress list for
 the port.
 
+=item $juniper->peth_port_ifindex()
+
+Returns reference to a hash: key= PowerEthernet MIB interface number, value = C<ifIndex>. As Juniper does not provide a mapping function, this does it manually. For example, ge-0/0/1 registers as PowerEthernet interface '1.2'.
+
 =back
 
 =head2 Pseudo F<ENTITY-MIB> information
