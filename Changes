@@ -6,6 +6,7 @@ Version 3.61 (2018-05-09)
   * #195 IP address table - IPv4 Address Table will use the
      IP-MIB::ipAddressTable if the deprecated IP-MIB::ipAddrTable doesn't
      return results
+  * Support for Cisco Firepower Threat Defense
 
   [BUG FIXES]
 

@@ -1811,6 +1811,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::CiscoASA'
             if ( $desc =~ /Cisco Adaptive Security Appliance/i );
 
+        # Cisco FTD includes an ASA running as lina process
+        $objtype = 'SNMP::Info::Layer3::CiscoASA'
+            if ( $desc =~ /Cisco Firepower Threat Defense/i );
+
         # Cisco FWSM
         $objtype = 'SNMP::Info::Layer3::CiscoFWSM'
             if ( $desc =~ /Cisco Firewall Services Module/i );
