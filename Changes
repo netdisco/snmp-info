@@ -1,3 +1,17 @@
+Version 3.62 (2018-10-29)
+
+  [ENHANCEMENTS]
+
+  * #278 Support for Cisco Firepower Threat Defense
+  * #275 Document peth_port_ifindex for Junipers
+  * #274 Add peth_port_ifindex override for Junipers
+  * #270 Add support for additional Mikrotik models
+  * Add HP 3810M, 2930M, 2930F and 2540 series switches 
+
+  [BUG FIXES]
+
+  * #265 Fix typos in L3::Huawei
+
 Version 3.61 (2018-05-09)
 
   [ENHANCEMENTS]
@@ -6,7 +20,6 @@ Version 3.61 (2018-05-09)
   * #195 IP address table - IPv4 Address Table will use the
      IP-MIB::ipAddressTable if the deprecated IP-MIB::ipAddrTable doesn't
      return results
-  * Support for Cisco Firepower Threat Defense
 
   [BUG FIXES]
 
