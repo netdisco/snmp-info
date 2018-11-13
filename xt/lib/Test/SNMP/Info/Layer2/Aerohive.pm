@@ -31,7 +31,7 @@ package Test::SNMP::Info::Layer2::Aerohive;
 
 use Test::Class::Most parent => 'My::Test::Class';
 
-use SNMP::Info::Layer1::Allied;
+use SNMP::Info::Layer2::Aerohive;
 
 sub setup : Tests(setup) {
   my $test = shift;
