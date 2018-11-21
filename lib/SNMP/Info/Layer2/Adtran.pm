@@ -20,9 +20,9 @@ our $index = undef;
 %MIBS = ( 
     %SNMP::Info::Layer2::MIBS,
     %SNMP::Info::Layer3::MIBS,
-    'ADTRAN-GENEVC-MIB'     => 'adGenEVCMIB',
-    'ADTRAN-GENMEF-MIB'     => 'adGenMEFMIB',
-    'ADTRAN-GENPORT-MIB'    => 'adGenPort',
+#    'ADTRAN-GENEVC-MIB'     => 'adGenEVCMIB',
+#    'ADTRAN-GENMEF-MIB'     => 'adGenMEFMIB',
+#    'ADTRAN-GENPORT-MIB'    => 'adGenPort',
     'ADTRAN-MIB'            => 'adtran',
     'ADTRAN-AOSUNIT'     => 'adGenAOSUnitMib',
  );
