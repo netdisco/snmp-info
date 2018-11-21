@@ -95,7 +95,8 @@ sub os {
 sub serial {
     my $aerohive = shift;
 
-    return $aerohive->ahSystemSerial();
+    return $aerohive->ahSystemSerial()
+      || $aerohive->SUPER::serial();
 }
 
 sub os_ver {
@@ -374,6 +375,10 @@ Returns the serial number extracted from C<ahSystemSerial>.
 =head2 Overrides
 
 =over
+
+=item $aerohive->serial()
+
+Returns C<ahSystemSerial>.
 
 =item $aerohive->layers()
 
