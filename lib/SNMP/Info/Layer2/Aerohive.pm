@@ -354,6 +354,10 @@ Returns 'aerohive'.
 
 Returns 'hive_os'.
 
+=item $aerohive->serial()
+
+Returns the serial number extracted from C<ahSystemSerial>.
+
 =item $aerohive->os_ver()
 
 Returns the OS versionl extracted from C<sysDescr>.
@@ -366,19 +370,11 @@ Returns the firmware version extracted from C<ahFirmwareVersion>.
 
 Returns the model extracted from C<sysDescr>.
 
-=item $aerohive->serial()
-
-Returns the serial number extracted from C<ahSystemSerial>.
-
 =back
 
 =head2 Overrides
 
 =over
-
-=item $aerohive->serial()
-
-Returns C<ahSystemSerial>.
 
 =item $aerohive->layers()
 

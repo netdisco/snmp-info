@@ -43,6 +43,7 @@ sub setup : Tests(setup) {
     # Example walk had no sysServices returned
     #'_layers'      => 1,
     '_description' => 'HiveAP121, HiveOS 6.2r1 release build1924',
+    '_serial' => '12345678',
 
     # AH-SMI-MIB::ahProduct
     '_id'            => '.1.3.6.1.4.1.26928.1',
