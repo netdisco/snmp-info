@@ -92,6 +92,12 @@ sub os {
     return 'hiveos';
 }
 
+sub serial {
+    my $aerohive = shift;
+
+    return $aerohive->ahSystemSerial();
+}
+
 sub os_ver {
     my $aerohive = shift;
     my $descr    = $aerohive->description();
