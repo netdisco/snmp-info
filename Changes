@@ -1,3 +1,14 @@
+Version 3.63 (2018-11-25)
+
+  [ENHANCEMENTS]
+
+  * #280 update to retrieve Aerohive serial
+  * #271 update os_ver for Alcatel-Lucent (stromsoe)
+
+  [BUG FIXES]
+
+  * #273 remove old ADTRAN modules not in netdisco-mibs
+
 Version 3.62 (2018-10-29)
 
   [ENHANCEMENTS]

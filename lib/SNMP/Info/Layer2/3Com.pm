@@ -11,7 +11,7 @@ use SNMP::Info::CDP;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD/;
 
-$VERSION = '3.62';
+$VERSION = '3.63';
 
 %MIBS = (
     %SNMP::Info::LLDP::MIBS,
