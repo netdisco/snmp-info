@@ -54,6 +54,7 @@ lib/SNMP/Info/Layer2/Catalyst.pm
 lib/SNMP/Info/Layer2/Centillion.pm
 lib/SNMP/Info/Layer2/Cisco.pm
 lib/SNMP/Info/Layer2/CiscoSB.pm
+lib/SNMP/Info/Layer2/Exinda.pm
 lib/SNMP/Info/Layer2/HP.pm
 lib/SNMP/Info/Layer2/HP4000.pm
 lib/SNMP/Info/Layer2/HPVC.pm
