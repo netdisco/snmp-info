@@ -597,8 +597,6 @@ See documentation in L<SNMP::Info::Layer2::CiscoSB> for details.
 
 Subclass for Exinda / GFI Network Orchestrator traffic shapers.
 
-Requires F<HP-ICF-OID> and F<ENTITY-MIB> downloaded from HP.
-
 See documentation in L<SNMP::Info::Layer2::Exinda> for details.
 
 =item SNMP::Info::Layer2::HP
