@@ -76,7 +76,7 @@ sub layers {
 }
 
 sub vendor {
-    return "Exinda";
+    return 'Exinda';
 }
 
 sub model {
