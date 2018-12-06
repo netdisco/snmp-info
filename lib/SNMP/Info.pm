@@ -593,9 +593,17 @@ Linksys.  This currently comprises the Sx300/500 line of switches.
 
 See documentation in L<SNMP::Info::Layer2::CiscoSB> for details.
 
+=item SNMP::Info::Layer2::Exinda
+
+Subclass for Exinda / GFI Network Orchestrator traffic shapers.
+
+Requires F<HP-ICF-OID> and F<ENTITY-MIB> downloaded from HP.
+
+See documentation in L<SNMP::Info::Layer2::Exinda> for details.
+
 =item SNMP::Info::Layer2::HP
 
-Subclass for more recent HP Procurve Switches
+Subclass for more recent HP Procurve Switches.
 
 Requires F<HP-ICF-OID> and F<ENTITY-MIB> downloaded from HP.
 
