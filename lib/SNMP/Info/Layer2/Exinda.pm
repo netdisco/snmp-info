@@ -46,11 +46,18 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
+    'EXINDA-MIB' => 'hardwareSeries',
     'EXINDA-MIB' => 'systemHostId',
+    'EXINDA-MIB' => 'systemVersion',
+    'EXINDA-MIB' => 'systemUptime',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
+    
+    # EXINDA-MIB
+    'serial' => 'systemHostId',
+    'uptime' => 'systemUptime',
 );
 
 %FUNCS = (
@@ -102,7 +109,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Exinda - SNMP Interface to exinda traffic shapers.
+SNMP::Info::Layer2::Exinda - SNMP Interface to exinda / gfi traffic shapers.
 
 =head1 AUTHORS
 
@@ -125,7 +132,7 @@ nick nauwelaerts
 
 =head1 DESCRIPTION
 
-Subclass for exinda traffic shapers
+Subclass for exinda / gfi network orchestrator traffic shapers
 
 =head2 Inherited Classes
 
@@ -172,6 +179,10 @@ Returns the model extracted from C<hardwareSeries>.
 =item $exinda->serial()
 
 Returns the model extracted from C<systemHostId>.
+
+=item $exinda->uptime()
+
+Returns the model extracted from C<systemUptime>.
 
 =back
 
