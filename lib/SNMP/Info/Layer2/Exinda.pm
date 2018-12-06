@@ -61,6 +61,13 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
     %SNMP::Info::Layer2::MUNGE,
 );
 
+sub layers {
+    # layer 2: bridged shaping and failopen interfaces
+    # layer 3/4: ip and layer 4 protocol fiddling and accell
+    # layer 7: wccp supprt
+    return '01001110';
+}
+
 sub vendor {
     return "Exinda";
 }
