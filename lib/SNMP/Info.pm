@@ -1695,6 +1695,7 @@ sub device_type {
         14823 => 'SNMP::Info::Layer3::Aruba',
         17163 => 'SNMP::Info::Layer3::Steelhead',
         20540 => 'SNMP::Info::Layer2::Sixnet',
+        21091 => 'SNMP::Info::Layer2::Exinda',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
         26928 => 'SNMP::Info::Layer2::Aerohive',
     );
