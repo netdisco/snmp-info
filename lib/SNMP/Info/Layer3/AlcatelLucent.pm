@@ -49,7 +49,7 @@ use SNMP::Info::LLDP;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.62';
+$VERSION = '3.63';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -112,15 +112,13 @@ sub vendor {
 }
 
 sub os_ver {
-    my $alu = shift;
+   my $alu = shift;
 
-    my $descr = $alu->description();
-    if ( $descr =~ m/^(\S+)/ ) {
-        return $1;
-    }
+   my $descr = $alu->description();
+   return $1 if $descr =~ m/\b(\d[\.\d]+R\d+) (?:GA|Service Release), /;
 
-    # No clue what this will try but hey
-    return $alu->SUPER::os_ver();
+   # No clue what this will try but hey
+   return $alu->SUPER::os_ver();
 }
 
 # ps1_type, ps1_status, ps2_type, ps2_status:

@@ -31,7 +31,7 @@ package Test::SNMP::Info::Layer2::Aerohive;
 
 use Test::Class::Most parent => 'My::Test::Class';
 
-use SNMP::Info::Layer1::Allied;
+use SNMP::Info::Layer2::Aerohive;
 
 sub setup : Tests(setup) {
   my $test = shift;
@@ -43,6 +43,7 @@ sub setup : Tests(setup) {
     # Example walk had no sysServices returned
     #'_layers'      => 1,
     '_description' => 'HiveAP121, HiveOS 6.2r1 release build1924',
+    '_ahSystemSerial' => '12345678',
 
     # AH-SMI-MIB::ahProduct
     '_id'            => '.1.3.6.1.4.1.26928.1',
@@ -129,6 +130,17 @@ sub model : Tests(4) {
 
   $test->{info}->clear_cache();
   is($test->{info}->model(), undef, q(No description returns undef model));
+}
+
+sub serial : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'serial');
+  is($test->{info}->serial(), '12345678', q(Serial is expected value));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->serial(), undef,
+    q(No serial returns undef));
 }
 
 sub i_ssidlist : Tests(3) {

@@ -38,7 +38,7 @@ use SNMP::Info::Layer2;
 
 use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
 
-$VERSION = '3.62';
+$VERSION = '3.63';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -90,6 +90,13 @@ sub vendor {
 
 sub os {
     return 'hiveos';
+}
+
+sub serial {
+    my $aerohive = shift;
+
+    return $aerohive->ahSystemSerial()
+      || $aerohive->SUPER::serial();
 }
 
 sub os_ver {
@@ -347,6 +354,10 @@ Returns 'aerohive'.
 
 Returns 'hive_os'.
 
+=item $aerohive->serial()
+
+Returns the serial number extracted from C<ahSystemSerial>.
+
 =item $aerohive->os_ver()
 
 Returns the OS versionl extracted from C<sysDescr>.
@@ -358,10 +369,6 @@ Returns the firmware version extracted from C<ahFirmwareVersion>.
 =item $aerohive->model()
 
 Returns the model extracted from C<sysDescr>.
-
-=item $aerohive->serial()
-
-Returns the serial number extracted from C<ahSystemSerial>.
 
 =back
 

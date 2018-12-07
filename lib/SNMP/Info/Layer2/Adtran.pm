@@ -11,7 +11,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.62';
+$VERSION = '3.63';
 
 # This will be filled in with the device's index into the EntPhysicalEntry
 # table by the serial() function.
@@ -20,9 +20,9 @@ our $index = undef;
 %MIBS = ( 
     %SNMP::Info::Layer2::MIBS,
     %SNMP::Info::Layer3::MIBS,
-    'ADTRAN-GENEVC-MIB'     => 'adGenEVCMIB',
-    'ADTRAN-GENMEF-MIB'     => 'adGenMEFMIB',
-    'ADTRAN-GENPORT-MIB'    => 'adGenPort',
+#    'ADTRAN-GENEVC-MIB'     => 'adGenEVCMIB',
+#    'ADTRAN-GENMEF-MIB'     => 'adGenMEFMIB',
+#    'ADTRAN-GENPORT-MIB'    => 'adGenPort',
     'ADTRAN-MIB'            => 'adtran',
     'ADTRAN-AOSUNIT'     => 'adGenAOSUnitMib',
  );
