@@ -29,7 +29,7 @@
 
 package SNMP::Info::Layer2::Exinda;
 
-$VERSION = '3.62';
+$VERSION = '3.63';
 
 use strict;
 
@@ -76,7 +76,7 @@ sub layers {
 }
 
 sub vendor {
-    return 'Exinda';
+    return 'exinda';
 }
 
 sub model {
@@ -156,7 +156,7 @@ See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
-These are methods that return scalar value from SNMP
+These are methods that return scalar value from SNMP.
 
 =over
 

@@ -234,7 +234,7 @@
       },
       "SNMP::Info::Layer2::Exinda" : {
          "file" : "lib/SNMP/Info/Layer2/Exinda.pm",
-         "version" : "3.62"
+         "version" : "3.63"
       },
       "SNMP::Info::Layer2::HP" : {
          "file" : "lib/SNMP/Info/Layer2/HP.pm",
