@@ -1659,6 +1659,7 @@ sub device_type {
         14823 => 'SNMP::Info::Layer3::Aruba',
         14988 => 'SNMP::Info::Layer3::Mikrotik',
         17163 => 'SNMP::Info::Layer3::Steelhead',
+        21091 => 'SNMP::Info::Layer2::Exinda',
         25506 => 'SNMP::Info::Layer3::H3C',
         25461 => 'SNMP::Info::Layer3::PaloAlto',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',

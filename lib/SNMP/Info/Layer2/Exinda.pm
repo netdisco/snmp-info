@@ -29,7 +29,7 @@
 
 package SNMP::Info::Layer2::Exinda;
 
-$VERSION = '3.62';
+$VERSION = '3.63';
 
 use strict;
 
@@ -46,18 +46,15 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
-    'EXINDA-MIB' => 'hardwareSeries',
-    'EXINDA-MIB' => 'systemHostId',
     'EXINDA-MIB' => 'systemVersion',
-    'EXINDA-MIB' => 'systemUptime',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
-    
     # EXINDA-MIB
-    'serial' => 'systemHostId',
     'uptime' => 'systemUptime',
+    'os_ver' => 'systemVersion',
+    'serial1' => 'systemHostId',
 );
 
 %FUNCS = (
@@ -76,7 +73,7 @@ sub layers {
 }
 
 sub vendor {
-    return 'Exinda';
+    return 'exinda';
 }
 
 sub model {
@@ -85,22 +82,19 @@ sub model {
     return $exinda->hardwareSeries();
 }
 
-sub serial {
-    # exinda units have a hostid and serial,
-    # regretfully only hostid is exposed via snmp
+sub mac {
+    # systemHostId is actually also a mac address
     my $exinda = shift;
+    my $exinda_mac = $exinda->systemHostId();
 
-    return $exinda->systemHostId();
+    $exinda_mac =~ s/(..)/$1:/g;
+    chop $exinda_mac;
+
+    return $exinda_mac;
 }
 
 sub os {
     return 'exos';
-}
-
-sub os_ver {
-    my $exinda = shift;
-
-    return $exinda->systemVersion();
 }
 
 1;
@@ -132,7 +126,7 @@ nick nauwelaerts
 
 =head1 DESCRIPTION
 
-Subclass for exinda / gfi network orchestrator traffic shapers
+Subclass for exinda / gfi network orchestrator traffic shapers.
 
 =head2 Inherited Classes
 
@@ -156,13 +150,17 @@ See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
-These are methods that return scalar value from SNMP
+These are methods that return scalar value from SNMP.
 
 =over
 
-=item $exinda->vendor()
+=item $exinda->mac()
 
-Returns 'Exinda'.
+Returns a mac address extracted from C<systemHostId>.
+
+=item $exinda->model()
+
+Returns the model extracted from C<hardwareSeries>.
 
 =item $exinda->os()
 
@@ -170,19 +168,19 @@ Returns 'exos'.
 
 =item $exinda->os_ver()
 
-Returns the model extracted from C<systemVersion>.
+Returns the os version extracted from C<systemVersion>.
 
-=item $exinda->model()
+=item $exinda->serial1()
 
-Returns the model extracted from C<hardwareSeries>.
-
-=item $exinda->serial()
-
-Returns the model extracted from C<systemHostId>.
+Returns the serial extracted from C<systemHostId>.
 
 =item $exinda->uptime()
 
-Returns the model extracted from C<systemUptime>.
+Returns the uptime extracted from C<systemUptime>.
+
+=item $exinda->vendor()
+
+Returns 'exinda'.
 
 =back
 
