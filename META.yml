@@ -348,6 +348,9 @@ provides:
   SNMP::Info::Layer3::Pica8:
     file: lib/SNMP/Info/Layer3/Pica8.pm
     version: '3.64'
+  SNMP::Info::Layer3::Redlion:
+    file: lib/SNMP/Info/Layer3/Redlion.pm
+    version: '3.64'
   SNMP::Info::Layer3::SonicWALL:
     file: lib/SNMP/Info/Layer3/SonicWALL.pm
     version: '3.64'

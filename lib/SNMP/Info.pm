@@ -976,6 +976,12 @@ Subclass for Pica8 devices.
 
 See documentation in L<SNMP::Info::Layer3::Pica8> for details.
 
+=item SNMP::Info::Layer3::Redlion
+
+Subclass for redlion routers.
+
+See documentation in L<SNMP::Info::Layer3::Redlion> for details.
+
 =item SNMP::Info::Layer3::SonicWALL
 
 Subclass for generic SonicWALL devices. See documentation in
@@ -1627,6 +1633,7 @@ sub device_type {
         674  => 'SNMP::Info::Layer3::Dell',
         1588 => 'SNMP::Info::Layer3::Foundry',
         1872 => 'SNMP::Info::Layer3::AlteonAD',
+        1890 => 'SNMP::Info::Layer3::Redlion',
         1916 => 'SNMP::Info::Layer3::Extreme',
         1991 => 'SNMP::Info::Layer3::Foundry',
         2011 => 'SNMP::Info::Layer3::Huawei',
@@ -1683,6 +1690,7 @@ sub device_type {
         664   => 'SNMP::Info::Layer2::Adtran',
         674   => 'SNMP::Info::Layer3::Dell',
         1872  => 'SNMP::Info::Layer3::AlteonAD',
+        1890  => 'SNMP::Info::Layer3::Redlion',
         1916  => 'SNMP::Info::Layer3::Extreme',
         1991  => 'SNMP::Info::Layer3::Foundry',
         2011  => 'SNMP::Info::Layer3::Huawei',
