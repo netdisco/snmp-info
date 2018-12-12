@@ -52,6 +52,9 @@ $VERSION = '3.63';
     # AH-SYSTEM-MIB
     'serial' => 'ahSystemSerial',
     'os_bin' => 'ahFirmwareVersion',
+    # not documented in the most recent mib,
+    # but this is the base mac for the device
+    'ah_mac' => '.1.3.6.1.4.1.26928.1.3.2.0',
 );
 
 %FUNCS = (
@@ -108,6 +111,31 @@ sub os_ver {
     }
     return;
 }
+
+
+sub mac {
+    my $aerohive = shift;
+    my $ahmac = $aerohive->ah_mac();
+
+    # newer hiveos version just return the mac address
+    if (defined $ahmac) {
+      # aerohive has a 0000:0000:0000 mac format by default,
+      # change to 00:00:00:00:00:00
+      $ahmac =~ s/(..)(..:?)/$1:$2/g;
+      return $ahmac;
+    }
+
+    my @macs;
+    my $macs = $aerohive->i_mac();
+    foreach my $iid (keys %$macs) {
+      if (defined $macs->{$iid}) {
+        push( @macs, $macs->{$iid} );
+      }
+      @macs = sort(@macs);
+    } 
+    return $macs[0];
+}
+
 
 sub model {
     my $aerohive = shift;
@@ -342,7 +370,7 @@ See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
-These are methods that return scalar value from SNMP
+These are methods that return scalar value from SNMP.
 
 =over
 
@@ -352,7 +380,7 @@ Returns 'aerohive'.
 
 =item $aerohive->os()
 
-Returns 'hive_os'.
+Returns 'hiveos'.
 
 =item $aerohive->serial()
 
@@ -360,11 +388,17 @@ Returns the serial number extracted from C<ahSystemSerial>.
 
 =item $aerohive->os_ver()
 
-Returns the OS versionl extracted from C<sysDescr>.
+Returns the OS version extracted from C<sysDescr>.
 
 =item $aerohive->os_bin()
 
 Returns the firmware version extracted from C<ahFirmwareVersion>.
+
+=item $aerohive->mac()
+
+Returns the base mac address of the aerohive unit from an undocumented
+snmp oid. if this oid is not available it will walk all interfaces and
+return the lowest numbered mac address.
 
 =item $aerohive->model()
 
@@ -395,7 +429,7 @@ to a hash.
 
 =item $aerohive->i_ssidlist()
 
-Returns reference to hash.  SSID's recognized by the radio interface.
+Returns reference to hash. SSID's recognized by the radio interface.
 
 =item $aerohive->i_ssidmac()
 
@@ -438,17 +472,17 @@ the interface iid.
 =item $aerohive->qb_fw_port()
 
 Returns reference to hash of forwarding table entries port interface
-identifier (iid)
+identifier (iid).
 
 =item $aerohive->qb_fw_mac()
 
-Returns reference to hash of forwarding table MAC Addresses
+Returns reference to hash of forwarding table MAC Addresses.
 
 C<ahClientMac>
 
 =item $aerohive->qb_fw_vlan()
 
-Returns reference to hash of forwarding table entries VLAN ID
+Returns reference to hash of forwarding table entries VLAN ID.
 
 C<ahClientVLAN>
 
