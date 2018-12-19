@@ -29,8 +29,6 @@
 
 package SNMP::Info::Layer2::Exinda;
 
-$VERSION = '3.63';
-
 use strict;
 
 use Exporter;
@@ -43,6 +41,8 @@ use SNMP::Info::Layer2;
 @SNMP::Info::Layer2::Exinda::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+
+$VERSION = '3.63';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -153,6 +153,10 @@ See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 These are methods that return scalar value from SNMP.
 
 =over
+
+=item $exinda->layers()
+
+Returns '01001110'.
 
 =item $exinda->mac()
 
