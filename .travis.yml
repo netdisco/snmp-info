@@ -6,8 +6,7 @@ addons:
       - libsnmp-dev
 branches:
   only:
-    - /^3\.\d{2}$/
-    - 'master'
+    - 'exinda'
 before_install:
   - mkdir ~/netdisco-mibs
   - cd ~/netdisco-mibs
