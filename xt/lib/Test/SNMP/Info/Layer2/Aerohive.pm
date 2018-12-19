@@ -149,11 +149,11 @@ sub model : Tests(4) {
 
   can_ok($test->{info}, 'model');
   is($test->{info}->model(),
-    'AP121', q(Model with 'Hive' in description sting is expected value));
+    'AP121', q(Model with 'Hive' in description is expected value));
 
   $test->{info}{_description} = 'AP250, HiveOS 8.3r2 build-191018';
   is($test->{info}->model(),
-    'AP250', q(Model without 'Hive' in description sting is expected value));
+    'AP250', q(Model without 'Hive' in description is expected value));
 
   $test->{info}->clear_cache();
   is($test->{info}->model(), undef, q(No description returns undef model));
