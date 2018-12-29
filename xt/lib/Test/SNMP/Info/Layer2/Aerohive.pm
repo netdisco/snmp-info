@@ -43,7 +43,9 @@ sub setup : Tests(setup) {
     # Example walk had no sysServices returned
     #'_layers'      => 1,
     '_description' => 'HiveAP121, HiveOS 6.2r1 release build1924',
-    '_ahSystemSerial' => '12345678',
+    '_ahSystemSerial' => '02511610111621',
+    # not documented, oid '.1.3.6.1.4.1.26928.1.3.2.0'
+    '_ah_mac' => '4018:b13a:4c40',
 
     # AH-SMI-MIB::ahProduct
     '_id'            => '.1.3.6.1.4.1.26928.1',
@@ -55,31 +57,38 @@ sub setup : Tests(setup) {
     '_ah_c_vlan'     => 1,
     '_ah_c_ip'       => 1,
     'store'          => {
-      'i_index' => {3 => 3, 10 => 10, 12 => 12, 15 => 15},
+      'i_index' => {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20},
       'i_description' =>
-        {3 => 'eth0', 10 => 'wifi0.1', 12 => 'wifi0.2', 15 => 'wifi1.1'},
+        {4 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 9 => 'mgt0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
       'i_mac' => {
-        3  => pack("H*", '4018B13A4C40'),
-        10 => pack("H*", '4018B13A4C54'),
-        12 => pack("H*", '4018B13A4C55'),
-        15 => pack("H*", '4018B13A4C68')
+# mgt0 always has lowest mac, most of the time shared with eth0
+# wifi0 shares it's mac with wifi0.1 (same goes for wifi1/wifi1.1)
+# wifi0's mac address is 14 digits higher as base mac
+# wifi1's mac address is 10 digits higher as wifi0
+        4  => pack("H*", '4018B13A4C40'),
+        6  => pack("H*", '4018B13A4C54'),
+        7  => pack("H*", '4018B13A4C64'),
+        9  => pack("H*", '4018B13A4C40'),
+        15 => pack("H*", '4018B13A4C54'),
+        16 => pack("H*", '4018B13A4C55'),
+        20 => pack("H*", '4018B13A4C64')
       },
       'ah_i_ssidlist' =>
-        {3 => 'N/A', 10 => 'MyGuest', 12 => 'MyPrivate', 15 => 'MyGuest'},
+        {4 => 'N/A', 6 => 'N/A', 7 => 'N/A', 9 => 'N/A', 15 => 'MyGuest', 16 => 'MyPrivate', 20 => 'MyGuest'},
       'cd11_txrate' => {
-        '10.6.128.150.177.92.153.130' => 6000,
-        '15.6.40.106.186.61.150.231'  => 58500,
-        '15.6.96.190.181.42.99.151'   => 72200
+        '15.6.128.150.177.92.153.130' => 6000,
+        '20.6.40.106.186.61.150.231'  => 58500,
+        '20.6.96.190.181.42.99.151'   => 72200
       },
       'ah_c_vlan' => {
-        '10.6.128.150.177.92.153.130' => 50,
-        '15.6.40.106.186.61.150.231'  => 1,
-        '15.6.96.190.181.42.99.151'   => 1
+        '15.6.128.150.177.92.153.130' => 50,
+        '20.6.40.106.186.61.150.231'  => 1,
+        '20.6.96.190.181.42.99.151'   => 1
       },
       'ah_c_ip' => {
-        '10.6.128.150.177.92.153.130' => '1.2.3.4',
-        '15.6.40.106.186.61.150.231'  => '0.0.0.0',
-        '15.6.96.190.181.42.99.151'   => '4.3.2.1'
+        '15.6.128.150.177.92.153.130' => '1.2.3.4',
+        '20.6.40.106.186.61.150.231'  => '0.0.0.0',
+        '20.6.96.190.181.42.99.151'   => '4.3.2.1'
       },
     }
   };
@@ -90,7 +99,7 @@ sub layers : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'layers');
-  is($test->{info}->layers(), '00000111', q(Vendor returns '00000011'));
+  is($test->{info}->layers(), '00000111', q(Layers returns '00000111'));
 }
 
 sub vendor : Tests(2) {
@@ -117,16 +126,34 @@ sub os_ver : Tests(3) {
   is($test->{info}->os_ver(), undef, q(No description returns undef os_ver));
 }
 
+sub mac : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mac');
+
+  my $expected = '40:18:b1:3a:4c:40';
+
+  is($test->{info}->mac(),
+    $expected, q(mac address derived from ah_mac is expected value));
+
+  $test->{info}{_ah_mac} = undef;
+  is($test->{info}->mac(),
+    $expected, q(mac address derived from lowest interface mac is expected value));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->mac(), undef, q(No mac returns undef mac));
+}
+
 sub model : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'model');
   is($test->{info}->model(),
-    'AP121', q(Model with 'Hive' in description sting is expected value));
+    'AP121', q(Model with 'Hive' in description is expected value));
 
   $test->{info}{_description} = 'AP250, HiveOS 8.3r2 build-191018';
   is($test->{info}->model(),
-    'AP250', q(Model without 'Hive' in description sting is expected value));
+    'AP250', q(Model without 'Hive' in description is expected value));
 
   $test->{info}->clear_cache();
   is($test->{info}->model(), undef, q(No description returns undef model));
@@ -136,7 +163,7 @@ sub serial : Tests(3) {
   my $test = shift;
 
   can_ok($test->{info}, 'serial');
-  is($test->{info}->serial(), '12345678', q(Serial is expected value));
+  is($test->{info}->serial(), '02511610111621', q(Serial is expected value));
 
   $test->{info}->clear_cache();
   is($test->{info}->serial(), undef,
@@ -148,7 +175,7 @@ sub i_ssidlist : Tests(3) {
 
   can_ok($test->{info}, 'i_ssidlist');
 
-  my $expected = {10 => 'MyGuest', 12 => 'MyPrivate', 15 => 'MyGuest'};
+  my $expected = {15 => 'MyGuest', 16 => 'MyPrivate', 20 => 'MyGuest'};
 
   cmp_deeply($test->{info}->i_ssidlist(),
     $expected, q(Interface SSIDs have expected values));
@@ -163,9 +190,9 @@ sub i_ssidmac : Tests(3) {
   can_ok($test->{info}, 'i_ssidmac');
 
   my $expected = {
-    10 => '40:18:b1:3a:4c:54',
-    12 => '40:18:b1:3a:4c:55',
-    15 => '40:18:b1:3a:4c:68'
+    15 => '40:18:b1:3a:4c:54',
+    16 => '40:18:b1:3a:4c:55',
+    20 => '40:18:b1:3a:4c:64'
   };
 
   cmp_deeply($test->{info}->i_ssidmac(),
@@ -181,9 +208,9 @@ sub cd11_port : Tests(3) {
   can_ok($test->{info}, 'cd11_port');
 
   my $expected = {
-    '10.6.128.150.177.92.153.130' => 'wifi0.1',
-    '15.6.40.106.186.61.150.231'  => 'wifi1.1',
-    '15.6.96.190.181.42.99.151'   => 'wifi1.1'
+    '15.6.128.150.177.92.153.130' => 'wifi0.1',
+    '20.6.40.106.186.61.150.231'  => 'wifi1.1',
+    '20.6.96.190.181.42.99.151'   => 'wifi1.1'
   };
 
   cmp_deeply($test->{info}->cd11_port(),
@@ -199,9 +226,9 @@ sub cd11_mac : Tests(3) {
   can_ok($test->{info}, 'cd11_mac');
 
   my $expected = {
-    '10.6.128.150.177.92.153.130' => '80:96:b1:5c:99:82',
-    '15.6.40.106.186.61.150.231'  => '28:6a:ba:3d:96:e7',
-    '15.6.96.190.181.42.99.151'   => '60:be:b5:2a:63:97'
+    '15.6.128.150.177.92.153.130' => '80:96:b1:5c:99:82',
+    '20.6.40.106.186.61.150.231'  => '28:6a:ba:3d:96:e7',
+    '20.6.96.190.181.42.99.151'   => '60:be:b5:2a:63:97'
   };
 
   cmp_deeply($test->{info}->cd11_mac(),
@@ -216,7 +243,7 @@ sub bp_index : Tests(3) {
 
   can_ok($test->{info}, 'bp_index');
 
-  my $expected = {3 => 3, 10 => 10, 12 => 12, 15 => 15};
+  my $expected = {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20};
 
   cmp_deeply($test->{info}->bp_index(),
     $expected, q(Bridge interface mapping has expected values));
@@ -231,9 +258,9 @@ sub qb_fw_port : Tests(3) {
   can_ok($test->{info}, 'qb_fw_port');
 
   my $expected = {
-    '10.6.128.150.177.92.153.130' => '10',
-    '15.6.40.106.186.61.150.231'  => '15',
-    '15.6.96.190.181.42.99.151'   => '15'
+    '15.6.128.150.177.92.153.130' => '15',
+    '20.6.40.106.186.61.150.231'  => '20',
+    '20.6.96.190.181.42.99.151'   => '20'
   };
 
   cmp_deeply($test->{info}->qb_fw_port(),
@@ -249,9 +276,9 @@ sub qb_fw_mac : Tests(3) {
   can_ok($test->{info}, 'qb_fw_mac');
 
   my $expected = {
-    '10.6.128.150.177.92.153.130' => '80:96:b1:5c:99:82',
-    '15.6.40.106.186.61.150.231'  => '28:6a:ba:3d:96:e7',
-    '15.6.96.190.181.42.99.151'   => '60:be:b5:2a:63:97'
+    '15.6.128.150.177.92.153.130' => '80:96:b1:5c:99:82',
+    '20.6.40.106.186.61.150.231'  => '28:6a:ba:3d:96:e7',
+    '20.6.96.190.181.42.99.151'   => '60:be:b5:2a:63:97'
   };
 
   cmp_deeply($test->{info}->qb_fw_mac(),
@@ -267,9 +294,9 @@ sub qb_fw_vlan : Tests(3) {
   can_ok($test->{info}, 'qb_fw_vlan');
 
   my $expected = {
-    '10.6.128.150.177.92.153.130' => 50,
-    '15.6.40.106.186.61.150.231'  => 1,
-    '15.6.96.190.181.42.99.151'   => 1
+    '15.6.128.150.177.92.153.130' => 50,
+    '20.6.40.106.186.61.150.231'  => 1,
+    '20.6.96.190.181.42.99.151'   => 1
   };
 
   cmp_deeply($test->{info}->qb_fw_vlan(),
@@ -285,9 +312,9 @@ sub at_paddr : Tests(3) {
   can_ok($test->{info}, 'at_paddr');
 
   my $expected = {
-    '10.6.128.150.177.92.153.130' => '80:96:b1:5c:99:82',
-    '15.6.40.106.186.61.150.231'  => '28:6a:ba:3d:96:e7',
-    '15.6.96.190.181.42.99.151'   => '60:be:b5:2a:63:97'
+    '15.6.128.150.177.92.153.130' => '80:96:b1:5c:99:82',
+    '20.6.40.106.186.61.150.231'  => '28:6a:ba:3d:96:e7',
+    '20.6.96.190.181.42.99.151'   => '60:be:b5:2a:63:97'
   };
 
   cmp_deeply($test->{info}->at_paddr(),
@@ -303,8 +330,8 @@ sub at_netaddr : Tests(3) {
   can_ok($test->{info}, 'at_netaddr');
 
   my $expected = {
-    '10.6.128.150.177.92.153.130' => '1.2.3.4',
-    '15.6.96.190.181.42.99.151'   => '4.3.2.1'
+    '15.6.128.150.177.92.153.130' => '1.2.3.4',
+    '20.6.96.190.181.42.99.151'   => '4.3.2.1'
   };
 
   cmp_deeply($test->{info}->at_netaddr(),
