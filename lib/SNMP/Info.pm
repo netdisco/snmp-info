@@ -593,9 +593,15 @@ Linksys.  This currently comprises the Sx300/500 line of switches.
 
 See documentation in L<SNMP::Info::Layer2::CiscoSB> for details.
 
+=item SNMP::Info::Layer2::Exinda
+
+Subclass for Exinda / GFI Network Orchestrator traffic shapers.
+
+See documentation in L<SNMP::Info::Layer2::Exinda> for details.
+
 =item SNMP::Info::Layer2::HP
 
-Subclass for more recent HP Procurve Switches
+Subclass for more recent HP Procurve Switches.
 
 Requires F<HP-ICF-OID> and F<ENTITY-MIB> downloaded from HP.
 
@@ -1653,6 +1659,7 @@ sub device_type {
         14823 => 'SNMP::Info::Layer3::Aruba',
         14988 => 'SNMP::Info::Layer3::Mikrotik',
         17163 => 'SNMP::Info::Layer3::Steelhead',
+        21091 => 'SNMP::Info::Layer2::Exinda',
         25506 => 'SNMP::Info::Layer3::H3C',
         25461 => 'SNMP::Info::Layer3::PaloAlto',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
@@ -1695,6 +1702,7 @@ sub device_type {
         14823 => 'SNMP::Info::Layer3::Aruba',
         17163 => 'SNMP::Info::Layer3::Steelhead',
         20540 => 'SNMP::Info::Layer2::Sixnet',
+        21091 => 'SNMP::Info::Layer2::Exinda',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
         26928 => 'SNMP::Info::Layer2::Aerohive',
     );
