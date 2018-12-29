@@ -7,9 +7,14 @@ Coding Guidelines:
     - check-in required mibs to netdisco-mibs and release new package if needed
 
 Release and Testing Instructions: 
-    - Please see misc/RELEASE in Netdisco
-      ( http://netdisco.cvs.sourceforge.net/viewvc/netdisco/misc/RELEASE?view=markup )
-      and follow all testing and release guidelines
+    - for netdisco see:
+        -> https://github.com/netdisco/netdisco/wiki/Developing
+        -> https://metacpan.org/pod/App::Netdisco
+    - for snmp::info see:
+        -> https://github.com/netdisco/snmp-info/wiki/Release-Process
+        -> https://metacpan.org/pod/SNMP::Info#EXTENDING-SNMP::INFO
+    - for netdisco-mibs see:
+        -> https://github.com/netdisco/netdisco-mibs/wiki
 
 FAQ:
     - Do I have to update the version number and timestamp in modified files before committing? 
