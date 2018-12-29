@@ -41,7 +41,8 @@ use base qw<Test::Class Class::Data::Inheritable>;
 # Don't run the base tests defined in this class, run them in subclasses only
 My::Test::Class->SKIP_CLASS(1);
 
-INIT { Test::Class->runtests }
+# add a test which runs "use Test::Class::Load qw<xt/lib>;" and uncomment:
+# INIT { Test::Class->runtests }
 
 my $EMPTY = q{};
 
