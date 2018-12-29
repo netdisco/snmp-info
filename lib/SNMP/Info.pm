@@ -1046,7 +1046,7 @@ See documentation in L<SNMP::Info::Layer7::Arbor> for details.
 
 Subclass for Cisco IPS devices
 
-See documentation in L<SNMP::Info::Layer7::Cisco IPS> for details.
+See documentation in L<SNMP::Info::Layer7::CiscoIPS> for details.
 
 =item SNMP::Info::Layer7::Gigamon
 
