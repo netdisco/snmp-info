@@ -137,8 +137,7 @@ REQUIREMENTS
 
         If you are using SNMP::Info separate from Netdisco, download the
         Netdisco MIB package at
-        http://sourceforge.net/projects/netdisco/files/netdisco-mibs/latest-
-        snapshot/
+        https://github.com/netdisco/netdisco-mibs/releases/latest
 
         Make sure that your snmp.conf is updated to point to your MIB
         directory and that the MIBs are world-readable.
@@ -189,7 +188,7 @@ SUBCLASSES
         See documentation in SNMP::Info::AdslLine for details.
 
     SNMP::Info::Aggregate
-        SNMP Interface to IF-MIB `ifStackTable' Aggregated Links
+        SNMP Interface to IF-MIB `ifStackTable' Aggregated Links.
 
         See documentation in SNMP::Info::Aggregate for details.
 
@@ -211,16 +210,16 @@ SUBCLASSES
 
         See documentation in SNMP::Info::Bridge for details.
 
-    SNMP::Info::CiscoAgg
-        SNMP Interface to Cisco Aggregated Links
-
-        See documentation in SNMP::Info::CiscoAgg for details.
-
     SNMP::Info::CDP
         CISCO-CDP-MIB. Cisco Discovery Protocol (CDP) Support. Inherited by
         Cisco, Enterasys, and HP devices.
 
         See documentation in SNMP::Info::CDP for details.
+
+    SNMP::Info::CiscoAgg
+        SNMP Interface to Cisco Aggregated Links.
+
+        See documentation in SNMP::Info::CiscoAgg for details.
 
     SNMP::Info::CiscoConfig
         CISCO-CONFIG-COPY-MIB, CISCO-FLASH-MIB, and OLD-CISCO-SYS-MIB. These
@@ -251,14 +250,9 @@ SUBCLASSES
         See documentation in SNMP::Info::CiscoRTT for details.
 
     SNMP::Info::CiscoStack
-        CISCO-STACK-MIB.
+        CISCO-STACK-MIB
 
         See documentation in SNMP::Info::CiscoStack for details.
-
-    SNMP::Info::CiscoStpExtensions
-        CISCO-STP-EXTENSIONS-MIB
-
-        See documentation in SNMP::Info::CiscoStpExtensions for details.
 
     SNMP::Info::CiscoStats
         OLD-CISCO-CPU-MIB, CISCO-PROCESS-MIB, and CISCO-MEMORY-POOL-MIB.
@@ -266,6 +260,11 @@ SUBCLASSES
         Cisco devices.
 
         See documentation in SNMP::Info::CiscoStats for details.
+        
+    SNMP::Info::CiscoStpExtensions
+        CISCO-STP-EXTENSIONS-MIB
+
+        See documentation in SNMP::Info::CiscoStpExtensions for details.
 
     SNMP::Info::CiscoVTP
         CISCO-VTP-MIB, CISCO-VLAN-MEMBERSHIP-MIB,
@@ -294,13 +293,6 @@ SUBCLASSES
 
         See documentation in SNMP::Info::FDP for details.
 
-    SNMP::Info::IPv6
-        SNMP Interface for obtaining configured IPv6 addresses and mapping
-        IPv6 addresses to MAC addresses and interfaces, using information
-        from IP-MIB, IPV6-MIB and/or CISCO-IETF-IP-MIB.
-
-        See documentation in SNMP::Info::IPv6 for details.
-
     SNMP::Info::IEEE802dot11
         IEEE802dot11-MIB. A collection of OIDs providing information about
         standards based 802.11 wireless devices.
@@ -311,6 +303,13 @@ SUBCLASSES
         SNMP Interface to IEEE Aggregated Links. IEEE8023-LAG-MIB
 
         See documentation in SNMP::Info::IEEE802dot3ad for details.
+        
+    SNMP::Info::IPv6
+        SNMP Interface for obtaining configured IPv6 addresses and mapping
+        IPv6 addresses to MAC addresses and interfaces, using information
+        from IP-MIB, IPV6-MIB and/or CISCO-IETF-IP-MIB.
+
+        See documentation in SNMP::Info::IPv6 for details.
 
     SNMP::Info::LLDP
         LLDP-MIB, LLDP-EXT-DOT1-MIB, and LLDP-EXT-DOT3-MIB. Link Layer
@@ -325,7 +324,7 @@ SUBCLASSES
         See documentation in SNMP::Info::MAU for details.
 
     SNMP::Info::MRO
-        Method resolution introspection for SNMP::Info
+        Method resolution introspection for SNMP::Info.
 
         See documentation in SNMP::Info::MRO for details.
 
@@ -401,7 +400,7 @@ SUBCLASSES
         See documentation in SNMP::Info::Layer2 for details.
 
         SNMP::Info::Layer2::3Com
-            SNMP::Info::Layer2::3Com - SNMP Interface to L2 3Com Switches
+            Subclass for L2 3Com Switches.
 
             See documentation in SNMP::Info::Layer2::3Com for details.
 
@@ -410,15 +409,15 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::Adtran for details.
 
-        SNMP::Info::Layer2::Aerohive
-            Subclass for Aerohive Access Points.
-
-            See documentation in SNMP::Info::Layer2::Aerohive for details.
-
         SNMP::Info::Layer2::Airespace
             Subclass for Cisco (Airespace) wireless controllers.
 
             See documentation in SNMP::Info::Layer2::Airespace for details.
+
+        SNMP::Info::Layer2::Aerohive
+            Subclass for Aerohive Access Points.
+
+            See documentation in SNMP::Info::Layer2::Aerohive for details.
 
         SNMP::Info::Layer2::Aironet
             Class for Cisco Aironet wireless devices that run IOS. See also
@@ -444,10 +443,6 @@ SUBCLASSES
             probably others.
 
             See documentation in SNMP::Info::Layer2::Baystack for details.
-
-        SNMP::Info::Layer2::Kentrox
-            Class for Kentrox DataSMART DSU/CSU. See
-            SNMP::Info::Layer2::Kentrox for details.
 
         SNMP::Info::Layer2::C1900
             Subclass for Cisco Catalyst 1900 and 1900c Devices running
@@ -476,7 +471,7 @@ SUBCLASSES
 
         SNMP::Info::Layer2::Cisco
             Generic Cisco subclass for layer 2 devices that are not yet
-            supported in more specific subclassesand the base layer 2 Cisco
+            supported in more specific subclasses and the base layer 2 Cisco
             class for other device specific layer 2 Cisco classes.
 
             See documentation in SNMP::Info::Layer2::Cisco for details.
@@ -489,23 +484,28 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer2::CiscoSB for details.
 
         SNMP::Info::Layer2::HP
-            Subclass for more recent HP Procurve Switches
+            Subclass for more recent HP Procurve Switches.
 
             Requires HP-ICF-OID and ENTITY-MIB downloaded from HP.
 
             See documentation in SNMP::Info::Layer2::HP for details.
 
         SNMP::Info::Layer2::HP4000
-            Subclass for older HP Procurve Switches
+            Subclass for older HP Procurve Switches.
 
             Requires HP-ICF-OID and ENTITY-MIB downloaded from HP.
 
             See documentation in SNMP::Info::Layer2::HP4000 for details.
 
         SNMP::Info::Layer2::HPVC
-            Subclass for HP Virtual Connect Switches
+            Subclass for HP Virtual Connect Switches.
 
             See documentation in SNMP::Info::Layer2::HPVC for details.
+            
+        SNMP::Info::Layer2::Kentrox
+            Subclass for Kentrox DataSMART DSU/CSU.
+            
+            See documentation in SNMP::Info::Layer2::Kentrox for details.
 
         SNMP::Info::Layer2::N2270
             Subclass for Nortel 2270 wireless switches.
@@ -518,17 +518,17 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer2::NAP222x for details.
 
         SNMP::Info::Layer2::Netgear
-            Subclass for Netgear switches
+            Subclass for Netgear switches.
 
             See documentation in SNMP::Info::Layer2::Netgear for details.
-
+            
         SNMP::Info::Layer2::Nexans
-            Subclass for Nexans switches
+            Subclass for Nexans switches.
 
-            See documetion in SNMP::Info::Layer2::Nexans for details.
-
+            See documentation in SNMP::Info::Layer2::Nexans for details.
+            
         SNMP::Info::Layer2::NWSS2300
-            SNMP Interface to Avaya (Trapeze) Wireless Controllers
+            SNMP Interface to Avaya (Trapeze) Wireless Controllers.
 
             See documentation in SNMP::Info::Layer2::NWSS2300 for details.
 
@@ -537,18 +537,18 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::Orinoco for details.
 
-        SNMP::Info::Layer2::Trapeze
-            SNMP Interface to Juniper (Trapeze) Wireless Controllers
-
-            See documentation in SNMP::Info::Layer2::Trapeze for details.
-
         SNMP::Info::Layer2::Sixnet
-            SNMP Interface to Sixnet industrial switches
+            SNMP Interface to Sixnet industrial switches.
 
             See documentation in SNMP::Info::Layer2::Sixnet for details.
 
+        SNMP::Info::Layer2::Trapeze
+            SNMP Interface to Juniper (Trapeze) Wireless Controllers.
+
+            See documentation in SNMP::Info::Layer2::Trapeze for details.
+            
         SNMP::Info::Layer2::Ubiquiti
-            SNMP Interface to Ubiquiti Access Points and other devices
+            SNMP Interface to Ubiquiti Access Points and other devices.
 
             See documentation in SNMP::Info::Layer2::Ubiquiti for details.
 
@@ -587,9 +587,13 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::AlteonAD for details.
 
         SNMP::Info::Layer3::Altiga
+            Subclass for Cisco (formerly Altiga) VPN concentrators.
+            
             See documentation in SNMP::Info::Layer3::Altiga for details.
 
         SNMP::Info::Layer3::Arista
+            Subclass for Arista EOS Switches.
+        
             See documentation in SNMP::Info::Layer3::Arista for details.
 
         SNMP::Info::Layer3::Aruba
@@ -609,8 +613,8 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::BlueCoatSG for details.
 
         SNMP::Info::Layer3::C3550
-            Subclass for Cisco Catalyst 3550,3540,3560 2/3 switches running
-            IOS.
+            Subclass for Cisco Catalyst 3550,3540,3560 layer 2/3 switches
+            running IOS.
 
             See documentation in SNMP::Info::Layer3::C3550 for details.
 
@@ -626,7 +630,7 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::C6500 for details.
 
         SNMP::Info::Layer3::CheckPoint
-            Subclass for CheckPoint devices
+            Subclass for CheckPoint devices.
 
             See documentation in SNMP::Info::Layer3::CheckPoint for details.
 
@@ -648,8 +652,9 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::CiscoFWSM for details.
 
         SNMP::Info::Layer3::CiscoSwitch
-            Base class for L3 Cisco switches. See documentation in
-            SNMP::Info::Layer3::CiscoSwitch for details.
+            Base class for L3 Cisco switches.
+            
+            See documentation in SNMP::Info::Layer3::CiscoSwitch for details.
 
         SNMP::Info::Layer3::Contivity
             Subclass for Avaya/Nortel Contivity/VPN Routers.
@@ -737,12 +742,12 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::IBMGbTor for details.
 
         SNMP::Info::Layer3::Juniper
-            Subclass for Juniper devices
+            Subclass for Juniper devices.
 
             See documentation in SNMP::Info::Layer3::Juniper for details.
 
         SNMP::Info::Layer3::Lantronix
-            Subclass for Lantronix devices
+            Subclass for Lantronix devices.
 
             See documentation in SNMP::Info::Layer3::Lantronix for details.
 
@@ -773,12 +778,12 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::Netscreen for details.
 
         SNMP::Info::Layer3::Nexus
-            Subclass for Cisco Nexus devices running NX-OS
+            Subclass for Cisco Nexus devices running NX-OS.
 
             See documentation in SNMP::Info::Layer3::Nexus for details.
 
         SNMP::Info::Layer3::OneAccess
-            Subclass for OneAccess Quidway switches
+            Subclass for OneAccess Quidway routers.
 
             See documentation in SNMP::Info::Layer3::OneAccess for details.
 
@@ -800,7 +805,7 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::Passport for details.
 
         SNMP::Info::Layer3::Pf
-            Subclass for FreeBSD-Based Firewalls using Pf /Pf Sense
+            Subclass for FreeBSD-Based Firewalls using Pf /Pf Sense.
 
             See documentation in SNMP::Info::Layer3::Pf for details.
 
@@ -810,12 +815,14 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::Pica8 for details.
 
         SNMP::Info::Layer3::SonicWALL
-            Subclass for generic SonicWALL devices. See documentation in
-            SNMP::Info::Layer3::SonicWALL for details.
+            Subclass for generic SonicWALL devices.
+            
+            See documentation in SNMP::Info::Layer3::SonicWALL for details.
 
         SNMP::Info::Layer3::Steelhead
-            Subclass for Riverbed Steelhead WAN optimization appliances. See
-            documentation in SNMP::Info::Layer3::Steelhead for details.
+            Subclass for Riverbed Steelhead WAN optimization appliances.
+            
+            See documentation in SNMP::Info::Layer3::Steelhead for details.
 
         SNMP::Info::Layer3::Sun
             Subclass for Generic Sun Routers running SunOS.
@@ -832,15 +839,15 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Timetra for details.
 
-        SNMP::Info::Layer3::VyOS
-            Subclass for VyOS routers.
-
-            See documentation in SNMP::Info::Layer3::VyOS for details.
-
         SNMP::Info::Layer3::VMware
             Subclass for VMware ESXi hosts.
 
             See documentation in SNMP::Info::Layer3::VMware for details.
+
+        SNMP::Info::Layer3::VyOS
+            Subclass for VyOS routers.
+
+            See documentation in SNMP::Info::Layer3::VyOS for details.
 
     SNMP::Info::Layer7
         Generic Layer7 Devices.
@@ -848,39 +855,39 @@ SUBCLASSES
         See documentation in SNMP::Info::Layer7 for details.
 
         SNMP::Info::Layer7::APC
-            Subclass for APC UPS devices
+            Subclass for APC UPS devices.
 
             See documentation in SNMP::Info::Layer7::APC for details.
 
         SNMP::Info::Layer7::Arbor
-            Subclass for Arbor appliances
+            Subclass for Arbor appliances.
 
             See documentation in SNMP::Info::Layer7::Arbor for details.
 
         SNMP::Info::Layer7::CiscoIPS
-            Subclass for Cisco IPS devices
+            Subclass for Cisco IPS devices.
 
-            See documentation in SNMP::Info::Layer7::Cisco IPS for details.
+            See documentation in SNMP::Info::Layer7::CiscoIPS for details.
 
         SNMP::Info::Layer7::Gigamon
-            Subclass for Gigamon devices
+            Subclass for Gigamon devices.
 
             See documentation in SNMP::Info::Layer7::Gigamon for details.
 
         SNMP::Info::Layer7::Liebert
-            Subclass for Liebert devices
+            Subclass for Liebert devices.
 
             See documentation in SNMP::Info::Layer7::Liebert for details.
 
-        SNMP::Info::Layer7::Netscaler
-            Subclass for Citrix Netscaler appliances
-
-            See documentation in SNMP::Info::Layer7::Netscaler for details.
-
         SNMP::Info::Layer7::Neoteris
-            Subclass for Juniper SSL VPN appliances
+            Subclass for Juniper SSL VPN appliances.
 
             See documentation in SNMP::Info::Layer7::Neoteris for details.
+
+        SNMP::Info::Layer7::Netscaler
+            Subclass for Citrix Netscaler appliances.
+
+            See documentation in SNMP::Info::Layer7::Netscaler for details.
 
 Thanks
     Thanks for testing and coding help (in no particular order) to :
