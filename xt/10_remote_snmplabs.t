@@ -13,13 +13,12 @@ use Path::Class 'dir';
 
 my $info = SNMP::Info->new(
   AutoSpecify => 1,
-  Debug       => 1,
   DestHost    => 'demo.snmplabs.com',
   Community   => 'public',
   Version     => 2,
   MibDirs     => [ _build_mibdirs() ],
   IgnoreNetSNMPConf => 1,
-#  Debug       => 1,
+  Debug       => 1,
 #  DebugSNMP   => 1,
 );
 
