@@ -154,7 +154,7 @@ xt/00_local_prereq.t
 xt/00_local_spelling.t
 xt/00_local_versionsync.t
 xt/10_remote_snmplabs.t
-xt/20_run.t
+xt/21_run.t
 xt/lib/My/Test/Class.pm
 xt/lib/Test/SNMP/Info.pm
 xt/lib/Test/SNMP/Info/AdslLine.pm

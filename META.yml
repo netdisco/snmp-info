@@ -6,6 +6,8 @@ build_requires:
   Class::Inspector: '0'
   File::Find: '0'
   File::Slurper: '0'
+  Module::Find: '0'
+  NetSNMP::default_store: '0'
   Path::Class: '0'
   Test::Class::Most: '0'
   Test::Distribution: '0'
