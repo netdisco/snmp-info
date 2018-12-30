@@ -1,3 +1,17 @@
+Version 3.64 (2018-12-30)
+
+  [NEW FEATURES]
+
+  * #283 support for Exinda/GFI traffic shapers (inphobia)
+
+  [ENHANCEMENTS]
+
+  * #282 Aerohive base MAC lookup (inphobia)
+
+  [BUG FIXES]
+
+  * many documentation fixes (inphobia)
+
 Version 3.63 (2018-11-25)
 
   [ENHANCEMENTS]
