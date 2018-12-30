@@ -36,6 +36,7 @@ Module::Build->new(
     'Test::Exception' => '0.43',
     'Class::Inspector' => '0',
     'NetSNMP::default_store' => '0',
+    'Module::Find' => '0',
   },
   # script_files => [
   # ],
