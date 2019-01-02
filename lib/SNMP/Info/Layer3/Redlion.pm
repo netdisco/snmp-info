@@ -29,7 +29,7 @@
 
 package SNMP::Info::Layer3::Redlion;
 
-$VERSION = '3.63';
+$VERSION = '3.64';
 
 use strict;
 
@@ -155,7 +155,7 @@ Returns the model extracted from C<unitDescription>.
 
 =item $redlion->os()
 
-Returns 'ns'.
+Returns 'sn'.
 
 =item $redlion->os_ver()
 
@@ -172,7 +172,7 @@ Returns 'redlion'.
 =back
 
 =head2 Global Methods imported from SNMP::Info::Layer3
- 
+
 See L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head1 TABLE ENTRIES
@@ -187,7 +187,7 @@ to a hash.
 =back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
- 
+
 See L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =cut

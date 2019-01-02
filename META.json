@@ -484,7 +484,7 @@
       },
       "SNMP::Info::Layer3::Redlion" : {
          "file" : "lib/SNMP/Info/Layer3/Redlion.pm",
-         "version" : "3.63"
+         "version" : "3.64"
       },
       "SNMP::Info::Layer3::SonicWALL" : {
          "file" : "lib/SNMP/Info/Layer3/SonicWALL.pm",
