@@ -168,7 +168,11 @@ ifIndex of the corresponding master ports.
 Implements the PAgP LAG info retrieval. Merged into C<agg_ports> data
 automatically.
 
+=back
+
 =head2 OVERRIDES
+
+=over
 
 =item C<agg_ports_lag>
 
