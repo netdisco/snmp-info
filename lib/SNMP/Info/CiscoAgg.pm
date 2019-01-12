@@ -80,6 +80,25 @@ sub agg_ports_pagp {
   return $mapping;
 }
 
+sub agg_ports_lag {
+  my $dev = shift;
+
+  # same note as for agg_ports_pagp, it will miss mappings if interfaces
+  # are down or lacp is not synced.
+
+  my $mapping = {};
+  my $group = $dev->dot3adAggPortSelectedAggID;
+  for my $slave (keys %$group) {
+    my $master = $group->{$slave};
+    next if($master == 0 || $slave == $master);
+
+    $mapping->{$slave} = $master;
+  }
+
+  return $mapping;
+}
+
+
 # until we have PAgP data and need to combine with LAG data
 sub agg_ports {
   my $ret = {%{agg_ports_pagp(@_)}, %{agg_ports_lag(@_)}};
@@ -148,6 +167,13 @@ ifIndex of the corresponding master ports.
 
 Implements the PAgP LAG info retrieval. Merged into C<agg_ports> data
 automatically.
+
+=head2 OVERRIDES
+
+=item C<agg_ports_lag>
+
+This will retrieve LAG ports based on C<dot3adAggPortSelectedAggID> data.
+It will be merged into C<agg_ports> data.
 
 =back
 
