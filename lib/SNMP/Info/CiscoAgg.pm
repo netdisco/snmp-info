@@ -41,24 +41,64 @@ use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
   agg_ports
 /;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+use vars qw/$DEBUG $VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 $VERSION = '3.64';
 
 %MIBS = (
   %SNMP::Info::IEEE802dot3ad::MIBS,
-  'CISCO-PAGP-MIB'   => 'pagpGroupIfIndex',
+  'CISCO-PAGP-MIB'         => 'pagpGroupIfIndex',
+  'CISCO-LAG-MIB'          => 'clagAggPortListPorts',
+  'CISCO-IF-EXTENSION-MIB' => 'cieIfLastInTime',
 );
 
 %GLOBALS = ();
 
 %FUNCS = (
   %SNMP::Info::IEEE802dot3ad::FUNCS,
+  'lag_ports'         => 'clagAggPortListPorts',
+  'lag_port_dot1_map' => 'cieIfDot1dBaseMappingPort',
+  'lag_map'           => 'clagAggPortListInterfaceIndexList',
+  'lag_members'       => 'clagAggPortListInterfaceIndexList',
 );
 
 %MUNGE = (
   %SNMP::Info::IEEE802dot3ad::MUNGE,
+  'lag_ports'   => \&SNMP::Info::munge_port_list,
+  'lag_map'   => \&SNMP::Info::CiscoAgg::munge_port_list_4o,
 );
+
+sub munge_port_list_4o {
+    my $oct = shift;
+printf 'XXXXXXXXXX oct: <%#B>'."\n",$oct;
+printf "l %d\n", length($oct);
+    return unless defined $oct;
+
+
+    my $list = [ split( //, unpack( "%32b", $oct ) ) ];
+printf 's %d'."\n", @$list;
+foreach (@$list) {
+#	printf 'XXX list: <%#B>'. "\n", $_;
+	printf '222 list: <%032b>'. "\n", $_;
+}
+
+    return $list;
+}
+
+sub lp {
+  my $dev = shift;
+  my $group = $dev->lag_map;
+
+  my $mapping = {};
+  for my $slave (keys %$group) {
+    my $master = $group->{$slave};
+    next if($master == 0 || $slave == $master);
+
+    $mapping->{$slave} = $master;
+  }
+
+  return $mapping;
+}
 
 sub agg_ports_pagp {
   my $dev = shift;
@@ -148,6 +188,8 @@ L<SNMP::Info::IEEE802dot3ad>
 =over
 
 =item F<CISCO-PAGP-MIB>
+
+=item F<CISCO-LAG-MIB>
 
 =back
 
