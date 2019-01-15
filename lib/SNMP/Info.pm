@@ -3540,7 +3540,7 @@ $REPEATERS = 20;
 
 =item munge_speed()
 
-Makes human friendly speed ratings using %SPEED_MAP
+Makes human friendly speed ratings using C<%SPEED_MAP>.
 
  %SPEED_MAP = (
                 '56000'      => '56 kbps',
@@ -3639,7 +3639,7 @@ sub munge_speed {
 
 =item munge_highspeed()
 
-Makes human friendly speed ratings for C<ifHighSpeed>
+Makes human friendly speed ratings for C<ifHighSpeed>.
 
 =cut
 
@@ -3668,7 +3668,7 @@ sub munge_highspeed {
 
 =item munge_ip()
 
-Takes a binary IP and makes it dotted ASCII
+Takes a binary IP and makes it dotted ASCII.
 
 =cut
 
@@ -3695,7 +3695,7 @@ sub munge_mac {
 
 =item munge_prio_mac()
 
-Takes an 2-byte octet stream (HEX-STRING) and returns a colon separated ASCII
+Takes an 8-byte octet stream (HEX-STRING) and returns a colon separated ASCII
 hex string.
 
 =cut
@@ -3711,23 +3711,23 @@ sub munge_prio_mac {
 
 =item munge_prio_port()
 
-Takes an 8-byte octet stream (HEX-STRING) and returns a colon separated ASCII
+Takes an 2-byte octet stream (HEX-STRING) and returns a colon separated ASCII
 hex string.
 
 =cut
 
 sub munge_prio_port {
-    my $mac = shift;
-    return unless defined $mac;
-    return unless length $mac;
-    $mac = join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $mac ) );
-    return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){1}[0-9A-F][0-9A-F]$/i;
+    my $priop = shift;
+    return unless defined $priop;
+    return unless length $priop;
+    $priop = join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $priop ) );
+    return $priop if $priop =~ /^([0-9A-F][0-9A-F]:){1}[0-9A-F][0-9A-F]$/i;
     return;
 }
 
 =item munge_octet2hex()
 
-Takes a binary octet stream and returns an ASCII hex string
+Takes a binary octet stream and returns an ASCII hex string.
 
 =cut
 
@@ -3738,7 +3738,7 @@ sub munge_octet2hex {
 
 =item munge_dec2bin()
 
-Takes a binary char and returns its ASCII binary representation
+Takes a binary char and returns its ASCII binary representation.
 
 =cut
 
@@ -3754,9 +3754,9 @@ sub munge_dec2bin {
     return $num;
 }
 
-=item munge_bits
+=item munge_bits()
 
-Takes a SNMP2 'BITS' field and returns the ASCII bit string
+Takes a SNMP2 'BITS' field and returns the ASCII bit string.
 
 =cut
 
@@ -3767,7 +3767,7 @@ sub munge_bits {
     return unpack( "B*", $bits );
 }
 
-=item munge_counter64
+=item munge_counter64()
 
 If $BIGINT is set to true, then a Math::BigInt object is returned.
 See Math::BigInt for details.
@@ -3782,7 +3782,7 @@ sub munge_counter64 {
     return $bigint;
 }
 
-=item munge_i_up
+=item munge_i_up()
 
 Net-SNMP tends to load C<RFC1213-MIB> first, and so ignores the
 updated enumeration for C<ifOperStatus> in C<IF-MIB>.  This munge
@@ -3804,7 +3804,7 @@ sub munge_i_up {
     return $ifOperStatusMap{$i_up} || $i_up;
 }
 
-=item munge_port_list
+=item munge_port_list()
 
 Takes an octet string representing a set of ports and returns a reference
 to an array of binary values each array element representing a port.
@@ -3825,7 +3825,7 @@ sub munge_port_list {
 
 =item munge_null()
 
-Removes control characters from a string
+Removes control characters from a string.
 
 =cut
 
