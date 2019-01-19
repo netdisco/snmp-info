@@ -277,7 +277,7 @@ Carlos Vicente
 
 =head1 SYNOPSIS
 
-   my $ciscostpext = new SNMP::Info(
+   my $stpx = new SNMP::Info(
                          AutoSpecify => 1,
                          Debug       => 1,
                          DestHost    => 'myswitch',
@@ -287,7 +287,7 @@ Carlos Vicente
 
    or die "Can't connect to DestHost.\n";
 
-   my $class = $ciscostpext->class();
+   my $class = $stpx->class();
    print " Using device sub class : $class\n";
 
 =head1 DESCRIPTION
@@ -306,6 +306,14 @@ For debugging you can call new() directly as you would in SNMP::Info
 =item SNMP::Info
 
 =item SNMP::Info::Bridge
+
+=back
+
+=head2 Required MIBs
+
+=over
+
+=item F<CISCO-STP-EXTENSIONS-MIB>
 
 =back
 
