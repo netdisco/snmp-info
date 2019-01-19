@@ -213,6 +213,10 @@ automatically.
 Implements the PAgP LAG info retrieval. Merged into C<agg_ports> data
 automatically.
 
+=item C<munge_port_ifindex>
+
+needs documentation. maps lag masters to slave ifindex.
+
 =back
 
 =head2 OVERRIDES
