@@ -63,7 +63,7 @@ $VERSION = '3.64';
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
     %SNMP::Info::LLDP::FUNCS,
-    
+
 );
 
 %MUNGE = (
@@ -102,14 +102,14 @@ Jeroen van Ingen
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $hp = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $hp->class();
@@ -117,11 +117,11 @@ Jeroen van Ingen
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
-HP Virtual Connect Switch via SNMP. 
+Provides abstraction to the configuration information obtainable from a
+HP Virtual Connect Switch via SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $hp = new SNMP::Info::Layer2::HPVC(...);
 
@@ -209,6 +209,6 @@ See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 These are methods that provide SNMP set functionality for overridden methods
 or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
-operations. 
+operations.
 
 =cut

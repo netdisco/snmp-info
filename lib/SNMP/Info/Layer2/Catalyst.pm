@@ -173,14 +173,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $cat = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $cat->class();
@@ -206,7 +206,7 @@ Note:  Some older Catalyst switches will only talk SNMP version 1.  Some
 newer ones will not return all their data if connected via Version 1.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $cat = new SNMP::Info::Layer2::Catalyst(...);
 
@@ -246,7 +246,7 @@ Returns 'catalyst'
 
 =item $cat->os_ver()
 
-Tries to use the value from SNMP::Info::CiscoStats->os_ver() and if it fails 
+Tries to use the value from SNMP::Info::CiscoStats->os_ver() and if it fails
 it grabs $cat->m_swver()->{1} and uses that.
 
 =item $cat->vendor()
@@ -279,11 +279,11 @@ to a hash.
 =item $cat->interfaces()
 
 Returns the map between SNMP Interface Identifier (iid) and physical port
-name. 
+name.
 
 =item $cat->i_name()
 
-Returns reference to hash of iid to human set name. 
+Returns reference to hash of iid to human set name.
 
 C<portName>
 
