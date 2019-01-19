@@ -157,7 +157,7 @@ or C<%FUNCS> configuration. The data structure looks like:
  }
 
 It should be noted that the order of method resolution in SNMP::Info is to
-first look for a defined subroutine (this is done by Perl), then the 
+first look for a defined subroutine (this is done by Perl), then the
 AUTOLOAD sequence will search for a definition in C<%GLOBALS> followed by
 C<%FUNCS>.
 

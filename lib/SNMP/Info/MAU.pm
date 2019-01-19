@@ -460,10 +460,10 @@ Max Baker
 
 =head1 SYNOPSIS
 
- my $mau = new SNMP::Info ( 
+ my $mau = new SNMP::Info (
                              AutoSpecify => 1,
                              Debug       => 1,
-                             DestHost    => 'hpswitch', 
+                             DestHost    => 'hpswitch',
                              Community   => 'public',
                              Version     => 2
                            );
@@ -551,14 +551,14 @@ and their index in the MAU IF Table.
 
 (C<ifMauIfIndex>)
 
-=item $mau->mau_link() - Returns the type of Media Access used.  
+=item $mau->mau_link() - Returns the type of Media Access used.
 
-    This is essentially the type of link in use.  
+    This is essentially the type of link in use.
     eg. dot3MauType100BaseTXFD - 100BaseT at Full Duplex
 
 (C<ifMauType>)
 
-=item $mau->mau_status() - Returns the admin link condition as 
+=item $mau->mau_status() - Returns the admin link condition as
 
     1 - other
     2 - unknown
@@ -576,9 +576,9 @@ Use 5 and !5 to see if the link is up or down on the admin side.
  (C<ifMauMediaAvailable>)
 
 =item $mau->mau_type() - Returns a 32bit string reporting the capabilities
-of the port from a MAU POV. 
+of the port from a MAU POV.
 
-  Directly from F<MAU-MIB> : 
+  Directly from F<MAU-MIB> :
           Bit   Capability
             0      other or unknown
             1      AUI
@@ -619,14 +619,14 @@ ports.
 (C<ifMauAutoNegAdminStatus>)
 
 =item $mau->mau_autosent() - Returns a 32 bit bit-string representing the
-capabilities we are broadcasting on that port 
+capabilities we are broadcasting on that port
 
     Uses the same decoder as $mau->mau_type().
 
 (C<ifMauAutoNegCapAdvertised>)
 
-=item $mau->mau_autorec() - Returns a 32 bit bit-string representing the 
-capabilities of the device on the other end. 
+=item $mau->mau_autorec() - Returns a 32 bit bit-string representing the
+capabilities of the device on the other end.
 
     Uses the same decoder as $mau->mau_type().
 
@@ -641,7 +641,7 @@ or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
 operations.
 
-=over 
+=over
 
 =item $mau->mau_set_i_speed_admin(speed, ifIndex)
 
@@ -684,7 +684,7 @@ Accepts the following values for speed and duplex:
 
 =head1 Utility Functions
 
-=over 
+=over
 
 =item munge_int2bin() - Unpacks an integer into a 32bit bit string.
 
