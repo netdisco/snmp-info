@@ -224,14 +224,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $aironet = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $aironet->class();
@@ -257,7 +257,7 @@ This class is for devices running Cisco IOS software (newer)
 =back
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $aironet = new SNMP::Info::Layer3::Aironet(...);
 
@@ -280,7 +280,7 @@ after determining a more specific class using the method above.
 =back
 
 These MIBs are now included in the v2.tar.gz archive available from
-ftp.cisco.com.  Make sure you have a current version. 
+ftp.cisco.com.  Make sure you have a current version.
 
 =head1 GLOBALS
 
@@ -296,7 +296,7 @@ C<awcEtherDuplex.0>
 
 =item $aironet->mac()
 
-Gives the MAC Address of the wireless side 
+Gives the MAC Address of the wireless side
 
 C<dot11StationID.2>
 

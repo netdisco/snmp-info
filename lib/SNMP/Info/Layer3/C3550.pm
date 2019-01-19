@@ -206,7 +206,7 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $c3550 = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
@@ -214,7 +214,7 @@ Max Baker
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $c3550->class();
@@ -222,14 +222,14 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Cisco Catalyst 3550 Layer 2/3 Switches.  
+Abstraction subclass for Cisco Catalyst 3550 Layer 2/3 Switches.
 
 These devices run IOS but have some of the same characteristics as the
 Catalyst WS-C family (5xxx,6xxx).  For example, forwarding tables are held in
 VLANs, and extended interface information is gleaned from F<CISCO-SWITCH-MIB>.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $c3550 = new SNMP::Info::Layer3::C3550(...);
 
@@ -327,7 +327,7 @@ Crosses $c3550->p_port() with $c3550->p_duplex() to utilize port C<ifIndex>.
 
     Example:
     my %if_map = reverse %{$c3550->interfaces()};
-    $c3550->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'}) 
+    $c3550->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'})
         or die "Couldn't change port duplex. ",$c3550->error(1);
 
 =back
