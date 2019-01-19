@@ -78,7 +78,7 @@ sub model : Tests(5) {
   $test->{info}{_id} = '.100.3.6.1.4.1.20540.2.1';
   is($test->{info}->model(), '.100.3.6.1.4.1.20540.2.1',
      q(Model is expected value when id doesn't translate));
-  
+
   $test->{info}->clear_cache();
   is($test->{info}->model(), undef, q(No data returns undef model));
 }

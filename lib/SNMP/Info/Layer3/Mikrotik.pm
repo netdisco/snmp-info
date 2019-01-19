@@ -179,6 +179,7 @@ Returns the value of C<mtxrLicVersion>.
 Returns the value of RouterOS level C<mtxrLicLevel>
 
 =item $mikrotik->board_temp()
+
 =item $mikrotik->cpu_temp()
 
 Returns the appropriate temperature values
@@ -206,13 +207,8 @@ to a hash.
 
 None.
 
-=over
-
-=back
-
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
 
 =cut

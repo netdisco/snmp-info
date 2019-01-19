@@ -74,7 +74,7 @@ sub setup : Tests(setup) {
         2 => '802.11G Radio',
         3 => '802.11A Radio',
         4 => 'PowerPCElvis Ethernet',
-      },     
+      },
 
     },
   };

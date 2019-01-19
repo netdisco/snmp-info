@@ -463,7 +463,7 @@ sub ip_index : Tests(4) {
   can_ok($test->{info}, 'ip_index');
 
   my $cache_data = {
-    '_old_ip_index' => 1,    
+    '_old_ip_index' => 1,
     '_new_ip_index' => 1,
     '_new_ip_type'  => 1,
     'store'        => {
@@ -498,7 +498,7 @@ sub ip_table : Tests(4) {
   can_ok($test->{info}, 'ip_table');
 
   my $cache_data = {
-    '_old_ip_table' => 1,    
+    '_old_ip_table' => 1,
     '_new_ip_index' => 1,
     '_new_ip_type'  => 1,
     'store'        => {
@@ -533,7 +533,7 @@ sub ip_netmask : Tests(4) {
   can_ok($test->{info}, 'ip_netmask');
 
   my $cache_data = {
-    '_old_ip_netmask' => 1,    
+    '_old_ip_netmask' => 1,
     '_new_ip_prefix' => 1,
     '_new_ip_type'  => 1,
     'store'        => {
@@ -908,7 +908,7 @@ sub resolve_desthost : Tests(6) {
     'udp6:fe80:0:0:0:2d0:b7ff:fe21:c6c0',
     q(Net-SNMP example IPv6 address returns with 'udp6:' prefix)
   );
-  
+
   dies_ok { SNMP::Info::resolve_desthost('1.2.3.4.5') } 'Bad IP dies';
 }
 

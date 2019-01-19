@@ -196,10 +196,6 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=over
-
-=back
-
 =head2 Overrides
 
 =over

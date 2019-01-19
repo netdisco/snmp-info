@@ -188,21 +188,9 @@ See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2 Overrides
-
-=over
-
-=back
-
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
-
-=head1 MUNGES
-
-=over
-
-=back
 
 =head1 SET METHODS
 
