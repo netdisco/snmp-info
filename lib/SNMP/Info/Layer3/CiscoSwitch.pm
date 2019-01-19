@@ -91,7 +91,7 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $switch = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
@@ -99,7 +99,7 @@ Eric Miller
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $switch->class();
@@ -107,14 +107,14 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Base subclass for Cisco Layer 2/3 Switches.  
+Base subclass for Cisco Layer 2/3 Switches.
 
 These devices have switch specific characteristics beyond those in
 traditional routers covered by L<SNMP::Info::Layer3::Cisco>. For example,
 port security interface information from L<SNMP::Info::CiscoPortSecurity>.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $swich = new SNMP::Info::Layer3::CiscoSwitch(...);
 
