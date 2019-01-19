@@ -68,10 +68,10 @@ my ($serial, $descr, $model);
 sub _fetch_info {
     my $self = shift;
     foreach my $id ( keys %{ $self->e_id() } ){
-        
+
         if (
             $self->e_name->{$id} =~ m/^Module$/ and
-            $self->e_model->{$id} =~ m/IPS/ 
+            $self->e_model->{$id} =~ m/IPS/
         ) {
             $serial = $self->e_serial->{$id};
             $descr  = $self->e_descr->{$id};
@@ -79,7 +79,7 @@ sub _fetch_info {
         }
 
     }
-    
+
 }
 
 sub layers {
@@ -113,14 +113,14 @@ sub productname {
 
 sub b_mac {
     my ( $self ) = shift;
-    
+
     foreach my $mac ( values %{$self->i_mac()} ){
 
         next unless defined $mac;
         next unless $mac =~ m/^e4:d3:f1/;
         return  $mac;
     }
-    
+
     return '';
 }
 
@@ -162,7 +162,7 @@ Moe Kraus
 
 =head1 DESCRIPTION
 
-Subclass for Cisco IPS Module 
+Subclass for Cisco IPS Module
 
 =head2 Inherited Classes
 
