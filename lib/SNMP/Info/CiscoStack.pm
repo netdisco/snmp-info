@@ -295,14 +295,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $ciscostats = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $ciscostats->class();
@@ -386,7 +386,7 @@ Returns a map to IID for ports that are physical ports, not vlans, etc.
 
 =item $stack->i_type()
 
-Crosses p_port() with p_type() and returns the results. 
+Crosses p_port() with p_type() and returns the results.
 
 Overrides with C<ifType> if p_type() isn't available.
 
@@ -425,7 +425,7 @@ C<portAdminSpeed>
 
     Example:
     my %if_map = reverse %{$stack->interfaces()};
-    $stack->set_i_speed_admin('auto', $if_map{'FastEthernet0/1'}) 
+    $stack->set_i_speed_admin('auto', $if_map{'FastEthernet0/1'})
         or die "Couldn't change port speed. ",$stack->error(1);
 
 =item $stack->set_i_duplex_admin(duplex, ifIndex)
