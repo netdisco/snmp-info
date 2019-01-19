@@ -4438,7 +4438,7 @@ sub _load_attr {
 
         if ( $self->{Offline} ) {
             $self->error_throw(
-                "SNMP::Info::_load_atrr: Offline but $attr is not in cache\n" );
+                "SNMP::Info::_load_attr: Offline but $attr is not in cache\n" );
             return;
         }
 
@@ -4516,7 +4516,7 @@ sub _load_attr {
             ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
             if ( $sess->{ErrorNum} ) {
                 $self->error_throw(
-                    "SNMP::Info::_load_atrr: BULKWALK " . $sess->{ErrorStr},
+                    "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr},
                     "\n" );
                 return;
             }
