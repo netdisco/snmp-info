@@ -37,7 +37,7 @@ Version 3.62 (2018-10-29)
   * #275 Document peth_port_ifindex for Junipers
   * #274 Add peth_port_ifindex override for Junipers
   * #270 Add support for additional Mikrotik models
-  * Add HP 3810M, 2930M, 2930F and 2540 series switches 
+  * Add HP 3810M, 2930M, 2930F and 2540 series switches
 
   [BUG FIXES]
 
@@ -127,7 +127,7 @@ Version 3.56 (2018-04-22)
   [BUG FIXES]
 
   * Fix table methods when defined as an OID which will not completely
-    translate to a fully qualified textual leaf 
+    translate to a fully qualified textual leaf
 
 Version 3.55 (2018-04-19)
 
@@ -160,7 +160,7 @@ Version 3.55 (2018-04-19)
     ports() of L3::C3550
   * Correct validation and IID/key used in mau_set_i_speed_admin() and
     mau_set_i_duplex_admin() of MAU
-  * Correct typo in MIB leaf names in L3::Aironet 
+  * Correct typo in MIB leaf names in L3::Aironet
   * Don't use MIB leafs that are not-accessible according to MIB
     NOTE: Fixing this logic now results in methods on MIB leafs specified as
     not-accessible failing validation in _validate_autoload_method()
@@ -223,7 +223,7 @@ version 3.50 (2018-03-14)
 
   * #226 Avaya VSP devices - no ifAlias
   * #227 Remove bogus can() check in _set()
-  * Fix SNMP::Info::IEEE802dot3ad when more than 1 LAG 
+  * Fix SNMP::Info::IEEE802dot3ad when more than 1 LAG
 
 version 3.49 (2018-03-03)
 
