@@ -169,14 +169,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $l2 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $l2->class();
@@ -199,11 +199,11 @@ This class is usually used as a superclass for more specific device classes
 listed under SNMP::Info::Layer2::*   Please read all docs under SNMP::Info
 first.
 
-Provides abstraction to the configuration information obtainable from a 
+Provides abstraction to the configuration information obtainable from a
 Layer2 device through SNMP.  Information is stored in a number of MIBs.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $l2 = new SNMP::Info::Layer2(...);
 
@@ -243,7 +243,7 @@ These are methods that return scalar value from SNMP
 
 =item $l2->model()
 
-Cross references $l2->id() with product IDs in the 
+Cross references $l2->id() with product IDs in the
 Cisco MIBs.
 
 For HP devices, removes C<'hpswitch'> from the name

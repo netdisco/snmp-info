@@ -66,7 +66,7 @@ sub model {
     my $id    = $l7->id();
     my $model = &SNMP::translateObj($id);
 
-    # Neoteris (Juniper IVE)    
+    # Neoteris (Juniper IVE)
     $model =~ s/^ive//i;
 
     return $model;
@@ -113,14 +113,14 @@ Jeroen van Ingen
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $l7 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $l7->class();
@@ -144,15 +144,15 @@ This class is usually used as a superclass for more specific device classes
 listed under SNMP::Info::Layer7::*   Please read all docs under SNMP::Info
 first.
 
-Provides abstraction to the configuration information obtainable from a 
+Provides abstraction to the configuration information obtainable from a
 Layer7 device through SNMP.  Information is stored in a number of MIBs.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $l7 = new SNMP::Info::Layer7(...);
 
-=head2 Inherited Classes 
+=head2 Inherited Classes
 
 =over
 
@@ -160,7 +160,7 @@ after determining a more specific class using the method above.
 
 =back
 
-=head2 Required MIBs 
+=head2 Required MIBs
 
 =over
 

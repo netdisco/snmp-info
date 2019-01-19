@@ -439,7 +439,7 @@ C<portAdminSpeed>
 
     Example:
     my %if_map = reverse %{$stack->interfaces()};
-    $stack->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'}) 
+    $stack->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'})
         or die "Couldn't change port duplex. ",$stack->error(1);
 
 =back
