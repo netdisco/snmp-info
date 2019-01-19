@@ -46,9 +46,9 @@ $VERSION = '3.64';
 
 %GLOBALS = ();
 
-%FUNCS = ( 
-    'cpeth_ent_phy'     => 'cpeExtPsePortEntPhyIndex', 
-    'peth_port_power'   => 'cpeExtPsePortPwrConsumption', 
+%FUNCS = (
+    'cpeth_ent_phy'     => 'cpeExtPsePortEntPhyIndex',
+    'peth_port_power'   => 'cpeExtPsePortPwrConsumption',
 );
 
 %MUNGE = ();
@@ -113,14 +113,14 @@ Bill Fenner
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $poe = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $poe->class();
@@ -176,7 +176,7 @@ Maps the C<pethPsePortTable> to C<ifIndex> by way of the F<ENTITY-MIB>.
 
 Power supplied by PoE ports, in milliwatts
 (C<cpeExtPsePortPwrConsumption>)
- 
+
 =back
 
 =head2 CDP Port table

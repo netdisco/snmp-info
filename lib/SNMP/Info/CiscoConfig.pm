@@ -336,10 +336,6 @@ These are methods that return scalar value from SNMP
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=over
-
-=back
-
 =head2 Config Copy Request Table  (C<ccCopyTable>)
 
 =over

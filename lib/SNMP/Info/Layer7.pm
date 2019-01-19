@@ -176,10 +176,6 @@ See L<SNMP::Info/"Required MIBs"> for its MIB requirements.
 
 These are methods that return scalar value from SNMP
 
-=over
-
-=back
-
 =head2 Overrides
 
 =over

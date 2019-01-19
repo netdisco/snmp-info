@@ -486,7 +486,7 @@ Eric Miller
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+                        )
 
     or die "Can't connect to DestHost.\n";
 
@@ -495,11 +495,11 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
+Provides abstraction to the configuration information obtainable from a
 Cyclades/Avocent device through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $cyclades = new SNMP::Info::Layer1::Cyclades(...);
 
@@ -602,12 +602,12 @@ to a hash.
 
 =item $cyclades->i_index()
 
-Returns reference to map of IIDs to Interface index. 
+Returns reference to map of IIDs to Interface index.
 
 Extended to include serial ports.  Serial ports are indexed with the
 alternative labeling system for the serial port, either the listening socket
 port C<cySPortSocketPort> or C<acsSerialPortTableDeviceName> name to avoid
-conflicts with C<ifIndex>.  
+conflicts with C<ifIndex>.
 
 =item $cyclades->interfaces()
 
@@ -617,7 +617,7 @@ serial ports, C<acsSerialPortTableDeviceName> or C<cyISPortTty>.
 =item $cyclades->i_speed()
 
 Returns interface speed.  Extended to include serial ports,
-C<acsSerialPortTableComSpeed> or C<cyISPortSpeed>. 
+C<acsSerialPortTableComSpeed> or C<cyISPortSpeed>.
 
 =item $cyclades->i_up()
 

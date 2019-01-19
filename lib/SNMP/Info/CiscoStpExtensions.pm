@@ -277,6 +277,19 @@ Carlos Vicente
 
 =head1 SYNOPSIS
 
+   my $ciscostpext = new SNMP::Info(
+                         AutoSpecify => 1,
+                         Debug       => 1,
+                         DestHost    => 'myswitch',
+                         Community   => 'public',
+                         Version     => 2
+                       )
+
+   or die "Can't connect to DestHost.\n";
+
+   my $class = $ciscostpext->class();
+   print " Using device sub class : $class\n";
+
 =head1 DESCRIPTION
 
 Create or use a subclass of SNMP::Info that inherits this class.  Do not use

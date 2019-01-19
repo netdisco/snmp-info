@@ -196,10 +196,6 @@ None.
 
 These are methods that return scalar values from SNMP
 
-=over
-
-=back
-
 =head2 F<CISCO-PORT-SECURITY-MIB> globals
 
 =over

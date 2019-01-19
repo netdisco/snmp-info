@@ -467,7 +467,7 @@ Max Baker
                              Community   => 'public',
                              Version     => 2
                            );
- 
+
  my $class = $mau->class();
  print " Using device sub class : $class\n";
 
