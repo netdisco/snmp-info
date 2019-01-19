@@ -110,12 +110,12 @@ sub i_ignore {
 
 sub layers {
     my $pfront = shift;
-    
+
     my $layers = $pfront->SUPER::layers();
     # Some models or softwware versions don't report L2 properly
     # so add L2 capability to the output if the device has bridge ports.
     my $bports = $pfront->b_ports();
-    
+
     if ($bports) {
         my $l = substr $layers, 6, 1, "1";
     }
@@ -137,14 +137,14 @@ initial version based on SNMP::Info::Layer3::NetSNMP by Bradley Baetz and Bill F
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $pfront = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $pfront->class();
@@ -202,7 +202,7 @@ Returns the software version extracted from C<sysDescr>.
 
 =item $pfront->serial()
 
-Returns the value of C<productSerialNo>. 
+Returns the value of C<productSerialNo>.
 
 =back
 
@@ -227,7 +227,7 @@ Ignores loopback
 
 =item $pfront->layers()
 
-L2 capability isn't always reported correctly by the device itself; what the 
+L2 capability isn't always reported correctly by the device itself; what the
 device reports is augmented with L2 capability if the device has bridge ports.
 
 =back

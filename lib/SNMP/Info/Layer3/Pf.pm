@@ -132,7 +132,7 @@ Max Baker
 =head1 SYNOPSIS
 
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $pf = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
@@ -140,7 +140,7 @@ Max Baker
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $pf->class();
@@ -157,7 +157,7 @@ that the available CDP/LLDP modules for net-snmp don't work on FreeBSD (on
 which pfSense is based) as they assume certain Linux specific Ethernet
 structures.  This problem is apparently solved on PF based firewall appliances
 by using the ladvd package, for which a port may be found here:
-L<http://www.freshports.org/net/ladvd/>.  I'm not sure if this module ties into 
+L<http://www.freshports.org/net/ladvd/>.  I'm not sure if this module ties into
 Net-SNMP or not.
 
 =head2 Inherited Classes
@@ -205,7 +205,7 @@ Returns 'Pf'
 =item $pf->os_ver()
 
 Tries to reference $pf->id() to one of the product MIBs listed above.
-Will probably return a truncation of the default OID for pf-based systems 
+Will probably return a truncation of the default OID for pf-based systems
 C<enterprises.12325.1.1.2.1.1>.
 
 =back
