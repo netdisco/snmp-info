@@ -30,15 +30,20 @@
 package SNMP::Info::CiscoAgg;
 
 use strict;
+#use warnings;
 use Exporter;
-use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
+use SNMP::Info::IEEE802dot3ad;
 
 @SNMP::Info::CiscoAgg::ISA = qw/
   SNMP::Info::IEEE802dot3ad
   Exporter
 /;
+
 @SNMP::Info::CiscoAgg::EXPORT_OK = qw/
   agg_ports
+  agg_ports_cisco
+  agg_ports_lag
+  agg_ports_pagp
 /;
 
 use vars qw/$DEBUG $VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
@@ -57,44 +62,35 @@ $VERSION = '3.64';
 %FUNCS = (
   %SNMP::Info::IEEE802dot3ad::FUNCS,
   'lag_ports'         => 'clagAggPortListPorts',
-  'lag_port_dot1_map' => 'cieIfDot1dBaseMappingPort',
-  'lag_map'           => 'clagAggPortListInterfaceIndexList',
   'lag_members'       => 'clagAggPortListInterfaceIndexList',
 );
 
 %MUNGE = (
   %SNMP::Info::IEEE802dot3ad::MUNGE,
-  'lag_ports'   => \&SNMP::Info::munge_port_list,
-  'lag_map'   => \&SNMP::Info::CiscoAgg::munge_port_list_4o,
+  'lag_ports'     => \&SNMP::Info::munge_port_list,
+  'lag_members'   => \&munge_port_ifindex,
 );
 
-sub munge_port_list_4o {
-    my $oct = shift;
-printf 'XXXXXXXXXX oct: <%#B>'."\n",$oct;
-printf "l %d\n", length($oct);
-    return unless defined $oct;
+sub munge_port_ifindex {
+    my $plist = shift;
+    return unless defined $plist;
+    return unless length $plist;
 
-
-    my $list = [ split( //, unpack( "%32b", $oct ) ) ];
-printf 's %d'."\n", @$list;
-foreach (@$list) {
-#	printf 'XXX list: <%#B>'. "\n", $_;
-	printf '222 list: <%032b>'. "\n", $_;
-}
+    my $list = [ map {sprintf "%d", hex($_)} unpack( "(A8)*", join( '' ,  map { sprintf "%02x", $_} unpack( "(C4)*", $plist ) ))  ];
 
     return $list;
 }
 
-sub lp {
+sub agg_ports_cisco {
   my $dev = shift;
-  my $group = $dev->lag_map;
+  my $group = $dev->lag_members;
 
   my $mapping = {};
-  for my $slave (keys %$group) {
-    my $master = $group->{$slave};
-    next if($master == 0 || $slave == $master);
-
-    $mapping->{$slave} = $master;
+  for my $master (keys %$group) {
+    my $slaves = $group->{$master};
+    for my $slave (@$slaves) {
+      $mapping->{$slave} = $master;
+    }
   }
 
   return $mapping;
@@ -139,9 +135,9 @@ sub agg_ports_lag {
 }
 
 
-# until we have PAgP data and need to combine with LAG data
+# combine PAgP, LAG & Cisco proprietary data
 sub agg_ports {
-  my $ret = {%{agg_ports_pagp(@_)}, %{agg_ports_lag(@_)}};
+  my $ret = {%{agg_ports_pagp(@_)}, %{agg_ports_lag(@_)}, %{agg_ports_cisco(@_)}};
   return $ret;
 }
 
@@ -191,6 +187,8 @@ L<SNMP::Info::IEEE802dot3ad>
 
 =item F<CISCO-LAG-MIB>
 
+=item F<CISCO-IF-EXTENSION-MIB>
+
 =back
 
 MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
@@ -204,6 +202,11 @@ MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 Returns a HASH reference mapping from slave to master port for each member of
 a port bundle on the device. Keys are ifIndex of the slave ports, Values are
 ifIndex of the corresponding master ports.
+
+=item C<agg_ports_cisco>
+
+Implements the cisco LAG info retrieval. Merged into C<agg_ports> data
+automatically.
 
 =item C<agg_ports_pagp>
 
