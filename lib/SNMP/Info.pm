@@ -1327,7 +1327,7 @@ sub new {
         $new_obj->{mibdirs} = $args{MibDirs};
         delete $sess_args{MibDirs};
     }
-    
+
     # For IPv6 hosts set transport
     if ( defined $sess_args{DestHost} ) {
         $sess_args{DestHost} = resolve_desthost($sess_args{DestHost});
@@ -2590,13 +2590,13 @@ See documentation in L<SNMP::Info::IPv6> for IPv6 Address Table.
 
 Maps the IPv4 addresses to the interface index
 
-(C<ipAdEntIfIndex>) or filtered and index modified (C<ipAddressIfIndex>) 
+(C<ipAdEntIfIndex>) or filtered and index modified (C<ipAddressIfIndex>)
 
 =item $info->ip_table()
 
 Maps the Table to the IPv4 address
 
-(C<ipAdEntAddr>) or address extracted from (C<ipAddressIfIndex>) 
+(C<ipAdEntAddr>) or address extracted from (C<ipAddressIfIndex>)
 
 =item $info->ip_netmask()
 
@@ -3874,12 +3874,12 @@ sub resolve_desthost {
     $desthost =~ s/^(?:udp6:|udpv6:|udpipv6:)//x;
 
     my $ip = NetAddr::IP::Lite->new($desthost);
-    
+
     if ($ip and $ip->bits == 32) {
         return $ip->addr;
     }
     elsif ($ip and $ip->bits == 128) {
-        return 'udp6:' . $ip->addr;        
+        return 'udp6:' . $ip->addr;
     }
     else {
        croak "Unable to resolve DestHost: $desthost to an IP\n";
@@ -4456,7 +4456,7 @@ sub _load_attr {
         # requests
 
         my ($leaf) = $qual_leaf =~ /::(.+)$/;
-        
+
         # If we weren't able to translate, we'll only have an OID
         $leaf = $oid unless defined $leaf;
 
@@ -4655,7 +4655,7 @@ sub snmp_connect_ip {
     my $comm = $self->snmp_comm();
 
     return if $self->{Offline};
-    
+
     $ip = resolve_desthost($ip);
     return if ( $ip eq '0.0.0.0' ) or ( $ip =~ /^127\./ );
 
@@ -4831,7 +4831,7 @@ sub _validate_autoload_method {
 
     # Validate that we have proper access for the operation
     my $access = '';
-    
+
     # Prevent autovivification by checking that MIB leaf exists
     if (exists $SNMP::MIB{$oid}) {
         $access = $SNMP::MIB{$oid}{'access'} || '';
@@ -4851,23 +4851,23 @@ sub _validate_autoload_method {
     }
 
      my $table_leaf = 0;
- 
+
     # This is an expensive check so we assume anything in the funcs and globals
     # hashes are known. Only for actual MIB leafs should we have to check the
-    # MIB. If the parent of the leaf has indexes it is contained within a table.   
+    # MIB. If the parent of the leaf has indexes it is contained within a table.
     if ($funcs->{$attr}) {
       $table_leaf = 1;
      }
     elsif (!$globals->{$attr}) {
 
-        # Prevent autovivification 
+        # Prevent autovivification
         if (exists $SNMP::MIB{$oid} &&
             exists $SNMP::MIB{$oid}{'parent'} &&
             exists $SNMP::MIB{$oid}{'parent'}{'indexes'} &&
             defined $SNMP::MIB{$oid}{'parent'}{'indexes'} &&
             scalar( @{$SNMP::MIB{$oid}{'parent'}{'indexes'}} ) > 0)
         {
-            $table_leaf = 1;    
+            $table_leaf = 1;
         }
      }
 
