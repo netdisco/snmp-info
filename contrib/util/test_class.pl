@@ -250,11 +250,11 @@ test_class.pl [options]
 
 Options:
 
-    -c|class    SNMP::Info class to use, Layer2::Catalyst    
+    -c|class    SNMP::Info class to use, Layer2::Catalyst
     -d|dev      Device
     -s|comm     SNMP community
     -v|ver      SNMP version
-    -p|print    Print values 
+    -p|print    Print values
     -i|ignore   Ignore Net-SNMP configuration file
     -m|mibdir   Directory containing MIB Files
     -n|nobulk   Disable bulkwalk
@@ -294,7 +294,7 @@ SNMP version. Default 2.
 =item B<-print>
 
 Print values of a class method rather than summarizing.  May be repeated
-multiple times. 
+multiple times.
 
 -print i_description -print i_type
 
@@ -308,7 +308,7 @@ provided.
 =item B<-mibdir>
 
 Directory containing MIB Files.  Multiple directories should be separated by a
-colon ':'. 
+colon ':'.
 
 -mibdir /usr/local/share/snmp/mibs/rfc:/usr/local/share/snmp/mibs/net-snmp
 

@@ -6,7 +6,7 @@ Coding Guidelines:
     - always update ChangeLog before committing
     - check-in required mibs to netdisco-mibs and release new package if needed
 
-Release and Testing Instructions: 
+Release and Testing Instructions:
     - for netdisco see:
         -> https://github.com/netdisco/netdisco/wiki/Developing
         -> https://metacpan.org/pod/App::Netdisco
@@ -17,17 +17,17 @@ Release and Testing Instructions:
         -> https://github.com/netdisco/netdisco-mibs/wiki
 
 FAQ:
-    - Do I have to update the version number and timestamp in modified files before committing? 
+    - Do I have to update the version number and timestamp in modified files before committing?
     -> No.  These are RCS tags that are automatically updated by CVS when you commit
 
     - Should I add changes at the top of the ChangeLog?
     -> Yes. The changelog is created one commit at a time.  If there isn't a
         section for the current version, then add one at the top and put your
-        changes after.  You can leave the date field for the release empty (). 
+        changes after.  You can leave the date field for the release empty ().
 
     - What should I change the $VERSION to?
     -> If you are the first person to get to a file after a release, update it
-       to either  release++ or "release++ dash cvs".   
+       to either  release++ or "release++ dash cvs".
        Example: File is marked 2.01, change it to 2.02-cvs with your new changes.
        Example: File is marked 2.02-cvs,  no change until packaging for release when the -cvs is removed.
        TODO: Is there still an odd/even scheme as introduced by Eric?
