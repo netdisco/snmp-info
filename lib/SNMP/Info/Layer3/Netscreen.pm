@@ -277,7 +277,7 @@ sub i_up_admin {
     my %i_up_admin;
 
     foreach my $iid ( keys %$ns_i_map ) {
-        $i_up_admin{$iid} 
+        $i_up_admin{$iid}
             = $i_up->{$iid} eq "up" && "up"
             || $i_up_admin->{ $ns_i_map->{$iid} }
             || 0;
@@ -324,7 +324,7 @@ sub i_speed {
     my %i_speed;
 
     foreach my $iid ( keys %$ns_i_map ) {
-        $i_speed{$iid} 
+        $i_speed{$iid}
             = $i_speed->{ $ns_i_map->{$iid} }
             || $i_name->{$iid} =~ /tunnel/ && "vpn"
             || 0;
@@ -527,7 +527,7 @@ Kent Hamilton
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
 
     or die "Can't connect to DestHost.\n";
 
@@ -536,11 +536,11 @@ Kent Hamilton
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
+Provides abstraction to the configuration information obtainable from a
 Juniper Netscreen devices through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $netscreen = new SNMP::Info::Layer3::Netscreen(...);
 
@@ -610,7 +610,7 @@ Returns serial number.
 
 =item $netscreen->layers()
 
-Returns 01001110.  Device doesn't report layers properly, modified to reflect 
+Returns 01001110.  Device doesn't report layers properly, modified to reflect
 Layer 2 and 3 functionality.
 
 =back
@@ -641,7 +641,7 @@ name.
 
 Defaults to C<insIfDescr> if available, uses C<nsIfName> if not.
 
-=item $netscreen->i_description() 
+=item $netscreen->i_description()
 
 Description of the interface. Uses C<insIfDescr> if available, C<nsIfName>
 if not.
@@ -658,12 +658,12 @@ Default SNMP IID to Interface index.
 
 =item $netscreen->i_lastchange()
 
-The value of C<sysUpTime> when this port last changed states (up,down), 
+The value of C<sysUpTime> when this port last changed states (up,down),
 maps from C<ifIndex> to C<nsIfIndex>.
 
 (C<ifLastChange>)
 
-=item $netscreen->i_mac() 
+=item $netscreen->i_mac()
 
 MAC address of the interface.  Note this is just the MAC of the port, not
 anything connected to it.  Uses C<nsIfMAC> if available, C<ifPhysAddress>
@@ -691,7 +691,7 @@ Interface type.  Maps from C<ifIndex> to C<nsIfIndex>.
 
 (C<ifType>)
 
-=item $netscreen->i_up() 
+=item $netscreen->i_up()
 
 Link Status of the interface.  Typical values are 'up' and 'down'.
 
@@ -732,7 +732,7 @@ Gives netmask setting for IP table entry.
 
 Uses C<nsIpArpTable> to emulate the forwarding table.
 
-=over 
+=over
 
 =item $netscreen->fw_index()
 
@@ -760,21 +760,21 @@ identifier (IID).
 
 =item $netscreen->at_index()
 
-Returns reference to hash.  Maps ARP table entries to Interface IIDs 
+Returns reference to hash.  Maps ARP table entries to Interface IIDs
 
 If the device doesn't support C<ipNetToMediaIfIndex>, this will try
 the proprietary C<nsIpArpIfIdx>.
 
 =item $netscreen->at_paddr()
 
-Returns reference to hash.  Maps ARP table entries to MAC addresses. 
+Returns reference to hash.  Maps ARP table entries to MAC addresses.
 
 If the device doesn't support C<ipNetToMediaPhysAddress>, this will try
 the proprietary C<nsIpArpMac>.
 
 =item $netscreen->at_netaddr()
 
-Returns reference to hash.  Maps ARP table entries to IP addresses. 
+Returns reference to hash.  Maps ARP table entries to IP addresses.
 
 If the device doesn't support C<ipNetToMediaNetAddress>, this will try
 the proprietary C<nsIpArpIp>.
@@ -783,7 +783,7 @@ the proprietary C<nsIpArpIp>.
 
 =head3 Wireless Information
 
-=over 
+=over
 
 =item $dot11->i_ssidlist()
 

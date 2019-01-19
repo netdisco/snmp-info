@@ -248,14 +248,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $ibm = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $ibm->class();
@@ -335,7 +335,7 @@ Returns the software version
 
 =item $ibm->hasLLDP()
 
-Is LLDP is active in this device?  
+Is LLDP is active in this device?
 
 Note:  LLDP may be active, but nothing in C<lldpRemoteSystemsData> Tables so
 the device would not return any useful topology information.
@@ -373,13 +373,13 @@ Ignores interfaces with descriptions of tunnel, loopback, and null.
 
 =item $ibm->i_duplex()
 
-Returns reference to hash of interface link duplex status. 
+Returns reference to hash of interface link duplex status.
 
 (C<portInfoMode>)
 
 =item $ibm->lldp_if()
 
-Returns the mapping to the SNMP Interface Table. Tries to cross reference 
+Returns the mapping to the SNMP Interface Table. Tries to cross reference
 (C<lldpInfoRemoteDevicesLocalPort>) with (C<ifDescr>) and (C<ifAlias>)
 to get (C<ifIndex>).
 

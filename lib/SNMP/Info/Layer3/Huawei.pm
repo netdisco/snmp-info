@@ -138,7 +138,7 @@ sub os_ver {
     if ($descr =~ /Version\s            # Start match on Version string
                    ([\d\.]+)            # Capture the primary version in 1
                    ,?                   # There may be a comma
-                   \s                   # Always a space                     
+                   \s                   # Always a space
                    (?:Release|Feature)? # Don't capture stanza if present
                    (?:\(\w+)?           # If paren & model don't capture
                    \s                   # Always a space
@@ -154,7 +154,7 @@ sub os_ver {
 
 sub mac {
     my $huawei  = shift;
-    
+
     return $huawei->b_mac();
 }
 
@@ -393,7 +393,7 @@ sub fan {
             my ($slot, $num) = split(/\./, $k);
             my $descr = "Slot $slot,Fan $num";
             $descr = $fan->{$k} if ($fan->{$k});
-            
+
             push @messages, "$descr: $state->{$k}";
         }
 
@@ -511,14 +511,14 @@ Jeroen van Ingen and Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $huawei = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $huawei->class();
@@ -553,7 +553,7 @@ Subclass for Huawei switches
 =item F<HUAWEI-POE-MIB>
 
 =item F<HUAWEI-ENTITY-EXTENT-MIB>
-    
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.

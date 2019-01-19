@@ -113,7 +113,7 @@ sub serial {
     $serial = $1 if ( $descr =~ m/Lantronix EDS\w+ V[\d\.R]+ \((\w+)\)/ );
 
     return $serial;
-}       
+}
 
 sub model {
     my $device = shift;
@@ -162,14 +162,14 @@ J R Binks
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $device = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'mydevice',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $device->class();
