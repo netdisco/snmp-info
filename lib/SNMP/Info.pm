@@ -1084,8 +1084,8 @@ Kramarov, Bernhard Augenstein, Bradley Baetz, Brian Chow, Brian Wilson,
 Carlos Vicente, Dana Watanabe, David Pinkoski, David Sieborger, Douglas
 McKeown, Greg King, Ivan Auger, Jean-Philippe Luiggi, Jeroen van Ingen,
 Justin Hunter, Kent Hamilton, Matthew Tuttle, Michael Robbert, Mike Hunter,
-Nicolai Petri, Ralf Gross, Robert Kerr and people listed on the Netdisco
-README!
+Nicolai Petri, Ralf Gross, Robert Kerr, Nick Nauwelaerts and people listed
+on the Netdisco README!
 
 =head1 USAGE
 
