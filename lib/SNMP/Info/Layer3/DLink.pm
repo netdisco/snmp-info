@@ -179,7 +179,7 @@ SNMP::Info::Layer3::DLink - SNMP Interface to DLink Devices
 
 =head1 DESCRIPTION
 
-Subclass for Vyatta Devices running dlink.
+Subclass for DLink devices.
 
 =head2 Inherited Classes
 
