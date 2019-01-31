@@ -25,6 +25,15 @@
 <!--- How has this issue affected you? What are you trying to accomplish? -->
 <!--- Providing context helps us come up with a solution that is most useful in the real world -->
 
+## Your Device
+<!--- Some basic info about your device will help out pinpointing the issue more easily -->
+<!--- also, snmpwalk output of the following oid helps out a lot: .1.3.6.1.2.1.1 -->
+* Vendor:
+* Device Model:
+* Operating System Version:
+* Snmpwalk output of .1.3.6.1.2.1.1:
+
+
 ## Your Environment
 <!--- Include as many relevant details about the environment you experienced the bug in -->
 * SNMP::Info version used: 
