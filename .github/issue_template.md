@@ -28,6 +28,7 @@
 ## Your Device
 <!--- Some basic info about your device will help out pinpointing the issue more easily -->
 <!--- also, snmpwalk output of the following oid helps out a lot: .1.3.6.1.2.1.1 -->
+<!--- this is the system leaf of the snmp mib-2 -->
 * Vendor:
 * Device Model:
 * Operating System Version:
