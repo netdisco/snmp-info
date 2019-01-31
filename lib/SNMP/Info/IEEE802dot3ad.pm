@@ -82,10 +82,10 @@ sub agg_ports_lag {
     for ( my $i = 0; $i <= scalar(@$portlist); $i++ ) {
       my $ifindex = $i+1;
       if ( exists($index->{$i+1}) and defined($index->{$i+1}) ) {
-        $ifindex = $index->{$i+1};       
+        $ifindex = $index->{$i+1};
       }
       $ret->{$ifindex} = $idx if ( @$portlist[$i] );
-    }   
+    }
   }
 
   return $ret;
@@ -105,14 +105,14 @@ SNMP::Info Developers
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $info = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $info->class();

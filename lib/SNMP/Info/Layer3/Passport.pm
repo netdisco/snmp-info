@@ -676,7 +676,7 @@ sub fw_status {
 
     my $qb = $passport->SUPER::fw_status($partial);
     return $qb if (ref {} eq ref $qb and scalar keys %$qb);
-    
+
     return $passport->rcBridgeTpFdbStatus($partial);
 }
 
@@ -1179,14 +1179,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $passport = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $passport->class();
@@ -1197,12 +1197,12 @@ Eric Miller
 Abstraction subclass for modular Avaya Ethernet Routing Switch 8000 Series
 (formerly Nortel/Bay Passport/Accelar) and VSP 9000 Series switches.
 
-These devices have some of the same characteristics as the stackable Avaya 
-Ethernet Switches (Baystack).  For example, extended interface information is 
+These devices have some of the same characteristics as the stackable Avaya
+Ethernet Switches (Baystack).  For example, extended interface information is
 gleaned from F<RAPID-CITY>.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $passport = new SNMP::Info::Layer3::Passport(...);
 
@@ -1240,7 +1240,7 @@ These are methods that return scalar value from SNMP
 
 =item $passport->model()
 
-Returns model type.  Checks $passport->id() against the 
+Returns model type.  Checks $passport->id() against the
 F<RAPID-CITY-MIB> and then parses out C<rcA>.
 
 =item $passport->vendor()
@@ -1364,7 +1364,7 @@ problems with F<BRIDGE-MIB>
 These methods utilize, in order; F<Q-BRIDGE-MIB>, F<BRIDGE-MIB>, and
 F<RAPID-CITY> to obtain the forwarding table information.
 
-=over 
+=over
 
 =item $passport->fw_mac()
 

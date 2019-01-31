@@ -72,7 +72,7 @@ sub model {
     my $riverbed = shift;
 
     my $model = $riverbed->rb_model() || '';
-    
+
     if ($model =~ /^(\d+)/) {
         return $1;
     }
@@ -85,19 +85,19 @@ sub os {
 
 sub os_ver {
     my $riverbed = shift;
-    
+
     my $ver = $riverbed->systemVersion() || '';
 
     if ( $ver =~ /(\d+[\.\d]+)/ ) {
         return $1;
     }
-    
+
     return $ver;
 }
 
 sub serial {
     my $riverbed = shift;
-    
+
     return $riverbed->serialNumber();
 }
 
@@ -115,14 +115,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $riverbed = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $riverbed->class();
@@ -133,7 +133,7 @@ Eric Miller
 Abstraction subclass for Riverbed Steelhead WAN optimization appliances.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $riverbed = new SNMP::Info::Layer3::Steelhead(...);
 

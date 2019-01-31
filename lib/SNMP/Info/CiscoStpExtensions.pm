@@ -1,29 +1,29 @@
 # SNMP::Info::CiscoStpExtensions
 #
 # Copyright (c)2009 Carlos Vicente
-# All rights reserved.  
+# All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright notice,
 #       this list of conditions and the following disclaimer in the documentation
 #       and/or other materials provided with the distribution.
-#     * Neither the name of the author nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the author nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 # DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
 # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 # LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package SNMP::Info::CiscoStpExtensions;
@@ -106,11 +106,11 @@ sub mst_region_rev {
 
 sub mst_vlan2instance {
     my $self = shift;
-    
+
     # Get MST vlan-to-instance mapping
     my $m1k2k = $self->stpx_smst_vlans_mapped_1k2k;
     my $m3k4k = $self->stpx_smst_vlans_mapped_3k4k;
-   
+
     # Get list of VLANs
     my $vlan_membership = $self->i_vlan_membership;
     my @vlans;
@@ -140,7 +140,7 @@ sub mst_vlan2instance {
                     $res{$vlan} = $inst;
                     last;
                 }
-            }       
+            }
         }
     }
     return \%res;
@@ -162,7 +162,7 @@ sub i_rootguard_enabled {
         $res{$iid} = $enabled;
     }
     return \%res;
-}  
+}
 
 sub i_loopguard_enabled {
     my $self    = shift;
@@ -180,7 +180,7 @@ sub i_loopguard_enabled {
         $res{$iid} = $enabled;
     }
     return \%res;
-}  
+}
 
 sub i_bpduguard_enabled {
     my $self    = shift;
@@ -189,7 +189,7 @@ sub i_bpduguard_enabled {
     my $bpdugm_default = $self->stpx_bpduguard_enable();
     my $bp_index       = $self->bp_index($partial);
     my $bpdugm         = $self->stpx_port_bpduguard_mode();
-    
+
     my %res;
     foreach my $index ( keys %$bpdugm ){
         my $mode = $bpdugm->{$index};
@@ -212,7 +212,7 @@ sub i_bpdufilter_enabled {
     my $bpdufm_default = $self->stpx_bpdufilter_enable();
     my $bp_index       = $self->bp_index($partial);
     my $bpdufm         = $self->stpx_port_bpdufilter_mode();
-    
+
     my %res;
     foreach my $index ( keys %$bpdufm ){
         my $mode = $bpdufm->{$index};
@@ -277,12 +277,25 @@ Carlos Vicente
 
 =head1 SYNOPSIS
 
+   my $stpx = new SNMP::Info(
+                         AutoSpecify => 1,
+                         Debug       => 1,
+                         DestHost    => 'myswitch',
+                         Community   => 'public',
+                         Version     => 2
+                       )
+
+   or die "Can't connect to DestHost.\n";
+
+   my $class = $stpx->class();
+   print " Using device sub class : $class\n";
+
 =head1 DESCRIPTION
 
 Create or use a subclass of SNMP::Info that inherits this class.  Do not use
 directly.
 
-For debugging you can call new() directly as you would in SNMP::Info 
+For debugging you can call new() directly as you would in SNMP::Info
 
  my $stpx = new SNMP::Info::CiscoStpExtensions(...);
 
@@ -290,9 +303,17 @@ For debugging you can call new() directly as you would in SNMP::Info
 
 =over
 
-=item SNMP::Info 
+=item SNMP::Info
 
-=item SNMP::Info::Bridge 
+=item SNMP::Info::Bridge
+
+=back
+
+=head2 Required MIBs
+
+=over
+
+=item F<CISCO-STP-EXTENSIONS-MIB>
 
 =back
 
@@ -306,7 +327,7 @@ These are methods that return scalar values from SNMP
 
 =item $stpx->stp_ver()
 
-Returns the particular STP version running on this device.  
+Returns the particular STP version running on this device.
 Meant to override SNMP::Info::Brigde::stp_ver()
 
 Values: C<pvstPlus>, C<mistp>, C<mistpPvstPlus>, C<mst>, C<rapidPvstPlus>
@@ -324,25 +345,25 @@ to a hash.
 
 =item $stpx->mst_config_digest()
 
-Returns the Multiple Spanning Tree (MST) configuration digest 
+Returns the Multiple Spanning Tree (MST) configuration digest
 
 (C<stpxSMSTConfigDigest>)
 
 =item $stpx->mst_region_name()
 
-Returns the Multiple Spanning Tree (MST) region name 
+Returns the Multiple Spanning Tree (MST) region name
 
 (C<stpxMSTRegionName>)
 
 =item $stpx->mst_region_rev()
 
-Returns the Multiple Spanning Tree (MST) region name 
+Returns the Multiple Spanning Tree (MST) region name
 
 (C<stpxSMSTRegionRevision>)
 
 =item $stpx->mst_vlan2instance()
 
-Returns the mapping of vlan to MST instance in the form of a hash reference 
+Returns the mapping of vlan to MST instance in the form of a hash reference
 with key = VLAN id, value = STP instance
 
 =item $stpx->i_rootguard_enabled()

@@ -294,9 +294,9 @@ sub fan {
 # default is slot * 1000, but some older switches start at 1
 sub _slot_factor {
     my $extreme = shift;
-    
+
     my $index = $extreme->i_index();
-    
+
     return 1 if (exists $index->{1} && $index->{1} == 1);
     return 1000;
 }
@@ -306,7 +306,7 @@ sub _slot_factor {
 # we use the BRIDGE-MIB tables if available then the ex_fw_*() methods.
 sub fw_mac {
     my $extreme = shift;
-    
+
     my $b = $extreme->SUPER::fw_mac();
     return $b if (keys %$b);
 
@@ -315,10 +315,10 @@ sub fw_mac {
 
 sub fw_port {
     my $extreme = shift;
-    
+
     my $b = $extreme->SUPER::fw_port();
     return $b if (keys %$b);
-    
+
     return $extreme->ex_fw_port();
 }
 
@@ -402,11 +402,11 @@ sub i_vlan {
     # Next we try extremeVlanOpaqueTable
     my $xos = $extreme->_xos_i_vlan($partial);
     return $xos if (keys %$xos);
-    
+
     # Try older ifStack method
     my $extremeware = $extreme->_extremeware_i_vlan($partial);
     return $extremeware if (keys %$extremeware);
-    
+
     return;
 }
 
@@ -481,11 +481,11 @@ sub i_vlan_membership {
     # Next we try extremeVlanOpaqueTable
     my $xos = $extreme->_xos_i_vlan_membership($partial);
     return $xos if (ref {} eq ref $xos and scalar keys %$xos);
-    
+
     # Try older ifStack method
     my $extremeware = $extreme->_extremeware_i_vlan_membership($partial);
     return $extremeware if (ref {} eq ref $extremeware and scalar keys %$extremeware);
-    
+
     return;
 }
 
@@ -573,11 +573,11 @@ sub i_vlan_membership_untagged {
     # Next we try extremeVlanOpaqueTable
     my $xos = $extreme->_xos_i_vlan_membership_untagged($partial);
     return $xos if (ref {} eq ref $xos and scalar keys %$xos);
-    
+
     # Try older ifStack method
     my $extremeware = $extreme->_extremeware_i_vlan_membership_untagged($partial);
     return $extremeware if (ref {} eq ref $extremeware and scalar keys %$extremeware);
-    
+
     return;
 }
 
@@ -789,7 +789,7 @@ sub lldp_if {
     my $addr    = $extreme->lldp_rem_pid($partial) || {};
     my $b_index = $extreme->bp_index() || {};
     #my %r_i_descr = reverse %$i_descr;
-    
+
     my %lldp_if;
     foreach my $key ( keys %$addr ) {
         my @aOID = split( '\.', $key );
@@ -829,9 +829,9 @@ sub stp_i_mac {
     foreach my $iid ( keys %$stp_i_bids ) {
         my $mac = $stp_i_bids->{$iid};
         next unless $mac;
-        
+
         $mac =~ s/^([0-9A-F][0-9A-F]:){2}//;
-        
+
         $stp_i_mac{$iid} = $mac;
     }
     return \%stp_i_mac;
@@ -886,14 +886,14 @@ Eric Miller, Bill Fenner
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $extreme = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $extreme->class();
@@ -902,11 +902,11 @@ Eric Miller, Bill Fenner
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from an 
-Extreme device through SNMP. 
+Provides abstraction to the configuration information obtainable from an
+Extreme device through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $extreme = new SNMP::Info::Layer3::Extreme(...);
 
@@ -1081,7 +1081,7 @@ IDs.  These are the VLANs which are members of the egress list for the port.
   Example:
   my $interfaces = $extreme->interfaces();
   my $vlans      = $extreme->i_vlan_membership();
-  
+
   foreach my $iid (sort keys %$interfaces) {
     my $port = $interfaces->{$iid};
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
@@ -1239,7 +1239,7 @@ See documentation in L<SNMP::Info::EDP/"TABLE METHODS"> for details.
 These are methods that provide SNMP set functionality for overridden methods
 or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
-operations. 
+operations.
 
 =over
 
@@ -1251,7 +1251,7 @@ VLAN ID and port C<ifIndex>.  This method should only be used on end station
 
   Example:
   my %if_map = reverse %{$extreme->interfaces()};
-  $extreme->set_i_vlan('2', $if_map{'FastEthernet0/1'}) 
+  $extreme->set_i_vlan('2', $if_map{'FastEthernet0/1'})
     or die "Couldn't change port VLAN. ",$extreme->error(1);
 
 =item $extreme->set_i_pvid ( pvid, ifIndex )
@@ -1261,7 +1261,7 @@ port C<ifIndex>.  This method should only be used on trunk ports.
 
   Example:
   my %if_map = reverse %{$extreme->interfaces()};
-  $extreme->set_i_pvid('2', $if_map{'FastEthernet0/1'}) 
+  $extreme->set_i_pvid('2', $if_map{'FastEthernet0/1'})
     or die "Couldn't change port default VLAN. ",$extreme->error(1);
 
 =item $extreme->set_add_i_vlan_tagged ( vlan, ifIndex )
@@ -1271,7 +1271,7 @@ numeric VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$extreme->interfaces()};
-  $extreme->set_add_i_vlan_tagged('2', $if_map{'FastEthernet0/1'}) 
+  $extreme->set_add_i_vlan_tagged('2', $if_map{'FastEthernet0/1'})
     or die "Couldn't add port to egress list. ",$extreme->error(1);
 
 =item $extreme->set_remove_i_vlan_tagged ( vlan, ifIndex )
@@ -1281,7 +1281,7 @@ with the numeric VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$extreme->interfaces()};
-  $extreme->set_remove_i_vlan_tagged('2', $if_map{'FastEthernet0/1'}) 
+  $extreme->set_remove_i_vlan_tagged('2', $if_map{'FastEthernet0/1'})
     or die "Couldn't add port to egress list. ",$extreme->error(1);
 
 =back

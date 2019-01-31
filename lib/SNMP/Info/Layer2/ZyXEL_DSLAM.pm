@@ -103,7 +103,7 @@ sub ip {
     my $found_ip;
 
     # Since hashes are random add sort so we get the same address each time
-    # if there happens to be more than one. Will return highest numbered address 
+    # if there happens to be more than one. Will return highest numbered address
     foreach my $ip ( sort keys %{$ip_hash} ) {
         $found_ip = $ip
             if ( defined $ip
@@ -124,14 +124,14 @@ Dmitry Sergienko (C<dmitry@trifle.net>)
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $zyxel = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myhub',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $l2->class();
@@ -139,8 +139,8 @@ Dmitry Sergienko (C<dmitry@trifle.net>)
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
-ZyXEL device through SNMP. See inherited classes' documentation for 
+Provides abstraction to the configuration information obtainable from a
+ZyXEL device through SNMP. See inherited classes' documentation for
 inherited methods.
 
 =head2 Inherited Classes
@@ -178,7 +178,7 @@ Returns 'ZyXEL' :)
 
 =item $zyxel->os()
 
-Returns 'ZyXEL' 
+Returns 'ZyXEL'
 
 =item $zyxel->os_ver()
 

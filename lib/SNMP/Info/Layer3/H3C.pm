@@ -89,7 +89,7 @@ sub vendor {
 
 sub model {
     my $h3c = shift;
-    
+
     my $descr = $h3c->description();
     if ($descr =~ /^.*\n(.*)\n/) {
         return $1;
@@ -154,14 +154,14 @@ Jeroen van Ingen
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $h3c = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $h3c->class();
@@ -223,7 +223,7 @@ Returns the OS extracted from C<sysDescr>.
 
 =item $h3c->os_ver()
 
-Returns the software version. Either C<entPhysicalSoftwareRev.2> or extracted from 
+Returns the software version. Either C<entPhysicalSoftwareRev.2> or extracted from
 C<sysDescr>.
 
 =back

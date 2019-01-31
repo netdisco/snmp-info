@@ -67,14 +67,14 @@ Alexander Hartmaier
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $rtt = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $rtt->class();
@@ -82,7 +82,7 @@ Alexander Hartmaier
 
 =head1 DESCRIPTION
 
-SNMP::Info::CiscoRTT is a subclass of SNMP::Info that provides 
+SNMP::Info::CiscoRTT is a subclass of SNMP::Info that provides
 information about a cisco device's RTT values.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.

@@ -35,7 +35,7 @@ sub glob_rec {
 
     foreach my $f (@files) {
         next if $f eq '\.$';
-        
+
         if (-d $f) {
             push @pms, glob_rec($f);
             next;

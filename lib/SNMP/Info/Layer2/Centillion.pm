@@ -274,14 +274,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $centillion = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $centillion->class();
@@ -289,14 +289,14 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
-Centillion device through SNMP. 
+Provides abstraction to the configuration information obtainable from a
+Centillion device through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $centillion = new SNMP::Info::Layer2::centillion(...);
- 
+
 Note:  This class supports version 4.X and 5.X which are VLAN based rather
 than bridge group based.
 
@@ -430,7 +430,7 @@ to a hash.
     formula:
       port = index % 256
       slot = int(index / 256)
- 
+
     The physical port name is returned as slot.port.
 
 =item $centillion->i_duplex()
@@ -469,13 +469,13 @@ Returns a mapping between C<ifIndex> and the VLAN.
 
 =item $centillion->centillion_p_index()
 
-Returns reference to hash.  Maps table IIDs to Interface IIDs 
+Returns reference to hash.  Maps table IIDs to Interface IIDs
 
 (C<cnDot3ExtnIfIndex>)
 
 =item $centillion->centillion_p_duplex()
 
-Returns reference to hash.  Maps port operational duplexes to IIDs 
+Returns reference to hash.  Maps port operational duplexes to IIDs
 
 (C<cnDot3ExtnIfOperConnectionType>)
 
@@ -493,19 +493,19 @@ Returns reference to hash.  Maps port admin duplexes to IIDs
 
 =item $centillion->centillion_i_vlan_index()
 
-Returns reference to hash.  Key: Table entry, Value: Index 
+Returns reference to hash.  Key: Table entry, Value: Index
 
 (C<cnVlanPortMemberIfIndex>)
 
 =item $centillion->centillion_i_vlan()
 
-Returns reference to hash.  Key: Table entry, Value: VLAN ID 
+Returns reference to hash.  Key: Table entry, Value: VLAN ID
 
 (C<cnVlanPortMemberVID>)
 
 =item $centillion->centillion_i_vlan_type()
 
-Returns reference to hash.  Key: Table entry, Value: VLAN Type 
+Returns reference to hash.  Key: Table entry, Value: VLAN Type
 
 (C<cnVlanPortMemberIngressType>)
 

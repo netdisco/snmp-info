@@ -209,14 +209,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $hp9300 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $hp9300->class();
@@ -359,11 +359,11 @@ Returns reference to hash of interface names to iids.
 
 Returns reference to hash of interfaces to be ignored.
 
-Ignores interfaces with descriptions of  tunnel,loopback,null 
+Ignores interfaces with descriptions of  tunnel,loopback,null
 
 =item $hp9300->i_duplex()
 
-Returns reference to hash of interface link duplex status. 
+Returns reference to hash of interface link duplex status.
 
 Crosses $hp9300->sw_duplex() with $hp9300->sw_index()
 
@@ -375,13 +375,13 @@ Crosses $hp9300->sw_duplex() with $hp9300->sw_index()
 
 =item $hp9300->sw_index()
 
-Returns reference to hash.  Maps Table to Interface IID. 
+Returns reference to hash.  Maps Table to Interface IID.
 
 (C<snSwPortIfIndex>)
 
 =item $hp9300->sw_duplex()
 
-Returns reference to hash.   Current duplex status for switch ports. 
+Returns reference to hash.   Current duplex status for switch ports.
 
 (C<snSwPortInfoChnMode>)
 
@@ -393,7 +393,7 @@ Returns reference to hash.  Current Port Type .
 
 =item $hp9300->sw_speed()
 
-Returns reference to hash.  Current Port Speed. 
+Returns reference to hash.  Current Port Speed.
 
 (C<snSwPortInfoSpeed>)
 

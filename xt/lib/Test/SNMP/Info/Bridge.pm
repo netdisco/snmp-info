@@ -60,7 +60,7 @@ sub qb_fdb_index : Tests(3) {
     my $test = shift;
 
     can_ok( $test->{info}, 'qb_fdb_index' );
-    
+
     my $expected = { 0 => 1, 3 => 91, 1 => 112, 2 => 113 };
     cmp_deeply( $test->{info}->qb_fdb_index(), $expected, q(FDB to VLAN index returned expected values));
 

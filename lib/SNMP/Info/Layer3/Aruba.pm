@@ -1403,7 +1403,7 @@ Eric Miller
 			  DestHost    => 'myswitch',
 			  Community   => 'public',
 			  Version     => 2
-			) 
+			)
 
     or die "Can't connect to DestHost.\n";
 
@@ -1422,7 +1422,7 @@ end station MAC addresses collection and correlation to the thin access point
 the end station is using for communication.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $aruba = new SNMP::Info::Layer3::Aruba(...);
 
@@ -1466,7 +1466,7 @@ These are methods that return scalar value from SNMP
 
 =item $aruba->model()
 
-Returns model type.  Cross references $aruba->id() with product IDs in the 
+Returns model type.  Cross references $aruba->id() with product IDs in the
 Aruba MIB.
 
 =item $aruba->vendor()
@@ -1540,7 +1540,7 @@ false.
 =item $aruba->i_ssidmac()
 
 With the same keys as i_ssidlist, returns the Basic service set
-identification (BSSID), MAC address, the AP is using for the SSID. 
+identification (BSSID), MAC address, the AP is using for the SSID.
 
 =item $aruba->cd11_mac()
 
@@ -1578,7 +1578,7 @@ Total packets transmitted by the wireless client.
 
 =item $aruba->i_index()
 
-Returns reference to map of IIDs to Interface index. 
+Returns reference to map of IIDs to Interface index.
 
 Extends C<ifIndex> to support APs as device interfaces.
 
@@ -1614,7 +1614,7 @@ interfaces.
 =item $aruba->i_up_admin()
 
 Returns reference to map of IIDs to administrative status of the interface.
-Returns C<ifAdminStatus> for Ethernet interfaces and C<wlanAPStatus> 
+Returns C<ifAdminStatus> for Ethernet interfaces and C<wlanAPStatus>
 for AP interfaces.
 
 =item $aruba->i_mac()

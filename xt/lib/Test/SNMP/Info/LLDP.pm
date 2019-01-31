@@ -377,9 +377,9 @@ sub lldp_cap : Tests(4) {
   can_ok($test->{info}, 'lldp_cap');
 
   my $expected = ['bridge', 'router'];
-  
+
   my $caps = $test->{info}->lldp_cap();
- 
+
   cmp_set($caps->{'0.6.1'}, $expected,
     q(Caps emumerated correctly));
 

@@ -50,7 +50,7 @@ $VERSION = '3.64';
     'adsl_atuc_curr_tx_rate'        => 'adslAtucChanCurrTxRate',
     'adsl_atuc_prev_tx_rate'        => 'adslAtucChanPrevTxRate',
     'adsl_atuc_crc_block_len'       => 'adslAtucChanCrcBlockLength',
-    
+
     # ADSL-LINE-MIB::adslAturChanTable
     'adsl_atur_interleave_delay'    => 'adslAturChanInterleaveDelay',
     'adsl_atur_curr_tx_rate'        => 'adslAturChanCurrTxRate',
@@ -73,14 +73,14 @@ Alexander Hartmaier
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $info = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $info->class();
@@ -88,7 +88,7 @@ Alexander Hartmaier
 
 =head1 DESCRIPTION
 
-SNMP::Info::AdslLine is a subclass of SNMP::Info that provides 
+SNMP::Info::AdslLine is a subclass of SNMP::Info that provides
 information about the adsl interfaces of a device.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.

@@ -1389,14 +1389,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $bayrs = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $bayrs->class();
@@ -1404,10 +1404,10 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Abstraction subclass for routers running Avaya/Nortel BayRS.  
+Abstraction subclass for routers running Avaya/Nortel BayRS.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $bayrs = new SNMP::Info::Layer3::BayRS(...);
 
@@ -1458,7 +1458,7 @@ These are methods that return scalar value from SNMP
 Returns the model of the BayRS router.  Will translate between the MIB model
 and the common model with this map :
 
-    C<%MODEL_MAP = ( 
+    C<%MODEL_MAP = (
         'acefn'     => 'FN',
         'aceln'     => 'LN',
         'acecn'     => 'CN',
@@ -1529,8 +1529,8 @@ passed but the entire table will be returned.
 Returns reference to the map between IID and physical Port.
 
 The physical port name is stripped to letter and numbers to signify
-port type and slot port (S11) if the default platform naming was 
-maintained.  Otherwise the port is the interface description. 
+port type and slot port (S11) if the default platform naming was
+maintained.  Otherwise the port is the interface description.
 
 =item $bayrs->i_name()
 
@@ -1540,7 +1540,7 @@ interfaces.
 =item $bayrs->i_duplex()
 
 Returns reference to hash.  Maps port operational duplexes to IIDs for
-Ethernet interfaces. 
+Ethernet interfaces.
 
 =item $bayrs->i_duplex_admin()
 

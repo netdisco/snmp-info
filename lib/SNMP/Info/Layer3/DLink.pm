@@ -47,7 +47,7 @@ $VERSION = '3.64';
     'SWPRIMGMT-DES3200-MIB' => 'dlink-des3200SeriesProd',
     'SWPRIMGMT-DES30XXP-MIB' => 'dlink-des30xxproductProd',
     'SWPRIMGMT-DES1228ME-MIB' => 'dlink-des1228MEproductProd',
-    'SWDES3528-52PRIMGMT-MIB' => 'dlink-Des3500Series', 
+    'SWDES3528-52PRIMGMT-MIB' => 'dlink-Des3500Series',
     'DES-1210-28-AX' => 'des-1210-28ax',
     'DES-1210-10MEbx' => 'des-1210-10mebx',
     'DES-1210-26MEbx' => 'des-1210-26mebx',
@@ -164,14 +164,14 @@ SNMP::Info::Layer3::DLink - SNMP Interface to DLink Devices
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $dlink = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $dlink->class();

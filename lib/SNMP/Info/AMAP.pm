@@ -240,10 +240,10 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- my $amap = new SNMP::Info ( 
+ my $amap = new SNMP::Info (
                              AutoSpecify => 1,
                              Debug       => 1,
-                             DestHost    => 'router', 
+                             DestHost    => 'router',
                              Community   => 'public',
                              Version     => 2
                            );
@@ -269,7 +269,7 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-SNMP::Info::AMAP is a subclass of SNMP::Info that provides an object oriented 
+SNMP::Info::AMAP is a subclass of SNMP::Info that provides an object oriented
 interface to Alcatel Mapping Adjacency Protocol (AMAP) information through
 SNMP.
 
@@ -299,7 +299,7 @@ These are methods that return scalar values from SNMP
 
 =item $amap->hasAMAP()
 
-Is AMAP is active in this device?  
+Is AMAP is active in this device?
 
 =back
 
@@ -322,7 +322,7 @@ Returns the mapping to the SNMP Interface Table.
 
 Returns remote IPv4 addresses.  Note: AMAP returns all IP addresses associated
 with the remote device.  It would be preferable to include only one address
-since they should all originate from the same device, but amap_ip() can not 
+since they should all originate from the same device, but amap_ip() can not
 determine if all addresses are reachable from the network management
 application therefore all addresses are returned and the calling application
 must determine which address to use and if they are in fact from the same
