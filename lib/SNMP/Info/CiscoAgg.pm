@@ -1,6 +1,6 @@
 # SNMP::Info::CiscoAgg
 #
-# Copyright (c) 2018 SNMP::Info Developers
+# Copyright (c) 2019 SNMP::Info Developers
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -171,7 +171,7 @@ SNMP::Info Developers
 =head1 DESCRIPTION
 
 This class provides access to Aggregated Links configuration on Cisco devices.
-It combines Cisco PAgP and IEEE 802.3ad information.
+It combines Cisco PAgP, Cisco proprietary info and IEEE 802.3ad information.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
@@ -206,16 +206,18 @@ ifIndex of the corresponding master ports.
 =item C<agg_ports_cisco>
 
 Implements the cisco LAG info retrieval. Merged into C<agg_ports> data
-automatically.
+automatically. Will fetch all members of C<clagAggPortListInterfaceIndexList>
+even if they are not running an aggregation protocol.
 
 =item C<agg_ports_pagp>
 
 Implements the PAgP LAG info retrieval. Merged into C<agg_ports> data
 automatically.
 
-=item C<munge_port_ifindex>
+=item C<lag_members>
 
-needs documentation. maps lag masters to slave ifindex.
+Mimics C<ad_lag_ports> from L<SNMP::Info::IEEE802dot3ad> but based on ifindex
+instead of instead of bp_index.
 
 =back
 
@@ -232,6 +234,21 @@ It will be merged into C<agg_ports> data.
 
 =head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
 
+=over
+
 See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
+
+=back
+
+=head1 MUNGES
+
+=over
+
+=item C<munge_port_ifindex>
+
+Takes C<clagAggPortListInterfaceIndexList>, uses the index as master port, then
+returns all members as ifindex. Works with single or multiple slaves to a master.
+
+=back
 
 =cut
