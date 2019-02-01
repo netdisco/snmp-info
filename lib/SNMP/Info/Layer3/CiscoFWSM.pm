@@ -141,7 +141,7 @@ Brian De Wolf
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $fwsm = new SNMP::Info(
 						AutoSpecify => 1,
 						Debug       => 1,
@@ -149,7 +149,7 @@ Brian De Wolf
 						DestHost    => 'myswitch',
 						Community   => 'public',
 						Version     => 2
-						) 
+						)
 	or die "Can't connect to DestHost.\n";
 
  my $class      = $fwsm->class();
@@ -195,10 +195,6 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=over
-
-=back
 
 =head2 Overrides
 

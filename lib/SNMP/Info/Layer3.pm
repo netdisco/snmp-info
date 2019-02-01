@@ -351,14 +351,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $l3 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $l3->class();
@@ -381,11 +381,11 @@ This class is usually used as a superclass for more specific device classes
 listed under SNMP::Info::Layer3::*   Please read all docs under SNMP::Info
 first.
 
-Provides generic methods for accessing SNMP data for Layer 3 network devices. 
-Includes support for Layer2+3 devices. 
+Provides generic methods for accessing SNMP data for Layer 3 network devices.
+Includes support for Layer2+3 devices.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $l3 = new SNMP::Info::Layer3(...);
 
@@ -461,7 +461,7 @@ Returns the BGP identifier of the local system
 
 =item $l3->bgp_local_as()
 
-Returns the local autonomous system number 
+Returns the local autonomous system number
 
 (C<bgpLocalAs.0>)
 
@@ -533,13 +533,13 @@ to a hash.
 =item $l3->interfaces()
 
 Returns the map between SNMP Interface Identifier (iid) and physical port
-name. 
+name.
 
 Only returns those iids that have a description listed in $l3->i_description()
 
 =item $l3->i_name()
 
-Returns reference to hash of iid to human set name. 
+Returns reference to hash of iid to human set name.
 
 Defaults to C<ifName>, but checks for an C<ifAlias>
 
@@ -547,8 +547,8 @@ Defaults to C<ifName>, but checks for an C<ifAlias>
 
 Returns reference to hash of iid to current link duplex setting.
 
-Maps $l3->el_index() to $l3->el_duplex, then culls out 
-full,half, or auto and sets the map to that value. 
+Maps $l3->el_index() to $l3->el_duplex, then culls out
+full,half, or auto and sets the map to that value.
 
 See L<SNMP::Info::Etherlike> for the el_index() and el_duplex() methods.
 
@@ -560,7 +560,7 @@ See L<SNMP::Info::Etherlike> for the el_index() and el_duplex() methods.
 
 =item $l3->at_index()
 
-Returns reference to hash.  Maps ARP table entries to Interface IIDs 
+Returns reference to hash.  Maps ARP table entries to Interface IIDs
 
 (C<ipNetToMediaIfIndex>)
 
@@ -569,7 +569,7 @@ the deprecated C<atIfIndex>.
 
 =item $l3->at_paddr()
 
-Returns reference to hash.  Maps ARP table entries to MAC addresses. 
+Returns reference to hash.  Maps ARP table entries to MAC addresses.
 
 (C<ipNetToMediaPhysAddress>)
 
@@ -578,7 +578,7 @@ the deprecated C<atPhysAddress>.
 
 =item $l3->at_netaddr()
 
-Returns reference to hash.  Maps ARP table entries to IP addresses. 
+Returns reference to hash.  Maps ARP table entries to IP addresses.
 
 (C<ipNetToMediaNetAddress>)
 

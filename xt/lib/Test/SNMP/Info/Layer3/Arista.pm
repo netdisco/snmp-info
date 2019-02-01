@@ -44,7 +44,7 @@ sub startup : Tests(startup => 1) {
 sub setup : Tests(setup) {
   my $test = shift;
   $test->SUPER::setup;
-  
+
   # Start with a common cache that will serve most tests
   my $d_string = 'Arista Networks EOS version 4.10.4 ';
   $d_string .= 'running on an Arista Networks DCS-7048T-A';

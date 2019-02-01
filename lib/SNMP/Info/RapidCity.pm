@@ -154,7 +154,7 @@ $VERSION = '3.64';
     'rc2k_mda_part'   => 'rc2kMdaCardPartNumber',
     'rc2k_mda_date'   => 'rc2kMdaCardDateCode',
     'rc2k_mda_dev'    => 'rc2kMdaCardDeviations',
-    
+
     # From RAPID-CITY::rcMltTable
     'rc_mlt_ports'    => 'rcMltPortMembers',
     'rc_mlt_index'    => 'rcMltIfIndex',
@@ -396,13 +396,13 @@ sub i_vlan_membership_untagged {
             if ($p_tag_opt->{$port}) {
                 if ($p_tag_opt->{$port} eq 'untagPvidOnly') {
                     my $vlan = $i_vlan->{$port};
-                    push( @{ $members_untagged->{$port} }, $vlan );                    
+                    push( @{ $members_untagged->{$port} }, $vlan );
                 }
                 elsif (($p_tag_opt->{$port} eq 'true') and
                        ($p_untag_def->{$port} and $p_untag_def->{$port} eq 'true'))
                 {
                     my $vlan = $i_vlan->{$port};
-                    push( @{ $members_untagged->{$port} }, $vlan );                     
+                    push( @{ $members_untagged->{$port} }, $vlan );
                 }
                 elsif ($p_tag_opt->{$port} eq 'tagPvidOnly') {
                     my $vlan = $i_vlan->{$port};
@@ -424,7 +424,7 @@ sub i_vlan_membership_untagged {
             }
         }
     }
- 
+
     return $members_untagged;
 }
 
@@ -883,7 +883,7 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $rapidcity = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
@@ -891,7 +891,7 @@ Eric Miller
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $rapidcity->class();
@@ -980,7 +980,7 @@ Returns serial number of the chassis
 
 =item $rapidcity->stp_ver()
 
-Returns the particular STP version running on this device.  
+Returns the particular STP version running on this device.
 
 Values: C<nortelStpg>, C<pvst>, C<rstp>, C<mstp>, C<ieee8021d>
 
@@ -1015,7 +1015,7 @@ IDs.  These are the VLANs which are members of the egress list for the port.
   Example:
   my $interfaces = $rapidcity->interfaces();
   my $vlans      = $rapidcity->i_vlan_membership();
-  
+
   foreach my $iid (sort keys %$interfaces) {
     my $port = $interfaces->{$iid};
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
@@ -1486,7 +1486,7 @@ of the Port ID is given by the value of C<dot1dStpPort>."
 =item $rapidcity->stp_p_state()
 
 "The port's current state as defined by application of the Spanning Tree
-Protocol."  
+Protocol."
 
 =item $rapidcity->stp_p_cost()
 
@@ -1516,7 +1516,7 @@ segment."
 These are methods that provide SNMP set functionality for overridden methods
 or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
-operations. 
+operations.
 
 =over
 
@@ -1527,7 +1527,7 @@ choices are 'auto', '10', '100', '1000'.
 
  Example:
  my %if_map = reverse %{$rapidcity->interfaces()};
- $rapidcity->set_i_speed_admin('auto', $if_map{'1.1'}) 
+ $rapidcity->set_i_speed_admin('auto', $if_map{'1.1'})
     or die "Couldn't change port speed. ",$rapidcity->error(1);
 
 =item $rapidcity->set_i_duplex_admin(duplex, ifIndex)
@@ -1537,7 +1537,7 @@ choices are 'auto', 'half', 'full'.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
-  $rapidcity->set_i_duplex_admin('auto', $if_map{'1.1'}) 
+  $rapidcity->set_i_duplex_admin('auto', $if_map{'1.1'})
     or die "Couldn't change port duplex. ",$rapidcity->error(1);
 
 =item $rapidcity->set_i_vlan(vlan, ifIndex)
@@ -1549,7 +1549,7 @@ station (non-trunk) ports.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
-  $rapidcity->set_i_vlan('2', $if_map{'1.1'}) 
+  $rapidcity->set_i_vlan('2', $if_map{'1.1'})
     or die "Couldn't change port VLAN. ",$rapidcity->error(1);
 
 =item $rapidcity->set_i_pvid(pvid, ifIndex)
@@ -1560,7 +1560,7 @@ port C<ifIndex>.  This method only changes the PVID, to modify an access
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
-  $rapidcity->set_i_pvid('2', $if_map{'1.1'}) 
+  $rapidcity->set_i_pvid('2', $if_map{'1.1'})
     or die "Couldn't change port PVID. ",$rapidcity->error(1);
 
 =item $rapidcity->set_add_i_vlan_tagged(vlan, ifIndex)
@@ -1570,7 +1570,7 @@ numeric VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
-  $rapidcity->set_add_i_vlan_tagged('2', $if_map{'1.1'}) 
+  $rapidcity->set_add_i_vlan_tagged('2', $if_map{'1.1'})
     or die "Couldn't add port to egress list. ",$rapidcity->error(1);
 
 =item $rapidcity->set_remove_i_vlan_tagged(vlan, ifIndex)
@@ -1580,7 +1580,7 @@ numeric VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
-  $rapidcity->set_remove_i_vlan_tagged('2', $if_map{'1.1'}) 
+  $rapidcity->set_remove_i_vlan_tagged('2', $if_map{'1.1'})
     or die "Couldn't add port to egress list. ",$rapidcity->error(1);
 
 =item $rapidcity->set_delete_vlan(vlan)
@@ -1592,7 +1592,7 @@ Deletes the specified VLAN from the device.
 Creates the specified VLAN on the device.
 
 Note:  This method only allows creation of Port type VLANs and does not allow
-for the setting of the Spanning Tree Group (STG) which defaults to 1.   
+for the setting of the Spanning Tree Group (STG) which defaults to 1.
 
 =back
 

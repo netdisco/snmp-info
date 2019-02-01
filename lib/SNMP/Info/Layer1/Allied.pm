@@ -128,14 +128,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $allied = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myhub',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $allied->class();
@@ -143,8 +143,8 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
-Allied device through SNMP. See inherited classes' documentation for 
+Provides abstraction to the configuration information obtainable from a
+Allied device through SNMP. See inherited classes' documentation for
 inherited methods.
 
 =head2 Inherited Classes
@@ -181,7 +181,7 @@ Returns 'allied' :)
 
 =item $allied->os()
 
-Returns 'allied' 
+Returns 'allied'
 
 =item $allied->os_ver()
 

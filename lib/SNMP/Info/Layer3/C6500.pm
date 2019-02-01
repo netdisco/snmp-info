@@ -179,7 +179,7 @@ sub set_i_duplex_admin {
 
     my $c6500 = shift;
     my ( $duplex, $iid ) = @_;
- 
+
     if ( $c6500->is_virtual_switch() ) {
 
         # VSS -> MAU
@@ -252,7 +252,7 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $c6500 = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
@@ -260,7 +260,7 @@ Max Baker
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $c6500->class();
@@ -268,14 +268,14 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Cisco Catalyst 6500 Layer 2/3 Switches.  
+Abstraction subclass for Cisco Catalyst 6500 Layer 2/3 Switches.
 
 These devices run IOS but have some of the same characteristics as the
 Catalyst WS-C family (5xxx). For example, forwarding tables are held in
 VLANs, and extended interface information is gleaned from F<CISCO-SWITCH-MIB>.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $c6500 = new SNMP::Info::Layer3::C6500(...);
 
@@ -382,7 +382,7 @@ Crosses $c6500->p_port() with $c6500->p_duplex() to utilize port C<ifIndex>.
 
     Example:
     my %if_map = reverse %{$c6500->interfaces()};
-    $c6500->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'}) 
+    $c6500->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'})
         or die "Couldn't change port duplex. ",$c6500->error(1);
 
 =item $c6500->set_i_speed_admin(speed, ifIndex)

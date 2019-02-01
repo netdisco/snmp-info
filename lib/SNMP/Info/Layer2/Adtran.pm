@@ -45,7 +45,7 @@ $VERSION = '3.64';
 # table by the serial() function.
 our $index = undef;
 
-%MIBS = ( 
+%MIBS = (
     %SNMP::Info::Layer2::MIBS,
     %SNMP::Info::Layer3::MIBS,
 #    'ADTRAN-GENEVC-MIB'     => 'adGenEVCMIB',
@@ -53,11 +53,11 @@ our $index = undef;
 #    'ADTRAN-GENPORT-MIB'    => 'adGenPort',
     'ADTRAN-MIB'            => 'adtran',
     'ADTRAN-AOSUNIT'     => 'adGenAOSUnitMib',
- );
+);
 
 %GLOBALS = (
-    %SNMP::Info::Layer2::GLOBALS, 
-    %SNMP::Info::Layer3::GLOBALS, 
+    %SNMP::Info::Layer2::GLOBALS,
+    %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
     'serial'    => 'adProdSerialNumber',
     'ad_mgmtevcvid' => 'adGenEVCSysMgmtEVCSTagVID',
@@ -65,7 +65,7 @@ our $index = undef;
 
 %FUNCS = ( %SNMP::Info::Layer2::FUNCS,
            %SNMP::Info::Layer3::FUNCS,
-           %SNMP::Info::LLDP::FUNCS, 
+           %SNMP::Info::LLDP::FUNCS,
            'ad_evcstag' => 'adGenEVCLookupName',
            'ad_menport' => 'adGenMenPortRowStatus',
            'ad_evcnamevid' => 'adGenEVCSTagVID',
@@ -86,11 +86,11 @@ sub os {
 
 sub layers {
     my $adtran = shift;
-    
+
     my $layers = $adtran->SUPER::layers();
-    # Some netvantas don't report L2 properly 
+    # Some netvantas don't report L2 properly
     my $macs   = $adtran->fw_mac();
-    
+
     if (keys %$macs) {
         my $l = substr $layers, 6, 1, "1";
     }
@@ -105,7 +105,7 @@ sub os_ver {
     my $aos_ver = $adtran->adAOSDeviceVersion();
     return $aos_ver;
 }
-sub model { 
+sub model {
     my $adtran = shift;
     my $id = $adtran->id();
     my $mod = $adtran->adProdName() || undef;
@@ -113,7 +113,7 @@ sub model {
     my $model = $adtran->adAOSDeviceProductName() || undef;
     return $model;
 }
-sub serial { 
+sub serial {
     my $adtran = shift;
     my $e_serial = $adtran->e_serial() || {};
     my $serial2 = $e_serial->{1} || undef;
@@ -124,19 +124,19 @@ sub serial {
 sub i_name {
     my $adtran = shift;
     my $partial = shift;
-    my $i_name = $adtran->SUPER::i_alias() || undef; 
+    my $i_name = $adtran->SUPER::i_alias() || undef;
     return $i_name if (defined $i_name);
     $i_name = {};
     my $adname = $adtran->ad_genportcustuse() || undef;
-    if (defined $adname) {  
-        foreach my $port (keys %$adname) { 
+    if (defined $adname) {
+        foreach my $port (keys %$adname) {
             my @split = split(/\./,$port);
             $i_name->{@split[1]} = $adname->{$port};
         }
     }
     return $i_name;
 }
-sub i_vlan { 
+sub i_vlan {
     my $adtran = shift;
     my $partial = shift;
     my $uniports = $adtran->ad_evcmapuniport() || undef;
@@ -155,14 +155,14 @@ sub i_vlan {
         return $i_vlan;
     }
     return {};
-        
+
 }
-        
-sub i_vlan_membership {         
+
+sub i_vlan_membership {
     my $adtran  = shift;
     my $partial = shift;
     my $i_vlan = $adtran->ad_menport();
-    if (defined $i_vlan) { 
+    if (defined $i_vlan) {
         my $vlans = {};
         my $v_name = $adtran->v_name();
         foreach my $vid (keys %$v_name) {
@@ -202,14 +202,14 @@ SNMP::Info::Layer2::Adtran - SNMP Interface to Adtran Devices
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $adtran = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $adtran->class();

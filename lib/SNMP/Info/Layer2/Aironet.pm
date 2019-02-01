@@ -443,7 +443,7 @@ sub i_ssidmac {
     my $partial    = shift;
     my $mbss_mac_addr = $aironet->mbss_mac_addr();
 
-    # Same logic as i_ssidbcast to return same indexes as i_ssidlist 
+    # Same logic as i_ssidbcast to return same indexes as i_ssidlist
     my $map = {};
     foreach my $key ( keys %$mbss_mac_addr ) {
         my ( $interface, @idx ) = split( /\./, $key );
@@ -484,14 +484,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $aironet = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $aironet->class();
@@ -517,7 +517,7 @@ This class is for devices running Cisco IOS software (newer)
 =back
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $aironet = new SNMP::Info::Layer2::Aironet(...);
 
@@ -655,11 +655,11 @@ being broadcast.
 =item $aironet->i_ssidmac()
 
 With the same keys as i_ssidlist, returns the Basic service set
-identification (BSSID), MAC address, the AP is using for the SSID. 
+identification (BSSID), MAC address, the AP is using for the SSID.
 
 =item $aironet ps1_status()
 
-Returns the PoE injector status based on C<cpoePdSupportedPower> and 
+Returns the PoE injector status based on C<cpoePdSupportedPower> and
 C<cpoePdSupportedPowerMode>.
 
 =back

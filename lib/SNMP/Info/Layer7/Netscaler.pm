@@ -80,7 +80,7 @@ sub serial {
 sub model {
     my $ns    = shift;
     my $desc  = $ns->sys_hw_desc() || '';
-   
+
     $desc =~ s/^.+\bNS//i;
 
     return $desc;
@@ -121,14 +121,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $ns = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $ns->class();

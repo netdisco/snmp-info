@@ -65,8 +65,8 @@ $VERSION = '3.64';
 	'mac' => 'dot1dBaseBridgeAddress',
 );
 
-%FUNCS = ( 
-    %SNMP::Info::Layer3::CiscoSwitch::FUNCS, 
+%FUNCS = (
+    %SNMP::Info::Layer3::CiscoSwitch::FUNCS,
     'vrf_name' => 'cContextMappingVrfName',
 );
 
@@ -258,7 +258,7 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $nexus = new SNMP::Info(
 						AutoSpecify => 1,
 						Debug       => 1,
@@ -266,7 +266,7 @@ Eric Miller
 						DestHost    => 'myswitch',
 						Community   => 'public',
 						Version     => 2
-						) 
+						)
 	or die "Can't connect to DestHost.\n";
 
  my $class      = $nexus->class();
@@ -274,10 +274,10 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Cisco Nexus Switches running NX-OS.  
+Abstraction subclass for Cisco Nexus Switches running NX-OS.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $nexus = new SNMP::Info::Layer3::Nexus(...);
 
@@ -340,12 +340,12 @@ C<dot1dBaseBridgeAddress>
 
 =head3 IP Address Table
 
-Each entry in this table is an IP address in use on this device.  Some 
+Each entry in this table is an IP address in use on this device.  Some
 versions do not index the table with the IPv4 address in accordance with
 the MIB definition, these overrides correct that behavior.
 
-Also, the table is augmented with IP addresses in use by UDP sockets on the 
-device, as determined by checking F<RFC1213-MIB::udpLocalAddress>. Valid 
+Also, the table is augmented with IP addresses in use by UDP sockets on the
+device, as determined by checking F<RFC1213-MIB::udpLocalAddress>. Valid
 addresses from this table (any IPv4 that is not localhost, 0.0.0.0, Class D
 (multicast) or Class E (experimental) are added as a /32 on interface ID 0.
 This is a workaround to determine possible VPC Keepalive IP addresses on the

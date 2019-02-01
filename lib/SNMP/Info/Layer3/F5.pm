@@ -270,7 +270,7 @@ sub i_vlan_membership_untagged {
 
     my $i_vlan_membership = {};
     foreach my $iid ( keys %$tagged ) {
-        
+
         next unless $tagged->{$iid} eq 'false';
         # IID is length.vlan name index.length.interface index
         # Split out and use as the IID to get the VLAN ID and ifIndex
@@ -304,14 +304,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $f5 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $f5->class();
@@ -322,7 +322,7 @@ Eric Miller
 Abstraction subclass for F5 network devices.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $f5 = new SNMP::Info::Layer3::F5(...);
 
@@ -357,7 +357,7 @@ These are methods that return scalar value from SNMP
 =item $f5->model()
 
 Return (C<sysPlatformInfoMarketingName>), otherwise tries to reference
-$f5->id() to F<F5-BIGIP-COMMON-MIB>. 
+$f5->id() to F<F5-BIGIP-COMMON-MIB>.
 
 =item $f5->vendor()
 
@@ -420,7 +420,7 @@ IDs.
   Example:
   my $interfaces = $f5->interfaces();
   my $vlans      = $f5->i_vlan_membership();
-  
+
   foreach my $iid (sort keys %$interfaces) {
     my $port = $interfaces->{$iid};
     my $vlan = join(',', sort(@{$vlans->{$iid}}));

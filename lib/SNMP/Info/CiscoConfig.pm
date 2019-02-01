@@ -279,7 +279,7 @@ Justin Hunter, Eric Miller
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
 
     or die "Can't connect to DestHost.\n";
 
@@ -335,10 +335,6 @@ These are methods that return scalar value from SNMP
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=over
-
-=back
 
 =head2 Config Copy Request Table  (C<ccCopyTable>)
 
@@ -435,7 +431,7 @@ Table of Flash copy operation entries.
 These are methods that provide SNMP set functionality for overridden methods
 or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
-operations. 
+operations.
 
 =over
 
@@ -452,7 +448,7 @@ older procedure has been depreciated by Cisco and is utilized only to support
 devices running older code revisions.
 
  Example:
- $ciscoconfig->copy_run_tftp('1.2.3.4', 'myconfig') 
+ $ciscoconfig->copy_run_tftp('1.2.3.4', 'myconfig')
     or die "Couldn't save config. ",$ciscoconfig->error(1);
 
 =item $ciscoconfig->copy_run_start()

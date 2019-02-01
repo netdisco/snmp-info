@@ -122,7 +122,7 @@ sub i_vlan {
 }
 
 # Apparently index doesn't use VLAN ID, so override the HOA private
-# method here to correct the mapping 
+# method here to correct the mapping
 sub _vlan_hoa {
     my $force10 = shift;
     my ( $v_ports, $partial ) = @_;
@@ -153,7 +153,7 @@ sub _vlan_hoa {
             my $vlan_tag = $v_index->{$vlan_ndx};
 
             # FIXME: would be preferable to use
-            # the mapping from Q-BRIDGE-MIB::dot1qVlanFdbId 
+            # the mapping from Q-BRIDGE-MIB::dot1qVlanFdbId
             my $mod = $vlan_tag % 4096;
 
             push ( @{ $vlan_hoa->{$ifindex} }, ($mod) );
@@ -176,7 +176,7 @@ William Bulley
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $force10 = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
@@ -184,7 +184,7 @@ William Bulley
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $force10->class();

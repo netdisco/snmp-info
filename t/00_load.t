@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# 00-load.t - Test loading of SNMP::Info 
+# 00-load.t - Test loading of SNMP::Info
 # $Id$
 
 use strict;

@@ -173,14 +173,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $asante = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $asante->class();
@@ -188,7 +188,7 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
+Provides abstraction to the configuration information obtainable from a
 Asante device through SNMP.
 
 =head2 Inherited Classes
@@ -250,7 +250,7 @@ See L<SNMP::Info::Layer1/"GLOBALS"> for details.
 
 Returns reference to the map between IID and physical Port.
 
-=item $asante->i_description() 
+=item $asante->i_description()
 
 Description of the interface.
 

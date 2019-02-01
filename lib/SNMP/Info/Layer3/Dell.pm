@@ -167,7 +167,7 @@ sub fan {
 
     my $fan   = $dell->dell_fan_desc()  || {};
     my $state = $dell->dell_fan_state() || {};
-    
+
     if (scalar keys %$fan) {
         my @messages = ();
 
@@ -200,8 +200,8 @@ sub ps2_type {
     my $dell = shift;
 
     my $src  = $dell->dell_pwr_src()  || {};
-    
-    my $i = 0; 
+
+    my $i = 0;
     foreach my $k (sort keys %$src) {
         $i++;
         next unless $src->{$k} and $i == 2;
@@ -226,8 +226,8 @@ sub ps2_status {
     my $dell = shift;
 
     my $status  = $dell->dell_pwr_state()  || {};
-    
-    my $i = 0; 
+
+    my $i = 0;
     foreach my $k (sort keys %$status) {
         $i++;
         next unless $status->{$k} and $i == 2;
@@ -330,14 +330,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $dell = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $dell->class();
@@ -346,12 +346,12 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from an 
+Provides abstraction to the configuration information obtainable from an
 Dell Power Connect device through SNMP.  D-Link and the IBM BladeCenter
-Gigabit Ethernet Switch Module also use this module based upon MIB support. 
+Gigabit Ethernet Switch Module also use this module based upon MIB support.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $dell = new SNMP::Info::Layer3::Dell(...);
 
@@ -502,7 +502,7 @@ to a hash.
 =item $dell->interfaces()
 
 Returns the map between SNMP Interface Identifier (iid) and physical port
-name.  Uses name if available instead of description since descriptions are 
+name.  Uses name if available instead of description since descriptions are
 sometimes not unique.
 
 =item $dell->i_duplex()

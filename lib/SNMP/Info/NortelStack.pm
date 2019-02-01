@@ -558,7 +558,7 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $stack = new SNMP::Info(
                     AutoSpecify => 1,
                     Debug       => 1,
@@ -566,7 +566,7 @@ Eric Miller
                     DestHost    => 'myswitch',
                     Community   => 'public',
                     Version     => 2
-                    ) 
+                    )
     or die "Can't connect to DestHost.\n";
 
  my $class = $stack->class();
@@ -620,13 +620,13 @@ Returns serial number of the chassis
 =item $stack->ns_ag_ver()
 
 Returns the version of the agent in the form
-'major.minor.maintenance[letters]'. 
+'major.minor.maintenance[letters]'.
 
 (C<s5AgInfoVer>)
 
 =item $stack->ns_op_mode()
 
-Returns the stacking mode. 
+Returns the stacking mode.
 
 (C<s5AgSysCurrentOperationalMode>)
 
@@ -821,7 +821,7 @@ Returns reference to hash.  Key: Table entry, Value: Version
 =head2 Pseudo F<ENTITY-MIB> information
 
 These methods emulate F<ENTITY-MIB> Physical Table methods using
-F<S5-CHASSIS-MIB>. 
+F<S5-CHASSIS-MIB>.
 
 =over
 
@@ -905,7 +905,7 @@ is not contained in any other entity.
 
 =item $stack->munge_ns_grp_type()
 
-Munges C<s5ChasGrpType> into an C<ENTITY-MIB PhysicalClass> equivalent. 
+Munges C<s5ChasGrpType> into an C<ENTITY-MIB PhysicalClass> equivalent.
 
 =back
 

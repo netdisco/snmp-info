@@ -80,7 +80,7 @@ unless ( defined $sysdescr ) {
 
 SNMP::loadModules(@ARGV);
 
-# Create a hash of MIB Modules for which we want results 
+# Create a hash of MIB Modules for which we want results
 my %mib_hash = map {$_ => 1} @ARGV;
 # Add the common MIB Modules we always want
 my @common_mibs = ('SNMPv2-MIB', 'IF-MIB');

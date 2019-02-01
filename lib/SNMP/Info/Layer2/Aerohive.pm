@@ -132,7 +132,7 @@ sub mac {
         push( @macs, $macs->{$iid} );
       }
       @macs = sort(@macs);
-    } 
+    }
     return $macs[0];
 }
 
@@ -323,14 +323,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $aerohive = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $aerohive->class();
@@ -339,10 +339,10 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from an
-Aerohive wireless Access Point through SNMP. 
+Aerohive wireless Access Point through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $aerohive = new SNMP::Info::Layer2::Aerohive(...);
 
