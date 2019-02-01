@@ -906,6 +906,12 @@ Subclass for Lantronix devices.
 
 See documentation in L<SNMP::Info::Layer3::Lantronix> for details.
 
+=item SNMP::Info::Layer3::Lenovo
+
+Subclass for Lenovo switches running CNOS.
+
+See documentation in L<SNMP::Info::Layer3::Lenovo> for details.
+
 =item SNMP::Info::Layer3::Microsoft
 
 Subclass for Generic Microsoft Routers running Microsoft Windows OS.
@@ -1665,6 +1671,7 @@ sub device_type {
         14823 => 'SNMP::Info::Layer3::Aruba',
         14988 => 'SNMP::Info::Layer3::Mikrotik',
         17163 => 'SNMP::Info::Layer3::Steelhead',
+        19046 => 'SNMP::Info::Layer3::Lenovo',
         21091 => 'SNMP::Info::Layer2::Exinda',
         25506 => 'SNMP::Info::Layer3::H3C',
         25461 => 'SNMP::Info::Layer3::PaloAlto',

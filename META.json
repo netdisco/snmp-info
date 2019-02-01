@@ -434,6 +434,10 @@
          "file" : "lib/SNMP/Info/Layer3/Lantronix.pm",
          "version" : "3.64"
       },
+      "SNMP::Info::Layer3::Lenovo" : {
+         "file" : "lib/SNMP/Info/Layer3/Lenovo.pm",
+         "version" : "3.64"
+      },
       "SNMP::Info::Layer3::Microsoft" : {
          "file" : "lib/SNMP/Info/Layer3/Microsoft.pm",
          "version" : "3.64"

@@ -104,6 +104,7 @@ lib/SNMP/Info/Layer3/Huawei.pm
 lib/SNMP/Info/Layer3/IBMGbTor.pm
 lib/SNMP/Info/Layer3/Juniper.pm
 lib/SNMP/Info/Layer3/Lantronix.pm
+lib/SNMP/Info/Layer3/Lenovo.pm
 lib/SNMP/Info/Layer3/Microsoft.pm
 lib/SNMP/Info/Layer3/Mikrotik.pm
 lib/SNMP/Info/Layer3/N1600.pm
