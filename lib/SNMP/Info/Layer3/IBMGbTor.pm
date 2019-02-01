@@ -208,6 +208,7 @@ sub os {
     return 'ibm';
 }
 
+# TODO: from os version 8 this should return lenovo
 sub vendor {
     return 'ibm';
 }
@@ -240,7 +241,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::IBMGbTor - SNMP Interface to IBM Rackswitch devices
+SNMP::Info::Layer3::IBMGbTor - SNMP Interface to Lenovo/IBM Rackswitch devices
 
 =head1 AUTHOR
 
@@ -265,7 +266,8 @@ Eric Miller
 =head1 DESCRIPTION
 
 Abstraction subclass for IBM Rackswitch (formerly Blade Network Technologies)
-network devices.
+network devices. Lenovo acquired these from IBM and is now selling
+them under the Lenovo brand.
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above.
