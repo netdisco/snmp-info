@@ -498,7 +498,7 @@ See documentation in L<SNMP::Info::Layer2> for details.
 
 =item SNMP::Info::Layer2::3Com
 
-SNMP::Info::Layer2::3Com - SNMP Interface to L2 3Com Switches
+Subclass for L2 3Com Switches.
 
 See documentation in L<SNMP::Info::Layer2::3Com> for details.
 
@@ -523,7 +523,7 @@ See documentation in L<SNMP::Info::Layer2::Airespace> for details.
 =item SNMP::Info::Layer2::Aironet
 
 Class for Cisco Aironet wireless devices that run IOS.  See also
-Layer3::Aironet for Aironet devices that don't run IOS.
+L<SNMP::Info::Layer3::Aironet> for Aironet devices that don't run IOS.
 
 See documentation in L<SNMP::Info::Layer2::Aironet> for details.
 
@@ -547,10 +547,6 @@ includes 303, 304, 350, 380, 410, 420, 425, 450, 460, 470 series,
 Business Policy Switch (BPS), VSP 7000 series, and probably others.
 
 See documentation in L<SNMP::Info::Layer2::Baystack> for details.
-
-=item SNMP::Info::Layer2::Kentrox
-
-Class for Kentrox DataSMART DSU/CSU. See L<SNMP::Info::Layer2::Kentrox> for details.
 
 =item SNMP::Info::Layer2::C1900
 
@@ -620,6 +616,12 @@ See documentation in L<SNMP::Info::Layer2::HP4000> for details.
 Subclass for HP Virtual Connect Switches
 
 See documentation in L<SNMP::Info::Layer2::HPVC> for details.
+
+=item SNMP::Info::Layer2::Kentrox
+
+Class for Kentrox DataSMART DSU/CSU.
+
+See documentation in L<SNMP::Info::Layer2::Kentrox> for details.
 
 =item SNMP::Info::Layer2::N2270
 
@@ -698,7 +700,7 @@ are usually older devices.
 
 MIBs for these devices now included in v2.tar.gz available from ftp.cisco.com.
 
-Note Layer2::Aironet
+Note L<SNMP::Info::Layer2::Aironet>
 
 See documentation in L<SNMP::Info::Layer3::Aironet> for details.
 
@@ -763,7 +765,7 @@ See documentation in L<SNMP::Info::Layer3::C6500> for details.
 
 =item SNMP::Info::Layer3::CheckPoint
 
-Subclass for CheckPoint devices
+Subclass for CheckPoint devices.
 
 See documentation in L<SNMP::Info::Layer3::CheckPoint> for details.
 
@@ -887,19 +889,20 @@ See documentation in L<SNMP::Info::Layer3::Huawei> for details.
 =item SNMP::Info::Layer3::IBMGbTor
 
 SNMP Interface to IBM Rackswitch (formerly Blade Network Technologies)
-network devices.
+network devices. Lenovo acquired these from IBM and is now selling
+them under the Lenovo brand.
 
 See documentation in L<SNMP::Info::Layer3::IBMGbTor> for details.
 
 =item SNMP::Info::Layer3::Juniper
 
-Subclass for Juniper devices
+Subclass for Juniper devices.
 
 See documentation in L<SNMP::Info::Layer3::Juniper> for details.
 
 =item SNMP::Info::Layer3::Lantronix
 
-Subclass for Lantronix devices
+Subclass for Lantronix devices.
 
 See documentation in L<SNMP::Info::Layer3::Lantronix> for details.
 
@@ -935,13 +938,13 @@ See documentation in L<SNMP::Info::Layer3::Netscreen> for details.
 
 =item SNMP::Info::Layer3::Nexus
 
-Subclass for Cisco Nexus devices running NX-OS
+Subclass for Cisco Nexus devices running NX-OS.
 
 See documentation in L<SNMP::Info::Layer3::Nexus> for details.
 
 =item SNMP::Info::Layer3::OneAccess
 
-Subclass for OneAccess Quidway switches
+Subclass for OneAccess routers.
 
 See documentation in L<SNMP::Info::Layer3::OneAccess> for details.
 
@@ -978,13 +981,15 @@ See documentation in L<SNMP::Info::Layer3::Pica8> for details.
 
 =item SNMP::Info::Layer3::SonicWALL
 
-Subclass for generic SonicWALL devices. See documentation in
-L<SNMP::Info::Layer3::SonicWALL> for details.
+Subclass for generic SonicWALL devices.
+
+See documentation in L<SNMP::Info::Layer3::SonicWALL> for details.
 
 =item SNMP::Info::Layer3::Steelhead
 
-Subclass for  Riverbed Steelhead WAN optimization appliances. See
-documentation in L<SNMP::Info::Layer3::Steelhead> for details.
+Subclass for  Riverbed Steelhead WAN optimization appliances.
+
+See documentation in L<SNMP::Info::Layer3::Steelhead> for details.
 
 =item SNMP::Info::Layer3::Sun
 
@@ -1032,45 +1037,46 @@ See documentation in L<SNMP::Info::Layer7> for details.
 
 =item SNMP::Info::Layer7::APC
 
-Subclass for APC UPS devices
+Subclass for APC UPS devices.
 
 See documentation in L<SNMP::Info::Layer7::APC> for details.
 
 =item SNMP::Info::Layer7::Arbor
 
-Subclass for Arbor appliances
+Subclass for Arbor appliances.
 
 See documentation in L<SNMP::Info::Layer7::Arbor> for details.
 
 =item SNMP::Info::Layer7::CiscoIPS
 
-Subclass for Cisco IPS devices
+Subclass for Cisco IPS devices.
 
 See documentation in L<SNMP::Info::Layer7::CiscoIPS> for details.
 
 =item SNMP::Info::Layer7::Gigamon
 
-Subclass for Gigamon devices
+Subclass for Gigamon devices.
 
 See documentation in L<SNMP::Info::Layer7::Gigamon> for details.
 
 =item SNMP::Info::Layer7::Liebert
 
-Subclass for Liebert devices
+Subclass for Liebert devices.
 
 See documentation in L<SNMP::Info::Layer7::Liebert> for details.
 
+=item SNMP::Info::Layer7::Neoteris
+
+Subclass for Juniper SSL VPN appliances.
+
+See documentation in L<SNMP::Info::Layer7::Neoteris> for details.
+
 =item SNMP::Info::Layer7::Netscaler
 
-Subclass for Citrix Netscaler appliances
+Subclass for Citrix Netscaler appliances.
 
 See documentation in L<SNMP::Info::Layer7::Netscaler> for details.
 
-=item SNMP::Info::Layer7::Neoteris
-
-Subclass for Juniper SSL VPN appliances
-
-See documentation in L<SNMP::Info::Layer7::Neoteris> for details.
 
 =back
 
