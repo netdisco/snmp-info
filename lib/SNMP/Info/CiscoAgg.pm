@@ -1,6 +1,6 @@
 # SNMP::Info::CiscoAgg
 #
-# Copyright (c) 2018 SNMP::Info Developers
+# Copyright (c) 2019 SNMP::Info Developers
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,35 +30,71 @@
 package SNMP::Info::CiscoAgg;
 
 use strict;
+#use warnings;
 use Exporter;
-use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
+use SNMP::Info::IEEE802dot3ad;
 
 @SNMP::Info::CiscoAgg::ISA = qw/
   SNMP::Info::IEEE802dot3ad
   Exporter
 /;
+
 @SNMP::Info::CiscoAgg::EXPORT_OK = qw/
   agg_ports
+  agg_ports_cisco
+  agg_ports_lag
+  agg_ports_pagp
 /;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+use vars qw/$DEBUG $VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
 $VERSION = '3.64';
 
 %MIBS = (
   %SNMP::Info::IEEE802dot3ad::MIBS,
-  'CISCO-PAGP-MIB'   => 'pagpGroupIfIndex',
+  'CISCO-PAGP-MIB'         => 'pagpGroupIfIndex',
+  'CISCO-LAG-MIB'          => 'clagAggPortListPorts',
+  'CISCO-IF-EXTENSION-MIB' => 'cieIfLastInTime',
 );
 
 %GLOBALS = ();
 
 %FUNCS = (
   %SNMP::Info::IEEE802dot3ad::FUNCS,
+  'lag_ports'         => 'clagAggPortListPorts',
+  'lag_members'       => 'clagAggPortListInterfaceIndexList',
 );
 
 %MUNGE = (
   %SNMP::Info::IEEE802dot3ad::MUNGE,
+  'lag_ports'     => \&SNMP::Info::munge_port_list,
+  'lag_members'   => \&munge_port_ifindex,
 );
+
+sub munge_port_ifindex {
+    my $plist = shift;
+    return unless defined $plist;
+    return unless length $plist;
+
+    my $list = [ map {sprintf "%d", hex($_)} unpack( "(A8)*", join( '' ,  map { sprintf "%02x", $_} unpack( "(C4)*", $plist ) ))  ];
+
+    return $list;
+}
+
+sub agg_ports_cisco {
+  my $dev = shift;
+  my $group = $dev->lag_members;
+
+  my $mapping = {};
+  for my $master (keys %$group) {
+    my $slaves = $group->{$master};
+    for my $slave (@$slaves) {
+      $mapping->{$slave} = $master;
+    }
+  }
+
+  return $mapping;
+}
 
 sub agg_ports_pagp {
   my $dev = shift;
@@ -80,9 +116,28 @@ sub agg_ports_pagp {
   return $mapping;
 }
 
-# until we have PAgP data and need to combine with LAG data
+sub agg_ports_lag {
+  my $dev = shift;
+
+  # same note as for agg_ports_pagp, it will miss mappings if interfaces
+  # are down or lacp is not synced.
+
+  my $mapping = {};
+  my $group = $dev->dot3adAggPortSelectedAggID;
+  for my $slave (keys %$group) {
+    my $master = $group->{$slave};
+    next if($master == 0 || $slave == $master);
+
+    $mapping->{$slave} = $master;
+  }
+
+  return $mapping;
+}
+
+
+# combine PAgP, LAG & Cisco proprietary data
 sub agg_ports {
-  my $ret = {%{agg_ports_pagp(@_)}, %{agg_ports_lag(@_)}};
+  my $ret = {%{agg_ports_pagp(@_)}, %{agg_ports_lag(@_)}, %{agg_ports_cisco(@_)}};
   return $ret;
 }
 
@@ -116,7 +171,7 @@ SNMP::Info Developers
 =head1 DESCRIPTION
 
 This class provides access to Aggregated Links configuration on Cisco devices.
-It combines Cisco PAgP and IEEE 802.3ad information.
+It combines Cisco PAgP, Cisco proprietary info and IEEE 802.3ad information.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
@@ -129,6 +184,10 @@ L<SNMP::Info::IEEE802dot3ad>
 =over
 
 =item F<CISCO-PAGP-MIB>
+
+=item F<CISCO-LAG-MIB>
+
+=item F<CISCO-IF-EXTENSION-MIB>
 
 =back
 
@@ -144,15 +203,52 @@ Returns a HASH reference mapping from slave to master port for each member of
 a port bundle on the device. Keys are ifIndex of the slave ports, Values are
 ifIndex of the corresponding master ports.
 
+=item C<agg_ports_cisco>
+
+Implements the cisco LAG info retrieval. Merged into C<agg_ports> data
+automatically. Will fetch all members of C<clagAggPortListInterfaceIndexList>
+even if they are not running an aggregation protocol.
+
 =item C<agg_ports_pagp>
 
 Implements the PAgP LAG info retrieval. Merged into C<agg_ports> data
 automatically.
 
+=item C<lag_members>
+
+Mimics C<ad_lag_ports> from L<SNMP::Info::IEEE802dot3ad> but based on ifindex
+instead of instead of bp_index.
+
+=back
+
+=head2 OVERRIDES
+
+=over
+
+=item C<agg_ports_lag>
+
+This will retrieve LAG ports based on C<dot3adAggPortSelectedAggID> data.
+It will be merged into C<agg_ports> data.
+
 =back
 
 =head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
 
+=over
+
 See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
+
+=back
+
+=head1 MUNGES
+
+=over
+
+=item C<munge_port_ifindex>
+
+Takes C<clagAggPortListInterfaceIndexList>, uses the index as master port, then
+returns all members as ifindex. Works with single or multiple slaves to a master.
+
+=back
 
 =cut

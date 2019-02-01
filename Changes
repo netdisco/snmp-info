@@ -2,7 +2,14 @@ Version 3.65 ()
 
   [ENHANCEMENTS]
 
-  * Add two more HP 2930F models
+  * Add two more HP 2930F models (JeroenvIS)
+  * #296 expand CiscoAgg to also include LACP based aggregated links
+    and staticly aggregated links. (inphobia)
+
+  [BUG FIXES]
+
+  * #295 make CiscoAgg return ifindex like expected instead of
+    bp_index (inphobia)
 
 Version 3.64 (2018-12-30)
 
