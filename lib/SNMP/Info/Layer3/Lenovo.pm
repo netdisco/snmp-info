@@ -27,16 +27,28 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+# TODO
+# ignore 127.0.0.1 interface
+# find port mac address
+# fix fix port speed
+# lag members
+# psu & fan info should be possible
+# are those \" really there in vlan & int descr?
+# spanning tree info is avail too
+
 package SNMP::Info::Layer3::Lenovo;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::LLDP;
+use SNMP::Info::IEEE802dot3ad;
 
 @SNMP::Info::Layer3::Lenovo::ISA = qw/
     SNMP::Info::LLDP
     SNMP::Info::Layer3
+    SNMP::Info::IEEE802dot3ad
     Exporter
 /;
 @SNMP::Info::Layer3::Lenovo::EXPORT_OK = qw//;
@@ -48,27 +60,33 @@ $VERSION = '3.64';
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::LLDP::MIBS,
-# add lenovo mibs, but there's so little in them....
+    %SNMP::Info::IEEE802dot3ad::MIBS,
+    'LENOVO-ENV-MIB'      => 'lenovoEnvMibPowerSupplyIndex',
+    'LENOVO-PRODUCTS-MIB' => 'lenovoProducts',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::IEEE802dot3ad::GLOBALS,
     # no way to get os version and other device details
     # ENTITY-MIB however can help out
+    # os_ver can either be from entPhysicalFirmwareRev.1
+    # or from entPhysicalSoftwareRev.1
     'os_ver'  => 'entPhysicalFirmwareRev.1',
-    'model'   => 'entPhysicalName.1',
+    'mac'     => 'dot1dBaseBridgeAddress',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::LLDP::FUNCS,
-    
+    %SNMP::Info::IEEE802dot3ad::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
 sub vendor {
@@ -84,7 +102,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Lenovo - SNMP Interface to Lenovo switches running CNOS 
+SNMP::Info::Layer3::Lenovo - SNMP Interface to Lenovo switches running CNOS.
 
 =head1 AUTHORS
 
@@ -125,6 +143,8 @@ Subclass for Lenovo switches running CNOS.
 
 =item F<LENOVO-ENV-MIB>
 
+=item F<LENOVO-PRODUCTS-MIB>
+
 =back
 
 =head2 Inherited Classes' MIBs
@@ -141,11 +161,11 @@ These are methods that return scalar value from SNMP.
 
 =over
 
-=item $cnos->model()
+=item $cnos->mac()
 
-Returns the model name extracted from C<entPhysicalName.1>.
+Returns base mac based on C<dot1dBaseBridgeAddress>.
 
-=item $pica8->os_ver()
+=item $cnos->os_ver()
 
 Returns the OS version extracted from C<entPhysicalFirmwareRev.1>.
 
