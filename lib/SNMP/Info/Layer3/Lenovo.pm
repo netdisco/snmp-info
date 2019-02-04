@@ -28,12 +28,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # TODO
-# ignore 127.0.0.1 interface
-# find port mac address
-# fix fix port speed
+# ignore 127.0.0.1 interface (could be snmpsim that's adding this however)
+# fix port speed
 # lag members
 # psu & fan info should be possible
-# are those \" really there in vlan & int descr?
 # spanning tree info is avail too
 
 package SNMP::Info::Layer3::Lenovo;
@@ -89,6 +87,24 @@ $VERSION = '3.64';
     %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
+# copied from snmp::info.pm to only use highspeed,
+# needs to either become more elegant of find a way to
+# force highspeed in snmp::info.pm
+sub i_speed {
+    my $info    = shift;
+    my $partial = shift;
+
+    my $i_speed = $info->orig_i_speed($partial);
+
+    my $i_speed_high = undef;
+    foreach my $i ( keys %$i_speed ) {
+            $i_speed_high = $info->i_speed_high($partial)
+                unless defined($i_speed_high);
+            $i_speed->{$i} = $i_speed_high->{$i} if ( $i_speed_high->{$i} );
+    }
+    return $i_speed;
+}
+
 sub vendor {
     return 'lenovo';
 }
@@ -118,7 +134,7 @@ Nick Nauwelaerts
                           Community   => 'public',
                           Version     => 2
                         )
-    or die "Can't connect to DestHost.\n";
+    or die "Can't connect to $DestHost.\n";
 
  my $class      = $cnos->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
