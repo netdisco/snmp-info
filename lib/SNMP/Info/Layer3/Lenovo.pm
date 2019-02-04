@@ -28,7 +28,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # TODO
-# document i_speed overwrite
+# document i_speed overwrite, fall back to super::i_speed needed?
 # lag members, but based on what? seems to be mapping info
 # psu & fan info should be possible
 # spanning tree info is avail too
