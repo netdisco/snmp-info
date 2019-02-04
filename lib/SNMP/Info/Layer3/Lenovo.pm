@@ -30,9 +30,12 @@
 # TODO
 # ignore 127.0.0.1 interface (could be snmpsim that's adding this however)
 # fix port speed
+#  -> either overwrite snmp::info to use highspeed
+#  -> or add more keys to munge in this module
 # lag members
 # psu & fan info should be possible
 # spanning tree info is avail too
+# no ifalias, overwrite default port name in netdisco
 
 package SNMP::Info::Layer3::Lenovo;
 
@@ -71,7 +74,7 @@ $VERSION = '3.64';
     # ENTITY-MIB however can help out
     # os_ver can either be from entPhysicalFirmwareRev.1
     # or from entPhysicalSoftwareRev.1
-    'os_ver'  => 'entPhysicalFirmwareRev.1',
+    'os_ver'  => 'entPhysicalSoftwareRev.1',
     'mac'     => 'dot1dBaseBridgeAddress',
 );
 
@@ -183,7 +186,7 @@ Returns base mac based on C<dot1dBaseBridgeAddress>.
 
 =item $cnos->os_ver()
 
-Returns the OS version extracted from C<entPhysicalFirmwareRev.1>.
+Returns the OS version extracted from C<entPhysicalSoftwareRev.1>.
 
 =back
 
