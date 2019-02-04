@@ -28,14 +28,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # TODO
-# ignore 127.0.0.1 interface (could be snmpsim that's adding this however)
-# fix port speed
-#  -> either overwrite snmp::info to use highspeed
-#  -> or add more keys to munge in this module
-# lag members
+# document i_speed overwrite
+# lag members, but based on what? seems to be mapping info
 # psu & fan info should be possible
 # spanning tree info is avail too
-# no ifalias, overwrite default port name in netdisco
+# ignore loopback0?
+# modules list could use more work
 
 package SNMP::Info::Layer3::Lenovo;
 
@@ -80,6 +78,10 @@ $VERSION = '3.64';
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
+    # perhaps we should honor what the device returns, but it's just
+    # the opposite of what most other's do, so overwrite
+    'i_name'        => 'ifDescr',
+    'i_description' => 'ifName',
 );
 
 %MUNGE = (
@@ -88,22 +90,16 @@ $VERSION = '3.64';
     %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
-# copied from snmp::info.pm to only use highspeed,
-# needs to either become more elegant of find a way to
-# force highspeed in snmp::info.pm
+# lenovo does not set ifSpeed to 4294967295 for highspeed links, instead
+# it substracts 4294967296 from the value until the remainder fits, so
+# 10gbit interfaces are presented as:
+# 10000000000 - 4294967296 - 4294967296 = 1410065408
+# so just always return if_speed_high
 sub i_speed {
     my $info    = shift;
     my $partial = shift;
 
-    my $i_speed = $info->orig_i_speed($partial);
-
-    my $i_speed_high = undef;
-    foreach my $i ( keys %$i_speed ) {
-            $i_speed_high = $info->i_speed_high($partial)
-                unless defined($i_speed_high);
-            $i_speed->{$i} = $i_speed_high->{$i} if ( $i_speed_high->{$i} );
-    }
-    return $i_speed;
+    return $info->orig_i_speed_high($partial);
 }
 
 sub vendor {
@@ -170,8 +166,6 @@ See L<SNMP::Info::Layer3> for its own MIB requirements.
 
 See L<SNMP::Info::LLDP> for its own MIB requirements.
 
-=back
-
 =head1 GLOBALS
 
 These are methods that return scalar value from SNMP.
@@ -214,6 +208,20 @@ See documentation in L<SNMP::Info::LLDP> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=head2 Overrides
+
+=over
+
+=item $cnos->i_description()
+
+Uses C<ifName> to match most other devices.
+
+=item $cnos->i_name()
+
+Uses C<ifDescr> to match most other devices.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
