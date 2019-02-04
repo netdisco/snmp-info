@@ -72,8 +72,6 @@ $VERSION = '3.64';
     %SNMP::Info::IEEE802dot3ad::GLOBALS,
     # no way to get os version and other device details
     # ENTITY-MIB however can help out
-    # os_ver can either be from entPhysicalFirmwareRev.1
-    # or from entPhysicalSoftwareRev.1
     'os_ver'  => 'entPhysicalSoftwareRev.1',
     'mac'     => 'dot1dBaseBridgeAddress',
 );
