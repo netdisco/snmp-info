@@ -29,7 +29,7 @@
 
 # TODO
 # document i_speed overwrite, fall back to super::i_speed needed?
-# lag members, but based on what? seems to be mapping info
+# lag members
 # psu & fan info should be possible
 # spanning tree info is avail too
 # ignore loopback0?
@@ -41,11 +41,9 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 use SNMP::Info::IEEE802dot3ad;
 
 @SNMP::Info::Layer3::Lenovo::ISA = qw/
-    SNMP::Info::LLDP
     SNMP::Info::Layer3
     SNMP::Info::IEEE802dot3ad
     Exporter
@@ -58,7 +56,6 @@ $VERSION = '3.64';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     'LENOVO-ENV-MIB'      => 'lenovoEnvMibPowerSupplyIndex',
     'LENOVO-PRODUCTS-MIB' => 'lenovoProducts',
@@ -66,7 +63,6 @@ $VERSION = '3.64';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::IEEE802dot3ad::GLOBALS,
     # no way to get os version and other device details
     # ENTITY-MIB however can help out
@@ -76,7 +72,6 @@ $VERSION = '3.64';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
     # perhaps we should honor what the device returns, but it's just
     # the opposite of what most other's do, so overwrite
@@ -86,7 +81,6 @@ $VERSION = '3.64';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
@@ -162,9 +156,9 @@ Subclass for Lenovo switches running CNOS.
 
 =head2 Inherited Classes' MIBs
 
-See L<SNMP::Info::Layer3> for its own MIB requirements.
+See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
 
-See L<SNMP::Info::LLDP> for its own MIB requirements.
+See L<SNMP::Info::Layer3> for its own MIB requirements.
 
 =head1 GLOBALS
 
@@ -196,13 +190,13 @@ Returns 'cnos'.
 
 =back
 
+=head2 Globals imported from SNMP::Info::IEEE802dot3ad
+
+See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
+
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
 
 =head1 TABLE ENTRIES
 
@@ -223,12 +217,12 @@ Uses C<ifDescr> to match most other devices.
 
 =back
 
+=head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
+
+See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
+
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
 
 =cut
