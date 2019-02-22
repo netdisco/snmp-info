@@ -1675,6 +1675,7 @@ sub device_type {
         4413 => 'SNMP::Info::Layer2::Ubiquiti',
         26928 => 'SNMP::Info::Layer2::Aerohive',
         30803 => 'SNMP::Info::Layer3::VyOS',
+	44641 => 'SNMP::Info::Layer3::VyOS',
         40310 => 'SNMP::Info::Layer3::Cumulus',
     );
 
