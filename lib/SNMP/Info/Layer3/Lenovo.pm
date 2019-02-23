@@ -28,11 +28,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # TODO
-# document i_speed overwrite, fall back to super::i_speed needed?
-# lag members
+# document i_speed overwrite, fallback to super::i_speed needed?
+# lag members (no ez way to map master<->slaves)
 # psu & fan info should be possible
 # spanning tree info is avail too
-# ignore loopback0?
 # modules list could use more work
 
 package SNMP::Info::Layer3::Lenovo;
@@ -41,10 +40,12 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::IEEE802dot3ad;
+use SNMP::Info::Aggregate;
+use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 @SNMP::Info::Layer3::Lenovo::ISA = qw/
     SNMP::Info::Layer3
+    SNMP::Info::Aggregate
     SNMP::Info::IEEE802dot3ad
     Exporter
 /;
@@ -56,6 +57,7 @@ $VERSION = '3.64';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::Aggregate::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     'LENOVO-ENV-MIB'      => 'lenovoEnvMibPowerSupplyIndex',
     'LENOVO-PRODUCTS-MIB' => 'lenovoProducts',
@@ -63,6 +65,7 @@ $VERSION = '3.64';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::Aggregate::GLOBALS,
     %SNMP::Info::IEEE802dot3ad::GLOBALS,
     # no way to get os version and other device details
     # ENTITY-MIB however can help out
@@ -72,6 +75,7 @@ $VERSION = '3.64';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::Aggregate::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
     # perhaps we should honor what the device returns, but it's just
     # the opposite of what most other's do, so overwrite
@@ -81,6 +85,7 @@ $VERSION = '3.64';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::Aggregate::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
@@ -104,7 +109,45 @@ sub os {
     return 'cnos';
 }
 
+sub agg_ports_ag {
+  my $dev = shift;
+
+  # TODO: implement partial
+  my $ports  = $dev->ad_lag_ports();
+  my $index  = $dev->bp_index() || {};
+
+  return {} unless ref {} eq ref $ports and scalar keys %$ports;
+
+  my $ret = {};
+  foreach my $m ( keys %$ports ) {
+print "m $m\n";
+    my $idx = $m;
+    my $portlist = $ports->{$m};
+printf "p %d\n", scalar(@$portlist);
+
+    next unless $portlist;
+
+    # While dot3adAggTable is indexed by ifIndex, the portlist is indexed
+    # with a dot1dBasePort, so we need to use dot1dBasePortIfIndex to map to
+    # the ifIndex. If we don't have dot1dBasePortIfIndex assume
+    # dot1dBasePort = ifIndex
+    for ( my $i = 0; $i <= scalar(@$portlist); $i++ ) {
+      my $ifindex = $i+1;
+      if ( exists($index->{$i+1}) and defined($index->{$i+1}) ) {
+        $ifindex = $index->{$i+1};
+print "ifi $ifindex\n";
+      }
+      $ret->{$ifindex} = $idx if ( @$portlist[$i] );
+    }
+  }
+
+  return $ret;
+}
+
+#sub agg_ports { return agg_ports_lag(@_) }
+
 1;
+
 __END__
 
 =head1 NAME
@@ -118,6 +161,7 @@ Nick Nauwelaerts
 =head1 SYNOPSIS
 
  # Let SNMP::Info determine the correct subclass for you.
+ use SNMP::Info;
  my $cnos = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
@@ -125,9 +169,8 @@ Nick Nauwelaerts
                           Community   => 'public',
                           Version     => 2
                         )
-    or die "Can't connect to $DestHost.\n";
-
- my $class      = $cnos->class();
+    or die "Can't connect to DestHost.\n";
+ my $class = $cnos->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
