@@ -394,7 +394,7 @@ See documentation in L<SNMP::Info::LLDP> for details.
 =item SNMP::Info::MAU
 
 F<MAU-MIB> (RFC2668).  Some Layer2 devices use this for extended Ethernet
-(Media Access Unit) interface information.
+(Medium Attachment Unit) interface information.
 
 See documentation in L<SNMP::Info::MAU> for details.
 
@@ -1682,6 +1682,7 @@ sub device_type {
         4413 => 'SNMP::Info::Layer2::Ubiquiti',
         26928 => 'SNMP::Info::Layer2::Aerohive',
         30803 => 'SNMP::Info::Layer3::VyOS',
+	44641 => 'SNMP::Info::Layer3::VyOS',
         40310 => 'SNMP::Info::Layer3::Cumulus',
     );
 

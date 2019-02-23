@@ -1,4 +1,4 @@
-# SNMP::Info::MAU - Media Access Unit - RFC 2668
+# SNMP::Info::MAU - Medium Attachment Unit - RFC 2668
 # $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
@@ -451,7 +451,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::MAU - SNMP Interface to Medium Access Unit (MAU) MIB (RFC 2668)
+SNMP::Info::MAU - SNMP Interface to Medium Attachment Unit (MAU) MIB (RFC 2668)
 via SNMP
 
 =head1 AUTHOR
@@ -475,7 +475,7 @@ Max Baker
 
 SNMP::Info::MAU is a subclass of SNMP::Info that supplies access to the
 F<MAU-MIB> (RFC 2668). This MIB is sometimes implemented on Layer 2 network
-devices like HP Switches.  MAU = Media Access Unit.
+devices like HP Switches.  MAU = Medium Attachment Unit.
 
 The MAU table contains link and duplex info for the port itself and the device
 connected to that port.
