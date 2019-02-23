@@ -203,7 +203,7 @@ Returns the software version extracted from C<sysDescr>.
 
 =item $oneos->model()
 
-Returns C<oamodel()> with a fallback to C<e_model()> from
+Returns C<oa_model()> with a fallback to C<e_model()> from
 L<SNMP::Info::Entity>.
 
 =item $oneos->os()
