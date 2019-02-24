@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.64
+    SNMP::Info - Version 3.65
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -322,7 +322,7 @@ SUBCLASSES
 
     SNMP::Info::MAU
         MAU-MIB (RFC2668). Some Layer2 devices use this for extended
-        Ethernet (Media Access Unit) interface information.
+        Ethernet (Medium Attachment Unit) interface information.
 
         See documentation in SNMP::Info::MAU for details.
 
@@ -403,7 +403,7 @@ SUBCLASSES
         See documentation in SNMP::Info::Layer2 for details.
 
         SNMP::Info::Layer2::3Com
-            SNMP::Info::Layer2::3Com - SNMP Interface to L2 3Com Switches
+            Subclass for L2 3Com Switches.
 
             See documentation in SNMP::Info::Layer2::3Com for details.
 
@@ -424,7 +424,8 @@ SUBCLASSES
 
         SNMP::Info::Layer2::Aironet
             Class for Cisco Aironet wireless devices that run IOS. See also
-            Layer3::Aironet for Aironet devices that don't run IOS.
+            SNMP::Info::Layer3::Aironet for Aironet devices that don't run
+            IOS.
 
             See documentation in SNMP::Info::Layer2::Aironet for details.
 
@@ -446,10 +447,6 @@ SUBCLASSES
             probably others.
 
             See documentation in SNMP::Info::Layer2::Baystack for details.
-
-        SNMP::Info::Layer2::Kentrox
-            Class for Kentrox DataSMART DSU/CSU. See
-            SNMP::Info::Layer2::Kentrox for details.
 
         SNMP::Info::Layer2::C1900
             Subclass for Cisco Catalyst 1900 and 1900c Devices running
@@ -514,6 +511,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::HPVC for details.
 
+        SNMP::Info::Layer2::Kentrox
+            Class for Kentrox DataSMART DSU/CSU.
+
+            See documentation in SNMP::Info::Layer2::Kentrox for details.
+
         SNMP::Info::Layer2::N2270
             Subclass for Nortel 2270 wireless switches.
 
@@ -577,7 +579,7 @@ SUBCLASSES
             MIBs for these devices now included in v2.tar.gz available from
             ftp.cisco.com.
 
-            Note Layer2::Aironet
+            Note SNMP::Info::Layer2::Aironet
 
             See documentation in SNMP::Info::Layer3::Aironet for details.
 
@@ -633,7 +635,7 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::C6500 for details.
 
         SNMP::Info::Layer3::CheckPoint
-            Subclass for CheckPoint devices
+            Subclass for CheckPoint devices.
 
             See documentation in SNMP::Info::Layer3::CheckPoint for details.
 
@@ -739,17 +741,18 @@ SUBCLASSES
 
         SNMP::Info::Layer3::IBMGbTor
             SNMP Interface to IBM Rackswitch (formerly Blade Network
-            Technologies) network devices.
+            Technologies) network devices. Lenovo acquired these from IBM
+            and is now selling them under the Lenovo brand.
 
             See documentation in SNMP::Info::Layer3::IBMGbTor for details.
 
         SNMP::Info::Layer3::Juniper
-            Subclass for Juniper devices
+            Subclass for Juniper devices.
 
             See documentation in SNMP::Info::Layer3::Juniper for details.
 
         SNMP::Info::Layer3::Lantronix
-            Subclass for Lantronix devices
+            Subclass for Lantronix devices.
 
             See documentation in SNMP::Info::Layer3::Lantronix for details.
 
@@ -780,12 +783,12 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::Netscreen for details.
 
         SNMP::Info::Layer3::Nexus
-            Subclass for Cisco Nexus devices running NX-OS
+            Subclass for Cisco Nexus devices running NX-OS.
 
             See documentation in SNMP::Info::Layer3::Nexus for details.
 
         SNMP::Info::Layer3::OneAccess
-            Subclass for OneAccess Quidway switches
+            Subclass for OneAccess routers.
 
             See documentation in SNMP::Info::Layer3::OneAccess for details.
 
@@ -817,12 +820,14 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::Pica8 for details.
 
         SNMP::Info::Layer3::SonicWALL
-            Subclass for generic SonicWALL devices. See documentation in
-            SNMP::Info::Layer3::SonicWALL for details.
+            Subclass for generic SonicWALL devices.
+
+            See documentation in SNMP::Info::Layer3::SonicWALL for details.
 
         SNMP::Info::Layer3::Steelhead
-            Subclass for Riverbed Steelhead WAN optimization appliances. See
-            documentation in SNMP::Info::Layer3::Steelhead for details.
+            Subclass for Riverbed Steelhead WAN optimization appliances.
+
+            See documentation in SNMP::Info::Layer3::Steelhead for details.
 
         SNMP::Info::Layer3::Sun
             Subclass for Generic Sun Routers running SunOS.
@@ -855,39 +860,39 @@ SUBCLASSES
         See documentation in SNMP::Info::Layer7 for details.
 
         SNMP::Info::Layer7::APC
-            Subclass for APC UPS devices
+            Subclass for APC UPS devices.
 
             See documentation in SNMP::Info::Layer7::APC for details.
 
         SNMP::Info::Layer7::Arbor
-            Subclass for Arbor appliances
+            Subclass for Arbor appliances.
 
             See documentation in SNMP::Info::Layer7::Arbor for details.
 
         SNMP::Info::Layer7::CiscoIPS
-            Subclass for Cisco IPS devices
+            Subclass for Cisco IPS devices.
 
             See documentation in SNMP::Info::Layer7::CiscoIPS for details.
 
         SNMP::Info::Layer7::Gigamon
-            Subclass for Gigamon devices
+            Subclass for Gigamon devices.
 
             See documentation in SNMP::Info::Layer7::Gigamon for details.
 
         SNMP::Info::Layer7::Liebert
-            Subclass for Liebert devices
+            Subclass for Liebert devices.
 
             See documentation in SNMP::Info::Layer7::Liebert for details.
 
-        SNMP::Info::Layer7::Netscaler
-            Subclass for Citrix Netscaler appliances
-
-            See documentation in SNMP::Info::Layer7::Netscaler for details.
-
         SNMP::Info::Layer7::Neoteris
-            Subclass for Juniper SSL VPN appliances
+            Subclass for Juniper SSL VPN appliances.
 
             See documentation in SNMP::Info::Layer7::Neoteris for details.
+
+        SNMP::Info::Layer7::Netscaler
+            Subclass for Citrix Netscaler appliances.
+
+            See documentation in SNMP::Info::Layer7::Netscaler for details.
 
 Thanks
     Thanks for testing and coding help (in no particular order) to :
@@ -1894,7 +1899,7 @@ SNMP::INFO INTERNALS
 
   Data Munging Callback Subroutines
     munge_speed()
-        Makes human friendly speed ratings using %SPEED_MAP
+        Makes human friendly speed ratings using %SPEED_MAP.
 
          %SPEED_MAP = (
                         '56000'      => '56 kbps',
@@ -1943,37 +1948,37 @@ SNMP::INFO INTERNALS
         speeds up to terabit levels this way.
 
     munge_highspeed()
-        Makes human friendly speed ratings for "ifHighSpeed"
+        Makes human friendly speed ratings for "ifHighSpeed".
 
     munge_ip()
-        Takes a binary IP and makes it dotted ASCII
+        Takes a binary IP and makes it dotted ASCII.
 
     munge_mac()
         Takes an octet stream (HEX-STRING) and returns a colon separated
         ASCII hex string.
 
     munge_prio_mac()
-        Takes an 2-byte octet stream (HEX-STRING) and returns a colon
-        separated ASCII hex string.
-
-    munge_prio_port()
         Takes an 8-byte octet stream (HEX-STRING) and returns a colon
         separated ASCII hex string.
 
+    munge_prio_port()
+        Takes an 2-byte octet stream (HEX-STRING) and returns a colon
+        separated ASCII hex string.
+
     munge_octet2hex()
-        Takes a binary octet stream and returns an ASCII hex string
+        Takes a binary octet stream and returns an ASCII hex string.
 
     munge_dec2bin()
-        Takes a binary char and returns its ASCII binary representation
+        Takes a binary char and returns its ASCII binary representation.
 
-    munge_bits
-        Takes a SNMP2 'BITS' field and returns the ASCII bit string
+    munge_bits()
+        Takes a SNMP2 'BITS' field and returns the ASCII bit string.
 
-    munge_counter64
+    munge_counter64()
         If $BIGINT is set to true, then a Math::BigInt object is returned.
         See Math::BigInt for details.
 
-    munge_i_up
+    munge_i_up()
         Net-SNMP tends to load "RFC1213-MIB" first, and so ignores the
         updated enumeration for "ifOperStatus" in "IF-MIB". This munge
         handles the "newer" definitions for the enumeration in IF-MIB.
@@ -1981,7 +1986,7 @@ SNMP::INFO INTERNALS
         TODO: Get the precedence of MIBs and overriding of MIB data in
         Net-SNMP figured out. Heirarchy/precendence of MIBS in SNMP::Info.
 
-    munge_port_list
+    munge_port_list()
         Takes an octet string representing a set of ports and returns a
         reference to an array of binary values each array element
         representing a port.
@@ -1990,7 +1995,7 @@ SNMP::INFO INTERNALS
         set of ports; the port is not included if it has a value of '0'.
 
     munge_null()
-        Removes control characters from a string
+        Removes control characters from a string.
 
     munge_e_type()
         Takes an OID and return the object name if the right MIB is loaded.

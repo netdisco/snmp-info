@@ -1,17 +1,16 @@
-Version 3.65 ()
+Version 3.65 (2019-02-24)
 
   [ENHANCEMENTS]
 
+  * #296 expand CiscoAgg to also include LACP (inphobia)
+  * #308 update VyOS enterprise OID
   * #310 bring layer3::oneaccess up to date for oneos6. (inphobia)
   * Add two more HP 2930F models (JeroenvIS)
-  * #296 expand CiscoAgg to also include LACP based aggregated links
-    and staticly aggregated links. (inphobia)
 
   [BUG FIXES]
 
-  * #295 make CiscoAgg return ifindex like expected instead of
-    bp_index (inphobia)
-  * more documentation fixes + whitespace cleanup in all files.
+  * #295 make CiscoAgg return ifindex instead of bp_index (inphobia)
+  * more documentation fixes + whitespace cleanup in all files
 
 Version 3.64 (2018-12-30)
 
