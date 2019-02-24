@@ -44,11 +44,16 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 $VERSION = '3.64';
 
 %MIBS = (
-    %SNMP::Info::Layer3::MIBS
+    %SNMP::Info::Layer3::MIBS,
+    'ONEACCESS-GLOBAL-REG' => 'oacOne10',
+    'ONEACCESS-SYS-MIB'    => 'oacSysSecureCrashlogCount',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
+    # model can be based on oacOneOsDevices, but the mib isn't up to date,
+    # so use the first product name instead
+    'oa_model' => 'oacExpIMSysHwcProductName.0',
 );
 
 %FUNCS = (
@@ -59,13 +64,26 @@ $VERSION = '3.64';
     %SNMP::Info::Layer3::MUNGE,
 );
 
+# notes:
+# duplex: oneos v5 has dot3StatsDuplexStatus but it always seems to
+#   return 0 so useless. oneos v6 no longer has any info.
+# macsuck: bridge-mib and oneaccess mibs didn't return useable data
+# arpnip: oneos v5 returns usable data from ip-mib & rfc1213 which is
+#   usable, both version support ip-forward-mib but this does not by
+#   itself provide enough data to be usable. v6 even fails for the
+#   snmp::info->ipforwarding() test.
+
 sub vendor {
-    return "OneAccess";
+    return "oneaccess";
 }
 
 sub model {
-  return 'One300';
+  my $oneos = shift;
 
+  # prefer oneaccess mib, but can fall back to entity mib
+
+  return $oneos->oa_model()
+    || $oneos->e_model();
 }
 
 sub os {
@@ -73,15 +91,23 @@ sub os {
 }
 
 sub os_ver {
-  my $OneAccess = shift;
-  my $descr  = $OneAccess->description();
-  my $os_ver = undef;
+  my $oneos = shift;
+  my $descr = $oneos->description();
 
-  if ( $descr =~ /V(\d.+)$/ )  {
-    $os_ver = $1;
+  # there is no easy way to get the os version, and the syntax also
+  # changed between major versions. for now we'll use everything after
+  # the last dash as version string
+  # SNMPv2-MIB::sysDescr.0 = STRING: OneOS-pCPE-ARM_pi1-6.1.rc1patch06
+  # SNMPv2-MIB::sysDescr.0 = STRING: OneOS-pCPE-ARM_pi1-6.1.3
+  # SNMPv2-MIB::sysDescr.0 = STRING: ONEOS16-ADVIP_11N-V5.2R1C12
+  # and this one comes from the snmp::info test modules: ONEOS5-VOIP_H323-V4.3R4E18
+
+  if (defined $descr) {
+    if ( $descr =~ /^.*-(.*$)/ ) {
+      return $1;
+    }
   }
-
-  return $os_ver;
+  return;
 }
 
 sub i_ignore {
@@ -105,7 +131,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::OneAccess - SNMP Interface to OneAccess Layer 3 routers.
+SNMP::Info::Layer3::OneAccess - SNMP Interface to OneAccess routers.
 
 =head1 AUTHORS
 
@@ -114,7 +140,7 @@ Rob Woodward
 =head1 SYNOPSIS
 
  # Let SNMP::Info determine the correct subclass for you.
- my $OneAccess = new SNMP::Info(
+ my $oneos = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
@@ -123,12 +149,12 @@ Rob Woodward
                         )
     or die "Can't connect to DestHost.\n";
 
- my $class      = $OneAccess->class();
+ my $class      = $oneos->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
 
-Subclass for OneAccess Quidway switches
+Subclass for OneAccess routers.
 
 =head2 Inherited Classes
 
@@ -142,7 +168,15 @@ Subclass for OneAccess Quidway switches
 
 =over
 
-=item Inherited Classes' MIBs
+=item F<ONEACCESS-GLOBAL-REG>
+
+=item F<ONEACCESS-SYS-MIB>
+
+=back
+
+=head2 Inherited Classes' MIBs
+
+=over
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
 
@@ -150,25 +184,36 @@ See L<SNMP::Info::Layer3> for its own MIB requirements.
 
 =head1 GLOBALS
 
-These are methods that return scalar value from SNMP
+These are methods that return scalar value from SNMP.
 
 =over
 
-=item $OneAccess->vendor()
+=item $oneos->oa_model()
 
-Returns 'OneAccess'.
+Returns the hardware model from C<oacExpIMSysHwcProductName.0>.
 
-=item $OneAccess->os()
-
-Returns 'oneos'.
-
-=item $OneAccess->os_ver()
+=item $oneos->os_ver()
 
 Returns the software version extracted from C<sysDescr>.
 
-=item $OneAccess->model()
+=back
 
-Returns the hardware model one300.
+=head2 Overrides
+
+=over
+
+=item $oneos->model()
+
+Returns C<oa_model()> with a fallback to C<e_model()> from
+L<SNMP::Info::Entity>.
+
+=item $oneos->os()
+
+Returns 'oneos'.
+
+=item $oneos->vendor()
+
+Returns 'oneaccess'.
 
 =back
 
@@ -185,7 +230,7 @@ to a hash.
 
 =over
 
-=item $OneAccess->i_ignore()
+=item $oneos->i_ignore()
 
 Returns reference to hash.  Increments value of IID if port is to be ignored.
 
