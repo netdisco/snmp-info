@@ -50,6 +50,7 @@ sub setup : Tests(setup) {
     '_layers'      => 79,
     '_description' => 'ONEOS5-VOIP_H323-V4.3R4E18',
     '_id'          => '.1.3.6.1.4.1.13191.1.1.30',
+    '_oa_model'    => 'ONE420',
     'store'        => {},
   };
   $test->{info}->cache($cache_data);
@@ -77,14 +78,14 @@ sub vendor : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'vendor');
-  is($test->{info}->vendor(), 'OneAccess', q(Vendor returns 'OneAccess'));
+  is($test->{info}->vendor(), 'oneaccess', q(Vendor returns 'oneaccess'));
 }
 
 sub model : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'model');
-  is($test->{info}->model(), 'One300', q(Model has expected value));
+  is($test->{info}->model(), 'ONE420', q(Model has expected value));
 }
 
 1;

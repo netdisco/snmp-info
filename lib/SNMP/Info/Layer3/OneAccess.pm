@@ -100,6 +100,7 @@ sub os_ver {
   # SNMPv2-MIB::sysDescr.0 = STRING: OneOS-pCPE-ARM_pi1-6.1.rc1patch06
   # SNMPv2-MIB::sysDescr.0 = STRING: OneOS-pCPE-ARM_pi1-6.1.3
   # SNMPv2-MIB::sysDescr.0 = STRING: ONEOS16-ADVIP_11N-V5.2R1C12
+  # and this one comes from the snmp::info test modules: ONEOS5-VOIP_H323-V4.3R4E18
 
   if (defined $descr) {
     if ( $descr =~ /^.*-(.*$)/ ) {
