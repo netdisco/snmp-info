@@ -63,11 +63,14 @@ sub os : Tests(2) {
   is($test->{info}->os(), 'oneos', q(OS returns 'oneos'));
 }
 
-sub os_ver : Tests(3) {
+sub os_ver : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'os_ver');
-  is($test->{info}->os_ver(), '4.3R4E18', q(OS version has expected value));
+  is($test->{info}->os_ver(), 'V4.3R4E18', q(OS version 4 has expected value));
+
+  $test->{info}{_description} = 'OneOS-pCPE-ARM_pi1-6.1.3';
+  is($test->{info}->os_ver(), '6.1.3', q(OS version 6 has expected value));
 
   $test->{info}->clear_cache();
   is($test->{info}->os_ver(), undef,
