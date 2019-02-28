@@ -309,11 +309,11 @@ provides:
   SNMP::Info::Layer3::Juniper:
     file: lib/SNMP/Info/Layer3/Juniper.pm
     version: '3.65'
-  SNMP::Info::Layer3::Lenovo:
-    file: lib/SNMP/Info/Layer3/Lenovo.pm
-    version: '3.65'
   SNMP::Info::Layer3::Lantronix:
     file: lib/SNMP/Info/Layer3/Lantronix.pm
+    version: '3.65'
+  SNMP::Info::Layer3::Lenovo:
+    file: lib/SNMP/Info/Layer3/Lenovo.pm
     version: '3.65'
   SNMP::Info::Layer3::Microsoft:
     file: lib/SNMP/Info/Layer3/Microsoft.pm

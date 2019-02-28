@@ -756,6 +756,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Lantronix for details.
 
+        SNMP::Info::Layer3::Lenovo
+            Subclass for Lenovo switches running CNOS.
+
+            See documentation in SNMP::Info::Layer3::Lenovo for details.
+
         SNMP::Info::Layer3::Microsoft
             Subclass for Generic Microsoft Routers running Microsoft Windows
             OS.
