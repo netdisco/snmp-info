@@ -46,7 +46,7 @@ use SNMP::Info::LLDP;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
 
-$VERSION = '3.64';
+$VERSION = '3.65';
 
 %MIBS = (
     %SNMP::Info::MIBS,         %SNMP::Info::Bridge::MIBS,

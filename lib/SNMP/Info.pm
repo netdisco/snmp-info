@@ -25,7 +25,7 @@ use vars
     qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
     $NOSUCH $BIGINT $REPEATERS/;
 
-$VERSION = '3.64';
+$VERSION = '3.65';
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.64
+SNMP::Info - Version 3.65
 
 =head1 AUTHOR
 
@@ -69,8 +69,8 @@ list any missing functionality (such as neighbor discovery tables).
  my $err = $info->error();
  die "SNMP Community or Version probably wrong connecting to device. $err\n" if defined $err;
 
- $name  = $info->name();
- $class = $info->class();
+ my $name  = $info->name();
+ my $class = $info->class();
  print "SNMP::Info is using this device class : $class\n";
 
  # Find out the Duplex status for the ports
@@ -260,7 +260,7 @@ See documentation in L<SNMP::Info::AMAP> for details.
 
 =item SNMP::Info::Bridge
 
-F<BRIDGE-MIB> (RFC1286).  F<QBRIDGE-MIB>. Inherited by devices with Layer2
+F<BRIDGE-MIB> (RFC1286).  F<Q-BRIDGE-MIB>. Inherited by devices with Layer2
 support.
 
 See documentation in L<SNMP::Info::Bridge> for details.

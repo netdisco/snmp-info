@@ -48,7 +48,7 @@ use SNMP::Info::IEEE802dot3ad;
 
 use vars qw/$DEBUG $VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.64';
+$VERSION = '3.65';
 
 %MIBS = (
   %SNMP::Info::IEEE802dot3ad::MIBS,

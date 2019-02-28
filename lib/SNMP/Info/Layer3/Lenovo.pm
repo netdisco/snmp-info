@@ -53,7 +53,7 @@ use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.64';
+$VERSION = '3.65';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -95,10 +95,10 @@ $VERSION = '3.64';
 # 10000000000 - 4294967296 - 4294967296 = 1410065408
 # so just always return if_speed_high
 sub i_speed {
-    my $info    = shift;
+    my $cnos    = shift;
     my $partial = shift;
 
-    return $info->orig_i_speed_high($partial);
+    return $cnos->orig_i_speed_high($partial);
 }
 
 sub vendor {
@@ -182,8 +182,6 @@ Subclass for Lenovo switches running CNOS.
 =over
 
 =item SNMP::Info::Layer3
-
-=item SNMP::Info::LLDP
 
 =back
 
