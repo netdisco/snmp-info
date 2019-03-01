@@ -28,7 +28,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # TODO
-# document i_speed overwrite, fallback to super::i_speed needed?
+# document i_speed_{raw} overwrite, fallback to super::i_speed needed?
 # lag members (no ez way to map master<->slaves)
 # psu & fan info should be possible
 # spanning tree info is avail too
@@ -94,11 +94,44 @@ $VERSION = '3.65';
 # 10gbit interfaces are presented as:
 # 10000000000 - 4294967296 - 4294967296 = 1410065408
 # so just always return if_speed_high
+
+# forcing the use of ifhighspeed would be preferred but not possible atm
+# so copy both functions from Info.pm & overwrite
+
+# is there any way to just overwrite the whole function?
+# (overwrite i_speed with i_speed_high)
 sub i_speed {
     my $cnos    = shift;
     my $partial = shift;
 
     return $cnos->orig_i_speed_high($partial);
+}
+
+sub i_speed_raw {
+    my $info    = shift;
+    my $partial = shift;
+
+    # remove the speed formating
+    my $munge_i_speed = delete $info->{munge}{i_speed};
+    # also for highspeed interfaces e.g. TenGigabitEthernet
+    my $munge_i_speed_high = delete $info->{munge}{i_speed_high};
+
+    my $i_speed_raw = $info->orig_i_speed($partial);
+    my $i_speed_high = undef;
+
+    # just overwrite if interface speed is over 2.5gbps
+    foreach my $i ( keys %$i_speed_raw ) {
+      $i_speed_high = $info->i_speed_high($partial);
+      if (defined($i_speed_high) and ($i_speed_high->{$i} > 2500)) {
+        $i_speed_raw->{$i} = ( $i_speed_high->{$i} * 1_000_000 )
+      }
+    }
+
+    # restore the speed formating
+    $info->{munge}{i_speed} = $munge_i_speed;
+    $info->{munge}{i_speed_high} = $munge_i_speed_high;
+
+    return $i_speed_raw;
 }
 
 sub vendor {
