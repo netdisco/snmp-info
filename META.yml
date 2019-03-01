@@ -429,7 +429,7 @@ resources:
   MailingList: https://lists.sourceforge.net/lists/listinfo/snmp-info-users
   bugtracker: https://github.com/netdisco/snmp-info/issues
   homepage: http://netdisco.org/
-  license: http://opensource.org/licenses/BSD-3-Clause
+  license: http://opensource.org/licenses/bsd-license.php
   repository: https://github.com/netdisco/snmp-info
 version: '3.65'
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'
