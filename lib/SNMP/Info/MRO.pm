@@ -97,7 +97,12 @@ SNMP::Info::MRO - Method resolution introspection for SNMP::Info
  use SNMP::Info::MRO;
  use Data::Printer;
 
- p SNMP::Info::MRO::all_methods('SNMP::Info::Layer3::Juniper');
+ # SNMP::Info::MRO::print_* functions
+ SNMP::Info::MRO::print_superclasses ('SNMP::Info::Layer3::Juniper');
+
+ # print output using Data::Printer for other functions
+ my $buff = SNMP::Info::MRO::all_methods('SNMP::Info::Layer3::Juniper');
+ p $buff;
 
 =head1 DESCRIPTION
 
