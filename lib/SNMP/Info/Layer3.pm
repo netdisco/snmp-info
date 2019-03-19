@@ -66,6 +66,7 @@ $VERSION = '3.65';
     %SNMP::Info::LLDP::MIBS,
     'IP-MIB'   => 'ipNetToMediaIfIndex',
     'OSPF-MIB' => 'ospfRouterId',
+    'ISIS-MIB' => 'isisSysID',
     'BGP4-MIB' => 'bgpIdentifier',
 );
 
@@ -123,6 +124,20 @@ $VERSION = '3.65';
     'ospf_peer_id'    => 'ospfNbrRtrId',
     'ospf_peer_state' => 'ospfNbrState',
 
+    # ISIS-MIB::isisCircTable
+    'isis_circ_if_idx'      => 'isisCircIfIndex' ,
+    'isis_circ_admin'       => 'isisCircAdminState',
+    'isis_circ_type'        => 'isisCircType',
+    'isis_circ_level_type'  => 'isisCircLevelType',
+
+    # ISIS-MIB::isisISAdjTable
+    'isis_adj_state'   => 'isisISAdjState',
+    'isis_adj_type'    => 'isisISAdjNeighSysType',
+    'isis_adj_usage'   => 'isisISAdjUsage',
+    'isis_adj_id'      => 'isisISAdjNeighSysID',
+    'isis_adj_ip_type' => 'isisISAdjIPAddrType',
+    'isis_adj'         => 'isisISAdjIPAddrAddress',
+
     # BGP4-MIB::bgpPeerTable
     'bgp_peers'               => 'bgpPeerLocalAddr',
     'bgp_peer_id'             => 'bgpPeerIdentifier',
@@ -160,6 +175,32 @@ $VERSION = '3.65';
     'at_paddr'     => \&SNMP::Info::munge_mac,
     'n2p_paddr'    => \&SNMP::Info::munge_mac,
 );
+
+sub isis_peers {
+    my $l3 = shift;
+
+    my $isis_peers = {};
+
+    # Returns hexstrings. Need to convert to IPv4 dotted or IPv6 hex notation
+    my $adjacencies = $l3->isis_adj();
+    foreach my $key (keys %$adjacencies) {
+        my $hexstr = $adjacencies->{$key};
+        my $l = length $hexstr;
+        my $ip;
+        # 4 bytes = IPv4
+        if ($l == 4) {
+            $ip = join(".", unpack("C*", $hexstr));
+            $isis_peers->{$key} = $ip;
+        }
+        # 16 bytes = IPv6
+        elsif ($l == 16) {
+            $ip = unpack("H*", $hexstr);
+            $ip =~ s/....(?=.)\K/:/sg ;
+            $isis_peers->{$key} = $ip;
+        }
+    }
+    return $isis_peers;
+}
 
 # Method OverRides
 
@@ -414,6 +455,8 @@ after determining a more specific class using the method above.
 =over
 
 =item F<IP-MIB>
+
+=item F<ISIS-MIB>
 
 =item F<OSPF-MIB>
 
@@ -763,6 +806,82 @@ Returns reference to hash of state of the relationship with the neighbor
 routers
 
 (C<ospfNbrState>)
+
+=back
+
+=head2 IS-IS Circuit Table
+
+=over
+
+=item $l3->isis_circ_if_idx()
+
+Returns reference to hash of the interface index associated with the IS-IS
+circuit
+(C<isisCircIfIndex>)
+
+=item $l3->isis_circ_admin()
+
+Returns reference to hash of the IS-IS circuit's admin status
+
+(C<isisCircAdminState>)
+
+=item $l3->isis_circ_type()
+
+Returns reference to hash of the IS-IS circuit's type
+
+(C<isisCircType>)
+
+=item $l3->isis_circ_level_type()
+
+Returns reference to hash of the IS-IS circuit's level
+
+(C<isisCircLevelType>)
+
+=back
+
+=head2 IS-IS Adjacency Table
+
+=over
+
+=item $l3->isis_adj_id()
+
+Returns reference to hash of the peer id of adjacencies.
+
+(C<isisISAdjNeighSysID>)
+
+=item $l3->isis_adj_type()
+
+Returns reference to hash of the type of adjacencies (Level 1
+Intermediate System, Level 2 Intermediate System, Level 1+2
+Intermediate System, unknown)
+
+(C<isisISAdjNeighSysType>)
+
+=item $l3->isis_adj_usage()
+
+Returns reference to hash of the type of adjacencies in use
+(undefined, Level 1, Level 2, Level1+2)
+
+(C<isisISAdjNeighUsage>)
+
+=item $l3->isis_adj_ip_type()
+
+Returns reference to hash of type of address (IPv4, IPv6, etc) on adjacencies.
+
+(C<isisISAdjIPAddrType>)
+
+=item $l3->isis_adj()
+
+Returns reference to hash of addresses (IPv4, IPv6, etc) on adjacencies.
+Note this returns hash-strings, for IPs, use $l3->isis_peers()
+
+(C<isisISAdjIPAddrAddress>)
+
+=item $l3->isis_peers()
+
+Returns reference to hash of addresses (IPv4, IPv6) on adjacencies.
+Convers hash strings from isis_adj to proper
+IP (v4 and v6) formatting.
 
 =back
 
