@@ -126,7 +126,7 @@ $VERSION = '3.65';
 
     # ISIS-MIB::isisCircTable
     'isis_circ_if_idx'      => 'isisCircIfIndex' ,
-    'isis_circ_admin' =>'isisCircAdminState',
+    'isis_circ_admin'       => 'isisCircAdminState',
     'isis_circ_type'        => 'isisCircType',
     'isis_circ_level_type'  => 'isisCircLevelType',
 
@@ -455,6 +455,8 @@ after determining a more specific class using the method above.
 =over
 
 =item F<IP-MIB>
+
+=item F<ISIS-MIB>
 
 =item F<OSPF-MIB>
 
@@ -833,7 +835,7 @@ Returns reference to hash of the IS-IS circuit's type
 
 Returns reference to hash of the IS-IS circuit's level
 
-(C<isisCircType>)
+(C<isisCircLevelType>)
 
 =back
 
@@ -849,14 +851,16 @@ Returns reference to hash of the peer id of adjacencies.
 
 =item $l3->isis_adj_type()
 
-Returns reference to hash of the type of adjacencies (L1, L2, L1+L2, etc)
+Returns reference to hash of the type of adjacencies (Level 1
+Intermediate System, Level 2 Intermediate System, Level 1+2
+Intermediate System, unknown)
 
 (C<isisISAdjNeighSysType>)
 
 =item $l3->isis_adj_usage()
 
 Returns reference to hash of the type of adjacencies in use
-(L1, L2, L1+L2, etc)
+(undefined, Level 1, Level 2, Level1+2)
 
 (C<isisISAdjNeighUsage>)
 
