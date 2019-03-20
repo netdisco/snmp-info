@@ -338,6 +338,12 @@ F<CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB>
 
 See documentation in L<SNMP::Info::CiscoVTP> for details.
 
+=item SNMP::Info::DocsisHE
+
+SNMP Interface for DOCSIS CMTS
+
+See documentation in L<SNMP::Info::DocsisHE> for details.
+
 =item SNMP::Info::EDP
 
 Extreme Discovery Protocol.  F<EXTREME-EDP-MIB>

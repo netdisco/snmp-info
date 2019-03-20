@@ -39,9 +39,10 @@ use SNMP::Info::Bridge;
 use SNMP::Info::Entity;
 use SNMP::Info::PowerEthernet;
 use SNMP::Info::LLDP;
+use SNMP::Info::DocsisHE;
 
 @SNMP::Info::Layer2::ISA
-    = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet SNMP::Info::LLDP Exporter/;
+    = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet SNMP::Info::LLDP SNMP::Info::DocsisHE Exporter/;
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
@@ -51,12 +52,13 @@ $VERSION = '3.65';
 %MIBS = (
     %SNMP::Info::MIBS,         %SNMP::Info::Bridge::MIBS,
     %SNMP::Info::Entity::MIBS, %SNMP::Info::PowerEthernet::MIBS,
-    %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::LLDP::MIBS,   %SNMP::Info::DocsisHE::MIBS,
 );
 
 %GLOBALS = (
     %SNMP::Info::GLOBALS,
     %SNMP::Info::Bridge::GLOBALS,
+    %SNMP::Info::DocsisHE::GLOBALS,
     %SNMP::Info::Entity::GLOBALS,
     %SNMP::Info::PowerEthernet::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
@@ -67,7 +69,7 @@ $VERSION = '3.65';
 %FUNCS = (
     %SNMP::Info::FUNCS,         %SNMP::Info::Bridge::FUNCS,
     %SNMP::Info::Entity::FUNCS, %SNMP::Info::PowerEthernet::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,   %SNMP::Info::DocsisHE::FUNCS,
 );
 
 %MUNGE = (
@@ -75,6 +77,7 @@ $VERSION = '3.65';
     # Inherit all the built in munging
     %SNMP::Info::MUNGE,
     %SNMP::Info::Bridge::MUNGE,
+    %SNMP::Info::DocsisHE::MUNGE,
     %SNMP::Info::Entity::MUNGE,
     %SNMP::Info::PowerEthernet::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
