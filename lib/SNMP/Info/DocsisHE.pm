@@ -49,14 +49,16 @@ Ryan Gasik
                              Community   => 'public',
                              Version     => 2
                           );
- 
+ # Get a list of modems off the DOCSIS CMTS
+ my $modems = $cmts->docs_if_cmts_cm_status_inet_address()
+
 =head1 DESCRIPTION
 SNMP::Info::DocsisHE is a subclass of SNMP::Info that provides information
-about the cable modems of a DOCSIS CMTS. 
+about the cable modems of a DOCSIS CMTS.
 
 =head2 Inherited Classes
 
-None. 
+None.
 
 =head2 Required MIBs
 
@@ -100,15 +102,15 @@ cable modem.
 
 =item $info->docs_cmts_cm_down_channel_if_index()
 
-Returns reference to hash of the IfIndex of the down channel 
+Returns reference to hash of the IfIndex of the down channel
 (for DOCSIS 1.1) or a down channel (DOCSIS 3+) associated with each
 cable modem.
 
 (C<docsIfCmtsCmStatusDownChannelIfIndex>)
 
-=item $info->docs_cmts_cm_up_channel_if_index() 
+=item $info->docs_cmts_cm_up_channel_if_index()
 
-Returns reference to hash of the IfIndex of the up channel 
+Returns reference to hash of the IfIndex of the up channel
 (for DOCSIS 1.1) or a up channel (DOCSIS 3+) associated with each
 cable modem.
 
