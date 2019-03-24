@@ -28,7 +28,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 # TODO
-# document i_speed_{raw} overwrite, fallback to super::i_speed needed?
+# fallback to super::i_speed needed?
 # lag members (no ez way to map master<->slaves)
 # psu & fan info should be possible
 # spanning tree info is avail too
@@ -40,12 +40,10 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::Aggregate;
 use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 @SNMP::Info::Layer3::Lenovo::ISA = qw/
     SNMP::Info::Layer3
-    SNMP::Info::Aggregate
     SNMP::Info::IEEE802dot3ad
     Exporter
 /;
@@ -57,7 +55,6 @@ $VERSION = '3.65';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::Aggregate::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     'LENOVO-ENV-MIB'      => 'lenovoEnvMibPowerSupplyIndex',
     'LENOVO-PRODUCTS-MIB' => 'lenovoProducts',
@@ -65,7 +62,6 @@ $VERSION = '3.65';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::Aggregate::GLOBALS,
     %SNMP::Info::IEEE802dot3ad::GLOBALS,
     # no way to get os version and other device details
     # ENTITY-MIB however can help out
@@ -75,7 +71,6 @@ $VERSION = '3.65';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::Aggregate::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
     # perhaps we should honor what the device returns, but it's just
     # the opposite of what most other's do, so overwrite
@@ -85,7 +80,6 @@ $VERSION = '3.65';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::Aggregate::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
@@ -94,12 +88,12 @@ $VERSION = '3.65';
 # 10gbit interfaces are presented as:
 # 10000000000 - 4294967296 - 4294967296 = 1410065408
 # so just always return if_speed_high
-
+#
 # forcing the use of ifhighspeed would be preferred but not possible atm
 # so copy both functions from Info.pm & overwrite
 
 # is there any way to just overwrite the whole function?
-# (overwrite i_speed with i_speed_high)
+# (overwrite i_speed with i_speed_high). would be more elegant.
 sub i_speed {
     my $cnos    = shift;
     my $partial = shift;
@@ -107,6 +101,8 @@ sub i_speed {
     return $cnos->orig_i_speed_high($partial);
 }
 
+# also need to overwrite i_speed_raw, netdisco uses this in some
+# instances
 sub i_speed_raw {
     my $info    = shift;
     my $partial = shift;
@@ -117,13 +113,15 @@ sub i_speed_raw {
     my $munge_i_speed_high = delete $info->{munge}{i_speed_high};
 
     my $i_speed_raw = $info->orig_i_speed($partial);
-    my $i_speed_high = undef;
+#    my $i_speed_high = undef;
 
     # just overwrite if interface speed is over 2.5gbps
     foreach my $i ( keys %$i_speed_raw ) {
+      my $i_speed_high = undef;
+
       $i_speed_high = $info->i_speed_high($partial);
       if (defined($i_speed_high) and ($i_speed_high->{$i} > 2500)) {
-        $i_speed_raw->{$i} = ( $i_speed_high->{$i} * 1_000_000 )
+        $i_speed_raw->{$i} = ( $i_speed_high->{$i} * 1_000_000 );
       }
     }
 
@@ -142,6 +140,8 @@ sub os {
     return 'cnos';
 }
 
+# work in progress, there seems to be no standardized way to map
+# lag members to the master.
 sub agg_ports_ag {
   my $dev = shift;
 
@@ -213,6 +213,8 @@ Subclass for Lenovo switches running CNOS.
 =head2 Inherited Classes
 
 =over
+
+=item SNMP::Info::IEEE802dot3ad
 
 =item SNMP::Info::Layer3
 
@@ -288,6 +290,16 @@ Uses C<ifName> to match most other devices.
 =item $cnos->i_name()
 
 Uses C<ifDescr> to match most other devices.
+
+=item $cnos->i_speed()
+
+CNOS does not set C<ifSpeed> to 4294967295 for high speed links, return
+C<orig_if_speed_high()> instead. SNMP::Info will handle this correctly.
+
+=item $cnos->i_speed_raw()
+
+If C<ifSpeedHigh> > 2500 we overwrite C<i_speed_raw()>, using the
+formula: C<ifSpeedHigh> * 1_000_000.
 
 =back
 
