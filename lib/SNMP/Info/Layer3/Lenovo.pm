@@ -142,7 +142,7 @@ sub os {
 
 # work in progress, there seems to be no standardized way to map
 # lag members to the master.
-sub agg_ports_ag {
+sub agg_ports_cnos {
   my $dev = shift;
 
   # TODO: implement partial
@@ -278,6 +278,14 @@ See documentation in L<SNMP::Info::Layer3> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=over
+
+=item $cnos->agg_ports_cnos()
+
+placeholder function, will return agg_ports mapping once implemented.
+
+=back
 
 =head2 Overrides
 
