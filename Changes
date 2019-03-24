@@ -1,3 +1,17 @@
+Version 3.66 (2019-xx-xx)
+
+  [NEW FEATURES]
+
+  * #316 add support for IS-IS routing protocol (pyro3d)
+  
+  [ENHANCEMENTS]
+
+  * switch to Alien::SNMP for travis builds (ollyg)
+  
+  [BUG FIXES]
+
+  * clarify MRO usage
+
 Version 3.65 (2019-02-24)
 
   [ENHANCEMENTS]
