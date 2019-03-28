@@ -23,12 +23,12 @@ script:
     ./Build test --test_files t/ --test_files xt/
 notifications:
   irc:
-    on_success: always
-    on_failure: always
+    on_success: change
+    on_failure: change
     channels:
       - 'chat.freenode.net#netdisco'
-  email:
-    on_success: always
-    on_failure: always
-    recipients:
-      - 'snmp-info-cvs@lists.sourceforge.net'
+#  email:
+#    on_success: always
+#    on_failure: always
+#    recipients:
+#      - 'snmp-info-cvs@lists.sourceforge.net'
