@@ -1,3 +1,9 @@
+Version 3.67 (2019-xx-xx)
+
+  [BUG FIXES]
+
+  * #319 make fortinet return a useful interface name (inphobia)
+
 Version 3.66 (2019-03-24)
 
   [NEW FEATURES]
