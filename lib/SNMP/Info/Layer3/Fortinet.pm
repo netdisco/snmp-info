@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
 
-$VERSION = '3.65';
+$VERSION = '3.66';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -61,6 +61,29 @@ $VERSION = '3.65';
 
 sub vendor {
     return 'fortinet';
+}
+
+# fortios 5.4 and higher can have empty ifDescr. use ifName (but
+# without the ifAlias fixup that's done in layer3::i_name()) which
+# mimics fortios >5.4
+# copied from an old Layer3.pm which did not have duplicate
+# description fixup
+sub interfaces {
+    my $fortinet = shift;
+    my $partial  = shift;
+
+    my $interfaces   = $fortinet->i_index($partial);
+    my $descriptions = $fortinet->orig_i_name($partial);
+
+    my %interfaces = ();
+    foreach my $iid ( keys %$interfaces ) {
+        my $desc = $descriptions->{$iid};
+        next unless defined $desc;
+
+        $interfaces{$iid} = $desc;
+    }
+
+    return \%interfaces;
 }
 
 sub model {
@@ -192,6 +215,14 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=over
+
+=item $fortinet->interfaces();
+
+Returns the map between SNMP Interface Identifier (iid) and C<ifName>.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
