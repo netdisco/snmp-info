@@ -243,11 +243,23 @@ sub bp_index : Tests(3) {
 
   can_ok($test->{info}, 'bp_index');
 
+  # aerohive->bp_index uses load_i_index, which clears cached data, so
+  # mock up the needed snmp data.
+  my $data
+    = {'IF-MIB::ifIndex' =>
+        {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20}
+    };
+  $test->{info}{sess}{Data} = $data;
+
   my $expected = {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20};
 
   cmp_deeply($test->{info}->bp_index(),
     $expected, q(Bridge interface mapping has expected values));
 
+  # and now delete the data so we can test for empty returns
+  delete $test->{info}{_i_index};
+  delete $test->{info}{store}{i_index};
+  $test->{info}{sess}{Data} = {};
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->bp_index(), {}, q(No data returns empty hash));
 }
