@@ -221,7 +221,10 @@ sub bp_index {
     my $aerohive = shift;
     my $partial  = shift;
 
-    my $i_index = $aerohive->i_index($partial) || {};
+    # somewhere caching is doing something strange, without load_
+    # netdisco can't find bp_index mappings & will not registerer
+    # any clients. netdisco/netdisco#496
+    my $i_index = $aerohive->load_i_index($partial) || {};
 
     my %bp_index;
     foreach my $iid ( keys %$i_index ) {
