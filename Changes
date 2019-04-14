@@ -3,6 +3,8 @@ Version 3.67 (2019-xx-xx)
   [BUG FIXES]
 
   * #319 make fortinet return a useful interface name (inphobia)
+  * #496 aerohive corrupts snmp cache, for reload, makes reporting
+         wireless clients work. (inphobia)
 
 Version 3.66 (2019-03-24)
 
