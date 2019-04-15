@@ -40,7 +40,7 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
+use SNMP::Info::IEEE802dot3ad;
 
 @SNMP::Info::Layer3::Lenovo::ISA = qw/
     SNMP::Info::Layer3
@@ -177,7 +177,7 @@ print "ifi $ifindex\n";
   return $ret;
 }
 
-#sub agg_ports { return agg_ports_lag(@_) }
+#sub agg_ports { return agg_ports_cnos(@_) }
 
 1;
 

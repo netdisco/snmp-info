@@ -33,7 +33,7 @@ use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info::Layer3::Lenovo;
 
-# Remove this startup override once we have full method coverage
+# XXX can be removed when agg_ports_cnos is implemented
 sub startup : Tests(startup => 1) {
   my $test = shift;
   $test->SUPER::startup();
@@ -47,14 +47,26 @@ sub setup : Tests(setup) {
 
   # Start with a common cache that will serve most tests
   my $cache_data = {
-    '_layers' => 6,
+    '_id'          => '.1.3.6.1.4.1.19046.1.7.32',
+    '_layers'      => 14,
     '_description' => 'Lenovo ThinkSystem NE1032 RackSwitch',
-    '_id'   => '.1.3.6.1.4.1.19046.1.7.32',
-    '_os_ver' => 1,
-    '_mac'    => 1,
-    '_lenovoProducts' => 1,
-    '_lenovoEnvMibPowerSupplyIndex' => 1,
-    'store' => {},
+
+    '_i_index'      => 1,
+    '_i_speed_high' => 1,
+    'store' => {
+      'i_index' => {
+         2      => 2,
+         10310  => 10310,
+         103999 => 103999,
+         410001 => 410001,
+      },
+      'i_speed_high' => {
+         2      => 1000,
+         10310  => 0,
+         103999 => 20000,
+         410001 => 10000,
+      },
+    },
   };
   $test->{info}->cache($cache_data);
 }
@@ -71,6 +83,65 @@ sub vendor : Tests(2) {
 
   can_ok($test->{info}, 'vendor');
   is($test->{info}->vendor(), 'lenovo', q(Vendor returns 'lenovo'));
+}
+
+sub i_speed : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_speed');
+
+  my $expected = {
+    2      => "1.0 Gbps",
+    10310  => "0 Mbps",
+    103999 => "20 Gbps",
+    410001 => "10 Gbps",
+  };
+
+  cmp_deeply($test->{info}->i_speed(),
+    $expected, q(i_speed data has expected values));
+
+  # do we want undef or empty hash?
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->i_speed(), undef, q(i_speed no data returns empty undef));
+}
+
+sub i_speed_raw : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_speed_raw');
+
+  # set original mib data to make sure we simulate everything correctly
+  my $data = {
+    'IF-MIB::ifSpeed' => {
+      2      => 1000000000,
+      10310  => 8000,
+      103999 => 2820130816,
+      410001 => 1410065408,
+    },
+    'IF-MIB::ifHighSpeed' => {
+      2      => 1000,
+      10310  => 0,
+      103999 => 20000,
+      410001 => 10000,
+    },
+  };
+  $test->{info}{sess}{Data} = $data;
+
+  my $expected = {
+    2      => 1000000000,
+    10310  => 8000,
+    103999 => 20000000000,
+    410001 => 10000000000,
+  };
+
+  cmp_deeply($test->{info}->i_speed_raw(),
+    $expected, q(i_speed_raw data has expected values));
+
+  delete $test->{info}{_i_speed_raw};
+  delete $test->{info}{store}{i_speed_raw};
+  $test->{info}{sess}{Data} = {};
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->i_speed_raw(), {}, q(i_speed_raw no data returns empty hash));
 }
 
 1;
