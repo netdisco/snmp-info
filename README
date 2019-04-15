@@ -3,6 +3,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
+
     SNMP::Info - Version 3.66
 
 AUTHOR
