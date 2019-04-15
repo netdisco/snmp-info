@@ -83,6 +83,7 @@ $VERSION = '3.66';
 %MUNGE
     = ( %SNMP::Info::Layer2::MUNGE, 'at_paddr' => \&SNMP::Info::munge_mac, );
 
+# hiveos does not have sysServices
 sub layers {
     return '00000111';
 }
