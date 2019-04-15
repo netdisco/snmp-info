@@ -363,14 +363,6 @@ Foundry (Brocade) Discovery Protocol.  F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
 See documentation in L<SNMP::Info::FDP> for details.
 
-=item SNMP::Info::IPv6
-
-SNMP Interface for obtaining configured IPv6 addresses and mapping IPv6
-addresses to MAC addresses and interfaces, using information from F<IP-MIB>,
-F<IPV6-MIB> and/or F<CISCO-IETF-IP-MIB>.
-
-See documentation in L<SNMP::Info::IPv6> for details.
-
 =item SNMP::Info::IEEE802dot11
 
 F<IEEE802dot11-MIB>.  A collection of OIDs providing information about
@@ -383,6 +375,14 @@ See documentation in L<SNMP::Info::IEEE802dot11> for details.
 SNMP Interface to IEEE Aggregated Links.  F<IEEE8023-LAG-MIB>
 
 See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
+
+=item SNMP::Info::IPv6
+
+SNMP Interface for obtaining configured IPv6 addresses and mapping IPv6
+addresses to MAC addresses and interfaces, using information from F<IP-MIB>,
+F<IPV6-MIB> and/or F<CISCO-IETF-IP-MIB>.
+
+See documentation in L<SNMP::Info::IPv6> for details.
 
 =item SNMP::Info::LLDP
 
