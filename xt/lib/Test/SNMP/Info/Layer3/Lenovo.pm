@@ -49,8 +49,11 @@ sub setup : Tests(setup) {
   my $cache_data = {
     '_layers' => 6,
     '_description' => 'Lenovo ThinkSystem NE1032 RackSwitch',
-    # LENOVO-PRODUCTS-MIB::ne1032
-    '_id'   => '.1.3.6.1.4.1.19046.1.7.32',
+    '_id'   => '.1.3.6.1.4.1.19046.1.7',
+    '_os_ver' => 1,
+    '_mac'    => 1,
+    '_lenovoProducts' => 1,
+    '_lenovoEnvMibPowerSupplyIndex' => 1,
     'store' => {},
   };
   $test->{info}->cache($cache_data);
