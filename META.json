@@ -434,6 +434,10 @@
          "file" : "lib/SNMP/Info/Layer3/Lantronix.pm",
          "version" : "3.66"
       },
+      "SNMP::Info::Layer3::Lenovo" : {
+         "file" : "lib/SNMP/Info/Layer3/Lenovo.pm",
+         "version" : "3.66"
+      },
       "SNMP::Info::Layer3::Microsoft" : {
          "file" : "lib/SNMP/Info/Layer3/Microsoft.pm",
          "version" : "3.66"
@@ -574,7 +578,7 @@
       },
       "homepage" : "http://netdisco.org/",
       "license" : [
-         "http://opensource.org/licenses/BSD-3-Clause"
+         "http://opensource.org/licenses/bsd-license.php"
       ],
       "repository" : {
          "url" : "https://github.com/netdisco/snmp-info"
@@ -583,5 +587,5 @@
       "x_MailingList" : "https://lists.sourceforge.net/lists/listinfo/snmp-info-users"
    },
    "version" : "3.66",
-   "x_serialization_backend" : "JSON::PP version 2.97001"
+   "x_serialization_backend" : "JSON::PP version 4.02"
 }

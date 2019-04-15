@@ -312,6 +312,9 @@ provides:
   SNMP::Info::Layer3::Lantronix:
     file: lib/SNMP/Info/Layer3/Lantronix.pm
     version: '3.66'
+  SNMP::Info::Layer3::Lenovo:
+    file: lib/SNMP/Info/Layer3/Lenovo.pm
+    version: '3.66'
   SNMP::Info::Layer3::Microsoft:
     file: lib/SNMP/Info/Layer3/Microsoft.pm
     version: '3.66'
@@ -426,7 +429,7 @@ resources:
   MailingList: https://lists.sourceforge.net/lists/listinfo/snmp-info-users
   bugtracker: https://github.com/netdisco/snmp-info/issues
   homepage: http://netdisco.org/
-  license: http://opensource.org/licenses/BSD-3-Clause
+  license: http://opensource.org/licenses/bsd-license.php
   repository: https://github.com/netdisco/snmp-info
 version: '3.66'
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'

@@ -1,5 +1,8 @@
 Version 3.67 (2019-xx-xx)
 
+  [NEW FEATURES]
+  * initial lenovo / cnos support (inphobia)
+
   [BUG FIXES]
 
   * #319 make fortinet return a useful interface name (inphobia)

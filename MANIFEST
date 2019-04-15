@@ -104,6 +104,7 @@ lib/SNMP/Info/Layer3/Huawei.pm
 lib/SNMP/Info/Layer3/IBMGbTor.pm
 lib/SNMP/Info/Layer3/Juniper.pm
 lib/SNMP/Info/Layer3/Lantronix.pm
+lib/SNMP/Info/Layer3/Lenovo.pm
 lib/SNMP/Info/Layer3/Microsoft.pm
 lib/SNMP/Info/Layer3/Mikrotik.pm
 lib/SNMP/Info/Layer3/N1600.pm
@@ -248,6 +249,7 @@ xt/lib/Test/SNMP/Info/Layer3/Huawei.pm
 xt/lib/Test/SNMP/Info/Layer3/IBMGbTor.pm
 xt/lib/Test/SNMP/Info/Layer3/Juniper.pm
 xt/lib/Test/SNMP/Info/Layer3/Lantronix.pm
+xt/lib/Test/SNMP/Info/Layer3/Lenovo.pm
 xt/lib/Test/SNMP/Info/Layer3/Microsoft.pm
 xt/lib/Test/SNMP/Info/Layer3/Mikrotik.pm
 xt/lib/Test/SNMP/Info/Layer3/N1600.pm
