@@ -57,7 +57,7 @@ $VERSION = '3.66';
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     'LENOVO-ENV-MIB'      => 'lenovoEnvMibPowerSupplyIndex',
-    'LENOVO-PRODUCTS-MIB' => 'lenovoProducts',
+    'LENOVO-PRODUCTS-MIB' => 'tor',
 );
 
 %GLOBALS = (
