@@ -30,6 +30,7 @@
 package SNMP::Info::Layer2::Exinda;
 
 use strict;
+use warnings;
 
 use Exporter;
 use SNMP::Info::Layer2;
@@ -52,9 +53,10 @@ $VERSION = '3.66';
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
     # EXINDA-MIB
-    'uptime' => 'systemUptime',
-    'os_ver' => 'systemVersion',
-    'serial1' => 'systemHostId',
+    'exinda_model' => 'hardwareSeries',
+    'serial1'      => 'systemHostId',
+    'uptime'       => 'systemUptime',
+    'os_ver'       => 'systemVersion',
 );
 
 %FUNCS = (
@@ -65,10 +67,11 @@ $VERSION = '3.66';
     %SNMP::Info::Layer2::MUNGE,
 );
 
+
+# layer 2: bridged shaping and failopen interfaces
+# layer 3/4: ip and layer 4 protocol fiddling and accell
+# layer 7: wccp support
 sub layers {
-    # layer 2: bridged shaping and failopen interfaces
-    # layer 3/4: ip and layer 4 protocol fiddling and accell
-    # layer 7: wccp supprt
     return '01001110';
 }
 
@@ -76,21 +79,19 @@ sub vendor {
     return 'exinda';
 }
 
+# overwrite l2->model, hardwareSeries returns a plain string
 sub model {
     my $exinda = shift;
-
-    return $exinda->hardwareSeries();
+    return $exinda->exinda_model;
 }
 
+# systemHostId (and thus serial1) is actually also a mac address
 sub mac {
-    # systemHostId is actually also a mac address
     my $exinda = shift;
-    my $exinda_mac = $exinda->systemHostId();
+    my $exinda_mac = $exinda->serial1;
 
-    $exinda_mac =~ s/(..)/$1:/g;
-    chop $exinda_mac;
-
-    return $exinda_mac;
+    return unless (defined $exinda_mac && (length $exinda_mac) == 12);
+    return join(":", $exinda_mac =~ m/\w{2}/g);
 }
 
 sub os {
@@ -164,7 +165,7 @@ Returns a mac address extracted from C<systemHostId>.
 
 =item $exinda->model()
 
-Returns the model extracted from C<hardwareSeries>.
+Returns C<hardwareSeries>.
 
 =item $exinda->os()
 
@@ -172,11 +173,7 @@ Returns 'exos'.
 
 =item $exinda->os_ver()
 
-Returns the os version extracted from C<systemVersion>.
-
-=item $exinda->serial1()
-
-Returns the serial extracted from C<systemHostId>.
+Returns C<systemVersion>.
 
 =item $exinda->uptime()
 
