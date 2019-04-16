@@ -200,6 +200,7 @@ xt/lib/Test/SNMP/Info/Layer2/Catalyst.pm
 xt/lib/Test/SNMP/Info/Layer2/Centillion.pm
 xt/lib/Test/SNMP/Info/Layer2/Cisco.pm
 xt/lib/Test/SNMP/Info/Layer2/CiscoSB.pm
+xt/lib/Test/SNMP/Info/Layer2/Exinda.pm
 xt/lib/Test/SNMP/Info/Layer2/HP.pm
 xt/lib/Test/SNMP/Info/Layer2/HP4000.pm
 xt/lib/Test/SNMP/Info/Layer2/HPVC.pm
