@@ -10,7 +10,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.65';
+$VERSION = '3.66';
 
 %MIBS = (
     'DOCS-IF3-MIB' => 'docsIf3Mib',
@@ -35,9 +35,11 @@ $VERSION = '3.65';
 __END__
 
 =head1 NAME
+
 SNMP::Info::DocsisHE - SNMP Interface for F<DOCS-IF-MIB> and F<DOCS-IF3-MIB>
 
 =head1 AUTHOR
+
 Ryan Gasik
 
 =head1 SYNOPSIS
