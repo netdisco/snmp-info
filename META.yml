@@ -75,6 +75,9 @@ provides:
   SNMP::Info::CiscoVTP:
     file: lib/SNMP/Info/CiscoVTP.pm
     version: '3.66'
+  SNMP::Info::DocsisHE:
+    file: lib/SNMP/Info/DocsisHE.pm
+    version: '3.66'
   SNMP::Info::EDP:
     file: lib/SNMP/Info/EDP.pm
     version: '3.66'
