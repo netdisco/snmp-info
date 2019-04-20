@@ -10,7 +10,7 @@ use SNMP::Info;
 
 use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
 
-$VERSION = '3.65';
+$VERSION = '3.66';
 
 %MIBS = (
     'DOCS-IF3-MIB' => 'docsIf3Mib',
