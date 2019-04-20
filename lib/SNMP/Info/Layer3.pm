@@ -42,12 +42,13 @@ use SNMP::Info::PowerEthernet;
 use SNMP::Info::IPv6;
 use SNMP::Info::AdslLine;
 use SNMP::Info::LLDP;
+use SNMP::Info::DocsisHE;
 
 @SNMP::Info::Layer3::ISA = qw/
     SNMP::Info::PowerEthernet SNMP::Info::IPv6
     SNMP::Info::Entity SNMP::Info::EtherLike
     SNMP::Info::Bridge SNMP::Info::AdslLine
-    SNMP::Info::LLDP
+    SNMP::Info::LLDP SNMP::Info::DocsisHE
     SNMP::Info Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
 
@@ -59,6 +60,7 @@ $VERSION = '3.66';
     %SNMP::Info::MIBS,
     %SNMP::Info::AdslLine::MIBS,
     %SNMP::Info::Bridge::MIBS,
+    %SNMP::Info::DocsisHE::MIBS,
     %SNMP::Info::EtherLike::MIBS,
     %SNMP::Info::Entity::MIBS,
     %SNMP::Info::PowerEthernet::MIBS,
@@ -76,6 +78,7 @@ $VERSION = '3.66';
     %SNMP::Info::GLOBALS,
     %SNMP::Info::AdslLine::GLOBALS,
     %SNMP::Info::Bridge::GLOBALS,
+    %SNMP::Info::DocsisHE::GLOBALS,
     %SNMP::Info::EtherLike::GLOBALS,
     %SNMP::Info::Entity::GLOBALS,
     %SNMP::Info::PowerEthernet::GLOBALS,
@@ -93,6 +96,7 @@ $VERSION = '3.66';
     %SNMP::Info::FUNCS,
     %SNMP::Info::AdslLine::FUNCS,
     %SNMP::Info::Bridge::FUNCS,
+    %SNMP::Info::DocsisHE::FUNCS,
     %SNMP::Info::EtherLike::FUNCS,
     %SNMP::Info::Entity::FUNCS,
     %SNMP::Info::PowerEthernet::FUNCS,
@@ -167,6 +171,7 @@ $VERSION = '3.66';
     %SNMP::Info::AdslLine::MUNGE,
     %SNMP::Info::Bridge::MUNGE,
     %SNMP::Info::EtherLike::MUNGE,
+    %SNMP::Info::DocsisHE::MUNGE,
     %SNMP::Info::Entity::MUNGE,
     %SNMP::Info::PowerEthernet::MUNGE,
     %SNMP::Info::IPv6::MUNGE,
