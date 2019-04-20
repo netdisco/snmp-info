@@ -65,8 +65,12 @@ TODO: {
     # We also could connect to http://snmplabs.com v3 simulator but would
     # prefer to keep those tests isolated to 10_remote_snmplabs.t - we could
     # also move the update() tests to that file.
-    todo_skip "Revisit v3 Context update() tests when using Net-SNMP 5.8+", 4
-      if 1;
+
+    my $version = $SNMP::VERSION;
+    my ( $major, $minor, $rev ) = split( '\.', $version );
+
+    todo_skip "Skip v3 Context update() tests when using Net-SNMP < 5.8", 4
+      if ($major < 5 or $minor < 8);
 
     # Starting context
     ok(!defined $test->{info}{sess}{Context}, q(Context doesn't exist));
