@@ -37,7 +37,7 @@ use Exporter;
 use SNMP::Info::CiscoStack;
 use SNMP::Info::Layer3::CiscoSwitch;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
 
 # NOTE : Top-most items gets precedence for @ISA
 @SNMP::Info::Layer3::C3550::ISA = qw/

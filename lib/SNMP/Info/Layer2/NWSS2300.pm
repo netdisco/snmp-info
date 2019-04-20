@@ -37,7 +37,7 @@ use SNMP::Info::Bridge;
     = qw/SNMP::Info SNMP::Info::Bridge Exporter/;
 @SNMP::Info::Layer2::NWSS2300::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE);
 
 $VERSION = '3.66';
 

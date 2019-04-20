@@ -44,7 +44,7 @@ use SNMP::Info::Entity;
     Exporter/;
 @SNMP::Info::Layer7::CiscoIPS::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
 
 $VERSION = '3.66';
 

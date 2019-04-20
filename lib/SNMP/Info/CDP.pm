@@ -40,7 +40,7 @@ use SNMP::Info;
 @SNMP::Info::CDP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CDP::EXPORT_OK = qw//;
 
-use vars
+our
     qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT %CDP_CAPABILITIES/;
 
 $VERSION = '3.66';

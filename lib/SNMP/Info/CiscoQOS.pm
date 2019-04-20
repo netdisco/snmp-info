@@ -37,7 +37,7 @@ use SNMP::Info;
 @SNMP::Info::CiscoQOS::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoQOS::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+our ($VERSION %MIBS %FUNCS %GLOBALS %MUNGE);
 
 $VERSION = '3.66';
 

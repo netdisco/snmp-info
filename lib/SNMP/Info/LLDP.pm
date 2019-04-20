@@ -37,7 +37,7 @@ use SNMP::Info;
 @SNMP::Info::LLDP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::LLDP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE);
 
 $VERSION = '3.66';
 

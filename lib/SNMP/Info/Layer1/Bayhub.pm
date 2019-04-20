@@ -40,7 +40,7 @@ use SNMP::Info::Layer2;
     = qw/SNMP::Info::SONMP SNMP::Info::NortelStack  SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer1::Bayhub::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE);
 
 $VERSION = '3.66';
 

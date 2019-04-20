@@ -3,7 +3,7 @@ package SNMP::Info::MRO;
 use warnings;
 use strict;
 
-use vars qw/$VERSION/;
+our ($VERSION);
 $VERSION = '3.66';
 
 use PPI;

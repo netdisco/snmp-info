@@ -8,7 +8,7 @@ use SNMP::Info;
 @SNMP::Info::DocsisHE::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::DocsisHE::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+our ($VERSION %MIBS %FUNCS %GLOBALS %MUNGE);
 
 $VERSION = '3.66';
 

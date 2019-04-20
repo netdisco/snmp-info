@@ -34,7 +34,7 @@ use warnings;
 use Exporter;
 use SNMP::Info::Layer3::CiscoSwitch;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
 
 # NOTE : Top-most items gets precedence for @ISA
 @SNMP::Info::Layer3::Nexus::ISA = qw/
@@ -44,7 +44,7 @@ use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 @SNMP::Info::Layer3::Nexus::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
 
 $VERSION = '3.66';
 

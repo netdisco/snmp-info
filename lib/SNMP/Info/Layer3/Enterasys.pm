@@ -42,7 +42,7 @@ use SNMP::Info::Layer3;
     Exporter/;
 @SNMP::Info::Layer3::Enterasys::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
+our ($VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE);
 
 $VERSION = '3.66';
 

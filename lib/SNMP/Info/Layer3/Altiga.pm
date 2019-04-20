@@ -37,7 +37,7 @@ use SNMP::Info::Layer3;
 @SNMP::Info::Layer3::Altiga::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Altiga::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE
+our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE
             $int_include_vpn $fake_idx $type_class/;
 
 $VERSION = '3.66';

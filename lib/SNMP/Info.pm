@@ -21,9 +21,9 @@ use NetAddr::IP::Lite ':lower';
 @SNMP::Info::ISA       = qw/Exporter/;
 @SNMP::Info::EXPORT_OK = qw//;
 
-use vars
-    qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
-    $NOSUCH $BIGINT $REPEATERS/;
+our
+    ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG, %SPEED_MAP,
+     $NOSUCH, $BIGINT, $REPEATERS);
 
 $VERSION = '3.66';
 
@@ -3430,7 +3430,7 @@ will inherit the Cisco Vlan module as an example.
                                        SNMP::Info::CiscoVTP Exporter/;
  @SNMP::Info::Layer2::Sample::EXPORT_OK = qw//;
 
- use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+ our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG);
 
  %MIBS    = (%SNMP::Info::Layer2::MIBS,
              %SNMP::Info::CiscoVTP::MIBS,
@@ -5001,8 +5001,6 @@ For example to override $info->name() create `` sub name {...}'' in your
 subclass.
 
 =cut
-
-our $AUTOLOAD;
 
 sub AUTOLOAD {
     my $self = shift;

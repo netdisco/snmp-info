@@ -41,7 +41,7 @@ use SNMP::Info::Layer3;
     SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Passport::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+our ($VERSION %GLOBALS %FUNCS %MIBS %MUNGE);
 
 $VERSION = '3.66';
 

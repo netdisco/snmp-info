@@ -39,7 +39,7 @@ use SNMP::Info;
 @SNMP::Info::MAU::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::MAU::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+our ($VERSION %MIBS %FUNCS %GLOBALS %MUNGE);
 
 $VERSION = '3.66';
 
