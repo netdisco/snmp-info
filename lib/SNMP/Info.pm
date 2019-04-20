@@ -1388,7 +1388,15 @@ sub new {
     $new_obj->{snmp_comm} = $sess->{Community} || $args{Community} || 'public';
     $new_obj->{snmp_user} = $sess->{SecName}   || $args{SecName}   || 'initial';
 
-    return $auto_specific ? $new_obj->specify() : $new_obj;
+    my $info = $auto_specific ? $new_obj->specify() : $new_obj;
+
+    if ( $info->debug() > 1 ) {
+        require mro;
+        print STDERR (ref $info) ." has resolution order: \n";
+        print STDERR "  $_\n" foreach @{ mro::get_linear_isa( ref $info ) };
+    }
+
+    return $info;
 }
 
 =item update()
@@ -2208,6 +2216,7 @@ sub specify {
 
     $self->debug()
         and print "SNMP::Info::specify() - Changed Class to $device_type.\n";
+
     return $sub_obj;
 }
 
