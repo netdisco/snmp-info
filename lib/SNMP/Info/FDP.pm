@@ -40,7 +40,7 @@ use SNMP::Info;
 @SNMP::Info::FDP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::FDP::EXPORT_OK = qw//;
 
-our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE);
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

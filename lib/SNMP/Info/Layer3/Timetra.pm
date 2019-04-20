@@ -40,7 +40,7 @@ use SNMP::Info::Aggregate;
     Exporter/;
 @SNMP::Info::Layer3::Timetra::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 $VERSION = '3.66';
 

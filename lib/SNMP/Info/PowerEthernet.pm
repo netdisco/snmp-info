@@ -37,7 +37,7 @@ use SNMP::Info;
 @SNMP::Info::PowerEthernet::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::PowerEthernet::EXPORT_OK = qw//;
 
-our ($VERSION %MIBS %FUNCS %GLOBALS %MUNGE);
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
 $VERSION = '3.66';
 

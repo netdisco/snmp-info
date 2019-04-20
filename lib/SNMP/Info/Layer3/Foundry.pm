@@ -46,7 +46,7 @@ use SNMP::Info::LLDP;
 /;
 @SNMP::Info::Layer3::Foundry::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %FUNCS %MIBS %MUNGE);
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

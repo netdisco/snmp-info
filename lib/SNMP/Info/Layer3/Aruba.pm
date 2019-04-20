@@ -38,7 +38,7 @@ use SNMP::Info::LLDP;
 @SNMP::Info::Layer3::Aruba::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Aruba::EXPORT_OK = qw//;
 
-our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE);
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

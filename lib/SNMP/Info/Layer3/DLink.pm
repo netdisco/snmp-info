@@ -36,7 +36,7 @@ use SNMP::Info::LLDP;
 @SNMP::Info::Layer3::DLink::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::DLink::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %FUNCS %MIBS %MUNGE);
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 
@@ -246,6 +246,17 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=over
+
+=item $dlink->interfaces();
+
+Returns the map between SNMP Interface Identifier (iid) and C<ifName>.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

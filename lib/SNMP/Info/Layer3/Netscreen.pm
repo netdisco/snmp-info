@@ -38,7 +38,7 @@ use SNMP::Info::IEEE802dot11;
     = qw/SNMP::Info::Layer3 SNMP::Info::IEEE802dot11 Exporter/;
 @SNMP::Info::Layer3::Netscreen::EXPORT_OK = qw//;
 
-our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE);
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

@@ -41,7 +41,7 @@ use SNMP::Info::LLDP;
     SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Force10::EXPORT_OK = qw//;
 
-our ($VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE);
+our ($VERSION, $DEBUG, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 $VERSION = '3.66';
 

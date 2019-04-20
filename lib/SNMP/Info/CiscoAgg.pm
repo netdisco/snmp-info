@@ -46,7 +46,7 @@ use SNMP::Info::IEEE802dot3ad;
   agg_ports_pagp
 /;
 
-our ($DEBUG $VERSION %MIBS %FUNCS %GLOBALS %MUNGE);
+our ($DEBUG, $VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
 $VERSION = '3.66';
 

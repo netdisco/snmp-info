@@ -44,7 +44,7 @@ use SNMP::Info::EDP;
     SNMP::Info::EDP Exporter/;
 @SNMP::Info::Layer3::Extreme::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %FUNCS %MIBS %MUNGE);
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

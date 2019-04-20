@@ -52,7 +52,7 @@ use SNMP::Info::DocsisHE;
     SNMP::Info Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %FUNCS %MIBS %MUNGE);
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

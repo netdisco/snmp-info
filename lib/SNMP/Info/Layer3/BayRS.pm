@@ -40,8 +40,8 @@ use SNMP::Info::Bridge;
     SNMP::Info::Bridge Exporter/;
 @SNMP::Info::Layer3::BayRS::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %FUNCS %MIBS %MUNGE %MODEL_MAP
-    %MODID_MAP %PROCID_MAP);
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE, %MODEL_MAP,
+    %MODID_MAP, %PROCID_MAP);
 
 $VERSION = '3.66';
 

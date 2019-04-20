@@ -36,7 +36,7 @@ use Exporter;
 @SNMP::Info::CiscoStack::ISA       = qw/Exporter/;
 @SNMP::Info::CiscoStack::EXPORT_OK = qw//;
 
-our ($VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT);
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE, %PORTSTAT);
 
 $VERSION = '3.66';
 

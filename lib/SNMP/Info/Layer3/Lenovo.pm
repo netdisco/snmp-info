@@ -49,7 +49,7 @@ use SNMP::Info::IEEE802dot3ad;
 /;
 @SNMP::Info::Layer3::Lenovo::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 $VERSION = '3.66';
 

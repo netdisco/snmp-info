@@ -35,7 +35,7 @@ use SNMP::Info::Layer3;
 @SNMP::Info::Layer3::Genua::ISA       = qw/SNMP::Info::Layer3/;
 @SNMP::Info::Layer3::Genua::EXPORT_OK = qw//;
 
-our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE);
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

@@ -36,7 +36,7 @@ use SNMP::Info::Layer7;
 @SNMP::Info::Layer7::Netscaler::ISA       = qw/SNMP::Info::Layer7 Exporter/;
 @SNMP::Info::Layer7::Netscaler::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 $VERSION = '3.66';
 

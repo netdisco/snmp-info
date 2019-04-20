@@ -3430,7 +3430,7 @@ will inherit the Cisco Vlan module as an example.
                                        SNMP::Info::CiscoVTP Exporter/;
  @SNMP::Info::Layer2::Sample::EXPORT_OK = qw//;
 
- our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG);
+ our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG);
 
  %MIBS    = (%SNMP::Info::Layer2::MIBS,
              %SNMP::Info::CiscoVTP::MIBS,

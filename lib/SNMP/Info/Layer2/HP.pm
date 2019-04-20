@@ -48,7 +48,7 @@ use SNMP::Info::Aggregate 'agg_ports_ifstack';
 /;
 @SNMP::Info::Layer2::HP::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE);
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MODEL_MAP, %MUNGE);
 
 $VERSION = '3.66';
 

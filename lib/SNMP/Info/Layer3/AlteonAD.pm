@@ -37,7 +37,7 @@ use SNMP::Info::Layer3;
 @SNMP::Info::Layer3::AlteonAD::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::AlteonAD::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %FUNCS %MIBS %MUNGE);
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

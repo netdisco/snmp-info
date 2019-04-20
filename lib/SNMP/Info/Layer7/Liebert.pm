@@ -36,7 +36,7 @@ use SNMP::Info::Layer7;
 @SNMP::Info::Layer7::Liebert::ISA       = qw/SNMP::Info::Layer7/;
 @SNMP::Info::Layer7::Liebert::EXPORT_OK = qw//;
 
-our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE);
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

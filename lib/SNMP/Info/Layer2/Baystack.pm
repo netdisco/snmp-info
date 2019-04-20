@@ -44,7 +44,7 @@ use SNMP::Info::Layer3;
     SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer2::Baystack::EXPORT_OK = qw//;
 
-our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE);
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

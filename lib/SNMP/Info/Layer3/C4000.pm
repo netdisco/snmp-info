@@ -42,7 +42,7 @@ use SNMP::Info::MAU;
     Exporter/;
 @SNMP::Info::Layer3::C4000::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 $VERSION = '3.66';
 

@@ -45,7 +45,7 @@ use SNMP::Info::DocsisHE;
     = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet SNMP::Info::LLDP SNMP::Info::DocsisHE Exporter/;
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE);
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MUNGE);
 
 $VERSION = '3.66';
 

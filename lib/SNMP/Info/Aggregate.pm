@@ -36,7 +36,7 @@ use SNMP::Info;
 @SNMP::Info::Aggregate::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::Aggregate::EXPORT_OK = qw/agg_ports_ifstack/;
 
-our ($VERSION %MIBS %FUNCS %GLOBALS %MUNGE);
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
 $VERSION = '3.66';
 

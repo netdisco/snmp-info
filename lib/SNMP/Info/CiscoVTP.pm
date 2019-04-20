@@ -39,7 +39,7 @@ use SNMP::Info;
 @SNMP::Info::CiscoVTP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoVTP::EXPORT_OK = qw//;
 
-our ($VERSION %MIBS %FUNCS %GLOBALS %MUNGE);
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
 $VERSION = '3.66';
 

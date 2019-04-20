@@ -36,7 +36,7 @@ use SNMP::Info;
 @SNMP::Info::AdslLine::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::AdslLine::EXPORT_OK = qw//;
 
-our ($VERSION %MIBS %FUNCS %GLOBALS %MUNGE);
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
 $VERSION = '3.66';
 

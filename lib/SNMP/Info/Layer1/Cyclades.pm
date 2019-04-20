@@ -37,7 +37,7 @@ use SNMP::Info::Layer1;
 @SNMP::Info::Layer1::Cyclades::ISA       = qw/SNMP::Info::Layer1 Exporter/;
 @SNMP::Info::Layer1::Cyclades::EXPORT_OK = qw//;
 
-our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD);
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD);
 
 $VERSION = '3.66';
 

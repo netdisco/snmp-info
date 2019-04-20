@@ -39,7 +39,7 @@ use SNMP::Info::SONMP;
     = qw/SNMP::Info::Layer3 SNMP::Info::SONMP Exporter/;
 @SNMP::Info::Layer3::N1600::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %FUNCS %MIBS %MUNGE);
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

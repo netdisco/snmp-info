@@ -34,7 +34,7 @@ use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
 
-our ($VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE %PORTSTAT $INIT);
+our ($VERSION, $DEBUG, %MIBS, %FUNCS, %GLOBALS, %MUNGE, %PORTSTAT, $INIT);
 
 $VERSION = '3.66';
 

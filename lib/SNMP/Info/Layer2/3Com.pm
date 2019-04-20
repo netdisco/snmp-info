@@ -37,7 +37,7 @@ use SNMP::Info::CDP;
 @SNMP::Info::Layer2::3Com::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::3Com::EXPORT_OK = qw//;
 
-our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD);
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD);
 
 $VERSION = '3.66';
 

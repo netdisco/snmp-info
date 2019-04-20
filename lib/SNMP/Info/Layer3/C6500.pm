@@ -37,7 +37,7 @@ use SNMP::Info::CiscoStack;
 use SNMP::Info::Layer3::CiscoSwitch;
 use SNMP::Info::MAU;
 
-our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 # NOTE : Top-most items gets precedence for @ISA
 @SNMP::Info::Layer3::C6500::ISA = qw/
@@ -48,8 +48,6 @@ our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
 /;
 
 @SNMP::Info::Layer3::C6500::EXPORT_OK = qw//;
-
-our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
 
 $VERSION = '3.66';
 

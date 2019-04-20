@@ -37,7 +37,7 @@ use SNMP::Info;
 @SNMP::Info::NortelStack::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::NortelStack::EXPORT_OK = qw//;
 
-our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE);
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

@@ -36,7 +36,7 @@ use SNMP::Info;
 @SNMP::Info::IPv6::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::IPv6::EXPORT_OK = qw//;
 
-our ($VERSION %MIBS %FUNCS %GLOBALS %MUNGE $METHOD);
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE, $METHOD);
 
 use constant {
     IPMIB   => 1,

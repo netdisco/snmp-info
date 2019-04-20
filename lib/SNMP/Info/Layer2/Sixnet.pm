@@ -36,7 +36,7 @@ use SNMP::Info::Layer2;
 @SNMP::Info::Layer2::Sixnet::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Sixnet::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %FUNCS %MIBS %MUNGE);
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 

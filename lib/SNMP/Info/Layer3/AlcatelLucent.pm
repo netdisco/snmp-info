@@ -47,7 +47,7 @@ use SNMP::Info::LLDP;
     SNMP::Info::MAU SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::AlcatelLucent::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 $VERSION = '3.66';
 

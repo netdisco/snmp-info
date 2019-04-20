@@ -47,7 +47,7 @@ use SNMP::Info::CDP;
     SNMP::Info::CiscoStats SNMP::Info::CiscoConfig SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::CiscoSB::EXPORT_OK = qw//;
 
-our ($VERSION %FUNCS %GLOBALS %MIBS %MUNGE);
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
 $VERSION = '3.66';
 
