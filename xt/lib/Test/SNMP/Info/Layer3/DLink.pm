@@ -49,12 +49,27 @@ sub setup : Tests(setup) {
   my $cache_data = {
     '_layers' => 4,
     '_description' => 'DGS-3620-28SC Gigabit Ethernet Switch',
+    '_i_name' => 1,
 
     # SWDGS3620PRIMGMT-MIB::dlink-Dgs3620Prod-Dgs3620-28SC
     '_id'   => '.1.3.6.1.4.1.171.10.118.2',
-    'store' => {},
+    'store' => {
+        i_name => { 1 => 'One', 2 => 'Two' },
+    },
   };
   $test->{info}->cache($cache_data);
+}
+
+sub interfaces : Tests(1) {
+  my $test = shift;
+
+  my $expected_data = {
+    1 => 'One',
+    2 => 'Two',
+  };
+
+  cmp_deeply($test->{info}->interfaces(),
+    $expected_data, 'Call to interfaces() returns ifName');
 }
 
 1;

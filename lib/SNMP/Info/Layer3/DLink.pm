@@ -91,6 +91,16 @@ sub model {
     }
 }
 
+# ifDescr is the same for all interfaces in a class, but the ifName is
+# unique, so let's use that for port name.
+sub interfaces {
+    my $dlink = shift;
+    my $partial = shift;
+
+    my $interfaces = $dlink->orig_i_name($partial);
+    return $interfaces;
+}
+
 
 sub vendor {
     return 'dlink';
