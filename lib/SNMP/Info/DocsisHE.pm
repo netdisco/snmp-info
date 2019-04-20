@@ -35,9 +35,11 @@ $VERSION = '3.66';
 __END__
 
 =head1 NAME
+
 SNMP::Info::DocsisHE - SNMP Interface for F<DOCS-IF-MIB> and F<DOCS-IF3-MIB>
 
 =head1 AUTHOR
+
 Ryan Gasik
 
 =head1 SYNOPSIS
