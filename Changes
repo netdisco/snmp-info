@@ -1,13 +1,27 @@
-Version 3.67 (2019-xx-xx)
+Version 3.67 (2019-04-20)
 
   [NEW FEATURES]
-  * initial lenovo / cnos support (inphobia)
+
+  * #323 initial Lenovo / cnos support (inphobia)
+  * #317 #326 DOCSIS Head End support (Pyro3d)
+
+  [ENHANCEMENTS]
+
+  * add v3 Context update() tests for net-snmp 5.8+
+  * support INFO_TRACE and SNMP_TRACE environment variables for Debug
+  * #324 clean up exinda and add regression test
 
   [BUG FIXES]
 
+  * #294 snmp::info should show full class used
+  * #297 perl 5.28 removal of "use vars"
+  * #306 fix incorrect interfaces for d-link
   * #319 make fortinet return a useful interface name (inphobia)
-  * #496 aerohive corrupts snmp cache, for reload, makes reporting
-         wireless clients work. (inphobia)
+  * #320 improve duplicate interfaces() fixup
+  * #321 clean interface descriptions of null and trailing space
+  * #322 #327 full fix for aerohive tests
+  * #325 lazy load legacy RFC1213-MIB only if needed
+  * #496 fix for aerohive wireless clients support (inphobia)
 
 Version 3.66 (2019-03-24)
 
