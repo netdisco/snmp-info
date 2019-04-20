@@ -3367,7 +3367,7 @@ $info->init() will throw an exception if a MIB does not load.
     # been overridden during the compliation of the local Net-SNMP library.
     # These cover the globals and funcs defined in this file.
     'SNMPv2-MIB'  => 'sysObjectID',
-    'RFC1213-MIB' => 'ipRouteIfIndex',
+    # (#325) 'RFC1213-MIB' => 'ipRouteIfIndex',
     'IP-MIB'      => 'ipAdEntAddr',
     'IF-MIB'      => 'ifIndex',
 );
@@ -4834,6 +4834,11 @@ sub _validate_autoload_method {
     if ( $self->{Offline} ) {
         return [1,(exists $self->{store}->{$method} ? 1: 0)];
     }
+
+    # (#325) lazy load legacy RFC1213-MIB only if needed
+    SNMP::loadModules('RFC1213-MIB')
+      if $leaf_name =~ m/^(?:RFC1213-MIB::|ipr_|ipRoute)/
+         and not SNMP::translateObj($leaf_name);
 
     # Translate MIB leaf node name to OID
     my $oid = SNMP::translateObj($leaf_name);
