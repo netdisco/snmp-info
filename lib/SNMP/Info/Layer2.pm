@@ -145,15 +145,21 @@ sub interfaces {
     # Replace the Index with the ifDescr field.
     # Check for duplicates in ifDescr, if so uniquely identify by adding
     # ifIndex to repeated values
-    my %seen;
-    foreach my $iid ( keys %$i_descr ) {
+    my (%seen, %first_seen_as);
+    foreach my $iid ( sort keys %$i_descr ) {
         my $port = $i_descr->{$iid};
         next unless defined $port;
+
         if ( $seen{$port}++ ) {
+            # (#320) also fixup the port this is a duplicate of
+            $interfaces->{ $first_seen_as{$port} }
+              = sprintf( "%s (%d)", $port, $first_seen_as{$port} );
+
             $interfaces->{$iid} = sprintf( "%s (%d)", $port, $iid );
         }
         else {
             $interfaces->{$iid} = $port;
+            $first_seen_as{$port} = $iid;
         }
     }
     return $interfaces;
