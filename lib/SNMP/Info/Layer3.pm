@@ -335,6 +335,10 @@ sub interfaces {
         my $port = $i_descr->{$iid};
         next unless defined $port;
 
+        my $port = SNMP::Info::munge_null($port);
+        $port =~ s/^\s+//; $port =~ s/\s+$//;
+        next unless length $port;
+
         if ( $seen{$port}++ ) {
             # (#320) also fixup the port this is a duplicate of
             $interfaces->{ $first_seen_as{$port} }

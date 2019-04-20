@@ -50,11 +50,15 @@ sub setup : Tests(setup) {
     '_i_index' => 1,
     '_i_description' => 1,
     'store' => {
-      'i_index' => {1 => 1, 2 => 2, 3 => 3, 4 => 4},
+      'i_index' => { map {($_ => $_)} (1 .. 8) },
       'i_description' => {
         1 => 'Unique Interface Name',
         2 => 'Duplicate Interface Name',
-        3 => 'Duplicate Interface Name'
+        3 => 'Duplicate Interface Name',
+        4 => "\0",
+        5 => "\0",
+        6 => " \0",
+        7 => "\0 ",
       },
     },
   };
@@ -69,11 +73,15 @@ sub duplicates : Tests(2) {
     2 => 'Duplicate Interface Name (2)',
     3 => 'Duplicate Interface Name (3)',
     4 => 4,
+    5 => 5,
+    6 => 6,
+    7 => 7,
+    8 => 8,
   };
 
   can_ok($test->{info}, 'interfaces');
   cmp_deeply($test->{info}->interfaces(),
-    $expected_data, 'Call to interfaces() removes duplicates');
+    $expected_data, 'Call to interfaces() removes duplicates and cleans up');
 }
 
 1;
