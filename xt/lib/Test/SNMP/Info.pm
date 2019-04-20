@@ -935,7 +935,7 @@ sub init : Tests(3) {
   my $netsnmp_ver = $SNMP::VERSION;
   local $SNMP::VERSION = '5.0.1';
 
-  warnings_like { $test->{info}->init() }
+  warnings_exist { $test->{info}->init() }
   [{carped => qr/Net-SNMP\s5.0.1\sseems\sto\sbe\srather\sbuggy/x}],
     'Use of bad Net-SNMP gives warning';
 
@@ -956,6 +956,8 @@ sub args : Tests(2) {
     'Community'   => 'public',
     'Version'     => 2,
     'Session'     => $sess,
+    'Debug'       => ($ENV{INFO_TRACE} || 0),
+    'DebugSNMP'   => ($ENV{SNMP_TRACE} || 0),
   };
 
   can_ok($test->{info}, 'args');
