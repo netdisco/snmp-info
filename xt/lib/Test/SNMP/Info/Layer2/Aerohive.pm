@@ -247,7 +247,9 @@ sub bp_index : Tests(3) {
   # mock up the needed snmp data.
   my $data
     = {'IF-MIB::ifIndex' =>
-        {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20}
+        {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20},
+       'RFC1213-MIB::ifIndex' =>
+        {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20},
     };
   $test->{info}{sess}{Data} = $data;
 
