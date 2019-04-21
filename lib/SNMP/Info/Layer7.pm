@@ -66,9 +66,6 @@ sub model {
     my $id    = $l7->id();
     my $model = &SNMP::translateObj($id);
 
-    # Neoteris (Juniper IVE)
-    $model =~ s/^ive//i;
-
     return $model;
 }
 

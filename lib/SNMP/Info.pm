@@ -1079,7 +1079,7 @@ See documentation in L<SNMP::Info::Layer7::Liebert> for details.
 
 =item SNMP::Info::Layer7::Neoteris
 
-Subclass for Juniper SSL VPN appliances.
+Subclass for Pulse Secure / Juniper SSL VPN appliances.
 
 See documentation in L<SNMP::Info::Layer7::Neoteris> for details.
 
