@@ -157,7 +157,7 @@ Moe Kraus
                         )
     or die "Can't connect to DestHost.\n";
 
- my $class      = $ips->class();
+ my $class      = $info->class();
  print "SNMP::Info determined this device to fall under subclass: $class\n";
 
 =head1 DESCRIPTION
@@ -231,7 +231,7 @@ See documentation in L<SNMP::Info::Layer7/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::Entity
 
-See documentation in L<SNMP::Info::Entitiy/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
