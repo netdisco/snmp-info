@@ -42,8 +42,7 @@ $VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
-    'UCD-SNMP-MIB'       => 'versionTag',
-    'JUNIPER-IVE-MIB'    => 'productVersion',
+    'PULSESECURE-PSG-MIB' => 'productVersion',
 );
 
 %GLOBALS = (
@@ -57,7 +56,7 @@ $VERSION = '3.67';
 %MUNGE = ( %SNMP::Info::Layer7::MUNGE, );
 
 sub vendor {
-    return 'juniper';
+    return 'pulsesecure';
 }
 
 sub os {
@@ -68,12 +67,23 @@ sub serial {
     return '';
 }
 
+sub model {
+    my $neoteris = shift;
+    my $id       = $neoteris->id();
+    my $model    = &SNMP::translateObj($id);
+
+    $model =~ s/^ive//i;
+
+    return $model;
+}
+
 1;
 __END__
 
 =head1 NAME
 
-SNMP::Info::Layer7::Neoteris - SNMP Interface to Juniper SSL VPN appliances
+SNMP::Info::Layer7::Neoteris - SNMP Interface to Pulse
+Secure / Juniper SSL VPN appliances
 
 =head1 AUTHORS
 
@@ -96,7 +106,7 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Subclass for Juniper SSL VPN appliances
+Subclass for Pulse Secure / Juniper SSL VPN appliances
 
 =head2 Inherited Classes
 
@@ -110,9 +120,7 @@ Subclass for Juniper SSL VPN appliances
 
 =over
 
-=item F<UCD-SNMP-MIB>
-
-=item F<JUNIPER-IVE-MIB>
+=item F<PULSESECURE-PSG-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -128,7 +136,12 @@ These are methods that return scalar value from SNMP
 
 =item $neoteris->vendor()
 
-Returns 'juniper'.
+Returns 'pulsesecure'.
+
+=item $neoteris->model()
+
+Translates $neoteris->id() to it's model name, stripping the leading
+'ive'.
 
 =item $neoteris->os()
 

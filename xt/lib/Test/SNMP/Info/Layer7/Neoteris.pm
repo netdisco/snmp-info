@@ -40,10 +40,10 @@ sub setup : Tests(setup) {
   # Start with a common cache that will serve most tests
   my $cache_data = {
     '_layers'      => 72,
-    '_description' => 'Juniper Networks,Inc,SA-4500,7.1R7 (build 20581)',
+    '_description' => 'Pulse Secure, LLC,Pulse Connect Secure,PSA-3000,8.2R7.2 (build 55673)',
 
-    # JUNIPER-IVE-MIB::iveSA4500
-    '_id'   => '.1.3.6.1.4.1.12532.252.5.1',
+    # PULSESECURE-PSG-MIB::ivePSA3000
+    '_id'   => '.1.3.6.1.4.1.12532.256.2.1',
     'store' => {},
   };
   $test->{info}->cache($cache_data);
@@ -53,7 +53,7 @@ sub vendor : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'vendor');
-  is($test->{info}->vendor(), 'juniper', q(Vendor returns 'juniper'));
+  is($test->{info}->vendor(), 'pulsesecure', q(Vendor returns 'pulsesecure'));
 }
 
 sub os : Tests(2) {
@@ -61,6 +61,13 @@ sub os : Tests(2) {
 
   can_ok($test->{info}, 'os');
   is($test->{info}->os(), 'ive', q(OS returns 'ive'));
+}
+
+sub model : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'model');
+  is($test->{info}->model(), 'PSA3000', q(model returns 'PSA3000'));
 }
 
 sub serial : Tests(2) {
