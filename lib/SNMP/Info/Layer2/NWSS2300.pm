@@ -37,9 +37,9 @@ use SNMP::Info::Bridge;
     = qw/SNMP::Info SNMP::Info::Bridge Exporter/;
 @SNMP::Info::Layer2::NWSS2300::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::MIBS,
@@ -159,7 +159,7 @@ sub model {
     return $id unless defined $model;
 
     $model =~ s/^ntwsSwitch//i;
-    return $model;    
+    return $model;
 }
 
 sub _ap_serial {
@@ -389,7 +389,7 @@ sub bp_index {
 sub fw_mac {
     my $nwss2300 = shift;
     my $partial  = shift;
-    
+
     my $serials = $nwss2300->nwss2300_sta_serial($partial) || {};
 
     my %fw_mac;
@@ -401,7 +401,7 @@ sub fw_mac {
 	
         $fw_mac{$iid} = $mac;
     }
-    return \%fw_mac;    
+    return \%fw_mac;
 }
 
 sub fw_port {
@@ -494,7 +494,7 @@ sub dot11_cur_tx_pwr_mw {
     my $partial  = shift;
 
     my $cur = $nwss2300->nwss2300_apif_power($partial);
-    
+
     my $dot11_cur_tx_pwr_mw = {};
     foreach my $idx ( keys %$cur ) {
         my $pwr_dbm = $cur->{$idx};
@@ -502,7 +502,7 @@ sub dot11_cur_tx_pwr_mw {
 	#Convert to milliWatts = 10(dBm/10)
         my $pwr = int (10 ** ($pwr_dbm / 10));
 	
-        $dot11_cur_tx_pwr_mw->{$idx} = $pwr; 
+        $dot11_cur_tx_pwr_mw->{$idx} = $pwr;
     }
     return $dot11_cur_tx_pwr_mw;
 }
@@ -514,7 +514,7 @@ sub e_index {
 
     # Try new first, fall back to depreciated
     my $ap_num = $nwss2300->nwss2300_ap_num() || $nwss2300->nwss2300_ap_dapnum() || {};
-  
+
     my %e_index;
 
     # Chassis
@@ -797,7 +797,7 @@ Eric Miller
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
 
     or die "Can't connect to DestHost.\n";
 
@@ -806,7 +806,7 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from 
+Provides abstraction to the configuration information obtainable from
 Avaya (Trapeze) Wireless Controllers through SNMP.
 
 This class emulates bridge functionality for the wireless switch. This enables
@@ -814,7 +814,7 @@ end station MAC addresses collection and correlation to the thin access point
 the end station is using for communication.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $nwss2300 = new SNMP::Info::Layer2::NWSS2300(...);
 
@@ -908,7 +908,7 @@ See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=over 
+=over
 
 =item $nwss2300->i_ssidlist()
 
@@ -1139,7 +1139,7 @@ These emulate the F<CISCO-DOT11-MIB>
 
 (C<ntwsClSessClientSessStatsUniPktOut>)
 
-=back 
+=back
 
 =head2 Table Methods imported from SNMP::Info
 
@@ -1155,14 +1155,14 @@ See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
 =item $nwss2300->i_index()
 
-Returns reference to map of IIDs to Interface index. 
+Returns reference to map of IIDs to Interface index.
 
 Extends C<ifIndex> to support thin APs and WLAN virtual interfaces as device
 interfaces.
 
 =item $nwss2300->interfaces()
 
-Returns reference to map of IIDs to ports.  Thin APs are implemented as device 
+Returns reference to map of IIDs to ports.  Thin APs are implemented as device
 interfaces.  The thin AP MAC address and Slot ID nwss2300_apif_slot() are
 used as the port identifier.
 
@@ -1207,7 +1207,7 @@ the interface iid.
 =item $nwss2300->fw_port()
 
 Returns reference to a hash, value being mac and
-nwss2300_sta_slot() combined to match the interface iid.  
+nwss2300_sta_slot() combined to match the interface iid.
 
 =item $nwss2300->fw_mac()
 

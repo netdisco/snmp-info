@@ -39,9 +39,9 @@ use SNMP::Info::Layer2;
     = qw/SNMP::Info::IEEE802dot11 SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Orinoco::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -170,14 +170,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $orinoco = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $orinoco->class();
@@ -190,7 +190,7 @@ Orinoco Access Point through SNMP.  Orinoco devices have been manufactured
 by Proxim, Agere, and Lucent.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $orinoco = new SNMP::Info::Layer2::Orinoco(...);
 
@@ -269,7 +269,7 @@ to a hash.
 
 =item $orinoco->interfaces()
 
-Returns reference to map of IIDs to physical ports. 
+Returns reference to map of IIDs to physical ports.
 
 =item $orinoco->i_ignore()
 

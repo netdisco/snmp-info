@@ -35,9 +35,9 @@ use SNMP::Info::Layer3;
 @SNMP::Info::Layer3::Genua::ISA       = qw/SNMP::Info::Layer3/;
 @SNMP::Info::Layer3::Genua::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (%SNMP::Info::Layer3::MIBS);
 
@@ -115,14 +115,14 @@ Netdisco Developers
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $genua = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myhub',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $genua->class();
@@ -163,7 +163,7 @@ Returns 'genua'
 
 =item $genua->os_ver()
 
-(C<infoRelease>) and (C<infoPatchlevel>) 
+(C<infoRelease>) and (C<infoPatchlevel>)
 
 =item $genua->model()
 

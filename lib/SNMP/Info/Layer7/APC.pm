@@ -38,9 +38,9 @@ use SNMP::Info::Layer7;
     = qw/SNMP::Info::Layer7 Exporter/;
 @SNMP::Info::Layer7::APC::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
@@ -63,7 +63,7 @@ $VERSION = '3.64';
 
 %FUNCS = (
     %SNMP::Info::Layer7::FUNCS,
-    
+
 );
 
 %MUNGE = (
@@ -115,14 +115,14 @@ Jeroen van Ingen
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $apc = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $apc->class();
@@ -130,11 +130,11 @@ Jeroen van Ingen
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
-APC UPS via SNMP. 
+Provides abstraction to the configuration information obtainable from a
+APC UPS via SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $apc = new SNMP::Info::Layer7::APC(...);
 
@@ -214,27 +214,15 @@ See documentation in L<SNMP::Info::Layer7/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2 Overrides
-
-=over
-
-=back
-
 =head2 Table Methods imported from SNMP::Info::Layer7
 
 See documentation in L<SNMP::Info::Layer7/"TABLE METHODS"> for details.
-
-=head1 MUNGES
-
-=over
-
-=back
 
 =head1 SET METHODS
 
 These are methods that provide SNMP set functionality for overridden methods
 or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
-operations. 
+operations.
 
 =cut

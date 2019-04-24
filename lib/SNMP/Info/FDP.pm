@@ -40,9 +40,9 @@ use SNMP::Info;
 @SNMP::Info::FDP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::FDP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = ( 'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snFdpGlobalRun' );
 
@@ -132,10 +132,10 @@ Bruce Rodger, Max Baker
 
 =head1 SYNOPSIS
 
- my $fdp = new SNMP::Info ( 
+ my $fdp = new SNMP::Info (
                              AutoSpecify => 1,
                              Debug       => 1,
-                             DestHost    => 'router', 
+                             DestHost    => 'router',
                              Community   => 'public',
                              Version     => 2
                            );
@@ -161,7 +161,7 @@ Bruce Rodger, Max Baker
 
 =head1 DESCRIPTION
 
-SNMP::Info::FDP is a subclass of SNMP::Info that provides an object oriented 
+SNMP::Info::FDP is a subclass of SNMP::Info that provides an object oriented
 interface to FDP information through SNMP.
 
 FDP is a Layer 2 protocol that supplies topology information of
@@ -172,7 +172,7 @@ virtually identical.  FDP is implemented in Brocade (Foundry) devices.
 Create or use a device subclass that inherits this class.  Do not use
 directly.
 
-Each device implements a subset of the global and cache entries. 
+Each device implements a subset of the global and cache entries.
 Check the return value to see if that data is held by the device.
 
 =head2 Inherited Classes
@@ -186,7 +186,7 @@ None.
 =item F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
 Needs a reasonably recent MIB. Works OK with B2R07604A.mib, but doesn't
-work with B2R07600C. 
+work with B2R07600C.
 
 =back
 
@@ -198,13 +198,13 @@ These are methods that return scalar values from SNMP
 
 =item  $fdp->hasFDP()
 
-Is FDP is active in this device?  
+Is FDP is active in this device?
 
 Accounts for SNMP version 1 devices which may have FDP but not fdp_run()
 
 =item $fdp->fdp_run()
 
-Is FDP enabled on this device?  
+Is FDP enabled on this device?
 
 (C<fdpGlobalRun>)
 
@@ -216,7 +216,7 @@ Interval in seconds at which FDP messages are generated.
 
 =item $fdp->fdp_holdtime()
 
-Time in seconds that FDP messages are kept. 
+Time in seconds that FDP messages are kept.
 
 (C<fdpGlobalHoldTime>)
 
@@ -236,13 +236,13 @@ Interval in seconds at which FDP messages are generated.
 
 =item $fdp->fdp_holdtime()
 
-Time in seconds that FDP messages are kept. 
+Time in seconds that FDP messages are kept.
 
 (C<fdpGlobalHoldTime>)
 
-=item  $fdp->fdp_id() 
+=item  $fdp->fdp_id()
 
-Returns FDP device ID.  
+Returns FDP device ID.
 
 This is the device id broadcast via FDP to other devices, and is what is
 retrieved from remote devices with $fdp->id().
@@ -334,9 +334,9 @@ Returns remote IP address
 
 (C<fdpCacheAddress>)
 
-=item $fdp->fdp_platform() 
+=item $fdp->fdp_platform()
 
-Returns remote platform id 
+Returns remote platform id
 
 (C<fdpCachePlatform>)
 
@@ -352,13 +352,13 @@ Returns remote address type received.  Usually IP.
 
 (C<fdpCacheAddressType>)
 
-=item $fdp->fdp_ver() 
+=item $fdp->fdp_ver()
 
 Returns remote hardware version
 
 (C<fdpCacheVersion>)
 
-=item $fdp->fdp_cache_type() 
+=item $fdp->fdp_cache_type()
 
 Returns type of entry received, either FDP or CDP.
 

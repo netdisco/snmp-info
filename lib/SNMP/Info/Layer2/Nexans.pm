@@ -36,9 +36,9 @@ use SNMP::Info::Layer2;
 @SNMP::Info::Layer2::Nexans::ISA = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Nexans::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -114,7 +114,7 @@ sub i_name {
     # replace i_name where possible
     foreach my $iid ( keys %$return ) {
         next unless $return->{$iid} eq "";
-        $return->{$iid} = $iid; 
+        $return->{$iid} = $iid;
     }
     return \%$return;
 }
@@ -133,7 +133,7 @@ Christoph Neuhaus
 
 =head1 SYNOPSIS
 
-# Let SNMP::Info determine the correct subclass for you. 
+# Let SNMP::Info determine the correct subclass for you.
 
     my $nexans = new SNMP::Info(
                             AutoSpecify => 1,
@@ -141,7 +141,7 @@ Christoph Neuhaus
                             DestHost    => 'myswitch',
                             Community   => 'public',
                             Version     => 2
-                            ) 
+                            )
     or die "Can't connect to DestHost.\n";
 
     my $class = $nexans->class();
@@ -158,7 +158,7 @@ tested devices:
     gigaSwitchV3d2SfpSfp version 3.68, 4.02, 4.02B, 4.10C, 4,14W
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
     my $nexans = new SNMP::Info::Layer2::Nexans(...);
 
@@ -223,7 +223,7 @@ See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=over 
+=over
 
 =item $nexans->i_name()
 

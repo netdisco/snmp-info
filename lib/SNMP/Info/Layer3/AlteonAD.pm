@@ -37,9 +37,9 @@ use SNMP::Info::Layer3;
 @SNMP::Info::Layer3::AlteonAD::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::AlteonAD::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -163,14 +163,14 @@ sub ps1_status {
     my $alteon = shift;
     my $old_ps = $alteon->old_ps1_stat();
     my $new_ps = $alteon->new_ps_stat();
-    
+
     return $old_ps if $old_ps;
-    
+
     if ($new_ps) {
         return 'ok' if ($new_ps eq 'singlePowerSupplyOk');
         return 'failed' if ($new_ps eq 'firstPowerSupplyFailed');
     }
-    
+
     return;
 }
 
@@ -178,9 +178,9 @@ sub ps2_status {
     my $alteon = shift;
     my $old_ps = $alteon->old_ps2_stat();
     my $new_ps = $alteon->new_ps_stat();
-    
+
     return $old_ps if $old_ps;
-    
+
     if ($new_ps) {
         return 'ok' if ($new_ps eq 'doublePowerSupplyOk');
         return 'failed' if ($new_ps eq 'secondPowerSupplyFailed');
@@ -242,19 +242,19 @@ sub i_duplex {
 sub i_duplex_admin {
     my $alteon = shift;
 
-    my $ag_pref 
+    my $ag_pref
         = $alteon->new_ag_p_cfg_pref()
         || $alteon->old_ag_p_cfg_pref()
         || {};
-    my $ag_fe_auto 
+    my $ag_fe_auto
         = $alteon->new_ag_p_cfg_fe_auto()
         || $alteon->old_ag_p_cfg_fe_auto()
         || {};
-    my $ag_fe_mode 
+    my $ag_fe_mode
         = $alteon->new_ag_p_cfg_fe_mode()
         || $alteon->old_ag_p_cfg_fe_mode()
         || {};
-    my $ag_ge_auto 
+    my $ag_ge_auto
         = $alteon->new_ag_p_cfg_ge_auto()
         || $alteon->old_ag_p_cfg_ge_auto()
         || {};
@@ -395,7 +395,7 @@ sub i_vlan_membership_untagged {
         my $vlan = $vlans->{$port};
         push( @{ $i_vlan_membership->{$port} }, $vlan );
     }
-    
+
     return $i_vlan_membership;
 }
 
@@ -432,14 +432,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $alteon = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $alteon->class();
@@ -451,7 +451,7 @@ Abstraction subclass for Radware Alteon Series ADC switches and
 Nortel BladeCenter Layer2-3 GbE Switch Modules.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $alteon = new SNMP::Info::Layer3::AlteonAD(...);
 
@@ -581,7 +581,7 @@ IDs.  These are the VLANs which are members of the egress list for the port.
   Example:
   my $interfaces = $alteon->interfaces();
   my $vlans      = $alteon->i_vlan_membership();
-  
+
   foreach my $iid (sort keys %$interfaces) {
     my $port = $interfaces->{$iid};
     my $vlan = join(',', sort(@{$vlans->{$iid}}));

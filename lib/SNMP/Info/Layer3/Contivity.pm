@@ -40,9 +40,9 @@ use SNMP::Info::Entity;
     = qw/SNMP::Info SNMP::Info::Layer3 SNMP::Info::Entity Exporter/;
 @SNMP::Info::Layer3::Contivity::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::MIBS, %SNMP::Info::Layer3::MIBS, %SNMP::Info::Entity::MIBS,
@@ -171,14 +171,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $contivity = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $contivity->class();
@@ -187,10 +187,10 @@ Eric Miller
 =head1 DESCRIPTION
 
 Abstraction subclass for Avaya/Nortel VPN Routers (formerly Contivity
-Extranet Switch).  
+Extranet Switch).
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $contivity = new SNMP::Info::Layer3::Contivity(...);
 

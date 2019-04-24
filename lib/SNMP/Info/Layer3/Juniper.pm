@@ -38,9 +38,9 @@ use SNMP::Info::LLDP;
 @SNMP::Info::Layer3::Juniper::ISA       = qw/SNMP::Info::Layer3 SNMP::Info::LLDP  Exporter/;
 @SNMP::Info::Layer3::Juniper::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, $DEBUG, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -106,11 +106,11 @@ sub os {
 
 sub layers {
     my $juniper = shift;
-    
+
     my $layers = $juniper->SUPER::layers();
-    # Some models don't report L2 properly 
+    # Some models don't report L2 properly
     my $macs   = $juniper->fw_mac();
-    
+
     if (keys %$macs) {
         my $l = substr $layers, 6, 1, "1";
     }
@@ -145,7 +145,7 @@ sub model {
     # Query the junos device model.
     my $mod = uc $l3->vc_model() || '';
 
-    if  (not $mod eq '') { 
+    if  (not $mod eq '') {
         return $mod;
     }
     # Fallback to old method
@@ -268,14 +268,14 @@ sub i_vlan {
     return $i_vlan;
 }
 
-sub v_name { 
+sub v_name {
     my $juniper = shift;
 
     return $juniper->jnx_els_v_name() || $juniper->jnx_v_name();
 }
 
 # Index doesn't use VLAN ID, so override the HOA private method here to
-# correct the mapping 
+# correct the mapping
 sub _vlan_hoa {
     my $juniper = shift;
     my ( $v_ports, $partial ) = @_;
@@ -373,7 +373,7 @@ sub _e_is_virtual {
     my $juniper = shift;
 
     my $v_test = $juniper->jnxVirtualChassisMemberRole() || {};
-    
+
     #If we are functioning as a stack someone should be master
     foreach my $iid ( keys %$v_test ) {
 	my $role = $v_test->{$iid};
@@ -418,7 +418,7 @@ sub e_index {
     my $virtuals   = $juniper->_e_virtual_index() || {};
     my $is_virtual = $juniper->_e_is_virtual();
 
-    # Format into consistent integer format so that numeric sorting works     
+    # Format into consistent integer format so that numeric sorting works
     my %e_index;
     if ($is_virtual) {
 	foreach my $key ( keys %$virtuals ) {
@@ -433,7 +433,7 @@ sub e_index {
     foreach my $key ( keys %$contents ) {
 	$e_index{$key} = join( '', map { sprintf "%02d", $_ } split /\./, $key );
     }
- 
+
     return \%e_index;
 }
 
@@ -687,14 +687,14 @@ Bill Fenner
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $juniper = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $juniper->class();
@@ -812,7 +812,7 @@ to a hash.
 =item $juniper->qb_fdb_index()
 
 Returns reference to hash: key = FDB ID, value = VLAN ID.
-    
+
 =item $juniper->v_index()
 
 Returns (C<jnxL2aldVlanTag>) or (C<jnxExVlanTag>) depending upon switch
@@ -859,7 +859,7 @@ For example, ge-0/0/1 registers as PowerEthernet interface '1.2'
 =head2 Pseudo F<ENTITY-MIB> information
 
 These methods emulate F<ENTITY-MIB> Physical Table methods using
-F<JUNIPER-MIB> and F<JUNIPER-VIRTUALCHASSIS-MIB>. 
+F<JUNIPER-MIB> and F<JUNIPER-VIRTUALCHASSIS-MIB>.
 
 =over
 

@@ -40,10 +40,10 @@ use SNMP::Info;
 @SNMP::Info::CDP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CDP::EXPORT_OK = qw//;
 
-use vars
-    qw/$VERSION $DEBUG %FUNCS %GLOBALS %MIBS %MUNGE $INIT %CDP_CAPABILITIES/;
+our
+    ($VERSION, $DEBUG, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $INIT, %CDP_CAPABILITIES);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 # Five data structures required by SNMP::Info
 %MIBS = ( 'CISCO-CDP-MIB' => 'cdpGlobalRun' );
@@ -245,10 +245,10 @@ Max Baker
 
 =head1 SYNOPSIS
 
- my $cdp = new SNMP::Info ( 
+ my $cdp = new SNMP::Info (
                              AutoSpecify => 1,
                              Debug       => 1,
-                             DestHost    => 'router', 
+                             DestHost    => 'router',
                              Community   => 'public',
                              Version     => 2
                            );
@@ -274,7 +274,7 @@ Max Baker
 
 =head1 DESCRIPTION
 
-SNMP::Info::CDP is a subclass of SNMP::Info that provides an object oriented 
+SNMP::Info::CDP is a subclass of SNMP::Info that provides an object oriented
 interface to CDP information through SNMP.
 
 CDP is a Layer 2 protocol that supplies topology information of devices that
@@ -284,7 +284,7 @@ some HP devices.
 Create or use a device subclass that inherits this class.  Do not use
 directly.
 
-Each device implements a subset of the global and cache entries. 
+Each device implements a subset of the global and cache entries.
 Check the return value to see if that data is held by the device.
 
 =head2 Inherited Classes
@@ -309,7 +309,7 @@ These are methods that return scalar values from SNMP
 
 =item  $cdp->hasCDP()
 
-Is CDP is active in this device?  
+Is CDP is active in this device?
 
 Accounts for SNMP version 1 devices which may have CDP but not cdp_run()
 
@@ -328,13 +328,13 @@ Interval in seconds at which CDP messages are generated.
 
 =item $cdp->cdp_holdtime()
 
-Time in seconds that CDP messages are kept. 
+Time in seconds that CDP messages are kept.
 
 (C<cdpGlobalHoldTime>)
 
-=item  $cdp->cdp_gid() 
+=item  $cdp->cdp_gid()
 
-Returns CDP device ID.  
+Returns CDP device ID.
 
 This is the device id broadcast via CDP to other devices, and is what is
 retrieved from remote devices with $cdp->id().
@@ -355,9 +355,9 @@ to a hash.
 =item $cdp->cdp_capabilities()
 
 Returns Device Functional Capabilities.  Results are munged into an ascii
-binary string, MSB.  Each digit represents a bit from the table below from 
+binary string, MSB.  Each digit represents a bit from the table below from
 the CDP Capabilities Mapping to Smartport Type table within the
-Cisco Small Business 200 Series Smart Switch Administration Guide, 
+Cisco Small Business 200 Series Smart Switch Administration Guide,
 L<http://www.cisco.com/c/en/us/support/switches/small-business-200-series-smart-switches/products-maintenance-guides-list.html>:
 
 (Bit) - Description
@@ -407,7 +407,7 @@ C<CISCO-VTP-MIB::managementDomainName>
 
 (C<cdpCacheVTPMgmtDomain>)
 
-=item $cdp->cdp_duplex() 
+=item $cdp->cdp_duplex()
 
 Returns the port duplex status from remote devices.
 
@@ -424,7 +424,7 @@ Returns remote device id string
 Returns the mapping to the SNMP Interface Table.
 
 Note that a lot devices don't implement $cdp->cdp_index(),  So if it isn't
-around, we fake it. 
+around, we fake it.
 
 In order to map the cdp table entry back to the interfaces() entry, we
 truncate the last number off of it :
@@ -435,7 +435,7 @@ truncate the last number off of it :
 
   # if not, let's fake it
   my $cdp_ip       = $device->cdp_ip();
-    
+
   my %cdp_if
   foreach my $key (keys %$cdp_ip){
       $iid = $key;
@@ -443,13 +443,13 @@ truncate the last number off of it :
       $iid =~ s/\.\d+$//;
       $cdp_if{$key} = $iid;
   }
- 
+
   return \%cdp_if;
 
 
 =item $cdp->cdp_index()
 
-Returns the mapping to the SNMP2 Interface table for CDP Cache Entries. 
+Returns the mapping to the SNMP2 Interface table for CDP Cache Entries.
 
 Most devices don't implement this, so you probably want to use $cdp->cdp_if()
 instead.
@@ -471,9 +471,9 @@ Returns remote address
 
 (C<cdpCacheAddress>)
 
-=item $cdp->cdp_platform() 
+=item $cdp->cdp_platform()
 
-Returns remote platform id 
+Returns remote platform id
 
 (C<cdpCachePlatform>)
 
@@ -489,7 +489,7 @@ Returns remote address type received.  Usually IP.
 
 (C<cdpCacheAddressType>)
 
-=item $cdp->cdp_ver() 
+=item $cdp->cdp_ver()
 
 Returns remote hardware version
 
@@ -508,7 +508,7 @@ for decimal placement.
 
 (C<cdpCachePowerConsumption>)
 
-=item  $cdp->cdp_cap() 
+=item  $cdp->cdp_cap()
 
 Returns hash of arrays with each array containing the system capabilities
 supported by the remote system.  Possible elements in the array are

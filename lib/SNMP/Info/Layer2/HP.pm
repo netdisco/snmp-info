@@ -41,16 +41,16 @@ use SNMP::Info::Aggregate 'agg_ports_ifstack';
 
 @SNMP::Info::Layer2::HP::ISA = qw/
     SNMP::Info::Aggregate
-    SNMP::Info::Layer3 
-    SNMP::Info::MAU 
-    SNMP::Info::CDP 
+    SNMP::Info::Layer3
+    SNMP::Info::MAU
+    SNMP::Info::CDP
     Exporter
 /;
 @SNMP::Info::Layer2::HP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MODEL_MAP, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -107,7 +107,7 @@ $VERSION = '3.64';
     'hp_s_oid'    => 'hpicfSensorObjectId',
     'hp_s_name'   => 'hpicfSensorDescr',
     'hp_s_status' => 'hpicfSensorStatus',
-    
+
     # HP-ICF-POE-MIB
     'peth_port_power'   => 'hpicfPoePethPsePortPower',
 );
@@ -123,7 +123,7 @@ $VERSION = '3.64';
 
 
 # Model map, reverse sorted by common model name (sort -k2 -r)
-# Potential sources for model information: http://www.hp.com/rnd/software/switches.htm or HP-ICF-OID MIB 
+# Potential sources for model information: http://www.hp.com/rnd/software/switches.htm or HP-ICF-OID MIB
 %MODEL_MAP = (
     'J8131A' => 'WAP-420-WW',
     'J8130A' => 'WAP-420-NA',
@@ -315,7 +315,7 @@ sub os_ver {
     return;
 }
 
-# Regular managed ProCurve switches have the serial num in entity mib, 
+# Regular managed ProCurve switches have the serial num in entity mib,
 # the web-managed models in the semi mib (hphttpmanageable).
 sub serial {
     my $hp = shift;
@@ -595,14 +595,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $hp = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $hp->class();
@@ -610,15 +610,15 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
-HP ProCurve Switch via SNMP. 
+Provides abstraction to the configuration information obtainable from a
+HP ProCurve Switch via SNMP.
 
 Note:  Some HP Switches will connect via SNMP version 1, but a lot of config
 data will not be available.  Make sure you try and connect with Version 2
 first, and then fail back to version 1.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $hp = new SNMP::Info::Layer2::HP(...);
 
@@ -874,7 +874,7 @@ to a hash.
 
 =over 4
 
-=item $hp->interfaces() 
+=item $hp->interfaces()
 
 Uses $hp->i_description()
 
@@ -931,7 +931,7 @@ Munge for c_id which handles CDP and LLDP.
 These are methods that provide SNMP set functionality for overridden methods
 or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
-operations. 
+operations.
 
 =over
 

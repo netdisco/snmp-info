@@ -39,9 +39,9 @@ use SNMP::Info::LLDP;
     = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::IBMGbTor::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -208,6 +208,7 @@ sub os {
     return 'ibm';
 }
 
+# TODO: from os version 8 this should return lenovo
 sub vendor {
     return 'ibm';
 }
@@ -240,7 +241,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::IBMGbTor - SNMP Interface to IBM Rackswitch devices
+SNMP::Info::Layer3::IBMGbTor - SNMP Interface to Lenovo/IBM Rackswitch devices
 
 =head1 AUTHOR
 
@@ -248,14 +249,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $ibm = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $ibm->class();
@@ -265,7 +266,8 @@ Eric Miller
 =head1 DESCRIPTION
 
 Abstraction subclass for IBM Rackswitch (formerly Blade Network Technologies)
-network devices.
+network devices. Lenovo acquired these from IBM and is now selling
+them under the Lenovo brand.
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above.
@@ -335,7 +337,7 @@ Returns the software version
 
 =item $ibm->hasLLDP()
 
-Is LLDP is active in this device?  
+Is LLDP is active in this device?
 
 Note:  LLDP may be active, but nothing in C<lldpRemoteSystemsData> Tables so
 the device would not return any useful topology information.
@@ -373,13 +375,13 @@ Ignores interfaces with descriptions of tunnel, loopback, and null.
 
 =item $ibm->i_duplex()
 
-Returns reference to hash of interface link duplex status. 
+Returns reference to hash of interface link duplex status.
 
 (C<portInfoMode>)
 
 =item $ibm->lldp_if()
 
-Returns the mapping to the SNMP Interface Table. Tries to cross reference 
+Returns the mapping to the SNMP Interface Table. Tries to cross reference
 (C<lldpInfoRemoteDevicesLocalPort>) with (C<ifDescr>) and (C<ifAlias>)
 to get (C<ifIndex>).
 

@@ -4,20 +4,20 @@
 # Copyright (c) 2008 Jeroen van Ingen Schenau
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the 
-#       names of its contributors may be used to endorse or promote products 
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE  
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
 # LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -37,16 +37,16 @@ use SNMP::Info::Layer3;
 @SNMP::Info::Layer3::Altiga::ISA = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Altiga::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE 
-            $int_include_vpn $fake_idx $type_class/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE,
+            $int_include_vpn, $fake_idx, $type_class);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
             %SNMP::Info::Layer3::MIBS,
             'ALTIGA-VERSION-STATS-MIB'  => 'alVersionString',
             'ALTIGA-SESSION-STATS-MIB'  => 'alActiveSessionCount',
-            'ALTIGA-HARDWARE-STATS-MIB' => 'alHardwarePs1Type',  
+            'ALTIGA-HARDWARE-STATS-MIB' => 'alHardwarePs1Type',
     );
 
 %GLOBALS = (
@@ -70,7 +70,7 @@ $VERSION = '3.64';
             'fan1_alarm'      => 'alHardwareFan1RpmAlarm',
             'fan2_alarm'      => 'alHardwareFan2RpmAlarm',
             'fan3_alarm'      => 'alHardwareFan3RpmAlarm',
-            
+
        );
 
 %FUNCS = (
@@ -189,7 +189,7 @@ sub interfaces {
     if ($int_include_vpn) {
         my $tun_type = $altiga->vpn_sess_protocol();
         my $peer = $altiga->vpn_sess_peer_ip();
-        my $remote = $altiga->vpn_sess_rem_ip(); 
+        my $remote = $altiga->vpn_sess_rem_ip();
         my $group = $altiga->vpn_sess_gid();
         foreach my $tunnel (keys %$tun_type) {
             if ($type_class->{$tun_type->{$tunnel}} eq 1) {
@@ -197,7 +197,7 @@ sub interfaces {
             }
         }
     }
-            
+
     return \%interfaces;
 }
 
@@ -275,14 +275,14 @@ Jeroen van Ingen Schenau
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $altiga = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'my_vpn_host',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $altiga->class();
@@ -366,7 +366,7 @@ to a hash.
 =item $altiga->interfaces()
 
 This method overrides the interfaces() method inherited from SNMP::Info.
-It provides a mapping between the Interface Table Index (iid) and the physical 
+It provides a mapping between the Interface Table Index (iid) and the physical
 port name, adding a port number to the port name to prevent duplicate names.
 
 =item $altiga->i_lastchange()

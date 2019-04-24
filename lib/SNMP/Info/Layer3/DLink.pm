@@ -36,9 +36,9 @@ use SNMP::Info::LLDP;
 @SNMP::Info::Layer3::DLink::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::DLink::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -47,7 +47,7 @@ $VERSION = '3.64';
     'SWPRIMGMT-DES3200-MIB' => 'dlink-des3200SeriesProd',
     'SWPRIMGMT-DES30XXP-MIB' => 'dlink-des30xxproductProd',
     'SWPRIMGMT-DES1228ME-MIB' => 'dlink-des1228MEproductProd',
-    'SWDES3528-52PRIMGMT-MIB' => 'dlink-Des3500Series', 
+    'SWDES3528-52PRIMGMT-MIB' => 'dlink-Des3500Series',
     'DES-1210-28-AX' => 'des-1210-28ax',
     'DES-1210-10MEbx' => 'des-1210-10mebx',
     'DES-1210-26MEbx' => 'des-1210-26mebx',
@@ -89,6 +89,16 @@ sub model {
     	#If don't have a device MIB
 	return $dlink->description();
     }
+}
+
+# ifDescr is the same for all interfaces in a class, but the ifName is
+# unique, so let's use that for port name.
+sub interfaces {
+    my $dlink = shift;
+    my $partial = shift;
+
+    my $interfaces = $dlink->orig_i_name($partial);
+    return $interfaces;
 }
 
 
@@ -164,14 +174,14 @@ SNMP::Info::Layer3::DLink - SNMP Interface to DLink Devices
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $dlink = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $dlink->class();
@@ -179,7 +189,7 @@ SNMP::Info::Layer3::DLink - SNMP Interface to DLink Devices
 
 =head1 DESCRIPTION
 
-Subclass for Vyatta Devices running dlink.
+Subclass for DLink devices.
 
 =head2 Inherited Classes
 
@@ -236,6 +246,17 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=over
+
+=item $dlink->interfaces();
+
+Returns the map between SNMP Interface Identifier (iid) and C<ifName>.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

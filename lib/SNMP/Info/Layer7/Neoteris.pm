@@ -36,14 +36,13 @@ use SNMP::Info::Layer7;
 @SNMP::Info::Layer7::Neoteris::ISA       = qw/SNMP::Info::Layer7 Exporter/;
 @SNMP::Info::Layer7::Neoteris::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
-    'UCD-SNMP-MIB'       => 'versionTag',
-    'JUNIPER-IVE-MIB'    => 'productVersion',
+    'PULSESECURE-PSG-MIB' => 'productVersion',
 );
 
 %GLOBALS = (
@@ -57,7 +56,7 @@ $VERSION = '3.64';
 %MUNGE = ( %SNMP::Info::Layer7::MUNGE, );
 
 sub vendor {
-    return 'juniper';
+    return 'pulsesecure';
 }
 
 sub os {
@@ -68,12 +67,23 @@ sub serial {
     return '';
 }
 
+sub model {
+    my $neoteris = shift;
+    my $id       = $neoteris->id();
+    my $model    = &SNMP::translateObj($id);
+
+    $model =~ s/^ive//i;
+
+    return $model;
+}
+
 1;
 __END__
 
 =head1 NAME
 
-SNMP::Info::Layer7::Neoteris - SNMP Interface to Juniper SSL VPN appliances
+SNMP::Info::Layer7::Neoteris - SNMP Interface to Pulse
+Secure / Juniper SSL VPN appliances
 
 =head1 AUTHORS
 
@@ -81,14 +91,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $neoteris = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $neoteris->class();
@@ -96,7 +106,7 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Subclass for Juniper SSL VPN appliances
+Subclass for Pulse Secure / Juniper SSL VPN appliances
 
 =head2 Inherited Classes
 
@@ -110,9 +120,7 @@ Subclass for Juniper SSL VPN appliances
 
 =over
 
-=item F<UCD-SNMP-MIB>
-
-=item F<JUNIPER-IVE-MIB>
+=item F<PULSESECURE-PSG-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -128,7 +136,12 @@ These are methods that return scalar value from SNMP
 
 =item $neoteris->vendor()
 
-Returns 'juniper'.
+Returns 'pulsesecure'.
+
+=item $neoteris->model()
+
+Translates $neoteris->id() to it's model name, stripping the leading
+'ive'.
 
 =item $neoteris->os()
 

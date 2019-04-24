@@ -3,9 +3,9 @@ package SNMP::Info::MRO;
 use warnings;
 use strict;
 
-use vars qw/$VERSION/;
-$VERSION = '3.64';
- 
+our ($VERSION);
+$VERSION = '3.67';
+
 use PPI;
 use Class::ISA;  ## no critic
 use Module::Info;
@@ -67,7 +67,7 @@ sub _walk_global_data {
 
 sub _print_global_data {
     my $results = _walk_global_data(@_);
-    
+
     foreach my $key (sort keys %$results) {
         print $key, "\n";
         my @defs = @{ $results->{$key} };
@@ -96,8 +96,13 @@ SNMP::Info::MRO - Method resolution introspection for SNMP::Info
 
  use SNMP::Info::MRO;
  use Data::Printer;
- 
- p SNMP::Info::MRO::all_methods('SNMP::Info::Layer3::Juniper');
+
+ # SNMP::Info::MRO::print_* functions
+ SNMP::Info::MRO::print_superclasses ('SNMP::Info::Layer3::Juniper');
+
+ # print output using Data::Printer for other functions
+ my $buff = SNMP::Info::MRO::all_methods('SNMP::Info::Layer3::Juniper');
+ p $buff;
 
 =head1 DESCRIPTION
 
@@ -157,7 +162,7 @@ or C<%FUNCS> configuration. The data structure looks like:
  }
 
 It should be noted that the order of method resolution in SNMP::Info is to
-first look for a defined subroutine (this is done by Perl), then the 
+first look for a defined subroutine (this is done by Perl), then the
 AUTOLOAD sequence will search for a definition in C<%GLOBALS> followed by
 C<%FUNCS>.
 

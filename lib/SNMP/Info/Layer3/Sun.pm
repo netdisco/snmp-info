@@ -37,9 +37,9 @@ use SNMP::Info::Layer3;
 @SNMP::Info::Layer3::Sun::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Sun::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS, );
 
@@ -113,14 +113,14 @@ begemot
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $sun = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'mysunrouter',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $sun->class();

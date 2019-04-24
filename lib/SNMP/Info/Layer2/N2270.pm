@@ -41,9 +41,9 @@ use SNMP::Info::Airespace;
     = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::SONMP SNMP::Info::Airespace Exporter/;
 @SNMP::Info::Layer2::N2270::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::MIBS,        %SNMP::Info::Bridge::MIBS,
@@ -114,7 +114,7 @@ Eric Miller
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
 
     or die "Can't connect to DestHost.\n";
 
@@ -123,11 +123,11 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
+Provides abstraction to the configuration information obtainable from a
 Nortel 2270 Series Wireless Switch through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $n2270 = new SNMP::Info::Layer2::N2270(...);
 

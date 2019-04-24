@@ -28,7 +28,7 @@ if ($@) {
             } else {
                 $graph{$vendor}->{$family}=[];
             }
-            
+
         }
     }
     my $now = scalar localtime;
@@ -83,7 +83,7 @@ foreach my $vendor (sort sort_nocase keys %$matrix){
                 } elsif (defined $vendor_defaults->{$a}){
                     $val = $vendor_defaults->{$a};
                     $class = 'vendor';
-                } 
+                }
                 print "  <TD CLASS='$class'>",join("<BR>\n",@$val),"</TD>\n";
             }
             print "</TR></TABLE>\n";
@@ -141,7 +141,7 @@ sub parse_data {
 
         my ($cmd,$value);
         if ($line =~ /^([a-z-_]+)\s*:\s*(.*)$/) {
-            $cmd = $1;  $value = $2; 
+            $cmd = $1;  $value = $2;
         } else {
             print "What do i do with this line : $line \n";
             next;
@@ -164,18 +164,18 @@ sub parse_data {
             $family = $value;
             $model = undef;
             print "$family has no vendor.\n" unless defined $vendor;
-            $Matrix->{$vendor}->{families}->{$family} = {} 
+            $Matrix->{$vendor}->{families}->{$family} = {}
                 unless defined $Matrix->{$vendor}->{families}->{$family};
             $class = $Matrix->{$vendor}->{families}->{$family};
             $class->{defaults}->{type}='family';
             next;
-        }   
+        }
 
         if ($cmd eq 'device') {
             $model = $value;
             print "$model has no family.\n" unless defined $family;
             print "$model has no vendor.\n" unless defined $vendor;
-            $Matrix->{$vendor}->{families}->{$family}->{models}->{$model} = {} 
+            $Matrix->{$vendor}->{families}->{$family}->{models}->{$model} = {}
                 unless defined $Matrix->{$vendor}->{families}->{$family}->{models}->{$model};
             $class = $Matrix->{$vendor}->{families}->{$family}->{models}->{$model};
             $class->{defaults}->{type}='device';
@@ -233,7 +233,7 @@ sub html_head {
     .vendor { font-size:12pt; color:#777777; }
     .family { font-size:12pt; color:blue; }
     .model  { font-size:12pt; color:red; }
-    .note   { color:red; } 
+    .note   { color:red; }
 //-->
 </STYLE>
 </HEAD>
@@ -304,7 +304,7 @@ be assumed working.
         Discovery Protocol (LLDP), Cisco Discovery Protocol (CDP),
         SynOptics/Bay/Nortel/Avaya Network Management Protocol (SONMP),
         Foundry/Brocade Discovery Protocol (FDP), Extreme Discovery
-        Protocol (EDP), and Alcatel Mapping Adjacency Protocol (AMAP). 
+        Protocol (EDP), and Alcatel Mapping Adjacency Protocol (AMAP).
     </TD>
 </TR>
 <TR>
@@ -325,7 +325,7 @@ be assumed working.
 </BODY>
 </HTML>
 end_tail
-    
+
 }
 
 sub print_headers {

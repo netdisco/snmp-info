@@ -40,9 +40,9 @@ use SNMP::Info;
 @SNMP::Info::CiscoStats::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoStats::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     'SNMPv2-MIB'            => 'sysDescr',
@@ -88,7 +88,7 @@ $VERSION = '3.64';
 
     # CISCO-FLASH-MIB::ciscoFlashDeviceTable
     'cisco_flash_size' => 'ciscoFlashDeviceSize',
-    
+
     # CISCO-IMAGE-MIB
     'ci_images' => 'ciscoImageString',
 );
@@ -334,7 +334,7 @@ Eric Miller, Max Baker, Sam Stickland
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $ciscostats = new SNMP::Info(
                     AutoSpecify => 1,
                     Debug       => 1,
@@ -342,7 +342,7 @@ Eric Miller, Max Baker, Sam Stickland
                     DestHost    => 'myswitch',
                     Community   => 'public',
                     Version     => 2
-                    ) 
+                    )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $ciscostats->class();
@@ -351,7 +351,7 @@ Eric Miller, Max Baker, Sam Stickland
 =head1 DESCRIPTION
 
 SNMP::Info::CiscoStats is a subclass of SNMP::Info that provides cpu, memory,
-os and version information about Cisco Devices. 
+os and version information about Cisco Devices.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
@@ -447,7 +447,7 @@ Tries to parse C<ROMMON> version from rom_id() string
 
 Current CPU usage in percent.
 
-C<1.3.6.1.4.1.9.2.1.56.0> = 
+C<1.3.6.1.4.1.9.2.1.56.0> =
 C<OLD-CISCO-CPU-MIB:avgBusyPer>
 
 =item $ciscostats->ios_cpu_1min()

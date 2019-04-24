@@ -46,9 +46,9 @@ use SNMP::Info::Aggregate 'agg_ports_ifstack';
 /;
 @SNMP::Info::Layer3::Arista::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -146,7 +146,7 @@ Bill Fenner
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $arista = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
@@ -154,7 +154,7 @@ Bill Fenner
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+		 	)
     or die "Can't connect to DestHost.\n";
 
  my $class      = $arista->class();

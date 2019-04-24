@@ -36,9 +36,9 @@ use SNMP::Info::Layer2;
 @SNMP::Info::Layer2::Sixnet::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Sixnet::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (%SNMP::Info::Layer2::MIBS, 'SIXNET-MIB' => 'sxid',);
 
@@ -96,7 +96,7 @@ Eric Miller
               DestHost    => 'myswitch',
               Community   => 'public',
               Version     => 2
-            ) 
+            )
 
     or die "Can't connect to DestHost.\n";
 
@@ -109,7 +109,7 @@ SNMP::Info::Layer2::Sixnet is a subclass of SNMP::Info that provides an
 interface to Sixnet industrial switches.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $sixnet = new SNMP::Info::Layer2::Sixnet(...);
 

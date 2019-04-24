@@ -38,9 +38,9 @@ use SNMP::Info::LLDP;
 @SNMP::Info::Layer3::CheckPoint::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::CheckPoint::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -57,7 +57,7 @@ $VERSION = '3.64';
     %SNMP::Info::LLDP::GLOBALS,
     'netsnmp_vers'   => 'versionTag',
     'hrSystemUptime' => 'hrSystemUptime',
-    
+
 );
 
 %FUNCS = (
@@ -109,7 +109,7 @@ sub os_ver {
             return $1 if ($extend_table->{$ex} =~ /^This is Check Point's software version (.*)$/);
             last;
         }
-    } 
+    }
 
     $os_ver = $1 if ( $descr =~ /^\S+\s+\S+\s+(\S+)\s+/ );
     if ($vers) {
@@ -184,14 +184,14 @@ Ambroise Rosset
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $ckp = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $ckp->class();

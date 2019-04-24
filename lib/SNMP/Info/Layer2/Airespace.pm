@@ -38,9 +38,9 @@ use SNMP::Info::Airespace;
     = qw/SNMP::Info::Airespace SNMP::Info::CDP SNMP::Info::Bridge Exporter/;
 @SNMP::Info::Layer2::Airespace::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::MIBS,      %SNMP::Info::Bridge::MIBS,
@@ -166,11 +166,11 @@ sub cd11_mac {
 
 sub cd11_txrate {
     my $airespace = shift;
-    
+
     my $rates  = $airespace->client_txrate() || {};
     my $protos = $airespace->cd11_proto()    || {};
     my $bws    = $airespace->cd11n_ch_bw()   || {};
-    
+
     my $cd11_txrate = {};
     foreach my $idx ( keys %$rates ) {
 	my $rate = $rates->{$idx} || '0.0';
@@ -193,7 +193,7 @@ sub cd11_txrate {
 
 sub munge_cd11n_ch_bw {
     my $bw = shift;
-    
+
     if ( $bw =~ /forty/ ) {
 	return 40;
     }
@@ -202,7 +202,7 @@ sub munge_cd11n_ch_bw {
 
 sub munge_cd11_proto {
     my $bw = shift;
-    
+
     return 2 if ( $bw eq 'dot11n5' );
 
     return 1;
@@ -260,7 +260,7 @@ Eric Miller
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
 
     or die "Can't connect to DestHost.\n";
 
@@ -269,11 +269,11 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from 
+Provides abstraction to the configuration information obtainable from
 Cisco (Airespace) Wireless Controllers through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $airespace = new SNMP::Info::Layer2::Airespace(...);
 
@@ -346,7 +346,7 @@ See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=over 
+=over
 
 =item cd11_mac()
 
@@ -356,7 +356,7 @@ Returns client radio interface MAC addresses.
 
 Returns client transmission speed in Mbs.
 
-=back 
+=back
 
 =head2 Overrides
 

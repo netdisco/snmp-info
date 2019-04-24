@@ -39,9 +39,9 @@ use SNMP::Info::Layer2::Cisco;
 @SNMP::Info::Layer2::C2900::ISA = qw/SNMP::Info::Layer2::Cisco Exporter/;
 @SNMP::Info::Layer2::C2900::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::Cisco::GLOBALS,
@@ -225,7 +225,7 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $c2900 = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
@@ -233,7 +233,7 @@ Max Baker
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $c2900->class();
@@ -241,11 +241,11 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
-C2900 device through SNMP. 
+Provides abstraction to the configuration information obtainable from a
+C2900 device through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $c2900 = new SNMP::Info::Layer2::C2900(...);
 
@@ -309,8 +309,8 @@ Returns reference to the map between IID and physical Port.
 On the 2900 devices i_name isn't reliable, so we override to just the
 description.
 
-Next all dots are changed for forward slashes so that the physical port name 
-is the same as the broad-casted CDP port name. 
+Next all dots are changed for forward slashes so that the physical port name
+is the same as the broad-casted CDP port name.
     (Ethernet0.1 -> Ethernet0/1)
 
 Also, any weird characters are removed, as I saw a few pop up.
@@ -333,7 +333,7 @@ Returns reference to hash of IIDs to admin speed setting.
 
 =back
 
-=head2 F<C2900-MIB> Port Entry Table 
+=head2 F<C2900-MIB> Port Entry Table
 
 =over
 
@@ -357,7 +357,7 @@ Gives admin setting for Duplex Info
 
 =item $c2900->c2900_p_speed_admin()
 
-Gives Admin speed of port 
+Gives Admin speed of port
 
 (C<c2900PortAdminSpeed>)
 
@@ -372,7 +372,7 @@ See L<SNMP::Info::Layer2::Cisco/"TABLE METHODS"> for details.
 These are methods that provide SNMP set functionality for overridden methods
 or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
-operations. 
+operations.
 
 =over
 
@@ -387,7 +387,7 @@ port C<ifIndex>.
 
     Example:
     my %if_map = reverse %{$c2900->interfaces()};
-    $c2900->set_i_speed_admin('auto', $if_map{'FastEthernet0/1'}) 
+    $c2900->set_i_speed_admin('auto', $if_map{'FastEthernet0/1'})
         or die "Couldn't change port speed. ",$c2900->error(1);
 
 =item $c2900->set_i_duplex_admin(duplex, ifIndex)
@@ -401,7 +401,7 @@ port C<ifIndex>.
 
     Example:
     my %if_map = reverse %{$c2900->interfaces()};
-    $c2900->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'}) 
+    $c2900->set_i_duplex_admin('auto', $if_map{'FastEthernet0/1'})
         or die "Couldn't change port duplex. ",$c2900->error(1);
 
 =back

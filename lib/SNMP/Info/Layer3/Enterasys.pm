@@ -42,9 +42,9 @@ use SNMP::Info::Layer3;
     Exporter/;
 @SNMP::Info::Layer3::Enterasys::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %GLOBALS %FUNCS $INIT %MIBS %MUNGE/;
+our ($VERSION, $DEBUG, %GLOBALS, %FUNCS, $INIT, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS, %SNMP::Info::CDP::MIBS,
@@ -207,7 +207,7 @@ sub lldp_if {
     my $addr    = $lldp->lldp_rem_pid($partial) || {};
     my $i_descr = $lldp->ifName() || {};
     my %r_i_descr = reverse %$i_descr;
-    
+
     my %lldp_if;
     foreach my $key ( keys %$addr ) {
         my @aOID = split( '\.', $key );
@@ -221,7 +221,7 @@ sub lldp_if {
         if ( exists $r_i_descr{$desc} ) {
             $port = $r_i_descr{$desc};
         }
-        
+
         $lldp_if{$key} = $port;
     }
     return \%lldp_if;
@@ -261,14 +261,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $enterasys = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $enterasys->class();
@@ -277,11 +277,11 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from an 
-Enterasys device through SNMP. 
+Provides abstraction to the configuration information obtainable from an
+Enterasys device through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $enterasys = new SNMP::Info::Layer3::Enterasys(...);
 

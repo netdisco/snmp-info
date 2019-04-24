@@ -36,7 +36,7 @@ use SNMP::Info;
 @SNMP::Info::IPv6::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::IPv6::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE $METHOD/;
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE, $METHOD);
 
 use constant {
     IPMIB   => 1,
@@ -44,19 +44,19 @@ use constant {
     IPV6MIB => 3,
 };
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 
 
-%MIBS = ( 
+%MIBS = (
     'IP-MIB'            => 'ipv6InterfaceTableLastChange',
     'IPV6-MIB'          => 'ipv6IfTableLastChange',
-    'CISCO-IETF-IP-MIB' => 'cInetNetToMediaNetAddress', 
+    'CISCO-IETF-IP-MIB' => 'cInetNetToMediaNetAddress',
 );
 
 %GLOBALS = ();
 
-%FUNCS = ( 
+%FUNCS = (
     'ip_n2p_phys_addr'  => 'ipNetToPhysicalPhysAddress',    # IP-MIB
     'c_inet_phys_addr'  => 'cInetNetToMediaPhysAddress',    # CISCO-IETF-IP-MIB
     'i6_n2p_phys_addr'  => 'ipv6NetToMediaPhysAddress',     # IPV6-MIB
@@ -70,10 +70,10 @@ $VERSION = '3.64';
     'i6_n2p_phys_state' => 'ipv6IfNetToMediaState',         # IPV6-MIB
 
     'ip_pfx_origin'     => 'ipAddressPrefixOrigin',         # IP-MIB
-    'c_pfx_origin'      => 'cIpAddressPfxOrigin',           # CISCO-IETF-IP-MIB 
+    'c_pfx_origin'      => 'cIpAddressPfxOrigin',           # CISCO-IETF-IP-MIB
 
     'ip_addr6_pfx'      => 'ipAddressPrefix',               # IP-MIB
-    'c_addr6_pfx'       => 'cIpAddressPrefix',              # CISCO-IETF-IP-MIB 
+    'c_addr6_pfx'       => 'cIpAddressPrefix',              # CISCO-IETF-IP-MIB
 
     # Commented out are not-accessible according to MIB
     #'ip_addr6_pfxlen'   => 'ipAddressPrefixLength',        # IP-MIB
@@ -81,7 +81,7 @@ $VERSION = '3.64';
     'i6_addr_pfxlen'    => 'ipv6AddrPfxLength',             # IPV6-MIB
 
     'ip_addr6_index'    => 'ipAddressIfIndex',              # IP-MIB
-    'c_addr6_index'     => 'cIpAddressIfIndex',             # CISCO-IETF-IP-MIB 
+    'c_addr6_index'     => 'cIpAddressIfIndex',             # CISCO-IETF-IP-MIB
 
     'ip_addr6_type'     => 'ipAddressType',                 # IP-MIB
     'c_addr6_type'      => 'cIpAddressType',                # CISCO-IETF-IP-MIB
@@ -106,8 +106,8 @@ sub ipv6_n2p_mac {
     foreach my $row (keys %$phys_addr) {
         if ($row =~ /^(\d+)\.(\d+)\.(\d+)\.([\d\.]+)$/) {
             my $ifindex = $1; my $addrtype = $2; my $addrsize = $3; my $v6addr = $4;
-            if ($info::METHOD == IPV6MIB) { 
-                # IPV6-MIB doesn't include the addrtype in the index; 
+            if ($info::METHOD == IPV6MIB) {
+                # IPV6-MIB doesn't include the addrtype in the index;
                 # also, address syntax is IPv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
                 $v6addr = join('.', $addrtype, $addrsize, $v6addr);
                 $addrtype = 2;
@@ -133,8 +133,8 @@ sub ipv6_n2p_addr {
     foreach my $row (keys %$net_addr) {
         if ($row =~ /^(\d+)\.(\d+)\.(\d+)\.([\d\.]+)$/) {
             my $ifindex = $1; my $addrtype = $2; my $addrsize = $3; my $v6addr = $4;
-            if ($info::METHOD == IPV6MIB) { 
-                # IPV6-MIB doesn't include the addrtype in the index; 
+            if ($info::METHOD == IPV6MIB) {
+                # IPV6-MIB doesn't include the addrtype in the index;
                 # also, address syntax is IPv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
                 $v6addr = join('.', $addrtype, $addrsize, $v6addr);
                 $addrtype = 2;
@@ -142,7 +142,7 @@ sub ipv6_n2p_addr {
             if ($addrtype == 2) { # IPv6
                 my $v6_packed = pack("C*", split(/\./, $v6addr));
                 if (length($v6_packed) == 15) {
-                    # Workaround for some some IP-MIB implementations, eg on Cisco Nexus: no explicit addrsize, 
+                    # Workaround for some some IP-MIB implementations, eg on Cisco Nexus: no explicit addrsize,
                     # so what we've collected in that variable is actually the first byte of the address.
                     $v6_packed = pack('C', $addrsize) . $v6_packed;
                 }
@@ -177,8 +177,8 @@ sub ipv6_n2p_if {
     foreach my $row (keys %$phys_addr) {
         if ($row =~ /^(\d+)\.(\d+)\.(\d+)\.([\d\.]+)$/) {
             my $ifindex = $1; my $addrtype = $2; my $addrsize = $3; my $v6addr = $4;
-            if ($info::METHOD == IPV6MIB) { 
-                # IPV6-MIB doesn't include the addrtype in the index; 
+            if ($info::METHOD == IPV6MIB) {
+                # IPV6-MIB doesn't include the addrtype in the index;
                 # also, address syntax is IPv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
                 $v6addr = join('.', $addrtype, $addrsize, $v6addr);
                 $addrtype = 2;
@@ -204,8 +204,8 @@ sub ipv6_n2p_type {
     foreach my $row (keys %$phys_type) {
         if ($row =~ /^(\d+)\.(\d+)\.(\d+)\.([\d\.]+)$/) {
             my $ifindex = $1; my $addrtype = $2; my $addrsize = $3; my $v6addr = $4;
-            if ($info::METHOD == IPV6MIB) { 
-                # IPV6-MIB doesn't include the addrtype in the index; 
+            if ($info::METHOD == IPV6MIB) {
+                # IPV6-MIB doesn't include the addrtype in the index;
                 # also, address syntax is IPv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
                 $v6addr = join('.', $addrtype, $addrsize, $v6addr);
                 $addrtype = 2;
@@ -231,8 +231,8 @@ sub ipv6_n2p_state {
     foreach my $row (keys %$phys_state) {
         if ($row =~ /^(\d+)\.(\d+)\.(\d+)\.([\d\.]+)$/) {
             my $ifindex = $1; my $addrtype = $2; my $addrsize = $3; my $v6addr = $4;
-            if ($info::METHOD == IPV6MIB) { 
-                # IPV6-MIB doesn't include the addrtype in the index; 
+            if ($info::METHOD == IPV6MIB) {
+                # IPV6-MIB doesn't include the addrtype in the index;
                 # also, address syntax is IPv6Address (fixed 16 bytes) and not InetAddress (length field followed by address bytes)
                 $v6addr = join('.', $addrtype, $addrsize, $v6addr);
                 $addrtype = 2;
@@ -442,14 +442,14 @@ Jeroen van Ingen and Carlos Vicente
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $info = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $info->class();
@@ -457,12 +457,12 @@ Jeroen van Ingen and Carlos Vicente
 
 =head1 DESCRIPTION
 
-The SNMP::Info::IPv6 class implements functions to for mapping IPv6 addresses 
+The SNMP::Info::IPv6 class implements functions to for mapping IPv6 addresses
 to MAC addresses, interfaces and more. It will use data from the F<IP-MIB>,
 F<IPV6-MIB>, or the F<CISCO-IETF-IP-MIB>, whichever is supported by the
 device.
 
-This class is inherited by Info::Layer3 to provide IPv6 node tracking across  
+This class is inherited by Info::Layer3 to provide IPv6 node tracking across
 device classes.
 
 For debugging purposes you can call this class directly as you would
@@ -519,7 +519,7 @@ Maps an IPv6 address to its type (unicast, anycast, etc.)
 
 Maps an IPv6 prefix with its origin (manual, well-known, dhcp, etc.)
 
-=item $info->ipv6_addr_prefix() 
+=item $info->ipv6_addr_prefix()
 
 Maps IPv6 addresses with their prefixes
 
@@ -545,7 +545,7 @@ Maps an address of type C<cInetNetToMediaNetAddressType> on interface C<ifIndex>
 
 =head1 MUNGES
 
-=over 
+=over
 
 =item munge_physaddr()
 

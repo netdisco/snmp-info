@@ -37,9 +37,9 @@ use SNMP::Info;
 @SNMP::Info::LLDP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::LLDP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     'LLDP-MIB'          => 'lldpLocSysCapEnabled',
@@ -141,7 +141,7 @@ sub lldp_if {
         next unless $port;
 
         # Local LLDP port may not equate to ifIndex, see LldpPortNumber
-        # TEXTUAL-CONVENTION in LLDP-MIB. Cross reference lldpLocPortDesc 
+        # TEXTUAL-CONVENTION in LLDP-MIB. Cross reference lldpLocPortDesc
         # with ifDescr and ifAlias to get ifIndex, prefer ifDescr over
         # ifAlias because using cross ref with description is correct
         # behavior according to the LLDP-MIB. Some devices (eg H3C gear)
@@ -455,10 +455,10 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- my $lldp = new SNMP::Info ( 
+ my $lldp = new SNMP::Info (
                              AutoSpecify => 1,
                              Debug       => 1,
-                             DestHost    => 'router', 
+                             DestHost    => 'router',
                              Community   => 'public',
                              Version     => 2
                            );
@@ -484,7 +484,7 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-SNMP::Info::LLDP is a subclass of SNMP::Info that provides an object oriented 
+SNMP::Info::LLDP is a subclass of SNMP::Info that provides an object oriented
 interface to LLDP information through SNMP.
 
 LLDP is a Layer 2 protocol that allows a network device to advertise its
@@ -520,7 +520,7 @@ These are methods that return scalar values from SNMP
 
 =item $lldp->hasLLDP()
 
-Is LLDP is active in this device?  
+Is LLDP is active in this device?
 
 Note:  LLDP may be active, but nothing in C<lldpRemoteSystemsData> Tables so
 the device would not return any useful topology information.
@@ -531,7 +531,7 @@ The string value used to identify the system name of the local system.  If the
 local agent supports IETF RFC 3418, C<lldpLocSysName> object should have the
 same value of C<sysName> object.
 
-Nulls are removed before the value is returned. 
+Nulls are removed before the value is returned.
 
 (C<lldpLocSysName>)
 
@@ -545,7 +545,7 @@ Nulls are removed before the value is returned.
 
 (C<lldpLocSysDesc>)
 
-=item  $lldp->lldp_sys_cap() 
+=item  $lldp->lldp_sys_cap()
 
 Returns which system capabilities are enabled on the local system.  Results
 are munged into an ascii binary string, LSB.  Each digit represents a bit
@@ -595,8 +595,8 @@ with the remote system.
 
 =item $lldp->lldp_if()
 
-Returns the mapping to the SNMP Interface Table. Tries to cross reference 
-(C<lldpLocPortDesc>) with (C<ifDescr>) and (C<ifAlias>) to get (C<ifIndex>), 
+Returns the mapping to the SNMP Interface Table. Tries to cross reference
+(C<lldpLocPortDesc>) with (C<ifDescr>) and (C<ifAlias>) to get (C<ifIndex>),
 if unable defaults to (C<lldpRemLocalPortNum>).
 
 =item  $lldp->lldp_ip()
@@ -611,7 +611,7 @@ use lldp_addr if you don't care about return address type.
 
 =item  $lldp->lldp_mac()
 
-Returns remote (management) MAC address, if known.  Returns for all other 
+Returns remote (management) MAC address, if known.  Returns for all other
 address types, use lldp_addr if you don't care about return address type.
 
 =item  $lldp->lldp_addr()
@@ -632,13 +632,13 @@ Returns remote port ID
 Tries to return something useful from C<lldp_rem_sysdesc()> or
 C<lldp_rem_sysname()>.
 
-=item  $lldp->lldp_cap() 
+=item  $lldp->lldp_cap()
 
 Returns hash of arrays with each array containing the system capabilities
 supported by the remote system.  Possible elements in the array are
 enumerated from C<LldpSystemCapabilitiesMap>.
 
-=item  $lldp->lldp_media_cap() 
+=item  $lldp->lldp_media_cap()
 
 Returns hash of arrays with each array containing the media capabilities
 supported by the remote system.  Possible elements in the array are
@@ -683,7 +683,7 @@ the remote system.
 Returns the string value used to identify the description of the given port
 associated with the remote system.
 
-Nulls are removed before the value is returned. 
+Nulls are removed before the value is returned.
 
 (C<lldpRemPortDesc>)
 
@@ -692,7 +692,7 @@ Nulls are removed before the value is returned.
 Returns the string value used to identify the system name of the remote
 system.
 
-Nulls are removed before the value is returned. 
+Nulls are removed before the value is returned.
 
 (C<lldpRemSysName>)
 
@@ -701,70 +701,70 @@ Nulls are removed before the value is returned.
 Returns the string value used to identify the system description of the
 remote system.
 
-Nulls are removed before the value is returned. 
+Nulls are removed before the value is returned.
 
 (C<lldpRemSysDesc>)
 
 =item $lldp->lldp_rem_hw_rev()
 
 Returns the string value used to identify the hardware revision of the
-remote system. Nulls are removed before the value is returned. 
+remote system. Nulls are removed before the value is returned.
 
 (C<lldpXMedRemHardwareRev>)
 
 =item $lldp->lldp_rem_fw_rev()
 
 Returns the string value used to identify the firmware revision of the
-remote system. Nulls are removed before the value is returned. 
+remote system. Nulls are removed before the value is returned.
 
 (C<lldpXMedRemHardwareRev>)
 
 =item $lldp->lldp_rem_sw_rev()
 
 Returns the string value used to identify the software revision of the
-remote system. Nulls are removed before the value is returned. 
+remote system. Nulls are removed before the value is returned.
 
 (C<lldpXMedRemSoftwareRev>)
 
 =item $lldp->lldp_rem_serial()
 
 Returns the string value used to identify the serial number of the
-remote system. Nulls are removed before the value is returned. 
+remote system. Nulls are removed before the value is returned.
 
 (C<lldpXMedRemSerialNum>)
 
 =item $lldp->lldp_rem_vendor()
 
 Returns the string value used to identify the manufacturer of the
-remote system. Nulls are removed before the value is returned. 
+remote system. Nulls are removed before the value is returned.
 
 (C<lldpXMedRemMfgName>)
 
 =item $lldp->lldp_rem_asset()
 
 Returns the string value used to identify the asset number of the
-remote system. Nulls are removed before the value is returned. 
+remote system. Nulls are removed before the value is returned.
 
 (C<lldpXMedRemAssetID>)
 
 =item $lldp->lldp_rem_model()
 
 Returns the string value used to identify the model of the
-remote system. Nulls are removed before the value is returned. 
+remote system. Nulls are removed before the value is returned.
 
 (C<lldpXMedRemModelName>)
 
-=item  $lldp->lldp_rem_media_cap_spt() 
+=item  $lldp->lldp_rem_media_cap_spt()
 
 Returns which media capabilities are supported on the remote system. Results
 are munged into an ascii binary string, LSB.
 
-=item  $lldp->lldp_rem_media_cap() 
+=item  $lldp->lldp_rem_media_cap()
 
 Returns which media capabilities are enabled on the remote system. Results
 are munged into an ascii binary string, LSB.
 
-=item  $lldp->lldp_rem_sys_cap() 
+=item  $lldp->lldp_rem_sys_cap()
 
 Returns which system capabilities are enabled on the remote system.  Results
 are munged into an ascii binary string, LSB.  Each digit represents a bit

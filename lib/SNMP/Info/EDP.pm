@@ -37,9 +37,9 @@ use SNMP::Info;
 @SNMP::Info::EDP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::EDP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     'EXTREME-EDP-MIB'   => 'extremeEdpPortIfIndex',
@@ -64,7 +64,7 @@ sub hasEDP {
     my $edp_ip = $edp->extremeEdpNeighborVlanIpAddress() || {};
 
     return 1 if ( scalar( keys %$edp_ip ) );
-    
+
     return;
 }
 
@@ -80,7 +80,7 @@ sub _edp_index {
     my $edp = shift;
 
     my $edp_ip  = $edp->extremeEdpNeighborVlanIpAddress() || {};
-    
+
     my %edp_index;
     foreach my $key ( keys %$edp_ip ) {
         my $ip = $edp_ip->{$key};
@@ -103,7 +103,7 @@ sub edp_if {
         $iid = $1 if $iid =~ /^(\d+)\./;
         $edp_if{$key} = $iid;
     }
- 
+
   return \%edp_if;
 }
 
@@ -193,10 +193,10 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- my $edp = new SNMP::Info ( 
+ my $edp = new SNMP::Info (
                              AutoSpecify => 1,
                              Debug       => 1,
-                             DestHost    => 'router', 
+                             DestHost    => 'router',
                              Community   => 'public',
                              Version     => 2
                            );
@@ -222,7 +222,7 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-SNMP::Info::EDP is a subclass of SNMP::Info that provides an object oriented 
+SNMP::Info::EDP is a subclass of SNMP::Info that provides an object oriented
 interface to EDP information through SNMP.
 
 EDP is a Layer 2 protocol that allows a network device to advertise its
@@ -251,7 +251,7 @@ These are methods that return scalar values from SNMP
 
 =item $edp->hasEDP()
 
-Is EDP is active in this device?  
+Is EDP is active in this device?
 
 =back
 
@@ -285,7 +285,7 @@ Returns remote port ID
 
 Returns the operating system version of the remote system.
 
-Nulls are removed before the value is returned. 
+Nulls are removed before the value is returned.
 
 (C<extremeEdpNeighborSoftwareVersion>)
 

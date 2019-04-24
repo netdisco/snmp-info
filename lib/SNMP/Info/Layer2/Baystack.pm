@@ -44,9 +44,9 @@ use SNMP::Info::Layer3;
     SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer2::Baystack::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,    %SNMP::Info::LLDP::MIBS,
@@ -136,7 +136,7 @@ sub model {
     return '303' if ( defined $descr and $descr =~ /\D303\D/ );
     return '304' if ( defined $descr and $descr =~ /\D304\D/ );
     return 'BPS' if ( $model =~ /BPS2000/i );
-    
+
     # Pull sreg- from all
     $model =~ s/^sreg-//;
     # Strip ES/ERS/BayStack etc. from those families
@@ -341,7 +341,7 @@ sub peth_port_ifindex {
     return \%peth_port_ifindex;
 }
 
-# Currently only ERS 4800 v5.8+ support the rcBridgeSpbmMacTable 
+# Currently only ERS 4800 v5.8+ support the rcBridgeSpbmMacTable
 # which holds the FDB for a SPBM edge deployment.
 #
 # Q-BRIDGE still holds some entries when the rcBridgeSpbmMacTable is in use
@@ -353,7 +353,7 @@ sub fw_mac {
     my $qb = $rapidcity->SUPER::fw_mac() || {};
     my $spbm = $rapidcity->rc_spbm_fw_mac() || {};
     my $fw_mac = { %$qb, %$spbm };
-    
+
     return $fw_mac;
 }
 
@@ -363,17 +363,17 @@ sub fw_port {
     my $qb = $rapidcity->SUPER::fw_port() || {};
     my $spbm = $rapidcity->rc_spbm_fw_port() || {};
     my $fw_port = { %$qb, %$spbm };
-    
+
     return $fw_port;
 }
 
 sub fw_status {
     my $rapidcity = shift;
 
-    my $qb = $rapidcity->SUPER::fw_status() || {};    
+    my $qb = $rapidcity->SUPER::fw_status() || {};
     my $spbm = $rapidcity->rc_spbm_fw_status() || {};
     my $fw_status = { %$qb, %$spbm };
-    
+
     return $fw_status;
 }
 
@@ -383,7 +383,7 @@ sub qb_fw_vlan {
     my $qb = $rapidcity->SUPER::qb_fw_vlan() || {};
     my $spbm = $rapidcity->rc_spbm_fw_vlan() || {};
     my $qb_fw_vlan = { %$qb, %$spbm };
-    
+
     return $qb_fw_vlan;
 }
 
@@ -417,7 +417,7 @@ Eric Miller
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
   or die "Can't connect to DestHost.\n";
 
  my $class = $baystack->class();
@@ -427,10 +427,10 @@ Eric Miller
 
 Provides abstraction to the configuration information obtainable from an
 Avaya Ethernet Switch (formerly Nortel/Bay Baystack) and VSP 7000 series
-through SNMP. 
+through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $baystack = new SNMP::Info::Layer2::Baystack(...);
 
@@ -500,7 +500,7 @@ Returns the firmware version extracted from C<sysDescr>.
 
 =item $baystack->stp_ver()
 
-Returns the particular STP version running on this device.  
+Returns the particular STP version running on this device.
 
 Values: C<nortelStpg>, C<pvst>, C<rstp>, C<mstp>, C<ieee8021d>
 
@@ -560,10 +560,10 @@ Returns reference to the map between IID and physical Port.
 
   Slot and port numbers on the Baystack switches are determined by the
   formula:
-  
+
   port = (Interface index % Index factor)
   slot = (int(Interface index / Index factor)) + Slot offset
- 
+
   The physical port name is returned as slot.port.
 
 =item $baystack->i_ignore()
@@ -572,9 +572,9 @@ Returns reference to hash of IIDs to ignore.
 
 =item $baystack->i_mac()
 
-Returns the C<ifPhysAddress> table entries. 
+Returns the C<ifPhysAddress> table entries.
 
-Removes all entries matching '00:00:00:00:00:00' -- Certain 
+Removes all entries matching '00:00:00:00:00:00' -- Certain
 revisions of Baystack firmware report all zeros for each port mac.
 
 =item $baystack->i_name()
@@ -602,60 +602,60 @@ L<SNMP::Info::NortelStack/"TABLE METHODS"> for details on ns_e_* methods.
 
 =over
 
-=item $baystack->e_index() 
+=item $baystack->e_index()
 
 If the device doesn't support C<entPhysicalDescr>, this will try ns_e_index().
 Note that this is based on C<entPhysicalDescr> due to implementation
 details of SNMP::Info::Entity::e_index().
 
-=item $baystack->e_class() 
+=item $baystack->e_class()
 
 If the device doesn't support C<entPhysicalClass>, this will try ns_e_class().
 
-=item $baystack->e_descr() 
+=item $baystack->e_descr()
 
 If the device doesn't support C<entPhysicalDescr>, this will try ns_e_descr().
 
-=item $baystack->e_name() 
+=item $baystack->e_name()
 
 If the device doesn't support C<entPhysicalName>, this will try ns_e_name().
 
-=item $baystack->e_fwver() 
+=item $baystack->e_fwver()
 
 If the device doesn't support C<entPhysicalFirmwareRev>, this will try
 ns_e_fwver().
 
-=item $baystack->e_hwver() 
+=item $baystack->e_hwver()
 
 If the device doesn't support C<entPhysicalHardwareRev>, this will try
 ns_e_hwver().
 
-=item $baystack->e_parent() 
+=item $baystack->e_parent()
 
 If the device doesn't support C<entPhysicalContainedIn>, this will try
 ns_e_parent().
 
-=item $baystack->e_pos() 
+=item $baystack->e_pos()
 
 If the device doesn't support C<entPhysicalParentRelPos>, this will try
 ns_e_pos().
 
-=item $baystack->e_serial() 
+=item $baystack->e_serial()
 
 If the device doesn't support C<entPhysicalSerialNum>, this will try
 ns_e_serial().
 
-=item $baystack->e_swver() 
+=item $baystack->e_swver()
 
 If the device doesn't support C<entPhysicalSoftwareRev>, this will try
 ns_e_swver().
 
-=item $baystack->e_type() 
+=item $baystack->e_type()
 
 If the device doesn't support C<entPhysicalVendorType>, this will try
 ns_e_type().
 
-=item $baystack->e_vendor() 
+=item $baystack->e_vendor()
 
 If the device doesn't support C<entPhysicalMfgName>, this will try
 ns_e_vendor().

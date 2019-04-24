@@ -40,9 +40,9 @@ use SNMP::Info::Layer2;
     = qw/SNMP::Info::SONMP SNMP::Info::IEEE802dot11 SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::NAP222x::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS, %SNMP::Info::IEEE802dot11::MIBS,
@@ -375,14 +375,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $nap222x = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $nap222x->class();
@@ -391,10 +391,10 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a Nortel
-2220 series wireless Access Points through SNMP. 
+2220 series wireless Access Points through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $nap222x = new SNMP::Info::Layer2::NAP222x(...);
 
@@ -526,7 +526,7 @@ to a hash.
 
 =item $nap222x->interfaces()
 
-Returns reference to map of IIDs to physical ports. 
+Returns reference to map of IIDs to physical ports.
 
 =item $nap222x->i_duplex()
 
@@ -548,7 +548,7 @@ Returns a human name based upon port description.
 
 Returns a mapping between C<ifIndex> and the Bridge Table.  This does not
 exist in the MIB and bridge port index is not the same as C<ifIndex> so it is
-created. 
+created.
 
 =item $nap222x->i_ssidlist()
 

@@ -37,9 +37,9 @@ use SNMP::Info;
 @SNMP::Info::CiscoPortSecurity::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoPortSecurity::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE %PAECAPABILITIES/;
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE, %PAECAPABILITIES);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     'CISCO-PORT-SECURITY-MIB' => 'ciscoPortSecurityMIB',
@@ -152,14 +152,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $cps = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $cps->class();
@@ -195,10 +195,6 @@ None.
 =head1 GLOBALS
 
 These are methods that return scalar values from SNMP
-
-=over
-
-=back
 
 =head2 F<CISCO-PORT-SECURITY-MIB> globals
 

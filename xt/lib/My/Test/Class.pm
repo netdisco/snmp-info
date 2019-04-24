@@ -73,6 +73,8 @@ sub setup : Tests(setup) {
     'Community'   => 'public',
     'Version'     => 2,
     'Session'     => $sess,
+    'Debug'       => ($ENV{INFO_TRACE} || 0),
+    'DebugSNMP'   => ($ENV{SNMP_TRACE} || 0),
   );
 }
 

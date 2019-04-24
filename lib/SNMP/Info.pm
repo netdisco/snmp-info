@@ -21,11 +21,11 @@ use NetAddr::IP::Lite ':lower';
 @SNMP::Info::ISA       = qw/Exporter/;
 @SNMP::Info::EXPORT_OK = qw//;
 
-use vars
-    qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG %SPEED_MAP
-    $NOSUCH $BIGINT $REPEATERS/;
+our
+    ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG, %SPEED_MAP,
+     $NOSUCH, $BIGINT, $REPEATERS);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.64
+SNMP::Info - Version 3.67
 
 =head1 AUTHOR
 
@@ -69,8 +69,8 @@ list any missing functionality (such as neighbor discovery tables).
  my $err = $info->error();
  die "SNMP Community or Version probably wrong connecting to device. $err\n" if defined $err;
 
- $name  = $info->name();
- $class = $info->class();
+ my $name  = $info->name();
+ my $class = $info->class();
  print "SNMP::Info is using this device class : $class\n";
 
  # Find out the Duplex status for the ports
@@ -260,7 +260,7 @@ See documentation in L<SNMP::Info::AMAP> for details.
 
 =item SNMP::Info::Bridge
 
-F<BRIDGE-MIB> (RFC1286).  F<QBRIDGE-MIB>. Inherited by devices with Layer2
+F<BRIDGE-MIB> (RFC1286).  F<Q-BRIDGE-MIB>. Inherited by devices with Layer2
 support.
 
 See documentation in L<SNMP::Info::Bridge> for details.
@@ -338,6 +338,12 @@ F<CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB>
 
 See documentation in L<SNMP::Info::CiscoVTP> for details.
 
+=item SNMP::Info::DocsisHE
+
+SNMP Interface for DOCSIS CMTS
+
+See documentation in L<SNMP::Info::DocsisHE> for details.
+
 =item SNMP::Info::EDP
 
 Extreme Discovery Protocol.  F<EXTREME-EDP-MIB>
@@ -363,14 +369,6 @@ Foundry (Brocade) Discovery Protocol.  F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
 See documentation in L<SNMP::Info::FDP> for details.
 
-=item SNMP::Info::IPv6
-
-SNMP Interface for obtaining configured IPv6 addresses and mapping IPv6
-addresses to MAC addresses and interfaces, using information from F<IP-MIB>,
-F<IPV6-MIB> and/or F<CISCO-IETF-IP-MIB>.
-
-See documentation in L<SNMP::Info::IPv6> for details.
-
 =item SNMP::Info::IEEE802dot11
 
 F<IEEE802dot11-MIB>.  A collection of OIDs providing information about
@@ -384,6 +382,14 @@ SNMP Interface to IEEE Aggregated Links.  F<IEEE8023-LAG-MIB>
 
 See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
 
+=item SNMP::Info::IPv6
+
+SNMP Interface for obtaining configured IPv6 addresses and mapping IPv6
+addresses to MAC addresses and interfaces, using information from F<IP-MIB>,
+F<IPV6-MIB> and/or F<CISCO-IETF-IP-MIB>.
+
+See documentation in L<SNMP::Info::IPv6> for details.
+
 =item SNMP::Info::LLDP
 
 F<LLDP-MIB>, F<LLDP-EXT-DOT1-MIB>, and F<LLDP-EXT-DOT3-MIB>.  Link Layer
@@ -394,7 +400,7 @@ See documentation in L<SNMP::Info::LLDP> for details.
 =item SNMP::Info::MAU
 
 F<MAU-MIB> (RFC2668).  Some Layer2 devices use this for extended Ethernet
-(Media Access Unit) interface information.
+(Medium Attachment Unit) interface information.
 
 See documentation in L<SNMP::Info::MAU> for details.
 
@@ -498,7 +504,7 @@ See documentation in L<SNMP::Info::Layer2> for details.
 
 =item SNMP::Info::Layer2::3Com
 
-SNMP::Info::Layer2::3Com - SNMP Interface to L2 3Com Switches
+Subclass for L2 3Com Switches.
 
 See documentation in L<SNMP::Info::Layer2::3Com> for details.
 
@@ -523,7 +529,7 @@ See documentation in L<SNMP::Info::Layer2::Airespace> for details.
 =item SNMP::Info::Layer2::Aironet
 
 Class for Cisco Aironet wireless devices that run IOS.  See also
-Layer3::Aironet for Aironet devices that don't run IOS.
+L<SNMP::Info::Layer3::Aironet> for Aironet devices that don't run IOS.
 
 See documentation in L<SNMP::Info::Layer2::Aironet> for details.
 
@@ -547,10 +553,6 @@ includes 303, 304, 350, 380, 410, 420, 425, 450, 460, 470 series,
 Business Policy Switch (BPS), VSP 7000 series, and probably others.
 
 See documentation in L<SNMP::Info::Layer2::Baystack> for details.
-
-=item SNMP::Info::Layer2::Kentrox
-
-Class for Kentrox DataSMART DSU/CSU. See L<SNMP::Info::Layer2::Kentrox> for details.
 
 =item SNMP::Info::Layer2::C1900
 
@@ -620,6 +622,12 @@ See documentation in L<SNMP::Info::Layer2::HP4000> for details.
 Subclass for HP Virtual Connect Switches
 
 See documentation in L<SNMP::Info::Layer2::HPVC> for details.
+
+=item SNMP::Info::Layer2::Kentrox
+
+Class for Kentrox DataSMART DSU/CSU.
+
+See documentation in L<SNMP::Info::Layer2::Kentrox> for details.
 
 =item SNMP::Info::Layer2::N2270
 
@@ -698,7 +706,7 @@ are usually older devices.
 
 MIBs for these devices now included in v2.tar.gz available from ftp.cisco.com.
 
-Note Layer2::Aironet
+Note L<SNMP::Info::Layer2::Aironet>
 
 See documentation in L<SNMP::Info::Layer3::Aironet> for details.
 
@@ -763,7 +771,7 @@ See documentation in L<SNMP::Info::Layer3::C6500> for details.
 
 =item SNMP::Info::Layer3::CheckPoint
 
-Subclass for CheckPoint devices
+Subclass for CheckPoint devices.
 
 See documentation in L<SNMP::Info::Layer3::CheckPoint> for details.
 
@@ -887,21 +895,28 @@ See documentation in L<SNMP::Info::Layer3::Huawei> for details.
 =item SNMP::Info::Layer3::IBMGbTor
 
 SNMP Interface to IBM Rackswitch (formerly Blade Network Technologies)
-network devices.
+network devices. Lenovo acquired these from IBM and is now selling
+them under the Lenovo brand.
 
 See documentation in L<SNMP::Info::Layer3::IBMGbTor> for details.
 
 =item SNMP::Info::Layer3::Juniper
 
-Subclass for Juniper devices
+Subclass for Juniper devices.
 
 See documentation in L<SNMP::Info::Layer3::Juniper> for details.
 
 =item SNMP::Info::Layer3::Lantronix
 
-Subclass for Lantronix devices
+Subclass for Lantronix devices.
 
 See documentation in L<SNMP::Info::Layer3::Lantronix> for details.
+
+=item SNMP::Info::Layer3::Lenovo
+
+Subclass for Lenovo switches running CNOS.
+
+See documentation in L<SNMP::Info::Layer3::Lenovo> for details.
 
 =item SNMP::Info::Layer3::Microsoft
 
@@ -935,13 +950,13 @@ See documentation in L<SNMP::Info::Layer3::Netscreen> for details.
 
 =item SNMP::Info::Layer3::Nexus
 
-Subclass for Cisco Nexus devices running NX-OS
+Subclass for Cisco Nexus devices running NX-OS.
 
 See documentation in L<SNMP::Info::Layer3::Nexus> for details.
 
 =item SNMP::Info::Layer3::OneAccess
 
-Subclass for OneAccess Quidway switches
+Subclass for OneAccess routers.
 
 See documentation in L<SNMP::Info::Layer3::OneAccess> for details.
 
@@ -984,13 +999,15 @@ See documentation in L<SNMP::Info::Layer3::Redlion> for details.
 
 =item SNMP::Info::Layer3::SonicWALL
 
-Subclass for generic SonicWALL devices. See documentation in
-L<SNMP::Info::Layer3::SonicWALL> for details.
+Subclass for generic SonicWALL devices.
+
+See documentation in L<SNMP::Info::Layer3::SonicWALL> for details.
 
 =item SNMP::Info::Layer3::Steelhead
 
-Subclass for  Riverbed Steelhead WAN optimization appliances. See
-documentation in L<SNMP::Info::Layer3::Steelhead> for details.
+Subclass for  Riverbed Steelhead WAN optimization appliances.
+
+See documentation in L<SNMP::Info::Layer3::Steelhead> for details.
 
 =item SNMP::Info::Layer3::Sun
 
@@ -1038,45 +1055,46 @@ See documentation in L<SNMP::Info::Layer7> for details.
 
 =item SNMP::Info::Layer7::APC
 
-Subclass for APC UPS devices
+Subclass for APC UPS devices.
 
 See documentation in L<SNMP::Info::Layer7::APC> for details.
 
 =item SNMP::Info::Layer7::Arbor
 
-Subclass for Arbor appliances
+Subclass for Arbor appliances.
 
 See documentation in L<SNMP::Info::Layer7::Arbor> for details.
 
 =item SNMP::Info::Layer7::CiscoIPS
 
-Subclass for Cisco IPS devices
+Subclass for Cisco IPS devices.
 
 See documentation in L<SNMP::Info::Layer7::CiscoIPS> for details.
 
 =item SNMP::Info::Layer7::Gigamon
 
-Subclass for Gigamon devices
+Subclass for Gigamon devices.
 
 See documentation in L<SNMP::Info::Layer7::Gigamon> for details.
 
 =item SNMP::Info::Layer7::Liebert
 
-Subclass for Liebert devices
+Subclass for Liebert devices.
 
 See documentation in L<SNMP::Info::Layer7::Liebert> for details.
 
+=item SNMP::Info::Layer7::Neoteris
+
+Subclass for Pulse Secure / Juniper SSL VPN appliances.
+
+See documentation in L<SNMP::Info::Layer7::Neoteris> for details.
+
 =item SNMP::Info::Layer7::Netscaler
 
-Subclass for Citrix Netscaler appliances
+Subclass for Citrix Netscaler appliances.
 
 See documentation in L<SNMP::Info::Layer7::Netscaler> for details.
 
-=item SNMP::Info::Layer7::Neoteris
-
-Subclass for Juniper SSL VPN appliances
-
-See documentation in L<SNMP::Info::Layer7::Neoteris> for details.
 
 =back
 
@@ -1090,8 +1108,8 @@ Kramarov, Bernhard Augenstein, Bradley Baetz, Brian Chow, Brian Wilson,
 Carlos Vicente, Dana Watanabe, David Pinkoski, David Sieborger, Douglas
 McKeown, Greg King, Ivan Auger, Jean-Philippe Luiggi, Jeroen van Ingen,
 Justin Hunter, Kent Hamilton, Matthew Tuttle, Michael Robbert, Mike Hunter,
-Nicolai Petri, Ralf Gross, Robert Kerr and people listed on the Netdisco
-README!
+Nicolai Petri, Ralf Gross, Robert Kerr, Nick Nauwelaerts and people listed
+on the Netdisco README!
 
 =head1 USAGE
 
@@ -1333,7 +1351,7 @@ sub new {
         $new_obj->{mibdirs} = $args{MibDirs};
         delete $sess_args{MibDirs};
     }
-    
+
     # For IPv6 hosts set transport
     if ( defined $sess_args{DestHost} ) {
         $sess_args{DestHost} = resolve_desthost($sess_args{DestHost});
@@ -1376,7 +1394,15 @@ sub new {
     $new_obj->{snmp_comm} = $sess->{Community} || $args{Community} || 'public';
     $new_obj->{snmp_user} = $sess->{SecName}   || $args{SecName}   || 'initial';
 
-    return $auto_specific ? $new_obj->specify() : $new_obj;
+    my $info = $auto_specific ? $new_obj->specify() : $new_obj;
+
+    if ( $info->debug() > 1 ) {
+        require mro;
+        print STDERR (ref $info) ." has resolution order: \n";
+        print STDERR "  $_\n" foreach @{ mro::get_linear_isa( ref $info ) };
+    }
+
+    return $info;
 }
 
 =item update()
@@ -1666,6 +1692,7 @@ sub device_type {
         14823 => 'SNMP::Info::Layer3::Aruba',
         14988 => 'SNMP::Info::Layer3::Mikrotik',
         17163 => 'SNMP::Info::Layer3::Steelhead',
+        19046 => 'SNMP::Info::Layer3::Lenovo',
         21091 => 'SNMP::Info::Layer2::Exinda',
         25506 => 'SNMP::Info::Layer3::H3C',
         25461 => 'SNMP::Info::Layer3::PaloAlto',
@@ -1676,6 +1703,7 @@ sub device_type {
         4413 => 'SNMP::Info::Layer2::Ubiquiti',
         26928 => 'SNMP::Info::Layer2::Aerohive',
         30803 => 'SNMP::Info::Layer3::VyOS',
+	44641 => 'SNMP::Info::Layer3::VyOS',
         40310 => 'SNMP::Info::Layer3::Cumulus',
     );
 
@@ -2196,6 +2224,7 @@ sub specify {
 
     $self->debug()
         and print "SNMP::Info::specify() - Changed Class to $device_type.\n";
+
     return $sub_obj;
 }
 
@@ -2598,13 +2627,13 @@ See documentation in L<SNMP::Info::IPv6> for IPv6 Address Table.
 
 Maps the IPv4 addresses to the interface index
 
-(C<ipAdEntIfIndex>) or filtered and index modified (C<ipAddressIfIndex>) 
+(C<ipAdEntIfIndex>) or filtered and index modified (C<ipAddressIfIndex>)
 
 =item $info->ip_table()
 
 Maps the Table to the IPv4 address
 
-(C<ipAdEntAddr>) or address extracted from (C<ipAddressIfIndex>) 
+(C<ipAdEntAddr>) or address extracted from (C<ipAddressIfIndex>)
 
 =item $info->ip_netmask()
 
@@ -3355,7 +3384,7 @@ $info->init() will throw an exception if a MIB does not load.
     # been overridden during the compliation of the local Net-SNMP library.
     # These cover the globals and funcs defined in this file.
     'SNMPv2-MIB'  => 'sysObjectID',
-    'RFC1213-MIB' => 'ipRouteIfIndex',
+    # (#325) 'RFC1213-MIB' => 'ipRouteIfIndex',
     'IP-MIB'      => 'ipAdEntAddr',
     'IF-MIB'      => 'ifIndex',
 );
@@ -3418,7 +3447,7 @@ will inherit the Cisco Vlan module as an example.
                                        SNMP::Info::CiscoVTP Exporter/;
  @SNMP::Info::Layer2::Sample::EXPORT_OK = qw//;
 
- use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE $AUTOLOAD $INIT $DEBUG/;
+ our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG);
 
  %MIBS    = (%SNMP::Info::Layer2::MIBS,
              %SNMP::Info::CiscoVTP::MIBS,
@@ -3548,7 +3577,7 @@ $REPEATERS = 20;
 
 =item munge_speed()
 
-Makes human friendly speed ratings using %SPEED_MAP
+Makes human friendly speed ratings using C<%SPEED_MAP>.
 
  %SPEED_MAP = (
                 '56000'      => '56 kbps',
@@ -3647,7 +3676,7 @@ sub munge_speed {
 
 =item munge_highspeed()
 
-Makes human friendly speed ratings for C<ifHighSpeed>
+Makes human friendly speed ratings for C<ifHighSpeed>.
 
 =cut
 
@@ -3676,7 +3705,7 @@ sub munge_highspeed {
 
 =item munge_ip()
 
-Takes a binary IP and makes it dotted ASCII
+Takes a binary IP and makes it dotted ASCII.
 
 =cut
 
@@ -3703,7 +3732,7 @@ sub munge_mac {
 
 =item munge_prio_mac()
 
-Takes an 2-byte octet stream (HEX-STRING) and returns a colon separated ASCII
+Takes an 8-byte octet stream (HEX-STRING) and returns a colon separated ASCII
 hex string.
 
 =cut
@@ -3719,23 +3748,23 @@ sub munge_prio_mac {
 
 =item munge_prio_port()
 
-Takes an 8-byte octet stream (HEX-STRING) and returns a colon separated ASCII
+Takes an 2-byte octet stream (HEX-STRING) and returns a colon separated ASCII
 hex string.
 
 =cut
 
 sub munge_prio_port {
-    my $mac = shift;
-    return unless defined $mac;
-    return unless length $mac;
-    $mac = join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $mac ) );
-    return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){1}[0-9A-F][0-9A-F]$/i;
+    my $priop = shift;
+    return unless defined $priop;
+    return unless length $priop;
+    $priop = join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $priop ) );
+    return $priop if $priop =~ /^([0-9A-F][0-9A-F]:){1}[0-9A-F][0-9A-F]$/i;
     return;
 }
 
 =item munge_octet2hex()
 
-Takes a binary octet stream and returns an ASCII hex string
+Takes a binary octet stream and returns an ASCII hex string.
 
 =cut
 
@@ -3746,7 +3775,7 @@ sub munge_octet2hex {
 
 =item munge_dec2bin()
 
-Takes a binary char and returns its ASCII binary representation
+Takes a binary char and returns its ASCII binary representation.
 
 =cut
 
@@ -3762,9 +3791,9 @@ sub munge_dec2bin {
     return $num;
 }
 
-=item munge_bits
+=item munge_bits()
 
-Takes a SNMP2 'BITS' field and returns the ASCII bit string
+Takes a SNMP2 'BITS' field and returns the ASCII bit string.
 
 =cut
 
@@ -3775,7 +3804,7 @@ sub munge_bits {
     return unpack( "B*", $bits );
 }
 
-=item munge_counter64
+=item munge_counter64()
 
 If $BIGINT is set to true, then a Math::BigInt object is returned.
 See Math::BigInt for details.
@@ -3790,7 +3819,7 @@ sub munge_counter64 {
     return $bigint;
 }
 
-=item munge_i_up
+=item munge_i_up()
 
 Net-SNMP tends to load C<RFC1213-MIB> first, and so ignores the
 updated enumeration for C<ifOperStatus> in C<IF-MIB>.  This munge
@@ -3812,7 +3841,7 @@ sub munge_i_up {
     return $ifOperStatusMap{$i_up} || $i_up;
 }
 
-=item munge_port_list
+=item munge_port_list()
 
 Takes an octet string representing a set of ports and returns a reference
 to an array of binary values each array element representing a port.
@@ -3833,7 +3862,7 @@ sub munge_port_list {
 
 =item munge_null()
 
-Removes control characters from a string
+Removes control characters from a string.
 
 =cut
 
@@ -3882,12 +3911,12 @@ sub resolve_desthost {
     $desthost =~ s/^(?:udp6:|udpv6:|udpipv6:)//x;
 
     my $ip = NetAddr::IP::Lite->new($desthost);
-    
+
     if ($ip and $ip->bits == 32) {
         return $ip->addr;
     }
     elsif ($ip and $ip->bits == 128) {
-        return 'udp6:' . $ip->addr;        
+        return 'udp6:' . $ip->addr;
     }
     else {
        croak "Unable to resolve DestHost: $desthost to an IP\n";
@@ -4446,7 +4475,7 @@ sub _load_attr {
 
         if ( $self->{Offline} ) {
             $self->error_throw(
-                "SNMP::Info::_load_atrr: Offline but $attr is not in cache\n" );
+                "SNMP::Info::_load_attr: Offline but $attr is not in cache\n" );
             return;
         }
 
@@ -4464,7 +4493,7 @@ sub _load_attr {
         # requests
 
         my ($leaf) = $qual_leaf =~ /::(.+)$/;
-        
+
         # If we weren't able to translate, we'll only have an OID
         $leaf = $oid unless defined $leaf;
 
@@ -4524,7 +4553,7 @@ sub _load_attr {
             ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
             if ( $sess->{ErrorNum} ) {
                 $self->error_throw(
-                    "SNMP::Info::_load_atrr: BULKWALK " . $sess->{ErrorStr},
+                    "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr},
                     "\n" );
                 return;
             }
@@ -4663,7 +4692,7 @@ sub snmp_connect_ip {
     my $comm = $self->snmp_comm();
 
     return if $self->{Offline};
-    
+
     $ip = resolve_desthost($ip);
     return if ( $ip eq '0.0.0.0' ) or ( $ip =~ /^127\./ );
 
@@ -4823,6 +4852,11 @@ sub _validate_autoload_method {
         return [1,(exists $self->{store}->{$method} ? 1: 0)];
     }
 
+    # (#325) lazy load legacy RFC1213-MIB only if needed
+    SNMP::loadModules('RFC1213-MIB')
+      if $leaf_name =~ m/^(?:RFC1213-MIB::|ipr_|ipRoute)/
+         and not SNMP::translateObj($leaf_name);
+
     # Translate MIB leaf node name to OID
     my $oid = SNMP::translateObj($leaf_name);
 
@@ -4839,7 +4873,7 @@ sub _validate_autoload_method {
 
     # Validate that we have proper access for the operation
     my $access = '';
-    
+
     # Prevent autovivification by checking that MIB leaf exists
     if (exists $SNMP::MIB{$oid}) {
         $access = $SNMP::MIB{$oid}{'access'} || '';
@@ -4859,23 +4893,23 @@ sub _validate_autoload_method {
     }
 
      my $table_leaf = 0;
- 
+
     # This is an expensive check so we assume anything in the funcs and globals
     # hashes are known. Only for actual MIB leafs should we have to check the
-    # MIB. If the parent of the leaf has indexes it is contained within a table.   
+    # MIB. If the parent of the leaf has indexes it is contained within a table.
     if ($funcs->{$attr}) {
       $table_leaf = 1;
      }
     elsif (!$globals->{$attr}) {
 
-        # Prevent autovivification 
+        # Prevent autovivification
         if (exists $SNMP::MIB{$oid} &&
             exists $SNMP::MIB{$oid}{'parent'} &&
             exists $SNMP::MIB{$oid}{'parent'}{'indexes'} &&
             defined $SNMP::MIB{$oid}{'parent'}{'indexes'} &&
             scalar( @{$SNMP::MIB{$oid}{'parent'}{'indexes'}} ) > 0)
         {
-            $table_leaf = 1;    
+            $table_leaf = 1;
         }
      }
 
@@ -4984,8 +5018,6 @@ For example to override $info->name() create `` sub name {...}'' in your
 subclass.
 
 =cut
-
-our $AUTOLOAD;
 
 sub AUTOLOAD {
     my $self = shift;

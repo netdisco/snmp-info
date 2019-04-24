@@ -39,9 +39,9 @@ use SNMP::Info;
 @SNMP::Info::CiscoVTP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoVTP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     'CISCO-VTP-MIB'                       => 'vtpVlanName',
@@ -172,7 +172,7 @@ sub i_vlan {
         # vtp_trunk_dyn_stat is not useful for down ports
         # so we use vtp_trunk_dyn to see if trunking is set
         my $dyn = $trunk_dyn->{$port};
-        
+
         if (($stat and $stat =~ /^trunking/ )
             or ($dyn and (($dyn eq 'on') or ($dyn eq 'onNoNegotiate'))))
         {
@@ -303,7 +303,7 @@ sub i_vlan_membership_untagged {
         my $vlan = $vlans->{$port};
         push( @{ $i_vlan_membership->{$port} }, $vlan );
     }
-    
+
     return $i_vlan_membership;
 }
 
@@ -529,14 +529,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $vtp = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $vtp->class();
@@ -544,7 +544,7 @@ Max Baker
 
 =head1 DESCRIPTION
 
-SNMP::Info::CiscoVTP is a subclass of SNMP::Info that provides 
+SNMP::Info::CiscoVTP is a subclass of SNMP::Info that provides
 information about a Cisco device's VLAN and VTP Domain membership.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
@@ -620,7 +620,7 @@ IDs.  These are the VLANs which are members of enabled VLAN list for the port.
   Example:
   my $interfaces = $vtp->interfaces();
   my $vlans      = $vtp->i_vlan_membership();
-  
+
   foreach my $iid (sort keys %$interfaces) {
     my $port = $interfaces->{$iid};
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
@@ -722,7 +722,7 @@ for a good treaty of how to connect to the VLANs
 
 =item $vtp->i_vlan_type()
 
-Static, Dynamic, or multiVlan.  
+Static, Dynamic, or multiVlan.
 
 (C<vmVlanType>)
 
@@ -769,7 +769,7 @@ Each bit represents a VLAN.  This is 3072 through 4095
 
 =over
 
-=item $vtp->i_voice_vlan() 
+=item $vtp->i_voice_vlan()
 
 (C<vmVoiceVlanId>)
 
@@ -884,7 +884,7 @@ Each bit represents a VLAN.  This is 3072 through 4095
 These are methods that provide SNMP set functionality for overridden methods
 or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
-operations. 
+operations.
 
 =over
 
@@ -896,7 +896,7 @@ VLAN ID and port C<ifIndex>.  This method should only be used on end station
 
   Example:
   my %if_map = reverse %{$vtp->interfaces()};
-  $vtp->set_i_vlan('2', $if_map{'FastEthernet0/1'}) 
+  $vtp->set_i_vlan('2', $if_map{'FastEthernet0/1'})
     or die "Couldn't change port VLAN. ",$vtp->error(1);
 
 =item $vtp->set_i_pvid ( pvid, ifIndex )
@@ -906,7 +906,7 @@ port C<ifIndex>.  This method should only be used on trunk ports.
 
   Example:
   my %if_map = reverse %{$vtp->interfaces()};
-  $vtp->set_i_pvid('2', $if_map{'FastEthernet0/1'}) 
+  $vtp->set_i_pvid('2', $if_map{'FastEthernet0/1'})
     or die "Couldn't change port default VLAN. ",$vtp->error(1);
 
 =item $vtp->set_i_untagged ( vlan, ifIndex )
@@ -922,7 +922,7 @@ numeric VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$vtp->interfaces()};
-  $vtp->set_add_i_vlan_tagged('2', $if_map{'FastEthernet0/1'}) 
+  $vtp->set_add_i_vlan_tagged('2', $if_map{'FastEthernet0/1'})
     or die "Couldn't add port to egress list. ",$vtp->error(1);
 
 =item $vtp->set_remove_i_vlan_tagged ( vlan, ifIndex )
@@ -932,7 +932,7 @@ with the numeric VLAN ID and port C<ifIndex>.
 
   Example:
   my %if_map = reverse %{$vtp->interfaces()};
-  $vtp->set_remove_i_vlan_tagged('2', $if_map{'FastEthernet0/1'}) 
+  $vtp->set_remove_i_vlan_tagged('2', $if_map{'FastEthernet0/1'})
     or die "Couldn't add port to egress list. ",$vtp->error(1);
 
 =back

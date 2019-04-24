@@ -37,9 +37,9 @@ use SNMP::Info::Layer2;
 @SNMP::Info::Layer1::S3000::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer1::S3000::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -373,7 +373,7 @@ Eric Miller
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
 
     or die "Can't connect to DestHost.\n";
 
@@ -382,12 +382,12 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
+Provides abstraction to the configuration information obtainable from a
 Bay hub device through SNMP.  Also provides device MAC to port mapping through
 the proprietary MIB.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $s3000 = new SNMP::Info::Layer1::S3000(...);
 
@@ -447,7 +447,7 @@ Returns the firmware version. (C<s3AgentFwVer>)
 
 =item $s3000->mac()
 
-Returns MAC of the advertised IP address of the device. 
+Returns MAC of the advertised IP address of the device.
 
 =back
 
@@ -477,7 +477,7 @@ to a hash.
 
 =item $s3000->i_index()
 
-Returns reference to map of IIDs to Interface index. 
+Returns reference to map of IIDs to Interface index.
 
 Since hubs do not support C<ifIndex>, the interface index is created using the
 formula (board * 256 + port).  This is required to support devices with more
@@ -485,11 +485,11 @@ than one module.
 
 =item $s3000->interfaces()
 
-Returns reference to map of IIDs to physical ports. 
+Returns reference to map of IIDs to physical ports.
 
 =item $s3000->i_duplex()
 
-Returns half, hubs do not support full duplex. 
+Returns half, hubs do not support full duplex.
 
 =item $s3000->i_duplex_admin()
 
@@ -516,7 +516,7 @@ State choices are 'up' or 'down'
 
 Example:
   my %if_map = reverse %{$s3000->interfaces()};
-  $s3000->set_i_up_admin('down', $if_map{'1.1'}) 
+  $s3000->set_i_up_admin('down', $if_map{'1.1'})
       or die "Couldn't change port state. ",$s3000->error(1);
 
 =item $s3000->bp_index()

@@ -44,9 +44,9 @@ use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 /;
 @SNMP::Info::Layer3::Cumulus::EXPORT_OK = qw/ agg_ports /;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -115,7 +115,7 @@ sub uptime {
 }
 
 # ifDescr is the same for all interfaces in a class, but the ifName is
-# unique, so let's use that for port name.  If all else fails, 
+# unique, so let's use that for port name.  If all else fails,
 # concatentate ifDesc and ifIndex.
 # (code from SNMP/Info/Layer2/Netgear.pm)
 sub interfaces {
@@ -179,14 +179,14 @@ Oliver Gorwits - based on Layer3::NetSNMP implementation
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $cumulus = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $cumulus->class();

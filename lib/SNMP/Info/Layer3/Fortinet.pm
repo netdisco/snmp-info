@@ -37,9 +37,9 @@ use SNMP::Info::Layer3;
     = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Fortinet::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -63,6 +63,29 @@ sub vendor {
     return 'fortinet';
 }
 
+# fortios 5.4 and higher can have empty ifDescr. use ifName (but
+# without the ifAlias fixup that's done in layer3::i_name()) which
+# mimics fortios >5.4
+# copied from an old Layer3.pm which did not have duplicate
+# description fixup
+sub interfaces {
+    my $fortinet = shift;
+    my $partial  = shift;
+
+    my $interfaces   = $fortinet->i_index($partial);
+    my $descriptions = $fortinet->orig_i_name($partial);
+
+    my %interfaces = ();
+    foreach my $iid ( keys %$interfaces ) {
+        my $desc = $descriptions->{$iid};
+        next unless defined $desc;
+
+        $interfaces{$iid} = $desc;
+    }
+
+    return \%interfaces;
+}
+
 sub model {
     my $fortinet = shift;
     my $id = $fortinet->id() || '';
@@ -81,19 +104,19 @@ sub os {
 
 sub os_ver {
     my $fortinet = shift;
-    
+
     my $ver = $fortinet->fgSysVersion() || '';
 
     if ( $ver =~ /(\d+[\.\d]+)/ ) {
         return $1;
     }
-    
+
     return $ver;
 }
 
 sub serial {
     my $fortinet = shift;
-    
+
     return $fortinet->fnSysSerial();
 }
 
@@ -110,14 +133,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $fortinet = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $fortinet->class();
@@ -128,7 +151,7 @@ Eric Miller
 Abstraction subclass for Fortinet network devices.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $fortinet = new SNMP::Info::Layer3::Fortinet(...);
 
@@ -192,6 +215,14 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=over
+
+=item $fortinet->interfaces();
+
+Returns the map between SNMP Interface Identifier (iid) and C<ifName>.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

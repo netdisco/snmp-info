@@ -37,9 +37,9 @@ use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 @SNMP::Info::Layer3::VMware::ISA       = qw/SNMP::Info::IEEE802dot3ad SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::VMware::EXPORT_OK = qw/agg_ports/;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::IEEE802dot3ad::MIBS,

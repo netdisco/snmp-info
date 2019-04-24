@@ -39,9 +39,9 @@ use SNMP::Info;
 @SNMP::Info::EtherLike::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::EtherLike::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = ( 'EtherLike-MIB' => 'etherMIB' );
 
@@ -95,14 +95,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- my $el = new SNMP::Info ( 
+ my $el = new SNMP::Info (
                              AutoSpecify => 1,
                              Debug       => 1,
-                             DestHost    => 'router', 
+                             DestHost    => 'router',
                              Community   => 'public',
                              Version     => 2
                            );
- 
+
  my $class = $cdp->class();
  print " Using device sub class : $class\n";
 
@@ -110,7 +110,7 @@ Max Baker
  # ETHERLIKE-MIB
  my $interfaces = $el->interfaces();
  my $el_index   = $el->el_index();
- my $el_duplex  = $el->el_duplex(); 
+ my $el_duplex  = $el->el_duplex();
 
  foreach my $el_port (keys %$el_duplex){
     my $duplex = $el_duplex->{$el_port};
@@ -122,7 +122,7 @@ Max Baker
 
 =head1 DESCRIPTION
 
-SNMP::Info::EtherLike is a subclass of SNMP::Info that supplies 
+SNMP::Info::EtherLike is a subclass of SNMP::Info that supplies
 access to the F<ETHERLIKE-MIB> used by some Layer 3 Devices such as
 Cisco routers.
 
@@ -133,7 +133,7 @@ directly.
 
 =head2 Inherited Classes
 
-None.  
+None.
 
 =head2 Required MIBs
 

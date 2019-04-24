@@ -47,9 +47,41 @@ sub setup : Tests(setup) {
 
   # Start with a common cache that will serve most tests
   my $cache_data = {
-    'store' => {},
+    '_i_index' => 1,
+    '_i_description' => 1,
+    'store' => {
+      'i_index' => { map {($_ => $_)} (1 .. 8) },
+      'i_description' => {
+        1 => 'Unique Interface Name',
+        2 => 'Duplicate Interface Name',
+        3 => 'Duplicate Interface Name',
+        4 => "\0",
+        5 => "\0",
+        6 => " \0",
+        7 => "\0 ",
+      },
+    },
   };
   $test->{info}->cache($cache_data);
+}
+
+sub interfaces : Tests(2) {
+  my $test = shift;
+
+  my $expected_data = {
+    1 => 'Unique Interface Name',
+    2 => 'Duplicate Interface Name (2)',
+    3 => 'Duplicate Interface Name (3)',
+    4 => 4,
+    5 => 5,
+    6 => 6,
+    7 => 7,
+    8 => 8,
+  };
+
+  can_ok($test->{info}, 'interfaces');
+  cmp_deeply($test->{info}->interfaces(),
+    $expected_data, 'Call to interfaces() removes duplicates and cleans up');
 }
 
 1;

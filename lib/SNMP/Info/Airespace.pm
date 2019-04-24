@@ -37,9 +37,9 @@ use SNMP::Info;
 @SNMP::Info::Airespace::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::Airespace::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::MIBS,
@@ -84,7 +84,7 @@ $VERSION = '3.64';
     'airespace_ess_ifname'    => 'bsnDot11EssInterfaceName',
     'airespace_ess_aclname'   => 'bsnDot11EssAclName',
     'airespace_ess_bcast'     => 'bsnDot11EssBroadcastSsid',
-    
+
     # AIRESPACE-WIRELESS-MIB::bsnAPTable
     'airespace_ap_mac'      => 'bsnAPDot3MacAddress',
     'airespace_ap_name'     => 'bsnAPName',
@@ -764,14 +764,14 @@ sub dot11_cur_tx_pwr_mw {
     my $partial   = shift;
     my $cur       = $airespace->airespace_apif_power($partial);
     my $pwr_abs   = $airespace->airespace_apif_a_pwr($partial);
-    
+
     my $dot11_cur_tx_pwr_mw = {};
     foreach my $idx ( keys %$cur ) {
         my $pwr = $cur->{$idx};
         if ( $pwr >= 1 && $pwr <= 8 ) {
 
-            my @pwr_list = split(/,/, $pwr_abs->{$idx} ); 
-            $dot11_cur_tx_pwr_mw->{$idx} = $pwr_list[$pwr-1]; 
+            my @pwr_list = split(/,/, $pwr_abs->{$idx} );
+            $dot11_cur_tx_pwr_mw->{$idx} = $pwr_list[$pwr-1];
 
         }
         else {
@@ -1087,7 +1087,7 @@ Eric Miller
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
 
     or die "Can't connect to DestHost.\n";
 
@@ -1204,7 +1204,7 @@ valid only when the Transfer Mode is tftp.
 =item $airespace->airespace_ul_path()
 
 Transfer upload tftp path configures the directory path where the file is to
-be uploaded to. The switch remembers the last file path used. 
+be uploaded to. The switch remembers the last file path used.
 
 (C<agentTransferUploadPath>)
 
@@ -1279,7 +1279,7 @@ radio interface.
 =item $airespace->i_ssidmac()
 
 With the same keys as i_ssidlist, returns the Basic service set
-identification (BSSID), MAC address, the AP is using for the SSID. 
+identification (BSSID), MAC address, the AP is using for the SSID.
 
 =back
 
@@ -1346,7 +1346,7 @@ Name of the interface used by this WLAN.
 Name of ACL for the WLAN. This is applicable only when Web Authentication is
 enabled.
 
-(C<bsnDot11EssAclName>)           
+(C<bsnDot11EssAclName>)
 
 =item $airespace->airespace_ess_bcast()
 
@@ -1672,14 +1672,14 @@ to an empty string.
 
 =item $airespace->i_index()
 
-Returns reference to map of IIDs to Interface index. 
+Returns reference to map of IIDs to Interface index.
 
 Extends C<ifIndex> to support thin APs and WLAN virtual interfaces as device
 interfaces.
 
 =item $airespace->interfaces()
 
-Returns reference to map of IIDs to ports.  Thin APs are implemented as device 
+Returns reference to map of IIDs to ports.  Thin APs are implemented as device
 interfaces.  The thin AP MAC address airespace_ap_mac() and Slot ID
 airespace_apif_slot() are used as the port identifier.  Virtual interfaces
 use airespace_if_name() as the port identifier.
@@ -1717,7 +1717,7 @@ for thin AP interfaces.
 =item $airespace->i_mac()
 
 Returns reference to map of IIDs to MAC address of the interface.  Returns
-C<ifPhysAddress> for Ethernet interfaces and airespace_if_mac() for virtual 
+C<ifPhysAddress> for Ethernet interfaces and airespace_if_mac() for virtual
 interfaces.
 
 =item $airespace->i_vlan()
@@ -1751,7 +1751,7 @@ the interface iid.
 =item $airespace->fw_port()
 
 Returns reference to a hash, value being airespace_sta_mac() and
-airespace_sta_slot() combined to match the interface iid.  
+airespace_sta_slot() combined to match the interface iid.
 
 =item $airespace->fw_mac()
 

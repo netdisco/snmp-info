@@ -40,9 +40,9 @@ use SNMP::Info::MAU;
     SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Tasman::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -340,7 +340,7 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $tasman = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
@@ -348,7 +348,7 @@ Eric Miller
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $tasman->class();
@@ -400,7 +400,7 @@ Returns C<'avaya'>
 
 =item $tasman->model()
 
-Tries to get the model from C<nnchassisModel> and if not available 
+Tries to get the model from C<nnchassisModel> and if not available
 cross references $tasman->id() to F<NT-ENTERPRISE-DATA-MIB>.
 
 Substitutes 'SR' for C<'ntSecureRouter'> in the name for readability.
@@ -487,7 +487,7 @@ C<portAdminSpeed>
 =head2 Pseudo F<ENTITY-MIB> information
 
 These methods emulate F<ENTITY-MIB> Physical Table methods using
-F<CHASSIS-MIB>. 
+F<CHASSIS-MIB>.
 
 =over
 

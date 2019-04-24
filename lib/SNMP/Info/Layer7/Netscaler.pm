@@ -36,9 +36,9 @@ use SNMP::Info::Layer7;
 @SNMP::Info::Layer7::Netscaler::ISA       = qw/SNMP::Info::Layer7 Exporter/;
 @SNMP::Info::Layer7::Netscaler::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
@@ -49,6 +49,7 @@ $VERSION = '3.64';
     %SNMP::Info::Layer7::GLOBALS,
     'build_ver'   => 'sysBuildVersion',
     'sys_hw_desc' => 'sysHardwareVersionDesc',
+    'sys_hw_sn'   => 'sysHardwareSerialNumber',
     'cpu'         => 'resCpuUsage',
 );
 
@@ -74,13 +75,14 @@ sub os {
 }
 
 sub serial {
-    return '';
+    my $ns    = shift;
+    return $ns->sys_hw_sn() || '';
 }
 
 sub model {
     my $ns    = shift;
     my $desc  = $ns->sys_hw_desc() || '';
-   
+
     $desc =~ s/^.+\bNS//i;
 
     return $desc;
@@ -121,14 +123,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $ns = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $ns->class();
@@ -194,7 +196,7 @@ C<sysHardwareVersionDesc>
 
 =item $ns->serial()
 
-Returns ''.
+C<sysHardwareSerialNumber>
 
 =back
 

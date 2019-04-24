@@ -39,9 +39,9 @@ use SNMP::Info::Layer3;
     /;
 @SNMP::Info::Layer3::Lantronix::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -113,7 +113,7 @@ sub serial {
     $serial = $1 if ( $descr =~ m/Lantronix EDS\w+ V[\d\.R]+ \((\w+)\)/ );
 
     return $serial;
-}       
+}
 
 sub model {
     my $device = shift;
@@ -162,14 +162,14 @@ J R Binks
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $device = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'mydevice',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $device->class();
@@ -245,10 +245,6 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=over
-
-=back
 
 =head2 Overrides
 

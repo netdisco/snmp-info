@@ -1,6 +1,6 @@
-# Test::SNMP::Info::Layer3::Arista
+# Test::SNMP::Info::Layer3::Lenovo
 #
-# Copyright (c) 2018 Eric Miller
+# Copyright (c) 2019 nick nauwelaerts
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,13 +27,13 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package Test::SNMP::Info::Layer3::Arista;
+package Test::SNMP::Info::Layer3::Lenovo;
 
 use Test::Class::Most parent => 'My::Test::Class';
 
-use SNMP::Info::Layer3::Arista;
+use SNMP::Info::Layer3::Lenovo;
 
-# Remove this startup override once we have full method coverage
+# XXX can be removed when agg_ports_cnos is implemented
 sub startup : Tests(startup => 1) {
   my $test = shift;
   $test->SUPER::startup();
@@ -46,15 +46,27 @@ sub setup : Tests(setup) {
   $test->SUPER::setup;
 
   # Start with a common cache that will serve most tests
-  my $d_string = 'Arista Networks EOS version 4.10.4 ';
-  $d_string .= 'running on an Arista Networks DCS-7048T-A';
   my $cache_data = {
-    '_layers' => 4,
-    '_description' => $d_string,
+    '_id'          => '.1.3.6.1.4.1.19046.1.7.32',
+    '_layers'      => 14,
+    '_description' => 'Lenovo ThinkSystem NE1032 RackSwitch',
 
-    # ARISTA-PRODUCTS-MIB::aristaDCS7048TA
-    '_id'   => '.1.3.6.1.4.1.30065.1.3011.7048.427.3648',
-    'store' => {},
+    '_i_index'      => 1,
+    '_i_speed_high' => 1,
+    'store' => {
+      'i_index' => {
+         2      => 2,
+         10310  => 10310,
+         103999 => 103999,
+         410001 => 410001,
+      },
+      'i_speed_high' => {
+         2      => 1000,
+         10310  => 0,
+         103999 => 20000,
+         410001 => 10000,
+      },
+    },
   };
   $test->{info}->cache($cache_data);
 }
@@ -63,32 +75,73 @@ sub os : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'os');
-  is($test->{info}->os(), 'EOS', q(OS returns 'EOS'));
+  is($test->{info}->os(), 'cnos', q(OS returns 'cnos'));
 }
 
 sub vendor : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'vendor');
-  is($test->{info}->vendor(), 'arista', q(Vendor returns 'arista'));
+  is($test->{info}->vendor(), 'lenovo', q(Vendor returns 'lenovo'));
 }
 
-sub model : Tests(2) {
+sub i_speed : Tests(3) {
   my $test = shift;
 
-  can_ok($test->{info}, 'model');
-  is($test->{info}->model(), 'DCS7048TA', q(Model is expected value));
-}
+  can_ok($test->{info}, 'i_speed');
 
-sub os_ver : Tests(3) {
-  my $test = shift;
+  my $expected = {
+    2      => "1.0 Gbps",
+    10310  => "0 Mbps",
+    103999 => "20 Gbps",
+    410001 => "10 Gbps",
+  };
 
-  can_ok($test->{info}, 'os_ver');
-  is($test->{info}->os_ver(), '4.10.4', q(OS version is expected value));
+  cmp_deeply($test->{info}->i_speed(),
+    $expected, q(i_speed data has expected values));
 
+  # do we want undef or empty hash?
   $test->{info}->clear_cache();
-  is($test->{info}->os_ver(), undef,
-    q(No description returns undef OS version));
+  cmp_deeply($test->{info}->i_speed(), undef, q(i_speed no data returns empty undef));
+}
+
+sub i_speed_raw : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_speed_raw');
+
+  # set original mib data to make sure we simulate everything correctly
+  my $data = {
+    'IF-MIB::ifSpeed' => {
+      2      => 1000000000,
+      10310  => 8000,
+      103999 => 2820130816,
+      410001 => 1410065408,
+    },
+    'IF-MIB::ifHighSpeed' => {
+      2      => 1000,
+      10310  => 0,
+      103999 => 20000,
+      410001 => 10000,
+    },
+  };
+  $test->{info}{sess}{Data} = $data;
+
+  my $expected = {
+    2      => 1000000000,
+    10310  => 8000,
+    103999 => 20000000000,
+    410001 => 10000000000,
+  };
+
+  cmp_deeply($test->{info}->i_speed_raw(),
+    $expected, q(i_speed_raw data has expected values));
+
+  delete $test->{info}{_i_speed_raw};
+  delete $test->{info}{store}{i_speed_raw};
+  $test->{info}{sess}{Data} = {};
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->i_speed_raw(), {}, q(i_speed_raw no data returns empty hash));
 }
 
 1;

@@ -1,6 +1,6 @@
 # SNMP::Info::Layer3::Redlion
 #
-# Copyright (c) 2018 nick nauwelaerts
+# Copyright (c) 2019 nick nauwelaerts
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
 
 package SNMP::Info::Layer3::Redlion;
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 use strict;
 
@@ -42,7 +42,7 @@ use SNMP::Info::Layer3;
 /;
 @SNMP::Info::Layer3::Redlion::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -87,7 +87,6 @@ sub serial {
     return $redlion->unitSerialNumber();
 }
 
-
 sub os {
     return 'sn';
 }
@@ -98,7 +97,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Redlion - SNMP Interface to 
+SNMP::Info::Layer3::Redlion - SNMP Interface to redlion routers
 
 =head1 AUTHORS
 
@@ -121,7 +120,7 @@ nick nauwelaerts
 
 =head1 DESCRIPTION
 
-Subclass for 
+Subclass for redlion routers.
 
 =head2 Inherited Classes
 
@@ -179,12 +178,6 @@ See L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=head2 Overrides
-
-=over
-
-=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

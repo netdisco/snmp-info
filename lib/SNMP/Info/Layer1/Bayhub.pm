@@ -40,9 +40,9 @@ use SNMP::Info::Layer2;
     = qw/SNMP::Info::SONMP SNMP::Info::NortelStack  SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer1::Bayhub::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -492,7 +492,7 @@ Eric Miller
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
 
     or die "Can't connect to DestHost.\n";
 
@@ -501,12 +501,12 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
+Provides abstraction to the configuration information obtainable from a
 Bay hub device through SNMP.  Also provides device MAC to port mapping through
-the proprietary MIB. 
+the proprietary MIB.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $bayhub = new SNMP::Info::Layer1::Bayhub(...);
 
@@ -607,18 +607,18 @@ to a hash.
 
 =item $bayhub->i_index()
 
-Returns reference to map of IIDs to Interface index. 
+Returns reference to map of IIDs to Interface index.
 
 Since hubs do not support C<ifIndex>, the interface index is created using the
 formula (board * 256 + port).
 
 =item $bayhub->interfaces()
 
-Returns reference to map of IIDs to physical ports. 
+Returns reference to map of IIDs to physical ports.
 
 =item $bayhub->i_duplex()
 
-Returns half, hubs do not support full duplex. 
+Returns half, hubs do not support full duplex.
 
 =item $bayhub->i_duplex_admin()
 
@@ -644,7 +644,7 @@ State choices are 'up' or 'down'
 
 Example:
   my %if_map = reverse %{$bayhub->interfaces()};
-  $bayhub->set_i_up_admin('down', $if_map{'1.1'}) 
+  $bayhub->set_i_up_admin('down', $if_map{'1.1'})
       or die "Couldn't change port state. ",$bayhub->error(1);
 
 =item $bayhub->bp_index()
@@ -671,51 +671,51 @@ L<SNMP::Info::NortelStack/"TABLE METHODS"> for details.
 
 =over
 
-=item $bayhub->e_index() 
+=item $bayhub->e_index()
 
 Returns ns_e_index().
 
-=item $bayhub->e_class() 
+=item $bayhub->e_class()
 
 Returns ns_e_class().
 
-=item $bayhub->e_descr() 
+=item $bayhub->e_descr()
 
 Returns ns_e_descr().
 
-=item $bayhub->e_name() 
+=item $bayhub->e_name()
 
 Returns ns_e_name().
 
-=item $bayhub->e_fwver() 
+=item $bayhub->e_fwver()
 
 Returns ns_e_fwver().
 
-=item $bayhub->e_hwver() 
+=item $bayhub->e_hwver()
 
 Returns ns_e_hwver().
 
-=item $bayhub->e_parent() 
+=item $bayhub->e_parent()
 
 Returns ns_e_parent().
 
-=item $bayhub->e_pos() 
+=item $bayhub->e_pos()
 
 Returns ns_e_pos().
 
-=item $bayhub->e_serial() 
+=item $bayhub->e_serial()
 
 Returns ns_e_serial().
 
-=item $bayhub->e_swver() 
+=item $bayhub->e_swver()
 
 Returns ns_e_swver().
 
-=item $bayhub->e_type() 
+=item $bayhub->e_type()
 
 Returns ns_e_type().
 
-=item $bayhub->e_vendor() 
+=item $bayhub->e_vendor()
 
 Returns ns_e_vendor().
 

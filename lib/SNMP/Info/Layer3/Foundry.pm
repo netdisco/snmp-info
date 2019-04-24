@@ -46,9 +46,9 @@ use SNMP::Info::LLDP;
 /;
 @SNMP::Info::Layer3::Foundry::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -241,7 +241,7 @@ sub os_ver {
 
     # See if we report from Flash if wouldn't report from running above
     return $foundry->snAgFlashImgVer() if ( defined $foundry->snAgFlashImgVer() );
-    
+
     # Last resort
     return $foundry->SUPER::os_ver();
 
@@ -405,7 +405,7 @@ sub brcd_e_index {
     my $partial = shift;
 
     my $stack_master = $foundry->_brcd_stack_master();
-    my $brcd_e_idx 
+    my $brcd_e_idx
         = $foundry->snAgentConfigModule2Description($partial)
         || $foundry->snAgentConfigModuleDescription($partial)
         || {};
@@ -460,7 +460,7 @@ sub brcd_e_descr {
     my $partial = shift;
 
     my $brcd_e_idx = $foundry->brcd_e_index($partial) || {};
-    my $m_descrs 
+    my $m_descrs
         = $foundry->snAgentConfigModule2Description($partial)
         || $foundry->snAgentConfigModuleDescription($partial)
         || {};
@@ -526,7 +526,7 @@ sub brcd_e_serial {
     my $partial = shift;
 
     my $e_idx = $foundry->brcd_e_index($partial) || {};
-    my $serials 
+    my $serials
         = $foundry->snAgentConfigModule2SerialNumber($partial)
         || $foundry->snAgentConfigModuleSerialNumber($partial)
         || {};
@@ -551,7 +551,7 @@ sub brcd_e_type {
     my $partial = shift;
 
     my $e_idx = $foundry->brcd_e_index($partial) || {};
-    my $types 
+    my $types
         = $foundry->ag_mod2_type($partial)
         || $foundry->ag_mod_type($partial)
         || {};
@@ -861,14 +861,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $foundry = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $foundry->class();
@@ -932,7 +932,7 @@ These are methods that return scalar value from SNMP
 
 Returns model type.  Checks $foundry->id() against the F<FOUNDRY-SN-ROOT-MIB>
 and removes 'C<sn>' and 'C<Switch>'.  EdgeIron models determined
-through F<ENTITY-MIB>.  
+through F<ENTITY-MIB>.
 
 =item $foundry->vendor()
 
@@ -1029,16 +1029,16 @@ Returns reference to hash of interface names to iids.
 
 Returns reference to hash of interfaces to be ignored.
 
-Ignores interfaces with descriptions of  tunnel,loopback,null 
+Ignores interfaces with descriptions of  tunnel,loopback,null
 
 =item $foundry->i_duplex()
 
-Returns reference to hash of interface link duplex status. 
+Returns reference to hash of interface link duplex status.
 
 Crosses $foundry->sw_duplex() with $foundry->sw_index()
 
 =item $foundry->i_stp_state()
- 
+
 Returns the mapping of (C<dot1dStpPortState>) to the interface
 index (iid).
 
@@ -1060,7 +1060,7 @@ for details on brcd_e_* methods.
 
 =over
 
-=item $foundry->e_index() 
+=item $foundry->e_index()
 
 If the device doesn't support C<entPhysicalDescr>, this will
 try brcd_e_index().
@@ -1068,42 +1068,42 @@ try brcd_e_index().
 Note that this is based on C<entPhysicalDescr> due to implementation
 details of SNMP::Info::Entity::e_index().
 
-=item $foundry->e_class() 
+=item $foundry->e_class()
 
 If the device doesn't support C<entPhysicalClass>, this will try
 brcd_e_class().
 
-=item $foundry->e_descr() 
+=item $foundry->e_descr()
 
 If the device doesn't support C<entPhysicalDescr>, this will try
 brcd_e_descr().
 
-=item $foundry->e_name() 
+=item $foundry->e_name()
 
 If the device doesn't support C<entPhysicalName>, this will try
 brcd_e_name().
 
-=item $foundry->e_parent() 
+=item $foundry->e_parent()
 
 If the device doesn't support C<entPhysicalContainedIn>, this will try
 brcd_e_parent().
 
-=item $foundry->e_pos() 
+=item $foundry->e_pos()
 
 If the device doesn't support C<entPhysicalParentRelPos>, this will try
 brcd_e_pos().
 
-=item $foundry->e_serial() 
+=item $foundry->e_serial()
 
 If the device doesn't support C<entPhysicalSerialNum>, this will try
 brcd_e_serial().
 
-=item $foundry->e_type() 
+=item $foundry->e_type()
 
 If the device doesn't support C<entPhysicalVendorType>, this will try
 brcd_e_type().
 
-=item $foundry->e_vendor() 
+=item $foundry->e_vendor()
 
 If the device doesn't support C<entPhysicalMfgName>, this will try
 brcd_e_vendor().
@@ -1113,7 +1113,7 @@ brcd_e_vendor().
 =head2 Pseudo F<ENTITY-MIB> information
 
 These methods emulate F<ENTITY-MIB> Physical Table methods using
-F<FOUNDRY-SN-AGENT-MIB>. 
+F<FOUNDRY-SN-AGENT-MIB>.
 
 =over
 
@@ -1135,7 +1135,7 @@ base switches that contain modules, and 'module' for others.
 Returns reference to hash.  Key: IID, Value: Human friendly name
 
 (C<snAgentConfigModule2Description>) or
-(C<snAgentConfigModuleDescription>) 
+(C<snAgentConfigModuleDescription>)
 
 =item $foundry->brcd_e_name()
 
@@ -1149,14 +1149,14 @@ Returns reference to hash.  Key: IID, Value: brocade
 
 Returns reference to hash.  Key: IID, Value: Serial number
 
-Serial number is $foundry->serial() for a stack master unit and 
+Serial number is $foundry->serial() for a stack master unit and
 (C<snAgentConfigModule2SerialNumber>) or
 (C<snAgentConfigModuleSerialNumber>) for all others.
 
 =item $foundry->brcd_e_type()
 
 Returns reference to hash.  Key: IID, Value: Type of component/sub-component
-as defined under C<snAgentConfigModule2Type> or C<snAgentConfigModule2Type> 
+as defined under C<snAgentConfigModule2Type> or C<snAgentConfigModule2Type>
 in F<FOUNDRY-SN-AGENT-MIB>.
 
 =item $foundry->brcd_e_pos()
@@ -1180,13 +1180,13 @@ this entity is not contained in any other entity.
 
 =item $foundry->sw_index()
 
-Returns reference to hash.  Maps Table to Interface IID. 
+Returns reference to hash.  Maps Table to Interface IID.
 
 (C<snSwPortIfIndex>)
 
 =item $foundry->sw_duplex()
 
-Returns reference to hash.   Current duplex status for switch ports. 
+Returns reference to hash.   Current duplex status for switch ports.
 
 (C<snSwPortInfoChnMode>)
 
@@ -1198,7 +1198,7 @@ Returns reference to hash.  Current Port Type .
 
 =item $foundry->sw_speed()
 
-Returns reference to hash.  Current Port Speed. 
+Returns reference to hash.  Current Port Speed.
 
 (C<snSwPortInfoSpeed>)
 

@@ -39,24 +39,26 @@ use SNMP::Info::Bridge;
 use SNMP::Info::Entity;
 use SNMP::Info::PowerEthernet;
 use SNMP::Info::LLDP;
+use SNMP::Info::DocsisHE;
 
 @SNMP::Info::Layer2::ISA
-    = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet SNMP::Info::LLDP Exporter/;
+    = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet SNMP::Info::LLDP SNMP::Info::DocsisHE Exporter/;
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::MIBS,         %SNMP::Info::Bridge::MIBS,
     %SNMP::Info::Entity::MIBS, %SNMP::Info::PowerEthernet::MIBS,
-    %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::LLDP::MIBS,   %SNMP::Info::DocsisHE::MIBS,
 );
 
 %GLOBALS = (
     %SNMP::Info::GLOBALS,
     %SNMP::Info::Bridge::GLOBALS,
+    %SNMP::Info::DocsisHE::GLOBALS,
     %SNMP::Info::Entity::GLOBALS,
     %SNMP::Info::PowerEthernet::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
@@ -67,7 +69,7 @@ $VERSION = '3.64';
 %FUNCS = (
     %SNMP::Info::FUNCS,         %SNMP::Info::Bridge::FUNCS,
     %SNMP::Info::Entity::FUNCS, %SNMP::Info::PowerEthernet::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,   %SNMP::Info::DocsisHE::FUNCS,
 );
 
 %MUNGE = (
@@ -75,6 +77,7 @@ $VERSION = '3.64';
     # Inherit all the built in munging
     %SNMP::Info::MUNGE,
     %SNMP::Info::Bridge::MUNGE,
+    %SNMP::Info::DocsisHE::MUNGE,
     %SNMP::Info::Entity::MUNGE,
     %SNMP::Info::PowerEthernet::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
@@ -142,15 +145,25 @@ sub interfaces {
     # Replace the Index with the ifDescr field.
     # Check for duplicates in ifDescr, if so uniquely identify by adding
     # ifIndex to repeated values
-    my %seen;
-    foreach my $iid ( keys %$i_descr ) {
+    my (%seen, %first_seen_as);
+    foreach my $iid ( sort keys %$i_descr ) {
         my $port = $i_descr->{$iid};
         next unless defined $port;
+
+        my $port = SNMP::Info::munge_null($port);
+        $port =~ s/^\s+//; $port =~ s/\s+$//;
+        next unless length $port;
+
         if ( $seen{$port}++ ) {
+            # (#320) also fixup the port this is a duplicate of
+            $interfaces->{ $first_seen_as{$port} }
+              = sprintf( "%s (%d)", $port, $first_seen_as{$port} );
+
             $interfaces->{$iid} = sprintf( "%s (%d)", $port, $iid );
         }
         else {
             $interfaces->{$iid} = $port;
+            $first_seen_as{$port} = $iid;
         }
     }
     return $interfaces;
@@ -169,14 +182,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $l2 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $l2->class();
@@ -199,11 +212,11 @@ This class is usually used as a superclass for more specific device classes
 listed under SNMP::Info::Layer2::*   Please read all docs under SNMP::Info
 first.
 
-Provides abstraction to the configuration information obtainable from a 
+Provides abstraction to the configuration information obtainable from a
 Layer2 device through SNMP.  Information is stored in a number of MIBs.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $l2 = new SNMP::Info::Layer2(...);
 
@@ -243,7 +256,7 @@ These are methods that return scalar value from SNMP
 
 =item $l2->model()
 
-Cross references $l2->id() with product IDs in the 
+Cross references $l2->id() with product IDs in the
 Cisco MIBs.
 
 For HP devices, removes C<'hpswitch'> from the name

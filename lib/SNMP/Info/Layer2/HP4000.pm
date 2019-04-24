@@ -42,9 +42,9 @@ use SNMP::Info::CDP;
     SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::HP4000::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MODEL_MAP %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MODEL_MAP, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -386,7 +386,7 @@ sub i_vlan_membership_untagged {
         my $vlan = $vlans->{$port};
         push( @{ $i_vlan_membership->{$port} }, $vlan );
     }
-    
+
     return $i_vlan_membership;
 }
 
@@ -482,14 +482,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $hp = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $hp->class();
@@ -497,15 +497,15 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
-HP ProCurve Switch via SNMP. 
+Provides abstraction to the configuration information obtainable from a
+HP ProCurve Switch via SNMP.
 
 Note:  Some HP Switches will connect via SNMP version 1, but a lot of config
 data will not be available.  Make sure you try and connect with Version 2
 first, and then fail back to version 1.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $hp = new SNMP::Info::Layer2::HP4000(...);
 
@@ -583,7 +583,7 @@ Returns bytes of used memory
 Returns the model number of the HP Switch.  Will translate between the HP Part
 number and the common model number with this map :
 
- %MODEL_MAP = ( 
+ %MODEL_MAP = (
                 'J4093A' => '2424M',
                 'J4110A' => '8000M',
                 'J4120A' => '1600M',
@@ -652,7 +652,7 @@ to a hash.
 
 =over
 
-=item $hp->interfaces() 
+=item $hp->interfaces()
 
 Uses $hp->i_description()
 
@@ -687,7 +687,7 @@ It is the union of tagged, untagged, and auto ports.
   Example:
   my $interfaces = $hp->interfaces();
   my $vlans      = $hp->i_vlan_membership();
-  
+
   foreach my $iid (sort keys %$interfaces) {
     my $port = $interfaces->{$iid};
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
@@ -731,7 +731,7 @@ See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
 These are methods that provide SNMP set functionality for overridden methods
 or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
-operations. 
+operations.
 
 =over
 

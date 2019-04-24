@@ -43,7 +43,7 @@ sub setup : Tests(setup) {
     '_peth_port_class'  => 1,
     'store' => {
       'peth_port_status' => {'1.1' => 'searching', '1.3' => 'otherFault', '1.24' => 'deliveringPower'},
-      'peth_port_class'  => {'1.1' => 'class0', '1.3' => 'class0', '1.24' => 'class3'},      
+      'peth_port_class'  => {'1.1' => 'class0', '1.3' => 'class0', '1.24' => 'class3'},
       },
   };
   $test->{info}->cache($cache_data);

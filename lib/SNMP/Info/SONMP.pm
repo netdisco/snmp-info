@@ -37,9 +37,9 @@ use SNMP::Info;
 @SNMP::Info::SONMP::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::SONMP::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     'SYNOPTICS-ROOT-MIB'           => 'synoptics',
@@ -147,7 +147,7 @@ sub sonmp_if {
                 $port = 26;
             }
         }
-        
+
         my $index;
         my $int = $sub_port ? "$slot.$port.$sub_port" : "$slot.$port";
 
@@ -292,10 +292,10 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- my $sonmp = new SNMP::Info ( 
+ my $sonmp = new SNMP::Info (
                              AutoSpecify => 1,
                              Debug       => 1,
-                             DestHost    => 'router', 
+                             DestHost    => 'router',
                              Community   => 'public',
                              Version     => 2
                            );
@@ -321,7 +321,7 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-SNMP::Info::SONMP is a subclass of SNMP::Info that provides an object oriented 
+SNMP::Info::SONMP is a subclass of SNMP::Info that provides an object oriented
 interface to the SynOptics Network Management Protocol (SONMP) information
 through SNMP.
 
@@ -334,7 +334,7 @@ Discovery Protocol (NDP).
 Create or use a device subclass that inherits this class.  Do not use
 directly.
 
-Each device implements a subset of the global and cache entries. 
+Each device implements a subset of the global and cache entries.
 Check the return value to see if that data is held by the device.
 
 =head2 Inherited Classes
@@ -368,7 +368,7 @@ Returns the offset if slot numbering does not start at 0.  Defaults to 1.
 
 =item $sonmp->port_offset()
 
-Returns the offset if port numbering does not start at 0.  Defaults to 0. 
+Returns the offset if port numbering does not start at 0.  Defaults to 0.
 
 =item  $sonmp->hasSONMP()
 
@@ -382,13 +382,13 @@ Returns the IP that the device is sending out for its Nmm topology info.
 
 =item $sonmp->sonmp_run()
 
-Returns true if SONMP is on for this device. 
+Returns true if SONMP is on for this device.
 
 (C<s5EnMsTopStatus>)
 
 =item $sonmp->mac()
 
-Returns MAC of the advertised IP address of this device. 
+Returns MAC of the advertised IP address of this device.
 
 =back
 
@@ -481,7 +481,7 @@ Returns reference to hash.  Key: IID, Value: Remote IP address
 
 If multiple entries exist with the same local port, sonmp_if(), with different
 IPv4 addresses, sonmp_ip(), there is either a non SONMP device in between two or
-more devices or multiple devices which are not directly connected.  
+more devices or multiple devices which are not directly connected.
 
 Use the data from the Layer2 Topology Table below to dig deeper.
 

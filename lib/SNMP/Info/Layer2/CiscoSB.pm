@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::CiscoSB
-# $Id$
 #
 # Copyright (c) 2013 Nic Bernstein
 #
@@ -48,9 +47,9 @@ use SNMP::Info::CDP;
     SNMP::Info::CiscoStats SNMP::Info::CiscoConfig SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::CiscoSB::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
@@ -149,7 +148,6 @@ sub interfaces {
     return $interfaces;
 }
 
-
 1;
 __END__
 
@@ -185,15 +183,17 @@ managed switches. [i.e. those matching enterprises(1).cisco(9).otherEnterprises(
 
 =over
 
-=item SNMP::Info::Layer2
+=item SNMP::Info::CDP
+
+=item SNMP::Info::CiscoConfig
+
+=item SNMP::Info::CiscoStats
 
 =item SNMP::Info::Entity
 
 =item SNMP::Info::EtherLike
 
-=item SNMP::Info::CiscoStats
-
-=item SNMP::Info::CiscoConfig
+=item SNMP::Info::Layer2
 
 =back
 
@@ -209,17 +209,9 @@ MIBs required by the inherited classes listed above.
 
 =head1 GLOBALS
 
-These are methods that return scalar value from SNMP
+These are methods that return scalar value from SNMP.
 
 =over
-
-=item $ciscosb->vendor()
-
-Returns 'cisco'
-
-=item $ciscosb->os()
-
-Returns 'ros'
 
 =item $ciscosb->os_ver()
 
@@ -233,6 +225,20 @@ Returns serial number of unit (C<entPhysicalSerialNum>)
 
 Returns model and hardware revision of unit
 (C<entPhysicalModelName+entPhysicalHardwareRev>)
+
+=back
+
+=head2 Overrides
+
+=over
+
+=item $ciscosb->vendor()
+
+Returns 'cisco'.
+
+=item $ciscosb->os()
+
+Returns 'ros'.
 
 =back
 

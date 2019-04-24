@@ -38,9 +38,9 @@ use SNMP::Info::LLDP;
 @SNMP::Info::Layer2::Netgear::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Netgear::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 # This will be filled in with the device's index into the EntPhysicalEntry
 # table by the serial() function.
@@ -74,7 +74,7 @@ sub os {
 sub serial {
     my $netgear = shift;
     my $serial = undef;
-    
+
     my $e_serial = $netgear->e_serial();
     if (defined($e_serial)) { # This unit sports the Entity-MIB
         # Find entity table entry for this unit
@@ -108,7 +108,7 @@ sub model {
 }
 
 # ifDescr is the same for all interfaces in a class, but the ifName is
-# unique, so let's use that for port name.  If all else fails, 
+# unique, so let's use that for port name.  If all else fails,
 # concatentate ifDesc and ifIndex.
 sub interfaces {
     my $netgear = shift;
@@ -162,20 +162,20 @@ SNMP::Info::Layer2::Netgear - SNMP Interface to Netgear switches
 
 =head1 AUTHOR
 
- Bill Fenner and Zoltan Erszenyi, 
- Hacked in LLDP support from Baystack.pm by 
+ Bill Fenner and Zoltan Erszenyi,
+ Hacked in LLDP support from Baystack.pm by
  Nic Bernstein <nic@onlight.com>
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $netgear = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $netgear->class();
@@ -183,8 +183,8 @@ SNMP::Info::Layer2::Netgear - SNMP Interface to Netgear switches
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a 
-Netgear device through SNMP. See inherited classes' documentation for 
+Provides abstraction to the configuration information obtainable from a
+Netgear device through SNMP. See inherited classes' documentation for
 inherited methods.
 
 =head2 Inherited Classes
@@ -226,11 +226,11 @@ Returns 'netgear'
 
 =item $netgear->os()
 
-Returns 'netgear' 
+Returns 'netgear'
 
 =item $netgear->model()
 
-Returns concatenation of $e_model and $e_hwver if Entity MIB present, 
+Returns concatenation of $e_model and $e_hwver if Entity MIB present,
 otherwise returns description()
 
 =item $netgear->os_ver()

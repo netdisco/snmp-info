@@ -40,9 +40,9 @@ use SNMP::Info;
 @SNMP::Info::Bridge::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::Bridge::EXPORT_OK = qw//;
 
-use vars qw/$VERSION $DEBUG %MIBS %FUNCS %GLOBALS %MUNGE $INIT/;
+our ($VERSION, $DEBUG, %MIBS, %FUNCS, %GLOBALS, %MUNGE, $INIT);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     'BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',
@@ -189,7 +189,7 @@ sub qb_fw_vlan {
     foreach my $idx ( keys %$qb_fw_port ) {
         my ( $fdb_id, $mac ) = _qb_fdbtable_index($idx);
         # Many devices do not populate the dot1qVlanCurrentTable, so default
-        # to FDB ID = VID, but if we have a mapping use it.  
+        # to FDB ID = VID, but if we have a mapping use it.
         my $vlan = $fdb_id;
         # defined as test since some devices have a vlan 0
         if (defined $qb_fdb_ids->{$fdb_id}) {
@@ -237,7 +237,7 @@ sub qb_fdb_index {
     return $vl_fdb_index;
 }
 
-# Most devices now support Q-BRIDGE-MIB, fall back to 
+# Most devices now support Q-BRIDGE-MIB, fall back to
 # BRIDGE-MIB for those that don't.
 sub fw_mac {
     my $bridge = shift;
@@ -262,7 +262,7 @@ sub fw_status {
 
     my $qb = $bridge->qb_fw_status();
     return $qb if (ref {} eq ref $qb and scalar keys %$qb);
-    
+
     return $bridge->SUPER::fw_status();
 }
 
@@ -555,10 +555,10 @@ Max Baker
 
 =head1 SYNOPSIS
 
- my $bridge = new SNMP::Info ( 
+ my $bridge = new SNMP::Info (
                              AutoSpecify => 1,
                              Debug       => 1,
-                             DestHost    => 'switch', 
+                             DestHost    => 'switch',
                              Community   => 'public',
                              Version     => 2
                              );
@@ -579,7 +579,7 @@ Max Baker
     my $port  = $interfaces->{$iid};
 
     print "Port:$port forwarding to $mac\n";
- } 
+ }
 
 =head1 DESCRIPTION
 
@@ -588,12 +588,12 @@ MAC Forwarding Table and Spanning Tree Protocol info.
 
 F<Q-BRIDGE-MIB> holds 802.1q information -- VLANs and Trunking.  Cisco tends
 not to use this MIB, but some proprietary ones.  HP and some nicer vendors use
-this.  This is from C<RFC2674_q>.  
+this.  This is from C<RFC2674_q>.
 
 Create or use a subclass of SNMP::Info that inherits this class.  Do not use
 directly.
 
-For debugging you can call new() directly as you would in SNMP::Info 
+For debugging you can call new() directly as you would in SNMP::Info
 
  my $bridge = new SNMP::Info::Bridge(...);
 
@@ -657,19 +657,19 @@ Returns root of STP.
 
 (C<dot1dStpDesignatedRoot>)
 
-=item $bridge->qb_vlans_max() 
+=item $bridge->qb_vlans_max()
 
 Maximum number of VLANS supported on this device.
 
 (C<dot1qMaxSupportedVlans>)
 
-=item $bridge->qb_vlans() 
+=item $bridge->qb_vlans()
 
 Current number of VLANs that are configured in this device.
 
 (C<dot1qNumVlans>)
 
-=item $bridge->qb_next_vlan_index() 
+=item $bridge->qb_next_vlan_index()
 
 The next available value for C<dot1qVlanIndex> of a local VLAN entry in
 C<dot1qVlanStaticTable>
@@ -701,7 +701,7 @@ IDs.  These are the VLANs which are members of the egress list for the port.
   Example:
   my $interfaces = $bridge->interfaces();
   my $vlans      = $bridge->i_vlan_membership();
-  
+
   foreach my $iid (sort keys %$interfaces) {
     my $port = $interfaces->{$iid};
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
@@ -731,7 +731,7 @@ Returns VLAN IDs
 
 =head2 Forwarding Table (C<dot1dTpFdbEntry>)
 
-=over 
+=over
 
 =item $bridge->fw_mac()
 
@@ -949,7 +949,7 @@ The set of ports which are assigned to the egress list for this VLAN.
 =item $bridge->qb_cv_untagged()
 
 The set of ports which should transmit egress packets for this VLAN as
-untagged. 
+untagged.
 
 (C<dot1qVlanCurrentUntaggedPorts>)
 
@@ -987,7 +987,7 @@ for this VLAN.
 =item $bridge->qb_v_untagged()
 
 The set of ports which should transmit egress packets for this VLAN as
-untagged. 
+untagged.
 
 (C<dot1qVlanStaticUntaggedPorts>)
 
@@ -1027,13 +1027,13 @@ Returns reference to hash of forwarding table entries status
 (C<dot1qTpFdbStatus>)
 
 =back
- 
+
 =head1 SET METHODS
 
 These are methods that provide SNMP set functionality for overridden methods
 or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
-operations. 
+operations.
 
 =over
 

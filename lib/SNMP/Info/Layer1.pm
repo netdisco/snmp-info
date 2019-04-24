@@ -39,9 +39,9 @@ use SNMP::Info;
 @SNMP::Info::Layer1::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::Layer1::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %PORTSTAT %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = ( %SNMP::Info::MIBS, 'SNMP-REPEATER-MIB' => 'rptrPortGroupIndex' );
 
@@ -172,14 +172,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $l1 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $l1->class();
@@ -203,15 +203,15 @@ This class is usually used as a superclass for more specific device classes
 listed under SNMP::Info::Layer1::*   Please read all docs under SNMP::Info
 first.
 
-Provides abstraction to the configuration information obtainable from a 
+Provides abstraction to the configuration information obtainable from a
 Layer1 device through SNMP.  Information is stored in a number of MIBs.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $l1 = new SNMP::Info::Layer1(...);
 
-=head2 Inherited Classes 
+=head2 Inherited Classes
 
 =over
 
@@ -219,7 +219,7 @@ after determining a more specific class using the method above.
 
 =back
 
-=head2 Required MIBs 
+=head2 Required MIBs
 
 =over
 
@@ -242,7 +242,7 @@ These are methods that return scalar value from SNMP
 
 =item $l1->ports_managed()
 
-Gets the number of ports under the interface mib 
+Gets the number of ports under the interface mib
 
 (C<ifNumber>)
 

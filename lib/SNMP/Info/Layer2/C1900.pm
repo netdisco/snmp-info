@@ -46,9 +46,9 @@ use SNMP::Info::Layer2;
     Exporter/;
 @SNMP::Info::Layer2::C1900::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
@@ -291,14 +291,14 @@ Max Baker
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $c1900 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $c1900->class();
@@ -312,7 +312,7 @@ Catalyst 1900 device through SNMP.  See SNMP::Info for full documentation
 Note that most of these devices only talk SNMP version 1, but not all.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $c1900 = new SNMP::Info::Layer2::C1900(...);
 
@@ -379,8 +379,8 @@ Returns 'catalyst'
 
 =item $c1900->os_ver()
 
-Returns CatOS version if obtainable.  First tries to use 
-SNMP::Info::CiscoStats->os_ver() .  If that fails then it 
+Returns CatOS version if obtainable.  First tries to use
+SNMP::Info::CiscoStats->os_ver() .  If that fails then it
 checks for the presence of $c1900->c1900_flash_status() and culls
 the version from there.
 
@@ -467,7 +467,7 @@ bridge group IDs.
   Example:
   my $interfaces = $c1900->interfaces();
   my $vlans      = $c1900->i_vlan_membership();
-  
+
   foreach my $iid (sort keys %$interfaces) {
     my $port = $interfaces->{$iid};
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
@@ -510,7 +510,7 @@ Gives admin setting for Duplex Info
 
 =item $c1900->c1900_p_name()
 
-Gives human set name for port 
+Gives human set name for port
 
 (C<swPortName>)
 
@@ -563,7 +563,7 @@ See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 These are methods that provide SNMP set functionality for overridden methods
 or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
-operations. 
+operations.
 
 =over
 
@@ -574,7 +574,7 @@ choices are 'auto', 'half', 'full'.
 
   Example:
   my %if_map = reverse %{$c1900->interfaces()};
-  $c1900->set_i_duplex_admin('auto', $if_map{'1'}) 
+  $c1900->set_i_duplex_admin('auto', $if_map{'1'})
     or die "Couldn't change port duplex. ",$c1900->error(1);
 
 =back

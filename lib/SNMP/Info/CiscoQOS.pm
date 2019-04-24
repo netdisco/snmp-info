@@ -37,9 +37,9 @@ use SNMP::Info;
 @SNMP::Info::CiscoQOS::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::CiscoQOS::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = ( 'CISCO-CLASS-BASED-QOS-MIB' => 'cbQosIfIndex', );
 
@@ -86,14 +86,14 @@ Alexander Hartmaier
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $qos = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $qos->class();
@@ -101,7 +101,7 @@ Alexander Hartmaier
 
 =head1 DESCRIPTION
 
-SNMP::Info::CiscoQOS is a subclass of SNMP::Info that provides 
+SNMP::Info::CiscoQOS is a subclass of SNMP::Info that provides
 information about a cisco device's QoS config.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.

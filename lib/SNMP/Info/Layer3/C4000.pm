@@ -42,9 +42,9 @@ use SNMP::Info::MAU;
     Exporter/;
 @SNMP::Info::Layer3::C4000::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::MAU::MIBS,
@@ -111,7 +111,7 @@ Bill Fenner
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $c4000 = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
@@ -119,7 +119,7 @@ Bill Fenner
                         DestHost    => 'myswitch',
                         Community   => 'public',
                         Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $c4000->class();
@@ -127,10 +127,10 @@ Bill Fenner
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Cisco Catalyst 4000 Layer 2/3 Switches.  
+Abstraction subclass for Cisco Catalyst 4000 Layer 2/3 Switches.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $c4000 = new SNMP::Info::Layer3::C4000(...);
 

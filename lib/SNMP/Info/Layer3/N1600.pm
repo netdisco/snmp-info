@@ -39,9 +39,9 @@ use SNMP::Info::SONMP;
     = qw/SNMP::Info::Layer3 SNMP::Info::SONMP Exporter/;
 @SNMP::Info::Layer3::N1600::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %GLOBALS %FUNCS %MIBS %MUNGE/;
+our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -183,14 +183,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $n1600 = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 1
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class      = $n1600->class();
@@ -200,10 +200,10 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from an
-Avaya/Nortel N16XX device through SNMP. 
+Avaya/Nortel N16XX device through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
 my $n1600 = new SNMP::Info::Layer3::N1600(...);
 
@@ -243,7 +243,7 @@ Return C<1>.  Bulkwalk is currently turned off for this class.
 
 =item $n1600->model()
 
-Returns model type.  Checks $n1600->id() against the 
+Returns model type.  Checks $n1600->id() against the
 F<RAPID-CITY-MIB> and then parses out C<rcA>.
 
 =item $n1600->vendor()
@@ -300,11 +300,11 @@ SNMP::Info::SONMP.
 
 =item $n1600->i_duplex()
 
-Returns reference to hash of interface operational link duplex status. 
+Returns reference to hash of interface operational link duplex status.
 
 =item $n1600->i_duplex_admin()
 
-Returns reference to hash of interface administrative link duplex status. 
+Returns reference to hash of interface administrative link duplex status.
 
 =back
 

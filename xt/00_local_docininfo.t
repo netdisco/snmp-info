@@ -35,7 +35,7 @@ sub check_version {
 
     # Make sure that this package is listed in Info.pm
     fail($_) unless $content =~ m/^\s*package\s+(\S+)\s*;/m;
-    
+
     my $package = $1;
 
     return if $package eq 'SNMP::Info';

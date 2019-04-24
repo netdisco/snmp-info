@@ -36,9 +36,9 @@ use SNMP::Info::Layer2;
 @SNMP::Info::Layer2::Aerohive::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Aerohive::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -83,6 +83,7 @@ $VERSION = '3.64';
 %MUNGE
     = ( %SNMP::Info::Layer2::MUNGE, 'at_paddr' => \&SNMP::Info::munge_mac, );
 
+# hiveos does not have sysServices
 sub layers {
     return '00000111';
 }
@@ -132,7 +133,7 @@ sub mac {
         push( @macs, $macs->{$iid} );
       }
       @macs = sort(@macs);
-    } 
+    }
     return $macs[0];
 }
 
@@ -221,7 +222,10 @@ sub bp_index {
     my $aerohive = shift;
     my $partial  = shift;
 
-    my $i_index = $aerohive->i_index($partial) || {};
+    # somewhere caching is doing something strange, without load_
+    # netdisco can't find bp_index mappings & will not registerer
+    # any clients. netdisco/netdisco#496
+    my $i_index = $aerohive->load_i_index($partial) || {};
 
     my %bp_index;
     foreach my $iid ( keys %$i_index ) {
@@ -323,14 +327,14 @@ Eric Miller
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $aerohive = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $aerohive->class();
@@ -339,10 +343,10 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from an
-Aerohive wireless Access Point through SNMP. 
+Aerohive wireless Access Point through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $aerohive = new SNMP::Info::Layer2::Aerohive(...);
 

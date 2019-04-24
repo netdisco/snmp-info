@@ -36,9 +36,9 @@ use SNMP::Info;
 @SNMP::Info::Aggregate::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::Aggregate::EXPORT_OK = qw/agg_ports_ifstack/;
 
-use vars qw/$VERSION %MIBS %FUNCS %GLOBALS %MUNGE/;
+our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 # Load MIB for leafs referenced within class
 %MIBS = ('IF-MIB' => 'ifIndex',);
@@ -84,14 +84,14 @@ SNMP::Info Developers
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $info = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $info->class();

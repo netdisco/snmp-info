@@ -1,6 +1,6 @@
-# Test::SNMP::Info::Bridge
+# Test::SNMP::Info::Layer2::Exinda
 #
-# Copyright (c) 2018 Eric Miller
+# Copyright (c) 2019 nick nauwelaerts
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,19 +27,11 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package Test::SNMP::Info::Bridge;
+package Test::SNMP::Info::Layer2::Exinda;
 
 use Test::Class::Most parent => 'My::Test::Class';
 
-use SNMP::Info::Bridge;
-
-# Remove this startup override once we have full method coverage
-sub startup : Tests(startup => 1) {
-  my $test = shift;
-  $test->SUPER::startup();
-
-  $test->todo_methods(1);
-}
+use SNMP::Info::Layer2::Exinda;
 
 sub setup : Tests(setup) {
   my $test = shift;
@@ -47,26 +39,63 @@ sub setup : Tests(setup) {
 
   # Start with a common cache that will serve most tests
   my $cache_data = {
-    '_dot1qVlanFdbId' =>1,
-    'store' => {
-      'dot1qVlanFdbId' => { '0.1' => 0, '0.91' => 3, '0.112' => 1, '0.113' => 2}
-      },
+    '_id'          => '.1.3.6.1.4.1.21091',
+    '_layers'      => 72,
+    '_description' => 'Linux exinda-8063 3.10.72-72EXINDAsmp #0 SMP @1484583999 x86_64',
+
+    '_serial1' => '109836a9a4a9',
+    '_exinda_model'  => '8063',
+    'store' => {},
   };
   $test->{info}->cache($cache_data);
 }
 
+sub os : Tests(2) {
+  my $test = shift;
 
-sub qb_fdb_index : Tests(3) {
-    my $test = shift;
+  can_ok($test->{info}, 'os');
+  is($test->{info}->os(), 'exos', q(os returns 'exos'));
 
-    can_ok( $test->{info}, 'qb_fdb_index' );
-
-    my $expected = { 0 => 1, 3 => 91, 1 => 112, 2 => 113 };
-    cmp_deeply( $test->{info}->qb_fdb_index(), $expected, q(FDB to VLAN index returned expected values));
-
-    $test->{info}->clear_cache();
-    cmp_deeply( $test->{info}->qb_fdb_index(),
-        {}, q(No data returns empty hash) );
+  # hardcoded, so no check for undef
 }
+
+sub vendor : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'exinda');
+  is($test->{info}->vendor(), 'exinda', q(vendor returns 'exinda'));
+
+  # hardcoded, so no check for undef
+}
+
+sub layers : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'layers');
+  is($test->{info}->layers(), '01001110', q(layers returns '01001110'));
+
+  # hardcoded, so no check for undef
+}
+
+sub model : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'model');
+  is($test->{info}->model(), '8063', q(model is expected value));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->model(), undef, q(no data returns undef model));
+}
+
+sub mac : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mac');
+  is($test->{info}->mac(), '10:98:36:a9:a4:a9', q(mac is expected value));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->mac(), undef, q(no data returns undef mac));
+}
+
 
 1;

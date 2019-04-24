@@ -26,6 +26,7 @@ lib/SNMP/Info/CiscoStack.pm
 lib/SNMP/Info/CiscoStats.pm
 lib/SNMP/Info/CiscoStpExtensions.pm
 lib/SNMP/Info/CiscoVTP.pm
+lib/SNMP/Info/DocsisHE.pm
 lib/SNMP/Info/EDP.pm
 lib/SNMP/Info/Entity.pm
 lib/SNMP/Info/EtherLike.pm
@@ -104,6 +105,7 @@ lib/SNMP/Info/Layer3/Huawei.pm
 lib/SNMP/Info/Layer3/IBMGbTor.pm
 lib/SNMP/Info/Layer3/Juniper.pm
 lib/SNMP/Info/Layer3/Lantronix.pm
+lib/SNMP/Info/Layer3/Lenovo.pm
 lib/SNMP/Info/Layer3/Microsoft.pm
 lib/SNMP/Info/Layer3/Mikrotik.pm
 lib/SNMP/Info/Layer3/N1600.pm
@@ -200,6 +202,7 @@ xt/lib/Test/SNMP/Info/Layer2/Catalyst.pm
 xt/lib/Test/SNMP/Info/Layer2/Centillion.pm
 xt/lib/Test/SNMP/Info/Layer2/Cisco.pm
 xt/lib/Test/SNMP/Info/Layer2/CiscoSB.pm
+xt/lib/Test/SNMP/Info/Layer2/Exinda.pm
 xt/lib/Test/SNMP/Info/Layer2/HP.pm
 xt/lib/Test/SNMP/Info/Layer2/HP4000.pm
 xt/lib/Test/SNMP/Info/Layer2/HPVC.pm
@@ -249,6 +252,7 @@ xt/lib/Test/SNMP/Info/Layer3/Huawei.pm
 xt/lib/Test/SNMP/Info/Layer3/IBMGbTor.pm
 xt/lib/Test/SNMP/Info/Layer3/Juniper.pm
 xt/lib/Test/SNMP/Info/Layer3/Lantronix.pm
+xt/lib/Test/SNMP/Info/Layer3/Lenovo.pm
 xt/lib/Test/SNMP/Info/Layer3/Microsoft.pm
 xt/lib/Test/SNMP/Info/Layer3/Mikrotik.pm
 xt/lib/Test/SNMP/Info/Layer3/N1600.pm

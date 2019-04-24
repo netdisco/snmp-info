@@ -40,9 +40,9 @@ use SNMP::Info::Layer3;  # only used in sub mac()
     = qw/SNMP::Info::IEEE802dot11 SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Ubiquiti::EXPORT_OK = qw//;
 
-use vars qw/$VERSION %FUNCS %GLOBALS %MIBS %MUNGE/;
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.64';
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -130,11 +130,11 @@ sub model {
         next unless defined $prod;
         return $prod;
     }
-    
+
     my $desc = $ubnt->description() || '';
-    
+
     ## Pull Model from beginning of description, separated by comma (EdgeSwitch)
-    if((lc $desc) =~ /^edgeswitch/){    
+    if((lc $desc) =~ /^edgeswitch/){
         my @mydesc = split(/, /, $desc);
         return $mydesc[0];
     }
@@ -151,15 +151,15 @@ sub model {
         my $ethCount = 0;
         my $switchCount = 0;
         #my $sfpCount = 0;
-        #my $poeCount = 0;  
-        my $memTotalReal = $ubnt->memTotalReal;   
+        #my $poeCount = 0;
+        my $memTotalReal = $ubnt->memTotalReal;
         my $cpuLoad = $ubnt->hrProcessorLoad;
         my $cpuCount = 0;
         ## My perl is lacking. Not sure if there's a more efficient way to find the cpu count
         foreach my $iid ( keys %$cpuLoad ) {
             $cpuCount++;
         }
-        
+
         my $ifDescs = $ubnt->ifDescr;
         foreach my $iid ( keys %$ifDescs ) {
             my $ifDesc = $ifDescs->{$iid};
@@ -172,7 +172,7 @@ sub model {
             }
         }
 
-        ## If people have other models to further fine-tune this logic that would be great. 
+        ## If people have other models to further fine-tune this logic that would be great.
         if($ethCount eq 9){
             ## Should be ER Infinity
             return "EdgeRouter Infinity"
@@ -190,7 +190,7 @@ sub model {
             ## failback string
             return "EdgeRouter eth-$ethCount switch-$switchCount mem-$memTotalReal cpuNum-$cpuCount";
         }
-        
+
     }
 }
 
@@ -221,14 +221,12 @@ sub mac {
 
             # syntax stolen from sub munge_mac in SNMP::Info
             $mac = lc join( ':', map { sprintf "%02x", $_ } unpack( 'C*', $mac ) );
-            return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){5}[0-9A-F][0-9A-F]$/i;  
-            
+            return $mac if $mac =~ /^([0-9A-F][0-9A-F]:){5}[0-9A-F][0-9A-F]$/i;
         }
     }
-    
+
     # MAC malformed or missing
     return;
-
 }
 
 sub interfaces {
@@ -288,14 +286,14 @@ Max Kosmach
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you. 
+ # Let SNMP::Info determine the correct subclass for you.
  my $ubnt = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
                           Version     => 2
-                        ) 
+                        )
     or die "Can't connect to DestHost.\n";
 
  my $class = $ubnt->class();
@@ -307,7 +305,7 @@ Provides abstraction to the configuration information obtainable from
 Ubiquiti Access Point through SNMP.
 
 For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above. 
+after determining a more specific class using the method above.
 
  my $ubnt = new SNMP::Info::Layer2::Ubiquiti(...);
 
