@@ -196,7 +196,7 @@ C<sysHardwareVersionDesc>
 
 =item $ns->serial()
 
-Returns ''.
+C<sysHardwareSerialNumber>
 
 =back
 
