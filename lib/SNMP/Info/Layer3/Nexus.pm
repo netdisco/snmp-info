@@ -293,6 +293,8 @@ after determining a more specific class using the method above.
 
 =item F<CISCO-ENTITY-VENDORTYPE-OID-MIB>
 
+=item F<CISCO-CONTEXT-MAPPING-MIB>
+
 =back
 
 =over
