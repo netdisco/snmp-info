@@ -69,7 +69,7 @@ $VERSION = '3.67';
 );
 
 sub vendor {
-    return 'VMware';
+    return 'vmware';
 }
 
 sub os_ver {
@@ -155,7 +155,7 @@ These are methods that return scalar value from SNMP
 
 =item $vmware->vendor()
 
-Returns C<'VMware'>.
+Returns C<'vmware'>.
 
 =item $vmware->os()
 
