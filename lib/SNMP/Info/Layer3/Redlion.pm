@@ -1,4 +1,4 @@
-# SNMP::Info::Layer3::Redlion
+package SNMP::Info::Layer3::Redlion;
 #
 # Copyright (c) 2019 nick nauwelaerts
 # All rights reserved.
@@ -27,11 +27,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package SNMP::Info::Layer3::Redlion;
-
-$VERSION = '3.67';
-
 use strict;
+use warnings;
 
 use Exporter;
 use SNMP::Info::Layer3;
@@ -42,7 +39,9 @@ use SNMP::Info::Layer3;
 /;
 @SNMP::Info::Layer3::Redlion::EXPORT_OK = qw//;
 
-our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
+
+$VERSION = '3.67';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -51,6 +50,9 @@ our ($VERSION %GLOBALS %MIBS %FUNCS %MUNGE);
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
+    'sn_model'  => 'unitDescription',
+    'sn_os_ver' => 'unitFirmwareVersion',
+    'sn_serial' => 'unitSerialNumber',
 );
 
 %FUNCS = (
@@ -72,21 +74,25 @@ sub vendor {
 sub os_ver {
     my $redlion = shift;
 
-    return $redlion->unitFirmwareVersion();
+    return $redlion->sn_os_ver();
 }
 
 sub model {
     my $redlion = shift;
 
-    return $redlion->unitDescription();
+    return $redlion->sn_model();
 }
 
 sub serial {
     my $redlion = shift;
 
-    return $redlion->unitSerialNumber();
+    return $redlion->sn_serial();
 }
 
+# is actually just an embedded linux
+# 'sn' refers to "sixnet", the original creators of the device
+# layer2::sixnet is for redlion's switch offerings.
+# (they also have a different enterprise oid)
 sub os {
     return 'sn';
 }
@@ -148,6 +154,10 @@ These are methods that return scalar value from SNMP.
 
 =over
 
+=item $redlion->layers()
+
+Returns '00000110' since sysServices returns undef.
+
 =item $redlion->model()
 
 Returns the model extracted from C<unitDescription>.
@@ -162,7 +172,8 @@ Returns the os version extracted from C<unitFirmwareVersion>.
 
 =item $redlion->serial()
 
-Returns the serial extracted from C<unitSerialNumber>.
+Returns the serial extracted from C<unitSerialNumber>. Must be enabled
+in the snmp setup of the device to show this.
 
 =item $redlion->vendor()
 
