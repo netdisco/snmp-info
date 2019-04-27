@@ -3563,7 +3563,7 @@ $NOSUCH = 1;
 =item $REPEATERS
 
 Default 20.  MaxRepeaters for BULKWALK operations.  See C<perldoc SNMP> for
-more info.  Can change by passing L<BulkRepeaters> option in new()
+more info.  Can change by passing L</BulkRepeaters> option in new()
 
 =cut
 

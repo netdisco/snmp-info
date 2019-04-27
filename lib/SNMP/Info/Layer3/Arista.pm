@@ -204,7 +204,7 @@ These are methods that return scalar values from SNMP
 
 =item $arista->vendor()
 
-    Returns 'Arista Networks, Inc.'
+Returns 'arista'
 
 =item $arista->model()
 
