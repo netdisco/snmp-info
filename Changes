@@ -1,5 +1,9 @@
 Version 3.68 (2019-xx-xx)
 
+  [NEW FEATURES]
+
+  * initial support for redlion wireless routers
+
   [ENHANCEMENTS]
 
   * use pulsesecure mib in layer7::neoteris instead of juniper-ive
