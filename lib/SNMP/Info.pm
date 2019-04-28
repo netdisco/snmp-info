@@ -1390,7 +1390,7 @@ sub new {
 
     my $info = $auto_specific ? $new_obj->specify() : $new_obj;
 
-    if ( $info->debug() > 1 ) {
+    if (defined $info and ($info->debug() > 1)) {
         require mro;
         print STDERR (ref $info) ." has resolution order: \n";
         print STDERR "  $_\n" foreach @{ mro::get_linear_isa( ref $info ) };
