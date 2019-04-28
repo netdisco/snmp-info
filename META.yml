@@ -17,7 +17,7 @@ build_requires:
 configure_requires:
   Module::Build: '0.42'
 dynamic_config: 1
-generated_by: 'Module::Build version 0.4229, CPAN::Meta::Converter version 2.150010'
+generated_by: 'Module::Build version 0.4224, CPAN::Meta::Converter version 2.150010'
 license: bsd
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -353,6 +353,9 @@ provides:
     version: '3.67'
   SNMP::Info::Layer3::Pica8:
     file: lib/SNMP/Info/Layer3/Pica8.pm
+    version: '3.67'
+  SNMP::Info::Layer3::Redlion:
+    file: lib/SNMP/Info/Layer3/Redlion.pm
     version: '3.67'
   SNMP::Info::Layer3::SonicWALL:
     file: lib/SNMP/Info/Layer3/SonicWALL.pm
