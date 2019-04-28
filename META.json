@@ -4,7 +4,7 @@
       "Eric A. Miller <emiller@cpan.org>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4229",
+   "generated_by" : "Module::Build version 0.4224",
    "license" : [
       "bsd"
    ],
@@ -490,6 +490,10 @@
          "file" : "lib/SNMP/Info/Layer3/Pica8.pm",
          "version" : "3.67"
       },
+      "SNMP::Info::Layer3::Redlion" : {
+         "file" : "lib/SNMP/Info/Layer3/Redlion.pm",
+         "version" : "3.67"
+      },
       "SNMP::Info::Layer3::SonicWALL" : {
          "file" : "lib/SNMP/Info/Layer3/SonicWALL.pm",
          "version" : "3.67"
@@ -591,5 +595,5 @@
       "x_MailingList" : "https://lists.sourceforge.net/lists/listinfo/snmp-info-users"
    },
    "version" : "3.67",
-   "x_serialization_backend" : "JSON::PP version 2.97001"
+   "x_serialization_backend" : "JSON::PP version 4.02"
 }
