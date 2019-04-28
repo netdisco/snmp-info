@@ -42,7 +42,7 @@ use SNMP::Info::Layer3;  # only used in sub mac()
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.67';
+$VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
