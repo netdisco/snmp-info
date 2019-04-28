@@ -335,7 +335,7 @@ sub interfaces {
         my $port = $i_descr->{$iid};
         next unless defined $port;
 
-        my $port = SNMP::Info::munge_null($port);
+        $port = SNMP::Info::munge_null($port);
         $port =~ s/^\s+//; $port =~ s/\s+$//;
         next unless length $port;
 
