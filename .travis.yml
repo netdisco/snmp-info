@@ -1,7 +1,7 @@
 language: perl
 perl:
-  - "stable"
-  - "5.14"
+  - "5.28"
+  - "5.10"
 addons:
   apt:
     packages:
