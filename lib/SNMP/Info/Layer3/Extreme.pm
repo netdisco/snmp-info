@@ -307,8 +307,8 @@ sub _slot_factor {
 sub fw_mac {
     my $extreme = shift;
 
-    my $b = $extreme->SUPER::fw_mac();
-    return $b if (keys %$b);
+    my $fw_m = $extreme->SUPER::fw_mac();
+    return $fw_m if (keys %$fw_m);
 
     return $extreme->ex_fw_mac();
 }
@@ -316,8 +316,8 @@ sub fw_mac {
 sub fw_port {
     my $extreme = shift;
 
-    my $b = $extreme->SUPER::fw_port();
-    return $b if (keys %$b);
+    my $fw_p = $extreme->SUPER::fw_port();
+    return $fw_p if (keys %$fw_p);
 
     return $extreme->ex_fw_port();
 }
@@ -325,8 +325,8 @@ sub fw_port {
 sub fw_status {
     my $extreme   = shift;
 
-    my $b = $extreme->SUPER::fw_status();
-    return $b if (keys %$b);
+    my $fw_s = $extreme->SUPER::fw_status();
+    return $fw_s if (keys %$fw_s);
 
     return $extreme->ex_fw_status();
 }
@@ -892,7 +892,7 @@ Eric Miller, Bill Fenner
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
@@ -938,6 +938,8 @@ my $extreme = new SNMP::Info::Layer3::Extreme(...);
 
 =item F<EXTREME-POE-MIB>
 
+=item F<EXTREME-STP-EXTENSIONS-MIB>
+
 =item Inherited Classes' MIBs
 
 See classes listed above for their required MIBs.
@@ -956,11 +958,11 @@ Returns model type.  Checks $extreme->id() against the F<EXTREME-BASE-MIB>.
 
 =item $extreme->vendor()
 
-Returns extreme
+Returns C<extreme>
 
 =item $extreme->os()
 
-Returns extreme
+Returns C<xos> or C<extremeware> depending on description()
 
 =item $extreme->os_ver()
 
