@@ -357,7 +357,7 @@ Newer software versions return duplex based upon the result of
 $c6500->el_duplex().  Otherwise it uses the result of the call to
 CiscoStack::i_duplex().
 
-See L<SNMP::Info::Etherlike> for el_duplex() method and
+See L<SNMP::Info::EtherLike> for el_duplex() method and
 L<SNMP::Info::CiscoStack> for its i_duplex() method.
 
 =item $c6500->i_duplex_admin()

@@ -608,7 +608,7 @@ Returns reference to hash of iid to current link duplex setting.
 Maps $l3->el_index() to $l3->el_duplex, then culls out
 full,half, or auto and sets the map to that value.
 
-See L<SNMP::Info::Etherlike> for the el_index() and el_duplex() methods.
+See L<SNMP::Info::EtherLike> for the el_index() and el_duplex() methods.
 
 =back
 
