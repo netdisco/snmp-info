@@ -70,4 +70,4 @@ README.md
 \.komodoproject$
 
 # ignore intellij
-\.idea$
+\B\.idea
