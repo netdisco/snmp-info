@@ -68,3 +68,6 @@ README.md
 
 # Avoid Komodo project file
 \.komodoproject$
+
+# ignore intellij
+\.idea$
