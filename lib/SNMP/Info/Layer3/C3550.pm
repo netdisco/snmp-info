@@ -304,7 +304,7 @@ Software version 12.1(22)EA1a or greater returns duplex based upon the
 result of $c3550->el_duplex().  Otherwise it uses the result of
 the call to CiscoStack::i_duplex().
 
-See L<SNMP::Info::Etherlike> for el_duplex() method and
+See L<SNMP::Info::EtherLike> for el_duplex() method and
 L<SNMP::Info::CiscoStack> for its i_duplex() method.
 
 =item $c3550->i_duplex_admin()
