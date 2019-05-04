@@ -325,7 +325,7 @@ sub file {
 Returns the list (in order) of the names of classes Perl will search to find
 methods for this SNMP::Info class or object instance.
 
-Note this B<requires> the L<Class:ISA> distribution to be installed.
+Note this B<requires> the L<Class::ISA> distribution to be installed.
 
 =cut
 
