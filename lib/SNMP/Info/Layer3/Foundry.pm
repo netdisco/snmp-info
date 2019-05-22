@@ -60,7 +60,6 @@ $VERSION = '3.68';
     'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snSwGroupOperMode',
     'FOUNDRY-SN-STACKING-MIB'     => 'snStackingOperUnitRole',
     'FOUNDRY-POE-MIB'             => 'snAgentPoeGblPowerCapacityTotal',
-    'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snSwGroupOperMode',
     'BROCADE-PRODUCTS-MIB'        => 'brocadeProducts',
 );
 
@@ -900,6 +899,8 @@ after determining a more specific class using the method above.
 
 =over
 
+=item F<BROCADE-PRODUCTS-MIB>
+
 =item F<FOUNDRY-SN-ROOT-MIB>
 
 =item F<FOUNDRY-SN-AGENT-MIB>
@@ -909,8 +910,6 @@ after determining a more specific class using the method above.
 =item F<FOUNDRY-SN-STACKING-MIB>
 
 =item F<FOUNDRY-POE-MIB>
-
-=item F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
 =item Inherited Classes' MIBs
 
