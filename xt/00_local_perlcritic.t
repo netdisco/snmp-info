@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 00_local_perlcritic.t - Test file for PBP compliance for SNMP::Info
 # $Id$
 

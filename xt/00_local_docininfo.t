@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 00_local_versionsync.t - Private test to check that all modules are listed in Info.pm
 # $Id$
 

@@ -6,6 +6,7 @@ build_requires:
   Class::Inspector: '0'
   File::Find: '0'
   File::Slurper: '0'
+  Hook::LexWrap: '0'
   Module::Find: '0'
   NetSNMP::default_store: '0'
   Path::Class: '0'
@@ -17,7 +18,7 @@ build_requires:
 configure_requires:
   Module::Build: '0.42'
 dynamic_config: 1
-generated_by: 'Module::Build version 0.4224, CPAN::Meta::Converter version 2.150010'
+generated_by: 'Module::Build version 0.4229, CPAN::Meta::Converter version 2.150010'
 license: bsd
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html

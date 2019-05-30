@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # pod-coverage.t - Test to check POD coverage of SNMP::Info
 # $Id$
 
