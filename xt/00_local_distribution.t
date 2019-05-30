@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 00_local_distribution.t - Private test to check distribution
 # $Id$
 

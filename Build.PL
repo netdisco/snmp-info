@@ -37,6 +37,7 @@ Module::Build->new(
     'Class::Inspector' => '0',
     'NetSNMP::default_store' => '0',
     'Module::Find' => '0',
+    'Hook::LexWrap' => '0',
   },
   # script_files => [
   # ],

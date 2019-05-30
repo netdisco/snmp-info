@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 00-load.t - Test loading of SNMP::Info
 # $Id$
 
