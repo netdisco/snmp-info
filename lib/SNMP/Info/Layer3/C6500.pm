@@ -242,7 +242,8 @@ __END__
 =head1 NAME
 
 SNMP::Info::Layer3::C6500 - SNMP Interface to Cisco Catalyst 6500 Layer 2/3
-Switches running IOS and/or CatOS
+Switches running IOS and/or CatOS. Also Cisco Catalyst 2960, 2970, 3750 and
+3850 series and blade switch CBS30x0 and CBS31x0 series running IOS.
 
 =head1 AUTHOR
 
@@ -271,6 +272,10 @@ Abstraction subclass for Cisco Catalyst 6500 Layer 2/3 Switches.
 These devices run IOS but have some of the same characteristics as the
 Catalyst WS-C family (5xxx). For example, forwarding tables are held in
 VLANs, and extended interface information is gleaned from F<CISCO-SWITCH-MIB>.
+
+It also support the following IOS only series switches: Cisco Catalyst 2960,
+2970, 3750 and 3850 series. Also blade switches from the CBS30x0 and CBS31x0
+series.
 
 For speed or debugging purposes you can call the subclass directly, but not
 after determining a more specific class using the method above.

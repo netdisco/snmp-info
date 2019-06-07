@@ -764,8 +764,9 @@ See documentation in L<SNMP::Info::Layer3::C4000> for details.
 
 =item SNMP::Info::Layer3::C6500
 
-This class covers Catalyst 6500s in native mode, hybrid mode.  Catalyst
-3750's, 2970's and probably others.
+This class covers Catalyst 6500 series running CatOS or IOS, as well as
+Catalyst 2960, 2970, 3750 and 3850 series, including blade switches
+CBS30x0 and CBS31x0 series, all running IOS.
 
 See documentation in L<SNMP::Info::Layer3::C6500> for details.
 
