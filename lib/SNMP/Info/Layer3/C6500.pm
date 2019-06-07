@@ -293,6 +293,8 @@ after determining a more specific class using the method above.
 
 =over
 
+=item F<CISCO-VIRTUAL-SWITCH-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::CiscoStack/"Required MIBs"> for its own MIB requirements.
