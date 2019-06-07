@@ -367,13 +367,17 @@ my $dell = new SNMP::Info::Layer3::Dell(...);
 
 =over
 
+=item F<DELL-REF-MIB>
+
 =item F<Dell-Vendor-MIB>
+
+=item F<RADLAN-COPY-MIB>
+
+=item F<RADLAN-HWENVIROMENT>
 
 =item F<RADLAN-Physicaldescription-MIB>
 
 =item F<RADLAN-rlInterfaces>
-
-=item F<RADLAN-HWENVIROMENT>
 
 =item Inherited Classes' MIBs
 
