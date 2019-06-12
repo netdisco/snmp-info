@@ -319,7 +319,7 @@ These are methods that return scalar value from SNMP
 
 =item $c6500->vendor()
 
-    Returns 'cisco'
+Returns 'cisco'
 
 =item $c6500->cvsSwitchMode()
 
