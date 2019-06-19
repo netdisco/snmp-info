@@ -197,6 +197,8 @@ Subclass for H3C & HP A-series devices
 
 =item Inherited Classes' MIBs
 
+See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
+
 See L<SNMP::Info::Layer3> for its own MIB requirements.
 
 See L<SNMP::Info::LLDP> for its own MIB requirements.
