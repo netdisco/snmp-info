@@ -103,17 +103,21 @@ sub os_ver {
         }
     }
     my $ver = $dot11->description() || '';
-    if($ver =~ /^edgeswitch/){
-        ## EdgeSwitch OS version is second field split by comma
+    if((lc $ver) =~ /^edgeswitch/){
+        ## EdgeSwitch OS version is second field split by comma and bootcode version is last
         my @myver = split(/, /, $ver);
+        my @firmware = split(/\./, $myver[1]);
+        my @bootcode = split(/\./, $myver[-1]);
 
-        return $myver[1];
+        return join('.', @firmware[0,1,2]) . '.-b' . join('.', @bootcode[0,1,2]);
+
     }
 
     ## EdgeRouter OS version is second field split by space
     my @myver = split(/ /, $ver);
+    my @firmware = split(/\./, $myver[1]);
 
-    return $myver[1];
+    return join('.', @firmware[0,1,2]);
 }
 
 sub vendor {
@@ -142,7 +146,7 @@ sub model {
     if(!((lc $desc) =~ /edgeos/)){
         # Not sure what type of device this is to get Model
         # Wireless devices report dot11_prod_name
-        # EdgeSwitch includes mode directly and edgeos logic is in else statement
+        # EdgeSwitch includes model directly and edgeos logic is in else statement
         return ;
     }else{
         ## do some logic to determine ER model based on tech specs from ubnt:
