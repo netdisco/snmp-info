@@ -109,6 +109,7 @@ sub os_ver {
         my @firmware = split(/\./, $myver[1]);
         my @bootcode = split(/\./, $myver[-1]);
 
+        ## Return only three major version groupings and include bootcode version
         return join('.', @firmware[0,1,2]) . '.-b' . join('.', @bootcode[0,1,2]);
 
     }
@@ -117,6 +118,11 @@ sub os_ver {
     my @myver = split(/ /, $ver);
     my @firmware = split(/\./, $myver[1]);
 
+    if($firmware[2] =~ /hotfix$/){
+        # edge case where EdgeOS has hotfix versions in format "EdgeOS v1.9.7+hotfix.4.5024004.171005.0403"
+        $firmware[2] = $firmware[2] . '.' . $firmware[3]
+    }
+    ## Return only three major version groupings
     return join('.', @firmware[0,1,2]);
 }
 
