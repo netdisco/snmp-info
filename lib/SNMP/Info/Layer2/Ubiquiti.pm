@@ -70,14 +70,14 @@ sub os {
         my $prod = $names->{$iid};
         next unless defined $prod;
         # Product names that match AirOS products
-                if((lc $prod) =~ /station/ or (lc $prod) =~ /beam/ or (lc $prod) =~ /grid/){
-                        return 'AirOS';
-                # Product names that match UAP
-                }elsif((lc $prod) =~ /uap/){
-                        return 'UniFi';
-                }else{
-                    # Continue below to find OS name
-                }
+        if((lc $prod) =~ /station/ or (lc $prod) =~ /beam/ or (lc $prod) =~ /grid/){
+                return 'AirOS';
+        # Product names that match UAP
+        }elsif((lc $prod) =~ /uap/){
+                return 'UniFi';
+        }else{
+            # Continue below to find OS name
+        }
     }
 
     ## EdgeMAX OS (EdgeSwitch and EdgeRouter) name is first field split by space
@@ -89,20 +89,29 @@ sub os {
 }
 
 sub os_ver {
-    my $dot11 = shift;
+    my $ubnt = shift;
 
-    my $versions = $dot11->dot11_prod_ver();
+    my $versions = $ubnt->dot11_prod_ver();
 
     foreach my $iid ( keys %$versions ) {
         my $ver = $versions->{$iid};
         next unless defined $ver;
+        my $os = $ubnt->os;
+        if($os == 'AirOS'){
+            ## pretty up the version reporting for AirOS to include hardware (XW, XM, etc) and three major groups of firmware
+            my @firmware =  split(/v/, $ver);
+            my @firmwareSplit = split(/\./, $firmware[1]);
+            my @prefix = split(/\./, $ver);
+            $ver = $prefix[0] . '-v' . join('.', @firmwareSplit[0,1,2]);
+        }
         return $ver;
         ## Not sure what this function does, it seems to be extraneous being in the same code block after a return statement?
-        if ( $ver =~ /([\d\.]+)/ ) {
-            return $1;
-        }
+        #if ( $ver =~ /([\d\.]+)/ ) {
+        #    return $1;
+        #}
     }
-    my $ver = $dot11->description() || '';
+
+    my $ver = $ubnt->description() || '';
     if((lc $ver) =~ /^edgeswitch/){
         ## EdgeSwitch OS version is second field split by comma and bootcode version is last
         my @myver = split(/, /, $ver);
