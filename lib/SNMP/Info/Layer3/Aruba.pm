@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Aruba
-# $Id$
 #
 # Copyright (c) 2013 Eric Miller
 # All rights reserved.
@@ -170,10 +169,9 @@ sub vendor {
     $id = $1 if ( defined($id) && $id =~ /^\.1\.3\.6\.1\.4\.1\.(\d+)/ );
 
     if ( defined($id) and exists( $oidmap{$id} ) ) {
-	return $oidmap{$id};
-    }
-    else {
-	return 'aruba';
+      return $oidmap{$id};
+    } else {
+      return 'aruba';
     }
 }
 
@@ -183,7 +181,7 @@ sub os_ver {
     return unless defined $descr;
 
     if ( $descr =~ m/Version\s+(\d+\.\d+\.\d+\.\d+)/ ) {
-	return $1;
+      return $1;
     }
 
     return;
@@ -1420,11 +1418,6 @@ access points themselves are unable to be polled for end station information.
 This class emulates bridge functionality for the wireless switch. This enables
 end station MAC addresses collection and correlation to the thin access point
 the end station is using for communication.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $aruba = new SNMP::Info::Layer3::Aruba(...);
 
 =head2 Inherited Classes
 

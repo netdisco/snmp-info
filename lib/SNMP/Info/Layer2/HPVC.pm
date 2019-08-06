@@ -120,11 +120,6 @@ Jeroen van Ingen
 Provides abstraction to the configuration information obtainable from a
 HP Virtual Connect Switch via SNMP.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $hp = new SNMP::Info::Layer2::HPVC(...);
-
 =head2 Inherited Classes
 
 =over

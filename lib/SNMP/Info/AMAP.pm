@@ -40,16 +40,16 @@ our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
 $VERSION = '3.68';
 
-%MIBS
-    = ( 'ALCATEL-IND1-INTERSWITCH-PROTOCOL-MIB' => 'aipAMAPRemDeviceType', );
+%MIBS = (
+  'ALCATEL-IND1-INTERSWITCH-PROTOCOL-MIB' => 'aipAMAPRemDeviceType',
+);
 
 %GLOBALS = (
 
 );
 
 %FUNCS = (
-
-    # EXTREME-EDP-MIB::extremeEdpTable
+    # ALCATEL-IND1-INTERSWITCH-PROTOCOL-MIB::aipAMAPRemHostname
     'amap_rem_sysname' => 'aipAMAPRemHostname',
 );
 

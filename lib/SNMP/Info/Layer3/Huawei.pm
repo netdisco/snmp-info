@@ -111,7 +111,7 @@ $VERSION = '3.68';
 );
 
 sub vendor {
-    return "Huawei";
+    return "huawei";
 }
 
 sub os {
@@ -570,7 +570,7 @@ These are methods that return scalar value from SNMP
 
 =item $huawei->vendor()
 
-Returns 'Huawei'.
+Returns 'huawei'.
 
 =item $huawei->os()
 

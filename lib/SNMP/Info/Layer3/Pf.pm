@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Pf
-# $Id$
 #
 # Copyright (c) 2010 Max Baker
 # All rights reserved.

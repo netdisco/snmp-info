@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::N2270
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -125,11 +124,6 @@ Eric Miller
 
 Provides abstraction to the configuration information obtainable from a
 Nortel 2270 Series Wireless Switch through SNMP.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $n2270 = new SNMP::Info::Layer2::N2270(...);
 
 =head2 Inherited Classes
 

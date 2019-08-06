@@ -62,7 +62,7 @@ $VERSION = '3.68';
 );
 
 sub vendor {
-    return 'Pica8';
+    return 'pica8';
 }
 
 sub os {
@@ -151,7 +151,7 @@ These are methods that return scalar value from SNMP
 
 =item $pica8->vendor()
 
-Returns 'Pica8'
+Returns 'pica8'
 
 =item $pica8->model()
 

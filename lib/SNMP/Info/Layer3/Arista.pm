@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Arista
-# $Id$
 #
 # Copyright (c) 2008 Arista Networks, Inc.
 # All rights reserved.
@@ -42,7 +41,8 @@ use SNMP::Info::Aggregate 'agg_ports_ifstack';
     SNMP::Info::Aggregate
     SNMP::Info::LLDP
     SNMP::Info::MAU
-    SNMP::Info::Layer3 Exporter
+    SNMP::Info::Layer3
+    Exporter
 /;
 @SNMP::Info::Layer3::Arista::EXPORT_OK = qw//;
 

@@ -56,7 +56,7 @@ $VERSION = '3.68';
 %MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::Layer3::MUNGE, );
 
 sub vendor {
-    return 'SonicWALL';
+    return 'sonicwall';
 }
 
 sub os {
@@ -130,6 +130,8 @@ Subclass for Generic SonicWALL Firewalls
 
 =over
 
+=item F<SNWL-COMMON-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
@@ -146,7 +148,7 @@ These are methods that return scalar value from SNMP
 
 =item $router->vendor()
 
-Returns C<'SonicWALL'>
+Returns C<'sonicwall'>
 
 =item $router->os()
 
@@ -154,11 +156,11 @@ Returns C<'SonicOS'>
 
 =item $router->os_ver()
 
-Returns '4.2.0.0-10e'
+Returns C<'snwlSysFirmwareVersion'>
 
 =item $router->model()
 
-Returns C<'PRO 3060 Enhanced'>
+Returns C<'snwlSysModel'>
 
 =item $router->serial()
 

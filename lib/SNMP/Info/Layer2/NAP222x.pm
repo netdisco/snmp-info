@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::NAP222x
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -392,11 +391,6 @@ Eric Miller
 
 Provides abstraction to the configuration information obtainable from a Nortel
 2220 series wireless Access Points through SNMP.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $nap222x = new SNMP::Info::Layer2::NAP222x(...);
 
 =head2 Inherited Classes
 

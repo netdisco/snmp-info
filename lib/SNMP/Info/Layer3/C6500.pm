@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::C6500
-# $Id$
 #
 # Copyright (c) 2008-2009 Max Baker
 # All rights reserved.
@@ -273,7 +272,7 @@ These devices run IOS but have some of the same characteristics as the
 Catalyst WS-C family (5xxx). For example, forwarding tables are held in
 VLANs, and extended interface information is gleaned from F<CISCO-SWITCH-MIB>.
 
-It also support the following IOS only series switches: Cisco Catalyst 2960,
+It also supports the following IOS only series switches: Cisco Catalyst 2960,
 2970, 3750 and 3850 series. Also blade switches from the CBS30x0 and CBS31x0
 series.
 

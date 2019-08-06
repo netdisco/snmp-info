@@ -272,11 +272,6 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from
 Cisco (Airespace) Wireless Controllers through SNMP.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $airespace = new SNMP::Info::Layer2::Airespace(...);
-
 =head2 Inherited Classes
 
 =over

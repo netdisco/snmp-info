@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoRTT
-# $Id$
 #
 # Copyright (c) 2005 Alexander Hartmaier
 # All rights reserved.
@@ -113,7 +112,7 @@ None
 
 =head2 Overall Control Group Table
 
-This table is from C<CISCO-RTTMAN-MIB::rttMonCtrlAdminTable>
+This table is from C<CISCO-RTTMON-MIB::rttMonCtrlAdminTable>
 
 =over
 

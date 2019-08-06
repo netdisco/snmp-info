@@ -479,7 +479,9 @@ none.
 =over
 
 =item F<IP-MIB>
+
 =item F<IPV6-MIB>
+
 =item F<CISCO-IETF-IP-MIB>
 
 =back

@@ -30,7 +30,6 @@ package SNMP::Info::Layer2::Adtran;
 
 use strict;
 use Exporter;
-use SNMP::Info::LLDP;
 use SNMP::Info::Layer2;
 use SNMP::Info::Layer3;
 
@@ -223,6 +222,8 @@ Subclass for adtran Devices running JUNOS
 
 =over
 
+=item SNMP::Info::Layer2
+
 =item SNMP::Info::Layer3
 
 =item SNMP::Info::LLDP
@@ -230,6 +231,8 @@ Subclass for adtran Devices running JUNOS
 =back
 
 =head2 Inherited Classes' MIBs
+
+See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
@@ -302,6 +305,10 @@ Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
 IDs.  These are the VLANs which are members of the egress list for the port.
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

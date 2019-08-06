@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::C4000
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.

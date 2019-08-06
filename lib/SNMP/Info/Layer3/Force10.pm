@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Force10
-# $Id$
 #
 # Copyright (c) 2012 William Bulley
 # All rights reserved.

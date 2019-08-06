@@ -153,11 +153,11 @@ These are methods that return scalar value from SNMP
 
 =item $Arbor->vendor()
 
-Returns 'Arbor'.
+Returns 'arbor'.
 
 =item $Arbor->os()
 
-Returns 'arbos'.
+Returns 'ArbOS'.
 
 =item $Arbor->os_ver()
 

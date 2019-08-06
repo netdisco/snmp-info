@@ -113,7 +113,6 @@ sub os_ver {
     return;
 }
 
-
 sub mac {
     my $aerohive = shift;
     my $ahmac = $aerohive->ah_mac();
@@ -136,7 +135,6 @@ sub mac {
     }
     return $macs[0];
 }
-
 
 sub model {
     my $aerohive = shift;
@@ -344,11 +342,6 @@ Eric Miller
 
 Provides abstraction to the configuration information obtainable from an
 Aerohive wireless Access Point through SNMP.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $aerohive = new SNMP::Info::Layer2::Aerohive(...);
 
 =head2 Inherited Classes
 

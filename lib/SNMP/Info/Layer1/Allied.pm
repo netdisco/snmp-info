@@ -1,5 +1,4 @@
 # SNMP::Info::Layer1::Allied
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #

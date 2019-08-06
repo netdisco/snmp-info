@@ -133,11 +133,6 @@ Jeroen van Ingen
 Provides abstraction to the configuration information obtainable from a
 APC UPS via SNMP.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $apc = new SNMP::Info::Layer7::APC(...);
-
 =head2 Inherited Classes
 
 =over

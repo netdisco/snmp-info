@@ -321,11 +321,6 @@ Eric Miller
 
 Abstraction subclass for F5 network devices.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $f5 = new SNMP::Info::Layer3::F5(...);
-
 =head2 Inherited Classes
 
 =over

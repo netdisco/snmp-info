@@ -1,5 +1,4 @@
 # SNMP::Info::FDP
-# $Id$
 #
 # Copyright (c) 2008 Bruce Rodger, Max Baker
 # All rights reserved.
@@ -146,7 +145,7 @@ Bruce Rodger, Max Baker
  $hasfdp   = $fdp->hasFDP() ? 'yes' : 'no';
 
  # Print out a map of device ports with FDP neighbors:
- my $interfaces = $fdp->interfaces();
+ my $interfaces   = $fdp->interfaces();
  my $fdp_if       = $fdp->fdp_if();
  my $fdp_ip       = $fdp->fdp_ip();
  my $fdp_port     = $fdp->fdp_port();

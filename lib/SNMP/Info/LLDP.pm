@@ -1,5 +1,4 @@
 # SNMP::Info::LLDP
-# $Id$
 #
 # Copyright (c) 2018 Eric Miller
 # All rights reserved.

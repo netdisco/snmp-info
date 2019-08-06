@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Catalyst
-# $Id$
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond

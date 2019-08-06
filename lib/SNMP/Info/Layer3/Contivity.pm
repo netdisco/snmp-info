@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Contivity
-# $Id$
 #
 # Copyright (c) 2010 Eric Miller
 # All rights reserved.
@@ -189,11 +188,6 @@ Eric Miller
 Abstraction subclass for Avaya/Nortel VPN Routers (formerly Contivity
 Extranet Switch).
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $contivity = new SNMP::Info::Layer3::Contivity(...);
-
 =head2 Inherited Classes
 
 =over
@@ -238,7 +232,7 @@ Returns the chassis name.
 
 =item $contivity->os()
 
-Returns C<'CES'>
+Returns C<'contivity'>
 
 =item $contivity->os_ver()
 

@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Lantronix
-# $Id$
 #
 # Copyright (c) 2012 J R Binks
 #
@@ -245,16 +244,6 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=head2 Overrides
-
-=over
-
-=item $device->i_ignore()
-
-Returns reference to hash.  Increments value of IID if port is to be ignored.
-
-=back
 
 =head2 Lantronix specific items
 

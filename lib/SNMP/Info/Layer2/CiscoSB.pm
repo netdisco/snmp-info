@@ -88,7 +88,6 @@ $VERSION = '3.68';
     %SNMP::Info::CDP::MUNGE,
 );
 
-
 sub vendor {
     return 'cisco';
 }

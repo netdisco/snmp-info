@@ -1,5 +1,4 @@
 # SNMP::Info::Layer1 - SNMP Interface to Layer1 Devices
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -178,7 +177,7 @@ Max Baker
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 

@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoVTP
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #

@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Juniper
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.

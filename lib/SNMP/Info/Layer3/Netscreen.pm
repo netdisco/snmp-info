@@ -539,11 +539,6 @@ Kent Hamilton
 Provides abstraction to the configuration information obtainable from a
 Juniper Netscreen devices through SNMP.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $netscreen = new SNMP::Info::Layer3::Netscreen(...);
-
 =head2 Inherited Classes
 
 =over

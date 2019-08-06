@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Netgear
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.
@@ -192,7 +191,9 @@ inherited methods.
 =over
 
 =item SNMP::Info::Layer2
+
 =item SNMP::Info::Entity
+
 =item SNMP::Info::LLDP
 
 =back

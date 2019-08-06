@@ -1,5 +1,4 @@
 # SNMP::Info::Layer7::CiscoIPS
-# $Id$
 #
 # Copyright (c) 2013 Moe Kraus
 # All rights reserved.

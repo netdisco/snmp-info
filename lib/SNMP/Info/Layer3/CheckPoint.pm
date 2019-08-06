@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::CheckPoint
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.
@@ -199,7 +198,7 @@ Ambroise Rosset
 
 =head1 DESCRIPTION
 
-Subclass for Generic Net-SNMP devices
+Subclass for CheckPoint Devices.
 
 =head2 WARNING
 
@@ -221,7 +220,11 @@ To correctly and completelly work, you should add the following line in the file
 
 =over
 
+=item F<CHECKPOINT-MIB>
+
 =item F<UCD-SNMP-MIB>
+
+=item F<NET-SNMP-EXTEND-MIB>
 
 =item F<NET-SNMP-TC>
 

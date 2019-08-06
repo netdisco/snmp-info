@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::AlcatelLucent
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 #
@@ -370,7 +369,7 @@ These are methods that return scalar value from SNMP
 
 =item $alu->vendor()
 
-    Returns 'alcatel-lucent'
+Returns 'alcatel-lucent'
 
 =item $alu->model()
 

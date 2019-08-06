@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Baystack
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 # All rights reserved.
@@ -428,11 +427,6 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from an
 Avaya Ethernet Switch (formerly Nortel/Bay Baystack) and VSP 7000 series
 through SNMP.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $baystack = new SNMP::Info::Layer2::Baystack(...);
 
 =head2 Inherited Classes
 

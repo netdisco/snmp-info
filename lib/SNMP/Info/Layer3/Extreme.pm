@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Extreme - SNMP Interface to Extreme devices
-# $Id$
 #
 # Copyright (c) 2012 Eric Miller
 #
@@ -904,11 +903,6 @@ Eric Miller, Bill Fenner
 
 Provides abstraction to the configuration information obtainable from an
 Extreme device through SNMP.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $extreme = new SNMP::Info::Layer3::Extreme(...);
 
 =head2 Inherited Classes
 

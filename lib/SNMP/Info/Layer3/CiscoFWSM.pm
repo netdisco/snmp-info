@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::CiscoFWSM
-# $Id$
 #
 # Copyright (c) 2010 Brian De Wolf
 # All rights reserved.

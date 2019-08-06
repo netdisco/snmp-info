@@ -305,8 +305,8 @@ Eric Miller
 
  $hassonmp   = $sonmp->hasSONMP() ? 'yes' : 'no';
 
- # Print out a map of device ports with CDP neighbors:
- my $interfaces = $sonmp->interfaces();
+ # Print out a map of device ports with SONMP neighbors:
+ my $interfaces     = $sonmp->interfaces();
  my $sonmp_if       = $sonmp->sonmp_if();
  my $sonmp_ip       = $sonmp->sonmp_ip();
  my $sonmp_port     = $sonmp->sonmp_port();

@@ -1,5 +1,4 @@
 # SNMP::Info::Bridge
-# $Id$
 #
 # Changes since Version 0.7 Copyright (c) 2004 Max Baker
 # All rights reserved.
@@ -608,6 +607,8 @@ None.
 =item F<BRIDGE-MIB>
 
 =item F<Q-BRIDGE-MIB>
+
+=item F<RSTP-MIB>
 
 =back
 

@@ -31,7 +31,6 @@ package SNMP::Info::Layer2::3Com;
 use strict;
 use Exporter;
 use SNMP::Info::Layer2;
-use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
 
 @SNMP::Info::Layer2::3Com::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer2 Exporter/;
@@ -94,7 +93,7 @@ sub os_ver {
 }
 
 sub vendor {
-    return '3Com';
+    return '3com';
 }
 
 sub model {
@@ -128,7 +127,7 @@ Max Kosmach
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
@@ -169,7 +168,7 @@ These are methods that return scalar value from SNMP
 
 =item $device->vendor()
 
-Returns '3Com'
+Returns '3com'
 
 =item $device->os()
 

@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Cisco
-# $Id$
 #
 # Copyright (c) 2008 Max Baker
 # All rights reserved.
@@ -194,7 +193,7 @@ These are methods that return scalar value from SNMP
 
 =item $cisco->vendor()
 
-    Returns 'cisco'
+Returns 'cisco'
 
 =back
 

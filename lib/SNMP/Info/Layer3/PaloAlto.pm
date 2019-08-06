@@ -146,7 +146,7 @@ Returns C<'Palo Alto Networks'>.
 
 =item $pa->os()
 
-Returns C<'PANOS'>.
+Returns C<'PAN-OS'>.
 
 =item $pa->model()
 

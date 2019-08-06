@@ -55,7 +55,7 @@ $VERSION = '3.68';
 %MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::Layer3::MUNGE, );
 
 sub vendor {
-    return 'Blue Coat';
+    return 'bluecoat';
 }
 
 sub os {
@@ -92,7 +92,7 @@ Jeroen van Ingen
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
@@ -113,9 +113,9 @@ Subclass for Blue Coat SG Series proxy devices
 
 =head2 Required MIBs
 
- BLUECOAT-SG-PROXY-MIB
-
 =over
+
+=item F<BLUECOAT-SG-PROXY-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -133,7 +133,7 @@ These are methods that return scalar value from SNMP
 
 =item $router->vendor()
 
-Returns C<'Blue Coat'>
+Returns C<'bluecoat'>
 
 =item $router->os()
 

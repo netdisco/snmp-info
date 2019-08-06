@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoStats
-# $Id$
 #
 # Changes since Version 0.7 Copyright (c) 2008-2009 Max Baker and SNMP::Info Developers
 # All rights reserved.

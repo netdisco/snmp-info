@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::HP9300 - SNMP Interface to HP Foundry OEM devices
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -215,7 +214,7 @@ Eric Miller
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 

@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::BayRS
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -1405,11 +1404,6 @@ Eric Miller
 =head1 DESCRIPTION
 
 Abstraction subclass for routers running Avaya/Nortel BayRS.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $bayrs = new SNMP::Info::Layer3::BayRS(...);
 
 =head2 Inherited Classes
 

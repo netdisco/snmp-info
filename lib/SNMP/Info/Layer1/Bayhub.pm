@@ -1,5 +1,4 @@
 # SNMP::Info::Layer1::Bayhub
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller, Max Baker
 # All rights reserved.
@@ -504,11 +503,6 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from a
 Bay hub device through SNMP.  Also provides device MAC to port mapping through
 the proprietary MIB.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $bayhub = new SNMP::Info::Layer1::Bayhub(...);
 
 =head2 Inherited Classes
 

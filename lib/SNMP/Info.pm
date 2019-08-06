@@ -1006,7 +1006,7 @@ See documentation in L<SNMP::Info::Layer3::SonicWALL> for details.
 
 =item SNMP::Info::Layer3::Steelhead
 
-Subclass for  Riverbed Steelhead WAN optimization appliances.
+Subclass for Riverbed Steelhead WAN optimization appliances.
 
 See documentation in L<SNMP::Info::Layer3::Steelhead> for details.
 
@@ -1262,7 +1262,7 @@ Some older devices don't support SNMP version 2, and will not return anything
 when a connection under Version 2 is attempted.
 
 Some newer devices will support Version 1, but will not return all the data
-they might have if you had connected under Version 1
+they might have if you had connected under Version 1.
 
 When trying to get info from a new device, you may have to try version 2 and
 then fallback to version 1.
@@ -1674,6 +1674,7 @@ sub device_type {
         3375 => 'SNMP::Info::Layer3::F5',
         3417 => 'SNMP::Info::Layer3::BlueCoatSG',
         3717 => 'SNMP::Info::Layer3::Genua',
+        4413 => 'SNMP::Info::Layer2::Ubiquiti',
         4526 => 'SNMP::Info::Layer2::Netgear',
         4874 => 'SNMP::Info::Layer3::ERX',
         5624 => 'SNMP::Info::Layer3::Enterasys',
@@ -1695,17 +1696,16 @@ sub device_type {
         17163 => 'SNMP::Info::Layer3::Steelhead',
         19046 => 'SNMP::Info::Layer3::Lenovo',
         21091 => 'SNMP::Info::Layer2::Exinda',
-        25506 => 'SNMP::Info::Layer3::H3C',
         25461 => 'SNMP::Info::Layer3::PaloAlto',
+        25506 => 'SNMP::Info::Layer3::H3C',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
-        30065 => 'SNMP::Info::Layer3::Arista',
-        35098 => 'SNMP::Info::Layer3::Pica8',
-        41112 => 'SNMP::Info::Layer2::Ubiquiti',
-        4413 => 'SNMP::Info::Layer2::Ubiquiti',
         26928 => 'SNMP::Info::Layer2::Aerohive',
+        30065 => 'SNMP::Info::Layer3::Arista',
         30803 => 'SNMP::Info::Layer3::VyOS',
-	44641 => 'SNMP::Info::Layer3::VyOS',
+        35098 => 'SNMP::Info::Layer3::Pica8',
         40310 => 'SNMP::Info::Layer3::Cumulus',
+        41112 => 'SNMP::Info::Layer2::Ubiquiti',
+        44641 => 'SNMP::Info::Layer3::VyOS',
     );
 
     my %l2sysoidmap = (
@@ -1754,8 +1754,8 @@ sub device_type {
         476   => 'SNMP::Info::Layer7::Liebert',
         5951  => 'SNMP::Info::Layer7::Netscaler',
         9694  => 'SNMP::Info::Layer7::Arbor',
-        14525 => 'SNMP::Info::Layer2::Trapeze',
         12532 => 'SNMP::Info::Layer7::Neoteris',
+        14525 => 'SNMP::Info::Layer2::Trapeze',
         26866 => 'SNMP::Info::Layer7::Gigamon',
     );
 
@@ -1788,7 +1788,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Aironet'
             if ( $desc =~ /Aironet/ and $desc =~ /\D(AP4800)\D/ );
 
-	# Override voice gateway device (VG350) showing up as Aironet
+        # Override voice gateway device (VG350) showing up as Aironet
         $objtype = 'SNMP::Info::Layer3::Cisco' if $desc =~ /VG350/;
 
         # Cat6k with older SUPs (hybrid CatOS/IOS?)
@@ -3235,7 +3235,7 @@ A class inheriting this class must implement these data structures :
 
 =over
 
-=item  $INIT
+=item $INIT
 
 Used to flag if the MIBs have been loaded yet.
 

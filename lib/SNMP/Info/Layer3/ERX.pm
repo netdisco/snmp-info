@@ -60,7 +60,7 @@ $VERSION = '3.68';
 );
 
 sub vendor {
-  return "Juniper";
+  return "juniper";
 }
 
 sub model {
@@ -161,7 +161,7 @@ These are methods that return scalar value from SNMP
 
 =item $ERX->vendor()
 
-Returns 'Juniper'.
+Returns 'juniper'.
 
 =item $ERX->os()
 

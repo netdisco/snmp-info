@@ -55,7 +55,7 @@ $VERSION = '3.68';
 %MIBS = (
 	%SNMP::Info::Layer3::CiscoSwitch::MIBS,
 	'CISCO-ENTITY-VENDORTYPE-OID-MIB'   => 'cevMIBObjects',
-    'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
+  'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
 );
 
 %GLOBALS = (

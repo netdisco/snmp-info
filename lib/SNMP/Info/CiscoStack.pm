@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoStack
-# $Id$
 #
 # Copyright (c) 2008 Max Baker
 # All rights reserved.
@@ -286,8 +285,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::CiscoStack - SNMP Interface to data from F<CISCO-STACK-MIB> and
-F<CISCO-PORT-SECURITY-MIB>
+SNMP::Info::CiscoStack - SNMP Interface to data from F<CISCO-STACK-MIB>
 
 =head1 AUTHOR
 
@@ -296,7 +294,7 @@ Max Baker
 =head1 SYNOPSIS
 
  # Let SNMP::Info determine the correct subclass for you.
- my $ciscostats = new SNMP::Info(
+ my $ciscostack = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myswitch',
@@ -305,7 +303,7 @@ Max Baker
                         )
     or die "Can't connect to DestHost.\n";
 
- my $class = $ciscostats->class();
+ my $class = $ciscostack->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION

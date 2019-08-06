@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Cumulus
-# $Id$
 #
 # Copyright (c) 2018 Bill Fenner and Oliver Gorwits
 # All rights reserved.
@@ -77,7 +76,7 @@ $VERSION = '3.68';
     %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
-sub vendor { return 'Cumulus Networks' }
+sub vendor { return 'cumulus networks' }
 
 sub os { return 'cumulus' }
 
@@ -232,7 +231,7 @@ These are methods that return scalar value from SNMP
 
 =item $cumulus->vendor()
 
-Returns 'Cumulus Networks'.
+Returns 'cumulus networks'.
 
 =item $cumulus->os()
 

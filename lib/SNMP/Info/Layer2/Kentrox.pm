@@ -57,7 +57,7 @@ $VERSION = '3.68';
 %MUNGE = ( %SNMP::Info::Layer2::MUNGE, );
 
 sub os {
-    return 'Kentrox';
+    return 'kentrox';
 }
 
 sub os_ver {
@@ -79,7 +79,7 @@ sub serial {
     return;
 }
 sub vendor {
-    return 'Kentrox';
+    return 'kentrox';
 }
 
 sub model {
@@ -110,7 +110,7 @@ phishphreek@gmail.com
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 

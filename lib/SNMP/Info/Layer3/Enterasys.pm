@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Enterasys - SNMP Interface to Enterasys devices
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -267,7 +266,7 @@ Eric Miller
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
@@ -279,11 +278,6 @@ Eric Miller
 
 Provides abstraction to the configuration information obtainable from an
 Enterasys device through SNMP.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $enterasys = new SNMP::Info::Layer3::Enterasys(...);
 
 =head2 Inherited Classes
 

@@ -1,5 +1,4 @@
 # SNMP::Info::PowerEthernet
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.

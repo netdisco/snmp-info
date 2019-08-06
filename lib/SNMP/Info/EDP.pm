@@ -207,7 +207,7 @@ Eric Miller
  $haslldp   = $edp->hasLLDP() ? 'yes' : 'no';
 
  # Print out a map of device ports with LLDP neighbors:
- my $interfaces    = $edp->interfaces();
+ my $interfaces   = $edp->interfaces();
  my $edp_if       = $edp->edp_if();
  my $edp_ip       = $edp->edp_ip();
  my $edp_port     = $edp->edp_port();

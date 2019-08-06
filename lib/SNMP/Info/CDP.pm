@@ -1,5 +1,4 @@
 # SNMP::Info::CDP
-# $Id$
 #
 # Changes since Version 0.7 Copyright (c) 2004 Max Baker
 # All rights reserved.

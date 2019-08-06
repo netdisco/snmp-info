@@ -47,16 +47,16 @@ $VERSION = '3.68';
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
     %SNMP::Info::IEEE802dot11::MIBS,
-
 );
 
-%GLOBALS
-    = ( %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::IEEE802dot11::GLOBALS, );
+%GLOBALS = (
+  %SNMP::Info::Layer2::GLOBALS,
+  %SNMP::Info::IEEE802dot11::GLOBALS,
+);
 
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
     %SNMP::Info::IEEE802dot11::FUNCS,
-
 );
 
 %MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::IEEE802dot11::MUNGE, );
@@ -117,7 +117,7 @@ sub os_ver {
 }
 
 sub vendor {
-    return 'Ubiquiti Networks, Inc.';
+    return 'ubiquiti';
 }
 
 sub model {
@@ -304,11 +304,6 @@ Max Kosmach
 Provides abstraction to the configuration information obtainable from
 Ubiquiti Access Point through SNMP.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $ubnt = new SNMP::Info::Layer2::Ubiquiti(...);
-
 =head2 Inherited Classes
 
 =over
@@ -337,11 +332,11 @@ These are methods that return scalar value from SNMP
 
 =item $ubnt->vendor()
 
-Returns 'Ubiquiti Networks, Inc.'
+Returns 'ubiquiti'
 
 =item $ubnt->model()
 
-Returns the model extracted from C<dot11manufacturerProductName>, with failback to some complex logic for EdgeMax devices
+Returns the model extracted from C<dot11manufacturerProductName>, with fallback to some complex logic for EdgeMax devices
 
 =item $ubnt->serial()
 

@@ -813,11 +813,6 @@ This class emulates bridge functionality for the wireless switch. This enables
 end station MAC addresses collection and correlation to the thin access point
 the end station is using for communication.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $nwss2300 = new SNMP::Info::Layer2::NWSS2300(...);
-
 =head2 Inherited Classes
 
 =over

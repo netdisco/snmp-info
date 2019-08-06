@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Sun
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.

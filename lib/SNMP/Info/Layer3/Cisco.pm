@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Cisco
-# $Id$
 #
 # Copyright (c) 2008 Max Baker
 # All rights reserved.

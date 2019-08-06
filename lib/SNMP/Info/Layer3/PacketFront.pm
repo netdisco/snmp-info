@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::PacketFront
-# $Id$
 #
 # Copyright (c) 2011 Jeroen van Ingen
 # All rights reserved.

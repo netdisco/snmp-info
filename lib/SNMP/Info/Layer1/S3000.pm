@@ -1,5 +1,4 @@
 # SNMP::Info::Layer1::S3000
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -385,11 +384,6 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from a
 Bay hub device through SNMP.  Also provides device MAC to port mapping through
 the proprietary MIB.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $s3000 = new SNMP::Info::Layer1::S3000(...);
 
 =head2 Inherited Classes
 

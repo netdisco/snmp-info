@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoQOS
-# $Id$
 #
 # Copyright (c) 2005 Alexander Hartmaier
 # All rights reserved.

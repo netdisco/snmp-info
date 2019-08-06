@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2 - SNMP Interface to Layer2 Devices
-# $Id$
 #
 # Copyright (c) 2008 Max Baker -- All changes from Version 0.7 on
 #
@@ -228,9 +227,13 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::Bridge
 
+=item SNMP::Info::DocsisHE
+
 =item SNMP::Info::Entity
 
 =item SNMP::Info::LLDP
+
+=item SNMP::Info::PowerEthernet
 
 =back
 

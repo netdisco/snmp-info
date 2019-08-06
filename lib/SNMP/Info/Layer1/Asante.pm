@@ -1,5 +1,4 @@
 # SNMP::Info::Layer1::Asante
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -188,7 +187,7 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a
+Provides abstraction to the configuration information obtainable from an
 Asante device through SNMP.
 
 =head2 Inherited Classes

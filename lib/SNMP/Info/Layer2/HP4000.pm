@@ -504,11 +504,6 @@ Note:  Some HP Switches will connect via SNMP version 1, but a lot of config
 data will not be available.  Make sure you try and connect with Version 2
 first, and then fail back to version 1.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $hp = new SNMP::Info::Layer2::HP4000(...);
-
 =head2 Inherited Classes
 
 =over

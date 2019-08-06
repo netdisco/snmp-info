@@ -90,7 +90,7 @@ Netdisco Developers
                           Debug       => 1,
                           DestHost    => 'myhub',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 

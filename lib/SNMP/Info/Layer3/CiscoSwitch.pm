@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::CiscoSwitch
-# $Id$
 #
 # Copyright (c) 2014 Eric Miller
 # All rights reserved.

@@ -157,11 +157,6 @@ tested devices:
     gigaSwitch641DeskSfpTp version 3.68, 4.14W
     gigaSwitchV3d2SfpSfp version 3.68, 4.02, 4.02B, 4.10C, 4,14W
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-    my $nexans = new SNMP::Info::Layer2::Nexans(...);
-
 =head2 Inherited Classes
 
 =over

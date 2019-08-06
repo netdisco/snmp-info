@@ -1,5 +1,4 @@
 # SNMP::Info::Layer1::Cyclades
-# $Id$
 #
 # Copyright (c) 2018 Eric Miller
 # All rights reserved.
@@ -498,11 +497,6 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from a
 Cyclades/Avocent device through SNMP.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $cyclades = new SNMP::Info::Layer1::Cyclades(...);
-
 =head2 Inherited Classes
 
 =over
@@ -515,6 +509,10 @@ my $cyclades = new SNMP::Info::Layer1::Cyclades(...);
 
 =over
 
+=item F<ACS-MIB>
+
+=item F<ACS6000-MIB>
+
 =item F<CYCLADES-ACS-SYS-MIB>
 
 =item F<CYCLADES-ACS-CONF-MIB>
@@ -526,8 +524,6 @@ my $cyclades = new SNMP::Info::Layer1::Cyclades(...);
 =item F<CYCLADES-ACS5K-CONF-MIB>
 
 =item F<CYCLADES-ACS5K-INFO-MIB>
-
-=item F<ACS6000-MIB>
 
 =back
 

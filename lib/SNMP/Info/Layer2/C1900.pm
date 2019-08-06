@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::C1900
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -310,11 +309,6 @@ Provides abstraction to the configuration information obtainable from a
 Catalyst 1900 device through SNMP.  See SNMP::Info for full documentation
 
 Note that most of these devices only talk SNMP version 1, but not all.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $c1900 = new SNMP::Info::Layer2::C1900(...);
 
 =head2 Inherited classes
 

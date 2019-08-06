@@ -1,5 +1,4 @@
 # SNMP::Info::EtherLike
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -103,7 +102,7 @@ Max Baker
                              Version     => 2
                            );
 
- my $class = $cdp->class();
+ my $class = $el->class();
  print " Using device sub class : $class\n";
 
  # Find the duplex setting for a port on a device that implements

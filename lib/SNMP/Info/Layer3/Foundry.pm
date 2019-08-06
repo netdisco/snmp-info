@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Foundry - SNMP Interface to Foundry devices
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -866,7 +865,7 @@ Max Baker
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
@@ -876,12 +875,8 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Abstraction subclass for Brocade (Foundry) Networks devices.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $foundry = new SNMP::Info::Layer3::Foundry(...);
+Provides abstraction to information obtainable from Brocade (Foundry) Networks
+devices through SNMP. See inherited classes' documentation for inherited methods.
 
 =head2 Inherited Classes
 

@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3 - SNMP Interface to Layer3 devices
-# $Id$
 #
 # Copyright (c) 2008 Max Baker -- All changes from Version 0.7 on
 #

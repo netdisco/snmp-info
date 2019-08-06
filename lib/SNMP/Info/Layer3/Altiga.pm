@@ -1,7 +1,6 @@
 # SNMP::Info::Layer3::Altiga
-# $Id$
 #
-# Copyright (c) 2008 Jeroen van Ingen Schenau
+# # Copyright (c) 2008 Jeroen van Ingen Schenau
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -281,7 +280,7 @@ Jeroen van Ingen Schenau
                           Debug       => 1,
                           DestHost    => 'my_vpn_host',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 

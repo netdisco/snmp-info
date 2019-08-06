@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Aironet
-# $Id$
 #
 # Copyright (c) 2008-2009 Max Baker changes from version 0.8 and beyond.
 #
@@ -540,6 +539,16 @@ my $aironet = new SNMP::Info::Layer2::Aironet(...);
 =head2 Required MIBs
 
 =over
+
+=item F<CISCO-DOT11-ASSOCIATION-MIB>
+
+=item F<CISCO-DOT11-IF-MIB>
+
+=item F<CISCO-DOT11-SSID-SECURITY-MIB>
+
+=item F<CISCO-POE-PD-MIB>
+
+=item F<CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB>
 
 =item Inherited Classes
 
