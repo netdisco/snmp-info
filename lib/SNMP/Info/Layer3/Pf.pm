@@ -85,7 +85,7 @@ $VERSION = '3.68';
 );
 
 sub vendor {
-    return 'FreeBSD';
+    return 'freebsd';
 }
 
 sub model {
@@ -147,7 +147,7 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Subclass for Free-BSD PF-Based devices
+Subclass for FreeBSD PF-Based devices
 
 =head1 LLDP Support
 
@@ -191,7 +191,7 @@ These are methods that return scalar values from SNMP
 
 =item $pf->vendor()
 
-    Returns 'FreeBSD'
+Returns 'freebsd'
 
 =item $pf->model()
 
