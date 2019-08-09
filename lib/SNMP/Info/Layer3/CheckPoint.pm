@@ -57,7 +57,9 @@ $VERSION = '3.68';
     %SNMP::Info::LLDP::GLOBALS,
     'netsnmp_vers'   => 'versionTag',
     'hrSystemUptime' => 'hrSystemUptime',
-
+    'serial_number' => 'svnApplianceSerialNumber',
+    'product_name' => 'svnApplianceProductName',
+    'manufacturer' => 'svnApplianceManufacturer',
 );
 
 %FUNCS = (
@@ -83,7 +85,9 @@ sub model {
 
     my $model = &SNMP::translateObj($id);
 
-    if (defined $model) {
+    if (defined $ckp->product_name) {
+        return $ckp->product_name;
+    } elsif (defined $model) {
         $model =~ s/^checkPoint//;
         return $model;
     } else {
@@ -122,16 +126,20 @@ sub os_ver {
 
 sub serial {
     my $ckp = shift;
-    my $extend_table = $ckp->extend_output_table() || {};
 
-    foreach my $ex (keys %$extend_table) {
-        (my $name = pack('C*',split(/\./,$ex))) =~ s/[^[:print:]]//g;
-        if ($name eq 'ckpAsset') {
-            return $1 if ($extend_table->{$ex} =~ /Serial Number: (\S+)/);
-            last;
+    if (defined $ckp->serial_number) {
+        return $ckp->serial_number;
+    } else {
+        my $extend_table = $ckp->extend_output_table() || {};
+
+        foreach my $ex (keys %$extend_table) {
+            (my $name = pack('C*',split(/\./,$ex))) =~ s/[^[:print:]]//g;
+            if ($name eq 'ckpAsset') {
+                return $1 if ($extend_table->{$ex} =~ /Serial Number: (\S+)/);
+                last;
+            }
         }
     }
-
     return '';
 }
 
