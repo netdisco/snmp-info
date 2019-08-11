@@ -30,6 +30,7 @@
 package SNMP::Info::Layer2::Orinoco;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::IEEE802dot11;
 use SNMP::Info::Layer2;

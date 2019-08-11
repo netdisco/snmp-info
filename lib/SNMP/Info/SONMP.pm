@@ -70,7 +70,7 @@ $VERSION = '3.68';
 
 %MUNGE = (
     'sonmp_topo_mac'   => \&SNMP::Info::munge_mac,
-    'sonmp_topo_e_mac' => \&SNMP::Info::munge_mac
+    'sonmp_topo_e_mac' => \&SNMP::Info::munge_mac,
 );
 
 sub index_factor {
@@ -120,7 +120,7 @@ sub sonmp_if {
         || $sonmp->sonmp_topo_e_platform($partial)
         || {};
     my $interfaces   = $sonmp->interfaces() || {};
-    my %r_interfaces  = reverse %$interfaces;
+    my %r_interfaces = reverse %$interfaces;
     my $index_factor = $sonmp->index_factor();
     my $slot_offset  = $sonmp->slot_offset();
     my $port_offset  = $sonmp->port_offset();

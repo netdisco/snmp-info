@@ -32,6 +32,7 @@
 package SNMP::Info::Layer2::C1900;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;

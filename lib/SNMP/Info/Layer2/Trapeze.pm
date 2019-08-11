@@ -29,6 +29,7 @@
 package SNMP::Info::Layer2::Trapeze;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;

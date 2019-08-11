@@ -30,6 +30,7 @@
 package SNMP::Info::Layer2::Nexans;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 

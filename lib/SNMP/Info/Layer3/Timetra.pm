@@ -29,7 +29,7 @@
 package SNMP::Info::Layer3::Timetra;
 
 use strict;
-
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::Aggregate;

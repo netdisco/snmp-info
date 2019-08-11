@@ -30,6 +30,7 @@
 package SNMP::Info::Layer2::NAP222x;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::SONMP;
 use SNMP::Info::IEEE802dot11;

@@ -30,6 +30,7 @@
 package SNMP::Info::Layer1::S3000;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 

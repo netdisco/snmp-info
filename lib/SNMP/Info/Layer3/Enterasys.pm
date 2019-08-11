@@ -30,6 +30,7 @@
 package SNMP::Info::Layer3::Enterasys;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::MAU;
 use SNMP::Info::LLDP;

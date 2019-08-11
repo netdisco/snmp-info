@@ -32,6 +32,7 @@
 package SNMP::Info::Layer2::Aironet;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::Entity;
@@ -59,7 +60,7 @@ $VERSION = '3.68';
     %SNMP::Info::CiscoConfig::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
     'serial' => 'entPhysicalSerialNum.1',
-    'ps1_type' => 'cpoePdCurrentPowerSource'
+    'ps1_type' => 'cpoePdCurrentPowerSource',
 );
 
 %FUNCS = (
@@ -117,7 +118,6 @@ $VERSION = '3.68';
     = \&SNMP::Info::IEEE802dot11::dot11_cur_tx_pwr_mw;
 
 sub vendor {
-
     # Sorry, but it's true.
     return 'cisco';
 }

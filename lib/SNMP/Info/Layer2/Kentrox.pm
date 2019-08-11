@@ -28,6 +28,7 @@ package SNMP::Info::Layer2::Kentrox;
 # POSSIBILITY OF SUCH DAMAGE.
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 

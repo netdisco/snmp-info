@@ -30,6 +30,7 @@
 package SNMP::Info::CiscoPower;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 

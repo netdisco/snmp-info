@@ -32,6 +32,7 @@
 package SNMP::Info::Layer3::Foundry;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::FDP;

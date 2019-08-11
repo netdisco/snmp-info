@@ -30,6 +30,7 @@
 package SNMP::Info::AdslLine;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 

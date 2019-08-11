@@ -28,6 +28,7 @@ package SNMP::Info::Layer3::SonicWALL;
 # POSSIBILITY OF SUCH DAMAGE.
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -107,7 +108,7 @@ phishphreek@gmail.com
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 

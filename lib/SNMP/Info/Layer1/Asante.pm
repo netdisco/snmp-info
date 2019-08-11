@@ -32,6 +32,7 @@
 package SNMP::Info::Layer1::Asante;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer1;
 

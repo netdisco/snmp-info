@@ -30,6 +30,7 @@
 package SNMP::Info::Layer1::Bayhub;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::SONMP;
 use SNMP::Info::NortelStack;

@@ -31,6 +31,7 @@
 package SNMP::Info::Layer2::HPVC;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::LLDP;

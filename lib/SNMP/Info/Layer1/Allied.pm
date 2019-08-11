@@ -32,6 +32,7 @@
 package SNMP::Info::Layer1::Allied;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer1;
 

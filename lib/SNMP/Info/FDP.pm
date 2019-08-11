@@ -33,6 +33,7 @@
 package SNMP::Info::FDP;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -64,7 +65,7 @@ $VERSION = '3.68';
 
 %MUNGE = (
     'fdp_capabilities' => \&SNMP::Info::munge_bits,
-    'fdp_ip'           => \&SNMP::Info::munge_ip
+    'fdp_ip'           => \&SNMP::Info::munge_ip,
 );
 
 sub fdp_run {

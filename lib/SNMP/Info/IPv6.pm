@@ -30,6 +30,7 @@
 package SNMP::Info::IPv6;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 

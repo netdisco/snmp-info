@@ -32,6 +32,7 @@
 package SNMP::Info::Layer1;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -48,7 +49,7 @@ $VERSION = '3.68';
     %SNMP::Info::GLOBALS,
     'ports_managed' => 'ifNumber',
     'rptr_slots'    => 'rptrGroupCapacity',
-    'slots'         => 'rptrGroupCapacity'
+    'slots'         => 'rptrGroupCapacity',
 );
 
 %FUNCS = (

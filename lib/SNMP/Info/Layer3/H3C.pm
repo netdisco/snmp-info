@@ -30,6 +30,7 @@
 package SNMP::Info::Layer3::H3C;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::LLDP;

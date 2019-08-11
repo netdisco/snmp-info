@@ -34,6 +34,7 @@
 package SNMP::Info::Layer2::CiscoSB;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::Entity;
@@ -58,7 +59,7 @@ $VERSION = '3.68';
     %SNMP::Info::CiscoStats::GLOBALS,
     %SNMP::Info::CiscoConfig::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
-    'descr'  => 'sysDescr'
+    'descr'  => 'sysDescr',
 );
 
 %FUNCS = (

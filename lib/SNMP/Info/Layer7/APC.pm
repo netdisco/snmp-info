@@ -31,6 +31,7 @@
 package SNMP::Info::Layer7::APC;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer7;
 

@@ -30,6 +30,7 @@
 package SNMP::Info::Layer3::Netscreen;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::IEEE802dot11;

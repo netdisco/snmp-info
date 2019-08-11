@@ -30,6 +30,7 @@
 package SNMP::Info::Layer7::Gigamon;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer7;
 

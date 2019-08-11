@@ -29,6 +29,7 @@
 package SNMP::Info::Layer3::Genua;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 

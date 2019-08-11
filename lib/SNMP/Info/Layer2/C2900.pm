@@ -32,6 +32,7 @@
 package SNMP::Info::Layer2::C2900;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2::Cisco;
 

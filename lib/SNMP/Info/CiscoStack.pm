@@ -30,6 +30,7 @@
 package SNMP::Info::CiscoStack;
 
 use strict;
+use warnings;
 use Exporter;
 
 @SNMP::Info::CiscoStack::ISA       = qw/Exporter/;

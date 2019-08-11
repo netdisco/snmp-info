@@ -30,6 +30,7 @@
 package SNMP::Info::CiscoRTT;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 

@@ -30,7 +30,7 @@
 package SNMP::Info::CiscoAgg;
 
 use strict;
-#use warnings;
+use warnings;
 use Exporter;
 use SNMP::Info::IEEE802dot3ad;
 

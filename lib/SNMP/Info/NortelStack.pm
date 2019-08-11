@@ -30,6 +30,7 @@
 package SNMP::Info::NortelStack;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 

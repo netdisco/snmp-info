@@ -29,6 +29,7 @@
 package SNMP::Info::Layer2::Adtran;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::Layer3;

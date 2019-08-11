@@ -32,6 +32,7 @@
 package SNMP::Info::Entity;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 

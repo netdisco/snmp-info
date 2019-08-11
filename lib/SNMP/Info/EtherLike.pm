@@ -32,6 +32,7 @@
 package SNMP::Info::EtherLike;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -67,7 +68,7 @@ $VERSION = '3.68';
     'el_xmit_defer'      => 'dot3StatsDeferredTransmissions',
 
     # Ethernet-like Collision Statistics Group
-    'el_coll_freq'  => 'dot3CollFrequencies'
+    'el_coll_freq'  => 'dot3CollFrequencies',
 );
 
 %MUNGE = ( %SNMP::Info::MUNGE, 'el_duplex' => \&munge_el_duplex, );

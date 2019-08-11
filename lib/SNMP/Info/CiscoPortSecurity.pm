@@ -30,6 +30,7 @@
 package SNMP::Info::CiscoPortSecurity;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -109,7 +110,7 @@ $VERSION = '3.68';
 
 %PAECAPABILITIES = (
     0 => 'dot1xPaePortAuthCapable',
-    1 => 'dot1xPaePortSuppCapable'
+    1 => 'dot1xPaePortSuppCapable',
 );
 
 sub munge_pae_capabilities {

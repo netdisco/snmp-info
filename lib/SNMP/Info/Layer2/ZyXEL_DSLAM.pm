@@ -30,6 +30,7 @@
 package SNMP::Info::Layer2::ZyXEL_DSLAM;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 

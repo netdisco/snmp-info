@@ -30,6 +30,7 @@
 package SNMP::Info::Layer2::N2270;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;

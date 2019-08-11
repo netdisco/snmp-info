@@ -31,6 +31,7 @@
 package SNMP::Info::Layer2::Catalyst;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::CiscoStack;
 use SNMP::Info::Layer2::Cisco;

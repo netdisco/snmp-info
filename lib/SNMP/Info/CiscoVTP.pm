@@ -32,6 +32,7 @@
 package SNMP::Info::CiscoVTP;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 

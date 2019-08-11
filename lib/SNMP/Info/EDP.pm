@@ -31,6 +31,7 @@
 package SNMP::Info::EDP;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
