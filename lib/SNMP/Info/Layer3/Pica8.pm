@@ -86,7 +86,9 @@ sub model {
     my $pica8 = shift;
     my $descr   = $pica8->description();
 
-    return $1 if ( $descr =~ /Hardware model (P-\d{4})/i );
+    if (defined $descr) {
+      return $1 if ($descr =~ /Hardware model (P-\d{4})/i);
+    }
     return;
 }
 
