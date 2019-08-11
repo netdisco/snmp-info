@@ -130,8 +130,8 @@ sub i_name {
     my $adname = $adtran->ad_genportcustuse() || undef;
     if (defined $adname) {
         foreach my $port (keys %$adname) {
-            my @split = split(/\./,$port);
-            $i_name->{@split[1]} = $adname->{$port};
+            my @splitout = split(/\./,$port);
+            $i_name->{$splitout[1]} = $adname->{$port};
         }
     }
     return $i_name;
@@ -170,9 +170,9 @@ sub i_vlan_membership {
         }
         my $if_vlans = {};
         foreach my $entry (keys %$i_vlan) {
-            my @split = split(/(\.0)+\./,$entry);
-            my $name = pack("C*", split(/\./,@split[0]));
-            push @{$if_vlans->{@split[2]}}, $vlans->{$name};
+            my @splitout = split(/(\.0)+\./,$entry);
+            my $name = pack("C*", split(/\./,$splitout[0]));
+            push @{$if_vlans->{$splitout[2]}}, $vlans->{$name};
         }
         my $mgmtevcports = $adtran->ad_mgmtevcports();
         my $mgmtevcid = $adtran->ad_mgmtevcvid();
