@@ -463,6 +463,10 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::LLDP
 
+=item SNMP::Info::DocsisHE
+
+=item SNMP::Info::AdslLine
+
 =back
 
 =head2 Required MIBs
@@ -494,6 +498,10 @@ See L<SNMP::Info::PowerEthernet/"Required MIBs"> for its MIB requirements.
 See L<SNMP::Info::IPv6/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::LLDP/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::DocsisHE/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::AdslLine/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -578,6 +586,14 @@ See L<SNMP::Info::IPv6/"GLOBALS"> for details.
 =head2 Global Methods imported from SNMP::Info::LLDP
 
 See L<SNMP::Info::LLDP/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::DocsisHE
+
+See L<SNMP::Info::DocsisHE/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::AdslLine
+
+See L<SNMP::Info::AdslLine/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -927,5 +943,13 @@ See L<SNMP::Info::IPv6/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::LLDP
 
 See L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::DocsisHE
+
+See L<SNMP::Info::DocsisHE/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::AdslLine
+
+See L<SNMP::Info::AdslLine/"TABLE METHODS"> for details.
 
 =cut

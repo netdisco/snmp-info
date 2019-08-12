@@ -34,7 +34,7 @@ use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::CheckPoint::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::CheckPoint::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::CheckPoint::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
@@ -43,7 +43,6 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     'CHECKPOINT-MIB'      => 'fwProduct',
     'UCD-SNMP-MIB'        => 'versionTag',
     'NET-SNMP-TC'         => 'netSnmpAliasDomain',
@@ -53,15 +52,12 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'netsnmp_vers'   => 'versionTag',
     'hrSystemUptime' => 'hrSystemUptime',
-
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 
     # Net-SNMP Extend table that could but customize to add a the CheckPoint version
     'extend_output_table' => 'nsExtendOutputFull',
@@ -69,7 +65,6 @@ $VERSION = '3.68';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
 );
 
 sub vendor {
@@ -234,8 +229,6 @@ To correctly and completelly work, you should add the following line in the file
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
 
-See L<SNMP::Info::LLDP> for its own MIB requirements.
-
 =back
 
 =head1 GLOBALS
@@ -282,10 +275,6 @@ Return '01001100'.
 
 See documentation in L<SNMP::Info::Layer3> for details.
 
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
-
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
@@ -306,10 +295,6 @@ Ignores loopback
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
 
 =head1 NOTES
 

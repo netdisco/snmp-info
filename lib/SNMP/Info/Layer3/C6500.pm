@@ -276,11 +276,6 @@ It also supports the following IOS only series switches: Cisco Catalyst 2960,
 2970, 3750 and 3850 series. Also blade switches from the CBS30x0 and CBS31x0
 series.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $c6500 = new SNMP::Info::Layer3::C6500(...);
-
 =head2 Inherited Classes
 
 =over
@@ -403,12 +398,10 @@ Crosses $c6500->p_port() with $c6500->p_speed() to utilize port C<ifIndex>.
 
 See documentation in L<SNMP::Info::CiscoStack/"TABLE METHODS"> for details.
 
-
 =head2 Table Methods imported from SNMP::Info::Layer3::CiscoSwitch
 
 See documentation in L<SNMP::Info::Layer3::CiscoSwitch/"TABLE METHODS"> for
 details.
-
 
 =head2 Table Methods imported from SNMP::Info::MAU
 

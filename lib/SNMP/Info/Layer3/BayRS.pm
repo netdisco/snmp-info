@@ -34,7 +34,6 @@ use warnings;
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Layer3;
-use SNMP::Info::Bridge;
 
 @SNMP::Info::Layer3::BayRS::ISA = qw/SNMP::Info SNMP::Info::Layer3
     SNMP::Info::Bridge Exporter/;
@@ -48,7 +47,6 @@ $VERSION = '3.68';
 %MIBS = (
     %SNMP::Info::MIBS,
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::Bridge::MIBS,
     'Wellfleet-HARDWARE-MIB'        => 'wfHwBpIdOpt',
     'Wellfleet-OSPF-MIB'            => 'wfOspfRouterId',
     'Wellfleet-DOT1QTAG-CONFIG-MIB' => 'wfDot1qTagCfgVlanName',
@@ -59,7 +57,6 @@ $VERSION = '3.68';
 %GLOBALS = (
     %SNMP::Info::GLOBALS,
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::Bridge::GLOBALS,
     'bp_id'       => 'wfHwBpIdOpt',
     'bp_serial'   => 'wfHwBpSerialNumber',
     'ospf_rtr_id' => 'wfOspfRouterId',
@@ -68,7 +65,6 @@ $VERSION = '3.68';
 %FUNCS = (
     %SNMP::Info::FUNCS,
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::Bridge::FUNCS,
 
     # From Wellfleet-CSMACD-MIB::wfCSMACDTable
     'wf_csmacd_cct'  => 'wfCSMACDCct',
@@ -109,7 +105,6 @@ $VERSION = '3.68';
 %MUNGE = (
     %SNMP::Info::MUNGE,
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::Bridge::MUNGE,
     'wf_hw_boot'     => \&munge_hw_rev,
     'wf_hw_diag'     => \&munge_hw_rev,
     'wf_hw_mobo_ser' => \&munge_wf_serial,
@@ -1415,8 +1410,6 @@ Abstraction subclass for routers running Avaya/Nortel BayRS.
 
 =item SNMP::Info
 
-=item SNMP::Info::Bridge
-
 =item SNMP::Info::Layer3
 
 =back
@@ -1440,8 +1433,6 @@ Abstraction subclass for routers running Avaya/Nortel BayRS.
 =head2 Inherited MIBs
 
 See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::Bridge/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
@@ -1501,10 +1492,6 @@ undefined.
 =head2 Globals imported from SNMP::Info
 
 See documentation in L<SNMP::Info/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::Bridge
-
-See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer3
 
@@ -1626,10 +1613,6 @@ is not contained in any other entity.
 =head2 Table Methods imported from SNMP::Info
 
 See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Bridge
-
-See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
