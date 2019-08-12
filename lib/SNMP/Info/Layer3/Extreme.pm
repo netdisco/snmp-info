@@ -36,7 +36,6 @@ use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
-use SNMP::Info::LLDP;
 use SNMP::Info::EDP;
 
 @SNMP::Info::Layer3::Extreme::ISA

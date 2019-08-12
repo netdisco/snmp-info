@@ -32,7 +32,6 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info;
-use SNMP::Info::Bridge;
 
 @SNMP::Info::Layer2::NWSS2300::ISA
     = qw/SNMP::Info SNMP::Info::Bridge Exporter/;

@@ -32,9 +32,7 @@ package SNMP::Info::Layer3::Pf;
 use strict;
 use warnings;
 use Exporter;
-
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer3::Pf::ISA = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Pf::EXPORT_OK = qw//;

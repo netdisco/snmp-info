@@ -35,7 +35,6 @@ use Exporter;
 
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
-use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer3::Force10::ISA = qw/SNMP::Info::LLDP SNMP::Info::MAU
     SNMP::Info::Layer3 Exporter/;

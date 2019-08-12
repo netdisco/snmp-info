@@ -34,7 +34,6 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
-use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer2::HPVC::ISA
     = qw/SNMP::Info::Layer2 SNMP::Info::LLDP Exporter/;

@@ -33,7 +33,6 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info;
-use SNMP::Info::Bridge;
 use SNMP::Info::NortelStack;
 use SNMP::Info::SONMP;
 

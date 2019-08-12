@@ -36,7 +36,6 @@ use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::FDP;
-use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer3::Foundry::ISA = qw/
     SNMP::Info::FDP

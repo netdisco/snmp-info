@@ -32,10 +32,8 @@ package SNMP::Info::Layer3::Arista;
 use strict;
 use warnings;
 use Exporter;
-
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
-use SNMP::Info::LLDP;
 use SNMP::Info::Aggregate 'agg_ports_ifstack';
 
 @SNMP::Info::Layer3::Arista::ISA = qw/

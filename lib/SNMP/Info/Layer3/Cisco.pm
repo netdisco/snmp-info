@@ -33,7 +33,6 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::CiscoVTP;
-use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoRTT;

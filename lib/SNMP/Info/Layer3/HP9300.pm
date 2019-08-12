@@ -34,7 +34,6 @@ use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::FDP;
-use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer3::HP9300::ISA = qw/SNMP::Info::FDP SNMP::Info::LLDP
     SNMP::Info::Layer3 Exporter/;

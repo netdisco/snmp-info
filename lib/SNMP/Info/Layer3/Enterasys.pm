@@ -33,7 +33,6 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::MAU;
-use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
 use SNMP::Info::Layer3;
 

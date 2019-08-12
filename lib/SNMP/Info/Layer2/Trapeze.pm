@@ -32,8 +32,6 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info;
-use SNMP::Info::Bridge;
-use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer2::Trapeze::ISA
     = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::LLDP Exporter/;

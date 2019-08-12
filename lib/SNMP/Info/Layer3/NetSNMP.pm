@@ -33,7 +33,6 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer3::NetSNMP::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::NetSNMP::EXPORT_OK = qw//;

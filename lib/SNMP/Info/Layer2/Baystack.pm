@@ -35,7 +35,6 @@ use Exporter;
 use SNMP::Info::SONMP;
 use SNMP::Info::NortelStack;
 use SNMP::Info::RapidCity;
-use SNMP::Info::LLDP;
 use SNMP::Info::Layer3;
 
 @SNMP::Info::Layer2::Baystack::ISA

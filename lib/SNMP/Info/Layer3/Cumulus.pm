@@ -33,7 +33,6 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 @SNMP::Info::Layer3::Cumulus::ISA = qw/
