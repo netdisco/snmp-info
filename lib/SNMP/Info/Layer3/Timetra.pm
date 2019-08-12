@@ -119,7 +119,7 @@ sub model {
 
     my $str;
 
-    if ( $descr =~ /\s+(7\d{3})/ ) {
+    if ( defined ($descr) && $descr =~ /\s+(7\d{3})/ ) {
         $str = $1;
     }
 

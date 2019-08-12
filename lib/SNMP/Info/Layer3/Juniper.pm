@@ -143,10 +143,10 @@ sub model {
     my $l3 = shift;
     my $id = $l3->id();
     # Query the junos device model.
-    my $mod = uc $l3->vc_model() || '';
+    my $mod = $l3->vc_model() || '';
 
-    if  (not $mod eq '') {
-        return $mod;
+    if (not $mod eq '') {
+        return uc $mod;
     }
     # Fallback to old method
     unless ( defined $id ) {

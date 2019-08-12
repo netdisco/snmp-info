@@ -136,7 +136,7 @@ sub os_ver {
     my $descr  = $huawei->description();
     my $os_ver = undef;
 
-    if ($descr =~ /Version\s            # Start match on Version string
+    if (defined ($descr) && $descr =~ /Version\s            # Start match on Version string
                    ([\d\.]+)            # Capture the primary version in 1
                    ,?                   # There may be a comma
                    \s                   # Always a space

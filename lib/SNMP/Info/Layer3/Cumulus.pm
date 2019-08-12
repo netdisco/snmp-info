@@ -95,7 +95,9 @@ sub model {
     my $chassis = $netsnmp->chassis();
 
 # STRING: "Cumulus Networks  VX Chassis"
-    return $1 if ( $chassis =~ /^Cumulus Networks\s+(.+)/ );
+    if (defined ($chassis)) {
+      return $1 if ($chassis =~ /^Cumulus Networks\s+(.+)/);
+    }
     return $netsnmp->SUPER::model();
 }
 

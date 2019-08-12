@@ -137,7 +137,9 @@ sub description {
     my $descr   = $aironet->SUPER::description();
     my $e_descr = $aironet->e_descr();
 
-    $descr = "$e_descr->{1}  $descr" if defined $e_descr->{1};
+    if (defined $e_descr->{1}) {
+      $descr = "$e_descr->{1}  $descr"
+    }
 
     return $descr;
 }
