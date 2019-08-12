@@ -73,7 +73,7 @@ sub os_ver {
 sub serial {
     my $dsserial = shift;
     my $serial = $dsserial->ds_sysinfo();
-    if ( $serial =~ /SERIAL\s(\S+)/){
+    if ( defined ($serial) && $serial =~ /SERIAL\s(\S+)/){
         my $str = substr($1,8,10);
         return $str;
     }

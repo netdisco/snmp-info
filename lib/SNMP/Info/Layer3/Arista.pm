@@ -93,11 +93,14 @@ sub os {
 
 sub os_ver {
     my $arista = shift;
-    my $descr   = $arista->description();
-    my $os_ver  = undef;
+    my $descr  = $arista->description();
 
-    $os_ver = $1 if ( $descr =~ /\s+EOS\s+version\s+(\S+)\s+/ );
-    return $os_ver;
+    if (defined ($descr)) {
+      my $os_ver = undef;
+      $os_ver = $1 if ($descr =~ /\s+EOS\s+version\s+(\S+)\s+/);
+      return $os_ver;
+    }
+    return;
 }
 
 sub model {

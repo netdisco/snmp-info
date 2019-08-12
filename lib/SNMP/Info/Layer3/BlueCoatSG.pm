@@ -66,7 +66,7 @@ sub os {
 sub os_ver {
     my $sg = shift;
     my $os_string = $sg->sw_ver();
-    if ($os_string =~ /^Version:\s(\w+)\s([\d\.]+)/) {
+    if (defined ($os_string) && $os_string =~ /^Version:\s(\w+)\s([\d\.]+)/) {
         return $2;
     } else {
         return ''; # perhaps we can try sysDescr or some other object...

@@ -70,7 +70,7 @@ sub os_ver {
     my $allied = shift;
     my $descr  = $allied->description();
 
-    if ( $descr =~ m/version (\d+\.\d+)/ ) {
+    if ( defined ($descr) && $descr =~ m/version (\d+\.\d+)/ ) {
         return $1;
     }
     return;
@@ -78,10 +78,9 @@ sub os_ver {
 
 sub model {
     my $allied = shift;
-
     my $desc = $allied->description();
 
-    if ( $desc =~ /(AT-80\d{2}\S*)/ ) {
+    if ( defined ($desc) &&  $desc =~ /(AT-80\d{2}\S*)/ ) {
         return $1;
     }
     return;

@@ -83,7 +83,7 @@ sub os_ver {
   my $descr  = $ERX->description();
   my $os_ver = undef;
 
-  if ( $descr =~ /Version : \((.+)\) .+:/ ) {
+  if ( defined ($descr) && $descr =~ /Version : \((.+)\) .+:/ ) {
     $os_ver = $1;
   }
 

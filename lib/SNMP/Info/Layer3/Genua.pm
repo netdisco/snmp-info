@@ -86,14 +86,15 @@ sub model {
 
     my $genua_model = $genua->genua_model();
 
-    if ( $genua_model =~ m/GeNUA.+(GS.+?)\s/i ) {
+    if (defined $genua_model) {
+      if ($genua_model =~ m/GeNUA.+(GS.+?)\s/i) {
         $genua_model = $1;
-    }
-    elsif ( $genua_model =~ m/genua\s+(.+?)\s+/i ) {
+      }
+      elsif ($genua_model =~ m/genua\s+(.+?)\s+/i) {
         $genua_model = $1;
-    }
-    else {
-        $genua_model = 'unknown';
+      }
+    } else {
+      $genua_model = 'unknown';
     }
     return $genua_model;
 }

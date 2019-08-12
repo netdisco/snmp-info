@@ -68,7 +68,7 @@ sub os_ver {
     my $allied = shift;
     my $descr  = $allied->description();
 
-    if ( $descr =~ m/version (\d+\.\d+)/ ) {
+    if ( defined ($descr) && $descr =~ m/version (\d+\.\d+)/ ) {
         return $1;
     }
     return;

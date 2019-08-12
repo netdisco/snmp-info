@@ -115,7 +115,9 @@ sub os_ver {
    my $alu = shift;
 
    my $descr = $alu->description();
-   return $1 if $descr =~ m/\b(\d[\.\d]+R\d+) (?:GA|Service Release), /;
+   if (defined ($descr)) {
+     return $1 if $descr =~ m/\b(\d[\.\d]+R\d+) (?:GA|Service Release), /;
+   }
 
    # No clue what this will try but hey
    return $alu->SUPER::os_ver();
