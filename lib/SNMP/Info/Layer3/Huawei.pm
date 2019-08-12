@@ -119,7 +119,7 @@ sub os {
     my $huawei = shift;
     my $descr  = $huawei->description();
 
-    if ( $descr =~ /\b(VRP)\b/ ) {
+    if ( defined ($descr) && $descr =~ /\b(VRP)\b/ ) {
         return $1;
     }
     return "huawei";

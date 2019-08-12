@@ -541,7 +541,10 @@ sub model {
     my $bayrs = shift;
     my $bp_id = $bayrs->bp_id();
 
-    return defined $MODEL_MAP{$bp_id} ? $MODEL_MAP{$bp_id} : $bp_id;
+    if (defined $bp_id) {
+      return defined $MODEL_MAP{$bp_id} ? $MODEL_MAP{$bp_id} : $bp_id;
+    }
+    return;
 }
 
 sub vendor {

@@ -138,9 +138,12 @@ sub description {
     my $e_descr = $aironet->e_descr();
 
     if (defined $e_descr->{1}) {
-      $descr = "$e_descr->{1}  $descr"
+      if (defined $descr) {
+        $descr = "$e_descr->{1}  $descr"
+      } else {
+        $descr = "$e_descr->{1}"
+      }
     }
-
     return $descr;
 }
 
