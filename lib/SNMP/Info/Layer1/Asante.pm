@@ -81,7 +81,7 @@ sub os_ver {
     my $asante = shift;
     my $descr  = $asante->description();
 
-    if ( $descr =~ /software v(\d+\.\d+)/ ) {
+    if ( defined ($descr) && $descr =~ /software v(\d+\.\d+)/ ) {
         return $1;
     }
     return;

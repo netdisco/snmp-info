@@ -77,7 +77,7 @@ sub os_ver {
     my $zyxel = shift;
     my $descr = $zyxel->description();
 
-    if ( $descr =~ m/version (\S+) / ) {
+    if ( defined ($descr) && $descr =~ m/version (\S+) / ) {
         return $1;
     }
     return;
@@ -88,11 +88,13 @@ sub model {
 
     my $desc = $zyxel->description();
 
-    if ( $desc =~ /8-port ADSL Module\(Annex A\)/ ) {
+    if (defined $desc) {
+      if ($desc =~ /8-port ADSL Module\(Annex A\)/) {
         return "AAM1008-61";
-    }
-    elsif ( $desc =~ /8-port ADSL Module\(Annex B\)/ ) {
+      }
+      elsif ($desc =~ /8-port ADSL Module\(Annex B\)/) {
         return "AAM1008-63";
+      }
     }
     return;
 }

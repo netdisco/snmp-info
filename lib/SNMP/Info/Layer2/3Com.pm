@@ -98,13 +98,15 @@ sub vendor {
 }
 
 sub model {
-
     my $dsmodel = shift;
     my $descr = $dsmodel->description();
-    if ( $descr =~ /^([\S ]+) Software.*/){
+
+    if (defined ($descr)) {
+      if ($descr =~ /^([\S ]+) Software.*/) {
         return $1;
-    } else {
+      } else {
         return $descr;
+      }
     }
     return;
 }

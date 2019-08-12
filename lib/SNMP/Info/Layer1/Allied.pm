@@ -79,7 +79,7 @@ sub model {
 
     my $desc = $allied->description();
 
-    if ( $desc =~ /(AT-\d{4}\S{1})/ ) {
+    if ( defined ($desc) && $desc =~ /(AT-\d{4}\S{1})/ ) {
         return $1;
     }
     return;

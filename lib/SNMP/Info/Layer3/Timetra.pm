@@ -145,7 +145,7 @@ sub os_ver {
     my $timetra = shift;
 
     my $descr = $timetra->description();
-    if ( $descr =~ m/^TiMOS-(\S+)/x ) {
+    if ( defined ($descr) && $descr =~ m/^TiMOS-(\S+)/x ) {
         return $1;
     }
     return;

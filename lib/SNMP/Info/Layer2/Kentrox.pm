@@ -64,7 +64,7 @@ sub os {
 sub os_ver {
     my $dsver = shift;
     my $descr = $dsver->description();
-    if ( $descr =~ /^\S+\s\S+\s\S+\s(\S+)/){
+    if ( defined ($descr) && $descr =~ /^\S+\s\S+\s\S+\s(\S+)/){
         return $1;
     }
     return;
@@ -86,7 +86,7 @@ sub vendor {
 sub model {
     my $dsmodel = shift;
     my $descr = $dsmodel->description();
-    if ( $descr =~ /^(\S+\s\S+)/){
+    if ( defined ($descr) && $descr =~ /^(\S+\s\S+)/){
         return $1;
     }
     return;
