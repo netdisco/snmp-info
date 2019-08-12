@@ -29,6 +29,8 @@
 
 package My::Test::Class;
 
+use strict;
+use warnings;
 use Test::Class::Most attributes => [qw/class mock_session todo_methods/];
 use Test::MockObject::Extends;
 use File::Find 'find';
