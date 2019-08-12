@@ -31,10 +31,10 @@ package SNMP::Info::Layer2::NWSS2300;
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info;
+use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer2::NWSS2300::ISA
-    = qw/SNMP::Info SNMP::Info::Bridge Exporter/;
+    = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::NWSS2300::EXPORT_OK = qw//;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
@@ -42,8 +42,7 @@ our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 $VERSION = '3.68';
 
 %MIBS = (
-    %SNMP::Info::MIBS,
-    %SNMP::Info::Bridge::MIBS,
+    %SNMP::Info::Layer2::MIBS,
     'NTWS-REGISTRATION-DEVICES-MIB' => 'ntwsSwitch2380',
     'NTWS-AP-STATUS-MIB'            => 'ntwsApStatNumAps',
     'NTWS-CLIENT-SESSION-MIB'       => 'ntwsClSessTotalSessions',
@@ -53,16 +52,14 @@ $VERSION = '3.68';
 );
 
 %GLOBALS = (
-    %SNMP::Info::GLOBALS,
-    %SNMP::Info::Bridge::GLOBALS,
+    %SNMP::Info::Layer2::GLOBALS,
     'os_ver' => 'ntwsVersionString',
     'serial' => 'ntwsSerialNumber',
     'mac'    => 'dot1dBaseBridgeAddress',
 );
 
 %FUNCS = (
-    %SNMP::Info::FUNCS,
-    %SNMP::Info::Bridge::FUNCS,
+    %SNMP::Info::Layer2::FUNCS,
 
     # NTWS-AP-STATUS-MIB::ntwsApStatApStatusTable
     'nwss2300_ap_mac'      => 'ntwsApStatApStatusBaseMac',
@@ -125,8 +122,7 @@ $VERSION = '3.68';
 );
 
 %MUNGE = (
-    %SNMP::Info::MUNGE,
-    %SNMP::Info::Bridge::MUNGE,
+    %SNMP::Info::Layer2::MUNGE,
     'nwss2300_apif_mac'      => \&SNMP::Info::munge_mac,
     'nwss2300_apif_bssid'    => \&SNMP::Info::munge_mac,
 );
@@ -817,9 +813,7 @@ the end station is using for communication.
 
 =over
 
-=item SNMP::Info
-
-=item SNMP::Info::Bridge
+=item SNMP::Info::Layer2
 
 =back
 
@@ -841,9 +835,7 @@ the end station is using for communication.
 
 =head2 Inherited Classes' MIBs
 
-See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::Bridge/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
 
 =head1 GLOBALS
 
@@ -890,13 +882,9 @@ proprietary MIBs.
 
 =back
 
-=head2 Global Methods imported from SNMP::Info
+=head2 Global Methods imported from SNMP::Info::Layer2
 
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::Bridge
-
-See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -1136,13 +1124,9 @@ These emulate the F<CISCO-DOT11-MIB>
 
 =back
 
-=head2 Table Methods imported from SNMP::Info
+=head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Bridge
-
-See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =head2 Overrides
 
