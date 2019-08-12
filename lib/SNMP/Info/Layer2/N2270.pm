@@ -32,12 +32,12 @@ package SNMP::Info::Layer2::N2270;
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info;
+use SNMP::Info::Layer2;
 use SNMP::Info::SONMP;
 use SNMP::Info::Airespace;
 
 @SNMP::Info::Layer2::N2270::ISA
-    = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::SONMP SNMP::Info::Airespace Exporter/;
+    = qw/SNMP::Info::Layer2 SNMP::Info::SONMP SNMP::Info::Airespace Exporter/;
 @SNMP::Info::Layer2::N2270::EXPORT_OK = qw//;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG);
@@ -45,23 +45,27 @@ our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG);
 $VERSION = '3.68';
 
 %MIBS = (
-    %SNMP::Info::MIBS,        %SNMP::Info::Bridge::MIBS,
-    %SNMP::Info::SONMP::MIBS, %SNMP::Info::Airespace::MIBS,
+    %SNMP::Info::Layer2::MIBS,
+    %SNMP::Info::SONMP::MIBS,
+    %SNMP::Info::Airespace::MIBS,
 );
 
 %GLOBALS = (
-    %SNMP::Info::GLOBALS,        %SNMP::Info::Bridge::GLOBALS,
-    %SNMP::Info::SONMP::GLOBALS, %SNMP::Info::Airespace::GLOBALS,
+    %SNMP::Info::Layer2::GLOBALS,
+    %SNMP::Info::SONMP::GLOBALS,
+    %SNMP::Info::Airespace::GLOBALS,
 );
 
 %FUNCS = (
-    %SNMP::Info::FUNCS,        %SNMP::Info::Bridge::FUNCS,
-    %SNMP::Info::SONMP::FUNCS, %SNMP::Info::Airespace::FUNCS,
+    %SNMP::Info::Layer2::FUNCS,
+    %SNMP::Info::SONMP::FUNCS,
+    %SNMP::Info::Airespace::FUNCS,
 );
 
 %MUNGE = (
-    %SNMP::Info::MUNGE,        %SNMP::Info::Bridge::MUNGE,
-    %SNMP::Info::SONMP::MUNGE, %SNMP::Info::Airespace::MUNGE,
+    %SNMP::Info::Layer2::MUNGE,
+    %SNMP::Info::SONMP::MUNGE,
+    %SNMP::Info::Airespace::MUNGE,
 );
 
 sub os {
@@ -129,9 +133,7 @@ Nortel 2270 Series Wireless Switch through SNMP.
 
 =over
 
-=item SNMP::Info
-
-=item SNMP::Info::Bridge
+=item SNMP::Info::Layer2
 
 =item SNMP::Info::SONMP
 
@@ -145,9 +147,7 @@ Nortel 2270 Series Wireless Switch through SNMP.
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::Bridge/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::SONMP/"Required MIBs"> for its own MIB requirements.
 
@@ -194,13 +194,9 @@ start at 0.  Returns 0.
 
 =back
 
-=head2 Globals imported from SNMP::Info
+=head2 Globals imported from SNMP::Info::Layer2
 
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::Bridge
-
-See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::SONMP
 
@@ -223,13 +219,9 @@ to a hash.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info
+=head2 Table Methods imported from SNMP::Info::Layer2
 
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Bridge
-
-See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::SONMP
 
