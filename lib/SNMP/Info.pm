@@ -3439,6 +3439,7 @@ will inherit the Cisco Vlan module as an example.
  $VERSION = 0.1;
 
  use strict;
+ use warnings;
 
  use Exporter;
  use SNMP::Info::Layer2;
@@ -3452,14 +3453,14 @@ will inherit the Cisco Vlan module as an example.
 
  %MIBS    = (%SNMP::Info::Layer2::MIBS,
              %SNMP::Info::CiscoVTP::MIBS,
-             'SUPER-DOOPER-MIB'  => 'supermibobject'
+             'SUPER-DOOPER-MIB'  => 'supermibobject',
             );
 
  %GLOBALS = (%SNMP::Info::Layer2::GLOBALS,
              %SNMP::Info::CiscoVTP::GLOBALS,
              'name'              => 'supermib_supername',
              'favorite_color'    => 'supermib_fav_color_object',
-             'favorite_movie'    => 'supermib_fav_movie_val'
+             'favorite_movie'    => 'supermib_fav_movie_val',
              );
 
  %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
@@ -3467,16 +3468,16 @@ will inherit the Cisco Vlan module as an example.
              # Super Dooper MIB - Super Hero Table
              'super_hero_index'  => 'SuperHeroIfIndex',
              'super_hero_name'   => 'SuperHeroIfName',
-             'super_hero_powers' => 'SuperHeroIfPowers'
+             'super_hero_powers' => 'SuperHeroIfPowers',
             );
 
 
  %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
              %SNMP::Info::CiscoVTP::MUNGE,
-             'super_hero_powers' => \&munge_powers
+             'super_hero_powers' => \&munge_powers,
             );
 
- # OverRide uptime() method from %SNMP::Info::GLOBALS
+ # Override uptime() method from %SNMP::Info::GLOBALS
  sub uptime {
      my $sample = shift;
 
