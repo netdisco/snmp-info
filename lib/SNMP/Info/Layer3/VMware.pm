@@ -50,6 +50,7 @@ $VERSION = '3.68';
 );
 
 %GLOBALS = (
+    %SNMP::Info::IEEE802dot3ad::GLOBALS,
     %SNMP::Info::Layer3::GLOBALS,
     # VMWARE-SYSTEM-MIB
     'vmwProdVersion'  => 'vmwProdVersion',
@@ -167,7 +168,6 @@ Returns the value of C<vmwProdName.0>.
 Returns the software version specified as major-update.patch.build (ex.  5.1.0-3.55.2583090).
 
 (C<vmwProdVersion>)-(C<vmwProdUpdate>).(C<vmwProdPatch>).(C<vmwProdBuild>)
-
 
 =back
 
