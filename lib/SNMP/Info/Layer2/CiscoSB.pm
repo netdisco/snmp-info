@@ -34,6 +34,7 @@
 package SNMP::Info::Layer2::CiscoSB;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::Entity;
@@ -135,6 +136,26 @@ sub model {
         }
     }
     return $ciscosb->description();
+}
+
+# CISCOSBinterfaces.mib also contains duplex info if needed
+sub i_duplex {
+    my $ciscosb = shift;
+    my $partial = shift;
+
+    my $el_duplex = $ciscosb->el_duplex($partial);
+
+    if ( defined $el_duplex and scalar( keys %$el_duplex ) ) {
+        my %i_duplex;
+        foreach my $el_port ( keys %$el_duplex ) {
+            my $duplex = $el_duplex->{$el_port};
+            next unless defined $duplex;
+
+            $i_duplex{$el_port} = 'half' if $duplex =~ /half/i;
+            $i_duplex{$el_port} = 'full' if $duplex =~ /full/i;
+        }
+        return \%i_duplex;
+    }
 }
 
 # ifDescr is the same for all interfaces in a class, but the ifName is
@@ -255,6 +276,14 @@ See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 See documentation in L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
+
+=over
+
+=item $ciscosb->i_duplex()
+
+Return duplex based upon the result of EtherLike->el_duplex().
+
+=back
 
 =head2 Overrides
 
