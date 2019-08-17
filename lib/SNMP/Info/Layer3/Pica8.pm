@@ -34,7 +34,7 @@ use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::Pica8::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Pica8::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Pica8::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
@@ -43,22 +43,18 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
 );
 
 sub vendor {
@@ -129,8 +125,6 @@ Subclass for Pica8 devices
 
 =item SNMP::Info::Layer3
 
-=item SNMP::Info::LLDP
-
 =back
 
 =head2 Required MIBs
@@ -142,8 +136,6 @@ Subclass for Pica8 devices
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
-
-See L<SNMP::Info::LLDP> for its own MIB requirements.
 
 =back
 
@@ -175,10 +167,6 @@ Returns the OS version extracted from C<sysDescr>.
 
 See documentation in L<SNMP::Info::Layer3> for details.
 
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
-
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
@@ -187,9 +175,5 @@ to a hash.
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
 
 =cut

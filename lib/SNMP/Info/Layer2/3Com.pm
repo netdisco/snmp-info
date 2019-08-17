@@ -34,7 +34,7 @@ use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::CDP;
 
-@SNMP::Info::Layer2::3Com::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::3Com::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::3Com::EXPORT_OK = qw//;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD);
@@ -42,26 +42,21 @@ our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD);
 $VERSION = '3.68';
 
 %MIBS = (
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::Layer2::MIBS,
     'A3Com-products-MIB' => 'wlanAP7760',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
 );
 
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer2::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
 );
-
 
 sub os {
     return '3Com';

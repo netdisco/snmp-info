@@ -35,7 +35,7 @@ use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::FDP;
 
-@SNMP::Info::Layer3::HP9300::ISA = qw/SNMP::Info::FDP SNMP::Info::LLDP
+@SNMP::Info::Layer3::HP9300::ISA = qw/SNMP::Info::FDP
     SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::HP9300::EXPORT_OK = qw//;
 
@@ -45,7 +45,6 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::FDP::MIBS,
     'HP-SN-ROOT-MIB'         => 'hp',
     'HP-SN-AGENT-MIB'        => 'snChasPwrSupplyDescription',
@@ -54,7 +53,6 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::FDP::GLOBALS,
     'mac'        => 'ifPhysAddress.1',
     'chassis'    => 'entPhysicalDescr.1',
@@ -67,7 +65,6 @@ $VERSION = '3.68';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::FDP::FUNCS,
 
     # HP-SN-SWITCH-GROUP-MIB
@@ -81,7 +78,7 @@ $VERSION = '3.68';
 );
 
 %MUNGE = (
-    %SNMP::Info::Layer3::MUNGE, %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::FDP::MUNGE,
 );
 
@@ -227,11 +224,6 @@ Eric Miller
 Abstraction subclass for HP network devices which Foundry Networks was the
 Original Equipment Manufacturer (OEM) such as the HP ProCurve 9300 series.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $hp9300 = new SNMP::Info::Layer3::HP9300(...);
-
 =head2 Inherited Classes
 
 =over
@@ -239,8 +231,6 @@ after determining a more specific class using the method above.
 =item SNMP::Info::Layer3;
 
 =item SNMP::Info::FDP;
-
-=item SNMP::Info::LLDP;
 
 =back
 
@@ -259,8 +249,6 @@ after determining a more specific class using the method above.
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::FDP/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -285,7 +273,7 @@ Returns 'hp'
 
 =item $hp9300->os_ver()
 
-Returns the software version
+Returns the software version.
 
 =item $hp9300->mac()
 
@@ -336,10 +324,6 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 =head2 Global Methods imported from SNMP::Info::FDP
 
 See documentation in L<SNMP::Info::FDP/"GLOBALS"> for details.
-
-=head2 Global Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -405,9 +389,5 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::FDP
 
 See documentation in L<SNMP::Info::FDP/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut

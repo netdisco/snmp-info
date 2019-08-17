@@ -32,11 +32,10 @@ package SNMP::Info::Layer3::BayRS;
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::BayRS::ISA = qw/SNMP::Info SNMP::Info::Layer3
-    SNMP::Info::Bridge Exporter/;
+@SNMP::Info::Layer3::BayRS::ISA = qw/SNMP::Info::Layer3
+    Exporter/;
 @SNMP::Info::Layer3::BayRS::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE, %MODEL_MAP,
@@ -45,7 +44,6 @@ our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE, %MODEL_MAP,
 $VERSION = '3.68';
 
 %MIBS = (
-    %SNMP::Info::MIBS,
     %SNMP::Info::Layer3::MIBS,
     'Wellfleet-HARDWARE-MIB'        => 'wfHwBpIdOpt',
     'Wellfleet-OSPF-MIB'            => 'wfOspfRouterId',
@@ -55,7 +53,6 @@ $VERSION = '3.68';
 );
 
 %GLOBALS = (
-    %SNMP::Info::GLOBALS,
     %SNMP::Info::Layer3::GLOBALS,
     'bp_id'       => 'wfHwBpIdOpt',
     'bp_serial'   => 'wfHwBpSerialNumber',
@@ -63,7 +60,6 @@ $VERSION = '3.68';
 );
 
 %FUNCS = (
-    %SNMP::Info::FUNCS,
     %SNMP::Info::Layer3::FUNCS,
 
     # From Wellfleet-CSMACD-MIB::wfCSMACDTable
@@ -103,7 +99,6 @@ $VERSION = '3.68';
 );
 
 %MUNGE = (
-    %SNMP::Info::MUNGE,
     %SNMP::Info::Layer3::MUNGE,
     'wf_hw_boot'     => \&munge_hw_rev,
     'wf_hw_diag'     => \&munge_hw_rev,
@@ -1408,8 +1403,6 @@ Abstraction subclass for routers running Avaya/Nortel BayRS.
 
 =over
 
-=item SNMP::Info
-
 =item SNMP::Info::Layer3
 
 =back
@@ -1431,8 +1424,6 @@ Abstraction subclass for routers running Avaya/Nortel BayRS.
 =back
 
 =head2 Inherited MIBs
-
-See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
@@ -1488,10 +1479,6 @@ Returns the first found:  CLIP (CircuitLess IP), (C<wfOspfRouterId>), or
 undefined.
 
 =back
-
-=head2 Globals imported from SNMP::Info
-
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer3
 
@@ -1609,10 +1596,6 @@ entity which 'contains' this entity.  A value of zero indicates	this entity
 is not contained in any other entity.
 
 =back
-
-=head2 Table Methods imported from SNMP::Info
-
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

@@ -381,7 +381,7 @@ the version from there.
 
 =item $c1900->vendor()
 
-Returns 'cisco' :)
+Returns 'cisco'
 
 =back
 

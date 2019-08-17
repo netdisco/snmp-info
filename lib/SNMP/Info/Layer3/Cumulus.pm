@@ -37,7 +37,6 @@ use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 @SNMP::Info::Layer3::Cumulus::ISA = qw/
   SNMP::Info::IEEE802dot3ad
-  SNMP::Info::LLDP
   SNMP::Info::Layer3
   Exporter
 /;
@@ -49,7 +48,6 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     'UCD-SNMP-MIB'       => 'versionTag',
     'NET-SNMP-TC'        => 'netSnmpAliasDomain',
@@ -58,7 +56,6 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'netsnmp_vers'   => 'versionTag',
     'hrSystemUptime' => 'hrSystemUptime',
     'chassis'    => 'entPhysicalDescr.1',
@@ -66,13 +63,11 @@ $VERSION = '3.68';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
@@ -219,8 +214,6 @@ Subclass for Cumulus Networks devices
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
 
-See L<SNMP::Info::LLDP> for its own MIB requirements.
-
 See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
 
 =back
@@ -259,10 +252,6 @@ Returns the chassis type.
 
 See documentation in L<SNMP::Info::Layer3> for details.
 
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
-
 =head2 Globals imported from SNMP::Info::IEEE802dot3ad
 
 See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
@@ -295,10 +284,6 @@ ifIndex of the corresponding master ports.
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
 
 =head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
 

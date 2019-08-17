@@ -32,12 +32,10 @@ package SNMP::Info::Layer3::Contivity;
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info;
 use SNMP::Info::Layer3;
-use SNMP::Info::Entity;
 
 @SNMP::Info::Layer3::Contivity::ISA
-    = qw/SNMP::Info SNMP::Info::Layer3 SNMP::Info::Entity Exporter/;
+    = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Contivity::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
@@ -45,22 +43,19 @@ our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 $VERSION = '3.68';
 
 %MIBS = (
-    %SNMP::Info::MIBS, %SNMP::Info::Layer3::MIBS, %SNMP::Info::Entity::MIBS,
+    %SNMP::Info::Layer3::MIBS,
 );
 
 %GLOBALS = (
-    %SNMP::Info::GLOBALS, %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::Entity::GLOBALS,
+    %SNMP::Info::Layer3::GLOBALS,
 );
 
 %FUNCS = (
-    %SNMP::Info::FUNCS, %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::Entity::FUNCS,
+  %SNMP::Info::Layer3::FUNCS,
 );
 
 %MUNGE = (
-    %SNMP::Info::MUNGE, %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::Entity::MUNGE,
+  %SNMP::Info::Layer3::MUNGE,
 );
 
 sub layers {
@@ -193,11 +188,7 @@ Extranet Switch).
 
 =over
 
-=item SNMP::Info
-
 =item SNMP::Info::Layer3
-
-=item SNMP::Info::Entity
 
 =back
 
@@ -207,11 +198,7 @@ Extranet Switch).
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
-
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::Entity/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -262,17 +249,9 @@ layers.
 
 =back
 
-=head2 Globals imported from SNMP::Info
-
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
-
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -294,16 +273,8 @@ Interface Name field.  Skips loopback and tunnel interfaces.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info
-
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
-
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 
 =cut

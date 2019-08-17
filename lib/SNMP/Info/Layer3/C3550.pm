@@ -227,11 +227,6 @@ These devices run IOS but have some of the same characteristics as the
 Catalyst WS-C family (5xxx,6xxx).  For example, forwarding tables are held in
 VLANs, and extended interface information is gleaned from F<CISCO-SWITCH-MIB>.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $c3550 = new SNMP::Info::Layer3::C3550(...);
-
 =head2 Inherited Classes
 
 =over

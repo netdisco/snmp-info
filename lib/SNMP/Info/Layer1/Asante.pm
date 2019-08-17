@@ -227,7 +227,7 @@ Culls software version from description()
 
 =item $asante->vendor()
 
-Returns 'asante' :)
+Returns 'asante'
 
 =item $asante->model()
 

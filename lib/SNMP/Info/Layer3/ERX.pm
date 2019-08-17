@@ -111,7 +111,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::ERX - SNMP Interface to ERX Layer 3 routers.
+SNMP::Info::Layer3::ERX - SNMP Interface to Juniper ERX Layer 3 routers.
 
 =head1 AUTHORS
 

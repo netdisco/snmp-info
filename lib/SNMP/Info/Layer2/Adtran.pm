@@ -34,7 +34,7 @@ use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer2::Adtran::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::Adtran::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Adtran::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
@@ -58,14 +58,12 @@ our $index = undef;
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'serial'    => 'adProdSerialNumber',
     'ad_mgmtevcvid' => 'adGenEVCSysMgmtEVCSTagVID',
 );
 
 %FUNCS = ( %SNMP::Info::Layer2::FUNCS,
            %SNMP::Info::Layer3::FUNCS,
-           %SNMP::Info::LLDP::FUNCS,
            'ad_evcstag' => 'adGenEVCLookupName',
            'ad_menport' => 'adGenMenPortRowStatus',
            'ad_evcnamevid' => 'adGenEVCSTagVID',
@@ -75,7 +73,7 @@ our $index = undef;
            'ad_genportcustuse' => 'adGenPortCustomerUse',
 );
 
-%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::LLDP::MUNGE, %SNMP::Info::Layer3::MUNGE );
+%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::Layer3::MUNGE );
 
 sub vendor {
     return 'adtran';
@@ -227,8 +225,6 @@ Subclass for adtran Devices running JUNOS
 
 =item SNMP::Info::Layer3
 
-=item SNMP::Info::LLDP
-
 =back
 
 =head2 Inherited Classes' MIBs
@@ -236,8 +232,6 @@ Subclass for adtran Devices running JUNOS
 See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
 
 =head1 GLOBALS
 
@@ -277,10 +271,6 @@ Returns serial number.
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
-=head2 Global Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
-
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
@@ -314,9 +304,5 @@ See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut

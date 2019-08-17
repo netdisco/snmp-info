@@ -190,7 +190,7 @@ These are methods that return scalar value from SNMP
 
 =item $allied->vendor()
 
-Returns 'allied' :)
+Returns 'allied'
 
 =item $allied->os()
 

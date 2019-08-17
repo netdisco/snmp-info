@@ -538,7 +538,7 @@ Kent Hamilton
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a
-Juniper Netscreen devices through SNMP.
+Juniper Netscreen device through SNMP.
 
 =head2 Inherited Classes
 

@@ -52,9 +52,14 @@ $VERSION = '3.68';
     'ati_up'     => 'linkTestLED',
 );
 
-%MIBS = ( %SNMP::Info::Layer1::MIBS, 'ATI-MIB' => 'atiPortGroupIndex' );
+%MIBS = (
+    %SNMP::Info::Layer1::MIBS,
+    'ATI-MIB' => 'atiPortGroupIndex',
+);
 
-%MUNGE = ( %SNMP::Info::Layer1::MUNGE, );
+%MUNGE = (
+    %SNMP::Info::Layer1::MUNGE,
+);
 
 sub vendor {
     return 'allied';

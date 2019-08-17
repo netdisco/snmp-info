@@ -37,7 +37,7 @@ use SNMP::Info::NortelStack;
 use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer1::Bayhub::ISA
-    = qw/SNMP::Info::SONMP SNMP::Info::NortelStack  SNMP::Info::Layer2 Exporter/;
+    = qw/SNMP::Info::SONMP SNMP::Info::NortelStack SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer1::Bayhub::EXPORT_OK = qw//;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);

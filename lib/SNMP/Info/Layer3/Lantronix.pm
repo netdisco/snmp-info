@@ -74,13 +74,14 @@ sub vendor {
 sub os {
     my $device = shift;
     my $descr = $device->description() || '';
-    my $os;
 
     # On EDS, it is called the "Evolution OS"
     # Not sure what, if any, name it has a name on other products
-    $os = 'EvolutionOS' if ( $descr =~ m/Lantronix EDS\w+ V([\d\.R]+)/ );
-
-    return 'LantronixOS';
+    if ( $descr =~ m/Lantronix EDS\w+ V([\d\.R]+)/ ) {
+      return 'EvolutionOS'
+    } else {
+      return 'LantronixOS';
+    }
 }
 
 sub os_ver {
@@ -213,7 +214,7 @@ Returns 'lantronix'.
 
 =item $device->os()
 
-Returns 'EvolutionOS' for EDS devices.
+Returns 'EvolutionOS' for EDS devices, else returns 'LantronixOS'.
 
 =item $device->os_ver()
 

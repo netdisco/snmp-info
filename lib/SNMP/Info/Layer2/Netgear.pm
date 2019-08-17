@@ -34,7 +34,7 @@ use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 
-@SNMP::Info::Layer2::Netgear::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::Netgear::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Netgear::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
@@ -45,18 +45,18 @@ $VERSION = '3.68';
 # table by the serial() function.
 our $index = undef;
 
-%MIBS = ( %SNMP::Info::Layer2::MIBS, %SNMP::Info::LLDP::MIBS, );
+%MIBS = ( %SNMP::Info::Layer2::MIBS, );
 
 %GLOBALS = (
-    %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::Layer2::GLOBALS,
     ng_fsosver   => '.1.3.6.1.4.1.4526.11.11.1.0',
     ng_gsmserial => '.1.3.6.1.4.1.4526.10.1.1.1.4.0',
     ng_gsmosver  => '.1.3.6.1.4.1.4526.10.1.1.1.13.0',
 );
 
-%FUNCS = ( %SNMP::Info::Layer2::FUNCS, %SNMP::Info::LLDP::FUNCS, );
+%FUNCS = ( %SNMP::Info::Layer2::FUNCS, );
 
-%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::LLDP::MUNGE, );
+%MUNGE = ( %SNMP::Info::Layer2::MUNGE, );
 
 sub vendor {
     return 'netgear';
@@ -192,10 +192,6 @@ inherited methods.
 
 =item SNMP::Info::Layer2
 
-=item SNMP::Info::Entity
-
-=item SNMP::Info::LLDP
-
 =back
 
 =head2 Required MIBs
@@ -206,10 +202,6 @@ inherited methods.
 
 MIBs listed in L<SNMP::Info::Layer2/"Required MIBs"> and its inherited
 classes.
-
-See L<SNMP::Info::Entity/"Required MIBs"> for its MIB requirements.
-
-See L<SNMP::Info::LLDP/"Required MIBs"> for its MIB requirements.
 
 =back
 
@@ -249,14 +241,6 @@ serial number).
 
 See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
-
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of
@@ -275,13 +259,5 @@ Uses the i_name() field.
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut

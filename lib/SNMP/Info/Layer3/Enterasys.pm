@@ -36,7 +36,7 @@ use SNMP::Info::MAU;
 use SNMP::Info::CDP;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::Enterasys::ISA = qw/SNMP::Info::MAU SNMP::Info::LLDP
+@SNMP::Info::Layer3::Enterasys::ISA = qw/SNMP::Info::MAU
     SNMP::Info::CDP SNMP::Info::Layer3
     Exporter/;
 @SNMP::Info::Layer3::Enterasys::EXPORT_OK = qw//;
@@ -47,24 +47,24 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS, %SNMP::Info::CDP::MIBS,
-    %SNMP::Info::LLDP::MIBS, %SNMP::Info::MAU::MIBS,
+    %SNMP::Info::MAU::MIBS,
     'ENTERASYS-OIDS-MIB' => 'etsysOidDevice',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::CDP::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,   %SNMP::Info::MAU::GLOBALS,
+    %SNMP::Info::MAU::GLOBALS,
     'mac' => 'dot1dBaseBridgeAddress',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS, %SNMP::Info::CDP::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,   %SNMP::Info::MAU::FUNCS,
+    %SNMP::Info::MAU::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE, %SNMP::Info::CDP::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,   %SNMP::Info::MAU::MUNGE,
+    %SNMP::Info::MAU::MUNGE,
 );
 
 sub model {
@@ -285,8 +285,6 @@ Enterasys device through SNMP.
 
 =item SNMP::Info::MAU
 
-=item SNMP::Info::LLDP
-
 =item SNMP::Info::CDP
 
 =item SNMP::Info::Layer3
@@ -304,8 +302,6 @@ Enterasys device through SNMP.
 =head2 Inherited MIBs
 
 See L<SNMP::Info::MAU/"Required MIBs"> for its MIB requirements.
-
-See L<SNMP::Info::LLDP/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::CDP/"Required MIBs"> for its MIB requirements.
 
@@ -345,10 +341,6 @@ Returns base mac
 =head2 Globals imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::CDP
 
@@ -420,10 +412,6 @@ supply a partial value of zero which means no time filter.
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CDP
 

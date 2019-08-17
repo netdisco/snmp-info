@@ -39,7 +39,6 @@ use SNMP::Info::FDP;
 
 @SNMP::Info::Layer3::Foundry::ISA = qw/
     SNMP::Info::FDP
-    SNMP::Info::LLDP
     SNMP::Info::Layer3
     Exporter
 /;
@@ -51,7 +50,6 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::FDP::MIBS,
 
     'FOUNDRY-SN-ROOT-MIB'         => 'foundry',
@@ -64,7 +62,6 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::FDP::GLOBALS,
 
     'mac'        => 'ifPhysAddress.1',
@@ -80,7 +77,6 @@ $VERSION = '3.68';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::FDP::FUNCS,
 
     # FOUNDRY-SN-SWITCH-GROUP-MIB
@@ -118,7 +114,6 @@ $VERSION = '3.68';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::FDP::MUNGE,
 
     'ag_mod2_type' => \&SNMP::Info::munge_e_type,
@@ -303,7 +298,7 @@ sub interfaces {
 # NetIron CES, NetIron CER, and older EdgeIron series devices.
 # Try Entity MIB methods first and fall back to Pseudo ENTITY-MIB methods for
 # other devices.
-# e_fwver, e_hwver, e_swver not supported in psuedo methods, no need to
+# e_fwver, e_hwver, e_swver not supported in pseudo methods, no need to
 # override
 
 sub e_index {
@@ -886,8 +881,6 @@ devices through SNMP. See inherited classes' documentation for inherited methods
 
 =item SNMP::Info::FDP;
 
-=item SNMP::Info::LLDP;
-
 =back
 
 =head2 Required MIBs
@@ -911,8 +904,6 @@ devices through SNMP. See inherited classes' documentation for inherited methods
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::FDP/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -1001,10 +992,6 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 =head2 Global Methods imported from SNMP::Info::FDP
 
 See documentation in L<SNMP::Info::FDP/"GLOBALS"> for details.
-
-=head2 Global Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -1269,9 +1256,5 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::FDP
 
 See documentation in L<SNMP::Info::FDP/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut

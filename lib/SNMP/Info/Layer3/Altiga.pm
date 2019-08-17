@@ -304,6 +304,12 @@ Subclass for Cisco (formerly Altiga) VPN concentrators
 
 =over
 
+=item F<ALTIGA-VERSION-STATS-MIB>
+
+=item F<ALTIGA-SESSION-STATS-MIB>
+
+=item F<ALTIGA-HARDWARE-STATS-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.

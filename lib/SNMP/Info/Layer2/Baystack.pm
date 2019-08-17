@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 @SNMP::Info::Layer2::Baystack::ISA
     = qw/SNMP::Info::SONMP SNMP::Info::NortelStack
-    SNMP::Info::RapidCity SNMP::Info::LLDP
+    SNMP::Info::RapidCity
     SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer2::Baystack::EXPORT_OK = qw//;
 
@@ -48,20 +48,20 @@ our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 $VERSION = '3.68';
 
 %MIBS = (
-    %SNMP::Info::Layer3::MIBS,    %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::RapidCity::MIBS, %SNMP::Info::NortelStack::MIBS,
     %SNMP::Info::SONMP::MIBS,
     'BAY-STACK-PETH-EXT-MIB' => 'bspePethPsePortExtMeasuredPower',
 );
 
 %GLOBALS = (
-    %SNMP::Info::Layer3::GLOBALS,    %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::RapidCity::GLOBALS, %SNMP::Info::NortelStack::GLOBALS,
     %SNMP::Info::SONMP::GLOBALS,
 );
 
 %FUNCS = (
-    %SNMP::Info::Layer3::FUNCS,    %SNMP::Info::LLDP::FUNCS,
+    %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::RapidCity::FUNCS, %SNMP::Info::NortelStack::FUNCS,
     %SNMP::Info::SONMP::FUNCS,
     'peth_port_power' => 'bspePethPsePortExtMeasuredPower',
@@ -73,7 +73,7 @@ $SNMP::Info::SPEED_MAP{200_000_000}   = '100 Mbps';
 $SNMP::Info::SPEED_MAP{2_000_000_000} = '1.0 Gbps';
 
 %MUNGE = (
-    %SNMP::Info::Layer3::MUNGE,    %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::RapidCity::MUNGE, %SNMP::Info::NortelStack::MUNGE,
     %SNMP::Info::SONMP::MUNGE,
 );
@@ -438,8 +438,6 @@ through SNMP.
 
 =item SNMP::Info::RapidCity
 
-=item SNMP::Info::LLDP
-
 =item SNMP::Info::Layer3
 
 =back
@@ -459,8 +457,6 @@ See L<SNMP::Info::SONMP/"Required MIBs"> for its MIB requirements.
 See L<SNMP::Info::NortelStack/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::RapidCity/"Required MIBs"> for its MIB requirements.
-
-See L<SNMP::Info::LLDP/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its MIB requirements.
 
@@ -530,10 +526,6 @@ See L<SNMP::Info::NortelStack/"GLOBALS"> for details.
 =head2 Global Methods imported from SNMP::Info::RapidCity
 
 See L<SNMP::Info::RapidCity/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer3
 
@@ -693,10 +685,6 @@ See L<SNMP::Info::NortelStack/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::RapidCity
 
 See L<SNMP::Info::RapidCity/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

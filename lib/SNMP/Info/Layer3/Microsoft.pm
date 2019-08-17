@@ -96,7 +96,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Microsoft - SNMP Interface to L3 Microsoft Windows router
+SNMP::Info::Layer3::Microsoft - SNMP Interface to L3 Microsoft Windows routers
 
 =head1 AUTHOR
 
