@@ -448,7 +448,7 @@ through SNMP.
 
 =over
 
-=item F<BAY-STACK-PETH-EXT-MIBB>
+=item F<BAY-STACK-PETH-EXT-MIB>
 
 =back
 

@@ -420,7 +420,7 @@ sub mau_set_i_speed_duplex_admin {
         return ("bad arguments");
     }
 
-    # map input speed and duplex paramters to 'mau_type_admin' settings
+    # map input speed and duplex parameters to 'mau_type_admin' settings
     # From IANA-MAU-MIB
     # 11 = dot3MauType10BaseTFD, 10 = dot3MauType10BaseTHD,
     # 16 = dot3MauType100BaseTXFD, 15 = dot3MauType100BaseTXHD

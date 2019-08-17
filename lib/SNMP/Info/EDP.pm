@@ -76,7 +76,7 @@ sub hasEDP {
 # address since they should all originate from the same device, but we don't
 # know if they would all be reachable from the network management application.
 #
-# We don't inplement partials since this is private index function
+# We don't implement partials since this is private index function
 sub _edp_index {
     my $edp = shift;
 

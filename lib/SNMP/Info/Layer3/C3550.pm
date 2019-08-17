@@ -104,7 +104,7 @@ sub ports {
     return $ports;
 }
 
-#  Verions prior to 12.1(22)EA1a use the older CiscoStack method
+#  Versions prior to 12.1(22)EA1a use the older CiscoStack method
 #  Newer versions use the ETHERLIKE-MIB to report operational duplex.
 #  See http://www.ciscosystems.com/en/US/products/hw/switches/ps646/prod_release_note09186a00802a08ee.html
 

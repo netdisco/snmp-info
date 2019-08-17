@@ -112,7 +112,7 @@ sub layers {
     my $pfront = shift;
 
     my $layers = $pfront->SUPER::layers();
-    # Some models or softwware versions don't report L2 properly
+    # Some models or software versions don't report L2 properly
     # so add L2 capability to the output if the device has bridge ports.
     my $bports = $pfront->b_ports();
 

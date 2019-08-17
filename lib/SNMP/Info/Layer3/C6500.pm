@@ -185,7 +185,7 @@ sub set_i_duplex_admin {
         # 2. Disable ifMauAutoNegAdminStatus
         # If the second set is not done, this is not going to be
         # working... Cisco Bug id CSCty97033.
-        # SXI is not working (up to at least relase SXI9).
+        # SXI is not working (up to at least release SXI9).
         # SXJ is working at SXJ3 (not before).
 
         return $c6500->mau_set_i_duplex_admin( $duplex, $iid );
@@ -223,7 +223,7 @@ sub set_i_speed_admin {
         # 2. Disable ifMauAutoNegAdminStatus
         # If the second set is not done, this is not going to be working...
         # Cisco Bug id CSCty97033.
-        # SXI is not working (at least up to relase SXI9).
+        # SXI is not working (at least up to release SXI9).
         # SXJ is working at SXJ3 (not before).
 
         return $c6500->mau_set_i_speed_admin( $speed, $iid );

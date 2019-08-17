@@ -583,7 +583,7 @@ See documentation in L<SNMP::Info::Layer2::Centillion> for details.
 =item SNMP::Info::Layer2::Cisco
 
 Generic Cisco subclass for layer 2 devices that are not yet supported
-in more specific subclassesand the base layer 2 Cisco class for
+in more specific subclasses and the base layer 2 Cisco class for
 other device specific layer 2 Cisco classes.
 
 See documentation in L<SNMP::Info::Layer2::Cisco> for details.
@@ -651,7 +651,7 @@ See documentation in L<SNMP::Info::Layer2::Netgear> for details.
 
 Subclass for Nexans switches
 
-See documetion in L<SNMP::Info::Layer2::Nexans> for details.
+See documentation in L<SNMP::Info::Layer2::Nexans> for details.
 
 =item SNMP::Info::Layer2::NWSS2300
 
@@ -3382,7 +3382,7 @@ $info->init() will throw an exception if a MIB does not load.
 %MIBS = (
 
     # Include these here for cases where the Net-SNMP default MIB list has
-    # been overridden during the compliation of the local Net-SNMP library.
+    # been overridden during the compilation of the local Net-SNMP library.
     # These cover the globals and funcs defined in this file.
     'SNMPv2-MIB'  => 'sysObjectID',
     # (#325) 'RFC1213-MIB' => 'ipRouteIfIndex',
@@ -3828,7 +3828,7 @@ updated enumeration for C<ifOperStatus> in C<IF-MIB>.  This munge
 handles the "newer" definitions for the enumeration in IF-MIB.
 
 TODO: Get the precedence of MIBs and overriding of MIB data in Net-SNMP
-figured out.  Heirarchy/precendence of MIBS in SNMP::Info.
+figured out.  Hierarchy/precedence of MIBS in SNMP::Info.
 
 =cut
 
@@ -4613,7 +4613,7 @@ sub _load_attr {
 
          # Another check for SNMPv1 - noSuchName return may results in an $iid
          # we've already seen and $val an empty string.  If we don't catch
-         # this here we erronously report a loop below.
+         # this here we erroneously report a loop below.
             if ( defined $seen{$iid} and $seen{$iid} and $val eq '' ) {
                 last;
             }
@@ -4888,7 +4888,7 @@ sub _validate_autoload_method {
         || ($method !~ /^set/ && $access eq 'NoAccess')) {
 
             print
-                "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessable for requested operation.\n"
+                "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessible for requested operation.\n"
                 if $self->debug();
             return;
 

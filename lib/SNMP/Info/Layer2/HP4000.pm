@@ -428,7 +428,7 @@ sub set_i_vlan {
                     $hp->error_throw("Error removing previous untagged vlan from port, should never happen...\n") unless defined $rv;
                 }
             } else {
-                # If vlan change was not succesful, try to revert to the old situation.
+                # If vlan change was not successful, try to revert to the old situation.
                 if (defined $old_untagged) {
                     $rv = $hp->set_hp_v_if_tag(2, $old_untagged) if defined $old_untagged;
                     if (defined $rv) {

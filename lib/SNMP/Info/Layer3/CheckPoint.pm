@@ -197,7 +197,7 @@ Subclass for CheckPoint Devices.
 
 =head2 WARNING
 
-To correctly and completelly work, you should add the following line in the file C</etc/snmp/snmpd.local.conf> on each of your CheckPoint devices:
+To correctly and completely work, you should add the following line in the file C</etc/snmp/snmpd.local.conf> on each of your CheckPoint devices:
 
  # Netdisco SNMP configuration
  extend  ckpVersion /opt/CPsuite-R77/fw1/bin/fw ver

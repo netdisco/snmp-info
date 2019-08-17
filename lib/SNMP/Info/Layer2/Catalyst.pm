@@ -64,7 +64,7 @@ $VERSION = '3.68';
     %SNMP::Info::CiscoStack::MUNGE,
 );
 
-# Overidden Methods
+# Overridden Methods
 
 # i_physical sets a hash entry as true if the iid is a physical port
 sub i_physical {

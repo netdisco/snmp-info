@@ -75,7 +75,7 @@ sub e_index {
     my $entity  = shift;
     my $partial = shift;
 
-    # Force use of MIB leaf to avoid inheritance issues in psuedo classes
+    # Force use of MIB leaf to avoid inheritance issues in pseudo classes
     my $e_descr = $entity->entPhysicalDescr($partial);
 
     return unless ($e_descr);

@@ -86,7 +86,7 @@ $VERSION = '3.68';
 # Method OverRides
 
 # $l2->model() - Looks at sysObjectID which gives the oid of the system
-#       name, contained in a propriatry MIB.
+#       name, contained in a proprietary MIB.
 sub model {
     my $l2    = shift;
     my $id    = $l2->id();

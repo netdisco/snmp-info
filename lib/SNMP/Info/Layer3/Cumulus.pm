@@ -117,7 +117,7 @@ sub uptime {
 
 # ifDescr is the same for all interfaces in a class, but the ifName is
 # unique, so let's use that for port name.  If all else fails,
-# concatentate ifDesc and ifIndex.
+# concatenate ifDesc and ifIndex.
 # (code from SNMP/Info/Layer2/Netgear.pm)
 sub interfaces {
     my $netsnmp = shift;

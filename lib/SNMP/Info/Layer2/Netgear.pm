@@ -86,7 +86,7 @@ sub serial {
         return $e_serial->{$index} if defined $index;
     }
 
-    # Without Enitity-MIB, we've got to work our way through a bunch of
+    # Without Entity-MIB, we've got to work our way through a bunch of
     # different locales...
     return $netgear->ng_gsmserial() if defined $netgear->model and $netgear->model =~ m/[FG]SM\d/i;;
     return 'none';
@@ -108,7 +108,7 @@ sub model {
 
 # ifDescr is the same for all interfaces in a class, but the ifName is
 # unique, so let's use that for port name.  If all else fails,
-# concatentate ifDesc and ifIndex.
+# concatenate ifDesc and ifIndex.
 sub interfaces {
     my $netgear = shift;
     my $partial = shift;

@@ -911,7 +911,7 @@ Note this returns hash-strings, for IPs, use $l3->isis_peers()
 =item $l3->isis_peers()
 
 Returns reference to hash of addresses (IPv4, IPv6) on adjacencies.
-Convers hash strings from isis_adj to proper
+Convert hash strings from isis_adj to proper
 IP (v4 and v6) formatting.
 
 =back

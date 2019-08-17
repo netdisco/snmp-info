@@ -774,7 +774,7 @@ sub e_index {
     my $bp_id = $bayrs->bp_id();
 
     # Don't like polling all these columns to build the index, can't think of
-    # a better way right now.  Luckly all this data will be cached for the
+    # a better way right now.  Luckily all this data will be cached for the
     # rest of the e_* methods
 
     # Using mib leafs so we don't have to define everything in FUNCS
@@ -803,7 +803,7 @@ sub e_index {
     my @slots = ( $wf_mb, $wf_db, $wf_bb, $wf_mod, $wf_mod1, $wf_mod2 );
     my @mods = ( $wf_mm, $wf_dm );
 
-    # We're going to hack an index: Slot/Module/Postion
+    # We're going to hack an index: Slot/Module/Position
     my %wf_e_index;
 
     # Chassis on BN types

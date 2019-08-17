@@ -212,7 +212,7 @@ Returns model name
 
 =item $info->productname
 
-Retruns the product name
+Returns the product name
 
 =item $info->serial
 

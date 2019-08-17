@@ -86,7 +86,7 @@ sub ports {
 }
 
 # $l1->model() - Looks at sysObjectID which gives the oid of the system
-#       name, contained in a propriatry MIB.
+#       name, contained in a proprietary MIB.
 sub model {
     my $l1    = shift;
     my $id    = $l1->id();
