@@ -50,7 +50,6 @@ $VERSION = '3.68';
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::CDP::MIBS,
     'RFC1271-MIB'    => 'logDescription',
     'HP-ICF-OID'     => 'hpSwitch4000',

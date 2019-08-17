@@ -205,9 +205,9 @@ Eric Miller
  my $class = $edp->class();
  print " Using device sub class : $class\n";
 
- $haslldp   = $edp->hasLLDP() ? 'yes' : 'no';
+ $hasedp   = $edp->hasEDP() ? 'yes' : 'no';
 
- # Print out a map of device ports with LLDP neighbors:
+ # Print out a map of device ports with EDP neighbors:
  my $interfaces   = $edp->interfaces();
  my $edp_if       = $edp->edp_if();
  my $edp_ip       = $edp->edp_ip();
@@ -252,7 +252,7 @@ These are methods that return scalar values from SNMP
 
 =item $edp->hasEDP()
 
-Is EDP is active in this device?
+Is EDP active on this device?
 
 =back
 

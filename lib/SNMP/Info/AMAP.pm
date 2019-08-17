@@ -254,7 +254,7 @@ Eric Miller
 
  $hasamap   = $amap->hasAMAP() ? 'yes' : 'no';
 
- # Print out a map of device ports with LLDP neighbors:
+ # Print out a map of device ports with AMAP neighbors:
  my $interfaces    = $amap->interfaces();
  my $amap_if       = $amap->amap_if();
  my $amap_ip       = $amap->amap_ip();
