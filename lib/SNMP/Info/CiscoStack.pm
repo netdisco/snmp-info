@@ -106,7 +106,7 @@ $VERSION = '3.68';
     1 => 'other',
     2 => 'ok',
     3 => 'minorFault',
-    4 => 'majorFault'
+    4 => 'majorFault',
 );
 
 # Changes binary byte describing each port into ascii, and returns

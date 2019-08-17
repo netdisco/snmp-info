@@ -3900,7 +3900,7 @@ sub munge_e_type {
 
 Takes the SNMP::Session C<DestHost> argument and determines if it is an
 'IPv4' or 'IPv6' host. 'IPv6' hosts are prefixed with the C<udp6:>
-C<transport-specifier> as required by the undelying C<Net-SNMP> library.
+C<transport-specifier> as required by the underlying C<Net-SNMP> library.
 If unable to determine the type of address or resolve a DNS name, dies with
 C<croak>.
 
