@@ -78,7 +78,7 @@ sub os {
     # On EDS, it is called the "Evolution OS"
     # Not sure what, if any, name it has a name on other products
     if ( $descr =~ m/Lantronix EDS\w+ V([\d\.R]+)/ ) {
-      return 'EvolutionOS'
+      return 'EvolutionOS';
     } else {
       return 'LantronixOS';
     }

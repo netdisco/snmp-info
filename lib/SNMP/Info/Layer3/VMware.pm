@@ -50,7 +50,6 @@ $VERSION = '3.68';
 );
 
 %GLOBALS = (
-    %SNMP::Info::IEEE802dot3ad::GLOBALS,
     %SNMP::Info::Layer3::GLOBALS,
     # VMWARE-SYSTEM-MIB
     'vmwProdVersion'  => 'vmwProdVersion',

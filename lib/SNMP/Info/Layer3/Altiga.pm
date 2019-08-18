@@ -1,6 +1,6 @@
 # SNMP::Info::Layer3::Altiga
 #
-# # Copyright (c) 2008 Jeroen van Ingen Schenau
+# Copyright (c) 2008 Jeroen van Ingen Schenau
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without

@@ -133,10 +133,6 @@ Eric Miller
 
 Abstraction subclass for Riverbed Steelhead WAN optimization appliances.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $riverbed = new SNMP::Info::Layer3::Steelhead(...);
 
 =head2 Inherited Classes
 

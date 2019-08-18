@@ -259,7 +259,7 @@ Max Baker
  $hascdp   = $cdp->hasCDP() ? 'yes' : 'no';
 
  # Print out a map of device ports with CDP neighbors:
- my $interfaces = $cdp->interfaces();
+ my $interfaces   = $cdp->interfaces();
  my $cdp_if       = $cdp->cdp_if();
  my $cdp_ip       = $cdp->cdp_ip();
  my $cdp_port     = $cdp->cdp_port();
