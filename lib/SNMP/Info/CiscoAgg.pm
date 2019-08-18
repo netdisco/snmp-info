@@ -191,7 +191,7 @@ L<SNMP::Info::IEEE802dot3ad>
 
 =back
 
-=head1 METHODS
+=head1 TABLE METHODS
 
 =over 4
 

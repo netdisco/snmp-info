@@ -2242,7 +2242,7 @@ sub cisco_comm_indexing {
 
 =back
 
-=head2 Globals (Scalar Methods)
+=head2 GLOBALS (Scalar Methods)
 
 These are methods to return scalar data from RFC1213.
 

@@ -279,7 +279,7 @@ Returns a serial number if found from F<ENTITY-MIB> and F<OLD-CISCO->... MIB.
 
 =head2 Globals imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =head2 Globals imported from SNMP::Info::Bridge
 
@@ -313,7 +313,7 @@ Defaults to C<ifDescr> but checks and overrides with C<ifName>
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 

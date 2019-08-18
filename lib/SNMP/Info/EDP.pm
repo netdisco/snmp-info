@@ -244,7 +244,7 @@ None.
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

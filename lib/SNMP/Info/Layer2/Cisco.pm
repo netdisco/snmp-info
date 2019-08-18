@@ -226,10 +226,6 @@ See documentation in L<SNMP::Info::CiscoPortSecurity/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::CiscoStpExtensions/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::CiscoAgg
-
-See documentation in L<SNMP::Info::CiscoAgg/"GLOBALS"> for details.
-
 =head2 Globals imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.

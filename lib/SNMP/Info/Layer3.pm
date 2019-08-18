@@ -485,7 +485,7 @@ after determining a more specific class using the method above.
 
 =head2 Inherited MIBs
 
-See L<SNMP::Info/"Required MIBs"> for its MIB requirements.
+See L<SNMP::Info/"REQUIREMENTS"> for its MIB requirements.
 
 See L<SNMP::Info::Bridge/"Required MIBs"> for its MIB requirements.
 
@@ -561,7 +561,7 @@ found:  OSPF Router ID (C<ospfRouterId>) or any OSPF Host IP Address
 
 =head2 Globals imported from SNMP::Info
 
-See L<SNMP::Info/"GLOBALS"> for details.
+See L<SNMP::Info/"USAGE"> for details.
 
 =head2 Global Methods imported from SNMP::Info::Bridge
 
@@ -918,7 +918,7 @@ IP (v4 and v6) formatting.
 
 =head2 Table Methods imported from SNMP::Info
 
-See L<SNMP::Info/"TABLE METHODS"> for details.
+See L<SNMP::Info/"USAGE"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 

@@ -413,10 +413,6 @@ See L<SNMP::Info::CiscoConfig/"GLOBALS"> for details.
 
 See L<SNMP::Info::CiscoStpExtensions/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::CiscoAgg
-
-See L<SNMP::Info::CiscoAgg/"GLOBALS"> for details.
-
 =head2 Globals imported from SNMP::Info::Layer2
 
 See L<SNMP::Info::Layer2/"GLOBALS"> for details.

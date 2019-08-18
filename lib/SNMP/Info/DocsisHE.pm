@@ -75,7 +75,7 @@ CableLabs MIBs for DOCSIS 3
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 None.
 

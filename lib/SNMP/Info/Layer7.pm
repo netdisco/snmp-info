@@ -166,9 +166,9 @@ after determining a more specific class using the method above.
 
 =back
 
-MIBs required for L<SNMP::Info/"Required MIBs">
+MIBs required for L<SNMP::Info/"REQUIREMENTS">
 
-See L<SNMP::Info/"Required MIBs"> for its MIB requirements.
+See L<SNMP::Info/"REQUIREMENTS"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -191,7 +191,7 @@ C<sysObjectID>.
 
 =head2 Global Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =head1 TABLE METHODS
 
@@ -210,6 +210,6 @@ Returns reference to the map between IID and physical Port.
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =cut

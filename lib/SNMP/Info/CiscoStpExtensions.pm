@@ -317,7 +317,7 @@ For debugging you can call new() directly as you would in SNMP::Info
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

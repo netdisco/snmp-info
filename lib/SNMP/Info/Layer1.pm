@@ -227,9 +227,9 @@ after determining a more specific class using the method above.
 
 =back
 
-MIBs required for L<SNMP::Info/"Required MIBs">
+MIBs required for L<SNMP::Info/"REQUIREMENTS">
 
-See L<SNMP::Info/"Required MIBs"> for its MIB requirements.
+See L<SNMP::Info/"REQUIREMENTS"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -275,7 +275,7 @@ Number of 'groups' in the Repeater MIB
 
 =head2 Global Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =head1 TABLE METHODS
 
@@ -338,6 +338,6 @@ Group (slot) Number for given port.
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =cut

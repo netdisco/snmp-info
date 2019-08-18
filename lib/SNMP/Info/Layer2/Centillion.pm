@@ -322,7 +322,7 @@ than bridge group based.
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info/"REQUIREMENTS"> for its own MIB requirements.
 
 See L<SNMP::Info::Bridge/"Required MIBs"> for its own MIB requirements.
 
@@ -393,7 +393,7 @@ start at 0.  Returns 0.
 
 =head2 Globals imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =head2 Globals imported from SNMP::Info::Bridge
 
@@ -507,7 +507,7 @@ Returns reference to hash.  Key: Table entry, Value: VLAN Type
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 

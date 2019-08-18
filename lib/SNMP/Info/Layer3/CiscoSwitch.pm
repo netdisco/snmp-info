@@ -154,10 +154,6 @@ Returns 1.  Use vlan indexing.
 
 =back
 
-=head2 Global Methods imported from SNMP::Info::CiscoAgg
-
-See documentation in L<SNMP::Info::CiscoAgg/"GLOBALS"> for details.
-
 =head2 Globals imported from SNMP::Info::CiscoPortSecurity
 
 See documentation in L<SNMP::Info::CiscoPortSecurity/"GLOBALS"> for details.
