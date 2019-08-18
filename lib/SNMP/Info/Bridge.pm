@@ -613,9 +613,6 @@ None.
 
 =back
 
-F<BRIDGE-MIB> needs to be extracted from
-ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
-
 =head1 GLOBAL METHODS
 
 These are methods that return scalar values from SNMP

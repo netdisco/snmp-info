@@ -231,9 +231,6 @@ MIBs required for L<SNMP::Info/"Required MIBs">
 
 See L<SNMP::Info/"Required MIBs"> for its MIB requirements.
 
-F<SNMP-REPEATER-MIB> needs to be extracted from
-ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
-
 =head1 GLOBALS
 
 These are methods that return scalar value from SNMP

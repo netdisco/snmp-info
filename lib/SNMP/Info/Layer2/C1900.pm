@@ -337,8 +337,6 @@ Note that most of these devices only talk SNMP version 1, but not all.
 
 F<ESSWITCH-MIB> is included in the Version 1 MIBs from Cisco.
 
-They can be found at ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
-
 =back
 
 =head2 Inherited MIBs

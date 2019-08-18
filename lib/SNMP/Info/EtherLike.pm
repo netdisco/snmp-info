@@ -143,8 +143,6 @@ None.
 
 =back
 
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
-
 =head1 GLOBALS
 
 These are methods that return scalar values from SNMP

@@ -106,8 +106,6 @@ none.
 
 =back
 
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
-
 =head1 GLOBALS
 
 =over

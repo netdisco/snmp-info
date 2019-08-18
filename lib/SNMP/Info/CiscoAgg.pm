@@ -191,8 +191,6 @@ L<SNMP::Info::IEEE802dot3ad>
 
 =back
 
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
-
 =head1 METHODS
 
 =over 4

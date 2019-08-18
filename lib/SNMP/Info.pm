@@ -704,8 +704,6 @@ See documentation in L<SNMP::Info::Layer3> for details.
 Subclass for Cisco Aironet wireless access points (AP) not running IOS. These
 are usually older devices.
 
-MIBs for these devices now included in v2.tar.gz available from ftp.cisco.com.
-
 Note L<SNMP::Info::Layer2::Aironet>
 
 See documentation in L<SNMP::Info::Layer3::Aironet> for details.

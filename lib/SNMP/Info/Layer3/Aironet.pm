@@ -279,9 +279,6 @@ after determining a more specific class using the method above.
 
 =back
 
-These MIBs are now included in the v2.tar.gz archive available from
-ftp.cisco.com.  Make sure you have a current version.
-
 =head1 GLOBALS
 
 These are methods that return scalar value from SNMP
