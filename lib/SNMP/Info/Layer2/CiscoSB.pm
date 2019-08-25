@@ -37,14 +37,13 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
-use SNMP::Info::Entity;
 use SNMP::Info::EtherLike;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoConfig;
 use SNMP::Info::CDP;
 
 @SNMP::Info::Layer2::CiscoSB::ISA
-    = qw/SNMP::Info::Layer2 SNMP::Info::Entity SNMP::Info::EtherLike
+    = qw/SNMP::Info::Layer2 SNMP::Info::EtherLike
     SNMP::Info::CiscoStats SNMP::Info::CiscoConfig SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::CiscoSB::EXPORT_OK = qw//;
 
@@ -54,17 +53,15 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
-    %SNMP::Info::Entity::GLOBALS,
     %SNMP::Info::EtherLike::GLOBALS,
     %SNMP::Info::CiscoStats::GLOBALS,
     %SNMP::Info::CiscoConfig::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
-    'descr'  => 'sysDescr'
+    'descr'  => 'sysDescr',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
-    %SNMP::Info::Entity::FUNCS,
     %SNMP::Info::EtherLike::FUNCS,
     %SNMP::Info::CiscoStats::FUNCS,
     %SNMP::Info::CiscoConfig::FUNCS,
@@ -73,7 +70,6 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
-    %SNMP::Info::Entity::MIBS,
     %SNMP::Info::EtherLike::MIBS,
     %SNMP::Info::CiscoStats::MIBS,
     %SNMP::Info::CiscoConfig::MIBS,
@@ -82,13 +78,11 @@ $VERSION = '3.68';
 
 %MUNGE = (
     %SNMP::Info::Layer2::MUNGE,
-    %SNMP::Info::Entity::MUNGE,
     %SNMP::Info::EtherLike::MUNGE,
     %SNMP::Info::CiscoStats::MUNGE,
     %SNMP::Info::CiscoConfig::MUNGE,
     %SNMP::Info::CDP::MUNGE,
 );
-
 
 sub vendor {
     return 'cisco';
@@ -210,8 +204,6 @@ managed switches. [i.e. those matching enterprises(1).cisco(9).otherEnterprises(
 
 =item SNMP::Info::CiscoStats
 
-=item SNMP::Info::Entity
-
 =item SNMP::Info::EtherLike
 
 =item SNMP::Info::Layer2
@@ -267,10 +259,6 @@ Returns 'ros'.
 
 See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
-
 =head2 Globals imported from SNMP::Info::EtherLike
 
 See documentation in L<SNMP::Info::EtherLike/"GLOBALS"> for details.
@@ -298,10 +286,6 @@ Uses the i_name() field.
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::EtherLike
 

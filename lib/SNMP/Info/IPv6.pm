@@ -30,6 +30,7 @@
 package SNMP::Info::IPv6;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -479,7 +480,9 @@ none.
 =over
 
 =item F<IP-MIB>
+
 =item F<IPV6-MIB>
+
 =item F<CISCO-IETF-IP-MIB>
 
 =back

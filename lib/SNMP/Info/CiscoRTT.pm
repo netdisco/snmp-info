@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoRTT
-# $Id$
 #
 # Copyright (c) 2005 Alexander Hartmaier
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::CiscoRTT;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -99,8 +99,6 @@ none.
 
 =back
 
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
-
 =head1 GLOBALS
 
 =over
@@ -113,7 +111,7 @@ None
 
 =head2 Overall Control Group Table
 
-This table is from C<CISCO-RTTMAN-MIB::rttMonCtrlAdminTable>
+This table is from C<CISCO-RTTMON-MIB::rttMonCtrlAdminTable>
 
 =over
 

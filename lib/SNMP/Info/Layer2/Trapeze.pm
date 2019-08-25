@@ -29,13 +29,12 @@
 package SNMP::Info::Layer2::Trapeze;
 
 use strict;
+use warnings;
 use Exporter;
-use SNMP::Info;
-use SNMP::Info::Bridge;
-use SNMP::Info::LLDP;
+use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer2::Trapeze::ISA
-    = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::LLDP Exporter/;
+    = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Trapeze::EXPORT_OK = qw//;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
@@ -43,9 +42,7 @@ our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 $VERSION = '3.68';
 
 %MIBS = (
-    %SNMP::Info::MIBS,
-    %SNMP::Info::Bridge::MIBS,
-    %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::Layer2::MIBS,
     'TRAPEZE-NETWORKS-REGISTRATION-DEVICES-MIB' => 'wirelessLANController',
     'TRAPEZE-NETWORKS-AP-STATUS-MIB'            => 'trpzApStatNumAps',
     'TRAPEZE-NETWORKS-CLIENT-SESSION-MIB'       => 'trpzClSessTotalSessions',
@@ -55,18 +52,14 @@ $VERSION = '3.68';
 );
 
 %GLOBALS = (
-    %SNMP::Info::GLOBALS,
-    %SNMP::Info::Bridge::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::Layer2::GLOBALS,
     'os_ver' => 'trpzVersionString',
     'serial' => 'trpzSerialNumber',
     'mac'    => 'dot1dBaseBridgeAddress',
 );
 
 %FUNCS = (
-    %SNMP::Info::FUNCS,
-    %SNMP::Info::Bridge::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
+    %SNMP::Info::Layer2::FUNCS,
     # TRAPEZE-NETWORKS-AP-STATUS-MIB::trpzApStatApStatusTable
     'trapeze_ap_mac'      => 'trpzApStatApStatusBaseMac',
     'trapeze_ap_name'     => 'trpzApStatApStatusApName',
@@ -128,9 +121,7 @@ $VERSION = '3.68';
 );
 
 %MUNGE = (
-    %SNMP::Info::MUNGE,
-    %SNMP::Info::Bridge::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::Layer2::MUNGE,
     'trapeze_apif_mac'      => \&SNMP::Info::munge_mac,
     'trapeze_apif_bssid'    => \&SNMP::Info::munge_mac,
 );
@@ -817,18 +808,11 @@ This class emulates bridge functionality for the wireless switch. This enables
 end station MAC addresses collection and correlation to the thin access point
 the end station is using for communication.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $trapeze = new SNMP::Info::Layer2::Trapeze(...);
-
 =head2 Inherited Classes
 
 =over
 
-=item SNMP::Info
-
-=item SNMP::Info::Bridge
+=item SNMP::Info::Layer2
 
 =back
 
@@ -850,9 +834,7 @@ my $trapeze = new SNMP::Info::Layer2::Trapeze(...);
 
 =head2 Inherited Classes' MIBs
 
-See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::Bridge/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
 
 =head1 GLOBALS
 
@@ -899,13 +881,9 @@ proprietary MIBs.
 
 =back
 
-=head2 Global Methods imported from SNMP::Info
+=head2 Global Methods imported from SNMP::Info::Layer2
 
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::Bridge
-
-See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -1147,11 +1125,7 @@ These emulate the F<CISCO-DOT11-MIB>
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Bridge
-
-See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =head2 Overrides
 

@@ -1,5 +1,4 @@
 # SNMP::Info::Bridge
-# $Id$
 #
 # Changes since Version 0.7 Copyright (c) 2004 Max Baker
 # All rights reserved.
@@ -34,6 +33,7 @@
 package SNMP::Info::Bridge;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -296,11 +296,11 @@ sub i_stp_port {
     my %i_stp_port;
 
     foreach my $index ( keys %$stp_p_port ) {
-        my $bridge = $stp_p_port->{$index};
+        my $bport  = $stp_p_port->{$index};
         my $iid    = $bp_index->{$index};
         next unless defined $iid;
-        next unless defined $bridge;
-        $i_stp_port{$iid} = $bridge;
+        next unless defined $bport;
+        $i_stp_port{$iid} = $bport;
     }
     return \%i_stp_port;
 }
@@ -315,11 +315,11 @@ sub i_stp_id {
     my %i_stp_id;
 
     foreach my $index ( keys %$stp_p_id ) {
-        my $bridge = $stp_p_id->{$index};
+        my $bport  = $stp_p_id->{$index};
         my $iid    = $bp_index->{$index};
         next unless defined $iid;
-        next unless defined $bridge;
-        $i_stp_id{$iid} = $bridge;
+        next unless defined $bport;
+        $i_stp_id{$iid} = $bport;
     }
     return \%i_stp_id;
 }
@@ -334,11 +334,11 @@ sub i_stp_bridge {
     my %i_stp_bridge;
 
     foreach my $index ( keys %$stp_p_bridge ) {
-        my $bridge = $stp_p_bridge->{$index};
+        my $bport  = $stp_p_bridge->{$index};
         my $iid    = $bp_index->{$index};
         next unless defined $iid;
-        next unless defined $bridge;
-        $i_stp_bridge{$iid} = $bridge;
+        next unless defined $bport;
+        $i_stp_bridge{$iid} = $bport;
     }
     return \%i_stp_bridge;
 }
@@ -609,12 +609,11 @@ None.
 
 =item F<Q-BRIDGE-MIB>
 
+=item F<RSTP-MIB>
+
 =back
 
-F<BRIDGE-MIB> needs to be extracted from
-ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
-
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

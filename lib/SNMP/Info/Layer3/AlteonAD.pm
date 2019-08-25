@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::AlteonAD
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All Rights Reserved
@@ -31,6 +30,7 @@
 package SNMP::Info::Layer3::AlteonAD;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -449,11 +449,6 @@ Eric Miller
 
 Abstraction subclass for Radware Alteon Series ADC switches and
 Nortel BladeCenter Layer2-3 GbE Switch Modules.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $alteon = new SNMP::Info::Layer3::AlteonAD(...);
 
 =head2 Inherited Classes
 

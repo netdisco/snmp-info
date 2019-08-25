@@ -583,7 +583,7 @@ See documentation in L<SNMP::Info::Layer2::Centillion> for details.
 =item SNMP::Info::Layer2::Cisco
 
 Generic Cisco subclass for layer 2 devices that are not yet supported
-in more specific subclassesand the base layer 2 Cisco class for
+in more specific subclasses and the base layer 2 Cisco class for
 other device specific layer 2 Cisco classes.
 
 See documentation in L<SNMP::Info::Layer2::Cisco> for details.
@@ -651,7 +651,7 @@ See documentation in L<SNMP::Info::Layer2::Netgear> for details.
 
 Subclass for Nexans switches
 
-See documetion in L<SNMP::Info::Layer2::Nexans> for details.
+See documentation in L<SNMP::Info::Layer2::Nexans> for details.
 
 =item SNMP::Info::Layer2::NWSS2300
 
@@ -703,8 +703,6 @@ See documentation in L<SNMP::Info::Layer3> for details.
 
 Subclass for Cisco Aironet wireless access points (AP) not running IOS. These
 are usually older devices.
-
-MIBs for these devices now included in v2.tar.gz available from ftp.cisco.com.
 
 Note L<SNMP::Info::Layer2::Aironet>
 
@@ -764,8 +762,9 @@ See documentation in L<SNMP::Info::Layer3::C4000> for details.
 
 =item SNMP::Info::Layer3::C6500
 
-This class covers Catalyst 6500s in native mode, hybrid mode.  Catalyst
-3750's, 2970's and probably others.
+This class covers Catalyst 6500 series running CatOS or IOS, as well as
+Catalyst 2960, 2970, 3750 and 3850 series, including blade switches
+CBS30x0 and CBS31x0 series, all running IOS.
 
 See documentation in L<SNMP::Info::Layer3::C6500> for details.
 
@@ -1005,7 +1004,7 @@ See documentation in L<SNMP::Info::Layer3::SonicWALL> for details.
 
 =item SNMP::Info::Layer3::Steelhead
 
-Subclass for  Riverbed Steelhead WAN optimization appliances.
+Subclass for Riverbed Steelhead WAN optimization appliances.
 
 See documentation in L<SNMP::Info::Layer3::Steelhead> for details.
 
@@ -1261,7 +1260,7 @@ Some older devices don't support SNMP version 2, and will not return anything
 when a connection under Version 2 is attempted.
 
 Some newer devices will support Version 1, but will not return all the data
-they might have if you had connected under Version 1
+they might have if you had connected under Version 1.
 
 When trying to get info from a new device, you may have to try version 2 and
 then fallback to version 1.
@@ -1673,6 +1672,7 @@ sub device_type {
         3375 => 'SNMP::Info::Layer3::F5',
         3417 => 'SNMP::Info::Layer3::BlueCoatSG',
         3717 => 'SNMP::Info::Layer3::Genua',
+        4413 => 'SNMP::Info::Layer2::Ubiquiti',
         4526 => 'SNMP::Info::Layer2::Netgear',
         4874 => 'SNMP::Info::Layer3::ERX',
         5624 => 'SNMP::Info::Layer3::Enterasys',
@@ -1694,17 +1694,16 @@ sub device_type {
         17163 => 'SNMP::Info::Layer3::Steelhead',
         19046 => 'SNMP::Info::Layer3::Lenovo',
         21091 => 'SNMP::Info::Layer2::Exinda',
-        25506 => 'SNMP::Info::Layer3::H3C',
         25461 => 'SNMP::Info::Layer3::PaloAlto',
+        25506 => 'SNMP::Info::Layer3::H3C',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
-        30065 => 'SNMP::Info::Layer3::Arista',
-        35098 => 'SNMP::Info::Layer3::Pica8',
-        41112 => 'SNMP::Info::Layer2::Ubiquiti',
-        4413 => 'SNMP::Info::Layer2::Ubiquiti',
         26928 => 'SNMP::Info::Layer2::Aerohive',
+        30065 => 'SNMP::Info::Layer3::Arista',
         30803 => 'SNMP::Info::Layer3::VyOS',
-	44641 => 'SNMP::Info::Layer3::VyOS',
+        35098 => 'SNMP::Info::Layer3::Pica8',
         40310 => 'SNMP::Info::Layer3::Cumulus',
+        41112 => 'SNMP::Info::Layer2::Ubiquiti',
+        44641 => 'SNMP::Info::Layer3::VyOS',
     );
 
     my %l2sysoidmap = (
@@ -1753,8 +1752,8 @@ sub device_type {
         476   => 'SNMP::Info::Layer7::Liebert',
         5951  => 'SNMP::Info::Layer7::Netscaler',
         9694  => 'SNMP::Info::Layer7::Arbor',
-        14525 => 'SNMP::Info::Layer2::Trapeze',
         12532 => 'SNMP::Info::Layer7::Neoteris',
+        14525 => 'SNMP::Info::Layer2::Trapeze',
         26866 => 'SNMP::Info::Layer7::Gigamon',
     );
 
@@ -1787,7 +1786,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Aironet'
             if ( $desc =~ /Aironet/ and $desc =~ /\D(AP4800)\D/ );
 
-	# Override voice gateway device (VG350) showing up as Aironet
+        # Override voice gateway device (VG350) showing up as Aironet
         $objtype = 'SNMP::Info::Layer3::Cisco' if $desc =~ /VG350/;
 
         # Cat6k with older SUPs (hybrid CatOS/IOS?)
@@ -2243,7 +2242,7 @@ sub cisco_comm_indexing {
 
 =back
 
-=head2 Globals (Scalar Methods)
+=head2 GLOBALS (Scalar Methods)
 
 These are methods to return scalar data from RFC1213.
 
@@ -3234,7 +3233,7 @@ A class inheriting this class must implement these data structures :
 
 =over
 
-=item  $INIT
+=item $INIT
 
 Used to flag if the MIBs have been loaded yet.
 
@@ -3381,7 +3380,7 @@ $info->init() will throw an exception if a MIB does not load.
 %MIBS = (
 
     # Include these here for cases where the Net-SNMP default MIB list has
-    # been overridden during the compliation of the local Net-SNMP library.
+    # been overridden during the compilation of the local Net-SNMP library.
     # These cover the globals and funcs defined in this file.
     'SNMPv2-MIB'  => 'sysObjectID',
     # (#325) 'RFC1213-MIB' => 'ipRouteIfIndex',
@@ -3438,6 +3437,7 @@ will inherit the Cisco Vlan module as an example.
  $VERSION = 0.1;
 
  use strict;
+ use warnings;
 
  use Exporter;
  use SNMP::Info::Layer2;
@@ -3451,14 +3451,14 @@ will inherit the Cisco Vlan module as an example.
 
  %MIBS    = (%SNMP::Info::Layer2::MIBS,
              %SNMP::Info::CiscoVTP::MIBS,
-             'SUPER-DOOPER-MIB'  => 'supermibobject'
+             'SUPER-DOOPER-MIB'  => 'supermibobject',
             );
 
  %GLOBALS = (%SNMP::Info::Layer2::GLOBALS,
              %SNMP::Info::CiscoVTP::GLOBALS,
              'name'              => 'supermib_supername',
              'favorite_color'    => 'supermib_fav_color_object',
-             'favorite_movie'    => 'supermib_fav_movie_val'
+             'favorite_movie'    => 'supermib_fav_movie_val',
              );
 
  %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
@@ -3466,16 +3466,16 @@ will inherit the Cisco Vlan module as an example.
              # Super Dooper MIB - Super Hero Table
              'super_hero_index'  => 'SuperHeroIfIndex',
              'super_hero_name'   => 'SuperHeroIfName',
-             'super_hero_powers' => 'SuperHeroIfPowers'
+             'super_hero_powers' => 'SuperHeroIfPowers',
             );
 
 
  %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
              %SNMP::Info::CiscoVTP::MUNGE,
-             'super_hero_powers' => \&munge_powers
+             'super_hero_powers' => \&munge_powers,
             );
 
- # OverRide uptime() method from %SNMP::Info::GLOBALS
+ # Override uptime() method from %SNMP::Info::GLOBALS
  sub uptime {
      my $sample = shift;
 
@@ -3826,7 +3826,7 @@ updated enumeration for C<ifOperStatus> in C<IF-MIB>.  This munge
 handles the "newer" definitions for the enumeration in IF-MIB.
 
 TODO: Get the precedence of MIBs and overriding of MIB data in Net-SNMP
-figured out.  Heirarchy/precendence of MIBS in SNMP::Info.
+figured out.  Hierarchy/precedence of MIBS in SNMP::Info.
 
 =cut
 
@@ -3898,7 +3898,7 @@ sub munge_e_type {
 
 Takes the SNMP::Session C<DestHost> argument and determines if it is an
 'IPv4' or 'IPv6' host. 'IPv6' hosts are prefixed with the C<udp6:>
-C<transport-specifier> as required by the undelying C<Net-SNMP> library.
+C<transport-specifier> as required by the underlying C<Net-SNMP> library.
 If unable to determine the type of address or resolve a DNS name, dies with
 C<croak>.
 
@@ -4611,7 +4611,7 @@ sub _load_attr {
 
          # Another check for SNMPv1 - noSuchName return may results in an $iid
          # we've already seen and $val an empty string.  If we don't catch
-         # this here we erronously report a loop below.
+         # this here we erroneously report a loop below.
             if ( defined $seen{$iid} and $seen{$iid} and $val eq '' ) {
                 last;
             }
@@ -4886,7 +4886,7 @@ sub _validate_autoload_method {
         || ($method !~ /^set/ && $access eq 'NoAccess')) {
 
             print
-                "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessable for requested operation.\n"
+                "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessible for requested operation.\n"
                 if $self->debug();
             return;
 

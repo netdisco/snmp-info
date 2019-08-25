@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Contivity
-# $Id$
 #
 # Copyright (c) 2010 Eric Miller
 # All rights reserved.
@@ -31,13 +30,12 @@
 package SNMP::Info::Layer3::Contivity;
 
 use strict;
+use warnings;
 use Exporter;
-use SNMP::Info;
 use SNMP::Info::Layer3;
-use SNMP::Info::Entity;
 
 @SNMP::Info::Layer3::Contivity::ISA
-    = qw/SNMP::Info SNMP::Info::Layer3 SNMP::Info::Entity Exporter/;
+    = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Contivity::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
@@ -45,22 +43,19 @@ our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 $VERSION = '3.68';
 
 %MIBS = (
-    %SNMP::Info::MIBS, %SNMP::Info::Layer3::MIBS, %SNMP::Info::Entity::MIBS,
+    %SNMP::Info::Layer3::MIBS,
 );
 
 %GLOBALS = (
-    %SNMP::Info::GLOBALS, %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::Entity::GLOBALS,
+    %SNMP::Info::Layer3::GLOBALS,
 );
 
 %FUNCS = (
-    %SNMP::Info::FUNCS, %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::Entity::FUNCS,
+  %SNMP::Info::Layer3::FUNCS,
 );
 
 %MUNGE = (
-    %SNMP::Info::MUNGE, %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::Entity::MUNGE,
+  %SNMP::Info::Layer3::MUNGE,
 );
 
 sub layers {
@@ -189,20 +184,11 @@ Eric Miller
 Abstraction subclass for Avaya/Nortel VPN Routers (formerly Contivity
 Extranet Switch).
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $contivity = new SNMP::Info::Layer3::Contivity(...);
-
 =head2 Inherited Classes
 
 =over
 
-=item SNMP::Info
-
 =item SNMP::Info::Layer3
-
-=item SNMP::Info::Entity
 
 =back
 
@@ -212,11 +198,7 @@ after determining a more specific class using the method above.
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
-
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::Entity/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -238,7 +220,7 @@ Returns the chassis name.
 
 =item $contivity->os()
 
-Returns C<'CES'>
+Returns C<'contivity'>
 
 =item $contivity->os_ver()
 
@@ -267,17 +249,9 @@ layers.
 
 =back
 
-=head2 Globals imported from SNMP::Info
-
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
-
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -299,16 +273,8 @@ Interface Name field.  Skips loopback and tunnel interfaces.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info
-
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
-
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 
 =cut

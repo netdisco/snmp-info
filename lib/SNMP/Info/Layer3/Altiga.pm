@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Altiga
-# $Id$
 #
 # Copyright (c) 2008 Jeroen van Ingen Schenau
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::Layer3::Altiga;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -281,7 +281,7 @@ Jeroen van Ingen Schenau
                           Debug       => 1,
                           DestHost    => 'my_vpn_host',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
@@ -303,6 +303,12 @@ Subclass for Cisco (formerly Altiga) VPN concentrators
 =head2 Required MIBs
 
 =over
+
+=item F<ALTIGA-VERSION-STATS-MIB>
+
+=item F<ALTIGA-SESSION-STATS-MIB>
+
+=item F<ALTIGA-HARDWARE-STATS-MIB>
 
 =item Inherited Classes' MIBs
 

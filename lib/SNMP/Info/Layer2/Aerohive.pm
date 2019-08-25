@@ -30,6 +30,7 @@
 package SNMP::Info::Layer2::Aerohive;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 
@@ -107,12 +108,11 @@ sub os_ver {
     my $aerohive = shift;
     my $descr    = $aerohive->description();
 
-    if ( $descr =~ m/\bHiveOS\s(\d\.\w+)\b/ix ) {
+    if ( defined ($descr) && $descr =~ m/\bHiveOS\s(\d\.\w+)\b/ix ) {
         return $1;
     }
     return;
 }
-
 
 sub mac {
     my $aerohive = shift;
@@ -137,12 +137,11 @@ sub mac {
     return $macs[0];
 }
 
-
 sub model {
     my $aerohive = shift;
     my $descr    = $aerohive->description();
 
-    if ( $descr =~ m/\b(?:Hive|)(AP\d+)\b/ix ) {
+    if ( defined ($descr) && $descr =~ m/\b(?:Hive|)(AP\d+)\b/ix ) {
         return $1;
     }
     return;
@@ -344,11 +343,6 @@ Eric Miller
 
 Provides abstraction to the configuration information obtainable from an
 Aerohive wireless Access Point through SNMP.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $aerohive = new SNMP::Info::Layer2::Aerohive(...);
 
 =head2 Inherited Classes
 

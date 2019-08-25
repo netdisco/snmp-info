@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Aironet
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -33,6 +32,7 @@
 package SNMP::Info::Layer3::Aironet;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -278,9 +278,6 @@ after determining a more specific class using the method above.
 =item F<IEEE802dot11-MIB>
 
 =back
-
-These MIBs are now included in the v2.tar.gz archive available from
-ftp.cisco.com.  Make sure you have a current version.
 
 =head1 GLOBALS
 

@@ -1,6 +1,7 @@
 package SNMP::Info::DocsisHE;
 
 use strict;
+use warnings;
 use Exporter;
 
 use SNMP::Info;
@@ -14,7 +15,7 @@ $VERSION = '3.68';
 
 %MIBS = (
     'DOCS-IF3-MIB' => 'docsIf3Mib',
-    'DOCS-IF-MIB' => 'docsIfMib'
+    'DOCS-IF-MIB'  => 'docsIfMib',
 );
 
 %GLOBALS = ();
@@ -26,12 +27,12 @@ $VERSION = '3.68';
     'docs_if_cmts_cm_status_inet_address_type' => 'docsIfCmtsCmStatusInetAddressType',
     'docs_if_cmts_cm_status_inet_address'      => 'docsIfCmtsCmStatusInetAddress',
     'docs_cmts_cm_down_channel_if_index'       => 'docsIfCmtsCmStatusDownChannelIfIndex',
-    'docs_cmts_cm_up_channel_if_index'         => 'docsIfCmtsCmStatusUpChannelIfIndex'
+    'docs_cmts_cm_up_channel_if_index'         => 'docsIfCmtsCmStatusUpChannelIfIndex',
 );
 
 %MUNGE = ();
 
- 1;
+1;
 __END__
 
 =head1 NAME
@@ -74,7 +75,7 @@ CableLabs MIBs for DOCSIS 3
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 None.
 
@@ -119,3 +120,5 @@ cable modem.
 (C<docsIfCmtsCmStatusUpChannelIfIndex>)
 
 =back
+
+=cut

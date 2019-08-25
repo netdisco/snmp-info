@@ -1,5 +1,4 @@
 # SNMP::Info::CDP
-# $Id$
 #
 # Changes since Version 0.7 Copyright (c) 2004 Max Baker
 # All rights reserved.
@@ -34,6 +33,7 @@
 package SNMP::Info::CDP;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -259,7 +259,7 @@ Max Baker
  $hascdp   = $cdp->hasCDP() ? 'yes' : 'no';
 
  # Print out a map of device ports with CDP neighbors:
- my $interfaces = $cdp->interfaces();
+ my $interfaces   = $cdp->interfaces();
  my $cdp_if       = $cdp->cdp_if();
  my $cdp_ip       = $cdp->cdp_ip();
  my $cdp_port     = $cdp->cdp_port();
@@ -299,9 +299,7 @@ None.
 
 =back
 
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
-
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

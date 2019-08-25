@@ -1,5 +1,4 @@
 # SNMP::Info::NortelStack
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::NortelStack;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -597,7 +597,7 @@ None.
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

@@ -1,5 +1,4 @@
 # SNMP::Info::Layer1::Asante
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -33,6 +32,7 @@
 package SNMP::Info::Layer1::Asante;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer1;
 
@@ -81,7 +81,7 @@ sub os_ver {
     my $asante = shift;
     my $descr  = $asante->description();
 
-    if ( $descr =~ /software v(\d+\.\d+)/ ) {
+    if ( defined ($descr) && $descr =~ /software v(\d+\.\d+)/ ) {
         return $1;
     }
     return;
@@ -188,7 +188,7 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Provides abstraction to the configuration information obtainable from a
+Provides abstraction to the configuration information obtainable from an
 Asante device through SNMP.
 
 =head2 Inherited Classes
@@ -227,7 +227,7 @@ Culls software version from description()
 
 =item $asante->vendor()
 
-Returns 'asante' :)
+Returns 'asante'
 
 =item $asante->model()
 

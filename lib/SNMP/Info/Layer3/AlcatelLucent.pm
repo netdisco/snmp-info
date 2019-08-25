@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::AlcatelLucent
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 #
@@ -30,6 +29,7 @@
 package SNMP::Info::Layer3::AlcatelLucent;
 
 use strict;
+use warnings;
 
 use Exporter;
 use SNMP::Info::Layer3;
@@ -115,7 +115,9 @@ sub os_ver {
    my $alu = shift;
 
    my $descr = $alu->description();
-   return $1 if $descr =~ m/\b(\d[\.\d]+R\d+) (?:GA|Service Release), /;
+   if (defined ($descr)) {
+     return $1 if $descr =~ m/\b(\d[\.\d]+R\d+) (?:GA|Service Release), /;
+   }
 
    # No clue what this will try but hey
    return $alu->SUPER::os_ver();
@@ -370,7 +372,7 @@ These are methods that return scalar value from SNMP
 
 =item $alu->vendor()
 
-    Returns 'alcatel-lucent'
+Returns 'alcatel-lucent'
 
 =item $alu->model()
 

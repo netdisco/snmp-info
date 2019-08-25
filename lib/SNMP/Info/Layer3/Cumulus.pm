@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Cumulus
-# $Id$
 #
 # Copyright (c) 2018 Bill Fenner and Oliver Gorwits
 # All rights reserved.
@@ -31,14 +30,13 @@
 package SNMP::Info::Layer3::Cumulus;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 @SNMP::Info::Layer3::Cumulus::ISA = qw/
   SNMP::Info::IEEE802dot3ad
-  SNMP::Info::LLDP
   SNMP::Info::Layer3
   Exporter
 /;
@@ -50,7 +48,6 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     'UCD-SNMP-MIB'       => 'versionTag',
     'NET-SNMP-TC'        => 'netSnmpAliasDomain',
@@ -59,7 +56,6 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'netsnmp_vers'   => 'versionTag',
     'hrSystemUptime' => 'hrSystemUptime',
     'chassis'    => 'entPhysicalDescr.1',
@@ -67,17 +63,15 @@ $VERSION = '3.68';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
-sub vendor { return 'Cumulus Networks' }
+sub vendor { return 'cumulus networks' }
 
 sub os { return 'cumulus' }
 
@@ -86,7 +80,7 @@ sub os_ver {
     my $descr   = $netsnmp->description();
 
 # STRING: "Cumulus Linux version 3.5.1 running on innotek GmbH VirtualBox"
-    return $1 if ( $descr =~ /^Cumulus Linux.+(\d+\.\d+\.\d+)\s/ );
+    return $1 if ( defined ($descr) && $descr =~ /^Cumulus Linux.+(\d+\.\d+\.\d+)\s/ );
     return;
 }
 
@@ -95,7 +89,9 @@ sub model {
     my $chassis = $netsnmp->chassis();
 
 # STRING: "Cumulus Networks  VX Chassis"
-    return $1 if ( $chassis =~ /^Cumulus Networks\s+(.+)/ );
+    if (defined ($chassis)) {
+      return $1 if ($chassis =~ /^Cumulus Networks\s+(.+)/);
+    }
     return $netsnmp->SUPER::model();
 }
 
@@ -116,7 +112,7 @@ sub uptime {
 
 # ifDescr is the same for all interfaces in a class, but the ifName is
 # unique, so let's use that for port name.  If all else fails,
-# concatentate ifDesc and ifIndex.
+# concatenate ifDesc and ifIndex.
 # (code from SNMP/Info/Layer2/Netgear.pm)
 sub interfaces {
     my $netsnmp = shift;
@@ -218,8 +214,6 @@ Subclass for Cumulus Networks devices
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
 
-See L<SNMP::Info::LLDP> for its own MIB requirements.
-
 See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
 
 =back
@@ -232,7 +226,7 @@ These are methods that return scalar value from SNMP
 
 =item $cumulus->vendor()
 
-Returns 'Cumulus Networks'.
+Returns 'cumulus networks'.
 
 =item $cumulus->os()
 
@@ -257,10 +251,6 @@ Returns the chassis type.
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
 
 =head2 Globals imported from SNMP::Info::IEEE802dot3ad
 
@@ -294,10 +284,6 @@ ifIndex of the corresponding master ports.
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
 
 =head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
 

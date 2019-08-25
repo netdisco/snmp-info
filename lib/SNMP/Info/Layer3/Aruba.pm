@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Aruba
-# $Id$
 #
 # Copyright (c) 2013 Eric Miller
 # All rights reserved.
@@ -31,11 +30,11 @@
 package SNMP::Info::Layer3::Aruba;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::Aruba::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Aruba::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Aruba::EXPORT_OK = qw//;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
@@ -44,7 +43,6 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     'WLSR-AP-MIB'        => 'wlsrHideSSID',
     'WLSX-IFEXT-MIB'     => 'ifExtVlanName',
     'WLSX-POE-MIB'       => 'wlsxPseSlotPowerAvailable',
@@ -58,7 +56,6 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'aruba_serial_old' => 'wlsxSwitchLicenseSerialNumber',
     'aruba_serial_new' => 'wlsxSysExtLicenseSerialNumber',
     'aruba_model'      => 'wlsxModelName',
@@ -67,7 +64,6 @@ $VERSION = '3.68';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 
     # WLSR-AP-MIB::wlsrConfigTable
     'aruba_ap_ssidbcast' => 'wlsrHideSSID',
@@ -143,7 +139,6 @@ $VERSION = '3.68';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
     'aruba_ap_fqln'       => \&munge_aruba_fqln,
     'aruba_ap_type'       => \&SNMP::Info::munge_e_type,
     'aruba_card_type'     => \&SNMP::Info::munge_e_type,
@@ -170,10 +165,9 @@ sub vendor {
     $id = $1 if ( defined($id) && $id =~ /^\.1\.3\.6\.1\.4\.1\.(\d+)/ );
 
     if ( defined($id) and exists( $oidmap{$id} ) ) {
-	return $oidmap{$id};
-    }
-    else {
-	return 'aruba';
+      return $oidmap{$id};
+    } else {
+      return 'aruba';
     }
 }
 
@@ -183,7 +177,7 @@ sub os_ver {
     return unless defined $descr;
 
     if ( $descr =~ m/Version\s+(\d+\.\d+\.\d+\.\d+)/ ) {
-	return $1;
+      return $1;
     }
 
     return;
@@ -1420,11 +1414,6 @@ access points themselves are unable to be polled for end station information.
 This class emulates bridge functionality for the wireless switch. This enables
 end station MAC addresses collection and correlation to the thin access point
 the end station is using for communication.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $aruba = new SNMP::Info::Layer3::Aruba(...);
 
 =head2 Inherited Classes
 

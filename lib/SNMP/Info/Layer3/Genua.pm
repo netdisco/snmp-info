@@ -29,6 +29,7 @@
 package SNMP::Info::Layer3::Genua;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -85,14 +86,15 @@ sub model {
 
     my $genua_model = $genua->genua_model();
 
-    if ( $genua_model =~ m/GeNUA.+(GS.+?)\s/i ) {
+    if (defined $genua_model) {
+      if ($genua_model =~ m/GeNUA.+(GS.+?)\s/i) {
         $genua_model = $1;
-    }
-    elsif ( $genua_model =~ m/genua\s+(.+?)\s+/i ) {
+      }
+      elsif ($genua_model =~ m/genua\s+(.+?)\s+/i) {
         $genua_model = $1;
-    }
-    else {
-        $genua_model = 'unknown';
+      }
+    } else {
+      $genua_model = 'unknown';
     }
     return $genua_model;
 }
@@ -121,7 +123,7 @@ Netdisco Developers
                           Debug       => 1,
                           DestHost    => 'myhub',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 

@@ -30,6 +30,7 @@
 package SNMP::Info::Layer3::ERX;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -60,7 +61,7 @@ $VERSION = '3.68';
 );
 
 sub vendor {
-  return "Juniper";
+  return "juniper";
 }
 
 sub model {
@@ -82,7 +83,7 @@ sub os_ver {
   my $descr  = $ERX->description();
   my $os_ver = undef;
 
-  if ( $descr =~ /Version : \((.+)\) .+:/ ) {
+  if ( defined ($descr) && $descr =~ /Version : \((.+)\) .+:/ ) {
     $os_ver = $1;
   }
 
@@ -110,7 +111,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::ERX - SNMP Interface to ERX Layer 3 routers.
+SNMP::Info::Layer3::ERX - SNMP Interface to Juniper ERX Layer 3 routers.
 
 =head1 AUTHORS
 
@@ -161,7 +162,7 @@ These are methods that return scalar value from SNMP
 
 =item $ERX->vendor()
 
-Returns 'Juniper'.
+Returns 'juniper'.
 
 =item $ERX->os()
 
