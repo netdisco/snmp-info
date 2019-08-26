@@ -3,6 +3,12 @@ Version 3.69 (2019-xx-xx)
   [ENHANCEMENTS]
 
   * duplex support for ciscosb
+  * report all vendor names in lowercase
+
+  [BUG FIXES]
+
+  * doc fixes: report all required mibs as for each modules as based on code
+  * include fixes: don't include modules already imported from parent class
 
 Version 3.68 (2019-04-28)
 
