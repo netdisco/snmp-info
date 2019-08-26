@@ -40,21 +40,25 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 $VERSION = '3.68';
 
 %MIBS = (
-    %SNMP::Info::Layer2::MIBS, %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::Layer3::MIBS,
     'SNWL-COMMON-MIB' => 'snwlCommonModule',
 );
 
 %GLOBALS = (
-    %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::Layer3::GLOBALS,
     #From SNWL-COMMON-MIB
-    'sw_model' => 'snwlSysModel',
-    'sw_serial' => 'snwlSysSerialNumber',
+    'sw_model'    => 'snwlSysModel',
+    'sw_serial'   => 'snwlSysSerialNumber',
     'sw_firmware' => 'snwlSysFirmwareVersion',
 );
 
-%FUNCS = ( %SNMP::Info::Layer2::FUNCS, %SNMP::Info::Layer3::FUNCS, );
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,
+);
 
-%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::Layer3::MUNGE, );
+%MUNGE = (
+    %SNMP::Info::Layer3::MUNGE,
+);
 
 sub vendor {
     return 'sonicwall';
@@ -64,9 +68,9 @@ sub os {
         my $sonicos = shift;
         my $swos = $sonicos->sw_firmware();
         if ($swos =~ /Enhanced/) {
-            return 'SonicOS Enhanced';
+            return 'sonicos enhanced';
         }
-        return 'SonicOS Standard';
+        return 'sonicos standard';
 }
 
 sub os_ver {
@@ -131,6 +135,8 @@ Subclass for Generic SonicWALL Firewalls
 
 =over
 
+=item F<SONICWALL-SMI>
+
 =item F<SNWL-COMMON-MIB>
 
 =item Inherited Classes' MIBs
@@ -153,7 +159,7 @@ Returns C<'sonicwall'>
 
 =item $router->os()
 
-Returns C<'SonicOS'>
+Returns C<'sonicos enhanded'> or C<'sonicos standard'> based on C<'snwlSysFirmwareVersion'>
 
 =item $router->os_ver()
 
