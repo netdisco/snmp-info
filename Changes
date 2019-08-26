@@ -4,6 +4,7 @@ Version 3.69 (2019-xx-xx)
 
   * duplex support for ciscosb
   * report all vendor names in lowercase
+  * sprinkle "use warnings" and "use strict" around
 
   [BUG FIXES]
 
