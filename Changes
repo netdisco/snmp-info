@@ -2,14 +2,15 @@ Version 3.69 (2019-xx-xx)
 
   [ENHANCEMENTS]
 
-  * duplex support for ciscosb
-  * report all vendor names in lowercase
-  * sprinkle "use warnings" and "use strict" around
+  * #350 ubiquiti version string cleanup (LBegnaud)
+  * #352 duplex support for ciscosb
+  * #353 report all vendor names in lowercase
+  * #353 sprinkle "use warnings" and "use strict" around
 
   [BUG FIXES]
 
-  * doc fixes: report all required mibs for each module as based on code
-  * include fixes: don't include modules already imported from parent classes
+  * #353 doc fixes: report all required mibs for each module as based on code
+  * #353 include fixes: don't include modules already imported from parent classes
 
 Version 3.68 (2019-04-28)
 
