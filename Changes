@@ -8,8 +8,8 @@ Version 3.69 (2019-xx-xx)
 
   [BUG FIXES]
 
-  * doc fixes: report all required mibs as for each modules as based on code
-  * include fixes: don't include modules already imported from parent class
+  * doc fixes: report all required mibs for each module as based on code
+  * include fixes: don't include modules already imported from parent classes
 
 Version 3.68 (2019-04-28)
 
