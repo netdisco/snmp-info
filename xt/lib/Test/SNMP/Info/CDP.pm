@@ -29,6 +29,8 @@
 
 package Test::SNMP::Info::CDP;
 
+use strict;
+use warnings;
 use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info::CDP;
@@ -51,7 +53,7 @@ sub setup : Tests(setup) {
       'cdp_proto' => {'2.1' => 'ip',                   '3.1' => 'chaos'},
       'cdp_capabilities' => {'2.1' => pack("H*", '00000228')},
       'cdp_dev_id'       => {'2.1' => pack("H*", 'ABCD12345678')},
-      'cdp_dev_port'     => {'2.1' => pack("H*", 'ABCD12345678')},
+      'cdp_dev_port'     => {'2.1' => 'My-Port-Name'},
     }
   };
   $test->{info}->cache($cache_data);
@@ -139,18 +141,12 @@ sub cdp_id : Tests(4) {
   cmp_deeply($test->{info}->cdp_id(), {}, q(No data returns empty hash));
 }
 
-sub cdp_port : Tests(4) {
+sub cdp_port : Tests(3) {
   my $test = shift;
 
   can_ok($test->{info}, 'cdp_port');
 
-  my $expected = {'2.1' => 'ab:cd:12:34:56:78'};
-
-  cmp_deeply($test->{info}->cdp_port(),
-    $expected, q(Remote ID packed MAC has expected value));
-
-  $test->{info}{store}{cdp_dev_port} = {'2.1' => 'My-Port-Name'};
-  $expected = {'2.1' => 'My-Port-Name'};
+  my $expected = {'2.1' => 'My-Port-Name'};
 
   cmp_deeply($test->{info}->cdp_port(),
     $expected, q(Remote ID text has expected value));
