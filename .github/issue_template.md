@@ -1,10 +1,19 @@
-<!--- Provide a general summary of the issue in the Title above -->
-<!--- https://guides.github.com/features/mastering-markdown/#examples -->
+<!---
 
-<!--- when including netdisco config snippets, whitespace matters since it's a yaml file -->
-<!--- for github issues it really helps if you include the relevant config parts in a codeblock (code fencing) -->
-<!--- see the "code" subject on https://guides.github.com/features/mastering-markdown/ for that) -->
-<!--- this should preserve spaces in the issue tracker and make troubleshooting quicker -->
+READ THIS FIRST!
+----------------
+
+the more info you can provide, the easier it is for us the help you, so please
+fill out as many of the items below as possible.
+
+Provide a general summary of the issue in the Title above
+
+when including netdisco config snippets, whitespace matters since it's a yaml file
+for github issues it really helps if you include the relevant config parts in a codeblock (code fencing)
+see the "code" subject on https://guides.github.com/features/mastering-markdown/ for that)
+this should preserve spaces in the issue tracker and make troubleshooting quicker
+
+-->
 
 
 ## Expected Behavior
