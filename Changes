@@ -6,6 +6,7 @@ Version 3.69 (2019-xx-xx)
   * #352 duplex support for ciscosb
   * #353 report all vendor names in lowercase
   * #353 sprinkle "use warnings" and "use strict" around
+  * poe power usage & mac address for ciscosb
 
   [BUG FIXES]
 
