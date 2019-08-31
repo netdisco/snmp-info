@@ -58,6 +58,7 @@ $VERSION = '3.68';
     %SNMP::Info::CiscoConfig::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
     'descr'  => 'sysDescr',
+    'mac'    => 'rndBasePhysicalAddress',
 );
 
 %FUNCS = (
@@ -66,6 +67,7 @@ $VERSION = '3.68';
     %SNMP::Info::CiscoStats::FUNCS,
     %SNMP::Info::CiscoConfig::FUNCS,
     %SNMP::Info::CDP::FUNCS,
+    'peth_port_power' => 'rlPethPsePortOutputPower',
 );
 
 %MIBS = (
@@ -74,6 +76,8 @@ $VERSION = '3.68';
     %SNMP::Info::CiscoStats::MIBS,
     %SNMP::Info::CiscoConfig::MIBS,
     %SNMP::Info::CDP::MIBS,
+    'CISCOSB-POE-MIB'          => 'rlPethPsePortOutputPower',
+    'CISCOSB-DEVICEPARAMS-MIB' => 'rndBasePhysicalAddress',
 );
 
 %MUNGE = (
@@ -214,6 +218,10 @@ managed switches. [i.e. those matching enterprises(1).cisco(9).otherEnterprises(
 
 =over
 
+=item F<CISCOSB-DEVICEPARAMS-MIB>
+
+=item F<CISCOSB-POE-MIB>
+
 =item Inherited Classes
 
 MIBs required by the inherited classes listed above.
@@ -225,6 +233,10 @@ MIBs required by the inherited classes listed above.
 These are methods that return scalar value from SNMP.
 
 =over
+
+=item $ciscosb->mac()
+
+Returns mac from (C<rndBasePhysicalAddress>)
 
 =item $ciscosb->os_ver()
 
@@ -266,6 +278,11 @@ See documentation in L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 =head1 TABLE METHODS
 
 =over
+
+=item $ciscosb->peth_port_power()
+
+Power supplied by PoE ports, in milliwatts.
+(C<rlPethPsePortOutputPower>)
 
 =item $ciscosb->i_duplex()
 
