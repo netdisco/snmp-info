@@ -29,6 +29,8 @@
 
 package Test::SNMP::Info;
 
+use strict;
+use warnings;
 use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info;

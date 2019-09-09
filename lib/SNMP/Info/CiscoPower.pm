@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoPower
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::CiscoPower;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -42,7 +42,8 @@ our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 $VERSION = '3.68';
 
 %MIBS = ( 'CISCO-POWER-ETHERNET-EXT-MIB' => 'cpeExtPsePortEntPhyIndex',
-          'CISCO-CDP-MIB' => 'cdpCachePowerConsumption' );
+          'CISCO-CDP-MIB' => 'cdpCachePowerConsumption',
+);
 
 %GLOBALS = ();
 
@@ -152,6 +153,8 @@ Note that it requires that the device inherits from Info::Entity.
 =over
 
 =item F<CISCO-POWER-ETHERNET-EXT-MIB>
+
+=item F<CISCO-CDP-MIB>
 
 =back
 

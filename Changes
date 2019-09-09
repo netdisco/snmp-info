@@ -1,3 +1,19 @@
+Version 3.69 (2019-xx-xx)
+
+  [ENHANCEMENTS]
+
+  * #350 ubiquiti version string cleanup (LBegnaud)
+  * #352 duplex support for ciscosb
+  * #353 report all vendor names in lowercase
+  * #353 sprinkle "use warnings" and "use strict" around
+  * poe power usage & mac address for ciscosb
+
+  [BUG FIXES]
+
+  * #353 doc fixes: report all required mibs for each module as based on code
+  * #353 include fixes: don't include modules already imported from parent classes
+  * #355 fix #252, don't think 6char devices names are mac addresses
+
 Version 3.68 (2019-04-28)
 
   [NEW FEATURES]

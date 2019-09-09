@@ -1,5 +1,4 @@
 # SNMP::Info::FDP
-# $Id$
 #
 # Copyright (c) 2008 Bruce Rodger, Max Baker
 # All rights reserved.
@@ -34,6 +33,7 @@
 package SNMP::Info::FDP;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -65,7 +65,7 @@ $VERSION = '3.68';
 
 %MUNGE = (
     'fdp_capabilities' => \&SNMP::Info::munge_bits,
-    'fdp_ip'           => \&SNMP::Info::munge_ip
+    'fdp_ip'           => \&SNMP::Info::munge_ip,
 );
 
 sub fdp_run {
@@ -146,7 +146,7 @@ Bruce Rodger, Max Baker
  $hasfdp   = $fdp->hasFDP() ? 'yes' : 'no';
 
  # Print out a map of device ports with FDP neighbors:
- my $interfaces = $fdp->interfaces();
+ my $interfaces   = $fdp->interfaces();
  my $fdp_if       = $fdp->fdp_if();
  my $fdp_ip       = $fdp->fdp_ip();
  my $fdp_port     = $fdp->fdp_port();
@@ -190,7 +190,7 @@ work with B2R07600C.
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

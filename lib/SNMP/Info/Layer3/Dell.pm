@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Dell - SNMP Interface to Dell devices
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -31,11 +30,11 @@
 package SNMP::Info::Layer3::Dell;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::Dell::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Dell::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Dell::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
@@ -44,7 +43,6 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     'RADLAN-COPY-MIB'                => 'rlCopySourceLocation',
     'RADLAN-Physicaldescription-MIB' => 'rlPhdStackReorder',
     'RADLAN-rlInterfaces'            => 'rlIfNumOfLoopbackPorts',
@@ -55,14 +53,12 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'dell_os_ver'  => 'productIdentificationVersion',
     'dell_id_name' => 'productIdentificationDisplayName',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 
     # RADLAN-rlInterfaces:swIfTable
     'dell_duplex_admin' => 'swIfDuplexAdminMode',
@@ -108,7 +104,7 @@ $VERSION = '3.68';
     'dell_fan_desc'  => 'rlEnvMonFanStatusDescr',
 );
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, %SNMP::Info::LLDP::MUNGE, );
+%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
 
 # Method OverRides
 
@@ -336,7 +332,7 @@ Eric Miller
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
@@ -452,10 +448,6 @@ otherwise uses the Layer3 serial method.
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
-
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
@@ -527,9 +519,5 @@ Returns nothing to work around incorrect indexing of C<dot1qTpFdbTable>
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut

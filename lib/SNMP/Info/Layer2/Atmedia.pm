@@ -30,6 +30,7 @@
 package SNMP::Info::Layer2::Atmedia;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 
@@ -68,10 +69,12 @@ sub model {
     my $atmedia = shift;
 
     my $atmedia_model = $atmedia->atm_model();
-    $atmedia_model =~ s/\<|\>//g;
-    $atmedia_model =~ s/\//_/g;
-
-    return $atmedia_model;
+    if (defined $atmedia_model) {
+      $atmedia_model =~ s/\<|\>//g;
+      $atmedia_model =~ s/\//_/g;
+      return $atmedia_model;
+    }
+    return;
 }
 
 sub vendor {

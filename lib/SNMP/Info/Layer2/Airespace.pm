@@ -29,8 +29,8 @@
 package SNMP::Info::Layer2::Airespace;
 
 use strict;
+use warnings;
 use Exporter;
-use SNMP::Info::Bridge;
 use SNMP::Info::CDP;
 use SNMP::Info::Airespace;
 
@@ -271,11 +271,6 @@ Eric Miller
 
 Provides abstraction to the configuration information obtainable from
 Cisco (Airespace) Wireless Controllers through SNMP.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $airespace = new SNMP::Info::Layer2::Airespace(...);
 
 =head2 Inherited Classes
 

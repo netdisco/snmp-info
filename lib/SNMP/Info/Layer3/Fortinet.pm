@@ -30,6 +30,7 @@
 package SNMP::Info::Layer3::Fortinet;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -149,11 +150,6 @@ Eric Miller
 =head1 DESCRIPTION
 
 Abstraction subclass for Fortinet network devices.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $fortinet = new SNMP::Info::Layer3::Fortinet(...);
 
 =head2 Inherited Classes
 

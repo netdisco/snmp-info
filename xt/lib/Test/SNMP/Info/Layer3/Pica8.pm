@@ -62,7 +62,7 @@ sub vendor : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'vendor');
-  is($test->{info}->vendor(), 'Pica8', q(Vendor returns 'Pica8'));
+  is($test->{info}->vendor(), 'pica8', q(Vendor returns 'pica8'));
 }
 
 sub model : Tests(3) {

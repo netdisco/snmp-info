@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Timetra
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 #
@@ -30,7 +29,7 @@
 package SNMP::Info::Layer3::Timetra;
 
 use strict;
-
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::Aggregate;
@@ -120,7 +119,7 @@ sub model {
 
     my $str;
 
-    if ( $descr =~ /\s+(7\d{3})/ ) {
+    if ( defined ($descr) && $descr =~ /\s+(7\d{3})/ ) {
         $str = $1;
     }
 
@@ -146,7 +145,7 @@ sub os_ver {
     my $timetra = shift;
 
     my $descr = $timetra->description();
-    if ( $descr =~ m/^TiMOS-(\S+)/x ) {
+    if ( defined ($descr) && $descr =~ m/^TiMOS-(\S+)/x ) {
         return $1;
     }
     return;
@@ -454,7 +453,7 @@ These are methods that return scalar value from SNMP
 
 =item $alu->vendor()
 
-Returns 'alcatel-lucent'
+Returns 'nokia'
 
 =item $alu->os()
 

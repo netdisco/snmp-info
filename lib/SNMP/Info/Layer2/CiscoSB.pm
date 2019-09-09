@@ -34,16 +34,16 @@
 package SNMP::Info::Layer2::CiscoSB;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
-use SNMP::Info::Entity;
 use SNMP::Info::EtherLike;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoConfig;
 use SNMP::Info::CDP;
 
 @SNMP::Info::Layer2::CiscoSB::ISA
-    = qw/SNMP::Info::Layer2 SNMP::Info::Entity SNMP::Info::EtherLike
+    = qw/SNMP::Info::Layer2 SNMP::Info::EtherLike
     SNMP::Info::CiscoStats SNMP::Info::CiscoConfig SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::CiscoSB::EXPORT_OK = qw//;
 
@@ -53,41 +53,40 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
-    %SNMP::Info::Entity::GLOBALS,
     %SNMP::Info::EtherLike::GLOBALS,
     %SNMP::Info::CiscoStats::GLOBALS,
     %SNMP::Info::CiscoConfig::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
-    'descr'  => 'sysDescr'
+    'descr'  => 'sysDescr',
+    'mac'    => 'rndBasePhysicalAddress',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
-    %SNMP::Info::Entity::FUNCS,
     %SNMP::Info::EtherLike::FUNCS,
     %SNMP::Info::CiscoStats::FUNCS,
     %SNMP::Info::CiscoConfig::FUNCS,
     %SNMP::Info::CDP::FUNCS,
+    'peth_port_power' => 'rlPethPsePortOutputPower',
 );
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
-    %SNMP::Info::Entity::MIBS,
     %SNMP::Info::EtherLike::MIBS,
     %SNMP::Info::CiscoStats::MIBS,
     %SNMP::Info::CiscoConfig::MIBS,
     %SNMP::Info::CDP::MIBS,
+    'CISCOSB-POE-MIB'          => 'rlPethPsePortOutputPower',
+    'CISCOSB-DEVICEPARAMS-MIB' => 'rndBasePhysicalAddress',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer2::MUNGE,
-    %SNMP::Info::Entity::MUNGE,
     %SNMP::Info::EtherLike::MUNGE,
     %SNMP::Info::CiscoStats::MUNGE,
     %SNMP::Info::CiscoConfig::MUNGE,
     %SNMP::Info::CDP::MUNGE,
 );
-
 
 sub vendor {
     return 'cisco';
@@ -135,6 +134,26 @@ sub model {
         }
     }
     return $ciscosb->description();
+}
+
+# CISCOSBinterfaces.mib also contains duplex info if needed
+sub i_duplex {
+    my $ciscosb = shift;
+    my $partial = shift;
+
+    my $el_duplex = $ciscosb->el_duplex($partial);
+
+    if ( defined $el_duplex and scalar( keys %$el_duplex ) ) {
+        my %i_duplex;
+        foreach my $el_port ( keys %$el_duplex ) {
+            my $duplex = $el_duplex->{$el_port};
+            next unless defined $duplex;
+
+            $i_duplex{$el_port} = 'half' if $duplex =~ /half/i;
+            $i_duplex{$el_port} = 'full' if $duplex =~ /full/i;
+        }
+        return \%i_duplex;
+    }
 }
 
 # ifDescr is the same for all interfaces in a class, but the ifName is
@@ -189,8 +208,6 @@ managed switches. [i.e. those matching enterprises(1).cisco(9).otherEnterprises(
 
 =item SNMP::Info::CiscoStats
 
-=item SNMP::Info::Entity
-
 =item SNMP::Info::EtherLike
 
 =item SNMP::Info::Layer2
@@ -200,6 +217,10 @@ managed switches. [i.e. those matching enterprises(1).cisco(9).otherEnterprises(
 =head2 Required MIBs
 
 =over
+
+=item F<CISCOSB-DEVICEPARAMS-MIB>
+
+=item F<CISCOSB-POE-MIB>
 
 =item Inherited Classes
 
@@ -212,6 +233,10 @@ MIBs required by the inherited classes listed above.
 These are methods that return scalar value from SNMP.
 
 =over
+
+=item $ciscosb->mac()
+
+Returns mac from (C<rndBasePhysicalAddress>)
 
 =item $ciscosb->os_ver()
 
@@ -246,15 +271,24 @@ Returns 'ros'.
 
 See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-=head2 Globals imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
-
 =head2 Globals imported from SNMP::Info::EtherLike
 
 See documentation in L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
+
+=over
+
+=item $ciscosb->peth_port_power()
+
+Power supplied by PoE ports, in milliwatts.
+(C<rlPethPsePortOutputPower>)
+
+=item $ciscosb->i_duplex()
+
+Return duplex based upon the result of EtherLike->el_duplex().
+
+=back
 
 =head2 Overrides
 
@@ -269,10 +303,6 @@ Uses the i_name() field.
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::EtherLike
 

@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::C3550
-# $Id$
 #
 # Copyright (c) 2008-2009 Max Baker changes from version 0.8 and beyond.
 # Copyright (c) 2004 Regents of the University of California
@@ -105,7 +104,7 @@ sub ports {
     return $ports;
 }
 
-#  Verions prior to 12.1(22)EA1a use the older CiscoStack method
+#  Versions prior to 12.1(22)EA1a use the older CiscoStack method
 #  Newer versions use the ETHERLIKE-MIB to report operational duplex.
 #  See http://www.ciscosystems.com/en/US/products/hw/switches/ps646/prod_release_note09186a00802a08ee.html
 
@@ -227,11 +226,6 @@ Abstraction subclass for Cisco Catalyst 3550 Layer 2/3 Switches.
 These devices run IOS but have some of the same characteristics as the
 Catalyst WS-C family (5xxx,6xxx).  For example, forwarding tables are held in
 VLANs, and extended interface information is gleaned from F<CISCO-SWITCH-MIB>.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $c3550 = new SNMP::Info::Layer3::C3550(...);
 
 =head2 Inherited Classes
 

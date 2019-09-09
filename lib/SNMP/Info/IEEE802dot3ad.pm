@@ -30,6 +30,7 @@
 package SNMP::Info::IEEE802dot3ad;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Aggregate;
 

@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Orinoco
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::Layer2::Orinoco;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::IEEE802dot11;
 use SNMP::Info::Layer2;
@@ -189,11 +189,6 @@ Provides abstraction to the configuration information obtainable from
 Orinoco Access Point through SNMP.  Orinoco devices have been manufactured
 by Proxim, Agere, and Lucent.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $orinoco = new SNMP::Info::Layer2::Orinoco(...);
-
 =head2 Inherited Classes
 
 =over
@@ -234,7 +229,7 @@ Returns the model extracted from C<sysDescr>.
 
 =item $orinoco->os()
 
-Returns 'Orinoco'
+Returns 'orinoco'
 
 =item $orinoco->os_ver()
 

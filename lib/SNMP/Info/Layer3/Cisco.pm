@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Cisco
-# $Id$
 #
 # Copyright (c) 2008 Max Baker
 # All rights reserved.
@@ -34,7 +33,6 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::CiscoVTP;
-use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoRTT;
@@ -45,7 +43,7 @@ use SNMP::Info::CiscoStpExtensions;
 use SNMP::Info::Layer3;
 
 @SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::CiscoVTP
-    SNMP::Info::LLDP SNMP::Info::CDP
+    SNMP::Info::CDP
     SNMP::Info::CiscoStats SNMP::Info::CiscoRTT
     SNMP::Info::CiscoQOS SNMP::Info::CiscoConfig
     SNMP::Info::CiscoPower SNMP::Info::CiscoStpExtensions
@@ -66,7 +64,6 @@ $VERSION = '3.68';
     %SNMP::Info::CiscoRTT::MIBS,
     %SNMP::Info::CiscoStats::MIBS,
     %SNMP::Info::CDP::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::CiscoVTP::MIBS,
     'CISCO-EIGRP-MIB' => 'cEigrpAsRouterId',
 );
@@ -80,7 +77,6 @@ $VERSION = '3.68';
     %SNMP::Info::CiscoRTT::GLOBALS,
     %SNMP::Info::CiscoStats::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::CiscoVTP::GLOBALS,
     'eigrp_id' => 'cEigrpAsRouterId',
 );
@@ -94,13 +90,11 @@ $VERSION = '3.68';
     %SNMP::Info::CiscoRTT::FUNCS,
     %SNMP::Info::CiscoStats::FUNCS,
     %SNMP::Info::CDP::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::CiscoVTP::FUNCS,
 
     # CISCO-EIGRP-MIB::cEigrpPeerTable
     'c_eigrp_peer_types' => 'cEigrpPeerAddrType',
     'c_eigrp_peers'      => 'cEigrpPeerAddr',
-
 );
 
 %MUNGE = (
@@ -108,7 +102,7 @@ $VERSION = '3.68';
     %SNMP::Info::CiscoPower::MUNGE, %SNMP::Info::CiscoConfig::MUNGE,
     %SNMP::Info::CiscoQOS::MUNGE,   %SNMP::Info::CiscoRTT::MUNGE,
     %SNMP::Info::CiscoStats::MUNGE, %SNMP::Info::CDP::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,       %SNMP::Info::CiscoVTP::MUNGE,
+    %SNMP::Info::CiscoVTP::MUNGE,
 );
 
 sub i_vlan {
@@ -214,8 +208,6 @@ for other device specific L3 Cisco classes.
 
 =item SNMP::Info::CiscoVTP
 
-=item SNMP::Info::LLDP
-
 =item SNMP::Info::CDP
 
 =item SNMP::Info::CiscoStats
@@ -243,8 +235,6 @@ for other device specific L3 Cisco classes.
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::CiscoVTP/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::CDP/"Required MIBs"> for its own MIB requirements.
 
@@ -284,10 +274,6 @@ Determined by checking C<vtpVersion>.
 =head2 Global Methods imported from SNMP::Info::CiscoVTP
 
 See documentation in L<SNMP::Info::CiscoVTP/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::CDP
 
@@ -343,10 +329,6 @@ Returns a mapping between C<ifIndex> and the PVID or default VLAN.
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 
 See documentation in L<SNMP::Info::CiscoVTP/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::CDP
 

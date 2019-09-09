@@ -1,5 +1,4 @@
 # SNMP::Info::CDP
-# $Id$
 #
 # Changes since Version 0.7 Copyright (c) 2004 Max Baker
 # All rights reserved.
@@ -34,6 +33,7 @@
 package SNMP::Info::CDP;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -82,7 +82,6 @@ $VERSION = '3.68';
     'cdp_ver'          => \&SNMP::Info::munge_null,
     'cdp_ip'           => \&SNMP::Info::munge_ip,
     'cdp_power'        => \&munge_power,
-
 );
 
 %CDP_CAPABILITIES = (
@@ -222,11 +221,17 @@ sub cdp_port {
 
     my $ch = $cdp->cdp_dev_port($partial) || {};
 
+    # most devices return a string with the interface name here (Port-ID TLV)
+    # see https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/cdp/command/cdp-cr-book/cdp-cr-a1.html
+    # it seems however that some devices report hex encoded mac addresses for this, see
+    # https://github.com/netdisco/snmp-info/issues/252
+    # once these bad devices get known we can figure out workarounds for them
+
     my %cdp_port;
     foreach my $key ( sort keys %$ch ) {
         my $port = $ch->{$key};
         next unless $port;
-        $port = SNMP::Info::munge_mac($port) || SNMP::Info::munge_null($port);
+        $port = SNMP::Info::munge_null($port);
         $cdp_port{$key} = $port;
     }
     return \%cdp_port;
@@ -259,7 +264,7 @@ Max Baker
  $hascdp   = $cdp->hasCDP() ? 'yes' : 'no';
 
  # Print out a map of device ports with CDP neighbors:
- my $interfaces = $cdp->interfaces();
+ my $interfaces   = $cdp->interfaces();
  my $cdp_if       = $cdp->cdp_if();
  my $cdp_ip       = $cdp->cdp_ip();
  my $cdp_port     = $cdp->cdp_port();
@@ -278,8 +283,8 @@ SNMP::Info::CDP is a subclass of SNMP::Info that provides an object oriented
 interface to CDP information through SNMP.
 
 CDP is a Layer 2 protocol that supplies topology information of devices that
-also speak CDP, mostly switches and routers.  CDP is implemented in Cisco and
-some HP devices.
+also speak CDP, mostly switches and routers.  CDP is implemented by Cisco and
+several other vendors.
 
 Create or use a device subclass that inherits this class.  Do not use
 directly.
@@ -299,9 +304,7 @@ None.
 
 =back
 
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
-
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 
@@ -479,9 +482,10 @@ Returns remote platform id
 
 =item $cdp->cdp_port()
 
-Returns remote port ID
+Returns remote Port-ID. Most of the time this is a string with the port name, but this
+is not guaranteed to be so.
 
-(C<cdpDevicePort>)
+(C<cdpCacheDevicePort>)
 
 =item  $cdp->cdp_proto()
 

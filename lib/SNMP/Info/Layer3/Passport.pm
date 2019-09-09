@@ -713,7 +713,7 @@ sub e_index {
     my $model = $passport->model();
     my $rc_ps_t = $passport->rc_ps_type() || {};
 
-    # We're going to hack an index: Slot/Mda/Postion
+    # We're going to hack an index: Slot/Mda/Position
     # We're going to put chassis and power supplies in a slot
     # which doesn't exist
     my %rc_e_index;

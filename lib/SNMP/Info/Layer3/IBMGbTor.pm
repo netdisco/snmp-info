@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::IBMGbTor - SNMP Interface to IBM Rackswitch devices
-# $Id$
 #
 # Copyright (c) 2013 Eric Miller
 # All rights reserved.
@@ -31,9 +30,9 @@
 package SNMP::Info::Layer3::IBMGbTor;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer3::IBMGbTor::ISA
     = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
@@ -255,7 +254,7 @@ Eric Miller
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
@@ -268,11 +267,6 @@ Eric Miller
 Abstraction subclass for IBM Rackswitch (formerly Blade Network Technologies)
 network devices. Lenovo acquired these from IBM and is now selling
 them under the Lenovo brand.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $ibm = new SNMP::Info::Layer3::IBMGbTor(...);
 
 =head2 Inherited Classes
 

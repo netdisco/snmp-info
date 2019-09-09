@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Centillion
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -31,9 +30,9 @@
 package SNMP::Info::Layer2::Centillion;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
-use SNMP::Info::Bridge;
 use SNMP::Info::NortelStack;
 use SNMP::Info::SONMP;
 
@@ -292,11 +291,6 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from a
 Centillion device through SNMP.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $centillion = new SNMP::Info::Layer2::centillion(...);
-
 Note:  This class supports version 4.X and 5.X which are VLAN based rather
 than bridge group based.
 
@@ -328,7 +322,7 @@ than bridge group based.
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info/"REQUIREMENTS"> for its own MIB requirements.
 
 See L<SNMP::Info::Bridge/"Required MIBs"> for its own MIB requirements.
 
@@ -346,7 +340,7 @@ These are methods that return scalar value from SNMP
 
 =item $centillion->vendor()
 
-Returns 'Nortel'
+Returns 'nortel'
 
 =item $centillion->model()
 
@@ -357,7 +351,7 @@ Removes C<sreg-> from the model name
 
 =item $centillion->os()
 
-Returns 'Centillion'
+Returns 'centillion'
 
 =item $centillion->tftp_action()
 
@@ -399,7 +393,7 @@ start at 0.  Returns 0.
 
 =head2 Globals imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =head2 Globals imported from SNMP::Info::Bridge
 
@@ -513,7 +507,7 @@ Returns reference to hash.  Key: Table entry, Value: VLAN Type
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 

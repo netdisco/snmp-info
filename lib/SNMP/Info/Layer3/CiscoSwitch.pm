@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::CiscoSwitch
-# $Id$
 #
 # Copyright (c) 2014 Eric Miller
 # All rights reserved.
@@ -154,10 +153,6 @@ These are methods that return scalar value from SNMP
 Returns 1.  Use vlan indexing.
 
 =back
-
-=head2 Global Methods imported from SNMP::Info::CiscoAgg
-
-See documentation in L<SNMP::Info::CiscoAgg/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::CiscoPortSecurity
 

@@ -1,5 +1,4 @@
 # SNMP::Info::RapidCity
-# $Id$
 #
 # Copyright (c) 2014 Eric Miller
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::RapidCity;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -914,11 +914,15 @@ None.
 
 =over
 
-=item RAPID-CITY
+=item F<RAPID-CITY>
+
+=item F<NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB>
+
+=item F<NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB>
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

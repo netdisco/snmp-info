@@ -29,12 +29,12 @@
 package SNMP::Info::Layer2::Adtran;
 
 use strict;
+use warnings;
 use Exporter;
-use SNMP::Info::LLDP;
 use SNMP::Info::Layer2;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer2::Adtran::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::Adtran::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::Adtran::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
@@ -58,14 +58,12 @@ our $index = undef;
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'serial'    => 'adProdSerialNumber',
     'ad_mgmtevcvid' => 'adGenEVCSysMgmtEVCSTagVID',
 );
 
 %FUNCS = ( %SNMP::Info::Layer2::FUNCS,
            %SNMP::Info::Layer3::FUNCS,
-           %SNMP::Info::LLDP::FUNCS,
            'ad_evcstag' => 'adGenEVCLookupName',
            'ad_menport' => 'adGenMenPortRowStatus',
            'ad_evcnamevid' => 'adGenEVCSTagVID',
@@ -75,7 +73,7 @@ our $index = undef;
            'ad_genportcustuse' => 'adGenPortCustomerUse',
 );
 
-%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::LLDP::MUNGE, %SNMP::Info::Layer3::MUNGE );
+%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::Layer3::MUNGE );
 
 sub vendor {
     return 'adtran';
@@ -130,8 +128,8 @@ sub i_name {
     my $adname = $adtran->ad_genportcustuse() || undef;
     if (defined $adname) {
         foreach my $port (keys %$adname) {
-            my @split = split(/\./,$port);
-            $i_name->{@split[1]} = $adname->{$port};
+            my @splitout = split(/\./,$port);
+            $i_name->{$splitout[1]} = $adname->{$port};
         }
     }
     return $i_name;
@@ -170,9 +168,9 @@ sub i_vlan_membership {
         }
         my $if_vlans = {};
         foreach my $entry (keys %$i_vlan) {
-            my @split = split(/(\.0)+\./,$entry);
-            my $name = pack("C*", split(/\./,@split[0]));
-            push @{$if_vlans->{@split[2]}}, $vlans->{$name};
+            my @splitout = split(/(\.0)+\./,$entry);
+            my $name = pack("C*", split(/\./,$splitout[0]));
+            push @{$if_vlans->{$splitout[2]}}, $vlans->{$name};
         }
         my $mgmtevcports = $adtran->ad_mgmtevcports();
         my $mgmtevcid = $adtran->ad_mgmtevcvid();
@@ -223,17 +221,17 @@ Subclass for adtran Devices running JUNOS
 
 =over
 
-=item SNMP::Info::Layer3
+=item SNMP::Info::Layer2
 
-=item SNMP::Info::LLDP
+=item SNMP::Info::Layer3
 
 =back
 
 =head2 Inherited Classes' MIBs
 
-See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
 
-See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 =head1 GLOBALS
 
@@ -273,10 +271,6 @@ Returns serial number.
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
-=head2 Global Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
-
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
@@ -303,12 +297,12 @@ IDs.  These are the VLANs which are members of the egress list for the port.
 
 =back
 
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
+
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut

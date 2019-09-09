@@ -1,5 +1,4 @@
 # SNMP::Info::Layer1 - SNMP Interface to Layer1 Devices
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -33,6 +32,7 @@
 package SNMP::Info::Layer1;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -49,7 +49,7 @@ $VERSION = '3.68';
     %SNMP::Info::GLOBALS,
     'ports_managed' => 'ifNumber',
     'rptr_slots'    => 'rptrGroupCapacity',
-    'slots'         => 'rptrGroupCapacity'
+    'slots'         => 'rptrGroupCapacity',
 );
 
 %FUNCS = (
@@ -86,7 +86,7 @@ sub ports {
 }
 
 # $l1->model() - Looks at sysObjectID which gives the oid of the system
-#       name, contained in a propriatry MIB.
+#       name, contained in a proprietary MIB.
 sub model {
     my $l1    = shift;
     my $id    = $l1->id();
@@ -178,7 +178,7 @@ Max Baker
                           Debug       => 1,
                           DestHost    => 'myswitch',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
@@ -227,12 +227,9 @@ after determining a more specific class using the method above.
 
 =back
 
-MIBs required for L<SNMP::Info/"Required MIBs">
+MIBs required for L<SNMP::Info/"REQUIREMENTS">
 
-See L<SNMP::Info/"Required MIBs"> for its MIB requirements.
-
-F<SNMP-REPEATER-MIB> needs to be extracted from
-ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
+See L<SNMP::Info/"REQUIREMENTS"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -278,7 +275,7 @@ Number of 'groups' in the Repeater MIB
 
 =head2 Global Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =head1 TABLE METHODS
 
@@ -341,6 +338,6 @@ Group (slot) Number for given port.
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =cut

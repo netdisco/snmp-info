@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoConfig
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::CiscoConfig;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 

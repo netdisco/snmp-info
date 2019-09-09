@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Mikrotik
-# $Id$
 #
 # Copyright (c) 2011 Jeroen van Ingen
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::Layer3::Mikrotik;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 

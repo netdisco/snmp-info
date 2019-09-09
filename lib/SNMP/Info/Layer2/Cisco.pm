@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Cisco
-# $Id$
 #
 # Copyright (c) 2008 Max Baker
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::Layer2::Cisco;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
@@ -194,7 +194,7 @@ These are methods that return scalar value from SNMP
 
 =item $cisco->vendor()
 
-    Returns 'cisco'
+Returns 'cisco'
 
 =back
 
@@ -225,10 +225,6 @@ See documentation in L<SNMP::Info::CiscoPortSecurity/"GLOBALS"> for details.
 =head2 Globals imported from SNMP::Info::CiscoStpExtensions
 
 See documentation in L<SNMP::Info::CiscoStpExtensions/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::CiscoAgg
-
-See documentation in L<SNMP::Info::CiscoAgg/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer2
 

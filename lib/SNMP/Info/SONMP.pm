@@ -70,7 +70,7 @@ $VERSION = '3.68';
 
 %MUNGE = (
     'sonmp_topo_mac'   => \&SNMP::Info::munge_mac,
-    'sonmp_topo_e_mac' => \&SNMP::Info::munge_mac
+    'sonmp_topo_e_mac' => \&SNMP::Info::munge_mac,
 );
 
 sub index_factor {
@@ -120,7 +120,7 @@ sub sonmp_if {
         || $sonmp->sonmp_topo_e_platform($partial)
         || {};
     my $interfaces   = $sonmp->interfaces() || {};
-    my %r_interfaces  = reverse %$interfaces;
+    my %r_interfaces = reverse %$interfaces;
     my $index_factor = $sonmp->index_factor();
     my $slot_offset  = $sonmp->slot_offset();
     my $port_offset  = $sonmp->port_offset();
@@ -305,8 +305,8 @@ Eric Miller
 
  $hassonmp   = $sonmp->hasSONMP() ? 'yes' : 'no';
 
- # Print out a map of device ports with CDP neighbors:
- my $interfaces = $sonmp->interfaces();
+ # Print out a map of device ports with SONMP neighbors:
+ my $interfaces     = $sonmp->interfaces();
  my $sonmp_if       = $sonmp->sonmp_if();
  my $sonmp_ip       = $sonmp->sonmp_ip();
  my $sonmp_port     = $sonmp->sonmp_port();
@@ -351,7 +351,7 @@ None.
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

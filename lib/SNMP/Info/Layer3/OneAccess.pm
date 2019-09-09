@@ -30,6 +30,7 @@
 package SNMP::Info::Layer3::OneAccess;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -67,7 +68,7 @@ $VERSION = '3.68';
 # notes:
 # duplex: oneos v5 has dot3StatsDuplexStatus but it always seems to
 #   return 0 so useless. oneos v6 no longer has any info.
-# macsuck: bridge-mib and oneaccess mibs didn't return useable data
+# macsuck: bridge-mib and oneaccess mibs didn't return usable data
 # arpnip: oneos v5 returns usable data from ip-mib & rfc1213 which is
 #   usable, both version support ip-forward-mib but this does not by
 #   itself provide enough data to be usable. v6 even fails for the

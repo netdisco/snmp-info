@@ -52,7 +52,7 @@ sub os : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'os');
-  is($test->{info}->os(), 'Kentrox', q(OS returns 'Kentrox'));
+  is($test->{info}->os(), 'kentrox', q(OS returns 'kentrox'));
 }
 
 sub os_ver : Tests(3) {
@@ -80,7 +80,7 @@ sub vendor : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'vendor');
-  is($test->{info}->vendor(), 'Kentrox', q(Vendor returns 'Kentrox'));
+  is($test->{info}->vendor(), 'kentrox', q(Vendor returns 'kentrox'));
 }
 
 sub model : Tests(3) {

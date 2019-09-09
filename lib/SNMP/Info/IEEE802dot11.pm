@@ -1,5 +1,4 @@
 # SNMP::Info::IEEE802dot11
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::IEEE802dot11;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 

@@ -1,5 +1,4 @@
 # SNMP::Info::LLDP
-# $Id$
 #
 # Copyright (c) 2018 Eric Miller
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::LLDP;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -512,7 +512,7 @@ None.
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

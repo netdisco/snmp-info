@@ -29,7 +29,7 @@
 package SNMP::Info::CiscoStpExtensions;
 
 use strict;
-
+use warnings;
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
@@ -317,9 +317,7 @@ For debugging you can call new() directly as you would in SNMP::Info
 
 =back
 
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
-
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

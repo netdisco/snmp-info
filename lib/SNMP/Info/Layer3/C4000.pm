@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::C4000
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.
@@ -128,11 +127,6 @@ Bill Fenner
 =head1 DESCRIPTION
 
 Abstraction subclass for Cisco Catalyst 4000 Layer 2/3 Switches.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $c4000 = new SNMP::Info::Layer3::C4000(...);
 
 =head2 Inherited Classes
 

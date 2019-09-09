@@ -30,6 +30,7 @@
 package SNMP::Info::AdslLine;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -104,8 +105,6 @@ none.
 =item F<ADSL-LINE-MIB>
 
 =back
-
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =head1 GLOBALS
 

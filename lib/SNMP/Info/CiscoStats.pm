@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoStats
-# $Id$
 #
 # Changes since Version 0.7 Copyright (c) 2008-2009 Max Baker and SNMP::Info Developers
 # All rights reserved.
@@ -34,6 +33,7 @@
 package SNMP::Info::CiscoStats;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -384,8 +384,6 @@ None.
 =item F<CISCO-IMAGE-MIB>
 
 =back
-
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =head1 GLOBALS
 

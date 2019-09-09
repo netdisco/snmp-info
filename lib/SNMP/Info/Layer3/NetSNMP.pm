@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::NetSNMP
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.
@@ -31,11 +30,11 @@
 package SNMP::Info::Layer3::NetSNMP;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::NetSNMP::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::NetSNMP::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::NetSNMP::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
@@ -44,7 +43,6 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     'UCD-SNMP-MIB'       => 'versionTag',
     'NET-SNMP-TC'        => 'netSnmpAliasDomain',
     'HOST-RESOURCES-MIB' => 'hrSystem',
@@ -52,19 +50,16 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'netsnmp_vers'   => 'versionTag',
     'hrSystemUptime' => 'hrSystemUptime',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
 );
 
 sub vendor {
@@ -182,8 +177,6 @@ Subclass for Generic Net-SNMP devices
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
 
-See L<SNMP::Info::LLDP> for its own MIB requirements.
-
 =back
 
 =head1 GLOBALS
@@ -221,10 +214,6 @@ Returns ''.
 
 See documentation in L<SNMP::Info::Layer3> for details.
 
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
-
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
@@ -245,10 +234,6 @@ Ignores loopback
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
 
 =head1 NOTES
 

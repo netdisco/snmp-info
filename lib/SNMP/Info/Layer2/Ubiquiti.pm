@@ -29,6 +29,7 @@
 package SNMP::Info::Layer2::Ubiquiti;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::IEEE802dot11;
 use SNMP::Info::Layer2;
@@ -47,16 +48,16 @@ $VERSION = '3.68';
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
     %SNMP::Info::IEEE802dot11::MIBS,
-
 );
 
-%GLOBALS
-    = ( %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::IEEE802dot11::GLOBALS, );
+%GLOBALS = (
+  %SNMP::Info::Layer2::GLOBALS,
+  %SNMP::Info::IEEE802dot11::GLOBALS,
+);
 
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
     %SNMP::Info::IEEE802dot11::FUNCS,
-
 );
 
 %MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::IEEE802dot11::MUNGE, );
@@ -70,14 +71,14 @@ sub os {
         my $prod = $names->{$iid};
         next unless defined $prod;
         # Product names that match AirOS products
-                if((lc $prod) =~ /station/ or (lc $prod) =~ /beam/ or (lc $prod) =~ /grid/){
-                        return 'AirOS';
-                # Product names that match UAP
-                }elsif((lc $prod) =~ /uap/){
-                        return 'UniFi';
-                }else{
-                    # Continue below to find OS name
-                }
+        if((lc $prod) =~ /station/ or (lc $prod) =~ /beam/ or (lc $prod) =~ /grid/){
+                return 'AirOS';
+        # Product names that match UAP
+        }elsif((lc $prod) =~ /uap/){
+                return 'UniFi';
+        }else{
+            # Continue below to find OS name
+        }
     }
 
     ## EdgeMAX OS (EdgeSwitch and EdgeRouter) name is first field split by space
@@ -89,35 +90,54 @@ sub os {
 }
 
 sub os_ver {
-    my $dot11 = shift;
+    my $ubnt = shift;
 
-    my $versions = $dot11->dot11_prod_ver();
+    my $versions = $ubnt->dot11_prod_ver();
 
     foreach my $iid ( keys %$versions ) {
         my $ver = $versions->{$iid};
         next unless defined $ver;
+        my $os = $ubnt->os;
+        if($os == 'AirOS'){
+            ## pretty up the version reporting for AirOS to include hardware (XW, XM, etc) and three major groups of firmware
+            my @firmware =  split(/v/, $ver);
+            my @firmwareSplit = split(/\./, $firmware[1]);
+            my @prefix = split(/\./, $ver);
+            $ver = $prefix[0] . '-v' . join('.', @firmwareSplit[0,1,2]);
+        }
         return $ver;
         ## Not sure what this function does, it seems to be extraneous being in the same code block after a return statement?
-        if ( $ver =~ /([\d\.]+)/ ) {
-            return $1;
-        }
+        #if ( $ver =~ /([\d\.]+)/ ) {
+        #    return $1;
+        #}
     }
-    my $ver = $dot11->description() || '';
-    if($ver =~ /^edgeswitch/){
-        ## EdgeSwitch OS version is second field split by comma
-        my @myver = split(/, /, $ver);
 
-        return $myver[1];
+    my $ver = $ubnt->description() || '';
+    if((lc $ver) =~ /^edgeswitch/){
+        ## EdgeSwitch OS version is second field split by comma and bootcode version is last
+        my @myver = split(/, /, $ver);
+        my @firmware = split(/\./, $myver[1]);
+        my @bootcode = split(/\./, $myver[-1]);
+
+        ## Return only three major version groupings and include bootcode version
+        return join('.', @firmware[0,1,2]) . '.-b' . join('.', @bootcode[0,1,2]);
+
     }
 
     ## EdgeRouter OS version is second field split by space
     my @myver = split(/ /, $ver);
+    my @firmware = split(/\./, $myver[1]);
 
-    return $myver[1];
+    if($firmware[2] =~ /hotfix$/){
+        # edge case where EdgeOS has hotfix versions in format "EdgeOS v1.9.7+hotfix.4.5024004.171005.0403"
+        $firmware[2] = $firmware[2] . '.' . $firmware[3]
+    }
+    ## Return only three major version groupings
+    return join('.', @firmware[0,1,2]);
 }
 
 sub vendor {
-    return 'Ubiquiti Networks, Inc.';
+    return 'ubiquiti';
 }
 
 sub model {
@@ -142,7 +162,7 @@ sub model {
     if(!((lc $desc) =~ /edgeos/)){
         # Not sure what type of device this is to get Model
         # Wireless devices report dot11_prod_name
-        # EdgeSwitch includes mode directly and edgeos logic is in else statement
+        # EdgeSwitch includes model directly and edgeos logic is in else statement
         return ;
     }else{
         ## do some logic to determine ER model based on tech specs from ubnt:
@@ -304,11 +324,6 @@ Max Kosmach
 Provides abstraction to the configuration information obtainable from
 Ubiquiti Access Point through SNMP.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $ubnt = new SNMP::Info::Layer2::Ubiquiti(...);
-
 =head2 Inherited Classes
 
 =over
@@ -337,11 +352,11 @@ These are methods that return scalar value from SNMP
 
 =item $ubnt->vendor()
 
-Returns 'Ubiquiti Networks, Inc.'
+Returns 'ubiquiti'
 
 =item $ubnt->model()
 
-Returns the model extracted from C<dot11manufacturerProductName>, with failback to some complex logic for EdgeMax devices
+Returns the model extracted from C<dot11manufacturerProductName>, with fallback to some complex logic for EdgeMax devices
 
 =item $ubnt->serial()
 
