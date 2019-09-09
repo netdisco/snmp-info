@@ -93,7 +93,7 @@ sub model : Tests(3) {
   my $test = shift;
 
   can_ok($test->{info}, 'model');
-  is($test->{info}->model(), 'fw', q(Model is expected value));
+  is($test->{info}->model(), 'Check Point 12200', q(Model is expected value));
 
   $test->{info}->clear_cache();
   is($test->{info}->model(), undef, q(No description returns undef model));
