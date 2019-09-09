@@ -53,6 +53,10 @@ sub setup : Tests(setup) {
     # CHECKPOINT-MIB::fw
     '_id'   => '.1.3.6.1.4.1.2620.1.1',
     'store' => {},
+    '_serial_number' => '0123456789abcdef',
+    '_product_name' => 'Check Point 12200',
+    '_manufacturer' => 'Checkpoint',
+    '_version' => 'R80.20',
   };
   $test->{info}->cache($cache_data);
 }
@@ -68,7 +72,21 @@ sub vendor : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'vendor');
-  is($test->{info}->vendor(), 'checkpoint', q(Vendor returns 'checkpoint'));
+  is($test->{info}->vendor(), 'Checkpoint', q(Vendor returns 'Checkpoint')); 
+}
+
+sub os_ver : Tests(2) {
+  my $test = shift;
+    
+  can_ok($test->{info}, 'os_ver');
+  is($test->{info}->os_ver(), 'R80.20',q(OS Version return 'R80.20'));
+}
+
+sub serial : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'serial');
+  is($test->{info}->serial(), '0123456789abcdef', q(Serial returns '0123456789abcdef'));
 }
 
 sub model : Tests(3) {
