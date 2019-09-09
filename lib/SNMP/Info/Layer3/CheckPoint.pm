@@ -54,6 +54,10 @@ $VERSION = '3.68';
     %SNMP::Info::Layer3::GLOBALS,
     'netsnmp_vers'   => 'versionTag',
     'hrSystemUptime' => 'hrSystemUptime',
+    'serial_number' => 'svnApplianceSerialNumber',
+    'product_name' => 'svnApplianceProductName',
+    'manufacturer' => 'svnApplianceManufacturer',
+    'version' => 'svnVersion',
 );
 
 %FUNCS = (
@@ -68,7 +72,13 @@ $VERSION = '3.68';
 );
 
 sub vendor {
-    return 'checkpoint';
+    my $ckp = shift;
+
+    if (defined $ckp->manufacturer) {
+        return $ckp->manufacturer;
+    } else {
+        return 'checkpoint';
+    }
 }
 
 sub model {
@@ -93,27 +103,30 @@ sub os {
 
 sub os_ver {
     my $ckp = shift;
-    my $extend_table = $ckp->extend_output_table() || {};
+    if (defined $ckp->version) {
+        return $ckp->version;
+    } else {
+        my $extend_table = $ckp->extend_output_table() || {};
 
-    my $descr   = $ckp->description();
-    my $vers    = $ckp->netsnmp_vers();
-    my $os_ver  = undef;
+        my $descr   = $ckp->description();
+        my $vers    = $ckp->netsnmp_vers();
+        my $os_ver  = undef;
 
-    foreach my $ex (keys %$extend_table) {
-        (my $name = pack('C*',split(/\./,$ex))) =~ s/[^[:print:]]//g;
-        if ($name eq 'ckpVersion') {
-            return $1 if ($extend_table->{$ex} =~ /^This is Check Point's software version (.*)$/);
-            last;
+        foreach my $ex (keys %$extend_table) {
+            (my $name = pack('C*',split(/\./,$ex))) =~ s/[^[:print:]]//g;
+            if ($name eq 'ckpVersion') {
+                return $1 if ($extend_table->{$ex} =~ /^This is Check Point's software version (.*)$/);
+                last;
+            }
         }
-    }
 
-    $os_ver = $1 if ( $descr =~ /^\S+\s+\S+\s+(\S+)\s+/ );
-    if ($vers) {
-        $os_ver = "???" unless defined($os_ver);
-        $os_ver .= " / Net-SNMP " . $vers;
+        $os_ver = $1 if ( $descr =~ /^\S+\s+\S+\s+(\S+)\s+/ );
+        if ($vers) {
+            $os_ver = "???" unless defined($os_ver);
+            $os_ver .= " / Net-SNMP " . $vers;
+        }
+        return $os_ver;
     }
-
-    return $os_ver;
 }
 
 sub serial {
