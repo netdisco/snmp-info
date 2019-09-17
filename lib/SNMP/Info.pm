@@ -2095,6 +2095,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer7::CiscoIPS'
             if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.9\.1\.1545/i );
 
+	# Siemens Simatic Scalance 
+        $objtype = 'SNMP::Info::Layer2::Scalance'
+	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
+
         # Generic device classification based upon sysObjectID
         if ( defined($id) and $objtype eq 'SNMP::Info') {
             if ( defined $l3sysoidmap{$id} ) {
