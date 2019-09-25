@@ -13,6 +13,7 @@ Version 3.69 (2019-xx-xx)
   * #353 doc fixes: report all required mibs for each module as based on code
   * #353 include fixes: don't include modules already imported from parent classes
   * #355 fix #252, don't think 6char devices names are mac addresses
+  * #364 strip newline from neoteris os_ver, fixes netdisco #647
 
 Version 3.68 (2019-04-28)
 
