@@ -39,6 +39,7 @@ use SNMP::Info::MAU;
 use SNMP::Info::LLDP;
 use SNMP::Info::Bridge;
 use Socket;
+use Data::Dumper;
 
 @SNMP::Info::Layer2::Scalance::ISA = qw/
     SNMP::Info::Layer2
@@ -85,19 +86,20 @@ $VERSION = '3.68';
     %SNMP::Info::Layer2::MUNGE,
     %SNMP::Info::MAU::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
-    %SNMP::Info::Bridge::MUNGE,    
+    %SNMP::Info::Bridge::MUNGE,
+    # shorten interface description
+    'i_description' => \&munge_i_description,
 );
 
 
 # Method Overrides
 #
 
-# sub layers {
-#     # at least x500 reports value 72, which is layer 4+7
-#     # but it sure is a bridge and can do 2 and 3
-#     #       07654321
-#     return '01001110';
-# }
+sub layers {
+    # at least x500 reports value 72, which is layer 4+7
+    # but it sure is a bridge and can do 2 and 3
+    return '00000111';
+}
 
 sub os {
     return 'scalance';
@@ -144,6 +146,18 @@ sub mac {
 
 sub vendor {
     return 'siemens';
+}
+
+sub munge_i_description {
+    # siemens returns a description including firmware, switch serial, etc
+    my $descr = shift;
+    my $short;
+    ($short) = $descr =~ /.*(?:Port, |VLAN, )(.*)$/;
+    if ( ! $short ) {
+        # splitting at VLAN/PORT failed, just the part after the last comma
+        ($short) = $descr =~ /.*, (.*)$/;
+    }
+    return $short;
 }
 
 sub lldp_ip {
