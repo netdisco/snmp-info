@@ -996,6 +996,12 @@ Subclass for redlion routers.
 
 See documentation in L<SNMP::Info::Layer3::Redlion> for details.
 
+=item SNMP::Info::Layer3::Scalance
+
+Subclass for Siemens Scalance devices.
+
+See documentation in L<SNMP::Info::Layer3::Scalance> for details.
+
 =item SNMP::Info::Layer3::SonicWALL
 
 Subclass for generic SonicWALL devices.

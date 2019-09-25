@@ -96,10 +96,6 @@ $VERSION = '3.68';
     'os_ver' => \&munge_os_ver,
 );
 
-
-# Method Overrides
-#
-
 sub layers {
     # at least x500 reports value 72, which is layer 4+7
     # but it sure is a bridge and can do 2 and 3
@@ -138,19 +134,6 @@ sub munge_os_ver {
 }
 
 sub munge_i_description {
-    # siemens returns a description including firmware, switch serial, etc
-    my $descr = shift;
-    my $short;
-    ($short) = $descr =~ /.*(?:Port, |VLAN, )(.*)$/;
-    if ( ! $short ) {
-        # splitting at VLAN/PORT failed, just the part after the last comma
-        ($short) = $descr =~ /.*, (.*)$/;
-    }
-    return $short;
-}
-
-sub munge_i_description {
-    # siemens returns a description including firmware, switch serial, etc
     my $descr = shift;
     my $short;
     ($short) = $descr =~ /.*(?:Port, |VLAN, )(.*)$/;
@@ -162,9 +145,6 @@ sub munge_i_description {
 }
 
 sub lldp_ip {
-    # simatic does not implement lldpRemManAddrIfSubtype
-    # but remote system names are available
-    # try to resolve them via DNS and use that
     my $scalance = shift;
     my %result;
     my $remotes = $scalance->lldp_rem_sysname();
@@ -257,33 +237,41 @@ These are methods that return scalar value from SNMP
 
 =over
 
+=item $scalance->layers()
+
+Overwrite snmp value, we support 1-3
+
 =item $scalance->os()
 
 Returns scalance
 
-=item $scalance->os_version()
-
-C<automationSwRevision.0>
-
-=item $scalance->serial1
-
-Returns serial number through SNMP C<automationSerialNumber.0>
-
 =item $scalance->vendor()
 
-siemens
+Returns siemens
 
-=item $scalance->ps1_status()
+=item $scalance->model()
 
-Power supply 1 status
-
-=item $scalance->ps2_status()
-
-Power supply 2 status
+extrace a meaningful name from description
 
 =item $scalance->mac()
 
-use the value of C<dot1dBaseBridgeAddress.0>
+use the dot1dBaseBridgeAddress
+
+=item $scalance->munge_os_ver()
+
+clean up os_version string
+
+=item $scalance->munge_i_description()
+
+siemens returns a description including firmware, switch serial, etc
+clean it up. Try to use anything past VLAN or Port. And if this fails 
+past the last comma
+
+=item $scalance->lldp_ip()
+
+simatic does not implement lldpRemManAddrIfSubtype
+but remote system names are available
+try to resolve them via DNS and use that
 
 =back
 
