@@ -1895,6 +1895,14 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::NWSS2300'
             if (
             $desc =~ /^(Nortel\s)??Wireless\sSecurity\sSwitch\s23[568][012]\b/);
+	
+	# Siemens Simatic Scalance 
+        # Scalance overwrites layers later, 
+        # so if we don't add it here (layer3) and at other
+        # it would flip/flop between those
+        $objtype = 'SNMP::Info::Layer3::Scalance'
+	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
+
 
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer3' )
@@ -1903,7 +1911,6 @@ sub device_type {
         {
             $objtype = $l3sysoidmap{$id};
         }
-
         # Layer 2 Supported
     }
     elsif ( $info->has_layer(2) ) {
@@ -2094,6 +2101,13 @@ sub device_type {
         # Cisco IPS, older version which doesn't report layer 3 functionality
         $objtype = 'SNMP::Info::Layer7::CiscoIPS'
             if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.9\.1\.1545/i );
+
+	# Siemens Simatic Scalance 
+        # Scalance overwrites layers later, 
+        # so if we don't add it here (layer3) and at other
+        # it would flip/flop between those
+        $objtype = 'SNMP::Info::Layer3::Scalance'
+	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
 
         # Generic device classification based upon sysObjectID
         if ( defined($id) and $objtype eq 'SNMP::Info') {
