@@ -43,6 +43,8 @@ sub setup : Tests(setup) {
     '_description' => 'Pulse Secure, LLC,Pulse Connect Secure,PSA-3000,8.2R7.2 (build 55673)',
 
     # PULSESECURE-PSG-MIB::ivePSA3000
+    # productVersion newline is intentional, this is what the appliance returns
+    # see netdisco github issue #647
     '_id'             => '.1.3.6.1.4.1.12532.256.2.1',
     '_productVersion' => '"8.3R7.1 (build 65025)
 "',
