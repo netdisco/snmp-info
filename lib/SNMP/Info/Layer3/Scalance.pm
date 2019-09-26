@@ -6,6 +6,7 @@
 # Copyright (c) 2008-2009 Max Baker changes from version 0.8 and beyond.
 #
 # Copyright (c) 2002,2003 Regents of the University of California
+#
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -16,9 +17,10 @@
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the
+#     * Neither the name of the University of California, Santa Cruz , 
+#       the GSI Helmholtzzentrum fuer Schwerionenforschung, nor the
 #       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
+#       derived from this software without specific prior written permission
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -37,7 +39,7 @@ package SNMP::Info::Layer3::Scalance;
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info::Layer2;
+use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
 use SNMP::Info::LLDP;
 use SNMP::Info::Bridge;
@@ -45,7 +47,7 @@ use Socket;
 use Data::Dumper;
 
 @SNMP::Info::Layer3::Scalance::ISA = qw/
-    SNMP::Info::Layer2
+    SNMP::Info::Layer3
     SNMP::Info::MAU
     SNMP::Info::Bridge
     SNMP::Info::LLDP
@@ -58,7 +60,7 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MODEL_MAP, %MUNGE);
 $VERSION = '3.68';
 
 %MIBS = (
-    %SNMP::Info::Layer2::MIBS,
+    %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::Bridge::MIBS,
@@ -67,7 +69,7 @@ $VERSION = '3.68';
 );
 
 %GLOBALS = (
-    %SNMP::Info::Layer2::GLOBALS,
+    %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::MAU::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,    
     %SNMP::Info::Bridge::GLOBALS,    
@@ -78,7 +80,7 @@ $VERSION = '3.68';
 );
 
 %FUNCS = (
-    %SNMP::Info::Layer2::FUNCS,
+    %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::MAU::FUNCS,
     %SNMP::Info::LLDP::FUNCS,    
     %SNMP::Info::Bridge::FUNCS,    
@@ -86,14 +88,10 @@ $VERSION = '3.68';
 
 %MUNGE = (
     # Inherit all the built in munging
-    %SNMP::Info::Layer2::MUNGE,
+    %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::MAU::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::Bridge::MUNGE,
-    # shorten interface description
-    'i_description' => \&munge_i_description,
-    # clean up os version string
-    'os_ver' => \&munge_os_ver,
 );
 
 sub layers {
@@ -127,21 +125,39 @@ sub mac {
     return $scalance->b_mac();
 }
 
-sub munge_os_ver {
-    my $version = shift;
-    $version =~ s/^V//;
-    return $version;
+sub os_ver {
+    # clean up os_ver string
+    my $scalance = shift;
+    my $result = $scalance->SUPER::os_ver();
+    $result =~ s/^V//;
+    return $result;
 }
 
-sub munge_i_description {
-    my $descr = shift;
-    my $short;
-    ($short) = $descr =~ /.*(?:Port, |VLAN, )(.*)$/;
-    if ( ! $short ) {
-        # splitting at VLAN/PORT failed, just the part after the last comma
-        ($short) = $descr =~ /.*, (.*)$/;
+sub i_description {
+    # munge interface descriptions, from
+    #
+    # Siemens, SIMATIC NET, SCALANCE XR524-8C 2PS, 6GK5 524-8GS00-4AR2, 
+    #    HW: Version 1, FW: Version V06.02.02, SERIAL, Ethernet Port, R0/S0/X1 P16
+    #
+    # to
+    #
+    # R0/S0/X1 P16
+
+    my $scalance = shift;
+
+    my $orig = $scalance->SUPER::i_description();
+    my %result;
+    foreach my $iid ( keys %$orig ) {
+        my $descr = $orig->{$iid};
+        my $short;
+        ($short) = $descr =~ /.*(?:Port, |VLAN, )(.*)$/;
+        if ( ! $short ) {
+            # splitting at VLAN/PORT failed, just the part after the last comma
+            ($short) = $descr =~ /.*, (.*)$/;
+        }
+        $result{$iid} = $short;
     }
-    return $short;
+    return \%result;
 }
 
 sub lldp_ip {
@@ -257,11 +273,11 @@ extrace a meaningful name from description
 
 use the dot1dBaseBridgeAddress
 
-=item $scalance->munge_os_ver()
+=item $scalance->os_ver()
 
 clean up os_version string
 
-=item $scalance->munge_i_description()
+=item $scalance->i_description()
 
 siemens returns a description including firmware, switch serial, etc
 clean it up. Try to use anything past VLAN or Port. And if this fails 
@@ -275,9 +291,9 @@ try to resolve them via DNS and use that
 
 =back
 
-=head2 Globals imported from SNMP::Info::Layer2
+=head2 Globals imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::MAU
 
@@ -302,12 +318,14 @@ try to resolve them via DNS and use that.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info::Layer2
+=head2 Table Methods imported from SNMP::Info::Layer3
 
-See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
 
 =cut
+
+# vim: filetype=perl ts=4 sw=4 sta et sts=4 ai
