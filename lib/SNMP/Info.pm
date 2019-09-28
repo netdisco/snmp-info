@@ -2182,7 +2182,7 @@ Returns an object of a more-specific subclass.
 
  my $info = new SNMP::Info(...);
  # Returns more specific object type
- $info = $info->specific();
+ my $specific = $info->specify();
 
 Usually this method is called internally from new(AutoSpecify => 1)
 

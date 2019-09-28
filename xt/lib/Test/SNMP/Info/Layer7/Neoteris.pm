@@ -43,8 +43,11 @@ sub setup : Tests(setup) {
     '_description' => 'Pulse Secure, LLC,Pulse Connect Secure,PSA-3000,8.2R7.2 (build 55673)',
 
     # PULSESECURE-PSG-MIB::ivePSA3000
-    '_id'   => '.1.3.6.1.4.1.12532.256.2.1',
-    'store' => {},
+    # _pulse_os_ver newline is intentional, this is what the appliance returns
+    # see netdisco github issue #647
+    '_id'             => '.1.3.6.1.4.1.12532.256.2.1',
+    '_pulse_os_ver' => "8.3R7.1 (build 65025)\n",
+    'store'           => {},
   };
   $test->{info}->cache($cache_data);
 }
@@ -54,6 +57,13 @@ sub vendor : Tests(2) {
 
   can_ok($test->{info}, 'vendor');
   is($test->{info}->vendor(), 'pulsesecure', q(Vendor returns 'pulsesecure'));
+}
+
+sub os_ver  : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'os_ver');
+  is($test->{info}->os_ver(), '8.3R7.1 (build 65025)', q(os_ver returns '8.3R7.1 (build 65025)'));
 }
 
 sub os : Tests(2) {
