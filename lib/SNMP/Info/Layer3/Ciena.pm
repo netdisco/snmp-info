@@ -87,9 +87,10 @@ sub i_vlan {
     my $i_vlan = {};
     my $pvid = $ciena->wwpLeosEtherIngressPvid() || undef;
 
+    my $bp_index = $ciena->bp_index;
     if (defined $pvid) {
         foreach my $i (keys %$pvid) {
-            $i_vlan->{$i+10000} = $pvid->{$i};
+            $i_vlan->{$bp_index->{$i}} = $pvid->{$i};
         }
     }
     return $i_vlan;
@@ -101,13 +102,9 @@ sub i_vlan_membership {
 
     my $vlans = $ciena->wwpLeosVlanMemberPortId();
 
-    my $i_name = $ciena->ifName;
-    my $r_i_name = {};
-    foreach my $iface (keys %$i_name) {
-        $r_i_name->{$i_name->{$iface}} = $iface;
-    }
+    my $bp_index = $ciena->bp_index;
     foreach my $vlan (keys %$vlans) {
-        push @{$i_vlan_membership->{$r_i_name->{$vlans->{$vlan}}}} , (split(/\./,$vlan))[0];
+        push @{$i_vlan_membership->{$bp_index->{$vlans->{$vlan}}}} , (split(/\./,$vlan))[0];
     }
     return $i_vlan_membership;
 }
