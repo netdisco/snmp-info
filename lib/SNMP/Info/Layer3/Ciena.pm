@@ -52,7 +52,8 @@ $VERSION = '3.68';
 );
 
 %GLOBALS = (
-    'serial'    => 'wwpLeosSystemSerialNumber',
+    %SNMP::Info::Layer3::GLOBALS,
+    'ciena_serial'    => 'wwpLeosSystemSerialNumber',
     'mac'       => 'wwpLeosChassisMacAddress',
     'box_descr' => 'wwpLeosPhyBladeBoardDesc',
     'version'   => 'wwpLeosBladeRunPackageVer'
@@ -80,6 +81,11 @@ sub os_ver {
     my $ciena = shift;
     my $version = $ciena->wwpLeosBladeRunPackageVer || {};
     return values(%$version);
+}
+
+sub serial {
+    my $ciena = shift;
+    return $ciena->ciena_serial();
 }
 
 sub i_vlan {
