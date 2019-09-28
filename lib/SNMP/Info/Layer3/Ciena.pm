@@ -92,11 +92,27 @@ sub i_vlan {
 sub i_vlan_membership {
     my $ciena = shift;
     my $i_vlan_membership = {};
- 
+
     my $vlans = $ciena->wwpLeosVlanMemberPortId();
 
+    my $i_name = $ciena->i_name;
     foreach my $vlan (keys %$vlans) {
-        push @{$i_vlan_membership->{$vlans->{$vlan}+10000}} , (split(/\./,$vlan))[0];
+        foreach my $iface (keys %$i_name) {
+            if ($vlans->{$vlan} eq $i_name->{$iface}) {
+                push @{$i_vlan_membership->{$i_name->{$iface}}} , (split(/\./,$vlan))[0];
+            }
+        }
     }
     return $i_vlan_membership;
+}
+
+sub qb_fw_vlan {
+    my $ciena = shift;
+    my $qb_fw_vlan = {};
+    my $learn_entries = $ciena->wwpLeosFlowLearnType();
+    foreach my $entry (keys %$learn_entries) {
+        my @params = (split(/\./, $entry));
+        $qb_fw_vlan->{join('.', @params[1..6])} = $params[8];
     }
+    return $qb_fw_vlan;
+}
