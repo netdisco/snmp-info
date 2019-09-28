@@ -75,6 +75,12 @@ sub os {
     return 'SAOS';
 }
 
+use Data::Dumper;
+sub os_ver {
+    my $ciena = shift;
+    my $version = $ciena->wwpLeosBladeRunPackageVer || {};
+    return values(%$version);
+}
 
 sub i_vlan {
     my $ciena = shift;
@@ -95,13 +101,13 @@ sub i_vlan_membership {
 
     my $vlans = $ciena->wwpLeosVlanMemberPortId();
 
-    my $i_name = $ciena->i_name;
+    my $i_name = $ciena->ifName;
+    my $r_i_name = {};
+    foreach my $iface (keys %$i_name) {
+        $r_i_name->{$i_name->{$iface}} = $iface;
+    }
     foreach my $vlan (keys %$vlans) {
-        foreach my $iface (keys %$i_name) {
-            if ($vlans->{$vlan} eq $i_name->{$iface}) {
-                push @{$i_vlan_membership->{$i_name->{$iface}}} , (split(/\./,$vlan))[0];
-            }
-        }
+        push @{$i_vlan_membership->{$r_i_name->{$vlans->{$vlan}}}} , (split(/\./,$vlan))[0];
     }
     return $i_vlan_membership;
 }
