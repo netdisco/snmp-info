@@ -43,12 +43,13 @@ $VERSION = '3.68';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    'WWP-LEOS-SW-XGRADE-MIB'    => 'wwpLeosBladeRunPackageVer',
-    'WWP-LEOS-BLADE-MIB'        => 'wwpLeosBladeId',
-    'WWP-LEOS-CHASSIS-MIB'      => 'wwpLeosChassisDeviceId',
-    'WWP-LEOS-FLOW-MIB'         => 'wwpLeosFlowLearnType',
-    'WWP-LEOS-PORT-MIB'         => 'wwpLeosEtherIngressPvid',
-    'WWP-LEOS-VLAN-TAG-MIB'     => 'wwpLeosNumVlans'
+    'WWP-LEOS-SW-XGRADE-MIB' => 'wwpLeosBladeRunPackageVer',
+    'WWP-LEOS-BLADE-MIB'     => 'wwpLeosBladeId',
+    'WWP-LEOS-CHASSIS-MIB'   => 'wwpLeosChassisDeviceId',
+    'WWP-LEOS-FLOW-MIB'      => 'wwpLeosFlowLearnType',
+    'WWP-LEOS-PORT-MIB'      => 'wwpLeosEtherIngressPvid',
+    'WWP-LEOS-VLAN-TAG-MIB'  => 'wwpLeosNumVlans',
+    'WWP-PRODUCTS-MIB'       => 'wwpProductsMIB'
 );
 
 %GLOBALS = (
@@ -71,7 +72,7 @@ sub vendor {
 }
 
 sub os {
-    return 'SAOS';
+    return 'saos';
 }
 
 sub os_ver {
@@ -162,6 +163,8 @@ Subclass for Ciena Devices running SAOS
 =item F<WWP-LEOS-PORT-MIB>
 
 =item F<WWP-LEOS-VLAN-TAG-MIB>
+
+=item F<WWP-PRODUCTS-MIB>
 
 =back
 
