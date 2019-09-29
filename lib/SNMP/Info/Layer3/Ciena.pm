@@ -74,7 +74,6 @@ sub os {
     return 'SAOS';
 }
 
-use Data::Dumper;
 sub os_ver {
     my $ciena = shift;
     my $version = $ciena->wwpLeosBladeRunPackageVer || {};
@@ -86,6 +85,7 @@ sub serial {
     return $ciena->ciena_serial();
 }
 
+# Override lldp_if function to translate the port with bp_index
 sub lldp_if {
     my $ciena = shift;
     my $lldp = $ciena->SUPER::lldp_if;
@@ -102,6 +102,7 @@ sub i_vlan {
     my $i_vlan = {};
     my $pvid = $ciena->wwpLeosEtherIngressPvid() || undef;
 
+    # bp_index needed to resolve correct port id
     my $bp_index = $ciena->bp_index;
     if (defined $pvid) {
         foreach my $i (keys %$pvid) {
@@ -116,7 +117,7 @@ sub i_vlan_membership {
     my $i_vlan_membership = {};
 
     my $vlans = $ciena->wwpLeosVlanMemberPortId();
-
+    # bp_index needed to resolve correct port id
     my $bp_index = $ciena->bp_index;
     foreach my $vlan (keys %$vlans) {
         push @{$i_vlan_membership->{$bp_index->{$vlans->{$vlan}}}} , (split(/\./,$vlan))[0];
@@ -134,3 +135,102 @@ sub qb_fw_vlan {
     }
     return $qb_fw_vlan;
 }
+
+=head1 DESCRIPTION
+Subclass for Ciena Devices running SAOS
+
+=head2 Inherited Classes
+
+=over
+
+=item SNMP::Info::Layer3
+
+=back
+
+=head2 Required MIBs
+
+=over
+
+=item F<WWP-LEOS-SW-XGRADE-MIB>
+
+=item F<WWP-LEOS-BLADE-MIB>
+
+=item F<WWP-LEOS-CHASSIS-MIB>
+
+=item F<WWP-LEOS-FLOW-MIB>
+
+=item F<WWP-LEOS-PORT-MIB>
+
+=item F<WWP-LEOS-VLAN-TAG-MIB>
+
+=back
+
+=head2 Inherited Classes' MIBs
+
+See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
+
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=over
+
+=item $ciena->vendor()
+
+Returns 'ciena'
+
+=item $ciena->os()
+
+Returns 'saos'
+
+=item $ciena->os_ver()
+
+Returns the running software package extracted with C<wwpLeosBladeRunPackageVer>
+
+=item $ciena->serial()
+
+Returns serial number
+(C<wwpLeosSystemSerialNumber>)
+
+=item $ciena->mac()
+
+Returns the MAC address used by this bridge when it must be referred
+to in a unique fashion.
+
+(C<dot1dBaseBridgeAddress>)
+
+
+=back
+
+=head2 Globals imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
+
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=over
+
+=item $ciena->lldp_if()
+
+Returns the mapping to the SNMP Interface Table. Overridden to translate to correct ethernet port with bp_index
+
+=item $ciena->i_vlan()
+
+Returns a mapping between C<ifIndex> and the PVID or default VLAN.
+
+=item $ciena->i_vlan_membership()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs.
+
+=item $ciena->qb_fw_vlan()
+
+Returns reference to hash of forwarding table entries VLAN ID, using C<wwpLeosFlowLearnType>
+
+=back
+
+
+
