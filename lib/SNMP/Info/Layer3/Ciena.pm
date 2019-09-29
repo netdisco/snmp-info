@@ -60,7 +60,13 @@ $VERSION = '3.68';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    'v_name'    => 'wwpLeosVlanName'
+    'v_name'     => 'wwpLeosVlanName',
+    'ps_type'    => 'wwpLeosChassisPowerSupplyType',
+    'ps_status'  => 'wwpLeosChassisPowerSupplyState',
+    'ps_name'    => 'wwpLeosChassisPowerSupplyModuleLabel',
+    'fan_type'   => 'wwpLeosChassisFanModuleType',
+    'fan_status' => 'wwpLeosChassisFanModuleStatus',
+    'fan_name'   => 'wwpLeosChassisFanModuleNum'
 );
 
 %MUNGE = (
@@ -137,6 +143,45 @@ sub qb_fw_vlan {
     return $qb_fw_vlan;
 }
 
+sub fan {
+    my $ciena = shift;
+
+    my $fan_status = $ciena->fan_status || {};
+    my $fan_type = $ciena->fan_type;
+    my $fan_name = $ciena->fan_name;
+    my @messages;
+
+    foreach my $fan (keys %$fan_status) {
+        if ($fan_status->{$fan} ne "ok") {
+            push @messages, sprintf("%s fan %s failed.", $fan_type->{$fan}, $fan_name->{$fan});
+        }
+    }
+    return sprintf("%s fans OK", scalar keys %$fan_status) if scalar @messages  == 0;
+
+    return join(", ", @messages);
+}
+sub ps1_type {
+    my $ciena = shift;
+    my $ps_type = $ciena->ps_type;
+    return $ps_type->{'1'} if defined $ps_type->{'1'};
+}
+
+sub ps1_status {
+    my $ciena = shift;
+    my $ps_status = $ciena->ps_status;
+    return $ps_status->{'1'} if defined $ps_status->{'1'};
+}
+sub ps2_type {
+    my $ciena = shift;
+    my $ps_type = $ciena->ps_type;
+    return $ps_type->{'2'} if defined $ps_type->{'2'};
+}
+
+sub ps2_status {
+    my $ciena = shift;
+    my $ps_status = $ciena->ps_status;
+    return $ps_status->{'2'} if defined $ps_status->{'2'};
+}
 =head1 DESCRIPTION
 Subclass for Ciena Devices running SAOS
 
@@ -202,6 +247,26 @@ to in a unique fashion.
 
 (C<dot1dBaseBridgeAddress>)
 
+=item $huawei->fan()
+
+Return the status of all fans. Returns a string indicating the number of fans 'OK'  or
+identification of any fan without a 'normal' operating status.
+
+=item $ciena->ps1_status()
+
+Return the status of the first power supply
+
+=item $ciena->ps1_type()
+
+Return the type of the first power supply
+
+=item $ciena->ps2_status()
+
+Return the status of the second power supply
+
+=item $ciena->ps2_type()
+
+Return the type of the second power supply
 
 =back
 
@@ -233,7 +298,28 @@ IDs.
 
 Returns reference to hash of forwarding table entries VLAN ID, using C<wwpLeosFlowLearnType>
 
+=item $ciena->ps_name()
+
+Returns reference to hash of the power supplies and their names.
+
+=item $ciena->ps_type()
+
+Returns reference to hash of the power supplies and their type (ex. AC, DC, etc.)
+
+=item $ciena->ps_status()
+
+Returns reference to hash of the power supplies and their status.
+
+=item $ciena->fan_name()
+
+Returns reference to hash of fans and their names. In this case, it is simply a number.
+
+=item $ciena->fan_type()
+
+Returns reference to hash of fans and their types (ex. fixed, modular, etc.)
+
+=item $ciena->fan_status)
+
+Returns reference to hash of fans and their status
+
 =back
-
-
-
