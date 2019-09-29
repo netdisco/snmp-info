@@ -53,10 +53,8 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    'ciena_serial'    => 'wwpLeosSystemSerialNumber',
-    'mac'       => 'wwpLeosChassisMacAddress',
-    'box_descr' => 'wwpLeosPhyBladeBoardDesc',
-    'version'   => 'wwpLeosBladeRunPackageVer'
+    'ciena_serial' => 'wwpLeosSystemSerialNumber',
+    'mac'          => 'dot1dBaseBridgeAddress'
 );
 
 %FUNCS = (
@@ -86,6 +84,17 @@ sub os_ver {
 sub serial {
     my $ciena = shift;
     return $ciena->ciena_serial();
+}
+
+sub lldp_if {
+    my $ciena = shift;
+    my $lldp = $ciena->SUPER::lldp_if;
+    my $bp_index = $ciena->bp_index;
+    foreach my $iface (keys %$lldp) {
+        my $orig_iface = $lldp->{$iface};
+        $lldp->{$iface} = $bp_index->{$orig_iface};
+    }
+    return $lldp;
 }
 
 sub i_vlan {
