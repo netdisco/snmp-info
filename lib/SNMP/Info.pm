@@ -774,6 +774,12 @@ Subclass for CheckPoint devices.
 
 See documentation in L<SNMP::Info::Layer3::CheckPoint> for details.
 
+=item SNMP::Info::Layer3::Ciena
+
+Subclass for Ciena devices.
+
+See documentation in L<SNMP::Info::Layer3::Ciena> for details.
+
 =item SNMP::Info::Layer3::Cisco
 
 This is a simple wrapper around layer 3 for IOS devices and the base layer 3
