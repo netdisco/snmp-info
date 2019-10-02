@@ -32,9 +32,9 @@ use strict;
 use warnings;
 use Exporter;
 
-use SNMP::Info;
+use SNMP::Info::Layer2;
 
-@SNMP::Info::DocsisCM::ISA       = qw/SNMP::Info Exporter/;
+@SNMP::Info::DocsisCM::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::DocsisCM::EXPORT_OK = qw//;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
@@ -42,17 +42,19 @@ our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 $VERSION = '3.68';
  
 %MIBS = (
+    %SNMP::Info::Layer2::MIBS
 );
 
 %GLOBALS = (
-    %SNMP::Info::GLOBALS
+    %SNMP::Info::Layer2::GLOBALS
 );
 
 %FUNCS  = (
+    %SNMP::Info::Layer2::FUNCS
 );
 
 %MUNGE = (
-    %SNMP::Info::MUNGE
+    %SNMP::Info::Layer2::MUNGE
 );
 
 sub vendor {
