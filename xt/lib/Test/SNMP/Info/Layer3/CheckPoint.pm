@@ -48,6 +48,7 @@ sub setup : Tests(setup) {
   # Start with a common cache that will serve most tests
   my $cache_data = {
     '_layers' => 76,
+    # descr is from older ipso based devices
     '_description' => 'i386 FreeBSD 2.1.5. Check Point FireWall-1 Version',
 
     # CHECKPOINT-MIB::fw
@@ -72,7 +73,7 @@ sub vendor : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'vendor');
-  is($test->{info}->vendor(), 'Checkpoint', q(Vendor returns 'Checkpoint')); 
+  is($test->{info}->vendor(), 'checkpoint', q(Vendor returns 'checkpoint')); 
 }
 
 sub os_ver : Tests(2) {

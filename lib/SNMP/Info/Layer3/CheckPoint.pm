@@ -54,10 +54,10 @@ $VERSION = '3.68';
     %SNMP::Info::Layer3::GLOBALS,
     'netsnmp_vers'   => 'versionTag',
     'hrSystemUptime' => 'hrSystemUptime',
-    'serial_number' => 'svnApplianceSerialNumber',
-    'product_name' => 'svnApplianceProductName',
-    'manufacturer' => 'svnApplianceManufacturer',
-    'version' => 'svnVersion',
+    'serial_number'  => 'svnApplianceSerialNumber',
+    'product_name'   => 'svnApplianceProductName',
+    'manufacturer'   => 'svnApplianceManufacturer',
+    'version'        => 'svnVersion',
 );
 
 %FUNCS = (
@@ -75,7 +75,7 @@ sub vendor {
     my $ckp = shift;
 
     if (defined $ckp->manufacturer) {
-        return $ckp->manufacturer;
+        return lc $ckp->manufacturer;
     } else {
         return 'checkpoint';
     }
@@ -216,7 +216,9 @@ Subclass for CheckPoint Devices.
 
 =head2 WARNING
 
-To correctly and completely work, you should add the following line in the file C</etc/snmp/snmpd.local.conf> on each of your CheckPoint devices:
+To correctly and completely work on IPSO based devices, you should
+add the following line in the file C</etc/snmp/snmpd.local.conf> on each
+of your CheckPoint devices:
 
  # Netdisco SNMP configuration
  extend  ckpVersion /opt/CPsuite-R77/fw1/bin/fw ver
@@ -258,11 +260,12 @@ These are methods that return scalar value from SNMP
 
 =item $ckp->vendor()
 
-Returns 'checkpoint'.
+Returns C<svnApplianceManufacturer> in lowercase, else 'checkpoint'.
 
 =item $ckp->model()
 
-Return the model type of the CheckPoint device (Based on the sysObjectOID translation).
+Returns C<svnApplianceProductName>, else the model type based on the
+sysObjectOID translation.
 
 =item $ckp->os()
 
@@ -270,8 +273,8 @@ Returns the OS extracted from C<sysDescr>.
 
 =item $ckp->os_ver()
 
-Returns the software version extracted from C<sysDescr>, along
-with the Net-SNMP version.
+Returns C<svnVersion>, else the software version is extracted from
+C<sysDescr>, along with the Net-SNMP version.
 
 =item $ckp->uptime()
 
@@ -281,8 +284,9 @@ are based on agent uptime, so use orig_uptime().
 
 =item $ckp->serial()
 
-Return the serial number of the device if the SNMP server is configured as indicated previously.
-Return '' in other case.
+Returns <svnApplianceSerialNumber>, else the serial number of the
+device if the SNMP server is configured as indicated previously.
+Returns '' in other case.
 
 =item $ckp->layers()
 
@@ -316,6 +320,10 @@ Ignores loopback
 See documentation in L<SNMP::Info::Layer3> for details.
 
 =head1 NOTES
+
+If your device is not recognized by SNMP::Info as being in the class
+L<SNMP::Info::Layer3::CheckPoint> you might need additional snmp
+configuration on the CheckPoint device.
 
 In order to cause SNMP::Info to classify your device into this class, it
 may be necessary to put a configuration line into your F<snmpd.conf>
