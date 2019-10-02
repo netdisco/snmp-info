@@ -344,6 +344,12 @@ SNMP Interface for DOCSIS CMTS
 
 See documentation in L<SNMP::Info::DocsisHE> for details.
 
+=item SNMP::Info::DocsisCM
+
+SNMP Interface for DOCSIS Cable Modems
+
+See documentation in L<SNMP::Info::DocsisCM> for details.
+
 =item SNMP::Info::EDP
 
 Extreme Discovery Protocol.  F<EXTREME-EDP-MIB>
