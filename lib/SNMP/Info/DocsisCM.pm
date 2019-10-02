@@ -1,4 +1,4 @@
-# SNMP::Info::Layer3::Ciena - SNMP Interface to Ciena Devices
+# SNMP::Info::DocsisCM - SNMP Interface to DOCSIS Cable Modems
 #
 # Copyright (c) 2019 by The Netdisco Developer Team.
 #
