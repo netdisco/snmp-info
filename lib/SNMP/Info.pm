@@ -1723,7 +1723,6 @@ sub device_type {
         266   => 'SNMP::Info::Layer2::Nexans',
         664   => 'SNMP::Info::Layer2::Adtran',
         674   => 'SNMP::Info::Layer3::Dell',
-        1166  => 'SNMP::Info::DocsisCM',
         1872  => 'SNMP::Info::Layer3::AlteonAD',
         1890  => 'SNMP::Info::Layer3::Redlion',
         1916  => 'SNMP::Info::Layer3::Extreme',
@@ -1733,12 +1732,10 @@ sub device_type {
         2925  => 'SNMP::Info::Layer1::Cyclades',
         3224  => 'SNMP::Info::Layer3::Netscreen',
         3375  => 'SNMP::Info::Layer3::F5',
-        4115  => 'SNMP::Info::DocsisCM',
         4526  => 'SNMP::Info::Layer2::Netgear',
         5624  => 'SNMP::Info::Layer3::Enterasys',
         6141 => 'SNMP::Info::Layer3::Ciena',
         6486  => 'SNMP::Info::Layer3::AlcatelLucent',
-        8595  => 'SNMP::Info::DocsisCM',
         9303  => 'SNMP::Info::Layer3::PacketFront',
         10418 => 'SNMP::Info::Layer1::Cyclades',
         11898 => 'SNMP::Info::Layer2::Orinoco',
@@ -2035,6 +2032,11 @@ sub device_type {
 
         $objtype = 'SNMP::Info::Layer2::ZyXEL_DSLAM'
             if ( $desc =~ /8-port .DSL Module\(Annex .\)/i );
+
+        # Generic DOCSIS Cable Modem override
+        # If sysDesc follows the DOCSIS standard
+        $objtype = 'SNMP::Info::DocsisCM'
+            if ( $desc =~ /<<HW_REV: .*; VENDOR: .*; BOOTR: .*; SW_REV: .*; MODEL: .*>>/i);
 
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer2' )
