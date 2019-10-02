@@ -774,6 +774,12 @@ Subclass for CheckPoint devices.
 
 See documentation in L<SNMP::Info::Layer3::CheckPoint> for details.
 
+=item SNMP::Info::Layer3::Ciena
+
+Subclass for Ciena devices.
+
+See documentation in L<SNMP::Info::Layer3::Ciena> for details.
+
 =item SNMP::Info::Layer3::Cisco
 
 This is a simple wrapper around layer 3 for IOS devices and the base layer 3
@@ -1677,6 +1683,7 @@ sub device_type {
         4874 => 'SNMP::Info::Layer3::ERX',
         5624 => 'SNMP::Info::Layer3::Enterasys',
         6027 => 'SNMP::Info::Layer3::Force10',
+        6141 => 'SNMP::Info::Layer3::Ciena',
         6486 => 'SNMP::Info::Layer3::AlcatelLucent',
         6527 => 'SNMP::Info::Layer3::Timetra',
         6876 => 'SNMP::Info::Layer3::VMware',
@@ -1727,6 +1734,7 @@ sub device_type {
         3375  => 'SNMP::Info::Layer3::F5',
         4526  => 'SNMP::Info::Layer2::Netgear',
         5624  => 'SNMP::Info::Layer3::Enterasys',
+        6141 => 'SNMP::Info::Layer3::Ciena',
         6486  => 'SNMP::Info::Layer3::AlcatelLucent',
         9303  => 'SNMP::Info::Layer3::PacketFront',
         10418 => 'SNMP::Info::Layer1::Cyclades',

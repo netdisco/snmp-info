@@ -83,6 +83,7 @@ lib/SNMP/Info/Layer3/C3550.pm
 lib/SNMP/Info/Layer3/C4000.pm
 lib/SNMP/Info/Layer3/C6500.pm
 lib/SNMP/Info/Layer3/CheckPoint.pm
+lib/SNMP/Info/Layer3/Ciena.pm
 lib/SNMP/Info/Layer3/Cisco.pm
 lib/SNMP/Info/Layer3/CiscoASA.pm
 lib/SNMP/Info/Layer3/CiscoFWSM.pm
