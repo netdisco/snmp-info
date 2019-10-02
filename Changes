@@ -8,6 +8,7 @@ Version 3.69 (2019-xx-xx)
   * #353 sprinkle "use warnings" and "use strict" around
   * poe power usage & mac address for ciscosb
   * #359 detect newer ios-xe using codenames (Christoph Neuhaus)
+  * #358 prefer checkpoint mib over net-snmp mib (earendilfr) 
 
   [BUG FIXES]
 
