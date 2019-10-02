@@ -120,3 +120,5 @@ Returns 'cm', as the actual os is vendor and model dependent.
 
 Returns the version of the software, extracted from the SW_REV field.
 
+=back
+
