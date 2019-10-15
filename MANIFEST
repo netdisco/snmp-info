@@ -26,6 +26,7 @@ lib/SNMP/Info/CiscoStack.pm
 lib/SNMP/Info/CiscoStats.pm
 lib/SNMP/Info/CiscoStpExtensions.pm
 lib/SNMP/Info/CiscoVTP.pm
+lib/SNMP/Info/DocsisCM.pm
 lib/SNMP/Info/DocsisHE.pm
 lib/SNMP/Info/EDP.pm
 lib/SNMP/Info/Entity.pm

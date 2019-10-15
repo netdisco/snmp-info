@@ -344,6 +344,12 @@ SNMP Interface for DOCSIS CMTS
 
 See documentation in L<SNMP::Info::DocsisHE> for details.
 
+=item SNMP::Info::DocsisCM
+
+SNMP Interface for DOCSIS Cable Modems
+
+See documentation in L<SNMP::Info::DocsisCM> for details.
+
 =item SNMP::Info::EDP
 
 Extreme Discovery Protocol.  F<EXTREME-EDP-MIB>
@@ -2045,6 +2051,11 @@ sub device_type {
 
         $objtype = 'SNMP::Info::Layer2::ZyXEL_DSLAM'
             if ( $desc =~ /8-port .DSL Module\(Annex .\)/i );
+
+        # Generic DOCSIS Cable Modem override
+        # If sysDesc follows the DOCSIS standard
+        $objtype = 'SNMP::Info::DocsisCM'
+            if ( $desc =~ /<<HW_REV: .*; VENDOR: .*; BOOTR: .*; SW_REV: .*; MODEL: .*>>/i);
 
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer2' )
