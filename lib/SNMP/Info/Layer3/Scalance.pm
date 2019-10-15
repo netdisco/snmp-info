@@ -58,7 +58,7 @@ use Data::Dumper;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MODEL_MAP, %MUNGE);
 
-$VERSION = '3.69';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
