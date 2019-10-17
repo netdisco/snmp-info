@@ -171,7 +171,7 @@ Version 3.59 (2018-05-01)
 
   [BUG FIXES]
 
-  * Capture fan ans power supply status in L3::Huawei when description is
+  * Capture fan and power supply status in L3::Huawei when description is
     not available
 
 Version 3.58 (2018-04-29)
@@ -375,13 +375,13 @@ version 3.41 (2018-02-01)
 
   [BUG FIXES]
 
-  * Fixes to distriution metadata
+  * Fixes to distribution metadata
 
 version 3.40 (2018-01-28)
 
   [ENHANCEMENTS]
 
-  * #240 Support for CheckPoint devies through SNMP
+  * #240 Support for CheckPoint devices through SNMP
   * #240 Cisco SB switches fixup
   * #244 Add Adtran support
   * #241 Vyatta/VyOS support
