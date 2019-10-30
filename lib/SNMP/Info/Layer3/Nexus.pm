@@ -55,7 +55,7 @@ $VERSION = '3.70';
 %MIBS = (
 	%SNMP::Info::Layer3::CiscoSwitch::MIBS,
 	'CISCO-ENTITY-VENDORTYPE-OID-MIB'   => 'cevMIBObjects',
-  'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
+    'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
 );
 
 %GLOBALS = (
@@ -135,6 +135,15 @@ sub model {
 
 	$model =~ s/^cevChassis//i;
 	return $model;
+}
+
+# nx-os 6 seems to swap the data of lldpLocPortDesc with that of
+# lldpLocPortId, so remap it to make the main lldp module happy.
+# nx-os 7 has fixed this.
+sub lldp_lport_desc {
+    my $nexus         = shift;
+
+    return $nexus->SUPER::lldp_lport_desc;
 }
 
 # Reported version 6.x of NX-OS doesn't use the IPv4 address as index
@@ -376,6 +385,12 @@ Gives netmask setting for IP table entry.
 Gives broadcast address for IP table entry.
 
 (C<ipAdEntBcastAddr>)
+
+=item $nexus->lldp_lport_desc()
+
+On nx-os 6 only this will return data from C<lldpLocPortId> instead of
+the expected C<lldpLocPortDesc>. For all other nx-os versions uses the
+function from L<SNMP::Info::LLDP>.
 
 =back
 
