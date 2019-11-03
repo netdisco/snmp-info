@@ -59,6 +59,7 @@ $VERSION = '3.70';
     'lldp_lman_addr' => 'lldpLocManAddrIfId',
 
     # LLDP-MIB::LldpLocPortEntry
+    'lldp_lport_id'   => 'lldpLocPortId',
     'lldp_lport_desc' => 'lldpLocPortDesc',
 
     # LLDP-MIB::lldpRemTable

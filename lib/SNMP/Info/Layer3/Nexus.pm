@@ -139,11 +139,17 @@ sub model {
 
 # nx-os 6 seems to swap the data of lldpLocPortDesc with that of
 # lldpLocPortId, so remap it to make the main lldp module happy.
-# nx-os 7 has fixed this.
+# nx-os 7 behaves as expected.
 sub lldp_lport_desc {
     my $nexus         = shift;
+    my $osver         = $nexus->os_ver();
 
-    return $nexus->SUPER::lldp_lport_desc;
+    if (defined ($osver)) {
+        if ($osver =~ /^6.*/) {
+            return $nexus->SUPER::lldp_lport_id();
+        }
+    }
+    return $nexus->SUPER::lldp_lport_desc();
 }
 
 # Reported version 6.x of NX-OS doesn't use the IPv4 address as index
