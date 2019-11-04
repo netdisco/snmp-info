@@ -95,6 +95,7 @@ $VERSION = '3.70';
     'lldp_rem_sysname'   => \&SNMP::Info::munge_null,
     'lldp_rem_sysdesc'   => \&SNMP::Info::munge_null,
     'lldp_rem_port_desc' => \&SNMP::Info::munge_null,
+    'lldp_lport_id'      => \&SNMP::Info::munge_null,
     'lldp_lport_desc'    => \&SNMP::Info::munge_null,
     'lldp_sys_cap'       => \&SNMP::Info::munge_bits,
     'lldp_rem_sys_cap'   => \&SNMP::Info::munge_bits,

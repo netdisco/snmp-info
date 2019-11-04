@@ -40,7 +40,7 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 @SNMP::Info::Layer3::Nexus::ISA = qw/
 	SNMP::Info::Layer3::CiscoSwitch
 	Exporter
-	/;
+/;
 
 @SNMP::Info::Layer3::Nexus::EXPORT_OK = qw//;
 
@@ -53,14 +53,14 @@ $VERSION = '3.70';
 # The @ISA order should be reverse of these orders.
 
 %MIBS = (
-	%SNMP::Info::Layer3::CiscoSwitch::MIBS,
-	'CISCO-ENTITY-VENDORTYPE-OID-MIB'   => 'cevMIBObjects',
+    %SNMP::Info::Layer3::CiscoSwitch::MIBS,
+    'CISCO-ENTITY-VENDORTYPE-OID-MIB'   => 'cevMIBObjects',
     'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
 );
 
 %GLOBALS = (
-	%SNMP::Info::Layer3::CiscoSwitch::GLOBALS,
-	'mac' => 'dot1dBaseBridgeAddress',
+    %SNMP::Info::Layer3::CiscoSwitch::GLOBALS,
+    'mac' => 'dot1dBaseBridgeAddress',
 );
 
 %FUNCS = (
