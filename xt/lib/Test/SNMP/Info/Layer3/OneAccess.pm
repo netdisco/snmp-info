@@ -33,14 +33,6 @@ use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info::Layer3::OneAccess;
 
-# Remove this startup override once we have full method coverage
-sub startup : Tests(startup => 1) {
-  my $test = shift;
-  $test->SUPER::startup();
-
-  $test->todo_methods(1);
-}
-
 sub setup : Tests(setup) {
   my $test = shift;
   $test->SUPER::setup;
