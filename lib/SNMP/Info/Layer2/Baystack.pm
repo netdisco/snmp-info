@@ -552,10 +552,6 @@ Returns reference to the map between IID and physical Port.
 
   The physical port name is returned as slot.port.
 
-=item $baystack->i_ignore()
-
-Returns reference to hash of IIDs to ignore.
-
 =item $baystack->i_mac()
 
 Returns the C<ifPhysAddress> table entries.
