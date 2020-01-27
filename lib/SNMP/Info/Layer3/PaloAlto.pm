@@ -129,6 +129,10 @@ Subclass for Palo Alto devices
 
 =over
 
+=item F<PAN-COMMON-MIB>
+
+=item F<PAN-PRODUCTS-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
@@ -163,6 +167,17 @@ Returns the value of C<panSysSerialNumber.0>.
 
 =back
 
+=head2 Overrides
+
+=over
+
+=item $pa->layers()
+
+Returns 01001100. Palo Alto doesn't report layers, modified to reflect
+Layer 3,4,7 functionality.
+
+=back
+
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
@@ -172,20 +187,8 @@ See documentation in L<SNMP::Info::Layer3> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2 Overrides
-
-=over
-
-=item $pa->layers()
-
-Returns 01001110.  Palo Alto doesn't report layers, modified to reflect
-Layer 2,3,4,7 functionality.
-
-=back
-
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
 
 =cut
