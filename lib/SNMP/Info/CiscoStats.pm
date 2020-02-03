@@ -42,7 +42,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     'SNMPv2-MIB'            => 'sysDescr',
@@ -105,6 +105,10 @@ sub os {
 
     # order here matters - there are Catalysts that run IOS and have catalyst
     # in their description field, as well as Catalysts that run IOS-XE.
+    return 'ios-xe'   if ( $descr =~ /Denali/ );
+    return 'ios-xe'   if ( $descr =~ /Fuji/ );
+    return 'ios-xe'   if ( $descr =~ /Everest/ );
+    return 'ios-xe'   if ( $descr =~ /Gibraltar/ );
     return 'ios-xe'   if ( $descr =~ /IOS-XE/ );
     return 'ios-xr'   if ( $descr =~ /IOS XR/ );
     return 'ios'      if ( $descr =~ /IOS/ );

@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     'RAPID-CITY' => 'rapidCity',
@@ -298,7 +298,6 @@ sub set_i_duplex_admin {
     else {
         return $rapidcity->set_rc_duplex_admin( $duplexes{$duplex}, $iid );
     }
-    return;
 }
 
 sub set_i_speed_admin {
@@ -321,7 +320,6 @@ sub set_i_speed_admin {
     else {
         return $rapidcity->set_rc_speed_admin( $speeds{$speed}, $iid );
     }
-    return;
 }
 
 sub v_index {

@@ -4,7 +4,7 @@
       "Eric A. Miller <emiller@cpan.org>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4229",
+   "generated_by" : "Module::Build version 0.4224",
    "license" : [
       "bsd"
    ],
@@ -53,531 +53,543 @@
    "provides" : {
       "SNMP::Info" : {
          "file" : "lib/SNMP/Info.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::AMAP" : {
          "file" : "lib/SNMP/Info/AMAP.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::AdslLine" : {
          "file" : "lib/SNMP/Info/AdslLine.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Aggregate" : {
          "file" : "lib/SNMP/Info/Aggregate.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Airespace" : {
          "file" : "lib/SNMP/Info/Airespace.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Bridge" : {
          "file" : "lib/SNMP/Info/Bridge.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::CDP" : {
          "file" : "lib/SNMP/Info/CDP.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::CiscoAgg" : {
          "file" : "lib/SNMP/Info/CiscoAgg.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::CiscoConfig" : {
          "file" : "lib/SNMP/Info/CiscoConfig.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::CiscoPortSecurity" : {
          "file" : "lib/SNMP/Info/CiscoPortSecurity.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::CiscoPower" : {
          "file" : "lib/SNMP/Info/CiscoPower.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::CiscoQOS" : {
          "file" : "lib/SNMP/Info/CiscoQOS.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::CiscoRTT" : {
          "file" : "lib/SNMP/Info/CiscoRTT.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::CiscoStack" : {
          "file" : "lib/SNMP/Info/CiscoStack.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::CiscoStats" : {
          "file" : "lib/SNMP/Info/CiscoStats.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::CiscoStpExtensions" : {
          "file" : "lib/SNMP/Info/CiscoStpExtensions.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::CiscoVTP" : {
          "file" : "lib/SNMP/Info/CiscoVTP.pm",
-         "version" : "3.68"
+         "version" : "3.70"
+      },
+      "SNMP::Info::DocsisCM" : {
+         "file" : "lib/SNMP/Info/DocsisCM.pm",
+         "version" : "3.70"
       },
       "SNMP::Info::DocsisHE" : {
          "file" : "lib/SNMP/Info/DocsisHE.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::EDP" : {
          "file" : "lib/SNMP/Info/EDP.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Entity" : {
          "file" : "lib/SNMP/Info/Entity.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::EtherLike" : {
          "file" : "lib/SNMP/Info/EtherLike.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::FDP" : {
          "file" : "lib/SNMP/Info/FDP.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::IEEE802dot11" : {
          "file" : "lib/SNMP/Info/IEEE802dot11.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::IEEE802dot3ad" : {
          "file" : "lib/SNMP/Info/IEEE802dot3ad.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::IPv6" : {
          "file" : "lib/SNMP/Info/IPv6.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::LLDP" : {
          "file" : "lib/SNMP/Info/LLDP.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer1" : {
          "file" : "lib/SNMP/Info/Layer1.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer1::Allied" : {
          "file" : "lib/SNMP/Info/Layer1/Allied.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer1::Asante" : {
          "file" : "lib/SNMP/Info/Layer1/Asante.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer1::Bayhub" : {
          "file" : "lib/SNMP/Info/Layer1/Bayhub.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer1::Cyclades" : {
          "file" : "lib/SNMP/Info/Layer1/Cyclades.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer1::S3000" : {
          "file" : "lib/SNMP/Info/Layer1/S3000.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2" : {
          "file" : "lib/SNMP/Info/Layer2.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::3Com" : {
          "file" : "lib/SNMP/Info/Layer2/3Com.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Adtran" : {
          "file" : "lib/SNMP/Info/Layer2/Adtran.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Aerohive" : {
          "file" : "lib/SNMP/Info/Layer2/Aerohive.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Airespace" : {
          "file" : "lib/SNMP/Info/Layer2/Airespace.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Aironet" : {
          "file" : "lib/SNMP/Info/Layer2/Aironet.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Allied" : {
          "file" : "lib/SNMP/Info/Layer2/Allied.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Atmedia" : {
          "file" : "lib/SNMP/Info/Layer2/Atmedia.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Baystack" : {
          "file" : "lib/SNMP/Info/Layer2/Baystack.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::C1900" : {
          "file" : "lib/SNMP/Info/Layer2/C1900.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::C2900" : {
          "file" : "lib/SNMP/Info/Layer2/C2900.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Catalyst" : {
          "file" : "lib/SNMP/Info/Layer2/Catalyst.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Centillion" : {
          "file" : "lib/SNMP/Info/Layer2/Centillion.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Cisco" : {
          "file" : "lib/SNMP/Info/Layer2/Cisco.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::CiscoSB" : {
          "file" : "lib/SNMP/Info/Layer2/CiscoSB.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Exinda" : {
          "file" : "lib/SNMP/Info/Layer2/Exinda.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::HP" : {
          "file" : "lib/SNMP/Info/Layer2/HP.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::HP4000" : {
          "file" : "lib/SNMP/Info/Layer2/HP4000.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::HPVC" : {
          "file" : "lib/SNMP/Info/Layer2/HPVC.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Kentrox" : {
          "file" : "lib/SNMP/Info/Layer2/Kentrox.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::N2270" : {
          "file" : "lib/SNMP/Info/Layer2/N2270.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::NAP222x" : {
          "file" : "lib/SNMP/Info/Layer2/NAP222x.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::NWSS2300" : {
          "file" : "lib/SNMP/Info/Layer2/NWSS2300.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Netgear" : {
          "file" : "lib/SNMP/Info/Layer2/Netgear.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Nexans" : {
          "file" : "lib/SNMP/Info/Layer2/Nexans.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Orinoco" : {
          "file" : "lib/SNMP/Info/Layer2/Orinoco.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Sixnet" : {
          "file" : "lib/SNMP/Info/Layer2/Sixnet.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Trapeze" : {
          "file" : "lib/SNMP/Info/Layer2/Trapeze.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::Ubiquiti" : {
          "file" : "lib/SNMP/Info/Layer2/Ubiquiti.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer2::ZyXEL_DSLAM" : {
          "file" : "lib/SNMP/Info/Layer2/ZyXEL_DSLAM.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3" : {
          "file" : "lib/SNMP/Info/Layer3.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Aironet" : {
          "file" : "lib/SNMP/Info/Layer3/Aironet.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::AlcatelLucent" : {
          "file" : "lib/SNMP/Info/Layer3/AlcatelLucent.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::AlteonAD" : {
          "file" : "lib/SNMP/Info/Layer3/AlteonAD.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Altiga" : {
          "file" : "lib/SNMP/Info/Layer3/Altiga.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Arista" : {
          "file" : "lib/SNMP/Info/Layer3/Arista.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Aruba" : {
          "file" : "lib/SNMP/Info/Layer3/Aruba.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::BayRS" : {
          "file" : "lib/SNMP/Info/Layer3/BayRS.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::BlueCoatSG" : {
          "file" : "lib/SNMP/Info/Layer3/BlueCoatSG.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::C3550" : {
          "file" : "lib/SNMP/Info/Layer3/C3550.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::C4000" : {
          "file" : "lib/SNMP/Info/Layer3/C4000.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::C6500" : {
          "file" : "lib/SNMP/Info/Layer3/C6500.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::CheckPoint" : {
          "file" : "lib/SNMP/Info/Layer3/CheckPoint.pm",
-         "version" : "3.68"
+         "version" : "3.70"
+      },
+      "SNMP::Info::Layer3::Ciena" : {
+         "file" : "lib/SNMP/Info/Layer3/Ciena.pm",
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Cisco" : {
          "file" : "lib/SNMP/Info/Layer3/Cisco.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::CiscoASA" : {
          "file" : "lib/SNMP/Info/Layer3/CiscoASA.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::CiscoFWSM" : {
          "file" : "lib/SNMP/Info/Layer3/CiscoFWSM.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::CiscoSwitch" : {
          "file" : "lib/SNMP/Info/Layer3/CiscoSwitch.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Contivity" : {
          "file" : "lib/SNMP/Info/Layer3/Contivity.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Cumulus" : {
          "file" : "lib/SNMP/Info/Layer3/Cumulus.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::DLink" : {
          "file" : "lib/SNMP/Info/Layer3/DLink.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Dell" : {
          "file" : "lib/SNMP/Info/Layer3/Dell.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::ERX" : {
          "file" : "lib/SNMP/Info/Layer3/ERX.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Enterasys" : {
          "file" : "lib/SNMP/Info/Layer3/Enterasys.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Extreme" : {
          "file" : "lib/SNMP/Info/Layer3/Extreme.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::F5" : {
          "file" : "lib/SNMP/Info/Layer3/F5.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Force10" : {
          "file" : "lib/SNMP/Info/Layer3/Force10.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Fortinet" : {
          "file" : "lib/SNMP/Info/Layer3/Fortinet.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Foundry" : {
          "file" : "lib/SNMP/Info/Layer3/Foundry.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Genua" : {
          "file" : "lib/SNMP/Info/Layer3/Genua.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::H3C" : {
          "file" : "lib/SNMP/Info/Layer3/H3C.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::HP9300" : {
          "file" : "lib/SNMP/Info/Layer3/HP9300.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Huawei" : {
          "file" : "lib/SNMP/Info/Layer3/Huawei.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::IBMGbTor" : {
          "file" : "lib/SNMP/Info/Layer3/IBMGbTor.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Juniper" : {
          "file" : "lib/SNMP/Info/Layer3/Juniper.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Lantronix" : {
          "file" : "lib/SNMP/Info/Layer3/Lantronix.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Lenovo" : {
          "file" : "lib/SNMP/Info/Layer3/Lenovo.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Microsoft" : {
          "file" : "lib/SNMP/Info/Layer3/Microsoft.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Mikrotik" : {
          "file" : "lib/SNMP/Info/Layer3/Mikrotik.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::N1600" : {
          "file" : "lib/SNMP/Info/Layer3/N1600.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::NetSNMP" : {
          "file" : "lib/SNMP/Info/Layer3/NetSNMP.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Netscreen" : {
          "file" : "lib/SNMP/Info/Layer3/Netscreen.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Nexus" : {
          "file" : "lib/SNMP/Info/Layer3/Nexus.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::OneAccess" : {
          "file" : "lib/SNMP/Info/Layer3/OneAccess.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::PacketFront" : {
          "file" : "lib/SNMP/Info/Layer3/PacketFront.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::PaloAlto" : {
          "file" : "lib/SNMP/Info/Layer3/PaloAlto.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Passport" : {
          "file" : "lib/SNMP/Info/Layer3/Passport.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Pf" : {
          "file" : "lib/SNMP/Info/Layer3/Pf.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Pica8" : {
          "file" : "lib/SNMP/Info/Layer3/Pica8.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Redlion" : {
          "file" : "lib/SNMP/Info/Layer3/Redlion.pm",
-         "version" : "3.68"
+         "version" : "3.70"
+      },
+      "SNMP::Info::Layer3::Scalance" : {
+         "file" : "lib/SNMP/Info/Layer3/Scalance.pm",
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::SonicWALL" : {
          "file" : "lib/SNMP/Info/Layer3/SonicWALL.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Steelhead" : {
          "file" : "lib/SNMP/Info/Layer3/Steelhead.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Sun" : {
          "file" : "lib/SNMP/Info/Layer3/Sun.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Tasman" : {
          "file" : "lib/SNMP/Info/Layer3/Tasman.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::Timetra" : {
          "file" : "lib/SNMP/Info/Layer3/Timetra.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::VMware" : {
          "file" : "lib/SNMP/Info/Layer3/VMware.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer3::VyOS" : {
          "file" : "lib/SNMP/Info/Layer3/VyOS.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer7" : {
          "file" : "lib/SNMP/Info/Layer7.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer7::APC" : {
          "file" : "lib/SNMP/Info/Layer7/APC.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer7::Arbor" : {
          "file" : "lib/SNMP/Info/Layer7/Arbor.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer7::CiscoIPS" : {
          "file" : "lib/SNMP/Info/Layer7/CiscoIPS.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer7::Gigamon" : {
          "file" : "lib/SNMP/Info/Layer7/Gigamon.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer7::Liebert" : {
          "file" : "lib/SNMP/Info/Layer7/Liebert.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer7::Neoteris" : {
          "file" : "lib/SNMP/Info/Layer7/Neoteris.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::Layer7::Netscaler" : {
          "file" : "lib/SNMP/Info/Layer7/Netscaler.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::MAU" : {
          "file" : "lib/SNMP/Info/MAU.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::MRO" : {
          "file" : "lib/SNMP/Info/MRO.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::NortelStack" : {
          "file" : "lib/SNMP/Info/NortelStack.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::PowerEthernet" : {
          "file" : "lib/SNMP/Info/PowerEthernet.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::RapidCity" : {
          "file" : "lib/SNMP/Info/RapidCity.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       },
       "SNMP::Info::SONMP" : {
          "file" : "lib/SNMP/Info/SONMP.pm",
-         "version" : "3.68"
+         "version" : "3.70"
       }
    },
    "release_status" : "stable",
@@ -587,7 +599,7 @@
       },
       "homepage" : "http://netdisco.org/",
       "license" : [
-         "http://opensource.org/licenses/BSD-3-Clause"
+         "http://opensource.org/licenses/bsd-license.php"
       ],
       "repository" : {
          "url" : "https://github.com/netdisco/snmp-info"
@@ -595,6 +607,6 @@
       "x_IRC" : "irc://irc.freenode.org/#netdisco",
       "x_MailingList" : "https://lists.sourceforge.net/lists/listinfo/snmp-info-users"
    },
-   "version" : "3.68",
+   "version" : "3.70",
    "x_serialization_backend" : "JSON::PP version 2.97001"
 }

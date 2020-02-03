@@ -17,7 +17,7 @@ before_install:
   - mkdir ~/netdisco-mibs
   - cd ~/netdisco-mibs
 install:
-  - curl -sL https://github.com/netdisco/netdisco-mibs/releases/download/4.016/netdisco-mibs.tar.gz | tar --strip-components=1 -zxf -
+  - curl -sL https://api.github.com/repos/netdisco/netdisco-mibs/releases/latest | jq -r '.tarball_url' | xargs -n1 curl -sL | tar --strip-components=1 -zxf -
   - cpanm --quiet --notest PkgConfig Test::CChecker Alien::zlib::Static Alien::OpenSSL::Static Alien::SNMP
 before_script:
   - 'cd ${TRAVIS_BUILD_DIR}'

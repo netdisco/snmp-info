@@ -26,6 +26,7 @@ lib/SNMP/Info/CiscoStack.pm
 lib/SNMP/Info/CiscoStats.pm
 lib/SNMP/Info/CiscoStpExtensions.pm
 lib/SNMP/Info/CiscoVTP.pm
+lib/SNMP/Info/DocsisCM.pm
 lib/SNMP/Info/DocsisHE.pm
 lib/SNMP/Info/EDP.pm
 lib/SNMP/Info/Entity.pm
@@ -83,6 +84,7 @@ lib/SNMP/Info/Layer3/C3550.pm
 lib/SNMP/Info/Layer3/C4000.pm
 lib/SNMP/Info/Layer3/C6500.pm
 lib/SNMP/Info/Layer3/CheckPoint.pm
+lib/SNMP/Info/Layer3/Ciena.pm
 lib/SNMP/Info/Layer3/Cisco.pm
 lib/SNMP/Info/Layer3/CiscoASA.pm
 lib/SNMP/Info/Layer3/CiscoFWSM.pm
@@ -119,6 +121,7 @@ lib/SNMP/Info/Layer3/Passport.pm
 lib/SNMP/Info/Layer3/Pf.pm
 lib/SNMP/Info/Layer3/Pica8.pm
 lib/SNMP/Info/Layer3/Redlion.pm
+lib/SNMP/Info/Layer3/Scalance.pm
 lib/SNMP/Info/Layer3/SonicWALL.pm
 lib/SNMP/Info/Layer3/Steelhead.pm
 lib/SNMP/Info/Layer3/Sun.pm
@@ -266,6 +269,7 @@ xt/lib/Test/SNMP/Info/Layer3/Passport.pm
 xt/lib/Test/SNMP/Info/Layer3/Pf.pm
 xt/lib/Test/SNMP/Info/Layer3/Pica8.pm
 xt/lib/Test/SNMP/Info/Layer3/Redlion.pm
+xt/lib/Test/SNMP/Info/Layer3/Scalance.pm
 xt/lib/Test/SNMP/Info/Layer3/SonicWALL.pm
 xt/lib/Test/SNMP/Info/Layer3/Steelhead.pm
 xt/lib/Test/SNMP/Info/Layer3/Sun.pm

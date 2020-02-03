@@ -37,7 +37,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -121,7 +121,7 @@ phishphreek@gmail.com
 
 =head1 DESCRIPTION
 
-Subclass for Generic SonicWALL Firewalls
+Subclass for SonicWALL Firewalls
 
 =head2 Inherited Classes
 
@@ -159,7 +159,7 @@ Returns C<'sonicwall'>
 
 =item $router->os()
 
-Returns C<'sonicos enhanded'> or C<'sonicos standard'> based on C<'snwlSysFirmwareVersion'>
+Returns C<'sonicos enhanced'> or C<'sonicos standard'> based on C<'snwlSysFirmwareVersion'>
 
 =item $router->os_ver()
 

@@ -40,7 +40,7 @@ use SNMP::Info::Layer3;
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE,
             $int_include_vpn, $fake_idx, $type_class);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
             %SNMP::Info::Layer3::MIBS,

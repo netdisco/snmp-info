@@ -42,7 +42,7 @@ use SNMP::Info;
 
 our ($VERSION, $DEBUG, %MIBS, %FUNCS, %GLOBALS, %MUNGE, $INIT);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     'BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',
@@ -242,8 +242,10 @@ sub qb_fdb_index {
 sub fw_mac {
     my $bridge = shift;
 
-    my $qb = $bridge->qb_fw_mac();
-    return $qb if (ref {} eq ref $qb and scalar keys %$qb);
+    unless ($bridge->can('cisco_comm_indexing') && $bridge->cisco_comm_indexing()){
+        my $qb = $bridge->qb_fw_mac();
+        return $qb if (ref {} eq ref $qb and scalar keys %$qb);
+    }
 
     return $bridge->SUPER::fw_mac();
 }
@@ -251,8 +253,10 @@ sub fw_mac {
 sub fw_port {
     my $bridge = shift;
 
-    my $qb = $bridge->qb_fw_port();
-    return $qb if (ref {} eq ref $qb and scalar keys %$qb);
+    unless ($bridge->can('cisco_comm_indexing') && $bridge->cisco_comm_indexing()){
+        my $qb = $bridge->qb_fw_port();
+        return $qb if (ref {} eq ref $qb and scalar keys %$qb);
+    }
 
     return $bridge->SUPER::fw_port();
 }
@@ -260,8 +264,10 @@ sub fw_port {
 sub fw_status {
     my $bridge = shift;
 
-    my $qb = $bridge->qb_fw_status();
-    return $qb if (ref {} eq ref $qb and scalar keys %$qb);
+    unless ($bridge->can('cisco_comm_indexing') && $bridge->cisco_comm_indexing()){
+        my $qb = $bridge->qb_fw_status();
+        return $qb if (ref {} eq ref $qb and scalar keys %$qb);
+    }
 
     return $bridge->SUPER::fw_status();
 }

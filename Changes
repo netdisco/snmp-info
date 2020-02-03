@@ -1,4 +1,10 @@
-Version 3.69 (2019-xx-xx)
+Version 3.70 (2019-10-15)
+
+  [NEW FEATURES]
+
+  * #361 Siemens Scalance switch support
+  * #365 Ciena Layer3 support
+  * #368 DOCSIS cable modem support
 
   [ENHANCEMENTS]
 
@@ -6,6 +12,10 @@ Version 3.69 (2019-xx-xx)
   * #352 duplex support for ciscosb
   * #353 report all vendor names in lowercase
   * #353 sprinkle "use warnings" and "use strict" around
+  * #358 prefer checkpoint mib over net-snmp mib (earendilfr) 
+  * #359 detect newer ios-xe using codenames (Christoph Neuhaus)
+  * #367 test using latest MIBs version dynamically
+  * #370 smarter Q-BRIDGE handling
   * poe power usage & mac address for ciscosb
 
   [BUG FIXES]
@@ -13,6 +23,8 @@ Version 3.69 (2019-xx-xx)
   * #353 doc fixes: report all required mibs for each module as based on code
   * #353 include fixes: don't include modules already imported from parent classes
   * #355 fix #252, don't think 6char devices names are mac addresses
+  * #363 clean return calls in code
+  * #364 strip newline from neoteris os_ver, fixes netdisco #647
 
 Version 3.68 (2019-04-28)
 
@@ -159,7 +171,7 @@ Version 3.59 (2018-05-01)
 
   [BUG FIXES]
 
-  * Capture fan ans power supply status in L3::Huawei when description is
+  * Capture fan and power supply status in L3::Huawei when description is
     not available
 
 Version 3.58 (2018-04-29)
@@ -363,13 +375,13 @@ version 3.41 (2018-02-01)
 
   [BUG FIXES]
 
-  * Fixes to distriution metadata
+  * Fixes to distribution metadata
 
 version 3.40 (2018-01-28)
 
   [ENHANCEMENTS]
 
-  * #240 Support for CheckPoint devies through SNMP
+  * #240 Support for CheckPoint devices through SNMP
   * #240 Cisco SB switches fixup
   * #244 Add Adtran support
   * #241 Vyatta/VyOS support

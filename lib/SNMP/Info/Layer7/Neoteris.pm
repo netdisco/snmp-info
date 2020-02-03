@@ -39,7 +39,7 @@ use SNMP::Info::Layer7;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
@@ -48,8 +48,8 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer7::GLOBALS,
-    'os_ver' => 'productVersion',
-    'cpu'    => 'iveCpuUtil',
+    'pulse_os_ver' => 'productVersion',
+    'cpu'          => 'iveCpuUtil',
 );
 
 %FUNCS = ( %SNMP::Info::Layer7::FUNCS, );
@@ -58,6 +58,17 @@ $VERSION = '3.68';
 
 sub vendor {
     return 'pulsesecure';
+}
+
+sub os_ver {
+    my $neoteris = shift;
+    my $p_os_ver = $neoteris->pulse_os_ver();
+
+    if (defined $p_os_ver) {
+      chomp ($p_os_ver);
+      return $p_os_ver;
+    }
+    return '';
 }
 
 sub os {
@@ -150,7 +161,7 @@ Returns C<'ive'>.
 
 =item $neoteris->os_ver()
 
-C<productVersion>
+C<productVersion> without trailing newline.
 
 =item $neoteris->cpu()
 
