@@ -55,6 +55,7 @@ $VERSION = '3.70';
     'hrSystemUptime' => 'hrSystemUptime',
     'rut_serial'     => '.1.3.6.1.4.1.48690.1.5.0',
     'os_ver'         => 'firmwareVersion',
+    'model'          => 'productCode',
 );
 
 %FUNCS = ( %SNMP::Info::Layer3::FUNCS, );
@@ -72,26 +73,6 @@ sub os {
 sub serial {
     my $info = shift;
     return $info->rut_serial();
-}
-
-sub model {
-    my $info = shift;
-    return $info->productCode();
-}
-
-sub layers {
-    my $info = shift;
-
-    my $layers = $info->SUPER::layers();
-    # Some models or software versions don't report L2 properly
-    # so add L2 capability to the output if the device has bridge ports.
-    my $bports = $info->b_ports();
-
-    if ($bports) {
-        my $l = substr $layers, 6, 1, "1";
-    }
-
-    return $layers;
 }
 
 1;
