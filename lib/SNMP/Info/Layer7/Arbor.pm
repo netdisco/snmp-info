@@ -30,6 +30,7 @@
 package SNMP::Info::Layer7::Arbor;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer7;
 
@@ -38,7 +39,7 @@ use SNMP::Info::Layer7;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
@@ -153,11 +154,11 @@ These are methods that return scalar value from SNMP
 
 =item $Arbor->vendor()
 
-Returns 'Arbor'.
+Returns 'arbor'.
 
 =item $Arbor->os()
 
-Returns 'arbos'.
+Returns 'ArbOS'.
 
 =item $Arbor->os_ver()
 

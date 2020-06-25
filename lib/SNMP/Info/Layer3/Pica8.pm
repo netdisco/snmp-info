@@ -30,39 +30,35 @@
 package SNMP::Info::Layer3::Pica8;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::Pica8::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Pica8::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Pica8::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
 );
 
 sub vendor {
-    return 'Pica8';
+    return 'pica8';
 }
 
 sub os {
@@ -77,7 +73,9 @@ sub os_ver {
     my $pica8 = shift;
     my $descr   = $pica8->description();
 
-    return $1 if ( $descr =~ /Software version ([\d\.]+)/i );
+    if (defined ($descr)) {
+      return $1 if ($descr =~ /Software version ([\d\.]+)/i);
+    }
     return;
 }
 
@@ -85,7 +83,9 @@ sub model {
     my $pica8 = shift;
     my $descr   = $pica8->description();
 
-    return $1 if ( $descr =~ /Hardware model (P-\d{4})/i );
+    if (defined $descr) {
+      return $1 if ($descr =~ /Hardware model (P-\d{4})/i);
+    }
     return;
 }
 
@@ -125,8 +125,6 @@ Subclass for Pica8 devices
 
 =item SNMP::Info::Layer3
 
-=item SNMP::Info::LLDP
-
 =back
 
 =head2 Required MIBs
@@ -139,8 +137,6 @@ Subclass for Pica8 devices
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
 
-See L<SNMP::Info::LLDP> for its own MIB requirements.
-
 =back
 
 =head1 GLOBALS
@@ -151,7 +147,7 @@ These are methods that return scalar value from SNMP
 
 =item $pica8->vendor()
 
-Returns 'Pica8'
+Returns 'pica8'
 
 =item $pica8->model()
 
@@ -171,10 +167,6 @@ Returns the OS version extracted from C<sysDescr>.
 
 See documentation in L<SNMP::Info::Layer3> for details.
 
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
-
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
@@ -183,9 +175,5 @@ to a hash.
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
 
 =cut

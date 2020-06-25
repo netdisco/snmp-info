@@ -122,7 +122,6 @@ sub description : Tests(4) {
 
   $test->{info}{_description} = undef;
   $expected = 'Cisco Aironet 1240 Series (IEEE 802.11a/g) Access Point';
-  $expected .= '  ';
   is($test->{info}->description(), $expected, q(Description is expected value just using Entity MIB));
 
   $test->{info}->clear_cache();

@@ -30,7 +30,7 @@
 package SNMP::Info::CiscoAgg;
 
 use strict;
-#use warnings;
+use warnings;
 use Exporter;
 use SNMP::Info::IEEE802dot3ad;
 
@@ -48,7 +48,7 @@ use SNMP::Info::IEEE802dot3ad;
 
 our ($DEBUG, $VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
   %SNMP::Info::IEEE802dot3ad::MIBS,
@@ -191,9 +191,7 @@ L<SNMP::Info::IEEE802dot3ad>
 
 =back
 
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
-
-=head1 METHODS
+=head1 TABLE METHODS
 
 =over 4
 

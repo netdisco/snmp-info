@@ -1,5 +1,4 @@
 # SNMP::Info::Layer1::Bayhub
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller, Max Baker
 # All rights reserved.
@@ -31,18 +30,19 @@
 package SNMP::Info::Layer1::Bayhub;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::SONMP;
 use SNMP::Info::NortelStack;
 use SNMP::Info::Layer2;
 
 @SNMP::Info::Layer1::Bayhub::ISA
-    = qw/SNMP::Info::SONMP SNMP::Info::NortelStack  SNMP::Info::Layer2 Exporter/;
+    = qw/SNMP::Info::SONMP SNMP::Info::NortelStack SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer1::Bayhub::EXPORT_OK = qw//;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -504,11 +504,6 @@ Eric Miller
 Provides abstraction to the configuration information obtainable from a
 Bay hub device through SNMP.  Also provides device MAC to port mapping through
 the proprietary MIB.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $bayhub = new SNMP::Info::Layer1::Bayhub(...);
 
 =head2 Inherited Classes
 

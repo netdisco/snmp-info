@@ -29,20 +29,19 @@
 package SNMP::Info::Layer3::DLink;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::DLink::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::DLink::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::DLink::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     'DLINK-ID-REC-MIB' => 'dlink',
     'SWPRIMGMT-DES3200-MIB' => 'dlink-des3200SeriesProd',
     'SWPRIMGMT-DES30XXP-MIB' => 'dlink-des30xxproductProd',
@@ -54,17 +53,14 @@ $VERSION = '3.68';
     'DES-1210-52-BX' => 'des-1210-52bx',
     'DES-1210-52-CX' => 'des-1210-52-cx',
     'DGS-1210-24-AX' => 'dgs-1210-24ax',
-
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
     'dlink_fw' => 'probeSoftwareRev',
     'dlink_hw' => 'probeHardwareRev',
     # Replaced with OID since these MIBs are no longer in the netdisco-mibs
@@ -76,7 +72,7 @@ $VERSION = '3.68';
     # replaced similarly and use the library getter methods
 );
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, %SNMP::Info::LLDP::MUNGE, );
+%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
 
 sub model {
     my $dlink=shift;
@@ -197,15 +193,39 @@ Subclass for DLink devices.
 
 =item SNMP::Info::Layer3
 
-=item SNMP::Info::LLDP
+=back
+
+=head2 Required MIBs
+
+=over
+
+=item F<DLINK-ID-REC-MIB>
+
+=item F<SWPRIMGMT-DES3200-MIB>
+
+=item F<SWPRIMGMT-DES30XXP-MIB>
+
+=item F<SWPRIMGMT-DES1228ME-MIB>
+
+=item F<SWDES3528-52PRIMGMT-MIB>
+
+=item F<DES-1210-28-AX>
+
+=item F<DES-1210-10MEbx>
+
+=item F<DES-1210-26MEbx>
+
+=item F<DES-1210-52-BX>
+
+=item F<DES-1210-52-CX>
+
+=item F<DGS-1210-24-AX>
 
 =back
 
 =head2 Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
 
 =head1 GLOBALS
 
@@ -243,8 +263,6 @@ Returns the STP root port.
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
-
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
@@ -261,7 +279,5 @@ Returns the map between SNMP Interface Identifier (iid) and C<ifName>.
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut

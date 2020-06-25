@@ -30,6 +30,7 @@
 package SNMP::Info::Layer3::Huawei;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::IEEE802dot3ad;
@@ -43,7 +44,7 @@ use SNMP::Info::IEEE802dot3ad;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -111,14 +112,14 @@ $VERSION = '3.68';
 );
 
 sub vendor {
-    return "Huawei";
+    return "huawei";
 }
 
 sub os {
     my $huawei = shift;
     my $descr  = $huawei->description();
 
-    if ( $descr =~ /\b(VRP)\b/ ) {
+    if ( defined ($descr) && $descr =~ /\b(VRP)\b/ ) {
         return $1;
     }
     return "huawei";
@@ -135,7 +136,7 @@ sub os_ver {
     my $descr  = $huawei->description();
     my $os_ver = undef;
 
-    if ($descr =~ /Version\s            # Start match on Version string
+    if (defined ($descr) && $descr =~ /Version\s            # Start match on Version string
                    ([\d\.]+)            # Capture the primary version in 1
                    ,?                   # There may be a comma
                    \s                   # Always a space
@@ -570,7 +571,7 @@ These are methods that return scalar value from SNMP
 
 =item $huawei->vendor()
 
-Returns 'Huawei'.
+Returns 'huawei'.
 
 =item $huawei->os()
 

@@ -30,6 +30,7 @@
 package SNMP::Info::Layer7::Liebert;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer7;
 
@@ -38,7 +39,7 @@ use SNMP::Info::Layer7;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
@@ -90,7 +91,7 @@ Netdisco Developers
                           Debug       => 1,
                           DestHost    => 'myhub',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 

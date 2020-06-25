@@ -30,6 +30,7 @@
 package SNMP::Info::Layer3::Netscreen;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::IEEE802dot11;
@@ -40,7 +41,7 @@ use SNMP::Info::IEEE802dot11;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -537,12 +538,7 @@ Kent Hamilton
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a
-Juniper Netscreen devices through SNMP.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $netscreen = new SNMP::Info::Layer3::Netscreen(...);
+Juniper Netscreen device through SNMP.
 
 =head2 Inherited Classes
 

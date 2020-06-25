@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Arista
-# $Id$
 #
 # Copyright (c) 2008 Arista Networks, Inc.
 # All rights reserved.
@@ -31,29 +30,27 @@
 package SNMP::Info::Layer3::Arista;
 
 use strict;
+use warnings;
 use Exporter;
-
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
-use SNMP::Info::LLDP;
 use SNMP::Info::Aggregate 'agg_ports_ifstack';
 
 @SNMP::Info::Layer3::Arista::ISA = qw/
     SNMP::Info::Aggregate
-    SNMP::Info::LLDP
     SNMP::Info::MAU
-    SNMP::Info::Layer3 Exporter
+    SNMP::Info::Layer3
+    Exporter
 /;
 @SNMP::Info::Layer3::Arista::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::Aggregate::MIBS,
     'ARISTA-PRODUCTS-MIB' => 'aristaDCS7124S',
 );
@@ -61,19 +58,16 @@ $VERSION = '3.68';
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::MAU::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::MAU::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::MAU::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
 );
 
 # use MAU-MIB for admin. duplex and admin. speed
@@ -92,11 +86,14 @@ sub os {
 
 sub os_ver {
     my $arista = shift;
-    my $descr   = $arista->description();
-    my $os_ver  = undef;
+    my $descr  = $arista->description();
 
-    $os_ver = $1 if ( $descr =~ /\s+EOS\s+version\s+(\S+)\s+/ );
-    return $os_ver;
+    if (defined ($descr)) {
+      my $os_ver = undef;
+      $os_ver = $1 if ($descr =~ /\s+EOS\s+version\s+(\S+)\s+/);
+      return $os_ver;
+    }
+    return;
 }
 
 sub model {
@@ -174,8 +171,6 @@ Subclass for Arista Networks EOS-based devices
 
 =item SNMP::Info::MAU
 
-=item SNMP::Info::LLDP
-
 =back
 
 =head2 Required MIBs
@@ -191,8 +186,6 @@ See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 See L<SNMP::Info::Aggregate/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::MAU/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -230,10 +223,6 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
 
-=head2 Global Methods imported from SNMP::Info::Layer3
-
-See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
-
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
@@ -268,9 +257,5 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut

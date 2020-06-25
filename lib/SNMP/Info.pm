@@ -25,7 +25,7 @@ our
     ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG, %SPEED_MAP,
      $NOSUCH, $BIGINT, $REPEATERS);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.68
+SNMP::Info - Version 3.70
 
 =head1 AUTHOR
 
@@ -344,6 +344,12 @@ SNMP Interface for DOCSIS CMTS
 
 See documentation in L<SNMP::Info::DocsisHE> for details.
 
+=item SNMP::Info::DocsisCM
+
+SNMP Interface for DOCSIS Cable Modems
+
+See documentation in L<SNMP::Info::DocsisCM> for details.
+
 =item SNMP::Info::EDP
 
 Extreme Discovery Protocol.  F<EXTREME-EDP-MIB>
@@ -583,7 +589,7 @@ See documentation in L<SNMP::Info::Layer2::Centillion> for details.
 =item SNMP::Info::Layer2::Cisco
 
 Generic Cisco subclass for layer 2 devices that are not yet supported
-in more specific subclassesand the base layer 2 Cisco class for
+in more specific subclasses and the base layer 2 Cisco class for
 other device specific layer 2 Cisco classes.
 
 See documentation in L<SNMP::Info::Layer2::Cisco> for details.
@@ -651,7 +657,7 @@ See documentation in L<SNMP::Info::Layer2::Netgear> for details.
 
 Subclass for Nexans switches
 
-See documetion in L<SNMP::Info::Layer2::Nexans> for details.
+See documentation in L<SNMP::Info::Layer2::Nexans> for details.
 
 =item SNMP::Info::Layer2::NWSS2300
 
@@ -703,8 +709,6 @@ See documentation in L<SNMP::Info::Layer3> for details.
 
 Subclass for Cisco Aironet wireless access points (AP) not running IOS. These
 are usually older devices.
-
-MIBs for these devices now included in v2.tar.gz available from ftp.cisco.com.
 
 Note L<SNMP::Info::Layer2::Aironet>
 
@@ -764,8 +768,9 @@ See documentation in L<SNMP::Info::Layer3::C4000> for details.
 
 =item SNMP::Info::Layer3::C6500
 
-This class covers Catalyst 6500s in native mode, hybrid mode.  Catalyst
-3750's, 2970's and probably others.
+This class covers Catalyst 6500 series running CatOS or IOS, as well as
+Catalyst 2960, 2970, 3750 and 3850 series, including blade switches
+CBS30x0 and CBS31x0 series, all running IOS.
 
 See documentation in L<SNMP::Info::Layer3::C6500> for details.
 
@@ -774,6 +779,12 @@ See documentation in L<SNMP::Info::Layer3::C6500> for details.
 Subclass for CheckPoint devices.
 
 See documentation in L<SNMP::Info::Layer3::CheckPoint> for details.
+
+=item SNMP::Info::Layer3::Ciena
+
+Subclass for Ciena devices.
+
+See documentation in L<SNMP::Info::Layer3::Ciena> for details.
 
 =item SNMP::Info::Layer3::Cisco
 
@@ -997,6 +1008,12 @@ Subclass for redlion routers.
 
 See documentation in L<SNMP::Info::Layer3::Redlion> for details.
 
+=item SNMP::Info::Layer3::Scalance
+
+Subclass for Siemens Scalance devices.
+
+See documentation in L<SNMP::Info::Layer3::Scalance> for details.
+
 =item SNMP::Info::Layer3::SonicWALL
 
 Subclass for generic SonicWALL devices.
@@ -1005,7 +1022,7 @@ See documentation in L<SNMP::Info::Layer3::SonicWALL> for details.
 
 =item SNMP::Info::Layer3::Steelhead
 
-Subclass for  Riverbed Steelhead WAN optimization appliances.
+Subclass for Riverbed Steelhead WAN optimization appliances.
 
 See documentation in L<SNMP::Info::Layer3::Steelhead> for details.
 
@@ -1261,7 +1278,7 @@ Some older devices don't support SNMP version 2, and will not return anything
 when a connection under Version 2 is attempted.
 
 Some newer devices will support Version 1, but will not return all the data
-they might have if you had connected under Version 1
+they might have if you had connected under Version 1.
 
 When trying to get info from a new device, you may have to try version 2 and
 then fallback to version 1.
@@ -1646,42 +1663,44 @@ sub device_type {
     # Hash for generic fallback to a device class if unable to determine using
     # the sysDescr regex.
     my %l3sysoidmap = (
-        9    => 'SNMP::Info::Layer3::Cisco',
-        11   => 'SNMP::Info::Layer2::HP',
-        18   => 'SNMP::Info::Layer3::BayRS',
-        42   => 'SNMP::Info::Layer3::Sun',
-        43   => 'SNMP::Info::Layer2::3Com',
-        45   => 'SNMP::Info::Layer2::Baystack',
-        171  => 'SNMP::Info::Layer3::DLink',
-        244  => 'SNMP::Info::Layer3::Lantronix',
-        311  => 'SNMP::Info::Layer3::Microsoft',
+        9     => 'SNMP::Info::Layer3::Cisco',
+        11    => 'SNMP::Info::Layer2::HP',
+        18    => 'SNMP::Info::Layer3::BayRS',
+        42    => 'SNMP::Info::Layer3::Sun',
+        43    => 'SNMP::Info::Layer2::3Com',
+        45    => 'SNMP::Info::Layer2::Baystack',
+        171   => 'SNMP::Info::Layer3::DLink',
+        244   => 'SNMP::Info::Layer3::Lantronix',
+        311   => 'SNMP::Info::Layer3::Microsoft',
         664   => 'SNMP::Info::Layer2::Adtran',
-        674  => 'SNMP::Info::Layer3::Dell',
-        1588 => 'SNMP::Info::Layer3::Foundry',
-        1872 => 'SNMP::Info::Layer3::AlteonAD',
-        1890 => 'SNMP::Info::Layer3::Redlion',
-        1916 => 'SNMP::Info::Layer3::Extreme',
-        1991 => 'SNMP::Info::Layer3::Foundry',
-        2011 => 'SNMP::Info::Layer3::Huawei',
-        2021 => 'SNMP::Info::Layer3::NetSNMP',
-        2272 => 'SNMP::Info::Layer3::Passport',
-        2620 => 'SNMP::Info::Layer3::CheckPoint',
-        2636 => 'SNMP::Info::Layer3::Juniper',
-        2925 => 'SNMP::Info::Layer1::Cyclades',
-        3076 => 'SNMP::Info::Layer3::Altiga',
-        3224 => 'SNMP::Info::Layer3::Netscreen',
-        3375 => 'SNMP::Info::Layer3::F5',
-        3417 => 'SNMP::Info::Layer3::BlueCoatSG',
-        3717 => 'SNMP::Info::Layer3::Genua',
-        4526 => 'SNMP::Info::Layer2::Netgear',
-        4874 => 'SNMP::Info::Layer3::ERX',
-        5624 => 'SNMP::Info::Layer3::Enterasys',
-        6027 => 'SNMP::Info::Layer3::Force10',
-        6486 => 'SNMP::Info::Layer3::AlcatelLucent',
-        6527 => 'SNMP::Info::Layer3::Timetra',
-        6876 => 'SNMP::Info::Layer3::VMware',
-        8072 => 'SNMP::Info::Layer3::NetSNMP',
-        9303 => 'SNMP::Info::Layer3::PacketFront',
+        674   => 'SNMP::Info::Layer3::Dell',
+        1588  => 'SNMP::Info::Layer3::Foundry',
+        1872  => 'SNMP::Info::Layer3::AlteonAD',
+        1890  => 'SNMP::Info::Layer3::Redlion',
+        1916  => 'SNMP::Info::Layer3::Extreme',
+        1991  => 'SNMP::Info::Layer3::Foundry',
+        2011  => 'SNMP::Info::Layer3::Huawei',
+        2021  => 'SNMP::Info::Layer3::NetSNMP',
+        2272  => 'SNMP::Info::Layer3::Passport',
+        2620  => 'SNMP::Info::Layer3::CheckPoint',
+        2636  => 'SNMP::Info::Layer3::Juniper',
+        2925  => 'SNMP::Info::Layer1::Cyclades',
+        3076  => 'SNMP::Info::Layer3::Altiga',
+        3224  => 'SNMP::Info::Layer3::Netscreen',
+        3375  => 'SNMP::Info::Layer3::F5',
+        3417  => 'SNMP::Info::Layer3::BlueCoatSG',
+        3717  => 'SNMP::Info::Layer3::Genua',
+        4413  => 'SNMP::Info::Layer2::Ubiquiti',
+        4526  => 'SNMP::Info::Layer2::Netgear',
+        4874  => 'SNMP::Info::Layer3::ERX',
+        5624  => 'SNMP::Info::Layer3::Enterasys',
+        6027  => 'SNMP::Info::Layer3::Force10',
+        6141  => 'SNMP::Info::Layer3::Ciena',
+        6486  => 'SNMP::Info::Layer3::AlcatelLucent',
+        6527  => 'SNMP::Info::Layer3::Timetra',
+        6876  => 'SNMP::Info::Layer3::VMware',
+        8072  => 'SNMP::Info::Layer3::NetSNMP',
+        9303  => 'SNMP::Info::Layer3::PacketFront',
         10002 => 'SNMP::Info::Layer2::Ubiquiti',
         10418 => 'SNMP::Info::Layer1::Cyclades',
         12325 => 'SNMP::Info::Layer3::Pf',
@@ -1694,17 +1713,16 @@ sub device_type {
         17163 => 'SNMP::Info::Layer3::Steelhead',
         19046 => 'SNMP::Info::Layer3::Lenovo',
         21091 => 'SNMP::Info::Layer2::Exinda',
-        25506 => 'SNMP::Info::Layer3::H3C',
         25461 => 'SNMP::Info::Layer3::PaloAlto',
+        25506 => 'SNMP::Info::Layer3::H3C',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
-        30065 => 'SNMP::Info::Layer3::Arista',
-        35098 => 'SNMP::Info::Layer3::Pica8',
-        41112 => 'SNMP::Info::Layer2::Ubiquiti',
-        4413 => 'SNMP::Info::Layer2::Ubiquiti',
         26928 => 'SNMP::Info::Layer2::Aerohive',
+        30065 => 'SNMP::Info::Layer3::Arista',
         30803 => 'SNMP::Info::Layer3::VyOS',
-	44641 => 'SNMP::Info::Layer3::VyOS',
+        35098 => 'SNMP::Info::Layer3::Pica8',
         40310 => 'SNMP::Info::Layer3::Cumulus',
+        41112 => 'SNMP::Info::Layer2::Ubiquiti',
+        44641 => 'SNMP::Info::Layer3::VyOS',
     );
 
     my %l2sysoidmap = (
@@ -1728,6 +1746,7 @@ sub device_type {
         3375  => 'SNMP::Info::Layer3::F5',
         4526  => 'SNMP::Info::Layer2::Netgear',
         5624  => 'SNMP::Info::Layer3::Enterasys',
+        6141  => 'SNMP::Info::Layer3::Ciena',
         6486  => 'SNMP::Info::Layer3::AlcatelLucent',
         9303  => 'SNMP::Info::Layer3::PacketFront',
         10418 => 'SNMP::Info::Layer1::Cyclades',
@@ -1753,8 +1772,8 @@ sub device_type {
         476   => 'SNMP::Info::Layer7::Liebert',
         5951  => 'SNMP::Info::Layer7::Netscaler',
         9694  => 'SNMP::Info::Layer7::Arbor',
-        14525 => 'SNMP::Info::Layer2::Trapeze',
         12532 => 'SNMP::Info::Layer7::Neoteris',
+        14525 => 'SNMP::Info::Layer2::Trapeze',
         26866 => 'SNMP::Info::Layer7::Gigamon',
     );
 
@@ -1787,7 +1806,7 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Aironet'
             if ( $desc =~ /Aironet/ and $desc =~ /\D(AP4800)\D/ );
 
-	# Override voice gateway device (VG350) showing up as Aironet
+        # Override voice gateway device (VG350) showing up as Aironet
         $objtype = 'SNMP::Info::Layer3::Cisco' if $desc =~ /VG350/;
 
         # Cat6k with older SUPs (hybrid CatOS/IOS?)
@@ -1896,6 +1915,14 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::NWSS2300'
             if (
             $desc =~ /^(Nortel\s)??Wireless\sSecurity\sSwitch\s23[568][012]\b/);
+	
+	# Siemens Simatic Scalance 
+        # Scalance overwrites layers later, 
+        # so if we don't add it here (layer3) and at other
+        # it would flip/flop between those
+        $objtype = 'SNMP::Info::Layer3::Scalance'
+	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
+
 
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer3' )
@@ -1904,7 +1931,6 @@ sub device_type {
         {
             $objtype = $l3sysoidmap{$id};
         }
-
         # Layer 2 Supported
     }
     elsif ( $info->has_layer(2) ) {
@@ -2026,6 +2052,11 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::ZyXEL_DSLAM'
             if ( $desc =~ /8-port .DSL Module\(Annex .\)/i );
 
+        # Generic DOCSIS Cable Modem override
+        # If sysDesc follows the DOCSIS standard
+        $objtype = 'SNMP::Info::DocsisCM'
+            if ( $desc =~ /<<HW_REV: .*; VENDOR: .*; BOOTR: .*; SW_REV: .*; MODEL: .*>>/i);
+
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer2' )
             and ( defined($id) )
@@ -2095,6 +2126,13 @@ sub device_type {
         # Cisco IPS, older version which doesn't report layer 3 functionality
         $objtype = 'SNMP::Info::Layer7::CiscoIPS'
             if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.9\.1\.1545/i );
+
+	# Siemens Simatic Scalance 
+        # Scalance overwrites layers later, 
+        # so if we don't add it here (layer3) and at other
+        # it would flip/flop between those
+        $objtype = 'SNMP::Info::Layer3::Scalance'
+	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
 
         # Generic device classification based upon sysObjectID
         if ( defined($id) and $objtype eq 'SNMP::Info') {
@@ -2181,7 +2219,7 @@ Returns an object of a more-specific subclass.
 
  my $info = new SNMP::Info(...);
  # Returns more specific object type
- $info = $info->specific();
+ my $specific = $info->specify();
 
 Usually this method is called internally from new(AutoSpecify => 1)
 
@@ -2243,7 +2281,7 @@ sub cisco_comm_indexing {
 
 =back
 
-=head2 Globals (Scalar Methods)
+=head2 GLOBALS (Scalar Methods)
 
 These are methods to return scalar data from RFC1213.
 
@@ -3234,7 +3272,7 @@ A class inheriting this class must implement these data structures :
 
 =over
 
-=item  $INIT
+=item $INIT
 
 Used to flag if the MIBs have been loaded yet.
 
@@ -3381,7 +3419,7 @@ $info->init() will throw an exception if a MIB does not load.
 %MIBS = (
 
     # Include these here for cases where the Net-SNMP default MIB list has
-    # been overridden during the compliation of the local Net-SNMP library.
+    # been overridden during the compilation of the local Net-SNMP library.
     # These cover the globals and funcs defined in this file.
     'SNMPv2-MIB'  => 'sysObjectID',
     # (#325) 'RFC1213-MIB' => 'ipRouteIfIndex',
@@ -3438,6 +3476,7 @@ will inherit the Cisco Vlan module as an example.
  $VERSION = 0.1;
 
  use strict;
+ use warnings;
 
  use Exporter;
  use SNMP::Info::Layer2;
@@ -3451,14 +3490,14 @@ will inherit the Cisco Vlan module as an example.
 
  %MIBS    = (%SNMP::Info::Layer2::MIBS,
              %SNMP::Info::CiscoVTP::MIBS,
-             'SUPER-DOOPER-MIB'  => 'supermibobject'
+             'SUPER-DOOPER-MIB'  => 'supermibobject',
             );
 
  %GLOBALS = (%SNMP::Info::Layer2::GLOBALS,
              %SNMP::Info::CiscoVTP::GLOBALS,
              'name'              => 'supermib_supername',
              'favorite_color'    => 'supermib_fav_color_object',
-             'favorite_movie'    => 'supermib_fav_movie_val'
+             'favorite_movie'    => 'supermib_fav_movie_val',
              );
 
  %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
@@ -3466,16 +3505,16 @@ will inherit the Cisco Vlan module as an example.
              # Super Dooper MIB - Super Hero Table
              'super_hero_index'  => 'SuperHeroIfIndex',
              'super_hero_name'   => 'SuperHeroIfName',
-             'super_hero_powers' => 'SuperHeroIfPowers'
+             'super_hero_powers' => 'SuperHeroIfPowers',
             );
 
 
  %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
              %SNMP::Info::CiscoVTP::MUNGE,
-             'super_hero_powers' => \&munge_powers
+             'super_hero_powers' => \&munge_powers,
             );
 
- # OverRide uptime() method from %SNMP::Info::GLOBALS
+ # Override uptime() method from %SNMP::Info::GLOBALS
  sub uptime {
      my $sample = shift;
 
@@ -3826,7 +3865,7 @@ updated enumeration for C<ifOperStatus> in C<IF-MIB>.  This munge
 handles the "newer" definitions for the enumeration in IF-MIB.
 
 TODO: Get the precedence of MIBs and overriding of MIB data in Net-SNMP
-figured out.  Heirarchy/precendence of MIBS in SNMP::Info.
+figured out.  Hierarchy/precedence of MIBS in SNMP::Info.
 
 =cut
 
@@ -3898,7 +3937,7 @@ sub munge_e_type {
 
 Takes the SNMP::Session C<DestHost> argument and determines if it is an
 'IPv4' or 'IPv6' host. 'IPv6' hosts are prefixed with the C<udp6:>
-C<transport-specifier> as required by the undelying C<Net-SNMP> library.
+C<transport-specifier> as required by the underlying C<Net-SNMP> library.
 If unable to determine the type of address or resolve a DNS name, dies with
 C<croak>.
 
@@ -4611,7 +4650,7 @@ sub _load_attr {
 
          # Another check for SNMPv1 - noSuchName return may results in an $iid
          # we've already seen and $val an empty string.  If we don't catch
-         # this here we erronously report a loop below.
+         # this here we erroneously report a loop below.
             if ( defined $seen{$iid} and $seen{$iid} and $val eq '' ) {
                 last;
             }
@@ -4886,7 +4925,7 @@ sub _validate_autoload_method {
         || ($method !~ /^set/ && $access eq 'NoAccess')) {
 
             print
-                "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessable for requested operation.\n"
+                "SNMP::Info::_validate_autoload_method($attr : $oid) Not accessible for requested operation.\n"
                 if $self->debug();
             return;
 

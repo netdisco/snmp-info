@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::PacketFront
-# $Id$
 #
 # Copyright (c) 2011 Jeroen van Ingen
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::Layer3::PacketFront;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -112,7 +112,7 @@ sub layers {
     my $pfront = shift;
 
     my $layers = $pfront->SUPER::layers();
-    # Some models or softwware versions don't report L2 properly
+    # Some models or software versions don't report L2 properly
     # so add L2 capability to the output if the device has bridge ports.
     my $bports = $pfront->b_ports();
 

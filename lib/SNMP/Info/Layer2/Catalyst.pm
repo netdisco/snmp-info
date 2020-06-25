@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Catalyst
-# $Id$
 #
 # Copyright (c) 2002,2003 Regents of the University of California
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond
@@ -32,6 +31,7 @@
 package SNMP::Info::Layer2::Catalyst;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::CiscoStack;
 use SNMP::Info::Layer2::Cisco;
@@ -42,7 +42,7 @@ use SNMP::Info::Layer2::Cisco;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer2::Cisco::MIBS,
@@ -64,7 +64,7 @@ $VERSION = '3.68';
     %SNMP::Info::CiscoStack::MUNGE,
 );
 
-# Overidden Methods
+# Overridden Methods
 
 # i_physical sets a hash entry as true if the iid is a physical port
 sub i_physical {

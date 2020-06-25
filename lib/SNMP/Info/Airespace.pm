@@ -1,5 +1,4 @@
 # SNMP::Info::Airespace
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::Airespace;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::MIBS,

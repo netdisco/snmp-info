@@ -51,7 +51,7 @@ use SNMP::Info::IEEE802dot3ad;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -62,7 +62,6 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::IEEE802dot3ad::GLOBALS,
     # no way to get os version and other device details
     # ENTITY-MIB however can help out
     'os_ver'  => 'entPhysicalSoftwareRev.1',

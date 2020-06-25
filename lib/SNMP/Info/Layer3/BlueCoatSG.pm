@@ -28,6 +28,7 @@ package SNMP::Info::Layer3::BlueCoatSG;
 # POSSIBILITY OF SUCH DAMAGE.
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -36,7 +37,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS, %SNMP::Info::Layer3::MIBS,
@@ -55,7 +56,7 @@ $VERSION = '3.68';
 %MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::Layer3::MUNGE, );
 
 sub vendor {
-    return 'Blue Coat';
+    return 'bluecoat';
 }
 
 sub os {
@@ -65,7 +66,7 @@ sub os {
 sub os_ver {
     my $sg = shift;
     my $os_string = $sg->sw_ver();
-    if ($os_string =~ /^Version:\s(\w+)\s([\d\.]+)/) {
+    if (defined ($os_string) && $os_string =~ /^Version:\s(\w+)\s([\d\.]+)/) {
         return $2;
     } else {
         return ''; # perhaps we can try sysDescr or some other object...
@@ -92,7 +93,7 @@ Jeroen van Ingen
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
@@ -113,9 +114,9 @@ Subclass for Blue Coat SG Series proxy devices
 
 =head2 Required MIBs
 
- BLUECOAT-SG-PROXY-MIB
-
 =over
+
+=item F<BLUECOAT-SG-PROXY-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -133,7 +134,7 @@ These are methods that return scalar value from SNMP
 
 =item $router->vendor()
 
-Returns C<'Blue Coat'>
+Returns C<'bluecoat'>
 
 =item $router->os()
 

@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::N1600 - SNMP Interface to Nortel N16XX devices
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::Layer3::N1600;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::SONMP;
@@ -41,7 +41,7 @@ use SNMP::Info::SONMP;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -201,11 +201,6 @@ Eric Miller
 
 Provides abstraction to the configuration information obtainable from an
 Avaya/Nortel N16XX device through SNMP.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $n1600 = new SNMP::Info::Layer3::N1600(...);
 
 =head2 Inherited Classes
 

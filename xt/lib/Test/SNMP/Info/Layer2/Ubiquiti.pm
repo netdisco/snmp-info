@@ -61,8 +61,8 @@ sub vendor : Tests(2) {
   can_ok($test->{info}, 'vendor');
   is(
     $test->{info}->vendor(),
-    'Ubiquiti Networks, Inc.',
-    q(Vendor returns 'Ubiquiti Networks, Inc.')
+    'ubiquiti',
+    q(Vendor returns 'ubiquiti')
   );
 }
 

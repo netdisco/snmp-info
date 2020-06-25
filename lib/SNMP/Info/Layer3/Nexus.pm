@@ -44,7 +44,7 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 @SNMP::Info::Layer3::Nexus::EXPORT_OK = qw//;
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 # NOTE: Order creates precedence
 #       Example: v_name exists in Bridge.pm and CiscoVTP.pm
@@ -55,7 +55,7 @@ $VERSION = '3.68';
 %MIBS = (
 	%SNMP::Info::Layer3::CiscoSwitch::MIBS,
 	'CISCO-ENTITY-VENDORTYPE-OID-MIB'   => 'cevMIBObjects',
-    'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
+  'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
 );
 
 %GLOBALS = (

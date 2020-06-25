@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Microsoft
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::Layer3::Microsoft;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS, );
 
@@ -96,7 +96,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Microsoft - SNMP Interface to L3 Microsoft Windows router
+SNMP::Info::Layer3::Microsoft - SNMP Interface to L3 Microsoft Windows routers
 
 =head1 AUTHOR
 
@@ -110,7 +110,7 @@ begemot
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 

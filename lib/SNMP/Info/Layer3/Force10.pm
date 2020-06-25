@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Force10
-# $Id$
 #
 # Copyright (c) 2012 William Bulley
 # All rights reserved.
@@ -31,43 +30,39 @@
 package SNMP::Info::Layer3::Force10;
 
 use strict;
+use warnings;
 use Exporter;
 
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
-use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::Force10::ISA = qw/SNMP::Info::LLDP SNMP::Info::MAU
+@SNMP::Info::Layer3::Force10::ISA = qw/SNMP::Info::MAU
     SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Force10::EXPORT_OK = qw//;
 
 our ($VERSION, $DEBUG, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     'F10-PRODUCTS-MIB' => 'f10ESeriesProducts',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::MAU::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::MAU::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::MAU::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
 );
 
 # use MAU-MIB for admin. duplex and admin. speed
@@ -202,8 +197,6 @@ Subclass for Force10 Networks FTOS-based devices.
 
 =item SNMP::Info::MAU
 
-=item SNMP::Info::LLDP
-
 =back
 
 =head2 Required MIBs
@@ -217,8 +210,6 @@ Subclass for Force10 Networks FTOS-based devices.
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::MAU/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -254,10 +245,6 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
 
-=head2 Global Methods imported from SNMP::Info::Layer3
-
-See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
-
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
@@ -290,9 +277,5 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut

@@ -1,6 +1,5 @@
 #!/usr/bin/env perl
 # 00_local_spelling.t - Private test to spell check documentation
-# $Id$
 
 use warnings;
 use strict;

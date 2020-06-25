@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoQOS
-# $Id$
 #
 # Copyright (c) 2005 Alexander Hartmaier
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::CiscoQOS;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = ( 'CISCO-CLASS-BASED-QOS-MIB' => 'cbQosIfIndex', );
 
@@ -117,8 +117,6 @@ none.
 =item F<CISCO-CLASS-BASED-QOS-MIB>
 
 =back
-
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =head1 GLOBALS
 

@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Aironet
-# $Id$
 #
 # Copyright (c) 2008-2009 Max Baker changes from version 0.8 and beyond.
 #
@@ -33,9 +32,9 @@
 package SNMP::Info::Layer2::Aironet;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
-use SNMP::Info::Entity;
 use SNMP::Info::EtherLike;
 use SNMP::Info::CiscoStats;
 use SNMP::Info::CiscoConfig;
@@ -43,30 +42,28 @@ use SNMP::Info::CDP;
 use SNMP::Info::IEEE802dot11;
 
 @SNMP::Info::Layer2::Aironet::ISA
-    = qw/SNMP::Info::Layer2 SNMP::Info::Entity SNMP::Info::EtherLike
+    = qw/SNMP::Info::Layer2 SNMP::Info::EtherLike
     SNMP::Info::CiscoStats SNMP::Info::CiscoConfig SNMP::Info::CDP Exporter/;
 @SNMP::Info::Layer2::Aironet::EXPORT_OK = qw//;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %GLOBALS = (
     %SNMP::Info::IEEE802dot11::GLOBALS,
     %SNMP::Info::Layer2::GLOBALS,
-    %SNMP::Info::Entity::GLOBALS,
     %SNMP::Info::EtherLike::GLOBALS,
     %SNMP::Info::CiscoStats::GLOBALS,
     %SNMP::Info::CiscoConfig::GLOBALS,
     %SNMP::Info::CDP::GLOBALS,
     'serial' => 'entPhysicalSerialNum.1',
-    'ps1_type' => 'cpoePdCurrentPowerSource'
+    'ps1_type' => 'cpoePdCurrentPowerSource',
 );
 
 %FUNCS = (
     %SNMP::Info::IEEE802dot11::FUNCS,
     %SNMP::Info::Layer2::FUNCS,
-    %SNMP::Info::Entity::FUNCS,
     %SNMP::Info::EtherLike::FUNCS,
     %SNMP::Info::CiscoStats::FUNCS,
     %SNMP::Info::CiscoConfig::FUNCS,
@@ -88,7 +85,6 @@ $VERSION = '3.68';
 %MIBS = (
     %SNMP::Info::IEEE802dot11::MIBS,
     %SNMP::Info::Layer2::MIBS,
-    %SNMP::Info::Entity::MIBS,
     %SNMP::Info::EtherLike::MIBS,
     %SNMP::Info::CiscoStats::MIBS,
     %SNMP::Info::CiscoConfig::MIBS,
@@ -103,7 +99,6 @@ $VERSION = '3.68';
 %MUNGE = (
     %SNMP::Info::IEEE802dot11::MUNGE,
     %SNMP::Info::Layer2::MUNGE,
-    %SNMP::Info::Entity::MUNGE,
     %SNMP::Info::EtherLike::MUNGE,
     %SNMP::Info::CiscoStats::MUNGE,
     %SNMP::Info::CiscoConfig::MUNGE,
@@ -118,7 +113,6 @@ $VERSION = '3.68';
     = \&SNMP::Info::IEEE802dot11::dot11_cur_tx_pwr_mw;
 
 sub vendor {
-
     # Sorry, but it's true.
     return 'cisco';
 }
@@ -138,8 +132,13 @@ sub description {
     my $descr   = $aironet->SUPER::description();
     my $e_descr = $aironet->e_descr();
 
-    $descr = "$e_descr->{1}  $descr" if defined $e_descr->{1};
-
+    if (defined $e_descr->{1}) {
+      if (defined $descr) {
+        $descr = "$e_descr->{1}  $descr"
+      } else {
+        $descr = "$e_descr->{1}"
+      }
+    }
     return $descr;
 }
 
@@ -527,8 +526,6 @@ my $aironet = new SNMP::Info::Layer2::Aironet(...);
 
 =item SNMP::Info::Layer2
 
-=item SNMP::Info::Entity
-
 =item SNMP::Info::EtherLike
 
 =item SNMP::Info::CiscoStats
@@ -540,6 +537,16 @@ my $aironet = new SNMP::Info::Layer2::Aironet(...);
 =head2 Required MIBs
 
 =over
+
+=item F<CISCO-DOT11-ASSOCIATION-MIB>
+
+=item F<CISCO-DOT11-IF-MIB>
+
+=item F<CISCO-DOT11-SSID-SECURITY-MIB>
+
+=item F<CISCO-POE-PD-MIB>
+
+=item F<CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB>
 
 =item Inherited Classes
 
@@ -566,10 +573,6 @@ System description. Adds info from method e_descr() from SNMP::Info::Entity
 =head2 Globals imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::EtherLike
 
@@ -667,10 +670,6 @@ C<cpoePdSupportedPowerMode>.
 =head2 Table Methods imported from SNMP::Info::Layer2
 
 See documentation in L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Entity
-
-See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::EtherLike
 

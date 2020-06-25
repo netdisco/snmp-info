@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Juniper
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.
@@ -31,20 +30,19 @@
 package SNMP::Info::Layer3::Juniper;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::Juniper::ISA       = qw/SNMP::Info::Layer3 SNMP::Info::LLDP  Exporter/;
+@SNMP::Info::Layer3::Juniper::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Juniper::EXPORT_OK = qw//;
 
 our ($VERSION, $DEBUG, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     'JUNIPER-CHASSIS-DEFINES-MIB' => 'jnxChassisDefines',
     'JUNIPER-MIB'                 => 'jnxBoxAnatomy',
     'JUNIPER-VIRTUALCHASSIS-MIB'  => 'jnxVirtualChassisMemberTable',
@@ -54,7 +52,6 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'serial'    => 'jnxBoxSerialNo',
     'mac'       => 'dot1dBaseBridgeAddress',
     'box_descr' => 'jnxBoxDescr',
@@ -64,7 +61,6 @@ $VERSION = '3.68';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 
     # JUNIPER-VLAN-MIB::jnxExVlanPortGroupTable
     'i_trunk' => 'jnxExVlanPortAccessMode',
@@ -91,7 +87,6 @@ $VERSION = '3.68';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
     'e_containers_type' => \&SNMP::Info::munge_e_type,
     'e_contents_type'   => \&SNMP::Info::munge_e_type,
 );
@@ -143,10 +138,10 @@ sub model {
     my $l3 = shift;
     my $id = $l3->id();
     # Query the junos device model.
-    my $mod = uc $l3->vc_model() || '';
+    my $mod = $l3->vc_model() || '';
 
-    if  (not $mod eq '') {
-        return $mod;
+    if (not $mod eq '') {
+        return uc $mod;
     }
     # Fallback to old method
     unless ( defined $id ) {
@@ -710,8 +705,6 @@ Subclass for Juniper Devices running JUNOS
 
 =item SNMP::Info::Layer3
 
-=item SNMP::Info::LLDP
-
 =back
 
 =head2 Required MIBs
@@ -733,8 +726,6 @@ Subclass for Juniper Devices running JUNOS
 =head2 Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::LLDP/"Required MIBs"> for its own MIB requirements.
 
 =head1 GLOBALS
 
@@ -797,10 +788,6 @@ The name, model, or detailed description of the device.
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
-
-=head2 Global Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -916,9 +903,5 @@ BOOLEAN. Is a Field Replaceable unit?
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =cut

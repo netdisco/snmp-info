@@ -1,5 +1,4 @@
 # SNMP::Info::RapidCity
-# $Id$
 #
 # Copyright (c) 2014 Eric Miller
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::RapidCity;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     'RAPID-CITY' => 'rapidCity',
@@ -298,7 +298,6 @@ sub set_i_duplex_admin {
     else {
         return $rapidcity->set_rc_duplex_admin( $duplexes{$duplex}, $iid );
     }
-    return;
 }
 
 sub set_i_speed_admin {
@@ -321,7 +320,6 @@ sub set_i_speed_admin {
     else {
         return $rapidcity->set_rc_speed_admin( $speeds{$speed}, $iid );
     }
-    return;
 }
 
 sub v_index {
@@ -914,11 +912,15 @@ None.
 
 =over
 
-=item RAPID-CITY
+=item F<RAPID-CITY>
+
+=item F<NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB>
+
+=item F<NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB>
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

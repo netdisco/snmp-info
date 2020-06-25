@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::Allied
-# $Id$
 #
 # Copyright (c) 2008 Max Baker
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::Layer2::Allied;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 use SNMP::Info::Layer1;
@@ -40,7 +40,7 @@ use SNMP::Info::Layer1;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %GLOBALS = ( %SNMP::Info::Layer2::GLOBALS );
 
@@ -70,7 +70,7 @@ sub os_ver {
     my $allied = shift;
     my $descr  = $allied->description();
 
-    if ( $descr =~ m/version (\d+\.\d+)/ ) {
+    if ( defined ($descr) && $descr =~ m/version (\d+\.\d+)/ ) {
         return $1;
     }
     return;
@@ -78,10 +78,9 @@ sub os_ver {
 
 sub model {
     my $allied = shift;
-
     my $desc = $allied->description();
 
-    if ( $desc =~ /(AT-80\d{2}\S*)/ ) {
+    if ( defined ($desc) &&  $desc =~ /(AT-80\d{2}\S*)/ ) {
         return $1;
     }
     return;
@@ -191,7 +190,7 @@ These are methods that return scalar value from SNMP
 
 =item $allied->vendor()
 
-Returns 'allied' :)
+Returns 'allied'
 
 =item $allied->os()
 

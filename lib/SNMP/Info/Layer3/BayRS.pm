@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::BayRS
-# $Id$
 #
 # Copyright (c) 2008 Eric Miller
 # All rights reserved.
@@ -31,24 +30,21 @@
 package SNMP::Info::Layer3::BayRS;
 
 use strict;
+use warnings;
 use Exporter;
-use SNMP::Info;
 use SNMP::Info::Layer3;
-use SNMP::Info::Bridge;
 
-@SNMP::Info::Layer3::BayRS::ISA = qw/SNMP::Info SNMP::Info::Layer3
-    SNMP::Info::Bridge Exporter/;
+@SNMP::Info::Layer3::BayRS::ISA = qw/SNMP::Info::Layer3
+    Exporter/;
 @SNMP::Info::Layer3::BayRS::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE, %MODEL_MAP,
     %MODID_MAP, %PROCID_MAP);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
-    %SNMP::Info::MIBS,
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::Bridge::MIBS,
     'Wellfleet-HARDWARE-MIB'        => 'wfHwBpIdOpt',
     'Wellfleet-OSPF-MIB'            => 'wfOspfRouterId',
     'Wellfleet-DOT1QTAG-CONFIG-MIB' => 'wfDot1qTagCfgVlanName',
@@ -57,18 +53,14 @@ $VERSION = '3.68';
 );
 
 %GLOBALS = (
-    %SNMP::Info::GLOBALS,
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::Bridge::GLOBALS,
     'bp_id'       => 'wfHwBpIdOpt',
     'bp_serial'   => 'wfHwBpSerialNumber',
     'ospf_rtr_id' => 'wfOspfRouterId',
 );
 
 %FUNCS = (
-    %SNMP::Info::FUNCS,
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::Bridge::FUNCS,
 
     # From Wellfleet-CSMACD-MIB::wfCSMACDTable
     'wf_csmacd_cct'  => 'wfCSMACDCct',
@@ -107,9 +99,7 @@ $VERSION = '3.68';
 );
 
 %MUNGE = (
-    %SNMP::Info::MUNGE,
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::Bridge::MUNGE,
     'wf_hw_boot'     => \&munge_hw_rev,
     'wf_hw_diag'     => \&munge_hw_rev,
     'wf_hw_mobo_ser' => \&munge_wf_serial,
@@ -541,7 +531,10 @@ sub model {
     my $bayrs = shift;
     my $bp_id = $bayrs->bp_id();
 
-    return defined $MODEL_MAP{$bp_id} ? $MODEL_MAP{$bp_id} : $bp_id;
+    if (defined $bp_id) {
+      return defined $MODEL_MAP{$bp_id} ? $MODEL_MAP{$bp_id} : $bp_id;
+    }
+    return;
 }
 
 sub vendor {
@@ -776,7 +769,7 @@ sub e_index {
     my $bp_id = $bayrs->bp_id();
 
     # Don't like polling all these columns to build the index, can't think of
-    # a better way right now.  Luckly all this data will be cached for the
+    # a better way right now.  Luckily all this data will be cached for the
     # rest of the e_* methods
 
     # Using mib leafs so we don't have to define everything in FUNCS
@@ -805,7 +798,7 @@ sub e_index {
     my @slots = ( $wf_mb, $wf_db, $wf_bb, $wf_mod, $wf_mod1, $wf_mod2 );
     my @mods = ( $wf_mm, $wf_dm );
 
-    # We're going to hack an index: Slot/Module/Postion
+    # We're going to hack an index: Slot/Module/Position
     my %wf_e_index;
 
     # Chassis on BN types
@@ -1406,18 +1399,9 @@ Eric Miller
 
 Abstraction subclass for routers running Avaya/Nortel BayRS.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $bayrs = new SNMP::Info::Layer3::BayRS(...);
-
 =head2 Inherited Classes
 
 =over
-
-=item SNMP::Info
-
-=item SNMP::Info::Bridge
 
 =item SNMP::Info::Layer3
 
@@ -1440,10 +1424,6 @@ after determining a more specific class using the method above.
 =back
 
 =head2 Inherited MIBs
-
-See L<SNMP::Info/"Required MIBs"> for its own MIB requirements.
-
-See L<SNMP::Info::Bridge/"Required MIBs"> for its own MIB requirements.
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
 
@@ -1499,14 +1479,6 @@ Returns the first found:  CLIP (CircuitLess IP), (C<wfOspfRouterId>), or
 undefined.
 
 =back
-
-=head2 Globals imported from SNMP::Info
-
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::Bridge
-
-See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer3
 
@@ -1624,14 +1596,6 @@ entity which 'contains' this entity.  A value of zero indicates	this entity
 is not contained in any other entity.
 
 =back
-
-=head2 Table Methods imported from SNMP::Info
-
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Bridge
-
-See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::C1900
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -33,6 +32,7 @@
 package SNMP::Info::Layer2::C1900;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
@@ -48,7 +48,7 @@ use SNMP::Info::Layer2;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
@@ -311,11 +311,6 @@ Catalyst 1900 device through SNMP.  See SNMP::Info for full documentation
 
 Note that most of these devices only talk SNMP version 1, but not all.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $c1900 = new SNMP::Info::Layer2::C1900(...);
-
 =head2 Inherited classes
 
 =over
@@ -341,8 +336,6 @@ after determining a more specific class using the method above.
 =item F<STAND-ALONE-ETHERNET-SWITCH-MIB (ESSWITCH-MIB)>
 
 F<ESSWITCH-MIB> is included in the Version 1 MIBs from Cisco.
-
-They can be found at ftp://ftp.cisco.com/pub/mibs/v1/v1.tar.gz
 
 =back
 
@@ -386,7 +379,7 @@ the version from there.
 
 =item $c1900->vendor()
 
-Returns 'cisco' :)
+Returns 'cisco'
 
 =back
 
@@ -419,10 +412,6 @@ See L<SNMP::Info::CiscoConfig/"GLOBALS"> for details.
 =head2 Globals imported from SNMP::Info::CiscoStpExtensions
 
 See L<SNMP::Info::CiscoStpExtensions/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::CiscoAgg
-
-See L<SNMP::Info::CiscoAgg/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::Layer2
 

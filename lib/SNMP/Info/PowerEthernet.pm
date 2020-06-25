@@ -1,5 +1,4 @@
 # SNMP::Info::PowerEthernet
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::PowerEthernet;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = ( 'POWER-ETHERNET-MIB' => 'pethPsePortDetectionStatus' );
 

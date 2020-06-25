@@ -31,21 +31,20 @@
 package SNMP::Info::Layer2::HPVC;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
-use SNMP::Info::LLDP;
 
 @SNMP::Info::Layer2::HPVC::ISA
-    = qw/SNMP::Info::Layer2 SNMP::Info::LLDP Exporter/;
+    = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::HPVC::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     'HPVC-MIB'       => 'vcDomainName',
     'CPQSINFO-MIB'   => 'cpqSiSysSerialNum',
     'HPVCMODULE-MIB' => 'vcModuleDomainName',
@@ -53,7 +52,6 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'serial1'      => 'cpqSiSysSerialNum.0',
     'os_ver'       => 'cpqHoSWRunningVersion.1',
     'os_bin'       => 'cpqHoFwVerVersion.1',
@@ -62,16 +60,12 @@ $VERSION = '3.68';
 
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
-
 );
 
 %MUNGE = (
     # Inherit all the built in munging
     %SNMP::Info::Layer2::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
 );
-
 
 # Method Overrides
 
@@ -119,11 +113,6 @@ Jeroen van Ingen
 
 Provides abstraction to the configuration information obtainable from a
 HP Virtual Connect Switch via SNMP.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $hp = new SNMP::Info::Layer2::HPVC(...);
 
 =head2 Inherited Classes
 

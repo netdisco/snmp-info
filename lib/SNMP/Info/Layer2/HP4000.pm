@@ -32,6 +32,7 @@
 package SNMP::Info::Layer2::HP4000;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
@@ -44,12 +45,11 @@ use SNMP::Info::CDP;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MODEL_MAP, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::CDP::MIBS,
     'RFC1271-MIB'    => 'logDescription',
     'HP-ICF-OID'     => 'hpSwitch4000',
@@ -427,7 +427,7 @@ sub set_i_vlan {
                     $hp->error_throw("Error removing previous untagged vlan from port, should never happen...\n") unless defined $rv;
                 }
             } else {
-                # If vlan change was not succesful, try to revert to the old situation.
+                # If vlan change was not successful, try to revert to the old situation.
                 if (defined $old_untagged) {
                     $rv = $hp->set_hp_v_if_tag(2, $old_untagged) if defined $old_untagged;
                     if (defined $rv) {
@@ -503,11 +503,6 @@ HP ProCurve Switch via SNMP.
 Note:  Some HP Switches will connect via SNMP version 1, but a lot of config
 data will not be available.  Make sure you try and connect with Version 2
 first, and then fail back to version 1.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $hp = new SNMP::Info::Layer2::HP4000(...);
 
 =head2 Inherited Classes
 

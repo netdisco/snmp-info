@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Extreme - SNMP Interface to Extreme devices
-# $Id$
 #
 # Copyright (c) 2012 Eric Miller
 #
@@ -33,25 +32,24 @@
 package SNMP::Info::Layer3::Extreme;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
-use SNMP::Info::LLDP;
 use SNMP::Info::EDP;
 
 @SNMP::Info::Layer3::Extreme::ISA
-    = qw/SNMP::Info::Layer3 SNMP::Info::MAU SNMP::Info::LLDP
+    = qw/SNMP::Info::Layer3 SNMP::Info::MAU
     SNMP::Info::EDP Exporter/;
 @SNMP::Info::Layer3::Extreme::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::EDP::MIBS,
     'EXTREME-BASE-MIB'           => 'extremeAgent',
     'EXTREME-SYSTEM-MIB'         => 'extremeSystem',
@@ -64,7 +62,6 @@ $VERSION = '3.68';
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::MAU::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::EDP::GLOBALS,
     'serial1'        => 'extremeSystemID.0',
     'temp'           => 'extremeCurrentTemperature',
@@ -78,7 +75,6 @@ $VERSION = '3.68';
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::MAU::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::EDP::FUNCS,
     'fan_state' => 'extremeFanOperational',
     # EXTREME-FDB-MIB:extremeFdbMacFdbTable
@@ -119,7 +115,6 @@ $VERSION = '3.68';
     # Inherit all the built in munging
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::MAU::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::EDP::MUNGE,
     'ex_fw_mac'        => \&SNMP::Info::munge_mac,
     'ps1_status_old'   => \&munge_true_ok,
@@ -166,7 +161,6 @@ sub vendor {
 
 sub os {
     my $extreme = shift;
-
     my $desc = $extreme->description();
 
     if ( $desc =~ /xos/i ) {
@@ -905,11 +899,6 @@ Eric Miller, Bill Fenner
 Provides abstraction to the configuration information obtainable from an
 Extreme device through SNMP.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
-my $extreme = new SNMP::Info::Layer3::Extreme(...);
-
 =head2 Inherited Classes
 
 =over
@@ -917,8 +906,6 @@ my $extreme = new SNMP::Info::Layer3::Extreme(...);
 =item SNMP::Info::Layer3
 
 =item SNMP::Info::MAU
-
-=item SNMP::Info::LLDP
 
 =item SNMP::Info::EDP
 
@@ -1013,10 +1000,6 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 =head2 Globals imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
-
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::EDP
 
@@ -1227,10 +1210,6 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::EDP
 

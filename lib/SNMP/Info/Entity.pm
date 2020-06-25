@@ -1,5 +1,4 @@
 # SNMP::Info::Entity
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -33,6 +32,7 @@
 package SNMP::Info::Entity;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -41,7 +41,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = ( 'ENTITY-MIB' => 'entPhysicalSerialNum' );
 
@@ -75,7 +75,7 @@ sub e_index {
     my $entity  = shift;
     my $partial = shift;
 
-    # Force use of MIB leaf to avoid inheritance issues in psuedo classes
+    # Force use of MIB leaf to avoid inheritance issues in pseudo classes
     my $e_descr = $entity->entPhysicalDescr($partial);
 
     return unless ($e_descr);
@@ -212,8 +212,6 @@ none.
 =item F<ENTITY-MIB>
 
 =back
-
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =head1 GLOBALS
 

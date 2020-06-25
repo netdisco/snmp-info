@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::C2900
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -33,6 +32,7 @@
 package SNMP::Info::Layer2::C2900;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2::Cisco;
 
@@ -41,7 +41,7 @@ use SNMP::Info::Layer2::Cisco;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::Cisco::GLOBALS,
@@ -244,11 +244,6 @@ Max Baker
 Provides abstraction to the configuration information obtainable from a
 C2900 device through SNMP.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $c2900 = new SNMP::Info::Layer2::C2900(...);
-
 =head2 Inherited Classes
 
 =over
@@ -281,7 +276,7 @@ These are methods that return scalar value from SNMP
 
 =item $c2900->vendor()
 
-Returns 'cisco' :)
+Returns 'cisco'
 
 =item $c2900->cisco_comm_indexing()
 

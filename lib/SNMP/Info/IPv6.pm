@@ -30,6 +30,7 @@
 package SNMP::Info::IPv6;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -44,7 +45,7 @@ use constant {
     IPV6MIB => 3,
 };
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 
 
@@ -479,7 +480,9 @@ none.
 =over
 
 =item F<IP-MIB>
+
 =item F<IPV6-MIB>
+
 =item F<CISCO-IETF-IP-MIB>
 
 =back

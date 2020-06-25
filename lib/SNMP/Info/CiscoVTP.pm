@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoVTP
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -33,6 +32,7 @@
 package SNMP::Info::CiscoVTP;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -41,7 +41,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     'CISCO-VTP-MIB'                       => 'vtpVlanName',
@@ -564,8 +564,6 @@ None.
 =item F<CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB>
 
 =back
-
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =head1 GLOBALS
 

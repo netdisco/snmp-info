@@ -28,6 +28,7 @@ package SNMP::Info::Layer2::Kentrox;
 # POSSIBILITY OF SUCH DAMAGE.
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 
@@ -36,7 +37,7 @@ use SNMP::Info::Layer2;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -57,13 +58,13 @@ $VERSION = '3.68';
 %MUNGE = ( %SNMP::Info::Layer2::MUNGE, );
 
 sub os {
-    return 'Kentrox';
+    return 'kentrox';
 }
 
 sub os_ver {
     my $dsver = shift;
     my $descr = $dsver->description();
-    if ( $descr =~ /^\S+\s\S+\s\S+\s(\S+)/){
+    if ( defined ($descr) && $descr =~ /^\S+\s\S+\s\S+\s(\S+)/){
         return $1;
     }
     return;
@@ -72,20 +73,20 @@ sub os_ver {
 sub serial {
     my $dsserial = shift;
     my $serial = $dsserial->ds_sysinfo();
-    if ( $serial =~ /SERIAL\s(\S+)/){
+    if ( defined ($serial) && $serial =~ /SERIAL\s(\S+)/){
         my $str = substr($1,8,10);
         return $str;
     }
     return;
 }
 sub vendor {
-    return 'Kentrox';
+    return 'kentrox';
 }
 
 sub model {
     my $dsmodel = shift;
     my $descr = $dsmodel->description();
-    if ( $descr =~ /^(\S+\s\S+)/){
+    if ( defined ($descr) && $descr =~ /^(\S+\s\S+)/){
         return $1;
     }
     return;
@@ -110,7 +111,7 @@ phishphreek@gmail.com
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 

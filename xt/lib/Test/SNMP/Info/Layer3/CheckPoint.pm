@@ -48,11 +48,16 @@ sub setup : Tests(setup) {
   # Start with a common cache that will serve most tests
   my $cache_data = {
     '_layers' => 76,
+    # descr is from older ipso based devices
     '_description' => 'i386 FreeBSD 2.1.5. Check Point FireWall-1 Version',
 
     # CHECKPOINT-MIB::fw
     '_id'   => '.1.3.6.1.4.1.2620.1.1',
     'store' => {},
+    '_serial_number' => '0123456789abcdef',
+    '_product_name' => 'Check Point 12200',
+    '_manufacturer' => 'Checkpoint',
+    '_version' => 'R80.20',
   };
   $test->{info}->cache($cache_data);
 }
@@ -68,14 +73,28 @@ sub vendor : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'vendor');
-  is($test->{info}->vendor(), 'checkpoint', q(Vendor returns 'checkpoint'));
+  is($test->{info}->vendor(), 'checkpoint', q(Vendor returns 'checkpoint')); 
+}
+
+sub os_ver : Tests(2) {
+  my $test = shift;
+    
+  can_ok($test->{info}, 'os_ver');
+  is($test->{info}->os_ver(), 'R80.20',q(OS Version return 'R80.20'));
+}
+
+sub serial : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'serial');
+  is($test->{info}->serial(), '0123456789abcdef', q(Serial returns '0123456789abcdef'));
 }
 
 sub model : Tests(3) {
   my $test = shift;
 
   can_ok($test->{info}, 'model');
-  is($test->{info}->model(), 'fw', q(Model is expected value));
+  is($test->{info}->model(), 'Check Point 12200', q(Model is expected value));
 
   $test->{info}->clear_cache();
   is($test->{info}->model(), undef, q(No description returns undef model));

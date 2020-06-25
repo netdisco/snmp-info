@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::CheckPoint
-# $Id$
 #
 # Copyright (c) 2008 Bill Fenner
 # All rights reserved.
@@ -31,20 +30,19 @@
 package SNMP::Info::Layer3::CheckPoint;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 
-@SNMP::Info::Layer3::CheckPoint::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::CheckPoint::ISA       = qw/SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::CheckPoint::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     'CHECKPOINT-MIB'      => 'fwProduct',
     'UCD-SNMP-MIB'        => 'versionTag',
     'NET-SNMP-TC'         => 'netSnmpAliasDomain',
@@ -54,15 +52,16 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'netsnmp_vers'   => 'versionTag',
     'hrSystemUptime' => 'hrSystemUptime',
-
+    'serial_number'  => 'svnApplianceSerialNumber',
+    'product_name'   => 'svnApplianceProductName',
+    'manufacturer'   => 'svnApplianceManufacturer',
+    'version'        => 'svnVersion',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 
     # Net-SNMP Extend table that could but customize to add a the CheckPoint version
     'extend_output_table' => 'nsExtendOutputFull',
@@ -70,11 +69,16 @@ $VERSION = '3.68';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
 );
 
 sub vendor {
-    return 'checkpoint';
+    my $ckp = shift;
+
+    if (defined $ckp->manufacturer) {
+        return lc $ckp->manufacturer;
+    } else {
+        return 'checkpoint';
+    }
 }
 
 sub model {
@@ -83,7 +87,9 @@ sub model {
 
     my $model = &SNMP::translateObj($id);
 
-    if (defined $model) {
+    if (defined $ckp->product_name) {
+        return $ckp->product_name;
+    } elsif (defined $model) {
         $model =~ s/^checkPoint//;
         return $model;
     } else {
@@ -97,41 +103,48 @@ sub os {
 
 sub os_ver {
     my $ckp = shift;
-    my $extend_table = $ckp->extend_output_table() || {};
+    if (defined $ckp->version) {
+        return $ckp->version;
+    } else {
+        my $extend_table = $ckp->extend_output_table() || {};
 
-    my $descr   = $ckp->description();
-    my $vers    = $ckp->netsnmp_vers();
-    my $os_ver  = undef;
+        my $descr   = $ckp->description();
+        my $vers    = $ckp->netsnmp_vers();
+        my $os_ver  = undef;
 
-    foreach my $ex (keys %$extend_table) {
-        (my $name = pack('C*',split(/\./,$ex))) =~ s/[^[:print:]]//g;
-        if ($name eq 'ckpVersion') {
-            return $1 if ($extend_table->{$ex} =~ /^This is Check Point's software version (.*)$/);
-            last;
+        foreach my $ex (keys %$extend_table) {
+            (my $name = pack('C*',split(/\./,$ex))) =~ s/[^[:print:]]//g;
+            if ($name eq 'ckpVersion') {
+                return $1 if ($extend_table->{$ex} =~ /^This is Check Point's software version (.*)$/);
+                last;
+            }
         }
-    }
 
-    $os_ver = $1 if ( $descr =~ /^\S+\s+\S+\s+(\S+)\s+/ );
-    if ($vers) {
-        $os_ver = "???" unless defined($os_ver);
-        $os_ver .= " / Net-SNMP " . $vers;
+        $os_ver = $1 if ( $descr =~ /^\S+\s+\S+\s+(\S+)\s+/ );
+        if ($vers) {
+            $os_ver = "???" unless defined($os_ver);
+            $os_ver .= " / Net-SNMP " . $vers;
+        }
+        return $os_ver;
     }
-
-    return $os_ver;
 }
 
 sub serial {
     my $ckp = shift;
-    my $extend_table = $ckp->extend_output_table() || {};
 
-    foreach my $ex (keys %$extend_table) {
-        (my $name = pack('C*',split(/\./,$ex))) =~ s/[^[:print:]]//g;
-        if ($name eq 'ckpAsset') {
-            return $1 if ($extend_table->{$ex} =~ /Serial Number: (\S+)/);
-            last;
+    if (defined $ckp->serial_number) {
+        return $ckp->serial_number;
+    } else {
+        my $extend_table = $ckp->extend_output_table() || {};
+
+        foreach my $ex (keys %$extend_table) {
+            (my $name = pack('C*',split(/\./,$ex))) =~ s/[^[:print:]]//g;
+            if ($name eq 'ckpAsset') {
+                return $1 if ($extend_table->{$ex} =~ /Serial Number: (\S+)/);
+                last;
+            }
         }
     }
-
     return '';
 }
 
@@ -199,11 +212,13 @@ Ambroise Rosset
 
 =head1 DESCRIPTION
 
-Subclass for Generic Net-SNMP devices
+Subclass for CheckPoint Devices.
 
 =head2 WARNING
 
-To correctly and completelly work, you should add the following line in the file C</etc/snmp/snmpd.local.conf> on each of your CheckPoint devices:
+To correctly and completely work on IPSO based devices, you should
+add the following line in the file C</etc/snmp/snmpd.local.conf> on each
+of your CheckPoint devices:
 
  # Netdisco SNMP configuration
  extend  ckpVersion /opt/CPsuite-R77/fw1/bin/fw ver
@@ -221,7 +236,11 @@ To correctly and completelly work, you should add the following line in the file
 
 =over
 
+=item F<CHECKPOINT-MIB>
+
 =item F<UCD-SNMP-MIB>
+
+=item F<NET-SNMP-EXTEND-MIB>
 
 =item F<NET-SNMP-TC>
 
@@ -230,8 +249,6 @@ To correctly and completelly work, you should add the following line in the file
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
-
-See L<SNMP::Info::LLDP> for its own MIB requirements.
 
 =back
 
@@ -243,11 +260,12 @@ These are methods that return scalar value from SNMP
 
 =item $ckp->vendor()
 
-Returns 'checkpoint'.
+Returns C<svnApplianceManufacturer> in lowercase, else 'checkpoint'.
 
 =item $ckp->model()
 
-Return the model type of the CheckPoint device (Based on the sysObjectOID translation).
+Returns C<svnApplianceProductName>, else the model type based on the
+sysObjectOID translation.
 
 =item $ckp->os()
 
@@ -255,8 +273,8 @@ Returns the OS extracted from C<sysDescr>.
 
 =item $ckp->os_ver()
 
-Returns the software version extracted from C<sysDescr>, along
-with the Net-SNMP version.
+Returns C<svnVersion>, else the software version is extracted from
+C<sysDescr>, along with the Net-SNMP version.
 
 =item $ckp->uptime()
 
@@ -266,8 +284,9 @@ are based on agent uptime, so use orig_uptime().
 
 =item $ckp->serial()
 
-Return the serial number of the device if the SNMP server is configured as indicated previously.
-Return '' in other case.
+Returns <svnApplianceSerialNumber>, else the serial number of the
+device if the SNMP server is configured as indicated previously.
+Returns '' in other case.
 
 =item $ckp->layers()
 
@@ -278,10 +297,6 @@ Return '01001100'.
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Globals imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
 
 =head1 TABLE ENTRIES
 
@@ -304,11 +319,11 @@ Ignores loopback
 
 See documentation in L<SNMP::Info::Layer3> for details.
 
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
-
 =head1 NOTES
+
+If your device is not recognized by SNMP::Info as being in the class
+L<SNMP::Info::Layer3::CheckPoint> you might need additional snmp
+configuration on the CheckPoint device.
 
 In order to cause SNMP::Info to classify your device into this class, it
 may be necessary to put a configuration line into your F<snmpd.conf>

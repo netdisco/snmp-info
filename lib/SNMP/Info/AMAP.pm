@@ -30,6 +30,7 @@
 package SNMP::Info::AMAP;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -38,18 +39,18 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
-%MIBS
-    = ( 'ALCATEL-IND1-INTERSWITCH-PROTOCOL-MIB' => 'aipAMAPRemDeviceType', );
+%MIBS = (
+  'ALCATEL-IND1-INTERSWITCH-PROTOCOL-MIB' => 'aipAMAPRemDeviceType',
+);
 
 %GLOBALS = (
 
 );
 
 %FUNCS = (
-
-    # EXTREME-EDP-MIB::extremeEdpTable
+    # ALCATEL-IND1-INTERSWITCH-PROTOCOL-MIB::aipAMAPRemHostname
     'amap_rem_sysname' => 'aipAMAPRemHostname',
 );
 
@@ -91,7 +92,7 @@ sub _conn_table_mac {
 # address since they should all originate from the same device, but we don't
 # know if they would all be reachable from the network management application.
 #
-# We don't inplement partials since this is private index function
+# We don't implement partials since this is private index function
 sub _amap_index {
     my $amap = shift;
 
@@ -253,7 +254,7 @@ Eric Miller
 
  $hasamap   = $amap->hasAMAP() ? 'yes' : 'no';
 
- # Print out a map of device ports with LLDP neighbors:
+ # Print out a map of device ports with AMAP neighbors:
  my $interfaces    = $amap->interfaces();
  my $amap_if       = $amap->amap_if();
  my $amap_ip       = $amap->amap_ip();
@@ -291,7 +292,7 @@ None.
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 

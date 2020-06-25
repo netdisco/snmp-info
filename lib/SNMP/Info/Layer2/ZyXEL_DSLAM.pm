@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2::ZyXEL_DSLAM
-# $Id$
 #
 # Copyright (c) 2008 Max Baker
 # All rights reserved.
@@ -31,6 +30,7 @@
 package SNMP::Info::Layer2::ZyXEL_DSLAM;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 
@@ -39,7 +39,7 @@ use SNMP::Info::Layer2;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 # Set for No CDP
 %GLOBALS = ( %SNMP::Info::Layer2::GLOBALS );
@@ -77,7 +77,7 @@ sub os_ver {
     my $zyxel = shift;
     my $descr = $zyxel->description();
 
-    if ( $descr =~ m/version (\S+) / ) {
+    if ( defined ($descr) && $descr =~ m/version (\S+) / ) {
         return $1;
     }
     return;
@@ -88,11 +88,13 @@ sub model {
 
     my $desc = $zyxel->description();
 
-    if ( $desc =~ /8-port ADSL Module\(Annex A\)/ ) {
+    if (defined $desc) {
+      if ($desc =~ /8-port ADSL Module\(Annex A\)/) {
         return "AAM1008-61";
-    }
-    elsif ( $desc =~ /8-port ADSL Module\(Annex B\)/ ) {
+      }
+      elsif ($desc =~ /8-port ADSL Module\(Annex B\)/) {
         return "AAM1008-63";
+      }
     }
     return;
 }
@@ -130,11 +132,11 @@ Dmitry Sergienko (C<dmitry@trifle.net>)
                           Debug       => 1,
                           DestHost    => 'myhub',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
- my $class      = $l2->class();
+ my $class      = $zyxel->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
@@ -174,11 +176,11 @@ These are methods that return scalar value from SNMP
 
 =item $zyxel->vendor()
 
-Returns 'ZyXEL' :)
+Returns 'zyxel'
 
 =item $zyxel->os()
 
-Returns 'ZyXEL'
+Returns 'zyxel'
 
 =item $zyxel->os_ver()
 

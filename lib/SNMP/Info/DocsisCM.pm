@@ -1,7 +1,6 @@
-# SNMP::Info::CiscoRTT
+# SNMP::Info::DocsisCM - SNMP Interface to DOCSIS Cable Modems
 #
-# Copyright (c) 2005 Alexander Hartmaier
-# All rights reserved.
+# Copyright (c) 2019 by The Netdisco Developer Team.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -27,110 +26,101 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package SNMP::Info::CiscoRTT;
+package SNMP::Info::DocsisCM;
 
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info;
 
-@SNMP::Info::CiscoRTT::ISA       = qw/SNMP::Info Exporter/;
-@SNMP::Info::CiscoRTT::EXPORT_OK = qw//;
+use SNMP::Info::Layer2;
+
+@SNMP::Info::DocsisCM::ISA       = qw/SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::DocsisCM::EXPORT_OK = qw//;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
 $VERSION = '3.70';
-
-%MIBS = ( 'CISCO-RTTMON-MIB' => 'rttMonCtrlAdminOwner', );
-
-%GLOBALS = ();
-
-%FUNCS = (
-
-    # CISCO-RTTMON-MIB
-    'rtt_desc' => 'rttMonCtrlAdminOwner',
-    'rtt_last' => 'rttMonLatestRttOperCompletionTime',
+ 
+%MIBS = (
+    %SNMP::Info::Layer2::MIBS
 );
 
-%MUNGE = ();
+%GLOBALS = (
+    %SNMP::Info::Layer2::GLOBALS
+);
+
+%FUNCS  = (
+    %SNMP::Info::Layer2::FUNCS
+);
+
+%MUNGE = (
+    %SNMP::Info::Layer2::MUNGE
+);
+
+sub vendor {
+    my $cm = shift;
+    my $descr = $cm->description();
+    return $1 if $descr =~ /VENDOR: (.*?);/;
+}
+
+sub model {
+    my $cm = shift;
+    my $descr = $cm->description();
+    return $1 if $descr =~ /MODEL: (.*?)>>/;
+}
+
+sub os {
+    return "CM";
+}
+
+sub os_ver {
+    my $cm = shift;
+    my $descr = $cm->description();
+    return $1 if $descr =~ /SW_REV: (.*?);/;
+}
 
 1;
 __END__
 
 =head1 NAME
 
-SNMP::Info::CiscoRTT - SNMP Interface to Cisco's Round Trip Time MIBs
-
-=head1 AUTHOR
-
-Alexander Hartmaier
-
-=head1 SYNOPSIS
-
- # Let SNMP::Info determine the correct subclass for you.
- my $rtt = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          DestHost    => 'myswitch',
-                          Community   => 'public',
-                          Version     => 2
-                        )
-    or die "Can't connect to DestHost.\n";
-
- my $class = $rtt->class();
- print "SNMP::Info determined this device to fall under subclass : $class\n";
+SNMP::Info::DocsisCM - SNMP Interface for DOCSIS Cable Modems
 
 =head1 DESCRIPTION
-
-SNMP::Info::CiscoRTT is a subclass of SNMP::Info that provides
-information about a cisco device's RTT values.
-
-Use or create in a subclass of SNMP::Info.  Do not use directly.
+SNMP::Info::DocsisCM is a subclass of SNMP::Info that provides info
+about a given cable modem. Extracts data from the sysDescr, which is 
+mandated in the DOCSIS specification to match
+"HW_REV: <value>; VENDOR: <value>; BOOTR: <value>; SW_REV: <value>; MODEL: <value>"
 
 =head2 Inherited Classes
 
-none.
+None.
 
 =head2 Required MIBs
 
-=over
-
-=item F<CISCO-RTTMON-MIB>
-
-=back
+None.
 
 =head1 GLOBALS
 
-=over
-
-None
-
-=back
-
-=head1 TABLE METHODS
-
-=head2 Overall Control Group Table
-
-This table is from C<CISCO-RTTMON-MIB::rttMonCtrlAdminTable>
+These are methods that return scalar value from SNMP
 
 =over
 
-=item $rtt->rtt_desc()
+=item $cm->vendor()
 
-(C<rttMonCtrlAdminOwner>)
+Returns the vendor of the cable modem.
+
+=item $cm->model()
+
+Returns the model of the cable modem.
+
+=item $cm->os()
+
+Returns 'cm', as the actual os is vendor and model dependent.
+
+=item $cm->os_ver()
+
+Returns the version of the software, extracted from the SW_REV field.
 
 =back
 
-=head2 Overall Control Group Table
-
-This table is from C<CISCO-RTTMON-MIB::rttMonCtrl>
-
-=over
-
-=item $rtt->rtt_last()
-
-(C<rttMonLatestRttOperCompletionTime>)
-
-=back
-
-=cut

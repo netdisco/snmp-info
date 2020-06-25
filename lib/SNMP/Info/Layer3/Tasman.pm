@@ -42,7 +42,7 @@ use SNMP::Info::MAU;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -102,7 +102,7 @@ my $module_map = {
     DS3_1C  => '1-port Channelized T3',
     WTE_1   => '1-port T1/E1 w DS0 and DS1 support for both TDM and Packet',
     WTE_2S  => '2-port Sync and Async Serial',
-    WTE_8   => '8-port T1/E1'
+    WTE_8   => '8-port T1/E1',
 };
 
 sub vendor {

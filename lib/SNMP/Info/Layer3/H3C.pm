@@ -30,14 +30,13 @@
 package SNMP::Info::Layer3::H3C;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
-use SNMP::Info::LLDP;
 use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 @SNMP::Info::Layer3::H3C::ISA = qw/
   SNMP::Info::IEEE802dot3ad
-  SNMP::Info::LLDP
   SNMP::Info::Layer3
   Exporter
 /;
@@ -47,11 +46,10 @@ use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     'HH3C-LswDEVM-MIB'     => 'hh3cDevMFanStatus',
     'HH3C-LswINF-MIB'      => 'hh3cSlotPortMax',
@@ -62,7 +60,6 @@ $VERSION = '3.68';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
     'fan' => 'hh3cDevMFanStatus.1',
     'ps1_status' => 'hh3cDevMPowerStatus.1',
     'ps2_status' => 'hh3cDevMPowerStatus.2',
@@ -70,21 +67,19 @@ $VERSION = '3.68';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
     i_duplex_admin => 'hh3cifEthernetDuplex',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
 sub vendor {
     my $h3c = shift;
     my $mfg = $h3c->entPhysicalMfgName(1) || {};
-    return $mfg->{1} || "H3C";
+    return $mfg->{1} || "h3c";
 }
 
 sub model {
@@ -177,7 +172,7 @@ Subclass for H3C & HP A-series devices
 
 =item SNMP::Info::Layer3
 
-=item SNMP::Info::LLDP
+=item SNMP::Info::IEEE802dot3ad
 
 =back
 
@@ -200,8 +195,6 @@ Subclass for H3C & HP A-series devices
 See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
-
-See L<SNMP::Info::LLDP> for its own MIB requirements.
 
 =back
 
@@ -234,9 +227,9 @@ C<sysDescr>.
 
 See documentation in L<SNMP::Info::Layer3> for details.
 
-=head2 Globals imported from SNMP::Info::LLDP
+=head2 Globals imported from SNMP::Info::IEEE802dot3ad
 
-See documentation in L<SNMP::Info::LLDP> for details.
+See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
 
 =head1 TABLE ENTRIES
 
@@ -264,10 +257,6 @@ ifIndex of the corresponding master ports.
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Table Methods imported from SNMP::Info::LLDP
-
-See documentation in L<SNMP::Info::LLDP> for details.
 
 =head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
 

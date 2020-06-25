@@ -1,5 +1,4 @@
 # SNMP::Info::Layer2 - SNMP Interface to Layer2 Devices
-# $Id$
 #
 # Copyright (c) 2008 Max Baker -- All changes from Version 0.7 on
 #
@@ -33,6 +32,7 @@
 package SNMP::Info::Layer2;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
@@ -47,7 +47,7 @@ use SNMP::Info::DocsisHE;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::MIBS,         %SNMP::Info::Bridge::MIBS,
@@ -86,7 +86,7 @@ $VERSION = '3.68';
 # Method OverRides
 
 # $l2->model() - Looks at sysObjectID which gives the oid of the system
-#       name, contained in a propriatry MIB.
+#       name, contained in a proprietary MIB.
 sub model {
     my $l2    = shift;
     my $id    = $l2->id();
@@ -228,9 +228,13 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::Bridge
 
+=item SNMP::Info::DocsisHE
+
 =item SNMP::Info::Entity
 
 =item SNMP::Info::LLDP
+
+=item SNMP::Info::PowerEthernet
 
 =back
 
@@ -275,7 +279,7 @@ Returns a serial number if found from F<ENTITY-MIB> and F<OLD-CISCO->... MIB.
 
 =head2 Globals imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"GLOBALS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =head2 Globals imported from SNMP::Info::Bridge
 
@@ -309,7 +313,7 @@ Defaults to C<ifDescr> but checks and overrides with C<ifName>
 
 =head2 Table Methods imported from SNMP::Info
 
-See documentation in L<SNMP::Info/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info/"USAGE"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 

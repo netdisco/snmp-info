@@ -1,5 +1,4 @@
 # SNMP::Info::Layer7::CiscoIPS
-# $Id$
 #
 # Copyright (c) 2013 Moe Kraus
 # All rights reserved.
@@ -46,7 +45,7 @@ use SNMP::Info::Entity;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = ( %SNMP::Info::Layer7::MIBS, %SNMP::Info::Entity::MIBS, );
 
@@ -213,7 +212,7 @@ Returns model name
 
 =item $info->productname
 
-Retruns the product name
+Returns the product name
 
 =item $info->serial
 

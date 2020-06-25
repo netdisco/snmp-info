@@ -1,5 +1,4 @@
 # SNMP::Info::CiscoStats
-# $Id$
 #
 # Changes since Version 0.7 Copyright (c) 2008-2009 Max Baker and SNMP::Info Developers
 # All rights reserved.
@@ -34,6 +33,7 @@
 package SNMP::Info::CiscoStats;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -42,7 +42,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     'SNMPv2-MIB'            => 'sysDescr',
@@ -105,6 +105,10 @@ sub os {
 
     # order here matters - there are Catalysts that run IOS and have catalyst
     # in their description field, as well as Catalysts that run IOS-XE.
+    return 'ios-xe'   if ( $descr =~ /Denali/ );
+    return 'ios-xe'   if ( $descr =~ /Fuji/ );
+    return 'ios-xe'   if ( $descr =~ /Everest/ );
+    return 'ios-xe'   if ( $descr =~ /Gibraltar/ );
     return 'ios-xe'   if ( $descr =~ /IOS-XE/ );
     return 'ios-xr'   if ( $descr =~ /IOS XR/ );
     return 'ios'      if ( $descr =~ /IOS/ );
@@ -384,8 +388,6 @@ None.
 =item F<CISCO-IMAGE-MIB>
 
 =back
-
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =head1 GLOBALS
 

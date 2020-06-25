@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.68
+    SNMP::Info - Version 3.70
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -280,6 +280,11 @@ SUBCLASSES
 
         See documentation in SNMP::Info::DocsisHE for details.
 
+    SNMP::Info::DocsisCM
+        SNMP Interface for DOCSIS Cable Modems
+
+        See documentation in SNMP::Info::DocsisCM for details.
+
     SNMP::Info::EDP
         Extreme Discovery Protocol. EXTREME-EDP-MIB
 
@@ -480,7 +485,7 @@ SUBCLASSES
 
         SNMP::Info::Layer2::Cisco
             Generic Cisco subclass for layer 2 devices that are not yet
-            supported in more specific subclassesand the base layer 2 Cisco
+            supported in more specific subclasses and the base layer 2 Cisco
             class for other device specific layer 2 Cisco classes.
 
             See documentation in SNMP::Info::Layer2::Cisco for details.
@@ -539,7 +544,7 @@ SUBCLASSES
         SNMP::Info::Layer2::Nexans
             Subclass for Nexans switches
 
-            See documetion in SNMP::Info::Layer2::Nexans for details.
+            See documentation in SNMP::Info::Layer2::Nexans for details.
 
         SNMP::Info::Layer2::NWSS2300
             SNMP Interface to Avaya (Trapeze) Wireless Controllers
@@ -580,9 +585,6 @@ SUBCLASSES
         SNMP::Info::Layer3::Aironet
             Subclass for Cisco Aironet wireless access points (AP) not
             running IOS. These are usually older devices.
-
-            MIBs for these devices now included in v2.tar.gz available from
-            ftp.cisco.com.
 
             Note SNMP::Info::Layer2::Aironet
 
@@ -634,8 +636,9 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::C4000 for details.
 
         SNMP::Info::Layer3::C6500
-            This class covers Catalyst 6500s in native mode, hybrid mode.
-            Catalyst 3750's, 2970's and probably others.
+            This class covers Catalyst 6500 series running CatOS or IOS, as
+            well as Catalyst 2960, 2970, 3750 and 3850 series, including
+            blade switches CBS30x0 and CBS31x0 series, all running IOS.
 
             See documentation in SNMP::Info::Layer3::C6500 for details.
 
@@ -643,6 +646,11 @@ SUBCLASSES
             Subclass for CheckPoint devices.
 
             See documentation in SNMP::Info::Layer3::CheckPoint for details.
+
+        SNMP::Info::Layer3::Ciena
+            Subclass for Ciena devices.
+
+            See documentation in SNMP::Info::Layer3::Ciena for details.
 
         SNMP::Info::Layer3::Cisco
             This is a simple wrapper around layer 3 for IOS devices and the
@@ -833,6 +841,11 @@ SUBCLASSES
             Subclass for redlion routers.
 
             See documentation in SNMP::Info::Layer3::Redlion for details.
+
+        SNMP::Info::Layer3::Scalance
+            Subclass for Siemens Scalance devices.
+
+            See documentation in SNMP::Info::Layer3::Scalance for details.
 
         SNMP::Info::Layer3::SonicWALL
             Subclass for generic SonicWALL devices.
@@ -1051,7 +1064,7 @@ USAGE
         anything when a connection under Version 2 is attempted.
 
         Some newer devices will support Version 1, but will not return all
-        the data they might have if you had connected under Version 1
+        the data they might have if you had connected under Version 1.
 
         When trying to get info from a new device, you may have to try
         version 2 and then fallback to version 1.
@@ -1151,7 +1164,7 @@ USAGE
 
          my $info = new SNMP::Info(...);
          # Returns more specific object type
-         $info = $info->specific();
+         my $specific = $info->specify();
 
         Usually this method is called internally from new(AutoSpecify => 1)
 
@@ -1165,7 +1178,7 @@ USAGE
         <ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-community
         Indexing.html>
 
-  Globals (Scalar Methods)
+  GLOBALS (Scalar Methods)
     These are methods to return scalar data from RFC1213.
 
     Some subset of these is probably available for any network device that
@@ -1806,6 +1819,7 @@ EXTENDING SNMP::INFO
      $VERSION = 0.1;
 
      use strict;
+     use warnings;
 
      use Exporter;
      use SNMP::Info::Layer2;
@@ -1819,14 +1833,14 @@ EXTENDING SNMP::INFO
 
      %MIBS    = (%SNMP::Info::Layer2::MIBS,
                  %SNMP::Info::CiscoVTP::MIBS,
-                 'SUPER-DOOPER-MIB'  => 'supermibobject'
+                 'SUPER-DOOPER-MIB'  => 'supermibobject',
                 );
 
      %GLOBALS = (%SNMP::Info::Layer2::GLOBALS,
                  %SNMP::Info::CiscoVTP::GLOBALS,
                  'name'              => 'supermib_supername',
                  'favorite_color'    => 'supermib_fav_color_object',
-                 'favorite_movie'    => 'supermib_fav_movie_val'
+                 'favorite_movie'    => 'supermib_fav_movie_val',
                  );
 
      %FUNCS   = (%SNMP::Info::Layer2::FUNCS,
@@ -1834,16 +1848,16 @@ EXTENDING SNMP::INFO
                  # Super Dooper MIB - Super Hero Table
                  'super_hero_index'  => 'SuperHeroIfIndex',
                  'super_hero_name'   => 'SuperHeroIfName',
-                 'super_hero_powers' => 'SuperHeroIfPowers'
+                 'super_hero_powers' => 'SuperHeroIfPowers',
                 );
 
 
      %MUNGE   = (%SNMP::Info::Layer2::MUNGE,
                  %SNMP::Info::CiscoVTP::MUNGE,
-                 'super_hero_powers' => \&munge_powers
+                 'super_hero_powers' => \&munge_powers,
                 );
 
-     # OverRide uptime() method from %SNMP::Info::GLOBALS
+     # Override uptime() method from %SNMP::Info::GLOBALS
      sub uptime {
          my $sample = shift;
 
@@ -1999,7 +2013,7 @@ SNMP::INFO INTERNALS
         handles the "newer" definitions for the enumeration in IF-MIB.
 
         TODO: Get the precedence of MIBs and overriding of MIB data in
-        Net-SNMP figured out. Heirarchy/precendence of MIBS in SNMP::Info.
+        Net-SNMP figured out. Hierarchy/precedence of MIBS in SNMP::Info.
 
     munge_port_list()
         Takes an octet string representing a set of ports and returns a
@@ -2019,7 +2033,7 @@ SNMP::INFO INTERNALS
     resolve_desthost()
         Takes the SNMP::Session "DestHost" argument and determines if it is
         an 'IPv4' or 'IPv6' host. 'IPv6' hosts are prefixed with the "udp6:"
-        "transport-specifier" as required by the undelying "Net-SNMP"
+        "transport-specifier" as required by the underlying "Net-SNMP"
         library. If unable to determine the type of address or resolve a DNS
         name, dies with "croak".
 

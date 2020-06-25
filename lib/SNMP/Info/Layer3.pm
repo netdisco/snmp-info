@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3 - SNMP Interface to Layer3 devices
-# $Id$
 #
 # Copyright (c) 2008 Max Baker -- All changes from Version 0.7 on
 #
@@ -33,6 +32,7 @@
 package SNMP::Info::Layer3;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
@@ -54,7 +54,7 @@ use SNMP::Info::DocsisHE;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::MIBS,
@@ -463,6 +463,10 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::LLDP
 
+=item SNMP::Info::DocsisHE
+
+=item SNMP::Info::AdslLine
+
 =back
 
 =head2 Required MIBs
@@ -481,7 +485,7 @@ after determining a more specific class using the method above.
 
 =head2 Inherited MIBs
 
-See L<SNMP::Info/"Required MIBs"> for its MIB requirements.
+See L<SNMP::Info/"REQUIREMENTS"> for its MIB requirements.
 
 See L<SNMP::Info::Bridge/"Required MIBs"> for its MIB requirements.
 
@@ -494,6 +498,10 @@ See L<SNMP::Info::PowerEthernet/"Required MIBs"> for its MIB requirements.
 See L<SNMP::Info::IPv6/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::LLDP/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::DocsisHE/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::AdslLine/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -553,7 +561,7 @@ found:  OSPF Router ID (C<ospfRouterId>) or any OSPF Host IP Address
 
 =head2 Globals imported from SNMP::Info
 
-See L<SNMP::Info/"GLOBALS"> for details.
+See L<SNMP::Info/"USAGE"> for details.
 
 =head2 Global Methods imported from SNMP::Info::Bridge
 
@@ -578,6 +586,14 @@ See L<SNMP::Info::IPv6/"GLOBALS"> for details.
 =head2 Global Methods imported from SNMP::Info::LLDP
 
 See L<SNMP::Info::LLDP/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::DocsisHE
+
+See L<SNMP::Info::DocsisHE/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::AdslLine
+
+See L<SNMP::Info::AdslLine/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -895,14 +911,14 @@ Note this returns hash-strings, for IPs, use $l3->isis_peers()
 =item $l3->isis_peers()
 
 Returns reference to hash of addresses (IPv4, IPv6) on adjacencies.
-Convers hash strings from isis_adj to proper
+Convert hash strings from isis_adj to proper
 IP (v4 and v6) formatting.
 
 =back
 
 =head2 Table Methods imported from SNMP::Info
 
-See L<SNMP::Info/"TABLE METHODS"> for details.
+See L<SNMP::Info/"USAGE"> for details.
 
 =head2 Table Methods imported from SNMP::Info::Bridge
 
@@ -927,5 +943,13 @@ See L<SNMP::Info::IPv6/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::LLDP
 
 See L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::DocsisHE
+
+See L<SNMP::Info::DocsisHE/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::AdslLine
+
+See L<SNMP::Info::AdslLine/"TABLE METHODS"> for details.
 
 =cut

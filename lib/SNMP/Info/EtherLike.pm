@@ -1,5 +1,4 @@
 # SNMP::Info::EtherLike
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -33,6 +32,7 @@
 package SNMP::Info::EtherLike;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -41,7 +41,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = ( 'EtherLike-MIB' => 'etherMIB' );
 
@@ -68,7 +68,7 @@ $VERSION = '3.68';
     'el_xmit_defer'      => 'dot3StatsDeferredTransmissions',
 
     # Ethernet-like Collision Statistics Group
-    'el_coll_freq'  => 'dot3CollFrequencies'
+    'el_coll_freq'  => 'dot3CollFrequencies',
 );
 
 %MUNGE = ( %SNMP::Info::MUNGE, 'el_duplex' => \&munge_el_duplex, );
@@ -103,7 +103,7 @@ Max Baker
                              Version     => 2
                            );
 
- my $class = $cdp->class();
+ my $class = $el->class();
  print " Using device sub class : $class\n";
 
  # Find the duplex setting for a port on a device that implements
@@ -142,8 +142,6 @@ None.
 =item F<ETHERLIKE-MIB>
 
 =back
-
-MIBs can be found at ftp://ftp.cisco.com/pub/mibs/v2/v2.tar.gz
 
 =head1 GLOBALS
 

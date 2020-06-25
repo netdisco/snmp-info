@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::Lantronix
-# $Id$
 #
 # Copyright (c) 2012 J R Binks
 #
@@ -30,6 +29,7 @@
 package SNMP::Info::Layer3::Lantronix;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 
@@ -41,7 +41,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -74,13 +74,14 @@ sub vendor {
 sub os {
     my $device = shift;
     my $descr = $device->description() || '';
-    my $os;
 
     # On EDS, it is called the "Evolution OS"
     # Not sure what, if any, name it has a name on other products
-    $os = 'EvolutionOS' if ( $descr =~ m/Lantronix EDS\w+ V([\d\.R]+)/ );
-
-    return 'LantronixOS';
+    if ( $descr =~ m/Lantronix EDS\w+ V([\d\.R]+)/ ) {
+      return 'EvolutionOS';
+    } else {
+      return 'LantronixOS';
+    }
 }
 
 sub os_ver {
@@ -213,7 +214,7 @@ Returns 'lantronix'.
 
 =item $device->os()
 
-Returns 'EvolutionOS' for EDS devices.
+Returns 'EvolutionOS' for EDS devices, else returns 'LantronixOS'.
 
 =item $device->os_ver()
 
@@ -245,16 +246,6 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=head2 Overrides
-
-=over
-
-=item $device->i_ignore()
-
-Returns reference to hash.  Increments value of IID if port is to be ignored.
-
-=back
 
 =head2 Lantronix specific items
 

@@ -31,6 +31,7 @@
 package SNMP::Info::EDP;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -39,7 +40,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     'EXTREME-EDP-MIB'   => 'extremeEdpPortIfIndex',
@@ -75,7 +76,7 @@ sub hasEDP {
 # address since they should all originate from the same device, but we don't
 # know if they would all be reachable from the network management application.
 #
-# We don't inplement partials since this is private index function
+# We don't implement partials since this is private index function
 sub _edp_index {
     my $edp = shift;
 
@@ -204,10 +205,10 @@ Eric Miller
  my $class = $edp->class();
  print " Using device sub class : $class\n";
 
- $haslldp   = $edp->hasLLDP() ? 'yes' : 'no';
+ $hasedp   = $edp->hasEDP() ? 'yes' : 'no';
 
- # Print out a map of device ports with LLDP neighbors:
- my $interfaces    = $edp->interfaces();
+ # Print out a map of device ports with EDP neighbors:
+ my $interfaces   = $edp->interfaces();
  my $edp_if       = $edp->edp_if();
  my $edp_ip       = $edp->edp_ip();
  my $edp_port     = $edp->edp_port();
@@ -243,7 +244,7 @@ None.
 
 =back
 
-=head1 GLOBAL METHODS
+=head1 GLOBALS
 
 These are methods that return scalar values from SNMP
 
@@ -251,7 +252,7 @@ These are methods that return scalar values from SNMP
 
 =item $edp->hasEDP()
 
-Is EDP is active in this device?
+Is EDP active on this device?
 
 =back
 

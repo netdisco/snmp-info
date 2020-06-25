@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::CiscoASA
-# $Id$
 #
 # Copyright (c) 2013 Moe Kraus
 # All rights reserved.
@@ -45,7 +44,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS, %SNMP::Info::CiscoStats::MIBS, );
 
@@ -113,7 +112,7 @@ Moe Kraus
 =head1 SYNOPSIS
 
  # Let SNMP::Info determine the correct subclass for you.
- my $cisco = new SNMP::Info(
+ my $asa = new SNMP::Info(
                         AutoSpecify => 1,
                         Debug       => 1,
                         # These arguments are passed directly to SNMP::Session

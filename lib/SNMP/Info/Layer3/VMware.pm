@@ -30,6 +30,7 @@
 package SNMP::Info::Layer3::VMware;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
@@ -39,7 +40,7 @@ use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::IEEE802dot3ad::MIBS,
@@ -166,7 +167,6 @@ Returns the value of C<vmwProdName.0>.
 Returns the software version specified as major-update.patch.build (ex.  5.1.0-3.55.2583090).
 
 (C<vmwProdVersion>)-(C<vmwProdUpdate>).(C<vmwProdPatch>).(C<vmwProdBuild>)
-
 
 =back
 

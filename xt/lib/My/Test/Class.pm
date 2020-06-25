@@ -29,6 +29,8 @@
 
 package My::Test::Class;
 
+use strict;
+use warnings;
 use Test::Class::Most attributes => [qw/class mock_session todo_methods/];
 use Test::MockObject::Extends;
 use File::Find 'find';
@@ -36,7 +38,7 @@ use Path::Class 'dir';
 use File::Slurper 'read_lines';
 use Class::Inspector;
 
-use base qw<Test::Class Class::Data::Inheritable>;
+use base qw/Test::Class Class::Data::Inheritable/;
 
 # Don't run the base tests defined in this class, run them in subclasses only
 My::Test::Class->SKIP_CLASS(1);

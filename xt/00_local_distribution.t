@@ -1,6 +1,5 @@
 #!/usr/bin/env perl
 # 00_local_distribution.t - Private test to check distribution
-# $Id$
 
 use strict;
 use warnings;

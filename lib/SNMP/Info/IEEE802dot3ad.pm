@@ -30,6 +30,7 @@
 package SNMP::Info::IEEE802dot3ad;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Aggregate;
 
@@ -43,7 +44,7 @@ use SNMP::Info::Aggregate;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
   %SNMP::Info::Aggregate::MIBS,

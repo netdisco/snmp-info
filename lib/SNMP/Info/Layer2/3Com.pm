@@ -29,39 +29,34 @@
 package SNMP::Info::Layer2::3Com;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
-use SNMP::Info::LLDP;
 use SNMP::Info::CDP;
 
-@SNMP::Info::Layer2::3Com::ISA       = qw/SNMP::Info::LLDP SNMP::Info::Layer2 Exporter/;
+@SNMP::Info::Layer2::3Com::ISA       = qw/SNMP::Info::Layer2 Exporter/;
 @SNMP::Info::Layer2::3Com::EXPORT_OK = qw//;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
-    %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::Layer2::MIBS,
     'A3Com-products-MIB' => 'wlanAP7760',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,
 );
 
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer2::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
 );
-
 
 sub os {
     return '3Com';
@@ -94,17 +89,19 @@ sub os_ver {
 }
 
 sub vendor {
-    return '3Com';
+    return '3com';
 }
 
 sub model {
-
     my $dsmodel = shift;
     my $descr = $dsmodel->description();
-    if ( $descr =~ /^([\S ]+) Software.*/){
+
+    if (defined ($descr)) {
+      if ($descr =~ /^([\S ]+) Software.*/) {
         return $1;
-    } else {
+      } else {
         return $descr;
+      }
     }
     return;
 }
@@ -128,7 +125,7 @@ Max Kosmach
                           Debug       => 1,
                           DestHost    => 'myrouter',
                           Community   => 'public',
-                          Version     => 1
+                          Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
@@ -169,7 +166,7 @@ These are methods that return scalar value from SNMP
 
 =item $device->vendor()
 
-Returns '3Com'
+Returns '3com'
 
 =item $device->os()
 

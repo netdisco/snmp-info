@@ -1,5 +1,8 @@
-# Test::SNMP::Info::Layer3::BlueCoatSG
+# Test::SNMP::Info::Layer3::Scalance
 #
+# Copyright (c) 2019 Christoph Handel GSI Helmholtzzentrum fuer
+# Schwerionenforschung
+
 # Copyright (c) 2018 Eric Miller
 # All rights reserved.
 #
@@ -11,7 +14,8 @@
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the University of California, Santa Cruz nor the
+#     * Neither the name of the University of California, Santa Cruz,
+#       the GSI Helmholtzzentrum fuer Schwerionenforschung nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
 #
@@ -27,61 +31,71 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package Test::SNMP::Info::Layer3::BlueCoatSG;
+package Test::SNMP::Info::Layer3::Scalance;
 
 use Test::Class::Most parent => 'My::Test::Class';
 
-use SNMP::Info::Layer3::BlueCoatSG;
+use SNMP::Info::Layer3::Scalance;
+
+# Remove this startup override once we have full method coverage
+sub startup : Tests(startup => 1) {
+  my $test = shift;
+  $test->SUPER::startup();
+
+  $test->todo_methods(1);
+}
 
 sub setup : Tests(setup) {
   my $test = shift;
   $test->SUPER::setup;
 
   # Start with a common cache that will serve most tests
-  my $d_string = 'Blue Coat SG300 Series, Version: SGOS 5.5.3.31, ';
-  $d_string .= 'Release id: 51877 Proxy Edition';
+  my $version = "V06.02.02";
+  my $model = 'Siemens, SIMATIC NET, SCALANCE XR524-8C 2PS, 6GK5 524-8GS00-4AR2, HW: Version 1';
+  my $serial = 'SVPL1234567';
+  my $iprefix = "$model FW: Version version, $serial";
+  
   my $cache_data = {
-    '_layers' => 4,
-    '_description' => $d_string,
-
-    # BLUECOAT-MIB::sg300
-    '_id'   => '.1.3.6.1.4.1.3417.1.1.32',
-    '_sw_ver' => 'Version: SGOS 5.5.3.31',
-    'store' => {},
+    '_layers' => 74,
+    '_description' => "$model, FW: Version $version, $serial",
+    '_id'   => '.1.3.6.1.4.1.4329.6.1.2',
+    # i have no idea why i need to add i_description here
+    # guess something with calling SUPER
+    '_i_description' => {},
+    'store' => {
+        'i_description' => {
+            1 => "$iprefix, Ethernet Port, R0/S0/X1 P1",
+            2 => "$iprefix, L3 VLAN, VLAN1",
+            3 => "$iprefix, loopback",
+        },
+    },
   };
   $test->{info}->cache($cache_data);
 }
 
-sub os : Tests(2) {
+sub layers : Tests(2) {
   my $test = shift;
 
-  can_ok($test->{info}, 'os');
-  is($test->{info}->os(), 'sgos', q(OS returns 'sgos'));
-}
-
-sub vendor : Tests(2) {
-  my $test = shift;
-
-  can_ok($test->{info}, 'vendor');
-  is($test->{info}->vendor(), 'bluecoat', q(Vendor returns 'bluecoat'));
+  can_ok($test->{info}, 'layers');
+  is($test->{info}->layers(), '00000111', q(Layers returns '00000111'));
 }
 
 sub model : Tests(2) {
   my $test = shift;
-
-  can_ok($test->{info}, 'model');
-  is($test->{info}->model(), 'sg300', q(Model is expected value));
+  is($test->{info}->model(), 'SCALANCE XR524-8C 2PS', q(Model extracted));
 }
 
-sub os_ver : Tests(3) {
+sub i_description : Tests(3) {
   my $test = shift;
 
-  can_ok($test->{info}, 'os_ver');
-  is($test->{info}->os_ver(), '5.5.3.31', q(OS version is expected value));
+  can_ok($test->{info}, 'interfaces');
 
-  $test->{info}->clear_cache();
-  is($test->{info}->os_ver(), '',
-    q(No data returns empty string));
+  my $expected = {1 => 'R0/S0/X1 P1', 2 => 'VLAN1', 3 => 'loopback'};
+
+  cmp_deeply($test->{info}->i_description(),
+    $expected, q(i_description have expected values));
 }
 
 1;
+
+# vim: filetype=perl ts=4 sw=4 sta et sts=4 ai

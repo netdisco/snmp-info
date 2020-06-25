@@ -43,7 +43,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS, %SNMP::Info::RapidCity::MIBS,
@@ -713,7 +713,7 @@ sub e_index {
     my $model = $passport->model();
     my $rc_ps_t = $passport->rc_ps_type() || {};
 
-    # We're going to hack an index: Slot/Mda/Postion
+    # We're going to hack an index: Slot/Mda/Position
     # We're going to put chassis and power supplies in a slot
     # which doesn't exist
     my %rc_e_index;

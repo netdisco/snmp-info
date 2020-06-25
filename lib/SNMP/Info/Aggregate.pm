@@ -30,6 +30,7 @@
 package SNMP::Info::Aggregate;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info;
 
@@ -38,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 # Load MIB for leafs referenced within class
 %MIBS = ('IF-MIB' => 'ifIndex',);

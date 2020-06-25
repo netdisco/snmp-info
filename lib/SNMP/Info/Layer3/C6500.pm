@@ -1,5 +1,4 @@
 # SNMP::Info::Layer3::C6500
-# $Id$
 #
 # Copyright (c) 2008-2009 Max Baker
 # All rights reserved.
@@ -49,7 +48,7 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 @SNMP::Info::Layer3::C6500::EXPORT_OK = qw//;
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 # NOTE: Order creates precedence
 #       Example: v_name exists in Bridge.pm and CiscoVTP.pm
@@ -186,7 +185,7 @@ sub set_i_duplex_admin {
         # 2. Disable ifMauAutoNegAdminStatus
         # If the second set is not done, this is not going to be
         # working... Cisco Bug id CSCty97033.
-        # SXI is not working (up to at least relase SXI9).
+        # SXI is not working (up to at least release SXI9).
         # SXJ is working at SXJ3 (not before).
 
         return $c6500->mau_set_i_duplex_admin( $duplex, $iid );
@@ -224,7 +223,7 @@ sub set_i_speed_admin {
         # 2. Disable ifMauAutoNegAdminStatus
         # If the second set is not done, this is not going to be working...
         # Cisco Bug id CSCty97033.
-        # SXI is not working (at least up to relase SXI9).
+        # SXI is not working (at least up to release SXI9).
         # SXJ is working at SXJ3 (not before).
 
         return $c6500->mau_set_i_speed_admin( $speed, $iid );
@@ -242,7 +241,8 @@ __END__
 =head1 NAME
 
 SNMP::Info::Layer3::C6500 - SNMP Interface to Cisco Catalyst 6500 Layer 2/3
-Switches running IOS and/or CatOS
+Switches running IOS and/or CatOS. Also Cisco Catalyst 2960, 2970, 3750 and
+3850 series and blade switch CBS30x0 and CBS31x0 series running IOS.
 
 =head1 AUTHOR
 
@@ -272,10 +272,9 @@ These devices run IOS but have some of the same characteristics as the
 Catalyst WS-C family (5xxx). For example, forwarding tables are held in
 VLANs, and extended interface information is gleaned from F<CISCO-SWITCH-MIB>.
 
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $c6500 = new SNMP::Info::Layer3::C6500(...);
+It also supports the following IOS only series switches: Cisco Catalyst 2960,
+2970, 3750 and 3850 series. Also blade switches from the CBS30x0 and CBS31x0
+series.
 
 =head2 Inherited Classes
 
@@ -292,6 +291,8 @@ after determining a more specific class using the method above.
 =head2 Required MIBs
 
 =over
+
+=item F<CISCO-VIRTUAL-SWITCH-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -312,7 +313,7 @@ These are methods that return scalar value from SNMP
 
 =item $c6500->vendor()
 
-    Returns 'cisco'
+Returns 'cisco'
 
 =item $c6500->cvsSwitchMode()
 
@@ -397,12 +398,10 @@ Crosses $c6500->p_port() with $c6500->p_speed() to utilize port C<ifIndex>.
 
 See documentation in L<SNMP::Info::CiscoStack/"TABLE METHODS"> for details.
 
-
 =head2 Table Methods imported from SNMP::Info::Layer3::CiscoSwitch
 
 See documentation in L<SNMP::Info::Layer3::CiscoSwitch/"TABLE METHODS"> for
 details.
-
 
 =head2 Table Methods imported from SNMP::Info::MAU
 

@@ -30,6 +30,7 @@
 package SNMP::Info::Layer2::Sixnet;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer2;
 
@@ -38,7 +39,7 @@ use SNMP::Info::Layer2;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (%SNMP::Info::Layer2::MIBS, 'SIXNET-MIB' => 'sxid',);
 
@@ -107,11 +108,6 @@ Eric Miller
 
 SNMP::Info::Layer2::Sixnet is a subclass of SNMP::Info that provides an
 interface to Sixnet industrial switches.
-
-For speed or debugging purposes you can call the subclass directly, but not
-after determining a more specific class using the method above.
-
- my $sixnet = new SNMP::Info::Layer2::Sixnet(...);
 
 =head2 Inherited Classes
 

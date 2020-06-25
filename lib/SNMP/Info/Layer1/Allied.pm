@@ -1,5 +1,4 @@
 # SNMP::Info::Layer1::Allied
-# $Id$
 #
 # Copyright (c) 2008 Max Baker changes from version 0.8 and beyond.
 #
@@ -33,6 +32,7 @@
 package SNMP::Info::Layer1::Allied;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer1;
 
@@ -41,7 +41,7 @@ use SNMP::Info::Layer1;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 # Set for No CDP
 %GLOBALS = ( %SNMP::Info::Layer1::GLOBALS, 'root_ip' => 'actualIPAddr', );
@@ -52,9 +52,14 @@ $VERSION = '3.68';
     'ati_up'     => 'linkTestLED',
 );
 
-%MIBS = ( %SNMP::Info::Layer1::MIBS, 'ATI-MIB' => 'atiPortGroupIndex' );
+%MIBS = (
+    %SNMP::Info::Layer1::MIBS,
+    'ATI-MIB' => 'atiPortGroupIndex',
+);
 
-%MUNGE = ( %SNMP::Info::Layer1::MUNGE, );
+%MUNGE = (
+    %SNMP::Info::Layer1::MUNGE,
+);
 
 sub vendor {
     return 'allied';
@@ -68,7 +73,7 @@ sub os_ver {
     my $allied = shift;
     my $descr  = $allied->description();
 
-    if ( $descr =~ m/version (\d+\.\d+)/ ) {
+    if ( defined ($descr) && $descr =~ m/version (\d+\.\d+)/ ) {
         return $1;
     }
     return;
@@ -79,7 +84,7 @@ sub model {
 
     my $desc = $allied->description();
 
-    if ( $desc =~ /(AT-\d{4}\S{1})/ ) {
+    if ( defined ($desc) && $desc =~ /(AT-\d{4}\S{1})/ ) {
         return $1;
     }
     return;

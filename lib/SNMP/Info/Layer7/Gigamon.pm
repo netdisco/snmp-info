@@ -30,6 +30,7 @@
 package SNMP::Info::Layer7::Gigamon;
 
 use strict;
+use warnings;
 use Exporter;
 use SNMP::Info::Layer7;
 
@@ -38,7 +39,7 @@ use SNMP::Info::Layer7;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.68';
+$VERSION = '3.70';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
