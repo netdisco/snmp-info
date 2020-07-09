@@ -1062,6 +1062,12 @@ Subclass for VMware ESXi hosts.
 
 See documentation in L<SNMP::Info::Layer3::VMware> for details.
 
+=item SNMP::Info::Layer3::Whiterabbit
+
+Subclass for whiterabbit devices.
+
+See documentation in L<SNMP::Info::Layer3::Whiterabbit> for details.
+
 =back
 
 =back
@@ -1936,6 +1942,10 @@ sub device_type {
             if (
             $desc =~ /\bTeltonika.*RUT9\d{2}\b/);
 
+	# Whiterabbit Timing
+        $objtype = 'SNMP::Info::Layer3::Whiterabbit'
+	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.96\.100\.1000/i );
+
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer3' )
             and ( defined($id) )
@@ -2145,6 +2155,10 @@ sub device_type {
         # it would flip/flop between those
         $objtype = 'SNMP::Info::Layer3::Scalance'
 	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
+	    
+	# Whiterabbit Timing
+        $objtype = 'SNMP::Info::Layer3::Whiterabbit'
+	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.96\.100\.1000/i );
 
         # Teltonika RUT9xx Series
         $objtype = 'SNMP::Info::Layer3::Teltonika'
