@@ -137,7 +137,7 @@ sub os_ver {
 }
 
 sub vendor {
-    return 'Ubiquiti';
+    return 'ubiquiti';
 }
 
 sub model {
