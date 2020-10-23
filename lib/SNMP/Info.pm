@@ -1729,6 +1729,7 @@ sub device_type {
         40310 => 'SNMP::Info::Layer3::Cumulus',
         41112 => 'SNMP::Info::Layer2::Ubiquiti',
         44641 => 'SNMP::Info::Layer3::VyOS',
+        48690 => 'SNMP::Info::Layer3::Teltonika',
     );
 
     my %l2sysoidmap = (
@@ -1766,6 +1767,7 @@ sub device_type {
         21091 => 'SNMP::Info::Layer2::Exinda',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
         26928 => 'SNMP::Info::Layer2::Aerohive',
+        48690 => 'SNMP::Info::Layer3::Teltonika',
     );
 
     my %l1sysoidmap = (
