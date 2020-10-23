@@ -53,9 +53,8 @@ $VERSION = '3.70';
     %SNMP::Info::Layer3::GLOBALS,
     'snmpd_vers'     => 'versionTag',
     'hrSystemUptime' => 'hrSystemUptime',
-    'rut_serial'     => '.1.3.6.1.4.1.48690.1.5.0',
+    'serial1'        => 'serial',
     'os_ver'         => 'firmwareVersion',
-    'model'          => 'productCode',
 );
 
 %FUNCS = ( %SNMP::Info::Layer3::FUNCS, );
@@ -70,9 +69,9 @@ sub os {
     return 'rutos';
 }
 
-sub serial {
-    my $info = shift;
-    return $info->rut_serial();
+sub model {
+    my $dev = shift;
+    return $dev->productCode();
 }
 
 1;
@@ -153,10 +152,6 @@ Returns the value of C<firmwareVersion>.
 =item $info->model()
 
 Returns the value of C<productCode>.
-
-=item $info->serial()
-
-Returns the value of C<serial>.
 
 =back
 
