@@ -112,64 +112,11 @@ sub vendor {
      return $whiterabbit->vendor1();
 }
     
-
-# sub model {
-#     my $whiterabbit = shift;
-#     # object id is only the general class (x500, x400, etc)
-#     # extract something meaningful from the description
-#     # my $id = $whiterabbit->id();
-#     my $description = $whiterabbit->description();
-#     # Siemens, SIMATIC NET, SCALANCE XR524-8C 2PS, 6GK5 524-8GS00-4AR2, HW: Version 1,...
-#     $description =~ s/.*?(SCALANCE .*?),.*/$1/;
-#     return $description;
-# }
-# 
-# sub mac {
-#     # use dot1dBaseBridgeAddress
-#     my $whiterabbit = shift;
-#     return $whiterabbit->b_mac();
-# }
-# 
-# 
-# sub i_description {
-#     # munge interface descriptions, from
-#     #
-#     # Siemens, SIMATIC NET, SCALANCE XR524-8C 2PS, 6GK5 524-8GS00-4AR2, 
-#     #    HW: Version 1, FW: Version V06.02.02, SERIAL, Ethernet Port, R0/S0/X1 P16
-#     #
-#     # to
-#     #
-#     # R0/S0/X1 P16
-# 
-#     my $whiterabbit = shift;
-# 
-#     my $orig = $whiterabbit->SUPER::i_description();
-#     my %result;
-#     foreach my $iid ( keys %$orig ) {
-#         my $descr = $orig->{$iid};
-#         my $short;
-#         ($short) = $descr =~ /.*(?:Port, |VLAN, )(.*)$/;
-#         if ( ! $short ) {
-#             # splitting at VLAN/PORT failed, just the part after the last comma
-#             ($short) = $descr =~ /.*, (.*)$/;
-#         }
-#         $result{$iid} = $short;
-#     }
-#     return \%result;
-# }
-# 
-# sub lldp_ip {
-#     my $whiterabbit = shift;
-#     my %result;
-#     my $remotes = $whiterabbit->lldp_rem_sysname();
-#     foreach my $port ( keys %$remotes) {
-# 	my $ip = gethostbyname($remotes->{$port});
-# 	if ($ip) {
-# 	    $result{$port} = inet_ntoa($ip);
-# 	}
-#     }
-#     return \%result
-# };
+sub mac {
+    # use dot1dBaseBridgeAddress
+    my $whiterabbit = shift;
+    return $whiterabbit->b_mac();
+}
 
 
 1;
