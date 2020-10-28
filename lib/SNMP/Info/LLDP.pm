@@ -55,9 +55,12 @@ $VERSION = '3.70';
 );
 
 %FUNCS = (
-
     # LLDP-MIB::lldpLocManAddrTable
     'lldp_lman_addr' => 'lldpLocManAddrIfId',
+
+    # LLDP-MIB::LldpLocPortEntry
+    'lldp_lport_id'   => 'lldpLocPortId',
+    'lldp_lport_desc' => 'lldpLocPortDesc',
 
     # LLDP-MIB::lldpRemTable
     'lldp_rem_id_type'  => 'lldpRemChassisIdSubtype',
@@ -92,6 +95,8 @@ $VERSION = '3.70';
     'lldp_rem_sysname'   => \&SNMP::Info::munge_null,
     'lldp_rem_sysdesc'   => \&SNMP::Info::munge_null,
     'lldp_rem_port_desc' => \&SNMP::Info::munge_null,
+    'lldp_lport_id'      => \&SNMP::Info::munge_null,
+    'lldp_lport_desc'    => \&SNMP::Info::munge_null,
     'lldp_sys_cap'       => \&SNMP::Info::munge_bits,
     'lldp_rem_sys_cap'   => \&SNMP::Info::munge_bits,
     'lldp_rem_cap_spt'   => \&SNMP::Info::munge_bits,
@@ -146,7 +151,11 @@ sub lldp_if {
         # ifAlias because using cross ref with description is correct
         # behavior according to the LLDP-MIB. Some devices (eg H3C gear)
         # seem to use ifAlias though.
-        my $lldp_desc = $lldp->lldpLocPortDesc($port);
+        # snmp::info #372 -> to make things even more complex some devices
+        # have different behaviour depending on os version (nx-os 6 vs 7)
+        # so we made this a function to allow overrides in more specific
+        # modules
+        my $lldp_desc = $lldp->lldp_lport_desc($port);
         my $desc      = $lldp_desc->{$port};
 
         # If cross reference is successful use it, otherwise stick with
