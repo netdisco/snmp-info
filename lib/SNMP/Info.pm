@@ -1038,6 +1038,12 @@ Subclass for Avaya Secure Routers.
 
 See documentation in L<SNMP::Info::Layer3::Tasman> for details.
 
+=item SNMP::Info::Layer3::Teltonika
+
+Subclass for Teltonika RUT9xx series routers.
+
+See documentation in L<SNMP::Info::Layer3::Teltonika> for details.
+
 =item SNMP::Info::Layer3::Timetra
 
 Alcatel-Lucent SR Class.
@@ -1723,6 +1729,7 @@ sub device_type {
         40310 => 'SNMP::Info::Layer3::Cumulus',
         41112 => 'SNMP::Info::Layer2::Ubiquiti',
         44641 => 'SNMP::Info::Layer3::VyOS',
+        48690 => 'SNMP::Info::Layer3::Teltonika',
     );
 
     my %l2sysoidmap = (
@@ -1760,6 +1767,7 @@ sub device_type {
         21091 => 'SNMP::Info::Layer2::Exinda',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
         26928 => 'SNMP::Info::Layer2::Aerohive',
+        48690 => 'SNMP::Info::Layer3::Teltonika',
     );
 
     my %l1sysoidmap = (
@@ -1923,6 +1931,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Scalance'
 	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
 
+        # Teltonika RUT9xx Series
+        $objtype = 'SNMP::Info::Layer3::Teltonika'
+            if (
+            $desc =~ /\bTeltonika.*RUT9\d{2}\b/);
 
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer3' )
@@ -2133,6 +2145,11 @@ sub device_type {
         # it would flip/flop between those
         $objtype = 'SNMP::Info::Layer3::Scalance'
 	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
+
+        # Teltonika RUT9xx Series
+        $objtype = 'SNMP::Info::Layer3::Teltonika'
+            if (
+            $desc =~ /\bTeltonika.*RUT9\d{2}\b/);
 
         # Generic device classification based upon sysObjectID
         if ( defined($id) and $objtype eq 'SNMP::Info') {
