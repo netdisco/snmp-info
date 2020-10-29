@@ -45,7 +45,6 @@ use SNMP::Info::MAU;
 use SNMP::Info::LLDP;
 use SNMP::Info::Bridge;
 use Socket;
-use Data::Dumper;
 
 @SNMP::Info::Layer3::Whiterabbit::ISA = qw/
     SNMP::Info::Layer3
@@ -66,8 +65,6 @@ $VERSION = '3.70';
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::Bridge::MIBS,
     'WR-SWITCH-MIB' => 'wrsScalar',
-    # 'SN-MSPS-SCX-MIB' => 'snMsps',
-    # 'AUTOMATION-SYSTEM-MIB' => 'automationManufacturerId',
 );
 
 %GLOBALS = (
@@ -77,9 +74,7 @@ $VERSION = '3.70';
     %SNMP::Info::Bridge::GLOBALS,   
     'serial1' => 'wrsVersionSwitchSerialNumber.0', 
     'vendor1' => 'wrsVersionManufacturer.0',
-    'os_ver' => 'wrsVersionGwVersion.0',
-    # 'ps1_status' => 'snMspsPowerSupply1State.0',
-    # 'ps2_status' => 'snMspsPowerSupply2State.0',
+    'os_ver' => 'wrsVersionSwVersion.0',
 );
 
 %FUNCS = (
@@ -99,7 +94,8 @@ $VERSION = '3.70';
 
 sub layers {
     # not reporting anything in sysServices
-    # but it sure is a bridge and can do 2 and 3
+    # but it sure is a bridge and can do 2
+    # at some later point it might get 3, so put it in layer3 right from the start
     return '00000111';
 }
 
@@ -124,7 +120,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Whiterabbit - SNMP Interface to Siemens Whiterabbit Switches
+SNMP::Info::Layer3::Whiterabbit - SNMP Interface to Whiterabbit Switches
 
 =head1 AUTHOR
 
@@ -148,9 +144,7 @@ Christoph Handel
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a
-Siemens Whiterabbit Switch via SNMP.
-
-Tested only with sclance xr524
+Whiterabbit Switch via SNMP.
 
 =head2 Inherited Classes
 
@@ -171,24 +165,13 @@ Tested only with sclance xr524
 
 =over
 
-=item F<SN-MSPS-SCX-MIB>
+=item F<>WR-SWITCH-MIB>
 
-=item F<AUTOMATION-SYSTEM-MIB>
-
-=item F<AUTOMATION-SMI.txt>
-
-=item F<AUTOMATION-SYSTEM-MIB>
-
-=item F<AUTOMATION-TC>
-
-=item F<SIEMENS-SMI>
+=item F< WRS-PRODUCTS-MIB>
 
 =back
 
-L<https://support.industry.siemens.com/cs/document/22015045/private-mibs%3A-whiterabbit-x-whiterabbit-w-and-snmp-opc-profile?dti=0&lc=en-DE>
-
-L<https://support.industry.siemens.com/cs/document/67637278/automationmib-now-available-for-download-in-version-v02-00-00-02-?dti=0&lc=en-TN>
-
+L<https://github.com/GSI-CS-CO/wrs_mibs.git>
 
 =head1 Change Log
 
@@ -204,15 +187,15 @@ Overwrite snmp value, we support 1-3
 
 =item $whiterabbit->os()
 
-Returns whiterabbit
+staticly returns whiterabbit
 
 =item $whiterabbit->vendor()
 
-Returns siemens
+return manufacturer as read from device. e.g. seven solutions, creotech, etc.
 
 =item $whiterabbit->model()
 
-extrace a meaningful name from description
+as returned by mib. no meaningful translation
 
 =item $whiterabbit->mac()
 
@@ -220,21 +203,7 @@ use the dot1dBaseBridgeAddress
 
 =item $whiterabbit->os_ver()
 
-clean up os_version string
-
-=item $whiterabbit->i_description()
-
-siemens returns a description including firmware, switch serial, etc
-clean it up. Try to use anything past VLAN or Port. And if this fails 
-past the last comma
-
-=item $whiterabbit->lldp_ip()
-
-simatic does not implement lldpRemManAddrIfSubtype
-but remote system names are available
-try to resolve them via DNS and use that
-
-=back
+including git hash
 
 =head2 Globals imported from SNMP::Info::Layer3
 
@@ -249,20 +218,6 @@ See documentation in L<SNMP::Info::MAU/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a reference
 to a hash.
 
-=head2 Overrides
-
-=over 4
-
-=item $whiterabbit->lldp_ip()
-
-Returns reference to hash of ports to remote ips.
-
-simatic does not implement lldpRemManAddrIfSubtype
-but remote system names are available
-try to resolve them via DNS and use that.
-
-=back
-
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
@@ -270,6 +225,10 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::Bridge
+
+See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
 =cut
 
