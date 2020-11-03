@@ -1,3 +1,13 @@
+Version 3.xx (xxxx-xx-xx)
+
+  [NEW FEATURES]
+
+  * Teltonika RUT9XX support
+
+  [BUG FIXES]
+
+  * #372 fix lldp on nxos6
+
 Version 3.70 (2019-10-15)
 
   [NEW FEATURES]
