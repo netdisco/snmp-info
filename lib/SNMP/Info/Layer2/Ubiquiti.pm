@@ -199,6 +199,9 @@ sub model {
         }if($ethCount eq 8){
             ## Could be ER-8 Pro, ER-8, or EP-R8
             return "EdgeRouter 8-Port"
+        }if($ethCount eq 12){
+            ## ER-12
+            return "EdgeRouter 12-Port"
         }elsif($ethCount eq 5 and $cpuCount eq 4){
             ## Could be ER-X or ER-X-SFP
             return "EdgeRouter X 5-Port"
@@ -230,13 +233,14 @@ sub serial {
 sub mac {
     my $ubnt = shift;
     my $ifDescs = $ubnt->ifDescr;
+    my $erModel = $ubnt->model;
 
     foreach my $iid ( keys %$ifDescs ) {
         my $ifDesc = $ifDescs->{$iid};
         next unless defined $ifDesc;
         ## CPU Interface will have the primary MAC for EdgeSwitch
-        ## eth0 will have primary MAC for linux-based UBNT devices
-        if($ifDesc =~ /CPU/ or $ifDesc eq 'eth0'){
+        ## eth0 will have primary MAC for linux-based UBNT devices, except ER-12 which is eth11
+        if($ifDesc =~ /CPU/ or ($ifDesc eq 'eth0' and !($erModel =~ /EdgeRouter 12/)) or ($ifDesc eq 'eth11' and ($erModel =~ /EdgeRouter 12/))){
             my $mac = $ubnt->ifPhysAddress->{$iid};
 
             # syntax stolen from sub munge_mac in SNMP::Info
