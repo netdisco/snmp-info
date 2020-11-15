@@ -254,11 +254,11 @@ sub mac {
 }
 
 sub interfaces {
-    my $netgear = shift;
+    my $ubnt = shift;
     my $partial = shift;
 
-    my $interfaces = $netgear->i_index($partial)       || {};
-    my $i_descr    = $netgear->i_description($partial) || {};
+    my $interfaces = $ubnt->i_index($partial)       || {};
+    my $i_descr    = $ubnt->i_description($partial) || {};
     my $return = {};
 
     foreach my $iid ( keys %$i_descr ) {
@@ -372,11 +372,11 @@ Bridge MAC address.
 
 =item $ubnt->os()
 
-Returns 'Ubiquiti Networks, Inc.'
+Returns C<AirOS>, C<UniFi> or C<EdgeOS> depending on model.
 
 =item $ubnt->os_ver()
 
-Returns the software version extracted from C<dot11manufacturerProductVersion>, with failback to description splitting for EdgeMax devices
+Returns the software version extracted from C<dot11manufacturerProductVersion>, with fallback to description splitting for EdgeMax devices
 
 =back
 
@@ -397,11 +397,11 @@ to a hash.
 
 =over
 
-=item $ubiquiti->interfaces()
+=item $ubnt->interfaces()
 
 Uses the i_name() field.
 
-=item $ubiquiti->i_ignore()
+=item $ubnt->i_ignore()
 
 Ignores interfaces with "CPU Interface" in them.
 
