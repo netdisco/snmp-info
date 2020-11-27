@@ -1,4 +1,4 @@
-Version 3.xx (xxxx-xx-xx)
+Version 3.71 (2020-11-27)
 
   [NEW FEATURES]
 
@@ -10,6 +10,7 @@ Version 3.xx (xxxx-xx-xx)
 
   [BUG FIXES]
 
+  * #409, 410 Don't add AUTOLOAD generated methods in symbol table
   * #372, 375 fix lldp on nx-os6 (inphobia)
 
 Version 3.70 (2019-10-15)
