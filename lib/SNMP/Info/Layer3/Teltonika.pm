@@ -1,6 +1,6 @@
-package SNMP::Info::Layer3::Redlion;
+# SNMP::Info::Layer3::Teltonika
 #
-# Copyright (c) 2019 nick nauwelaerts
+# Copyright (c) 2020 Jeroen van Ingen
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,17 +27,15 @@ package SNMP::Info::Layer3::Redlion;
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+package SNMP::Info::Layer3::Teltonika;
+
 use strict;
 use warnings;
-
 use Exporter;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::Redlion::ISA = qw/
-    SNMP::Info::Layer3
-    Exporter
-/;
-@SNMP::Info::Layer3::Redlion::EXPORT_OK = qw//;
+@SNMP::Info::Layer3::Teltonika::ISA       = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Teltonika::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
@@ -45,74 +43,53 @@ $VERSION = '3.71';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    'RED-LION-RAM-MIB' => 'unitDescription',
+    'UCD-SNMP-MIB'        => 'versionTag',
+    'NET-SNMP-TC'         => 'netSnmpAliasDomain',
+    'HOST-RESOURCES-MIB'  => 'hrSystem',
+    'TELTONIKA-MIB'       => 'routerName',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    'sn_model'  => 'unitDescription',
-    'sn_os_ver' => 'unitFirmwareVersion',
-    'sn_serial' => 'unitSerialNumber',
+    'snmpd_vers'     => 'versionTag',
+    'hrSystemUptime' => 'hrSystemUptime',
+    'serial1'        => 'serial',
+    'os_ver'         => 'firmwareVersion',
 );
 
-%FUNCS = (
-    %SNMP::Info::Layer3::FUNCS,
-);
+%FUNCS = ( %SNMP::Info::Layer3::FUNCS, );
 
-%MUNGE = (
-    %SNMP::Info::Layer3::MUNGE,
-);
-
-sub layers {
-    return '00000110';
-}
+%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
 
 sub vendor {
-    return 'redlion';
+    return 'teltonika';
 }
 
-sub os_ver {
-    my $redlion = shift;
-
-    return $redlion->sn_os_ver();
+sub os {
+    return 'rutos';
 }
 
 sub model {
-    my $redlion = shift;
-
-    return $redlion->sn_model();
-}
-
-sub serial {
-    my $redlion = shift;
-
-    return $redlion->sn_serial();
-}
-
-# is actually just an embedded linux
-# 'sn' refers to "sixnet", the original creators of the device
-# layer2::sixnet is for redlion's switch offerings.
-# (they also have a different enterprise oid)
-sub os {
-    return 'sn';
+    my $dev = shift;
+    return $dev->productCode();
 }
 
 1;
-
 __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Redlion - SNMP Interface to redlion routers
+SNMP::Info::Layer3::Teltonika - SNMP Interface to Teltonika devices
 
 =head1 AUTHORS
 
-nick nauwelaerts
+Jeroen van Ingen
+initial version based on SNMP::Info::Layer3::PacketFront
 
 =head1 SYNOPSIS
 
-    # Let SNMP::Info determine the correct subclass for you.
-    my $redlion = new SNMP::Info(
+ # Let SNMP::Info determine the correct subclass for you.
+ my $info = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
                           DestHost    => 'myrouter',
@@ -121,12 +98,12 @@ nick nauwelaerts
                         )
     or die "Can't connect to DestHost.\n";
 
-    my $class      = $redlion->class();
-    print "SNMP::Info determined this device to fall under subclass : $class\n";
+ my $class      = $info->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
 
-Subclass for redlion routers.
+Subclass for Teltonika devices
 
 =head2 Inherited Classes
 
@@ -140,50 +117,47 @@ Subclass for redlion routers.
 
 =over
 
-=item F<RED-LION-RAM-MIB>
+=item F<UCD-SNMP-MIB>
+
+=item F<NET-SNMP-TC>
+
+=item F<HOST-RESOURCES-MIB>
+
+=item F<TELTONIKA-MIB>
+
+=item Inherited Classes' MIBs
+
+See L<SNMP::Info::Layer3> for its own MIB requirements.
 
 =back
-
-=head2 Inherited MIBs
-
-See L<SNMP::Info::Layer3/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
-These are methods that return scalar value from SNMP.
+These are methods that return scalar value from SNMP
 
 =over
 
-=item $redlion->layers()
+=item $info->vendor()
 
-Returns '00000110' since sysServices returns undef.
+Returns C<'teltonika'>.
 
-=item $redlion->model()
+=item $info->os()
 
-Returns the model extracted from C<unitDescription>.
+Returns C<'rutos'>.
 
-=item $redlion->os()
+=item $info->os_ver()
 
-Returns 'sn'.
+Returns the value of C<firmwareVersion>.
 
-=item $redlion->os_ver()
+=item $info->model()
 
-Returns the os version extracted from C<unitFirmwareVersion>.
-
-=item $redlion->serial()
-
-Returns the serial extracted from C<unitSerialNumber>. Must be enabled
-in the snmp setup of the device to show this.
-
-=item $redlion->vendor()
-
-Returns 'redlion'.
+Returns the value of C<productCode>.
 
 =back
 
-=head2 Global Methods imported from SNMP::Info::Layer3
+=head2 Globals imported from SNMP::Info::Layer3
 
-See L<SNMP::Info::Layer3/"GLOBALS"> for details.
+See documentation in L<SNMP::Info::Layer3> for details.
 
 =head1 TABLE ENTRIES
 
@@ -192,6 +166,7 @@ to a hash.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
-See L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::Layer3> for details.
+
 
 =cut

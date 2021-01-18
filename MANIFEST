@@ -126,6 +126,7 @@ lib/SNMP/Info/Layer3/SonicWALL.pm
 lib/SNMP/Info/Layer3/Steelhead.pm
 lib/SNMP/Info/Layer3/Sun.pm
 lib/SNMP/Info/Layer3/Tasman.pm
+lib/SNMP/Info/Layer3/Teltonika.pm
 lib/SNMP/Info/Layer3/Timetra.pm
 lib/SNMP/Info/Layer3/VMware.pm
 lib/SNMP/Info/Layer3/VyOS.pm
@@ -274,6 +275,7 @@ xt/lib/Test/SNMP/Info/Layer3/SonicWALL.pm
 xt/lib/Test/SNMP/Info/Layer3/Steelhead.pm
 xt/lib/Test/SNMP/Info/Layer3/Sun.pm
 xt/lib/Test/SNMP/Info/Layer3/Tasman.pm
+xt/lib/Test/SNMP/Info/Layer3/Teltonika.pm
 xt/lib/Test/SNMP/Info/Layer3/Timetra.pm
 xt/lib/Test/SNMP/Info/Layer3/VMware.pm
 xt/lib/Test/SNMP/Info/Layer3/VyOS.pm
