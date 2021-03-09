@@ -136,6 +136,16 @@ sub i_ignore {
 
 sub agg_ports { return agg_ports_lag(@_) }
 
+# CH: overwrite and always return empty mapping for qb_fdb_index
+# see https://github.com/netdisco/snmp-info/issues/218
+# if no fdb->vlan mapping is available the fdb is assumed to be the vlan
+# which is ok for h3c
+# otherwise h3c will deliver a broken vlan mapping and nodes will jump
+# other all vlans
+sub qb_fdb_index {
+    return {};
+}
+
 1;
 __END__
 
