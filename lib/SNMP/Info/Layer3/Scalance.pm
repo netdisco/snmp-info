@@ -40,31 +40,24 @@ package SNMP::Info::Layer3::Scalance;
 use strict;
 use warnings;
 use Exporter;
+use Socket;
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
-use SNMP::Info::LLDP;
-use SNMP::Info::Bridge;
-use Socket;
-use Data::Dumper;
 
 @SNMP::Info::Layer3::Scalance::ISA = qw/
     SNMP::Info::Layer3
     SNMP::Info::MAU
-    SNMP::Info::Bridge
-    SNMP::Info::LLDP
     Exporter
 /;
 @SNMP::Info::Layer3::Scalance::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MODEL_MAP, %MUNGE);
 
-$VERSION = '3.70';
+$VERSION = '3.71';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
-    %SNMP::Info::LLDP::MIBS,
-    %SNMP::Info::Bridge::MIBS,
     'SN-MSPS-SCX-MIB' => 'snMsps',
     'AUTOMATION-SYSTEM-MIB' => 'automationManufacturerId',
 );
@@ -72,8 +65,6 @@ $VERSION = '3.70';
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::MAU::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,    
-    %SNMP::Info::Bridge::GLOBALS,    
     'serial1'      => 'automationSerialNumber.0',
     'ps1_status' => 'snMspsPowerSupply1State.0',
     'ps2_status' => 'snMspsPowerSupply2State.0',
@@ -83,16 +74,12 @@ $VERSION = '3.70';
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::MAU::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,    
-    %SNMP::Info::Bridge::FUNCS,    
 );
 
 %MUNGE = (
     # Inherit all the built in munging
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::MAU::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
-    %SNMP::Info::Bridge::MUNGE,
 );
 
 sub layers {
@@ -206,7 +193,7 @@ Christoph Handel
 Provides abstraction to the configuration information obtainable from a
 Siemens Scalance Switch via SNMP.
 
-Tested only with sclance xr524
+Tested only with scalance xr524
 
 =head2 Inherited Classes
 
@@ -216,28 +203,21 @@ Tested only with sclance xr524
 
 =item SNMP::Info::MAU
 
-=item SNMP::Info::LLDP
-
-=item SNMP::Info::Bridge
-
-
 =back
 
 =head2 Required MIBs
 
 =over
 
-=item F<SN-MSPS-SCX-MIB>
-
-=item F<AUTOMATION-SYSTEM-MIB>
-
-=item F<AUTOMATION-SMI.txt>
+=item F<AUTOMATION-SMI>
 
 =item F<AUTOMATION-SYSTEM-MIB>
 
 =item F<AUTOMATION-TC>
 
 =item F<SIEMENS-SMI>
+
+=item F<SN-MSPS-SCX-MIB>
 
 =back
 
@@ -268,7 +248,7 @@ Returns siemens
 
 =item $scalance->model()
 
-extrace a meaningful name from description
+extract a meaningful name from description
 
 =item $scalance->mac()
 

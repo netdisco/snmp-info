@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.70
+    SNMP::Info - Version 3.71
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -866,6 +866,11 @@ SUBCLASSES
             Subclass for Avaya Secure Routers.
 
             See documentation in SNMP::Info::Layer3::Tasman for details.
+
+        SNMP::Info::Layer3::Teltonika
+            Subclass for Teltonika RUT9xx series routers.
+
+            See documentation in SNMP::Info::Layer3::Teltonika for details.
 
         SNMP::Info::Layer3::Timetra
             Alcatel-Lucent SR Class.
@@ -2207,17 +2212,13 @@ SNMP::INFO INTERNALS
 
         Calls parent can() first to see if method exists, if not validates
         that a method should be created then dispatches to the appropriate
-        internal method for creation. The newly created method is inserted
-        into the symbol table returning to AUTOLOAD only for the initial
-        method call.
+        internal method for creation.
 
         Returns undef if the method does not exist and can not be created.
 
   AUTOLOAD
     Each entry in either %FUNCS, %GLOBALS, or MIB Leaf node names present in
-    loaded MIBs are used by AUTOLOAD() to create dynamic methods. Generated
-    methods are inserted into the symbol table so that subsequent calls can
-    avoid AUTOLOAD() and dispatch directly.
+    loaded MIBs are used by AUTOLOAD() to create dynamic methods.
 
     1. Returns unless method is listed in %FUNCS, %GLOBALS, or is a MIB Leaf
     node name in a loaded MIB for given class.

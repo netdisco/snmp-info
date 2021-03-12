@@ -1,12 +1,17 @@
-Version 3.xx (xxxx-xx-xx)
+Version 3.71 (2020-11-27)
 
   [NEW FEATURES]
 
-  * Teltonika RUT9XX support
+  * #386 Teltonika RUT9XX support (jeroenvis)
+
+  [ENHANCEMENTS]
+
+  * #398, 411 more ubiquiti cleanup and support for er-12 (lbegnaud & inphobia)
 
   [BUG FIXES]
 
-  * #372 fix lldp on nxos6
+  * #409, 410 Don't add AUTOLOAD generated methods in symbol table
+  * #372, 375 fix lldp on nx-os6 (inphobia)
 
 Version 3.70 (2019-10-15)
 
