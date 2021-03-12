@@ -57,7 +57,7 @@ use Socket;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MODEL_MAP, %MUNGE);
 
-$VERSION = '3.70';
+$VERSION = '3.71';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -204,6 +204,8 @@ use the dot1dBaseBridgeAddress
 =item $whiterabbit->os_ver()
 
 including git hash
+
+=back
 
 =head2 Globals imported from SNMP::Info::Layer3
 
