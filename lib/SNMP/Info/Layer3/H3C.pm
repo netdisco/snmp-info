@@ -231,6 +231,11 @@ Returns the OS extracted from C<sysDescr>.
 Returns the software version. Either C<entPhysicalSoftwareRev.2> or extracted from
 C<sysDescr>.
 
+=item $h3c->qb_fdb_index()
+
+overwritten to always return empty hash as implementation on 
+h3c is broken.
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
