@@ -11,3 +11,4 @@ _build
 blib
 cover_db
 .idea
+.vscode
