@@ -1931,6 +1931,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Scalance'
 	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
 
+        # Aruba wireless switches (issue #403)
+        $objtype = 'SNMP::Info::Layer3::Aruba'
+            if ( $desc =~ /ArubaOS/ );
+
         # Teltonika RUT9xx Series
         $objtype = 'SNMP::Info::Layer3::Teltonika'
             if (
