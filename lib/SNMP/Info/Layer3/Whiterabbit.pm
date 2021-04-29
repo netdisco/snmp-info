@@ -114,8 +114,8 @@ sub mac {
     return $whiterabbit->b_mac();
 }
 
-
 1;
+
 __END__
 
 =head1 NAME
@@ -158,22 +158,19 @@ Whiterabbit Switch via SNMP.
 
 =item SNMP::Info::Bridge
 
-
 =back
 
 =head2 Required MIBs
 
 =over
 
-=item F<>WR-SWITCH-MIB>
+=item F<WR-SWITCH-MIB>
 
-=item F< WRS-PRODUCTS-MIB>
+=item F<WRS-PRODUCTS-MIB>
 
 =back
 
 L<https://github.com/GSI-CS-CO/wrs_mibs.git>
-
-=head1 Change Log
 
 =head1 GLOBALS
 
@@ -233,5 +230,3 @@ See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
 See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
 =cut
-
-# vim: filetype=perl ts=4 sw=4 sta et sts=4 ai
