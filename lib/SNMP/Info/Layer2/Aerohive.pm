@@ -448,11 +448,11 @@ radio interface.
 
 C<ahRadioTxPower>
 
-=item $aironet->cd11_port()
+=item $aerohive->cd11_port()
 
 Returns radio interfaces.
 
-=item $aironet->cd11_mac()
+=item $aerohive->cd11_mac()
 
 Returns client radio interface MAC addresses.
 
