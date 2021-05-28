@@ -48,7 +48,7 @@ Module::Build->new(
       bugtracker => 'https://github.com/netdisco/snmp-info/issues',
       repository => 'https://github.com/netdisco/snmp-info',
       MailingList => 'https://lists.sourceforge.net/lists/listinfo/snmp-info-users',
-      IRC => 'irc://irc.freenode.org/#netdisco',
+      IRC => 'irc://irc.libera.chat/#netdisco',
     },
   },
 )->create_build_script;
