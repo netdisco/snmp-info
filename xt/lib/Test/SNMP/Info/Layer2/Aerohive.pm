@@ -116,11 +116,15 @@ sub os : Tests(2) {
   is($test->{info}->os(), 'hiveos', q(OS returns 'hiveos'));
 }
 
-sub os_ver : Tests(3) {
+sub os_ver : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'os_ver');
   is($test->{info}->os_ver(), '6.2r1', q(OS version is expected value));
+
+  $test->{info}{_description} = 'AP250, HiveOS 10.0r8 build-236132';
+  is($test->{info}->os_ver(),
+    '10.0r8', q(10.0r8 is expected os version));
 
   $test->{info}->clear_cache();
   is($test->{info}->os_ver(), undef, q(No description returns undef os_ver));

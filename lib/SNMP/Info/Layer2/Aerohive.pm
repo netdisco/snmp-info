@@ -108,7 +108,7 @@ sub os_ver {
     my $aerohive = shift;
     my $descr    = $aerohive->description();
 
-    if ( defined ($descr) && $descr =~ m/\bHiveOS\s(\d\.\w+)\b/ix ) {
+    if ( defined ($descr) && $descr =~ m/\bHiveOS\s(\d+\.\w+)\b/ix ) {
         return $1;
     }
     return;
