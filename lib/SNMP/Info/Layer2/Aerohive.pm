@@ -318,7 +318,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Aerohive - SNMP Interface to Aerohive Access Points
+SNMP::Info::Layer2::Aerohive - SNMP Interface to Aerohive / Extreme
+access points
 
 =head1 AUTHOR
 
@@ -342,7 +343,7 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from an
-Aerohive wireless Access Point through SNMP.
+Aerohive / Extreme wireless access point through SNMP.
 
 =head2 Inherited Classes
 

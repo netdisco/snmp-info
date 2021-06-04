@@ -528,7 +528,7 @@ See documentation in L<SNMP::Info::Layer2::Airespace> for details.
 
 =item SNMP::Info::Layer2::Aerohive
 
-Subclass for Aerohive Access Points.
+Subclass for Aerohive / Extreme access points.
 
 See documentation in L<SNMP::Info::Layer2::Aerohive> for details.
 
