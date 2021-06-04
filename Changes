@@ -3,6 +3,7 @@ Version 3.xx (2021-xx-xx)
   [BUG FIXES]
 
   * #403 don't use layer3::dell for layer3::aruba devices
+  * layer2::aerohive supports version numbers above 9
 
 Version 3.71 (2020-11-27)
 
