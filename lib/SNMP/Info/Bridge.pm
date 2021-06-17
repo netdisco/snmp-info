@@ -429,7 +429,7 @@ sub _vlan_hoa {
         my $vlan;
 
         # Strip TimeFilter if we're using VlanCurrentTable
-        ( $vlan = $idx ) =~ s/^\d+\.//;
+        ($vlan = $idx) =~ s/^(\d+\.)*//g;
 
         # Convert portlist bit array to bp_index array
         for ( my $i = 0; $i <= $#$portlist; $i++ ) {
