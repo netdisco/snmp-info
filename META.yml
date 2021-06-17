@@ -94,6 +94,9 @@ provides:
   SNMP::Info::FDP:
     file: lib/SNMP/Info/FDP.pm
     version: '3.71'
+  SNMP::Info::IEEE802_Bridge:
+    file: lib/SNMP/Info/IEEE802_Bridge.pm
+    version: '3.71'
   SNMP::Info::IEEE802dot11:
     file: lib/SNMP/Info/IEEE802dot11.pm
     version: '3.71'
