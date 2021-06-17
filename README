@@ -427,15 +427,15 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::Adtran for details.
 
-        SNMP::Info::Layer2::Airespace
-            Subclass for Cisco (Airespace) wireless controllers.
-
-            See documentation in SNMP::Info::Layer2::Airespace for details.
-
         SNMP::Info::Layer2::Aerohive
             Subclass for Aerohive / Extreme access points.
 
             See documentation in SNMP::Info::Layer2::Aerohive for details.
+
+        SNMP::Info::Layer2::Airespace
+            Subclass for Cisco (Airespace) wireless controllers.
+
+            See documentation in SNMP::Info::Layer2::Airespace for details.
 
         SNMP::Info::Layer2::Aironet
             Class for Cisco Aironet wireless devices that run IOS. See also

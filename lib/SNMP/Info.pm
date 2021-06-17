@@ -526,17 +526,17 @@ Subclass for Adtran devices.
 
 See documentation in L<SNMP::Info::Layer2::Adtran> for details.
 
-=item SNMP::Info::Layer2::Airespace
-
-Subclass for Cisco (Airespace) wireless controllers.
-
-See documentation in L<SNMP::Info::Layer2::Airespace> for details.
-
 =item SNMP::Info::Layer2::Aerohive
 
 Subclass for Aerohive / Extreme access points.
 
 See documentation in L<SNMP::Info::Layer2::Aerohive> for details.
+
+=item SNMP::Info::Layer2::Airespace
+
+Subclass for Cisco (Airespace) wireless controllers.
+
+See documentation in L<SNMP::Info::Layer2::Airespace> for details.
 
 =item SNMP::Info::Layer2::Aironet
 
