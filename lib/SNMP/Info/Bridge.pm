@@ -105,7 +105,7 @@ $VERSION = '3.71';
     'stp_p_bridge'   => 'dot1dStpPortDesignatedBridge',
     'stp_p_port'     => 'dot1dStpPortDesignatedPort',
 
-    # Rapid Spanning Tree Protocol Table : dot1dStpExtPortEntry
+    # Rapid Spanning Tree Protocol Table : dot1dStpExtPortEntry
     'is_edgeport_admin' => 'dot1dStpPortAdminEdgePort',
     'is_edgeport_oper'  => 'dot1dStpPortOperEdgePort',
 
