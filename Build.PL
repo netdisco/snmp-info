@@ -6,13 +6,13 @@ Module::Build->new(
   module_name => 'SNMP::Info',
   license     => 'bsd',
   dist_author => 'Eric A. Miller <emiller@cpan.org>',
-  # dynamic_config => 1,
+  # dynamic_config => 1,
   create_readme => 1,
   configure_requires => {
     'Module::Build' => '0.42',
   },
-  # build_requires => {
-  # },
+  # build_requires => {
+  # },
   requires => {
     'SNMP' => '0',
     'Math::BigInt' => '0',
@@ -39,9 +39,9 @@ Module::Build->new(
     'Module::Find' => '0',
     'Hook::LexWrap' => '0',
   },
-  # script_files => [
-  # ],
-  # share_dir => 'share',
+  # script_files => [
+  # ],
+  # share_dir => 'share',
   meta_merge => {
     resources => {
       homepage => 'http://netdisco.org/',
