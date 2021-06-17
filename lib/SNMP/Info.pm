@@ -375,6 +375,12 @@ Foundry (Brocade) Discovery Protocol.  F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
 See documentation in L<SNMP::Info::FDP> for details.
 
+=item SNMP::Info::IEEE802_Bridge
+
+SNMP Interface to data available through the F<IEEE8021-Q-BRIDGE-MIB>
+
+See documentation in L<SNMP::Info::IEEE802_Bridge> for details.
+
 =item SNMP::Info::IEEE802dot11
 
 F<IEEE802dot11-MIB>.  A collection of OIDs providing information about
@@ -520,17 +526,17 @@ Subclass for Adtran devices.
 
 See documentation in L<SNMP::Info::Layer2::Adtran> for details.
 
-=item SNMP::Info::Layer2::Airespace
-
-Subclass for Cisco (Airespace) wireless controllers.
-
-See documentation in L<SNMP::Info::Layer2::Airespace> for details.
-
 =item SNMP::Info::Layer2::Aerohive
 
 Subclass for Aerohive / Extreme access points.
 
 See documentation in L<SNMP::Info::Layer2::Aerohive> for details.
+
+=item SNMP::Info::Layer2::Airespace
+
+Subclass for Cisco (Airespace) wireless controllers.
+
+See documentation in L<SNMP::Info::Layer2::Airespace> for details.
 
 =item SNMP::Info::Layer2::Aironet
 
