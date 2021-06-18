@@ -31,6 +31,7 @@ package SNMP::Info::Layer2::Airespace;
 use strict;
 use warnings;
 use Exporter;
+use SNMP::Info::Bridge;
 use SNMP::Info::CDP;
 use SNMP::Info::Airespace;
 
