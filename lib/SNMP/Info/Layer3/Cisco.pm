@@ -218,7 +218,7 @@ for other device specific L3 Cisco classes.
 
 =item SNMP::Info::CiscoConfig
 
-=item SNMP::Info::Power
+=item SNMP::Info::CiscoPower
 
 =item SNMP::Info::CiscoStpExtensions
 
