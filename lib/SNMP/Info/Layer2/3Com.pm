@@ -39,7 +39,7 @@ use SNMP::Info::CDP;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD);
 
-$VERSION = '3.71';
+$VERSION = '3.72';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,

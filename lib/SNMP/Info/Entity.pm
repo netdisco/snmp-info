@@ -41,7 +41,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.71';
+$VERSION = '3.72';
 
 %MIBS = ( 'ENTITY-MIB' => 'entPhysicalSerialNum' );
 

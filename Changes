@@ -1,4 +1,9 @@
-Version 3.xx (2021-xx-xx)
+Version 3.72 (2021-06-28)
+
+  [NEW FEATURES]
+
+  * Support for Aruba CX switches
+  * IEEE802_Bridge module
 
   [BUG FIXES]
 
