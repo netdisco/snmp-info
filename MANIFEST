@@ -79,6 +79,7 @@ lib/SNMP/Info/Layer3/AlteonAD.pm
 lib/SNMP/Info/Layer3/Altiga.pm
 lib/SNMP/Info/Layer3/Arista.pm
 lib/SNMP/Info/Layer3/Aruba.pm
+lib/SNMP/Info/Layer3/ArubaCX.pm
 lib/SNMP/Info/Layer3/BayRS.pm
 lib/SNMP/Info/Layer3/BlueCoatSG.pm
 lib/SNMP/Info/Layer3/C3550.pm

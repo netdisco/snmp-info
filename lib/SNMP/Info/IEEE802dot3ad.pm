@@ -44,7 +44,7 @@ use SNMP::Info::Aggregate;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.72';
+$VERSION = '3.73';
 
 %MIBS = (
   %SNMP::Info::Aggregate::MIBS,

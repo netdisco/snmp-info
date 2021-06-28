@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.72';
+$VERSION = '3.73';
 
 # Load MIB for leafs referenced within class
 %MIBS = ('IF-MIB' => 'ifIndex',);
