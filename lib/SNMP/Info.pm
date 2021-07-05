@@ -747,6 +747,12 @@ Subclass for Aruba wireless switches.
 
 See documentation in L<SNMP::Info::Layer3::Aruba> for details.
 
+=item SNMP::Info::Layer3::ArubaCX
+
+SNMP Interface to L3 Devices running ArubaOS-CX
+
+See documentation in L<SNMP::Info::Layer3::ArubaCX> for details.
+
 =item SNMP::Info::Layer3::BayRS
 
 Subclass for Avaya/Nortel/Bay Multiprotocol/BayRS routers.  This includes
@@ -5035,7 +5041,7 @@ sub can {
     # We could add load_/orig_/_raw alternatives to symbol table here on
     # first call of any type for a global or func since they all use the same
     # destination code, but they aren't used heavily in main code base so
-    # we’ll just create if/when they are called rather than pollute the
+    # we'll just create if/when they are called rather than pollute the
     # symbol table with entries that never get called.
 
     # Between 2012-2020 we actually added the methods generated below to the
