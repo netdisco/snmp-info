@@ -131,7 +131,7 @@ sub stack_info {
         }
         return sprintf("%s (stack of %d)", $modelname, $num_members);
     } else {
-        return undef;
+        return;
     }
 }
 
@@ -253,7 +253,7 @@ These are methods that return scalar value from SNMP
 If the device supports VSF stacking and is not in standalone mode, returns
 a string describing the switch family and the number of stack members.
 Example return value: '6300M (stack of 2)'. Will return undef when VSF is not
-supported or when the device is VSF standalone/
+supported or when the device is VSF standalone.
 
 =item $cx->model()
 
