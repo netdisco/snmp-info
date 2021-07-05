@@ -182,7 +182,21 @@ sub ps2_status {
     my $ps_status = $ciena->ps_status;
     return $ps_status->{'2'} if defined $ps_status->{'2'};
 }
+
+1;
+
+__END__
+
+=head1 NAME
+
+SNMP::Info::Layer3::Ciena - SNMP Interface to Ciena Devices
+
+=head1 AUTHORS
+
+pyro3d
+
 =head1 DESCRIPTION
+
 Subclass for Ciena Devices running SAOS
 
 =head2 Inherited Classes
@@ -323,3 +337,5 @@ Returns reference to hash of fans and their types (ex. fixed, modular, etc.)
 Returns reference to hash of fans and their status
 
 =back
+
+=cut
