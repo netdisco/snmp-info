@@ -222,6 +222,8 @@ Subclass for devices running ArubaOS-CX
 
 =item SNMP::Info::Layer3
 
+=item SNMP::Info::IEEE802_Bridge
+
 =item SNMP::Info::IEEE802dot3ad
 
 =back
@@ -236,9 +238,11 @@ Subclass for devices running ArubaOS-CX
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
-
 See L<SNMP::Info::Layer3> for its own MIB requirements.
+
+See L<SNMP::Info::IEEE802_Bridge> for its own MIB requirements.
+
+See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
 
 =back
 
@@ -285,6 +289,10 @@ C<ARUBAWIRED-FAN-MIB>.
 
 See documentation in L<SNMP::Info::Layer3> for details.
 
+=head2 Globals imported from SNMP::Info::IEEE802_Bridge
+
+See documentation in L<SNMP::Info::IEEE802_Bridge> for details.
+
 =head2 Globals imported from SNMP::Info::IEEE802dot3ad
 
 See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
@@ -320,6 +328,10 @@ L<SNMP::Info::IEEE8021_Bridge> at PBB 1.
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
+
+=head2 Table Methods imported from SNMP::Info::IEEE802_Bridge
+
+See documentation in L<SNMP::Info::IEEE802_Bridge> for details.
 
 =head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
 
