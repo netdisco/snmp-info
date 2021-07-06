@@ -131,7 +131,7 @@ sub stack_info {
         }
         return sprintf("%s (stack of %d)", $modelname, $num_members);
     } else {
-        return undef;
+        return;
     }
 }
 
@@ -222,6 +222,8 @@ Subclass for devices running ArubaOS-CX
 
 =item SNMP::Info::Layer3
 
+=item SNMP::Info::IEEE802_Bridge
+
 =item SNMP::Info::IEEE802dot3ad
 
 =back
@@ -236,9 +238,11 @@ Subclass for devices running ArubaOS-CX
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
-
 See L<SNMP::Info::Layer3> for its own MIB requirements.
+
+See L<SNMP::Info::IEEE802_Bridge> for its own MIB requirements.
+
+See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
 
 =back
 
@@ -253,7 +257,7 @@ These are methods that return scalar value from SNMP
 If the device supports VSF stacking and is not in standalone mode, returns
 a string describing the switch family and the number of stack members.
 Example return value: '6300M (stack of 2)'. Will return undef when VSF is not
-supported or when the device is VSF standalone/
+supported or when the device is VSF standalone.
 
 =item $cx->model()
 
@@ -284,6 +288,10 @@ C<ARUBAWIRED-FAN-MIB>.
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
+
+=head2 Globals imported from SNMP::Info::IEEE802_Bridge
+
+See documentation in L<SNMP::Info::IEEE802_Bridge> for details.
 
 =head2 Globals imported from SNMP::Info::IEEE802dot3ad
 
@@ -320,6 +328,10 @@ L<SNMP::Info::IEEE8021_Bridge> at PBB 1.
 =head2 Table Methods imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
+
+=head2 Table Methods imported from SNMP::Info::IEEE802_Bridge
+
+See documentation in L<SNMP::Info::IEEE802_Bridge> for details.
 
 =head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
 
