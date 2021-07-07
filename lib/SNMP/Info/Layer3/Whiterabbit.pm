@@ -42,15 +42,11 @@ use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
 use SNMP::Info::MAU;
-use SNMP::Info::LLDP;
-use SNMP::Info::Bridge;
-use Socket;
+
 
 @SNMP::Info::Layer3::Whiterabbit::ISA = qw/
     SNMP::Info::Layer3
     SNMP::Info::MAU
-    SNMP::Info::Bridge
-    SNMP::Info::LLDP
     Exporter
 /;
 @SNMP::Info::Layer3::Whiterabbit::EXPORT_OK = qw//;
@@ -62,17 +58,13 @@ $VERSION = '3.71';
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::MAU::MIBS,
-    %SNMP::Info::LLDP::MIBS,
-    %SNMP::Info::Bridge::MIBS,
     'WR-SWITCH-MIB' => 'wrsScalar',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::MAU::GLOBALS,
-    %SNMP::Info::LLDP::GLOBALS,    
-    %SNMP::Info::Bridge::GLOBALS,   
-    'serial1' => 'wrsVersionSwitchSerialNumber.0', 
+    'serial1' => 'wrsVersionSwitchSerialNumber.0',
     'vendor1' => 'wrsVersionManufacturer.0',
     'os_ver' => 'wrsVersionSwVersion.0',
 );
@@ -80,16 +72,12 @@ $VERSION = '3.71';
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::MAU::FUNCS,
-    %SNMP::Info::LLDP::FUNCS,    
-    %SNMP::Info::Bridge::FUNCS,    
 );
 
 %MUNGE = (
     # Inherit all the built in munging
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::MAU::MUNGE,
-    %SNMP::Info::LLDP::MUNGE,
-    %SNMP::Info::Bridge::MUNGE,
 );
 
 sub layers {
@@ -153,10 +141,6 @@ Whiterabbit Switch via SNMP.
 =item SNMP::Info::Layer3
 
 =item SNMP::Info::MAU
-
-=item SNMP::Info::LLDP
-
-=item SNMP::Info::Bridge
 
 =back
 
@@ -224,9 +208,5 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
-
-=head2 Table Methods imported from SNMP::Info::Bridge
-
-See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
 =cut
