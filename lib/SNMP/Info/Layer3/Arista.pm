@@ -128,6 +128,11 @@ sub lldp_if {
     return $lldp_if;
 }
 
+sub set_i_vlan {
+    my ($arista, $vlan, $iid) = @_;
+    return $arista->set_qb_i_vlan($vlan, $iid);
+}
+
 sub agg_ports { return agg_ports_ifstack(@_) }
 
 1;
@@ -257,5 +262,18 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::MAU
 
 See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
+
+=head1 SET METHODS
+
+These are methods that provide SNMP set functionality for overridden methods
+or provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
+operations.
+
+=over
+
+=item set_i_vlan()
+
+=back
 
 =cut
