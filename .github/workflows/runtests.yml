@@ -1,0 +1,66 @@
+name: Test SNMP::Info
+on:
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Run debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'     
+        required: false
+        default:  false
+#  push:
+#    branches:
+#      - master
+jobs:
+  test_netdisco:
+    name: Run SNMP::Info Test Suite
+    runs-on: ubuntu-latest
+    container:
+      image: 'netdisco/netdisco:latest-do'
+      options: '--user root --entrypoint /bin/ash'
+      volumes:
+        - '/home/runner/work:/github/workspace'
+    steps:
+    - name: Get the Tag
+      id: get_tag
+      run: echo ::set-output name=TAGVALUE::${GITHUB_REF#refs/heads/}
+    - name: Install packages
+      run: apk add jq openssh xz tmux bash curl sudo gcc make
+    - name: Install fake apt-get
+      run: echo 'if [ "$1" == "update" ]; then exec apk update; else exec apk add openssh xz; fi' > /usr/local/bin/apt-get && chmod +x /usr/local/bin/apt-get
+#    - name: Add localhost
+#      run: echo "127.0.0.1 localhost" >> /etc/hosts
+    - name: Check out latest code
+      uses: actions/checkout@v1
+    - name: Fix owner of checkout
+      run: chown -R netdisco:netdisco /github/workspace/netdisco/netdisco
+#    - name: Install Perl deps
+#      run: sudo -u netdisco /home/netdisco/bin/localenv cpanm --notest Env::Path Test::Compile
+    - name: Run Tests
+      id: build_and_run_tests
+      run: |
+        sudo -u netdisco /home/netdisco/bin/localenv perl ./Build.PL
+        sudo -u netdisco /home/netdisco/bin/localenv ./Build test --test_files t/ --test_files xt/
+      working-directory: /github/workspace/netdisco/netdisco
+      continue-on-error: true
+    - name: IRC failure notification
+      uses: Gottox/irc-message-action@v2
+      if: (! github.event.inputs.debug_enabled) && (steps.build_and_run_tests.outcome == 'failure')
+      with:
+        channel: '#netdisco'
+        nickname: github-actions
+        message: |-
+          🤖 ${{ github.actor }} pushed to ${{ steps.get_tag.outputs.TAGVALUE }}: https://github.com/netdisco/snmp-info/commit/${{ github.sha }}
+          😭 TESTS have FAILED! 👀 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    - name: IRC success notification
+      uses: Gottox/irc-message-action@v2
+      if: (! github.event.inputs.debug_enabled) && (steps.build_and_run_tests.outcome == 'success')
+      with:
+        channel: '#netdisco'
+        nickname: github-actions
+        message: |-
+          🤖 ${{ github.actor }} pushed to ${{ steps.get_tag.outputs.TAGVALUE }}: https://github.com/netdisco/snmp-info/commit/${{ github.sha }} (tests PASSED)
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      if: always() && github.event.inputs.debug_enabled && (github.event_name == 'workflow_dispatch')
+      with:
+        sudo: true
+
