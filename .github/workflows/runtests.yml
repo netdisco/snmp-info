@@ -31,7 +31,7 @@ jobs:
     - name: Check out latest code
       uses: actions/checkout@v1
     - name: Fix owner of checkout
-      run: chown -R netdisco:netdisco /github/workspace/netdisco/netdisco
+      run: chown -R netdisco:netdisco /github/workspace/netdisco/snmp-info
 #    - name: Install Perl deps
 #      run: sudo -u netdisco /home/netdisco/bin/localenv cpanm --notest Env::Path Test::Compile
     - name: Run Tests
@@ -39,7 +39,7 @@ jobs:
       run: |
         sudo -u netdisco /home/netdisco/bin/localenv perl ./Build.PL
         sudo -u netdisco /home/netdisco/bin/localenv ./Build test --test_files t/ --test_files xt/
-      working-directory: /github/workspace/netdisco/netdisco
+      working-directory: /github/workspace/netdisco/snmp-info
       continue-on-error: true
     - name: IRC failure notification
       uses: Gottox/irc-message-action@v2
