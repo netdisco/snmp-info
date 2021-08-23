@@ -1,20 +1,20 @@
-name: Test SNMP::Info
+name: Test and Publish SNMP::Info
 on:
   workflow_dispatch:
     inputs:
-      debug_enabled:
-        description: 'Run debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'     
-        required: false
-        default:  false
       success_irc_squawk:
         description: 'Squawk to IRC on successful tests'     
+        required: false
+        default:  false
+      debug_test_enabled:
+        description: 'With build and test debug'
         required: false
         default:  false
   push:
     branches:
       - master
     tags:
-      - '3.[0-9][0-9]'
+      - '2.[0-9][0-9][0-9][0-9][0-9][0-9]'
 jobs:
   test_snmp_info:
     name: Test and CPAN Upload
@@ -28,11 +28,8 @@ jobs:
       run:
         working-directory: /github/workspace/snmp-info/snmp-info
     steps:
-    - name: Get the Tag and Branch
-      id: get_refs
-      run: |
-        echo ::set-output name=RELEASE_TAG::${GITHUB_REF#refs/tags/}
-        echo ::set-output name=RELEASE_BRANCH::${GITHUB_REF#refs/heads/}
+    - name: Get the Tag or Branch
+      run: echo "GH_REF_SHORT=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
 
     - name: Install packages
       run: apk add openssh xz tmux bash curl sudo gcc make musl-dev perl-dev unzip jq
@@ -57,55 +54,67 @@ jobs:
       continue-on-error: true
 
     - name: IRC test failure notification
+      if: (steps.build_and_run_tests.outcome == 'failure') && (github.event_name != 'workflow_dispatch')
       uses: Gottox/irc-message-action@v2
-      if: (! github.event.inputs.debug_enabled) && startsWith(github.ref, 'refs/heads/') && (steps.build_and_run_tests.outcome == 'failure')
       with:
         channel: '#netdisco'
         nickname: github-actions
         message: |-
-          🤖 ${{ github.actor }} pushed to ${{ steps.get_refs.outputs.RELEASE_BRANCH }}: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+          🤖 ${{ github.actor }} pushed to ${{ env.GH_REF_SHORT }}: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
           😭 TESTS have FAILED! 👀 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
     - name: IRC test success notification
+      if: (steps.build_and_run_tests.outcome == 'success') && github.event.inputs.success_irc_squawk
       uses: Gottox/irc-message-action@v2
-      if: github.event.inputs.success_irc_squawk && startsWith(github.ref, 'refs/heads/') && (steps.build_and_run_tests.outcome == 'success')
       with:
         channel: '#netdisco'
         nickname: github-actions
         message: |-
-          🤖 ${{ github.actor }} pushed to ${{ steps.get_refs.outputs.RELEASE_BRANCH }}: https://github.com/${{ github.repository }}/commit/${{ github.sha }} (tests PASSED 🎉)
+          🤖 ${{ github.actor }} pushed to ${{ env.GH_REF_SHORT }}: https://github.com/${{ github.repository }}/commit/${{ github.sha }} (tests PASSED 🎉)
 
-    - name: Upload dist to CPAN
+    - name: Make release
+      if: steps.build_and_run_tests.outcome == 'success'
+      run: |
+        sudo -u netdisco /home/netdisco/bin/localenv rm ./MANIFEST
+        sudo -u netdisco /home/netdisco/bin/localenv ./Build manifest
+        sudo -u netdisco /home/netdisco/bin/localenv ./Build distmeta
+        sudo -u netdisco /home/netdisco/bin/localenv ./Build dist
+
+    - name: Upload to CPAN
       id: upload_to_cpan
-      if: (! github.event.inputs.debug_enabled) && startsWith(github.ref, 'refs/tags/') && (steps.build_and_run_tests.outcome == 'success')
+      if: startsWith(github.ref, 'refs/tags/')
       env:
         PAUSE_USERNAME: ${{ secrets.PAUSE_USERNAME }}
         PAUSE_PASSWORD: ${{ secrets.PAUSE_PASSWORD }}
       run: |
-        sudo -u netdisco /home/netdisco/bin/localenv ./Build dist
-        sudo -u netdisco /home/netdisco/bin/localenv cpan-upload --user=$PAUSE_USERNAME --password=$PAUSE_PASSWORD SNMP-Info-*.tar.gz
+        bash -c 'RELEASENAME=(SNMP-Info-*.tar.gz) && ! curl -LI --fail https://cpan.metacpan.org/authors/id/O/OL/OLIVER/${RELEASENAME}'
+        sudo -u netdisco /home/netdisco/bin/localenv cpan-upload -u '${{ env.PAUSE_USERNAME }}' -p '${{ env.PAUSE_PASSWORD }}' SNMP-Info-*.tar.gz
       continue-on-error: true
 
     - name: IRC upload failure notification
+      if: steps.upload_to_cpan.outcome == 'failure'
       uses: Gottox/irc-message-action@v2
-      if: (! github.event.inputs.debug_enabled) && startsWith(github.ref, 'refs/tags/') && (steps.upload_to_cpan.outcome == 'failure')
       with:
         channel: '#netdisco'
         nickname: github-actions
         message: |-
-          🤖 Failed to upload SNMP::Info release ${{ steps.get_refs.outputs.RELEASE_TAG }} to CPAN! 😭
+          🤖 Failed to upload SNMP::Info release ${{ env.GH_REF_SHORT }} to CPAN! 😭
           👀 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
     - name: IRC upload success notification
+      if: steps.upload_to_cpan.outcome == 'success'
       uses: Gottox/irc-message-action@v2
-      if: (! github.event.inputs.debug_enabled) && startsWith(github.ref, 'refs/tags/') && (steps.upload_to_cpan.outcome == 'success')
       with:
         channel: '#netdisco'
         nickname: github-actions
         message: |-
-          🤖 Uploaded SNMP::Info release ${{ steps.get_refs.outputs.RELEASE_TAG }} to CPAN 🎉
+          🤖 Uploaded SNMP::Info release ${{ env.GH_REF_SHORT }} to CPAN 🎉
 
     - name: Setup tmate session
       uses: mxschmitt/action-tmate@v3
-      if: always() && github.event.inputs.debug_enabled && (github.event_name == 'workflow_dispatch')
+      if: always() && github.event.inputs.debug_test_enabled
       with:
         sudo: true
+
+    - name: Preserve status from tests
+      if: always() && (steps.build_and_run_tests.outcome == 'failure')
+      run: exit 1
 
