@@ -41,7 +41,7 @@ use SNMP::Info::FDP;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.73';
+$VERSION = '3.74';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,

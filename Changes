@@ -1,8 +1,13 @@
-Version 3.xx (TBD)
+Version 3.74 (2021-08-24)
 
   [NEW FEATURES]
 
   * Support changing PVID on Arista switches (#429)
+  * Support for Whiterabbit devices
+
+  [ENHANCEMENTS]
+
+  * Patch H3C broken node-vlan mapping
 
 Version 3.73 (2021-06-28)
 
