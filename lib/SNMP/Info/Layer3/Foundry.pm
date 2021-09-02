@@ -294,6 +294,29 @@ sub interfaces {
     return $i_descr;
 }
 
+sub set_i_vlan {
+    my ($foundry, $vlan, $iid) = @_;
+    my %if_map = reverse %{ $foundry->snSwPortIfIndex || {} };
+    my $target = $if_map{$iid};
+    my $i_vlan = $foundry->i_vlan($iid);
+
+    if ( defined $i_vlan and defined $target ) {
+        print
+            "Changing VLAN from $i_vlan->{$iid} to $vlan on IfIndex: $iid ($target)\n"
+            if $foundry->debug();
+
+        my $rv = $foundry->set_snSwPortVlanId( $vlan, $target );
+        unless ($rv) {
+            $foundry->error_throw(
+                "Unable to change VLAN to $vlan on IfIndex: $iid");
+            return;
+        }
+        return $rv;
+    }
+    $foundry->error_throw("Can't find ifIndex: $iid - Is it an access port?");
+    return;
+}
+
 # Entity MIB is supported on the Brocade NetIron XMR, NetIron MLX, MLXe,
 # NetIron CES, NetIron CER, and older EdgeIron series devices.
 # Try Entity MIB methods first and fall back to Pseudo ENTITY-MIB methods for
@@ -1256,5 +1279,27 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::FDP
 
 See documentation in L<SNMP::Info::FDP/"TABLE METHODS"> for details.
+
+=head1 SET METHODS
+
+These are methods that provide SNMP set functionality for overridden methods
+or provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
+operations.
+
+=over
+
+=item $foundry->set_i_vlan ( vlan, ifIndex )
+
+Changes an access (untagged) port VLAN, must be supplied with the numeric
+VLAN ID and port C<ifIndex>.  This method should only be used on end station
+(non-trunk) ports.
+
+  # Example:
+  my %if_map = reverse %{$foundry->interfaces()};
+  $foundry->set_i_vlan('2', $if_map{'FastEthernet0/1'})
+    or die "Couldn't change port VLAN. ",$foundry->error(1);
+
+=back
 
 =cut
