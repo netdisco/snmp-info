@@ -1295,7 +1295,7 @@ Changes an access (untagged) port VLAN, must be supplied with the numeric
 VLAN ID and port C<ifIndex>.  This method should only be used on end station
 (non-trunk) ports.
 
-  # Example:
+  Example:
   my %if_map = reverse %{$foundry->interfaces()};
   $foundry->set_i_vlan('2', $if_map{'FastEthernet0/1'})
     or die "Couldn't change port VLAN. ",$foundry->error(1);
