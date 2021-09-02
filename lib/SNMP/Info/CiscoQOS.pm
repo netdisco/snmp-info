@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.74';
+$VERSION = '3.75';
 
 %MIBS = ( 'CISCO-CLASS-BASED-QOS-MIB' => 'cbQosIfIndex', );
 

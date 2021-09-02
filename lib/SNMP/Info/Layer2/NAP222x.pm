@@ -42,7 +42,7 @@ use SNMP::Info::Layer2;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.74';
+$VERSION = '3.75';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS, %SNMP::Info::IEEE802dot11::MIBS,
