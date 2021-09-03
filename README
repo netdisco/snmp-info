@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.73
+    SNMP::Info - Version 3.76
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -618,6 +618,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Aruba for details.
 
+        SNMP::Info::Layer3::ArubaCX
+            SNMP Interface to L3 Devices running ArubaOS-CX
+
+            See documentation in SNMP::Info::Layer3::ArubaCX for details.
+
         SNMP::Info::Layer3::BayRS
             Subclass for Avaya/Nortel/Bay Multiprotocol/BayRS routers. This
             includes BCN, BLN, ASN, ARN, AN, 2430, and 5430 routers.
@@ -891,6 +896,12 @@ SUBCLASSES
             Subclass for VMware ESXi hosts.
 
             See documentation in SNMP::Info::Layer3::VMware for details.
+
+        SNMP::Info::Layer3::Whiterabbit
+            Subclass for whiterabbit devices.
+
+            See documentation in SNMP::Info::Layer3::Whiterabbit for
+            details.
 
     SNMP::Info::Layer7
         Generic Layer7 Devices.
