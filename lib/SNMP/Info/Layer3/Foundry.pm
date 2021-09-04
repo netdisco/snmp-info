@@ -46,7 +46,7 @@ use SNMP::Info::FDP;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.76';
+$VERSION = '3.77';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -319,10 +319,10 @@ sub set_i_vlan {
         }
 
         # try to add new one untagged
-        my $rv_add = $foundry->set_multi(
+        my $rv_add = $foundry->set_multi([
             ['snVLanByPortMemberRowStatus', "${vlan}.${iid}", 4],
             ['snVLanByPortMemberTagMode',   "${vlan}.${iid}", 2],
-        );
+        ]);
         sleep 1;
 
         unless ($rv_add) {
