@@ -48,15 +48,70 @@ sub setup : Tests(setup) {
   # Start with a common cache that will serve most tests
   my $cache_data = {
     '_layers' => 78,
+    '_description' => 'firewall',
 
-    # Example snmpwalk had null string in sysDescr.0
-    '_description' => '',
+    # FORTINET-FORTIGATE-MIB::fgt500E
+    '_id'   => '.1.3.6.1.4.1.12356.101.1.5005',
 
-    # FORTINET-FORTIGATE-MIB::fgt60D
-    '_id'   => '.1.3.6.1.4.1.12356.101.1.625',
-    'store' => {},
+    '_fnSysSerial' => 'FG5H0E5810000000',
+    '_fgSysVersion' => 'v6.0.11,build0387,200917 (GA)',
+    '_i_index' => 1,
+    '_orig_i_name' => 1,
+    'store' => {
+      'i_index'       => {
+        1 => 1,
+        2 => 2,
+        3 => 3
+      },
+      'orig_i_name'       => {
+        1 => "ha",
+        2 => "mgmt",
+        3 => "port1"
+      },
+    },
   };
   $test->{info}->cache($cache_data);
+}
+
+sub vendor : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'vendor');
+  is($test->{info}->vendor(), 'fortinet', q(Vendor returns 'fortinet'));
+}
+
+sub model : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'model');
+  is($test->{info}->model(), '500E', q(Model is expected value));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->model(), '', q(No model info returns undef model));
+}
+
+sub os : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'os');
+  is($test->{info}->os(), 'fortios', q(os returns 'fortios'));
+}
+
+sub os_ver : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'os_ver');
+  is($test->{info}->os_ver(), '6.0.11', q(os_ver is expected value));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->os_ver(), '', q(No os_ver info returns undef os_ver));
+}
+
+sub serial : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'serial');
+  is($test->{info}->serial(), 'FG5H0E5810000000', q(serial number is expected value'));
 }
 
 1;
