@@ -366,7 +366,7 @@ sub i_vlan {
     my $bridge  = shift;
     my $partial = shift;
 
-    my $index = $bridge->bp_index();
+    my $index = $bridge->bp_index() or return {};
 
     # If given a partial it will be an ifIndex, we need to use dot1dBasePort
     if ($partial) {

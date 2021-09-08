@@ -1,3 +1,9 @@
+Version 3.78 (2021-09-08)
+
+  [BUG FIXES]
+
+  * Fix undefined value error in Bridge.pm i_vlan
+
 Version 3.77 (2021-09-04)
 
   [ENHANCEMENTS]
