@@ -11,7 +11,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.77';
+$VERSION = '3.78';
 
 %MIBS = (
     'DOCS-IF3-MIB' => 'docsIf3Mib',
