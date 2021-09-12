@@ -42,7 +42,7 @@ use SNMP::Info;
 
 our ($VERSION, $DEBUG, %MIBS, %FUNCS, %GLOBALS, %MUNGE, $INIT);
 
-$VERSION = '3.73';
+$VERSION = '3.78';
 
 %MIBS = (
     'BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',
@@ -366,7 +366,7 @@ sub i_vlan {
     my $bridge  = shift;
     my $partial = shift;
 
-    my $index = $bridge->bp_index();
+    my $index = $bridge->bp_index() or return {};
 
     # If given a partial it will be an ifIndex, we need to use dot1dBasePort
     if ($partial) {

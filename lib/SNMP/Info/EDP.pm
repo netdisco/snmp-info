@@ -40,7 +40,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.73';
+$VERSION = '3.78';
 
 %MIBS = (
     'EXTREME-EDP-MIB'   => 'extremeEdpPortIfIndex',

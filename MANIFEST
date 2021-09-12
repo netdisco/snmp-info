@@ -132,6 +132,7 @@ lib/SNMP/Info/Layer3/Teltonika.pm
 lib/SNMP/Info/Layer3/Timetra.pm
 lib/SNMP/Info/Layer3/VMware.pm
 lib/SNMP/Info/Layer3/VyOS.pm
+lib/SNMP/Info/Layer3/Whiterabbit.pm
 lib/SNMP/Info/Layer7.pm
 lib/SNMP/Info/Layer7/APC.pm
 lib/SNMP/Info/Layer7/Arbor.pm
