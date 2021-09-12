@@ -1,3 +1,10 @@
+Version 3.79 (2021-xx-xx)
+
+  [ENHANCEMENTS]
+
+  * layer3::fortinet now supports link aggregation mapping
+
+
 Version 3.78 (2021-09-08)
 
   [BUG FIXES]
