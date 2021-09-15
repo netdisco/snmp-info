@@ -1936,6 +1936,12 @@ sub device_type {
             if (
             $desc =~ /\bTeltonika.*RUT9\d{2}\b/);
 
+        # Riverbed Steelfusion
+        $objtype = 'SNMP::Info::Layer3::SteelheadEx'
+            if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.17163\.1\.51/i );
+        $objtype = 'SNMP::Info::Layer3::Steelfusion'
+            if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.17163\.1\.52/i );
+
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer3' )
             and ( defined($id) )
