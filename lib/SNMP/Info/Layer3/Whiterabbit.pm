@@ -168,7 +168,7 @@ Overwrite snmp value, we support 1-3
 
 =item $whiterabbit->os()
 
-staticly returns whiterabbit
+statically returns whiterabbit
 
 =item $whiterabbit->vendor()
 
