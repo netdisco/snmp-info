@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.71
+    SNMP::Info - Version 3.78
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -213,16 +213,16 @@ SUBCLASSES
 
         See documentation in SNMP::Info::Bridge for details.
 
-    SNMP::Info::CiscoAgg
-        SNMP Interface to Cisco Aggregated Links
-
-        See documentation in SNMP::Info::CiscoAgg for details.
-
     SNMP::Info::CDP
         CISCO-CDP-MIB. Cisco Discovery Protocol (CDP) Support. Inherited by
         Cisco, Enterasys, and HP devices.
 
         See documentation in SNMP::Info::CDP for details.
+
+    SNMP::Info::CiscoAgg
+        SNMP Interface to Cisco Aggregated Links
+
+        See documentation in SNMP::Info::CiscoAgg for details.
 
     SNMP::Info::CiscoConfig
         CISCO-CONFIG-COPY-MIB, CISCO-FLASH-MIB, and OLD-CISCO-SYS-MIB. These
@@ -257,11 +257,6 @@ SUBCLASSES
 
         See documentation in SNMP::Info::CiscoStack for details.
 
-    SNMP::Info::CiscoStpExtensions
-        CISCO-STP-EXTENSIONS-MIB
-
-        See documentation in SNMP::Info::CiscoStpExtensions for details.
-
     SNMP::Info::CiscoStats
         OLD-CISCO-CPU-MIB, CISCO-PROCESS-MIB, and CISCO-MEMORY-POOL-MIB.
         Provides common interfaces for memory, cpu, and os statistics for
@@ -269,21 +264,26 @@ SUBCLASSES
 
         See documentation in SNMP::Info::CiscoStats for details.
 
+    SNMP::Info::CiscoStpExtensions
+        CISCO-STP-EXTENSIONS-MIB
+
+        See documentation in SNMP::Info::CiscoStpExtensions for details.
+
     SNMP::Info::CiscoVTP
         CISCO-VTP-MIB, CISCO-VLAN-MEMBERSHIP-MIB,
         CISCO-VLAN-IFTABLE-RELATIONSHIP-MIB
 
         See documentation in SNMP::Info::CiscoVTP for details.
 
-    SNMP::Info::DocsisHE
-        SNMP Interface for DOCSIS CMTS
-
-        See documentation in SNMP::Info::DocsisHE for details.
-
     SNMP::Info::DocsisCM
         SNMP Interface for DOCSIS Cable Modems
 
         See documentation in SNMP::Info::DocsisCM for details.
+
+    SNMP::Info::DocsisHE
+        SNMP Interface for DOCSIS CMTS
+
+        See documentation in SNMP::Info::DocsisHE for details.
 
     SNMP::Info::EDP
         Extreme Discovery Protocol. EXTREME-EDP-MIB
@@ -305,6 +305,11 @@ SUBCLASSES
         Foundry (Brocade) Discovery Protocol. FOUNDRY-SN-SWITCH-GROUP-MIB
 
         See documentation in SNMP::Info::FDP for details.
+
+    SNMP::Info::IEEE802_Bridge
+        SNMP Interface to data available through the IEEE8021-Q-BRIDGE-MIB
+
+        See documentation in SNMP::Info::IEEE802_Bridge for details.
 
     SNMP::Info::IEEE802dot11
         IEEE802dot11-MIB. A collection of OIDs providing information about
@@ -423,7 +428,7 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer2::Adtran for details.
 
         SNMP::Info::Layer2::Aerohive
-            Subclass for Aerohive Access Points.
+            Subclass for Aerohive / Extreme access points.
 
             See documentation in SNMP::Info::Layer2::Aerohive for details.
 
@@ -613,6 +618,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Aruba for details.
 
+        SNMP::Info::Layer3::ArubaCX
+            SNMP Interface to L3 Devices running ArubaOS-CX
+
+            See documentation in SNMP::Info::Layer3::ArubaCX for details.
+
         SNMP::Info::Layer3::BayRS
             Subclass for Avaya/Nortel/Bay Multiprotocol/BayRS routers. This
             includes BCN, BLN, ASN, ARN, AN, 2430, and 5430 routers.
@@ -620,7 +630,7 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::BayRS for details.
 
         SNMP::Info::Layer3::BlueCoatSG
-            Subclass for Blue Coat SG series proxy devices.
+            Subclass for BlueCoat SG series proxy devices.
 
             See documentation in SNMP::Info::Layer3::BlueCoatSG for details.
 
@@ -683,17 +693,17 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Cumulus for details.
 
-        SNMP::Info::Layer3::DLink
-            Subclass for DLink devices.
-
-            See documentation in SNMP::Info::Layer3::DLink for details.
-
         SNMP::Info::Layer3::Dell
             Subclass for Dell PowerConnect switches. The IBM BladeCenter
             Gigabit Ethernet Switch Module and some Linksys switches also
             use this module based upon MIB support.
 
             See documentation in SNMP::Info::Layer3::Dell for details.
+
+        SNMP::Info::Layer3::DLink
+            Subclass for DLink devices.
+
+            See documentation in SNMP::Info::Layer3::DLink for details.
 
         SNMP::Info::Layer3::Enterasys
             Subclass for Enterasys devices.
@@ -886,6 +896,12 @@ SUBCLASSES
             Subclass for VMware ESXi hosts.
 
             See documentation in SNMP::Info::Layer3::VMware for details.
+
+        SNMP::Info::Layer3::Whiterabbit
+            Subclass for whiterabbit devices.
+
+            See documentation in SNMP::Info::Layer3::Whiterabbit for
+            details.
 
     SNMP::Info::Layer7
         Generic Layer7 Devices.
@@ -1603,12 +1619,12 @@ USAGE
 
     For protocol specific information and implementation:
 
-    LLDP: See SNMP::Info::LLDP for details.
-    CDP: See SNMP::Info::CDP for details.
-    SONMP: See SNMP::Info::SONMP for details.
-    FDP: See SNMP::Info::FDP for details.
-    EDP: See SNMP::Info::EDP for details.
     AMAP: See SNMP::Info::AMAP for details.
+    CDP: See SNMP::Info::CDP for details.
+    EDP: See SNMP::Info::EDP for details.
+    FDP: See SNMP::Info::FDP for details.
+    LLDP: See SNMP::Info::LLDP for details.
+    SONMP: See SNMP::Info::SONMP for details.
 
    Topology Capabilities
     $info->has_topo()
@@ -1938,7 +1954,7 @@ SNMP::INFO INTERNALS
          %SPEED_MAP = (
                         '56000'      => '56 kbps',
                         '64000'      => '64 kbps',
-                        '115000'     => '115 kpbs',
+                        '115000'     => '115 kbps',
                         '1500000'    => '1.5 Mbps',
                         '1536000'    => 'T1',
                         '1544000'    => 'T1',
@@ -1949,9 +1965,9 @@ SNMP::INFO INTERNALS
                         '4000000'    => '4.0 Mbps',
                         '10000000'   => '10 Mbps',
                         '11000000'   => '11 Mbps',
-                        '20000000'   => '20 Mbps',
                         '16000000'   => '16 Mbps',
                         '16777216'   => '16 Mbps',
+                        '20000000'   => '20 Mbps',
                         '44210000'   => 'T3',
                         '44736000'   => 'T3',
                         '45000000'   => '45 Mbps',
@@ -1961,11 +1977,11 @@ SNMP::INFO INTERNALS
                         '54000000'   => '54 Mbps',
                         '64000000'   => '64 Mbps',
                         '100000000'  => '100 Mbps',
-                        '200000000'  => '200 Mbps',
                         '149760000'  => 'ATM on OC-3',
                         '155000000'  => 'OC-3',
                         '155519000'  => 'OC-3',
                         '155520000'  => 'OC-3',
+                        '200000000'  => '200 Mbps',
                         '400000000'  => '400 Mbps',
                         '599040000'  => 'ATM on OC-12',
                         '622000000'  => 'OC-12',

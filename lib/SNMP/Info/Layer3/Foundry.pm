@@ -46,7 +46,7 @@ use SNMP::Info::FDP;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.71';
+$VERSION = '3.78';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -292,6 +292,69 @@ sub interfaces {
     }
 
     return $i_descr;
+}
+
+sub set_i_vlan {
+    my ($foundry, $vlan, $iid) = @_;
+    my $i_vlan = $foundry->i_vlan($iid);
+
+    if ( defined $i_vlan ) {
+        print
+            "Changing VLAN from $i_vlan->{$iid} to $vlan on IfIndex: $iid\n"
+            if $foundry->debug();
+
+        # quietly try to remove new vlan association
+        $foundry->set_snVLanByPortMemberRowStatus( 3, "${vlan}.${iid}" );
+        sleep 1;
+        # try to remove old vlan association
+        my $rv_rem = $foundry->set_snVLanByPortMemberRowStatus( 3, "$i_vlan->{$iid}.$iid" );
+        sleep 1;
+
+        unless ($rv_rem) {
+            print "Unable to remove untagged(?) VLAN $i_vlan->{$iid} from IfIndex: $iid\n"
+              if $foundry->debug();
+            #    $foundry->error_throw(
+            #        "Unable to remove VLAN $i_vlan->{$iid} from interface: $iid");
+            #    return;
+        }
+
+        # try to add new one untagged
+        my $rv_add = $foundry->set_multi([
+            ['snVLanByPortMemberRowStatus', "${vlan}.${iid}", 4],
+            ['snVLanByPortMemberTagMode',   "${vlan}.${iid}", 2],
+        ]);
+        sleep 1;
+
+        unless ($rv_add) {
+            print "Unable to add untagged VLAN $vlan to IfIndex: $iid\n"
+              if $foundry->debug();
+
+            # did not work to add new untagged so add tagged
+            my $rv_add_tagged = $foundry->set_multi([
+              ['snVLanByPortMemberRowStatus', "${vlan}.${iid}", 4],
+              ['snVLanByPortMemberTagMode',   "${vlan}.${iid}", 1],
+            ]);
+            sleep 1;
+
+            if ($rv_add_tagged) {
+                my $rv_change_untagged = $foundry->set_snVLanByPortMemberTagMode( 2, "${vlan}.${iid}" );
+                sleep 1;
+                return $rv_change_untagged if $rv_change_untagged;
+            }
+
+            # try to remove old vlan association
+            # $foundry->set_snVLanByPortMemberRowStatus( 3, "${vlan}.${iid}" );
+
+            # then change to untagged
+            $foundry->error_throw(
+                "Unable to add VLAN $vlan to interface: $iid");
+            return;
+        }
+
+        return $rv_add;
+    }
+    $foundry->error_throw("Can't find ifIndex: $iid - Is it an access port?");
+    return;
 }
 
 # Entity MIB is supported on the Brocade NetIron XMR, NetIron MLX, MLXe,
@@ -1256,5 +1319,27 @@ See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::FDP
 
 See documentation in L<SNMP::Info::FDP/"TABLE METHODS"> for details.
+
+=head1 SET METHODS
+
+These are methods that provide SNMP set functionality for overridden methods
+or provide a simpler interface to complex set operations.  See
+L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
+operations.
+
+=over
+
+=item $foundry->set_i_vlan ( vlan, ifIndex )
+
+Changes an access (untagged) port VLAN, must be supplied with the numeric
+VLAN ID and port C<ifIndex>.  This method should only be used on end station
+(non-trunk) ports.
+
+  Example:
+  my %if_map = reverse %{$foundry->interfaces()};
+  $foundry->set_i_vlan('2', $if_map{'FastEthernet0/1'})
+    or die "Couldn't change port VLAN. ",$foundry->error(1);
+
+=back
 
 =cut

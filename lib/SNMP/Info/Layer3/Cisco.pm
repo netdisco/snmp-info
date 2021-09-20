@@ -53,7 +53,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.71';
+$VERSION = '3.78';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -218,7 +218,7 @@ for other device specific L3 Cisco classes.
 
 =item SNMP::Info::CiscoConfig
 
-=item SNMP::Info::Power
+=item SNMP::Info::CiscoPower
 
 =item SNMP::Info::CiscoStpExtensions
 

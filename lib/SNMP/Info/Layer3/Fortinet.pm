@@ -33,17 +33,22 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer3;
+use SNMP::Info::Aggregate 'agg_ports_ifstack';
 
-@SNMP::Info::Layer3::Fortinet::ISA
-    = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::Fortinet::ISA = qw/
+    SNMP::Info::Layer3
+    SNMP::Info::Aggregate
+    Exporter
+/;
 @SNMP::Info::Layer3::Fortinet::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.71';
+$VERSION = '3.78';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::Aggregate::MIBS,
     'FORTINET-CORE-MIB'      => 'fnSysSerial',
     'FORTINET-FORTIGATE-MIB' => 'fgVdMaxVdoms',
 );
@@ -121,6 +126,8 @@ sub serial {
     return $fortinet->fnSysSerial();
 }
 
+sub agg_ports { return agg_ports_ifstack(@_) }
+
 1;
 __END__
 
@@ -157,6 +164,8 @@ Abstraction subclass for Fortinet network devices.
 
 =item SNMP::Info::Layer3
 
+=item SNMP::Info::Aggregate
+
 =back
 
 =head2 Required MIBs
@@ -170,6 +179,8 @@ Abstraction subclass for Fortinet network devices.
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::Aggregate/"Required MIBs"> for its own MIB requirements.
 
 =back
 
@@ -217,6 +228,12 @@ to a hash.
 =item $fortinet->interfaces();
 
 Returns the map between SNMP Interface Identifier (iid) and C<ifName>.
+
+=item C<agg_ports>
+
+Returns a HASH reference mapping from slave to master port for each member of
+a port bundle on the device. Keys are ifIndex of the slave ports, Values are
+ifIndex of the corresponding master ports.
 
 =back
 

@@ -39,7 +39,7 @@ use SNMP::Info::Layer2;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.71';
+$VERSION = '3.78';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -108,7 +108,7 @@ sub os_ver {
     my $aerohive = shift;
     my $descr    = $aerohive->description();
 
-    if ( defined ($descr) && $descr =~ m/\bHiveOS\s(\d\.\w+)\b/ix ) {
+    if ( defined ($descr) && $descr =~ m/\bHiveOS\s(\d+\.\w+)\b/ix ) {
         return $1;
     }
     return;
@@ -318,7 +318,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Aerohive - SNMP Interface to Aerohive Access Points
+SNMP::Info::Layer2::Aerohive - SNMP Interface to Aerohive / Extreme
+access points
 
 =head1 AUTHOR
 
@@ -342,7 +343,7 @@ Eric Miller
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from an
-Aerohive wireless Access Point through SNMP.
+Aerohive / Extreme wireless access point through SNMP.
 
 =head2 Inherited Classes
 
@@ -448,11 +449,11 @@ radio interface.
 
 C<ahRadioTxPower>
 
-=item $aironet->cd11_port()
+=item $aerohive->cd11_port()
 
 Returns radio interfaces.
 
-=item $aironet->cd11_mac()
+=item $aerohive->cd11_mac()
 
 Returns client radio interface MAC addresses.
 

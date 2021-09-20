@@ -1,3 +1,51 @@
+Version 3.79 (2021-xx-xx)
+
+  [ENHANCEMENTS]
+
+  * layer3::fortinet now supports link aggregation mapping
+
+
+Version 3.78 (2021-09-08)
+
+  [BUG FIXES]
+
+  * Fix undefined value error in Bridge.pm i_vlan
+
+Version 3.77 (2021-09-04)
+
+  [ENHANCEMENTS]
+
+  * set_i_vlan support for Ruckus/Brocade/Foundry
+
+Version 3.74 (2021-08-24)
+
+  [NEW FEATURES]
+
+  * Support changing PVID on Arista switches (#429)
+  * Support for Whiterabbit devices
+
+  [ENHANCEMENTS]
+
+  * Patch H3C broken node-vlan mapping
+
+Version 3.73 (2021-06-28)
+
+  [BUG FIXES]
+
+  * fix packaging error
+
+Version 3.72 (2021-06-28)
+
+  [NEW FEATURES]
+
+  * Support for Aruba CX switches
+  * IEEE802_Bridge module
+
+  [BUG FIXES]
+
+  * #403 don't use layer3::dell for layer3::aruba devices
+  * layer2::aerohive supports version numbers above 9
+
 Version 3.71 (2020-11-27)
 
   [NEW FEATURES]

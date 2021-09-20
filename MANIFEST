@@ -32,6 +32,7 @@ lib/SNMP/Info/EDP.pm
 lib/SNMP/Info/Entity.pm
 lib/SNMP/Info/EtherLike.pm
 lib/SNMP/Info/FDP.pm
+lib/SNMP/Info/IEEE802_Bridge.pm
 lib/SNMP/Info/IEEE802dot11.pm
 lib/SNMP/Info/IEEE802dot3ad.pm
 lib/SNMP/Info/IPv6.pm
@@ -78,6 +79,7 @@ lib/SNMP/Info/Layer3/AlteonAD.pm
 lib/SNMP/Info/Layer3/Altiga.pm
 lib/SNMP/Info/Layer3/Arista.pm
 lib/SNMP/Info/Layer3/Aruba.pm
+lib/SNMP/Info/Layer3/ArubaCX.pm
 lib/SNMP/Info/Layer3/BayRS.pm
 lib/SNMP/Info/Layer3/BlueCoatSG.pm
 lib/SNMP/Info/Layer3/C3550.pm
@@ -130,6 +132,7 @@ lib/SNMP/Info/Layer3/Teltonika.pm
 lib/SNMP/Info/Layer3/Timetra.pm
 lib/SNMP/Info/Layer3/VMware.pm
 lib/SNMP/Info/Layer3/VyOS.pm
+lib/SNMP/Info/Layer3/Whiterabbit.pm
 lib/SNMP/Info/Layer7.pm
 lib/SNMP/Info/Layer7/APC.pm
 lib/SNMP/Info/Layer7/Arbor.pm
