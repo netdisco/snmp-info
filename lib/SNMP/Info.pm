@@ -1970,7 +1970,7 @@ sub device_type {
 
         # Whiterabbit Timing
         $objtype = 'SNMP::Info::Layer3::Whiterabbit'
-	          if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.96\.100\.1000/i );
+	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.96\.100\.1000/i );
 
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer3' )
