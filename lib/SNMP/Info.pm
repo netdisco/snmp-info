@@ -1032,11 +1032,23 @@ Subclass for generic SonicWALL devices.
 
 See documentation in L<SNMP::Info::Layer3::SonicWALL> for details.
 
+=item SNMP::Info::Layer3::Steelfusion
+
+Subclass for Riverbed Steelfusion WAN optimization appliances.
+
+See documentation in L<SNMP::Info::Layer3::Steelfusion> for details.
+
 =item SNMP::Info::Layer3::Steelhead
 
 Subclass for Riverbed Steelhead WAN optimization appliances.
 
 See documentation in L<SNMP::Info::Layer3::Steelhead> for details.
+
+=item SNMP::Info::Layer3::SteelheadEx
+
+Subclass for Riverbed SteelheadEx WAN optimization appliances.
+
+See documentation in L<SNMP::Info::Layer3::SteelheadEx> for details.
 
 =item SNMP::Info::Layer3::Sun
 
@@ -1962,7 +1974,13 @@ sub device_type {
             if (
             $desc =~ /\bTeltonika.*RUT9\d{2}\b/);
 
-	# Whiterabbit Timing
+        # Riverbed Steelfusion
+        $objtype = 'SNMP::Info::Layer3::SteelheadEx'
+            if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.17163\.1\.51/i );
+        $objtype = 'SNMP::Info::Layer3::Steelfusion'
+            if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.17163\.1\.52/i );
+
+        # Whiterabbit Timing
         $objtype = 'SNMP::Info::Layer3::Whiterabbit'
 	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.96\.100\.1000/i );
 
