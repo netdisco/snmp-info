@@ -1032,11 +1032,23 @@ Subclass for generic SonicWALL devices.
 
 See documentation in L<SNMP::Info::Layer3::SonicWALL> for details.
 
+=item SNMP::Info::Layer3::Steelfusion
+
+Subclass for Riverbed Steelfusion WAN optimization appliances.
+
+See documentation in L<SNMP::Info::Layer3::Steelfusion> for details.
+
 =item SNMP::Info::Layer3::Steelhead
 
 Subclass for Riverbed Steelhead WAN optimization appliances.
 
 See documentation in L<SNMP::Info::Layer3::Steelhead> for details.
+
+=item SNMP::Info::Layer3::SteelheadEx
+
+Subclass for Riverbed SteelheadEx WAN optimization appliances.
+
+See documentation in L<SNMP::Info::Layer3::SteelheadEx> for details.
 
 =item SNMP::Info::Layer3::Sun
 
