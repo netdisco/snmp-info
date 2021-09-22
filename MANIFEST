@@ -125,7 +125,9 @@ lib/SNMP/Info/Layer3/Pica8.pm
 lib/SNMP/Info/Layer3/Redlion.pm
 lib/SNMP/Info/Layer3/Scalance.pm
 lib/SNMP/Info/Layer3/SonicWALL.pm
+lib/SNMP/Info/Layer3/Steelfusion.pm
 lib/SNMP/Info/Layer3/Steelhead.pm
+lib/SNMP/Info/Layer3/SteelheadEx.pm
 lib/SNMP/Info/Layer3/Sun.pm
 lib/SNMP/Info/Layer3/Tasman.pm
 lib/SNMP/Info/Layer3/Teltonika.pm

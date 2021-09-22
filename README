@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.78
+    SNMP::Info - Version 3.79
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -862,10 +862,22 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::SonicWALL for details.
 
+        SNMP::Info::Layer3::Steelfusion
+            Subclass for Riverbed Steelfusion WAN optimization appliances.
+
+            See documentation in SNMP::Info::Layer3::Steelfusion for
+            details.
+
         SNMP::Info::Layer3::Steelhead
             Subclass for Riverbed Steelhead WAN optimization appliances.
 
             See documentation in SNMP::Info::Layer3::Steelhead for details.
+
+        SNMP::Info::Layer3::SteelheadEx
+            Subclass for Riverbed SteelheadEx WAN optimization appliances.
+
+            See documentation in SNMP::Info::Layer3::SteelheadEx for
+            details.
 
         SNMP::Info::Layer3::Sun
             Subclass for Generic Sun Routers running SunOS.
