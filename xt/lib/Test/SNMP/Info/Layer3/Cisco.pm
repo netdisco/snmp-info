@@ -86,6 +86,16 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
+# This class is a collection of roles and not meant to instantiated for a
+# specific device. Don't test device class and no need to setup data
+sub device_type : Tests(1) {
+  my $test  = shift;
+  my $class = $test->class;
+
+  can_ok($test->{info}, 'device_type');
+
+}
+
 # Only going to test the non-VTP path in this class and assume CiscoVTP will
 # test the SUPER::i_vlan method, since this class will handle traditional
 # routers that usually don't have VTP.
