@@ -42,7 +42,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.79';
+$VERSION = '3.80';
 
 %MIBS = (
     'SNMPv2-MIB'            => 'sysDescr',

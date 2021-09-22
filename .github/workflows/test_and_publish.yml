@@ -83,7 +83,7 @@ jobs:
 
     - name: Upload to CPAN
       id: upload_to_cpan
-      if: startsWith(github.ref, 'refs/tags/')
+      if: success() && startsWith(github.ref, 'refs/tags/')
       env:
         PAUSE_USERNAME: ${{ secrets.PAUSE_USERNAME }}
         PAUSE_PASSWORD: ${{ secrets.PAUSE_PASSWORD }}

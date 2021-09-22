@@ -49,7 +49,7 @@ use SNMP::Info::LLDP;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.79';
+$VERSION = '3.80';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
