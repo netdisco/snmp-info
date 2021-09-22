@@ -1,9 +1,17 @@
-Version 3.79 (2021-xx-xx)
+Version 3.79 (2021-09-22)
+
+  [NEW FEATURES]
+
+  * layer3::fortinet now supports link aggregation mapping
+  * Add support for Riverbed SteelheadEx and Steelfusion (#438)
 
   [ENHANCEMENTS]
 
-  * layer3::fortinet now supports link aggregation mapping
+  * change default class for Cisco from Layer3::Cisco to Layer3::CiscoSwitch
 
+  [ENHANCEMENTS]
+
+  * Fix typo in Whiterabbit.pm (#439)
 
 Version 3.78 (2021-09-08)
 

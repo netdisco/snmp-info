@@ -1699,7 +1699,7 @@ sub device_type {
     # Hash for generic fallback to a device class if unable to determine using
     # the sysDescr regex.
     my %l3sysoidmap = (
-        9     => 'SNMP::Info::Layer3::Cisco',
+        9     => 'SNMP::Info::Layer3::CiscoSwitch',
         11    => 'SNMP::Info::Layer2::HP',
         18    => 'SNMP::Info::Layer3::BayRS',
         42    => 'SNMP::Info::Layer3::Sun',
