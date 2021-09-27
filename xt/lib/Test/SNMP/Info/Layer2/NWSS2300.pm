@@ -51,6 +51,9 @@ sub setup : Tests(setup) {
     '_description' =>
       'Nortel Wireless Security Switch 2380, 7.0.13.3 REL',
 
+    # NTWS-BASIC-MIB
+    '_ntwsSerialNumber' => 'STP1E4013Z',
+
     # NTWS-REGISTRATION-DEVICES-MIB::ntwsSwitch2380
     '_id'                   => '.1.3.6.1.4.1.45.6.1.3.1.3',
     'store'                 => {},
@@ -70,6 +73,17 @@ sub vendor : Tests(2) {
 
   can_ok($test->{info}, 'vendor');
   is($test->{info}->vendor(), 'avaya', q(Vendor returns 'avaya'));
+}
+
+sub serial : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'serial');
+  is($test->{info}->serial(), 'STP1E4013Z', q(Serial is expected value));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->serial(), undef,
+    q(No serial returns undef));
 }
 
 1;
