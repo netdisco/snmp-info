@@ -662,7 +662,7 @@ sub e_serial {
     my %e_serial;
 
     # Chassis
-    $e_serial{1} = $nwss2300->serial();
+    $e_serial{1} = $nwss2300->serial()  || '';
 
     # APs
     foreach my $iid ( keys %$ap_serial ) {
