@@ -20,6 +20,7 @@ on:
 jobs:
   test_snmp_info:
     name: Test and CPAN Upload
+    if: github.repository == ‘netdisco/snmp-info’
     runs-on: ubuntu-latest
     container:
       image: 'netdisco/netdisco:latest-do'
