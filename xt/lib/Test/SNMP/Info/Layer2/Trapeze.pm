@@ -51,6 +51,9 @@ sub setup : Tests(setup) {
     '_description' =>
       'Juniper Networks, Inc WLC880R 7.5.1.6 REL',
 
+    # TRAPEZE-NETWORKS-BASIC-MIB
+    '_trpzSerialNumber' => '0882200159',
+
     # TRAPEZE-NETWORKS-REGISTRATION-DEVICES-MIB::wirelessLANController880R
     '_id'                   => '.1.3.6.1.4.1.14525.3.3.1',
     'store'                 => {},
@@ -77,6 +80,17 @@ sub vendor : Tests(2) {
 
   can_ok($test->{info}, 'vendor');
   is($test->{info}->vendor(), 'juniper', q(Vendor returns 'juniper'));
+}
+
+sub serial : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'serial');
+  is($test->{info}->serial(), '0882200159', q(Serial is expected value));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->serial(), undef,
+    q(No serial returns undef));
 }
 
 1;
