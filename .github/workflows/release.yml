@@ -5,6 +5,7 @@ on:
       - '[0-9].[0-9][0-9]'
 jobs:
   release_snmp_info:
+    if: github.repository == ‘netdisco/netdisco’
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
