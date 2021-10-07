@@ -111,22 +111,6 @@ sub os_ver {
   return;
 }
 
-sub i_ignore {
-  my $l3      = shift;
-  my $partial = shift;
-
-  my $interfaces = $l3->interfaces($partial) || {};
-
-  my %i_ignore;
-  foreach my $if ( keys %$interfaces ) {
-    # lo0 etc
-    if ( $interfaces->{$if} =~ /\b(inloopback|console)\d*\b/i ) {
-      $i_ignore{$if}++;
-    }
-  }
-  return \%i_ignore;
-}
-
 1;
 __END__
 
@@ -226,18 +210,6 @@ See documentation in L<SNMP::Info::Layer3> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
-
-=head2 Overrides
-
-=over
-
-=item $oneos->i_ignore()
-
-Returns reference to hash.  Increments value of IID if port is to be ignored.
-
-Ignores InLoopback and Console interfaces
-
-=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 

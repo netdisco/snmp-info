@@ -312,10 +312,6 @@ sub i_mtu {
     return \%i_mtu;
 }
 
-sub i_ignore {
-    return;
-}
-
 sub i_speed {
     my $netscreen = shift;
 
@@ -642,10 +638,6 @@ Defaults to C<insIfDescr> if available, uses C<nsIfName> if not.
 Description of the interface. Uses C<insIfDescr> if available, C<nsIfName>
 if not.
 
-=item $netscreen->i_ignore()
-
-Returns without defining any interfaces to ignore.
-
 =item $netscreen->i_index()
 
 Default SNMP IID to Interface index.
@@ -804,4 +796,3 @@ See L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 See L<SNMP::Info::IEEE802dot11/"TABLE METHODS"> for details.
 
 =cut
-
