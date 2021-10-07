@@ -53,9 +53,9 @@ $VERSION = '3.80';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
-    'os_ver' => 'ntwsVersionString',
-    'serial' => 'ntwsSerialNumber',
-    'mac'    => 'dot1dBaseBridgeAddress',
+    'os_ver'     => 'ntwsVersionString',
+    'nws_serial' => 'ntwsSerialNumber',
+    'mac'        => 'dot1dBaseBridgeAddress',
 );
 
 %FUNCS = (
@@ -137,6 +137,14 @@ sub os {
 
 sub vendor {
     return 'avaya';
+}
+
+sub serial {
+    my $nwss2300 = shift;
+    my $ser = $nwss2300->ntwsSerialNumber();
+#    my $ser = $nwss2300->nws_serial();
+
+    return $ser;
 }
 
 sub model {
@@ -654,7 +662,7 @@ sub e_serial {
     my %e_serial;
 
     # Chassis
-    $e_serial{1} = $nwss2300->serial();
+    $e_serial{1} = $nwss2300->serial()  || '';
 
     # APs
     foreach my $iid ( keys %$ap_serial ) {
