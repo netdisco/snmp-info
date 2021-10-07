@@ -105,8 +105,8 @@ sub model {
 
 sub vendor {
     my $l2    = shift;
-    my $model = $l2->model();
-    my $descr = $l2->description();
+    my $model = $l2->model() || '';
+    my $descr = $l2->description() || '';
 
     if ( $model =~ /hp/i or $descr =~ /\bhp\b/i ) {
         return 'hp';

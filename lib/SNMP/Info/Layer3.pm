@@ -357,8 +357,8 @@ sub interfaces {
 sub vendor {
     my $l3 = shift;
 
-    my $descr = $l3->description();
-    my $id    = $l3->id();
+    my $descr = $l3->description() || '';
+    my $id    = $l3->id() || '';
 
     # .1.3.6.1.4.1.9.1 is the CISCO-PRODUCTS-MIB
     # .1.3.6.1.4.1.9.9.368.4 is an old tree that Cisco CSSs were numbered from

@@ -349,7 +349,7 @@ sub ipv6_addr_prefixlength {
                 # Remove interface specific part from vrf interfaces
                 if ($row =~ /^((\d+\.){17}\d+)/) { $row = $1 }
                 # Remove the OID part from the value
-                my $val = $ipv6_addr_prefix->{$row};
+                my $val = $ipv6_addr_prefix->{$row} || '';
                 if ( $val =~ /^.+?((?:\d+\.){19}(\d+))$/ ) {
                     $val = $2;
                     $return->{$row} = $val;
