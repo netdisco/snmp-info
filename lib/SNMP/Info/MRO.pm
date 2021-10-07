@@ -4,7 +4,7 @@ use warnings;
 use strict;
 
 our ($VERSION);
-$VERSION = '3.80';
+$VERSION = '3.81';
 
 use PPI;
 use Class::ISA;  ## no critic

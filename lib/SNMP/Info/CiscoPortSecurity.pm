@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE, %PAECAPABILITIES);
 
-$VERSION = '3.80';
+$VERSION = '3.81';
 
 %MIBS = (
     'CISCO-PORT-SECURITY-MIB' => 'ciscoPortSecurityMIB',

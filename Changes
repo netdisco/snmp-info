@@ -1,3 +1,18 @@
+Version 3.81 (2021-10-07)
+
+  [ENHANCEMENTS]
+
+  * #400 change IPv6 decode warning to be debug-only
+  * #394 Recognise hyphenated cumulus version strings
+  * #401 add DLink layers always 2+3
+  * #377 i/if_ignore cleanup
+
+  [BUG FIXES]
+
+  * #443 trapeze and nws deep recursion fix
+  * #378 fix several uninitialized vars
+  * #374 undefined error from H3C class
+
 Version 3.80 (2021-09-22)
 
   [NEW FEATURES]
@@ -9,7 +24,7 @@ Version 3.80 (2021-09-22)
 
   * change default class for Cisco from Layer3::Cisco to Layer3::CiscoSwitch
 
-  [ENHANCEMENTS]
+  [BUG FIXES]
 
   * Fix typo in Whiterabbit.pm (#439)
 
