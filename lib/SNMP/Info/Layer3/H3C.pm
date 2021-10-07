@@ -84,14 +84,18 @@ sub vendor {
 
 sub model {
     my $h3c = shift;
+    my $id    = $h3c->id() || '';
+    my $descr = $h3c->description() || '';
 
-    my $descr = $h3c->description();
+    my $entclass = $h3c->entPhysicalClass(2) || {};
+    my $entity   = $entclass->{2} || '';
+    my $entname  = $h3c->entPhysicalName(2)  || {};
+
     if ($descr =~ /^.*\n(.*)\n/) {
         return $1;
-    } elsif ($h3c->entPhysicalClass(2)->{2} =~ /^(3|chassis)$/) {
-        return $h3c->entPhysicalName(2)->{2};
+    } elsif ($entity =~ /^(3|chassis)$/) {
+        return $entname->{2};
     } else {
-        my $id = $h3c->id();
         return &SNMP::translateObj($id) || $id;
     }
 }
