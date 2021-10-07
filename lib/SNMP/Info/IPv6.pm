@@ -377,9 +377,8 @@ sub ipv6_addr {
         my $addrsize = shift @parts; # First element now is addrsize, should be 16
         if ($is_valid && $addrsize == 16) {
             $return->{$row} = join(':', unpack('(H4)*', pack('C*', @parts)));
-        } else {
-            sprintf("%s: unable to decode table index to IPv6 address. Raw data is [%s].\n", &_my_sub_name, $row)
-              if $info->debug();
+        } elsif ($info->debug()) {
+            printf("%s: unable to decode table index to IPv6 address. Raw data is [%s].\n", &_my_sub_name, $row);
         }
     }
     return $return;
