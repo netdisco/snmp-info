@@ -47,7 +47,7 @@ sub setup : Tests(setup) {
 
   # Start with a common cache that will serve most tests
   my $cache_data = {
-    '_layers' => 4,
+    '_layers' => 6,
     '_description' => 'DGS-3620-28SC Gigabit Ethernet Switch',
     '_i_name' => 1,
 
@@ -58,6 +58,16 @@ sub setup : Tests(setup) {
     },
   };
   $test->{info}->cache($cache_data);
+}
+
+sub layers : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'layers');
+  is($test->{info}->layers(), '00000110', q(Original layers unmodified));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->layers(), undef, q(No data returns undef layers));
 }
 
 sub interfaces : Tests(1) {
