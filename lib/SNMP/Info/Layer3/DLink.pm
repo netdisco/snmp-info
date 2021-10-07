@@ -78,8 +78,10 @@ sub layers {
     my $dlink = shift;
 
     my $layers = $dlink->SUPER::layers();
-    substr $layers, 5, 1, "1";
-    substr $layers, 6, 1, "1";
+    if ($layers) {
+        substr $layers, 5, 1, "1";
+        substr $layers, 6, 1, "1";
+    }
 
     return $layers;
 }
