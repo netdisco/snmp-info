@@ -3009,7 +3009,7 @@ sub ip_netmask {
             $prefix = $1;
         }
         my $new_iid = join( ".", @parts );
-        my $mask = NetAddr::IP::Lite->new( $new_iid . '/' . $prefix )->mask()
+        my $mask = eval { NetAddr::IP::Lite->new( $new_iid . '/' . $prefix )->mask() }
             || undef;
 
         $ip_netmask{$new_iid} = $mask;
