@@ -5132,9 +5132,9 @@ subclass.
 
 sub AUTOLOAD {
     my $self = shift;
-    my ($sub_name) = $AUTOLOAD =~ /::(\w+)$/;
+    my ($sub_name) = $AUTOLOAD =~ /::([a-zA-Z0-9_-]+)$/;
 
-   return if $sub_name eq 'CARP_TRACE';
+    return if $sub_name eq 'CARP_TRACE';
 
     # Typos in function calls in SNMP::Info subclasses turn into
     # AUTOLOAD requests for non-methods.  While this is deprecated,
