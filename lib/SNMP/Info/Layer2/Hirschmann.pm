@@ -48,7 +48,7 @@ $VERSION = '3.71';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
-    'h_serial_number' => 'hmSysGroupTable.hmSysGroupEntry.hmSysGroupSerialNum.1' # '.1.3.6.1.4.1.248.14.1.1.9.1.10.1',
+    'h_serial_number' => 'hmSysGroupTable.hmSysGroupEntry.hmSysGroupSerialNum.1', 
     'os_version'      => 'hmSysVersion.0'
 );
 
@@ -99,6 +99,7 @@ sub model {
 
     my $model = &SNMP::translateObj($id) || $id;
 
+    # model return by snmp is rs30 also if its a rs40
     if (defined $model && $model !~ /rs30/) {
         return uc $model;
     } else {
