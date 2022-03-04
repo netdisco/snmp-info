@@ -1,4 +1,4 @@
-# SNMP::Info::Layer2::Hirschmann - SNMP Interface to 3Com Devices
+# SNMP::Info::Layer2::Hirschmann - SNMP Interface to Hirschmann Devices
 #
 # Copyright (c) 2019 by The Netdisco Developer Team.
 #
@@ -153,7 +153,7 @@ Christophe COMTE
 
 =head1 DESCRIPTION
 
-Subclass for 3Com L2 devices
+Subclass for Hirschmann L2 devices
 
 =head2 Inherited Classes
 
