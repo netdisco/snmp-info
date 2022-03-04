@@ -114,7 +114,7 @@ sub mac {
     my $i_descr    = $hirschmann->i_description();
     my $i_mac      = $hirschmann->i_mac();
 
-    # Return Interface MAC
+    # Return Interface MAC addresse of the switch (on the CPU pseudo interface)
     foreach my $entry ( sort keys %$i_descr ) {
         my $descr = $i_descr->{$entry};
         if ($descr =~ m/(^CPU.)/) {
