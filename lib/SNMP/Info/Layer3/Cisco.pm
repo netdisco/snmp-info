@@ -32,6 +32,7 @@ package SNMP::Info::Layer3::Cisco;
 use strict;
 use warnings;
 use Exporter;
+use SNMP::Info::CiscoBGP;
 use SNMP::Info::CiscoVTP;
 use SNMP::Info::CDP;
 use SNMP::Info::CiscoStats;
@@ -42,7 +43,9 @@ use SNMP::Info::CiscoPower;
 use SNMP::Info::CiscoStpExtensions;
 use SNMP::Info::Layer3;
 
-@SNMP::Info::Layer3::Cisco::ISA = qw/SNMP::Info::CiscoVTP
+@SNMP::Info::Layer3::Cisco::ISA = qw/
+    SNMP::Info::CiscoBGP
+    SNMP::Info::CiscoVTP
     SNMP::Info::CDP
     SNMP::Info::CiscoStats SNMP::Info::CiscoRTT
     SNMP::Info::CiscoQOS SNMP::Info::CiscoConfig
@@ -57,6 +60,7 @@ $VERSION = '3.81';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::CiscoBGP::MIBS,
     %SNMP::Info::CiscoStpExtensions::MIBS,
     %SNMP::Info::CiscoPower::MIBS,
     %SNMP::Info::CiscoConfig::MIBS,
@@ -70,6 +74,7 @@ $VERSION = '3.81';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::CiscoBGP::GLOBALS,
     %SNMP::Info::CiscoStpExtensions::GLOBALS,
     %SNMP::Info::CiscoPower::GLOBALS,
     %SNMP::Info::CiscoConfig::GLOBALS,
@@ -83,6 +88,7 @@ $VERSION = '3.81';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::CiscoBGP::FUNCS,
     %SNMP::Info::CiscoStpExtensions::FUNCS,
     %SNMP::Info::CiscoPower::FUNCS,
     %SNMP::Info::CiscoConfig::FUNCS,
@@ -98,10 +104,15 @@ $VERSION = '3.81';
 );
 
 %MUNGE = (
-    %SNMP::Info::Layer3::MUNGE,     %SNMP::Info::CiscoStpExtensions::MUNGE,
-    %SNMP::Info::CiscoPower::MUNGE, %SNMP::Info::CiscoConfig::MUNGE,
-    %SNMP::Info::CiscoQOS::MUNGE,   %SNMP::Info::CiscoRTT::MUNGE,
-    %SNMP::Info::CiscoStats::MUNGE, %SNMP::Info::CDP::MUNGE,
+    %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::CiscoBGP::MUNGE,
+    %SNMP::Info::CiscoStpExtensions::MUNGE,
+    %SNMP::Info::CiscoPower::MUNGE,
+    %SNMP::Info::CiscoConfig::MUNGE,
+    %SNMP::Info::CiscoQOS::MUNGE,
+    %SNMP::Info::CiscoRTT::MUNGE,
+    %SNMP::Info::CiscoStats::MUNGE,
+    %SNMP::Info::CDP::MUNGE,
     %SNMP::Info::CiscoVTP::MUNGE,
 );
 
