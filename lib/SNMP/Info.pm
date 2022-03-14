@@ -278,6 +278,13 @@ SNMP Interface to Cisco Aggregated Links
 
 See documentation in L<SNMP::Info::CiscoAgg> for details.
 
+=item SNMP::Info::CiscoBGP
+
+F<CISCO-BGP4-MIB>.  Cisco BGPv4 support.  Inherited by Cisco devices with
+Layer3 support.
+
+See documentation in L<SNMP::Info::CiscoBGP> for details.
+
 =item SNMP::Info::CiscoConfig
 
 F<CISCO-CONFIG-COPY-MIB>, F<CISCO-FLASH-MIB>, and F<OLD-CISCO-SYS-MIB>.
@@ -3820,6 +3827,27 @@ Takes a binary IP and makes it dotted ASCII.
 sub munge_ip {
     my $ip = shift;
     return join( '.', unpack( 'C4', $ip ) );
+}
+
+=item munge_inetaddress
+
+Takes a binary IP address as defined by the SNMP InetAddress type and returns
+it as human readable string;
+
+=cut
+
+sub munge_inetaddress  {
+    my $ip = shift;
+    # 4 bytes = IPv4
+    if (length($ip) == 4) {
+        return SNMP::Info::munge_ip($ip);
+    }
+    # 16 bytes = IPv6
+    elsif (length($ip) == 16) {
+        return sprintf( "%x:%x:%x:%x:%x:%x:%x:%x",
+            unpack( 'n8', $ip ));
+    }
+    return '';
 }
 
 =item munge_mac()
