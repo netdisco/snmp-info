@@ -36,7 +36,7 @@ use SNMP::Info;
 
 @SNMP::Info::CiscoBGP::ISA       = qw( SNMP::Info Exporter );
 @SNMP::Info::CiscoBGP::EXPORT_OK = qw(
-    parse_cisco_bgp_peer2_peer2entry_index
+    parse_cisco_bgp_peer2_entry_index
 );
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
@@ -93,7 +93,7 @@ $VERSION = '3.81';
     'cisco_bgp_peer2_lasterror'           => \&SNMP::Info::munge_octet2hex,
 );
 
-sub parse_cisco_bgp_peer2_peer2entry_index {
+sub parse_cisco_bgp_peer2_entry_index {
     my ($self, $index) = @_;
     my ($type, $addrlength, $ip) = split(/\./, $index, 3);
     # decode IPv6 remote address
@@ -132,7 +132,7 @@ my $remoteas_for_index = $device->cisco_bgp_peer2_remoteas;
 
 for my $index (keys $remoteas_for_index->%*) {
     my ($type, $addrlength, $ip) =
-        $device->parse_cisco_bgp_peer2_peer2entry_index($index);
+        $device->parse_cisco_bgp_peer2_entry_index($index);
     printf('remote: %-39s  type: %-4s  remote AS: %5d',
         $ip, $type, $remoteas_for_index->{$index});
 }
@@ -254,7 +254,7 @@ supported by a peer.
 
 =over
 
-=item parse_cisco_bgp_peer2_peer2entry_index
+=item parse_cisco_bgp_peer2_entry_index
 
 Takes a cbgpPeer2Entry index as returned by all methods of the Cisco BGP Peer
 2 Table methods.
