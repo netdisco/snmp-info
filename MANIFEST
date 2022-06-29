@@ -17,6 +17,7 @@ lib/SNMP/Info/AMAP.pm
 lib/SNMP/Info/Bridge.pm
 lib/SNMP/Info/CDP.pm
 lib/SNMP/Info/CiscoAgg.pm
+lib/SNMP/Info/CiscoBGP.pm
 lib/SNMP/Info/CiscoConfig.pm
 lib/SNMP/Info/CiscoPortSecurity.pm
 lib/SNMP/Info/CiscoPower.pm

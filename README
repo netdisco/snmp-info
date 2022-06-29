@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.81
+    SNMP::Info - Version 3.82
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -223,6 +223,12 @@ SUBCLASSES
         SNMP Interface to Cisco Aggregated Links
 
         See documentation in SNMP::Info::CiscoAgg for details.
+
+    SNMP::Info::CiscoBGP
+        CISCO-BGP4-MIB. Cisco BGPv4 support. Inherited by Cisco devices with
+        Layer3 support.
+
+        See documentation in SNMP::Info::CiscoBGP for details.
 
     SNMP::Info::CiscoConfig
         CISCO-CONFIG-COPY-MIB, CISCO-FLASH-MIB, and OLD-CISCO-SYS-MIB. These
@@ -2014,6 +2020,10 @@ SNMP::INFO INTERNALS
 
     munge_ip()
         Takes a binary IP and makes it dotted ASCII.
+
+    munge_inetaddress
+        Takes a binary IP address as defined by the SNMP InetAddress type
+        and returns it as human readable string;
 
     munge_mac()
         Takes an octet stream (HEX-STRING) and returns a colon separated

@@ -25,7 +25,7 @@ our
     ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG, %SPEED_MAP,
      $NOSUCH, $BIGINT, $REPEATERS);
 
-$VERSION = '3.81';
+$VERSION = '3.82';
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.81
+SNMP::Info - Version 3.82
 
 =head1 AUTHOR
 
@@ -277,6 +277,13 @@ See documentation in L<SNMP::Info::CDP> for details.
 SNMP Interface to Cisco Aggregated Links
 
 See documentation in L<SNMP::Info::CiscoAgg> for details.
+
+=item SNMP::Info::CiscoBGP
+
+F<CISCO-BGP4-MIB>.  Cisco BGPv4 support.  Inherited by Cisco devices with
+Layer3 support.
+
+See documentation in L<SNMP::Info::CiscoBGP> for details.
 
 =item SNMP::Info::CiscoConfig
 
@@ -3823,6 +3830,27 @@ sub munge_ip {
     return join( '.', unpack( 'C4', $ip ) );
 }
 
+=item munge_inetaddress
+
+Takes a binary IP address as defined by the SNMP InetAddress type and returns
+it as human readable string;
+
+=cut
+
+sub munge_inetaddress  {
+    my $ip = shift;
+    # 4 bytes = IPv4
+    if (length($ip) == 4) {
+        return SNMP::Info::munge_ip($ip);
+    }
+    # 16 bytes = IPv6
+    elsif (length($ip) == 16) {
+        return sprintf( "%x:%x:%x:%x:%x:%x:%x:%x",
+            unpack( 'n8', $ip ));
+    }
+    return '';
+}
+
 =item munge_mac()
 
 Takes an octet stream (HEX-STRING) and returns a colon separated ASCII hex
@@ -5133,9 +5161,9 @@ subclass.
 
 sub AUTOLOAD {
     my $self = shift;
-    my ($sub_name) = $AUTOLOAD =~ /::(\w+)$/;
+    my ($sub_name) = $AUTOLOAD =~ /::([a-zA-Z0-9_-]+)$/;
 
-   return if $sub_name eq 'CARP_TRACE';
+    return if $sub_name eq 'CARP_TRACE';
 
     # Typos in function calls in SNMP::Info subclasses turn into
     # AUTOLOAD requests for non-methods.  While this is deprecated,
