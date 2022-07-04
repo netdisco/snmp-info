@@ -52,9 +52,9 @@ $VERSION = '3.83';
 
 %MUNGE = (%SNMP::Info::Layer7::MUNGE);
 
-sub os {
-    return '';
-}
+#sub os {
+#    return '';
+#}
 
 #sub model {
 #    return '';
