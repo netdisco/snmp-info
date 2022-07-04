@@ -1137,6 +1137,12 @@ Subclass for Gigamon devices.
 
 See documentation in L<SNMP::Info::Layer7::Gigamon> for details.
 
+=item SNMP::Info::Layer7::HWGroup
+
+Subclass for HW Group devices.
+
+See documentation in L<SNMP::Info::Layer7::HWGroup> for details.
+
 =item SNMP::Info::Layer7::Liebert
 
 Subclass for Liebert devices.
@@ -1823,6 +1829,7 @@ sub device_type {
         9694  => 'SNMP::Info::Layer7::Arbor',
         12532 => 'SNMP::Info::Layer7::Neoteris',
         14525 => 'SNMP::Info::Layer2::Trapeze',
+        21796 => 'SNMP::Info::Layer7::HWGroup',
         26866 => 'SNMP::Info::Layer7::Gigamon',
     );
 
