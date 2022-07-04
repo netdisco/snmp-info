@@ -141,6 +141,7 @@ lib/SNMP/Info/Layer7/APC.pm
 lib/SNMP/Info/Layer7/Arbor.pm
 lib/SNMP/Info/Layer7/CiscoIPS.pm
 lib/SNMP/Info/Layer7/Gigamon.pm
+lib/SNMP/Info/Layer7/HWGroup.pm
 lib/SNMP/Info/Layer7/Liebert.pm
 lib/SNMP/Info/Layer7/Neoteris.pm
 lib/SNMP/Info/Layer7/Netscaler.pm
