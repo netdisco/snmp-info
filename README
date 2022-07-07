@@ -520,6 +520,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::HP for details.
 
+        SNMP::Info::Layer2::Hirschmann
+            Subclass for L2 Hirschmann Switches.
+
+            See documentation in SNMP::Info::Layer2::Hirschmann for details.
+
         SNMP::Info::Layer2::HP4000
             Subclass for older HP Procurve Switches
 
