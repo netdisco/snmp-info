@@ -1,6 +1,6 @@
-# SNMP::Info::Layer7::Neoteris
+# SNMP::Info::Layer7::HWGroup
 #
-# Copyright (c) 2012 Eric Miller
+# Copyright (c) 2022 Netdisco Developers
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,98 +27,74 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package SNMP::Info::Layer7::Neoteris;
+package SNMP::Info::Layer7::HWGroup;
 
 use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer7;
 
-@SNMP::Info::Layer7::Neoteris::ISA       = qw/SNMP::Info::Layer7 Exporter/;
-@SNMP::Info::Layer7::Neoteris::EXPORT_OK = qw//;
+@SNMP::Info::Layer7::HWGroup::ISA       = qw/SNMP::Info::Layer7/;
+@SNMP::Info::Layer7::HWGroup::EXPORT_OK = qw//;
 
-our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
+our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
 $VERSION = '3.84';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
-    'PULSESECURE-PSG-MIB' => 'productVersion',
+    'HWG-STE-MIB' => 'hwgroup',
 );
 
-%GLOBALS = (
-    %SNMP::Info::Layer7::GLOBALS,
-    'pulse_os_ver' => 'productVersion',
-    'cpu'          => 'iveCpuUtil',
-);
+%GLOBALS = (%SNMP::Info::Layer7::GLOBALS);
 
-%FUNCS = ( %SNMP::Info::Layer7::FUNCS, );
+%FUNCS = (%SNMP::Info::Layer7::FUNCS);
 
-%MUNGE = ( %SNMP::Info::Layer7::MUNGE, );
+%MUNGE = (%SNMP::Info::Layer7::MUNGE);
 
-sub vendor {
-    return 'pulsesecure';
-}
+#sub os {
+#    return '';
+#}
 
-sub os_ver {
-    my $neoteris = shift;
-    my $p_os_ver = $neoteris->pulse_os_ver();
+#sub model {
+#    return '';
+#}
 
-    if (defined $p_os_ver) {
-      chomp ($p_os_ver);
-      return $p_os_ver;
-    }
-    return '';
-}
-
-sub os {
-    return 'ive';
-}
-
-sub serial {
-    return '';
-}
-
-sub model {
-    my $neoteris = shift;
-    my $id       = $neoteris->id();
-    my $model    = &SNMP::translateObj($id);
-
-    $model =~ s/^ive//i;
-
-    return $model;
-}
+#sub vendor {
+#    return '';
+#}
 
 1;
+
 __END__
 
 =head1 NAME
 
-SNMP::Info::Layer7::Neoteris - SNMP Interface to Pulse
-Secure / Juniper SSL VPN appliances
+SNMP::Info::Layer7::HWGroup - SNMP Interface to HW Group devices
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-Eric Miller
+Netdisco Developers
 
 =head1 SYNOPSIS
 
  # Let SNMP::Info determine the correct subclass for you.
- my $neoteris = new SNMP::Info(
+ my $hwgroup = new SNMP::Info(
                           AutoSpecify => 1,
                           Debug       => 1,
-                          DestHost    => 'myrouter',
+                          DestHost    => 'myhub',
                           Community   => 'public',
                           Version     => 2
                         )
     or die "Can't connect to DestHost.\n";
 
- my $class      = $neoteris->class();
+ my $class = $hwgroup->class();
  print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
 
-Subclass for Pulse Secure / Juniper SSL VPN appliances
+Provides abstraction to information obtainable from an HW Group device
+through SNMP. See inherited classes' documentation for inherited methods.
 
 =head2 Inherited Classes
 
@@ -132,58 +108,52 @@ Subclass for Pulse Secure / Juniper SSL VPN appliances
 
 =over
 
-=item F<PULSESECURE-PSG-MIB>
-
-=item Inherited Classes' MIBs
-
-See L<SNMP::Info::Layer7> for its own MIB requirements.
+=item F<HWG-STE-MIB>
 
 =back
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info::Layer7/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
 These are methods that return scalar value from SNMP
 
-=over
-
-=item $neoteris->vendor()
-
-Returns 'pulsesecure'.
-
-=item $neoteris->model()
-
-Translates $neoteris->id() to it's model name, stripping the leading
-'ive'.
-
-=item $neoteris->os()
-
-Returns C<'ive'>.
-
-=item $neoteris->os_ver()
-
-C<productVersion> without trailing newline.
-
-=item $neoteris->cpu()
-
-C<iveCpuUtil>
-
-=item $neoteris->serial()
-
-Returns ''.
-
-=back
+#=head2 Overrides
+#
+#=over
+#
+#=item $hwgroup->vendor()
+#
+#Returns 'hwgroup'
+#
+#=item $hwgroup->os()
+#
+#Returns 'hwgroup'
+#
+#=item $hwgroup->os_ver()
+#
+#(C<lgpAgentDeviceFirmwareVersion.1>)
+#
+#=item $hwgroup->model()
+#
+#(C<lgpAgentDeviceModel.1>)
+#
+#=item $hwgroup->serial()
+#
+#(C<lgpAgentDeviceSerialNumber.1>)
+#
+#=back
 
 =head2 Globals imported from SNMP::Info::Layer7
 
-See documentation in L<SNMP::Info::Layer7> for details.
+See L<SNMP::Info::Layer7/"GLOBALS"> for details.
 
-=head1 TABLE ENTRIES
-
-These are methods that return tables of information in the form of a reference
-to a hash.
+=head1 TABLE METHODS
 
 =head2 Table Methods imported from SNMP::Info::Layer7
 
-See documentation in L<SNMP::Info::Layer7> for details.
+See L<SNMP::Info::Layer7/"TABLE METHODS"> for details.
 
 =cut

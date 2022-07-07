@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.82
+    SNMP::Info - Version 3.84
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -945,6 +945,11 @@ SUBCLASSES
             Subclass for Gigamon devices.
 
             See documentation in SNMP::Info::Layer7::Gigamon for details.
+
+        SNMP::Info::Layer7::HWGroup
+            Subclass for HW Group devices.
+
+            See documentation in SNMP::Info::Layer7::HWGroup for details.
 
         SNMP::Info::Layer7::Liebert
             Subclass for Liebert devices.
