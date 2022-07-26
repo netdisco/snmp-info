@@ -966,6 +966,12 @@ Subclass for Avaya/Nortel Ethernet Routing Switch 1600 series.
 
 See documentation in L<SNMP::Info::Layer3::N1600> for details.
 
+=item SNMP::Info::Layer3::Netonix
+
+Subclass for Netonix switches.
+
+See documentation in L<SNMP::Info::Layer3::Netonix> for details.
+
 =item SNMP::Info::Layer3::NetSNMP
 
 Subclass for host systems running Net-SNMP.
