@@ -45,7 +45,7 @@ use constant {
     IPV6MIB => 3,
 };
 
-$VERSION = '3.84';
+$VERSION = '3.85';
 
 
 

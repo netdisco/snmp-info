@@ -1,3 +1,9 @@
+Version 3.85 (2022-08-02)
+
+  [NEW FEATURES]
+
+  * Add i_subinterfaces for VLAN subinterfaces in CiscoVTP
+
 Version 3.84 (2022-07-04)
 
   [NEW FEATURES]
