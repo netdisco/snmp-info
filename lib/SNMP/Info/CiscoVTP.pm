@@ -199,6 +199,32 @@ sub i_vlan {
     return \%i_vlans;
 }
 
+sub i_subinterfaces {
+    my $vtp    = shift;
+    my %i_subs = ();
+
+    # CISCO-VLAN-IFTABLE-RELATION-MIB
+    # Used for traditional Cisco Routers and Aironet
+
+    my $v_cvi_if = $vtp->v_cvi_if();
+    if ( defined $v_cvi_if ) {
+
+        # Translate vlan.parent_physical_interface_iid -> iid
+        #       to iid -> [iid, iid, ...]
+        foreach my $i ( keys %$v_cvi_if ) {
+            my ( $vlan, $phys ) = split( /\./, $i );
+            my $iid = $v_cvi_if->{$i};
+
+            next unless $phys and $iid;
+            next if $phys == $iid;
+
+            push @{ $i_subs{$phys} }, $iid;
+        }
+    }
+
+    return \%i_subs;
+}
+
 sub i_untagged {
     my $vtp = shift;
     my ( $ifindex ) = @_;
@@ -623,6 +649,22 @@ IDs.  These are the VLANs which are members of enabled VLAN list for the port.
     my $port = $interfaces->{$iid};
     my $vlan = join(',', sort(@{$vlans->{$iid}}));
     print "Port: $port VLAN: $vlan\n";
+  }
+
+=item $vtp->i_subinterfaces()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of
+C<ifIndex>. These are the VLAN subinterfaces (C<l2vlan> type) for the parent
+(C<ethernetCsmacd> type) interface.
+
+  Example:
+  my $interfaces = $vtp->interfaces();
+  my $i_subs     = $vtp->i_subinterfaces();
+
+  foreach my $iid (sort keys %$interfaces) {
+    my $port = $interfaces->{$iid};
+    my $subs = join(',', sort(map {$interfaces->{$_}} @{$i_subs->{$iid}}));
+    print "Port: $port has subinterfaces: $subs\n";
   }
 
 =item $vtp->i_vlan_membership_untagged()
