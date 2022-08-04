@@ -64,6 +64,14 @@ list any missing functionality (such as neighbor discovery tables).
                             DestHost    => 'router',
                             Community   => 'public',
                             Version     => 2
+                            # Parameter reference for SNMPv3
+                            # Version   => 3
+                            # SecLevel  => 'authPriv', # authPriv|authNoPriv|noAuthNoPriv
+                            # SecName   => 'myuser',
+                            # AuthProto => 'MD5',      # MD5|SHA
+                            # AuthPass  => 'authp4ss',
+                            # PrivProto => 'DES',      # DES|AES
+                            # PrivPass  => 'pr1vp4ss',
                           ) or die "Can't connect to device.\n";
 
  my $err = $info->error();
