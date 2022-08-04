@@ -35,6 +35,7 @@ use Exporter;
 use SNMP::Info::CiscoAgg;
 use SNMP::Info::CiscoPortSecurity;
 use SNMP::Info::Layer3::Cisco;
+use SNMP::Info::PortAccessEntity;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
@@ -42,6 +43,7 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
     SNMP::Info::CiscoAgg
     SNMP::Info::CiscoPortSecurity
     SNMP::Info::Layer3::Cisco
+    SNMP::Info::PortAccessEntity
     Exporter
 /;
 
@@ -53,24 +55,28 @@ $VERSION = '3.85';
     %SNMP::Info::Layer3::Cisco::MIBS,
     %SNMP::Info::CiscoPortSecurity::MIBS,
     %SNMP::Info::CiscoAgg::MIBS,
+    %SNMP::Info::PortAccessEntity::MIBS,
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::Cisco::GLOBALS,
     %SNMP::Info::CiscoPortSecurity::GLOBALS,
     %SNMP::Info::CiscoAgg::GLOBALS,
+    %SNMP::Info::PortAccessEntity::GLOBALS,
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::Cisco::FUNCS,
     %SNMP::Info::CiscoPortSecurity::FUNCS,
     %SNMP::Info::CiscoAgg::FUNCS,
+    %SNMP::Info::PortAccessEntity::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::Cisco::MUNGE,
     %SNMP::Info::CiscoPortSecurity::MUNGE,
     %SNMP::Info::CiscoAgg::MUNGE,
+    %SNMP::Info::PortAccessEntity::MUNGE,
 );
 
 sub cisco_comm_indexing { return 1; }
