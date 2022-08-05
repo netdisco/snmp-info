@@ -52,6 +52,8 @@ $VERSION = '3.86';
     'lldp_sysname' => 'lldpLocSysName',
     'lldp_sysdesc' => 'lldpLocSysDesc',
     'lldp_sys_cap' => 'lldpLocSysCapEnabled',
+    'lldp_loc_id_type'  => 'lldpLocChassisIdSubtype',
+    '_lldp_loc_id_os'    => 'lldpLocChassisId',
 );
 
 %FUNCS = (
@@ -283,6 +285,29 @@ sub lldp_port {
     return \%lldp_port;
 }
 
+sub _lldp_id_string {
+    my $lldp    = shift;
+    my $id    = shift;
+    my $type    = shift;
+
+    # May need to format other types in the future
+    if ( $type =~ /mac/ ) {
+        $id = SNMP::Info::munge_mac($id)
+    } elsif ( $type eq 'networkAddress' ) {
+        if ( length( unpack( 'H*', $id ) ) == 10 ) {
+
+            # IP address - first octet is IANA Address Family Number, need
+            # walk with IPv6
+            my @octets
+                = ( map { sprintf "%02x", $_ } unpack( 'C*', $id ) )
+                [ 1 .. 4 ];
+            $id = join '.', map { hex($_) } @octets;
+        }
+    }
+
+    return $id;
+}
+
 sub lldp_id {
     my $lldp    = shift;
     my $partial = shift;
@@ -297,24 +322,17 @@ sub lldp_id {
         my $type = $ch_type->{$key};
         next unless $type;
 
-        # May need to format other types in the future
-        if ( $type =~ /mac/ ) {
-            $id = SNMP::Info::munge_mac($id)
-        }
-        elsif ( $type eq 'networkAddress' ) {
-            if ( length( unpack( 'H*', $id ) ) == 10 ) {
-
-                # IP address - first octet is IANA Address Family Number, need
-                # walk with IPv6
-                my @octets
-                    = ( map { sprintf "%02x", $_ } unpack( 'C*', $id ) )
-                    [ 1 .. 4 ];
-                $id = join '.', map { hex($_) } @octets;
-            }
-        }
+        $id = $lldp->_lldp_id_string($id, $type);
         $lldp_id{$key} = $id;
     }
     return \%lldp_id;
+}
+
+sub lldp_loc_id {
+    my $lldp    = shift;
+    my $ch_type = $lldp->lldp_loc_id_type();
+    my $ch      = $lldp->_lldp_loc_id_os();
+    return $lldp->_lldp_id_string($ch, $ch_type);
 }
 
 sub lldp_platform {
@@ -585,6 +603,22 @@ capability and nothing else."
 =back
 
 (C<lldpLocSysCapEnabled>)
+
+=item $lldp->lldp_loc_id()
+
+The string value used to identify the chassis component associated with 
+the local system.
+
+(C<lldpLocChassisId>)
+
+=item $lldp->lldp_loc_id_type()
+
+The type of encoding used to identify the chassis associated with the 
+local system.
+
+This is used by the above method to decode the octet string in C<lldpLocChassisId>
+
+(C<lldpLocChassisIdSubtype>)
 
 =back
 
