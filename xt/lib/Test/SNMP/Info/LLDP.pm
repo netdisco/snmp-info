@@ -50,6 +50,8 @@ sub setup : Tests(setup) {
     '_lldp_rem_sysname'       => 1,
     '_lldp_rem_id_type'       => 1,
     '_lldp_rem_id'            => 1,
+    '__lldp_loc_id_os'         => pack("H*", 'ABCD12345678'),
+    '_lldp_loc_id_type'       => 'macAddress',
     '_lldp_rem_cap_spt'       => 1,
     '_lldp_rem_media_cap_spt' => 1,
     'store'                   => {
@@ -348,6 +350,19 @@ sub lldp_id : Tests(4) {
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_id(), {}, q(No data returns empty hash));
 }
+
+sub lldp_loc_id : Tests(2) {
+  my $test = shift;
+  can_ok($test->{info}, 'lldp_loc_id');
+
+
+  my $expected = 'ab:cd:12:34:56:78';
+
+  cmp_deeply($test->{info}->lldp_loc_id(),
+    $expected, q(Local LLDP ID type 'macAddress' has expected value));
+}
+
+
 
 sub lldp_platform : Tests(4) {
   my $test = shift;
