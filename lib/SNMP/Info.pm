@@ -443,6 +443,12 @@ F<S5-AGENT-MIB>, F<S5-CHASSIS-MIB>.
 
 See documentation in L<SNMP::Info::NortelStack> for details.
 
+=item SNMP::Info::PortAccessEntity
+
+F<IEEE8021-PAE-MIB>
+
+See documentation in L<SNMP::Info::PortAccessEntity> for details.
+
 =item SNMP::Info::PowerEthernet
 
 F<POWER-ETHERNET-MIB>
