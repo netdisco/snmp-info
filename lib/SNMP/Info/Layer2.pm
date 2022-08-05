@@ -37,12 +37,21 @@ use Exporter;
 use SNMP::Info;
 use SNMP::Info::Bridge;
 use SNMP::Info::Entity;
+use SNMP::Info::PortAccessEntity;
 use SNMP::Info::PowerEthernet;
 use SNMP::Info::LLDP;
 use SNMP::Info::DocsisHE;
 
-@SNMP::Info::Layer2::ISA
-    = qw/SNMP::Info SNMP::Info::Bridge SNMP::Info::Entity SNMP::Info::PowerEthernet SNMP::Info::LLDP SNMP::Info::DocsisHE Exporter/;
+@SNMP::Info::Layer2::ISA = qw/
+        SNMP::Info SNMP::Info::Bridge
+        SNMP::Info::Entity
+        SNMP::Info::PowerEthernet
+        SNMP::Info::LLDP
+        SNMP::Info::DocsisHE
+        SNMP::Info::PortAccessEntity
+        Exporter
+/;
+
 @SNMP::Info::Layer2::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MUNGE);
@@ -53,6 +62,7 @@ $VERSION = '3.85';
     %SNMP::Info::MIBS,         %SNMP::Info::Bridge::MIBS,
     %SNMP::Info::Entity::MIBS, %SNMP::Info::PowerEthernet::MIBS,
     %SNMP::Info::LLDP::MIBS,   %SNMP::Info::DocsisHE::MIBS,
+    %SNMP::Info::PortAccessEntity::MIBS
 );
 
 %GLOBALS = (
@@ -62,6 +72,7 @@ $VERSION = '3.85';
     %SNMP::Info::Entity::GLOBALS,
     %SNMP::Info::PowerEthernet::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::PortAccessEntity::GLOBALS,
     'serial1' =>
         '.1.3.6.1.4.1.9.3.6.3.0',    # OLD-CISCO-CHASSIS-MIB::chassisId.0
 );
@@ -70,6 +81,7 @@ $VERSION = '3.85';
     %SNMP::Info::FUNCS,         %SNMP::Info::Bridge::FUNCS,
     %SNMP::Info::Entity::FUNCS, %SNMP::Info::PowerEthernet::FUNCS,
     %SNMP::Info::LLDP::FUNCS,   %SNMP::Info::DocsisHE::FUNCS,
+    %SNMP::Info::PortAccessEntity::FUNCS
 );
 
 %MUNGE = (
@@ -81,6 +93,7 @@ $VERSION = '3.85';
     %SNMP::Info::Entity::MUNGE,
     %SNMP::Info::PowerEthernet::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::PortAccessEntity::MUNGE,
 );
 
 # Method OverRides
@@ -236,6 +249,8 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::PowerEthernet
 
+=item SNMP::Info::PortAccessEntity
+
 =back
 
 =head2 Required MIBs
@@ -293,6 +308,10 @@ See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 
 See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
 
+=head2 Globals imported from SNMP::Info::PortAccessEntity
+
+See documentation in L<SNMP::Info::PortAccessEntity/"GLOBALS"> for details.
+
 =head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
@@ -326,5 +345,9 @@ See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::LLDP
 
 See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::PortAccessEntity
+
+See documentation in L<SNMP::Info::PortAccessEntity/"TABLE METHODS"> for details.
 
 =cut
