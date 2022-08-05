@@ -174,6 +174,11 @@ for dot1x.
 
 C<dot1xAuthSessionUserName>
 
+=item $pae->pae_authsess_mab()
+
+Helper method, guess if this a mac address bypass port: contains the string "mab" for indexes where the 
+pae_authsess_user looks like a MAC address.
+
 =back
 
 =cut
