@@ -44,20 +44,18 @@ $VERSION = '3.85';
 
 %MIBS = ( 'IEEE8021-PAE-MIB' => 'dot1xPaeSystemAuthControl' );
 
-%GLOBALS = ();
-
-%FUNCS = (
-
+%GLOBALS = (
     # dot1xPaeSystem
     'pae_control'  => 'dot1xPaeSystemAuthControl',
+);
 
+%FUNCS = (
     # dot1xAuthConfigEntry
     'pae_authconfig_state'         => 'dot1xAuthPaeState', # disconnected|authenticated
     'pae_authconfig_port_status'   => 'dot1xAuthAuthControlledPortStatus', #(un)authorized
 
     # dot1xAuthSessionStatsTable
     'pae_authsess_user'  => 'dot1xAuthSessionUserName',
-
 );
 
 %MUNGE = ();
@@ -131,10 +129,6 @@ none.
 =back
 
 =head1 GLOBALS
-
-none.
-
-=head1 METHODS
 
 =over
 
