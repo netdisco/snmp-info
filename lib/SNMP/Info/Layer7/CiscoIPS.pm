@@ -45,7 +45,7 @@ use SNMP::Info::Entity;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.85';
+$VERSION = '3.86';
 
 %MIBS = ( %SNMP::Info::Layer7::MIBS, %SNMP::Info::Entity::MIBS, );
 
