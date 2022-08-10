@@ -116,6 +116,9 @@ $VERSION = '3.85';
     %SNMP::Info::CiscoVTP::MUNGE,
 );
 
+
+# the i_vlan in SUPER is just fine; this exists to catch any dotted vlan
+# subinterfaces not caught by CiscoVTP
 sub i_vlan {
     my $cisco   = shift;
     my $partial = shift;
@@ -126,18 +129,17 @@ sub i_vlan {
 
     foreach my $idx ( keys %$i_descr ) {
         next unless $i_type->{$idx};
-        if (   $i_type->{$idx} eq 'l2vlan'
-            || $i_type->{$idx} eq '135' && !defined $i_vlan->{$idx} )
-        {
-            # Not sure where this regex came from, anchored at end?
-            if ( $i_descr->{$idx} =~ /\.(\d+)$/ ) {
-                $i_vlan->{$idx} = $1;
-            }
+        next unless (($i_type->{$idx} eq 'l2vlan' or $i_type->{$idx} eq '135')
+                      and !defined $i_vlan->{$idx});
 
-            # This matches 101 in 'Ethernet0.101-802.1Q vLAN subif'
-            elsif ( $i_descr->{$idx} =~ /\.(\d+)-/ ) {
-                $i_vlan->{$idx} = $1;
-            }
+        # Not sure where this regex came from, anchored at end?
+        if ( $i_descr->{$idx} =~ /\.(\d+)$/ ) {
+            $i_vlan->{$idx} = $1;
+        }
+
+        # This matches 101 in 'Ethernet0.101-802.1Q vLAN subif'
+        elsif ( $i_descr->{$idx} =~ /\.(\d+)-/ ) {
+            $i_vlan->{$idx} = $1;
         }
     }
     return $i_vlan;

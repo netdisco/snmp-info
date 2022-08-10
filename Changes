@@ -1,3 +1,9 @@
+Version 3.86 (2022-08-10)
+
+  [BUG FIXES]
+
+  * #468 Cisco dotted subinterfaces had incorrect vlan assigned
+
 Version 3.85 (2022-08-02)
 
   [NEW FEATURES]
