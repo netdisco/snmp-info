@@ -42,12 +42,14 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 $VERSION = '3.86';
 
 %MIBS = (
+    %SNMP::Info::Layer2::MIBS,
     %SNMP::Info::Layer3::MIBS,
     'PAN-COMMON-MIB'   => 'panSysSwVersion',
     'PAN-PRODUCTS-MIB' => 'panProductsMibsModule',
 );
 
 %GLOBALS = (
+    %SNMP::Info::Layer2::GLOBALS,
     %SNMP::Info::Layer3::GLOBALS,
     'mac'        => 'ifPhysAddress.1',
     # Oids from PAN-COMMON-MIB.
@@ -57,10 +59,12 @@ $VERSION = '3.86';
 );
 
 %FUNCS = (
+    %SNMP::Info::Layer2::FUNCS,
     %SNMP::Info::Layer3::FUNCS,
 );
 
 %MUNGE = (
+    %SNMP::Info::Layer2::MUNGE,
     %SNMP::Info::Layer3::MUNGE,
 );
 

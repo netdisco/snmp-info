@@ -6,6 +6,7 @@ Version 3.87 (2022-08-12)
 
   [ENHANCEMENTS]
 
+  * #462 SNMP::Info::Layer3::PaloAlto to include layer 2
   * #461 Expose lldLocChassisId as $lldp->lldp_loc_id
   * Update CiscoStats.pm for Amsterdam IOS-XE release
 
