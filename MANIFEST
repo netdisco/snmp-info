@@ -149,6 +149,7 @@ lib/SNMP/Info/LLDP.pm
 lib/SNMP/Info/MAU.pm
 lib/SNMP/Info/MRO.pm
 lib/SNMP/Info/NortelStack.pm
+lib/SNMP/Info/PortAccessEntity.pm
 lib/SNMP/Info/PowerEthernet.pm
 lib/SNMP/Info/RapidCity.pm
 lib/SNMP/Info/SONMP.pm
