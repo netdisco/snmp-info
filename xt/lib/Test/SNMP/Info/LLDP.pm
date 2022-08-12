@@ -50,7 +50,7 @@ sub setup : Tests(setup) {
     '_lldp_rem_sysname'       => 1,
     '_lldp_rem_id_type'       => 1,
     '_lldp_rem_id'            => 1,
-    '__lldp_loc_id_os'         => pack("H*", 'ABCD12345678'),
+    '_lldp_loc_id_os'         => pack("H*", 'ABCD12345678'),
     '_lldp_loc_id_type'       => 'macAddress',
     '_lldp_rem_cap_spt'       => 1,
     '_lldp_rem_media_cap_spt' => 1,

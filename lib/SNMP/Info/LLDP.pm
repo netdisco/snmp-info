@@ -53,7 +53,7 @@ $VERSION = '3.86';
     'lldp_sysdesc' => 'lldpLocSysDesc',
     'lldp_sys_cap' => 'lldpLocSysCapEnabled',
     'lldp_loc_id_type'  => 'lldpLocChassisIdSubtype',
-    '_lldp_loc_id_os'    => 'lldpLocChassisId',
+    'lldp_loc_id_os'    => 'lldpLocChassisId',
 );
 
 %FUNCS = (
@@ -331,7 +331,7 @@ sub lldp_id {
 sub lldp_loc_id {
     my $lldp    = shift;
     my $ch_type = $lldp->lldp_loc_id_type();
-    my $ch      = $lldp->_lldp_loc_id_os();
+    my $ch      = $lldp->lldp_loc_id_os();
     return $lldp->_lldp_id_string($ch, $ch_type);
 }
 
