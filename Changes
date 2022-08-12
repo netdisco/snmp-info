@@ -1,3 +1,18 @@
+Version 3.87 (2022-08-12)
+
+  [NEW FEATURES]
+
+  * PortAccessEntity/IEEE8021-PAE-MIB module support
+
+  [ENHANCEMENTS]
+
+  * #461 Expose lldLocChassisId as $lldp->lldp_loc_id
+  * Update CiscoStats.pm for Amsterdam IOS-XE release
+
+  [BUG FIXES]
+
+  * #470 avoid error if Juniper VLAN not in bp_index
+
 Version 3.86 (2022-08-10)
 
   [BUG FIXES]
