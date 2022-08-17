@@ -1,3 +1,10 @@
+Version 3.88 (2022-08-17)
+
+  [NEW FEATURES]
+
+  * Add i_subinterfaces for VLAN subinterfaces in Layer3::Juniper
+  * Add i_vlan and i_vlan_membership_untagged to Layer3::Juniper based on ifChassisLogicalUnit
+
 Version 3.87 (2022-08-12)
 
   [NEW FEATURES]

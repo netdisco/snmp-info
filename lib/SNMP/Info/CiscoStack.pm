@@ -38,7 +38,7 @@ use Exporter;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE, %PORTSTAT);
 
-$VERSION = '3.87';
+$VERSION = '3.88';
 
 %MIBS = ( 'CISCO-STACK-MIB' => 'ciscoStackMIB', );
 
