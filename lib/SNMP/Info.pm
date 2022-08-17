@@ -4039,6 +4039,8 @@ Takes an OID and return the object name if the right MIB is loaded.
 
 sub munge_e_type {
     my $oid = shift;
+    return unless $oid;
+    return $oid if $oid =~ m/^\.0/;
 
     my $name = &SNMP::translateObj($oid);
     return $name if defined($name);
