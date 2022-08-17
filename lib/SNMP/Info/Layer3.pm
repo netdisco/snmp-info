@@ -277,6 +277,30 @@ sub model {
     return $model;
 }
 
+sub i_subinterfaces {
+  my $dev = shift;
+  my $partial = shift;
+
+  my $ifstack = $dev->i_stack_status() || {};
+  # TODO: if we want to do partial, we need to use inverse status
+  my $iftype = $dev->i_type() || {};
+
+  my $ret = $dev->SUPER::i_subinterfaces() || {};
+
+  foreach my $idx ( keys %$ifstack ) {
+      next unless $ifstack->{$idx} eq 'active';
+
+      my ( $higher, $lower ) = split /\./, $idx;
+      next if ( $higher == 0 or $lower == 0 );
+
+      if ( $iftype->{ $higher } eq 'l2vlan' or $iftype->{ $higher } eq 'l3ipvlan') {
+          push @{ $ret->{ $lower } }, $higher;
+      }
+  }
+
+  return $ret;
+}
+
 sub i_name {
     my $l3      = shift;
     my $partial = shift;
@@ -610,6 +634,22 @@ Returns the map between SNMP Interface Identifier (iid) and physical port
 name.
 
 Only returns those iids that have a description listed in $l3->i_description()
+
+=item $l3->i_subinterfaces()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of
+C<ifIndex>. These are the VLAN subinterfaces (C<l2vlan> type) for the parent
+(C<ethernetCsmacd> type) interface.
+
+  Example:
+  my $interfaces = $l3->interfaces();
+  my $i_subs     = $l3->i_subinterfaces();
+
+  foreach my $iid (sort keys %$interfaces) {
+    my $port = $interfaces->{$iid};
+    my $subs = join(',', sort(map {$interfaces->{$_}} @{$i_subs->{$iid}}));
+    print "Port: $port has subinterfaces: $subs\n";
+  }
 
 =item $l3->i_name()
 

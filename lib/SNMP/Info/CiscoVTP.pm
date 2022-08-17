@@ -201,7 +201,7 @@ sub i_vlan {
 
 sub i_subinterfaces {
     my $vtp    = shift;
-    my %i_subs = ();
+    my %i_subs = %{ $vtp->SUPER::i_subinterfaces() || {} };
 
     # CISCO-VLAN-IFTABLE-RELATION-MIB
     # Used for traditional Cisco Routers and Aironet
