@@ -45,6 +45,7 @@ $VERSION = '3.87';
     %SNMP::Info::Layer3::MIBS,
     'JUNIPER-CHASSIS-DEFINES-MIB' => 'jnxChassisDefines',
     'JUNIPER-MIB'                 => 'jnxBoxAnatomy',
+    'JUNIPER-IF-MIB'              => 'ifChassisLogicalUnit',
     'JUNIPER-VIRTUALCHASSIS-MIB'  => 'jnxVirtualChassisMemberTable',
     'JUNIPER-VLAN-MIB'            => 'jnxVlanMIBObjects',
     'JUNIPER-L2ALD-MIB'           => 'jnxL2aldVlanFdbId',
@@ -83,6 +84,9 @@ $VERSION = '3.87';
     'jnx_els_v_index'  => 'jnxL2aldVlanTag',
     'jnx_els_v_type'   => 'jnxL2aldVlanType',
     'jnx_els_v_fdb_id' => 'jnxL2aldVlanFdbId',
+
+    # JUNIPER-IF-MIB::ifChassisTable
+    'i_logical_unit' => 'ifChassisLogicalUnit',
 );
 
 %MUNGE = (
@@ -235,7 +239,8 @@ sub i_vlan {
     my $juniper = shift;
     my $partial = shift;
 
-    my $index = $juniper->bp_index();
+    my $index = $juniper->bp_index() || {};
+    my $types = $juniper->i_type() || {};
 
     # If given a partial it will be an ifIndex, we need to use dot1dBasePort
     if ($partial) {
@@ -243,13 +248,13 @@ sub i_vlan {
         $partial = $r_index{$partial};
     }
 
-    my $v_index  = $juniper->v_index();
-    my $i_pvid   = $juniper->qb_i_vlan($partial) || {};
-    my $i_vlan = {};
+    my $v_index = $juniper->v_index() || {};
+    my $i_pvid  = $juniper->qb_i_vlan($partial) || {};
+    my $i_vlan  = $juniper->SUPER::i_vlan() || {};
 
     foreach my $bport ( keys %$i_pvid ) {
         my $q_vlan  = $i_pvid->{$bport};
-	    my $vlan    = $q_vlan;
+        my $vlan    = $q_vlan;
         # Use defined as check since VLAN can be zero
         $vlan = $v_index->{$q_vlan} if defined $v_index->{$q_vlan};
         my $ifindex = $index->{$bport};
@@ -260,6 +265,17 @@ sub i_vlan {
         }
         $i_vlan->{$ifindex} = $vlan;
     }
+
+    # add in i_logical_unit
+    my $i_unit = $juniper->ifChassisLogicalUnit();
+    foreach my $ifindex (keys %$i_unit) {
+        my $type = $types->{$ifindex} or next;
+        next unless $type eq 'l2vlan';
+        # XXX not sure why this is off by one?!
+        my $vlan = $i_unit->{$ifindex} - 1 or next;
+        $i_vlan->{$ifindex} = $vlan;
+    }
+
     return $i_vlan;
 }
 
@@ -345,13 +361,14 @@ sub i_vlan_membership_untagged {
 
     # Use presence of JUNIPER-VLAN-MIB::jnxExVlanTag to indicate if we should
     # treat as RFC 4363 standard PortList
-    my $old_index = $juniper->jnx_v_index();
+    my $old_index = $juniper->jnx_v_index() || {};
 
     if ( scalar keys %$old_index ) {
         return $juniper->SUPER::i_vlan_membership_untagged($partial);
     }
 
-    my $res;
+    my $types = $juniper->i_type() || {};
+    my $res = {};
 
     # This isn't a PortList so use _raw to prevent munge
     my $v_ports = $juniper->qb_cv_untagged_raw($partial)
@@ -369,6 +386,17 @@ sub i_vlan_membership_untagged {
             push @{ $res->{ $bp_index->{$idx} } }, $vlan;
         }
     }
+
+    # add in i_logical_unit
+    my $i_unit = $juniper->ifChassisLogicalUnit();
+    foreach my $ifindex (keys %$i_unit) {
+        my $type = $types->{$ifindex} or next;
+        next unless $type eq 'l2vlan';
+        # XXX not sure why this is off by one?!
+        my $vlan = $i_unit->{$ifindex} - 1 or next;
+        push @{ $res->{ $ifindex } }, $vlan;
+    }
+
     return $res;
 }
 
