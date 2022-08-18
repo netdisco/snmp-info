@@ -17,6 +17,7 @@ Module::Build->new(
     'SNMP' => '0',
     'Math::BigInt' => '0',
     'NetAddr::IP' => '4.068',
+    'Regexp::Common' => '0',
   },
   recommends => {
     'PPI' => '0',

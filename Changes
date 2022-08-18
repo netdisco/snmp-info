@@ -1,3 +1,10 @@
+Version 3.89 (2022-08-18)
+
+  [BUG FIXES]
+
+  * add Regexp::Common to dependencies
+  * fix tests for i_vlan_membership_untagged
+
 Version 3.88 (2022-08-17)
 
   [NEW FEATURES]

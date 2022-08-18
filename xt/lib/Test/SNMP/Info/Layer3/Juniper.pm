@@ -500,7 +500,7 @@ sub i_vlan_membership_untagged : Tests(4) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->i_vlan_membership_untagged(),
-    undef, q(No data returns undef));
+    {}, q(No data returns empty hashref));
 }
 
 # These is no longer defined in the class, but tested due to past issues with
