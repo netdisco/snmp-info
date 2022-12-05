@@ -110,6 +110,10 @@ sub os {
     return 'ios-xe'   if ( $descr =~ /Everest/ );
     return 'ios-xe'   if ( $descr =~ /Gibraltar/ );
     return 'ios-xe'   if ( $descr =~ /Amsterdam/ );
+    return 'ios-xe'   if ( $descr =~ /Bengaluru/ );
+    return 'ios-xe'   if ( $descr =~ /Cupertino/ );
+    return 'ios-xe'   if ( $descr =~ /Dublin/ );
+    return 'ios-xe'   if ( $descr =~ /IOSXE/ );
     return 'ios-xe'   if ( $descr =~ /IOS-XE/ );
     return 'ios-xr'   if ( $descr =~ /IOS XR/ );
     return 'ios'      if ( $descr =~ /IOS/ );
