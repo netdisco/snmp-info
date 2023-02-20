@@ -1,3 +1,22 @@
+Version 3.91 (2023-02-20)
+
+  [NEW FEATURES]
+
+  * #450 Hirschmann switch support
+  * #463 Netonix switch support
+
+  [ENHANCEMENTS]
+
+  * new() accepts hashref as well as bare list of arguments
+  # #475 additional recognition of Allied switches
+  * #477 additional recognition of Cisco 9xxx switches
+
+  [BUG FIXES]
+
+  * #460 always return $info instance to allow error() inspection
+  * #464 check in case non numeric key in cache befor inc
+  * #474 workaround for aruba-cx link aggregation
+
 Version 3.89 (2022-08-18)
 
   [BUG FIXES]
