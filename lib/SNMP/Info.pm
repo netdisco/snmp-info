@@ -982,6 +982,12 @@ Subclass for Avaya/Nortel Ethernet Routing Switch 1600 series.
 
 See documentation in L<SNMP::Info::Layer3::N1600> for details.
 
+=item SNMP::Info::Layer3::Netonix
+
+Subclass for Netonix switches.
+
+See documentation in L<SNMP::Info::Layer3::Netonix> for details.
+
 =item SNMP::Info::Layer3::NetSNMP
 
 Subclass for host systems running Net-SNMP.
@@ -1790,6 +1796,7 @@ sub device_type {
         40310 => 'SNMP::Info::Layer3::Cumulus',
         41112 => 'SNMP::Info::Layer2::Ubiquiti',
         44641 => 'SNMP::Info::Layer3::VyOS',
+        46242 => 'SNMP::Info::Layer3::Netonix',
         47196 => 'SNMP::Info::Layer3::ArubaCX',
         48690 => 'SNMP::Info::Layer3::Teltonika',
     );
@@ -1830,6 +1837,7 @@ sub device_type {
         21091 => 'SNMP::Info::Layer2::Exinda',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
         26928 => 'SNMP::Info::Layer2::Aerohive',
+        46242 => 'SNMP::Info::Layer3::Netonix',
         47196 => 'SNMP::Info::Layer3::ArubaCX',
         48690 => 'SNMP::Info::Layer3::Teltonika',
     );
