@@ -73,10 +73,11 @@ list any missing functionality (such as neighbor discovery tables).
                             # AuthPass  => 'authp4ss',
                             # PrivProto => 'DES',      # DES|AES
                             # PrivPass  => 'pr1vp4ss',
-                          ) or die "Can't connect to device.\n";
+                          );
 
  my $err = $info->error();
- die "SNMP Community or Version probably wrong connecting to device. $err\n" if defined $err;
+ die $err if defined $err;
+ # usually a wrong DestHost or Community or Version if you have trouble here
 
  my $name  = $info->name();
  my $class = $info->class();
@@ -1455,16 +1456,16 @@ sub new {
 
     # No session object created
     unless ( defined $sess ) {
-        $new_obj->error_throw("SNMP::Info::new() Failed to Create Session. ");
-        return;
+        $new_obj->error_throw("SNMP::Info::new() Net-SNMP session creation failed completely.");
+        return $new_obj;
     }
 
     # Session object created but SNMP connection failed.
-    my $sess_err = $sess->{ErrorStr} || '';
-    if ($sess_err) {
+    if ($sess->{ErrorStr}) {
+        my $sess_err = $sess->{ErrorStr} || 'no specific error';
         $new_obj->error_throw(
-            "SNMP::Info::new() Net-SNMP session creation failed. $sess_err");
-        return;
+            "SNMP::Info::new() Net-SNMP session creation failed: $sess_err");
+        return $new_obj;
     }
 
     # Save Args for later
@@ -2332,8 +2333,8 @@ sub specify {
     my $device_type = $self->device_type();
     unless ( defined $device_type ) {
         $self->error_throw(
-            "SNMP::Info::specify() - Could not get info from device");
-        return;
+            "SNMP::Info::specify() - fatal error: connect failed or missing sysServices and/or sysDescr");
+        return $self;
     }
     return $self if $device_type eq 'SNMP::Info';
 
