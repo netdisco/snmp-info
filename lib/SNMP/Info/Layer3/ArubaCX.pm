@@ -79,6 +79,7 @@ $VERSION = '3.89';
     'psu_types' => 'arubaWiredPSUProductName',
     'psu_states' => 'arubaWiredPSUState',
     'vsf_prod_names' => 'arubaWiredVsfMemberProductName',
+    'raw_ad_lag_ports' => 'dot3adAggPortListPorts',  # unmunged raw data
 );
 
 %MUNGE = (
@@ -154,7 +155,37 @@ sub os_ver {
     return $ver_release->{1};
 }
 
-sub agg_ports { return agg_ports_lag(@_) }
+# agg_ports should return a hash with
+# ifindex of member -> ifindex of aggregation
+#
+# arabuaos-cx has a broken implementation of 
+# dot3adAggPortListPorts / 1.2.840.10006.300.43.1.1.2.1.1
+# it return a comma seperated String with interface names
+# (rfc states a PortList / bitmask of member ports)
+#
+# fetch value, split at comma, reverse search the interface hash
+# for the interface index
+
+sub agg_ports {
+    my $cx = shift;
+    my $ret = {};
+    my $ports = $cx->raw_ad_lag_ports();
+    my $interfaces = $cx->interfaces();
+    foreach my $m ( keys %$ports ) {
+        my $idx = $m;
+        my $portlist = $ports->{$m};
+        next unless $portlist;
+
+        foreach my $ifname ( split(/,/, $portlist) ) {
+            foreach my $ifindex ( keys %$interfaces) {
+                if ($interfaces->{$ifindex} eq $ifname) {
+                    $ret->{$ifindex} = $idx;
+                }
+            }
+        }
+    }
+    return $ret;    
+}
 
 # Overrides for VLAN & forwarding table methods
 sub v_name {
