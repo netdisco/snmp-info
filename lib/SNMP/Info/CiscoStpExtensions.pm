@@ -36,7 +36,7 @@ use SNMP::Info::Bridge;
 
 our ($VERSION, $DEBUG, %MIBS, %FUNCS, %GLOBALS, %MUNGE, %PORTSTAT, $INIT);
 
-$VERSION = '3.89';
+$VERSION = '3.90';
 
 @SNMP::Info::CiscoStpExtensions::ISA = qw/SNMP::Info::Bridge SNMP::Info Exporter/;
 @SNMP::Info::CiscoStpExtensions::EXPORT_OK = qw//;

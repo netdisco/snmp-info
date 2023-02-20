@@ -355,7 +355,7 @@ sub specify : Tests(4) {
   $test->{info}->specify();
   is(
     $test->{info}->error(),
-    'SNMP::Info::specify() - Could not get info from device',
+    'SNMP::Info::specify() - fatal error: connect failed or missing sysServices and/or sysDescr',
     'Undef device type throws error'
   );
   $test->{info}->cache_clear();

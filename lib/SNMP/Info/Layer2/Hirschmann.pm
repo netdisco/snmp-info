@@ -39,7 +39,7 @@ use SNMP::Info::CDP;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD);
 
-$VERSION = '3.84';
+$VERSION = '3.90';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -195,6 +195,10 @@ Returns 'hirschmann'
 =item $device->os_ver()
 
 Return os version
+
+=item $device->mac()
+
+Return Interface MAC addresse of the switch (on the CPU pseudo interface).
 
 =item $device->model()
 

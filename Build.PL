@@ -18,6 +18,7 @@ Module::Build->new(
     'Math::BigInt' => '0',
     'NetAddr::IP' => '4.068',
     'Regexp::Common' => '0',
+    'Scalar::Util' => '0',
   },
   recommends => {
     'PPI' => '0',

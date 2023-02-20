@@ -59,6 +59,7 @@ lib/SNMP/Info/Layer2/Centillion.pm
 lib/SNMP/Info/Layer2/Cisco.pm
 lib/SNMP/Info/Layer2/CiscoSB.pm
 lib/SNMP/Info/Layer2/Exinda.pm
+lib/SNMP/Info/Layer2/Hirschmann.pm
 lib/SNMP/Info/Layer2/HP.pm
 lib/SNMP/Info/Layer2/HP4000.pm
 lib/SNMP/Info/Layer2/HPVC.pm
@@ -114,6 +115,7 @@ lib/SNMP/Info/Layer3/Lenovo.pm
 lib/SNMP/Info/Layer3/Microsoft.pm
 lib/SNMP/Info/Layer3/Mikrotik.pm
 lib/SNMP/Info/Layer3/N1600.pm
+lib/SNMP/Info/Layer3/Netonix.pm
 lib/SNMP/Info/Layer3/Netscreen.pm
 lib/SNMP/Info/Layer3/NetSNMP.pm
 lib/SNMP/Info/Layer3/Nexus.pm

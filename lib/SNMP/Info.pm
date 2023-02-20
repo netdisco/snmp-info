@@ -26,7 +26,7 @@ our
     ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG, %SPEED_MAP,
      $NOSUCH, $BIGINT, $REPEATERS);
 
-$VERSION = '3.89';
+$VERSION = '3.90';
 
 =head1 NAME
 
@@ -34,7 +34,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.89
+SNMP::Info - Version 3.90
 
 =head1 AUTHOR
 
@@ -79,7 +79,7 @@ list any missing functionality (such as neighbor discovery tables).
 
  my $err = $info->error();
  die $err if defined $err;
- # usually a wrong DestHost or Community or Version if you have trouble here
+ # usually a wrong DestHost or Community or Version if you have trouble here
 
  my $name  = $info->name();
  my $class = $info->class();
@@ -637,6 +637,12 @@ See documentation in L<SNMP::Info::Layer2::CiscoSB> for details.
 Subclass for Exinda / GFI Network Orchestrator traffic shapers.
 
 See documentation in L<SNMP::Info::Layer2::Exinda> for details.
+
+=item SNMP::Info::Layer2::Hirschmann
+
+Subclass for Hirschmann switches
+
+See documentation in L<SNMP::Info::Layer2::Hirschmann> for details.
 
 =item SNMP::Info::Layer2::HP
 

@@ -42,7 +42,7 @@ use SNMP::Info::Airespace;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG);
 
-$VERSION = '3.89';
+$VERSION = '3.90';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
