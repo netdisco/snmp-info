@@ -4925,7 +4925,7 @@ sub _cache {
     my $store = $self->store();
 
     if (ref {} eq ref $data) {
-        if (! Scalar::Util::looks_like_number($self->{"_${attr}"}) {
+        if (! Scalar::Util::looks_like_number($self->{"_${attr}"})) {
             # https://github.com/netdisco/snmp-info/issues/464
             # perhaps this is being set twice and first time gets $data ??
             $self->{"_${attr}"} = 0;
