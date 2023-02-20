@@ -57,14 +57,16 @@ list any missing functionality (such as neighbor discovery tables).
 
  use SNMP::Info;
 
- my $info = new SNMP::Info(
-                            # Auto Discover more specific Device Class
+ my $info = SNMP::Info->new({
+                            # Auto Discover your Device Class (Cisco, Juniper, etc ...)
                             AutoSpecify => 1,
                             Debug       => 1,
+
                             # The rest is passed to SNMP::Session
                             DestHost    => 'router',
                             Community   => 'public',
                             Version     => 2
+
                             # Parameter reference for SNMPv3
                             # Version   => 3
                             # SecLevel  => 'authPriv', # authPriv|authNoPriv|noAuthNoPriv
@@ -73,7 +75,7 @@ list any missing functionality (such as neighbor discovery tables).
                             # AuthPass  => 'authp4ss',
                             # PrivProto => 'DES',      # DES|AES
                             # PrivPass  => 'pr1vp4ss',
-                          );
+                           });
 
  my $err = $info->error();
  die $err if defined $err;
@@ -1209,18 +1211,24 @@ on the Netdisco README!
 
 Creates a new object and connects via SNMP::Session.
 
- my $info = new SNMP::Info( 'Debug'             => 1,
-                            'AutoSpecify'       => 1,
-                            'BigInt'            => 1,
-                            'BulkWalk'          => 1,
-                            'BulkRepeaters'     => 20,
-                            'IgnoreNetSNMPConf' => 1,
-                            'LoopDetect'        => 1,
-                            'DestHost'          => 'myrouter',
-                            'Community'         => 'public',
-                            'Version'           => 2,
-                            'MibDirs'           => ['dir1','dir2','dir3'],
-                          ) or die;
+Always returns an SNMP::Info instance, and you should always check for
+error() as in SYNOPSIS above to be sure of success.
+
+Will take a bare list of key/value options but we recommend a HASH ref
+as in the example below and SYNOPSIS, to catch syntax errors.
+
+ my $info = SNMP::Info->({ 'Debug'             => 1,
+                           'AutoSpecify'       => 1,
+                           'BigInt'            => 1,
+                           'BulkWalk'          => 1,
+                           'BulkRepeaters'     => 20,
+                           'LoopDetect'        => 1,
+                           'IgnoreNetSNMPConf' => 1,
+                           'DestHost'          => 'myrouter',
+                           'Community'         => 'public',
+                           'Version'           => 2,
+                           'MibDirs'           => ['dir1','dir2','dir3'],
+                        });
 
 SNMP::Info Specific Arguments :
 
@@ -1359,7 +1367,7 @@ then fallback to version 1.
 sub new {
     my $proto     = shift;
     my $class     = ref($proto) || $proto;
-    my %args      = @_;
+    my %args      = (ref $_[0] ? %{ $_[0] } : @_);
     my %sess_args = %args;
     my $new_obj   = {};
     bless $new_obj, $class;
