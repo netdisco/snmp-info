@@ -1734,6 +1734,7 @@ sub device_type {
         45    => 'SNMP::Info::Layer2::Baystack',
         96    => 'SNMP::Info::Layer3::Whiterabbit',
         171   => 'SNMP::Info::Layer3::DLink',
+        207   => 'SNMP::Info::Layer2::Allied',
         244   => 'SNMP::Info::Layer3::Lantronix',
         311   => 'SNMP::Info::Layer3::Microsoft',
         664   => 'SNMP::Info::Layer2::Adtran',
