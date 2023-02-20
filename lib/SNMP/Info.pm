@@ -15,6 +15,7 @@ use strict;
 use Exporter;
 use SNMP;
 use Carp;
+use Scalar::Util ();
 use Math::BigInt;
 use NetAddr::IP::Lite ':lower';
 
@@ -4924,6 +4925,11 @@ sub _cache {
     my $store = $self->store();
 
     if (ref {} eq ref $data) {
+        if (! Scalar::Util::looks_like_number($self->{"_${attr}"}) {
+            # https://github.com/netdisco/snmp-info/issues/464
+            # perhaps this is being set twice and first time gets $data ??
+            $self->{"_${attr}"} = 0;
+        }
         $self->{"_${attr}"}++;
         $store->{$attr} = $data;
     }
