@@ -1,3 +1,9 @@
+Version 3.93 (2023-07-14)
+
+  [ENHANCEMENTS]
+
+  * #484 add Aggregate::agg_ports_ifstack to CiscoAgg::agg_ports
+
 Version 3.92 (2023-02-20)
 
   [NEW FEATURES]
