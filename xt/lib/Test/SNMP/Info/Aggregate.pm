@@ -54,6 +54,8 @@ sub setup : Tests(setup) {
         '163.10'  => 'active',
         '163.90'  => 'active',
         '0.8193'  => 'active',
+        '5010.10102' => 'active',
+        '5010.10103' => 'active',
         '8193.20' => 'active',
         '8193.80' => 'active',
       },
@@ -63,7 +65,10 @@ sub setup : Tests(setup) {
         '20'   => 'ethernetCsmacd',
         '80'   => 'ethernetCsmacd',
         '90'   => 'ethernetCsmacd',
+        '10102' => 'ethernetCsmacd',
+        '10103' => 'ethernetCsmacd',
         '163'  => 'ieee8023adLag',
+        '5010' => 'propVirtual',
         '8193' => 'propMultiplexor',
       },
     }
@@ -77,7 +82,7 @@ sub agg_ports_ifstack : Tests(2) {
   can_ok($test->{info}, 'agg_ports_ifstack');
 
   my $expected
-    = {'10' => '163', '90' => '163', '20' => '8193', '80' => '8193',};
+    = {'10' => '163', '90' => '163', '10102' => '5010', '10103' => '5010', '20' => '8193', '80' => '8193',};
 
   cmp_deeply($test->{info}->agg_ports_ifstack(),
     $expected, q(Aggregated links have expected values));

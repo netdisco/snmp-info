@@ -33,6 +33,7 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::IEEE802dot3ad;
+use SNMP::Info::Aggregate 'agg_ports_ifstack';
 
 @SNMP::Info::CiscoAgg::ISA = qw/
   SNMP::Info::IEEE802dot3ad
@@ -137,7 +138,12 @@ sub agg_ports_lag {
 
 # combine PAgP, LAG & Cisco proprietary data
 sub agg_ports {
-  my $ret = {%{agg_ports_pagp(@_)}, %{agg_ports_lag(@_)}, %{agg_ports_cisco(@_)}};
+  my $ret = {
+      %{agg_ports_ifstack(@_)},
+      %{agg_ports_pagp(@_)},
+      %{agg_ports_lag(@_)},
+      %{agg_ports_cisco(@_)},
+  };
   return $ret;
 }
 

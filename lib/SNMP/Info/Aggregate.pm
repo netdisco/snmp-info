@@ -63,7 +63,9 @@ sub agg_ports_ifstack {
   foreach my $idx ( keys %$ifStack ) {
       my ( $higher, $lower ) = split /\./, $idx;
       next if ( $higher == 0 or $lower == 0 );
-      if ( $ifType->{ $higher } eq 'ieee8023adLag'  or $ifType->{ $higher } eq 'propMultiplexor') {
+      if ( $ifType->{ $higher } eq 'ieee8023adLag'
+            or $ifType->{ $higher } eq 'propMultiplexor'
+            or $ifType->{ $higher } eq 'propVirtual' ) {
           $ret->{ $lower } = $higher;
       }
   }
