@@ -135,10 +135,43 @@ sub agg_ports_lag {
   return $mapping;
 }
 
+# version of SNMP::Info::Aggregate which uses propVirtual
+# because CISCO-PAGP-MIB says "The ifType of an agport is propVirtual"
+# but we need to filter out the VLANs and stuff so check against
+# CISCO-PAGP-MIB::pagpEthcOperationMode
+sub agg_ports_propvirtual {
+  my $dev = shift;
+  my $partial = shift;
+
+  my $ifStack = $dev->ifStackStatus();
+  my $pagpOperMode = $dev->pagpEthcOperationMode() || {};
+  # TODO: if we want to do partial, we need to use inverse status
+  my $ifType = $dev->ifType();
+
+  my $ret = {};
+
+  foreach my $idx ( keys %$ifStack ) {
+      my ( $higher, $lower ) = split /\./, $idx;
+      next if ( $higher == 0 or $lower == 0 );
+      if ( $ifType->{ $higher } eq 'propVirtual' ) {
+
+          # lower needs also to be configured in pagpEthcOperationMode
+          next unless exists $pagpOperMode->{$lower}
+            and defined $pagpOperMode->{$lower}
+            and $pagpOperMode->{$lower} =~ m/^(?:manual|pagpOn)$/;
+
+          $ret->{ $lower } = $higher;
+      }
+  }
+
+  return $ret;
+}
+
 
 # combine PAgP, LAG & Cisco proprietary data
 sub agg_ports {
   my $ret = {
+      %{agg_ports_propvirtual(@_)},
       %{agg_ports_ifstack(@_)},
       %{agg_ports_pagp(@_)},
       %{agg_ports_lag(@_)},
@@ -217,6 +250,11 @@ even if they are not running an aggregation protocol.
 
 Implements the PAgP LAG info retrieval. Merged into C<agg_ports> data
 automatically.
+
+=item C<agg_ports_propvirtual>
+
+A version of SNMP::Info::Aggregate::agg_ports_ifstack that inspects only
+ports of type propVirtual. You still need to use agg_ports_ifstack.
 
 =item C<lag_members>
 
