@@ -82,7 +82,7 @@ sub agg_ports_ifstack : Tests(2) {
   can_ok($test->{info}, 'agg_ports_ifstack');
 
   my $expected
-    = {'10' => '163', '90' => '163', '10102' => '5010', '10103' => '5010', '20' => '8193', '80' => '8193',};
+    = {'10' => '163', '90' => '163', '20' => '8193', '80' => '8193',};
 
   cmp_deeply($test->{info}->agg_ports_ifstack(),
     $expected, q(Aggregated links have expected values));
