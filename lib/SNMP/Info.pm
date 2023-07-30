@@ -1440,6 +1440,11 @@ sub new {
         delete $sess_args{Cache};
     }
 
+    if ( defined $args{SessionWrapper} ) {
+        $new_obj->{SessionWrapper} = $args{SessionWrapper} || 0;
+        delete $sess_args{SessionWrapper};
+    }
+
     my $sess = undef;
     if ( defined $args{Session} ) {
         $sess = $args{Session};
@@ -4350,7 +4355,10 @@ sub _global {
             my $qual_leaf = SNMP::translateObj($oid,0,1) || '';
             print "SNMP::Info::_global $method : $qual_leaf : $oid\n";
         }
-        my $val = $sess->get($oid);
+        my $val = $self->{SessionWrapper} ?
+          $self->{SessionWrapper}->($self, $sess, 'get', $oid)
+          : $sess->get($oid);
+        #my $val = $sess->get($oid);
 
         # Mark as gotten. Even if it fails below, we don't want to keep failing.
         $self->{"_$attr"} = undef;
@@ -4716,7 +4724,10 @@ sub _load_attr {
             # Would like to only do this if we know the OID is
             # long enough; implementing that would require a
             # lot of MIB mucking.
-            my $try = $sess->get($var);
+            my $try = $self->{SessionWrapper} ?
+              $self->{SessionWrapper}->($self, $sess, 'get', $var)
+              : $sess->get($var);
+            #my $try = $sess->get($var);
             $errornum = $sess->{ErrorNum};
             if ( defined($try) && $errornum == 0 && $try !~ /^NOSUCH/ ) {
                 $var->[2] = $try;
@@ -4735,7 +4746,10 @@ sub _load_attr {
 
         # Use BULKWALK if we can because its faster
         if ( $bulkwalk && @$vars == 0 ) {
-            ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
+            ($vars) = $self->{SessionWrapper} ?
+              $self->{SessionWrapper}->($self, $sess, 'bulkwalk', 0, $repeaters, $var)
+              : $sess->bulkwalk( 0, $repeaters, $var );
+            #($vars) = $sess->bulkwalk( 0, $repeaters, $var );
             if ( $sess->{ErrorNum} ) {
                 $self->error_throw(
                     "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr},
@@ -4751,7 +4765,10 @@ sub _load_attr {
             else {
 
                 # GETNEXT instead of BULKWALK
-                $sess->getnext($var);
+                $self->{SessionWrapper} ?
+                  $self->{SessionWrapper}->($self, $sess, 'getnext', $var)
+                  : $sess->getnext($var);
+                #$sess->getnext($var);
                 $errornum = $sess->{ErrorNum};
             }
 
@@ -4900,7 +4917,10 @@ sub snmp_connect_ip {
     }
 
     # Try to get some data from IP
-    my $layers = $snmp_test->get('sysServices.0');
+    my $layers = $self->{SessionWrapper} ?
+      $self->{SessionWrapper}->($self, $snmp_test, 'get', 'sysServices.0')
+      : $snmp_test->get('sysServices.0');
+    #my $layers = $snmp_test->get('sysServices.0');
 
     $sess_err = $snmp_test->{ErrorStr} || '';
     if ($sess_err) {
