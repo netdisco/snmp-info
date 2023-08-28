@@ -56,6 +56,7 @@ $VERSION = '3.94';
     %SNMP::Info::IEEE802_Bridge::MIBS,
     'ARUBAWIRED-FAN-MIB' => 'arubaWiredFanName',
     'ARUBAWIRED-VSF-MIB' => 'arubaWiredVsfTrapEnable',
+    'ARUBAWIRED-POE-MIB' => 'arubaWiredPoePethPsePortAveragePower',
     'ARUBAWIRED-POWERSUPPLY-MIB' => 'arubaWiredPSUName',
 );
 
@@ -73,6 +74,7 @@ $VERSION = '3.94';
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
     %SNMP::Info::IEEE802_Bridge::FUNCS,
+    'peth_port_power' => 'arubaWiredPoePethPsePortAveragePower',
     'fan_names' => 'arubaWiredFanName',
     'fan_states' => 'arubaWiredFanState',
     'psu_names' => 'arubaWiredPSUName',
@@ -264,7 +266,11 @@ Subclass for devices running ArubaOS-CX
 =over
 
 =item F<ARUBAWIRED-FAN-MIB>
+
 =item F<ARUBAWIRED-VSF-MIB>
+
+=item F<ARUBAWIRED-POE-MIB>
+
 =item F<ARUBAWIRED-POWERSUPPLY-MIB>
 
 =item Inherited Classes' MIBs
@@ -332,6 +338,15 @@ See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=over
+
+=item $cx->peth_port_power()
+
+Power supplied by PoE ports, in milliwatts.
+(C<arubaWiredPoePethPsePortAveragePower>)
+
+=back
 
 =head2 Overrides
 
