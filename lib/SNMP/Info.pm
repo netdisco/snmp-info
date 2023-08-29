@@ -3779,6 +3779,7 @@ Makes human friendly speed ratings using C<%SPEED_MAP>.
                 '1000000000' => '1.0 Gbps',
                 '2000000000' => '2.0 Gbps',
                 '2488000000' => 'OC-48',
+                '2500000000' => '2.5 Gbps',
              )
 
 Note: high speed interfaces (usually 1 Gbps or faster) have their link
@@ -3826,6 +3827,7 @@ munge_highspeed(). SNMP::Info can return speeds up to terabit levels this way.
     '1000000000' => '1.0 Gbps',
     '2000000000' => '2.0 Gbps',
     '2488000000' => 'OC-48',
+    '2500000000' => '2.5 Gbps',
 );
 
 sub munge_speed {
