@@ -1,3 +1,16 @@
+Version 3.95 (2023-09-02)
+
+  [ENHANCEMENTS]
+
+  * #491 Dell - Take into account OS10
+  * #492 F5 - Update the module to correctly retrieve interfaces
+  * #499 aoscx power over ethernet support
+  * #500 pretty format 2.5gbps speeds
+
+  [BUG FIXES]
+
+  * partial revert #484 and replace with Cisco specific CiscoAgg::agg_ports_propvirtual
+
 Version 3.94 (2023-07-25)
 
   [BUG FIXES]
