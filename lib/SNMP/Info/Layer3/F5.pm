@@ -86,7 +86,7 @@ $VERSION = '3.94';
 
 %MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
 
-sub convert_f5id_stdid {
+sub _convert_f5id_stdid {
     my $f5      = shift;
     my $partial = shift;
     my $id = shift;
@@ -145,7 +145,7 @@ sub i_mtu {
     my $mtu = $f5->sys_i_mtu($partial) || {};
     my $i_mtu = {};
     while (my ($iid,$value) = each( %$mtu )) {
-        $i_mtu->{$f5->convert_f5id_stdid($partial,$iid)} = $value;
+        $i_mtu->{$f5->_convert_f5id_stdid($partial,$iid)} = $value;
     }
     
     return $i_mtu;
@@ -163,7 +163,7 @@ sub i_duplex {
         next unless defined $duplex;
         next if ( $duplex eq 'none' );
 
-        $i_duplex->{$f5->convert_f5id_stdid($partial,$iid)} = $duplex;
+        $i_duplex->{$f5->_convert_f5id_stdid($partial,$iid)} = $duplex;
     }
     return $i_duplex;
 }
@@ -214,7 +214,7 @@ sub i_vlan {
         my @iid_array = split(/\./, $iid);
         my $len       = $iid_array[0];
         my $v_idx     = join('', ( splice @iid_array, 0, $len + 1 ));
-        my $idx       = $f5->convert_f5id_stdid($partial,join('.', @iid_array));
+        my $idx       = $f5->_convert_f5id_stdid($partial,join('.', @iid_array));
 
         # Check to make sure we can map to a port
         my $p_idx = $index->{$idx};
@@ -244,7 +244,7 @@ sub i_vlan_membership {
         my @iid_array = split (/\./, $iid);
         my $len       = $iid_array[0];
         my $v_idx     = join ('.', ( splice @iid_array, 0, $len + 1 ));
-        my $idx       = $f5->convert_f5id_stdid($partial,join ('.', @iid_array));
+        my $idx       = $f5->_convert_f5id_stdid($partial,join ('.', @iid_array));
 
         # Check to make sure we can map to a port
         my $p_idx = $index->{$idx};
@@ -275,7 +275,7 @@ sub i_vlan_membership_untagged {
         my @iid_array = split (/\./, $iid);
         my $len       = $iid_array[0];
         my $v_idx     = join ('.', ( splice @iid_array, 0, $len + 1 ));
-        my $idx       = $f5->convert_f5id_stdid($partial,join ('.', @iid_array));
+        my $idx       = $f5->_convert_f5id_stdid($partial,join ('.', @iid_array));
 
         # Check to make sure we can map to a port
         my $p_idx = $index->{$idx};
