@@ -49,7 +49,7 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 @SNMP::Info::Layer3::CiscoSwitch::EXPORT_OK = qw//;
 
-$VERSION = '3.94';
+$VERSION = '3.95';
 
 %MIBS = (
     %SNMP::Info::Layer3::Cisco::MIBS,
