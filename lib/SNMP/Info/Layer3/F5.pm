@@ -54,9 +54,9 @@ $VERSION = '3.94';
     'ps2_status' => 'sysChassisPowerSupplyStatus.2',
 
     # Named serial1 to override serial1 in L3 serial method
-    'serial1'  => 'sysGeneralChassisSerialNum',
-    'qb_vlans' => 'sysVlanNumber',
-    'ports'    => 'sysInterfaceNumber',
+    'serial1'    => 'sysGeneralChassisSerialNum',
+    'qb_vlans'   => 'sysVlanNumber',
+    'ports'      => 'sysInterfaceNumber',
 
 );
 
@@ -64,39 +64,19 @@ $VERSION = '3.94';
     %SNMP::Info::Layer3::FUNCS,
 
     # sysInterfaceTable
-    'i_index'       => 'sysInterfaceName',
-    'i_description' => 'sysInterfaceName',
-    'i_mtu'         => 'sysInterfaceMtu',
-    'i_speed'       => 'sysInterfaceMediaActiveSpeed',
-    'i_mac'         => 'sysInterfaceMacAddr',
-    'i_up_admin'    => 'sysInterfaceEnabled',
-    'i_up'          => 'sysInterfaceStatus',
-
-    # sysIfxStatTable
-    'i_octet_in64'       => 'sysIfxStatHcInOctets',
-    'i_octet_out64'      => 'sysIfxStatHcOutOctets',
-    'i_pkts_ucast_in64'  => 'sysIfxStatHcInUcastPkts',
-    'i_pkts_ucast_out64' => 'sysIfxStatHcOutUcastPkts',
-    'i_pkts_mutli_in64'  => 'sysIfxStatInMulticastPkts',
-    'i_pkts_multi_out64' => 'sysIfxStatOutMulticastPkts',
-    'i_pkts_bcast_in64'  => 'sysIfxStatInBroadcastPkts',
-    'i_pkts_bcast_out64' => 'sysIfxStatOutBroadcastPkts',
-
-    # sysInterfaceStatTable
-    'i_discards_in'  => 'sysInterfaceStatDropsIn',
-    'i_discards_out' => 'sysInterfaceStatDropsOut',
-    'i_errors_in'    => 'sysInterfaceStatErrorsIn',
-    'i_errors_out'   => 'sysInterfaceStatErrorsOut',
-
-    # sysInterfaceTable
-    'sys_i_duplex' => 'sysInterfaceMediaActiveDuplex',
+    'sys_i_description' => 'sysInterfaceName',
+    'sys_i_mtu'         => 'sysInterfaceMtu',
+    'sys_i_speed'       => 'sysInterfaceMediaActiveSpeed',
+    'sys_i_up_admin'    => 'sysInterfaceEnabled',
+    'sys_i_up'          => 'sysInterfaceStatus',
+    'sys_i_duplex'      => 'sysInterfaceMediaActiveDuplex',
 
     # sysChassisFanTable
     'fan_state' => 'sysChassisFanStatus',
 
     # sysVlanTable
     'sys_v_id' => 'sysVlanId',
-    'v_name'   => 'sysVlanVname',
+    'sys_v_name'   => 'sysVlanVname',
 
     # sysVlanMemberTable
     'sys_vm_tagged' => 'sysVlanMemberTagged',
@@ -105,6 +85,22 @@ $VERSION = '3.94';
 );
 
 %MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
+
+sub convert_f5id_stdid {
+    my $f5      = shift;
+    my $partial = shift;
+    my $id = shift;
+    my $sys_i_description = $f5->sys_i_description($partial) || {};
+    my $i_name = $f5->i_name($partial) || {};
+   
+    if (exists($sys_i_description->{$id})) {
+        my @result = grep { $i_name->{$_} eq $sys_i_description->{$id} } keys %$i_name;
+        if (scalar @result eq 1) {
+            return $result[0];
+        }
+    }
+    return $id;
+};
 
 sub vendor {
     return 'f5';
@@ -141,36 +137,18 @@ sub model {
     return $model;
 }
 
-# Override L3 interfaces
-sub interfaces {
+# Override L3 i_mtu
+sub i_mtu {
     my $f5      = shift;
     my $partial = shift;
 
-    return $f5->i_index($partial);
-}
-
-# Override L3 i_name
-sub i_name {
-    my $f5      = shift;
-    my $partial = shift;
-
-    return $f5->i_index($partial);
-}
-
-# We don't have this, so fake it
-sub i_type {
-    my $f5      = shift;
-    my $partial = shift;
-
-    my $idx = $f5->i_index($partial);
-
-    my %i_type;
-    foreach my $if ( keys %$idx ) {
-        $i_type{$if} =
-          ((exists $f5->{sess}->{UseEnums} and $f5->{sess}->{UseEnums})
-           ? 'ethernetCsmacd' : 6 );
+    my $mtu = $f5->sys_i_mtu($partial) || {};
+    my $i_mtu = {};
+    while (my ($iid,$value) = each( %$mtu )) {
+        $i_mtu->{$f5->convert_f5id_stdid($partial,$iid)} = $value;
     }
-    return \%i_type;
+    
+    return $i_mtu;
 }
 
 # Override L3 i_duplex
@@ -180,15 +158,14 @@ sub i_duplex {
 
     my $duplexes = $f5->sys_i_duplex() || {};
 
-    my %i_duplex;
-    foreach my $if ( keys %$duplexes ) {
-        my $duplex = $duplexes->{$if};
+    my $i_duplex = {};
+    while (my ($iid,$duplex) = each( %$duplexes )) {
         next unless defined $duplex;
         next if ( $duplex eq 'none' );
 
-        $i_duplex{$if} = $duplex;
+        $i_duplex->{$f5->convert_f5id_stdid($partial,$iid)} = $duplex;
     }
-    return \%i_duplex;
+    return $i_duplex;
 }
 
 # Override Bridge v_index
@@ -196,14 +173,34 @@ sub v_index {
     my $f5      = shift;
     my $partial = shift;
 
-    return $f5->sys_v_id($partial);
+    my $v_idx = $f5->sys_v_id($partial);
+    my $v_index = {};
+    while (my ($vid,$value) = each( %$v_idx )) {
+        $v_index->{$vid =~ s/\.//gr} = $value;
+    }
+
+    return $v_index;
+}
+
+# Override Bridge v_name
+sub v_name {
+    my $f5      = shift;
+    my $partial = shift;
+
+    my $vlan_names = $f5->sys_v_name($partial) || {};
+    my $v_name = {};
+    while (my ($vid,$value) = each( %$vlan_names )) {
+        $v_name->{$vid =~ s/\.//gr} = $value;
+    }
+
+    return $v_name;
 }
 
 sub i_vlan {
     my $f5      = shift;
     my $partial = shift;
 
-    my $index  = $f5->i_index($partial) || {};
+    my $index  = $f5->interfaces($partial) || {};
     my $tagged = $f5->sys_vm_tagged()   || {};
     my $vlans  = $f5->v_index()         || {};
 
@@ -214,10 +211,10 @@ sub i_vlan {
 
         # IID is length.vlan name index.length.interface index
         # Split out and use as the IID to get the VLAN ID and ifIndex
-        my @iid_array = split /\./, $iid;
+        my @iid_array = split(/\./, $iid);
         my $len       = $iid_array[0];
-        my $v_idx     = join '.', ( splice @iid_array, 0, $len + 1 );
-        my $idx       = join '.', @iid_array;
+        my $v_idx     = join('', ( splice @iid_array, 0, $len + 1 ));
+        my $idx       = $f5->convert_f5id_stdid($partial,join('.', @iid_array));
 
         # Check to make sure we can map to a port
         my $p_idx = $index->{$idx};
@@ -235,7 +232,7 @@ sub i_vlan_membership {
     my $f5      = shift;
     my $partial = shift;
 
-    my $index  = $f5->i_index($partial) || {};
+    my $index  = $f5->interfaces($partial) || {};
     my $tagged = $f5->sys_vm_tagged()   || {};
     my $vlans  = $f5->v_index()         || {};
 
@@ -244,10 +241,10 @@ sub i_vlan_membership {
 
         # IID is length.vlan name index.length.interface index
         # Split out and use as the IID to get the VLAN ID and ifIndex
-        my @iid_array = split /\./, $iid;
+        my @iid_array = split (/\./, $iid);
         my $len       = $iid_array[0];
-        my $v_idx     = join '.', ( splice @iid_array, 0, $len + 1 );
-        my $idx       = join '.', @iid_array;
+        my $v_idx     = join ('.', ( splice @iid_array, 0, $len + 1 ));
+        my $idx       = $f5->convert_f5id_stdid($partial,join ('.', @iid_array));
 
         # Check to make sure we can map to a port
         my $p_idx = $index->{$idx};
@@ -265,7 +262,7 @@ sub i_vlan_membership_untagged {
     my $f5      = shift;
     my $partial = shift;
 
-    my $index  = $f5->i_index($partial) || {};
+    my $index  = $f5->interfaces($partial) || {};
     my $tagged = $f5->sys_vm_tagged()   || {};
     my $vlans  = $f5->v_index()         || {};
 
@@ -275,10 +272,10 @@ sub i_vlan_membership_untagged {
         next unless $tagged->{$iid} eq 'false';
         # IID is length.vlan name index.length.interface index
         # Split out and use as the IID to get the VLAN ID and ifIndex
-        my @iid_array = split /\./, $iid;
+        my @iid_array = split (/\./, $iid);
         my $len       = $iid_array[0];
-        my $v_idx     = join '.', ( splice @iid_array, 0, $len + 1 );
-        my $idx       = join '.', @iid_array;
+        my $v_idx     = join ('.', ( splice @iid_array, 0, $len + 1 ));
+        my $idx       = $f5->convert_f5id_stdid($partial,join ('.', @iid_array));
 
         # Check to make sure we can map to a port
         my $p_idx = $index->{$idx};
@@ -394,15 +391,17 @@ reference to a hash.
 
 =over
 
-=item $f5->interfaces()
-
-Returns reference to the map between IID and physical port.
-
-(C<sysInterfaceName>).
-
 =item $f5->i_duplex()
 
 Returns reference to hash.  Maps port operational duplexes to IIDs.
+
+(C<sysInterfaceMediaActiveDuplex>).
+
+=item $f5->i_mtu()
+
+Returns reference to hash.  Maps port operational MTU to IIDs
+
+(C<sysInterfaceMtu>).
 
 =item $f5->i_vlan()
 
@@ -437,14 +436,6 @@ Returns VLAN IDs
 
 Human-entered name for vlans.
 
-=item $f5->i_name()
-
-Returns the human set port name if exists.
-
-=item $f5->i_type()
-
-Returns C<'ethernetCsmacd'> for each C<ifIndex>.
-
 =back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
@@ -452,3 +443,5 @@ Returns C<'ethernetCsmacd'> for each C<ifIndex>.
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =cut
+
+# vim: expandtab tabstop=4 shiftwidth=4
