@@ -49,12 +49,19 @@ $VERSION = '3.94';
     'RADLAN-HWENVIROMENT'            => 'rlEnvPhysicalDescription',
     'Dell-Vendor-MIB'                => 'productIdentificationVersion',
     'DELL-REF-MIB'                   => 'dell6224Switch',
+
+    # For DELL-OS10 devices
+    'DELLEMC-OS10-PRODUCTS-MIB'      => 'os10Products',
+    'DELLEMC-OS10-CHASSIS-MIB'       => 'os10SysObject',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     'dell_os_ver'  => 'productIdentificationVersion',
     'dell_id_name' => 'productIdentificationDisplayName',
+
+    # For DELL-OS10
+    'dell_os10_id_name' => 'os10ChassisType',
 );
 
 %FUNCS = (
@@ -102,6 +109,15 @@ $VERSION = '3.94';
     # RADLAN-HWENVIROMENT:rlEnvMonFanStatusTable
     'dell_fan_state' => 'rlEnvMonFanState',
     'dell_fan_desc'  => 'rlEnvMonFanStatusDescr',
+
+    # DELLEMC-OS10-CHASSIS-MIB:os10PowerSupplyTable
+    'dell_os10_pwr_src'   => 'os10PowerSupplyType',
+    'dell_os10_pwr_state' => 'os10PowerSupplyOperStatus',
+   
+    # DELLEMC-OS10-CHASSIS-MIB:os10FanTable
+    'dell_os10_fan_state' => 'os10FanOperStatus',
+    'dell_os10_fan_ent'   => 'os10FanEntity',
+    'dell_os10_fan_slot'  => 'os10FanEntitySlot',
 );
 
 %MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
@@ -112,10 +128,13 @@ sub model {
     my $dell = shift;
 
     my $name  = $dell->dell_id_name();
+    my $os10_name = $dell->dell_os10_id_name();
     my $id    = $dell->id();
 
     if ( defined $name and $name =~ m/(\d+)/ ) {
         return $1;
+    } elsif (defined $os10_name) {
+	return $os10_name;
     }
 
     return unless defined $id;
@@ -163,6 +182,9 @@ sub fan {
 
     my $fan   = $dell->dell_fan_desc()  || {};
     my $state = $dell->dell_fan_state() || {};
+    my $os10_fan_ent  = $dell->dell_os10_fan_ent() || {};
+    my $os10_fan_slot = $dell->dell_os10_fan_slot() || {}; 
+    my $os10_state    = $dell->dell_os10_fan_state() || {};
 
     if (scalar keys %$fan) {
         my @messages = ();
@@ -176,14 +198,25 @@ sub fan {
             if scalar @messages == 0;
 
         return (join ", ", @messages);
+    } elsif (scalar keys %$os10_fan_ent) {
+        my @messages = ();
+
+        foreach my $k (keys %$os10_fan_ent) {
+            next if $os10_state->{$k} and $os10_state->{$k} eq 'up';
+            push @messages, "$os10_fan_ent->{$k}_$os10_fan_slot->{$k}: $os10_state->{$k}";
         }
+
+        push @messages, ((scalar keys %$os10_fan_ent). " fans OK");
+
+        return (join ", ", @messages);
+    }
     return;
 }
 
 sub ps1_type {
     my $dell = shift;
 
-    my $src  = $dell->dell_pwr_src()  || {};
+    my $src  = $dell->dell_pwr_src() || $dell->dell_os10_pwr_src() || {};
 
     foreach my $k (sort keys %$src) {
         next unless $src->{$k};
@@ -195,7 +228,7 @@ sub ps1_type {
 sub ps2_type {
     my $dell = shift;
 
-    my $src  = $dell->dell_pwr_src()  || {};
+    my $src  = $dell->dell_pwr_src() || $dell->dell_os10_pwr_src() || {};
 
     my $i = 0;
     foreach my $k (sort keys %$src) {
@@ -209,7 +242,7 @@ sub ps2_type {
 sub ps1_status {
     my $dell = shift;
 
-    my $status  = $dell->dell_pwr_state()  || {};
+    my $status  = $dell->dell_pwr_state() || $dell->dell_os10_pwr_state() || {};
 
     foreach my $k (sort keys %$status) {
         next unless $status->{$k};
@@ -221,7 +254,7 @@ sub ps1_status {
 sub ps2_status {
     my $dell = shift;
 
-    my $status  = $dell->dell_pwr_state()  || {};
+    my $status  = $dell->dell_pwr_state() || $dell->dell_os10_pwr_state() || {};
 
     my $i = 0;
     foreach my $k (sort keys %$status) {
