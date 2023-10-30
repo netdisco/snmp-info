@@ -153,6 +153,7 @@ sub agg_ports_propvirtual {
   foreach my $idx ( keys %$ifStack ) {
       my ( $higher, $lower ) = split /\./, $idx;
       next if ( $higher == 0 or $lower == 0 );
+      next if !exists($ifType->{ $higher });
       if ( $ifType->{ $higher } eq 'propVirtual' ) {
 
           # lower needs also to be configured in pagpEthcOperationMode
