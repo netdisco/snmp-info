@@ -873,8 +873,12 @@ sub agg_ports {
 
   my $ret = {};
   foreach my $m (keys %$trunks) {
+      next unless $m and exists $ports->{$m} and defined $ports->{$m};
+
       my $skip = 0;
       while (my $s = unpack("x${skip}n2", $trunks->{$m})) {
+          next unless $s and exists $ports->{$s} and defined $ports->{$s};
+
           $ret->{ $ports->{$s} } = $ports->{$m};
           $skip += 2;
       }
