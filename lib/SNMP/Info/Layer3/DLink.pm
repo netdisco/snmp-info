@@ -78,9 +78,12 @@ sub layers {
     my $dlink = shift;
 
     my $layers = $dlink->SUPER::layers();
+    # Force at least L2 and L3
     if ($layers) {
         substr $layers, 5, 1, "1";
         substr $layers, 6, 1, "1";
+    } else {
+        $layers = "00000110";
     }
 
     return $layers;

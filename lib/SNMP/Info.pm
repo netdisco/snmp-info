@@ -2257,6 +2257,10 @@ sub device_type {
             if (
             $desc =~ /\bTeltonika.*RUT9\d{2}\b/);
 
+        # D-Link switches that don't return layers()
+        $objtype = 'SNMP::Info::Layer3::DLink'
+            if ( $desc =~ /\bD-Link\b.*\bSwitch\b/ );
+
         # Generic device classification based upon sysObjectID
         if ( defined($id) and $objtype eq 'SNMP::Info') {
             if ( defined $l3sysoidmap{$id} ) {
