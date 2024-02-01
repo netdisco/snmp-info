@@ -44,6 +44,7 @@ sub setup : Tests(setup) {
     #'_layers'      => 1,
     '_description' => 'HiveAP121, HiveOS 6.2r1 release build1924',
     '_ahSystemSerial' => '02511610111621',
+    '_ah_devmode' => 'AP305C',
     # not documented, oid '.1.3.6.1.4.1.26928.1.3.2.0'
     '_ah_mac' => '4018:b13a:4c40',
 
@@ -148,12 +149,16 @@ sub mac : Tests(4) {
   is($test->{info}->mac(), undef, q(No mac returns undef mac));
 }
 
-sub model : Tests(4) {
+sub model : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'model');
   is($test->{info}->model(),
-    'AP121', q(Model with 'Hive' in description is expected value));
+    'AP305C', q(Model ah_devmode is expected value));
+
+  delete $test->{info}{_ah_devmode};
+  is($test->{info}->model(),
+    'AP121', q(Model with 'Hive' in description when ahDeviceMode undef is expected value));
 
   $test->{info}{_description} = 'AP250, HiveOS 8.3r2 build-191018';
   is($test->{info}->model(),

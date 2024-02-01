@@ -51,11 +51,12 @@ $VERSION = '3.95';
     %SNMP::Info::Layer2::GLOBALS,
 
     # AH-SYSTEM-MIB
-    'serial' => 'ahSystemSerial',
-    'os_bin' => 'ahFirmwareVersion',
+    'serial'     => 'ahSystemSerial',
+    'os_bin'     => 'ahFirmwareVersion',
+    'ah_devmode' => 'ahDeviceMode',
     # not documented in the most recent mib,
     # but this is the base mac for the device
-    'ah_mac' => '.1.3.6.1.4.1.26928.1.3.2.0',
+    'ah_mac'     => '.1.3.6.1.4.1.26928.1.3.2.0',
 );
 
 %FUNCS = (
@@ -138,10 +139,14 @@ sub mac {
 }
 
 sub model {
-    my $aerohive = shift;
-    my $descr    = $aerohive->description();
+    my $aerohive  = shift;
+    my $descr     = $aerohive->description();
+    my $ahdevmode = $aerohive->ah_devmode();
 
-    if ( defined ($descr) && $descr =~ m/\b(?:Hive|)(AP\d+)\b/ix ) {
+    if ( defined ($ahdevmode) && $ahdevmode =~ m/\b(?:Hive|)(AP\d\w+)\b/ix ) {
+	return $1;
+    }
+    if ( defined ($descr) && $descr =~ m/\b(?:Hive|)(AP\d\w+[-])\b/ix ) {
         return $1;
     }
     return;
@@ -401,7 +406,8 @@ return the lowest numbered mac address.
 
 =item $aerohive->model()
 
-Returns the model extracted from C<sysDescr>.
+Returns C<ahDeviceMode> with the leading 'hive' stripped, if that's not
+available the model extracted from C<sysDescr>.
 
 =back
 
