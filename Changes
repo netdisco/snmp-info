@@ -1,3 +1,5 @@
+###changes at at revision 3.70: git diff 3.71 3.70 -- Changes
+
 Version 3.95 (2023-09-02)
 
   [ENHANCEMENTS]
@@ -24,6 +26,26 @@ Version 3.93 (2023-07-14)
   * #484 add Aggregate::agg_ports_ifstack to CiscoAgg::agg_ports
 
 Version 3.92 (2023-02-20)
+
+  [NEW FEATURES]
+
+  * #450 Hirschmann switch support
+  * #463 Netonix switch support
+
+  [ENHANCEMENTS]
+
+  * new() accepts hashref as well as bare list of arguments
+  # #475 additional recognition of Allied switches
+  * #477 additional recognition of Cisco 9xxx switches
+
+  [BUG FIXES]
+
+  * #460 always return $info instance to allow error() inspection
+  * #464 check in case non numeric key in cache befor inc
+  * #474 workaround for aruba-cx link aggregation
+
+Version 3.91 (2023-02-20)
+Version 3.90 (2023-02-20)
 
   [NEW FEATURES]
 
@@ -85,6 +107,7 @@ Version 3.85 (2022-08-02)
   * Add i_subinterfaces for VLAN subinterfaces in CiscoVTP
 
 Version 3.84 (2022-07-04)
+Version 3.83 (2022-07-04)
 
   [NEW FEATURES]
 
@@ -126,6 +149,7 @@ Version 3.80 (2021-09-22)
 
   * Fix typo in Whiterabbit.pm (#439)
 
+Version 3.79 (2021-09-22)
 Version 3.78 (2021-09-08)
 
   [BUG FIXES]
@@ -133,6 +157,8 @@ Version 3.78 (2021-09-08)
   * Fix undefined value error in Bridge.pm i_vlan
 
 Version 3.77 (2021-09-04)
+Version 3.76 (2021-09-03)
+Version 3.75 (2021-09-02)
 
   [ENHANCEMENTS]
 
