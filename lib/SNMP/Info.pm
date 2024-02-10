@@ -2671,8 +2671,8 @@ of i_description().  For others it is a human set field like i_name().
 
 =over
 
-=item $info->i_octet_in(), $info->i_octets_out(),
-$info->i_octet_in64(), $info->i_octets_out64()
+=item $info->i_octet_in(), $info->i_octet_out(),
+$info->i_octet_in64(), $info->i_octet_out64()
 
 Bandwidth.
 
