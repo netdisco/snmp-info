@@ -2167,7 +2167,7 @@ sub device_type {
             if ( $desc =~ /8-port .DSL Module\(Annex .\)/i );
 
         # Generic DOCSIS Cable Modem override
-        # If sysDesc follows the DOCSIS standard
+        # If sysDescr follows the DOCSIS standard
         $objtype = 'SNMP::Info::DocsisCM'
             if ( $desc =~ /<<HW_REV: .*; VENDOR: .*; BOOTR: .*; SW_REV: .*; MODEL: .*>>/i);
 
