@@ -1339,7 +1339,7 @@ also the C<cache()> and C<offline()> methods.
 
 Pass in a HashRef to prime the cache of retrieved data. Useful for creating an
 instance in C<Offline> mode from a previously dumped cache. See also the
-C<cache()> method to retrieve a cache after running actial queries.
+C<cache()> method to retrieve a cache after running actual queries.
 
 =item OTHER
 
@@ -2594,7 +2594,7 @@ sub i_speed_raw {
     my $info    = shift;
     my $partial = shift;
 
-    # remove the speed formating
+    # remove the speed formatting
     my $munge_i_speed = delete $info->{munge}{i_speed};
     # also for highspeed interfaces e.g. TenGigabitEthernet
     my $munge_i_speed_high = delete $info->{munge}{i_speed_high};
@@ -2611,7 +2611,7 @@ sub i_speed_raw {
         }
     }
 
-    # restore the speed formating
+    # restore the speed formatting
     $info->{munge}{i_speed} = $munge_i_speed;
     $info->{munge}{i_speed_high} = $munge_i_speed_high;
 
@@ -3878,10 +3878,10 @@ sub munge_ip {
     return join( '.', unpack( 'C4', $ip ) );
 }
 
-=item munge_inetaddress
+=item munge_inetaddress()
 
 Takes a binary IP address as defined by the SNMP InetAddress type and returns
-it as human readable string;
+it as human readable string.
 
 =cut
 
