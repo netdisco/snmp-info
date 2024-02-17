@@ -147,7 +147,7 @@ sub model {
     if ( defined ($ahdevmode) and length $ahdevmode ) {
 	return $ahdevmode;
     }
-    if ( defined ($descr) && $descr =~ m/\b(?:Hive|)(AP\d\w+[-])\b/ix ) {
+    if ( defined ($descr) && $descr =~ m/\b(?:Hive|)(AP\d[\w|\-]+)\b/ix ) {
         return $1;
     }
     return;
