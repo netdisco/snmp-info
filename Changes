@@ -1,5 +1,3 @@
-###changes at at revision 3.70: git diff 3.71 3.70 -- Changes
-
 Version 3.95 (2023-09-02)
 
   [ENHANCEMENTS]
@@ -209,6 +207,7 @@ Version 3.71 (2020-11-27)
   * #372, 375 fix lldp on nx-os6 (inphobia)
 
 Version 3.70 (2019-10-15)
+Version 3.69 (2019-10-15)
 
   [NEW FEATURES]
 
@@ -222,7 +221,7 @@ Version 3.70 (2019-10-15)
   * #352 duplex support for ciscosb
   * #353 report all vendor names in lowercase
   * #353 sprinkle "use warnings" and "use strict" around
-  * #358 prefer checkpoint mib over net-snmp mib (earendilfr) 
+  * #358 prefer checkpoint mib over net-snmp mib (earendilfr)
   * #359 detect newer ios-xe using codenames (Christoph Neuhaus)
   * #367 test using latest MIBs version dynamically
   * #370 smarter Q-BRIDGE handling
