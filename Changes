@@ -24,24 +24,6 @@ Version 3.93 (2023-07-14)
   * #484 add Aggregate::agg_ports_ifstack to CiscoAgg::agg_ports
 
 Version 3.92 (2023-02-20)
-
-  [NEW FEATURES]
-
-  * #450 Hirschmann switch support
-  * #463 Netonix switch support
-
-  [ENHANCEMENTS]
-
-  * new() accepts hashref as well as bare list of arguments
-  # #475 additional recognition of Allied switches
-  * #477 additional recognition of Cisco 9xxx switches
-
-  [BUG FIXES]
-
-  * #460 always return $info instance to allow error() inspection
-  * #464 check in case non numeric key in cache befor inc
-  * #474 workaround for aruba-cx link aggregation
-
 Version 3.91 (2023-02-20)
 Version 3.90 (2023-02-20)
 
@@ -133,6 +115,7 @@ Version 3.81 (2021-10-07)
   * #374 undefined error from H3C class
 
 Version 3.80 (2021-09-22)
+Version 3.79 (2021-09-22)
 
   [NEW FEATURES]
 
@@ -147,7 +130,6 @@ Version 3.80 (2021-09-22)
 
   * Fix typo in Whiterabbit.pm (#439)
 
-Version 3.79 (2021-09-22)
 Version 3.78 (2021-09-08)
 
   [BUG FIXES]
@@ -500,6 +482,7 @@ Version 3.53 (2018-03-22)
      dynamic methods not being added to the symbol table.
 
 version 3.52 (2018-03-19)
+version 3.51 (2018-03-17)
 
   [ENHANCEMENTS]
 
@@ -792,6 +775,7 @@ version 3.23 (2014-12-09)
       are not in operational trunking mode
 
 version 3.22 (2014-12-02)
+version 3.21 (2014-11-14)
 
    [NEW FEATURES]
 
