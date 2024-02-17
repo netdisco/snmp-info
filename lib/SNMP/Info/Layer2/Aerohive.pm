@@ -68,6 +68,7 @@ $VERSION = '3.95';
 
     # AH-INTERFACE-MIB::ahXIfTable
     'ah_i_ssidlist' => 'ahSSIDName',
+    'ah_i_name'     => 'ahIfName',
 
     # AH-INTERFACE-MIB::ahAssociationTable
     'cd11_txrate'      => 'ahClientLastTxRate',
@@ -150,6 +151,21 @@ sub model {
         return $1;
     }
     return;
+}
+
+sub interfaces {
+    my $aerohive   = shift;
+    my $interfaces = $aerohive->i_index();
+    my $i_descr    = $aerohive->ah_i_name();
+
+    my %if;
+    foreach my $iid ( keys %$interfaces ) {
+        my $descr = $i_descr->{$iid};
+        next unless defined $descr;
+        $if{$iid} = $descr if ( defined $descr and length $descr );
+    }
+
+    return \%if
 }
 
 sub i_ssidlist {
@@ -468,6 +484,11 @@ Returns client radio interface MAC addresses.
 =head2 Overrides
 
 =over
+
+=item $aerohive->interfaces()
+
+Only return interfaces which have an entry in ahIfName as well. This halts
+the creation of ghost interfaces.
 
 =item $aerohive->bp_index()
 

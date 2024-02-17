@@ -54,13 +54,14 @@ sub setup : Tests(setup) {
     '_i_description' => 1,
     '_i_mac'         => 1,
     '_ah_i_ssidlist' => 1,
+    '_ah_i_name'     => 1,
     '_cd11_txrate'   => 1,
     '_ah_c_vlan'     => 1,
     '_ah_c_ip'       => 1,
     'store'          => {
-      'i_index' => {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20},
+      'i_index' => {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20},
       'i_description' =>
-        {4 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 9 => 'mgt0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
+        {10 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 33 => 'mgt0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
       'i_mac' => {
 # mgt0 always has lowest mac, most of the time shared with eth0
 # wifi0 shares it's mac with wifi0.1 (same goes for wifi1/wifi1.1)
@@ -75,7 +76,9 @@ sub setup : Tests(setup) {
         20 => pack("H*", '4018B13A4C64')
       },
       'ah_i_ssidlist' =>
-        {4 => 'N/A', 6 => 'N/A', 7 => 'N/A', 9 => 'N/A', 15 => 'MyGuest', 16 => 'MyPrivate', 20 => 'MyGuest'},
+        {10 => 'N/A', 6 => 'N/A', 7 => 'N/A', 33 => 'N/A', 15 => 'MyGuest', 16 => 'MyPrivate', 20 => 'MyGuest'},
+      'ah_i_name' =>
+        {10 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 33 => 'mgt0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
       'cd11_txrate' => {
         '15.6.128.150.177.92.153.130' => 6000,
         '20.6.40.106.186.61.150.231'  => 58500,
@@ -179,6 +182,20 @@ sub serial : Tests(3) {
     q(No serial returns undef));
 }
 
+sub interfaces : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'interfaces');
+
+  my $expected = {6 => 'wifi0', 7 => 'wifi1', 10 => 'eth0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1', 33 => 'mgt0'};
+
+  cmp_deeply($test->{info}->interfaces(),
+    $expected, q(interfaces return expected values));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->interfaces(), {}, q(No data returns empty hash));
+}
+
 sub i_ssidlist : Tests(3) {
   my $test = shift;
 
@@ -256,13 +273,13 @@ sub bp_index : Tests(3) {
   # mock up the needed snmp data.
   my $data
     = {'IF-MIB::ifIndex' =>
-        {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20},
+        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20},
        'RFC1213-MIB::ifIndex' =>
-        {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20},
+        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20},
     };
   $test->{info}{sess}{Data} = $data;
 
-  my $expected = {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20};
+  my $expected = {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20};
 
   cmp_deeply($test->{info}->bp_index(),
     $expected, q(Bridge interface mapping has expected values));
