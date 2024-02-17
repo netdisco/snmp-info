@@ -144,8 +144,8 @@ sub model {
     my $descr     = $aerohive->description();
     my $ahdevmode = $aerohive->ah_devmode();
 
-    if ( defined ($ahdevmode) && $ahdevmode =~ m/\b(?:Hive|)(AP\d\w+)\b/ix ) {
-	return $1;
+    if ( defined ($ahdevmode) and length $ahdevmode ) {
+	return $ahdevmode;
     }
     if ( defined ($descr) && $descr =~ m/\b(?:Hive|)(AP\d\w+[-])\b/ix ) {
         return $1;
@@ -422,8 +422,8 @@ return the lowest numbered mac address.
 
 =item $aerohive->model()
 
-Returns C<ahDeviceMode> with the leading 'hive' stripped, if that's not
-available the model extracted from C<sysDescr>.
+Returns C<ahDeviceMode>, if that's not available the model
+is extracted from C<sysDescr>.
 
 =back
 
