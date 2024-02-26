@@ -1,7 +1,14 @@
   [ENHANCEMENTS]
 
-  * override ipv6_addr for Cisco ASA which doesn't conform to RFC4001
-    because it is missing the number of octets in InetAddress
+  * return IPv6 addresses of type ipv6z consistent by all IPv6 address methods
+
+  * add parse_inetaddress method to IPv6
+    for parsing RFC4001 InetAddress OIDs used to index the IP-MIB
+    and refactor its methods to use it where appropriate
+
+  * override parse_inetaddress for Cisco ASA which doesn't conform to RFC4001
+    because it is missing the number of octets in InetAddress, seems it's
+    indexed like the CISCO-IETF-IP-MIB
 
 Version 3.95 (2023-09-02)
 

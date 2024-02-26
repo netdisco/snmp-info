@@ -94,6 +94,75 @@ $VERSION = '3.95';
     'i6_n2p_phys_addr'  => \&SNMP::Info::munge_mac,
 );
 
+sub parse_inetaddress {
+    my ($info, $inetaddress) = @_;
+    my @parts = split(/\./, $inetaddress);
+    # first part is the InetAddressType
+    my $addrtype = shift @parts;
+    # second part is the number of octets
+    my $addrsize = shift @parts;
+    # InetAddressIPv4
+    if ($addrtype == 1) {
+        if ($addrsize == 4) {
+            my @ipv4 = @parts[0..3];
+            return {
+                type    => $addrtype,
+                address => join('.', @ipv4),
+            };
+        }
+        elsif ($info->debug()) {
+            print("invalid number of octets '$addrsize' for InetAddressIPv4 '$inetaddress'\n");
+        }
+    }
+    # InetAddressIPv6
+    if ($addrtype == 2) {
+        if ($addrsize == 16) {
+            my @ipv6 = @parts[0..16];
+            return {
+                type    => $addrtype,
+                address => join(':', unpack('(H4)*', pack('C*', @ipv6))),
+            };
+        }
+        elsif ($info->debug()) {
+            print("invalid number of octets '$addrsize' for InetAddressIPv4 '$inetaddress'\n");
+        }
+    }
+    # InetAddressIPv4z
+    elsif ($addrtype == 3) {
+        if ($addrsize == 8) {
+            my @ipv4 = @parts[0..3];
+            my @zone_identifier = @parts[4..7];
+            return {
+                type            => $addrtype,
+                address         => join('.', @ipv4),
+                zone_identifier => unpack("L", pack("C*", @zone_identifier)),
+            };
+        }
+        elsif ($info->debug()) {
+            print("invalid number of octets '$addrsize' for InetAddressIPv4z '$inetaddress'\n");
+        }
+    }
+    # InetAddressIPv6z
+    elsif ($addrtype == 4) {
+        if ($addrsize == 20) {
+            my @ipv6 = @parts[0..15];
+            my @zone_identifier = @parts[16..19];
+            return {
+                type            => $addrtype,
+                address         => join(':', unpack('(H4)*', pack('C*', @ipv6))),
+                zone_identifier => unpack("L", pack("C*", @zone_identifier)),
+            };
+        }
+        elsif ($info->debug()) {
+            print("invalid number of octets '$addrsize' for InetAddressIPv6z '$inetaddress'\n");
+        }
+    }
+    elsif ($info->debug()) {
+        print("unsupported address type '$addrtype'\n");
+    }
+
+    return;
+}
 
 sub ipv6_n2p_mac {
     my $info = shift;
@@ -255,13 +324,15 @@ sub ipv6_index {
         c_addr6_index   => CISCO,
     });
     return unless defined $ipv6_index;
-    foreach my $row (keys %$ipv6_index){
-        if ($row =~ /^(\d+)\.([\d\.]+)$/) {
-            my $addrtype = $1; my $v6addr = $2;
-            if ($addrtype == 2) { # IPv6
-		$return->{$row} = $ipv6_index->{$row};
-	    }
-	}
+    foreach my $row (keys %$ipv6_index) {
+        my $parsed_address = $info->parse_inetaddress($row);
+        next
+            unless defined $parsed_address;
+        # only IPv6 and IPv6z (with zone identifier)
+        next
+            unless $parsed_address->{type} == 2 || $parsed_address->{type} == 4;
+
+        $return->{$row} = $ipv6_index->{$row};
     }
     printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
@@ -276,12 +347,14 @@ sub ipv6_type {
     });
     return unless defined $ipv6_type;
     foreach my $row (keys %$ipv6_type){
-        if ($row =~ /^(\d+)\.([\d\.]+)$/) {
-            my $addrtype = $1; my $v6addr = $2;
-            if ($addrtype == 2) { # IPv6
-		$return->{$row} = $ipv6_type->{$row};
-	    }
-	}
+        my $parsed_address = $info->parse_inetaddress($row);
+        next
+            unless defined $parsed_address;
+        # only IPv6 and IPv6z (with zone identifier)
+        next
+            unless $parsed_address->{type} == 2 || $parsed_address->{type} == 4;
+
+         $return->{$row} = $ipv6_type->{$row};
     }
     printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
@@ -298,7 +371,8 @@ sub ipv6_pfx_origin {
     foreach my $row (keys %$ipv6_pfx_origin) {
         if ($row =~ /^(\d+)\.(\d+)\.([\d\.]+)\.(\d+)$/) {
             my $ifindex = $1; my $type = $2; my $pfx = $3; my $len = $4;
-            if ($type == 2) { # IPv6
+            # only IPv6 and IPv6z (with zone identifier)
+            if ($type == 2 || $type == 4) {
                 $return->{$row} = $ipv6_pfx_origin->{$row};
             }
         }
@@ -316,11 +390,15 @@ sub ipv6_addr_prefix {
     });
     return unless defined $ipv6_addr_prefix;
     foreach my $row (keys %$ipv6_addr_prefix) {
-        if ($row =~ /^(\d+)\.[\d\.]+$/) {
-            my $type = $1;
-	    if (($type == 2) or ($type == 4)) { # IPv6
+        my $parsed_address = $info->parse_inetaddress($row);
+        next
+            unless defined $parsed_address;
+        # only IPv6 and IPv6z (with zone identifier)
+        next
+            unless $parsed_address->{type} == 2 || $parsed_address->{type} == 4;
+
         # Remove interface specific part from vrf interfaces
-        if ($row =~ /^((\d+\.){17}\d+)/) { $row = $1 }
+        if ($parsed_address->{type} == 4 && $row =~ /^((\d+\.){17}\d+)/) { $row = $1 }
         # Remove the OID part from the value
         my $val = $ipv6_addr_prefix->{$row};
         if ( $val =~ /^.+?((?:\d+\.){19}\d+)$/ ){
@@ -343,8 +421,7 @@ sub ipv6_addr_prefixlength {
     foreach my $row (keys %$ipv6_addr_prefix) {
         if ($row =~ /^(\d+)\.[\d\.]+$/) {
             my $type = $1;
-            # only IPv6 and IPv6z (with zone identifier)
-            if ($type == 2 || $type == 4) {
+            if ($type == 2 || $type == 4) { # IPv6 or IPv6z (with zone identifier)
                 # Remove interface specific part from vrf interfaces
                 if ($row =~ /^((\d+\.){17}\d+)/) { $row = $1 }
                 # Remove the OID part from the value
@@ -365,20 +442,14 @@ sub ipv6_addr {
     my $return = {};
     my $indexes = $info->ipv6_index();
     foreach my $row (keys %$indexes) {
-        my @parts = split(/\./, $row);
-        my $is_valid = 0;
-        if (scalar @parts == 18) {
-            my $addrtype = shift @parts;
-            $is_valid = 1;
-        } elsif (scalar @parts == 17) {
-            $is_valid = 1;
-        }
-        my $addrsize = shift @parts; # First element now is addrsize, should be 16
-        if ($is_valid && $addrsize == 16) {
-            $return->{$row} = join(':', unpack('(H4)*', pack('C*', @parts)));
-        } elsif ($info->debug()) {
-            printf("%s: unable to decode table index to IPv6 address. Raw data is [%s].\n", &_my_sub_name, $row);
-        }
+        my $parsed_address = $info->parse_inetaddress($row);
+        next
+            unless defined $parsed_address;
+        # only IPv6 and IPv6z (with zone identifier)
+        next
+            unless $parsed_address->{type} == 2 || $parsed_address->{type} == 4;
+
+        $return->{$row} = $parsed_address->{address};
     }
     return $return;
 }
@@ -553,6 +624,13 @@ Maps an address of type C<cInetNetToMediaNetAddressType> on interface C<ifIndex>
 
 Takes an octet stream (HEX-STRING) and returns a colon separated ASCII hex
 string.
+
+=item parse_inetaddress
+
+Parses an InetAddress as defined by INET-ADDRESS-MIB.
+
+Returns a hashref with the type as defined by InetAddressType, the textual
+address and optionally the zone_identifier.
 
 =back
 

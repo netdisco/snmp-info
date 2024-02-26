@@ -98,23 +98,53 @@ sub i_description {
     return $i_descr;
 }
 
-sub ipv6_addr {
-    my $info = shift;
-    my $return = {};
-    my $indexes = $info->ipv6_index();
-    foreach my $row (keys %$indexes) {
-        my @parts = split(/\./, $row);
-        my $addrtype = shift @parts;
-        # skip non IPv6 entries
-        next
-            if $addrtype != 2;
-        if (scalar @parts == 16) {
-            $return->{$row} = join(':', unpack('(H4)*', pack('C*', @parts)));
-        } elsif ($info->debug()) {
-            printf("%s: unable to decode table index to IPv6 address. Raw data is [%s].\n", &_my_sub_name, $row);
-        }
+sub parse_inetaddress {
+    my ($info, $inetaddress) = @_;
+    my @parts = split(/\./, $inetaddress);
+    # first part is the InetAddressType
+    my $addrtype = shift @parts;
+    # second part should be the number of octets but is missing on Cisco ASA
+    # InetAddressIPv4
+    if ($addrtype == 1) {
+        my @ipv4 = @parts[0..3];
+        return {
+            type    => $addrtype,
+            address => join('.', @ipv4),
+        };
     }
-    return $return;
+    # InetAddressIPv6
+    if ($addrtype == 2) {
+        my @ipv6 = @parts[0..16];
+        return {
+            type    => $addrtype,
+            address => join(':', unpack('(H4)*', pack('C*', @ipv6))),
+        };
+    }
+    # InetAddressIPv4z
+    elsif ($addrtype == 3) {
+        my @ipv4 = @parts[0..3];
+        my @zone_identifier = @parts[4..7];
+        return {
+            type            => $addrtype,
+            address         => join('.', @ipv4),
+            zone_identifier => unpack("L", pack("C*", @zone_identifier)),
+        };
+    }
+    # InetAddressIPv6z
+    elsif ($addrtype == 4) {
+        my @ipv6 = @parts[0..15];
+        my @zone_identifier = @parts[16..19];
+        return {
+            type            => $addrtype,
+            address         => join(':', unpack('(H4)*', pack('C*', @ipv6))),
+            zone_identifier => unpack("L", pack("C*", @zone_identifier)),
+        };
+    }
+    elsif ($info->debug()) {
+        print("unsupported address type '$addrtype'\n");
+    }
+
+    return;
 }
 
 1;
