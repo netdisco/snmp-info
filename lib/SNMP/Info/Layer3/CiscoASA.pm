@@ -217,10 +217,11 @@ Overrides base interface description function in L<SNMP::Info> to return the
 configured interface name instead of "Adaptive Security Appliance
 '$configured interface name' interface".
 
-=item $asa->ipv6_addr()
+=item $asa->parse_inetaddress()
 
-Overrides base IPv6 address function in L<SNMP::Info::IPv6> because Cisco ASA
+Overrides base IPv6 method L<SNMP::Info::IPv6/parse_inetaddress> because Cisco ASA
 doesn't conform to RFC4001 4.1 because it is missing the number of octets.
+Instead it is indexed like the CISCO-IETF-IP-MIB.
 
 =back
 
