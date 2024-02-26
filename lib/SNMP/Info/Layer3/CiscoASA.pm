@@ -123,21 +123,17 @@ sub parse_inetaddress {
     # InetAddressIPv4z
     elsif ($addrtype == 3) {
         my @ipv4 = @parts[0..3];
-        my @zone_identifier = @parts[4..7];
         return {
             type            => $addrtype,
             address         => join('.', @ipv4),
-            zone_identifier => unpack("L", pack("C*", @zone_identifier)),
         };
     }
     # InetAddressIPv6z
     elsif ($addrtype == 4) {
         my @ipv6 = @parts[0..15];
-        my @zone_identifier = @parts[16..19];
         return {
             type            => $addrtype,
             address         => join(':', unpack('(H4)*', pack('C*', @ipv6))),
-            zone_identifier => unpack("L", pack("C*", @zone_identifier)),
         };
     }
     elsif ($info->debug()) {

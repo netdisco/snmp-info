@@ -1,3 +1,8 @@
+  [BUG FIXES]
+
+  * fix uninitialized warnings in CiscoASA parse_inetaddress
+    although the type is ipv6z the entry has no zone identifier
+
 Version 3.97 (2024-02-26)
   [BUG FIXES]
 
