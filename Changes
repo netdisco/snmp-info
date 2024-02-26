@@ -1,3 +1,4 @@
+Version 3.96 (2024-02-26)
   [ENHANCEMENTS]
 
   * return IPv6 addresses of type ipv6z consistent by all IPv6 address methods
