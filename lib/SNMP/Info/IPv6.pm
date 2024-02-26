@@ -251,9 +251,9 @@ sub ipv6_index {
     my $info = shift;
     my $return;
     my $ipv6_index = &_test_methods( $info, {
-	ip_addr6_index  => IPMIB,
-	c_addr6_index   => CISCO,
-				    });
+        ip_addr6_index  => IPMIB,
+        c_addr6_index   => CISCO,
+    });
     return unless defined $ipv6_index;
     foreach my $row (keys %$ipv6_index){
         if ($row =~ /^(\d+)\.([\d\.]+)$/) {
@@ -271,9 +271,9 @@ sub ipv6_type {
     my $info = shift;
     my $return;
     my $ipv6_type = &_test_methods( $info, {
-	ip_addr6_type  => IPMIB,
-	c_addr6_type   => CISCO,
-				    });
+        ip_addr6_type  => IPMIB,
+        c_addr6_type   => CISCO,
+    });
     return unless defined $ipv6_type;
     foreach my $row (keys %$ipv6_type){
         if ($row =~ /^(\d+)\.([\d\.]+)$/) {
@@ -291,17 +291,17 @@ sub ipv6_pfx_origin {
     my $info = shift;
     my $return;
     my $ipv6_pfx_origin = &_test_methods( $info, {
-	ip_pfx_origin  => IPMIB,
-	c_pfx_origin   => CISCO,
-				    });
+        ip_pfx_origin  => IPMIB,
+        c_pfx_origin   => CISCO,
+    });
     return unless defined $ipv6_pfx_origin;
-    foreach my $row (keys %$ipv6_pfx_origin){
+    foreach my $row (keys %$ipv6_pfx_origin) {
         if ($row =~ /^(\d+)\.(\d+)\.([\d\.]+)\.(\d+)$/) {
             my $ifindex = $1; my $type = $2; my $pfx = $3; my $len = $4;
             if ($type == 2) { # IPv6
-		$return->{$row} = $ipv6_pfx_origin->{$row};
-	    }
-	}
+                $return->{$row} = $ipv6_pfx_origin->{$row};
+            }
+        }
     }
     printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
@@ -311,24 +311,22 @@ sub ipv6_addr_prefix {
     my $info = shift;
     my $return;
     my $ipv6_addr_prefix = &_test_methods( $info, {
-	ip_addr6_pfx  => IPMIB,
-	c_addr6_pfx   => CISCO,
-				    });
+        ip_addr6_pfx  => IPMIB,
+        c_addr6_pfx   => CISCO,
+    });
     return unless defined $ipv6_addr_prefix;
-    foreach my $row (keys %$ipv6_addr_prefix){
+    foreach my $row (keys %$ipv6_addr_prefix) {
         if ($row =~ /^(\d+)\.[\d\.]+$/) {
             my $type = $1;
 	    if (($type == 2) or ($type == 4)) { # IPv6
-		# Remove interface specific part from vrf interfaces
-		if ($row =~ /^((\d+\.){17}\d+)/) { $row = $1 }
-		# Remove the OID part from the value
-		my $val = $ipv6_addr_prefix->{$row};
-		if ( $val =~ /^.+?((?:\d+\.){19}\d+)$/ ){
-		    $val = $1;
-		    $return->{$row} = $val;
-		}
-	    }
-	}
+        # Remove interface specific part from vrf interfaces
+        if ($row =~ /^((\d+\.){17}\d+)/) { $row = $1 }
+        # Remove the OID part from the value
+        my $val = $ipv6_addr_prefix->{$row};
+        if ( $val =~ /^.+?((?:\d+\.){19}\d+)$/ ){
+            $val = $1;
+            $return->{$row} = $val;
+        }
     }
     printf("%s: data comes from %s.\n", &_my_sub_name, $info->_method_used() ) if $info->debug();
     return $return;
@@ -345,7 +343,8 @@ sub ipv6_addr_prefixlength {
     foreach my $row (keys %$ipv6_addr_prefix) {
         if ($row =~ /^(\d+)\.[\d\.]+$/) {
             my $type = $1;
-            if (($type == 2) or ($type == 4)) { # IPv6
+            # only IPv6 and IPv6z (with zone identifier)
+            if ($type == 2 || $type == 4) {
                 # Remove interface specific part from vrf interfaces
                 if ($row =~ /^((\d+\.){17}\d+)/) { $row = $1 }
                 # Remove the OID part from the value
@@ -458,7 +457,7 @@ Jeroen van Ingen and Carlos Vicente
 
 =head1 DESCRIPTION
 
-The SNMP::Info::IPv6 class implements functions to for mapping IPv6 addresses
+The SNMP::Info::IPv6 class implements functions for mapping IPv6 addresses
 to MAC addresses, interfaces and more. It will use data from the F<IP-MIB>,
 F<IPV6-MIB>, or the F<CISCO-IETF-IP-MIB>, whichever is supported by the
 device.
@@ -469,7 +468,7 @@ device classes.
 For debugging purposes you can call this class directly as you would
 SNMP::Info
 
- my $info = new SNMP::Info::IPv6 (...);
+ my $info = SNMP::Info::IPv6->new(...);
 
 =head2 Inherited Classes
 
