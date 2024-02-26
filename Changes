@@ -1,3 +1,9 @@
+  [BUG FIXES]
+
+  * fix invalid IPv6 addresses returned by ipv6_addr
+    for entries without a zone identifier
+    caused by off-by-one error in parse_inetaddress
+
 Version 3.96 (2024-02-26)
   [ENHANCEMENTS]
 

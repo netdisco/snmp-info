@@ -114,7 +114,7 @@ sub parse_inetaddress {
     }
     # InetAddressIPv6
     if ($addrtype == 2) {
-        my @ipv6 = @parts[0..16];
+        my @ipv6 = @parts[0..15];
         return {
             type    => $addrtype,
             address => join(':', unpack('(H4)*', pack('C*', @ipv6))),
