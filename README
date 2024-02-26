@@ -1285,7 +1285,7 @@ USAGE
 	Pass in a HashRef to prime the cache of retrieved data. Useful for
 	creating an instance in Offline mode from a previously dumped
 	cache. See also the cache() method to retrieve a cache after
-	running actial queries.
+	running actual queries.
 
       OTHER
 
@@ -1632,8 +1632,8 @@ USAGE
 
  Interface Statistics
 
-    $info->i_octet_in(), $info->i_octets_out(), $info->i_octet_in64(),
-    $info->i_octets_out64()
+    $info->i_octet_in(), $info->i_octet_out(), $info->i_octet_in64(),
+    $info->i_octet_out64()
 
       Bandwidth.
 
@@ -2331,10 +2331,10 @@ SNMP::INFO INTERNALS
 
       Takes a binary IP and makes it dotted ASCII.
 
-    munge_inetaddress
+    munge_inetaddress()
 
       Takes a binary IP address as defined by the SNMP InetAddress type and
-      returns it as human readable string;
+      returns it as human readable string.
 
     munge_mac()
 
