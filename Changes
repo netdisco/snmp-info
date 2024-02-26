@@ -1,3 +1,8 @@
+  [ENHANCEMENTS]
+
+  * override ipv6_addr for Cisco ASA which doesn't conform to RFC4001
+    because it is missing the number of octets in InetAddress
+
 Version 3.95 (2023-09-02)
 
   [ENHANCEMENTS]

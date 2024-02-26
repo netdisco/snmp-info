@@ -98,6 +98,25 @@ sub i_description {
     return $i_descr;
 }
 
+sub ipv6_addr {
+    my $info = shift;
+    my $return = {};
+    my $indexes = $info->ipv6_index();
+    foreach my $row (keys %$indexes) {
+        my @parts = split(/\./, $row);
+        my $addrtype = shift @parts;
+        # skip non IPv6 entries
+        next
+            if $addrtype != 2;
+        if (scalar @parts == 16) {
+            $return->{$row} = join(':', unpack('(H4)*', pack('C*', @parts)));
+        } elsif ($info->debug()) {
+            printf("%s: unable to decode table index to IPv6 address. Raw data is [%s].\n", &_my_sub_name, $row);
+        }
+    }
+    return $return;
+}
+
 1;
 __END__
 
@@ -167,6 +186,11 @@ Overrides base mac function in L<SNMP::Info::Layer3>.
 Overrides base interface description function in L<SNMP::Info> to return the
 configured interface name instead of "Adaptive Security Appliance
 '$configured interface name' interface".
+
+=item $asa->ipv6_addr()
+
+Overrides base IPv6 address function in L<SNMP::Info::IPv6> because Cisco ASA
+doesn't conform to RFC4001 4.1 because it is missing the number of octets.
 
 =back
 
