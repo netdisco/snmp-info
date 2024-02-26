@@ -1,3 +1,4 @@
+Version 3.97 (2024-02-26)
   [BUG FIXES]
 
   * fix invalid IPv6 addresses returned by ipv6_addr

@@ -39,7 +39,7 @@ use SNMP::Info::Layer2;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.96';
+$VERSION = '3.97';
 
 %MIBS = (%SNMP::Info::Layer2::MIBS, 'SIXNET-MIB' => 'sxid',);
 
