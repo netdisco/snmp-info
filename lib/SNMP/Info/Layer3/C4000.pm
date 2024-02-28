@@ -43,7 +43,7 @@ use SNMP::Info::MAU;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.97';
+$VERSION = '3.970001';
 
 %MIBS = (
     %SNMP::Info::MAU::MIBS,

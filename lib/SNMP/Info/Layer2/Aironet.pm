@@ -48,7 +48,7 @@ use SNMP::Info::IEEE802dot11;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.97';
+$VERSION = '3.970001';
 
 %GLOBALS = (
     %SNMP::Info::IEEE802dot11::GLOBALS,

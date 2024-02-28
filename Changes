@@ -1,3 +1,4 @@
+Version 3.970001 (2024-02-28)
   [BUG FIXES]
 
   * fix uninitialized warnings in CiscoASA parse_inetaddress
