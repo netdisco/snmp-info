@@ -49,6 +49,10 @@ this should preserve spaces in the issue tracker and make troubleshooting quicke
 * Operating System Version:
 * Snmpwalk output of .1.3.6.1.2.1.1:
 
+<!--- if the device is can be contacted by netdisco an snmp snapshot helps out a lot -->
+<!--- procedure: https://github.com/netdisco/netdisco/wiki/Snapshot#share-a-snapshot -->
+<!--- do note that the following command might contain sensitive info -->
+
 
 ## Your Environment
 <!--- Include as many relevant details about the environment you experienced the bug in -->
