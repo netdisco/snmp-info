@@ -46,7 +46,7 @@ use SNMP::Info::FDP;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.95';
+$VERSION = '3.970001';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -56,7 +56,7 @@ $VERSION = '3.95';
     'FOUNDRY-SN-AGENT-MIB'        => 'snChasPwrSupplyDescription',
     'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snSwGroupOperMode',
     'FOUNDRY-SN-STACKING-MIB'     => 'snStackingOperUnitRole',
-    'FOUNDRY-POE-MIB'             => 'snAgentPoeGblPowerCapacityTotal',
+    'FDRY-POE-MIB'                => 'snAgentPoeGblPowerCapacityTotal',
     'BROCADE-PRODUCTS-MIB'        => 'brocadeProducts',
 );
 
@@ -68,7 +68,9 @@ $VERSION = '3.95';
     'chassis'    => 'entPhysicalDescr.1',
     'temp'       => 'snChasActualTemperature',
     'ps1_type'   => 'snChasPwrSupplyDescription.1',
+    'ps2_type'   => 'snChasPwrSupplyDescription.2',
     'ps1_status' => 'snChasPwrSupplyOperStatus.1',
+    'ps2_status' => 'snChasPwrSupplyOperStatus.2',
     'fan'        => 'snChasFanOperStatus.1',
     'img_ver'    => 'snAgImgVer',
     'ch_serial'  => 'snChasSerNum',
@@ -85,6 +87,9 @@ $VERSION = '3.95';
     'sw_duplex' => 'snSwPortInfoChnMode',
     'sw_type'   => 'snSwPortInfoMediaType',
     'sw_speed'  => 'snSwPortInfoSpeed',
+
+    # FOUNDRY-SN-SWITCH-GROUP-MIB
+    #
 
     # FOUNDRY-SN-AGENT-MIB::snAgentConfigModule2Table
     'ag_mod2_type' => 'snAgentConfigModule2Type',
@@ -912,8 +917,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::Foundry - SNMP Interface to Brocade (Foundry) Network
-Devices
+SNMP::Info::Layer3::Foundry - SNMP Interface to Ruckus (Brocade / Foundry Networks)
+ICX switches.
 
 =head1 AUTHOR
 
@@ -937,8 +942,9 @@ Max Baker
 
 =head1 DESCRIPTION
 
-Provides abstraction to information obtainable from Brocade (Foundry) Networks
-devices through SNMP. See inherited classes' documentation for inherited methods.
+Provides abstraction to information obtainable from Ruckus ICX switches (Brocade
+/ Foundry Networks) devices through SNMP.
+See inherited classes' documentation for inherited methods.
 
 =head2 Inherited Classes
 
@@ -964,7 +970,7 @@ devices through SNMP. See inherited classes' documentation for inherited methods
 
 =item F<FOUNDRY-SN-STACKING-MIB>
 
-=item F<FOUNDRY-POE-MIB>
+=item F<FDRY-POE-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -1022,15 +1028,27 @@ Returns the chassis temperature
 
 =item $foundry->ps1_type()
 
-Returns the Description for the power supply
+Returns the description for the first power supply.
 
 (C<snChasPwrSupplyDescription.1>)
 
 =item $foundry->ps1_status()
 
-Returns the status of the power supply.
+Returns the status of the first power supply.
 
 (C<snChasPwrSupplyOperStatus.1>)
+
+=item $foundry->ps2_type()
+
+Returns the description for the second power supply.
+
+(C<snChasPwrSupplyDescription.2>)
+
+=item $foundry->ps2_status()
+
+Returns the status of the second power supply.
+
+(C<snChasPwrSupplyOperStatus.2>)
 
 =item $foundry->fan()
 
@@ -1255,7 +1273,7 @@ Returns reference to hash.  Current Port Speed.
 =head2 Power Over Ethernet Port Table
 
 These methods emulate the F<POWER-ETHERNET-MIB> Power Source Entity (PSE)
-Port Table C<pethPsePortTable> methods using the F<FOUNDRY-POE-MIB> Power
+Port Table C<pethPsePortTable> methods using the F<FDRY-POE-MIB> Power
 over Ethernet Port Table C<snAgentPoePortTable>.
 
 =over
@@ -1296,7 +1314,7 @@ The power, in milliwatts, that the port is delivering.
 =head2 Power Over Ethernet Module Table
 
 These methods emulate the F<POWER-ETHERNET-MIB> Main Power Source Entity
-(PSE) Table C<pethMainPseTable> methods using the F<FOUNDRY-POE-MIB> Power
+(PSE) Table C<pethMainPseTable> methods using the F<FDRY-POE-MIB> Power
 over Ethernet Port Table C<snAgentPoeModuleTable >.
 
 =over

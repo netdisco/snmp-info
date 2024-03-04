@@ -39,7 +39,7 @@ use SNMP::Info::CDP;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD);
 
-$VERSION = '3.95';
+$VERSION = '3.970001';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -48,8 +48,8 @@ $VERSION = '3.95';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
-    'h_serial_number' => 'hmSysGroupTable.hmSysGroupEntry.hmSysGroupSerialNum.1', 
-    'os_version'      => 'hmSysVersion.0'
+    'h_serial_number' => 'hmSysGroupTable.hmSysGroupEntry.hmSysGroupSerialNum.1',
+    'os_version'      => 'hmSysVersion.0',
 );
 
 %FUNCS = (
@@ -61,7 +61,7 @@ $VERSION = '3.95';
 );
 
 sub os {
-    return 'Hirschmann';
+    return 'hirschmann';
 }
 
 sub serial {
@@ -90,7 +90,7 @@ sub os_ver {
 }
 
 sub vendor {
-    return 'Hirschmann';
+    return 'hirschmann';
 }
 
 sub model {
@@ -131,7 +131,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Hirschamnn - SNMP Interface to L2 Hirschmann Switches
+SNMP::Info::Layer2::Hirschmann - SNMP Interface to L2 Hirschmann Switches
 
 =head1 AUTHOR
 
@@ -162,17 +162,19 @@ Subclass for Hirschmann L2 devices
 
 =item SNMP::Info::Layer2
 
+=item SNMP::Info::CDP
+
 =back
 
 =head2 Required MIBs
 
 =over
 
-=item F<>
+=item F<HMPRIV-MGMT-SNMP-MIB>
 
-=item Inherited Classes' MIBs
+=item Inherited Classes
 
-See L<SNMP::Info::Layer2/"Required MIBs"> for its own MIB requirements.
+MIBs required by the inherited classes listed above.
 
 =back
 

@@ -1,3 +1,28 @@
+Version 3.970001 (2024-02-28)
+  [BUG FIXES]
+
+  * fix uninitialized warnings in CiscoASA parse_inetaddress
+    although the type is ipv6z the entry has no zone identifier
+
+Version 3.97 (2024-02-26)
+  [BUG FIXES]
+
+  * fix invalid IPv6 addresses returned by ipv6_addr
+    for entries without a zone identifier
+    caused by off-by-one error in parse_inetaddress
+
+Version 3.96 (2024-02-26)
+  [ENHANCEMENTS]
+
+  * return IPv6 addresses of type ipv6z consistent by all IPv6 address methods
+  * add parse_inetaddress method to IPv6
+    for parsing RFC4001 InetAddress OIDs used to index the IP-MIB
+    and refactor its methods to use it where appropriate
+  * override parse_inetaddress for Cisco ASA which doesn't conform to RFC4001
+    because it is missing the number of octets in InetAddress, seems it's
+    indexed like the CISCO-IETF-IP-MIB
+  * #512 add psu2 to foundry, poe mib has been renamed (needs netdisco-mibs 4.039)
+
 Version 3.95 (2023-09-02)
 
   [ENHANCEMENTS]
@@ -24,6 +49,8 @@ Version 3.93 (2023-07-14)
   * #484 add Aggregate::agg_ports_ifstack to CiscoAgg::agg_ports
 
 Version 3.92 (2023-02-20)
+Version 3.91 (2023-02-20)
+Version 3.90 (2023-02-20)
 
   [NEW FEATURES]
 
@@ -85,6 +112,7 @@ Version 3.85 (2022-08-02)
   * Add i_subinterfaces for VLAN subinterfaces in CiscoVTP
 
 Version 3.84 (2022-07-04)
+Version 3.83 (2022-07-04)
 
   [NEW FEATURES]
 
@@ -112,6 +140,7 @@ Version 3.81 (2021-10-07)
   * #374 undefined error from H3C class
 
 Version 3.80 (2021-09-22)
+Version 3.79 (2021-09-22)
 
   [NEW FEATURES]
 
@@ -133,6 +162,8 @@ Version 3.78 (2021-09-08)
   * Fix undefined value error in Bridge.pm i_vlan
 
 Version 3.77 (2021-09-04)
+Version 3.76 (2021-09-03)
+Version 3.75 (2021-09-02)
 
   [ENHANCEMENTS]
 
@@ -183,6 +214,7 @@ Version 3.71 (2020-11-27)
   * #372, 375 fix lldp on nx-os6 (inphobia)
 
 Version 3.70 (2019-10-15)
+Version 3.69 (2019-10-15)
 
   [NEW FEATURES]
 
@@ -196,7 +228,7 @@ Version 3.70 (2019-10-15)
   * #352 duplex support for ciscosb
   * #353 report all vendor names in lowercase
   * #353 sprinkle "use warnings" and "use strict" around
-  * #358 prefer checkpoint mib over net-snmp mib (earendilfr) 
+  * #358 prefer checkpoint mib over net-snmp mib (earendilfr)
   * #359 detect newer ios-xe using codenames (Christoph Neuhaus)
   * #367 test using latest MIBs version dynamically
   * #370 smarter Q-BRIDGE handling
@@ -475,6 +507,7 @@ Version 3.53 (2018-03-22)
      dynamic methods not being added to the symbol table.
 
 version 3.52 (2018-03-19)
+version 3.51 (2018-03-17)
 
   [ENHANCEMENTS]
 
@@ -767,6 +800,7 @@ version 3.23 (2014-12-09)
       are not in operational trunking mode
 
 version 3.22 (2014-12-02)
+version 3.21 (2014-11-14)
 
    [NEW FEATURES]
 

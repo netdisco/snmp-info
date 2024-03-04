@@ -44,7 +44,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.95';
+$VERSION = '3.970001';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS, %SNMP::Info::CiscoStats::MIBS, );
 
@@ -96,6 +96,51 @@ sub i_description {
     }
 
     return $i_descr;
+}
+
+sub parse_inetaddress {
+    my ($info, $inetaddress) = @_;
+    my @parts = split(/\./, $inetaddress);
+    # first part is the InetAddressType
+    my $addrtype = shift @parts;
+    # second part should be the number of octets but is missing on Cisco ASA
+    # InetAddressIPv4
+    if ($addrtype == 1) {
+        my @ipv4 = @parts[0..3];
+        return {
+            type    => $addrtype,
+            address => join('.', @ipv4),
+        };
+    }
+    # InetAddressIPv6
+    if ($addrtype == 2) {
+        my @ipv6 = @parts[0..15];
+        return {
+            type    => $addrtype,
+            address => join(':', unpack('(H4)*', pack('C*', @ipv6))),
+        };
+    }
+    # InetAddressIPv4z
+    elsif ($addrtype == 3) {
+        my @ipv4 = @parts[0..3];
+        return {
+            type            => $addrtype,
+            address         => join('.', @ipv4),
+        };
+    }
+    # InetAddressIPv6z
+    elsif ($addrtype == 4) {
+        my @ipv6 = @parts[0..15];
+        return {
+            type            => $addrtype,
+            address         => join(':', unpack('(H4)*', pack('C*', @ipv6))),
+        };
+    }
+    elsif ($info->debug()) {
+        print("unsupported address type '$addrtype'\n");
+    }
+
+    return;
 }
 
 1;
@@ -167,6 +212,12 @@ Overrides base mac function in L<SNMP::Info::Layer3>.
 Overrides base interface description function in L<SNMP::Info> to return the
 configured interface name instead of "Adaptive Security Appliance
 '$configured interface name' interface".
+
+=item $asa->parse_inetaddress()
+
+Overrides base IPv6 method L<SNMP::Info::IPv6/parse_inetaddress> because Cisco ASA
+doesn't conform to RFC4001 4.1 because it is missing the number of octets.
+Instead it is indexed like the CISCO-IETF-IP-MIB.
 
 =back
 
