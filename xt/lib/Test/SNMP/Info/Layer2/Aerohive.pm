@@ -43,10 +43,11 @@ sub setup : Tests(setup) {
     # Example walk had no sysServices returned
     #'_layers'      => 1,
     '_description' => 'HiveAP121, HiveOS 6.2r1 release build1924',
-    '_ahSystemSerial' => '02511610111621',
-    '_ah_devmode' => 'AP305C',
+    '_os_bin'      => 'HiveOS 10.6r6 build-8f57188',
+    '_ah_serial'   => '02511610111621',
+    '_ah_devmode'  => 'AP305C-1',
     # not documented, oid '.1.3.6.1.4.1.26928.1.3.2.0'
-    '_ah_mac' => '4018:b13a:4c40',
+    '_ah_mac'      => '4018:b13a:4c40',
 
     # AH-SMI-MIB::ahProduct
     '_id'            => '.1.3.6.1.4.1.26928.1',
@@ -120,10 +121,13 @@ sub os : Tests(2) {
   is($test->{info}->os(), 'hiveos', q(OS returns 'hiveos'));
 }
 
-sub os_ver : Tests(4) {
+sub os_ver : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'os_ver');
+  is($test->{info}->os_ver(), '10.6r6', q(OS version from ahFirmwareVersion is expected value));
+
+  delete $test->{info}{_os_bin};
   is($test->{info}->os_ver(), '6.2r1', q(OS version is expected value));
 
   $test->{info}{_description} = 'AP250, HiveOS 10.0r8 build-236132';
@@ -157,15 +161,15 @@ sub model : Tests(5) {
 
   can_ok($test->{info}, 'model');
   is($test->{info}->model(),
-    'AP305C', q(Model ah_devmode is expected value));
+    'AP305C-1', q(Model from ah_devmode is expected value));
 
   delete $test->{info}{_ah_devmode};
   is($test->{info}->model(),
-    'AP121', q(Model with 'Hive' in description when ahDeviceMode undef is expected value));
+    'AP121', q(Model with 'Hive' in description with no ah_devmode is expected value));
 
   $test->{info}{_description} = 'AP250, HiveOS 8.3r2 build-191018';
   is($test->{info}->model(),
-    'AP250', q(Model without 'Hive' in description is expected value));
+    'AP250', q(Model without 'Hive' in description with no ah_devmode is expected value));
 
   $test->{info}->clear_cache();
   is($test->{info}->model(), undef, q(No description returns undef model));

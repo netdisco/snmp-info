@@ -51,7 +51,7 @@ $VERSION = '3.970001';
     %SNMP::Info::Layer2::GLOBALS,
 
     # AH-SYSTEM-MIB
-    'serial'     => 'ahSystemSerial',
+    'ah_serial'  => 'ahSystemSerial',
     'os_bin'     => 'ahFirmwareVersion',
     'ah_devmode' => 'ahDeviceMode',
     # not documented in the most recent mib,
@@ -102,14 +102,18 @@ sub os {
 sub serial {
     my $aerohive = shift;
 
-    return $aerohive->ahSystemSerial()
+    return $aerohive->ah_serial()
       || $aerohive->SUPER::serial();
 }
 
 sub os_ver {
     my $aerohive = shift;
+    my $ah_ver   = $aerohive->os_bin();
     my $descr    = $aerohive->description();
 
+    if ( defined ($ah_ver) && $ah_ver =~ m/\bHiveOS\s(\d+\.\w+)\b/ix ) {
+        return $1;
+    }
     if ( defined ($descr) && $descr =~ m/\bHiveOS\s(\d+\.\w+)\b/ix ) {
         return $1;
     }
@@ -145,9 +149,9 @@ sub model {
     my $ahdevmode = $aerohive->ah_devmode();
 
     if ( defined ($ahdevmode) and length $ahdevmode ) {
-	return $ahdevmode;
+        return $ahdevmode;
     }
-    if ( defined ($descr) && $descr =~ m/\b(?:Hive|)(AP\d[\w|\-]+)\b/ix ) {
+    if ( defined ($descr) && $descr =~ m/\b(?:Hive|)(AP\d+)\b/ix ) {
         return $1;
     }
     return;
@@ -404,15 +408,13 @@ Returns 'hiveos'.
 
 =item $aerohive->serial()
 
-Returns the serial number extracted from C<ahSystemSerial>.
+Returns the serial number extracted from C<ahSystemSerial> or defer
+to imported modules.
 
 =item $aerohive->os_ver()
 
-Returns the OS version extracted from C<sysDescr>.
-
-=item $aerohive->os_bin()
-
-Returns the firmware version extracted from C<ahFirmwareVersion>.
+Returns the OS version extracted from C<ahFirmwareVersion> or
+C<sysDescr> as fallback.
 
 =item $aerohive->mac()
 
