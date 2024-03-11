@@ -51,11 +51,12 @@ $VERSION = '3.970001';
     %SNMP::Info::Layer2::GLOBALS,
 
     # AH-SYSTEM-MIB
-    'serial' => 'ahSystemSerial',
-    'os_bin' => 'ahFirmwareVersion',
+    'ah_serial'  => 'ahSystemSerial',
+    'os_bin'     => 'ahFirmwareVersion',
+    'ah_devmode' => 'ahDeviceMode',
     # not documented in the most recent mib,
     # but this is the base mac for the device
-    'ah_mac' => '.1.3.6.1.4.1.26928.1.3.2.0',
+    'ah_mac'     => '.1.3.6.1.4.1.26928.1.3.2.0',
 );
 
 %FUNCS = (
@@ -67,6 +68,7 @@ $VERSION = '3.970001';
 
     # AH-INTERFACE-MIB::ahXIfTable
     'ah_i_ssidlist' => 'ahSSIDName',
+    'ah_i_name'     => 'ahIfName',
 
     # AH-INTERFACE-MIB::ahAssociationTable
     'cd11_txrate'      => 'ahClientLastTxRate',
@@ -100,14 +102,18 @@ sub os {
 sub serial {
     my $aerohive = shift;
 
-    return $aerohive->ahSystemSerial()
+    return $aerohive->ah_serial()
       || $aerohive->SUPER::serial();
 }
 
 sub os_ver {
     my $aerohive = shift;
+    my $ah_ver   = $aerohive->os_bin();
     my $descr    = $aerohive->description();
 
+    if ( defined ($ah_ver) && $ah_ver =~ m/\bHiveOS\s(\d+\.\w+)\b/ix ) {
+        return $1;
+    }
     if ( defined ($descr) && $descr =~ m/\bHiveOS\s(\d+\.\w+)\b/ix ) {
         return $1;
     }
@@ -138,13 +144,32 @@ sub mac {
 }
 
 sub model {
-    my $aerohive = shift;
-    my $descr    = $aerohive->description();
+    my $aerohive  = shift;
+    my $descr     = $aerohive->description();
+    my $ahdevmode = $aerohive->ah_devmode();
 
+    if ( defined ($ahdevmode) and length $ahdevmode ) {
+        return $ahdevmode;
+    }
     if ( defined ($descr) && $descr =~ m/\b(?:Hive|)(AP\d+)\b/ix ) {
         return $1;
     }
     return;
+}
+
+sub interfaces {
+    my $aerohive   = shift;
+    my $interfaces = $aerohive->i_index();
+    my $i_descr    = $aerohive->ah_i_name();
+
+    my %if;
+    foreach my $iid ( keys %$interfaces ) {
+        my $descr = $i_descr->{$iid};
+        next unless defined $descr;
+        $if{$iid} = $descr if ( defined $descr and length $descr );
+    }
+
+    return \%if
 }
 
 sub i_ssidlist {
@@ -383,15 +408,13 @@ Returns 'hiveos'.
 
 =item $aerohive->serial()
 
-Returns the serial number extracted from C<ahSystemSerial>.
+Returns the serial number extracted from C<ahSystemSerial> or defer
+to imported modules.
 
 =item $aerohive->os_ver()
 
-Returns the OS version extracted from C<sysDescr>.
-
-=item $aerohive->os_bin()
-
-Returns the firmware version extracted from C<ahFirmwareVersion>.
+Returns the OS version extracted from C<ahFirmwareVersion> or
+C<sysDescr> as fallback.
 
 =item $aerohive->mac()
 
@@ -401,7 +424,8 @@ return the lowest numbered mac address.
 
 =item $aerohive->model()
 
-Returns the model extracted from C<sysDescr>.
+Returns C<ahDeviceMode>, if that's not available the model
+is extracted from C<sysDescr>.
 
 =back
 
@@ -462,6 +486,11 @@ Returns client radio interface MAC addresses.
 =head2 Overrides
 
 =over
+
+=item $aerohive->interfaces()
+
+Only return interfaces which have an entry in ahIfName as well. This halts
+the creation of ghost interfaces.
 
 =item $aerohive->bp_index()
 

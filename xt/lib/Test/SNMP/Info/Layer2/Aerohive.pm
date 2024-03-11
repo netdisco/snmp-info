@@ -43,9 +43,11 @@ sub setup : Tests(setup) {
     # Example walk had no sysServices returned
     #'_layers'      => 1,
     '_description' => 'HiveAP121, HiveOS 6.2r1 release build1924',
-    '_ahSystemSerial' => '02511610111621',
+    '_os_bin'      => 'HiveOS 10.6r6 build-8f57188',
+    '_ah_serial'   => '02511610111621',
+    '_ah_devmode'  => 'AP305C-1',
     # not documented, oid '.1.3.6.1.4.1.26928.1.3.2.0'
-    '_ah_mac' => '4018:b13a:4c40',
+    '_ah_mac'      => '4018:b13a:4c40',
 
     # AH-SMI-MIB::ahProduct
     '_id'            => '.1.3.6.1.4.1.26928.1',
@@ -53,13 +55,14 @@ sub setup : Tests(setup) {
     '_i_description' => 1,
     '_i_mac'         => 1,
     '_ah_i_ssidlist' => 1,
+    '_ah_i_name'     => 1,
     '_cd11_txrate'   => 1,
     '_ah_c_vlan'     => 1,
     '_ah_c_ip'       => 1,
     'store'          => {
-      'i_index' => {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20},
+      'i_index' => {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20},
       'i_description' =>
-        {4 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 9 => 'mgt0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
+        {10 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 33 => 'mgt0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
       'i_mac' => {
 # mgt0 always has lowest mac, most of the time shared with eth0
 # wifi0 shares it's mac with wifi0.1 (same goes for wifi1/wifi1.1)
@@ -74,7 +77,9 @@ sub setup : Tests(setup) {
         20 => pack("H*", '4018B13A4C64')
       },
       'ah_i_ssidlist' =>
-        {4 => 'N/A', 6 => 'N/A', 7 => 'N/A', 9 => 'N/A', 15 => 'MyGuest', 16 => 'MyPrivate', 20 => 'MyGuest'},
+        {10 => 'N/A', 6 => 'N/A', 7 => 'N/A', 33 => 'N/A', 15 => 'MyGuest', 16 => 'MyPrivate', 20 => 'MyGuest'},
+      'ah_i_name' =>
+        {10 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 33 => 'mgt0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
       'cd11_txrate' => {
         '15.6.128.150.177.92.153.130' => 6000,
         '20.6.40.106.186.61.150.231'  => 58500,
@@ -116,10 +121,13 @@ sub os : Tests(2) {
   is($test->{info}->os(), 'hiveos', q(OS returns 'hiveos'));
 }
 
-sub os_ver : Tests(4) {
+sub os_ver : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'os_ver');
+  is($test->{info}->os_ver(), '10.6r6', q(OS version from ahFirmwareVersion is expected value));
+
+  delete $test->{info}{_os_bin};
   is($test->{info}->os_ver(), '6.2r1', q(OS version is expected value));
 
   $test->{info}{_description} = 'AP250, HiveOS 10.0r8 build-236132';
@@ -148,16 +156,20 @@ sub mac : Tests(4) {
   is($test->{info}->mac(), undef, q(No mac returns undef mac));
 }
 
-sub model : Tests(4) {
+sub model : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'model');
   is($test->{info}->model(),
-    'AP121', q(Model with 'Hive' in description is expected value));
+    'AP305C-1', q(Model from ah_devmode is expected value));
+
+  delete $test->{info}{_ah_devmode};
+  is($test->{info}->model(),
+    'AP121', q(Model with 'Hive' in description with no ah_devmode is expected value));
 
   $test->{info}{_description} = 'AP250, HiveOS 8.3r2 build-191018';
   is($test->{info}->model(),
-    'AP250', q(Model without 'Hive' in description is expected value));
+    'AP250', q(Model without 'Hive' in description with no ah_devmode is expected value));
 
   $test->{info}->clear_cache();
   is($test->{info}->model(), undef, q(No description returns undef model));
@@ -172,6 +184,20 @@ sub serial : Tests(3) {
   $test->{info}->clear_cache();
   is($test->{info}->serial(), undef,
     q(No serial returns undef));
+}
+
+sub interfaces : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'interfaces');
+
+  my $expected = {6 => 'wifi0', 7 => 'wifi1', 10 => 'eth0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1', 33 => 'mgt0'};
+
+  cmp_deeply($test->{info}->interfaces(),
+    $expected, q(interfaces return expected values));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->interfaces(), {}, q(No data returns empty hash));
 }
 
 sub i_ssidlist : Tests(3) {
@@ -251,13 +277,13 @@ sub bp_index : Tests(3) {
   # mock up the needed snmp data.
   my $data
     = {'IF-MIB::ifIndex' =>
-        {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20},
+        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20},
        'RFC1213-MIB::ifIndex' =>
-        {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20},
+        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20},
     };
   $test->{info}{sess}{Data} = $data;
 
-  my $expected = {4 => 4, 6 => 6, 7 => 7, 9 => 9, 15 => 15, 16 => 16, 20 => 20};
+  my $expected = {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20};
 
   cmp_deeply($test->{info}->bp_index(),
     $expected, q(Bridge interface mapping has expected values));
