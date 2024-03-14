@@ -176,6 +176,10 @@ Abstraction subclass for Fortinet network devices.
 
 =item F<FORTINET-CORE-MIB>
 
+=item F<FORTINET-FORTIAUTHENTICATOR-MIB>
+
+=item F<FORTINET-FORTIMANAGER-FORTIANALYZER-MIB>
+
 =item F<FORTINET-FORTIGATE-MIB>
 
 =item Inherited Classes' MIBs
