@@ -51,6 +51,8 @@ $VERSION = '3.970001';
     %SNMP::Info::Aggregate::MIBS,
     'FORTINET-CORE-MIB'      => 'fnSysSerial',
     'FORTINET-FORTIGATE-MIB' => 'fgVdMaxVdoms',
+    'FORTINET-FORTIMANAGER-FORTIANALYZER-MIB' => 'fmSysVersion',
+    'FORTINET-FORTIAUTHENTICATOR-MIB' => 'facSysVersion',
 );
 
 %GLOBALS = (
@@ -111,7 +113,7 @@ sub os {
 sub os_ver {
     my $fortinet = shift;
 
-    my $ver = $fortinet->fgSysVersion() || '';
+    my $ver = $fortinet->fgSysVersion() || $fortinet->fmSysVersion() || $fortinet->facSysVersion() || '';
 
     if ( $ver =~ /(\d+[\.\d]+)/ ) {
         return $1;
@@ -204,7 +206,11 @@ Returns 'fortios'
 
 =item $fortinet->os_ver()
 
-Returns the software version extracted from (C<systemVersion>).
+Returns the software version extracted from the Fortinet MIB in this order:
+
+(C<fgSysVersion>)
+(C<fmSysVersion>)
+(C<facSysVersion>)
 
 =item $fortinet->serial()
 
