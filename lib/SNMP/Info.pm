@@ -1057,6 +1057,12 @@ Subclass for redlion routers.
 
 See documentation in L<SNMP::Info::Layer3::Redlion> for details.
 
+=item SNMP::Info::Layer3::SilverPeak
+
+Subclass for SilverPeak devices.
+
+See documentation in L<SNMP::Info::Layer3::SilverPeak> for details.
+
 =item SNMP::Info::Layer3::Scalance
 
 Subclass for Siemens Scalance devices.
@@ -1800,6 +1806,7 @@ sub device_type {
         17163 => 'SNMP::Info::Layer3::Steelhead',
         19046 => 'SNMP::Info::Layer3::Lenovo',
         21091 => 'SNMP::Info::Layer2::Exinda',
+        23867 => 'SNMP::Info::Layer3::SilverPeak',
         25461 => 'SNMP::Info::Layer3::PaloAlto',
         25506 => 'SNMP::Info::Layer3::H3C',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
