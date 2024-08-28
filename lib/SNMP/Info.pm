@@ -768,6 +768,10 @@ See documentation in L<SNMP::Info::Layer3::AlteonAD> for details.
 
 See documentation in L<SNMP::Info::Layer3::Altiga> for details.
 
+=item SNMP::Info::Layer3::Meraki
+
+See documentation in L<SNMP::Info::Layer3::Meraki> for details.
+
 =item SNMP::Info::Layer3::Arista
 
 See documentation in L<SNMP::Info::Layer3::Arista> for details.
@@ -1811,6 +1815,7 @@ sub device_type {
         25506 => 'SNMP::Info::Layer3::H3C',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
         26928 => 'SNMP::Info::Layer2::Aerohive',
+        29671 => 'SNMP::Info::Layer3::Meraki',
         30065 => 'SNMP::Info::Layer3::Arista',
         30803 => 'SNMP::Info::Layer3::VyOS',
         35098 => 'SNMP::Info::Layer3::Pica8',
@@ -1830,7 +1835,7 @@ sub device_type {
         96    => 'SNMP::Info::Layer3::Whiterabbit',
         171   => 'SNMP::Info::Layer3::DLink',
         207   => 'SNMP::Info::Layer2::Allied',
-	248   => 'SNMP::Info::Layer2::Hirschmann',
+        248   => 'SNMP::Info::Layer2::Hirschmann',
         266   => 'SNMP::Info::Layer2::Nexans',
         664   => 'SNMP::Info::Layer2::Adtran',
         674   => 'SNMP::Info::Layer3::Dell',
