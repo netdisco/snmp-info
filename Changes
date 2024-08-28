@@ -1,3 +1,15 @@
+Version 3.971000 (2024-08-28)
+
+  [NEW FEATURES]
+
+  * #524 SilverPeak device support
+  * Layer3::Meraki class from Jeremiah Garmatter
+
+  [ENHANCEMENTS]
+
+  * #502 update SNMP::Info::Layer3::Fortinet
+  * #519 lots of improvements to Layer2::Aerohive
+
 Version 3.970001 (2024-02-28)
   [BUG FIXES]
 

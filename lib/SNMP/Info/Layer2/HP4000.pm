@@ -45,7 +45,7 @@ use SNMP::Info::CDP;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MODEL_MAP, %MUNGE);
 
-$VERSION = '3.970001';
+$VERSION = '3.971000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
