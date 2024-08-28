@@ -44,7 +44,7 @@ $VERSION = '3.970001';
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     'SILVERPEAK-MGMT-MIB'    => 'spsSystemVersion',
-    'SILVERPEAK-PRODUCTS-MIB' => 'spsProductModel',
+    'SILVERPEAK-PRODUCTS-MIB' => 'silverpeakProductsMIB',
 );
 
 %GLOBALS = (
