@@ -109,6 +109,20 @@ See L<SNMP::Info::Layer3> for its own MIB requirements.
 
 See documentation in L<SNMP::Info::Layer3> for details.
 
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=head2 Overrides
+
+=over
+
+=item $meraki->layers()
+
+Returns 00000110.
+
+=back
+
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
