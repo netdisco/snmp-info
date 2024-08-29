@@ -134,7 +134,9 @@ Abstraction subclass for SilverPeak devices.
 
 =head2 Required MIBs
 
-F<STEELHEAD-MIB>
+F<SILVERPEAK-MGMT-MIB>
+
+F<SILVERPEAK-PRODUCTS-MIB>
 
 =over
 
