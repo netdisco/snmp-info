@@ -901,6 +901,12 @@ Subclass for Extreme Networks switches.
 
 See documentation in L<SNMP::Info::Layer3::Extreme> for details.
 
+=item SNMP::Info::Layer3::ExtremeWing
+
+Subclass for Extreme WiNG APs.
+
+See documentation in L<SNMP::Info::Layer3::ExtremeWing> for details.
+
 =item SNMP::Info::Layer3::F5
 
 Subclass for F5 devices.
@@ -1994,6 +2000,10 @@ sub device_type {
         #   This is for enterprises(1).cisco(9).otherEnterprises(6).ciscosb(1)
         $objtype = 'SNMP::Info::Layer2::CiscoSB'
             if ( $soid =~ /^\.?1\.3\.6\.1\.4\.1\.9\.6\.1/ );
+
+        # Extreme WiNG APs (formerly Motorola)
+        $objtype = 'SNMP::Info::Layer3::ExtremeWing'
+            if ( $soid =~ /^\.?1\.3\.6\.1\.4\.1\.388\.50/ );
 
         # Avaya Secure Router
         $objtype = 'SNMP::Info::Layer3::Tasman'
