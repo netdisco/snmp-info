@@ -51,12 +51,25 @@ $VERSION = '3.971000';
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    # unsure how this index is picked and if it will be the same on other WiNG AP, TBD
-    # in the AP310, there is one chassis entry that has all the info we need at this index
-    # .entPhysicalTable.entPhysicalEntry.entPhysicalClass.4000 = INTEGER: chassis(3)
-    # .entPhysicalTable.entPhysicalEntry.entPhysicalName.4000 = STRING: AP310
+
+# WiNG APs have a full entity mib, on all the models we tested in 2024 there is a single chassis entry at index 4000.
+# The entPhysicalModelName seems to be a better representation of the model than the systemOID (e.g.wingSysoidAP310), 
+# so we use the former if available.
+# Sample data:
+#  .1.3.6.1.2.1.47.1.1.1.1.2.4000 = STRING: "Extreme Networks, Inc. AP7532"
+#  .1.3.6.1.2.1.47.1.1.1.1.2.4000 = STRING: "Extreme Networks, Inc. AP310"
+#  .1.3.6.1.2.1.47.1.1.1.1.2.4000 = STRING: "Extreme Networks, Inc. AP360"
+#  .1.3.6.1.2.1.47.1.1.1.1.2.4000 = STRING: "Extreme Networks, Inc. AP310-1"
+#  .1.3.6.1.2.1.47.1.1.1.1.2.4000 = STRING: "Extreme Networks, Inc. NX5500"
+#  .1.3.6.1.2.1.47.1.1.1.1.13.4000 = STRING: "AP310i-WR"
+#  .1.3.6.1.2.1.47.1.1.1.1.13.4000 = STRING: "AP360i-WR"
+#  .1.3.6.1.2.1.47.1.1.1.1.13.4000 = STRING: "AP310i-1-WR"
+#  .1.3.6.1.2.1.47.1.1.1.1.13.4000 = STRING: "NX-5500-100R0-WR"
+#  .1.3.6.1.2.1.47.1.1.1.1.13.4000 = STRING: "AP-7532-67030-WR"
+
     'wing_os_ver' => 'entPhysicalSoftwareRev.4000',
     'wing_mfg' => 'entPhysicalMfgName.4000',
+    'wing_model' => 'entPhysicalModelName.4000'
 );
 
 %FUNCS = (
@@ -80,6 +93,16 @@ sub os_ver {
 sub os {
     return 'WiNG';
 }
+
+sub model {
+    my $self = shift;
+    # the super model is the resolved systemOid, use as fallback
+    my $pm = $self->SUPER::model();
+    my $wm =  $self->wing_model();
+    return $wm ? $wm : $pm; 
+}
+
+
 
 1;
 
@@ -110,7 +133,12 @@ Nick Nauwelaerts, Christian Ramseyer and Netdisco Contributors
 
 =head1 DESCRIPTION
 
-Subclass for self routers.
+Subclass for Extreme WiNG APs
+
+WiNG APs have a full entity mib, on all the models we tested in 2024 there
+is a single chassis entry at index 4000. This class returns the relevant
+bits from this index.
+
 
 =head2 Inherited Classes
 
@@ -144,11 +172,15 @@ Returns 'WiNG'.
 
 =item $self->os_ver()
 
-Returns the os version extracted from C<unitFirmwareVersion>.
+Returns the os version extracted from C<entPhysicalSoftwareRev>.
 
 =item $self->vendor()
 
-Returns the value from C<entPhysicalSoftwareRev>.
+Returns the value from C<entPhysicalMfgName>.
+
+=item $self-model()
+
+Returns the value from C<entPhysicalModelName>.
 
 =back
 
