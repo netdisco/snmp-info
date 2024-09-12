@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.971000
+    SNMP::Info - Version 3.972000
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -749,6 +749,12 @@ SUBCLASSES
             Subclass for Extreme Networks switches.
 
             See documentation in SNMP::Info::Layer3::Extreme for details.
+
+        SNMP::Info::Layer3::ExtremeWing
+            Subclass for Extreme WiNG APs.
+
+            See documentation in SNMP::Info::Layer3::ExtremeWing for
+            details.
 
         SNMP::Info::Layer3::F5
             Subclass for F5 devices.

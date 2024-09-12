@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.971000';
+$VERSION = '3.972000';
 
 %MIBS = ( 'IEEE802dot11-MIB' => 'dot11DesiredSSID', );
 
