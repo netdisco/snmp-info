@@ -201,4 +201,8 @@ to a hash.
 
 See documentation in L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
+=head2 AUTHOR
+
+Written and contributed by Muris Boric. Many thanks!
+
 =cut
