@@ -84,6 +84,7 @@ lib/SNMP/Info/Layer3/Aruba.pm
 lib/SNMP/Info/Layer3/ArubaCX.pm
 lib/SNMP/Info/Layer3/BayRS.pm
 lib/SNMP/Info/Layer3/BlueCoatSG.pm
+lib/SNMP/Info/Layer3/C1300.pm
 lib/SNMP/Info/Layer3/C3550.pm
 lib/SNMP/Info/Layer3/C4000.pm
 lib/SNMP/Info/Layer3/C6500.pm
@@ -243,6 +244,7 @@ xt/lib/Test/SNMP/Info/Layer3/Arista.pm
 xt/lib/Test/SNMP/Info/Layer3/Aruba.pm
 xt/lib/Test/SNMP/Info/Layer3/BayRS.pm
 xt/lib/Test/SNMP/Info/Layer3/BlueCoatSG.pm
+xt/lib/Test/SNMP/Info/Layer3/C1300.pm
 xt/lib/Test/SNMP/Info/Layer3/C3550.pm
 xt/lib/Test/SNMP/Info/Layer3/C4000.pm
 xt/lib/Test/SNMP/Info/Layer3/C6500.pm
