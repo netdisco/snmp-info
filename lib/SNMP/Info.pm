@@ -1908,6 +1908,7 @@ sub device_type {
 
         return $objtype unless ( defined $desc and length($desc) );
 
+        $objtype = 'SNMP::Info::Layer3::C1300' if $desc =~ /Catalyst 1300 Series Managed Switch/;
         $objtype = 'SNMP::Info::Layer3::C3550' if $desc =~ /(C3550|C3560)/;
         $objtype = 'SNMP::Info::Layer3::C4000' if $desc =~ /Catalyst 4[05]00/;
         $objtype = 'SNMP::Info::Layer3::Foundry' if $desc =~ /foundry/i;

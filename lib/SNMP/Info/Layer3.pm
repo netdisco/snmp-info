@@ -293,7 +293,8 @@ sub i_subinterfaces {
       my ( $higher, $lower ) = split /\./, $idx;
       next if ( $higher == 0 or $lower == 0 );
 
-      if ( $iftype->{ $higher } eq 'l2vlan' or $iftype->{ $higher } eq 'l3ipvlan') {
+      if ( $iftype->{ $higher } and
+            ($iftype->{ $higher } eq 'l2vlan' or $iftype->{ $higher } eq 'l3ipvlan') ) {
           push @{ $ret->{ $lower } }, $higher;
       }
   }
