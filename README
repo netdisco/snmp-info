@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.972001
+    SNMP::Info - Version 3.972002
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -663,6 +663,9 @@ SUBCLASSES
             Subclass for BlueCoat SG series proxy devices.
 
             See documentation in SNMP::Info::Layer3::BlueCoatSG for details.
+
+        SNMP::Info::Layer3::C1300
+            See documentation in SNMP::Info::Layer3::C1300 for details.
 
         SNMP::Info::Layer3::C3550
             Subclass for Cisco Catalyst 3550,3540,3560 2/3 switches running
