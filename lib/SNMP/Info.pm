@@ -801,6 +801,10 @@ Subclass for BlueCoat SG series proxy devices.
 
 See documentation in L<SNMP::Info::Layer3::BlueCoatSG> for details.
 
+=item SNMP::Info::Layer3::C1300
+
+See documentation in L<SNMP::Info::Layer3::C1300> for details.
+
 =item SNMP::Info::Layer3::C3550
 
 Subclass for Cisco Catalyst 3550,3540,3560 2/3 switches running IOS.

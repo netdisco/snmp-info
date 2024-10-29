@@ -191,6 +191,10 @@ to a hash.
 
 =over
 
+=item $C1300->v_name()
+
+The VLAN Names.
+
 =item $C1300->i_duplex_admin()
 
 Returns info from F<MAU-MIB>
