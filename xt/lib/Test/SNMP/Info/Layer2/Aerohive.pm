@@ -126,21 +126,25 @@ sub os_ver : Tests(7) {
   my $test = shift;
 
   can_ok($test->{info}, 'os_ver');
-  is($test->{info}->os_ver(), '10.6r6', q(OS version from ahFirmwareVersion is expected value, HiveOS version));
+  is($test->{info}->os_ver(),
+    '10.6r6', q(10.6r6 is expected os version from ahFirmwareVersion, HiveOS version));
 
   $test->{info}{_os_bin} = 'IQ Engine 10.7r5 build-a7c6326';
   is($test->{info}->os_ver(),
     '10.7r5', q(10.7r5 is expected os version from ahFirmwareVersion, IQ Engine version));
 
-  delete $test->{info}{_os_bin};
-  is($test->{info}->os_ver(), '6.2r1', q(OS version is expected value));
+  # invalid format, testversion should not in there
+  $test->{info}{_os_bin} = 'IQ Engine testversion 10.7r5 build-a7c6326';
+  is($test->{info}->os_ver(),
+    '6.2r1', q(6.2r1 is expected os version when we incorrectly parse ahFirmwareVersion));
 
   delete $test->{info}{_os_bin};
-  is($test->{info}->os_ver(), '6.2r1', q(OS version is expected value));
+  is($test->{info}->os_ver(),
+    '6.2r1', q(6.2r1 is expected os version from sysdescr (legacy format) when ahFirmwareVersion unavailable));
 
   $test->{info}{_description} = 'AP250, HiveOS 10.0r8 build-236132';
   is($test->{info}->os_ver(),
-    '10.0r8', q(10.0r8 is expected os version));
+    '10.0r8', q(10.0r8 is expected os version from sysdescr (current format) when ahFirmwareVersion unavailable));
 
   $test->{info}->clear_cache();
   is($test->{info}->os_ver(), undef, q(No description returns undef os_ver));
