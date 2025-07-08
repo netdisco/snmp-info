@@ -89,11 +89,11 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::EdgeSwitch - SNMP Interface to Blue Coat SG Series proxy devices
+SNMP::Info::Layer3::EdgeSwitch - SNMP Interface to Broadcom EdgeSwitch devices.
 
 =head1 AUTHOR
 
-Jeroen van Ingen
+Ambroise Rosset
 
 =head1 SYNOPSIS
 
@@ -148,7 +148,7 @@ Returns C<'broadcom'>
 
 =item $router->model()
 
-Tries to revolve model string fomr C<"agentInventoryMachineModel">
+Tries to resolve model string fomr C<"agentInventoryMachineModel">
 
 =item $router->os()
 
