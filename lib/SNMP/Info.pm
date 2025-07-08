@@ -887,6 +887,12 @@ Subclass for DLink devices.
 
 See documentation in L<SNMP::Info::Layer3::DLink> for details.
 
+=item SNMP::Info::Layer3::EdgeSwitch
+
+Subclass for Broadcom EdgeSwitch devices.
+
+See documentation in L<SNMP::Info::Layer3::EdgeSwitch> for details.
+
 =item SNMP::Info::Layer3::Enterasys
 
 Subclass for Enterasys devices.
