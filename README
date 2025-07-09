@@ -738,6 +738,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::DLink for details.
 
+        SNMP::Info::Layer3::EdgeSwitch
+            Subclass for Broadcom EdgeSwitch devices.
+
+            See documentation in SNMP::Info::Layer3::EdgeSwitch for details.
+
         SNMP::Info::Layer3::Enterasys
             Subclass for Enterasys devices.
 

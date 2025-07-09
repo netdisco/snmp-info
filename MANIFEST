@@ -98,6 +98,7 @@ lib/SNMP/Info/Layer3/Contivity.pm
 lib/SNMP/Info/Layer3/Cumulus.pm
 lib/SNMP/Info/Layer3/Dell.pm
 lib/SNMP/Info/Layer3/DLink.pm
+lib/SNMP/Info/Layer3/EdgeSwitch.pm
 lib/SNMP/Info/Layer3/Enterasys.pm
 lib/SNMP/Info/Layer3/ERX.pm
 lib/SNMP/Info/Layer3/Extreme.pm
@@ -257,6 +258,7 @@ xt/lib/Test/SNMP/Info/Layer3/Contivity.pm
 xt/lib/Test/SNMP/Info/Layer3/Cumulus.pm
 xt/lib/Test/SNMP/Info/Layer3/Dell.pm
 xt/lib/Test/SNMP/Info/Layer3/DLink.pm
+xt/lib/Test/SNMP/Info/Layer3/EdgeSwitch.pm
 xt/lib/Test/SNMP/Info/Layer3/Enterasys.pm
 xt/lib/Test/SNMP/Info/Layer3/ERX.pm
 xt/lib/Test/SNMP/Info/Layer3/Extreme.pm

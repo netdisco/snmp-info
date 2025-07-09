@@ -417,6 +417,10 @@
          "file" : "lib/SNMP/Info/Layer3/ERX.pm",
          "version" : "3.972002"
       },
+      "SNMP::Info::Layer3::EdgeSwitch" : {
+         "file" : "lib/SNMP/Info/Layer3/EdgeSwitch.pm",
+         "version" : "3.972002"
+      },
       "SNMP::Info::Layer3::Enterasys" : {
          "file" : "lib/SNMP/Info/Layer3/Enterasys.pm",
          "version" : "3.972002"
