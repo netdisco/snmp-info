@@ -40,20 +40,20 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 $VERSION = '3.972002';
 
 %MIBS = (
-    %SNMP::Info::Layer2::MIBS, %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::Layer3::MIBS,
     'EdgeSwitch-SWITCHING-MIB' => 'fastPathSwitching',
 );
 
 %GLOBALS = (
-    %SNMP::Info::Layer2::GLOBALS, %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::Layer3::GLOBALS,
     'inv_mach_model'  => 'agentInventoryMachineModel',
     'serial1'=> 'agentInventorySerialNumber',
     'sw_ver' => 'agentInventorySoftwareVersion',
 );
 
-%FUNCS = ( %SNMP::Info::Layer2::FUNCS, %SNMP::Info::Layer3::FUNCS, );
+%FUNCS = ( %SNMP::Info::Layer3::FUNCS, );
 
-%MUNGE = ( %SNMP::Info::Layer2::MUNGE, %SNMP::Info::Layer3::MUNGE, );
+%MUNGE = ( %SNMP::Info::Layer3::MUNGE, );
 
 sub vendor {
     return 'broadcom';
