@@ -887,6 +887,12 @@ Subclass for DLink devices.
 
 See documentation in L<SNMP::Info::Layer3::DLink> for details.
 
+=item SNMP::Info::Layer3::EdgeSwitch
+
+Subclass for Broadcom EdgeSwitch devices.
+
+See documentation in L<SNMP::Info::Layer3::EdgeSwitch> for details.
+
 =item SNMP::Info::Layer3::Enterasys
 
 Subclass for Enterasys devices.
@@ -2063,7 +2069,11 @@ sub device_type {
 
         # Whiterabbit Timing
         $objtype = 'SNMP::Info::Layer3::Whiterabbit'
-	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.96\.100\.1000/i );
+            if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.96\.100\.1000/i );
+
+        # Broadcom Edge Switches
+        $objtype = 'SNMP::Info::Layer3::EdgeSwitch'
+            if ( $desc =~ /^EFOS/ and $soid =~ /\.1\.3\.6\.1\.4\.1\.4413/i );
 
         # Generic device classification based upon sysObjectID
         if (    ( $objtype eq 'SNMP::Info::Layer3' )

@@ -298,6 +298,9 @@ provides:
   SNMP::Info::Layer3::ERX:
     file: lib/SNMP/Info/Layer3/ERX.pm
     version: '3.972002'
+  SNMP::Info::Layer3::EdgeSwitch:
+    file: lib/SNMP/Info/Layer3/EdgeSwitch.pm
+    version: '3.972002'
   SNMP::Info::Layer3::Enterasys:
     file: lib/SNMP/Info/Layer3/Enterasys.pm
     version: '3.972002'
@@ -495,4 +498,4 @@ resources:
   license: http://opensource.org/licenses/BSD-3-Clause
   repository: https://github.com/netdisco/snmp-info
 version: '3.972002'
-x_serialization_backend: 'CPAN::Meta::YAML version 0.018'
+x_serialization_backend: 'CPAN::Meta::YAML version 0.020'
