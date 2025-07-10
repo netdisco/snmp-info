@@ -48,6 +48,7 @@ $VERSION = '3.972002';
 
 %GLOBALS = (
     %SNMP::Info::Layer7::GLOBALS,
+    'product_name' => 'productName',
     'pulse_os_ver' => 'productVersion',
     'cpu'          => 'iveCpuUtil',
 );
@@ -82,9 +83,14 @@ sub serial {
 sub model {
     my $neoteris = shift;
     my $id       = $neoteris->id();
-    my $model    = &SNMP::translateObj($id);
+    my $product_name = $neoteris->product_name();
 
-    $model =~ s/^ive//i;
+    my $model    = &SNMP::translateObj($id);
+    if ($product_name =~ /^(Ivanti|Pulse) Connect Secure,(\S+)/) {
+        $model = $2;
+    } else {
+        $model =~ s/^ive//i;
+    }
 
     return $model;
 }
