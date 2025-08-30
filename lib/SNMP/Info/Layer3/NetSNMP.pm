@@ -103,8 +103,8 @@ sub uptime {
     my $uptime;
 
     $uptime = $netsnmp->hrSystemUptime();
-    return $uptime if defined $uptime;
-
+    # sometimes hrSystemUptime is 0 so check truthy, not defined
+    return $uptime if $uptime;
     return $netsnmp->SUPER::uptime();
 }
 
