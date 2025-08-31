@@ -27,16 +27,13 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-# NOTE: This test file is commented out because the STORMSHIELD MIBs are not
-# in the docker image yet.
-
-=pod
 package Test::SNMP::Info::Layer7::Stormshield;
 
 use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info::Layer7::Stormshield;
 
+# Remove this startup override once we have full method coverage
 sub startup : Tests(startup => 1) {
   my $test = shift;
   $test->SUPER::startup();
@@ -48,14 +45,16 @@ sub setup : Tests(setup) {
   my $test = shift;
   $test->SUPER::setup;
 
+  # Start with a common cache that will serve most tests
   my $cache_data = {
     '_layers'      => 72,
     '_description' => 'NS-BSD SNSS1A13B0001 amd64',
+    '_id'            => '.1.3.6.1.4.1.11256.2.0',
 
     # STORMSHIELD-HA-MIB::snsFwSerial
     '_hamib_serial' => {
       '0' => 'SNSS1A13B0001',
-      '1' => 'SNSS1A13B0002'
+      '1' => 'SNSS1A13B0002',
     },
     '_hamib_model' => {
       '0' => 'SN-S-Series-220',
@@ -71,7 +70,16 @@ sub setup : Tests(setup) {
     '_propmib_model' => 'SN-S-Series-220',
     '_propmib_version' => '4.3.0',
 
-    'store'        => {},
+    'store'        => {
+      'hamib_model' => {
+        '0' => 'SN-S-Series-220',
+        '1' => 'SN-S-Series-220'
+      },
+      'hamib_serial' => {
+        '0' => 'SNSS1A13B0001',
+        '1' => 'SNSS1A13B0002',
+      }
+    }
   };
   $test->{info}->cache($cache_data);
 }
@@ -123,7 +131,6 @@ sub os_ver : Tests(3) {
   is($test->{info}->os_ver(), '', q(No data returns empty string));
 }
 
-1;
-=cut
+
 
 1;

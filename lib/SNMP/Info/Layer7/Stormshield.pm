@@ -107,8 +107,8 @@ sub serial {
   } else {
     push @serials, $propmib_serial unless $seen{$propmib_serial}++;
   }
-  
-  my $serial = join(' ', @serials);
+
+  my $serial = join(' ', grep { defined && length } @serials);
   return $serial;
 }
 
@@ -142,7 +142,7 @@ sub model {
     push @models, $propmib_model unless $seen{$propmib_model}++;
   }
   
-  my $model = join(' ', @models);
+  my $model = join(' ', grep { defined && length } @models);
   return $model;
 }
 
@@ -174,7 +174,7 @@ sub os_ver {
     push @versions, $propmib_version unless $seen{$propmib_version}++;
   }
   
-  my $os_ver = join(' ', @versions);
+  my $os_ver = join(' ', grep { defined && length } @versions);
   return $os_ver;
 }
 
