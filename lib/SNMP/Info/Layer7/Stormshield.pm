@@ -147,14 +147,34 @@ sub model {
 }
 
 sub os_ver {
+
   my $Stormshield = shift;
+  my $hamib_version = $Stormshield->hamib_version();
+  my $propmib_version = $Stormshield->propmib_version();
+
+  my @versions;
+  my %seen;
   
-  # Try HA MIB first
-  my $os_ver = $Stormshield->hamib_version();
-  return $os_ver if defined $os_ver;
+  # Collect unique versions preserving HA MIB order
+  if (ref($hamib_version) eq 'HASH') {
+    foreach my $key (sort keys %$hamib_version) {
+      my $value = $hamib_version->{$key};
+      push @versions, $value unless $seen{$value}++;
+    }
+  } else {
+    push @versions, $hamib_version unless $seen{$hamib_version}++;
+  }
   
-  # Fall back to Property MIB
-  $os_ver = $Stormshield->propmib_version();
+  # Add Property MIB version
+  if (ref($propmib_version) eq 'HASH') {
+    foreach my $value (values %$propmib_version) {
+      push @versions, $value unless $seen{$value}++;
+    }
+  } else {
+    push @versions, $propmib_version unless $seen{$propmib_version}++;
+  }
+  
+  my $os_ver = join(' ', @versions);
   return $os_ver;
 }
 
