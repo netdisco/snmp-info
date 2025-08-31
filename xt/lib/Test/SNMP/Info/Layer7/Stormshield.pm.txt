@@ -27,13 +27,16 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+# NOTE: This test file is commented out because the STORMSHIELD MIBs are not
+# in the docker image yet.
+
+=pod
 package Test::SNMP::Info::Layer7::Stormshield;
 
 use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info::Layer7::Stormshield;
 
-# Remove this startup override once we have full method coverage
 sub startup : Tests(startup => 1) {
   my $test = shift;
   $test->SUPER::startup();
@@ -45,7 +48,6 @@ sub setup : Tests(setup) {
   my $test = shift;
   $test->SUPER::setup;
 
-  # Start with a common cache that will serve most tests
   my $cache_data = {
     '_layers'      => 72,
     '_description' => 'NS-BSD SNSS1A13B0001 amd64',
@@ -121,6 +123,7 @@ sub os_ver : Tests(3) {
   is($test->{info}->os_ver(), '', q(No data returns empty string));
 }
 
-
+1;
+=cut
 
 1;
