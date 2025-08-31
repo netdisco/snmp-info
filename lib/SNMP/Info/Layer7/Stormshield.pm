@@ -48,21 +48,23 @@ $VERSION = '3.972002';
     'STORMSHIELD-PROPERTY-MIB' => 'snsSerialNumber',
 );
 
+
+# use qualified names to avoid leaf conflicts. There is PROPERTY, HA and some DEPRECATED mibs
+# with identical symbols 
+
 %GLOBALS = (
     %SNMP::Info::Layer7::GLOBALS,
-    'propmib_serial'   => 'snsSerialNumber',
+    'propmib_serial'   => 'STORMSHIELD_PROPERTY_MIB__snsSerialNumber',
+    'propmib_model'    => 'STORMSHIELD_PROPERTY_MIB__snsModel',
+    'propmib_version'  => 'STORMSHIELD_PROPERTY_MIB__snsVersion',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer7::FUNCS,
     # HA MIB
-    'hamib_serial' => 'snsFwSerial',
-    'hamib_model'  => 'snsModel', 
-    'hamib_version' => 'snsVersion',
-    # Property MIB
-    #'propmib_serial' => 'snsSerialNumber',
-    'propmib_model'  => 'snsModel',
-    'propmib_version' => 'snsVersion',
+    'hamib_serial' => 'STORMSHIELD_HA_MIB__snsFwSerial',
+    'hamib_model'  => 'STORMSHIELD_HA_MIB__snsModel', 
+    'hamib_version' => 'STORMSHIELD_HA_MIB__snsVersion',
     );
 
 %MUNGE = (
@@ -78,10 +80,9 @@ sub os {
 }
 
 sub serial {
-  my $Stormshield = shift;
 
+  my $Stormshield = shift;
   my $hamib_serial = $Stormshield->hamib_serial();
-  
   my $propmib_serial = $Stormshield->propmib_serial();
 
   # Collect serials preserving HA MIB order
@@ -111,17 +112,37 @@ sub serial {
   return $serial;
 }
 
+
+
 sub model {
+
   my $Stormshield = shift;
-  
-  # Try HA MIB first
   my $hamib_model = $Stormshield->hamib_model();
-  
-  # Fall back to Property MIB
   my $propmib_model = $Stormshield->propmib_model();
 
-  my $model = "assemble me";
-
+  my @models;
+  my %seen;
+  
+  # Collect unique models preserving HA MIB order
+  if (ref($hamib_model) eq 'HASH') {
+    foreach my $key (sort keys %$hamib_model) {
+      my $value = $hamib_model->{$key};
+      push @models, $value unless $seen{$value}++;
+    }
+  } else {
+    push @models, $hamib_model unless $seen{$hamib_model}++;
+  }
+  
+  # Add Property MIB model
+  if (ref($propmib_model) eq 'HASH') {
+    foreach my $value (values %$propmib_model) {
+      push @models, $value unless $seen{$value}++;
+    }
+  } else {
+    push @models, $propmib_model unless $seen{$propmib_model}++;
+  }
+  
+  my $model = join(' ', @models);
   return $model;
 }
 
