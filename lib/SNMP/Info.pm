@@ -75,6 +75,11 @@ list any missing functionality (such as neighbor discovery tables).
                             # AuthPass  => 'authp4ss',
                             # PrivProto => 'DES',      # DES|AES
                             # PrivPass  => 'pr1vp4ss',
+
+                            # Rarer options - see https://metacpan.org/pod/SNMP for full list
+                            # Timeout => 15 * 1000000, # microseconds
+                            # RemotePort => 161,
+                            # NonIncreasing => 1
                            });
 
  my $err = $info->error();
@@ -1217,6 +1222,12 @@ Subclass for Citrix Netscaler appliances.
 
 See documentation in L<SNMP::Info::Layer7::Netscaler> for details.
 
+=item SNMP::Info::Layer7::Stormshield
+
+Subclass for Stormshield Network Security appliances.
+
+See documentation in L<SNMP::Info::Layer7::Stormshield> for details.
+
 
 =back
 
@@ -1486,6 +1497,12 @@ sub new {
     }
 
     $new_obj->{nosuch} = $args{RetryNoSuch} || $NOSUCH;
+
+    # this will have the cleartext community, enable when needed
+    #if ($args{Debug}) {
+    #    use Data::Dumper;
+    #    print "SNMP::Info::new sess_args for SNMP::Session : ", Dumper(\%sess_args);
+    #}
 
     # Initialize mibs if not done
     my $init_ref = $new_obj->{init};
@@ -1816,6 +1833,7 @@ sub device_type {
         9303  => 'SNMP::Info::Layer3::PacketFront',
         10002 => 'SNMP::Info::Layer2::Ubiquiti',
         10418 => 'SNMP::Info::Layer1::Cyclades',
+        11256 => 'SNMP::Info::Layer7::Stormshield',
         12325 => 'SNMP::Info::Layer3::Pf',
         12356 => 'SNMP::Info::Layer3::Fortinet',
         13191 => 'SNMP::Info::Layer3::OneAccess',
@@ -1895,6 +1913,7 @@ sub device_type {
         476   => 'SNMP::Info::Layer7::Liebert',
         5951  => 'SNMP::Info::Layer7::Netscaler',
         9694  => 'SNMP::Info::Layer7::Arbor',
+        11256 => 'SNMP::Info::Layer7::Stormshield',
         12532 => 'SNMP::Info::Layer7::Neoteris',
         14525 => 'SNMP::Info::Layer2::Trapeze',
         21796 => 'SNMP::Info::Layer7::HWGroup',
@@ -2278,14 +2297,14 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer7::CiscoIPS'
             if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.9\.1\.1545/i );
 
-	# Siemens Simatic Scalance 
+	    # Siemens Simatic Scalance 
         # Scalance overwrites layers later, 
         # so if we don't add it here (layer3) and at other
         # it would flip/flop between those
         $objtype = 'SNMP::Info::Layer3::Scalance'
 	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
 	    
-	# Whiterabbit Timing
+        # Whiterabbit Timing
         $objtype = 'SNMP::Info::Layer3::Whiterabbit'
 	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.96\.100\.1000/i );
 
