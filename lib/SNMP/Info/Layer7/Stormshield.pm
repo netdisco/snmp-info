@@ -33,6 +33,7 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::Layer7;
+use Data::Dumper;
 
 @SNMP::Info::Layer7::Stormshield::ISA       = qw/SNMP::Info::Layer7 Exporter/;
 @SNMP::Info::Layer7::Stormshield::EXPORT_OK = qw//;
@@ -49,6 +50,7 @@ $VERSION = '3.972002';
 
 %GLOBALS = (
     %SNMP::Info::Layer7::GLOBALS,
+    'propmib_serial'   => 'snsSerialNumber',
 );
 
 %FUNCS = (
@@ -58,7 +60,7 @@ $VERSION = '3.972002';
     'hamib_model'  => 'snsModel', 
     'hamib_version' => 'snsVersion',
     # Property MIB
-    'propmib_serial' => 'snsSerialNumber',
+    #'propmib_serial' => 'snsSerialNumber',
     'propmib_model'  => 'snsModel',
     'propmib_version' => 'snsVersion',
     );
@@ -77,27 +79,49 @@ sub os {
 
 sub serial {
   my $Stormshield = shift;
+
+  my $hamib_serial = $Stormshield->hamib_serial();
   
-  # Try HA MIB first
-  my $serial = $Stormshield->hamib_serial();
-  return $serial if defined $serial;
+  my $propmib_serial = $Stormshield->propmib_serial();
+
+  # Collect serials preserving HA MIB order
+  my %unique_serials;
+  my @serials;
+  my %seen;
   
-  # Fall back to Property MIB
-  $serial = $Stormshield->propmib_serial();
+  if (ref($hamib_serial) eq 'HASH') {
+    foreach my $key (sort keys %$hamib_serial) {
+      my $value = $hamib_serial->{$key};
+      push @serials, $value unless $seen{$value}++;
+    }
+  } else {
+    push @serials, $hamib_serial unless $seen{$hamib_serial}++;
+  }
+  
+  # Add Property MIB serials (avoiding duplicates)
+  if (ref($propmib_serial) eq 'HASH') {
+    foreach my $value (values %$propmib_serial) {
+      push @serials, $value unless $seen{$value}++;
+    }
+  } else {
+    push @serials, $propmib_serial unless $seen{$propmib_serial}++;
+  }
+  
+  my $serial = join(' ', @serials);
   return $serial;
 }
-
-
 
 sub model {
   my $Stormshield = shift;
   
   # Try HA MIB first
-  my $model = $Stormshield->hamib_model();
-  return $model if defined $model;
+  my $hamib_model = $Stormshield->hamib_model();
   
   # Fall back to Property MIB
-  $model = $Stormshield->propmib_model();
+  my $propmib_model = $Stormshield->propmib_model();
+
+  my $model = "assemble me";
+
   return $model;
 }
 
