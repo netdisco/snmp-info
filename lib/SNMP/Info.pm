@@ -1217,6 +1217,12 @@ Subclass for Citrix Netscaler appliances.
 
 See documentation in L<SNMP::Info::Layer7::Netscaler> for details.
 
+=item SNMP::Info::Layer7::Stormshield
+
+Subclass for Stormshield Network Security appliances.
+
+See documentation in L<SNMP::Info::Layer7::Stormshield> for details.
+
 
 =back
 
@@ -1895,6 +1901,7 @@ sub device_type {
         476   => 'SNMP::Info::Layer7::Liebert',
         5951  => 'SNMP::Info::Layer7::Netscaler',
         9694  => 'SNMP::Info::Layer7::Arbor',
+        11256 => 'SNMP::Info::Layer7::Stormshield',
         12532 => 'SNMP::Info::Layer7::Neoteris',
         14525 => 'SNMP::Info::Layer2::Trapeze',
         21796 => 'SNMP::Info::Layer7::HWGroup',

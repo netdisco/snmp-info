@@ -1,0 +1,255 @@
+# SNMP::Info::Layer7::Stormshield
+#
+# Copyright (c) 2025 snmp-info Developers
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#     * Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+package SNMP::Info::Layer7::Stormshield;
+
+use strict;
+use warnings;
+use Exporter;
+use SNMP::Info::Layer7;
+
+@SNMP::Info::Layer7::Stormshield::ISA       = qw/SNMP::Info::Layer7 Exporter/;
+@SNMP::Info::Layer7::Stormshield::EXPORT_OK = qw//;
+
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
+
+$VERSION = '3.972002';
+
+%MIBS = (
+    %SNMP::Info::Layer7::MIBS,
+    'STORMSHIELD-HA-MIB'     => 'snsFwSerial',
+    'STORMSHIELD-PROPERTY-MIB' => 'snsSerialNumber',
+);
+
+%GLOBALS = (
+    %SNMP::Info::Layer7::GLOBALS,
+);
+
+%FUNCS = (
+    %SNMP::Info::Layer7::FUNCS,
+    # HA MIB
+    'hamib_serial' => 'snsFwSerial',
+    'hamib_model'  => 'snsModel', 
+    'hamib_version' => 'snsVersion',
+    # Property MIB
+    'propmib_serial' => 'snsSerialNumber',
+    'propmib_model'  => 'snsModel',
+    'propmib_version' => 'snsVersion',
+    );
+
+%MUNGE = (
+    %SNMP::Info::Layer7::MUNGE,
+    );
+
+sub vendor {
+    return 'stormshield';
+}
+
+sub os {
+    return 'SNS';
+}
+
+sub serial {
+  my $Stormshield = shift;
+  
+  # Try HA MIB first
+  my $serial = $Stormshield->hamib_serial();
+  return $serial if defined $serial;
+  
+  # Fall back to Property MIB
+  $serial = $Stormshield->propmib_serial();
+  return $serial;
+}
+
+
+
+sub model {
+  my $Stormshield = shift;
+  
+  # Try HA MIB first
+  my $model = $Stormshield->hamib_model();
+  return $model if defined $model;
+  
+  # Fall back to Property MIB
+  $model = $Stormshield->propmib_model();
+  return $model;
+}
+
+sub os_ver {
+  my $Stormshield = shift;
+  
+  # Try HA MIB first
+  my $os_ver = $Stormshield->hamib_version();
+  return $os_ver if defined $os_ver;
+  
+  # Fall back to Property MIB
+  $os_ver = $Stormshield->propmib_version();
+  return $os_ver;
+}
+
+
+
+1;
+
+__END__
+
+=head1 NAME
+
+SNMP::Info::Layer7::Stormshield - SNMP Interface to Stormshield Network Security appliances
+
+=head1 AUTHORS
+
+Rob Woodward
+
+=head1 SYNOPSIS
+
+ # Let SNMP::Info determine the correct subclass for you.
+ my $Stormshield = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          DestHost    => 'myfirewall',
+                          Community   => 'public',
+                          Version     => 2
+                        )
+    or die "Can't connect to DestHost.\n";
+
+ my $class      = $Stormshield->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+Subclass for Stormshield Network Security (SNS) appliances
+
+The module supports both High Availability (HA) and non-HA Stormshield appliances. The information retrieved can be different based on whether the device is a HA or non-HA device.
+
+=head2 High Availability (HA) Devices
+
+For HA devices, the module uses the STORMSHIELD-HA-MIB:
+
+=over
+
+=item Serial Number: C<snsFwSerial> (.1.3.6.1.4.1.11256.1.11.7.1.2)
+
+=item Model: C<snsModel> (.1.3.6.1.4.1.11256.1.11.7.1.4)
+
+=item Version: C<snsVersion> (.1.3.6.1.4.1.11256.1.11.7.1.5)
+
+=back
+
+Example SNMP walk for model:
+ snmpwalk -v2c -On .1.3.6.1.4.1.11256.1.11.7.1.4
+ .1.3.6.1.4.1.11256.1.11.7.1.4.0 = STRING: "SN-S-Series-220"
+ .1.3.6.1.4.1.11256.1.11.7.1.4.1 = STRING: "SN-S-Series-220"
+
+=head2 Non-HA Devices
+
+For non-HA devices, the module uses the STORMSHIELD-PROPERTY-MIB:
+
+=over
+
+=item Serial Number: C<snsSerialNumber> (.1.3.6.1.4.1.11256.1.18.3)
+
+=item Model: C<snsModel> (.1.3.6.1.4.1.11256.1.18.1)
+
+=item Version: C<snsVersion> (.1.3.6.1.4.1.11256.1.18.2)
+
+=back
+
+Example SNMP walk for model:
+ snmpwalk -v2c -On .1.3.6.1.4.1.11256.1.18
+ .1.3.6.1.4.1.11256.1.18.1.0 = STRING: "SN-S-Series-220"
+
+=head2 Inherited Classes
+
+=over
+
+=item SNMP::Info::Layer7
+
+=back
+
+=head2 Required MIBs
+
+=over
+
+=item Inherited Classes' MIBs
+
+See L<SNMP::Info::Layer7> for its own MIB requirements.
+
+=item STORMSHIELD-HA-MIB
+
+Required for High Availability (HA) Stormshield appliances.
+
+=item STORMSHIELD-PROPERTY-MIB
+
+Required for non-HA Stormshield appliances.
+
+=back
+
+=head1 GLOBALS
+
+These are methods that return scalar value from SNMP
+
+=over
+
+=item $Stormshield->vendor()
+
+Returns 'stormshield'.
+
+=item $Stormshield->os()
+
+Returns 'SNS'.
+
+=item $Stormshield->os_ver()
+
+Release extracted from Stormshield MIBs (HA or Property MIB).
+
+=item $Stormshield->model()
+
+Model extracted from Stormshield MIBs (HA or Property MIB).
+
+=item $Stormshield->serial()
+
+Returns serial number extracted from Stormshield MIBs (HA or Property MIB).
+
+=back
+
+=head2 Globals imported from SNMP::Info::Layer7
+
+See documentation in L<SNMP::Info::Layer7> for details.
+
+=head1 TABLE ENTRIES
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=head2 Table Methods imported from SNMP::Info::Layer7
+
+See documentation in L<SNMP::Info::Layer7> for details.
+
+=cut
