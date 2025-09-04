@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.972002
+    SNMP::Info - Version 3.973000
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -41,6 +41,11 @@ SYNOPSIS
                                 # AuthPass  => 'authp4ss',
                                 # PrivProto => 'DES',      # DES|AES
                                 # PrivPass  => 'pr1vp4ss',
+
+                                # Rarer options - see https://metacpan.org/pod/SNMP for full list
+                                # Timeout => 15 * 1000000, # microseconds
+                                # RemotePort => 161,
+                                # NonIncreasing => 1
                                });
 
      my $err = $info->error();
@@ -1014,6 +1019,12 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer7::Netscaler for details.
 
+        SNMP::Info::Layer7::Stormshield
+            Subclass for Stormshield Network Security appliances.
+
+            See documentation in SNMP::Info::Layer7::Stormshield for
+            details.
+
 Thanks
     Thanks for testing and coding help (in no particular order) to :
     Alexander Barthel, Andy Ford, Alexander Hartmaier, Andrew Herrick, Alex
@@ -1133,14 +1144,14 @@ USAGE
         Offline
             Causes SNMP::Info to avoid network activity and return data only
             from its cache. If you ask for something not in the cache, an
-            error is thrown. See also the cache() and offline() methods.
+            error is thrown. See also the "cache()" and "offline()" methods.
 
             (default 0, which means "online")
 
         Cache
             Pass in a HashRef to prime the cache of retrieved data. Useful
             for creating an instance in "Offline" mode from a previously
-            dumped cache. See also the cache() method to retrieve a cache
+            dumped cache. See also the "cache()" method to retrieve a cache
             after running actual queries.
 
         OTHER
