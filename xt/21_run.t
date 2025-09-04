@@ -22,8 +22,16 @@ if (scalar @ARGV) { @found = @ARGV }
 @found = sort { (scalar split m/::/, $a) <=> (scalar split m/::/, $b)
                     or
                 $a cmp $b } @found;
-
-my $total = scalar @found - scalar @BAD_MODULES;
+                
+# my $total = scalar @found - scalar @BAD_MODULES;
+# this did not work because @found can be a subset (e.g. via ARGV), so subtracting
+# all BAD modules (even those not in @found) makes the TAP plan incorrect.
+# the below seems to work correctly for the hand-picked usage like
+#  prove  xt/21_run.t ::  Test::SNMP::Info::Layer7::Stormshield
+my $total = scalar grep {
+  my $m = $_;
+  ! grep { $_ eq $m } @BAD_MODULES
+} @found;
 my $count = 0;
 
 # fake test plan
