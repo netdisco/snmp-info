@@ -65,6 +65,12 @@ sub setup : Tests(setup) {
       '1' => '4.3.0'
     },
 
+    # STORMSHIELD-HA-MIB::snsNodeIndex
+    '_hamib_nodeindex' => {
+      '0' => 0,
+      '1' => 1,
+    },
+
     # STORMSHIELD-PROPERTY-MIB::snsSerialNumber
     '_propmib_serial' => 'SNSS1A13B0001',
     '_propmib_model' => 'SN-S-Series-220',
@@ -129,6 +135,20 @@ sub os_ver : Tests(3) {
 
   $test->{info}->clear_cache();
   is($test->{info}->os_ver(), '', q(No data returns empty string));
+}
+
+sub e_index : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'e_index');
+  is_deeply(
+    $test->{info}->e_index(),
+    { '0' => '0', '1' => '1' },
+    q(e_index returns identity mapping of snsNodeIndex IIDs)
+  );
+
+  $test->{info}->clear_cache();
+  is_deeply($test->{info}->e_index(), {}, q(No data returns empty hashref));
 }
 
 

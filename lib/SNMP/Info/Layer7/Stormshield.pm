@@ -65,6 +65,9 @@ $VERSION = '3.972002';
     'hamib_serial' => 'STORMSHIELD_HA_MIB__snsFwSerial',
     'hamib_model'  => 'STORMSHIELD_HA_MIB__snsModel', 
     'hamib_version' => 'STORMSHIELD_HA_MIB__snsVersion',
+    'hamib_halicense' => 'STORMSHIELD_HA_MIB__snsHALicence',
+    # can't use, MAX-ACCESS	not-accessible
+    #'hamib_nodeindex' => 'STORMSHIELD_HA_MIB__snsNodeIndex',
     );
 
 %MUNGE = (
@@ -80,6 +83,12 @@ sub os {
 }
 
 sub serial {
+
+  my $Stormshield = shift;
+  return $Stormshield->propmib_serial() // '';
+}
+
+sub serial000 {
 
   my $Stormshield = shift;
   my $hamib_serial = $Stormshield->hamib_serial();
@@ -112,9 +121,12 @@ sub serial {
   return $serial;
 }
 
-
-
 sub model {
+  my $Stormshield = shift;
+  return $Stormshield->propmib_model() // '';
+}
+
+sub model000 {
 
   my $Stormshield = shift;
   my $hamib_model = $Stormshield->hamib_model();
@@ -147,6 +159,11 @@ sub model {
 }
 
 sub os_ver {
+  my $Stormshield = shift;
+  return $Stormshield->propmib_version() // '';
+}
+
+sub os_ver000 {
 
   my $Stormshield = shift;
   my $hamib_version = $Stormshield->hamib_version();
@@ -179,6 +196,106 @@ sub os_ver {
 }
 
 
+
+sub e_index {
+
+  my $Stormshield = shift;
+  my $hamib_serials = $Stormshield->hamib_serial() || ();
+  my %e_index;
+  foreach my $iid (keys %$hamib_serials) {
+    $e_index{$iid} = $iid;
+  }
+
+  return \%e_index;
+}
+
+sub e_class {
+
+  my $Stormshield = shift;
+  my $hamib_serials = $Stormshield->hamib_serial() || ();
+  my %e_index;
+  foreach my $iid (keys %$hamib_serials) {
+    $e_index{$iid} = "chassis";
+  }
+
+  return \%e_index;
+}
+
+sub e_name {
+
+  my $Stormshield = shift;
+  my $hamib_serials = $Stormshield->hamib_serial() || ();
+  my %e_index;
+  foreach my $iid (keys %$hamib_serials) {
+    $e_index{$iid} = "chassis." . $iid;
+  }
+
+  return \%e_index;
+}
+
+sub e_vendor {
+
+  my $Stormshield = shift;
+  my $hamib_serials = $Stormshield->hamib_serial() || ();
+  my %e_index;
+  foreach my $iid (keys %$hamib_serials) {
+    $e_index{$iid} = $Stormshield->vendor();
+  }
+
+  return \%e_index;
+}
+
+sub e_descr {
+
+  my $Stormshield = shift;
+  my $hamib_models = $Stormshield->hamib_model() || ();
+  my $hamib_halicense = $Stormshield->hamib_halicense() || ();
+  my $hamib_serials = $Stormshield->hamib_serial() || ();
+  my $hamib_version = $Stormshield->hamib_version() || ();
+  my %e_index;
+  foreach my $iid (keys %$hamib_models) {
+    $e_index{$iid} = $hamib_models->{$iid} . " " . $hamib_halicense->{$iid} . " " . $hamib_serials->{$iid} . " " . $hamib_version->{$iid};
+  }
+
+  return \%e_index;
+}
+
+sub e_model {
+
+  my $Stormshield = shift;
+  my $hamib_models = $Stormshield->hamib_model() || ();
+  my %e_index;
+  foreach my $iid (keys %$hamib_models) {
+    $e_index{$iid} = $hamib_models->{$iid};
+  }
+
+  return \%e_index;
+}
+
+sub e_swver {
+
+  my $Stormshield = shift;
+  my $hamib_version = $Stormshield->hamib_version() || ();
+  my %e_index;
+  foreach my $iid (keys %$hamib_version) {
+    $e_index{$iid} = $hamib_version->{$iid};
+  }
+
+  return \%e_index;
+}
+
+
+sub e_serial {
+
+  my $Stormshield = shift;
+  my $hamib_serials = $Stormshield->hamib_serial() || ();
+  my %e_index;
+  foreach my $iid (keys %$hamib_serials) {
+    $e_index{$iid} = $hamib_serials->{$iid};
+  }
+
+  return \%e_index;
+}
 
 1;
 
