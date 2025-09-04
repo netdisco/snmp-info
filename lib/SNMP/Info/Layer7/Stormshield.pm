@@ -88,113 +88,17 @@ sub serial {
   return $Stormshield->propmib_serial() // '';
 }
 
-sub serial000 {
-
-  my $Stormshield = shift;
-  my $hamib_serial = $Stormshield->hamib_serial();
-  my $propmib_serial = $Stormshield->propmib_serial();
-
-  # Collect serials preserving HA MIB order
-  my %unique_serials;
-  my @serials;
-  my %seen;
-  
-  if (ref($hamib_serial) eq 'HASH') {
-    foreach my $key (sort keys %$hamib_serial) {
-      my $value = $hamib_serial->{$key};
-      push @serials, $value unless $seen{$value}++;
-    }
-  } else {
-    push @serials, $hamib_serial unless $seen{$hamib_serial}++;
-  }
-  
-  # Add Property MIB serials (avoiding duplicates)
-  if (ref($propmib_serial) eq 'HASH') {
-    foreach my $value (values %$propmib_serial) {
-      push @serials, $value unless $seen{$value}++;
-    }
-  } else {
-    push @serials, $propmib_serial unless $seen{$propmib_serial}++;
-  }
-
-  my $serial = join(' ', grep { defined && length } @serials);
-  return $serial;
-}
 
 sub model {
   my $Stormshield = shift;
   return $Stormshield->propmib_model() // '';
 }
 
-sub model000 {
-
-  my $Stormshield = shift;
-  my $hamib_model = $Stormshield->hamib_model();
-  my $propmib_model = $Stormshield->propmib_model();
-
-  my @models;
-  my %seen;
-  
-  # Collect unique models preserving HA MIB order
-  if (ref($hamib_model) eq 'HASH') {
-    foreach my $key (sort keys %$hamib_model) {
-      my $value = $hamib_model->{$key};
-      push @models, $value unless $seen{$value}++;
-    }
-  } else {
-    push @models, $hamib_model unless $seen{$hamib_model}++;
-  }
-  
-  # Add Property MIB model
-  if (ref($propmib_model) eq 'HASH') {
-    foreach my $value (values %$propmib_model) {
-      push @models, $value unless $seen{$value}++;
-    }
-  } else {
-    push @models, $propmib_model unless $seen{$propmib_model}++;
-  }
-  
-  my $model = join(' ', grep { defined && length } @models);
-  return $model;
-}
 
 sub os_ver {
   my $Stormshield = shift;
   return $Stormshield->propmib_version() // '';
 }
-
-sub os_ver000 {
-
-  my $Stormshield = shift;
-  my $hamib_version = $Stormshield->hamib_version();
-  my $propmib_version = $Stormshield->propmib_version();
-
-  my @versions;
-  my %seen;
-  
-  # Collect unique versions preserving HA MIB order
-  if (ref($hamib_version) eq 'HASH') {
-    foreach my $key (sort keys %$hamib_version) {
-      my $value = $hamib_version->{$key};
-      push @versions, $value unless $seen{$value}++;
-    }
-  } else {
-    push @versions, $hamib_version unless $seen{$hamib_version}++;
-  }
-  
-  # Add Property MIB version
-  if (ref($propmib_version) eq 'HASH') {
-    foreach my $value (values %$propmib_version) {
-      push @versions, $value unless $seen{$value}++;
-    }
-  } else {
-    push @versions, $propmib_version unless $seen{$propmib_version}++;
-  }
-  
-  my $os_ver = join(' ', grep { defined && length } @versions);
-  return $os_ver;
-}
-
 
 
 sub e_index {
@@ -328,30 +232,44 @@ Rob Woodward
 
 Subclass for Stormshield Network Security (SNS) appliances
 
-The module supports both High Availability (HA) and non-HA Stormshield appliances. The information retrieved can be different based on whether the device is a HA or non-HA device.
+The module supports both High Availability (HA) and non-HA Stormshield
+appliances.
 
-=head2 High Availability (HA) Devices
+- Scalar globals such as serial number, model and OS version are retrieved
+  from C<STORMSHIELD-PROPERTY-MIB>.
+- Since ENTITY-MIB is not available on the device, a set of C<e_*> methods is
+  provided based on C<STORMSHIELD-HA-MIB> tables to approximate ENTITY-like
+  information for HA nodes.
 
-For HA devices, the module uses the STORMSHIELD-HA-MIB:
+=head2 High Availability (HA) Devices (HA-derived e_* methods)
+
+For HA devices, the module uses the C<STORMSHIELD-HA-MIB> to build
+ENTITY-like methods:
 
 =over
 
-=item Serial Number: C<snsFwSerial> (.1.3.6.1.4.1.11256.1.11.7.1.2)
+=item Serial Number table: C<snsFwSerial> (.1.3.6.1.4.1.11256.1.11.7.1.2)
 
-=item Model: C<snsModel> (.1.3.6.1.4.1.11256.1.11.7.1.4)
+=item Model table: C<snsModel> (.1.3.6.1.4.1.11256.1.11.7.1.4)
 
-=item Version: C<snsVersion> (.1.3.6.1.4.1.11256.1.11.7.1.5)
+=item Version table: C<snsVersion> (.1.3.6.1.4.1.11256.1.11.7.1.5)
+
+=item HA license table: C<snsHALicence> (.1.3.6.1.4.1.11256.1.11.7.1.6)
 
 =back
+
+Note: While C<snsNodeIndex> exists in the HA MIB, it is C<MAX-ACCESS
+not-accessible> and cannot be fetched directly; the C<e_index> method uses the
+row indices of the HA tables (e.g., C<snsFwSerial>) as identity mapping.
 
 Example SNMP walk for model:
  snmpwalk -v2c -On .1.3.6.1.4.1.11256.1.11.7.1.4
  .1.3.6.1.4.1.11256.1.11.7.1.4.0 = STRING: "SN-S-Series-220"
  .1.3.6.1.4.1.11256.1.11.7.1.4.1 = STRING: "SN-S-Series-220"
 
-=head2 Non-HA Devices
+=head2 Non-HA Devices (Property MIB globals)
 
-For non-HA devices, the module uses the STORMSHIELD-PROPERTY-MIB:
+The module uses the C<STORMSHIELD-PROPERTY-MIB> for single nodes or the primary cluster node:
 
 =over
 
@@ -389,7 +307,7 @@ Required for High Availability (HA) Stormshield appliances.
 
 =item STORMSHIELD-PROPERTY-MIB
 
-Required for non-HA Stormshield appliances.
+Required for both single nodes and clusters.
 
 =back
 
@@ -409,15 +327,15 @@ Returns 'SNS'.
 
 =item $Stormshield->os_ver()
 
-Release extracted from Stormshield MIBs (HA or Property MIB).
+Release extracted from C<STORMSHIELD-PROPERTY-MIB>.
 
 =item $Stormshield->model()
 
-Model extracted from Stormshield MIBs (HA or Property MIB).
+Model extracted from C<STORMSHIELD-PROPERTY-MIB>.
 
 =item $Stormshield->serial()
 
-Returns serial number extracted from Stormshield MIBs (HA or Property MIB).
+Returns serial number extracted from C<STORMSHIELD-PROPERTY-MIB>.
 
 =back
 
@@ -425,10 +343,50 @@ Returns serial number extracted from Stormshield MIBs (HA or Property MIB).
 
 See documentation in L<SNMP::Info::Layer7> for details.
 
-=head1 TABLE ENTRIES
+=head1 TABLE METHODS
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=over
+
+=item $Stormshield->e_index()
+
+Returns an identity mapping of HA node row indices inferred from
+C<STORMSHIELD-HA-MIB> tables; key = iid, value = iid.
+
+=item $Stormshield->e_class()
+
+Returns reference to hash: key = iid, value = 'chassis'.
+
+=item $Stormshield->e_name()
+
+Returns reference to hash: key = iid, value = 'chassis.<iid>'.
+
+=item $Stormshield->e_vendor()
+
+Returns reference to hash: key = iid, value = 'stormshield'.
+
+=item $Stormshield->e_descr()
+
+Returns reference to hash: key = iid, value = '<model> <licence> <serial> <version>'
+assembled from HA tables: C<snsModel>, C<snsHALicence>, C<snsFwSerial>, and
+C<snsVersion>.
+
+=item $Stormshield->e_model()
+
+Returns reference to hash: key = iid, value = model (from C<snsModel>).
+
+=item $Stormshield->e_swver()
+
+Returns reference to hash: key = iid, value = software version (from
+C<snsVersion>).
+
+=item $Stormshield->e_serial()
+
+Returns reference to hash: key = iid, value = serial (from C<snsFwSerial>).
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer7
 
