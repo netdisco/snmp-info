@@ -83,7 +83,7 @@ sub serial {
 sub model {
     my $neoteris = shift;
     my $id       = $neoteris->id();
-    my $product_name = $neoteris->product_name();
+    my $product_name = $neoteris->product_name() || '';
 
     my $model    = &SNMP::translateObj($id);
     if ($product_name =~ /^(Ivanti|Pulse) Connect Secure,(\S+)/) {
