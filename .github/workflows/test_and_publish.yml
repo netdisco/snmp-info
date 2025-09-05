@@ -46,6 +46,20 @@ jobs:
     - name: Fix owner of checkout
       run: chown -R netdisco:netdisco /github/workspace/snmp-info/snmp-info
 
+    - name: Download latest netdisco-mibs
+      working-directory: /home/netdisco/netdisco-mibs
+      run: |
+        rm -rf /home/netdisco/netdisco-mibs/* && 
+        curl -sL https://api.github.com/repos/netdisco/netdisco-mibs/releases/latest |
+          grep browser_download_url | xargs printf "curl -sL %s\n" | tail -1 |
+          sh | tar --strip-components=1 -zxf - &&
+        chown -R netdisco:netdisco /home/netdisco/netdisco-mibs
+
+    - name: Show netdisco-mibs contents
+      working-directory: /home/netdisco/netdisco-mibs
+      run: |
+        ls -l && echo VERSION: && cat VERSION
+
     - name: Install Perl deps
       run: |
         sudo -u netdisco /home/netdisco/bin/localenv cpanm --notest Hook::LexWrap Test::Class::Most Test::Distribution Test::MockObject::Extends PPI Class::ISA Module::Info File::Slurp Test::Perl::Critic Test::Spelling CPAN::Uploader
