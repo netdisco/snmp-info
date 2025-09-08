@@ -135,11 +135,6 @@ sub os {
 sub os_ver {
     my $huawei = shift;
 
-    my $entity_os = $huawei->entity_derived_os_ver();
-    if ( defined $entity_os and $entity_os !~ /^\s*$/ ) {
-        return $entity_os;
-    }
-
     my $patchstr = $huawei->_os_patch(); 
     # Prefer extracting uniform V600R023C10SPC500-style version strings from sysDescr first
     # we trim the base kernel version like 5.170 to make the netdisco inventory page nicer
