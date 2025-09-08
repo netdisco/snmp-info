@@ -141,7 +141,6 @@ sub os_ver {
     }
 
     my $patchstr = $huawei->_os_patch(); 
-    print STDERR "PPPPP $patchstr\n";
     # Prefer extracting uniform V600R023C10SPC500-style version strings from sysDescr first
     # we trim the base kernel version like 5.170 to make the netdisco inventory page nicer
     my $descr = $huawei->description();
@@ -164,7 +163,6 @@ sub _os_patch {
     my $patches = $huawei->hw_patch_version();
     #use Data::Dumper; print Dumper $patches;
 
-    print STDERR "xxx $patches\n";
     my $patchstr = join ' ', map { /V\d{3}R\d{3}(\S+)/ ? $1 : () } values %$patches;
     return $patchstr;
 }

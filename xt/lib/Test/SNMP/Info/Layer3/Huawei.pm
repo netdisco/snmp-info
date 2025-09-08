@@ -71,9 +71,10 @@ sub setup : Tests(setup) {
     '_hw_fan_descr'        => 1,
     '_hw_pwr_state'        => 1,
     '_hw_pwr_descr'        => 1,
+    '_hw_patch_version'    => 1,
 
     'store' => {
-      'hw_patch_version' => { '1' => 'HP777', 2 => 'HP123'},
+      'hw_patch_version' => { },
       'i_index'       => {1 => 1, 6 => 6, 7 => 7, 8 => 8, 108 => 108},
       'i_description' => {
         1   => 'InLoopBack0',
@@ -141,7 +142,6 @@ sub os : Tests(5) {
   is($test->{info}->os(), 'huawei', q(... and 'huawei' as fallback if nothing else matches));
 }
 
-=pod
 sub os_ver_with_patch : Tests(2) {
   my $test = shift;
 
@@ -158,7 +158,6 @@ sub os_ver_with_patch : Tests(2) {
     q(OS version returned with patch example 1)
   );
 }
-=cut
 
 sub os_ver : Tests(9) {
   my $test = shift;
