@@ -45,6 +45,7 @@ $VERSION = '3.973000';
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
     'STORMSHIELD-HA-MIB'     => 'snsFwSerial',
+    'STORMSHIELD-IF-MIB'     => 'snsifUserName',
     'STORMSHIELD-PROPERTY-MIB' => 'snsSerialNumber',
 );
 
@@ -69,11 +70,109 @@ $VERSION = '3.973000';
     'hamib_halicense' => 'STORMSHIELD_HA_MIB__snsHALicence',
     # can't use, MAX-ACCESS	not-accessible
     #'hamib_nodeindex' => 'STORMSHIELD_HA_MIB__snsNodeIndex',
+
+    # use STORMSHIELD_IF_MIB
+    # it uses different indexes than ifXEntry so we need to take care
+    # of not mixing things up. 
+    'ifmib_interfaces' => 'STORMSHIELD_IF_MIB__snsifDrvName',
+    'i_name' => 'STORMSHIELD_IF_MIB__snsifName',
+    'i_alias' => 'STORMSHIELD_IF_MIB__snsifName',
+    'i_description' => 'STORMSHIELD_IF_MIB__snsifUserName',
+    'i_type' => 'STORMSHIELD_IF_MIB__snsifType',
+    'i_index' => 'STORMSHIELD_IF_MIB__snsifIndex',
+
+    # regular interface tables
+    '_mib2_i_description' => 'IF-MIB__ifDescr',
+
     );
 
 %MUNGE = (
-    %SNMP::Info::Layer7::MUNGE,
+    %SNMP::Info::Layer7::MUNGE
     );
+
+sub _ifindex_conversion {
+  my $Stormshield = shift;
+
+  # return a table that maps the snsifTable to the ifTable index, so we can look up things that are only in the latter
+
+  # .iso.org.dod.internet.private.enterprises.stormshield.stormshieldMIB.snsif.snsifTable.snsifEntry.snsifDrvName.1 = STRING: "tun0"
+  # .iso.org.dod.internet.private.enterprises.stormshield.stormshieldMIB.snsif.snsifTable.snsifEntry.snsifDrvName.4 = STRING: "igc7"
+  # .iso.org.dod.internet.private.enterprises.stormshield.stormshieldMIB.snsif.snsifTable.snsifEntry.snsifDrvName.5 = STRING: "igc6"
+
+  # .iso.org.dod.internet.mgmt.mib-2.interfaces.ifTable.ifEntry.ifDescr.7 = STRING: "igc6"
+  # .iso.org.dod.internet.mgmt.mib-2.interfaces.ifTable.ifEntry.ifDescr.8 = STRING: "igc7"
+  # .iso.org.dod.internet.mgmt.mib-2.interfaces.ifTable.ifEntry.ifDescr.12 = STRING: "tun0"
+
+  my $snsif = $Stormshield->ifmib_interfaces();
+  my $mib2if = {reverse %{$Stormshield->_mib2_i_description}};
+  my $map_s2m = {};
+
+
+  foreach my $si ( keys %$snsif ) {
+    my $sv = $snsif->{$si};
+    $map_s2m->{$si} = $mib2if->{$sv};
+  }
+
+  # now for e.g. igc7:
+  # this will now return $map_s2m->{4} = 8, the correct index to looks at ifEntry for igc7 
+  return $map_s2m;
+}
+
+sub _map_table {
+  # apply _ifindex_conversion to an arbitrary structure with IF-MIB indexes
+  my ($Stormshield, $tableref) = @_;
+  my $map_s2m = $Stormshield->_ifindex_conversion();
+  my $interfaces = $Stormshield->interfaces();
+  my $out = {};
+
+  foreach my $si ( keys %$interfaces ) {
+    $out->{$si} = $tableref->{$map_s2m->{$si}} ;
+  }
+  return $out;
+}
+
+
+sub interfaces {
+  # skip Layer7::interfaces for our own version
+  my $Stormshield = shift;
+  return $Stormshield->ifmib_interfaces();
+}
+
+sub i_up {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_up();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_up_admin {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_up_admin();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_duplex {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_duplex();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_duplex_admin {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_duplex_admin();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_mac {
+  my $Stormshield = shift;
+  my $mib2mac = $Stormshield->SUPER::i_mac();
+  return $Stormshield->_map_table($mib2mac);
+}
+
+sub i_speed {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_speed();
+  return $Stormshield->_map_table($mib2table);
+}
 
 sub vendor {
     return 'stormshield';
