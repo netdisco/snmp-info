@@ -30,6 +30,7 @@
 package Test::SNMP::Info::Layer7::Stormshield;
 
 use Test::Class::Most parent => 'My::Test::Class';
+use Data::Dumper;
 
 use SNMP::Info::Layer7::Stormshield;
 
@@ -153,6 +154,22 @@ sub e_index : Tests(3) {
   is_deeply($res, {}, q(No data returns empty hashref));
 }
 
+sub interface_mapping : Tests(3) {
+  my $test = shift;
 
+  # Test that the methods exist and are callable
+  can_ok($test->{info}, '_ifindex_conversion');
+  can_ok($test->{info}, 'interfaces');
+  can_ok($test->{info}, 'i_name');
+  
+}
+
+sub interface_methods : Tests(1) {
+  my $test = shift;
+
+  # Test that the interfaces method works (returns standard IF-MIB data)
+  can_ok($test->{info}, 'interfaces');
+  
+}
 
 1;

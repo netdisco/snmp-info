@@ -93,7 +93,7 @@ $VERSION = '3.973000';
 sub _ifindex_conversion {
   my $Stormshield = shift;
 
-  # return a table that maps the snsifTable to the ifTable index, so we can look up things that are only in the latter
+  # return a table that maps ifTable indexes to snsifTable indexes, so we can look up STORMSHIELD_IF_MIB data using standard IF-MIB indexes
 
   # .iso.org.dod.internet.private.enterprises.stormshield.stormshieldMIB.snsif.snsifTable.snsifEntry.snsifDrvName.1 = STRING: "tun0"
   # .iso.org.dod.internet.private.enterprises.stormshield.stormshieldMIB.snsif.snsifTable.snsifEntry.snsifDrvName.4 = STRING: "igc7"
@@ -103,30 +103,51 @@ sub _ifindex_conversion {
   # .iso.org.dod.internet.mgmt.mib-2.interfaces.ifTable.ifEntry.ifDescr.8 = STRING: "igc7"
   # .iso.org.dod.internet.mgmt.mib-2.interfaces.ifTable.ifEntry.ifDescr.12 = STRING: "tun0"
 
-  my $snsif = $Stormshield->ifmib_interfaces();
-  my $mib2if = {reverse %{$Stormshield->_mib2_i_description}};
-  my $map_s2m = {};
-
+  my $snsif = $Stormshield->ifmib_interfaces() || {};
+  my $mib2if_desc = $Stormshield->_mib2_i_description() || {};
+  my $mib2if = {reverse %$mib2if_desc};
+  my $map_m2s = {};
 
   foreach my $si ( keys %$snsif ) {
     my $sv = $snsif->{$si};
-    $map_s2m->{$si} = $mib2if->{$sv};
+    my $mib_index = $mib2if->{$sv};
+    if (defined $mib_index) {
+      $map_m2s->{$mib_index} = $si;
+    }
   }
 
-  # now for e.g. igc7:
-  # this will now return $map_s2m->{4} = 8, the correct index to looks at ifEntry for igc7 
-  return $map_s2m;
+  # now for e.g. ifDescr.8 (igc7):
+  # this will return $map_m2s->{8} = 4, the STORMSHIELD_IF_MIB index for igc7
+  return $map_m2s;
 }
 
 sub _map_table {
-  # apply _ifindex_conversion to an arbitrary structure with IF-MIB indexes
-  my ($Stormshield, $tableref) = @_;
-  my $map_s2m = $Stormshield->_ifindex_conversion();
-  my $interfaces = $Stormshield->interfaces();
+  # get STORMSHIELD_IF_MIB data and map it to standard IF-MIB indexes
+  my ($Stormshield, $snsif_method) = @_;
+  my $map_m2s = $Stormshield->_ifindex_conversion();
+  
+  # Map method names to their SNMP attribute names
+  my %method_to_attr = (
+    'i_name' => 'snsifName',
+    'i_alias' => 'snsifName', 
+    'i_description' => 'snsifUserName',
+    'i_type' => 'snsifType',
+    'i_index' => 'snsifIndex',
+  );
+  
+  my $attr_name = $method_to_attr{$snsif_method};
+  
+  # Get the raw SNMP data by calling the attribute method directly
+  my $snsif_data = {};
+  if ($attr_name && $Stormshield->can($attr_name)) {
+    $snsif_data = $Stormshield->$attr_name() || {};
+  }
+  
   my $out = {};
 
-  foreach my $si ( keys %$interfaces ) {
-    $out->{$si} = $tableref->{$map_s2m->{$si}} ;
+  foreach my $mib_index ( keys %$map_m2s ) {
+    my $snsif_index = $map_m2s->{$mib_index};
+    $out->{$mib_index} = $snsif_data->{$snsif_index};
   }
   return $out;
 }
@@ -266,119 +287,37 @@ sub e_serial {
 
 # Interface methods - all grouped together
 sub interfaces {
-  # skip Layer7::interfaces for our own version
+  # return standard IF-MIB interface names keyed by standard IF-MIB indexes
   my $Stormshield = shift;
-  return $Stormshield->ifmib_interfaces();
+  return $Stormshield->_mib2_i_description();
 }
 
-sub i_up {
+
+# STORMSHIELD_IF_MIB specific methods that map to standard IF-MIB indexes
+sub i_name {
   my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_up();
-  return $Stormshield->_map_table($mib2table);
+  return $Stormshield->_map_table('i_name');
 }
 
-sub i_up_admin {
+sub i_alias {
   my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_up_admin();
-  return $Stormshield->_map_table($mib2table);
+  return $Stormshield->_map_table('i_alias');
 }
 
-sub i_duplex {
+sub i_description {
   my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_duplex();
-  return $Stormshield->_map_table($mib2table);
+  return $Stormshield->_map_table('i_description');
 }
 
-sub i_duplex_admin {
+sub i_type {
   my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_duplex_admin();
-  return $Stormshield->_map_table($mib2table);
+  return $Stormshield->_map_table('i_type');
 }
 
-sub i_mac {
+sub i_index {
   my $Stormshield = shift;
-  my $mib2mac = $Stormshield->SUPER::i_mac();
-  return $Stormshield->_map_table($mib2mac);
+  return $Stormshield->_map_table('i_index');
 }
-
-sub i_speed {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_speed();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_errors {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_errors();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_octets {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_octets();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_octets_in {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_octets_in();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_octets_out {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_octets_out();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_pkts {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_pkts();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_pkts_in {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_pkts_in();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_pkts_out {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_pkts_out();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_errors_in {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_errors_in();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_errors_out {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_errors_out();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_discards {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_discards();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_discards_in {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_discards_in();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_discards_out {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_discards_out();
-  return $Stormshield->_map_table($mib2table);
-}
-
 
 1;
 
@@ -573,77 +512,6 @@ Returns reference to hash: key = iid, value = serial (from C<snsFwSerial>).
 
 Override interface details with STORMSHIELD_IF_MIB
 
-=item $Stormshield->i_up()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_up_admin()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_duplex()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_duplex_admin()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_mac()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_speed()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_errors()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_octets()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_octets_in()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_octets_out()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_pkts()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_pkts_in()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_pkts_out()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_errors_in()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_errors_out()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_discards()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_discards_in()
-
-Override interface details with STORMSHIELD_IF_MIB
-
-=item $Stormshield->i_discards_out()
-
-Override interface details with STORMSHIELD_IF_MIB
 
 
 =back
