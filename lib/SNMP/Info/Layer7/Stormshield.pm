@@ -132,48 +132,6 @@ sub _map_table {
 }
 
 
-sub interfaces {
-  # skip Layer7::interfaces for our own version
-  my $Stormshield = shift;
-  return $Stormshield->ifmib_interfaces();
-}
-
-sub i_up {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_up();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_up_admin {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_up_admin();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_duplex {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_duplex();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_duplex_admin {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_duplex_admin();
-  return $Stormshield->_map_table($mib2table);
-}
-
-sub i_mac {
-  my $Stormshield = shift;
-  my $mib2mac = $Stormshield->SUPER::i_mac();
-  return $Stormshield->_map_table($mib2mac);
-}
-
-sub i_speed {
-  my $Stormshield = shift;
-  my $mib2table = $Stormshield->SUPER::i_speed();
-  return $Stormshield->_map_table($mib2table);
-}
-
 sub vendor {
     return 'stormshield';
 }
@@ -305,6 +263,122 @@ sub e_serial {
 
   return \%e_index;
 }
+
+# Interface methods - all grouped together
+sub interfaces {
+  # skip Layer7::interfaces for our own version
+  my $Stormshield = shift;
+  return $Stormshield->ifmib_interfaces();
+}
+
+sub i_up {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_up();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_up_admin {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_up_admin();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_duplex {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_duplex();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_duplex_admin {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_duplex_admin();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_mac {
+  my $Stormshield = shift;
+  my $mib2mac = $Stormshield->SUPER::i_mac();
+  return $Stormshield->_map_table($mib2mac);
+}
+
+sub i_speed {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_speed();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_errors {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_errors();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_octets {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_octets();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_octets_in {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_octets_in();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_octets_out {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_octets_out();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_pkts {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_pkts();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_pkts_in {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_pkts_in();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_pkts_out {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_pkts_out();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_errors_in {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_errors_in();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_errors_out {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_errors_out();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_discards {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_discards();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_discards_in {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_discards_in();
+  return $Stormshield->_map_table($mib2table);
+}
+
+sub i_discards_out {
+  my $Stormshield = shift;
+  my $mib2table = $Stormshield->SUPER::i_discards_out();
+  return $Stormshield->_map_table($mib2table);
+}
+
 
 1;
 
@@ -494,6 +568,83 @@ C<snsVersion>).
 =item $Stormshield->e_serial()
 
 Returns reference to hash: key = iid, value = serial (from C<snsFwSerial>).
+
+=item $Stormshield->interfaces()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_up()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_up_admin()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_duplex()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_duplex_admin()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_mac()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_speed()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_errors()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_octets()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_octets_in()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_octets_out()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_pkts()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_pkts_in()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_pkts_out()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_errors_in()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_errors_out()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_discards()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_discards_in()
+
+Override interface details with STORMSHIELD_IF_MIB
+
+=item $Stormshield->i_discards_out()
+
+Override interface details with STORMSHIELD_IF_MIB
+
 
 =back
 
