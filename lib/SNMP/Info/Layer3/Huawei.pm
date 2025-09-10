@@ -54,7 +54,7 @@ $VERSION = '3.973000';
     'HUAWEI-IF-EXT-MIB'        => 'hwTrunkIfIndex',
     'HUAWEI-L2IF-MIB'          => 'hwL2IfPortIfIndex',
     'HUAWEI-POE-MIB'           => 'hwPoePower',
-    'HUAWEI-SYS-MAN-MIB'       => 'hwPatchFileVersion',
+    'HUAWEI-SYS-MAN-MIB'       => 'hwPatchVersion',
     'HUAWEI-ENTITY-EXTENT-MIB' => 'hwEntityFanState',
 );
 
@@ -100,7 +100,7 @@ $VERSION = '3.973000';
     'hw_pwr_descr' => 'hwEntityPwrDesc',
 
     # HUAWEI-SYS-MAN-MIB::hwPatchFileTable
-    'hw_patch_version' => 'hwPatchFileVersion',
+    'hw_patch_version' => 'hwPatchVersion',
 );
 
 %MUNGE = (
@@ -158,6 +158,8 @@ sub _os_patch {
     my $patches = $huawei->hw_patch_version();
     #use Data::Dumper; print Dumper $patches;
 
+    # hwPatchTable.hwPatchEntry.hwPatchVersion should only return one row (at a somewhat random-looking index),
+    # but we join up multiple results just in case
     my $patchstr = join ' ', map { /V\d{3}R\d{3}(\S+)/ ? $1 : () } values %$patches;
     return $patchstr;
 }
