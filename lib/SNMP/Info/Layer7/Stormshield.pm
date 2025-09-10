@@ -57,6 +57,7 @@ $VERSION = '3.973000';
     'propmib_serial'   => 'STORMSHIELD_PROPERTY_MIB__snsSerialNumber',
     'propmib_model'    => 'STORMSHIELD_PROPERTY_MIB__snsModel',
     'propmib_version'  => 'STORMSHIELD_PROPERTY_MIB__snsVersion',
+    'propmib_systemname'  => 'STORMSHIELD_PROPERTY_MIB__snsSystemName',
 );
 
 %FUNCS = (
@@ -80,6 +81,11 @@ sub vendor {
 
 sub os {
     return 'SNS';
+}
+
+sub name {
+    my $Stormshield = shift;
+    return $Stormshield->propmib_systemname() || $Stormshield->SUPER::name();
 }
 
 sub serial {
@@ -320,6 +326,10 @@ These are methods that return scalar value from SNMP
 =item $Stormshield->vendor()
 
 Returns 'stormshield'.
+
+=item $Stormshield->name()
+
+Returns snsProductProperty.snsSystemName if available, regular sysName otherwise
 
 =item $Stormshield->os()
 
