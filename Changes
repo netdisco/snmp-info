@@ -1,3 +1,10 @@
+Version 3.974000 (2025-09-12)
+
+  [ENHANCEMENTS]
+
+  * Stormshield uses STORMSHIELD-IF-MIB for i_ methods
+  * #551 Huawei os, os_ver normalized and patch info added
+
 Version 3.973000 (2025-09-04)
 
   [NEW FEATURES]
