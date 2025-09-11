@@ -41,7 +41,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.973000';
+$VERSION = '3.974000';
 
 %MIBS = ( 'CISCO-BGP4-MIB' => 'cbgpPeer2State', );
 

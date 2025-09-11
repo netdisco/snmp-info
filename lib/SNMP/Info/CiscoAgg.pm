@@ -49,7 +49,7 @@ use SNMP::Info::Aggregate 'agg_ports_ifstack';
 
 our ($DEBUG, $VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.973000';
+$VERSION = '3.974000';
 
 %MIBS = (
   %SNMP::Info::IEEE802dot3ad::MIBS,
