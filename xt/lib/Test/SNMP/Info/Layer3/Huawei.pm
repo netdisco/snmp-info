@@ -71,8 +71,10 @@ sub setup : Tests(setup) {
     '_hw_fan_descr'        => 1,
     '_hw_pwr_state'        => 1,
     '_hw_pwr_descr'        => 1,
+    '_hw_patch_version'    => 1,
 
     'store' => {
+      'hw_patch_version' => { },
       'i_index'       => {1 => 1, 6 => 6, 7 => 7, 8 => 8, 108 => 108},
       'i_description' => {
         1   => 'InLoopBack0',
@@ -120,52 +122,118 @@ sub vendor : Tests(2) {
   is($test->{info}->vendor(), 'huawei', q(Vendor returns 'huawei'));
 }
 
-sub os : Tests(3) {
+sub os : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'os');
-  is($test->{info}->os(), 'VRP', q(OS returns 'VRP' when description matches));
+  is($test->{info}->os(), 'VRP', q(OS returns 'VRP' when V100 description matches));
+
+  my $descr = "Huawei YunShan OS\nVersion 1.23.1.1 (S5700 V600R023C10SPC500)\n"
+    ."Copyright (C) 2021-2024 Huawei Technologies Co., Ltd.";
+  $test->{info}{_description} = $descr;
+  is($test->{info}->os(), 'YunShan OS', q(OS returns 'YunShan OS' when V600 description matches));
+
+  $descr = "Huawei Versatile Routing Platform Software\r\nVRP (R) software,Version 5.170 (S5700 V200R011C10SPC600)\r\n"
+    ."Copyright (C) 2007 Huawei Technologies Co., Ltd.";
+  $test->{info}{_description} = $descr;
+  is($test->{info}->os(), 'VRP', q(OS returns 'VRP' when V200 description matches));
 
   $test->{info}->clear_cache();
-  is($test->{info}->os(), 'huawei', q(... and 'huawei' when it doesn't));
+  is($test->{info}->os(), 'huawei', q(... and 'huawei' as fallback if nothing else matches));
 }
 
-sub os_ver : Tests(7) {
+sub os_ver_with_patch : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'os_ver');
+
+  my $descr = "Huawei YunShan OS\nVersion 1.23.1.1 (S5700 V600R023C10SPC500)\n"
+    ."Copyright (C) 2021-2024 Huawei Technologies Co., Ltd.";
+  $test->{info}{_description} = $descr;
+  $test->{info}{store}{hw_patch_version}{'1'} = 'V600R023HP1501'; 
+  #$test->{info}{store}{hw_fan_state}{'1.2'} = 'normal';
+  is(
+    $test->{info}->os_ver(),
+    'V600R023C10SPC500 HP1501',
+    q(OS version returned with patch example 1)
+  );
+}
+
+sub os_patch : Tests {
+  my $test = shift;
+
+  can_ok($test->{info}, '_os_patch');
+
+  # more explanation is in _os_patch
+  my %cases = (
+    'V600R023HP1501'        => 'HP1501',
+    'V200R011SPC102'        => 'SPC102',
+    'V200R011SPH033'        => 'SPH033',
+    'V200R022C00SPC100B189' => 'B189',
+    'V200R023CO0SPH180'     => 'SPH180',
+  );
+
+  while (my ($input, $expected) = each %cases) {
+    $test->{info}{store}{hw_patch_version} = { '1' => $input };
+    is( $test->{info}->_os_patch(), $expected, "extracting patch from $input" );
+  }
+}
+
+
+sub os_ver : Tests(9) {
   my $test = shift;
 
   can_ok($test->{info}, 'os_ver');
 
   is(
     $test->{info}->os_ver(),
-    '8.100 V100R005C10SPC200',
+    'V100R005C10SPC200',
     q(OS version returned from 'sysDescr' example 1)
   );
 
+  # this first batch is ending up in _os_ver_legacy
+
   my $descr = 'Version 3.40, Release 0311P07 Quidway Series Router AR28-31 ';
   $test->{info}{_description} = $descr;
-
   is($test->{info}->os_ver(),
     '3.40 0311P07', q(OS version returned from 'sysDescr'example 2));
 
   $descr = 'Version 3.40, Feature 0308 Quidway Series Router AR46-40 ';
   $test->{info}{_description} = $descr;
-
   is($test->{info}->os_ver(),
     '3.40 0308', q(OS version returned from 'sysDescr'example 3));
 
   $descr = 'Version 3.40, Feature 0121L01.Quidway Router AR18-34E.';
   $test->{info}{_description} = $descr;
-
   is($test->{info}->os_ver(),
     '3.40 0121L01', q(OS version returned from 'sysDescr'example 4));
 
+  # contemporary os_ver 
+
   $descr = 'software,Version 5.120 (AR151 V200R003C01SPC100) ';
   $test->{info}{_description} = $descr;
-
   is(
     $test->{info}->os_ver(),
-    '5.120 V200R003C01SPC100',
+    'V200R003C01SPC100',
     q(OS version returned from 'sysDescr'example 5)
+  );
+
+  $descr = "Huawei YunShan OS\nVersion 1.23.1.1 (S5700 V600R023C10SPC500)\n"
+    ."Copyright (C) 2021-2024 Huawei Technologies Co., Ltd.";
+  $test->{info}{_description} = $descr;
+  is(
+    $test->{info}->os_ver(),
+    'V600R023C10SPC500',
+    q(OS version returned from 'sysDescr'example 6)
+  );
+
+  $descr = "Huawei Versatile Routing Platform Software\r\nVRP (R) software,Version 5.170 (S5700 V200R011C10SPC600) \r\n"
+    ."Copyright (C) 2007 Huawei Technologies Co., Ltd.";
+  $test->{info}{_description} = $descr;
+  is(
+    $test->{info}->os_ver(),
+    'V200R011C10SPC600',
+    q(OS version returned from 'sysDescr'example 7)
   );
 
   $test->{info}->clear_cache();

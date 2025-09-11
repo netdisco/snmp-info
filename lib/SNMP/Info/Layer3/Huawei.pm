@@ -54,6 +54,7 @@ $VERSION = '3.973000';
     'HUAWEI-IF-EXT-MIB'        => 'hwTrunkIfIndex',
     'HUAWEI-L2IF-MIB'          => 'hwL2IfPortIfIndex',
     'HUAWEI-POE-MIB'           => 'hwPoePower',
+    'HUAWEI-SYS-MAN-MIB'       => 'hwPatchVersion',
     'HUAWEI-ENTITY-EXTENT-MIB' => 'hwEntityFanState',
 );
 
@@ -97,6 +98,9 @@ $VERSION = '3.973000';
     # HUAWEI-ENTITY-EXTENT-MIB::hwPwrStatusTable
     'hw_pwr_state' => 'hwEntityPwrState',
     'hw_pwr_descr' => 'hwEntityPwrDesc',
+
+    # HUAWEI-SYS-MAN-MIB::hwPatchFileTable
+    'hw_patch_version' => 'hwPatchVersion',
 );
 
 %MUNGE = (
@@ -121,11 +125,59 @@ sub os {
 
     if ( defined ($descr) && $descr =~ /\b(VRP)\b/ ) {
         return $1;
+    }elsif ( defined ($descr) && $descr =~ /\b(YunShan OS)\b/i ) {
+        return "YunShan OS";
+    } else {
+        return "huawei";
     }
-    return "huawei";
 }
 
 sub os_ver {
+    my $huawei = shift;
+
+    my $patchstr = $huawei->_os_patch(); 
+    # Prefer extracting uniform V600R023C10SPC500-style version strings from sysDescr first
+    # we trim the base kernel version like 5.170 to make the netdisco inventory page nicer
+    my $descr = $huawei->description();
+    if ( defined $descr && $descr =~ /(V\d{3}[A-Za-z0-9]+)/ ) {
+        return $patchstr ? ($1 . " ".$patchstr) : $1;
+        #return $1 + $patchstr;
+    }else{
+        # if there is no version in the V\d{3}-style, use the old approach of returning more
+        return $huawei->_os_ver_legacy();
+    }
+}
+
+sub _os_patch {
+    my $huawei = shift;
+
+    # Patches are based on the release, e.g. 
+    #   os_ver               hw_patch_version 
+    #   V600R023C10SPC500 -> V600R023HP1501 -> Hot Patch 1501 
+    #   V200R011C10SPC600 -> V200R011SPC102 -> Service Pack Collection 102
+    #   V200R011C10SPC600 -> V200R011SPH033 -> Special Patch Hotfix 033
+    #   V200R022C00SPC100 -> V200R022CO0SPC100B189 -> APs are somehow different, this is AP Build 189 - just use B189
+    #   V200R023C00SPC100 -> V200R023CO0SPH180 -> APs without baseline in patch name, use SPH180
+    # 
+    # we only return the last segment like HP1501
+
+    my $patches = $huawei->hw_patch_version();
+
+    # hwPatchTable.hwPatchEntry.hwPatchVersion should only return one row (at a somewhat random-looking index),
+    # but we join up multiple results just in case
+    my $patchstr = join ' ',
+      map {
+        my $s = $_;
+        $s =~ s/^V\d{3}R\d{3}//;   # drop VRP prefix
+        $s =~ s/.*?([A-Z]+\d+)$/$1/; # only use last suffix to skip the extra bits in APs
+        $s;
+      } values %$patches;
+
+    return $patchstr;
+}
+
+
+sub _os_ver_legacy {
     my $huawei = shift;
 
     my $entity_os = $huawei->entity_derived_os_ver();
