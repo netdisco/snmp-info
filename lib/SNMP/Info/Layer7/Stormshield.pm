@@ -512,7 +512,31 @@ Returns reference to hash: key = iid, value = serial (from C<snsFwSerial>).
 
 Override interface details with STORMSHIELD_IF_MIB
 
+=back
 
+=head2 Overrides
+
+=over
+
+=item $Stormshield->i_name()
+
+Returns reference to hash: key = ifIndex, value = interface name from STORMSHIELD_IF_MIB.
+
+=item $Stormshield->i_alias()
+
+Returns reference to hash: key = ifIndex, value = interface alias from STORMSHIELD_IF_MIB.
+
+=item $Stormshield->i_description()
+
+Returns reference to hash: key = ifIndex, value = interface description from STORMSHIELD_IF_MIB.
+
+=item $Stormshield->i_type()
+
+Returns reference to hash: key = ifIndex, value = interface type from STORMSHIELD_IF_MIB.
+
+=item $Stormshield->i_index()
+
+Returns reference to hash: key = ifIndex, value = interface index from STORMSHIELD_IF_MIB.
 
 =back
 
