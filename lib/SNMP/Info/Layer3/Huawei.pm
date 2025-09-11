@@ -152,15 +152,27 @@ sub _os_patch {
     my $huawei = shift;
 
     # Patches are based on the release, e.g. 
+    #   os_ver               hw_patch_version 
     #   V600R023C10SPC500 -> V600R023HP1501 -> Hot Patch 1501 
     #   V200R011C10SPC600 -> V200R011SPC102 -> Service Pack Collection 102
     #   V200R011C10SPC600 -> V200R011SPH033 -> Special Patch Hotfix 033
+    #   V200R022C00SPC100 -> V200R022CO0SPC100B189 -> APs are somehow different, this is AP Build 189 - just use B189
+    #   V200R023C00SPC100 -> V200R023CO0SPH180 -> APs without baseline in patch name, use SPH180
+    # 
+    # we only return the last segment like HP1501
+
     my $patches = $huawei->hw_patch_version();
-    #use Data::Dumper; print Dumper $patches;
 
     # hwPatchTable.hwPatchEntry.hwPatchVersion should only return one row (at a somewhat random-looking index),
     # but we join up multiple results just in case
-    my $patchstr = join ' ', map { /V\d{3}R\d{3}(\S+)/ ? $1 : () } values %$patches;
+    my $patchstr = join ' ',
+      map {
+        my $s = $_;
+        $s =~ s/^V\d{3}R\d{3}//;   # drop VRP prefix
+        $s =~ s/.*?([A-Z]+\d+)$/$1/; # only use last suffix to skip the extra bits in APs
+        $s;
+      } values %$patches;
+
     return $patchstr;
 }
 

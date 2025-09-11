@@ -159,6 +159,27 @@ sub os_ver_with_patch : Tests(2) {
   );
 }
 
+sub os_patch : Tests {
+  my $test = shift;
+
+  can_ok($test->{info}, '_os_patch');
+
+  # more explanation is in _os_patch
+  my %cases = (
+    'V600R023HP1501'        => 'HP1501',
+    'V200R011SPC102'        => 'SPC102',
+    'V200R011SPH033'        => 'SPH033',
+    'V200R022C00SPC100B189' => 'B189',
+    'V200R023CO0SPH180'     => 'SPH180',
+  );
+
+  while (my ($input, $expected) = each %cases) {
+    $test->{info}{store}{hw_patch_version} = { '1' => $input };
+    is( $test->{info}->_os_patch(), $expected, "extracting patch from $input" );
+  }
+}
+
+
 sub os_ver : Tests(9) {
   my $test = shift;
 
