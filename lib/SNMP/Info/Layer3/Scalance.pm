@@ -153,10 +153,12 @@ sub lldp_ip {
     my %result;
     my $remotes = $scalance->lldp_rem_sysname();
     foreach my $port ( keys %$remotes) {
-	my $ip = gethostbyname($remotes->{$port});
-	if ($ip) {
-	    $result{$port} = inet_ntoa($ip);
-	}
+        if (defined $remotes->{$port}) {
+            my $ip = gethostbyname($remotes->{$port});
+            if ($ip) {
+                $result{$port} = inet_ntoa($ip);
+            }
+        }
     }
     return \%result
 };
