@@ -71,9 +71,9 @@ list any missing functionality (such as neighbor discovery tables).
                             # Version   => 3
                             # SecLevel  => 'authPriv', # authPriv|authNoPriv|noAuthNoPriv
                             # SecName   => 'myuser',
-                            # AuthProto => 'MD5',      # MD5|SHA
+                            # AuthProto => 'MD5',      # MD5|SHA|SHA512|SHA384|SHA256|SHA224
                             # AuthPass  => 'authp4ss',
-                            # PrivProto => 'DES',      # DES|AES
+                            # PrivProto => 'DES',      # DES|AES|AES128|AES192|AES256
                             # PrivPass  => 'pr1vp4ss',
 
                             # Rarer options - see https://metacpan.org/pod/SNMP for full list
@@ -171,9 +171,10 @@ from the net-snmp source tree.
 The Perl module C<SNMP> is found inside the net-snmp distribution.  Go to the
 F<perl/> directory of the distribution to install it, or run
 C<./configure --with-perl-modules> from the top directory of the net-snmp
-distribution.
+distribution. The net-snmp version and configuration will also determine
+which authentication and privacy protocols are available when using snmpv3.
 
-Net-SNMP can be found at http://net-snmp.sourceforge.net
+Net-SNMP can be found at L<http://net-snmp.sourceforge.net>.
 
 Version 5.3.2 or greater is recommended.
 
@@ -773,10 +774,6 @@ See documentation in L<SNMP::Info::Layer3::AlteonAD> for details.
 
 See documentation in L<SNMP::Info::Layer3::Altiga> for details.
 
-=item SNMP::Info::Layer3::Meraki
-
-See documentation in L<SNMP::Info::Layer3::Meraki> for details.
-
 =item SNMP::Info::Layer3::Arista
 
 See documentation in L<SNMP::Info::Layer3::Arista> for details.
@@ -942,7 +939,7 @@ See documentation in L<SNMP::Info::Layer3::Fortinet> for details.
 
 =item SNMP::Info::Layer3::Foundry
 
-Subclass for Brocade (Foundry) Network devices.
+Subclass for Ruckus / Brocade / Foundry switches.
 
 See documentation in L<SNMP::Info::Layer3::Foundry> for details.
 
@@ -997,6 +994,10 @@ Subclass for Lenovo switches running CNOS.
 
 See documentation in L<SNMP::Info::Layer3::Lenovo> for details.
 
+=item SNMP::Info::Layer3::Meraki
+
+See documentation in L<SNMP::Info::Layer3::Meraki> for details.
+
 =item SNMP::Info::Layer3::Microsoft
 
 Subclass for Generic Microsoft Routers running Microsoft Windows OS.
@@ -1021,17 +1022,17 @@ Subclass for Netonix switches.
 
 See documentation in L<SNMP::Info::Layer3::Netonix> for details.
 
-=item SNMP::Info::Layer3::NetSNMP
-
-Subclass for host systems running Net-SNMP.
-
-See documentation in L<SNMP::Info::Layer3::NetSNMP> for details.
-
 =item SNMP::Info::Layer3::Netscreen
 
 Subclass for Juniper NetScreen.
 
 See documentation in L<SNMP::Info::Layer3::Netscreen> for details.
+
+=item SNMP::Info::Layer3::NetSNMP
+
+Subclass for host systems running Net-SNMP.
+
+See documentation in L<SNMP::Info::Layer3::NetSNMP> for details.
 
 =item SNMP::Info::Layer3::Nexus
 
@@ -1082,17 +1083,17 @@ Subclass for redlion routers.
 
 See documentation in L<SNMP::Info::Layer3::Redlion> for details.
 
-=item SNMP::Info::Layer3::SilverPeak
-
-Subclass for SilverPeak devices.
-
-See documentation in L<SNMP::Info::Layer3::SilverPeak> for details.
-
 =item SNMP::Info::Layer3::Scalance
 
 Subclass for Siemens Scalance devices.
 
 See documentation in L<SNMP::Info::Layer3::Scalance> for details.
+
+=item SNMP::Info::Layer3::SilverPeak
+
+Subclass for SilverPeak devices.
+
+See documentation in L<SNMP::Info::Layer3::SilverPeak> for details.
 
 =item SNMP::Info::Layer3::SonicWALL
 
@@ -1142,17 +1143,17 @@ Alcatel-Lucent SR Class.
 
 See documentation in L<SNMP::Info::Layer3::Timetra> for details.
 
-=item SNMP::Info::Layer3::VyOS
-
-Subclass for VyOS routers.
-
-See documentation in L<SNMP::Info::Layer3::VyOS> for details.
-
 =item SNMP::Info::Layer3::VMware
 
 Subclass for VMware ESXi hosts.
 
 See documentation in L<SNMP::Info::Layer3::VMware> for details.
+
+=item SNMP::Info::Layer3::VyOS
+
+Subclass for VyOS routers.
+
+See documentation in L<SNMP::Info::Layer3::VyOS> for details.
 
 =item SNMP::Info::Layer3::Whiterabbit
 
@@ -1212,7 +1213,7 @@ See documentation in L<SNMP::Info::Layer7::Liebert> for details.
 
 =item SNMP::Info::Layer7::Neoteris
 
-Subclass for Pulse Secure / Juniper SSL VPN appliances.
+Subclass for Ivanti / Pulse Secure / Juniper SSL VPN appliances.
 
 See documentation in L<SNMP::Info::Layer7::Neoteris> for details.
 
