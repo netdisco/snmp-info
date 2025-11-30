@@ -1888,6 +1888,7 @@ sub device_type {
         6486  => 'SNMP::Info::Layer3::AlcatelLucent',
         9303  => 'SNMP::Info::Layer3::PacketFront',
         10418 => 'SNMP::Info::Layer1::Cyclades',
+        11863 => 'SNMP::Info::Layer2::TPLink',
         11898 => 'SNMP::Info::Layer2::Orinoco',
         13458 => 'SNMP::Info::Layer2::Atmedia',
         14179 => 'SNMP::Info::Layer2::Airespace',
@@ -3515,6 +3516,8 @@ ALTEON-TS-PHYSICAL-MIB::agPortCurCfgPortName.
     # IF-MIB::IfEntry
     'i_index'           => 'ifIndex',
     'i_description'     => 'ifDescr',
+    # Alias for vendor-specific port description tables (defaults to ifDescr)
+    'tp_port_config_description' => 'ifDescr',
     'i_type'            => 'ifType',
     'i_mtu'             => 'ifMtu',
     'i_speed'           => 'ifSpeed',
