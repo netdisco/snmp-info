@@ -3516,8 +3516,6 @@ ALTEON-TS-PHYSICAL-MIB::agPortCurCfgPortName.
     # IF-MIB::IfEntry
     'i_index'           => 'ifIndex',
     'i_description'     => 'ifDescr',
-    # Alias for vendor-specific port description tables (defaults to ifDescr)
-    'tp_port_config_description' => 'ifDescr',
     'i_type'            => 'ifType',
     'i_mtu'             => 'ifMtu',
     'i_speed'           => 'ifSpeed',
