@@ -52,9 +52,9 @@ $VERSION = '3.974000';
     'TPLINK-MIB'         => 'tplinkProducts',
     'TPLINK-LLDP-MIB'    => 'tplinkLldpMIBObjects',
     'TPLINK-DOT1Q-VLAN-MIB' => 'tplinkDot1qVlanMIBObjects',
-        'TPLINK-PORTCONFIG-MIB' => 'tpPortConfigTable',
-        'TPLINK-SPANNING-TREE-MIB' => 'tplinkSpanningTreeMIBObjects',
-        'TPLINK-L2BRIDGE-MIB' => 'tplinkl2BridgeMIBObjects',
+    'TPLINK-PORTCONFIG-MIB' => 'tpPortConfigTable',
+    'TPLINK-SPANNING-TREE-MIB' => 'tplinkSpanningTreeMIBObjects',
+    'TPLINK-L2BRIDGE-MIB' => 'tplinkl2BridgeMIBObjects',
 );
 
 %GLOBALS = (
@@ -73,12 +73,13 @@ $VERSION = '3.974000';
     'stp_priority'  => 'TPLINK-SPANNING-TREE-MIB::tpStpCistPriority',
     'v_index'    => 'TPLINK-DOT1Q-VLAN-MIB::dot1qVlanId',
     'v_name' => 'TPLINK-DOT1Q-VLAN-MIB::dot1qVlanDescription',
+    # 'i_description' => 'TPLINK-PORTCONFIG-MIB::tpPortConfigDescription',
+    
 );
 
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
     %SNMP::Info::EtherLike::FUNCS,
-    'i_duplex' => 'dot3StatsDuplexStatus',
     # Ensure Ethernet/duplex index funcs are present for autoload
     'el_index'  => 'dot3StatsIndex',
     'el_duplex' => 'dot3StatsDuplexStatus',
@@ -87,12 +88,11 @@ $VERSION = '3.974000';
     # TP-Link port config (duplex/speed/etc)
     'i_duplex_admin' => 'TPLINK-PORTCONFIG-MIB::tpPortConfigDuplex',
     'i_speed_admin'  => 'TPLINK-PORTCONFIG-MIB::tpPortConfigSpeed',
-    'i_alias' => 'TPLINK-PORTCONFIG-MIB::tpPortConfigDescription',
+    'tp_port_config_descr' => 'TPLINK-PORTCONFIG-MIB::tpPortConfigDescription',
     # TP-Link LLDP tables (map to SNMP::Info::LLDP expected names)
     'lldp_lport_id'   => 'TPLINK-LLDPINFO-MIB::lldpLocalPortId',
     'lldp_lport_desc' => 'TPLINK-LLDPINFO-MIB::lldpLocalPortDescr',
     'lldp_lman_addr'  => 'TPLINK-LLDPINFO-MIB::lldpLocalManageIpAddr',
-
     'lldp_rem_id_type'  => 'TPLINK-LLDPINFO-MIB::lldpNeighborChassisIdType',
     'lldp_rem_id'       => 'TPLINK-LLDPINFO-MIB::lldpNeighborChassisId',
     'lldp_rem_pid_type' => 'TPLINK-LLDPINFO-MIB::lldpNeighborPortIdType',
@@ -102,6 +102,7 @@ $VERSION = '3.974000';
     'lldp_rem_sysdesc'  => 'TPLINK-LLDPINFO-MIB::lldpNeighborDeviceDescr',
     'lldp_rem_sys_cap'  => 'TPLINK-LLDPINFO-MIB::lldpNeighborCapEnabled',
     'lldp_rem_cap_spt'  => 'TPLINK-LLDPINFO-MIB::lldpNeighborCapAvailable',
+    'lldpLocalOperMau' => 'TPLINK-LLDPINFO-MIB::lldpLocalOperMau',
     # Raw TP-Link neighbor manage addr table (internal accessor)
     'tplink_lldp_rman'    => 'TPLINK-LLDPINFO-MIB::lldpNeighborManageIpAddr',
     # TP-Link dynamic MAC forwarding table
@@ -223,6 +224,40 @@ sub mac {
     return $tp->el_mac();
 }
 
+sub i_name {
+    my $tp = shift;
+
+    # Prefer TP-Link port description from port config MIB
+    my $pc_desc = $tp->tp_port_config_descr() || {};
+    my $ifdescr = $tp->SUPER::i_description() || {};
+    my %out;
+    foreach my $key ( keys %$ifdescr ) {
+        if (defined $pc_desc->{$key} and $pc_desc->{$key} ne '') {
+            $out{$key} = $pc_desc->{$key};
+        } else {
+            $out{$key} = $ifdescr->{$key};
+        }
+    }
+
+    return \%out;
+}
+
+sub i_duplex {
+    my $tp = shift;
+
+    # Prefer TP-Link admin duplex setting if available
+    my $mau = $tp->lldpLocalOperMau() || {};
+    my %out;
+    foreach my $key ( keys %$mau ) {
+        if ( defined $mau->{$key} and $mau->{$key} =~ /speed\(\S+\)\/duplex\((full|half)\)/i ) {
+            $out{$key} = $1;
+        } else {
+            $out{$key} = 'unknown';
+        }
+    }
+
+    return \%out;
+}
 # VLAN methods. 
 sub i_vlan_membership_untagged {
     my $tp  = shift;
