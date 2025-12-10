@@ -1,6 +1,6 @@
 # SNMP::Info::Layer2::TPLink
 #
-# Copyright (c) 2025 The Netdisco Developer Team
+# Copyright (c) 2025 The Netdisco Development Team
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,6 @@ package SNMP::Info::Layer2::TPLink;
 use strict;
 use warnings;
 use Exporter;
-use Data::Dumper;
 use SNMP::Info::Layer2;
 use SNMP::Info::EtherLike;
 
@@ -55,6 +54,7 @@ $VERSION = '3.974000';
     'TPLINK-PORTCONFIG-MIB' => 'tpPortConfigTable',
     'TPLINK-SPANNING-TREE-MIB' => 'tplinkSpanningTreeMIBObjects',
     'TPLINK-L2BRIDGE-MIB' => 'tplinkl2BridgeMIBObjects',
+    'TPLINK-POWER-OVER-ETHERNET-MIB' => 'tplinkPowerOverEthernetMIB',
 );
 
 %GLOBALS = (
@@ -65,6 +65,7 @@ $VERSION = '3.974000';
     'tp_sysinfo_hwver'    => 'tpSysInfoHwVersion',
     'tp_sysinfo_swver'    => 'tpSysInfoSwVersion',
     'tp_sysinfo_mac'      => 'tpSysInfoMacAddr',
+
     # Spanning Tree globals from TP-Link private MIB
     'stp_ver'       => 'TPLINK-SPANNING-TREE-MIB::tpStpMode',
     'stp_time'      => 'TPLINK-SPANNING-TREE-MIB::tpStpLastTopologyChangeTime',
@@ -73,8 +74,9 @@ $VERSION = '3.974000';
     'stp_priority'  => 'TPLINK-SPANNING-TREE-MIB::tpStpCistPriority',
     'v_index'    => 'TPLINK-DOT1Q-VLAN-MIB::dot1qVlanId',
     'v_name' => 'TPLINK-DOT1Q-VLAN-MIB::dot1qVlanDescription',
-    # 'i_description' => 'TPLINK-PORTCONFIG-MIB::tpPortConfigDescription',
-    
+    'tp_power_limit'  => 'TPLINK-POWER-OVER-ETHERNET-MIB::tpSystemPowerLimit.0',
+    'tp_power_consumption'  => 'TPLINK-POWER-OVER-ETHERNET-MIB::tpSystemPowerConsumption.0',
+    'tp_power_remain'  => 'TPLINK-POWER-OVER-ETHERNET-MIB::tpSystemPowerRemain.0',
 );
 
 %FUNCS = (
@@ -122,11 +124,21 @@ $VERSION = '3.974000';
     'stp_p_role'     => 'TPLINK-SPANNING-TREE-MIB::tpStpPortRole',
     'is_edgeport_admin' => 'TPLINK-SPANNING-TREE-MIB::tpStpEdgePortStatus',
     'is_edgeport_oper'  => 'TPLINK-SPANNING-TREE-MIB::tpStpEdgePortStatus',
+    # PoE
+    'tp_peth_port_admin'       => 'TPLINK-POWER-OVER-ETHERNET-MIB::tpPoePortStatus',
+    'tp_peth_port_status'     => 'TPLINK-POWER-OVER-ETHERNET-MIB::tpPoePowerStatus',
+    'tp_peth_port_class'       => 'TPLINK-POWER-OVER-ETHERNET-MIB::tpPoeClass',
+    'tp_peth_port_power'       => 'TPLINK-POWER-OVER-ETHERNET-MIB::tpPoePower',
+    'tp_peth_power_status'     => 'TPLINK-LLDPINFO-MIB::lldpLocalPsePowerEnabled',
+    'tp_peth_power_watts'       => 'TPLINK-LLDPMEDCONFIG-MIB::lldpMedLocalPowerValue',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer2::MUNGE,
     %SNMP::Info::EtherLike::MUNGE,
+    'tp_power_limit' => \&munge_power,
+    'tp_power_consumption' => \&munge_power,
+    'tp_power_remain' => \&munge_power,
 );
 
 sub vendor {
@@ -258,6 +270,109 @@ sub i_duplex {
 
     return \%out;
 }
+
+# PoE methods
+sub munge_power {
+    my $power = shift;
+
+    return $power ? $power / 10 : 0;
+}
+
+sub peth_power_status {
+    my $tp = shift;
+
+    my $tp_poe = $tp->tp_peth_power_status() || {};
+    my $p_capable = grep { $_ eq "enable" } values %$tp_poe;
+    my %out = ('1' => $p_capable ? "on" : "off");       # Emulate Cisco-style module number, it's always '1' for TP-Link. Untested on stacks.
+    return \%out;
+}
+
+sub peth_power_watts {
+    my $tp = shift;
+
+    my $tp_poe = $tp->tp_peth_power_status() || {};
+    my $p_capable = grep { $_ eq "enable" } values %$tp_poe;
+    my %out = ('1' => $p_capable ? $tp->tp_power_limit() : 0); # Emulate Cisco-style module number, it's always '1' for TP-Link. Untested on stacks.
+    return \%out;
+}
+
+sub peth_port_ifindex {
+    my $tp = shift;
+    my $tp_pif = $tp->lldp_lport_id() || {};
+    my %out;
+    
+    for my $ifidx (keys %$tp_pif) {
+        my $entry = $tp_pif->{$ifidx};
+        $entry =~ s|^(\d+)/\d+/(\d+)$|$1.$2|; # Emulate Cisco-style output
+        $out{$entry} = $ifidx;
+    }
+    return \%out;
+}
+
+sub make_port_index($$) {
+    my $tp = shift;
+    my $src = shift;
+    my $ifmap = $tp->peth_port_ifindex();
+    my $ifmap_rev = { reverse %$ifmap };
+    my %out;
+
+    for my $entry (keys %$ifmap) {
+        my (undef, $p_idx) = split(/\./, $entry, 2);
+        $out{$entry} = $src->{$p_idx} ? $src->{$p_idx} : 0;
+    }
+    return \%out;
+}
+
+sub peth_port_admin {
+    my $tp = shift;
+    my $port_admin = $tp->make_port_index($tp->tp_peth_port_admin());
+    for my $entry (keys %$port_admin) {
+        if ($port_admin->{$entry} eq 'enable') {
+            $port_admin->{$entry} = 'true';
+        } else {
+            $port_admin->{$entry} = 'false';
+        }
+    }
+    return \%$port_admin;
+}
+
+sub peth_port_status {
+    my $tp = shift;
+    my $port_status = $tp->make_port_index($tp->tp_peth_port_status());
+
+    for my $entry (keys %$port_status) {
+        if (defined $port_status->{$entry}) {
+            if ($port_status->{$entry} eq 'on') {
+                $port_status->{$entry} = 'deliveringPower';
+            } elsif ($port_status->{$entry} eq 'off') {
+                $port_status->{$entry} = 'searching';
+            } else {
+                $port_status->{$entry} = 'unknown';
+            }
+        } else {
+            $port_status->{$entry} = 'unknown';
+        }
+    }
+    return \%$port_status;
+}
+
+sub peth_port_class {
+    my $tp = shift;
+    return $tp->make_port_index($tp->tp_peth_port_class());
+}
+
+sub peth_port_power {
+    my $tp = shift;
+    my $port_power = $tp->make_port_index($tp->tp_peth_port_power());
+
+    for my $entry (keys %$port_power) {
+        if (defined $port_power->{$entry}) {
+            $port_power->{$entry} = $port_power->{$entry} * 100;
+        }
+    }
+    return $port_power;
+}
+
 # VLAN methods. 
 sub i_vlan_membership_untagged {
     my $tp  = shift;
@@ -667,6 +782,9 @@ and exposes TP-Link specific globals when available.
 
 =head1 AUTHOR
 
+Dmitry Sergienko <dmitry.sergienko@gmail.com>
+
+based on work by the
 Netdisco Developer Team
 
 =cut
