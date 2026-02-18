@@ -88,6 +88,7 @@ lib/SNMP/Info/Layer3/C1300.pm
 lib/SNMP/Info/Layer3/C3550.pm
 lib/SNMP/Info/Layer3/C4000.pm
 lib/SNMP/Info/Layer3/C6500.pm
+lib/SNMP/Info/Layer3/Cambium.pm
 lib/SNMP/Info/Layer3/CheckPoint.pm
 lib/SNMP/Info/Layer3/Ciena.pm
 lib/SNMP/Info/Layer3/Cisco.pm
@@ -250,6 +251,7 @@ xt/lib/Test/SNMP/Info/Layer3/C1300.pm
 xt/lib/Test/SNMP/Info/Layer3/C3550.pm
 xt/lib/Test/SNMP/Info/Layer3/C4000.pm
 xt/lib/Test/SNMP/Info/Layer3/C6500.pm
+xt/lib/Test/SNMP/Info/Layer3/Cambium.pm
 xt/lib/Test/SNMP/Info/Layer3/CheckPoint.pm
 xt/lib/Test/SNMP/Info/Layer3/Cisco.pm
 xt/lib/Test/SNMP/Info/Layer3/CiscoASA.pm
