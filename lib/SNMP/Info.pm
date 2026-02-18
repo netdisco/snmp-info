@@ -822,6 +822,12 @@ This class covers Catalyst 4000s and 4500s.
 
 See documentation in L<SNMP::Info::Layer3::C4000> for details.
 
+=item SNMP::Info::Layer3::Cambium
+
+Subclass for Cambium devices (ePMP/cnPilot).
+
+See documentation in L<SNMP::Info::Layer3::Cambium> for details.
+
 =item SNMP::Info::Layer3::C6500
 
 This class covers Catalyst 6500 series running CatOS or IOS, as well as
