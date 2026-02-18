@@ -39,14 +39,14 @@ sub setup : Tests(setup) {
 
   my $cache_data = {
     '_layers'              => 78,
-    '_description'         => 'Linux PontR-LaboSR-Master 3.14.77 #1 SMP PREEMPT Tue Mar 28 15:35:42 UTC 2023 armv7l',
+    '_description'         => 'Linux GVA-myLab-M 3.14.77 #1 SMP PREEMPT Tue Mar 28 15:35:42 UTC 2023 armv7l',
     '_id'                  => '.1.3.6.1.4.1.17713.21.9.51',
     '_cambium_os_ver'      => '4.7.0.1',
     '_cambium_hw_info'     => 51,
-    '_cambium_esn'         => '00045649B8FF',
-    '_cambium_epmp_msn'    => 'E4ZK023C93KQ',
-    '_cambium_lan_mac'     => '00:04:56:49:B8:FF',
-    '_cambium_device_name' => 'PontR-LaboSR-Master',
+    '_cambium_esn'         => '0004564AABBE',
+    '_cambium_epmp_msn'    => 'E4ZK02301102',
+    '_cambium_lan_mac'     => '00:04:56:49:AA:AA',
+    '_cambium_device_name' => 'GVA-myLab-M',
     'store'                => {},
   };
   $test->{info}->cache($cache_data);
@@ -80,7 +80,7 @@ sub name : Tests(3) {
   my $test = shift;
 
   can_ok($test->{info}, 'name');
-  is($test->{info}->name(), 'PontR-LaboSR-Master', q(Name returns expected value));
+  is($test->{info}->name(), 'GVA-myLab-M', q(Name returns expected value));
 
   $test->{info}->clear_cache();
   is($test->{info}->name(), undef, q(No data returns undef name));
@@ -90,7 +90,7 @@ sub mac : Tests(3) {
   my $test = shift;
 
   can_ok($test->{info}, 'mac');
-  is($test->{info}->mac(), '00:04:56:49:B8:FF', q(MAC returns expected value));
+  is($test->{info}->mac(), '00:04:56:49:AA:AA', q(MAC returns expected value));
 
   $test->{info}->clear_cache();
   is($test->{info}->mac(), undef, q(No data returns undef MAC));
@@ -102,7 +102,7 @@ sub serial : Tests(3) {
   can_ok($test->{info}, 'serial');
   is(
     $test->{info}->serial(),
-    'E4ZK023C93KQ 00045649B8FF',
+    'E4ZK02301102 0004564AABBE',
     q(Serial returns EPMPMSN and ESN, joined by space)
   );
 
