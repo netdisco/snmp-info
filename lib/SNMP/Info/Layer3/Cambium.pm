@@ -361,8 +361,9 @@ default Layer3 name.
 
 =item $self->serial()
 
-Returns C<cambiumEPMPMSN> if present, otherwise C<cambiumESN>, and finally the
-default Layer3 serial.
+Returns a string composed of C<cambiumEPMPMSN> and C<cambiumESN> separated by a
+space when both are present. If only one of these is available, returns that
+value. If neither is present, falls back to the default Layer3 serial.
 
 =back
 
