@@ -42,7 +42,7 @@ use SNMP::Info;
 
 our ($VERSION, $DEBUG, %MIBS, %FUNCS, %GLOBALS, %MUNGE, $INIT);
 
-$VERSION = '3.974000';
+$VERSION = '3.975000';
 
 %MIBS = (
     'IEEE8021-Q-BRIDGE-MIB' => 'ieee8021QBridgeVlanCurrentEgressPorts',

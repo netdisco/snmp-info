@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.974000
+    SNMP::Info - Version 3.975000
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -689,6 +689,11 @@ SUBCLASSES
             blade switches CBS30x0 and CBS31x0 series, all running IOS.
 
             See documentation in SNMP::Info::Layer3::C6500 for details.
+
+        SNMP::Info::Layer3::Cambium
+            Subclass for Cambium devices (ePMP/cnPilot).
+
+            See documentation in SNMP::Info::Layer3::Cambium for details.
 
         SNMP::Info::Layer3::CheckPoint
             Subclass for CheckPoint devices.

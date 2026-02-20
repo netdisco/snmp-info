@@ -45,7 +45,7 @@ use SNMP::Info::EDP;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.974000';
+$VERSION = '3.975000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
