@@ -1,3 +1,13 @@
+Version 3.975000 (2026-02-20)
+
+  [NEW FEATURES]
+
+  * #556 Cambium support
+
+  [ENHANCEMENTS]
+
+  * #556 fix warning (@m8522s)
+
 Version 3.974000 (2025-09-12)
 
   [ENHANCEMENTS]
