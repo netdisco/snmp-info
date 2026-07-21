@@ -830,6 +830,12 @@ CBS30x0 and CBS31x0 series, all running IOS.
 
 See documentation in L<SNMP::Info::Layer3::C6500> for details.
 
+=item SNMP::Info::Layer3::C9800
+
+Subclass for Cisco Catalyst 9800 Wireless Controllers.
+
+See documentation in L<SNMP::Info::Layer3::C9800> for details.
+
 =item SNMP::Info::Layer3::Cambium
 
 Subclass for Cambium devices (ePMP/cnPilot).
@@ -2062,6 +2068,10 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer2::Airespace'
             if ( $desc =~ /^Cisco Controller$/ );
 
+        # Cisco Catalyst 9800 Wireless Controller
+        $objtype = 'SNMP::Info::Layer3::C9800'
+            if ( $desc =~ /^Cisco IOS Software.*\b(?:CW9800|C9800(?:-[A-Z0-9]+)?) Software\b/i );
+
         #Nortel 2270
         $objtype = 'SNMP::Info::Layer2::N2270'
             if (
@@ -2217,6 +2227,10 @@ sub device_type {
         # Airespace (WLC) Module
         $objtype = 'SNMP::Info::Layer2::Airespace'
             if ( $desc =~ /^Cisco Controller$/ );
+
+        # Cisco Catalyst 9800 Wireless Controller
+        $objtype = 'SNMP::Info::Layer3::C9800'
+            if ( $desc =~ /^Cisco IOS Software.*\b(?:CW9800|C9800(?:-[A-Z0-9]+)?) Software\b/i );
 
         #Nortel 2270
         $objtype = 'SNMP::Info::Layer2::N2270'
