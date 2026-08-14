@@ -375,7 +375,7 @@ sub print_superclasses {
 
 =head1 AUTHOR
 
-Oliver Gorwits <oliver@cpan.org>
+Oliver Gorwits <oliver@co-ding.org>
 
 =head1 COPYRIGHT AND LICENSE
 
