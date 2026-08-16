@@ -219,9 +219,9 @@ sub os_ver {
         return $1;
     }
 
-    # Newer Catalysts and IOS devices
+    # Newer Catalysts and IOS/IOS-XE devices
     if ( defined $descr
-        and $descr =~ m/Version (\d+\.\d+\([^)]+\)[^,\s]*)(,|\s)+/ )
+        and $descr =~ m/Version (\d+\.\d+(?:\([^)]+\)|\.\d+)[^,\s]*)(?:,|\s)+/ )
     {
         return $1;
     }
