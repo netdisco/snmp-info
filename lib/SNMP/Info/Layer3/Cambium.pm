@@ -41,7 +41,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.976000';
+$VERSION = '3.977000';
 
 # Cambium publishes the model mapping only in free-form DESCRIPTION text for
 # cambiumHWInfo, not as machine-readable ASN.1 enums, so we keep a local lookup.
