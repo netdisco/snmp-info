@@ -71,6 +71,7 @@ lib/SNMP/Info/Layer2/Nexans.pm
 lib/SNMP/Info/Layer2/NWSS2300.pm
 lib/SNMP/Info/Layer2/Orinoco.pm
 lib/SNMP/Info/Layer2/Sixnet.pm
+lib/SNMP/Info/Layer2/TPLink.pm
 lib/SNMP/Info/Layer2/Trapeze.pm
 lib/SNMP/Info/Layer2/Ubiquiti.pm
 lib/SNMP/Info/Layer2/ZyXEL_DSLAM.pm
