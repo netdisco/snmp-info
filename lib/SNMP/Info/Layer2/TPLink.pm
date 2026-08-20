@@ -309,7 +309,7 @@ sub peth_port_ifindex {
     return \%out;
 }
 
-sub make_port_index($$) {
+sub make_port_index {
     my $tp = shift;
     my $src = shift;
     my $ifmap = $tp->peth_port_ifindex();
