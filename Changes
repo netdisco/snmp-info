@@ -1,3 +1,14 @@
+Version 3.976000 (2026-08-20)
+
+  [NEW FEATURES]
+
+  * #572 (CW)9800 Wireless Controller support
+  * #559 TP-Link switches support
+
+  [ENHANCEMENTS]
+
+  * #556 fix warning (@m8522s)
+
 Version 3.975000 (2026-02-20)
 
   [NEW FEATURES]
