@@ -713,6 +713,12 @@ Subclass for Orinoco/Proxim wireless access points.
 
 See documentation in L<SNMP::Info::Layer2::Orinoco> for details.
 
+=item SNMP::Info::Layer2::TPLink
+
+SNMP Interface to TPLink devices
+
+See documentation in L<SNMP::Info::Layer2::TPLink> for details.
+
 =item SNMP::Info::Layer2::Trapeze
 
 SNMP Interface to Juniper (Trapeze) Wireless Controllers
