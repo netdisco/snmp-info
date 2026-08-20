@@ -780,6 +780,43 @@ SNMP::Info::Layer2::TPLink - SNMP Interface to TP-Link Layer2 devices
 Subclass for TP-Link Layer2 devices. Inherits from L<SNMP::Info::Layer2>
 and exposes TP-Link specific globals when available.
 
+=head1 METHODS
+
+=over
+
+=item fw_port
+=item hasAMAP
+=item hasCDP
+=item hasEDP
+=item hasFDP
+=item hasLLDP
+=item hasSONMP
+=item i_duplex
+=item i_name
+=item i_vlan_membership_untagged
+=item lldp_if
+=item lldp_ip
+=item lldp_port
+=item lldp_rman_addr
+=item mac
+=item make_port_index
+=item model
+=item munge_power
+=item os
+=item os_ver
+=item peth_port_admin
+=item peth_port_class
+=item peth_port_ifindex
+=item peth_port_power
+=item peth_port_status
+=item peth_power_status
+=item peth_power_watts
+=item qb_fw_port
+=item serial
+=item vendor
+
+=back
+
 =head1 AUTHOR
 
 Dmitry Sergienko <dmitry.sergienko@gmail.com>
