@@ -677,6 +677,10 @@ Class for Kentrox DataSMART DSU/CSU.
 
 See documentation in L<SNMP::Info::Layer2::Kentrox> for details.
 
+=item SNMP::Info::Layer2::Mellanox
+
+Subclass for Mellanox/NVIDIA Onyx switches.
+
 =item SNMP::Info::Layer2::N2270
 
 Subclass for Nortel 2270 wireless switches.
@@ -1919,6 +1923,7 @@ sub device_type {
         21091 => 'SNMP::Info::Layer2::Exinda',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
         26928 => 'SNMP::Info::Layer2::Aerohive',
+        33049 => 'SNMP::Info::Layer2::Mellanox',
         46242 => 'SNMP::Info::Layer3::Netonix',
         47196 => 'SNMP::Info::Layer3::ArubaCX',
         48690 => 'SNMP::Info::Layer3::Teltonika',
