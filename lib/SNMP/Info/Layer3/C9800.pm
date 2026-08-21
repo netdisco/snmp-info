@@ -336,6 +336,11 @@ indexes.
 Returns the IOS-XE version from C<.1.3.6.1.2.1.16.19.2.0>, falling back to
 the standard Cisco sysDescr parsing.
 
+=item interfaces()
+
+Uses the IF-MIB description for regular IOS-XE interfaces while retaining the
+synthetic Airespace identifiers for AP and virtual interfaces.
+
 =item i_description()
 
 Adds the branch switch name, management address, and interface learned from
@@ -345,6 +350,32 @@ C<CISCO-LWAPP-CDP-MIB> to each matching AP pseudo-port description.
 
 Adds the same branch connection information to each matching AP module
 description.
+
+=item e_index()
+
+=item e_class()
+
+=item e_name()
+
+=item e_model()
+
+=item e_type()
+
+=item e_fwver()
+
+=item e_vendor()
+
+=item e_serial()
+
+=item e_pos()
+
+=item e_swver()
+
+=item e_parent()
+
+Merges the regular IOS-XE ENTITY-MIB inventory with the synthetic managed AP
+inventory.  Physical chassis and module entries remain authoritative, and AP
+entries are appended at their Airespace pseudo-indexes.
 
 =back
 
