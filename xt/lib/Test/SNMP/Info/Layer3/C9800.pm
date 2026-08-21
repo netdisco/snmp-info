@@ -87,6 +87,93 @@ sub os_ver : Tests(4) {
     'IOS-XE version falls back to sysDescr parsing';
 }
 
+sub interfaces : Tests(2) {
+  my $test = shift;
+
+  can_ok $test->{info}, 'interfaces';
+  $test->{info}->cache({
+    '_i_index'             => 1,
+    '_i_description'       => 1,
+    '_airespace_apif_slot' => 1,
+    '_airespace_if_name'   => 1,
+    'store' => {
+      'i_index' => {
+        1                 => 1,
+        '2.0.0.0.0.1.0'   => '02:00:00:00:00:01.0',
+      },
+      'i_description' => {
+        1 => 'GigabitEthernet1',
+      },
+      'airespace_apif_slot' => {},
+      'airespace_if_name'   => {},
+    },
+  });
+
+  cmp_deeply $test->{info}->interfaces, {
+    1               => 'GigabitEthernet1',
+    '2.0.0.0.0.1.0' => '02:00:00:00:00:01.0',
+  }, 'Regular IOS-XE ports retain their IF-MIB names';
+}
+
+sub entities : Tests(4) {
+  my $test = shift;
+
+  $test->{info}->cache({
+    '_c9800_entity_descr'  => 1,
+    '_c9800_entity_class'  => 1,
+    '_c9800_entity_serial' => 1,
+    '_airespace_ap_model'  => 1,
+    '_airespace_ap_name'   => 1,
+    '_airespace_ap_loc'    => 1,
+    '_airespace_ap_serial' => 1,
+    'store' => {
+      'c9800_entity_descr' => {
+        1  => 'Cisco C9800-80-K9 Chassis',
+        10 => 'Power Supply Module 0',
+      },
+      'c9800_entity_class' => {
+        1  => 'chassis',
+        10 => 'powerSupply',
+      },
+      'c9800_entity_serial' => {
+        1  => 'CHASSIS001',
+        10 => 'PSU001',
+      },
+      'airespace_ap_model' => {
+        '2.0.0.0.0.1' => 'C9120AXI',
+      },
+      'airespace_ap_name' => {
+        '2.0.0.0.0.1' => 'ap-1',
+      },
+      'airespace_ap_loc' => {
+        '2.0.0.0.0.1' => 'Branch office',
+      },
+      'airespace_ap_serial' => {
+        '2.0.0.0.0.1' => 'AP001',
+      },
+    },
+  });
+
+  cmp_deeply $test->{info}->e_index, {
+    1               => 1,
+    10              => 10,
+    '2.0.0.0.0.1'   => 1,
+  }, 'Entity index contains the physical chassis inventory and APs';
+  cmp_deeply $test->{info}->e_class, {
+    1               => 'chassis',
+    10              => 'powerSupply',
+    '2.0.0.0.0.1'   => 'ap',
+  }, 'Entity classes contain the physical modules and APs';
+  cmp_deeply $test->{info}->e_serial, {
+    1               => 'CHASSIS001',
+    10              => 'PSU001',
+    '2.0.0.0.0.1'   => 'AP001',
+  }, 'Entity serials contain the physical modules and APs';
+  is $test->{info}->e_descr->{'2.0.0.0.0.1'},
+    'C9120AXI: ap-1 (Branch office)',
+    'AP descriptions remain in the merged entity inventory';
+}
+
 sub connection_descriptions : Tests(3) {
   my $test = shift;
 

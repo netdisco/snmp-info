@@ -37,7 +37,16 @@ $VERSION = '3.975000';
 %FUNCS = (
     %SNMP::Info::Layer2::Airespace::FUNCS,
     'c9800_entity_descr'  => 'entPhysicalDescr',
+    'c9800_entity_class'  => 'entPhysicalClass',
+    'c9800_entity_name'   => 'entPhysicalName',
+    'c9800_entity_model'  => 'entPhysicalModelName',
+    'c9800_entity_type'   => 'entPhysicalVendorType',
+    'c9800_entity_fwver'  => 'entPhysicalFirmwareRev',
+    'c9800_entity_vendor' => 'entPhysicalMfgName',
     'c9800_entity_serial' => 'entPhysicalSerialNum',
+    'c9800_entity_pos'    => 'entPhysicalParentRelPos',
+    'c9800_entity_swver'  => 'entPhysicalSoftwareRev',
+    'c9800_entity_parent' => 'entPhysicalContainedIn',
     'c9800_cdp_name'      => 'clcCdpApCacheNeighName',
     'c9800_cdp_address'   => 'clcCdpApCacheNeighAddress',
     'c9800_cdp_interface' => 'clcCdpApCacheNeighInterface',
@@ -51,6 +60,7 @@ $VERSION = '3.975000';
 %MUNGE = (
     %SNMP::Info::Layer2::Airespace::MUNGE,
     'c9800_cdp_address' => \&SNMP::Info::munge_ip,
+    'c9800_entity_type' => \&SNMP::Info::munge_e_type,
 );
 
 sub serial {
@@ -76,6 +86,24 @@ sub os_ver {
     return $os_ver if defined $os_ver && $os_ver ne '';
 
     return SNMP::Info::CiscoStats::os_ver($c9800);
+}
+
+sub interfaces {
+    my $c9800   = shift;
+    my $partial = shift;
+
+    my $interfaces   = $c9800->SUPER::interfaces($partial)  || {};
+    my $indexes      = $c9800->i_index($partial)            || {};
+    my $descriptions = $c9800->orig_i_description($partial) || {};
+
+    foreach my $iid (keys %{$indexes}) {
+        next unless defined $indexes->{$iid} && $indexes->{$iid} =~ /^\d+$/;
+        next unless defined $descriptions->{$iid} && $descriptions->{$iid} ne '';
+
+        $interfaces->{$iid} = $descriptions->{$iid};
+    }
+
+    return $interfaces;
 }
 
 sub _cdp_connections {
@@ -196,9 +224,42 @@ sub i_description {
     return $descriptions;
 }
 
+sub _merged_entity_table {
+    my ($c9800, $entity_method, $ap_method) = @_;
+
+    my $entities = $c9800->$entity_method() || {};
+    my $ap_sub = SNMP::Info::Airespace->can($ap_method);
+    my $aps = $ap_sub->($c9800) || {};
+    my $ap_indexes = SNMP::Info::Airespace::e_index($c9800) || {};
+
+    my %ap_entities = map { $_ => $aps->{$_} }
+        grep { $_ ne 1 && exists $aps->{$_} } keys %{$ap_indexes};
+    return {%{$entities}, %ap_entities};
+}
+
+sub e_index {
+    my $c9800 = shift;
+
+    my $descriptions = $c9800->c9800_entity_descr() || {};
+    my $aps = SNMP::Info::Airespace::e_index($c9800) || {};
+    my %indexes = map { $_ => $_ } keys %{$descriptions};
+
+    delete $aps->{1};
+    return {%indexes, %{$aps}};
+}
+
+sub e_class {
+    return shift->_merged_entity_table('c9800_entity_class', 'e_class');
+}
+
+sub e_name {
+    return shift->_merged_entity_table('c9800_entity_name', 'e_name');
+}
+
 sub e_descr {
-    my $c9800      = shift;
-    my $descriptions = $c9800->SUPER::e_descr() || {};
+    my $c9800 = shift;
+    my $descriptions = $c9800->_merged_entity_table(
+        'c9800_entity_descr', 'e_descr');
     my $details      = $c9800->_ap_detail_strings();
     $c9800->_debug_ap_details();
 
@@ -206,6 +267,38 @@ sub e_descr {
         $descriptions->{$iid} .= "; $details->{$iid}" if $details->{$iid};
     }
     return $descriptions;
+}
+
+sub e_model {
+    return shift->_merged_entity_table('c9800_entity_model', 'e_model');
+}
+
+sub e_type {
+    return shift->_merged_entity_table('c9800_entity_type', 'e_type');
+}
+
+sub e_fwver {
+    return shift->_merged_entity_table('c9800_entity_fwver', 'e_fwver');
+}
+
+sub e_vendor {
+    return shift->_merged_entity_table('c9800_entity_vendor', 'e_vendor');
+}
+
+sub e_serial {
+    return shift->_merged_entity_table('c9800_entity_serial', 'e_serial');
+}
+
+sub e_pos {
+    return shift->_merged_entity_table('c9800_entity_pos', 'e_pos');
+}
+
+sub e_swver {
+    return shift->_merged_entity_table('c9800_entity_swver', 'e_swver');
+}
+
+sub e_parent {
+    return shift->_merged_entity_table('c9800_entity_parent', 'e_parent');
 }
 
 1;
