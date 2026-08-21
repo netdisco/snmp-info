@@ -39,7 +39,10 @@ sub check_version {
 
     return if $package eq 'SNMP::Info';
 
-    fail($_) unless defined $Items{$package};
+    if (!defined $Items{$package}) {
+        print STDERR sprintf "package missing from Info.pm: %s\n", ($package || '?');
+        fail($_);
+    }
 
     pass($_);
 }

@@ -26,7 +26,7 @@ our
     ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG, %SPEED_MAP,
      $NOSUCH, $BIGINT, $REPEATERS);
 
-$VERSION = '3.975000';
+$VERSION = '3.977000';
 
 =head1 NAME
 
@@ -34,7 +34,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.975000
+SNMP::Info - Version 3.977000
 
 =head1 AUTHOR
 
@@ -712,6 +712,12 @@ See documentation in L<SNMP::Info::Layer2::NWSS2300> for details.
 Subclass for Orinoco/Proxim wireless access points.
 
 See documentation in L<SNMP::Info::Layer2::Orinoco> for details.
+
+=item SNMP::Info::Layer2::TPLink
+
+SNMP Interface to TPLink devices
+
+See documentation in L<SNMP::Info::Layer2::TPLink> for details.
 
 =item SNMP::Info::Layer2::Trapeze
 
@@ -1901,6 +1907,7 @@ sub device_type {
         6486  => 'SNMP::Info::Layer3::AlcatelLucent',
         9303  => 'SNMP::Info::Layer3::PacketFront',
         10418 => 'SNMP::Info::Layer1::Cyclades',
+        11863 => 'SNMP::Info::Layer2::TPLink',
         11898 => 'SNMP::Info::Layer2::Orinoco',
         13458 => 'SNMP::Info::Layer2::Atmedia',
         14179 => 'SNMP::Info::Layer2::Airespace',

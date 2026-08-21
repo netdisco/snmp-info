@@ -40,7 +40,7 @@ use Data::Dumper;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.975000';
+$VERSION = '3.977000';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
