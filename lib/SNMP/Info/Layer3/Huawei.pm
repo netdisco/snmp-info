@@ -607,6 +607,8 @@ Subclass for Huawei switches
 
 =item F<HUAWEI-ENTITY-EXTENT-MIB>
 
+=item F<HUAWEI-SYS-MAN-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
@@ -627,12 +629,13 @@ Returns 'huawei'.
 
 =item $huawei->os()
 
-Returns 'VRP' if contained in C<sysDescr>, 'huawei' otherwise.
+Returns 'VRP' if contained in C<sysDescr>, if not check for 'YunShan OS'
+and return if found, 'huawei' otherwise.
 
 =item $huawei->os_ver()
 
-Returns the software version derived from the C<ENTITY-MIB> or
-extracted from C<sysDescr>.
+Returns the software version extracted from C<sysDescr> with a fallback to
+C<ENTITY-MIB>.
 
 =item $huawei->mac()
 
