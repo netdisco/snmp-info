@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.977000
+    SNMP::Info - Version 3.977001
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -1159,14 +1159,14 @@ USAGE
         Offline
             Causes SNMP::Info to avoid network activity and return data only
             from its cache. If you ask for something not in the cache, an
-            error is thrown. See also the cache() and offline() methods.
+            error is thrown. See also the "cache()" and "offline()" methods.
 
             (default 0, which means "online")
 
         Cache
             Pass in a HashRef to prime the cache of retrieved data. Useful
             for creating an instance in "Offline" mode from a previously
-            dumped cache. See also the cache() method to retrieve a cache
+            dumped cache. See also the "cache()" method to retrieve a cache
             after running actual queries.
 
         OTHER
