@@ -34,6 +34,7 @@ use warnings;
 use Exporter;
 use SNMP::Info::CiscoAgg;
 use SNMP::Info::CiscoPortSecurity;
+use SNMP::Info::CiscoAuthFramework;
 use SNMP::Info::Layer3::Cisco;
 use SNMP::Info::PortAccessEntity;
 
@@ -42,6 +43,7 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 @SNMP::Info::Layer3::CiscoSwitch::ISA = qw/
     SNMP::Info::CiscoAgg
     SNMP::Info::CiscoPortSecurity
+    SNMP::Info::CiscoAuthFramework
     SNMP::Info::Layer3::Cisco
     SNMP::Info::PortAccessEntity
     Exporter
@@ -54,6 +56,7 @@ $VERSION = '3.977001';
 %MIBS = (
     %SNMP::Info::Layer3::Cisco::MIBS,
     %SNMP::Info::CiscoPortSecurity::MIBS,
+    %SNMP::Info::CiscoAuthFramework::MIBS,
     %SNMP::Info::CiscoAgg::MIBS,
     %SNMP::Info::PortAccessEntity::MIBS,
 );
@@ -61,6 +64,7 @@ $VERSION = '3.977001';
 %GLOBALS = (
     %SNMP::Info::Layer3::Cisco::GLOBALS,
     %SNMP::Info::CiscoPortSecurity::GLOBALS,
+    %SNMP::Info::CiscoAuthFramework::GLOBALS,
     %SNMP::Info::CiscoAgg::GLOBALS,
     %SNMP::Info::PortAccessEntity::GLOBALS,
 );
@@ -68,6 +72,7 @@ $VERSION = '3.977001';
 %FUNCS = (
     %SNMP::Info::Layer3::Cisco::FUNCS,
     %SNMP::Info::CiscoPortSecurity::FUNCS,
+    %SNMP::Info::CiscoAuthFramework::FUNCS,
     %SNMP::Info::CiscoAgg::FUNCS,
     %SNMP::Info::PortAccessEntity::FUNCS,
 );
@@ -75,6 +80,7 @@ $VERSION = '3.977001';
 %MUNGE = (
     %SNMP::Info::Layer3::Cisco::MUNGE,
     %SNMP::Info::CiscoPortSecurity::MUNGE,
+    %SNMP::Info::CiscoAuthFramework::MUNGE,
     %SNMP::Info::CiscoAgg::MUNGE,
     %SNMP::Info::PortAccessEntity::MUNGE,
 );
