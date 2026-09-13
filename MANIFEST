@@ -136,6 +136,7 @@ lib/SNMP/Info/Layer3/Redlion.pm
 lib/SNMP/Info/Layer3/Scalance.pm
 lib/SNMP/Info/Layer3/SilverPeak.pm
 lib/SNMP/Info/Layer3/SonicWALL.pm
+lib/SNMP/Info/Layer3/Sophos.pm
 lib/SNMP/Info/Layer3/Steelfusion.pm
 lib/SNMP/Info/Layer3/Steelhead.pm
 lib/SNMP/Info/Layer3/SteelheadEx.pm
@@ -297,6 +298,7 @@ xt/lib/Test/SNMP/Info/Layer3/Redlion.pm
 xt/lib/Test/SNMP/Info/Layer3/Scalance.pm
 xt/lib/Test/SNMP/Info/Layer3/SilverPeak.pm
 xt/lib/Test/SNMP/Info/Layer3/SonicWALL.pm
+xt/lib/Test/SNMP/Info/Layer3/Sophos.pm
 xt/lib/Test/SNMP/Info/Layer3/Steelhead.pm
 xt/lib/Test/SNMP/Info/Layer3/Sun.pm
 xt/lib/Test/SNMP/Info/Layer3/Tasman.pm
