@@ -60,8 +60,21 @@ sub vendor {
     return 'sophos';
 }
 
+# Only SFOS lives under .1.3.6.1.4.1.2604.5.  %l3sysoidmap keys on the bare
+# enterprise number, so other Sophos appliances under 2604 reach this class as
+# well; they must keep the inherited behaviour instead of these fixed strings.
+sub _is_sfos {
+    my $sophos = shift;
+
+    return ( ( $sophos->id() || '' )
+        =~ /^\.1\.3\.6\.1\.4\.1\.2604\.5(?:\.|$)/ ) ? 1 : 0;
+}
+
 sub os {
-    return 'sfos';
+    my $sophos = shift;
+
+    return 'sfos' if $sophos->_is_sfos();
+    return $sophos->SUPER::os();
 }
 
 sub model {
@@ -81,7 +94,10 @@ sub model {
 }
 
 sub layers {
-    return '01001100';
+    my $sophos = shift;
+
+    return '01001100' if $sophos->_is_sfos();
+    return $sophos->SUPER::layers();
 }
 
 1;
@@ -147,7 +163,9 @@ Returns C<'sophos'>.
 
 =item $sophos->os()
 
-Returns C<'sfos'>.
+Returns C<'sfos'> for appliances whose C<sysObjectID> sits under
+C<.1.3.6.1.4.1.2604.5>. Other Sophos devices reaching this class through the
+bare enterprise number fall through to the inherited method.
 
 =item $sophos->model()
 
@@ -170,8 +188,11 @@ Returns the value of C<sfosDeviceAppKey.0>, the appliance key.
 
 =item $sophos->layers()
 
-Returns 01001100. SFOS doesn't report layers, modified to reflect
-Layer 3,4,7 functionality.
+Returns 01001100 for appliances whose C<sysObjectID> sits under
+C<.1.3.6.1.4.1.2604.5>. SFOS doesn't report layers, so the class reports them
+itself, reflecting Layer 3,4,7 functionality. Other Sophos devices reaching
+this class through the bare enterprise number fall through to the inherited
+method.
 
 =back
 
