@@ -1118,6 +1118,12 @@ Subclass for generic SonicWALL devices.
 
 See documentation in L<SNMP::Info::Layer3::SonicWALL> for details.
 
+=item SNMP::Info::Layer3::Sophos
+
+Subclass for Sophos SFOS firewalls.
+
+See documentation in L<SNMP::Info::Layer3::Sophos> for details.
+
 =item SNMP::Info::Layer3::Steelfusion
 
 Subclass for Riverbed Steelfusion WAN optimization appliances.
@@ -1830,6 +1836,7 @@ sub device_type {
         2011  => 'SNMP::Info::Layer3::Huawei',
         2021  => 'SNMP::Info::Layer3::NetSNMP',
         2272  => 'SNMP::Info::Layer3::Passport',
+        2604  => 'SNMP::Info::Layer3::Sophos',
         2620  => 'SNMP::Info::Layer3::CheckPoint',
         2636  => 'SNMP::Info::Layer3::Juniper',
         2925  => 'SNMP::Info::Layer1::Cyclades',
