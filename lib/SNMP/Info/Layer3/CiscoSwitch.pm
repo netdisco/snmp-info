@@ -137,6 +137,8 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::Layer3::Cisco
 
+=item SNMP::Info::CiscoAuthFramework
+
 =back
 
 =head2 Required MIBs
