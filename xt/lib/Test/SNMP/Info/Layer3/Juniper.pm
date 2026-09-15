@@ -381,7 +381,7 @@ sub v_index : Tests(4) {
   cmp_deeply($test->{info}->v_index(), undef, q(No data returns undef));
 }
 
-sub i_vlan : Tests(4) {
+sub i_vlan : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'i_vlan');
@@ -390,12 +390,29 @@ sub i_vlan : Tests(4) {
   cmp_deeply($test->{info}->i_vlan(),
     $expected, q(ELS PVID returned expected values));
 
+  # dot1qPvid is a VLAN ID. Preserve it when it happens to collide with a
+  # private VLAN table index for a different VLAN.
+  $test->{info}{store}{bp_index}         = {513 => 510};
+  $test->{info}{store}{qb_i_vlan}        = {513 => 15};
+  $test->{info}{store}{jnx_els_v_index}  = {8 => 15, 15 => 201};
+  $expected                              = {510 => 15};
+  cmp_deeply($test->{info}->i_vlan(),
+    $expected, q(ELS PVID preserved when VLAN ID collides with private index));
+
   delete $test->{info}{'_jnx_els_v_index'};
+  $test->{info}{store}{jnx_v_index} = {2 => 0, 3 => 120};
   $test->{info}{store}{bp_index}  = {513 => 505, 514 => 507};
   $test->{info}{store}{qb_i_vlan} = {513 => 3,   514 => 2};
   $expected                       = {505 => 120, 507 => 0};
   cmp_deeply($test->{info}->i_vlan(),
     $expected, q(Older PVID returned expected values));
+
+  $test->{info}{store}{jnx_v_index} = {8 => 15, 15 => 201};
+  $test->{info}{store}{bp_index}     = {513 => 510};
+  $test->{info}{store}{qb_i_vlan}    = {513 => 15};
+  $expected                          = {510 => 15};
+  cmp_deeply($test->{info}->i_vlan(),
+    $expected, q(Older PVID preserved when VLAN ID collides with private index));
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->i_vlan(), {}, q(No data returns empty hash));
