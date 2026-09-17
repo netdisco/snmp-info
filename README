@@ -1034,11 +1034,6 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer7::Netscaler for details.
 
-        SNMP::Info::Layer7::Kemp
-            Subclass for Kemp LoadMaster appliances.
-
-            See documentation in SNMP::Info::Layer7::Kemp for details.
-
         SNMP::Info::Layer7::Stormshield
             Subclass for Stormshield Network Security appliances.
 
