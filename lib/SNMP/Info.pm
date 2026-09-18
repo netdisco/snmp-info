@@ -1084,7 +1084,7 @@ See documentation in L<SNMP::Info::Layer3::Passport> for details.
 
 =item SNMP::Info::Layer3::Lancom
 
-Subclass for Lancom LCOS-OS-based Devies.
+Subclass for Lancom LCOS-OS-based Devices.
 
 See documentation in L<SNMP::Info::Layer3::Lancom> for details.
 
