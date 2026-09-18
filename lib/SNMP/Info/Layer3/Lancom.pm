@@ -11,12 +11,9 @@ our @ISA = qw(
 );
 
 our (
-    $VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE,
-    $AUTOLOAD, $INIT, $DEBUG
-);
+    $VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '0.01';
-$INIT    = 0;
+$VERSION = '3.977001';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
