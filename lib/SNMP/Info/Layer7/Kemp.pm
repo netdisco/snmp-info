@@ -65,7 +65,7 @@ $VERSION = '3.977001';
 
 sub vendor { return 'kemp'; }
 sub model  { return 'LoadMaster'; }
-sub os     { return 'loadmaster'; }
+sub os     { return 'LMOS'; }
 
 sub serial {
     my $kemp = shift;
@@ -187,7 +187,7 @@ Returns C<LoadMaster>.
 
 =item $kemp->os()
 
-Returns C<loadmaster>.
+Returns C<LMOS>.
 
 =item $kemp->os_ver()
 

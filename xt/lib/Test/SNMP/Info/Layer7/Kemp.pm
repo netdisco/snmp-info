@@ -82,7 +82,7 @@ sub model : Tests(1) {
 }
 
 sub os : Tests(1) {
-    is(shift->{info}->os(), 'loadmaster', 'OS');
+    is(shift->{info}->os(), 'LMOS', 'LoadMaster OS identifier');
 }
 
 sub os_ver : Tests(3) {
