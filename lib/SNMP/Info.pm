@@ -1082,6 +1082,12 @@ Accelar, and VSP 9000 series switches.
 
 See documentation in L<SNMP::Info::Layer3::Passport> for details.
 
+=item SNMP::Info::Layer3::Lancom
+
+Subclass for Lancom LCOS-absed Routers.
+
+See documentation in L<SNMP::Info::Layer3::Lancom> for details.
+
 =item SNMP::Info::Layer3::Pf
 
 Subclass for FreeBSD-Based Firewalls using Pf /Pf Sense
@@ -1842,6 +1848,7 @@ sub device_type {
         2011  => 'SNMP::Info::Layer3::Huawei',
         2021  => 'SNMP::Info::Layer3::NetSNMP',
         2272  => 'SNMP::Info::Layer3::Passport',
+		2356  => 'SNMP::Info::Layer3::Lancom',
         2604  => 'SNMP::Info::Layer3::Sophos',
         2620  => 'SNMP::Info::Layer3::CheckPoint',
         2636  => 'SNMP::Info::Layer3::Juniper',
