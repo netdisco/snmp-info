@@ -1246,6 +1246,12 @@ Subclass for Citrix Netscaler appliances.
 
 See documentation in L<SNMP::Info::Layer7::Netscaler> for details.
 
+=item SNMP::Info::Layer7::Kemp
+
+Subclass for Kemp LoadMaster appliances.
+
+See documentation in L<SNMP::Info::Layer7::Kemp> for details.
+
 =item SNMP::Info::Layer7::Stormshield
 
 Subclass for Stormshield Network Security appliances.
@@ -1859,6 +1865,7 @@ sub device_type {
         10002 => 'SNMP::Info::Layer2::Ubiquiti',
         10418 => 'SNMP::Info::Layer1::Cyclades',
         11256 => 'SNMP::Info::Layer7::Stormshield',
+        12196 => 'SNMP::Info::Layer7::Kemp',
         12325 => 'SNMP::Info::Layer3::Pf',
         12356 => 'SNMP::Info::Layer3::Fortinet',
         13191 => 'SNMP::Info::Layer3::OneAccess',
@@ -1942,6 +1949,7 @@ sub device_type {
         5951  => 'SNMP::Info::Layer7::Netscaler',
         9694  => 'SNMP::Info::Layer7::Arbor',
         11256 => 'SNMP::Info::Layer7::Stormshield',
+        12196 => 'SNMP::Info::Layer7::Kemp',
         12532 => 'SNMP::Info::Layer7::Neoteris',
         14525 => 'SNMP::Info::Layer2::Trapeze',
         21796 => 'SNMP::Info::Layer7::HWGroup',
