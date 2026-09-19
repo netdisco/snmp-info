@@ -65,6 +65,10 @@ $VERSION = '3.977001';
     %SNMP::Info::Layer3::MUNGE,
 );
 
+sub vendor {
+    return 'lancom';
+}
+
 sub model {
     my $self = shift;
     return $self->lancom_model();
