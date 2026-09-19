@@ -65,7 +65,6 @@ $VERSION = '3.977001';
     %SNMP::Info::Layer3::MUNGE,
 );
 
-
 sub model {
     my $self = shift;
     return $self->lancom_model();
@@ -93,3 +92,84 @@ sub os_ver {
 }
 
 1;
+
+__END__
+
+=head1 NAME
+
+SNMP::Info::Layer3::Lancom - SNMP Interface to LANCOM LCOS devices
+
+=head1 AUTHORS
+
+df-an and the SNMP::Info Developers
+
+=head1 SYNOPSIS
+
+ # Let SNMP::Info determine the correct subclass for you.
+ my $lancom = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          DestHost    => 'myrouter',
+                          Community   => 'public',
+                          Version     => 2
+                        )
+    or die "Can't connect to DestHost.\n";
+
+ my $class = $lancom->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
+=head1 DESCRIPTION
+
+Subclass for LANCOM devices running LCOS.
+
+=head2 Inherited Classes
+
+=over
+
+=item SNMP::Info::Layer3
+
+=back
+
+=head2 Required MIBs
+
+No additional MIB is required. The LANCOM hardware information is queried using
+numeric OIDs.
+
+=over
+
+=item Inherited Classes' MIBs
+
+See L<SNMP::Info::Layer3> for its own MIB requirements.
+
+=back
+
+=head1 GLOBALS
+
+These are methods that return scalar values from SNMP.
+
+=over
+
+=item $lancom->model()
+
+Returns the LANCOM model name.
+
+=item $lancom->serial()
+
+Returns the LANCOM serial number.
+
+=item $lancom->os()
+
+Returns C<'LCOS'>.
+
+=item $lancom->os_ver()
+
+Returns the LCOS firmware version. A date or other suffix following C<' / '>
+is removed from the value reported by the device.
+
+=back
+
+=head2 Globals imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3> for details.
+
+=cut
