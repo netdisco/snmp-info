@@ -49,6 +49,13 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
+sub vendor : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'vendor');
+  is($test->{info}->vendor(), 'lancom', q(Vendor returns 'lancom'));
+}
+
 sub model : Tests(3) {
   my $test = shift;
 
