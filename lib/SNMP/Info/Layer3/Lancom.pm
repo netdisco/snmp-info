@@ -136,8 +136,8 @@ Subclass for LANCOM devices running LCOS.
 
 =head2 Required MIBs
 
-No additional MIB is required. The LANCOM hardware information is queried using
-numeric OIDs.
+No vendor-specific MIB is required. The LANCOM hardware information is queried
+using numeric OIDs.
 
 =over
 
@@ -152,6 +152,10 @@ See L<SNMP::Info::Layer3> for its own MIB requirements.
 These are methods that return scalar values from SNMP.
 
 =over
+
+=item $lancom->vendor()
+
+Returns C<'lancom'>.
 
 =item $lancom->model()
 
