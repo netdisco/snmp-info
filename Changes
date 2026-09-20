@@ -4,6 +4,8 @@ Version 3.977002 (2026-tbd)
 
   * #583 Kemp LoadMaster support, including virtual service IPv4 addresses
   * #455 Sophos SFOS firewall support
+  * #585 LANCOM LCOS-based devices support
+  * #586 QNAP NAS support for legacy NAS-MIB, QTS, and QuTS hero devices
 
   [ENHANCEMENTS]
 
