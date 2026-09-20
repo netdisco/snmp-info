@@ -1003,6 +1003,12 @@ Subclass for Juniper devices.
 
 See documentation in L<SNMP::Info::Layer3::Juniper> for details.
 
+=item SNMP::Info::Layer3::Lancom
+
+Subclass for LANCOM devices running LCOS.
+
+See documentation in L<SNMP::Info::Layer3::Lancom> for details.
+
 =item SNMP::Info::Layer3::Lantronix
 
 Subclass for Lantronix devices.
@@ -1842,6 +1848,7 @@ sub device_type {
         2011  => 'SNMP::Info::Layer3::Huawei',
         2021  => 'SNMP::Info::Layer3::NetSNMP',
         2272  => 'SNMP::Info::Layer3::Passport',
+        2356  => 'SNMP::Info::Layer3::Lancom',
         2604  => 'SNMP::Info::Layer3::Sophos',
         2620  => 'SNMP::Info::Layer3::CheckPoint',
         2636  => 'SNMP::Info::Layer3::Juniper',
