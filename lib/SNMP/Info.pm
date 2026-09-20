@@ -1252,6 +1252,13 @@ Subclass for Citrix Netscaler appliances.
 
 See documentation in L<SNMP::Info::Layer7::Netscaler> for details.
 
+=item SNMP::Info::Layer7::QNAP
+
+Subclass for QNAP NAS devices running QTS or QuTS hero.  The operating-system
+family is reported as C<qts> or C<quts hero>.
+
+See documentation in L<SNMP::Info::Layer7::QNAP> for details.
+
 =item SNMP::Info::Layer7::Kemp
 
 Subclass for Kemp LoadMaster appliances.
@@ -1960,7 +1967,9 @@ sub device_type {
         12532 => 'SNMP::Info::Layer7::Neoteris',
         14525 => 'SNMP::Info::Layer2::Trapeze',
         21796 => 'SNMP::Info::Layer7::HWGroup',
+        24681 => 'SNMP::Info::Layer7::QNAP',
         26866 => 'SNMP::Info::Layer7::Gigamon',
+        55062 => 'SNMP::Info::Layer7::QNAP',
     );
 
     # Get just the enterprise number for generic mapping
