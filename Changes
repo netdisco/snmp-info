@@ -11,6 +11,10 @@ Version 3.977002 (2026-tbd)
 
   * #582 Improve Citrix Netscaler os_ver
 
+  [BUG FIXES]
+
+  * Juniper: preserve dot1qPvid values which collide with private VLAN indexes
+
 Version 3.977001 (2026-08-26)
 
   [BUG FIXES]

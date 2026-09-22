@@ -251,12 +251,17 @@ sub i_vlan {
     my $v_index = $juniper->v_index() || {};
     my $i_pvid  = $juniper->qb_i_vlan($partial) || {};
     my $i_vlan  = $juniper->SUPER::i_vlan() || {};
+    my %vlan_ids = map { $_ => 1 } grep { defined } values %$v_index;
 
     foreach my $bport ( keys %$i_pvid ) {
         my $q_vlan  = $i_pvid->{$bport};
         my $vlan    = $q_vlan;
-        # Use defined as check since VLAN can be zero
-        $vlan = $v_index->{$q_vlan} if defined $v_index->{$q_vlan};
+        # dot1qPvid normally contains a VLAN ID, but some Juniper devices
+        # return a private VLAN table index. Only translate when the value is
+        # not also a known VLAN ID; otherwise an index collision can rewrite a
+        # valid PVID to an unrelated VLAN.
+        $vlan = $v_index->{$q_vlan}
+            if !$vlan_ids{$q_vlan} and defined $v_index->{$q_vlan};
         my $ifindex = $index->{$bport};
         unless ( defined $ifindex ) {
             print "  Port $bport has no bp_index mapping. Skipping.\n"
