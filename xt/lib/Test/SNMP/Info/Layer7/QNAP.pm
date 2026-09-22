@@ -293,7 +293,7 @@ sub os_ver : Tests(8) {
     is($test->{info}->os_ver(), undef, 'No data returns undef OS version');
 }
 
-sub entity_inventory_version : Tests(7) {
+sub e_swver : Tests(7) {
     my $test = shift;
 
     $test->{info}{_e_parent} = 1;
