@@ -258,6 +258,12 @@ propvirtual
 proxim
 PSE
 pvid
+qnap
+QNAP
+qts
+QTS
+quts
+QuTS
 PVST
 qbridge
 qos
