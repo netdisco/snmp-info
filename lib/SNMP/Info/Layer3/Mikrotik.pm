@@ -45,6 +45,7 @@ $VERSION = '3.977001';
     %SNMP::Info::Layer3::MIBS,
     'HOST-RESOURCES-MIB'       => 'hrSystem',
     'MIKROTIK-MIB'             => 'mtxrLicVersion',
+    'MIKROTIK-LLDP-EXT-MIB'    => 'mtLldpRemManAddr', # override bc of CCR quirk
 );
 
 %GLOBALS = (
@@ -59,6 +60,9 @@ $VERSION = '3.977001';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
+#    'mt_lldp_rman_addr' => 'mtLldpRemManAddr',  # unique leaf, unique method
+ 'mt_lldp_rman_addr'    => 'lldpRemManAddr',
+ 'mt_lldp_rman_subtype' => 'lldpRemManAddrSubtype',
 );
 
 %MUNGE = (
@@ -98,6 +102,91 @@ sub cpu_temp {
     my $temp = $mikrotik->mtxrHlProcessorTemperature;
     return $temp / 10.0;
 }
+
+sub _norm_mac_text {
+    my $v = shift;
+    return unless defined $v;
+    $v =~ s/^\s+|\s+$//g;
+    $v =~ s/-/:/g;
+    return lc $v if $v =~ /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i;
+    return;
+}
+
+sub c_id {
+    my ($self, $partial) = @_;
+    my $super = $self->SUPER::c_id($partial) || {};
+    return $super if scalar keys %$super;
+
+    my $rid = $self->lldp_rem_id($partial)     || {};
+    my $sub = $self->lldp_rem_id_sub($partial) || {};
+    my %out;
+
+    for my $idx (keys %$rid) {
+        my $v = $rid->{$idx};
+        next unless defined $v && length $v;
+
+        if (defined $sub->{$idx} && $sub->{$idx} == 4) { # macAddress subtype
+            my $m = _norm_mac_text($v);
+            $out{$idx} = $m if defined $m;
+            next;
+        }
+
+        $out{$idx} = $v;
+    }
+
+    return scalar(keys %out) ? \%out : $super;
+}
+sub c_ip {
+    my ($self, $partial) = @_;
+
+    # normal behavior first
+    my $super = $self->SUPER::c_ip($partial) || {};
+    return $super if scalar keys %$super;
+
+    # fallback: build keyspace from joinable neighbor tuples
+    my $cid   = $self->c_id($partial)   || {};
+    my $cif   = $self->c_if($partial)   || {};
+    my $cport = $self->c_port($partial) || {};
+
+    my %out;
+    for my $idx (keys %$cif) {
+        next unless exists $cid->{$idx};
+        next unless exists $cport->{$idx};
+
+        # placeholder only; value is not trusted mgmt IP
+        $out{$idx} = '0.0.0.0';
+    }
+
+    return \%out;
+}
+sub _mt_unlock_rem_man_addr {
+    for my $n (qw(lldpRemManAddr mtLldpRemManAddr)) {
+        my $m = $SNMP::MIB{$n} or next;
+        $m->{access} = 'ReadOnly';
+    }
+}
+
+sub mt_mib_probe {
+    my $self = shift;
+    my $sess = $self->session;
+
+    my $info     = $self->mt_lldp_rman_addr;
+    my $name_tbl = $sess->gettable('mtLldpRemManAddr');
+    my $oid_tbl  = $sess->gettable('.1.0.8802.1.1.2.1.4.2.1.2');
+
+    my $name_n = (ref $name_tbl eq 'HASH') ? scalar keys %{$name_tbl} : -1;
+    my $oid_n  = (ref $oid_tbl  eq 'HASH') ? scalar keys %{$oid_tbl}  : -1;
+
+    return {
+        sess         => $sess ? 1 : 0,
+        info_defined => defined $info ? 1 : 0,
+        name_ref     => ref($name_tbl) || 'undef',
+        name_keys    => $name_n,
+        oid_ref      => ref($oid_tbl) || 'undef',
+        oid_keys     => $oid_n,
+    };
+}
+
 
 1;
 __END__
