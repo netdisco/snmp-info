@@ -677,6 +677,12 @@ Class for Kentrox DataSMART DSU/CSU.
 
 See documentation in L<SNMP::Info::Layer2::Kentrox> for details.
 
+=item SNMP::Info::Layer2::Microsens
+
+Subclass for MICROSENS managed switches, including G6 and G6+.
+
+See documentation in L<SNMP::Info::Layer2::Microsens> for details.
+
 =item SNMP::Info::Layer2::N2270
 
 Subclass for Nortel 2270 wireless switches.
@@ -1927,6 +1933,7 @@ sub device_type {
         2011  => 'SNMP::Info::Layer3::Huawei',
         2272  => 'SNMP::Info::Layer3::Passport',
         2925  => 'SNMP::Info::Layer1::Cyclades',
+        3181  => 'SNMP::Info::Layer2::Microsens',
         3224  => 'SNMP::Info::Layer3::Netscreen',
         3375  => 'SNMP::Info::Layer3::F5',
         4526  => 'SNMP::Info::Layer2::Netgear',
