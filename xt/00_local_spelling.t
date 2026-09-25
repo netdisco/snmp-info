@@ -172,6 +172,8 @@ ISID
 jeroen
 junos
 Kentrox
+MICROSENS
+Microsens
 Kosmach
 kramarov
 Kraus
