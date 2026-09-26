@@ -1880,6 +1880,7 @@ sub device_type {
         10418 => 'SNMP::Info::Layer1::Cyclades',
         11256 => 'SNMP::Info::Layer7::Stormshield',
         12196 => 'SNMP::Info::Layer7::Kemp',
+        12276 => 'SNMP::Info::Layer3::F5OS',
         12325 => 'SNMP::Info::Layer3::Pf',
         12356 => 'SNMP::Info::Layer3::Fortinet',
         13191 => 'SNMP::Info::Layer3::OneAccess',
