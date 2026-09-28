@@ -107,4 +107,32 @@ sub serial : Tests(2) {
   is($test->{info}->serial(), 'XXXXXXXXXXXXX', q(Serial is expected value));
 }
 
+sub name_oid : Tests(8) {
+  # Each case needs a fresh interpreter: globals and generated accessors are
+  # initialized when the module is loaded.
+  for my $case (
+      [ undef, '.1.3.6.1.4.1.2604.5.1.1.1.0', 'unset uses vendor OID' ],
+      [ '', '.1.3.6.1.4.1.2604.5.1.1.1.0', 'empty uses vendor OID' ],
+      [ '.1.3.6.1.2.1.1.5.0', '.1.3.6.1.2.1.1.5.0', 'standard sysName override' ],
+      [ '.1.3.6.1.4.1.2604.5.1.1.4.0', '.1.3.6.1.4.1.2604.5.1.1.4.0',
+          'custom scalar override' ],
+  ) {
+      local $ENV{SNMP_INFO_SOPHOS_NAME_OID};
+      if ( defined $case->[0] ) {
+          $ENV{SNMP_INFO_SOPHOS_NAME_OID} = $case->[0];
+      }
+      else {
+          delete $ENV{SNMP_INFO_SOPHOS_NAME_OID};
+      }
+
+      open my $child, '-|', $^X, '-Ilib', '-MSNMP::Info::Layer3::Sophos', '-e',
+          'print $SNMP::Info::Layer3::Sophos::GLOBALS{name}'
+          or die "Cannot start Perl: $!";
+      my $oid = do { local $/; <$child> };
+      close $child;
+      is( $?, 0, "$case->[2]: module loads" );
+      is( $oid, $case->[1], $case->[2] );
+  }
+}
+
 1;
