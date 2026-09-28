@@ -295,6 +295,13 @@ SNMP Interface to Cisco Aggregated Links
 
 See documentation in L<SNMP::Info::CiscoAgg> for details.
 
+=item SNMP::Info::CiscoAuthFramework
+
+F<CISCO-AUTH-FRAMEWORK-MIB>. Cisco Authentication Framework session
+information, including dynamically assigned authentication VLANs.
+
+See documentation in L<SNMP::Info::CiscoAuthFramework> for details.
+
 =item SNMP::Info::CiscoBGP
 
 F<CISCO-BGP4-MIB>.  Cisco BGPv4 support.  Inherited by Cisco devices with
