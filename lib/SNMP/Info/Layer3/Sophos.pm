@@ -47,6 +47,8 @@ $VERSION = '3.977001';
 # the class still works where the vendor MIB is not installed.
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
+    'name'      => ( $ENV{SNMP_INFO_SOPHOS_NAME_OID}
+            || '.1.3.6.1.4.1.2604.5.1.1.1.0' ),    # sfosDeviceName
     'os_ver'     => '.1.3.6.1.4.1.2604.5.1.1.3.0',    # sfosDeviceFWVersion
     'serial1'    => '.1.3.6.1.4.1.2604.5.1.1.4.0',    # sfosDeviceAppKey
     'sfos_model' => '.1.3.6.1.4.1.2604.5.1.1.2.0',    # sfosDeviceType
@@ -160,6 +162,19 @@ These are methods that return scalar value from SNMP
 =item $sophos->vendor()
 
 Returns C<'sophos'>.
+
+=item $sophos->name()
+
+Returns C<sfosDeviceName.0> (C<.1.3.6.1.4.1.2604.5.1.1.1.0>) by default.
+Set the environment variable C<SNMP_INFO_SOPHOS_NAME_OID> to a numeric scalar
+OID, including its instance suffix, to use a different source. For example,
+to use standard C<sysName.0>:
+
+ export SNMP_INFO_SOPHOS_NAME_OID=.1.3.6.1.2.1.1.5.0
+
+The variable is read when this module is loaded. An unset or empty value uses
+the default. When using Netdisco, set it in the backend process environment
+and restart the backend for changes to take effect.
 
 =item $sophos->os()
 
