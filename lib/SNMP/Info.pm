@@ -946,6 +946,12 @@ Subclass for F5 devices.
 
 See documentation in L<SNMP::Info::Layer3::F5> for details.
 
+=item SNMP::Info::Layer3::F5OS
+
+Subclass for F5OS devices.
+
+See documentation in L<SNMP::Info::Layer3::F5OS> for details.
+
 =item SNMP::Info::Layer3::Force10
 
 Subclass for Force10 devices.
