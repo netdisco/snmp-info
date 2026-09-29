@@ -64,6 +64,7 @@ sub device_type : Tests(+5) {
   isnt($test->{info}->device_type(), 'SNMP::Info::Layer2::Microsens',
     q(MICROSENS is not mapped through the Layer3 enterprise map));
 
+  $test->{info}{_layers} = 2;
   $test->{info}{_id} = '.1.3.6.1.4.1.3181.10.5.1';
   is($test->{info}->device_type(), 'SNMP::Info::Layer2::Microsens',
     q(Other MICROSENS managed switch generations are detected));
@@ -95,8 +96,9 @@ sub model : Tests(4) {
   is($test->{info}->model(), 'MS440210M-G6+', q(Model is normalized));
 
   $test->{info}{_microsens_model} = '';
-  is($test->{info}->model(), '.1.3.6.1.4.1.3181.10.6.2.1',
-    q(Empty model falls back to the Layer2 model));
+  like($test->{info}->model(),
+    qr/\A(?:\.1\.3\.6\.1\.4\.1\.|enterprises\.)3181\.10\.6\.2\.1\z/,
+    q(Empty model falls back to the Layer2 model in numeric or MIB form));
 
   $test->{info}->clear_cache();
   is($test->{info}->model(), '', q(No model data returns an empty model));
