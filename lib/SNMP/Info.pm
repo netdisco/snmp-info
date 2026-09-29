@@ -953,6 +953,12 @@ Subclass for F5 devices.
 
 See documentation in L<SNMP::Info::Layer3::F5> for details.
 
+=item SNMP::Info::Layer3::F5OS
+
+Subclass for F5OS devices.
+
+See documentation in L<SNMP::Info::Layer3::F5OS> for details.
+
 =item SNMP::Info::Layer3::Force10
 
 Subclass for Force10 devices.
@@ -1887,6 +1893,7 @@ sub device_type {
         10418 => 'SNMP::Info::Layer1::Cyclades',
         11256 => 'SNMP::Info::Layer7::Stormshield',
         12196 => 'SNMP::Info::Layer7::Kemp',
+        12276 => 'SNMP::Info::Layer3::F5OS',
         12325 => 'SNMP::Info::Layer3::Pf',
         12356 => 'SNMP::Info::Layer3::Fortinet',
         13191 => 'SNMP::Info::Layer3::OneAccess',
