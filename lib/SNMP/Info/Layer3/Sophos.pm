@@ -43,11 +43,13 @@ $VERSION = '3.977001';
 
 %MIBS = (%SNMP::Info::Layer3::MIBS);
 
+my $name_oid_override = $ENV{SNMP_INFO_SOPHOS_NAME_OID};
+
 # Numeric OIDs from the sfosXGDeviceInfo group of SFOS-FIREWALL-MIB, so that
 # the class still works where the vendor MIB is not installed.
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    'name'      => ( $ENV{SNMP_INFO_SOPHOS_NAME_OID}
+    'sfos_name' => ( $name_oid_override
             || '.1.3.6.1.4.1.2604.5.1.1.1.0' ),    # sfosDeviceName
     'os_ver'     => '.1.3.6.1.4.1.2604.5.1.1.3.0',    # sfosDeviceFWVersion
     'serial1'    => '.1.3.6.1.4.1.2604.5.1.1.4.0',    # sfosDeviceAppKey
@@ -77,6 +79,17 @@ sub os {
 
     return 'sfos' if $sophos->_is_sfos();
     return $sophos->SUPER::os();
+}
+
+sub name {
+    my $sophos = shift;
+
+    if ( $name_oid_override || $sophos->_is_sfos() ) {
+        my $name = $sophos->sfos_name();
+        return $name if defined $name and $name =~ /\S/;
+    }
+
+    return $sophos->SUPER::name();
 }
 
 sub model {
@@ -165,9 +178,12 @@ Returns C<'sophos'>.
 
 =item $sophos->name()
 
-Returns C<sfosDeviceName.0> (C<.1.3.6.1.4.1.2604.5.1.1.1.0>) by default.
+Returns C<sfosDeviceName.0> (C<.1.3.6.1.4.1.2604.5.1.1.1.0>) on SFOS,
+falling back to standard C<sysName.0> when it is unavailable or blank.
+Other Sophos devices use C<sysName.0> by default.
 Set the environment variable C<SNMP_INFO_SOPHOS_NAME_OID> to a numeric scalar
-OID, including its instance suffix, to use a different source. For example,
+OID, including its instance suffix, to prefer a different source on any
+Sophos device, with the same fallback. For example,
 to use standard C<sysName.0>:
 
  export SNMP_INFO_SOPHOS_NAME_OID=.1.3.6.1.2.1.1.5.0
@@ -175,6 +191,11 @@ to use standard C<sysName.0>:
 The variable is read when this module is loaded. An unset or empty value uses
 the default. When using Netdisco, set it in the backend process environment
 and restart the backend for changes to take effect.
+
+=item $sophos->sfos_name()
+
+Returns the configured hostname scalar directly, without the C<sysName.0>
+fallback used by C<name()>.
 
 =item $sophos->os()
 

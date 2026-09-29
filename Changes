@@ -1,13 +1,16 @@
-Version 3.977002 (2026-tbd)
+Version 3.978000 (2026-09-29)
 
   [NEW FEATURES]
 
-  * #583 Kemp LoadMaster support, including virtual service IPv4 addresses
+  * #584 Kemp LoadMaster support, including virtual service IPv4 addresses
   * #455 Sophos SFOS firewall support; name defaults to sfosDeviceName,
-    overridable with SNMP_INFO_SOPHOS_NAME_OID
+    overridable with SNMP_INFO_SOPHOS_NAME_OID, with sysName fallback;
+    non-SFOS devices retain sysName by default
   * #585 LANCOM LCOS-based devices support
   * #586 QNAP NAS support for legacy NAS-MIB, QTS, and QuTS hero devices
   * #587 add MICROSENS managed switch support, including G6 and G6+
+  * #580 Cisco Authentication Framework session VLAN support
+  * #588 F5OS rSeries appliance support, including LLDP and physical inventory
 
   [ENHANCEMENTS]
 
