@@ -42,7 +42,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.977001';
+$VERSION = '3.978000';
 
 %MIBS = ( 'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snFdpGlobalRun' );
 

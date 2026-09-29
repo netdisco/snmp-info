@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.977001
+    SNMP::Info - Version 3.978000
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -239,6 +239,12 @@ SUBCLASSES
         SNMP Interface to Cisco Aggregated Links
 
         See documentation in SNMP::Info::CiscoAgg for details.
+
+    SNMP::Info::CiscoAuthFramework
+        CISCO-AUTH-FRAMEWORK-MIB. Cisco Authentication Framework session
+        information, including dynamically assigned authentication VLANs.
+
+        See documentation in SNMP::Info::CiscoAuthFramework for details.
 
     SNMP::Info::CiscoBGP
         CISCO-BGP4-MIB. Cisco BGPv4 support. Inherited by Cisco devices with
@@ -563,6 +569,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::Kentrox for details.
 
+        SNMP::Info::Layer2::Microsens
+            Subclass for MICROSENS managed switches, including G6 and G6+.
+
+            See documentation in SNMP::Info::Layer2::Microsens for details.
+
         SNMP::Info::Layer2::N2270
             Subclass for Nortel 2270 wireless switches.
 
@@ -789,6 +800,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::F5 for details.
 
+        SNMP::Info::Layer3::F5OS
+            Subclass for F5OS devices.
+
+            See documentation in SNMP::Info::Layer3::F5OS for details.
+
         SNMP::Info::Layer3::Force10
             Subclass for Force10 devices.
 
@@ -837,6 +853,11 @@ SUBCLASSES
             Subclass for Juniper devices.
 
             See documentation in SNMP::Info::Layer3::Juniper for details.
+
+        SNMP::Info::Layer3::Lancom
+            Subclass for LANCOM devices running LCOS.
+
+            See documentation in SNMP::Info::Layer3::Lancom for details.
 
         SNMP::Info::Layer3::Lantronix
             Subclass for Lantronix devices.
@@ -936,6 +957,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::SonicWALL for details.
 
+        SNMP::Info::Layer3::Sophos
+            Subclass for Sophos SFOS firewalls.
+
+            See documentation in SNMP::Info::Layer3::Sophos for details.
+
         SNMP::Info::Layer3::Steelfusion
             Subclass for Riverbed Steelfusion WAN optimization appliances.
 
@@ -1033,6 +1059,17 @@ SUBCLASSES
             Subclass for Citrix Netscaler appliances.
 
             See documentation in SNMP::Info::Layer7::Netscaler for details.
+
+        SNMP::Info::Layer7::QNAP
+            Subclass for QNAP NAS devices running QTS or QuTS hero. The
+            operating-system family is reported as "qts" or "quts hero".
+
+            See documentation in SNMP::Info::Layer7::QNAP for details.
+
+        SNMP::Info::Layer7::Kemp
+            Subclass for Kemp LoadMaster appliances.
+
+            See documentation in SNMP::Info::Layer7::Kemp for details.
 
         SNMP::Info::Layer7::Stormshield
             Subclass for Stormshield Network Security appliances.

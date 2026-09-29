@@ -42,7 +42,7 @@ our @ISA = qw(
 our (
     $VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.977001';
+$VERSION = '3.978000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
