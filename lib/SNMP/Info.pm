@@ -1278,6 +1278,12 @@ family is reported as C<qts> or C<quts hero>.
 
 See documentation in L<SNMP::Info::Layer7::QNAP> for details.
 
+=item SNMP::Info::Layer7::Synology
+
+Subclass for Synology NAS devices running DiskStation Manager (DSM).
+
+See documentation in L<SNMP::Info::Layer7::Synology> for details.
+
 =item SNMP::Info::Layer7::Kemp
 
 Subclass for Kemp LoadMaster appliances.
@@ -2393,6 +2399,19 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Teltonika'
             if (
             $desc =~ /\bTeltonika.*RUT9\d{2}\b/);
+
+        # DSM uses a generic Linux sysDescr and commonly uses Net-SNMP's
+        # generic Linux sysObjectID.  Probe one DSM-specific scalar only for
+        # those devices or Synology's own enterprise.
+        if (
+            $soid
+            =~ /^\.?1\.3\.6\.1\.4\.1\.(?:6574(?:\.|$)|8072\.3\.2\.10$)/
+            )
+        {
+            my $version = _global('synology_ver', '.1.3.6.1.4.1.6574.1.5.3.0')->($info) // '';
+            $objtype = 'SNMP::Info::Layer7::Synology'
+                if $version =~ /^\s*DSM\s+\S+/i;
+        }
 
         # Generic device classification based upon sysObjectID
         if ( defined($id) and $objtype eq 'SNMP::Info') {

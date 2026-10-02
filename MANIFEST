@@ -162,6 +162,7 @@ lib/SNMP/Info/Layer7/Liebert.pm
 lib/SNMP/Info/Layer7/Neoteris.pm
 lib/SNMP/Info/Layer7/Netscaler.pm
 lib/SNMP/Info/Layer7/QNAP.pm
+lib/SNMP/Info/Layer7/Synology.pm
 lib/SNMP/Info/Layer7/Stormshield.pm
 lib/SNMP/Info/LLDP.pm
 lib/SNMP/Info/MAU.pm
@@ -326,6 +327,7 @@ xt/lib/Test/SNMP/Info/Layer7/Liebert.pm
 xt/lib/Test/SNMP/Info/Layer7/Neoteris.pm
 xt/lib/Test/SNMP/Info/Layer7/Netscaler.pm
 xt/lib/Test/SNMP/Info/Layer7/QNAP.pm
+xt/lib/Test/SNMP/Info/Layer7/Synology.pm
 xt/lib/Test/SNMP/Info/Layer7/Stormshield.pm
 xt/lib/Test/SNMP/Info/LLDP.pm
 xt/lib/Test/SNMP/Info/MAU.pm

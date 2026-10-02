@@ -266,6 +266,10 @@ qts
 QTS
 quts
 QuTS
+synology
+Synology
+DiskStation
+DSM
 PVST
 qbridge
 qos
