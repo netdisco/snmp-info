@@ -61,33 +61,42 @@ sub setup : Tests(setup) {
     );
 }
 
+sub _set_synology_version {
+    my ($test, $version) = @_;
+
+    $test->mock_session->{synology_version} = $version;
+    delete $test->{info}{_synology_ver};
+}
+
 sub device_type : Tests(+8) {
     my $test = shift;
     $test->SUPER::device_type;
 
     $test->{info}{_id} = '.1.3.6.1.4.1.6574.1.5';
+    _set_synology_version($test, " DSM 7.3-86009 \x00");
     is($test->{info}->device_type(), 'SNMP::Info::Layer7::Synology',
         'Native Synology enterprise with DSM version is detected');
 
     $test->{info}{_id} = '.1.3.6.1.4.1.8072.3.2.10';
-    $test->mock_session->{synology_version} = 'NOSUCHOBJECT';
+    _set_synology_version($test, 'NOSUCHOBJECT');
     is($test->{info}->device_type(), 'SNMP::Info::Layer3::NetSNMP',
         'Generic Net-SNMP agent without the DSM scalar is not Synology');
 
-    $test->mock_session->{synology_version} = undef;
+    _set_synology_version($test, undef);
     is($test->{info}->device_type(), 'SNMP::Info::Layer3::NetSNMP',
         'Undefined DSM version safely falls back to generic Net-SNMP');
 
-    $test->mock_session->{synology_version} = 'APM 1.0';
+    _set_synology_version($test, 'APM 1.0');
     is($test->{info}->device_type(), 'SNMP::Info::Layer3::NetSNMP',
         'Another Synology product is not assumed to run DSM');
 
     $test->{info}{_id} = '.1.3.6.1.4.1.6574.1.5';
+    _set_synology_version($test, 'APM 1.0');
     is($test->{info}->device_type(), 'SNMP::Info',
         'Native Synology enterprise without a DSM marker is not assumed DSM');
 
     $test->{info}{_id} = '.1.3.6.1.4.1.8072';
-    $test->mock_session->{synology_version} = 'DSM 7.3-86009';
+    _set_synology_version($test, 'DSM 7.3-86009');
     isnt($test->{info}->device_type(), 'SNMP::Info::Layer7::Synology',
         'Net-SNMP enterprise root does not trigger the DSM probe');
 
