@@ -2408,8 +2408,7 @@ sub device_type {
             =~ /^\.?1\.3\.6\.1\.4\.1\.(?:6574(?:\.|$)|8072\.3\.2\.10$)/
             )
         {
-            my $version
-                = $info->session()->get('.1.3.6.1.4.1.6574.1.5.3.0') // '';
+            my $version = _global('synology_ver', '.1.3.6.1.4.1.6574.1.5.3.0')->($info) // '';
             $objtype = 'SNMP::Info::Layer7::Synology'
                 if $version =~ /^\s*DSM\s+\S+/i;
         }
