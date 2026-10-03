@@ -242,6 +242,66 @@ sub connection_descriptions : Tests(3) {
     'AP module description includes its branch switch connection';
 }
 
+sub ap_tags : Tests(5) {
+  my $test = shift;
+
+  can_ok $test->{info}, 'c9800_ap_policy_tag';
+  $test->{info}->cache({
+    '_i_index'              => 1,
+    '_i_description'        => 1,
+    '_airespace_apif_slot'  => 1,
+    '_airespace_if_name'    => 1,
+    '_airespace_ap_loc'     => 1,
+    '_airespace_ap_name'    => 1,
+    '_airespace_ap_model'   => 1,
+    '_c9800_ap_policy_tag'  => 1,
+    '_c9800_ap_site_tag'    => 1,
+    '_c9800_ap_rf_tag'      => 1,
+    'store' => {
+      'i_index'             => {},
+      'i_description'       => {},
+      'airespace_apif_slot' => {'2.0.0.0.0.1.0' => 0},
+      'airespace_if_name'   => {},
+      'airespace_ap_loc'    => {
+        '2.0.0.0.0.1' => 'Branch office',
+        '2.0.0.0.0.3' => 'Main office',
+      },
+      'airespace_ap_name' => {
+        '2.0.0.0.0.1' => 'ap-1',
+        '2.0.0.0.0.3' => 'ap-2',
+      },
+      'airespace_ap_model' => {
+        '2.0.0.0.0.1' => 'C9120AXI',
+        '2.0.0.0.0.3' => 'C9130AXI',
+      },
+      'c9800_ap_policy_tag' => {
+        '2.0.0.0.0.1' => 'policy-branch',
+        '2.0.0.0.0.3' => 'default-policy-tag',
+      },
+      'c9800_ap_site_tag' => {
+        '2.0.0.0.0.1' => 'site-branch',
+      },
+      'c9800_ap_rf_tag' => {
+        '2.0.0.0.0.1' => 'rf-branch',
+        '2.0.0.0.0.3' => '',
+      },
+    },
+  });
+
+  is $test->{info}->e_descr->{'2.0.0.0.0.1'},
+    'C9120AXI: ap-1 (Branch office); Policy tag policy-branch; '
+      . 'Site tag site-branch; RF tag rf-branch',
+    'AP module description includes its tags';
+  is $test->{info}->e_descr->{'2.0.0.0.0.3'},
+    'C9130AXI: ap-2 (Main office); Policy tag default-policy-tag',
+    'Missing or empty tags are left out of the module description';
+  is $test->{info}->i_description->{'2.0.0.0.0.1.0'},
+    'Branch office',
+    'AP radio port description does not repeat the AP tags';
+  is $test->{info}->c9800_ap_site_tag->{'2.0.0.0.0.1'}, 'site-branch',
+    'Site tag is available per AP';
+}
+
 sub device_type_variants : Tests(3) {
   my $test = shift;
 
