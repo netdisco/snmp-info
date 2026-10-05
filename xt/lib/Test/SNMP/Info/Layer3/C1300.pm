@@ -78,4 +78,40 @@ sub model : Tests(2) {
   is($test->{info}->model(), 'C130048T4X', q(Model is expected value));
 }
 
+sub os_ver : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'os_ver');
+  my @cases = (
+    [ { 67109120 => 0 }, { 67109120 => 'chassis' },
+      { 67109120 => '4.1.7.26' }, '4.1.7.26',
+      'Reported C1300 software version is returned' ],
+    [ { 42 => 0 }, { 42 => 'chassis' }, { 42 => '4.1.7.26' },
+      '4.1.7.26', 'Chassis index is not hardcoded' ],
+    [ { 1 => 42, 42 => 0 }, { 1 => 'module', 42 => 'chassis' },
+      { 1 => '2.0.17', 42 => '4.1.7.26' }, '4.1.7.26',
+      'Child module version does not override the chassis version' ],
+    [ { 42 => 0 }, { 42 => 'chassis' }, { 42 => '' }, undef,
+      'Empty software version returns undef' ],
+    [ {}, {}, {}, undef, 'Missing entity data returns undef' ],
+  );
+
+  foreach my $case (@cases) {
+    my ($parents, $classes, $versions, $expected, $name) = @$case;
+    $test->{info}->clear_cache();
+    $test->{info}->cache({
+      '_e_parent' => 1, '_e_class' => 1, '_e_swver' => 1,
+      'store' => {
+        'e_parent' => $parents, 'e_class' => $classes,
+        'e_swver' => $versions,
+      },
+    });
+    # The helper fetches software revisions by entity index via the session.
+    $test->{info}{sess}{Data} = {
+      'ENTITY-MIB::entPhysicalSoftwareRev' => $versions,
+    };
+    is($test->{info}->os_ver(), $expected, $name);
+  }
+}
+
 1;
