@@ -89,6 +89,32 @@ sub missing_and_invalid_data : Tests(1) {
     };
 }
 
+sub raw_table_reads : Tests(1) {
+    my $test = shift;
+    subtest 'Read AI-AP-MIB tables through the SNMP session' => sub {
+        my $info = $test->{info};
+        my $fixture = decode_json(read_text('xt/fixtures/aruba-instant-8.10.json'));
+        my $session_data = {};
+        foreach my $method (keys %$fixture) {
+            my $leaf = $SNMP::Info::Layer3::ArubaInstant::FUNCS{$method};
+            my %table = %{$fixture->{$method}};
+            if ($method =~ /(?:mac|bssid)$/) {
+                $table{$_} = pack('C6', map {hex $_} split /:/, $table{$_})
+                    foreach keys %table;
+            }
+            $session_data->{"AI-AP-MIB::$leaf"} = \%table;
+        }
+        $test->mock_session->{Data} = $session_data;
+        $info->clear_cache();
+        foreach my $method (sort keys %$fixture) {
+            is_deeply($info->$method(), $fixture->{$method}, "$method reads and munges the MIB table");
+        }
+        is(scalar keys %{$info->i_ssidlist()}, 8, 'eight WLANs from raw SNMP tables');
+        is(scalar keys %{$info->fw_mac()}, 9, 'nine clients from raw SNMP tables');
+        done_testing();
+    };
+}
+
 sub detection_scope : Tests(4) {
     my $test = shift;
     my $base = SNMP::Info->new(AutoSpecify => 0, Session => $test->mock_session);
