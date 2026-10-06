@@ -2436,7 +2436,7 @@ sub device_type {
     # Restrict this initial support to the 8.x evidence in issue #536.
     $objtype = 'SNMP::Info::Layer3::ArubaInstant'
         if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.14823\.1\.2\.\d+$/
-        && $desc =~ /ArubaOS.*Version\s+8\./;
+        && $desc =~ /(?:ArubaOS|AOS-8).*Version\s+8\./;
 
     return $objtype;
 }

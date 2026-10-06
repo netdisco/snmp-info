@@ -93,6 +93,8 @@ sub raw_table_reads : Tests(1) {
     subtest 'Read AI-AP-MIB tables through the SNMP session' => sub {
         my $info = $test->{info};
         my $fixture = decode_json(read_text('xt/fixtures/aruba-instant-8.10.json'));
+        my $radio_fixture = decode_json(read_text('xt/fixtures/aruba-instant-8.4-radios.json'));
+        $fixture = {%$fixture, %$radio_fixture};
         my $session_data = {};
         foreach my $method (keys %$fixture) {
             my $leaf = $SNMP::Info::Layer3::ArubaInstant::FUNCS{$method};
@@ -196,13 +198,97 @@ sub fw_port : Tests(1) {
     is($info->fw_port()->{'instant.2.0.0.0.0.10'}, '02:00:00:00:00:02', 'associated client BSSID');
 }
 
-sub detection_scope : Tests(4) {
+# AP-225 / 8.4.0.0 radio rows from LibreNMS tests/snmpsim/aruba-instant.snmprec.
+# MAC addresses anonymised; channels, powers, statuses and indexes retained.
+sub _load_radios {
+    my $test = shift;
+    my $fixture = decode_json(read_text('xt/fixtures/aruba-instant-8.4-radios.json'));
+    foreach my $method (keys %$fixture) {
+        my %table = %{$fixture->{$method}};
+        if ($method eq 'instant_radio_mac') {
+            $table{$_} = pack('C6', map {hex $_} split /:/, $table{$_}) foreach keys %table;
+        }
+        $test->{info}{store}{$method} = \%table;
+        $test->{info}{'_' . $method} = 1;
+    }
+    return $fixture;
+}
+
+sub radio_interfaces : Tests(1) {
+    my $test = shift;
+    $test->_load_radios();
+    subtest 'Separate radio interfaces and channel joins' => sub {
+        my $info = $test->{info};
+        my $ports = $info->interfaces();
+        is(scalar keys %$ports, 17, 'wired port, eight WLANs and eight radios');
+        is($ports->{'2.0.0.0.0.1.0'}, '02:00:00:00:00:01.wlan0', 'WLAN identity retained');
+        is($ports->{'2.0.0.0.0.1.0.0'}, '02:00:00:00:00:01.radio0', 'radio index does not collide');
+        foreach my $iid (keys %{$info->i_80211channel()}) {
+            ok(exists $ports->{$iid}, 'channel joins a known radio port');
+            like($ports->{$iid}, qr/\.radio\d+$/, 'channel is assigned to a radio');
+            is($info->i_type()->{$iid}, 'ieee80211', 'radio is wireless');
+        }
+        ok(!exists $info->i_80211channel()->{'2.0.0.0.0.1.0'}, 'no inferred WLAN channel');
+        is(scalar keys %{$info->i_ssidlist()}, 8, 'radio interfaces do not invent SSIDs');
+        is(scalar keys %{$info->fw_mac()}, 10, 'client and wired entries retained');
+        done_testing();
+    };
+}
+
+sub i_80211channel : Tests(1) {
+    my $test = shift;
+    my $fixture = $test->_load_radios();
+    subtest 'Instant channel formats' => sub {
+        my $info = $test->{info};
+        my %expected;
+        foreach my $iid (keys %{$fixture->{instant_radio_channel}}) {
+            (my $number = $fixture->{instant_radio_channel}{$iid}) =~ s/[ES]$//;
+            $expected{"$iid.0"} = 0 + $number;
+            like($info->i_description()->{"$iid.0"},
+                qr/\Q$fixture->{instant_radio_channel}{$iid}\E\)/, 'raw channel retained in description');
+        }
+        is_deeply($info->i_80211channel(), \%expected, 'all eight public fixture channels parsed');
+        foreach my $case (['132+', 132], ['36-', 36], ['11', 11], ['116E', 116], ['69S', 69]) {
+            $info->{store}{instant_radio_channel}{'2.0.0.0.0.1.0'} = $case->[0];
+            is($info->i_80211channel()->{'2.0.0.0.0.1.0.0'}, $case->[1], "$case->[0] channel parsed");
+        }
+        $info->{store}{instant_radio_channel}{'2.0.0.0.0.1.0'} = 'unknown';
+        ok(!exists $info->i_80211channel()->{'2.0.0.0.0.1.0.0'}, 'unknown channel omitted');
+        $info->{store}{instant_radio_channel} = {};
+        is_deeply($info->i_80211channel(), {}, 'missing radio table returns empty channel map');
+        done_testing();
+    };
+}
+
+sub dot11_cur_tx_pwr_mw : Tests(1) {
+    my $test = shift;
+    $test->_load_radios();
+    subtest 'dBm to integer milliwatts' => sub {
+        my $info = $test->{info};
+        is(scalar keys %{$info->dot11_cur_tx_pwr_mw()}, 8, 'all public fixture powers exposed');
+        foreach my $case ([18, 63], [9, 8], [15, 32], [16, 40], [21, 126], [25, 316], [26, 398], [0, 1], [-3, 1]) {
+            $info->{store}{instant_radio_power}{'2.0.0.0.0.1.0'} = $case->[0];
+            is($info->dot11_cur_tx_pwr_mw()->{'2.0.0.0.0.1.0.0'}, $case->[1], "$case->[0] dBm converted");
+        }
+        $info->{store}{instant_radio_power}{'2.0.0.0.0.1.0'} = 'unknown';
+        ok(!exists $info->dot11_cur_tx_pwr_mw()->{'2.0.0.0.0.1.0.0'}, 'invalid power omitted');
+        $info->{store}{instant_radio_power} = {};
+        is_deeply($info->dot11_cur_tx_pwr_mw(), {}, 'missing power stays unknown');
+        done_testing();
+    };
+}
+
+sub detection_scope : Tests(6) {
     my $test = shift;
     my $base = SNMP::Info->new(AutoSpecify => 0, Session => $test->mock_session);
     $base->cache({_layers => 72, _id => '.1.3.6.1.4.1.14823.1.2.107',
         _description => 'ArubaOS (MODEL: 515), Version 8.10.0.9', store => {}});
     is($base->device_type(), 'SNMP::Info::Layer3::ArubaInstant', 'initial discovery with sysServices 72');
     is($test->{info}->device_type(), 'SNMP::Info::Layer3::ArubaInstant', 'Instant 8.x selected');
+    $test->{info}{_description} = 'AOS-8 (MODEL: 515), Version 8.13.0.1-8.13.0.1 LSR';
+    is($test->{info}->device_type(), 'SNMP::Info::Layer3::ArubaInstant', 'newer AOS-8 description selected');
+    $test->{info}{_description} = 'AOS-10 (MODEL: 635), Version 10.7.1.0-10.7.1.0 SSR';
+    is($test->{info}->device_type(), 'SNMP::Info::Layer3::Aruba', 'AOS-10 description excluded');
     $test->{info}{_description} = 'ArubaOS (MODEL: 515), Version 10.4.0.0';
     is($test->{info}->device_type(), 'SNMP::Info::Layer3::Aruba', 'AOS10 retains existing class');
     $test->{info}{_description} = 'ArubaOS (MODEL: Aruba7210-US), Version 8.10.0.9';

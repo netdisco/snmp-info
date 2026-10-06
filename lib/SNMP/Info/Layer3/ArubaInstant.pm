@@ -42,6 +42,10 @@ $VERSION = '3.978000';
     'AI-AP-MIB' => 'aiWlanESSID');
 %GLOBALS = (%SNMP::Info::Layer3::Aruba::GLOBALS);
 %FUNCS = (%SNMP::Info::Layer3::Aruba::FUNCS,
+    'instant_radio_channel' => 'aiRadioChannel',
+    'instant_radio_power'   => 'aiRadioTransmitPower',
+    'instant_radio_mac'     => 'aiRadioMACAddress',
+    'instant_radio_status'  => 'aiRadioStatus',
     'instant_wlan_ssid'   => 'aiWlanESSID',
     'instant_wlan_mac'    => 'aiWlanMACAddress',
     'instant_ap_name'     => 'aiAPName',
@@ -52,6 +56,7 @@ $VERSION = '3.978000';
     'instant_client_bssid'=> 'aiClientWlanMACAddress',
 );
 %MUNGE = (%SNMP::Info::Layer3::Aruba::MUNGE,
+    'instant_radio_mac' => \&SNMP::Info::munge_mac,
     'instant_wlan_mac'     => \&SNMP::Info::munge_mac,
     'instant_client_mac'   => \&SNMP::Info::munge_mac,
     'instant_client_bssid' => \&SNMP::Info::munge_mac,
@@ -76,27 +81,49 @@ sub _wlans {
     return \%wlans;
 }
 
+# Radio indexes overlap WLAN indexes. Append a component for a separate
+# synthetic interface namespace; do not infer a WLAN-to-radio relationship.
+sub _radios {
+    my ($self, $partial) = @_;
+    my $channels = $self->instant_radio_channel($partial) || {};
+    my $macs = $self->instant_radio_mac($partial) || {};
+    my %radios;
+    foreach my $iid (keys %$channels) {
+        next unless $iid =~ /^(\d+(?:\.\d+){5})\.(\d+)$/;
+        my ($ap, $number) = ($1, $2);
+        my $mac = $macs->{$iid};
+        $mac = undef unless defined $mac && $mac =~ /^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$/i;
+        $radios{"$iid.0"} = {ap => $ap, number => $number,
+            source => $iid, kind => 'radio', mac => $mac};
+    }
+    return \%radios;
+}
+
 sub _augment {
     my ($self, $physical, $field, $partial) = @_;
     my %result = %{ $physical || {} };
-    my $wlans = $self->_wlans($partial);
+    my $wlans = {%{$self->_wlans($partial)}, %{$self->_radios($partial)}};
+    my $radio_status = $self->instant_radio_status($partial) || {};
+    my $channels = $self->instant_radio_channel($partial) || {};
     my $names = $self->instant_ap_name() || {};
     my $ssids = $self->instant_wlan_ssid($partial) || {};
     my $status = $self->instant_ap_status() || {};
     foreach my $iid (keys %$wlans) {
         my $wlan = $wlans->{$iid};
         my $ap_mac = join ':', map {sprintf '%02x', $_} split /\./, $wlan->{ap};
-        my $name = "$ap_mac.wlan$wlan->{number}";
+        my $radio = ($wlan->{kind} || '') eq 'radio';
+        my $name = $ap_mac . ($radio ? '.radio' : '.wlan') . $wlan->{number};
         if ($field eq 'index') { $result{$iid} = $name }
         elsif ($field eq 'name') { $result{$iid} = $name }
         elsif ($field eq 'description') {
             $result{$iid} = join ': ', $names->{$wlan->{ap}} || $ap_mac,
-                $ssids->{$iid} // "WLAN $wlan->{number}";
+                ($radio ? "Radio $wlan->{number} (channel " . ($channels->{$wlan->{source}} // '') . ')'
+                    : $ssids->{$iid} // "WLAN $wlan->{number}");
         }
         elsif ($field eq 'type') { $result{$iid} = 'ieee80211' }
-        elsif ($field eq 'mac') { $result{$iid} = $wlan->{mac} }
+        elsif ($field eq 'mac') { $result{$iid} = $wlan->{mac} if defined $wlan->{mac} }
         elsif ($field eq 'up') {
-            my $value = $status->{$wlan->{ap}};
+            my $value = $radio ? $radio_status->{$wlan->{source}} : $status->{$wlan->{ap}};
             $result{$iid} = ($value eq '1' ? 'up' : $value eq '2' ? 'down' : $value)
                 if defined $value;
         }
@@ -173,6 +200,34 @@ sub i_ssidbcast {
         grep {exists $broadcast{$wlans->{$_}}} keys %$wlans};
 }
 
+sub i_80211channel {
+    my ($self, $partial) = @_;
+    my $channels = $self->instant_radio_channel($partial) || {};
+    my $radios = $self->_radios($partial);
+    my %result;
+    foreach my $iid (keys %$radios) {
+        my $value = $channels->{$radios->{$iid}{source}};
+        next unless defined $value && $value =~ /^(\d+)(?:[+-]|[ES])?$/i;
+        $result{$iid} = 0 + $1 if $1 > 0;
+    }
+    return \%result;
+}
+
+sub dot11_cur_tx_pwr_mw {
+    my ($self, $partial) = @_;
+    my $power = $self->instant_radio_power($partial) || {};
+    my $radios = $self->_radios($partial);
+    my %result;
+    foreach my $iid (keys %$radios) {
+        my $value = $power->{$radios->{$iid}{source}};
+        next unless defined $value && $value =~ /^-?\d+$/;
+        # AI-AP-MIB power is treated as dBm by LibreNMS's Aruba Instant
+        # implementation. Netdisco stores integer milliwatts.
+        $result{$iid} = int(10 ** ($value / 10) + 0.5);
+    }
+    return \%result;
+}
+
 sub bp_index {
     my ($self, $partial) = @_;
     my %index = %{ $self->SUPER::bp_index($partial) || {} };
@@ -243,11 +298,20 @@ L<SNMP::Info::Layer3::Aruba>. ArubaOS 10 is not validated by this class.
 
 C<i_index>, C<interfaces>, C<i_name>, C<i_description>, C<i_type>, C<i_mac>,
 C<i_up> and C<i_up_admin> preserve physical interfaces and add a logical
-wireless interface per AP and WLAN index. These are WLAN interfaces, not
-physical radio indexes. The status reflects the AP status.
+wireless interface per AP and WLAN index, plus separate radio interfaces. These are WLAN interfaces, not
+physical radio indexes. WLAN status reflects AP status; radio status comes from the radio table.
 
 C<i_ssidlist>, C<i_ssidmac> and C<i_ssidbcast> expose each WLAN's name,
 BSSID and broadcast flag. Missing data does not create wireless interfaces.
+
+=head2 Radio channel and power
+
+C<i_80211channel> exposes the numeric channel for each separate radio
+interface. Channel suffixes such as C<+>, C<E> and C<S> remain in the radio
+interface description. C<dot11_cur_tx_pwr_mw> converts radio power from dBm
+to integer milliwatts, rounding to the nearest milliwatt. The dBm interpretation
+follows the L<LibreNMS Aruba Instant implementation|https://github.com/librenms/librenms/blob/master/LibreNMS/OS/ArubaInstant.php>.
+No WLAN-to-radio relationship is inferred.
 
 =head2 Wireless clients
 
@@ -303,6 +367,14 @@ Returns BSSIDs using the same indexes as C<i_ssidlist>.
 =item i_ssidbcast
 
 Returns broadcast flags from the SSID hide setting, when available.
+
+=item i_80211channel
+
+Returns numeric channels indexed by synthetic radio interface.
+
+=item dot11_cur_tx_pwr_mw
+
+Returns radio transmit power converted from dBm to integer milliwatts.
 
 =item bp_index
 
