@@ -27,6 +27,11 @@ sub setup : Tests(setup) {
     $store->{bp_index} = {1 => 1};
     $store->{qb_fw_mac} = {'1.2.0.0.0.255.2' => '02:00:00:00:ff:02'};
     $store->{qb_fw_port} = {'1.2.0.0.0.255.2' => 1};
+    # SNMP::Info caches octet strings before applying MAC munges.
+    foreach my $method (qw/instant_wlan_mac instant_client_mac instant_client_bssid i_mac qb_fw_mac/) {
+        $store->{$method}{$_} = pack('C6', map {hex $_} split /:/, $store->{$method}{$_})
+            foreach keys %{$store->{$method}};
+    }
     $test->{info}->cache({
         (map {('_' . $_ => 1)} keys %$store),
         _layers => 72,
@@ -74,10 +79,10 @@ sub missing_and_invalid_data : Tests(1) {
     subtest 'Missing and invalid entries' => sub {
         my $info = $test->{info};
         my ($client) = sort keys %{$info->{store}{instant_client_mac}};
-        $info->{store}{instant_client_bssid}{$client} = '02:00:00:ff:ff:ff';
+        $info->{store}{instant_client_bssid}{$client} = pack('C6', 2, 0, 0, 255, 255, 255);
         ok(!exists $info->fw_mac()->{"instant.$client"}, 'unknown BSSID client omitted');
-        $info->{store}{instant_wlan_mac}{'invalid'} = '02:00:00:ff:ff:ff';
-        $info->{store}{instant_wlan_mac}{'2.0.0.0.0.1.99'} = '00:00:00:00:00:00';
+        $info->{store}{instant_wlan_mac}{'invalid'} = pack('C6', 2, 0, 0, 255, 255, 255);
+        $info->{store}{instant_wlan_mac}{'2.0.0.0.0.1.99'} = pack('C6', (0) x 6);
         is(scalar keys %{$info->i_ssidmac()}, 8, 'invalid WLAN entries omitted');
         $info->{store}{instant_wlan_mac} = {};
         is_deeply($info->interfaces(), {1 => 'Ethernet1'}, 'missing Instant tables retain wired ports');

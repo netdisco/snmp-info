@@ -164,7 +164,7 @@ sub i_ssidbcast {
     my %broadcast;
     foreach my $idx (keys %$ssids) {
         next unless defined $ssids->{$idx} && defined $hide->{$idx};
-        next unless $hide->{$idx} =~ /^(?:enable|disable|1|2)$/;
+        next unless $hide->{$idx} =~ /^(?:enable|disable|0|1)$/;
         $broadcast{$ssids->{$idx}} = ($hide->{$idx} eq 'enable' || $hide->{$idx} eq '1') ? 0 : 1;
     }
     my $wlans = $self->i_ssidlist($partial);
@@ -253,5 +253,68 @@ BSSID and broadcast flag. Missing data does not create wireless interfaces.
 C<fw_mac>, C<fw_port> and C<bp_index> map associated clients onto their WLAN
 interfaces by BSSID, preserving wired forwarding entries. Clients with an
 unknown BSSID are omitted. No client VLAN or physical radio is inferred.
+
+=head2 Interface methods
+
+=over
+
+=item i_index
+
+Returns physical indexes and logical AP/WLAN identifiers.
+
+=item interfaces
+
+Returns physical port names and stable logical WLAN names.
+
+=item i_name
+
+Returns the same stable WLAN names alongside physical interface names.
+
+=item i_description
+
+Returns the AP name and SSID for each logical WLAN.
+
+=item i_type
+
+Returns C<ieee80211> for logical WLANs.
+
+=item i_mac
+
+Returns the BSSID for each logical WLAN.
+
+=item i_up
+
+Returns AP operational status for logical WLANs.
+
+=item i_up_admin
+
+Returns AP status for logical WLANs; separate WLAN administrative status
+is not available from these tables.
+
+=item i_ssidlist
+
+Returns SSID names indexed by logical interface and SSID index.
+
+=item i_ssidmac
+
+Returns BSSIDs using the same indexes as C<i_ssidlist>.
+
+=item i_ssidbcast
+
+Returns broadcast flags from the SSID hide setting, when available.
+
+=item bp_index
+
+Adds BSSID to logical interface mappings to physical bridge mappings.
+
+=item fw_mac
+
+Adds associated wireless client MAC addresses to wired forwarding entries.
+
+=item fw_port
+
+Maps associated clients to BSSIDs for joining through C<bp_index>.
+
+=back
 
 =cut
