@@ -81,6 +81,10 @@ $VERSION = '3.978000';
 *SNMP::Info::Layer3::C1300::i_speed_admin
     = \&SNMP::Info::MAU::mau_i_speed_admin;
 
+sub os_ver {
+    return (shift)->entity_derived_os_ver();
+}
+
 sub v_name { return (shift)->dot1qVlanStaticName }
 
 sub vendor {
@@ -96,7 +100,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer3::C1300 - SNMP Interface to C1300 Networks EOS
+SNMP::Info::Layer3::C1300 - SNMP Interface to Cisco Catalyst 1300 switches
 
 =head1 AUTHOR
 
@@ -120,7 +124,7 @@ Bill Fenner
 
 =head1 DESCRIPTION
 
-Subclass for C1300 Networks EOS-based devices
+Subclass for Cisco Catalyst 1300 switches
 
 =head2 Inherited Classes
 
@@ -138,7 +142,7 @@ Subclass for C1300 Networks EOS-based devices
 
 =over
 
-=item F<C1300-PRODUCTS-MIB>
+=item F<CISCO-PRODUCTS-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -158,21 +162,22 @@ These are methods that return scalar values from SNMP
 
 =item $C1300->vendor()
 
-Returns 'C1300'
+Returns 'Cisco'
 
 =item $C1300->model()
 
 Tries to reference $C1300->id() to one of the product MIBs listed above
 
-Removes 'C1300' from the name for readability.
+Removes the Cisco prefix from the name for readability.
 
 =item $C1300->os()
 
-Returns 'EOS'
+Returns 'IOS'
 
 =item $C1300->os_ver()
 
-Grabs the os version from C<sysDescr>
+Returns C<entPhysicalSoftwareRev> for a root or chassis entity using
+L<SNMP::Info::Entity/entity_derived_os_ver>.
 
 =back
 
