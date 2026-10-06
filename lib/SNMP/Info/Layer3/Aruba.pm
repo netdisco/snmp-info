@@ -912,7 +912,7 @@ sub e_class {
 	if ( $iid eq 0 ) {
 	    $e_class{$iid} = 'chassis';
 	}
-	elsif ( $iid =~ /\d+/ ) {
+	elsif ( $iid =~ /^\d+$/ ) {
 	    $e_class{$iid} = 'module';
 	}
 
