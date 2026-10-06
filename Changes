@@ -4,6 +4,12 @@ Version 3.978001 (2026-tbd)
 
   * #590 Add Synology DSM NAS support
 
+  [BUG FIXES]
+
+  * #592 Fix HP/Aruba switch model translation, including Aruba 3810M
+    product prefixes, and add missing 2930F, 2930M and 3810M mappings (#553)
+  * #593 Read Cisco Catalyst 1300 software versions from ENTITY-MIB (#568)
+
 Version 3.978000 (2026-09-29)
 
   [NEW FEATURES]
