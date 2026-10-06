@@ -55,6 +55,11 @@ $VERSION = '3.978000';
     'c9800_ap_oper'       => 'bsnAPOperationStatus',
     'c9800_ap_primary'    => 'bsnAPPrimaryMwarName',
     'c9800_ap_secondary'  => 'bsnAPSecondaryMwarName',
+    # CISCO-LWAPP-AP-MIB::cLApTable
+    'c9800_ap_site_tag'   => 'cLApSiteTagName',
+    'c9800_ap_rf_tag'     => 'cLApRfTagName',
+    'c9800_ap_policy_tag' => 'cLApPolicyTagName',
+    'c9800_ap_tag_source' => 'cLApTagSource',
 );
 
 %MUNGE = (
@@ -160,6 +165,25 @@ sub _ap_detail_strings {
     return \%details;
 }
 
+# Tags are an AP-level setting, so they only go on the AP module and not on
+# every radio port of that AP.
+sub _ap_tag_strings {
+    my $c9800 = shift;
+    my $policy = $c9800->c9800_ap_policy_tag() || {};
+    my $site   = $c9800->c9800_ap_site_tag()   || {};
+    my $rf     = $c9800->c9800_ap_rf_tag()     || {};
+
+    my %tags;
+    foreach my $iid (keys %{$policy}, keys %{$site}, keys %{$rf}) {
+        my @parts;
+        push @parts, "Policy tag $policy->{$iid}" if $policy->{$iid};
+        push @parts, "Site tag $site->{$iid}"     if $site->{$iid};
+        push @parts, "RF tag $rf->{$iid}"         if $rf->{$iid};
+        $tags{$iid} = join '; ', @parts if @parts;
+    }
+    return \%tags;
+}
+
 sub _debug_ap_details {
     my $c9800 = shift;
     return unless $c9800->debug();
@@ -178,6 +202,10 @@ sub _debug_ap_details {
     my $oper       = $c9800->c9800_ap_oper()          || {};
     my $primary    = $c9800->c9800_ap_primary()       || {};
     my $secondary  = $c9800->c9800_ap_secondary()     || {};
+    my $policy_tag = $c9800->c9800_ap_policy_tag()    || {};
+    my $site_tag   = $c9800->c9800_ap_site_tag()      || {};
+    my $rf_tag     = $c9800->c9800_ap_rf_tag()        || {};
+    my $tag_source = $c9800->c9800_ap_tag_source()    || {};
 
     foreach my $iid (sort keys %{$names}) {
         my @values = (
@@ -194,6 +222,10 @@ sub _debug_ap_details {
             "oper="      . ($oper->{$iid}       // ''),
             "primary="   . ($primary->{$iid}    // ''),
             "secondary=" . ($secondary->{$iid}  // ''),
+            "policy_tag=" . ($policy_tag->{$iid} // ''),
+            "site_tag="   . ($site_tag->{$iid}   // ''),
+            "rf_tag="     . ($rf_tag->{$iid}     // ''),
+            "tag_source=" . ($tag_source->{$iid} // ''),
         );
         print " SNMP::Info::Layer3::C9800 AP $iid "
             . join(' ', @values) . "\n";
@@ -261,10 +293,12 @@ sub e_descr {
     my $descriptions = $c9800->_merged_entity_table(
         'c9800_entity_descr', 'e_descr');
     my $details      = $c9800->_ap_detail_strings();
+    my $tags         = $c9800->_ap_tag_strings();
     $c9800->_debug_ap_details();
 
     foreach my $iid (keys %{$descriptions}) {
         $descriptions->{$iid} .= "; $details->{$iid}" if $details->{$iid};
+        $descriptions->{$iid} .= "; $tags->{$iid}"    if $tags->{$iid};
     }
     return $descriptions;
 }
@@ -349,7 +383,9 @@ C<CISCO-LWAPP-CDP-MIB> to each matching AP pseudo-port description.
 =item e_descr()
 
 Adds the same branch connection information to each matching AP module
-description.
+description, followed by the AP's policy, site and RF tag names.  The tags
+are only added here and not to the AP radio port descriptions, because they
+are set per AP rather than per radio.
 
 =item e_index()
 
@@ -376,6 +412,34 @@ description.
 Merges the regular IOS-XE ENTITY-MIB inventory with the synthetic managed AP
 inventory.  Physical chassis and module entries remain authoritative, and AP
 entries are appended at their Airespace pseudo-indexes.
+
+=back
+
+=head2 AP Tag Table (C<CISCO-LWAPP-AP-MIB::cLApTable>)
+
+Each AP has exactly one tag of each kind.  These tables are indexed by the AP
+MAC address, like the Airespace AP tables.
+
+=over
+
+=item $c9800->c9800_ap_policy_tag()
+
+(C<cLApPolicyTagName>)
+
+=item $c9800->c9800_ap_site_tag()
+
+(C<cLApSiteTagName>)
+
+=item $c9800->c9800_ap_rf_tag()
+
+(C<cLApRfTagName>)
+
+=item $c9800->c9800_ap_tag_source()
+
+How the tags were assigned: none, static, filterengine, pnpserver, default
+or location.
+
+(C<cLApTagSource>)
 
 =back
 
