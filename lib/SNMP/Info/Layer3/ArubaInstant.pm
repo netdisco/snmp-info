@@ -304,8 +304,9 @@ L<SNMP::Info::Layer3::Aruba>. ArubaOS 10 is not validated by this class.
 
 C<i_index>, C<interfaces>, C<i_name>, C<i_description>, C<i_type>, C<i_mac>,
 C<i_up> and C<i_up_admin> preserve physical interfaces and add a logical
-wireless interface per AP and WLAN index, plus separate radio interfaces. These are WLAN interfaces, not
-physical radio indexes. WLAN status reflects AP status; radio status comes from the radio table.
+wireless interface per AP and WLAN index, plus separate radio interfaces.
+Synthetic radio indexes have an extra component to avoid colliding with WLAN
+indexes. WLAN status reflects AP status; radio status comes from the radio table.
 
 C<i_ssidlist>, C<i_ssidmac> and C<i_ssidbcast> expose each WLAN's name,
 BSSID and broadcast flag. Missing data does not create wireless interfaces.
@@ -331,27 +332,28 @@ unknown BSSID are omitted. No client VLAN or physical radio is inferred.
 
 =item i_index
 
-Returns physical indexes and logical AP/WLAN identifiers.
+Returns physical indexes and synthetic WLAN and radio identifiers.
 
 =item interfaces
 
-Returns physical port names and stable logical WLAN names.
+Returns physical port names and stable WLAN and radio names.
 
 =item i_name
 
-Returns the same stable WLAN names alongside physical interface names.
+Returns the same stable WLAN and radio names alongside physical interface names.
 
 =item i_description
 
-Returns the AP name and SSID for each logical WLAN.
+Returns the AP name and SSID for each WLAN, or radio number and raw channel
+for each radio.
 
 =item i_type
 
-Returns C<ieee80211> for logical WLANs.
+Returns C<ieee80211> for WLAN and radio interfaces.
 
 =item i_mac
 
-Returns the BSSID for each logical WLAN.
+Returns the BSSID for each WLAN and radio MAC when available for each radio.
 
 =item i_up
 
@@ -360,7 +362,8 @@ Returns AP operational status for WLANs and radio status for radio interfaces.
 =item i_up_admin
 
 Returns AP status for logical WLANs; separate WLAN administrative status
-is not available from these tables.
+is not available from these tables. Radio interfaces similarly use radio
+operational status.
 
 =item i_ssidlist
 
