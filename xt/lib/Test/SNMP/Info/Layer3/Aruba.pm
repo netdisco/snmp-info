@@ -57,6 +57,28 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
+sub e_class : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'e_class');
+  $test->{info}->cache({
+    'store' => {
+      'aruba_ap_model' => {
+        '0.56.23.195.197.122.228' => 'AP-315',
+        '56.23.195.197.122.252' => 'AP-315',
+      },
+      'aruba_card_serial' => { 1 => 'card-one', 23 => 'card-twenty-three' },
+    },
+  });
+
+  my $classes = $test->{info}->e_class;
+  is($classes->{0}, 'chassis', 'Controller retains chassis class');
+  is($classes->{1}, 'module', 'Numeric card index retains module class');
+  is($classes->{23}, 'module', 'Multi-digit card index retains module class');
+  is($classes->{'0.56.23.195.197.122.228'}, 'ap', 'Seven-component AP index is an AP');
+  is($classes->{'56.23.195.197.122.252'}, 'ap', 'Six-component AP index is an AP');
+}
+
 sub layers : Tests(2) {
   my $test = shift;
 

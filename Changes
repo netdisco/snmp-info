@@ -8,6 +8,8 @@ Version 3.978001 (2026-tbd)
 
   [BUG FIXES]
 
+  * #412 Classify Aruba controller AP inventory entries as APs instead of modules
+
   * #592 Fix HP/Aruba switch model translation, including Aruba 3810M
     product prefixes, and add missing 2930F, 2930M and 3810M mappings (#553)
   * #593 Read Cisco Catalyst 1300 software versions from ENTITY-MIB (#568)
