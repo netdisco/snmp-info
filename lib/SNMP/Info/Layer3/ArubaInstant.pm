@@ -121,7 +121,10 @@ sub _augment {
                     : $ssids->{$iid} // "WLAN $wlan->{number}");
         }
         elsif ($field eq 'type') { $result{$iid} = 'ieee80211' }
-        elsif ($field eq 'mac') { $result{$iid} = $wlan->{mac} if defined $wlan->{mac} }
+        elsif ($field eq 'mac') {
+            if (defined $wlan->{mac}) { $result{$iid} = $wlan->{mac} }
+            else { delete $result{$iid} }
+        }
         elsif ($field eq 'up') {
             my $value = $radio ? $radio_status->{$wlan->{source}} : $status->{$wlan->{ap}};
             $result{$iid} = ($value eq '1' ? 'up' : $value eq '2' ? 'down' : $value)
@@ -349,7 +352,7 @@ Returns the BSSID for each logical WLAN.
 
 =item i_up
 
-Returns AP operational status for logical WLANs.
+Returns AP operational status for WLANs and radio status for radio interfaces.
 
 =item i_up_admin
 

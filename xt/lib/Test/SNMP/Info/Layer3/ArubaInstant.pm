@@ -228,6 +228,11 @@ sub radio_interfaces : Tests(1) {
             like($ports->{$iid}, qr/\.radio\d+$/, 'channel is assigned to a radio');
             is($info->i_type()->{$iid}, 'ieee80211', 'radio is wireless');
         }
+        foreach my $iid (keys %{$info->_radios()}) {
+            my $source = $info->_radios()->{$iid}{source};
+            ok(!exists $info->i_mac()->{$iid}, 'missing radio MAC stays unknown')
+                unless exists $info->{store}{instant_radio_mac}{$source};
+        }
         ok(!exists $info->i_80211channel()->{'2.0.0.0.0.1.0'}, 'no inferred WLAN channel');
         is(scalar keys %{$info->i_ssidlist()}, 8, 'radio interfaces do not invent SSIDs');
         is(scalar keys %{$info->fw_mac()}, 10, 'client and wired entries retained');
