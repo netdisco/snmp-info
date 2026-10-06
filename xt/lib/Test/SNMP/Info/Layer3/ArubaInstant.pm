@@ -89,8 +89,12 @@ sub missing_and_invalid_data : Tests(1) {
     };
 }
 
-sub detection_scope : Tests(3) {
+sub detection_scope : Tests(4) {
     my $test = shift;
+    my $base = SNMP::Info->new(AutoSpecify => 0, Session => $test->mock_session);
+    $base->cache({_layers => 72, _id => '.1.3.6.1.4.1.14823.1.2.107',
+        _description => 'ArubaOS (MODEL: 515), Version 8.10.0.9', store => {}});
+    is($base->device_type(), 'SNMP::Info::Layer3::ArubaInstant', 'initial discovery with sysServices 72');
     is($test->{info}->device_type(), 'SNMP::Info::Layer3::ArubaInstant', 'Instant 8.x selected');
     $test->{info}{_description} = 'ArubaOS (MODEL: 515), Version 10.4.0.0';
     is($test->{info}->device_type(), 'SNMP::Info::Layer3::Aruba', 'AOS10 retains existing class');

@@ -1,11 +1,6 @@
 .perltidyrc
 Build.PL
 Changes
-LICENSE
-MANIFEST			This list of files
-META.json
-META.yml
-README
 contrib/DEVELOP
 contrib/util/docmunge
 contrib/util/make_dev_matrix.pl
@@ -15,10 +10,10 @@ contrib/util/run_test
 contrib/util/test_class.pl
 contrib/util/test_class_mocked.pl
 lib/SNMP/Info.pm
-lib/SNMP/Info/AMAP.pm
 lib/SNMP/Info/AdslLine.pm
 lib/SNMP/Info/Aggregate.pm
 lib/SNMP/Info/Airespace.pm
+lib/SNMP/Info/AMAP.pm
 lib/SNMP/Info/Bridge.pm
 lib/SNMP/Info/CDP.pm
 lib/SNMP/Info/CiscoAgg.pm
@@ -43,7 +38,6 @@ lib/SNMP/Info/IEEE802_Bridge.pm
 lib/SNMP/Info/IEEE802dot11.pm
 lib/SNMP/Info/IEEE802dot3ad.pm
 lib/SNMP/Info/IPv6.pm
-lib/SNMP/Info/LLDP.pm
 lib/SNMP/Info/Layer1.pm
 lib/SNMP/Info/Layer1/Allied.pm
 lib/SNMP/Info/Layer1/Asante.pm
@@ -66,17 +60,17 @@ lib/SNMP/Info/Layer2/Centillion.pm
 lib/SNMP/Info/Layer2/Cisco.pm
 lib/SNMP/Info/Layer2/CiscoSB.pm
 lib/SNMP/Info/Layer2/Exinda.pm
+lib/SNMP/Info/Layer2/Hirschmann.pm
 lib/SNMP/Info/Layer2/HP.pm
 lib/SNMP/Info/Layer2/HP4000.pm
 lib/SNMP/Info/Layer2/HPVC.pm
-lib/SNMP/Info/Layer2/Hirschmann.pm
 lib/SNMP/Info/Layer2/Kentrox.pm
 lib/SNMP/Info/Layer2/Microsens.pm
 lib/SNMP/Info/Layer2/N2270.pm
 lib/SNMP/Info/Layer2/NAP222x.pm
-lib/SNMP/Info/Layer2/NWSS2300.pm
 lib/SNMP/Info/Layer2/Netgear.pm
 lib/SNMP/Info/Layer2/Nexans.pm
+lib/SNMP/Info/Layer2/NWSS2300.pm
 lib/SNMP/Info/Layer2/Orinoco.pm
 lib/SNMP/Info/Layer2/Sixnet.pm
 lib/SNMP/Info/Layer2/TPLink.pm
@@ -108,11 +102,11 @@ lib/SNMP/Info/Layer3/CiscoFWSM.pm
 lib/SNMP/Info/Layer3/CiscoSwitch.pm
 lib/SNMP/Info/Layer3/Contivity.pm
 lib/SNMP/Info/Layer3/Cumulus.pm
-lib/SNMP/Info/Layer3/DLink.pm
 lib/SNMP/Info/Layer3/Dell.pm
-lib/SNMP/Info/Layer3/ERX.pm
+lib/SNMP/Info/Layer3/DLink.pm
 lib/SNMP/Info/Layer3/EdgeSwitch.pm
 lib/SNMP/Info/Layer3/Enterasys.pm
+lib/SNMP/Info/Layer3/ERX.pm
 lib/SNMP/Info/Layer3/Extreme.pm
 lib/SNMP/Info/Layer3/ExtremeWing.pm
 lib/SNMP/Info/Layer3/F5.pm
@@ -133,9 +127,9 @@ lib/SNMP/Info/Layer3/Meraki.pm
 lib/SNMP/Info/Layer3/Microsoft.pm
 lib/SNMP/Info/Layer3/Mikrotik.pm
 lib/SNMP/Info/Layer3/N1600.pm
-lib/SNMP/Info/Layer3/NetSNMP.pm
 lib/SNMP/Info/Layer3/Netonix.pm
 lib/SNMP/Info/Layer3/Netscreen.pm
+lib/SNMP/Info/Layer3/NetSNMP.pm
 lib/SNMP/Info/Layer3/Nexus.pm
 lib/SNMP/Info/Layer3/OneAccess.pm
 lib/SNMP/Info/Layer3/PacketFront.pm
@@ -169,8 +163,9 @@ lib/SNMP/Info/Layer7/Liebert.pm
 lib/SNMP/Info/Layer7/Neoteris.pm
 lib/SNMP/Info/Layer7/Netscaler.pm
 lib/SNMP/Info/Layer7/QNAP.pm
-lib/SNMP/Info/Layer7/Stormshield.pm
 lib/SNMP/Info/Layer7/Synology.pm
+lib/SNMP/Info/Layer7/Stormshield.pm
+lib/SNMP/Info/LLDP.pm
 lib/SNMP/Info/MAU.pm
 lib/SNMP/Info/MRO.pm
 lib/SNMP/Info/NortelStack.pm
@@ -178,6 +173,11 @@ lib/SNMP/Info/PortAccessEntity.pm
 lib/SNMP/Info/PowerEthernet.pm
 lib/SNMP/Info/RapidCity.pm
 lib/SNMP/Info/SONMP.pm
+LICENSE
+MANIFEST			This list of files
+META.json
+META.yml
+README
 t/00_load.t
 xt/.perltidyrc
 xt/00_local_distribution.t
@@ -193,10 +193,10 @@ xt/21_run.t
 xt/fixtures/aruba-instant-8.10.json
 xt/lib/My/Test/Class.pm
 xt/lib/Test/SNMP/Info.pm
-xt/lib/Test/SNMP/Info/AMAP.pm
 xt/lib/Test/SNMP/Info/AdslLine.pm
 xt/lib/Test/SNMP/Info/Aggregate.pm
 xt/lib/Test/SNMP/Info/Airespace.pm
+xt/lib/Test/SNMP/Info/AMAP.pm
 xt/lib/Test/SNMP/Info/Bridge.pm
 xt/lib/Test/SNMP/Info/CDP.pm
 xt/lib/Test/SNMP/Info/CiscoAgg.pm
@@ -216,7 +216,6 @@ xt/lib/Test/SNMP/Info/FDP.pm
 xt/lib/Test/SNMP/Info/IEEE802dot11.pm
 xt/lib/Test/SNMP/Info/IEEE802dot3ad.pm
 xt/lib/Test/SNMP/Info/IPv6.pm
-xt/lib/Test/SNMP/Info/LLDP.pm
 xt/lib/Test/SNMP/Info/Layer1.pm
 xt/lib/Test/SNMP/Info/Layer1/Allied.pm
 xt/lib/Test/SNMP/Info/Layer1/Asante.pm
@@ -245,9 +244,9 @@ xt/lib/Test/SNMP/Info/Layer2/Kentrox.pm
 xt/lib/Test/SNMP/Info/Layer2/Microsens.pm
 xt/lib/Test/SNMP/Info/Layer2/N2270.pm
 xt/lib/Test/SNMP/Info/Layer2/NAP222x.pm
-xt/lib/Test/SNMP/Info/Layer2/NWSS2300.pm
 xt/lib/Test/SNMP/Info/Layer2/Netgear.pm
 xt/lib/Test/SNMP/Info/Layer2/Nexans.pm
+xt/lib/Test/SNMP/Info/Layer2/NWSS2300.pm
 xt/lib/Test/SNMP/Info/Layer2/Orinoco.pm
 xt/lib/Test/SNMP/Info/Layer2/Sixnet.pm
 xt/lib/Test/SNMP/Info/Layer2/Trapeze.pm
@@ -276,11 +275,11 @@ xt/lib/Test/SNMP/Info/Layer3/CiscoFWSM.pm
 xt/lib/Test/SNMP/Info/Layer3/CiscoSwitch.pm
 xt/lib/Test/SNMP/Info/Layer3/Contivity.pm
 xt/lib/Test/SNMP/Info/Layer3/Cumulus.pm
-xt/lib/Test/SNMP/Info/Layer3/DLink.pm
 xt/lib/Test/SNMP/Info/Layer3/Dell.pm
-xt/lib/Test/SNMP/Info/Layer3/ERX.pm
+xt/lib/Test/SNMP/Info/Layer3/DLink.pm
 xt/lib/Test/SNMP/Info/Layer3/EdgeSwitch.pm
 xt/lib/Test/SNMP/Info/Layer3/Enterasys.pm
+xt/lib/Test/SNMP/Info/Layer3/ERX.pm
 xt/lib/Test/SNMP/Info/Layer3/Extreme.pm
 xt/lib/Test/SNMP/Info/Layer3/F5.pm
 xt/lib/Test/SNMP/Info/Layer3/F5OS.pm
@@ -300,8 +299,8 @@ xt/lib/Test/SNMP/Info/Layer3/Meraki.pm
 xt/lib/Test/SNMP/Info/Layer3/Microsoft.pm
 xt/lib/Test/SNMP/Info/Layer3/Mikrotik.pm
 xt/lib/Test/SNMP/Info/Layer3/N1600.pm
-xt/lib/Test/SNMP/Info/Layer3/NetSNMP.pm
 xt/lib/Test/SNMP/Info/Layer3/Netscreen.pm
+xt/lib/Test/SNMP/Info/Layer3/NetSNMP.pm
 xt/lib/Test/SNMP/Info/Layer3/Nexus.pm
 xt/lib/Test/SNMP/Info/Layer3/OneAccess.pm
 xt/lib/Test/SNMP/Info/Layer3/PacketFront.pm
@@ -331,8 +330,9 @@ xt/lib/Test/SNMP/Info/Layer7/Liebert.pm
 xt/lib/Test/SNMP/Info/Layer7/Neoteris.pm
 xt/lib/Test/SNMP/Info/Layer7/Netscaler.pm
 xt/lib/Test/SNMP/Info/Layer7/QNAP.pm
-xt/lib/Test/SNMP/Info/Layer7/Stormshield.pm
 xt/lib/Test/SNMP/Info/Layer7/Synology.pm
+xt/lib/Test/SNMP/Info/Layer7/Stormshield.pm
+xt/lib/Test/SNMP/Info/LLDP.pm
 xt/lib/Test/SNMP/Info/MAU.pm
 xt/lib/Test/SNMP/Info/NortelStack.pm
 xt/lib/Test/SNMP/Info/PowerEthernet.pm
