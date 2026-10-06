@@ -1,6 +1,7 @@
 # SNMP::Info::Layer3::ArubaInstant
 #
 # Copyright (c) 2013 Eric Miller
+# Copyright (c) 2026 Muris
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without

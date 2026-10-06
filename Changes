@@ -2,7 +2,7 @@ Version 3.978001 (2026-tbd)
 
   [NEW FEATURES]
 
-  * Add Aruba Instant 8.x WLAN SSIDs and associated clients using AI-AP-MIB (#536)
+  * #595 Add Aruba Instant 8.x WLAN SSIDs and associated clients using AI-AP-MIB (#536)
 
   * #590 Add Synology DSM NAS support
   * #591 Add Cisco C9800 per-AP policy, site and RF tags, including tag names

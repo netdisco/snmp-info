@@ -5,12 +5,6 @@ use SNMP::Info::Layer3::ArubaInstant;
 use JSON::PP qw/decode_json/;
 use File::Slurper qw/read_text/;
 
-sub startup : Tests(startup => 1) {
-    my $test = shift;
-    $test->SUPER::startup();
-    $test->todo_methods(1);
-}
-
 sub setup : Tests(setup) {
     my $test = shift;
     $test->SUPER::setup();
@@ -41,7 +35,7 @@ sub setup : Tests(setup) {
     });
 }
 
-sub wireless_joins : Tests(1) {
+sub interfaces : Tests(1) {
     my $test = shift;
     subtest 'Netdisco SSID and client joins' => sub {
         my $info = $test->{info};
@@ -118,6 +112,88 @@ sub raw_table_reads : Tests(1) {
         is(scalar keys %{$info->fw_mac()}, 9, 'nine clients from raw SNMP tables');
         done_testing();
     };
+}
+
+sub i_index : Tests(2) {
+    my $info = shift->{info};
+    is($info->i_index()->{1}, 1, 'physical index retained');
+    is($info->i_index()->{'2.0.0.0.0.1.0'}, '02:00:00:00:00:01.wlan0', 'stable logical index');
+}
+
+sub i_name : Tests(2) {
+    my $info = shift->{info};
+    is($info->i_name()->{1}, 'Ethernet1', 'physical name retained');
+    $info->{store}{instant_ap_name}{'2.0.0.0.0.1'} = 'Renamed AP';
+    is($info->i_name()->{'2.0.0.0.0.1.0'}, '02:00:00:00:00:01.wlan0', 'AP rename preserves port identity');
+}
+
+sub i_description : Tests(2) {
+    my $info = shift->{info};
+    is($info->i_description()->{1}, 'Ethernet uplink', 'physical description retained');
+    $info->{store}{instant_ap_name} = {};
+    $info->{store}{instant_wlan_ssid} = {};
+    is($info->i_description()->{'2.0.0.0.0.1.0'}, '02:00:00:00:00:01: WLAN 0', 'description with missing name and SSID');
+}
+
+sub i_type : Tests(2) {
+    my $info = shift->{info};
+    is($info->i_type()->{1}, 'ethernetCsmacd', 'wired type retained');
+    is($info->i_type()->{'2.0.0.0.0.1.0'}, 'ieee80211', 'logical port is wireless');
+}
+
+sub i_mac : Tests(2) {
+    my $info = shift->{info};
+    is($info->i_mac()->{1}, '02:00:00:00:ff:01', 'wired MAC retained');
+    is($info->i_mac()->{'2.0.0.0.0.1.0'}, '02:00:00:00:00:02', 'logical port uses BSSID');
+}
+
+sub i_up : Tests(2) {
+    my $info = shift->{info};
+    $info->{store}{instant_ap_status}{'2.0.0.0.0.1'} = '2';
+    is($info->i_up()->{'2.0.0.0.0.1.0'}, 'down', 'numeric AP down status');
+    $info->{store}{instant_ap_status}{'2.0.0.0.0.1'} = 'up';
+    is($info->i_up()->{'2.0.0.0.0.1.0'}, 'up', 'enum AP up status');
+}
+
+sub i_up_admin : Tests(2) {
+    my $info = shift->{info};
+    is($info->i_up_admin()->{1}, 'up', 'wired administrative status retained');
+    is($info->i_up_admin()->{'2.0.0.0.0.1.0'}, 'up', 'logical status reflects AP status');
+}
+
+sub i_ssidlist : Tests(1) {
+    my $info = shift->{info};
+    is($info->i_ssidlist()->{'2.0.0.0.0.1.0.0'}, 'Test WLAN 1', 'SSID appended to logical interface index');
+}
+
+sub i_ssidmac : Tests(1) {
+    my $info = shift->{info};
+    is($info->i_ssidmac()->{'2.0.0.0.0.1.0.0'}, '02:00:00:00:00:02', 'SSID and BSSID share index');
+}
+
+sub i_ssidbcast : Tests(5) {
+    my $info = shift->{info};
+    foreach my $case ([0, 1], [1, 0], ['disable', 1], ['enable', 0]) {
+        $info->{store}{instant_ssid_hide}{0} = $case->[0];
+        is($info->i_ssidbcast()->{'2.0.0.0.0.1.0.0'}, $case->[1], "hide $case->[0] translated");
+    }
+    $info->{store}{instant_ssid_hide}{0} = 'unknown';
+    ok(!exists $info->i_ssidbcast()->{'2.0.0.0.0.1.0.0'}, 'unknown broadcast setting omitted');
+}
+
+sub bp_index : Tests(1) {
+    my $info = shift->{info};
+    is($info->bp_index()->{'02:00:00:00:00:02'}, '2.0.0.0.0.1.0', 'BSSID maps to logical interface');
+}
+
+sub fw_mac : Tests(1) {
+    my $info = shift->{info};
+    is($info->fw_mac()->{'instant.2.0.0.0.0.10'}, '02:00:00:00:00:0a', 'associated client MAC');
+}
+
+sub fw_port : Tests(1) {
+    my $info = shift->{info};
+    is($info->fw_port()->{'instant.2.0.0.0.0.10'}, '02:00:00:00:00:02', 'associated client BSSID');
 }
 
 sub detection_scope : Tests(4) {
