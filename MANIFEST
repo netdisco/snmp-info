@@ -7,6 +7,7 @@ contrib/util/make_dev_matrix.pl
 contrib/util/make_snmpdata.pl
 contrib/util/push_ver
 contrib/util/run_test
+contrib/util/test_aruba_instant.pl
 contrib/util/test_class.pl
 contrib/util/test_class_mocked.pl
 lib/SNMP/Info.pm

@@ -286,6 +286,29 @@ sub dot11_cur_tx_pwr_mw : Tests(1) {
     };
 }
 
+sub diagnostic_report : Tests(1) {
+    my $test = shift;
+    $test->_load_radios();
+    subtest 'Read-only diagnostic output' => sub {
+        my $loaded = do './contrib/util/test_aruba_instant.pl';
+        ok($loaded, 'diagnostic loads without starting a live query') or die $@ || $!;
+        my $report = main::_report($test->{info});
+        is(scalar @{$report->{wlans}}, 8, 'all WLANs reported');
+        is(scalar @{$report->{radios}}, 8, 'all radios reported');
+        is(scalar @{$report->{clients}}, 9, 'wireless clients reported');
+        is_deeply($report->{unmapped_clients}, [], 'no unmatched clients in sample');
+        foreach my $client (@{$report->{clients}}) {
+            like($client->{port}, qr/\.wlan\d+$/, 'client reports joined WLAN port');
+        }
+        my ($key) = sort keys %{$test->{info}{store}{instant_client_mac}};
+        $test->{info}{store}{instant_client_bssid}{$key} = pack('C6', 2, 0, 0, 255, 255, 255);
+        $report = main::_report($test->{info});
+        is(scalar @{$report->{unmapped_clients}}, 1, 'unmatched client is visible in diagnostic');
+        ok(!exists $INC{'App/Netdisco/Transport/SNMP.pm'}, 'no Netdisco transport/database access');
+        done_testing();
+    };
+}
+
 sub detection_scope : Tests(6) {
     my $test = shift;
     my $base = SNMP::Info->new(AutoSpecify => 0, Session => $test->mock_session);
