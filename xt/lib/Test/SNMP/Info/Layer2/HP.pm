@@ -70,4 +70,58 @@ sub vendor : Tests(2) {
   is($test->{info}->vendor(), 'hp', q(Vendor returns 'hp'));
 }
 
+sub model : Tests(23) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'model');
+
+  # Exercise naming from HP-ICF-OID without requiring a device or recent MIBs.
+  my @cases = (
+    ['arubaJL071A', '3810M-24G'],
+    ['arubaJL072A', '3810M-48G'],
+    ['arubaJL073A', '3810M-24G-PoE+'],
+    ['arubaJL074A', '3810M-48G-PoE+'],
+    ['arubaJL075A', '3810M-16SFP+'],
+    ['arubaJL076A', '3810M-40G-8SR-PoE+'],
+    ['arubaJL077A', '3810M-16SR-PoE+'],
+    ['arubaSwitchR0M67A', '2930M-40G-8SR-PoE-Class6'],
+    ['arubaSwitchR0M68A', '2930M-24SR-PoE-Class6'],
+    ['arubaSwitchJL693A', '2930F-12G-PoE+-2G-2SFP+'],
+    ['arubaSwitchJL692A', '2930F-8G-PoE+-2SFP+-TAA'],
+    ['arubaSwitchJL263A', '2930F-24G-PoE+-4SFP+-TAA'],
+    ['arubaSwitchJL264A', '2930F-48G-PoE+-4SFP+-TAA'],
+    ['arubaSwitchJL559A', '2930F-48G-PoE+-4SFP+-740W-TAA'],
+    ['hpSwitchJ4887A', '4104GL'],
+    ['arubaSwitchJL253A', '2930F-24G-4SFP+'],
+    ['arubaSwitchJL999A', 'JL999A'],
+    ['arubaJL999A', 'JL999A'],
+    ['arubaUnrelated', 'arubaUnrelated'],
+    ['ARUBAJL075A', '3810M-16SFP+'],
+  );
+
+  {
+    no warnings 'redefine';
+    local *SNMP::Info::Layer2::HP::id = sub {
+      return '.1.3.6.1.4.1.11.2.3.7.11.27';
+    };
+    my $translated;
+    local *SNMP::translateObj = sub { return $translated; };
+    for my $case (@cases) {
+      $translated = $case->[0];
+      is($info->model(), $case->[1], "$translated resolves to $case->[1]");
+    }
+
+    $translated = undef;
+    is($info->model(), '.1.3.6.1.4.1.11.2.3.7.11.27',
+      'Failed translation returns the original OID');
+  }
+
+  {
+    no warnings 'redefine';
+    local *SNMP::Info::Layer2::HP::id = sub { return undef; };
+    is($info->model(), undef, 'Undefined device ID returns undef');
+  }
+}
+
 1;

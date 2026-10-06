@@ -164,6 +164,7 @@ $VERSION = '3.978000';
     'JL073A' => '3810M-24G-PoE+',
     'JL071A' => '3810M-24G',
     'JL075A' => '3810M-16SFP+',
+    'JL077A' => '3810M-16SR-PoE+',
     'J9588A' => '3800-48G-PoE+-4XG',
     'J9574A' => '3800-48G-PoE+-4SFP+',
     'J9586A' => '3800-48G-4XG',
@@ -186,17 +187,24 @@ $VERSION = '3.978000';
     'JL322A' => '2930M-48G-PoE+',
     'JL321A' => '2930M-48G',
     'JL323A' => '2930M-40G-8SR-PoE+',
+    'R0M67A' => '2930M-40G-8SR-PoE-Class6',
+    'R0M68A' => '2930M-24SR-PoE-Class6',
     'JL320A' => '2930M-24G-PoE+',
     'JL324A' => '2930M-24G-8SR-PoE+',
     'JL319A' => '2930M-24G',
     'JL258A' => '2930F-8G-PoE+-2SFP+',
+    'JL692A' => '2930F-8G-PoE+-2SFP+-TAA',
+    'JL693A' => '2930F-12G-PoE+-2G-2SFP+',
     'JL558A' => '2930F-48G-PoE+-4SFP+-740W',
+    'JL559A' => '2930F-48G-PoE+-4SFP+-740W-TAA',
     'JL557A' => '2930F-48G-PoE+-4SFP-740W',
     'JL256A' => '2930F-48G-PoE+-4SFP+',
+    'JL264A' => '2930F-48G-PoE+-4SFP+-TAA',
     'JL262A' => '2930F-48G-PoE+-4SFP',
     'JL254A' => '2930F-48G-4SFP+',
     'JL260A' => '2930F-48G-4SFP',
     'JL255A' => '2930F-24G-PoE+-4SFP+',
+    'JL263A' => '2930F-24G-PoE+-4SFP+-TAA',
     'JL261A' => '2930F-24G-PoE+-4SFP',
     'JL253A' => '2930F-24G-4SFP+',
     'JL259A' => '2930F-24G-4SFP',
@@ -333,7 +341,7 @@ sub model {
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
 
-    $model =~ s/^(hp|aruba)switch//i;
+    $model =~ s/^(?:hpSwitch|arubaSwitch|aruba(?=JL\d))//i;
 
     return defined $MODEL_MAP{$model} ? $MODEL_MAP{$model} : $model;
 }
