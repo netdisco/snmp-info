@@ -85,15 +85,18 @@ sub _wlans {
 # synthetic interface namespace; do not infer a WLAN-to-radio relationship.
 sub _radios {
     my ($self, $partial) = @_;
-    my $channels = $self->instant_radio_channel($partial) || {};
-    my $macs = $self->instant_radio_mac($partial) || {};
+    my $channels = $self->instant_radio_channel() || {};
+    my $macs = $self->instant_radio_mac() || {};
     my %radios;
     foreach my $iid (keys %$channels) {
         next unless $iid =~ /^(\d+(?:\.\d+){5})\.(\d+)$/;
         my ($ap, $number) = ($1, $2);
         my $mac = $macs->{$iid};
         $mac = undef unless defined $mac && $mac =~ /^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$/i;
-        $radios{"$iid.0"} = {ap => $ap, number => $number,
+        my $logical = "$iid.0";
+        next if defined $partial && length $partial
+            && $logical ne $partial && index($logical, "$partial.") != 0;
+        $radios{$logical} = {ap => $ap, number => $number,
             source => $iid, kind => 'radio', mac => $mac};
     }
     return \%radios;
@@ -103,8 +106,8 @@ sub _augment {
     my ($self, $physical, $field, $partial) = @_;
     my %result = %{ $physical || {} };
     my $wlans = {%{$self->_wlans($partial)}, %{$self->_radios($partial)}};
-    my $radio_status = $self->instant_radio_status($partial) || {};
-    my $channels = $self->instant_radio_channel($partial) || {};
+    my $radio_status = $self->instant_radio_status() || {};
+    my $channels = $self->instant_radio_channel() || {};
     my $names = $self->instant_ap_name() || {};
     my $ssids = $self->instant_wlan_ssid($partial) || {};
     my $status = $self->instant_ap_status() || {};
@@ -205,7 +208,7 @@ sub i_ssidbcast {
 
 sub i_80211channel {
     my ($self, $partial) = @_;
-    my $channels = $self->instant_radio_channel($partial) || {};
+    my $channels = $self->instant_radio_channel() || {};
     my $radios = $self->_radios($partial);
     my %result;
     foreach my $iid (keys %$radios) {
@@ -218,7 +221,7 @@ sub i_80211channel {
 
 sub dot11_cur_tx_pwr_mw {
     my ($self, $partial) = @_;
-    my $power = $self->instant_radio_power($partial) || {};
+    my $power = $self->instant_radio_power() || {};
     my $radios = $self->_radios($partial);
     my %result;
     foreach my $iid (keys %$radios) {

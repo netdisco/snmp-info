@@ -253,6 +253,8 @@ sub i_80211channel : Tests(1) {
                 qr/\Q$fixture->{instant_radio_channel}{$iid}\E\)/, 'raw channel retained in description');
         }
         is_deeply($info->i_80211channel(), \%expected, 'all eight public fixture channels parsed');
+        is_deeply($info->i_80211channel('2.0.0.0.0.1.0.0'),
+            {'2.0.0.0.0.1.0.0' => $expected{'2.0.0.0.0.1.0.0'}}, 'partial read uses synthetic radio index');
         foreach my $case (['132+', 132], ['36-', 36], ['11', 11], ['116E', 116], ['69S', 69]) {
             $info->{store}{instant_radio_channel}{'2.0.0.0.0.1.0'} = $case->[0];
             is($info->i_80211channel()->{'2.0.0.0.0.1.0.0'}, $case->[1], "$case->[0] channel parsed");
@@ -271,6 +273,7 @@ sub dot11_cur_tx_pwr_mw : Tests(1) {
     subtest 'dBm to integer milliwatts' => sub {
         my $info = $test->{info};
         is(scalar keys %{$info->dot11_cur_tx_pwr_mw()}, 8, 'all public fixture powers exposed');
+        is(scalar keys %{$info->dot11_cur_tx_pwr_mw('2.0.0.0.0.1.0.0')}, 1, 'partial power read is limited to selected radio');
         foreach my $case ([18, 63], [9, 8], [15, 32], [16, 40], [21, 126], [25, 316], [26, 398], [0, 1], [-3, 1]) {
             $info->{store}{instant_radio_power}{'2.0.0.0.0.1.0'} = $case->[0];
             is($info->dot11_cur_tx_pwr_mw()->{'2.0.0.0.0.1.0.0'}, $case->[1], "$case->[0] dBm converted");
