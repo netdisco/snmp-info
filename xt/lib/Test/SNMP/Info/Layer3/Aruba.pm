@@ -62,6 +62,8 @@ sub e_class : Tests(6) {
 
   can_ok($test->{info}, 'e_class');
   $test->{info}->cache({
+    '_aruba_ap_model' => 1,
+    '_aruba_card_serial' => 1,
     'store' => {
       'aruba_ap_model' => {
         '0.56.23.195.197.122.228' => 'AP-315',
