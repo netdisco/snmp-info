@@ -806,6 +806,11 @@ Subclass for Aruba wireless switches.
 
 See documentation in L<SNMP::Info::Layer3::Aruba> for details.
 
+=item SNMP::Info::Layer3::ArubaInstant
+
+SNMP Interface to Aruba Instant 8.x access points.
+See L<SNMP::Info::Layer3::ArubaInstant> for details.
+
 =item SNMP::Info::Layer3::ArubaCX
 
 SNMP Interface to L3 Devices running ArubaOS-CX
@@ -2426,6 +2431,12 @@ sub device_type {
             }
         }
     }
+
+    # Instant APs use AI-AP-MIB, not the mobility controller WLAN tables.
+    # Restrict this initial support to the 8.x evidence in issue #536.
+    $objtype = 'SNMP::Info::Layer3::ArubaInstant'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.14823\.1\.2\.\d+$/
+        && $desc =~ /ArubaOS.*Version\s+8\./;
 
     return $objtype;
 }

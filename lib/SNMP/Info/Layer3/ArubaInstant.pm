@@ -1,0 +1,257 @@
+# SNMP::Info::Layer3::ArubaInstant
+#
+# Copyright (c) 2013 Eric Miller
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#     * Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the University of California, Santa Cruz nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR # ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+package SNMP::Info::Layer3::ArubaInstant;
+
+use strict;
+use warnings;
+use SNMP::Info::Layer3::Aruba;
+
+our @ISA = qw/SNMP::Info::Layer3::Aruba/;
+our ($VERSION, %MIBS, %GLOBALS, %FUNCS, %MUNGE);
+$VERSION = '3.978000';
+
+%MIBS = (%SNMP::Info::Layer3::Aruba::MIBS,
+    'AI-AP-MIB' => 'aiWlanESSID');
+%GLOBALS = (%SNMP::Info::Layer3::Aruba::GLOBALS);
+%FUNCS = (%SNMP::Info::Layer3::Aruba::FUNCS,
+    'instant_wlan_ssid'   => 'aiWlanESSID',
+    'instant_wlan_mac'    => 'aiWlanMACAddress',
+    'instant_ap_name'     => 'aiAPName',
+    'instant_ap_status'   => 'aiAPStatus',
+    'instant_ssid'        => 'aiSSID',
+    'instant_ssid_hide'   => 'aiSSIDHide',
+    'instant_client_mac'  => 'aiClientMACAddress',
+    'instant_client_bssid'=> 'aiClientWlanMACAddress',
+);
+%MUNGE = (%SNMP::Info::Layer3::Aruba::MUNGE,
+    'instant_wlan_mac'     => \&SNMP::Info::munge_mac,
+    'instant_client_mac'   => \&SNMP::Info::munge_mac,
+    'instant_client_bssid' => \&SNMP::Info::munge_mac,
+    'instant_wlan_ssid'    => \&SNMP::Info::munge_null,
+    'instant_ssid'         => \&SNMP::Info::munge_null,
+);
+
+# Use one logical port per AP/WLAN, preserving all physical interfaces.
+# Only advertise entries with a BSSID, so both discovery and macsuck can join.
+sub _wlans {
+    my ($self, $partial) = @_;
+    my $macs = $self->instant_wlan_mac($partial) || {};
+    my %wlans;
+    foreach my $iid (keys %$macs) {
+        next unless $iid =~ /^(\d+(?:\.\d+){5})\.(\d+)$/;
+        my ($ap, $number) = ($1, $2);
+        my $mac = $macs->{$iid};
+        next unless defined $mac && $mac =~ /^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$/i;
+        next if $mac eq '00:00:00:00:00:00';
+        $wlans{$iid} = {ap => $ap, number => $number, mac => lc $mac};
+    }
+    return \%wlans;
+}
+
+sub _augment {
+    my ($self, $physical, $field, $partial) = @_;
+    my %result = %{ $physical || {} };
+    my $wlans = $self->_wlans($partial);
+    my $names = $self->instant_ap_name() || {};
+    my $ssids = $self->instant_wlan_ssid($partial) || {};
+    my $status = $self->instant_ap_status() || {};
+    foreach my $iid (keys %$wlans) {
+        my $wlan = $wlans->{$iid};
+        my $ap_mac = join ':', map {sprintf '%02x', $_} split /\./, $wlan->{ap};
+        my $name = "$ap_mac.wlan$wlan->{number}";
+        if ($field eq 'index') { $result{$iid} = $name }
+        elsif ($field eq 'name') { $result{$iid} = $name }
+        elsif ($field eq 'description') {
+            $result{$iid} = join ': ', $names->{$wlan->{ap}} || $ap_mac,
+                $ssids->{$iid} // "WLAN $wlan->{number}";
+        }
+        elsif ($field eq 'type') { $result{$iid} = 'ieee80211' }
+        elsif ($field eq 'mac') { $result{$iid} = $wlan->{mac} }
+        elsif ($field eq 'up') {
+            my $value = $status->{$wlan->{ap}};
+            $result{$iid} = ($value eq '1' ? 'up' : $value eq '2' ? 'down' : $value)
+                if defined $value;
+        }
+    }
+    return \%result;
+}
+
+sub i_index {
+    my ($self, $partial) = @_;
+    return $self->_augment($self->SUPER::i_index($partial), 'index', $partial);
+}
+
+sub interfaces {
+    my ($self, $partial) = @_;
+    return $self->_augment($self->SUPER::interfaces($partial), 'name', $partial);
+}
+
+sub i_name {
+    my ($self, $partial) = @_;
+    return $self->_augment($self->SUPER::i_name($partial), 'name', $partial);
+}
+
+sub i_description {
+    my ($self, $partial) = @_;
+    return $self->_augment($self->SUPER::i_description($partial), 'description', $partial);
+}
+
+sub i_type {
+    my ($self, $partial) = @_;
+    return $self->_augment($self->SUPER::i_type($partial), 'type', $partial);
+}
+
+sub i_mac {
+    my ($self, $partial) = @_;
+    return $self->_augment($self->SUPER::i_mac($partial), 'mac', $partial);
+}
+
+sub i_up {
+    my ($self, $partial) = @_;
+    return $self->_augment($self->SUPER::i_up($partial), 'up', $partial);
+}
+
+sub i_up_admin {
+    my ($self, $partial) = @_;
+    return $self->_augment($self->SUPER::i_up_admin($partial), 'up', $partial);
+}
+
+sub i_ssidlist {
+    my ($self, $partial) = @_;
+    my $ssids = $self->instant_wlan_ssid($partial) || {};
+    my $wlans = $self->_wlans($partial);
+    return {map { ("$_.0" => $ssids->{$_}) }
+        grep {defined $ssids->{$_}} keys %$wlans};
+}
+
+sub i_ssidmac {
+    my ($self, $partial) = @_;
+    my $wlans = $self->_wlans($partial);
+    return {map { ("$_.0" => $wlans->{$_}{mac}) } keys %$wlans};
+}
+
+sub i_ssidbcast {
+    my ($self, $partial) = @_;
+    my $ssids = $self->instant_ssid() || {};
+    my $hide = $self->instant_ssid_hide() || {};
+    my %broadcast;
+    foreach my $idx (keys %$ssids) {
+        next unless defined $ssids->{$idx} && defined $hide->{$idx};
+        next unless $hide->{$idx} =~ /^(?:enable|disable|1|2)$/;
+        $broadcast{$ssids->{$idx}} = ($hide->{$idx} eq 'enable' || $hide->{$idx} eq '1') ? 0 : 1;
+    }
+    my $wlans = $self->i_ssidlist($partial);
+    return {map { ($_ => $broadcast{$wlans->{$_}}) }
+        grep {exists $broadcast{$wlans->{$_}}} keys %$wlans};
+}
+
+sub bp_index {
+    my ($self, $partial) = @_;
+    my %index = %{ $self->SUPER::bp_index($partial) || {} };
+    my $wlans = $self->_wlans();
+    foreach my $iid (keys %$wlans) {
+        $index{ $wlans->{$iid}{mac} } = $iid;
+    }
+    return \%index;
+}
+
+sub _clients {
+    my ($self, $partial) = @_;
+    my $macs = $self->instant_client_mac($partial) || {};
+    my $bssids = $self->instant_client_bssid($partial) || {};
+    my $wlans = $self->_wlans();
+    my %known = map {$_->{mac} => 1} values %$wlans;
+    my %clients;
+    foreach my $iid (keys %$macs) {
+        my $mac = $macs->{$iid};
+        my $bssid = $bssids->{$iid};
+        next unless defined $mac && $mac =~ /^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$/i;
+        next unless defined $bssid && $known{lc $bssid};
+        $clients{$iid} = {mac => lc $mac, bssid => lc $bssid};
+    }
+    return \%clients;
+}
+
+sub fw_mac {
+    my ($self, $partial) = @_;
+    my %macs = %{ $self->SUPER::fw_mac($partial) || {} };
+    my $clients = $self->_clients($partial);
+    $macs{"instant.$_"} = $clients->{$_}{mac} foreach keys %$clients;
+    return \%macs;
+}
+
+sub fw_port {
+    my ($self, $partial) = @_;
+    my %ports = %{ $self->SUPER::fw_port($partial) || {} };
+    my $clients = $self->_clients($partial);
+    $ports{"instant.$_"} = $clients->{$_}{bssid} foreach keys %$clients;
+    return \%ports;
+}
+
+1;
+__END__
+
+=head1 NAME
+
+SNMP::Info::Layer3::ArubaInstant - SNMP Interface to Aruba Instant access points
+
+=head1 DESCRIPTION
+
+Support for Aruba Instant 8.x wireless networks using C<AI-AP-MIB>.
+Inherits physical interface and system information from
+L<SNMP::Info::Layer3::Aruba>. ArubaOS 10 is not validated by this class.
+
+=head2 Required MIBs
+
+=over
+
+=item AI-AP-MIB
+
+=item Inherited MIBs from L<SNMP::Info::Layer3::Aruba>
+
+=back
+
+=head2 Interfaces and wireless networks
+
+C<i_index>, C<interfaces>, C<i_name>, C<i_description>, C<i_type>, C<i_mac>,
+C<i_up> and C<i_up_admin> preserve physical interfaces and add a logical
+wireless interface per AP and WLAN index. These are WLAN interfaces, not
+physical radio indexes. The status reflects the AP status.
+
+C<i_ssidlist>, C<i_ssidmac> and C<i_ssidbcast> expose each WLAN's name,
+BSSID and broadcast flag. Missing data does not create wireless interfaces.
+
+=head2 Wireless clients
+
+C<fw_mac>, C<fw_port> and C<bp_index> map associated clients onto their WLAN
+interfaces by BSSID, preserving wired forwarding entries. Clients with an
+unknown BSSID are omitted. No client VLAN or physical radio is inferred.
+
+=cut
