@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.978000';
+$VERSION = '3.978001';
 
 %MIBS = (
     'RAPID-CITY' => 'rapidCity',
