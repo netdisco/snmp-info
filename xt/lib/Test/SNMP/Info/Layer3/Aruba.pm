@@ -64,11 +64,17 @@ sub layers : Tests(2) {
   is($test->{info}->layers(), '00000111', q(Layers returns '00000111'));
 }
 
-sub os : Tests(2) {
+sub os : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'os');
-  is($test->{info}->os(), 'airos', q(OS returns 'airos'));
+  is($test->{info}->os(), 'arubaos', q(Aruba OS returns 'arubaos'));
+
+  $test->{info}->cache({'_id' => '.1.3.6.1.4.1.6486.800.1.1.2.1'});
+  is($test->{info}->os(), 'aos-w', q(Alcatel-Lucent retains 'aos-w'));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->os(), 'arubaos', q(Missing ID retains the Aruba OS default));
 }
 
 sub vendor : Tests(2) {
