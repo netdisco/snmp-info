@@ -3,6 +3,8 @@ Version 3.978001 (2026-tbd)
   [NEW FEATURES]
 
   * #590 Add Synology DSM NAS support
+  * #591 Add Cisco C9800 per-AP policy, site and RF tags, including tag names
+    in AP module descriptions
 
   [BUG FIXES]
 
