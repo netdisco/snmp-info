@@ -155,7 +155,7 @@ sub layers {
 sub os {
     my $aruba = shift;
     my %osmap = ( 'alcatel-lucent' => 'aos-w', );
-    return $osmap{ $aruba->vendor() } || 'airos';
+    return $osmap{ $aruba->vendor() } || 'arubaos';
 }
 
 sub vendor {
@@ -1464,7 +1464,7 @@ Returns 'aruba'
 
 =item $aruba->os()
 
-Returns 'airos'
+Returns 'arubaos' for Aruba devices and 'aos-w' for Alcatel-Lucent devices.
 
 =item $aruba->os_ver()
 

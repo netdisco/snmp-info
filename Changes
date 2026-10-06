@@ -12,6 +12,11 @@ Version 3.978001 (2026-tbd)
     product prefixes, and add missing 2930F, 2930M and 3810M mappings (#553)
   * #593 Read Cisco Catalyst 1300 software versions from ENTITY-MIB (#568)
 
+  [ENHANCEMENTS]
+
+  * #527 Report Aruba wireless OS as arubaos instead of airos; update
+    OS-based filters or scripts matching airos. Alcatel-Lucent remains aos-w.
+
 Version 3.978000 (2026-09-29)
 
   [NEW FEATURES]

@@ -24,7 +24,7 @@ af
 agere
 airespace
 aironet
-airos
+arubaos
 alcatel
 Alcatel
 alteon
