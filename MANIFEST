@@ -335,3 +335,5 @@ xt/lib/Test/SNMP/Info/NortelStack.pm
 xt/lib/Test/SNMP/Info/PowerEthernet.pm
 xt/lib/Test/SNMP/Info/RapidCity.pm
 xt/lib/Test/SNMP/Info/SONMP.pm
+xt/fixtures/arubacx-cipt.json
+xt/lib/Test/SNMP/Info/Layer3/ArubaCX.pm
