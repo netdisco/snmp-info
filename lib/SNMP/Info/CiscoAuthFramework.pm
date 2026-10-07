@@ -10,7 +10,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.978001';
+$VERSION = '3.978002';
 
 %MIBS = (
     'CISCO-AUTH-FRAMEWORK-MIB' => 'ciscoAuthFrameworkMIB',
