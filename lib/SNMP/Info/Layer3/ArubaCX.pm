@@ -54,6 +54,7 @@ $VERSION = '3.978001';
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     %SNMP::Info::IEEE802_Bridge::MIBS,
+    'ARUBAWIRED-CIPT-MIB' => 'arubaWiredCiptClientIpAddress',
     'ARUBAWIRED-FAN-MIB' => 'arubaWiredFanName',
     'ARUBAWIRED-VSF-MIB' => 'arubaWiredVsfTrapEnable',
     'ARUBAWIRED-POE-MIB' => 'arubaWiredPoePethPsePortAveragePower',
@@ -81,6 +82,9 @@ $VERSION = '3.978001';
     'psu_types' => 'arubaWiredPSUProductName',
     'psu_states' => 'arubaWiredPSUState',
     'vsf_prod_names' => 'arubaWiredVsfMemberProductName',
+    'cipt_addr_type' => 'arubaWiredCiptClientIpAddrType',
+    'cipt_addr' => 'arubaWiredCiptClientIpAddress',
+    'cipt_ifindex' => 'arubaWiredCiptClientPortIfIndex',
     'raw_ad_lag_ports' => 'dot3adAggPortListPorts',  # unmunged raw data
 );
 
@@ -145,6 +149,73 @@ sub model {
     my $translated_id = &SNMP::translateObj($id) || $id;
     $translated_id =~ s/arubaWiredSwitch//i;
     return $cx->stack_info() || $model->{1} || $translated_id;
+}
+
+# Keep client tracking rows separate from the standard neighbour-table indexes.
+# InetAddress is an OCTET STRING; check its length against the address type.
+sub _cipt_clients {
+    my ($cx, $family, $partial) = @_;
+    my $types = $cx->cipt_addr_type() || {};
+    my $addrs = $cx->cipt_addr() || {};
+    my $ports = $cx->cipt_ifindex() || {};
+    my %clients;
+    foreach my $idx (keys %$types) {
+        my $type = $types->{$idx};
+        next unless defined $type;
+        next unless ($family == 1 && ($type eq '1' || $type eq 'ipv4'))
+            || ($family == 2 && ($type eq '2' || $type eq 'ipv6'));
+        next unless $idx =~ /^6\.((?:\d+\.){5}\d+)\.(\d+)\.(\d+)$/;
+        my ($mac_index, $vlan, $ip_index) = ($1, $2, $3);
+        my @mac = split /\./, $mac_index;
+        next if grep { $_ > 255 } @mac;
+        next if ($mac[0] & 1) || !grep { $_ } @mac;
+        next unless $vlan >= 1 && $vlan <= 4094 && $ip_index > 0;
+        my $addr = $addrs->{$idx};
+        next unless defined $addr && length($addr) == ($family == 1 ? 4 : 16);
+        my $port = $ports->{$idx};
+        next unless defined $port && $port =~ /^\d+$/ && $port > 0;
+        my $row = "cipt.$idx";
+        next if defined $partial && $row !~ /^\Q$partial\E(?:\.|$)/;
+        $clients{$row} = {
+            mac => join(':', map { sprintf '%02x', $_ } @mac),
+            addr => SNMP::Info::munge_inetaddress($addr),
+            port => $port,
+        };
+    }
+    return \%clients;
+}
+
+sub _cipt_merge {
+    my ($cx, $base, $family, $field, $partial) = @_;
+    my %result = %{ $base || {} };
+    my $clients = $cx->_cipt_clients($family, $partial);
+    $result{$_} = $clients->{$_}{$field} for keys %$clients;
+    return \%result;
+}
+
+sub at_paddr {
+    my ($cx, $partial) = @_;
+    return $cx->_cipt_merge($cx->SUPER::at_paddr($partial), 1, 'mac', $partial);
+}
+
+sub at_netaddr {
+    my ($cx, $partial) = @_;
+    return $cx->_cipt_merge($cx->SUPER::at_netaddr($partial), 1, 'addr', $partial);
+}
+
+sub ipv6_n2p_mac {
+    my ($cx, $partial) = @_;
+    return $cx->_cipt_merge($cx->SUPER::ipv6_n2p_mac(), 2, 'mac', $partial);
+}
+
+sub ipv6_n2p_addr {
+    my ($cx, $partial) = @_;
+    return $cx->_cipt_merge($cx->SUPER::ipv6_n2p_addr(), 2, 'addr', $partial);
+}
+
+sub ipv6_n2p_if {
+    my ($cx, $partial) = @_;
+    return $cx->_cipt_merge($cx->SUPER::ipv6_n2p_if(), 2, 'port', $partial);
 }
 
 sub os {
@@ -265,6 +336,8 @@ Subclass for devices running ArubaOS-CX
 
 =over
 
+=item F<ARUBAWIRED-CIPT-MIB>
+
 =item F<ARUBAWIRED-FAN-MIB>
 
 =item F<ARUBAWIRED-VSF-MIB>
@@ -333,6 +406,31 @@ See documentation in L<SNMP::Info::IEEE802_Bridge> for details.
 =head2 Globals imported from SNMP::Info::IEEE802dot3ad
 
 See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
+
+=head2 Client IP tracking
+
+=over
+
+=item $cx->at_paddr()
+
+=item $cx->at_netaddr()
+
+Add IPv4 client tracking MAC/IP pairs to the inherited ARP tables.
+
+=item $cx->ipv6_n2p_mac()
+
+=item $cx->ipv6_n2p_addr()
+
+=item $cx->ipv6_n2p_if()
+
+Add IPv6 client tracking MAC/IP/interface rows to the inherited neighbour tables.
+Client tracking must already be enabled on the switch. These methods only read
+its data; they do not enable tracking. Unsupported or empty tracking tables
+leave the inherited results intact. Tracking row keys use a C<cipt.> prefix
+followed by the MAC/VLAN/IP index, preserving multiple addresses for a client.
+Malformed rows and unsupported address types are omitted.
+
+=back
 
 =head1 TABLE ENTRIES
 

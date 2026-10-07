@@ -1,3 +1,10 @@
+Version 3.978002 (2026-tbd)
+
+  [NEW FEATURES]
+
+  * Add ArubaCX client IP tracking to IPv4 and IPv6 address collection
+    (netdisco/netdisco#1713)
+
 Version 3.978001 (2026-10-07)
 
   [NEW FEATURES]
