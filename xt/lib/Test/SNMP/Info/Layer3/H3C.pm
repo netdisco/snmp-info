@@ -41,7 +41,8 @@ sub setup : Tests(setup) {
   my $test = shift;
   $test->SUPER::setup;
   my %store = (
-    interfaces => {1=>'GigabitEthernet1/0/1',19=>'GigabitEthernet1/0/19',
+    i_index => {map { $_=>$_ } (1,19,32,56,57,58)},
+    i_description => {1=>'GigabitEthernet1/0/1',19=>'GigabitEthernet1/0/19',
       32=>'GigabitEthernet1/0/32',56=>'Ten-GigabitEthernet1/2/1',
       57=>'Ten-GigabitEthernet1/2/2',58=>'Bridge-Aggregation1'},
     bp_index => {1=>1,19=>19,32=>32,55=>56,56=>57,225=>58},
