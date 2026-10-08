@@ -196,7 +196,7 @@ Returns 'hirschmann'
 
 =item $device->os_ver()
 
-Return os version
+Returns os version extracted from hmSysVersion.0 with a fallback to id().
 
 =item $device->mac()
 
