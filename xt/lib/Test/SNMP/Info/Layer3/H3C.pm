@@ -28,36 +28,57 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 package Test::SNMP::Info::Layer3::H3C;
-
 use Test::Class::Most parent => 'My::Test::Class';
-
 use SNMP::Info::Layer3::H3C;
 
-# Remove this startup override once we have full method coverage
 sub startup : Tests(startup => 1) {
   my $test = shift;
-  $test->SUPER::startup();
-
+  $test->SUPER::startup;
   $test->todo_methods(1);
 }
 
 sub setup : Tests(setup) {
   my $test = shift;
   $test->SUPER::setup;
+  my %store = (
+    interfaces => {1=>'GigabitEthernet1/0/1',19=>'GigabitEthernet1/0/19',
+      32=>'GigabitEthernet1/0/32',56=>'Ten-GigabitEthernet1/2/1',
+      57=>'Ten-GigabitEthernet1/2/2',58=>'Bridge-Aggregation1'},
+    bp_index => {1=>1,19=>19,32=>32,55=>56,56=>57,225=>58},
+    stp_p_state => {1=>'blocking',19=>'forwarding',32=>'disabled',
+      55=>'blocking',56=>'blocking',225=>'disabled'},
+    ad_port_attached_agg => {1=>0,56=>58,57=>58},
+    ad_lag_ports => {58=>pack('C*',(0)x7,3)},
+  );
+  $test->{info}->cache({
+    _layers=>78, _id=>'.1.3.6.1.4.1.25506.1.297',
+    _description=>'HP A5120-48G EI Comware Software, Version 5.20.99',
+    (map { ('_' . $_)=>1 } keys %store), store=>\%store,
+  });
+}
 
-  # Start with a common cache that will serve most tests
-  my $d_string = 'Hangzhou H3C Comware Platform Software, ';
-  $d_string .= 'Software Version 3.10, ';
-  $d_string .= 'Release 2107 H3C S3100-52TP-SI ';
-  my $cache_data = {
-    '_layers' => 78,
-    '_description' => $d_string,
+sub agg_ports : Tests(2) {
+  my $test = shift;
+  cmp_deeply($test->{info}->agg_ports, {56=>58,57=>58},
+    'Attached indexes preserve selected and unselected membership');
+  $test->{info}{store}{ad_port_attached_agg} = {};
+  cmp_deeply($test->{info}->agg_ports,
+    SNMP::Info::IEEE802dot3ad::agg_ports_lag($test->{info}),
+    'Missing attached table retains existing fallback');
+}
 
-    # HH3C-PRODUCT-ID-MIB::hh3c-S3100-52TP-SI
-    '_id'   => '.1.3.6.1.4.1.25506.1.297',
-    'store' => {},
-  };
-  $test->{info}->cache($cache_data);
+sub i_stp_state : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+  cmp_deeply($info->i_stp_state, {1=>'blocking',19=>'forwarding',32=>'disabled',58=>'disabled'},
+    'Only physical aggregate member STP states omitted');
+  $info->{store}{stp_p_state}{225} = 'blocking';
+  is($info->i_stp_state->{58}, 'blocking', 'Blocked aggregate retained');
+  $info->{store}{ad_port_attached_agg} = {};
+  is($info->i_stp_state->{56}, 'blocking', 'Missing membership retains member state');
+  $info->{store}{ad_port_attached_agg} = {56=>0,57=>999,1=>'invalid',19=>19};
+  is($info->i_stp_state->{56}, 'blocking', 'Zero aggregate retains member state');
+  is($info->i_stp_state->{57}, 'blocking', 'Unknown aggregate retains member state');
 }
 
 1;

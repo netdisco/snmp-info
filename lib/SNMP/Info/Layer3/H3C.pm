@@ -69,6 +69,7 @@ $VERSION = '3.978002';
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
     i_duplex_admin => 'hh3cifEthernetDuplex',
+    ad_port_attached_agg => 'dot3adAggPortAttachedAggID',
 );
 
 %MUNGE = (
@@ -138,7 +139,38 @@ sub i_ignore {
     return \%i_ignore;
 }
 
-sub agg_ports { return agg_ports_lag(@_) }
+# Some Comware firmware uses a different numbering scheme in the PortList.
+# AttachedAggID is indexed directly by ifIndex, including unselected members.
+sub _attached_agg_ports {
+    my $h3c = shift;
+    my $attached = $h3c->ad_port_attached_agg() || {};
+    my $interfaces = $h3c->interfaces() || {};
+    my %members;
+    foreach my $member (keys %$attached) {
+        my $aggregate = $attached->{$member};
+        next unless defined $aggregate && $aggregate =~ /^\d+$/ && $aggregate > 0;
+        next if $member eq $aggregate;
+        next unless ($interfaces->{$member} || '') =~ /Ethernet/;
+        next unless ($interfaces->{$aggregate} || '') =~ /^Bridge-Aggregation\d+$/;
+        $members{$member} = $aggregate;
+    }
+    return \%members;
+}
+
+sub agg_ports {
+    my $h3c = shift;
+    my $members = $h3c->_attached_agg_ports();
+    return $members if scalar keys %$members;
+    return agg_ports_lag($h3c, @_);
+}
+
+sub i_stp_state {
+    my ($h3c, $partial) = @_;
+    my %states = %{ $h3c->SUPER::i_stp_state($partial) || {} };
+    my $members = $h3c->_attached_agg_ports();
+    delete @states{keys %$members};
+    return \%states;
+}
 
 # CH: overwrite and always return empty mapping for qb_fdb_index
 # see https://github.com/netdisco/snmp-info/issues/218
@@ -265,7 +297,24 @@ Returns reference to hash.  Increments value of IID if port is to be ignored.
 
 Ignores loopback
 
+=item $h3c->i_stp_state()
+
+Returns inherited STP states, omitting physical members of confirmed
+Bridge-Aggregation interfaces. STP applies to the logical aggregate; an omitted
+member state does not mean that the member or aggregate is forwarding.
+The aggregate and non-member states are retained. No MSTP instance states
+are combined into this single per-interface result.
+
+=item $h3c->ad_port_attached_agg()
+
+Returns the raw member ifIndex to attached aggregate ifIndex mapping from
+C<dot3adAggPortAttachedAggID>. Zero means no attached aggregate.
+
 =item C<agg_ports>
+
+Prefers validated C<dot3adAggPortAttachedAggID> mappings for Bridge-Aggregation
+interfaces, falling back to the inherited port-list mapping when none are
+available.
 
 Returns a HASH reference mapping from slave to master port for each member of
 a port bundle on the device. Keys are ifIndex of the slave ports, Values are
