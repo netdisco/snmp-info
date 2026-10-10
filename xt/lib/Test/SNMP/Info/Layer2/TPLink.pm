@@ -321,4 +321,182 @@ sub i_duplex : Tests(4) {
   is_deeply($test->{info}->i_duplex(), {}, q(No data returns an empty hash));
 }
 
+sub prime_poe {
+  my $test = shift;
+  my $info = $test->{info};
+
+  my %names = %{sg2218p_port_names()};
+  delete $names{49152 + 17};
+  delete $names{49152 + 18};
+  $info->{store}{i_description} = \%names;
+
+  $info->{"_$_"} = 1 for qw(
+    tp_peth_port_admin tp_peth_port_status tp_peth_port_class
+    tp_peth_port_power tp_power_limit
+  );
+  $info->{_tp_power_limit} = 1500;
+  $info->{store}{tp_peth_port_admin}
+    = {1 => 'enable', 11 => 'enable', 15 => 'enable', 17 => 'enable'};
+  $info->{store}{tp_peth_port_status}
+    = {1 => 'on', 11 => 'off', 15 => 'on', 17 => 'on'};
+  $info->{store}{tp_peth_port_class} = {
+    1  => 'class3',
+    11 => 'class-not-defined',
+    15 => 'class4',
+    17 => 'class0'
+  };
+  $info->{store}{tp_peth_port_power}
+    = {1 => 20, 11 => 0, 15 => 66, 17 => 5};
+}
+
+sub _tp_port_map : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->{store}{i_description} = {
+    1     => 'Vlan-interface1',
+    49153 => 'gigabitEthernet 1/0/1 : copper',
+    49154 => 'gigabitEthernet 2/0/5',
+    50001 => 'port-channel 3',
+    50002 => 'Tunnel1',
+  };
+  is_deeply(
+    $info->_tp_port_map(),
+    {'1/0/1' => 49153, '2/0/5' => 49154, 'LAG3' => 50001},
+    q(Port map keys u/s/p and LAGn, ignoring the media suffix and others)
+  );
+
+  $info->{store}{i_description} = {};
+  is_deeply($info->_tp_port_map(), {}, q(No interface descriptions map empty));
+
+  $info->{store}{i_description} = {49153 => 'gigabitEthernet 1/0/1'};
+  is_deeply($info->_tp_peth_by_port({1 => 'x', 2 => 'y'}),
+    {'1.1' => 'x'}, q(Column rows without an interface are dropped));
+
+  $info->clear_cache();
+  is_deeply($info->_tp_peth_by_port({1 => 'x'}),
+    {}, q(No interface data rekeys to an empty hash));
+}
+
+sub peth_port_ifindex : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'peth_port_ifindex');
+  $test->prime_poe;
+
+  no warnings 'redefine';
+  local *SNMP::Info::PowerEthernet::peth_port_ifindex
+    = sub { die 'RFC 3621 polled' };
+
+  my $expected = {'1.1' => 49153, '1.11' => 49163, '1.15' => 49167};
+  is_deeply($info->peth_port_ifindex(), $expected,
+    q(PoE ports map to ifIndex via the port map, port 17 omitted));
+
+  $info->{store}{i_description}{49153} = 'gigabitEthernet 1/0/1 : copper';
+  is_deeply($info->peth_port_ifindex(), $expected,
+    q(A media suffix on the ifDescr still resolves the port));
+
+  $info->clear_cache();
+  is_deeply($info->peth_port_ifindex(), {}, q(No data returns empty hash));
+}
+
+sub peth_port_admin : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'peth_port_admin');
+  $test->prime_poe;
+
+  no warnings 'redefine';
+  local *SNMP::Info::PowerEthernet::peth_port_admin
+    = sub { die 'RFC 3621 polled' };
+
+  is_deeply($info->peth_port_admin(),
+    {'1.1' => 'true', '1.11' => 'true', '1.15' => 'true'},
+    q(Admin state is keyed unit.port, port 17 without interface omitted));
+
+  $info->{store}{tp_peth_port_admin}{11} = 'disable';
+  is($info->peth_port_admin()->{'1.11'}, 'false', q(Disabled port is false));
+
+  $info->clear_cache();
+  is_deeply($info->peth_port_admin(), {}, q(No data returns empty hash));
+}
+
+sub peth_port_status : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'peth_port_status');
+  $test->prime_poe;
+
+  my $status = $info->peth_port_status();
+  is($status->{'1.1'}, 'deliveringPower', q(Powered port is deliveringPower));
+  is($status->{'1.11'}, 'searching', q(Unpowered port is searching));
+
+  $info->clear_cache();
+  is_deeply($info->peth_port_status(), {}, q(No data returns empty hash));
+}
+
+sub peth_port_class : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'peth_port_class');
+  $test->prime_poe;
+
+  my $class = $info->peth_port_class();
+  is($class->{'1.1'}, 'class3', q(Class is passed through));
+  is($class->{'1.11'}, 'class-not-defined', q(Undefined class is passed));
+
+  $info->clear_cache();
+  is_deeply($info->peth_port_class(), {}, q(No data returns empty hash));
+}
+
+sub peth_port_power : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'peth_port_power');
+  $test->prime_poe;
+
+  is_deeply($info->peth_port_power(),
+    {'1.1' => 2000, '1.11' => 0, '1.15' => 6600},
+    q(Power is scaled by 100, port 17 without interface omitted));
+  ok(!exists $info->peth_port_power()->{'1.17'}, q(No key for port 17));
+
+  $info->clear_cache();
+  is_deeply($info->peth_port_power(), {}, q(No data returns empty hash));
+  $info->{_tp_peth_port_power} = 1;
+  is_deeply($info->peth_port_power(), {}, q(No rows returns empty hash));
+}
+
+sub peth_power_watts : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'peth_power_watts');
+  $test->prime_poe;
+
+  is_deeply($info->peth_power_watts(), {1 => 150},
+    q(Power budget is the system limit in watts));
+
+  delete $info->{_tp_power_limit};
+  is_deeply($info->peth_power_watts(), {}, q(No limit returns empty hash));
+}
+
+sub peth_power_status : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'peth_power_status');
+  $test->prime_poe;
+
+  is_deeply($info->peth_power_status(), {1 => 'on'},
+    q(Module power is on when a limit is reported));
+
+  delete $info->{_tp_power_limit};
+  is_deeply($info->peth_power_status(), {}, q(No limit returns empty hash));
+}
+
 1;

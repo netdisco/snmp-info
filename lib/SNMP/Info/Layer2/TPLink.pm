@@ -139,8 +139,6 @@ $VERSION = '3.978002';
     'tp_peth_port_status'     => 'TPLINK-POWER-OVER-ETHERNET-MIB::tpPoePowerStatus',
     'tp_peth_port_class'       => 'TPLINK-POWER-OVER-ETHERNET-MIB::tpPoeClass',
     'tp_peth_port_power'       => 'TPLINK-POWER-OVER-ETHERNET-MIB::tpPoePower',
-    'tp_peth_power_status'     => 'TPLINK-LLDPINFO-MIB::lldpLocalPsePowerEnabled',
-    'tp_peth_power_watts'       => 'TPLINK-LLDPMEDCONFIG-MIB::lldpMedLocalPowerValue',
 );
 
 %MUNGE = (
@@ -285,99 +283,103 @@ sub munge_power {
     return $power ? $power / 10 : 0;
 }
 
+sub _tp_port_map {
+    my $tp = shift;
+
+    my $descriptions = $tp->i_description() || {};
+    my %map;
+    foreach my $iid ( keys %$descriptions ) {
+        my $description = $descriptions->{$iid};
+        next unless defined $description;
+        if ( $description =~ m{(\d+/\d+/\d+)} ) {
+            $map{$1} = $iid;
+        }
+        elsif ( $description =~ /^port-channel\s*(\d+)$/i ) {
+            $map{"LAG$1"} = $iid;
+        }
+    }
+    return \%map;
+}
+
+sub _tp_peth_by_port {
+    my $tp     = shift;
+    my $column = shift || {};
+
+    my $port_map = $tp->_tp_port_map();
+    my %out;
+    foreach my $port ( keys %$column ) {
+        next unless exists $port_map->{"1/0/$port"};
+        $out{"1.$port"} = $column->{$port};
+    }
+    return \%out;
+}
+
 sub peth_power_status {
     my $tp = shift;
 
-    my $tp_poe = $tp->tp_peth_power_status() || {};
-    my $p_capable = grep { $_ eq "enable" } values %$tp_poe;
-    my %out = ('1' => $p_capable ? "on" : "off");       # Emulate Cisco-style module number, it's always '1' for TP-Link. Untested on stacks.
-    return \%out;
+    my $watts = $tp->tp_power_limit();
+    return defined $watts ? { 1 => 'on' } : {};
 }
 
 sub peth_power_watts {
     my $tp = shift;
 
-    my $tp_poe = $tp->tp_peth_power_status() || {};
-    my $p_capable = grep { $_ eq "enable" } values %$tp_poe;
-    my %out = ('1' => $p_capable ? $tp->tp_power_limit() : 0); # Emulate Cisco-style module number, it's always '1' for TP-Link. Untested on stacks.
-    return \%out;
+    my $watts = $tp->tp_power_limit();
+    return defined $watts ? { 1 => $watts } : {};
 }
 
 sub peth_port_ifindex {
     my $tp = shift;
-    my $tp_pif = $tp->lldp_lport_id() || {};
-    my %out;
-    
-    for my $ifidx (keys %$tp_pif) {
-        my $entry = $tp_pif->{$ifidx};
-        $entry =~ s|^(\d+)/\d+/(\d+)$|$1.$2|; # Emulate Cisco-style output
-        $out{$entry} = $ifidx;
-    }
-    return \%out;
-}
 
-sub make_port_index {
-    my $tp = shift;
-    my $src = shift;
-    my $ifmap = $tp->peth_port_ifindex();
-    my $ifmap_rev = { reverse %$ifmap };
+    my $port_map = $tp->_tp_port_map();
+    my $admin    = $tp->tp_peth_port_admin() || {};
     my %out;
-
-    for my $entry (keys %$ifmap) {
-        my (undef, $p_idx) = split(/\./, $entry, 2);
-        $out{$entry} = $src->{$p_idx} ? $src->{$p_idx} : 0;
+    foreach my $port ( keys %$admin ) {
+        my $iid = $port_map->{"1/0/$port"};
+        $out{"1.$port"} = $iid if defined $iid;
     }
     return \%out;
 }
 
 sub peth_port_admin {
     my $tp = shift;
-    my $port_admin = $tp->make_port_index($tp->tp_peth_port_admin());
-    for my $entry (keys %$port_admin) {
-        if ($port_admin->{$entry} eq 'enable') {
-            $port_admin->{$entry} = 'true';
-        } else {
-            $port_admin->{$entry} = 'false';
-        }
+
+    my $admin = $tp->_tp_peth_by_port( $tp->tp_peth_port_admin() );
+    foreach my $entry ( keys %$admin ) {
+        my $state = $admin->{$entry};
+        $admin->{$entry}
+            = ( defined $state and $state eq 'enable' ) ? 'true' : 'false';
     }
-    return \%$port_admin;
+    return $admin;
 }
 
 sub peth_port_status {
     my $tp = shift;
-    my $port_status = $tp->make_port_index($tp->tp_peth_port_status());
 
-    for my $entry (keys %$port_status) {
-        if (defined $port_status->{$entry}) {
-            if ($port_status->{$entry} eq 'on') {
-                $port_status->{$entry} = 'deliveringPower';
-            } elsif ($port_status->{$entry} eq 'off') {
-                $port_status->{$entry} = 'searching';
-            } else {
-                $port_status->{$entry} = 'unknown';
-            }
-        } else {
-            $port_status->{$entry} = 'unknown';
-        }
+    my %state_name = ( on => 'deliveringPower', off => 'searching' );
+    my $status = $tp->_tp_peth_by_port( $tp->tp_peth_port_status() );
+    foreach my $entry ( keys %$status ) {
+        my $state = $status->{$entry};
+        $status->{$entry}
+            = defined $state ? ( $state_name{$state} || 'unknown' ) : 'unknown';
     }
-    return \%$port_status;
+    return $status;
 }
 
 sub peth_port_class {
     my $tp = shift;
-    return $tp->make_port_index($tp->tp_peth_port_class());
+
+    return $tp->_tp_peth_by_port( $tp->tp_peth_port_class() );
 }
 
 sub peth_port_power {
     my $tp = shift;
-    my $port_power = $tp->make_port_index($tp->tp_peth_port_power());
 
-    for my $entry (keys %$port_power) {
-        if (defined $port_power->{$entry}) {
-            $port_power->{$entry} = $port_power->{$entry} * 100;
-        }
+    my $power = $tp->_tp_peth_by_port( $tp->tp_peth_port_power() );
+    foreach my $entry ( keys %$power ) {
+        $power->{$entry} *= 100 if defined $power->{$entry};
     }
-    return $port_power;
+    return $power;
 }
 
 # VLAN methods. 
@@ -819,18 +821,41 @@ C<i_alias> has no rows, C<tp_port_config_descr> supplies the alias instead.
 Base MAC address from C<b_mac>, else from C<tp_sysinfo_mac> in upper case
 with colon separators.
 
-=item make_port_index
 =item model
 =item munge_power
 =item os
 =item os_ver
 =item peth_port_admin
+
+PoE admin state per C<unit.port> (C<true> or C<false>) from
+C<tp_peth_port_admin>. Ports without a matching interface are omitted.
+
 =item peth_port_class
+
+PoE class per C<unit.port> from C<tp_peth_port_class>.
+
 =item peth_port_ifindex
+
+Maps C<unit.port> to ifIndex for every port in C<tp_peth_port_admin> that
+has an interface. Unit is always 1.
+
 =item peth_port_power
+
+PoE power per C<unit.port> in milliwatts from C<tp_peth_port_power>.
+
 =item peth_port_status
+
+PoE detection state per C<unit.port>: C<deliveringPower>, C<searching> or
+C<unknown>, from C<tp_peth_port_status>.
+
 =item peth_power_status
+
+C<{1 =E<gt> 'on'}> when C<tp_power_limit> is reported, else an empty hash.
+
 =item peth_power_watts
+
+C<{1 =E<gt> $watts}> from C<tp_power_limit>, else an empty hash.
+
 =item qb_fw_port
 =item serial
 
