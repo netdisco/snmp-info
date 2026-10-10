@@ -114,7 +114,7 @@ $VERSION = '3.978002';
     'lldp_rem_sysdesc'  => 'TPLINK-LLDPINFO-MIB::lldpNeighborDeviceDescr',
     'lldp_rem_sys_cap'  => 'TPLINK-LLDPINFO-MIB::lldpNeighborCapEnabled',
     'lldp_rem_cap_spt'  => 'TPLINK-LLDPINFO-MIB::lldpNeighborCapAvailable',
-    'lldpLocalOperMau' => 'TPLINK-LLDPINFO-MIB::lldpLocalOperMau',
+    'tp_lldp_oper_mau' => 'TPLINK-LLDPINFO-MIB::lldpLocalOperMau',
     # Raw TP-Link neighbor manage addr table (internal accessor)
     'tplink_lldp_rman'    => 'TPLINK-LLDPINFO-MIB::lldpNeighborManageIpAddr',
     # TP-Link dynamic MAC forwarding table
@@ -226,33 +226,51 @@ sub mac {
 }
 
 sub i_name {
-    my $tp = shift;
+    my $tp      = shift;
+    my $partial = shift;
 
-    # Prefer TP-Link port description from port config MIB
-    my $pc_desc = $tp->tp_port_config_descr() || {};
-    my $ifdescr = $tp->SUPER::i_description() || {};
+    my $names   = $tp->orig_i_name($partial) || {};
+    my $aliases = $tp->i_alias($partial) || {};
+    $aliases = $tp->tp_port_config_descr($partial) || {}
+        unless keys %$aliases;
+
     my %out;
-    foreach my $key ( keys %$ifdescr ) {
-        if (defined $pc_desc->{$key} and $pc_desc->{$key} ne '') {
-            $out{$key} = $pc_desc->{$key};
-        } else {
-            $out{$key} = $ifdescr->{$key};
-        }
+    foreach my $iid ( keys %$names ) {
+        my $alias = $aliases->{$iid};
+        $out{$iid}
+            = ( defined $alias and $alias !~ /^\s*$/ )
+            ? $alias
+            : $names->{$iid};
     }
 
     return \%out;
 }
 
 sub i_duplex {
-    my $tp = shift;
+    my $tp      = shift;
+    my $partial = shift;
 
-    # Prefer TP-Link admin duplex setting if available
-    my $mau = $tp->lldpLocalOperMau() || {};
+    # EtherLike is present on most JetStream firmware; dot3StatsIndex equals
+    # ifIndex and no walk publishes it, so el_duplex is keyed directly.
+    my $el_duplex = $tp->el_duplex($partial) || {};
+    my %el_out;
+    foreach my $iid ( keys %$el_duplex ) {
+        my $duplex = $el_duplex->{$iid};
+        next unless defined $duplex;
+        $el_out{$iid} = 'full' if $duplex =~ /full/i;
+        $el_out{$iid} = 'half' if $duplex =~ /half/i;
+    }
+    return \%el_out if keys %el_out;
+
+    my $mau = $tp->tp_lldp_oper_mau($partial) || {};
     my %out;
     foreach my $key ( keys %$mau ) {
-        if ( defined $mau->{$key} and $mau->{$key} =~ /speed\(\S+\)\/duplex\((full|half)\)/i ) {
-            $out{$key} = $1;
-        } else {
+        if ( defined $mau->{$key}
+            and $mau->{$key} =~ /speed\(\S+\)\/duplex\((full|half)\)/i )
+        {
+            $out{$key} = lc $1;
+        }
+        else {
             $out{$key} = 'unknown';
         }
     }
@@ -781,7 +799,16 @@ and exposes TP-Link specific globals when available.
 =item hasLLDP
 =item hasSONMP
 =item i_duplex
+
+Duplex per ifIndex. Uses C<el_duplex> (EtherLike, C<full> or C<half>, other
+states omitted) when it returns any rows, otherwise parses
+C<tp_lldp_oper_mau> (C<unknown> when the string has no duplex).
+
 =item i_name
+
+Port name per ifIndex: C<i_alias> when not blank, else the ifName. When
+C<i_alias> has no rows, C<tp_port_config_descr> supplies the alias instead.
+
 =item i_vlan_membership_untagged
 =item lldp_if
 =item lldp_ip
@@ -830,6 +857,11 @@ Returned as the device reports it.
 
 C<powerSupplyUnitExternalPower>, C<.1.3.6.1.4.1.11863.6.88.1.1.4.0>.
 Returned as the device reports it.
+
+=item tp_lldp_oper_mau
+
+C<lldpLocalOperMau> from TPLINK-LLDPINFO-MIB, for example
+C<speed(1000M)/duplex(Full)>. Used by C<i_duplex> when EtherLike is absent.
 
 =back
 

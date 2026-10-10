@@ -33,9 +33,17 @@ use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info::Layer2::TPLink;
 
+sub sg2218p_port_names {
+  my %names = (1 => 'Vlan-interface1');
+  $names{49152 + $_} = "gigabitEthernet 1/0/$_" for 1 .. 18;
+  return \%names;
+}
+
 sub setup : Tests(setup) {
   my $test = shift;
   $test->SUPER::setup;
+
+  my $port_names = sg2218p_port_names();
 
   # Start with a common cache that will serve most tests
   my $cache_data = {
@@ -48,6 +56,27 @@ sub setup : Tests(setup) {
     '_tp_sysinfo_hwver'  => 'SG2218P 1.20',
     '_tp_sysinfo_swver'  => '1.20.6 Build 20250410 Rel.53214',
     '_tp_sysinfo_serial' => '222C014000151',
+
+    '_i_index'       => 1,
+    '_i_description' => 1,
+    '_i_name'        => 1,
+    '_i_alias'       => 1,
+    '_el_duplex'     => 1,
+    store            => {
+      i_index       => {map { $_ => $_ } keys %$port_names},
+      i_description => {%$port_names},
+      i_name        => {%$port_names},
+      i_alias       => {
+        (map { $_ => '' } keys %$port_names),
+        49153 => 'ac31: Kam (p1)',
+        49154 => 'ac31: Kam (p2)',
+      },
+      el_duplex => {
+        49153 => 'fullDuplex',
+        49154 => 'halfDuplex',
+        49155 => 'unknown',
+      },
+    },
   };
   $test->{info}->cache($cache_data);
 }
@@ -236,6 +265,60 @@ sub munge_power : Tests(4) {
   is(SNMP::Info::Layer2::TPLink::munge_power(0), 0, q(... zero stays zero));
   is(SNMP::Info::Layer2::TPLink::munge_power(undef),
     0, q(... undef munges to zero));
+}
+
+sub i_name : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_name');
+
+  my $names = $test->{info}->i_name();
+  is($names->{49153}, 'ac31: Kam (p1)',
+    q(Port name is the ifAlias when one is set));
+  is($names->{49155}, 'gigabitEthernet 1/0/3',
+    q(Port name is the ifName when the ifAlias is blank));
+
+  delete $test->{info}{_i_alias};
+  $test->{info}{_tp_port_config_descr} = 1;
+  $test->{info}{store}{tp_port_config_descr} = {49153 => 'uplink'};
+  $names = $test->{info}->i_name();
+  is_deeply(
+    [@{$names}{49153, 49155}],
+    ['uplink', 'gigabitEthernet 1/0/3'],
+    q(Port name falls back to the port config description, then the ifName)
+  );
+
+  delete $test->{info}{_tp_port_config_descr};
+  $names = $test->{info}->i_name();
+  is_deeply($names, sg2218p_port_names(),
+    q(Port name is the ifName when no alias source exists));
+}
+
+sub i_duplex : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_duplex');
+
+  is_deeply(
+    $test->{info}->i_duplex(),
+    {49153 => 'full', 49154 => 'half'},
+    q(Duplex comes from EtherLike keyed by ifIndex, unknown omitted)
+  );
+
+  delete $test->{info}{_el_duplex};
+  $test->{info}{_tp_lldp_oper_mau} = 1;
+  $test->{info}{store}{tp_lldp_oper_mau} = {
+    49153 => 'speed(1000M)/duplex(Full)',
+    49154 => 'other',
+  };
+  is_deeply(
+    $test->{info}->i_duplex(),
+    {49153 => 'full', 49154 => 'unknown'},
+    q(Duplex falls back to the LLDP MAU string when EtherLike is absent)
+  );
+
+  $test->{info}->clear_cache();
+  is_deeply($test->{info}->i_duplex(), {}, q(No data returns an empty hash));
 }
 
 1;
