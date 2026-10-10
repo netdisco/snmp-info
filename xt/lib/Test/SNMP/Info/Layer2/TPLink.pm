@@ -732,4 +732,271 @@ sub qb_fw_port : Tests(6) {
   is_deeply($info->qb_fw_port(), {}, q(Both tables absent returns empty hash));
 }
 
+sub prime_tp_lldp {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->{"_$_"} = 1 for qw(
+    lldp_rem_id tp_lldp_rem_id tp_lldp_rem_pid tp_lldp_rem_desc
+    tp_lldp_rem_sysname tp_lldp_rem_sysdesc tp_lldp_rem_cap_spt
+    tp_lldp_rman
+  );
+  $info->{store}{lldp_rem_id}    = {};
+  $info->{store}{tp_lldp_rem_id} = {
+    '49167.1' => '48:A9:8A:C1:AC:58',
+    '49168.1' => '48:A9:8A:C0:3C:40',
+    '49170.1' => 'E8:28:C1:26:B9:C0',
+  };
+  $info->{store}{tp_lldp_rem_pid} = {
+    '49167.1' => 'trunk: Up (eth1)',
+    '49168.1' => 'trunk: Up (eth1)',
+    '49170.1' => 'gi1/0/6',
+  };
+  $info->{store}{tp_lldp_rem_desc} = {
+    '49167.1' => 'trunk: Switch (br1)/trunk: Up (eth1)',
+    '49168.1' => 'trunk: Switch (br1)/trunk: Up (eth1)',
+    '49170.1' => 'trunk: sw31 (p06)',
+  };
+  $info->{store}{tp_lldp_rem_sysname} = {
+    '49167.1' => 'w131.soada',
+    '49168.1' => 'w104.soada',
+    '49170.1' => 'sw22.soada',
+  };
+  $info->{store}{tp_lldp_rem_sysdesc} = {
+    '49167.1' => 'MikroTik RouterOS 7.19 (stable) cAPGi-5HaxD2HaxD',
+    '49168.1' => 'MikroTik RouterOS 7.19.1 (stable) cAPGi-5HaxD2HaxD',
+    '49170.1' =>
+      'MES2324B 28-port 1G/10G Managed Switch, Software version: 4.0.24.1',
+  };
+  $info->{store}{tp_lldp_rem_cap_spt}
+    = {map { $_ => 'Bridge Router ' } qw(49167.1 49168.1 49170.1)};
+  $info->{store}{tp_lldp_rman} = {
+    '49167.1' => '::169.254.2.131',
+    '49168.1' => '::169.254.2.104',
+    '49170.1' => '::',
+  };
+}
+
+sub prime_std_lldp {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->{"_$_"} = 1 for qw(
+    lldp_rem_id lldp_rem_id_type lldp_rem_pid lldp_rem_pid_type
+    lldp_lport_desc lldp_rman_addr i_description i_alias
+  );
+  $info->{store}{i_description} = sg2218p_port_names();
+  $info->{store}{lldp_rem_id} = {'0.15.1' => pack('H*', '48A98AC1AC58')};
+  $info->{store}{lldp_rem_id_type}  = {'0.15.1' => 'macAddress'};
+  $info->{store}{lldp_rem_pid}      = {'0.15.1' => 'gi1/0/6'};
+  $info->{store}{lldp_rem_pid_type} = {'0.15.1' => 'interfaceName'};
+  $info->{store}{lldp_lport_desc}   = {15 => 'ac31: Kam (p15)'};
+  $info->{store}{i_alias}           = {49167 => 'ac31: Kam (p15)'};
+  $info->{store}{lldp_rman_addr}
+    = {'0.15.1.1.4.169.254.2.131' => 'ifIndex'};
+
+  # lldp_if reads lldpLocPortDesc as a partial, which bypasses the cache.
+  $info->{sess}{Data}
+    = {'LLDP-MIB::lldpLocPortDesc' => {15 => 'ac31: Kam (p15)'}};
+}
+
+sub _tp_lldp_standard : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->prime_std_lldp;
+  ok($info->_tp_lldp_standard(), q(LLDP-MIB neighbor rows select the standard));
+
+  $test->prime_tp_lldp;
+  ok(!$info->_tp_lldp_standard(),
+    q(No LLDP-MIB neighbor rows select the TP-Link table));
+}
+
+sub lldp_if : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'lldp_if');
+  $test->prime_tp_lldp;
+  is_deeply(
+    $info->lldp_if(),
+    {'49167.1' => 49167, '49168.1' => 49168, '49170.1' => 49170},
+    q(TP-Link neighbors map to the ifIndex in their index, keyed once)
+  );
+
+  $test->{info}->clear_cache();
+  $test->prime_std_lldp;
+  is_deeply($info->lldp_if(), {'0.15.1' => 49167},
+    q(LLDP-MIB neighbors map through lldpLocPortDesc and ifAlias));
+  ok(!exists $info->{'_tp_lldp_rem_id'},
+    q(The TP-Link neighbor table is not loaded when LLDP-MIB has rows));
+
+  $info->clear_cache();
+  is_deeply($info->lldp_if(), {}, q(No data returns empty hash));
+}
+
+sub lldp_ip : Tests(6) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'lldp_ip');
+  $test->prime_tp_lldp;
+  is_deeply(
+    $info->lldp_ip(),
+    {'49167.1' => '169.254.2.131', '49168.1' => '169.254.2.104'},
+    q(IPv4-mapped addresses are unwrapped and '::' is omitted)
+  );
+
+  $info->{store}{tp_lldp_rman}
+    = {'49167.1' => '10.0.0.1', '49170.1' => 'fe80::1'};
+  is_deeply($info->lldp_ip(), {'49167.1' => '10.0.0.1'},
+    q(A plain IPv4 address is kept and IPv6 is never reported));
+
+  $info->clear_cache();
+  $test->prime_std_lldp;
+  is_deeply($info->lldp_ip(), {'0.15.1' => '169.254.2.131'},
+    q(LLDP-MIB management addresses are used when LLDP-MIB has rows));
+  ok(!exists $info->{'_tp_lldp_rem_id'},
+    q(The TP-Link neighbor table is not loaded when LLDP-MIB has rows));
+
+  $info->clear_cache();
+  is_deeply($info->lldp_ip(), {}, q(No data returns empty hash));
+}
+
+sub lldp_ipv6 : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'lldp_ipv6');
+  $test->prime_tp_lldp;
+  is_deeply($info->lldp_ipv6(), {},
+    q('::' and IPv4-mapped addresses are not IPv6 neighbors));
+
+  $info->{store}{tp_lldp_rman}{'49170.1'} = 'fe80::1';
+  is_deeply($info->lldp_ipv6(), {'49170.1' => 'fe80::1'},
+    q(A real IPv6 address is reported as given));
+
+  $info->clear_cache();
+  is_deeply($info->lldp_ipv6(), {}, q(No data returns empty hash));
+}
+
+sub lldp_port : Tests(6) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'lldp_port');
+  $test->prime_tp_lldp;
+  my $ports = $info->lldp_port();
+  is($ports->{'49170.1'}, 'gi1/0/6',
+    q(Remote port id from column 6, not the local port));
+  is(scalar keys %$ports, 3, q(Every neighbor has a remote port));
+
+  $info->{store}{tp_lldp_rem_pid} = {};
+  is($info->lldp_port()->{'49170.1'}, 'trunk: sw31 (p06)',
+    q(Remote port description is used when the port id is absent));
+
+  $info->{store}{tp_lldp_rem_desc} = {};
+  is_deeply($info->lldp_port(), {},
+    q(Neighbors with neither port field are omitted));
+
+  $info->clear_cache();
+  is_deeply($info->lldp_port(), {}, q(No data returns empty hash));
+}
+
+sub lldp_id : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'lldp_id');
+  $test->prime_tp_lldp;
+  is_deeply(
+    $info->lldp_id(),
+    {
+      '49167.1' => '48:A9:8A:C1:AC:58',
+      '49168.1' => '48:A9:8A:C0:3C:40',
+      '49170.1' => 'E8:28:C1:26:B9:C0',
+    },
+    q(TP-Link chassis ids are returned as the device reports them)
+  );
+
+  $info->clear_cache();
+  $test->prime_std_lldp;
+  is_deeply($info->lldp_id(), {'0.15.1' => '48:a9:8a:c1:ac:58'},
+    q(LLDP-MIB chassis ids are formatted by the standard method));
+
+  $info->clear_cache();
+  is_deeply($info->lldp_id(), {}, q(No data returns empty hash));
+}
+
+sub lldp_platform : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'lldp_platform');
+  $test->prime_tp_lldp;
+  is($info->lldp_platform()->{'49170.1'},
+    'MES2324B 28-port 1G/10G Managed Switch, Software version: 4.0.24.1',
+    q(Platform is the remote system description));
+
+  $info->{store}{tp_lldp_rem_sysdesc} = {};
+  is($info->lldp_platform()->{'49170.1'}, 'sw22.soada',
+    q(Remote system name is used when the description is absent));
+
+  $info->{store}{tp_lldp_rem_sysname} = {};
+  is_deeply($info->lldp_platform(), {},
+    q(Neighbors with neither field are omitted));
+
+  $info->clear_cache();
+  is_deeply($info->lldp_platform(), {}, q(No data returns empty hash));
+}
+
+sub lldp_cap : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'lldp_cap');
+  $test->prime_tp_lldp;
+  cmp_deeply(
+    $info->lldp_cap(),
+    {map { $_ => bag('bridge', 'router') } qw(49167.1 49168.1 49170.1)},
+    q(Capability text is mapped to standard names)
+  );
+
+  $info->{store}{tp_lldp_rem_cap_spt} = {
+    '49167.1' => 'WLAN Access Point Gizmo Station Only',
+    '49168.1' => 'DOCSIS Cable Device Telephone Repeater Other',
+  };
+  cmp_deeply(
+    $info->lldp_cap(),
+    {
+      '49167.1' => bag('wlanAccessPoint', 'stationOnly'),
+      '49168.1' =>
+        bag('docsisCableDevice', 'telephone', 'repeater', 'other'),
+    },
+    q(Multi-word names are matched and unknown words dropped)
+  );
+
+  $info->{store}{tp_lldp_rem_cap_spt} = {'49167.1' => 'Gizmo'};
+  is_deeply($info->lldp_cap(), {}, q(Only unknown words yields no entry));
+
+  $info->clear_cache();
+  is_deeply($info->lldp_cap(), {}, q(No data returns empty hash));
+}
+
+sub topology : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->prime_tp_lldp;
+  my @neighbors = qw(49167.1 49168.1 49170.1);
+  cmp_deeply([keys %{$info->c_id()}], bag(@neighbors),
+    q(c_id has every TP-Link neighbor once));
+  cmp_deeply([keys %{$info->c_if()}], bag(@neighbors),
+    q(c_if has every TP-Link neighbor once));
+  cmp_deeply([keys %{$info->c_port()}], bag(@neighbors),
+    q(c_port has every TP-Link neighbor once));
+  cmp_deeply([keys %{$info->c_ip()}], bag(qw(49167.1 49168.1)),
+    q(c_ip has the neighbors with an IPv4 address));
+}
+
 1;
