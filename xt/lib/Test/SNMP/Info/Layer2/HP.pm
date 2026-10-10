@@ -119,7 +119,7 @@ sub model : Tests(23) {
 
   {
     no warnings 'redefine';
-    local *SNMP::Info::Layer2::HP::id = sub { return undef; };
+    local *SNMP::Info::Layer2::HP::id = sub { return; };
     is($info->model(), undef, 'Undefined device ID returns undef');
   }
 }

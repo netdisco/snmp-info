@@ -5,7 +5,10 @@ use strict;
 use warnings;
 use Test::More;
 
-eval "use Test::Perl::Critic (-severity => 5)";
-plan skip_all => "Test::Perl::Critic required for testing PBP compliance" if $@;
+eval {
+    require Test::Perl::Critic;
+    Test::Perl::Critic->import( -severity => 5 );
+    1;
+} or plan skip_all => "Test::Perl::Critic required for testing PBP compliance";
 
 Test::Perl::Critic::all_critic_ok();
