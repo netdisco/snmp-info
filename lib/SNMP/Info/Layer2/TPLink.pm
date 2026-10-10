@@ -354,12 +354,26 @@ sub peth_port_admin {
 sub peth_port_status {
     my $tp = shift;
 
-    my %state_name = ( on => 'deliveringPower', off => 'searching' );
+    my %state_name = (
+        'on'         => 'deliveringPower',
+        'off'        => 'searching',
+        'turning-on' => 'searching',
+        'overload'        => 'fault',
+        'short'           => 'fault',
+        'voltage-high'    => 'fault',
+        'voltage-low'     => 'fault',
+        'hardware-fault'  => 'fault',
+        'overtemperature' => 'fault',
+    );
+    my $admin  = $tp->_tp_peth_by_port( $tp->tp_peth_port_admin() );
     my $status = $tp->_tp_peth_by_port( $tp->tp_peth_port_status() );
     foreach my $entry ( keys %$status ) {
         my $state = $status->{$entry};
+        my $set   = $admin->{$entry};
         $status->{$entry}
-            = defined $state ? ( $state_name{$state} || 'unknown' ) : 'unknown';
+            = ( defined $set and $set eq 'disable' ) ? 'disabled'
+            : defined $state ? ( $state_name{$state} || 'otherFault' )
+            :                  'otherFault';
     }
     return $status;
 }
@@ -489,8 +503,8 @@ sub hasSONMP { return; }
 sub hasEDP { return; }
 sub hasAMAP { return; }
 
-# Decided once per device so neighbor keys never mix. Some models (the
-# SG2218P publishes LLDP-MIB's local port table) implement the standard.
+# Decided once per device so neighbor keys never mix. Some models publish
+# LLDP-MIB remote rows, which then take precedence.
 # Memoized because an empty walk is not cached; clear_cache resets it.
 sub _tp_lldp_standard {
     my $tp = shift;
@@ -657,18 +671,13 @@ sub qb_fw_port {
     return \%out;
 }
 
-# Netdisco looks fw_port values up in bp_index(), which is empty on these
-# devices, so resolve bridge-port numbers to ifIndex here.
+# dot1qTpFdbPort carries front-panel port numbers, but Netdisco looks
+# fw_port values up in bp_index(), which is keyed by ifIndex.
 sub fw_port {
     my $tp      = shift;
     my $partial = shift;
 
     my $fw = $tp->SUPER::fw_port($partial) || {};
-
-    unless ( keys %$fw ) {
-        my $qb = $tp->qb_fw_port($partial) || {};
-        $fw = $qb if keys %$qb;
-    }
 
     my $interfaces = $tp->interfaces() || {};
     my $bp_index   = $tp->bp_index()    || {};
@@ -733,17 +742,24 @@ keyed C<ifIndex.remIdx>.
 
 =item fw_port
 
-Forwarding table ports as ifIndex, from BRIDGE-MIB or else
-L</qb_fw_port>. Port 0 (not learned) is dropped. A port number resolves to
-the single C<u/s/number> interface (ambiguous on a stack), else an existing
-ifIndex, else C<bp_index>. Unresolved values stay as reported.
+Forwarding table ports as ifIndex, from L</qb_fw_port> (Q-BRIDGE or the
+TP-Link dynamic table) or else BRIDGE-MIB. Port 0 (not learned) is
+dropped. A port number resolves to the single C<u/s/number> interface
+(ambiguous on a stack), else an existing ifIndex, else C<bp_index>.
+Unresolved values stay as reported.
 
 =item hasAMAP
+
 =item hasCDP
+
 =item hasEDP
+
 =item hasFDP
+
 =item hasLLDP
+
 =item hasSONMP
+
 =item i_duplex
 
 Duplex per ifIndex. Uses C<el_duplex> (EtherLike, C<full> or C<half>, other
@@ -769,11 +785,6 @@ skipped. Q-BRIDGE is not polled.
 =item i_vlan_membership_untagged
 
 VLAN IDs per ifIndex from the untagged port lists only.
-
-=item munge_tp_pvid
-
-Maps the C<vlanPortType> labels C<access>, C<trunk> and C<general> back to
-C<0>, C<1> and C<2>; other values are returned unchanged.
 
 =item lldp_cap
 
@@ -815,9 +826,18 @@ Base MAC address from C<b_mac>, else from C<tp_sysinfo_mac> in upper case
 with colon separators.
 
 =item model
+
 =item munge_power
+
+=item munge_tp_pvid
+
+Maps the C<vlanPortType> labels C<access>, C<trunk> and C<general> back to
+C<0>, C<1> and C<2>; other values are returned unchanged.
+
 =item os
+
 =item os_ver
+
 =item peth_port_admin
 
 PoE admin state per C<unit.port> (C<true> or C<false>) from
@@ -838,8 +858,11 @@ PoE power per C<unit.port> in milliwatts from C<tp_peth_port_power>.
 
 =item peth_port_status
 
-PoE detection state per C<unit.port>: C<deliveringPower>, C<searching> or
-C<unknown>, from C<tp_peth_port_status>.
+PoE detection state per C<unit.port> from C<tp_peth_port_status>:
+C<deliveringPower> (on), C<searching> (off, turning-on), C<fault> (overload,
+short, voltage and hardware faults, overtemperature) or C<otherFault>
+(anything else). A port with C<tp_peth_port_admin> C<disable> is
+C<disabled>.
 
 =item peth_power_status
 
@@ -882,6 +905,12 @@ Returned as the device reports it.
 
 C<powerSupplyUnitExternalPower>, C<.1.3.6.1.4.1.11863.6.88.1.1.4.0>.
 Returned as the device reports it.
+
+=back
+
+=head2 Table Methods
+
+=over
 
 =item tp_vlan_port_pvid
 

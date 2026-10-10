@@ -391,7 +391,8 @@ sub _tp_port_map : Tests(4) {
   );
 
   $info->{store}{i_description} = {};
-  is_deeply($info->_tp_port_map(), {}, q(No interface descriptions map empty));
+  is_deeply($info->_tp_port_map(), {},
+    q(No interface descriptions map empty));
 
   $info->{store}{i_description} = {49153 => 'gigabitEthernet 1/0/1'};
   is_deeply($info->_tp_peth_by_port({1 => 'x', 2 => 'y'}),
@@ -447,7 +448,7 @@ sub peth_port_admin : Tests(4) {
   is_deeply($info->peth_port_admin(), {}, q(No data returns empty hash));
 }
 
-sub peth_port_status : Tests(4) {
+sub peth_port_status : Tests(13) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -457,6 +458,27 @@ sub peth_port_status : Tests(4) {
   my $status = $info->peth_port_status();
   is($status->{'1.1'}, 'deliveringPower', q(Powered port is deliveringPower));
   is($status->{'1.11'}, 'searching', q(Unpowered port is searching));
+
+  my %expected = (
+    'turning-on'     => 'searching',
+    'overload'       => 'fault',
+    'short'          => 'fault',
+    'voltage-high'   => 'fault',
+    'voltage-low'    => 'fault',
+    'hardware-fault' => 'fault',
+    'overtemperature' => 'fault',
+    'nonstandard-pd' => 'otherFault',
+  );
+  foreach my $raw ( sort keys %expected ) {
+    $info->{store}{tp_peth_port_status}{1} = $raw;
+    is($info->peth_port_status()->{'1.1'}, $expected{$raw},
+      qq(Device state $raw maps to $expected{$raw}));
+  }
+
+  $info->{store}{tp_peth_port_admin}{1} = 'disable';
+  $info->{store}{tp_peth_port_status}{1} = 'on';
+  is($info->peth_port_status()->{'1.1'}, 'disabled',
+    q(An administratively disabled port is disabled));
 
   $info->clear_cache();
   is_deeply($info->peth_port_status(), {}, q(No data returns empty hash));
@@ -622,7 +644,7 @@ sub prime_fdb {
   my ($test, $ports) = @_;
   $test->{info}{store}{qb_fw_port} = $ports;
   $test->{info}{_qb_fw_port}       = 1;
-  $test->{info}{store}{bp_index}   = {};
+  $test->{info}{store}{bp_index}   = {map { $_ => $_ } 49153 .. 49170};
   $test->{info}{_bp_index}         = 1;
 }
 
@@ -690,9 +712,12 @@ sub fw_port : Tests(11) {
     '1.2.3.4.5.6'         => 'Tunnel1',
   };
   my $text = $info->fw_port();
-  is($text->{'8.85.49.126.102.254'}, 49159, q(Text port 1/0/7 maps via port map));
-  is($text->{'0.39.251.118.93.1'}, 32769, q(Text port LAG1 maps via port map));
-  is($text->{'1.2.3.4.5.6'}, 'Tunnel1', q(Unknown text port stays as reported));
+  is($text->{'8.85.49.126.102.254'}, 49159,
+    q(Text port 1/0/7 maps via port map));
+  is($text->{'0.39.251.118.93.1'}, 32769,
+    q(Text port LAG1 maps via port map));
+  is($text->{'1.2.3.4.5.6'}, 'Tunnel1',
+    q(Unknown text port stays as reported));
 
   delete $info->{_fw_port};
   delete $info->{store}{fw_port};
@@ -729,7 +754,8 @@ sub qb_fw_port : Tests(6) {
     q(Unresolved vendor port keeps its raw value and port 0 is dropped));
 
   $info->clear_cache();
-  is_deeply($info->qb_fw_port(), {}, q(Both tables absent returns empty hash));
+  is_deeply($info->qb_fw_port(), {},
+    q(Both tables absent returns empty hash));
 }
 
 sub prime_tp_lldp {
