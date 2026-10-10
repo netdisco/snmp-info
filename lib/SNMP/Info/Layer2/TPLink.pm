@@ -95,8 +95,13 @@ $VERSION = '3.978002';
     # Ensure Ethernet/duplex index funcs are present for autoload
     'el_index'  => 'dot3StatsIndex',
     'el_duplex' => 'dot3StatsDuplexStatus',
-    # TP-Link DOT1Q VLAN MIB helpers
-    'tp_i_vlan_membership_untagged' => 'TPLINK-DOT1Q-VLAN-MIB::vlanPortPvid',
+
+    # netdisco/netdisco-mibs#281: TP-Link 2024 vlanPortPvid. netdisco-mibs
+    # names column 2 vlanPortType with enums, so labels arrive and
+    # munge_tp_pvid maps them back.
+    'tp_vlan_port_pvid' => '.1.3.6.1.4.1.11863.6.14.1.1.1.1.2',
+    'tp_vlan_tagged'    => 'TPLINK-DOT1Q-VLAN-MIB::vlanTagPortMemberAdd',
+    'tp_vlan_untagged'  => 'TPLINK-DOT1Q-VLAN-MIB::vlanUntagPortMemberAdd',
     # TP-Link port config (duplex/speed/etc)
     'i_duplex_admin' => 'TPLINK-PORTCONFIG-MIB::tpPortConfigDuplex',
     'i_speed_admin'  => 'TPLINK-PORTCONFIG-MIB::tpPortConfigSpeed',
@@ -144,6 +149,7 @@ $VERSION = '3.978002';
 %MUNGE = (
     %SNMP::Info::Layer2::MUNGE,
     %SNMP::Info::EtherLike::MUNGE,
+    'tp_vlan_port_pvid' => \&munge_tp_pvid,
     'tp_power_limit' => \&munge_power,
     'tp_power_consumption' => \&munge_power,
     'tp_power_remain' => \&munge_power,
@@ -382,18 +388,102 @@ sub peth_port_power {
     return $power;
 }
 
-# VLAN methods. 
-sub i_vlan_membership_untagged {
-    my $tp  = shift;
-    my $partial = shift;
-    my $vlan_members_untagged = {};
+sub munge_tp_pvid {
+    my $value = shift;
 
-    my $ports = $tp->tp_i_vlan_membership_untagged($partial);
+    my %by_label = ( access => 0, trunk => 1, general => 2 );
+    return $by_label{$value} if defined $value and exists $by_label{$value};
+    return $value;
+}
 
-    foreach my $key (keys %$ports) {
-        push @{$vlan_members_untagged->{$key}}, $ports->{$key};
+sub _tp_vlan_ports {
+    my $tp    = shift;
+    my $lists = shift || {};
+
+    my $port_map = $tp->_tp_port_map();
+    my %seen;
+    foreach my $vlan ( keys %$lists ) {
+        foreach my $port ( _tp_expand_port_list( $lists->{$vlan} ) ) {
+            my $iid = $port_map->{$port};
+            $seen{$iid}{$vlan} = 1 if defined $iid;
+        }
     }
-    return $vlan_members_untagged;
+
+    my %out;
+    foreach my $iid ( keys %seen ) {
+        $out{$iid} = [ sort { $a <=> $b } keys %{ $seen{$iid} } ];
+    }
+    return \%out;
+}
+
+sub _tp_expand_port_list {
+    my $list = shift;
+
+    return () unless defined $list;
+    my @ports;
+    foreach my $token ( split /\s*,\s*/, $list ) {
+        if ( $token =~ m{^(\d+/\d+/)(\d+)-(\d+)$} ) {
+            push @ports, map {"$1$_"} $2 .. $3;
+        }
+        elsif ( $token =~ /^LAG(\d+)-(\d+)$/ ) {
+            push @ports, map {"LAG$_"} $1 .. $2;
+        }
+        elsif ( $token =~ m{^(?:\d+/\d+/\d+|LAG\d+)$} ) {
+            push @ports, $token;
+        }
+    }
+    return @ports;
+}
+
+sub _tp_vlan_membership {
+    my $tp      = shift;
+    my $partial = shift;
+    my @columns = @_;
+
+    my %lists;
+    foreach my $column (@columns) {
+        my $rows = $tp->$column() || {};
+        foreach my $vlan ( keys %$rows ) {
+            next unless defined $rows->{$vlan} and $rows->{$vlan} ne '';
+            $lists{$vlan} .= ( exists $lists{$vlan} ? ',' : '' )
+                . $rows->{$vlan};
+        }
+    }
+
+    my $members = $tp->_tp_vlan_ports( \%lists );
+    return $members unless defined $partial;
+    return { map { $_ => $members->{$_} }
+            grep { $_ eq $partial } keys %$members };
+}
+
+sub i_vlan_membership {
+    my $tp      = shift;
+    my $partial = shift;
+
+    return $tp->_tp_vlan_membership( $partial, 'tp_vlan_tagged',
+        'tp_vlan_untagged' );
+}
+
+sub i_vlan_membership_untagged {
+    my $tp      = shift;
+    my $partial = shift;
+
+    return $tp->_tp_vlan_membership( $partial, 'tp_vlan_untagged' );
+}
+
+sub i_vlan {
+    my $tp      = shift;
+    my $partial = shift;
+
+    my $pvids = $tp->tp_vlan_port_pvid($partial) || {};
+    return { %$pvids } if keys %$pvids;
+
+    my $untagged = $tp->i_vlan_membership_untagged($partial) || {};
+    my %out;
+    foreach my $iid ( keys %$untagged ) {
+        $out{$iid} = $untagged->{$iid}[0] if @{ $untagged->{$iid} } == 1;
+    }
+    return \%out;
 }
 
 # TP-Link devices do not implement these proprietary neighbor discovery
@@ -811,7 +901,25 @@ C<tp_lldp_oper_mau> (C<unknown> when the string has no duplex).
 Port name per ifIndex: C<i_alias> when not blank, else the ifName. When
 C<i_alias> has no rows, C<tp_port_config_descr> supplies the alias instead.
 
+=item i_vlan
+
+PVID per ifIndex from C<tp_vlan_port_pvid>; when that column is empty, the
+VLAN a port is untagged in, for ports untagged in exactly one VLAN.
+
+=item i_vlan_membership
+
+VLAN IDs per ifIndex (arrayref, sorted, no repeats) from the tagged and
+untagged port lists. Tokens the parser does not know, such as C<Tunnel1>, are
+skipped. Q-BRIDGE is not polled.
+
 =item i_vlan_membership_untagged
+
+VLAN IDs per ifIndex from the untagged port lists only.
+
+=item munge_tp_pvid
+
+Maps the C<vlanPortType> labels C<access>, C<trunk> and C<general> back to
+C<0>, C<1> and C<2>; other values are returned unchanged.
 =item lldp_if
 =item lldp_ip
 =item lldp_port
@@ -882,6 +990,20 @@ Returned as the device reports it.
 
 C<powerSupplyUnitExternalPower>, C<.1.3.6.1.4.1.11863.6.88.1.1.4.0>.
 Returned as the device reports it.
+
+=item tp_vlan_port_pvid
+
+C<vlanPortPvid>, C<.1.3.6.1.4.1.11863.6.14.1.1.1.1.2>. netdisco-mibs names
+this column C<vlanPortType>, so the device may return C<trunk> for VLAN 1;
+C<munge_tp_pvid> maps the label back.
+
+=item tp_vlan_tagged
+
+C<vlanTagPortMemberAdd>, tagged port list per VLAN ID.
+
+=item tp_vlan_untagged
+
+C<vlanUntagPortMemberAdd>, untagged port list per VLAN ID.
 
 =item tp_lldp_oper_mau
 

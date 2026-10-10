@@ -36,6 +36,7 @@ use SNMP::Info::Layer2::TPLink;
 sub sg2218p_port_names {
   my %names = (1 => 'Vlan-interface1');
   $names{49152 + $_} = "gigabitEthernet 1/0/$_" for 1 .. 18;
+  $names{32768 + $_} = "port-channel $_" for 1 .. 2;
   return \%names;
 }
 
@@ -62,7 +63,30 @@ sub setup : Tests(setup) {
     '_i_name'        => 1,
     '_i_alias'       => 1,
     '_el_duplex'     => 1,
+    '_tp_vlan_port_pvid' => 1,
+    '_tp_vlan_tagged'    => 1,
+    '_tp_vlan_untagged'  => 1,
     store            => {
+      tp_vlan_port_pvid => {
+        (map { 49152 + $_ => 31 } 1 .. 12),
+        (map { 49152 + $_ => 'trunk' } 13 .. 18),
+      },
+      tp_vlan_tagged => {
+        1   => '',
+        2   => '1/0/15-18',
+        31  => '1/0/15-18',
+        98  => '1/0/15-18',
+        100 => '1/0/15-18,LAG1',
+        255 => '1/0/15-18',
+      },
+      tp_vlan_untagged => {
+        1   => '1/0/13-18',
+        2   => '',
+        31  => '1/0/1-12',
+        98  => '',
+        100 => 'LAG1-2,Tunnel1',
+        255 => '',
+      },
       i_index       => {map { $_ => $_ } keys %$port_names},
       i_description => {%$port_names},
       i_name        => {%$port_names},
@@ -497,6 +521,99 @@ sub peth_power_status : Tests(3) {
 
   delete $info->{_tp_power_limit};
   is_deeply($info->peth_power_status(), {}, q(No limit returns empty hash));
+}
+
+sub munge_tp_pvid : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_tp_pvid');
+  is(SNMP::Info::Layer2::TPLink::munge_tp_pvid('trunk'),
+    1, q(Label trunk maps to VLAN 1));
+  is(SNMP::Info::Layer2::TPLink::munge_tp_pvid('general'),
+    2, q(Label general maps to 2));
+  is(SNMP::Info::Layer2::TPLink::munge_tp_pvid('access'),
+    0, q(Label access maps to 0));
+  is(SNMP::Info::Layer2::TPLink::munge_tp_pvid(31), 31, q(Numeric stays));
+}
+
+sub _tp_vlan_ports : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  is_deeply(
+    $info->_tp_vlan_ports({100 => '1/0/15-16,LAG1-2,1/0/1,Tunnel1,'}),
+    {49167 => [100], 49168 => [100], 32769 => [100], 32770 => [100],
+      49153 => [100]},
+    q(Ranges, LAG ranges and single ports resolve; unknown tokens skipped)
+  );
+  is_deeply($info->_tp_vlan_ports({1 => ''}), {}, q(Empty list is skipped));
+  is_deeply(
+    $info->_tp_vlan_ports({100 => '1/0/1,1/0/1', 5 => '1/0/1'}),
+    {49153 => [5, 100]},
+    q(A VLAN is not repeated and lists are sorted)
+  );
+  is_deeply($info->_tp_vlan_ports({100 => '1/0/40-41,LAG9'}),
+    {}, q(Ports without an interface are omitted));
+}
+
+sub i_vlan : Tests(7) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  local *SNMP::Info::Bridge::i_vlan = sub { die 'Q-BRIDGE polled' };
+
+  my $vlans = $info->i_vlan();
+  is($vlans->{49153}, 31, q(PVID column gives the VLAN));
+  is($vlans->{49165}, 1,  q(Label trunk reads back as VLAN 1));
+
+  delete $info->{_tp_vlan_port_pvid};
+  delete $info->{store}{tp_vlan_port_pvid};
+  $info->{store}{tp_vlan_untagged}{2} = '1/0/2';
+  $vlans = $info->i_vlan();
+  is($vlans->{49153}, 31,  q(Derived from the single untagged VLAN));
+  is($vlans->{49165}, 1,   q(Derived trunk port is VLAN 1));
+  is($vlans->{32769}, 100, q(LAG derived from its untagged VLAN));
+  ok(!exists $vlans->{49154}, q(Port untagged in two VLANs is absent));
+
+  $info->clear_cache();
+  is_deeply($info->i_vlan(), {}, q(No data gives an empty hash));
+}
+
+sub i_vlan_membership : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  local *SNMP::Info::Bridge::i_vlan_membership
+    = sub { die 'Q-BRIDGE polled' };
+
+  my @warnings;
+  my $members;
+  {
+    local $SIG{__WARN__} = sub { push @warnings, @_ };
+    $members = $info->i_vlan_membership();
+  }
+  cmp_bag($members->{49167}, [1, 2, 31, 98, 100, 255],
+    q(Trunk port is in every VLAN that lists it));
+  is_deeply($members->{49153}, [31], q(Access port is in its VLAN));
+  is_deeply($members->{32769}, [100],
+    q(LAG tagged and untagged in one VLAN lists it once));
+  is_deeply(\@warnings, [], q(Empty lists and Tunnel1 raise no warnings));
+
+  is_deeply($info->i_vlan_membership(49153), {49153 => [31]},
+    q(Partial limits the result to one port));
+}
+
+sub i_vlan_membership_untagged : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  local *SNMP::Info::Bridge::i_vlan_membership_untagged
+    = sub { die 'Q-BRIDGE polled' };
+
+  my $members = $info->i_vlan_membership_untagged();
+  is_deeply($members->{49153}, [31],  q(Access port untagged VLAN));
+  is_deeply($members->{49167}, [1],   q(Trunk port untagged in VLAN 1));
+  is_deeply($members->{32770}, [100], q(LAG range member untagged));
 }
 
 1;
