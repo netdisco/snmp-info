@@ -491,11 +491,13 @@ sub hasAMAP { return; }
 
 # Decided once per device so neighbor keys never mix. Some models (the
 # SG2218P publishes LLDP-MIB's local port table) implement the standard.
+# Memoized because an empty walk is not cached; clear_cache resets it.
 sub _tp_lldp_standard {
     my $tp = shift;
 
+    return $tp->{_tp_lldp_standard} if exists $tp->{_tp_lldp_standard};
     my $rem_id = $tp->lldp_rem_id() || {};
-    return scalar keys %$rem_id ? 1 : 0;
+    return $tp->{_tp_lldp_standard} = scalar keys %$rem_id ? 1 : 0;
 }
 
 sub _tp_lldp_neighbors {
@@ -590,18 +592,18 @@ my %TP_LLDP_CAP = (
     'DOCSIS Cable Device' => 'docsisCableDevice',
     'Station Only'        => 'stationOnly',
 );
+my $TP_LLDP_CAP_NAMES = join '|', map {quotemeta}
+    sort { length $b <=> length $a } keys %TP_LLDP_CAP;
 
 sub lldp_cap {
     my ( $tp, $partial ) = @_;
     return $tp->SUPER::lldp_cap($partial) if $tp->_tp_lldp_standard;
 
-    my $names = join '|', map {quotemeta} sort { length $b <=> length $a }
-        keys %TP_LLDP_CAP;
     my $text = $tp->_tp_lldp_first( $partial, 'tp_lldp_rem_cap_spt' );
     my %lldp_cap;
     foreach my $key ( keys %$text ) {
         my @caps = map { $TP_LLDP_CAP{$_} }
-            $text->{$key} =~ /(?:^|\s)($names)(?=\s|$)/g;
+            $text->{$key} =~ /(?:^|\s)($TP_LLDP_CAP_NAMES)(?=\s|$)/g;
         $lldp_cap{$key} = \@caps if @caps;
     }
     return \%lldp_cap;
@@ -723,6 +725,10 @@ and exposes TP-Link specific globals when available.
 
 =head1 METHODS
 
+Every C<lldp_*> method below defers to L<SNMP::Info::LLDP> when LLDP-MIB
+C<lldp_rem_id> has rows, and otherwise reads the TP-Link neighbor table,
+keyed C<ifIndex.remIdx>.
+
 =over
 
 =item fw_port
@@ -770,9 +776,6 @@ Maps the C<vlanPortType> labels C<access>, C<trunk> and C<general> back to
 C<0>, C<1> and C<2>; other values are returned unchanged.
 
 =item lldp_cap
-
-Every C<lldp_*> method below defers to L<SNMP::Info::LLDP> when LLDP-MIB
-C<lldp_rem_id> has rows, and otherwise reads the TP-Link neighbor table.
 
 Remote capabilities per neighbor (arrayref of LLDP-MIB names such as
 C<bridge> and C<router>), parsed from the C<tp_lldp_rem_cap_spt> text.

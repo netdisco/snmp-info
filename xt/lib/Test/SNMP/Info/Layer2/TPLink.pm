@@ -784,6 +784,7 @@ sub prime_std_lldp {
   $info->{"_$_"} = 1 for qw(
     lldp_rem_id lldp_rem_id_type lldp_rem_pid lldp_rem_pid_type
     lldp_lport_desc lldp_rman_addr i_description i_alias
+    lldp_rem_desc lldp_rem_sysname lldp_rem_sysdesc lldp_rem_cap_spt
   );
   $info->{store}{i_description} = sg2218p_port_names();
   $info->{store}{lldp_rem_id} = {'0.15.1' => pack('H*', '48A98AC1AC58')};
@@ -792,24 +793,56 @@ sub prime_std_lldp {
   $info->{store}{lldp_rem_pid_type} = {'0.15.1' => 'interfaceName'};
   $info->{store}{lldp_lport_desc}   = {15 => 'ac31: Kam (p15)'};
   $info->{store}{i_alias}           = {49167 => 'ac31: Kam (p15)'};
-  $info->{store}{lldp_rman_addr}
-    = {'0.15.1.1.4.169.254.2.131' => 'ifIndex'};
+  $info->{store}{lldp_rem_desc}     = {'0.15.1' => 'sw31 port 6'};
+  $info->{store}{lldp_rem_sysname}  = {'0.15.1' => 'sw22.soada'};
+  $info->{store}{lldp_rem_sysdesc}
+    = {'0.15.1' => 'MES2324B 28-port 1G/10G Managed Switch'};
+  $info->{store}{lldp_rem_cap_spt} = {'0.15.1' => pack('H*', '2800')};
+  $info->{store}{lldp_rman_addr} = {
+    '0.15.1.1.4.169.254.2.131' => 'ifIndex',
+    '0.15.1.2.16.254.128.0.0.0.0.0.0.0.0.0.0.0.0.0.1' => 'ifIndex',
+  };
 
   # lldp_if reads lldpLocPortDesc as a partial, which bypasses the cache.
   $info->{sess}{Data}
     = {'LLDP-MIB::lldpLocPortDesc' => {15 => 'ac31: Kam (p15)'}};
 }
 
-sub _tp_lldp_standard : Tests(2) {
+sub _tp_lldp_standard : Tests(6) {
   my $test = shift;
   my $info = $test->{info};
 
   $test->prime_std_lldp;
-  ok($info->_tp_lldp_standard(), q(LLDP-MIB neighbor rows select the standard));
+  ok($info->_tp_lldp_standard(),
+    q(LLDP-MIB neighbor rows select the standard));
 
+  $info->clear_cache();
   $test->prime_tp_lldp;
   ok(!$info->_tp_lldp_standard(),
     q(No LLDP-MIB neighbor rows select the TP-Link table));
+
+  $info->clear_cache();
+  ok(!$info->_tp_lldp_standard(),
+    q(No data at all selects the TP-Link table));
+
+  {
+    $info->clear_cache();
+    my $calls = 0;
+    no warnings 'redefine';
+    local *SNMP::Info::Layer2::TPLink::lldp_rem_id
+      = sub { $calls++; return {} };
+    $info->_tp_lldp_standard() for 1 .. 3;
+    is($calls, 1, q(An empty LLDP-MIB walk is done once, not on every call));
+
+    $info->clear_cache();
+    $info->_tp_lldp_standard();
+    is($calls, 2, q(clear_cache resets the decision));
+  }
+
+  $info->clear_cache();
+  $test->prime_std_lldp;
+  ok($info->_tp_lldp_standard(),
+    q(After clear_cache the decision follows the new data));
 }
 
 sub lldp_if : Tests(5) {
@@ -863,7 +896,7 @@ sub lldp_ip : Tests(6) {
   is_deeply($info->lldp_ip(), {}, q(No data returns empty hash));
 }
 
-sub lldp_ipv6 : Tests(4) {
+sub lldp_ipv6 : Tests(6) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -877,10 +910,20 @@ sub lldp_ipv6 : Tests(4) {
     q(A real IPv6 address is reported as given));
 
   $info->clear_cache();
+  $test->prime_std_lldp;
+  is_deeply(
+    $info->lldp_ipv6(),
+    {'0.15.1' => 'fe80:0000:0000:0000:0000:0000:0000:0001'},
+    q(LLDP-MIB IPv6 management addresses are used when LLDP-MIB has rows)
+  );
+  ok(!exists $info->{'_tp_lldp_rem_id'},
+    q(The TP-Link neighbor table is not loaded when LLDP-MIB has rows));
+
+  $info->clear_cache();
   is_deeply($info->lldp_ipv6(), {}, q(No data returns empty hash));
 }
 
-sub lldp_port : Tests(6) {
+sub lldp_port : Tests(8) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -898,6 +941,13 @@ sub lldp_port : Tests(6) {
   $info->{store}{tp_lldp_rem_desc} = {};
   is_deeply($info->lldp_port(), {},
     q(Neighbors with neither port field are omitted));
+
+  $info->clear_cache();
+  $test->prime_std_lldp;
+  is_deeply($info->lldp_port(), {'0.15.1' => 'gi1/0/6'},
+    q(LLDP-MIB remote ports are used when LLDP-MIB has rows));
+  ok(!exists $info->{'_tp_lldp_rem_id'},
+    q(The TP-Link neighbor table is not loaded when LLDP-MIB has rows));
 
   $info->clear_cache();
   is_deeply($info->lldp_port(), {}, q(No data returns empty hash));
@@ -928,7 +978,7 @@ sub lldp_id : Tests(4) {
   is_deeply($info->lldp_id(), {}, q(No data returns empty hash));
 }
 
-sub lldp_platform : Tests(5) {
+sub lldp_platform : Tests(7) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -947,10 +997,20 @@ sub lldp_platform : Tests(5) {
     q(Neighbors with neither field are omitted));
 
   $info->clear_cache();
+  $test->prime_std_lldp;
+  is_deeply(
+    $info->lldp_platform(),
+    {'0.15.1' => 'MES2324B 28-port 1G/10G Managed Switch'},
+    q(LLDP-MIB remote descriptions are used when LLDP-MIB has rows)
+  );
+  ok(!exists $info->{'_tp_lldp_rem_id'},
+    q(The TP-Link neighbor table is not loaded when LLDP-MIB has rows));
+
+  $info->clear_cache();
   is_deeply($info->lldp_platform(), {}, q(No data returns empty hash));
 }
 
-sub lldp_cap : Tests(5) {
+sub lldp_cap : Tests(7) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -978,6 +1038,13 @@ sub lldp_cap : Tests(5) {
 
   $info->{store}{tp_lldp_rem_cap_spt} = {'49167.1' => 'Gizmo'};
   is_deeply($info->lldp_cap(), {}, q(Only unknown words yields no entry));
+
+  $info->clear_cache();
+  $test->prime_std_lldp;
+  cmp_deeply($info->lldp_cap(), {'0.15.1' => bag('bridge', 'router')},
+    q(LLDP-MIB capability bits are decoded when LLDP-MIB has rows));
+  ok(!exists $info->{'_tp_lldp_rem_id'},
+    q(The TP-Link neighbor table is not loaded when LLDP-MIB has rows));
 
   $info->clear_cache();
   is_deeply($info->lldp_cap(), {}, q(No data returns empty hash));
