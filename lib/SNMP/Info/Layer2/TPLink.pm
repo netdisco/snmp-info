@@ -493,15 +493,15 @@ sub i_vlan {
     return \%out;
 }
 
-# TP-Link devices do not implement these proprietary neighbor discovery
-# protocols.  Provide explicit overrides to avoid mistaken detection
-# and to keep has_topo() clean for TP-Link devices.
-sub hasLLDP { return 1; }
-sub hasCDP { return; }
-sub hasFDP { return; }
-sub hasSONMP { return; }
-sub hasEDP { return; }
-sub hasAMAP { return; }
+# TP-Link switches may publish neighbors only in the TP-Link table.
+sub hasLLDP {
+    my $tp = shift;
+
+    return 1 if $tp->SUPER::hasLLDP();
+    my $tp_rem_id = $tp->tp_lldp_rem_id() || {};
+    return 1 if scalar keys %$tp_rem_id;
+    return;
+}
 
 # Decided once per device so neighbor keys never mix. Some models publish
 # LLDP-MIB remote rows, which then take precedence.
@@ -767,17 +767,10 @@ dropped. A port number resolves to the single C<u/s/number> interface
 (ambiguous on a stack), else an existing ifIndex, else C<bp_index>.
 Unresolved values stay as reported.
 
-=item hasAMAP
-
-=item hasCDP
-
-=item hasEDP
-
-=item hasFDP
-
 =item hasLLDP
 
-=item hasSONMP
+True when L<SNMP::Info::LLDP/hasLLDP> is true, or when the TP-Link
+neighbor table (C<tp_lldp_rem_id>) has rows. Otherwise false.
 
 =item i_duplex
 

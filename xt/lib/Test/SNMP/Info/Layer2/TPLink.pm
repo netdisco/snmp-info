@@ -119,46 +119,40 @@ sub os : Tests(2) {
   is($test->{info}->os(), 'tplink', q(OS returns 'tplink'));
 }
 
-sub hasLLDP : Tests(2) {
+sub hasLLDP : Tests(5) {
   my $test = shift;
+  my $info = $test->{info};
 
-  can_ok($test->{info}, 'hasLLDP');
-  ok($test->{info}->hasLLDP(), q(Device reports LLDP support));
+  can_ok($info, 'hasLLDP');
+
+  $info->{_lldp_sys_cap} = pack('H*', '2800');
+  ok($info->hasLLDP(), q(LLDP-MIB local capabilities report LLDP support));
+
+  $info->clear_cache();
+  $test->prime_std_lldp;
+  ok($info->hasLLDP(), q(LLDP-MIB neighbor rows report LLDP support));
+
+  $info->clear_cache();
+  $test->prime_tp_lldp;
+  ok($info->hasLLDP(),
+    q(TP-Link neighbor rows report LLDP support without LLDP-MIB));
+
+  $info->clear_cache();
+  ok(!$info->hasLLDP(), q(No LLDP data reports no LLDP support));
 }
 
-sub hasCDP : Tests(2) {
+sub has_topo : Tests(3) {
   my $test = shift;
+  my $info = $test->{info};
 
-  can_ok($test->{info}, 'hasCDP');
-  ok(!$test->{info}->hasCDP(), q(Device reports no CDP support));
-}
+  can_ok($info, 'has_topo');
 
-sub hasFDP : Tests(2) {
-  my $test = shift;
+  $test->prime_tp_lldp;
+  is_deeply($info->has_topo(), ['lldp'],
+    q(TP-Link neighbor rows give LLDP as the only topology protocol));
 
-  can_ok($test->{info}, 'hasFDP');
-  ok(!$test->{info}->hasFDP(), q(Device reports no FDP support));
-}
-
-sub hasSONMP : Tests(2) {
-  my $test = shift;
-
-  can_ok($test->{info}, 'hasSONMP');
-  ok(!$test->{info}->hasSONMP(), q(Device reports no SONMP support));
-}
-
-sub hasEDP : Tests(2) {
-  my $test = shift;
-
-  can_ok($test->{info}, 'hasEDP');
-  ok(!$test->{info}->hasEDP(), q(Device reports no EDP support));
-}
-
-sub hasAMAP : Tests(2) {
-  my $test = shift;
-
-  can_ok($test->{info}, 'hasAMAP');
-  ok(!$test->{info}->hasAMAP(), q(Device reports no AMAP support));
+  $info->clear_cache();
+  is($info->has_topo(), undef, q(No neighbor data returns undef));
 }
 
 sub model : Tests(5) {
