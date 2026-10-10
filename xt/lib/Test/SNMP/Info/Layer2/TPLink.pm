@@ -618,4 +618,90 @@ sub i_vlan_membership_untagged : Tests(3) {
   is_deeply($members->{32770}, [100], q(LAG range member untagged));
 }
 
+sub prime_fdb {
+  my ($test, $ports) = @_;
+  $test->{info}{store}{qb_fw_port} = $ports;
+  $test->{info}{_qb_fw_port}       = 1;
+  $test->{info}{store}{bp_index}   = {};
+  $test->{info}{_bp_index}         = 1;
+}
+
+sub _tp_bridge_port_ifindex : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  my $port_map = $info->_tp_port_map();
+  is($info->_tp_bridge_port_ifindex(5, $port_map),
+    49157, q(A single u/s/5 entry resolves the port number));
+  is($info->_tp_bridge_port_ifindex(99, $port_map),
+    undef, q(A number with no entry returns undef));
+
+  my $stack = {'1/0/5' => 49153, '2/0/5' => 49200};
+  is($info->_tp_bridge_port_ifindex(5, $stack),
+    undef, q(A number present on two stack units is ambiguous));
+  is($info->_tp_bridge_port_ifindex(50, {'1/0/5' => 49153}),
+    undef, q(A number only matching as a suffix does not resolve));
+}
+
+sub fw_port : Tests(7) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'fw_port');
+  $test->prime_fdb({
+    '1.8.85.49.126.102.254' => 0,
+    '1.8.0.39.251.118.93'   => 1,
+    '1.24.3.115.157.158.198' => 18,
+    '1.116.77.40.117.3.36'  => 49170,
+  });
+
+  my $fw = $info->fw_port();
+  ok(!exists $fw->{'1.8.85.49.126.102.254'},
+    q(Port 0 means not learned and is skipped));
+  is($fw->{'1.8.0.39.251.118.93'}, 49153,
+    q(Port 1 is port 1/0/1, not ifIndex 1 Vlan-interface1));
+  is($fw->{'1.24.3.115.157.158.198'}, 49170, q(Port 18 maps to 1/0/18));
+  is($fw->{'1.116.77.40.117.3.36'}, 49170, q(An existing ifIndex is kept));
+
+  $info->{store}{i_description}{49200} = 'gigabitEthernet 2/0/5';
+  $info->{store}{i_description}{49153} = 'gigabitEthernet 1/0/5';
+  $test->prime_fdb({'1.1.2.3.4.5.6' => 5});
+  is_deeply($info->fw_port(), {'1.1.2.3.4.5.6' => 5},
+    q(Port 5 on a stack is ambiguous and stays unresolved));
+
+  $info->clear_cache();
+  is_deeply($info->fw_port(), {}, q(No data returns empty hash));
+}
+
+sub qb_fw_port : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'qb_fw_port');
+  my $column = {'1.8.0.39.251.118.93' => 1, '1.24.3.115.157.158.198' => 18};
+  $test->prime_fdb({%$column});
+  is_deeply($info->qb_fw_port(), $column,
+    q(A present Q-BRIDGE column is returned unchanged));
+
+  delete $info->{store}{qb_fw_port};
+  delete $info->{_qb_fw_port};
+  $info->{_tpl2BridgeManageDynPort} = 1;
+  $info->{store}{tpl2BridgeManageDynPort} = {
+    '0.10.235.1.2.3.10' => '1/0/7',
+    '0.10.235.1.2.3.20' => '7',
+  };
+  is_deeply(
+    $info->qb_fw_port(),
+    {'10.0.10.235.1.2.3' => 49159, '20.0.10.235.1.2.3' => 49159},
+    q(Without Q-BRIDGE the vendor table resolves u/s/p and port numbers)
+  );
+
+  $info->{store}{tpl2BridgeManageDynPort} = {'0.10.235.1.2.3.30' => 'LAG9'};
+  is_deeply($info->qb_fw_port(), {'30.0.10.235.1.2.3' => 'LAG9'},
+    q(An unresolved vendor port keeps its raw value));
+
+  $info->clear_cache();
+  is_deeply($info->qb_fw_port(), {}, q(Both tables absent returns empty hash));
+}
+
 1;

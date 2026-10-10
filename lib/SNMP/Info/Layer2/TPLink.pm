@@ -698,108 +698,62 @@ sub lldp_port {
     return \%ports;
 }
 
-# Build Q-BRIDGE style forwarding table (dot1qTpFdbPort) from
-# TP-Link's tpl2BridgeManageDynAddrCtrlTable when the standard
-# Q-BRIDGE entries are not available. Keys are returned in the
-# form: "<vlan>.<mac-octet-1>.<mac-octet-2>..." which mirrors
-# dot1qTpFdbEntry indexing so SNMP::Info::Bridge helpers can
-# parse MAC and VLAN from the index.
+sub _tp_bridge_port_ifindex {
+    my ( $tp, $number, $port_map ) = @_;
+
+    my @matches = grep { m{^\d+/\d+/\Q$number\E$} } keys %$port_map;
+    return unless @matches == 1;
+    return $port_map->{ $matches[0] };
+}
+
+# Build the Q-BRIDGE style forwarding table (dot1qTpFdbPort) from
+# tpl2BridgeManageDynPort when the standard column is absent. Its index is
+# mac.vlan; the result is keyed vlan.mac like dot1qTpFdbEntry.
 sub qb_fw_port {
     my $tp      = shift;
     my $partial = shift;
 
-    # Prefer existing Q-BRIDGE data if present
     my $super = $tp->SUPER::qb_fw_port($partial) || {};
-    return $super if (ref {} eq ref $super and scalar keys %$super);
+    return $super if ( ref {} eq ref $super and scalar keys %$super );
 
-    # Vendor dynamic MAC table
     my $dyn_port = $tp->tpl2BridgeManageDynPort($partial) || {};
+    my $port_map = $tp->_tp_port_map();
+    my $bp_index = $tp->bp_index() || {};
+
     my %out;
-
-    # interfaces mapping for port string -> ifIndex resolution
-    my $interfaces = $tp->interfaces() || {};
-
     foreach my $key ( keys %$dyn_port ) {
         my $pval = $dyn_port->{$key};
         next unless defined $pval and $pval ne '';
 
-        # Index in the MIB is: tpl2BridgeManageDynMac . tpl2BridgeManageDynVlanId
         my @parts = split /\./, $key;
         next unless @parts >= 2;
-        my $vlan = pop @parts;    # last component is VLAN id
-        my @mac_octets = @parts; # remaining are MAC octets (decimal)
+        my $vlan = pop @parts;
 
-        # Build qb-style index: vlan.<mac-octets>
-        my $qb_idx = join('.', $vlan, @mac_octets);
-
-        # Resolve vendor port value to an ifIndex when possible.
         my $ifindex;
-        my $bp_index = $tp->bp_index() || {};
-
-        # Normalize port value and try several resolution strategies in order
-        # 1) If the value contains a textual port like '1/0/28', extract the
-        #    trailing numeric and try to match interface descriptions (fast).
-        # 2) If the value is numeric (e.g. '28'), try to match '/28' in
-        #    interface descriptions (handles many TP-Link formats).
-        # 3) Try direct bp_index lookup if the vendor returns bridge-port
-        #    numeric identifiers (rare on some firmwares).
-        my $portnum;
-        if ( $pval =~ /(?:\D|^)(\d+)\$/ ) {
-            $portnum = $1;
+        if ( $pval =~ m{^\d+/\d+/\d+$} ) {
+            $ifindex = $port_map->{$pval};
+        }
+        elsif ( $pval =~ /^\d+$/ ) {
+            $ifindex = $tp->_tp_bridge_port_ifindex( $pval, $port_map );
+            $ifindex = $bp_index->{$pval}
+                if !defined $ifindex and exists $bp_index->{$pval};
         }
 
-        if ( defined $portnum ) {
-            # Prefer matching by interface description containing '/<portnum>' or ' <portnum>' patterns
-            foreach my $iid ( keys %$interfaces ) {
-                my $descr = $interfaces->{$iid} || '';
-                if ( $descr =~ /\/$portnum(?:\b|\s|:)/ || $descr =~ /\b$portnum(?:\b|\s|:)/ ) {
-                    $ifindex = $iid;
-                    last;
-                }
-            }
-        }
-
-        # If not found yet and pval is purely numeric, try bp_index mapping
-        if ( !defined $ifindex && $pval =~ /^\d+$/ ) {
-            if ( exists $bp_index->{$pval} ) {
-                $ifindex = $bp_index->{$pval};
-            }
-        }
-
-        # Final fallback: if pval is textual (eg '1/0/28'), try substring match
-        if ( !defined $ifindex ) {
-            foreach my $iid ( keys %$interfaces ) {
-                my $descr = $interfaces->{$iid} || '';
-                if ( $descr =~ /\Q$pval\E/ ) {
-                    $ifindex = $iid;
-                    last;
-                }
-            }
-        }
-
-        # If we couldn't resolve to an ifIndex, still expose the raw port
-        # string so callers can inspect it; Netdisco will prefer numeric
-        # ifIndex values but having the raw value is useful for diagnostics.
-        $out{$qb_idx} = defined $ifindex ? $ifindex : $pval;
+        $out{ join( '.', $vlan, @parts ) }
+            = defined $ifindex ? $ifindex : $pval;
     }
 
     return \%out;
 }
 
-# Override fw_port to ensure values are actual ifIndex where possible.
-# Some TP-Link devices return small bridge-port numbers (e.g. '28') which
-# Netdisco then looks up via bp_index(). On these devices bp_index() itself
-# uses high ifIndex-like keys, so we prefer resolving port identifiers to
-# the real ifIndex by matching interface descriptions or consulting
-# vendor tables. This keeps macsuck from skipping MACs with "no bp_index".
+# Netdisco looks fw_port values up in bp_index(), which is empty on these
+# devices, so resolve bridge-port numbers to ifIndex here.
 sub fw_port {
     my $tp      = shift;
     my $partial = shift;
 
-    # Get standard BRIDGE-MIB fw_port (dot1dTpFdbPort) from superclass
     my $fw = $tp->SUPER::fw_port($partial) || {};
 
-    # If Q-BRIDGE data is available and BRIDGE empty, prefer that
     unless ( keys %$fw ) {
         my $qb = $tp->qb_fw_port($partial) || {};
         $fw = $qb if keys %$qb;
@@ -807,6 +761,7 @@ sub fw_port {
 
     my $interfaces = $tp->interfaces() || {};
     my $bp_index   = $tp->bp_index()    || {};
+    my $port_map   = $tp->_tp_port_map();
 
     my %out;
     foreach my $idx ( keys %$fw ) {
@@ -814,43 +769,20 @@ sub fw_port {
         next unless defined $portval and $portval ne '';
 
         my $ifindex;
-
-        # If the port value looks like a numeric ID (bridge-port or ifIndex)
         if ( $portval =~ /^\d+$/ ) {
-            # If it's already an ifIndex, accept it
-            if ( exists $interfaces->{$portval} ) {
+            next if $portval == 0;
+            $ifindex = $tp->_tp_bridge_port_ifindex( $portval, $port_map );
+            if ( !defined $ifindex and exists $interfaces->{$portval} ) {
                 $ifindex = $portval;
             }
-            else {
-                # Try to find an interface whose description contains this
-                # numeric port (e.g. '/28' or ' 28'). This handles '1/0/28'
-                foreach my $iid ( keys %$interfaces ) {
-                    my $descr = $interfaces->{$iid} || '';
-                    if ( $descr =~ /\/$portval(?:\b|\s|:)/ || $descr =~ /\b$portval(?:\b|\s|:)/ ) {
-                        $ifindex = $iid;
-                        last;
-                    }
-                }
-            }
-
-            # If still not found, check if bp_index maps this bridge-port
-            if ( !defined $ifindex && exists $bp_index->{$portval} ) {
+            if ( !defined $ifindex and exists $bp_index->{$portval} ) {
                 $ifindex = $bp_index->{$portval};
             }
         }
         else {
-            # Textual port (like '1/0/28' or 'GigabitEthernet1/0/28')
-            # Try exact substring match against interface descriptions
-            foreach my $iid ( keys %$interfaces ) {
-                my $descr = $interfaces->{$iid} || '';
-                if ( $descr =~ /\Q$portval\E/ ) {
-                    $ifindex = $iid;
-                    last;
-                }
-            }
+            $ifindex = $port_map->{$portval};
         }
 
-        # Final fallback: keep original value so callers can inspect it
         $out{$idx} = defined $ifindex ? $ifindex : $portval;
     }
 
@@ -885,6 +817,12 @@ and exposes TP-Link specific globals when available.
 =over
 
 =item fw_port
+
+Forwarding table ports as ifIndex, from BRIDGE-MIB or else
+L</qb_fw_port>. Port 0 (not learned) is dropped. A port number resolves to
+the single C<u/s/number> interface (ambiguous on a stack), else an existing
+ifIndex, else C<bp_index>. Unresolved values stay as reported.
+
 =item hasAMAP
 =item hasCDP
 =item hasEDP
@@ -967,6 +905,13 @@ C<{1 =E<gt> 'on'}> when C<tp_power_limit> is reported, else an empty hash.
 C<{1 =E<gt> $watts}> from C<tp_power_limit>, else an empty hash.
 
 =item qb_fw_port
+
+Q-BRIDGE C<dot1qTpFdbPort> when present, otherwise built from
+C<tpl2BridgeManageDynPort> (index C<mac.vlan>) and rekeyed C<vlan.mac>. A
+C<u/s/p> value resolves through the interface port map, a port number
+through the single C<u/s/number> interface, then C<bp_index>. Unresolved
+values stay as reported.
+
 =item serial
 
 Serial number from C<tp_sysinfo_serial>, or undef when absent or blank.
