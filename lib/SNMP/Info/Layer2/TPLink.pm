@@ -735,256 +735,660 @@ __END__
 
 SNMP::Info::Layer2::TPLink - SNMP Interface to TP-Link Layer2 devices
 
+=head1 AUTHORS
+
+Dmitry Sergienko <dmitry.sergienko@gmail.com> and Eric Miller
+
+based on work by the
+Netdisco Developer Team
+
 =head1 SYNOPSIS
 
- my $tp = new SNMP::Info(
-                      AutoSpecify => 1,
-                      Debug       => 1,
-                      DestHost    => 'tplink-switch',
-                      Community   => 'public',
-                      Version     => 2
-                    )
-    or die "Can't connect to DestHost.\n";
+ # Let SNMP::Info determine the correct subclass for you.
+ my $tplink = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          DestHost    => 'myswitch',
+                          Community   => 'public',
+                          Version     => 2
+                        )
+  or die "Can't connect to DestHost.\n";
+
+ my $class = $tplink->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
 
 =head1 DESCRIPTION
 
-Subclass for TP-Link Layer2 devices. Inherits from L<SNMP::Info::Layer2>
-and exposes TP-Link specific globals when available.
+Provides abstraction to the configuration information obtainable from a
+TP-Link JetStream or Omada switch through SNMP. TP-Link private MIBs
+supply system information, VLANs, PoE, spanning tree, LLDP neighbors and
+the dynamic address table where the standard MIBs are absent or
+incomplete.
 
-=head1 METHODS
-
-Every C<lldp_*> method below defers to L<SNMP::Info::LLDP> when LLDP-MIB
-C<lldp_rem_id> has rows, and otherwise reads the TP-Link neighbor table,
-keyed C<ifIndex.remIdx>.
+=head2 Inherited Classes
 
 =over
 
-=item fw_port
+=item SNMP::Info::EtherLike
 
-Forwarding table ports as ifIndex, from L</qb_fw_port> (Q-BRIDGE or the
-TP-Link dynamic table) or else BRIDGE-MIB. Port 0 (not learned) is
-dropped. A port number resolves to the single C<u/s/number> interface
-(ambiguous on a stack), else an existing ifIndex, else C<bp_index>.
-Unresolved values stay as reported.
+=item SNMP::Info::Layer2
 
-=item hasLLDP
+=back
 
-True when L<SNMP::Info::LLDP/hasLLDP> is true, or when the TP-Link
-neighbor table (C<tp_lldp_rem_id>) has rows. Otherwise false.
+=head2 Required MIBs
 
-=item i_duplex
+=over
 
-Duplex per ifIndex. Uses C<el_duplex> (EtherLike, C<full> or C<half>, other
-states omitted) when it returns any rows, otherwise parses
-C<tp_lldp_oper_mau> (C<unknown> when the string has no duplex).
+=item F<TPLINK-SYSINFO-MIB>
 
-=item i_name
+=item F<TPLINK-MIB>
 
-Port name per ifIndex: C<i_alias> when not blank, else the ifName. When
-C<i_alias> has no rows, C<tp_port_config_descr> supplies the alias instead.
+=item F<TPLINK-LLDP-MIB>
 
-=item i_vlan
+=item F<TPLINK-DOT1Q-VLAN-MIB>
 
-PVID per ifIndex from C<tp_vlan_port_pvid>; when that column is empty, the
-VLAN a port is untagged in, for ports untagged in exactly one VLAN.
+=item F<TPLINK-PORTCONFIG-MIB>
 
-=item i_vlan_membership
+=item F<TPLINK-SPANNING-TREE-MIB>
 
-VLAN IDs per ifIndex (arrayref, sorted, no repeats) from the tagged and
-untagged port lists. Tokens the parser does not know, such as C<Tunnel1>, are
-skipped. Q-BRIDGE is not polled.
+=item F<TPLINK-L2BRIDGE-MIB>
 
-=item i_vlan_membership_untagged
+=item F<TPLINK-POWER-OVER-ETHERNET-MIB>
 
-VLAN IDs per ifIndex from the untagged port lists only.
+=back
 
-=item lldp_cap
+=head2 Inherited MIBs
 
-Remote capabilities per neighbor (arrayref of LLDP-MIB names such as
-C<bridge> and C<router>), parsed from the C<tp_lldp_rem_cap_spt> text.
-Unknown words are dropped.
+See L<SNMP::Info::EtherLike/"Required MIBs"> for its MIB requirements.
 
-=item lldp_id
+See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
-Remote chassis id per neighbor from C<tp_lldp_rem_id>, as reported.
+=head1 GLOBALS
 
-=item lldp_if
+These are methods that return scalar value from SNMP
 
-Local ifIndex per neighbor. With TP-Link neighbor data, the first component
-of the C<ifIndex.remIdx> index. With LLDP-MIB neighbors, the local port
-number in the index is mapped through C<lldpLocPortId> to the interface
-whose C<ifDescr> matches exactly; a port with no exact match keeps the
-result of the inherited C<lldp_if>.
+=over
 
-=item lldp_ip
+=item $tplink->vendor()
 
-Remote IPv4 management address per neighbor from C<tp_lldp_rman>.
-C<::a.b.c.d> is returned as C<a.b.c.d>; C<::> and IPv6 are omitted.
+Returns 'TP-Link'
 
-=item lldp_ipv6
+=item $tplink->os()
 
-Remote IPv6 management address per neighbor from C<tp_lldp_rman>, as
-reported. C<::> and C<::a.b.c.d> are omitted.
+Returns 'tplink'
 
-=item lldp_platform
+=item $tplink->os_ver()
 
-Remote platform per neighbor: C<tp_lldp_rem_sysdesc>, else
-C<tp_lldp_rem_sysname>.
+Returns the software version from C<tp_sysinfo_swver>. When that is
+absent or empty, returns the first dotted number found in C<sysDescr>.
 
-=item lldp_port
+=item $tplink->model()
 
-Remote port per neighbor: C<tp_lldp_rem_pid>, else C<tp_lldp_rem_desc>.
+Returns C<tp_sysinfo_descr> with trailing space removed, followed by
+C<tp_sysinfo_hwver> unless the description already contains it. When the
+description is absent or blank, returns C<sysDescr>.
 
-=item mac
+=item $tplink->serial()
 
-Base MAC address from C<b_mac>, else from C<tp_sysinfo_mac> in upper case
-with colon separators.
+Returns the serial number from C<tp_sysinfo_serial>, or undef when it is
+absent or blank.
 
-=item model
+=item $tplink->mac()
 
-=item munge_power
+Returns the base MAC address from C<b_mac>. When that is absent, returns
+C<tp_sysinfo_mac> in upper case with colon separators.
 
-=item munge_tp_pvid
+=item $tplink->tp_sysinfo_descr()
+
+Returns the TP-Link system description, which holds the product name.
+
+(C<tpSysInfoDescription>)
+
+=item $tplink->tp_sysinfo_hostname()
+
+Returns the administratively assigned host name.
+
+(C<tpSysInfoHostName>)
+
+=item $tplink->tp_sysinfo_hwver()
+
+Returns the hardware version of the product.
+
+(C<tpSysInfoHwVersion>)
+
+=item $tplink->tp_sysinfo_swver()
+
+Returns the software version of the product.
+
+(C<tpSysInfoSwVersion>)
+
+=item $tplink->tp_sysinfo_mac()
+
+Returns the system MAC address as text, for example
+C<74-DA-88-68-2A-D2>.
+
+(C<tpSysInfoMacAddr>)
+
+=item $tplink->tp_sysinfo_serial()
+
+Returns the serial number. netdisco-mibs names this object
+C<tpSysInfoUpTime>, so it is polled by number (netdisco/netdisco-mibs#281).
+
+(C<tpSysInfoSerialNum>, .1.3.6.1.4.1.11863.6.1.1.8.0)
+
+=item $tplink->tp_power_limit()
+
+Returns the maximum power the PoE switch supplies, in watts.
+
+(C<tpSystemPowerLimit>)
+
+=item $tplink->tp_power_consumption()
+
+Returns the real time PoE power consumption, in watts.
+
+(C<tpSystemPowerConsumption>)
+
+=item $tplink->tp_power_remain()
+
+Returns the real time remaining PoE power, in watts.
+
+(C<tpSystemPowerRemain>)
+
+=item $tplink->ps1_status()
+
+Returns the internal power supply status as the device reports it.
+netdisco-mibs lacks F<TPLINK-POWERSUPPLYUNIT-MIB>, so it is polled by
+number (netdisco/netdisco-mibs#281).
+
+(C<powerSupplyUnitInternalPower>, .1.3.6.1.4.1.11863.6.88.1.1.3.0)
+
+=item $tplink->ps2_status()
+
+Returns the external power supply status as the device reports it.
+netdisco-mibs lacks F<TPLINK-POWERSUPPLYUNIT-MIB>, so it is polled by
+number (netdisco/netdisco-mibs#281).
+
+(C<powerSupplyUnitExternalPower>, .1.3.6.1.4.1.11863.6.88.1.1.4.0)
+
+=back
+
+=head2 Overrides
+
+=over
+
+=item $tplink->hasLLDP()
+
+Returns true when L<SNMP::Info::LLDP/hasLLDP> is true, or when the TP-Link
+neighbor table (C<tp_lldp_rem_id>) has rows. Otherwise returns false.
+
+=item $tplink->stp_ver()
+
+Returns the spanning tree mode: C<stp>, C<rstp> or C<mstp>.
+
+(C<tpStpMode>)
+
+=item $tplink->stp_time()
+
+Returns the time of the last topology change as text.
+
+(C<tpStpLastTopologyChangeTime>)
+
+=item $tplink->stp_root()
+
+Returns the CIST root bridge.
+
+(C<tpStpCISTRoot>)
+
+=item $tplink->stp_root_port()
+
+Returns the root port.
+
+(C<tpStpRootPort>)
+
+=item $tplink->stp_priority()
+
+Returns the bridge priority in the CIST.
+
+(C<tpStpCistPriority>)
+
+=item $tplink->v_index()
+
+Mapped to the TP-Link VLAN ID column in place of the Q-BRIDGE VLAN index.
+
+(C<TPLINK-DOT1Q-VLAN-MIB::dot1qVlanId>)
+
+=item $tplink->v_name()
+
+Mapped to the TP-Link VLAN description in place of the Q-BRIDGE VLAN name.
+
+(C<TPLINK-DOT1Q-VLAN-MIB::dot1qVlanDescription>)
+
+=back
+
+=head2 Global Methods imported from SNMP::Info::EtherLike
+
+See L<SNMP::Info::EtherLike/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::Layer2
+
+See L<SNMP::Info::Layer2/"GLOBALS"> for details.
+
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a
+reference to a hash.
+
+=head2 Overrides
+
+=over
+
+=item $tplink->i_name()
+
+Returns reference to hash. Port name per ifIndex: C<i_alias> when not
+blank, else C<ifName>. When C<i_alias> has no rows,
+C<tp_port_config_descr> supplies the alias instead.
+
+=item $tplink->i_duplex()
+
+Returns reference to hash. Duplex per ifIndex. Uses C<el_duplex>
+(EtherLike, C<full> or C<half>, other states omitted) when it returns any
+rows, otherwise parses C<tp_lldp_oper_mau> (C<unknown> when the string has
+no duplex).
+
+=item $tplink->i_duplex_admin()
+
+Returns reference to hash. Configured duplex per port: C<half>, C<full>
+or C<auto>.
+
+(C<tpPortConfigDuplex>)
+
+=item $tplink->i_speed_admin()
+
+Returns reference to hash. Configured speed per port, for example
+C<speed-1Gigabps> or C<auto>.
+
+(C<tpPortConfigSpeed>)
+
+=item $tplink->fw_port()
+
+Returns reference to hash of forwarding table entries port interface
+identifier (iid). Values come from C<qb_fw_port> (Q-BRIDGE or the TP-Link
+dynamic table) or else BRIDGE-MIB. Port 0 (not learned) is dropped. A port
+number resolves to the single C<u/s/number> interface (ambiguous on a
+stack), else an existing ifIndex, else C<bp_index>. Unresolved values stay
+as reported.
+
+=item $tplink->qb_fw_port()
+
+Returns reference to hash of Q-BRIDGE forwarding table ports, keyed
+C<vlan.mac>. Uses C<dot1qTpFdbPort> when present, otherwise builds it from
+C<tpl2BridgeManageDynPort> (index C<mac.vlan>). A C<u/s/p> value resolves
+through the interface port map, a port number through the single
+C<u/s/number> interface, then C<bp_index>. Unresolved values stay as
+reported.
+
+=back
+
+=head2 TP-Link VLAN Port Table (C<vlanPortConfigTable>, C<vlanConfigTable>)
+
+=over
+
+=item $tplink->i_vlan()
+
+Returns reference to hash. PVID per ifIndex from C<tp_vlan_port_pvid>.
+When that column is empty, the VLAN a port is untagged in, for ports
+untagged in exactly one VLAN.
+
+=item $tplink->i_vlan_membership()
+
+Returns reference to hash of arrays: key = ifIndex, value = array of VLAN
+IDs (sorted, no repeats) from the tagged and untagged port lists. Tokens
+the parser does not know, such as C<Tunnel1>, are skipped. Q-BRIDGE is not
+polled.
+
+=item $tplink->i_vlan_membership_untagged()
+
+Returns reference to hash of arrays: key = ifIndex, value = array of VLAN
+IDs from the untagged port lists only.
+
+=item $tplink->tp_vlan_port_pvid()
+
+Returns reference to hash. PVID per ifIndex. netdisco-mibs names column 2
+C<vlanPortType> with enumerated labels, so the device may return C<trunk>
+for VLAN 1; C<munge_tp_pvid> maps the label back. It is polled by number
+(netdisco/netdisco-mibs#281).
+
+(C<vlanPortPvid>, .1.3.6.1.4.1.11863.6.14.1.1.1.1.2)
+
+=item $tplink->tp_vlan_tagged()
+
+Returns reference to hash. Tagged member port list per VLAN ID, as text
+such as C<1/0/15-18,LAG1>.
+
+(C<vlanTagPortMemberAdd>)
+
+=item $tplink->tp_vlan_untagged()
+
+Returns reference to hash. Untagged member port list per VLAN ID, as text.
+
+(C<vlanUntagPortMemberAdd>)
+
+=back
+
+=head2 Power Over Ethernet Port Table
+
+These methods emulate the F<POWER-ETHERNET-MIB> Power Source Entity (PSE)
+Port Table C<pethPsePortTable> methods using the
+F<TPLINK-POWER-OVER-ETHERNET-MIB> PoE Port Configuration Table
+C<tpPoePortConfigTable>. Entries are keyed C<unit.port> with unit 1; ports
+without a matching interface are omitted.
+
+=over
+
+=item $tplink->peth_port_ifindex()
+
+Returns reference to hash. Maps C<unit.port> to ifIndex for every port in
+C<tp_peth_port_admin> that has an interface.
+
+=item $tplink->peth_port_admin()
+
+Administrative status: is this port permitted to deliver power? C<true>
+or C<false>, from C<tp_peth_port_admin>.
+
+=item $tplink->peth_port_status()
+
+Current status, from C<tp_peth_port_status>: C<on> is
+C<deliveringPower>; C<off> and C<turning-on> are C<searching>;
+C<overload>, C<short>, C<voltage-high>, C<voltage-low>, C<hardware-fault>
+and C<overtemperature> are C<fault>; anything else is C<otherFault>. A
+port with C<tp_peth_port_admin> C<disable> is C<disabled>.
+
+=item $tplink->peth_port_class()
+
+Device class as the device reports it, for example C<class3>, from
+C<tp_peth_port_class>.
+
+=item $tplink->peth_port_power()
+
+The power, in milliwatts, that the port is delivering, from
+C<tp_peth_port_power>.
+
+=item $tplink->peth_power_watts()
+
+The PoE power budget, in watts: C<{1 =E<gt> $watts}> from
+C<tp_power_limit>, else an empty hash.
+
+=item $tplink->peth_power_status()
+
+The PoE module status: C<{1 =E<gt> 'on'}> when C<tp_power_limit> is
+reported, else an empty hash.
+
+=item $tplink->tp_peth_port_admin()
+
+Returns reference to hash. PoE enabled per port number: C<disable> or
+C<enable>.
+
+(C<tpPoePortStatus>)
+
+=item $tplink->tp_peth_port_status()
+
+Returns reference to hash. PoE power state per port number, for example
+C<on>, C<off> or C<overload>.
+
+(C<tpPoePowerStatus>)
+
+=item $tplink->tp_peth_port_class()
+
+Returns reference to hash. PoE class per port number.
+
+(C<tpPoeClass>)
+
+=item $tplink->tp_peth_port_power()
+
+Returns reference to hash. Real time power per port number, in units of
+0.1 W.
+
+(C<tpPoePower>)
+
+=back
+
+=head2 LLDP Neighbor Information
+
+The neighbor source is decided once per device: LLDP-MIB when it has
+remote rows, in which case these methods defer to L<SNMP::Info::LLDP>,
+otherwise the F<TPLINK-LLDPINFO-MIB> C<lldpNeighborInfoTable>, keyed
+C<ifIndex.remIdx>.
+
+=over
+
+=item $tplink->lldp_if()
+
+Returns reference to hash. Local ifIndex per neighbor. With TP-Link
+neighbor data, the first component of the C<ifIndex.remIdx> index. With
+LLDP-MIB neighbors, the local port number in the index is mapped through
+C<lldpLocPortId> to the interface whose C<ifDescr> matches exactly; a port
+with no exact match keeps the result of the inherited C<lldp_if>.
+
+=item $tplink->lldp_ip()
+
+Returns reference to hash. Remote IPv4 management address per neighbor
+from C<tp_lldp_rman>. C<::a.b.c.d> is returned as C<a.b.c.d>; C<::> and
+IPv6 are omitted.
+
+=item $tplink->lldp_ipv6()
+
+Returns reference to hash. Remote IPv6 management address per neighbor
+from C<tp_lldp_rman>, as reported. C<::> and C<::a.b.c.d> are omitted.
+
+=item $tplink->lldp_port()
+
+Returns reference to hash. Remote port per neighbor: C<tp_lldp_rem_pid>,
+else C<tp_lldp_rem_desc>.
+
+=item $tplink->lldp_id()
+
+Returns reference to hash. Remote chassis id per neighbor from
+C<tp_lldp_rem_id>, as reported.
+
+=item $tplink->lldp_platform()
+
+Returns reference to hash. Remote platform per neighbor:
+C<tp_lldp_rem_sysdesc>, else C<tp_lldp_rem_sysname>.
+
+=item $tplink->lldp_cap()
+
+Returns reference to hash of arrays. Remote capabilities per neighbor as
+LLDP-MIB names such as C<bridge> and C<router>, parsed from the
+C<tp_lldp_rem_cap_spt> text. Unknown words are dropped.
+
+=item $tplink->tp_lldp_rem_id()
+
+Returns reference to hash. Remote chassis id as text, for example
+C<48:A9:8A:C1:AC:58>.
+
+(C<lldpNeighborChassisId>)
+
+=item $tplink->tp_lldp_rem_pid()
+
+Returns reference to hash. Remote port id (column 6). Column 1,
+C<lldpNeighborPortId>, is the local port.
+
+(C<lldpNeighborPortIdDescr>)
+
+=item $tplink->tp_lldp_rem_desc()
+
+Returns reference to hash. Remote port description.
+
+(C<lldpNeighborPortDescr>)
+
+=item $tplink->tp_lldp_rem_sysname()
+
+Returns reference to hash. Remote system name.
+
+(C<lldpNeighborDeviceName>)
+
+=item $tplink->tp_lldp_rem_sysdesc()
+
+Returns reference to hash. Remote system description.
+
+(C<lldpNeighborDeviceDescr>)
+
+=item $tplink->tp_lldp_rem_cap_spt()
+
+Returns reference to hash. Remote capabilities as text, for example
+C<Bridge Router>.
+
+(C<lldpNeighborCapAvailable>)
+
+=item $tplink->tp_lldp_rman()
+
+Returns reference to hash. Remote management address as text, for
+example C<::169.254.2.131>.
+
+(C<lldpNeighborManageIpAddr>)
+
+=item $tplink->tp_lldp_oper_mau()
+
+Returns reference to hash. Local operational MAU per ifIndex, for example
+C<speed(1000M)/duplex(Full)>. Used by C<i_duplex> when EtherLike is
+absent.
+
+(C<lldpLocalOperMau>)
+
+=back
+
+=head2 Spanning Tree Port Table
+
+These methods map the F<TPLINK-SPANNING-TREE-MIB> objects onto the
+L<SNMP::Info::Bridge> spanning tree methods.
+
+=over
+
+=item $tplink->stp_i_root()
+
+Returns reference to hash. CIST root bridge.
+
+(C<tpStpCISTRoot>)
+
+=item $tplink->stp_i_time()
+
+Returns reference to hash. Time of the last topology change.
+
+(C<tpStpLastTopologyChangeTime>)
+
+=item $tplink->stp_i_root_port()
+
+Returns reference to hash. Root port.
+
+(C<tpStpRootPort>)
+
+=item $tplink->stp_i_priority()
+
+Returns reference to hash. Bridge priority in the CIST.
+
+(C<tpStpCistPriority>)
+
+=item $tplink->stp_p_id()
+
+Returns reference to hash. Port number of the switch.
+
+(C<tpStpPortNumber>)
+
+=item $tplink->stp_p_priority()
+
+Returns reference to hash. Port priority.
+
+(C<tpStpPortPriority>)
+
+=item $tplink->stp_p_state()
+
+Returns reference to hash. Port state, for example C<blocking> or
+C<forwarding>.
+
+(C<tpStpPortStatus>)
+
+=item $tplink->stp_p_cost()
+
+Returns reference to hash. Internal path cost of the port.
+
+(C<tpStpPortInPathCost>)
+
+=item $tplink->stp_p_role()
+
+Returns reference to hash. Port role, for example C<root> or
+C<designated>.
+
+(C<tpStpPortRole>)
+
+=item $tplink->is_edgeport_admin()
+
+Returns reference to hash. Edge port setting: C<disable> or C<enable>.
+
+(C<tpStpEdgePortStatus>)
+
+=item $tplink->is_edgeport_oper()
+
+Returns reference to hash. Edge port status, read from the same object as
+C<is_edgeport_admin>.
+
+(C<tpStpEdgePortStatus>)
+
+=back
+
+=head2 Port Configuration and Dynamic Address Tables
+
+=over
+
+=item $tplink->tp_port_config_descr()
+
+Returns reference to hash. Port description, used by C<i_name> when
+C<ifAlias> has no rows.
+
+(C<tpPortConfigDescription>)
+
+=item $tplink->tpl2BridgeManageDynMac()
+
+Returns reference to hash. Dynamic MAC address, indexed C<mac.vlan>.
+
+(C<tpl2BridgeManageDynMac>)
+
+=item $tplink->tpl2BridgeManageDynVlanId()
+
+Returns reference to hash. VLAN ID of the dynamic MAC address.
+
+(C<tpl2BridgeManageDynVlanId>)
+
+=item $tplink->tpl2BridgeManageDynPort()
+
+Returns reference to hash. Port of the dynamic MAC address, as a
+C<u/s/p> name or a port number. Used by C<qb_fw_port> when Q-BRIDGE is
+absent.
+
+(C<tpl2BridgeManageDynPort>)
+
+=back
+
+=head2 Table Methods imported from SNMP::Info::EtherLike
+
+See L<SNMP::Info::EtherLike/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
+
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item $tplink->munge_power()
+
+Converts tenths of a watt to watts. Undef and zero return 0.
+
+=item $tplink->munge_tp_pvid()
 
 Maps the C<vlanPortType> labels C<access>, C<trunk> and C<general> back to
 C<0>, C<1> and C<2>; other values are returned unchanged.
 
-=item os
-
-=item os_ver
-
-=item peth_port_admin
-
-PoE admin state per C<unit.port> (C<true> or C<false>) from
-C<tp_peth_port_admin>. Ports without a matching interface are omitted.
-
-=item peth_port_class
-
-PoE class per C<unit.port> from C<tp_peth_port_class>.
-
-=item peth_port_ifindex
-
-Maps C<unit.port> to ifIndex for every port in C<tp_peth_port_admin> that
-has an interface. Unit is always 1.
-
-=item peth_port_power
-
-PoE power per C<unit.port> in milliwatts from C<tp_peth_port_power>.
-
-=item peth_port_status
-
-PoE detection state per C<unit.port> from C<tp_peth_port_status>:
-C<deliveringPower> (on), C<searching> (off, turning-on), C<fault> (overload,
-short, voltage and hardware faults, overtemperature) or C<otherFault>
-(anything else). A port with C<tp_peth_port_admin> C<disable> is
-C<disabled>.
-
-=item peth_power_status
-
-C<{1 =E<gt> 'on'}> when C<tp_power_limit> is reported, else an empty hash.
-
-=item peth_power_watts
-
-C<{1 =E<gt> $watts}> from C<tp_power_limit>, else an empty hash.
-
-=item qb_fw_port
-
-Q-BRIDGE C<dot1qTpFdbPort> when present, otherwise built from
-C<tpl2BridgeManageDynPort> (index C<mac.vlan>) and rekeyed C<vlan.mac>. A
-C<u/s/p> value resolves through the interface port map, a port number
-through the single C<u/s/number> interface, then C<bp_index>. Unresolved
-values stay as reported.
-
-=item serial
-
-Serial number from C<tp_sysinfo_serial>, or undef when absent or blank.
-
-=item vendor
-
 =back
-
-=head2 Globals
-
-=over
-
-=item tp_sysinfo_serial
-
-C<tpSysInfoSerialNum>, C<.1.3.6.1.4.1.11863.6.1.1.8.0>.
-
-=item ps1_status
-
-C<powerSupplyUnitInternalPower>, C<.1.3.6.1.4.1.11863.6.88.1.1.3.0>.
-Returned as the device reports it.
-
-=item ps2_status
-
-C<powerSupplyUnitExternalPower>, C<.1.3.6.1.4.1.11863.6.88.1.1.4.0>.
-Returned as the device reports it.
-
-=back
-
-=head2 Table Methods
-
-=over
-
-=item tp_vlan_port_pvid
-
-C<vlanPortPvid>, C<.1.3.6.1.4.1.11863.6.14.1.1.1.1.2>. netdisco-mibs names
-this column C<vlanPortType>, so the device may return C<trunk> for VLAN 1;
-C<munge_tp_pvid> maps the label back.
-
-=item tp_vlan_tagged
-
-C<vlanTagPortMemberAdd>, tagged port list per VLAN ID.
-
-=item tp_vlan_untagged
-
-C<vlanUntagPortMemberAdd>, untagged port list per VLAN ID.
-
-=item tp_lldp_rem_id
-
-C<lldpNeighborChassisId>, remote chassis id as text, for example
-C<48:A9:8A:C1:AC:58>. The neighbor table index is C<ifIndex.remIdx>.
-
-=item tp_lldp_rem_pid
-
-C<lldpNeighborPortIdDescr> (column 6), remote port id. Column 1,
-C<lldpNeighborPortId>, is the local port.
-
-=item tp_lldp_rem_desc
-
-C<lldpNeighborPortDescr>, remote port description.
-
-=item tp_lldp_rem_sysname
-
-C<lldpNeighborDeviceName>, remote system name.
-
-=item tp_lldp_rem_sysdesc
-
-C<lldpNeighborDeviceDescr>, remote system description.
-
-=item tp_lldp_rem_cap_spt
-
-C<lldpNeighborCapAvailable>, remote capabilities as text, for example
-C<Bridge Router>.
-
-=item tp_lldp_rman
-
-C<lldpNeighborManageIpAddr>, remote management address as text, for
-example C<::169.254.2.131>.
-
-=item tp_lldp_oper_mau
-
-C<lldpLocalOperMau> from TPLINK-LLDPINFO-MIB, for example
-C<speed(1000M)/duplex(Full)>. Used by C<i_duplex> when EtherLike is absent.
-
-=back
-
-=head1 AUTHOR
-
-Dmitry Sergienko <dmitry.sergienko@gmail.com>
-
-based on work by the
-Netdisco Developer Team
 
 =cut
