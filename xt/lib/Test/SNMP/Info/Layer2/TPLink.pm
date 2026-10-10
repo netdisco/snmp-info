@@ -871,7 +871,7 @@ sub _tp_lldp_standard : Tests(6) {
     q(After clear_cache the decision follows the new data));
 }
 
-sub lldp_if : Tests(5) {
+sub lldp_if : Tests(8) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -892,6 +892,46 @@ sub lldp_if : Tests(5) {
 
   $info->clear_cache();
   is_deeply($info->lldp_if(), {}, q(No data returns empty hash));
+
+  $info->clear_cache();
+  $test->prime_std_lldp;
+  $info->{_lldp_lport_id} = 1;
+  $info->{store}{lldp_lport_id} = {
+    15 => 'gigabitEthernet 1/0/15',
+    16 => 'gigabitEthernet 1/0/16',
+  };
+  $info->{store}{lldp_rem_pid}
+    = {'0.15.1' => 'gi1/0/6', '0.16.1' => 'gi1/0/7'};
+  $info->{store}{lldp_lport_desc} = {15 => 'MKR', 16 => 'MKR'};
+  $info->{store}{i_alias} = {49167 => 'MKR', 49168 => 'MKR'};
+  $info->{sess}{Data}
+    = {'LLDP-MIB::lldpLocPortDesc' => {15 => 'MKR', 16 => 'MKR'}};
+  is_deeply(
+    $info->lldp_if(),
+    {'0.15.1' => 49167, '0.16.1' => 49168},
+    q(Ports sharing an alias map through lldpLocPortId, not the alias)
+  );
+
+  $info->{store}{lldp_lport_id}
+    = {15 => 'gigabitEthernet 1/0/15', 16 => 'unknown 16'};
+  $info->{store}{i_alias} = {49167 => 'MKR'};
+  $info->{sess}{Data} = {
+    'LLDP-MIB::lldpLocPortDesc' =>
+      {15 => 'MKR', 16 => 'gigabitEthernet 1/0/2'}
+  };
+  is_deeply(
+    $info->lldp_if(),
+    {'0.15.1' => 49167, '0.16.1' => 49154},
+    q(An unmatched lldpLocPortId falls back to the inherited mapping)
+  );
+
+  delete $info->{store}{lldp_lport_id};
+  delete $info->{_lldp_lport_id};
+  is_deeply(
+    $info->lldp_if(),
+    {'0.15.1' => 49167, '0.16.1' => 49154},
+    q(An absent lldpLocPortId column uses the inherited mapping)
+  );
 }
 
 sub lldp_ip : Tests(6) {

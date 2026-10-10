@@ -552,9 +552,28 @@ sub _tp_lldp_addr {
     return \%out;
 }
 
+sub _tp_lldp_std_if {
+    my ( $tp, $partial ) = @_;
+
+    my $inherited = $tp->SUPER::lldp_if($partial) || {};
+    my $port_id   = $tp->lldp_lport_id()          || {};
+    my %ifindex_of = reverse %{ $tp->i_description() || {} };
+
+    # lldpLocPortDesc holds the port alias when one is set, and aliases
+    # repeat across ports, so the exact ifDescr in lldpLocPortId decides.
+    my %lldp_if = %$inherited;
+    foreach my $key ( keys %lldp_if ) {
+        my $local_port = ( split /\./, $key )[1];
+        my $descr = defined $local_port ? $port_id->{$local_port} : undef;
+        $lldp_if{$key} = $ifindex_of{$descr}
+            if defined $descr and exists $ifindex_of{$descr};
+    }
+    return \%lldp_if;
+}
+
 sub lldp_if {
     my ( $tp, $partial ) = @_;
-    return $tp->SUPER::lldp_if($partial) if $tp->_tp_lldp_standard;
+    return $tp->_tp_lldp_std_if($partial) if $tp->_tp_lldp_standard;
 
     my %lldp_if;
     foreach my $key ( keys %{ $tp->_tp_lldp_neighbors($partial) } ) {
@@ -798,8 +817,11 @@ Remote chassis id per neighbor from C<tp_lldp_rem_id>, as reported.
 
 =item lldp_if
 
-Local ifIndex per neighbor: the first component of the C<ifIndex.remIdx>
-index.
+Local ifIndex per neighbor. With TP-Link neighbor data, the first component
+of the C<ifIndex.remIdx> index. With LLDP-MIB neighbors, the local port
+number in the index is mapped through C<lldpLocPortId> to the interface
+whose C<ifDescr> matches exactly; a port with no exact match keeps the
+result of the inherited C<lldp_if>.
 
 =item lldp_ip
 
