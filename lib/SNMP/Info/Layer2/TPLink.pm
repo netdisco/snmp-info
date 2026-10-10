@@ -66,6 +66,16 @@ $VERSION = '3.978002';
     'tp_sysinfo_swver'    => 'tpSysInfoSwVersion',
     'tp_sysinfo_mac'      => 'tpSysInfoMacAddr',
 
+    # netdisco/netdisco-mibs#281: tpSysInfoSerialNum (netdisco-mibs names .8
+    # tpSysInfoUpTime).
+    'tp_sysinfo_serial'   => '.1.3.6.1.4.1.11863.6.1.1.8.0',
+
+    # netdisco/netdisco-mibs#281: powerSupplyUnitInternalPower and
+    # powerSupplyUnitExternalPower (netdisco-mibs lacks
+    # TPLINK-POWERSUPPLYUNIT-MIB).
+    'ps1_status'          => '.1.3.6.1.4.1.11863.6.88.1.1.3.0',
+    'ps2_status'          => '.1.3.6.1.4.1.11863.6.88.1.1.4.0',
+
     # Spanning Tree globals from TP-Link private MIB
     'stp_ver'       => 'TPLINK-SPANNING-TREE-MIB::tpStpMode',
     'stp_time'      => 'TPLINK-SPANNING-TREE-MIB::tpStpLastTopologyChangeTime',
@@ -163,16 +173,9 @@ sub model {
         $model =~ s/\s+$//;
         # Append hardware version if present and not duplicate
         if ( defined $tp_hw and $tp_hw !~ /^\s*$/ and $model !~ /\Q$tp_hw\E/ ) {
-            $model = "$tp_hw";
+            $model = "$model $tp_hw";
         }
         return $model;
-    }
-
-    # Fallback: prefer ENTITY-MIB model information when available
-    my $e_model = $tp->e_model() || {};
-    foreach my $iid ( sort keys %$e_model ) {
-        my $m = $e_model->{$iid};
-        return $m if defined $m and $m !~ /^\s*$/;
     }
 
     # Last resort: use sysDescr
@@ -190,10 +193,6 @@ sub os_ver {
     my $sw = $tp->tp_sysinfo_swver();
     return $sw if defined $sw and $sw ne '';
 
-    # Fallback to ENTITY-MIB derived OS/version
-    my $e_ver = $tp->entity_derived_os_ver();
-    return $e_ver if defined $e_ver and $e_ver ne '';
-
     # Last resort, take from sysDescr
     my $desc = $tp->description() || '';
     if ( $desc =~ /([\d]+(?:\.[\d]+)+)/ ) {
@@ -205,18 +204,8 @@ sub os_ver {
 sub serial {
     my $tp = shift;
 
-
-    # Prefer TP-Link sometimes provides MAC as primary identifier; use as fallback
-    my $mac = $tp->tp_sysinfo_mac();
-    if ( defined $mac and $mac ne '' ) {
-        $mac =~ s/:|-//g;
-        $mac = uc $mac;
-        return $mac;
-    }
-
-    # Fallback to Entity MIB derived serial
-    my $eserial = $tp->entity_derived_serial();
-    return $eserial if defined $eserial and $eserial ne '';
+    my $serial = $tp->tp_sysinfo_serial();
+    return $serial if defined $serial and $serial !~ /^\s*$/;
 
     return;
 }
@@ -224,16 +213,16 @@ sub serial {
 sub mac {
     my $tp = shift;
 
-    # Prefer TP-Link MAC from sysinfo MIB
-    my $mac = $tp->tp_sysinfo_mac();
+    my $mac = $tp->b_mac();
+    return $mac if defined $mac and $mac ne '';
+
+    $mac = $tp->tp_sysinfo_mac();
     if ( defined $mac and $mac ne '' ) {
         $mac =~ s/-/:/g;
-        $mac = uc $mac;
-        return $mac;
+        return uc $mac;
     }
 
-    # Fallback to primary MAC from EtherLike MIB
-    return $tp->el_mac();
+    return;
 }
 
 sub i_name {
@@ -799,6 +788,10 @@ and exposes TP-Link specific globals when available.
 =item lldp_port
 =item lldp_rman_addr
 =item mac
+
+Base MAC address from C<b_mac>, else from C<tp_sysinfo_mac> in upper case
+with colon separators.
+
 =item make_port_index
 =item model
 =item munge_power
@@ -813,7 +806,30 @@ and exposes TP-Link specific globals when available.
 =item peth_power_watts
 =item qb_fw_port
 =item serial
+
+Serial number from C<tp_sysinfo_serial>, or undef when absent or blank.
+
 =item vendor
+
+=back
+
+=head2 Globals
+
+=over
+
+=item tp_sysinfo_serial
+
+C<tpSysInfoSerialNum>, C<.1.3.6.1.4.1.11863.6.1.1.8.0>.
+
+=item ps1_status
+
+C<powerSupplyUnitInternalPower>, C<.1.3.6.1.4.1.11863.6.88.1.1.3.0>.
+Returned as the device reports it.
+
+=item ps2_status
+
+C<powerSupplyUnitExternalPower>, C<.1.3.6.1.4.1.11863.6.88.1.1.4.0>.
+Returned as the device reports it.
 
 =back
 
