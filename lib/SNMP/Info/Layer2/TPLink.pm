@@ -723,7 +723,7 @@ sub qb_fw_port {
     my %out;
     foreach my $key ( keys %$dyn_port ) {
         my $pval = $dyn_port->{$key};
-        next unless defined $pval and $pval ne '';
+        next unless defined $pval and $pval ne '' and $pval ne '0';
 
         my @parts = split /\./, $key;
         next unless @parts >= 2;

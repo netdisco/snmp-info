@@ -643,7 +643,7 @@ sub _tp_bridge_port_ifindex : Tests(4) {
     undef, q(A number only matching as a suffix does not resolve));
 }
 
-sub fw_port : Tests(7) {
+sub fw_port : Tests(11) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -669,11 +669,38 @@ sub fw_port : Tests(7) {
   is_deeply($info->fw_port(), {'1.1.2.3.4.5.6' => 5},
     q(Port 5 on a stack is ambiguous and stays unresolved));
 
+  $info->{store}{i_description}{49153} = 'gigabitEthernet 1/0/1';
+  delete $info->{store}{i_description}{49200};
+  delete $info->{store}{qb_fw_port};
+  delete $info->{_qb_fw_port};
+  $info->{_fw_port}       = 1;
+  $info->{store}{fw_port} = {
+    '8.85.49.126.102.254' => 1,
+    '0.39.251.118.93.1'   => 18,
+  };
+  is_deeply(
+    $info->fw_port(),
+    {'8.85.49.126.102.254' => 49153, '0.39.251.118.93.1' => 49170},
+    q(BRIDGE-MIB column is resolved when Q-BRIDGE is absent)
+  );
+
+  $info->{store}{fw_port} = {
+    '8.85.49.126.102.254' => '1/0/7',
+    '0.39.251.118.93.1'   => 'LAG1',
+    '1.2.3.4.5.6'         => 'Tunnel1',
+  };
+  my $text = $info->fw_port();
+  is($text->{'8.85.49.126.102.254'}, 49159, q(Text port 1/0/7 maps via port map));
+  is($text->{'0.39.251.118.93.1'}, 32769, q(Text port LAG1 maps via port map));
+  is($text->{'1.2.3.4.5.6'}, 'Tunnel1', q(Unknown text port stays as reported));
+
+  delete $info->{_fw_port};
+  delete $info->{store}{fw_port};
   $info->clear_cache();
   is_deeply($info->fw_port(), {}, q(No data returns empty hash));
 }
 
-sub qb_fw_port : Tests(5) {
+sub qb_fw_port : Tests(6) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -696,9 +723,10 @@ sub qb_fw_port : Tests(5) {
     q(Without Q-BRIDGE the vendor table resolves u/s/p and port numbers)
   );
 
-  $info->{store}{tpl2BridgeManageDynPort} = {'0.10.235.1.2.3.30' => 'LAG9'};
+  $info->{store}{tpl2BridgeManageDynPort}
+    = {'0.10.235.1.2.3.30' => 'LAG9', '0.10.235.1.2.3.40' => '0'};
   is_deeply($info->qb_fw_port(), {'30.0.10.235.1.2.3' => 'LAG9'},
-    q(An unresolved vendor port keeps its raw value));
+    q(Unresolved vendor port keeps its raw value and port 0 is dropped));
 
   $info->clear_cache();
   is_deeply($info->qb_fw_port(), {}, q(Both tables absent returns empty hash));
