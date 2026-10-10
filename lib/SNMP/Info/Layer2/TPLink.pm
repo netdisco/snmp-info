@@ -50,6 +50,7 @@ $VERSION = '3.978002';
     'TPLINK-SYSINFO-MIB' => 'tpSysInfoDescription',
     'TPLINK-MIB'         => 'tplinkProducts',
     'TPLINK-LLDP-MIB'    => 'tplinkLldpMIBObjects',
+    'TPLINK-LLDPINFO-MIB' => 'lldpInfo',
     'TPLINK-DOT1Q-VLAN-MIB' => 'tplinkDot1qVlanMIBObjects',
     'TPLINK-PORTCONFIG-MIB' => 'tpPortConfigTable',
     'TPLINK-SPANNING-TREE-MIB' => 'tplinkSpanningTreeMIBObjects',
@@ -92,9 +93,6 @@ $VERSION = '3.978002';
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
     %SNMP::Info::EtherLike::FUNCS,
-    # Ensure Ethernet/duplex index funcs are present for autoload
-    'el_index'  => 'dot3StatsIndex',
-    'el_duplex' => 'dot3StatsDuplexStatus',
 
     # netdisco/netdisco-mibs#281: TP-Link 2024 vlanPortPvid. netdisco-mibs
     # names column 2 vlanPortType with enums, so labels arrive and
@@ -785,6 +783,8 @@ incomplete.
 
 =item F<TPLINK-LLDP-MIB>
 
+=item F<TPLINK-LLDPINFO-MIB>
+
 =item F<TPLINK-DOT1Q-VLAN-MIB>
 
 =item F<TPLINK-PORTCONFIG-MIB>
@@ -953,13 +953,17 @@ Returns the bridge priority in the CIST.
 
 =item $tplink->v_index()
 
-Mapped to the TP-Link VLAN ID column in place of the Q-BRIDGE VLAN index.
+Returns reference to a hash keyed by VLAN ID. Values are the VLAN IDs.
+Declared as a global, but it walks the TP-Link VLAN table column in place
+of the Q-BRIDGE VLAN index.
 
 (C<TPLINK-DOT1Q-VLAN-MIB::dot1qVlanId>)
 
 =item $tplink->v_name()
 
-Mapped to the TP-Link VLAN description in place of the Q-BRIDGE VLAN name.
+Returns reference to a hash keyed by VLAN ID. Values are the VLAN
+descriptions. Declared as a global, but it walks the TP-Link VLAN table
+column in place of the Q-BRIDGE VLAN name.
 
 (C<TPLINK-DOT1Q-VLAN-MIB::dot1qVlanDescription>)
 
