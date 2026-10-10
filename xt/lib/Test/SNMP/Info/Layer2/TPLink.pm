@@ -536,7 +536,7 @@ sub munge_tp_pvid : Tests(5) {
   is(SNMP::Info::Layer2::TPLink::munge_tp_pvid(31), 31, q(Numeric stays));
 }
 
-sub _tp_vlan_ports : Tests(4) {
+sub _tp_vlan_ports : Tests(5) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -552,6 +552,8 @@ sub _tp_vlan_ports : Tests(4) {
     {49153 => [5, 100]},
     q(A VLAN is not repeated and lists are sorted)
   );
+  is_deeply($info->_tp_vlan_ports({100 => ' 1/0/1 , LAG1 '}),
+    {49153 => [100], 32769 => [100]}, q(Whitespace around tokens is trimmed));
   is_deeply($info->_tp_vlan_ports({100 => '1/0/40-41,LAG9'}),
     {}, q(Ports without an interface are omitted));
 }

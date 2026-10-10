@@ -421,7 +421,8 @@ sub _tp_expand_port_list {
 
     return () unless defined $list;
     my @ports;
-    foreach my $token ( split /\s*,\s*/, $list ) {
+    foreach my $token ( split /,/, $list ) {
+        $token =~ s/^\s+|\s+$//g;
         if ( $token =~ m{^(\d+/\d+/)(\d+)-(\d+)$} ) {
             push @ports, map {"$1$_"} $2 .. $3;
         }
@@ -920,6 +921,7 @@ VLAN IDs per ifIndex from the untagged port lists only.
 
 Maps the C<vlanPortType> labels C<access>, C<trunk> and C<general> back to
 C<0>, C<1> and C<2>; other values are returned unchanged.
+
 =item lldp_if
 =item lldp_ip
 =item lldp_port
