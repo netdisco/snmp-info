@@ -139,8 +139,15 @@ sub i_duplex_admin {
 
     # Newer software
     if ( defined $el_duplex and scalar( keys %$el_duplex ) ) {
+
+        # Some IOS releases (Sup2T) publish MAU-MIB, which holds the
+        # configured setting
+        my $mau_admin = $c6500->mau_i_duplex_admin($partial);
+        return $mau_admin if $mau_admin and scalar( keys %$mau_admin );
+
         my $p_port   = $c6500->p_port()   || {};
         my $p_duplex = $c6500->p_duplex() || {};
+        my $p_speed  = $c6500->p_speed()  || {};
 
         my $i_duplex_admin = {};
         foreach my $port ( keys %$p_duplex ) {
@@ -148,7 +155,13 @@ sub i_duplex_admin {
             next unless defined $iid;
             next if ( defined $partial and $iid !~ /^$partial$/ );
 
-            $i_duplex_admin->{$iid} = $p_duplex->{$port};
+            # portDuplex is the negotiated duplex on a connected port, so a
+            # port with auto speed is configured for auto duplex
+            my $speed = $p_speed->{$port};
+            $i_duplex_admin->{$iid}
+                = ( defined $speed and $speed =~ /auto/ )
+                ? 'auto'
+                : $p_duplex->{$port};
         }
         return $i_duplex_admin;
     }
@@ -365,11 +378,16 @@ L<SNMP::Info::CiscoStack> for its i_duplex() method.
 
 Returns reference to hash of iid to administrative duplex setting.
 
-Newer software versions return duplex based upon the result of
-$c6500->p_duplex().  Otherwise it uses the result of the call to
-CiscoStack::i_duplex().
+Newer software versions, which publish EtherLike-MIB duplex, return the
+MAU-MIB setting from mau_i_duplex_admin() when present.  Otherwise they
+return C<auto> for ports whose $c6500->p_speed() is auto, and
+$c6500->p_duplex() for the rest, since p_duplex() reports the negotiated
+duplex of a connected port.  Older software uses the result of the call to
+CiscoStack::i_duplex_admin().
 
-See L<SNMP::Info::CiscoStack> for its i_duplex() and p_duplex() methods.
+See L<SNMP::Info::MAU> for mau_i_duplex_admin() and
+L<SNMP::Info::CiscoStack> for its i_duplex_admin(), p_duplex() and
+p_speed() methods.
 
 =item $c6500->set_i_duplex_admin(duplex, ifIndex)
 
