@@ -3,6 +3,7 @@ Version 3.978003 (2026-tbd)
   [BUG FIXES]
 
   * #603 Timetra: return tmnxHwIndex as the e_index value (#544)
+  * #602 Fixes for TP-Link JetStream and Omada switches (#449)
 
 Version 3.978002 (2026-10-07)
 
