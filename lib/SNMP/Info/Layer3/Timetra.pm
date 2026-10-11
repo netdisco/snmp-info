@@ -353,8 +353,12 @@ sub e_index {
 
     my %e_index;
 
+    # The iid is tmnxChassisIndex.tmnxHwIndex; tmnxHwContainedIn (e_parent)
+    # holds the bare tmnxHwIndex
     foreach my $iid ( keys %$e_descr ) {
-        $e_index{$iid} = $iid;
+        my ( undef, $hw_index ) = split /\./, $iid;
+        next unless defined $hw_index;
+        $e_index{$iid} = $hw_index;
     }
     return \%e_index;
 }
@@ -574,6 +578,9 @@ from the (C<tmnxLldpRemEntry >) index.
 =over
 
 =item $alu->e_index()
+
+Returns reference to hash.  Key: C<tmnxChassisIndex.tmnxHwIndex>,
+Value: C<tmnxHwIndex>, the index e_parent() refers to.
 
 (C<tmnxHwIndex>)
 
