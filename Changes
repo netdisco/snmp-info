@@ -1,3 +1,9 @@
+Version 3.978003 (2026-tbd)
+
+  [BUG FIXES]
+
+  * #602 Fixes for TP-Link JetStream and Omada switches (#449)
+
 Version 3.978002 (2026-10-07)
 
   [NEW FEATURES]
