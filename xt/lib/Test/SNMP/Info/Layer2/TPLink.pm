@@ -928,6 +928,52 @@ sub lldp_if : Tests(8) {
   );
 }
 
+sub lldp_rman_addr : Tests(7) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'lldp_rman_addr');
+  $test->prime_std_lldp;
+  is_deeply(
+    $info->lldp_rman_addr(),
+    {
+      '0.15.1.1.4.169.254.2.131' => 'ifIndex',
+      '0.15.1.2.16.254.128.0.0.0.0.0.0.0.0.0.0.0.0.0.1' => 'ifIndex',
+    },
+    q(Rows indexed with lldpRemTimeMark are unchanged)
+  );
+
+  $info->{store}{lldp_rman_addr} = {'15.1.1.4.169.254.2.131' => 'ifIndex'};
+  is_deeply(
+    $info->lldp_rman_addr(),
+    {'0.15.1.1.4.169.254.2.131' => 'ifIndex'},
+    q(A row without lldpRemTimeMark takes the lldpRemTable index)
+  );
+  is_deeply($info->lldp_ip(), {'0.15.1' => '169.254.2.131'},
+    q(Its address lines up with the neighbor in lldp_ip));
+
+  $info->{store}{lldp_rem_id}
+    = {'0.15.1' => pack('H*', '48A98AC1AC58'), '300.15.1' => 'x'};
+  is_deeply(
+    $info->lldp_rman_addr(),
+    {'300.15.1.1.4.169.254.2.131' => 'ifIndex'},
+    q(The newest lldpRemTimeMark wins when a neighbor has several)
+  );
+
+  $info->{store}{lldp_rman_addr} = {'16.1.1.4.169.254.2.132' => 'ifIndex'};
+  is_deeply($info->lldp_rman_addr(), {},
+    q(A row without lldpRemTimeMark and no matching neighbor is dropped));
+
+  $info->clear_cache();
+  $info->{_lldp_rman_addr} = 1;
+  $info->{store}{lldp_rman_addr} = {'15.1.1.4.169.254.2.131' => 'ifIndex'};
+  is_deeply(
+    $info->lldp_rman_addr(),
+    {'15.1.1.4.169.254.2.131' => 'ifIndex'},
+    q(Without LLDP-MIB neighbor rows the column is returned as read)
+  );
+}
+
 sub lldp_ip : Tests(6) {
   my $test = shift;
   my $info = $test->{info};

@@ -581,6 +581,49 @@ sub lldp_if {
     return \%lldp_if;
 }
 
+# lldpRemTable index by localPort.remIndex, newest lldpRemTimeMark kept
+sub _tp_lldp_rem_keys {
+    my $tp = shift;
+
+    my %full_key;
+    foreach my $key ( keys %{ $tp->lldp_rem_id() || {} } ) {
+        my ( $time_mark, $short ) = split /\./, $key, 2;
+        next unless defined $short;
+        my $kept = $full_key{$short};
+        next if defined $kept and ( split /\./, $kept )[0] >= $time_mark;
+        $full_key{$short} = $key;
+    }
+    return \%full_key;
+}
+
+# Some Omada firmware indexes lldpRemManAddrTable without lldpRemTimeMark
+# (localPort.remIndex.subtype.len.addr). Such rows take the lldpRemTable
+# index so management addresses line up with c_if and c_port.
+sub lldp_rman_addr {
+    my ( $tp, $partial ) = @_;
+
+    my $rman = $tp->SUPER::lldp_rman_addr($partial);
+    return $rman unless $tp->_tp_lldp_standard and ref $rman eq 'HASH';
+
+    my $rem_keys = $tp->_tp_lldp_rem_keys();
+    my %is_rem_key = map { $_ => 1 } values %$rem_keys;
+    my %out;
+    foreach my $key ( keys %$rman ) {
+        my @parts = split /\./, $key;
+        if ( $is_rem_key{ join '.', @parts[ 0 .. 2 ] } ) {
+            $out{$key} = $rman->{$key};
+            next;
+        }
+
+        my $addr_len = $parts[3];
+        next unless defined $addr_len and @parts == 4 + $addr_len;
+        my $full = $rem_keys->{ join '.', @parts[ 0, 1 ] };
+        next unless defined $full;
+        $out{ join '.', $full, @parts[ 2 .. $#parts ] } = $rman->{$key};
+    }
+    return \%out;
+}
+
 sub lldp_ip {
     my ( $tp, $partial ) = @_;
     return $tp->SUPER::lldp_ip($partial) if $tp->_tp_lldp_standard;
@@ -1172,6 +1215,18 @@ neighbor data, the first component of the C<ifIndex.remIdx> index. With
 LLDP-MIB neighbors, the local port number in the index is mapped through
 C<lldpLocPortId> to the interface whose C<ifDescr> matches exactly; a port
 with no exact match keeps the result of the inherited C<lldp_if>.
+
+=item $tplink->lldp_rman_addr()
+
+Returns reference to hash. With LLDP-MIB neighbors, the
+C<lldpRemManAddrTable> rows keyed by the C<lldpRemTable> index. Rows
+indexed without C<lldpRemTimeMark>
+(C<localPort.remIndex.subtype.len.addr>), as some Omada firmware returns
+them, take the index of the neighbor with the same C<localPort.remIndex>
+and the newest C<lldpRemTimeMark>; rows matching no neighbor are omitted.
+Otherwise the column as read.
+
+(C<lldpRemManAddrIfSubtype>)
 
 =item $tplink->lldp_ip()
 
