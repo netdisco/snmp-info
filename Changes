@@ -2,6 +2,8 @@ Version 3.978003 (2026-tbd)
 
   [BUG FIXES]
 
+  * #604 C6500: report the configured duplex in i_duplex_admin, not the
+    negotiated one (#473)
   * #603 Timetra: return tmnxHwIndex as the e_index value (#544)
   * #602 Fixes for TP-Link JetStream and Omada switches (#449)
 
