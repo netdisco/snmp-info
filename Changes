@@ -2,10 +2,7 @@ Version 3.978003 (2026-tbd)
 
   [BUG FIXES]
 
-  * #449 Fix TP-Link JetStream and Omada switches: LLDP neighbors keyed
-    once on the right port, PoE, VLAN membership including LAGs, native
-    VLAN, serial number, MAC, port names, duplex, and forwarding-table
-    ports. Read LLDP-MIB when the switch publishes it
+  * #602 Fixes for TP-Link JetStream and Omada switches (#449)
 
 Version 3.978002 (2026-10-07)
 
