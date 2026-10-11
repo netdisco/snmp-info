@@ -156,27 +156,15 @@ sub os {
 sub model {
     my $tp = shift;
 
-    # Prefer TP-Link's own sysinfo MIB (TPLINK-SYSINFO-MIB)
-    # Use textual description (tpSysInfoDescription) first which typically
-    # contains product name and version.  If available, prefer a cleaned
-    # combination of description and hardware version.
-    my $tp_descr = $tp->tp_sysinfo_descr();
-    my $tp_hw    = $tp->tp_sysinfo_hwver();
-    if ( defined $tp_descr and $tp_descr !~ /^\s*$/ ) {
-        my $model = $tp_descr;
-        $model =~ s/\s+$//;
-        # Append hardware version if present and not duplicate
-        if ( defined $tp_hw and $tp_hw !~ /^\s*$/ and $model !~ /\Q$tp_hw\E/ ) {
-            $model = "$model $tp_hw";
-        }
-        return $model;
+    # tpSysInfoHwVersion is the short model, e.g. "T1600G-28TS 3.0";
+    # tpSysInfoDescription and sysDescr are long product descriptions
+    foreach my $model ( $tp->tp_sysinfo_hwver(), $tp->tp_sysinfo_descr(),
+        $tp->description() )
+    {
+        next unless defined $model;
+        $model =~ s/^\s+|\s+$//g;
+        return $model if $model ne '';
     }
-
-    # Last resort: use sysDescr
-    my $descr = $tp->description() || '';
-    $descr =~ s/\s+$//;
-    return $descr if $descr ne '';
-
     return;
 }
 
@@ -867,9 +855,9 @@ absent or empty, returns the first dotted number found in C<sysDescr>.
 
 =item $tplink->model()
 
-Returns C<tp_sysinfo_descr> with trailing space removed, followed by
-C<tp_sysinfo_hwver> unless the description already contains it. When the
-description is absent or blank, returns C<sysDescr>.
+Returns the first non-blank of C<tp_sysinfo_hwver> (the short model with
+hardware version, e.g. C<T1600G-28TS 3.0>), C<tp_sysinfo_descr>, and
+C<sysDescr>, with surrounding space removed.
 
 =item $tplink->serial()
 

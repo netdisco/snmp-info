@@ -155,35 +155,34 @@ sub has_topo : Tests(3) {
   is($info->has_topo(), undef, q(No neighbor data returns undef));
 }
 
-sub model : Tests(5) {
+sub model : Tests(6) {
   my $test = shift;
+  my $info = $test->{info};
 
-  can_ok($test->{info}, 'model');
+  can_ok($info, 'model');
 
   no warnings 'redefine';
   local *SNMP::Info::Layer2::TPLink::e_model
     = sub { die 'ENTITY-MIB polled' };
 
+  is($info->model(), 'SG2218P 1.20',
+    q(Model is the hardware version when present));
+
+  $info->{_tp_sysinfo_descr} = 'JetStream 24-Port Gigabit Smart Switch';
+  $info->{_tp_sysinfo_hwver} = 'T1600G-28TS 3.0 ';
+  is($info->model(), 'T1600G-28TS 3.0',
+    q(Hardware version is preferred over the TP-Link description));
+
+  $info->{_tp_sysinfo_hwver} = ' ';
+  is($info->model(), 'JetStream 24-Port Gigabit Smart Switch',
+    q(Blank hardware version falls back to the TP-Link description));
+
+  delete $info->{_tp_sysinfo_hwver};
+  delete $info->{_tp_sysinfo_descr};
   is(
-    $test->{info}->model(),
+    $info->model(),
     'Omada 18-Port Gigabit Smart Switch with 16-Port PoE+',
-    q(Model falls back to sysDescr when TP-Link description is absent)
-  );
-
-  $test->{info}{_tp_sysinfo_descr} = 'JetStream 24-Port Gigabit Smart Switch';
-  $test->{info}{_tp_sysinfo_hwver} = 'T1600G-28TS 3.0';
-  is(
-    $test->{info}->model(),
-    'JetStream 24-Port Gigabit Smart Switch T1600G-28TS 3.0',
-    q(Model appends hardware version to TP-Link description)
-  );
-
-  $test->{info}{_tp_sysinfo_descr}
-    = 'JetStream T1600G-28TS 3.0 Gigabit Switch';
-  is(
-    $test->{info}->model(),
-    'JetStream T1600G-28TS 3.0 Gigabit Switch',
-    q(Model is unchanged when description already holds hardware version)
+    q(Model falls back to sysDescr when TP-Link sysinfo is absent)
   );
 
   $test->{info}->clear_cache();
