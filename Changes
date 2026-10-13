@@ -2,7 +2,7 @@ Version 3.978003 (2026-tbd)
 
   [BUG FIXES]
 
-  * IPv6: read device IPv6 addresses from IPV6-MIB when IP-MIB and
+  * #607 IPv6: read device IPv6 addresses from IPV6-MIB when IP-MIB and
     CISCO-IETF-IP-MIB have none (RouterOS)
   * #603 Timetra: return tmnxHwIndex as the e_index value (#544)
   * #602 Fixes for TP-Link JetStream and Omada switches (#449)
