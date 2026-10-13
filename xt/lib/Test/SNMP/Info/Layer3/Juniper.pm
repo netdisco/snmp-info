@@ -557,6 +557,21 @@ sub qb_fw_vlan : Tests(4) {
   cmp_deeply($test->{info}->qb_fw_vlan(), {}, q(No data returns empty hash));
 }
 
+# Two member virtual chassis on top of the common entity cache
+sub _set_virtual_chassis {
+  my $test = shift;
+
+  my $cache = $test->{info}{store};
+  $test->{info}{'_jnxVirtualChassisMemberSerialnumber'} = 1;
+  $test->{info}{'_jnxVirtualChassisMemberModel'}        = 1;
+  $cache->{jnxVirtualChassisMemberRole} = {0 => 'master', 1 => 'backup'};
+  $cache->{jnxVirtualChassisMemberSerialnumber}
+    = {0 => 'VC0000000001', 1 => 'VC0000000002'};
+  $cache->{jnxVirtualChassisMemberModel}
+    = {0 => 'ex4300-48t', 1 => 'ex4300-48p'};
+  return;
+}
+
 sub e_index : Tests(3) {
   my $test = shift;
 
@@ -596,7 +611,7 @@ sub e_index : Tests(3) {
   cmp_deeply($test->{info}->e_index(), {}, q(No data returns empty hash));
 }
 
-sub e_class : Tests(3) {
+sub e_class : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'e_class');
@@ -630,6 +645,22 @@ sub e_class : Tests(3) {
   };
   cmp_deeply($test->{info}->e_class(),
     $expected, q(Entity classes returned expected values));
+
+  _set_virtual_chassis($test);
+  my $classes = $test->{info}->e_class();
+  my %vc_class = map { $_ => $classes->{$_} }
+    qw(1 1.1.0.0 1.2.0.0 2.1.0.0 7.1.0.0);
+  cmp_deeply(
+    \%vc_class,
+    {
+      '1'       => 'stack',
+      '1.1.0.0' => 'chassis',
+      '1.2.0.0' => 'chassis',
+      '2.1.0.0' => 'container',
+      '7.1.0.0' => 'module'
+    },
+    q(Virtual chassis member frames are chassis under the stack)
+  );
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->e_class(), {}, q(No data returns empty hash));
@@ -674,7 +705,7 @@ sub e_descr : Tests(3) {
   cmp_deeply($test->{info}->e_descr(), {}, q(No data returns empty hash));
 }
 
-sub e_serial : Tests(3) {
+sub e_serial : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'e_serial');
@@ -695,8 +726,40 @@ sub e_serial : Tests(3) {
   cmp_deeply($test->{info}->e_serial(),
     $expected, q(Entity serial numbers returned expected values));
 
+  _set_virtual_chassis($test);
+  delete $expected->{'1'};
+  $expected->{'1.1.0.0'} = 'VC0000000001';
+  $expected->{'1.2.0.0'} = 'VC0000000002';
+  cmp_deeply($test->{info}->e_serial(),
+    $expected, q(Virtual chassis member frames have member serials));
+
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->e_serial(), {}, q(No data returns empty hash));
+}
+
+sub e_model : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'e_model');
+
+  $test->{info}{'_e_model'} = 1;
+  $test->{info}{store}{e_model} = {5 => 'ENTITY-MODEL'};
+  cmp_deeply($test->{info}->e_model(),
+    {5 => 'ENTITY-MODEL'}, q(Without virtual chassis returns ENTITY-MIB));
+
+  _set_virtual_chassis($test);
+  cmp_deeply(
+    $test->{info}->e_model(),
+    {
+      5         => 'ENTITY-MODEL',
+      '1.1.0.0' => 'EX4300-48T',
+      '1.2.0.0' => 'EX4300-48P'
+    },
+    q(Virtual chassis member frames have member models)
+  );
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->e_model(), {}, q(No data returns empty hash));
 }
 
 sub e_fru : Tests(3) {
