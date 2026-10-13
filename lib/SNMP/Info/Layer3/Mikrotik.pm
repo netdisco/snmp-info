@@ -56,6 +56,10 @@ $VERSION = '3.978002';
     'firmware'       => 'mtxrSystem.4.0',
     'fan_type'       => 'mtxrHlActiveFan',
     'mt_board_name'  => 'mtxrBoardName',
+    'mt_psu_state'        => 'mtxrHlPowerSupplyState',
+    'mt_backup_psu_state' => 'mtxrHlBackupPowerSupplyState',
+    'mt_fan1_speed'       => 'mtxrHlFanSpeed1.0',
+    'mt_fan2_speed'       => 'mtxrHlFanSpeed2.0',
 );
 
 %FUNCS = (
@@ -67,6 +71,8 @@ $VERSION = '3.978002';
     'mt_nbr_if'       => 'mtxrNeighborInterfaceID',
     'mt_gauge_name'   => 'mtxrGaugeName',
     'mt_gauge_value'  => 'mtxrGaugeValue',
+    'mt_poe_status'   => 'mtxrPOEStatus',
+    'mt_poe_power'    => 'mtxrPOEPower',
 );
 
 %MUNGE = (
@@ -129,6 +135,154 @@ sub _gauge_value {
         return $gauge_values->{$index} if defined $index;
     }
     return;
+}
+
+# RouterOS health states, in the order mtxrGaugeTable status rows report
+# them: 0 ok, 1 fail.
+my @GAUGE_STATES = qw/ok fail not-present idle no-input/;
+
+my %POE_STATUS = (
+    disabled        => 'disabled',
+    waitingForLoad  => 'searching',
+    poweredOn       => 'deliveringPower',
+    overload        => 'fault',
+    shortCircuit    => 'fault',
+    voltageTooLow   => 'fault',
+    currentTooLow   => 'fault',
+    voltageTooHigh  => 'fault',
+    controllerError => 'fault',
+);
+
+sub ps1_status {
+    my $mikrotik = shift;
+    my $legacy   = $mikrotik->mt_psu_state();
+    return $mikrotik->_psu_status( $legacy, 'psu1-state' );
+}
+
+sub ps2_status {
+    my $mikrotik = shift;
+    my $legacy   = $mikrotik->mt_backup_psu_state();
+    return $mikrotik->_psu_status( $legacy, 'psu2-state' );
+}
+
+# mtxrHlPowerSupplyState and mtxrHlBackupPowerSupplyState are 1 when ok.
+sub _psu_status {
+    my ( $mikrotik, $legacy, $gauge_name ) = @_;
+
+    return ( $legacy eq '1' or $legacy eq 'true' ) ? 'ok' : 'fail'
+        if defined $legacy;
+    return $mikrotik->_gauge_state($gauge_name);
+}
+
+sub _gauge_state {
+    my ( $mikrotik, $name ) = @_;
+
+    my $value = $mikrotik->_gauge_value($name);
+    return unless defined $value;
+    return $GAUGE_STATES[$value] // "unknown ($value)";
+}
+
+sub fan {
+    my $mikrotik = shift;
+
+    my @parts = grep {defined} $mikrotik->_gauge_state('fan-state'),
+        $mikrotik->_fan_speeds();
+    return unless @parts;
+    return join( ', ', @parts );
+}
+
+sub _fan_speeds {
+    my $mikrotik = shift;
+
+    my $fan1   = $mikrotik->mt_fan1_speed();
+    my $fan2   = $mikrotik->mt_fan2_speed();
+    my @legacy
+        = grep { defined $_->[1] } [ 'fan1', $fan1 ], [ 'fan2', $fan2 ];
+    return map {"$_->[0] $_->[1] rpm"} @legacy if @legacy;
+
+    my $gauge_names  = $mikrotik->mt_gauge_name()  || {};
+    my $gauge_values = $mikrotik->mt_gauge_value() || {};
+    my %speed_of;
+    foreach my $index ( keys %$gauge_names ) {
+        next unless $gauge_names->{$index} =~ /^(fan\d+)-speed$/;
+        $speed_of{$1} = $gauge_values->{$index};
+    }
+    return map {"$_ $speed_of{$_} rpm"} sort keys %speed_of;
+}
+
+# POWER-ETHERNET-MIB is used if the device has it; RouterOS only exports
+# mtxrPOETable, indexed by ifIndex, which is mapped to module 1.
+sub _uses_mt_poe {
+    my $mikrotik = shift;
+
+    my $standard = $mikrotik->SUPER::peth_port_status() || {};
+    return 0 if scalar keys %$standard;
+    my $status = $mikrotik->mt_poe_status() || {};
+    return scalar keys %$status;
+}
+
+sub _mt_poe_column {
+    my ( $mikrotik, $column ) = @_;
+
+    my $values = $mikrotik->$column() || {};
+    return { map { ( "1.$_" => $values->{$_} ) } keys %$values };
+}
+
+sub peth_port_ifindex {
+    my $mikrotik = shift;
+
+    return $mikrotik->SUPER::peth_port_ifindex(@_)
+        unless $mikrotik->_uses_mt_poe();
+    my $status = $mikrotik->mt_poe_status() || {};
+    return { map { ( "1.$_" => $_ ) } keys %$status };
+}
+
+sub peth_port_admin {
+    my $mikrotik = shift;
+
+    return $mikrotik->SUPER::peth_port_admin(@_)
+        unless $mikrotik->_uses_mt_poe();
+    my $status = $mikrotik->_mt_poe_column('mt_poe_status');
+    return { map { ( $_ => $status->{$_} eq 'disabled' ? 'false' : 'true' ) }
+            keys %$status };
+}
+
+sub peth_port_status {
+    my $mikrotik = shift;
+
+    return $mikrotik->SUPER::peth_port_status(@_)
+        unless $mikrotik->_uses_mt_poe();
+    my $status = $mikrotik->_mt_poe_column('mt_poe_status');
+    return { map { ( $_ => $POE_STATUS{ $status->{$_} } || 'otherFault' ) }
+            keys %$status };
+}
+
+# mtxrPOEPower is in deciwatts
+sub peth_port_power {
+    my $mikrotik = shift;
+
+    return $mikrotik->SUPER::peth_port_power(@_)
+        unless $mikrotik->_uses_mt_poe();
+    my $power = $mikrotik->_mt_poe_column('mt_poe_power');
+    return { map { ( $_ => $power->{$_} * 100 ) } keys %$power };
+}
+
+# RouterOS exports no PoE budget; an empty hash still lets callers read the
+# port table.
+sub peth_power_watts {
+    my $mikrotik = shift;
+
+    return $mikrotik->SUPER::peth_power_watts(@_)
+        unless $mikrotik->_uses_mt_poe();
+    return {};
+}
+
+sub peth_power_status {
+    my $mikrotik = shift;
+
+    return $mikrotik->SUPER::peth_power_status(@_)
+        unless $mikrotik->_uses_mt_poe();
+    return {};
 }
 
 # RouterOS returns MAC chassis IDs as text ("0C:00:1E:5A:27:00") rather than
@@ -352,6 +506,38 @@ no LLDP chassis ID.
 
 (C<mtxrBoardName>)
 
+=item $mikrotik->ps1_status()
+
+=item $mikrotik->ps2_status()
+
+Returns C<ok> or C<fail> from C<mtxrHlPowerSupplyState> or
+C<mtxrHlBackupPowerSupplyState>. Without them, returns the C<psu1-state> or
+C<psu2-state> row of C<mtxrGaugeTable>: C<ok>, C<fail>, C<not-present>,
+C<idle> or C<no-input>.
+
+=item $mikrotik->fan()
+
+Returns the C<fan-state> row of C<mtxrGaugeTable> (C<ok> or C<fail>) and
+the fan speeds, for example C<ok, fan1 3825 rpm, fan2 3945 rpm>. Speeds come
+from C<mtxrHlFanSpeed1> and C<mtxrHlFanSpeed2>, or else the C<fanN-speed>
+rows of C<mtxrGaugeTable>.
+
+=item $mikrotik->mt_psu_state()
+
+(C<mtxrHlPowerSupplyState>)
+
+=item $mikrotik->mt_backup_psu_state()
+
+(C<mtxrHlBackupPowerSupplyState>)
+
+=item $mikrotik->mt_fan1_speed()
+
+(C<mtxrHlFanSpeed1>)
+
+=item $mikrotik->mt_fan2_speed()
+
+(C<mtxrHlFanSpeed2>)
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -447,6 +633,48 @@ Return an empty hash: the table has no remote port or capabilities.
 =item $mikrotik->mt_gauge_value()
 
 (C<mtxrGaugeValue>)
+
+=back
+
+=head2 Power over Ethernet
+
+When the device has no F<POWER-ETHERNET-MIB> port table, these methods
+emulate it from C<mtxrPOETable>. Entries are keyed C<1.ifIndex>.
+
+=over
+
+=item $mikrotik->peth_port_ifindex()
+
+Maps C<1.ifIndex> to C<ifIndex>, from the C<mtxrPOETable> index.
+
+=item $mikrotik->peth_port_admin()
+
+C<false> when C<mtxrPOEStatus> is C<disabled>, else C<true>.
+
+=item $mikrotik->peth_port_status()
+
+From C<mtxrPOEStatus>: C<poweredOn> is C<deliveringPower>,
+C<waitingForLoad> is C<searching>, C<disabled> is C<disabled>; overload,
+short circuit, voltage, current and controller errors are C<fault>;
+anything else is C<otherFault>.
+
+=item $mikrotik->peth_port_power()
+
+Power the port is delivering, in milliwatts (C<mtxrPOEPower>).
+
+=item $mikrotik->peth_power_watts()
+
+=item $mikrotik->peth_power_status()
+
+RouterOS exports no PoE budget, so these return an empty hash.
+
+=item $mikrotik->mt_poe_status()
+
+(C<mtxrPOEStatus>)
+
+=item $mikrotik->mt_poe_power()
+
+(C<mtxrPOEPower>)
 
 =back
 
