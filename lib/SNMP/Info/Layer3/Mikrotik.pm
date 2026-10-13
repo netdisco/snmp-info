@@ -396,6 +396,52 @@ sub _nbr_key {
     return ( $ifindex // '' ) . ' ' . ( $name // '' );
 }
 
+sub i_vlan_membership {
+    my $mikrotik = shift;
+    my $partial  = shift;
+
+    my $q_bridge = $mikrotik->SUPER::i_vlan_membership($partial);
+    return $q_bridge if ref {} eq ref $q_bridge and scalar keys %$q_bridge;
+
+    return $mikrotik->_pvid_membership($partial);
+}
+
+sub i_vlan_membership_untagged {
+    my $mikrotik = shift;
+    my $partial  = shift;
+
+    my $q_bridge = $mikrotik->SUPER::i_vlan_membership_untagged($partial);
+    return $q_bridge if ref {} eq ref $q_bridge and scalar keys %$q_bridge;
+
+    return $mikrotik->_pvid_membership($partial);
+}
+
+# RouterOS exports no Q-BRIDGE VLAN static or current tables, only the port
+# PVID. A port carries its PVID untagged unless it admits only tagged frames,
+# which qb_i_vlan_t() reports as 'trunk'. Tagged VLANs are not exported.
+sub _pvid_membership {
+    my $mikrotik = shift;
+    my $partial  = shift;
+
+    my $index = $mikrotik->bp_index() || {};
+    my $bridge_port;
+    if ( defined $partial ) {
+        my %bridge_port_of = reverse %$index;
+        $bridge_port = $bridge_port_of{$partial};
+        return {} unless defined $bridge_port;
+    }
+
+    my $pvids      = $mikrotik->qb_i_vlan_t($bridge_port) || {};
+    my $membership = {};
+    foreach my $port ( keys %$pvids ) {
+        my $vlan    = $pvids->{$port};
+        my $ifindex = $index->{$port};
+        next unless defined $ifindex and $vlan ne 'trunk';
+        $membership->{$ifindex} = [$vlan];
+    }
+    return $membership;
+}
+
 1;
 __END__
 
@@ -561,6 +607,18 @@ and name), for example one learned by CDP. Failing that it returns
 C<0.0.0.0>, so Netdisco can resolve the neighbor by C<c_id()>. RouterOS
 advertises only addresses on the sending port or its bridge, not on VLAN
 interfaces.
+
+=item $mikrotik->i_vlan_membership()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs. Uses Q-BRIDGE-MIB when the device exports VLAN tables. RouterOS exports
+only the port PVID, so each port's PVID is returned instead, except on ports
+that admit only tagged frames. Tagged VLANs are not available.
+
+=item $mikrotik->i_vlan_membership_untagged()
+
+Returns reference to hash of arrays: key = C<ifIndex>, value = array of VLAN
+IDs. Same source and fallback as C<i_vlan_membership()>.
 
 =back
 

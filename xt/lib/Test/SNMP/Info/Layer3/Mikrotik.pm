@@ -524,4 +524,66 @@ sub peth_power_status : Tests(2) {
     q(mtxrPOETable present returns an empty hash));
 }
 
+# RouterOS 7.24.5: ether2 trunk admits only tagged frames, ether3 to ether5
+# access ports; no Q-BRIDGE VLAN static or current tables
+sub _prime_pvids {
+  my $test = shift;
+
+  $test->{info}{'_bp_index'}       = 1;
+  $test->{info}{'_qb_i_vlan'}      = 1;
+  $test->{info}{'_qb_i_vlan_type'} = 1;
+  $test->{info}{store}{bp_index} = {1 => 3, 2 => 4, 3 => 5, 4 => 6};
+  $test->{info}{store}{qb_i_vlan} = {1 => 1, 2 => 10, 3 => 20, 4 => 1};
+  $test->{info}{store}{qb_i_vlan_type} = {
+    1 => 'admitOnlyVlanTagged',
+    2 => 'admitAll',
+    3 => 'admitAll',
+    4 => 'admitAll',
+  };
+  return;
+}
+
+sub i_vlan_membership : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_vlan_membership');
+
+  $test->_prime_pvids();
+  cmp_deeply($test->{info}->i_vlan_membership(),
+    {4 => [10], 5 => [20], 6 => [1]},
+    q(Without Q-BRIDGE VLAN tables returns PVIDs, skipping tagged-only ports));
+
+  cmp_deeply($test->{info}->i_vlan_membership(2), {},
+    q(Partial ifIndex that is not a bridge port returns empty hash));
+
+  $test->{info}{'_qb_v_egress'} = 1;
+  $test->{info}{store}{qb_v_egress} = {10 => pack('H*', 'C0')};
+  cmp_deeply($test->{info}->i_vlan_membership(), {3 => [10], 4 => [10]},
+    q(Q-BRIDGE VLAN tables are used when present));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->i_vlan_membership(), {},
+    q(No data returns empty hash));
+}
+
+sub i_vlan_membership_untagged : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_vlan_membership_untagged');
+
+  $test->_prime_pvids();
+  cmp_deeply($test->{info}->i_vlan_membership_untagged(),
+    {4 => [10], 5 => [20], 6 => [1]},
+    q(Without Q-BRIDGE VLAN tables returns PVIDs, skipping tagged-only ports));
+
+  $test->{info}{'_qb_v_untagged'} = 1;
+  $test->{info}{store}{qb_v_untagged} = {20 => pack('H*', '20')};
+  cmp_deeply($test->{info}->i_vlan_membership_untagged(), {5 => [20]},
+    q(Q-BRIDGE VLAN tables are used when present));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->i_vlan_membership_untagged(), {},
+    q(No data returns empty hash));
+}
+
 1;
