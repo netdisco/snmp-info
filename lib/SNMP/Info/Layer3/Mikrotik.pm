@@ -109,6 +109,30 @@ sub _lldp_id_string {
     return $mikrotik->SUPER::_lldp_id_string( $id, $type );
 }
 
+# ifPhysAddress.1 is the loopback, all zeros. The chassis MAC is what LLDP
+# neighbors report as c_id, so Netdisco can match them to this device.
+sub mac {
+    my $mikrotik = shift;
+
+    my $chassis
+        = $mikrotik->lldp_loc_id_type() ? $mikrotik->lldp_loc_id() : undef;
+    return $chassis || $mikrotik->SUPER::mac();
+}
+
+# RouterOS advertises only addresses on the sending port or its bridge. A
+# neighbor managed on a VLAN interface has no IPv4 address, so return
+# 0.0.0.0, which Netdisco resolves by looking up c_id among known devices.
+sub c_ip {
+    my ( $mikrotik, $partial, $topo_cap ) = @_;
+
+    my $c_ip = $mikrotik->SUPER::c_ip( $partial, $topo_cap ) || {};
+    my $c_id = $mikrotik->c_id( $partial, $topo_cap )        || {};
+    foreach my $iid ( keys %$c_id ) {
+        $c_ip->{$iid} = '0.0.0.0' unless defined $c_ip->{$iid};
+    }
+    return $c_ip;
+}
+
 1;
 __END__
 
@@ -202,6 +226,12 @@ Returns the device serial.
 
 Returns the firmware version of hardware.
 
+=item $mikrotik->mac()
+
+Returns the LLDP chassis MAC (C<lldp_loc_id()>). C<ifPhysAddress.1> is the
+loopback on RouterOS and reads as all zeros; it is used only when there is
+no LLDP chassis ID.
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -215,7 +245,16 @@ to a hash.
 
 =head2 Overrides
 
-None.
+=over
+
+=item $mikrotik->c_ip()
+
+Returns C<0.0.0.0> for an LLDP neighbor that has a chassis ID but advertises
+no IPv4 management address, so Netdisco can resolve it by C<c_id()>. RouterOS
+advertises only addresses on the sending port or its bridge, not on VLAN
+interfaces.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
