@@ -91,4 +91,164 @@ sub os_ver : Tests(3) {
     q(No description returns undef OS version));
 }
 
+# Primes the standard and vendor copies of one POWER-ETHERNET-MIB column.
+# The standard pethPsePortTable decides the source for every peth method.
+sub _prime_peth {
+  my ($test, $method, $std_rows, $alu_rows, $std_status) = @_;
+
+  my $info = $test->{info};
+  $info->clear_cache();
+  $info->{'_std_peth_port_status'}     = 1;
+  $info->{store}{std_peth_port_status} = $std_status;
+  $info->{"_std_$method"}              = 1;
+  $info->{store}{"std_$method"}        = $std_rows;
+  $info->{"_alu_$method"}              = 1;
+  $info->{store}{"alu_$method"}        = $alu_rows;
+  return;
+}
+
+sub _peth_source_tests {
+  my ($test, $method, $std_rows, $alu_rows) = @_;
+
+  can_ok($test->{info}, $method);
+
+  my $std_status = {'1.1' => 'deliveringPower'};
+  $test->_prime_peth($method, $std_rows, $alu_rows, $std_status);
+  cmp_deeply($test->{info}->$method(), $std_rows,
+    qq($method uses standard POWER-ETHERNET-MIB when it has rows));
+
+  $test->_prime_peth($method, {}, $alu_rows, {});
+  cmp_deeply($test->{info}->$method(), $alu_rows,
+    qq($method falls back to ALU-POWER-ETHERNET-MIB));
+
+  # Never mix: a populated standard port table selects the standard copy
+  # even when this particular standard column is empty.
+  return if $method eq 'peth_port_status';
+  $test->_prime_peth($method, {}, $alu_rows, $std_status);
+  cmp_deeply($test->{info}->$method(), {},
+    qq($method does not mix vendor rows into standard data));
+  return;
+}
+
+sub peth_port_admin : Tests(4) {
+  my $test = shift;
+  $test->_peth_source_tests('peth_port_admin',
+    {'1.1' => 'true', '1.2' => 'false'}, {'1.7' => 'true'});
+}
+
+sub peth_port_status : Tests(4) {
+  my $test = shift;
+  $test->_peth_source_tests('peth_port_status',
+    {'1.1' => 'deliveringPower', '1.2' => 'searching'},
+    {'1.7' => 'searching'});
+
+  $test->_prime_peth('peth_port_status', {}, {}, {});
+  cmp_deeply($test->{info}->peth_port_status(), {},
+    q(No data returns empty hash));
+}
+
+sub peth_port_class : Tests(4) {
+  my $test = shift;
+  $test->_peth_source_tests('peth_port_class',
+    {'1.1' => 'class3'}, {'1.7' => 'class0'});
+}
+
+sub peth_power_watts : Tests(4) {
+  my $test = shift;
+  $test->_peth_source_tests('peth_power_watts', {1 => 770}, {1 => 240});
+}
+
+sub peth_power_status : Tests(4) {
+  my $test = shift;
+  $test->_peth_source_tests('peth_power_status', {1 => 'on'}, {1 => 'off'});
+}
+
+sub peth_power_consumption : Tests(4) {
+  my $test = shift;
+  $test->_peth_source_tests('peth_power_consumption', {1 => 52}, {1 => 7});
+}
+
+sub peth_power_threshold : Tests(4) {
+  my $test = shift;
+  $test->_peth_source_tests('peth_power_threshold', {1 => 99}, {1 => 80});
+}
+
+sub peth_port_ifindex : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'peth_port_ifindex');
+
+  $test->_prime_peth('peth_port_status',
+    {'1.1' => 'deliveringPower', '2.10' => 'searching'},
+    {'1.7' => 'searching'}, {});
+  cmp_deeply($test->{info}->peth_port_ifindex(),
+    {'1.1' => 1001, '2.10' => 2010},
+    q(Standard PoE ports map to OmniSwitch ifIndex values));
+
+  $test->_prime_peth('peth_port_status', {}, {'1.7' => 'searching'}, {});
+  cmp_deeply($test->{info}->peth_port_ifindex(),
+    {'1.7' => 1007}, q(Vendor PoE ports map to OmniSwitch ifIndex values));
+}
+
+sub alu8_vpa_type : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'alu8_vpa_type');
+
+  $info->{'_alu8_vpa_type'}     = 1;
+  $info->{store}{alu8_vpa_type} = {'12.1001' => 1, '5.1001' => 2};
+  cmp_deeply($info->alu8_vpa_type(), {'12.1001' => 1, '5.1001' => 2},
+    q(Cached AOS 8 vpaType rows are returned));
+
+  $info->clear_cache();
+  cmp_deeply($info->alu8_vpa_type(), {}, q(No data returns empty hash));
+}
+
+sub i_vlan : Tests(6) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'i_vlan');
+
+  $info->{'_bp_index'}         = 1;
+  $info->{store}{bp_index}     = {1 => 1001, 2 => 1002};
+  $info->{'_i_index'}          = 1;
+  $info->{store}{i_index}      = {1001 => 1001, 1002 => 1002};
+  $info->{'_qb_i_vlan'}        = 1;
+  $info->{store}{qb_i_vlan}    = {1 => 10, 2 => 20};
+  $info->{'_alu_vpa_type'}     = 1;
+  $info->{store}{alu_vpa_type} = {'30.1001' => 'cfgDefault'};
+  cmp_deeply($info->i_vlan(), {1001 => 10, 1002 => 20},
+    q(PVID from Q-BRIDGE-MIB is used when present));
+
+  $info->{store}{qb_i_vlan}    = {};
+  $info->{store}{alu_vpa_type} = {
+    '30.1001' => 'cfgDefault',
+    '40.1001' => 'qTagged',
+    '50.1002' => 'cfgDefault',
+  };
+  $info->{'_alu8_vpa_type'}     = 1;
+  $info->{store}{alu8_vpa_type} = {'60.1003' => 1};
+  cmp_deeply($info->i_vlan(), {1001 => 30, 1002 => 50},
+    q(AOS 6 cfgDefault VPA rows give the native VLAN));
+
+  $info->{store}{alu_vpa_type}  = {};
+  $info->{store}{alu8_vpa_type} = {
+    '12.1001' => 1,
+    '5.1001'  => 2,
+    '3.1013'  => 1,
+    '1.1020'  => 1,
+    '7.1020'  => 1,
+  };
+  cmp_deeply($info->i_vlan(), {1001 => 12, 1013 => 3},
+    q(AOS 8 cfgDefault VPA rows give the native VLAN, skipping ambiguous));
+
+  cmp_deeply($info->i_vlan(1013), {1013 => 3},
+    q(Partial fetch returns only the requested ifIndex));
+
+  $info->clear_cache();
+  cmp_deeply($info->i_vlan(), {}, q(No data returns empty hash));
+}
+
 1;

@@ -56,19 +56,16 @@ $VERSION = '3.978002';
     %SNMP::Info::MAU::MIBS,
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::AMAP::MIBS,
-    'ALCATEL-IND1-DEVICES'     => 'familyOmniSwitch7000',
-    'ALCATEL-IND1-CHASSIS-MIB' => 'chasEntPhysOperStatus',
-    'ALU-POWER-ETHERNET-MIB'   => 'pethPsePortDetectionStatus',
+    'ALCATEL-IND1-DEVICES'      => 'familyOmniSwitch7000',
+    'ALCATEL-IND1-CHASSIS-MIB'  => 'chasEntPhysOperStatus',
+    'ALCATEL-IND1-VLAN-MGR-MIB' => 'vpaType',
+    'ALU-POWER-ETHERNET-MIB'    => 'pethPsePortDetectionStatus',
 );
 
-# Alcatel provides their own version of the POWER-ETHERNET-MIB,
-# off in vendor-space, without renaming any of the objects.
-# This means we have to *not* load the POWER-ETHERNET-MIB
-# but can then still use the standard PowerEthernet module,
-# but cannot try both so we hope Alcatel doesn't stop supporting
-# their private version even if they get around to supporting the
-# standard.
-delete $MIBS{'POWER-ETHERNET-MIB'};
+# Alcatel's AOS 6 copy of the POWER-ETHERNET-MIB lives in vendor space
+# without renaming any objects, while AOS 8 implements the standard MIB.
+# With both modules loaded a bare leaf name resolves to whichever loaded
+# last, so every peth column is qualified with its MIB name.
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::MAU::GLOBALS,
@@ -78,6 +75,36 @@ delete $MIBS{'POWER-ETHERNET-MIB'};
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS, %SNMP::Info::MAU::FUNCS,
     %SNMP::Info::LLDP::FUNCS, %SNMP::Info::AMAP::FUNCS,
+
+    # POWER-ETHERNET-MIB (standard, AOS 8)
+    'std_peth_port_admin'  => 'POWER_ETHERNET_MIB__pethPsePortAdminEnable',
+    'std_peth_port_status' =>
+        'POWER_ETHERNET_MIB__pethPsePortDetectionStatus',
+    'std_peth_port_class' =>
+        'POWER_ETHERNET_MIB__pethPsePortPowerClassifications',
+    'std_peth_power_watts'  => 'POWER_ETHERNET_MIB__pethMainPsePower',
+    'std_peth_power_status' => 'POWER_ETHERNET_MIB__pethMainPseOperStatus',
+    'std_peth_power_consumption' =>
+        'POWER_ETHERNET_MIB__pethMainPseConsumptionPower',
+    'std_peth_power_threshold' =>
+        'POWER_ETHERNET_MIB__pethMainPseUsageThreshold',
+
+    # ALU-POWER-ETHERNET-MIB (vendor copy, AOS 6)
+    'alu_peth_port_admin' => 'ALU_POWER_ETHERNET_MIB__pethPsePortAdminEnable',
+    'alu_peth_port_status' =>
+        'ALU_POWER_ETHERNET_MIB__pethPsePortDetectionStatus',
+    'alu_peth_port_class' =>
+        'ALU_POWER_ETHERNET_MIB__pethPsePortPowerClassifications',
+    'alu_peth_power_watts'  => 'ALU_POWER_ETHERNET_MIB__pethMainPsePower',
+    'alu_peth_power_status' =>
+        'ALU_POWER_ETHERNET_MIB__pethMainPseOperStatus',
+    'alu_peth_power_consumption' =>
+        'ALU_POWER_ETHERNET_MIB__pethMainPseConsumptionPower',
+    'alu_peth_power_threshold' =>
+        'ALU_POWER_ETHERNET_MIB__pethMainPseUsageThreshold',
+
+    # ALCATEL-IND1-VLAN-MGR-MIB::vpaTable
+    'alu_vpa_type' => 'vpaType',
 );
 
 %MUNGE = (
@@ -240,43 +267,123 @@ sub bp_index {
     return $bp_index;
 }
 
-# Workaround for unimplemented Q-BRIDGE-MIB::dot1qPvid
-# If there is only one VLAN on which a given port is output
-# untagged, then call that one the PVID.  This is a guess that
-# works in obvious configurations but may be wrong in
-# subtle cases (like there's one output VLAN but a different
-# input one - the only way to know that is via the dot1qPvid
-# object)
-#
-# Newer versions have implemented dot1qPvid (but wrong, but
-# that's just life)
-#sub i_vlan {
-#    my $alu = shift;
-#
-#    my $qb_v_untagged = $alu->qb_v_untagged();
-#    my $bp_index = $alu->bp_index();
-#    my $vlan_list = {};
-#    foreach my $vlan (keys %$qb_v_untagged) {
-#	my $portlist = $qb_v_untagged->{$vlan};
-#	my $port;
-#	for ($port = 0; $port <= $#$portlist; $port++) {
-#	    if ($portlist->[$port]) {
-#		my $ifindex = $bp_index->{$port + 1};
-#		if ($ifindex) {
-#		    push(@{$vlan_list->{$ifindex}}, int($vlan));
-#		}
-#	    }
-#	}
-#    }
-#
-#    my $i_vlan = {};
-#    foreach my $ifindex (keys %$vlan_list) {
-#	if ($#{$vlan_list->{$ifindex}} == 0) {
-#	    $i_vlan->{$ifindex} = ${$vlan_list->{$ifindex}}[0];
-#	}
-#    }
-#    return $i_vlan;
-#}
+# AOS 8 (and some AOS 6 releases) leave dot1qPvid empty, so fall back to
+# the configured default VLAN in vpaTable, indexed by vlan.ifIndex.  A port
+# listed as default in more than one VLAN is ambiguous and left out.
+sub i_vlan {
+    my $alu     = shift;
+    my $partial = shift;
+
+    my $i_vlan = $alu->SUPER::i_vlan($partial);
+    return $i_vlan if ref $i_vlan eq 'HASH' and scalar keys %$i_vlan;
+
+    my $vpa_type = $alu->alu_vpa_type();
+    unless ( ref $vpa_type eq 'HASH' and scalar keys %$vpa_type ) {
+        $vpa_type = $alu->alu8_vpa_type();
+    }
+    return {} unless ref $vpa_type eq 'HASH';
+
+    my %defaults;
+    foreach my $iid ( keys %$vpa_type ) {
+        my $type = $vpa_type->{$iid};
+        next unless defined $type and $type =~ m/^(?:cfgDefault|1)$/;
+        my ( $vlan, $ifindex ) = split( m/\./, $iid );
+        next if defined $partial and $ifindex ne $partial;
+        push @{ $defaults{$ifindex} }, $vlan;
+    }
+
+    my $default_vlan = {};
+    foreach my $ifindex ( keys %defaults ) {
+        my @vlans = @{ $defaults{$ifindex} };
+        $default_vlan->{$ifindex} = $vlans[0] if scalar @vlans == 1;
+    }
+    return $default_vlan;
+}
+
+# AOS 8 serves vpaType under .6486.801, but netdisco-mibs only defines the
+# AOS 6 tree under .6486.800.  With no MIB node there net-snmp returns the
+# whole instance OID as the tag and an empty iid, which AUTOLOAD's table
+# walk cannot follow, so walk the numeric column here.
+sub alu8_vpa_type {
+    my $alu = shift;
+
+    return $alu->{store}{alu8_vpa_type} if $alu->{'_alu8_vpa_type'};
+    return if $alu->{Offline};
+    my $sess = $alu->session() or return;
+
+    my $base     = '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3';
+    my $next_oid = $base;
+    my $vpa_type = {};
+    my %seen;
+    while (1) {
+
+        # The returned tag cannot be resent, so ask again by number.
+        my $var = SNMP::Varbind->new( [$next_oid] );
+        $sess->getnext($var);
+        last if $sess->{ErrorNum} or !defined $var->[0];
+        my $name = $var->[0];
+        $name .= ".$var->[1]" if defined $var->[1] and length $var->[1];
+        my $oid = SNMP::translateObj($name) // $name;
+        last if $seen{$oid}++;
+        last unless $oid =~ m/^\Q$base\E\.(\d+\.\d+)$/;
+        $vpa_type->{$1} = $var->[2];
+        $next_oid = $oid;
+    }
+    $alu->_cache( 'alu8_vpa_type', $vpa_type );
+    return $vpa_type;
+}
+
+# One PoE source per device: the standard MIB when its port table has
+# rows, otherwise the AOS 6 vendor copy.
+sub _peth_table {
+    my $alu     = shift;
+    my $method  = shift;
+    my $partial = shift;
+
+    my $std_status = $alu->std_peth_port_status();
+    my $source
+        = ( ref $std_status eq 'HASH' and scalar keys %$std_status )
+        ? 'std'
+        : 'alu';
+    my $leaf_method = "${source}_$method";
+    my $table       = $alu->$leaf_method($partial);
+    return $table;
+}
+
+sub peth_port_admin {
+    my ( $alu, $partial ) = @_;
+    return $alu->_peth_table( 'peth_port_admin', $partial );
+}
+
+sub peth_port_status {
+    my ( $alu, $partial ) = @_;
+    return $alu->_peth_table( 'peth_port_status', $partial );
+}
+
+sub peth_port_class {
+    my ( $alu, $partial ) = @_;
+    return $alu->_peth_table( 'peth_port_class', $partial );
+}
+
+sub peth_power_watts {
+    my ( $alu, $partial ) = @_;
+    return $alu->_peth_table( 'peth_power_watts', $partial );
+}
+
+sub peth_power_status {
+    my ( $alu, $partial ) = @_;
+    return $alu->_peth_table( 'peth_power_status', $partial );
+}
+
+sub peth_power_consumption {
+    my ( $alu, $partial ) = @_;
+    return $alu->_peth_table( 'peth_power_consumption', $partial );
+}
+
+sub peth_power_threshold {
+    my ( $alu, $partial ) = @_;
+    return $alu->_peth_table( 'peth_power_threshold', $partial );
+}
 
 # Power-Ethernet ifIndex mapping.  I've only seen this from a
 # fixed-config single-module system, so this is only a plausible
@@ -346,13 +453,16 @@ Subclass for Alcatel-Lucent OmniSwitch devices
 
 =item F<ALCATEL-IND1-CHASSIS-MIB>
 
+=item F<ALCATEL-IND1-VLAN-MGR-MIB>
+
 =item F<ALU-POWER-ETHERNET-MIB>
 
 Note that Alcatel-Lucent distributes their own proprietary version of the
 F<POWER-ETHERNET-MIB>, but the MIB module name that they distribute is
 simply F<POWER-ETHERNET-MIB>.  This module must be hand-edited to change the
 module name to F<ALU-POWER-ETHERNET-MIB> so that it can be used simultaneously
-with the standard F<POWER-ETHERNET-MIB>.
+with the standard F<POWER-ETHERNET-MIB>.  AOS 6 populates this vendor
+copy; AOS 8 populates the standard F<POWER-ETHERNET-MIB> instead.
 
 =item Inherited Classes' MIBs
 
@@ -444,10 +554,43 @@ Returns info from F<MAU-MIB>
 
 Returns info from F<MAU-MIB>
 
+=item $alu->i_vlan()
+
+Returns the default VLAN of each port from C<dot1qPvid>.  When that is
+empty, as on AOS 8, returns the VLAN of C<vpaTable> rows whose C<vpaType>
+is C<cfgDefault>, keyed by C<vpaIfIndex>.  A port that is C<cfgDefault>
+in more than one VLAN is omitted.
+
+=item $alu->alu8_vpa_type()
+
+Returns C<vpaType> from the AOS 8 copy of C<vpaTable>
+(C<.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3>), keyed by
+C<vpaVlanNumber.vpaIfIndex>.  The table is walked by number because
+F<ALCATEL-IND1-VLAN-MGR-MIB> only defines the AOS 6 location.
+
 =item $alu->peth_port_ifindex()
 
 Returns the C<ifIndex> value for power-ethernet ports
 using the OmniSwitch algorithm.
+
+=item $alu->peth_port_admin()
+
+=item $alu->peth_port_status()
+
+=item $alu->peth_port_class()
+
+=item $alu->peth_power_watts()
+
+=item $alu->peth_power_status()
+
+=item $alu->peth_power_consumption()
+
+=item $alu->peth_power_threshold()
+
+Return the standard F<POWER-ETHERNET-MIB> column when its
+C<pethPsePortDetectionStatus> has rows (AOS 8), otherwise the same column
+from F<ALU-POWER-ETHERNET-MIB> (AOS 6).  Rows from the two MIBs are never
+mixed for one device.
 
 =back
 

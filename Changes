@@ -2,6 +2,9 @@ Version 3.978003 (2026-tbd)
 
   [BUG FIXES]
 
+  * AlcatelLucent: read PoE from the standard POWER-ETHERNET-MIB on AOS 8
+    and native VLAN from vpaTable when dot1qPvid is empty
+    (netdisco/netdisco#1298)
   * #603 Timetra: return tmnxHwIndex as the e_index value (#544)
   * #602 Fixes for TP-Link JetStream and Omada switches (#449)
   * #581 Juniper: preserve dot1qPvid values which collide with internal
