@@ -115,7 +115,7 @@ sub mac : Tests(3) {
     q(No LLDP chassis ID falls back to ifPhysAddress.1));
 }
 
-sub c_ip : Tests(3) {
+sub c_ip : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'c_ip');
@@ -142,9 +142,136 @@ sub c_ip : Tests(3) {
   cmp_deeply($test->{info}->c_ip(undef, ['lldp']), $expected,
     q(Neighbor with a chassis ID but no IPv4 address returns 0.0.0.0));
 
+  # sw5 sends LLDP with no management address on ifIndex 6 and its address
+  # by CDP, so the table has it; mt7 on ifIndex 7 has no address anywhere
+  $test->_prime_mndp();
+  my $info = $test->{info};
+  $info->{"_$_"} = 1 for qw/lldp_rem_id_type lldp_rem_id lldp_rman_addr/;
+  $info->{store}{lldp_rem_pid}
+    = {'0.6.2' => 'Ethernet1', '0.6.9' => 'Gi0/1', '0.7.8' => 'ether1'};
+  $info->{store}{lldp_rem_sysname}
+    = {'0.6.2' => 'ce1', '0.6.9' => 'sw5', '0.7.8' => 'mt7'};
+  $info->{store}{lldp_rem_id_type}
+    = {map { $_ => 'macAddress' } qw/0.6.2 0.6.9 0.7.8/};
+  $info->{store}{lldp_rem_id} = {
+    '0.6.2' => '00:1C:73:AE:FD:0C',
+    '0.6.9' => '00:00:5E:00:53:05',
+    '0.7.8' => '0C:00:00:00:00:07',
+  };
+  $info->{store}{lldp_rman_addr} = {'0.6.2.1.4.10.0.99.3' => 'ifIndex'};
+  $expected = {
+    '0.6.2' => '10.0.99.3',
+    '0.6.9' => '10.0.99.5',
+    '0.7.8' => '0.0.0.0',
+    3       => '10.0.99.2',
+  };
+  cmp_deeply($info->c_ip(undef, ['lldp', 'mndp']), $expected,
+    q(LLDP neighbor without an address takes the table's, else 0.0.0.0));
+
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->c_ip(undef, ['lldp']), {},
     q(No data returns empty hash));
+}
+
+
+# mt1 in the RouterOS 7.24.5 lab with mt2 sending only MNDP. mtxrNeighborTable
+# also lists ce1 (index 2), which LLDP-MIB reports on ifIndex 6; index 4 has
+# no IP; index 5 is a different neighbor heard only by CDP on ifIndex 6.
+sub _prime_mndp {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->{"_$_"} = 1 for qw/i_description i_alias lldp_rem_pid
+    lldp_rem_sysname mt_nbr_ip mt_nbr_mac mt_nbr_identity mt_nbr_platform
+    mt_nbr_if/;
+  $info->{store} = {
+    i_description    => {3 => 'ether2', 6 => 'ether5'},
+    i_alias          => {},
+    lldp_rem_pid     => {'0.6.2' => 'Ethernet1'},
+    lldp_rem_sysname => {'0.6.2' => 'ce1'},
+    mt_nbr_ip =>
+      {2 => '10.0.99.3', 3 => '10.0.99.2', 4 => '0.0.0.0', 5 => '10.0.99.5'},
+    mt_nbr_mac => {
+      2 => pack('H*', 'aac1ab001076'),
+      3 => pack('H*', 'aac1ab014254'),
+      4 => pack('H*', 'aac1ab000004'),
+      5 => pack('H*', '00005e005305'),
+    },
+    mt_nbr_identity => {2 => 'ce1',    3 => 'mt2', 4 => 'mt4', 5 => 'sw5'},
+    mt_nbr_platform =>
+      {2 => 'Arista', 3 => 'MikroTik', 4 => 'MikroTik', 5 => 'Cisco'},
+    mt_nbr_if => {2 => 6, 3 => 3, 4 => 4, 5 => 6},
+  };
+}
+
+sub hasMNDP : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'hasMNDP');
+
+  $test->_prime_mndp();
+  is($test->{info}->hasMNDP(), 1, q(Neighbor table rows return 1));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->hasMNDP(), undef, q(No neighbor table returns undef));
+}
+
+sub mndp_if : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mndp_if');
+
+  $test->_prime_mndp();
+  cmp_deeply($test->{info}->mndp_if(), {3 => 3, 5 => 6},
+    q(Skips LLDP duplicates and neighbors without an IP));
+  cmp_deeply($test->{info}->mndp_if(3), {3 => 3},
+    q(Partial returns the one neighbor));
+}
+
+sub mndp_ip : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mndp_ip');
+
+  $test->_prime_mndp();
+  cmp_deeply($test->{info}->mndp_ip(), {3 => '10.0.99.2', 5 => '10.0.99.5'},
+    q(Neighbor addresses));
+}
+
+sub mndp_id : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mndp_id');
+
+  $test->_prime_mndp();
+  cmp_deeply($test->{info}->mndp_id(),
+    {3 => 'aa:c1:ab:01:42:54', 5 => '00:00:5e:00:53:05'},
+    q(Neighbor IDs are their MAC addresses));
+}
+
+sub mndp_platform : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mndp_platform');
+
+  $test->_prime_mndp();
+  cmp_deeply($test->{info}->mndp_platform(), {3 => 'MikroTik', 5 => 'Cisco'},
+    q(Neighbor platforms));
+}
+
+sub mndp_port : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mndp_port');
+  cmp_deeply($test->{info}->mndp_port(), {}, q(No remote port in the table));
+}
+
+sub mndp_cap : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mndp_cap');
+  cmp_deeply($test->{info}->mndp_cap(), {}, q(No capabilities in the table));
 }
 
 1;
