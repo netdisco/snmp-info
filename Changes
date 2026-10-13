@@ -6,6 +6,7 @@ Version 3.978003 (2026-tbd)
   * #602 Fixes for TP-Link JetStream and Omada switches (#449)
   * #581 Juniper: preserve dot1qPvid values which collide with internal
     VLAN indexes
+  * #575 Mikrotik: read RouterOS LLDP chassis IDs sent as text MACs
 
 Version 3.978002 (2026-10-07)
 

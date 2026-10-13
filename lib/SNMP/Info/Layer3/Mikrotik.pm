@@ -99,6 +99,16 @@ sub cpu_temp {
     return $temp / 10.0;
 }
 
+# RouterOS returns MAC chassis IDs as text ("0C:00:1E:5A:27:00") rather than
+# the six octets LLDP-MIB defines, which munge_mac() rejects.
+sub _lldp_id_string {
+    my ( $mikrotik, $id, $type ) = @_;
+
+    return lc $id
+        if $type =~ /mac/ and $id =~ /^(?:[0-9A-F]{2}:){5}[0-9A-F]{2}$/i;
+    return $mikrotik->SUPER::_lldp_id_string( $id, $type );
+}
+
 1;
 __END__
 
