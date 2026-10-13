@@ -2,6 +2,8 @@ Version 3.978003 (2026-tbd)
 
   [BUG FIXES]
 
+  * Extreme: report os voss and os_ver for VOSS / Fabric Engine switches
+    (netdisco/netdisco#1442)
   * #603 Timetra: return tmnxHwIndex as the e_index value (#544)
   * #602 Fixes for TP-Link JetStream and Omada switches (#449)
   * #581 Juniper: preserve dot1qPvid values which collide with internal
