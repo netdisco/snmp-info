@@ -243,27 +243,28 @@ sub i_vlan {
     my $types = $juniper->i_type() || {};
 
     # If given a partial it will be an ifIndex, we need to use dot1dBasePort
+    my $if_partial = $partial;
     if ($partial) {
         my %r_index = reverse %$index;
         $partial = $r_index{$partial};
     }
 
-    my $v_index = $juniper->v_index() || {};
-    my $i_pvid  = $juniper->qb_i_vlan($partial) || {};
-    my $i_vlan  = $juniper->SUPER::i_vlan() || {};
+    my $old_index = $juniper->jnx_v_index() || {};
+    my $untagged  = scalar keys %$old_index
+        ? $juniper->i_vlan_membership_untagged($if_partial) || {}
+        : {};
+    my $i_pvid = $juniper->qb_i_vlan($partial) || {};
+    my $i_vlan = $juniper->SUPER::i_vlan() || {};
 
     foreach my $bport ( keys %$i_pvid ) {
-        my $q_vlan  = $i_pvid->{$bport};
-        my $vlan    = $q_vlan;
-        # Use defined as check since VLAN can be zero
-        $vlan = $v_index->{$q_vlan} if defined $v_index->{$q_vlan};
         my $ifindex = $index->{$bport};
         unless ( defined $ifindex ) {
             print "  Port $bport has no bp_index mapping. Skipping.\n"
                 if $DEBUG;
             next;
         }
-        $i_vlan->{$ifindex} = $vlan;
+        $i_vlan->{$ifindex} = $juniper->_pvid_vlan( $i_pvid->{$bport},
+            $old_index, $untagged->{$ifindex} );
     }
 
     # add in i_logical_unit
@@ -277,6 +278,20 @@ sub i_vlan {
     }
 
     return $i_vlan;
+}
+
+# ELS returns the VLAN ID in dot1qPvid. Pre-ELS releases differ: 10.4
+# returns the jnxExVlanTable index, 12.3 the VLAN ID. Prefer the reading the
+# port's untagged membership confirms, else keep the index translation.
+sub _pvid_vlan {
+    my ( $juniper, $pvid, $old_index, $untagged ) = @_;
+
+    my $translated = $old_index->{$pvid};
+    return $pvid unless defined $translated;
+
+    my %member = map { $_ => 1 } grep {defined} @{ $untagged || [] };
+    return $pvid if $member{$pvid} and !$member{$translated};
+    return $translated;
 }
 
 sub v_name {
