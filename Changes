@@ -2,6 +2,8 @@ Version 3.978003 (2026-tbd)
 
   [BUG FIXES]
 
+  * Huawei: fall back to the main board serial when the chassis serial is
+    empty (#529)
   * #603 Timetra: return tmnxHwIndex as the e_index value (#544)
   * #602 Fixes for TP-Link JetStream and Omada switches (#449)
   * #581 Juniper: preserve dot1qPvid values which collide with internal
