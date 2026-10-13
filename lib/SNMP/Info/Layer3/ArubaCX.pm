@@ -59,6 +59,7 @@ $VERSION = '3.978002';
     'ARUBAWIRED-VSF-MIB' => 'arubaWiredVsfTrapEnable',
     'ARUBAWIRED-POE-MIB' => 'arubaWiredPoePethPsePortAveragePower',
     'ARUBAWIRED-POWERSUPPLY-MIB' => 'arubaWiredPSUName',
+    'ARUBAWIRED-PM-MIB' => 'arubaWiredPmXcvrDescription',
 );
 
 %GLOBALS = (
@@ -86,6 +87,11 @@ $VERSION = '3.978002';
     'cipt_addr' => 'arubaWiredCiptClientIpAddress',
     'cipt_ifindex' => 'arubaWiredCiptClientPortIfIndex',
     'raw_ad_lag_ports' => 'dot3adAggPortListPorts',  # unmunged raw data
+    'pm_xcvr_port'    => 'arubaWiredPmXcvrPortDesc',
+    'pm_xcvr_descr'   => 'arubaWiredPmXcvrDescription',
+    'pm_xcvr_product' => 'arubaWiredPmXcvrProductNum',
+    'pm_xcvr_serial'  => 'arubaWiredPmXcvrSerialNum',
+    'pm_xcvr_type'    => 'arubaWiredPmXcvrType',
 );
 
 %MUNGE = (
@@ -218,6 +224,68 @@ sub ipv6_n2p_if {
     return $cx->_cipt_merge($cx->SUPER::ipv6_n2p_if(), 2, 'port', $partial);
 }
 
+# Transceivers are absent from ENTITY-MIB; add one module row per
+# arubaWiredPmXcvrTable row, indexed above any real entPhysicalIndex.
+my $XCVR_BASE = 1_000_000_000;
+
+sub _xcvr_entities {
+    my $cx = shift;
+    my $descr = $cx->pm_xcvr_descr() || {};
+    return {} unless %$descr;
+    my $real = $cx->SUPER::e_index() || {};
+    my $class = $cx->SUPER::e_class() || {};
+    my $name = $cx->SUPER::e_name() || {};
+    my $port = $cx->pm_xcvr_port() || {};
+    my $product = $cx->pm_xcvr_product() || {};
+    my $serial = $cx->pm_xcvr_serial() || {};
+    my $type = $cx->pm_xcvr_type() || {};
+    my ($chassis) = sort { $a <=> $b }
+        grep { ($class->{$_} // '') eq 'chassis' } keys %$class;
+    my %port_entity = map { $name->{$_} => $_ }
+        grep { ($class->{$_} // '') eq 'port' && defined $name->{$_} }
+        keys %$class;
+    my %rows;
+    foreach my $ifindex (grep { /^\d+$/ } keys %$descr) {
+        my $idx = $XCVR_BASE + $ifindex;
+        next if exists $real->{$idx};
+        my $port_name = $port->{$ifindex} // $ifindex;
+        $rows{$idx} = {
+            e_index => $idx,
+            e_class => 'module',
+            e_descr => $descr->{$ifindex},
+            e_name => "Transceiver $port_name",
+            e_model => $product->{$ifindex},
+            e_serial => $serial->{$ifindex},
+            e_type => $type->{$ifindex},
+            e_fru => 'true',
+            e_parent => $port_entity{$port_name} // $chassis // 0,
+        };
+    }
+    return \%rows;
+}
+
+sub _xcvr_merge {
+    my ($cx, $method, $partial) = @_;
+    my $super = "SUPER::$method";
+    return $cx->$super($partial) if defined $partial;
+    my $rows = $cx->_xcvr_entities();
+    return $cx->$super() unless %$rows;
+    my $base = $cx->$super();
+    my %result = %{ $base || {} };
+    $result{$_} = $rows->{$_}{$method} for keys %$rows;
+    return \%result;
+}
+
+sub e_index  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_index', $p) }
+sub e_class  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_class', $p) }
+sub e_descr  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_descr', $p) }
+sub e_name   { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_name', $p) }
+sub e_model  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_model', $p) }
+sub e_serial { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_serial', $p) }
+sub e_type   { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_type', $p) }
+sub e_fru    { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_fru', $p) }
+sub e_parent { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_parent', $p) }
+
 sub os {
     return "arubaos-cx";
 }
@@ -346,6 +414,8 @@ Subclass for devices running ArubaOS-CX
 
 =item F<ARUBAWIRED-POWERSUPPLY-MIB>
 
+=item F<ARUBAWIRED-PM-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
@@ -446,9 +516,61 @@ Power supplied by PoE ports, in milliwatts.
 
 =back
 
+=head2 Transceivers
+
+Columns of C<ARUBAWIRED-PM-MIB::arubaWiredPmXcvrTable>, indexed by ifIndex.
+
+=over
+
+=item $cx->pm_xcvr_port()
+
+(C<arubaWiredPmXcvrPortDesc>)
+
+=item $cx->pm_xcvr_descr()
+
+(C<arubaWiredPmXcvrDescription>)
+
+=item $cx->pm_xcvr_product()
+
+(C<arubaWiredPmXcvrProductNum>)
+
+=item $cx->pm_xcvr_serial()
+
+(C<arubaWiredPmXcvrSerialNum>)
+
+=item $cx->pm_xcvr_type()
+
+(C<arubaWiredPmXcvrType>)
+
+=back
+
 =head2 Overrides
 
 =over
+
+=item $cx->e_index()
+
+=item $cx->e_class()
+
+=item $cx->e_descr()
+
+=item $cx->e_name()
+
+=item $cx->e_model()
+
+=item $cx->e_serial()
+
+=item $cx->e_type()
+
+=item $cx->e_fru()
+
+=item $cx->e_parent()
+
+Add one C<module> row per transceiver to the C<ENTITY-MIB> data, indexed
+1000000000 plus the port ifIndex. The parent is the C<port> entity whose
+name matches C<arubaWiredPmXcvrPortDesc>, else the first chassis, else 0.
+A row whose index is already a real C<entPhysicalIndex> is skipped. Partial
+fetches and devices without transceiver data return the inherited result.
 
 =item C<agg_ports>
 
