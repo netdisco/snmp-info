@@ -58,4 +58,42 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
+sub lldp_id : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'lldp_id');
+
+  # RouterOS 7.24.5 CHR: MAC chassis IDs arrive as 17 bytes of text
+  $test->{info}{'_lldp_rem_id_type'} = 1;
+  $test->{info}{'_lldp_rem_id'}      = 1;
+  $test->{info}{store}{lldp_rem_id_type}
+    = {'0.3.1' => 'macAddress', '0.6.2' => 'macAddress', '0.7.3' => 'local'};
+  $test->{info}{store}{lldp_rem_id} = {
+    '0.3.1' => '0C:00:1E:5A:27:00',
+    '0.6.2' => pack('H*', '001c73aefd0c'),
+    '0.7.3' => 'ether2',
+  };
+  my $expected = {
+    '0.3.1' => '0c:00:1e:5a:27:00',
+    '0.6.2' => '00:1c:73:ae:fd:0c',
+    '0.7.3' => 'ether2',
+  };
+  cmp_deeply($test->{info}->lldp_id(), $expected,
+    q(Text and octet MAC chassis IDs both return formatted MACs));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->lldp_id(), {}, q(No data returns empty hash));
+}
+
+sub lldp_loc_id : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'lldp_loc_id');
+
+  $test->{info}{'_lldp_loc_id_type'} = 'macAddress';
+  $test->{info}{'_lldp_loc_id_os'}   = '0C:00:52:97:B8:00';
+  is($test->{info}->lldp_loc_id(), '0c:00:52:97:b8:00',
+    q(Text MAC local chassis ID returns formatted MAC));
+}
+
 1;

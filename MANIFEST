@@ -1,3 +1,4 @@
+.perlcriticrc
 .perltidyrc
 Build.PL
 Changes
@@ -17,6 +18,7 @@ lib/SNMP/Info/AMAP.pm
 lib/SNMP/Info/Bridge.pm
 lib/SNMP/Info/CDP.pm
 lib/SNMP/Info/CiscoAgg.pm
+lib/SNMP/Info/CiscoAuthFramework.pm
 lib/SNMP/Info/CiscoBGP.pm
 lib/SNMP/Info/CiscoConfig.pm
 lib/SNMP/Info/CiscoPortSecurity.pm
@@ -64,6 +66,7 @@ lib/SNMP/Info/Layer2/HP.pm
 lib/SNMP/Info/Layer2/HP4000.pm
 lib/SNMP/Info/Layer2/HPVC.pm
 lib/SNMP/Info/Layer2/Kentrox.pm
+lib/SNMP/Info/Layer2/Microsens.pm
 lib/SNMP/Info/Layer2/N2270.pm
 lib/SNMP/Info/Layer2/NAP222x.pm
 lib/SNMP/Info/Layer2/Netgear.pm
@@ -71,6 +74,7 @@ lib/SNMP/Info/Layer2/Nexans.pm
 lib/SNMP/Info/Layer2/NWSS2300.pm
 lib/SNMP/Info/Layer2/Orinoco.pm
 lib/SNMP/Info/Layer2/Sixnet.pm
+lib/SNMP/Info/Layer2/TPLink.pm
 lib/SNMP/Info/Layer2/Trapeze.pm
 lib/SNMP/Info/Layer2/Ubiquiti.pm
 lib/SNMP/Info/Layer2/ZyXEL_DSLAM.pm
@@ -88,6 +92,7 @@ lib/SNMP/Info/Layer3/C1300.pm
 lib/SNMP/Info/Layer3/C3550.pm
 lib/SNMP/Info/Layer3/C4000.pm
 lib/SNMP/Info/Layer3/C6500.pm
+lib/SNMP/Info/Layer3/C9800.pm
 lib/SNMP/Info/Layer3/Cambium.pm
 lib/SNMP/Info/Layer3/CheckPoint.pm
 lib/SNMP/Info/Layer3/Ciena.pm
@@ -105,6 +110,7 @@ lib/SNMP/Info/Layer3/ERX.pm
 lib/SNMP/Info/Layer3/Extreme.pm
 lib/SNMP/Info/Layer3/ExtremeWing.pm
 lib/SNMP/Info/Layer3/F5.pm
+lib/SNMP/Info/Layer3/F5OS.pm
 lib/SNMP/Info/Layer3/Force10.pm
 lib/SNMP/Info/Layer3/Fortinet.pm
 lib/SNMP/Info/Layer3/Foundry.pm
@@ -114,6 +120,7 @@ lib/SNMP/Info/Layer3/HP9300.pm
 lib/SNMP/Info/Layer3/Huawei.pm
 lib/SNMP/Info/Layer3/IBMGbTor.pm
 lib/SNMP/Info/Layer3/Juniper.pm
+lib/SNMP/Info/Layer3/Lancom.pm
 lib/SNMP/Info/Layer3/Lantronix.pm
 lib/SNMP/Info/Layer3/Lenovo.pm
 lib/SNMP/Info/Layer3/Meraki.pm
@@ -134,6 +141,7 @@ lib/SNMP/Info/Layer3/Redlion.pm
 lib/SNMP/Info/Layer3/Scalance.pm
 lib/SNMP/Info/Layer3/SilverPeak.pm
 lib/SNMP/Info/Layer3/SonicWALL.pm
+lib/SNMP/Info/Layer3/Sophos.pm
 lib/SNMP/Info/Layer3/Steelfusion.pm
 lib/SNMP/Info/Layer3/Steelhead.pm
 lib/SNMP/Info/Layer3/SteelheadEx.pm
@@ -150,9 +158,12 @@ lib/SNMP/Info/Layer7/Arbor.pm
 lib/SNMP/Info/Layer7/CiscoIPS.pm
 lib/SNMP/Info/Layer7/Gigamon.pm
 lib/SNMP/Info/Layer7/HWGroup.pm
+lib/SNMP/Info/Layer7/Kemp.pm
 lib/SNMP/Info/Layer7/Liebert.pm
 lib/SNMP/Info/Layer7/Neoteris.pm
 lib/SNMP/Info/Layer7/Netscaler.pm
+lib/SNMP/Info/Layer7/QNAP.pm
+lib/SNMP/Info/Layer7/Synology.pm
 lib/SNMP/Info/Layer7/Stormshield.pm
 lib/SNMP/Info/LLDP.pm
 lib/SNMP/Info/MAU.pm
@@ -175,9 +186,7 @@ xt/00_local_perlcritic.t
 xt/00_local_pod-coverage.t
 xt/00_local_pod.t
 xt/00_local_prereq.t
-xt/00_local_spelling.t
 xt/00_local_versionsync.t
-xt/10_remote_snmplabs.t
 xt/21_run.t
 xt/lib/My/Test/Class.pm
 xt/lib/Test/SNMP/Info.pm
@@ -188,6 +197,7 @@ xt/lib/Test/SNMP/Info/AMAP.pm
 xt/lib/Test/SNMP/Info/Bridge.pm
 xt/lib/Test/SNMP/Info/CDP.pm
 xt/lib/Test/SNMP/Info/CiscoAgg.pm
+xt/lib/Test/SNMP/Info/CiscoAuthFramework.pm
 xt/lib/Test/SNMP/Info/CiscoConfig.pm
 xt/lib/Test/SNMP/Info/CiscoPortSecurity.pm
 xt/lib/Test/SNMP/Info/CiscoPower.pm
@@ -228,6 +238,7 @@ xt/lib/Test/SNMP/Info/Layer2/HP.pm
 xt/lib/Test/SNMP/Info/Layer2/HP4000.pm
 xt/lib/Test/SNMP/Info/Layer2/HPVC.pm
 xt/lib/Test/SNMP/Info/Layer2/Kentrox.pm
+xt/lib/Test/SNMP/Info/Layer2/Microsens.pm
 xt/lib/Test/SNMP/Info/Layer2/N2270.pm
 xt/lib/Test/SNMP/Info/Layer2/NAP222x.pm
 xt/lib/Test/SNMP/Info/Layer2/Netgear.pm
@@ -235,6 +246,7 @@ xt/lib/Test/SNMP/Info/Layer2/Nexans.pm
 xt/lib/Test/SNMP/Info/Layer2/NWSS2300.pm
 xt/lib/Test/SNMP/Info/Layer2/Orinoco.pm
 xt/lib/Test/SNMP/Info/Layer2/Sixnet.pm
+xt/lib/Test/SNMP/Info/Layer2/TPLink.pm
 xt/lib/Test/SNMP/Info/Layer2/Trapeze.pm
 xt/lib/Test/SNMP/Info/Layer2/Ubiquiti.pm
 xt/lib/Test/SNMP/Info/Layer2/ZyXEL_DSLAM.pm
@@ -251,6 +263,7 @@ xt/lib/Test/SNMP/Info/Layer3/C1300.pm
 xt/lib/Test/SNMP/Info/Layer3/C3550.pm
 xt/lib/Test/SNMP/Info/Layer3/C4000.pm
 xt/lib/Test/SNMP/Info/Layer3/C6500.pm
+xt/lib/Test/SNMP/Info/Layer3/C9800.pm
 xt/lib/Test/SNMP/Info/Layer3/Cambium.pm
 xt/lib/Test/SNMP/Info/Layer3/CheckPoint.pm
 xt/lib/Test/SNMP/Info/Layer3/Cisco.pm
@@ -266,6 +279,7 @@ xt/lib/Test/SNMP/Info/Layer3/Enterasys.pm
 xt/lib/Test/SNMP/Info/Layer3/ERX.pm
 xt/lib/Test/SNMP/Info/Layer3/Extreme.pm
 xt/lib/Test/SNMP/Info/Layer3/F5.pm
+xt/lib/Test/SNMP/Info/Layer3/F5OS.pm
 xt/lib/Test/SNMP/Info/Layer3/Force10.pm
 xt/lib/Test/SNMP/Info/Layer3/Fortinet.pm
 xt/lib/Test/SNMP/Info/Layer3/Foundry.pm
@@ -275,6 +289,7 @@ xt/lib/Test/SNMP/Info/Layer3/HP9300.pm
 xt/lib/Test/SNMP/Info/Layer3/Huawei.pm
 xt/lib/Test/SNMP/Info/Layer3/IBMGbTor.pm
 xt/lib/Test/SNMP/Info/Layer3/Juniper.pm
+xt/lib/Test/SNMP/Info/Layer3/Lancom.pm
 xt/lib/Test/SNMP/Info/Layer3/Lantronix.pm
 xt/lib/Test/SNMP/Info/Layer3/Lenovo.pm
 xt/lib/Test/SNMP/Info/Layer3/Meraki.pm
@@ -294,6 +309,7 @@ xt/lib/Test/SNMP/Info/Layer3/Redlion.pm
 xt/lib/Test/SNMP/Info/Layer3/Scalance.pm
 xt/lib/Test/SNMP/Info/Layer3/SilverPeak.pm
 xt/lib/Test/SNMP/Info/Layer3/SonicWALL.pm
+xt/lib/Test/SNMP/Info/Layer3/Sophos.pm
 xt/lib/Test/SNMP/Info/Layer3/Steelhead.pm
 xt/lib/Test/SNMP/Info/Layer3/Sun.pm
 xt/lib/Test/SNMP/Info/Layer3/Tasman.pm
@@ -306,9 +322,12 @@ xt/lib/Test/SNMP/Info/Layer7/APC.pm
 xt/lib/Test/SNMP/Info/Layer7/Arbor.pm
 xt/lib/Test/SNMP/Info/Layer7/CiscoIPS.pm
 xt/lib/Test/SNMP/Info/Layer7/Gigamon.pm
+xt/lib/Test/SNMP/Info/Layer7/Kemp.pm
 xt/lib/Test/SNMP/Info/Layer7/Liebert.pm
 xt/lib/Test/SNMP/Info/Layer7/Neoteris.pm
 xt/lib/Test/SNMP/Info/Layer7/Netscaler.pm
+xt/lib/Test/SNMP/Info/Layer7/QNAP.pm
+xt/lib/Test/SNMP/Info/Layer7/Synology.pm
 xt/lib/Test/SNMP/Info/Layer7/Stormshield.pm
 xt/lib/Test/SNMP/Info/LLDP.pm
 xt/lib/Test/SNMP/Info/MAU.pm
@@ -316,3 +335,5 @@ xt/lib/Test/SNMP/Info/NortelStack.pm
 xt/lib/Test/SNMP/Info/PowerEthernet.pm
 xt/lib/Test/SNMP/Info/RapidCity.pm
 xt/lib/Test/SNMP/Info/SONMP.pm
+xt/fixtures/arubacx-cipt.json
+xt/lib/Test/SNMP/Info/Layer3/ArubaCX.pm
