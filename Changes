@@ -1,12 +1,57 @@
-Version 3.977002 (2026-tbd)
-
-  [NEW FEATURES]
-
-  * #455 Sophos SFOS firewall support
+Version 3.978003 (2026-tbd)
 
   [BUG FIXES]
 
-  * Juniper: preserve dot1qPvid values which collide with private VLAN indexes
+  * #603 Timetra: return tmnxHwIndex as the e_index value (#544)
+  * #602 Fixes for TP-Link JetStream and Omada switches (#449)
+  * #581 Juniper: preserve dot1qPvid values which collide with internal
+    VLAN indexes
+
+Version 3.978002 (2026-10-07)
+
+  [NEW FEATURES]
+
+  * Add ArubaCX client IP tracking to IPv4 and IPv6 address collection
+    (netdisco/netdisco#1713)
+
+Version 3.978001 (2026-10-07)
+
+  [NEW FEATURES]
+
+  * #590 Add Synology DSM NAS support
+  * #591 Add Cisco C9800 per-AP policy, site and RF tags, including tag names
+    in AP module descriptions
+
+  [BUG FIXES]
+
+  * #412 Classify Aruba controller AP inventory entries as APs instead of modules
+
+  * #592 Fix HP/Aruba switch model translation, including Aruba 3810M
+    product prefixes, and add missing 2930F, 2930M and 3810M mappings (#553)
+  * #593 Read Cisco Catalyst 1300 software versions from ENTITY-MIB (#568)
+
+  [ENHANCEMENTS]
+
+  * #527 Report Aruba wireless OS as arubaos instead of airos; update
+    OS-based filters or scripts matching airos. Alcatel-Lucent remains aos-w.
+
+Version 3.978000 (2026-09-29)
+
+  [NEW FEATURES]
+
+  * #584 Kemp LoadMaster support, including virtual service IPv4 addresses
+  * #455 Sophos SFOS firewall support; name defaults to sfosDeviceName,
+    overridable with SNMP_INFO_SOPHOS_NAME_OID, with sysName fallback;
+    non-SFOS devices retain sysName by default
+  * #585 LANCOM LCOS-based devices support
+  * #586 QNAP NAS support for legacy NAS-MIB, QTS, and QuTS hero devices
+  * #587 add MICROSENS managed switch support, including G6 and G6+
+  * #580 Cisco Authentication Framework session VLAN support
+  * #588 F5OS rSeries appliance support, including LLDP and physical inventory
+
+  [ENHANCEMENTS]
+
+  * #582 Improve Citrix Netscaler os_ver
 
 Version 3.977001 (2026-08-26)
 

@@ -390,14 +390,14 @@ sub i_vlan : Tests(7) {
   cmp_deeply($test->{info}->i_vlan(),
     $expected, q(ELS PVID returned expected values));
 
-  # dot1qPvid is a VLAN ID. Preserve it when it happens to collide with a
-  # private VLAN table index for a different VLAN.
+  # dot1qPvid is a VLAN ID. Preserve it when it happens to collide with an
+  # internal VLAN table index for a different VLAN.
   $test->{info}{store}{bp_index}         = {513 => 510};
   $test->{info}{store}{qb_i_vlan}        = {513 => 15};
   $test->{info}{store}{jnx_els_v_index}  = {8 => 15, 15 => 201};
   $expected                              = {510 => 15};
   cmp_deeply($test->{info}->i_vlan(),
-    $expected, q(ELS PVID preserved when VLAN ID collides with private index));
+    $expected, q(ELS PVID preserved when VLAN ID collides with internal index));
 
   delete $test->{info}{'_jnx_els_v_index'};
   $test->{info}{store}{jnx_v_index} = {2 => 0, 3 => 120};
@@ -417,7 +417,7 @@ sub i_vlan : Tests(7) {
   $test->{info}{store}{qb_v_untagged} = {8 => $bport_514, 15 => $bport_549};
   $expected                           = {506 => 15};
   cmp_deeply($test->{info}->i_vlan(),
-    $expected, q(Older PVID preserved when VLAN ID collides with private index));
+    $expected, q(Older PVID preserved when VLAN ID collides with internal index));
 
   # 10.4 returns the index; untagged membership confirms 201
   $test->{info}{store}{qb_v_untagged} = {15 => $bport_514};

@@ -39,7 +39,7 @@ use SNMP::Info::Layer7;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.977001';
+$VERSION = '3.978002';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,
@@ -92,6 +92,10 @@ sub model {
 sub os_ver {
     my $ns    = shift;
     my $ver  = $ns->build_ver() || '';
+
+    if ($ver =~ /\bNS(\d+(?:\.\d+)*):\s*Build\s+(\d+(?:\.\d+)*)/i) {
+        return "$1-$2";
+    }
 
     if ($ver =~ /^.+\bNS(\d+\.\d+)/) {
         $ver = $1;
@@ -177,7 +181,7 @@ Returns 'netscaler'.
 
 =item $ns->os_ver()
 
-Release extracted from C<sysBuildVersion>.
+Release and build number extracted from C<sysBuildVersion> when available.
 
 =item $ns->model()
 

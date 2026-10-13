@@ -107,4 +107,55 @@ sub serial : Tests(2) {
   is($test->{info}->serial(), 'XXXXXXXXXXXXX', q(Serial is expected value));
 }
 
+sub name : Tests(6) {
+  my $test = shift;
+  my $info = $test->{info};
+  my $sess = $test->mock_session;
+  $sess->{Data}{'SNMPv2-MIB::sysName'} = { 0 => 'standard.example.test' };
+  $info->{_sfos_name} = 'sfos.example.test';
+  is($info->name(), 'sfos.example.test', 'SFOS hostname takes precedence');
+
+  for my $value (undef, '', '   ') {
+    $info->{_sfos_name} = $value;
+    is($info->name(), 'standard.example.test',
+      'Missing or blank SFOS hostname falls back to sysName');
+  }
+
+  $info->{_id} = '.1.3.6.1.4.1.2604.1';
+  $info->{_sfos_name} = 'sfos.example.test';
+  is($info->name(), 'standard.example.test', 'Non-SFOS device uses sysName');
+
+  delete $info->{_name};
+  delete $sess->{Data}{'SNMPv2-MIB::sysName'};
+  is($info->name(), undef, 'No hostname data returns undef');
+}
+
+sub name_oid : Tests(8) {
+  # Each case needs a fresh interpreter: globals and generated accessors are
+  # initialized when the module is loaded.
+  for my $case (
+      [ undef, '.1.3.6.1.4.1.2604.5.1.1.1.0', 'unset uses vendor OID' ],
+      [ '', '.1.3.6.1.4.1.2604.5.1.1.1.0', 'empty uses vendor OID' ],
+      [ '.1.3.6.1.2.1.1.5.0', '.1.3.6.1.2.1.1.5.0', 'standard sysName override' ],
+      [ '.1.3.6.1.4.1.2604.5.1.1.4.0', '.1.3.6.1.4.1.2604.5.1.1.4.0',
+          'custom scalar override' ],
+  ) {
+      local $ENV{SNMP_INFO_SOPHOS_NAME_OID};
+      if ( defined $case->[0] ) {
+          $ENV{SNMP_INFO_SOPHOS_NAME_OID} = $case->[0];
+      }
+      else {
+          delete $ENV{SNMP_INFO_SOPHOS_NAME_OID};
+      }
+
+      open my $child, '-|', $^X, '-Ilib', '-MSNMP::Info::Layer3::Sophos', '-e',
+          'print $SNMP::Info::Layer3::Sophos::GLOBALS{sfos_name}'
+          or die "Cannot start Perl: $!";
+      my $oid = do { local $/; <$child> };
+      close $child;
+      is( $?, 0, "$case->[2]: module loads" );
+      is( $oid, $case->[1], $case->[2] );
+  }
+}
+
 1;
