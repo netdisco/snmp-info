@@ -459,9 +459,16 @@ sub ipv6_addr {
 # IPV6-MIB ipv6AddrTable is indexed by ifIndex and a 16 octet address.
 # Rows are re-keyed as InetAddress (type.length.address) so ipv6_addr() can
 # parse them; link-local addresses repeat across interfaces, so they become
-# IPv6z with the ifIndex as zone index.
+# IPv6z with the ifIndex as zone index. The re-keyed rows match IP-MIB keys,
+# so IPV6-MIB is read only when neither address table has rows; otherwise a
+# missing IP-MIB column would be filled from a different MIB.
 sub _i6_addr_column {
     my ( $info, $column ) = @_;
+
+    foreach my $index_method (qw/ip_addr6_index c_addr6_index/) {
+        my $index = $info->$index_method() || {};
+        return if scalar keys %$index;
+    }
 
     my $pfxlens = $info->i6_addr_pfxlen() || {};
     return unless scalar keys %$pfxlens;

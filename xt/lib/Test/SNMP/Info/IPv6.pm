@@ -102,7 +102,7 @@ sub ipv6_index : Tests(4) {
   is($test->{info}->ipv6_index(), undef, q(No data returns undef));
 }
 
-sub ipv6_type : Tests(3) {
+sub ipv6_type : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'ipv6_type');
@@ -117,11 +117,23 @@ sub ipv6_type : Tests(3) {
   cmp_deeply($test->{info}->ipv6_type(), $expected,
     q(IPV6-MIB anycast flag maps to anycast, otherwise unicast));
 
+  $test->{info}{'_ip_addr6_index'} = 1;
+  $test->{info}{store}{ip_addr6_index} = {"2.16.$GLOBAL" => 5};
+  is($test->{info}->ipv6_type(), undef,
+    q(IP-MIB addresses without a type column take none from IPV6-MIB));
+
+  $test->{info}->clear_cache();
+  $test->_prime_ipv6_mib();
+  $test->{info}{'_c_addr6_index'} = 1;
+  $test->{info}{store}{c_addr6_index} = {"2.16.$GLOBAL" => 5};
+  is($test->{info}->ipv6_type(), undef,
+    q(CISCO-IETF-IP-MIB addresses take no type from IPV6-MIB));
+
   $test->{info}->clear_cache();
   is($test->{info}->ipv6_type(), undef, q(No data returns undef));
 }
 
-sub ipv6_addr_prefixlength : Tests(3) {
+sub ipv6_addr_prefixlength : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'ipv6_addr_prefixlength');
@@ -135,6 +147,11 @@ sub ipv6_addr_prefixlength : Tests(3) {
   };
   cmp_deeply($test->{info}->ipv6_addr_prefixlength(), $expected,
     q(IPV6-MIB prefix lengths returned under the same keys));
+
+  $test->{info}{'_ip_addr6_index'} = 1;
+  $test->{info}{store}{ip_addr6_index} = {"2.16.$GLOBAL" => 5};
+  is($test->{info}->ipv6_addr_prefixlength(), undef,
+    q(IP-MIB addresses take no prefix length from IPV6-MIB));
 
   $test->{info}->clear_cache();
   is($test->{info}->ipv6_addr_prefixlength(), undef,
