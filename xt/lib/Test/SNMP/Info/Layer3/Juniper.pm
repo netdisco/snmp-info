@@ -381,7 +381,7 @@ sub v_index : Tests(4) {
   cmp_deeply($test->{info}->v_index(), undef, q(No data returns undef));
 }
 
-sub i_vlan : Tests(6) {
+sub i_vlan : Tests(7) {
   my $test = shift;
 
   can_ok($test->{info}, 'i_vlan');
@@ -407,12 +407,23 @@ sub i_vlan : Tests(6) {
   cmp_deeply($test->{info}->i_vlan(),
     $expected, q(Older PVID returned expected values));
 
-  $test->{info}{store}{jnx_v_index} = {8 => 15, 15 => 201};
-  $test->{info}{store}{bp_index}     = {513 => 510};
-  $test->{info}{store}{qb_i_vlan}    = {513 => 15};
-  $expected                          = {510 => 15};
+  # EX3300 12.3R12-S21 walk from PR #581: bridge port 514 (ifIndex 506) is
+  # untagged in row 8 (VLAN 15), not row 15 (VLAN 201), which holds port 549
+  my $bport_514 = pack('H*', ('00' x 64) . '40');
+  my $bport_549 = pack('H*', ('00' x 68) . '08');
+  $test->{info}{store}{jnx_v_index}   = {8 => 15, 15 => 201};
+  $test->{info}{store}{bp_index}      = {514 => 506};
+  $test->{info}{store}{qb_i_vlan}     = {514 => 15};
+  $test->{info}{store}{qb_v_untagged} = {8 => $bport_514, 15 => $bport_549};
+  $expected                           = {506 => 15};
   cmp_deeply($test->{info}->i_vlan(),
     $expected, q(Older PVID preserved when VLAN ID collides with private index));
+
+  # 10.4 returns the index; untagged membership confirms 201
+  $test->{info}{store}{qb_v_untagged} = {15 => $bport_514};
+  $expected                           = {506 => 201};
+  cmp_deeply($test->{info}->i_vlan(),
+    $expected, q(Older PVID index translated when membership confirms it));
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->i_vlan(), {}, q(No data returns empty hash));
