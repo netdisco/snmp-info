@@ -96,7 +96,6 @@ sub lldp_loc_id : Tests(2) {
     q(Text MAC local chassis ID returns formatted MAC));
 }
 
-
 sub mac : Tests(3) {
   my $test = shift;
 
@@ -272,6 +271,85 @@ sub mndp_cap : Tests(2) {
 
   can_ok($test->{info}, 'mndp_cap');
   cmp_deeply($test->{info}->mndp_cap(), {}, q(No capabilities in the table));
+}
+
+sub model : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'model');
+
+  is($test->{info}->model(), 'CRS125-24G-1S',
+    q(RouterOS 6 sysDescr returns the board));
+
+  $test->{info}{'_description'}
+    = 'RouterOS CCR2004-1G-12S+2XS 7.24.2 (stable)';
+  is($test->{info}->model(), 'CCR2004-1G-12S+2XS',
+    q(Recent RouterOS 7 sysDescr with version returns the board));
+
+  $test->{info}{'_description'} = 'RouterOS RB5009UPr+S+ 7.19.6 (long-term)';
+  is($test->{info}->model(), 'RB5009UPr+S+',
+    q(Long-term channel sysDescr returns the board));
+
+  $test->{info}{'_description'} = 'RouterOS RB 750';
+  is($test->{info}->model(), 'RB 750', q(Older RB sysDescr returns the board));
+
+  $test->{info}{'_mt_board_name'} = 'RB750Gr3';
+  is($test->{info}->model(), 'RB750Gr3', q(mtxrBoardName is preferred));
+}
+
+sub _prime_gauges {
+  my $test = shift;
+
+  # RouterOS 7.24 CCR2004: whole degrees in mtxrGaugeTable
+  $test->{info}{'_mt_gauge_name'}  = 1;
+  $test->{info}{'_mt_gauge_value'} = 1;
+  $test->{info}{store}{mt_gauge_name} = {
+    17   => 'cpu-temperature',
+    7001 => 'fan1-speed',
+    7101 => 'board-temperature1',
+    7102 => 'board-temperature2',
+  };
+  $test->{info}{store}{mt_gauge_value}
+    = {17 => 41, 7001 => 3825, 7101 => 33, 7102 => 36};
+  return;
+}
+
+sub board_temp : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'board_temp');
+
+  $test->{info}{'_mtxrHlTemperature'} = 350;
+  is($test->{info}->board_temp(), 35,
+    q(Legacy mtxrHlTemperature returns degrees from tenths));
+
+  delete $test->{info}{'_mtxrHlTemperature'};
+  $test->_prime_gauges();
+  is($test->{info}->board_temp(), 33,
+    q(RouterOS 7 returns board-temperature1 from the gauge table));
+
+  $test->{info}->clear_cache();
+  warnings_are { $test->{info}->board_temp() } [],
+    q(No data returns without warnings);
+}
+
+sub cpu_temp : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'cpu_temp');
+
+  $test->{info}{'_mtxrHlProcessorTemperature'} = 440;
+  is($test->{info}->cpu_temp(), 44,
+    q(Legacy mtxrHlProcessorTemperature returns degrees from tenths));
+
+  delete $test->{info}{'_mtxrHlProcessorTemperature'};
+  $test->_prime_gauges();
+  is($test->{info}->cpu_temp(), 41,
+    q(RouterOS 7 returns cpu-temperature from the gauge table));
+
+  $test->{info}->clear_cache();
+  warnings_are { $test->{info}->cpu_temp() } [],
+    q(No data returns without warnings);
 }
 
 1;

@@ -55,6 +55,7 @@ $VERSION = '3.978002';
     'serial1'        => 'mtxrSystem.3.0',
     'firmware'       => 'mtxrSystem.4.0',
     'fan_type'       => 'mtxrHlActiveFan',
+    'mt_board_name'  => 'mtxrBoardName',
 );
 
 %FUNCS = (
@@ -64,6 +65,8 @@ $VERSION = '3.978002';
     'mt_nbr_identity' => 'mtxrNeighborIdentity',
     'mt_nbr_platform' => 'mtxrNeighborPlatform',
     'mt_nbr_if'       => 'mtxrNeighborInterfaceID',
+    'mt_gauge_name'   => 'mtxrGaugeName',
+    'mt_gauge_value'  => 'mtxrGaugeValue',
 );
 
 %MUNGE = (
@@ -82,9 +85,15 @@ sub serial {
 
 sub model {
     my $mikrotik = shift;
+
+    my $board = $mikrotik->mt_board_name();
+    return $board if $board;
+
+    # Recent RouterOS 7 appends the version: "RouterOS CHR 7.24.5 (stable)"
     my $descr = $mikrotik->description() || '';
     my $model = undef;
-    $model = $1 if ( $descr =~ /^RouterOS\s+(\S+)$/i );
+    $model = $1
+        if ( $descr =~ /^RouterOS\s+(\S+)(?:\s+\d+\.\d+\S*\s+\([\w-]+\))?$/i );
     $model = $1 if ( $descr =~ /^RouterOS\s+(RB .*)$/i );
     return $model;
 }
@@ -93,16 +102,33 @@ sub os {
     return 'routeros';
 }
 
+# The legacy mtxrHealth scalars are in tenths of a degree; RouterOS 7
+# reports whole degrees in mtxrGaugeTable instead.
 sub board_temp {
     my $mikrotik = shift;
     my $temp = $mikrotik->mtxrHlTemperature;
-    return $temp / 10.0;
+    return $temp / 10.0 if defined $temp;
+    return $mikrotik->_gauge_value( 'board-temperature1', 'temperature' );
 }
 
 sub cpu_temp {
     my $mikrotik = shift;
     my $temp = $mikrotik->mtxrHlProcessorTemperature;
-    return $temp / 10.0;
+    return $temp / 10.0 if defined $temp;
+    return $mikrotik->_gauge_value('cpu-temperature');
+}
+
+sub _gauge_value {
+    my ( $mikrotik, @names ) = @_;
+
+    my $gauge_names  = $mikrotik->mt_gauge_name()  || {};
+    my $gauge_values = $mikrotik->mt_gauge_value() || {};
+    my %index_of     = reverse %$gauge_names;
+    foreach my $name (@names) {
+        my $index = $index_of{$name};
+        return $gauge_values->{$index} if defined $index;
+    }
+    return;
 }
 
 # RouterOS returns MAC chassis IDs as text ("0C:00:1E:5A:27:00") rather than
@@ -285,7 +311,8 @@ Returns C<'routeros'>.
 
 =item $mikrotik->model()
 
-Tries to extract the device model from C<sysDescr>.
+Returns C<mtxrBoardName>, or else tries to extract the device model from
+C<sysDescr>.
 
 =item $mikrotik->os_ver()
 
@@ -299,7 +326,8 @@ Returns the value of RouterOS level C<mtxrLicLevel>
 
 =item $mikrotik->cpu_temp()
 
-Returns the appropriate temperature values
+Returns the board or CPU temperature in degrees Celsius, from the
+C<mtxrHealth> scalars or, on RouterOS 7, from C<mtxrGaugeTable>.
 
 =item $mikrotik->serial()
 
@@ -319,6 +347,10 @@ C<mndp>, so the C<c_*> topology methods include those neighbors.
 Returns the LLDP chassis MAC (C<lldp_loc_id()>). C<ifPhysAddress.1> is the
 loopback on RouterOS and reads as all zeros; it is used only when there is
 no LLDP chassis ID.
+
+=item $mikrotik->mt_board_name()
+
+(C<mtxrBoardName>)
 
 =back
 
@@ -401,6 +433,20 @@ Return an empty hash: the table has no remote port or capabilities.
 =item $mikrotik->mt_nbr_if()
 
 (C<mtxrNeighborInterfaceID>)
+
+=back
+
+=head2 Gauge Table (C<mtxrGaugeTable>)
+
+=over
+
+=item $mikrotik->mt_gauge_name()
+
+(C<mtxrGaugeName>)
+
+=item $mikrotik->mt_gauge_value()
+
+(C<mtxrGaugeValue>)
 
 =back
 
