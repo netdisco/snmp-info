@@ -103,6 +103,53 @@ sub os_ver : Tests(7) {
     q(No description returns undef OS version));
 }
 
+sub _prime_vlan_names {
+  my $test = shift;
+
+  $test->{info}{'_ex_vlan_descr'} = 1;
+  $test->{info}{'_ex_vlan_id'}    = 1;
+  $test->{info}{'_qb_v_name'}     = 1;
+  $test->{info}{store}{ex_vlan_descr} = {1000004 => 'Default', 1000007 => 'v10'};
+  $test->{info}{store}{ex_vlan_id}    = {1000004 => 1, 1000007 => 10};
+  $test->{info}{store}{qb_v_name}     = {1 => 'Default', 10 => 'v10'};
+  return;
+}
+
+sub v_name : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'v_name');
+
+  $test->_prime_vlan_names();
+  cmp_deeply($test->{info}->v_name(), {1000004 => 'Default', 1000007 => 'v10'},
+    q(extremeVlanIfTable names are keyed by VLAN ifIndex));
+
+  $test->{info}{store}{ex_vlan_descr} = {};
+  cmp_deeply($test->{info}->v_name(), {1 => 'Default', 10 => 'v10'},
+    q(Without extremeVlanIfTable Q-BRIDGE names are used));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->v_name(), {}, q(No data returns empty hash));
+}
+
+sub v_index : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'v_index');
+
+  $test->_prime_vlan_names();
+  cmp_deeply($test->{info}->v_index(), {1000004 => 1, 1000007 => 10},
+    q(extremeVlanIfTable VLAN IDs are keyed by VLAN ifIndex));
+
+  $test->{info}{store}{ex_vlan_descr} = {};
+  $test->{info}{store}{ex_vlan_id}    = {};
+  cmp_deeply($test->{info}->v_index(), {1 => 1, 10 => 10},
+    q(Without extremeVlanIfTable Q-BRIDGE VLAN IDs are used));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->v_index(), {}, q(No data returns empty hash));
+}
+
 # EXOS 33.6.1.14: ports 1:1 and 1:2 are bridge ports 1 and 2. Port 1 is
 # untagged in VLAN 10 and tagged in VLAN 20, port 2 is untagged in VLAN 1.
 # No ifStackTable or extremeVlanEncapsIfTable.

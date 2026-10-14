@@ -391,11 +391,17 @@ sub _if2tag {
 # the VLAN interface.
 sub v_name {
     my $extreme = shift;
-    return $extreme->ex_vlan_descr();
+
+    my $names = $extreme->ex_vlan_descr() || {};
+    return $names if scalar keys %$names;
+    return $extreme->qb_v_name() || {};
 }
 
 sub v_index {
     my $extreme = shift;
+
+    my $names = $extreme->ex_vlan_descr() || {};
+    return $extreme->SUPER::v_index() unless scalar keys %$names;
     return $extreme->ex_vlan_id || $extreme->_if2tag();
 }
 
@@ -1188,11 +1194,13 @@ the port.
 
 =item $extreme->v_index()
 
-Returns VLAN IDs
+Returns VLAN IDs from C<extremeVlanIfTable>, or from C<Q-BRIDGE-MIB> when
+that table is empty.
 
 =item $extreme->v_name()
 
-Returns VLAN names
+Returns VLAN names from C<extremeVlanIfDescr>, or C<dot1qVlanStaticName>
+when C<extremeVlanIfTable> is empty.
 
 (C<extremeVlanIfDescr>)
 

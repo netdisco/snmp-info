@@ -11,6 +11,9 @@ Version 3.979001 (2026-tbd)
   * #566 Extreme: set port VLANs through Q-BRIDGE-MIB on ExtremeXOS, which
     has no ifStackTable or extremeVlanEncapsIfTable
 
+  * Extreme: read VLAN names and IDs from Q-BRIDGE-MIB when
+    extremeVlanIfTable is empty
+
 Version 3.979000 (2026-10-13)
 
   [NEW FEATURES]
