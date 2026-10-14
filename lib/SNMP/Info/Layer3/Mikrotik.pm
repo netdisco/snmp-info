@@ -59,10 +59,16 @@ $VERSION = '3.978002';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
+    'mt_nbr_ip'       => 'mtxrNeighborIpAddress',
+    'mt_nbr_mac'      => 'mtxrNeighborMacAddress',
+    'mt_nbr_identity' => 'mtxrNeighborIdentity',
+    'mt_nbr_platform' => 'mtxrNeighborPlatform',
+    'mt_nbr_if'       => 'mtxrNeighborInterfaceID',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
+    'mt_nbr_mac' => \&SNMP::Info::munge_mac,
 );
 
 sub vendor {
@@ -107,6 +113,107 @@ sub _lldp_id_string {
     return lc $id
         if $type =~ /mac/ and $id =~ /^(?:[0-9A-F]{2}:){5}[0-9A-F]{2}$/i;
     return $mikrotik->SUPER::_lldp_id_string( $id, $type );
+}
+
+# ifPhysAddress.1 is the loopback, all zeros. The chassis MAC is what LLDP
+# neighbors report as c_id, so Netdisco can match them to this device.
+sub mac {
+    my $mikrotik = shift;
+
+    my $chassis
+        = $mikrotik->lldp_loc_id_type() ? $mikrotik->lldp_loc_id() : undef;
+    return $chassis || $mikrotik->SUPER::mac();
+}
+
+# RouterOS advertises only addresses on the sending port or its bridge. For
+# an LLDP neighbor without an IPv4 address, use the one mtxrNeighborTable has
+# for it (from CDP, say). Failing that return 0.0.0.0, which Netdisco
+# resolves by looking up c_id among known devices.
+sub c_ip {
+    my ( $mikrotik, $partial, $topo_cap ) = @_;
+
+    my $c_ip     = $mikrotik->SUPER::c_ip( $partial, $topo_cap ) || {};
+    my $c_id     = $mikrotik->c_id( $partial, $topo_cap )        || {};
+    my $table_ip = $mikrotik->_lldp_table_ip();
+    foreach my $iid ( keys %$c_id ) {
+        next if defined $c_ip->{$iid};
+        $c_ip->{$iid} = $table_ip->{$iid} // '0.0.0.0';
+    }
+    return $c_ip;
+}
+
+sub hasMNDP {
+    my $mikrotik = shift;
+    my $nbr_if   = $mikrotik->mt_nbr_if() || {};
+    return scalar keys %$nbr_if ? 1 : undef;
+}
+
+sub mndp_ip       { return $_[0]->_mndp_column( 'mt_nbr_ip',       $_[1] ) }
+sub mndp_if       { return $_[0]->_mndp_column( 'mt_nbr_if',       $_[1] ) }
+sub mndp_id       { return $_[0]->_mndp_column( 'mt_nbr_mac',      $_[1] ) }
+sub mndp_platform { return $_[0]->_mndp_column( 'mt_nbr_platform', $_[1] ) }
+
+# mtxrNeighborTable has no remote port or capabilities
+sub mndp_port { return {} }
+sub mndp_cap  { return {} }
+
+sub _mndp_column {
+    my ( $mikrotik, $column, $partial ) = @_;
+
+    my $values = $mikrotik->$column() || {};
+    return { map { $_ => $values->{$_} } grep { defined $values->{$_} }
+            @{ $mikrotik->_mndp_neighbors($partial) } };
+}
+
+# mtxrNeighborTable lists neighbors heard by MNDP, CDP and LLDP alike. Skip
+# those LLDP-MIB already reports on the same port: Netdisco keeps one
+# neighbor per port and would replace the LLDP one, which has a remote port.
+sub _mndp_neighbors {
+    my ( $mikrotik, $partial ) = @_;
+
+    my $nbr_if    = $mikrotik->mt_nbr_if()        || {};
+    my $nbr_ip    = $mikrotik->mt_nbr_ip()        || {};
+    my $identity  = $mikrotik->mt_nbr_identity()  || {};
+    my $lldp_if   = $mikrotik->lldp_if()          || {};
+    my $lldp_name = $mikrotik->lldp_rem_sysname() || {};
+    my %lldp_seen = map { _nbr_key( $lldp_if->{$_}, $lldp_name->{$_} ) => 1 }
+        keys %$lldp_if;
+
+    my @neighbors;
+    foreach my $idx ( keys %$nbr_if ) {
+        next if defined $partial and $idx ne $partial;
+        next if !$nbr_ip->{$idx} or $nbr_ip->{$idx} eq '0.0.0.0';
+        my $neighbor = _nbr_key( $nbr_if->{$idx}, $identity->{$idx} );
+        push @neighbors, $idx unless $lldp_seen{$neighbor};
+    }
+    return \@neighbors;
+}
+
+# IPv4 addresses mtxrNeighborTable holds for LLDP neighbors, keyed by the
+# LLDP entry and matched on local port and name.
+sub _lldp_table_ip {
+    my $mikrotik = shift;
+
+    my $nbr_if   = $mikrotik->mt_nbr_if()       || {};
+    my $nbr_ip   = $mikrotik->mt_nbr_ip()       || {};
+    my $identity = $mikrotik->mt_nbr_identity() || {};
+    my %ip_of
+        = map { _nbr_key( $nbr_if->{$_}, $identity->{$_} ) => $nbr_ip->{$_} }
+        grep { $nbr_ip->{$_} and $nbr_ip->{$_} ne '0.0.0.0' } keys %$nbr_if;
+
+    my $lldp_if   = $mikrotik->lldp_if()          || {};
+    my $lldp_name = $mikrotik->lldp_rem_sysname() || {};
+    my %table_ip;
+    foreach my $iid ( keys %$lldp_if ) {
+        my $ip = $ip_of{ _nbr_key( $lldp_if->{$iid}, $lldp_name->{$iid} ) };
+        $table_ip{$iid} = $ip if defined $ip;
+    }
+    return \%table_ip;
+}
+
+sub _nbr_key {
+    my ( $ifindex, $name ) = @_;
+    return ( $ifindex // '' ) . ' ' . ( $name // '' );
 }
 
 1;
@@ -202,6 +309,17 @@ Returns the device serial.
 
 Returns the firmware version of hardware.
 
+=item $mikrotik->hasMNDP()
+
+Returns 1 when C<mtxrNeighborTable> has rows. C<has_topo()> then adds
+C<mndp>, so the C<c_*> topology methods include those neighbors.
+
+=item $mikrotik->mac()
+
+Returns the LLDP chassis MAC (C<lldp_loc_id()>). C<ifPhysAddress.1> is the
+loopback on RouterOS and reads as all zeros; it is used only when there is
+no LLDP chassis ID.
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -215,7 +333,76 @@ to a hash.
 
 =head2 Overrides
 
-None.
+=over
+
+=item $mikrotik->c_ip()
+
+For an LLDP neighbor that advertises no IPv4 management address, returns the
+address C<mtxrNeighborTable> has for the same neighbor (matched on local port
+and name), for example one learned by CDP. Failing that it returns
+C<0.0.0.0>, so Netdisco can resolve the neighbor by C<c_id()>. RouterOS
+advertises only addresses on the sending port or its bridge, not on VLAN
+interfaces.
+
+=back
+
+=head2 MikroTik neighbors (C<mndp>)
+
+C<mtxrNeighborTable> lists neighbors heard by MNDP, CDP and LLDP. These
+methods return the ones LLDP-MIB does not already report on the same port,
+and only those with an IPv4 address. They are keyed by C<mtxrNeighborIndex>.
+
+=over
+
+=item $mikrotik->mndp_ip()
+
+(C<mtxrNeighborIpAddress>)
+
+=item $mikrotik->mndp_if()
+
+Local C<ifIndex> (C<mtxrNeighborInterfaceID>).
+
+=item $mikrotik->mndp_id()
+
+Neighbor MAC address (C<mtxrNeighborMacAddress>).
+
+=item $mikrotik->mndp_platform()
+
+(C<mtxrNeighborPlatform>)
+
+=item $mikrotik->mndp_port()
+
+=item $mikrotik->mndp_cap()
+
+Return an empty hash: the table has no remote port or capabilities.
+
+=back
+
+=head2 MikroTik neighbor table (C<MIKROTIK-MIB::mtxrNeighborTable>)
+
+=over
+
+=item $mikrotik->mt_nbr_ip()
+
+(C<mtxrNeighborIpAddress>)
+
+=item $mikrotik->mt_nbr_mac()
+
+(C<mtxrNeighborMacAddress>)
+
+=item $mikrotik->mt_nbr_identity()
+
+(C<mtxrNeighborIdentity>)
+
+=item $mikrotik->mt_nbr_platform()
+
+(C<mtxrNeighborPlatform>)
+
+=item $mikrotik->mt_nbr_if()
+
+(C<mtxrNeighborInterfaceID>)
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
