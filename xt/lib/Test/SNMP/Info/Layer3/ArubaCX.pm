@@ -64,6 +64,33 @@ sub setup : Tests(setup) {
   });
 }
 
+sub model : Tests(7) {
+  my $test = shift;
+  my $info = $test->{info};
+  my $models = {1=>'JL719C',12001=>'JL719C',13001=>'JL601A'};
+  my $translated = 'arubaWiredSwitchJL719C';
+  my $stack;
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::ArubaCX::entPhysicalModelName = sub { return $models };
+  local *SNMP::Info::Layer3::ArubaCX::id = sub { return '.1.3.6.1.4.1.47196.4.1.1.1.422' };
+  local *SNMP::Info::Layer3::ArubaCX::stack_info = sub { return $stack };
+  local *SNMP::translateObj = sub { return $translated };
+  is($info->model, '8360-48Y6C v2', 'Reported root product code translated');
+  $models = {1=>'8360-48Y6C v2'};
+  is($info->model, '8360-48Y6C v2', 'Readable device model preserved');
+  $models = {1=>'JL999C'};
+  is($info->model, 'JL999C', 'Unknown root model preserved over known OID');
+  $models = {1=>'',13001=>'JL601A'};
+  is($info->model, '8360-48Y6C v2', 'Known product OID fallback translated');
+  $translated = 'arubaWiredSwitchJL999C';
+  is($info->model, 'JL999C', 'Unknown product OID name preserved');
+  $translated = undef;
+  is($info->model, '.1.3.6.1.4.1.47196.4.1.1.1.422', 'Untranslated OID preserved');
+  $models = {1=>'JL719C'};
+  $stack = '6200F (stack of 2)';
+  is($info->model, $stack, 'Existing stack result retains precedence');
+}
+
 sub at_paddr : Tests(4) {
   my $test = shift;
   my $data = $test->{info}->at_paddr;
