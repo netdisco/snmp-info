@@ -57,4 +57,17 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
+sub ipv6_index : Tests(2) {
+  my $test = shift;
+
+  my $global = '32.1.13.184.0.16.0.0.0.0.0.0.0.0.0.1';
+  $test->{info}{'_i6_addr_pfxlen'} = 1;
+  $test->{info}{store}{i6_addr_pfxlen} = {"8.$global" => 64};
+
+  is($test->{info}->ipv6_index(), undef,
+    q(IPV6-MIB addresses are not read, as parse_inetaddress expects no length));
+  is($test->{info}->ipv6_addr_prefixlength(), undef,
+    q(IPV6-MIB prefix lengths are not read));
+}
+
 1;
