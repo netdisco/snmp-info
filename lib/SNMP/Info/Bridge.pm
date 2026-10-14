@@ -42,7 +42,7 @@ use SNMP::Info;
 
 our ($VERSION, $DEBUG, %MIBS, %FUNCS, %GLOBALS, %MUNGE, $INIT);
 
-$VERSION = '3.978002';
+$VERSION = '3.979000';
 
 %MIBS = (
     'BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',
@@ -191,8 +191,9 @@ sub qb_fw_vlan {
         # Many devices do not populate the dot1qVlanCurrentTable, so default
         # to FDB ID = VID, but if we have a mapping use it.
         my $vlan = $fdb_id;
-        # defined as test since some devices have a vlan 0
-        if (defined $qb_fdb_ids->{$fdb_id}) {
+        # exists as test since some devices have a vlan 0, and a shared
+        # FDB ID maps to undef because its entries name no single VLAN
+        if (exists $qb_fdb_ids->{$fdb_id}) {
             $vlan = $qb_fdb_ids->{$fdb_id};
         }
         $qb_fw_vlan->{$idx} = $vlan;
@@ -227,13 +228,26 @@ sub qb_fdb_index {
     # see Enterasys for example.
     my $qb_fdb_ids = $bridge->dot1qVlanFdbId() || {};
 
-    # Strip the TimeFilter
-    my $vl_fdb_index = {};
-    for my $fdb_entry (keys(%$qb_fdb_ids)) {
-        (my $vlan = $fdb_entry) =~ s/^\d+\.//;
-        $vl_fdb_index->{$qb_fdb_ids->{$fdb_entry}} = $vlan;
+    return $bridge->_qb_fdb_vlan_map($qb_fdb_ids);
+}
+
+# Strip the TimeFilter from dot1qVlanFdbId and invert it. With shared VLAN
+# learning several VLANs report one FDB ID; it maps to undef rather than to
+# whichever of those VLANs hash order happened to visit last.
+sub _qb_fdb_vlan_map {
+    my ( $bridge, $qb_fdb_ids ) = @_;
+
+    my %vlans_of;
+    foreach my $fdb_entry ( keys %$qb_fdb_ids ) {
+        ( my $vlan = $fdb_entry ) =~ s/^\d+\.//;
+        $vlans_of{ $qb_fdb_ids->{$fdb_entry} }{$vlan} = 1;
     }
 
+    my $vl_fdb_index = {};
+    foreach my $fdb_id ( keys %vlans_of ) {
+        my @vlans = keys %{ $vlans_of{$fdb_id} };
+        $vl_fdb_index->{$fdb_id} = scalar @vlans == 1 ? $vlans[0] : undef;
+    }
     return $vl_fdb_index;
 }
 
@@ -728,6 +742,8 @@ tagged ports or the VLAN ID.
 
 Returns reference to hash: key = FDB ID, value = VLAN ID.
 
+An FDB ID shared by several VLANs (shared VLAN learning) maps to C<undef>.
+
 =item $bridge->v_index()
 
 Returns VLAN IDs
@@ -1024,6 +1040,9 @@ identifier (iid)
 =item $bridge->qb_fw_vlan()
 
 Returns reference to hash of forwarding table entries VLAN ID
+
+Entries whose FDB ID is shared by several VLANs have an C<undef> VLAN ID.
+Entries whose FDB ID has no mapping use the FDB ID as the VLAN ID.
 
 =item $bridge->qb_fw_status()
 

@@ -51,11 +51,28 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
-sub layers : Tests(2) {
+sub layers : Tests(6) {
   my $test = shift;
+  my $info = $test->{info};
 
-  can_ok($test->{info}, 'layers');
-  is($test->{info}->layers(), '01001100', q(Layers returns '01001100'));
+  can_ok($info, 'layers');
+  is($info->layers(), '01001100', q(Layers returns '01001100'));
+
+  # CS-series access switches report sysServices 72, layers 4 and 7 only.
+  $info->{_id}     = '.1.3.6.1.4.1.2604.6.1.54';
+  $info->{_layers} = 72;
+  is($info->layers(), '01001010', q(CS switch layers include layer 2));
+
+  $info->{_id} = '.1.3.6.1.4.1.2604.60.1';
+  is($info->layers(), '01001000',
+    q(Sibling subtree of the switch range keeps reported layers));
+
+  $info->{_id} = '.1.3.6.1.4.1.2604.1';
+  is($info->layers(), '01001000', q(Other Sophos devices keep reported layers));
+
+  $info->clear_cache();
+  $info->{_id} = '.1.3.6.1.4.1.2604.6.1.54';
+  is($info->layers(), undef, q(CS switch without sysServices returns undef));
 }
 
 sub vendor : Tests(2) {

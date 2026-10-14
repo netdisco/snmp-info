@@ -44,7 +44,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.978002';
+$VERSION = '3.979000';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS, %SNMP::Info::CiscoStats::MIBS, );
 
@@ -143,6 +143,10 @@ sub parse_inetaddress {
     return;
 }
 
+# IPV6-MIB rows are keyed with an octet count, which parse_inetaddress()
+# above would misread.
+sub _i6_addr_column { return }
+
 1;
 __END__
 
@@ -218,6 +222,9 @@ configured interface name instead of "Adaptive Security Appliance
 Overrides base IPv6 method L<SNMP::Info::IPv6/parse_inetaddress> because Cisco ASA
 doesn't conform to RFC4001 4.1 because it is missing the number of octets.
 Instead it is indexed like the CISCO-IETF-IP-MIB.
+
+For the same reason, the IPv6 address methods do not fall back to
+F<IPV6-MIB> on Cisco ASA.
 
 =back
 

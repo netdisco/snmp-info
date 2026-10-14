@@ -57,4 +57,50 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
+sub os : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'os');
+  is($test->{info}->os(), 'xos', q(ExtremeXOS description returns 'xos'));
+
+  $test->{info}{_description}
+    = 'Summit48 - Version 4.1.19 (Build 2) by Release_Master';
+  is($test->{info}->os(), 'extremeware',
+    q(ExtremeWare description returns 'extremeware'));
+
+  $test->{info}{_description} = '5520-48SE-FabricEngine (8.10.1.0)';
+  is($test->{info}->os(), 'voss', q(Fabric Engine description returns 'voss'));
+
+  $test->{info}{_description} = 'VSP-7432CQ (8.0.5.0)';
+  is($test->{info}->os(), 'voss', q(VSP description returns 'voss'));
+
+  $test->{info}{_description} = 'XA1440 (8.2.0.0_B020) (PRIVATE)';
+  is($test->{info}->os(), 'voss', q(XA1440 description returns 'voss'));
+}
+
+sub os_ver : Tests(7) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'os_ver');
+  is($test->{info}->os_ver(), '12.3.4.12', q(ExtremeXOS version parsed));
+
+  $test->{info}{_description}
+    = 'Summit48 - Version 4.1.19 (Build 2) by Release_Master';
+  is($test->{info}->os_ver(), '4.1.19', q(ExtremeWare version parsed));
+
+  $test->{info}{_description} = '5520-48SE-FabricEngine (8.10.1.0)';
+  is($test->{info}->os_ver(), '8.10.1.0', q(Fabric Engine version parsed));
+
+  $test->{info}{_description} = 'VSP-7432CQ (8.0.5.0)';
+  is($test->{info}->os_ver(), '8.0.5.0', q(VSP version parsed));
+
+  $test->{info}{_description} = 'XA1440 (8.2.0.0_B020) (PRIVATE)';
+  is($test->{info}->os_ver(), '8.2.0.0',
+    q(XA1440 version parsed without build suffix));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->os_ver(), undef,
+    q(No description returns undef OS version));
+}
+
 1;

@@ -64,6 +64,33 @@ sub setup : Tests(setup) {
   });
 }
 
+sub model : Tests(7) {
+  my $test = shift;
+  my $info = $test->{info};
+  my $models = {1=>'JL719C',12001=>'JL719C',13001=>'JL601A'};
+  my $translated = 'arubaWiredSwitchJL719C';
+  my $stack;
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::ArubaCX::entPhysicalModelName = sub { return $models };
+  local *SNMP::Info::Layer3::ArubaCX::id = sub { return '.1.3.6.1.4.1.47196.4.1.1.1.422' };
+  local *SNMP::Info::Layer3::ArubaCX::stack_info = sub { return $stack };
+  local *SNMP::translateObj = sub { return $translated };
+  is($info->model, '8360-48Y6C v2', 'Reported root product code translated');
+  $models = {1=>'8360-48Y6C v2'};
+  is($info->model, '8360-48Y6C v2', 'Readable device model preserved');
+  $models = {1=>'JL999C'};
+  is($info->model, 'JL999C', 'Unknown root model preserved over known OID');
+  $models = {1=>'',13001=>'JL601A'};
+  is($info->model, '8360-48Y6C v2', 'Known product OID fallback translated');
+  $translated = 'arubaWiredSwitchJL999C';
+  is($info->model, 'JL999C', 'Unknown product OID name preserved');
+  $translated = undef;
+  is($info->model, '.1.3.6.1.4.1.47196.4.1.1.1.422', 'Untranslated OID preserved');
+  $models = {1=>'JL719C'};
+  $stack = '6200F (stack of 2)';
+  is($info->model, $stack, 'Existing stack result retains precedence');
+}
+
 sub at_paddr : Tests(4) {
   my $test = shift;
   my $data = $test->{info}->at_paddr;
@@ -161,6 +188,163 @@ sub tracking_edge_cases : Tests(8) {
   is(scalar keys %{$info->ipv6_n2p_mac}, 1, 'Empty tracking preserves IPv6 neighbours');
   $info->clear_cache;
   cmp_deeply($info->at_netaddr, {}, 'Unsupported tables yield no invented addresses');
+}
+
+sub _prime_xcvr {
+  my $test = shift;
+  my $info = $test->{info};
+  my %ent = (
+    1      => ['Stack',    'stack',   0,      'Stack'],
+    101001 => ['Chassis',  'chassis', 1,      '6300M Chassis'],
+    120010 => ['1/1/1',    'port',    101001, 'Switch Port'],
+    120020 => ['1/1/2',    'port',    101001, 'Switch Port'],
+  );
+  my %store = (
+    pm_xcvr_port    => {1 => '1/1/1', 27 => '1/1/27'},
+    pm_xcvr_descr   => {1 => '10G SFP+ LC SR', 27 => '1G SFP LC LX'},
+    pm_xcvr_product => {1 => 'J9150D', 27 => 'J4859D'},
+    pm_xcvr_serial  => {1 => 'TEST0000001', 27 => 'TEST0000027'},
+    pm_xcvr_type    => {1 => '10G-SR', 27 => '1G-LX'},
+  );
+  foreach my $idx (keys %ent) {
+    my ($name, $class, $parent, $descr) = @{$ent{$idx}};
+    $store{entPhysicalDescr}{$idx} = $descr;
+    $store{e_descr}{$idx}  = $descr;
+    $store{e_name}{$idx}   = $name;
+    $store{e_class}{$idx}  = $class;
+    $store{e_parent}{$idx} = $parent;
+    $store{e_model}{$idx}  = $class eq 'chassis' ? 'JL660A' : '';
+    $store{e_serial}{$idx} = $class eq 'chassis' ? 'TESTCHASSIS' : '';
+    $store{e_type}{$idx}   = 'zeroDotZero';
+    $store{e_fru}{$idx}    = $class eq 'chassis' ? 'true' : 'false';
+  }
+  $info->{"_$_"} = 1 for keys %store;
+  $info->{store}{$_} = $store{$_} for keys %store;
+  return;
+}
+
+sub _xcvr_rows {
+  my ($test, $method) = @_;
+  my $data = $test->{info}->$method() || {};
+  return {map { $_ => $data->{$_} } grep { $_ >= 1_000_000_000 } keys %$data};
+}
+
+sub e_index : Tests(3) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  my $e_index = $test->{info}->e_index;
+  is(scalar keys %$e_index, 6, 'Four real entities plus two transceivers');
+  is($e_index->{1_000_000_001}, 1_000_000_001, 'Synthetic index value');
+  is($e_index->{120010}, 120010, 'Real entity index unchanged');
+}
+
+sub e_class : Tests(2) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  cmp_deeply($test->_xcvr_rows('e_class'),
+    {1_000_000_001 => 'module', 1_000_000_027 => 'module'},
+    'Transceivers are modules');
+  is($test->{info}->e_class->{120010}, 'port', 'Real class unchanged');
+}
+
+sub e_descr : Tests(1) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  cmp_deeply($test->_xcvr_rows('e_descr'),
+    {1_000_000_001 => '10G SFP+ LC SR', 1_000_000_027 => '1G SFP LC LX'},
+    'Transceiver descriptions');
+}
+
+sub e_name : Tests(1) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  cmp_deeply($test->_xcvr_rows('e_name'),
+    {1_000_000_001 => 'Transceiver 1/1/1',
+     1_000_000_027 => 'Transceiver 1/1/27'},
+    'Transceiver names carry the port');
+}
+
+sub e_model : Tests(1) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  cmp_deeply($test->_xcvr_rows('e_model'),
+    {1_000_000_001 => 'J9150D', 1_000_000_027 => 'J4859D'},
+    'Transceiver product numbers');
+}
+
+sub e_serial : Tests(1) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  cmp_deeply($test->_xcvr_rows('e_serial'),
+    {1_000_000_001 => 'TEST0000001', 1_000_000_027 => 'TEST0000027'},
+    'Transceiver serial numbers');
+}
+
+sub e_type : Tests(1) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  cmp_deeply($test->_xcvr_rows('e_type'),
+    {1_000_000_001 => '10G-SR', 1_000_000_027 => '1G-LX'},
+    'Transceiver types');
+}
+
+sub e_fru : Tests(1) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  cmp_deeply($test->_xcvr_rows('e_fru'),
+    {1_000_000_001 => 'true', 1_000_000_027 => 'true'},
+    'Transceivers are field replaceable');
+}
+
+sub e_parent : Tests(3) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  my $e_parent = $test->{info}->e_parent;
+  is($e_parent->{1_000_000_001}, 120010, 'Parented to matching port');
+  is($e_parent->{1_000_000_027}, 101001, 'No port entity: chassis');
+  is($e_parent->{120010}, 101001, 'Real parent unchanged');
+}
+
+sub xcvr_no_entities : Tests(2) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  my $info = $test->{info};
+  $info->{store}{$_} = {} for qw/entPhysicalDescr e_class e_name e_parent/;
+  is(scalar keys %{$info->e_index}, 2, 'Transceivers without ENTITY-MIB');
+  is($info->e_parent->{1_000_000_001}, 0, 'Root parent without chassis');
+}
+
+sub xcvr_index_collision : Tests(3) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  my $info = $test->{info};
+  $info->{store}{entPhysicalDescr}{1_000_000_027} = 'Real entity';
+  $info->{store}{e_descr}{1_000_000_027} = 'Real entity';
+  is($info->e_index->{1_000_000_027}, 1_000_000_027, 'Real index kept');
+  is($info->e_descr->{1_000_000_027}, 'Real entity', 'Real row wins');
+  ok(!exists $info->e_model->{1_000_000_027}, 'Colliding transceiver skipped');
+}
+
+sub xcvr_empty_table : Tests(2) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  my $info = $test->{info};
+  $info->{store}{$_} = {} for grep {/^pm_xcvr_/} keys %{$info->{store}};
+  cmp_deeply($info->e_descr, $info->{store}{e_descr}, 'Entity rows unchanged');
+  is(scalar keys %{$info->e_index}, 4, 'No synthetic indexes');
+}
+
+sub xcvr_partial : Tests(2) {
+  my $test = shift;
+  $test->_prime_xcvr;
+  my $info = $test->{info};
+  $info->{sess}{Data} = {
+    'ENTITY-MIB::entPhysicalDescr' => {120010 => 'Switch Port'},
+  };
+  cmp_deeply($info->e_descr(120010), {120010 => 'Switch Port'},
+    'Partial fetch returns the real row only');
+  cmp_deeply($info->e_index(120010), {120010 => 120010},
+    'Partial e_index returns the real row only');
 }
 
 1;

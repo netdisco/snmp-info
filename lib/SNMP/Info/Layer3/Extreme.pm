@@ -45,7 +45,7 @@ use SNMP::Info::EDP;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.978002';
+$VERSION = '3.979000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -167,6 +167,8 @@ sub os {
         return 'xos';
     }
 
+    return 'voss' if defined _voss_version($desc);
+
     return 'extremeware';
 }
 
@@ -177,6 +179,18 @@ sub os_ver {
     return unless defined $descr;
 
     if ( $descr =~ m/Version\s+([^ ]+)/i ) {
+        return $1;
+    }
+
+    return _voss_version($descr);
+}
+
+# VOSS / Fabric Engine sysDescr is "<model> (<a.b.c.d>[_build])"
+sub _voss_version {
+    my $descr = shift;
+    return unless defined $descr;
+
+    if ( $descr =~ m/^\S+\s+\((\d+(?:\.\d+){3})/ ) {
         return $1;
     }
 
@@ -949,7 +963,8 @@ Returns C<extreme>
 
 =item $extreme->os()
 
-Returns C<xos> or C<extremeware> depending on description()
+Returns C<xos>, C<voss> (VOSS / Fabric Engine) or C<extremeware>
+depending on description()
 
 =item $extreme->os_ver()
 

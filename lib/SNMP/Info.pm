@@ -26,7 +26,7 @@ our
     ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG, %SPEED_MAP,
      $NOSUCH, $BIGINT, $REPEATERS);
 
-$VERSION = '3.978002';
+$VERSION = '3.979000';
 
 =head1 NAME
 
@@ -34,7 +34,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.978000
+SNMP::Info - Version 3.979000
 
 =head1 AUTHOR
 
@@ -3138,8 +3138,8 @@ Reports Layer 2 topology protocols which are supported and running on
 a device.
 
 Returns either a reference to an array of protocols, possible values
-being: C<lldp>, C<cdp>, C<sonmp>, C<fdp>, C<edp>, C<amap> or C<undef> if
-no protocols are supported or running.
+being: C<lldp>, C<cdp>, C<sonmp>, C<fdp>, C<edp>, C<amap>, C<mndp> or
+C<undef> if no protocols are supported or running.
 
 =back
 
@@ -3239,6 +3239,7 @@ sub has_topo {
     push( @topo_cap, 'fdp' ) if $self->can('hasFDP') && $self->hasFDP();
     push( @topo_cap, 'edp' ) if $self->can('hasEDP') && $self->hasEDP();
     push( @topo_cap, 'amap' ) if $self->can('hasAMAP') && $self->hasAMAP();
+    push( @topo_cap, 'mndp' ) if $self->can('hasMNDP') && $self->hasMNDP();
 
     if (@topo_cap) {
         return \@topo_cap;
@@ -3258,7 +3259,7 @@ sub _get_topo_data {
 
     my %t_data;
     foreach my $proto (@$topo_cap) {
-        next unless $proto =~ /(lldp|cdp|sonmp|fdp|edp|amap)/;
+        next unless $proto =~ /(lldp|cdp|sonmp|fdp|edp|amap|mndp)/;
         my $method_name = "$proto" . "_$method";
         my $cdp = $self->$method_name($partial) || {};
 
@@ -3288,7 +3289,7 @@ first argument.
 
 If a reference to an array is provided as the second argument, those
 protocols will be queried for information.  The supported array values are:
-C<lldp>, C<cdp>, C<sonmp>, C<fdp>, C<edp>, C<amap>.
+C<lldp>, C<cdp>, C<sonmp>, C<fdp>, C<edp>, C<amap>, C<mndp>.
 
 If nothing is passed in as the second argument, the methods will call
 has_topo() to determine supported and running topology protocols on the

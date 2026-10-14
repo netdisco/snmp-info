@@ -6,9 +6,8 @@ use strict;
 use File::Find;
 use Test::More;
 
-eval "use File::Slurp";
-plan skip_all => "File::Slurp required for testing version sync"
-    if $@;
+eval { require File::Slurp; File::Slurp->import('read_file'); 1 }
+    or plan skip_all => "File::Slurp required for testing version sync";
 
 plan qw(no_plan);
 

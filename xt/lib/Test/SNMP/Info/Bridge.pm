@@ -69,4 +69,46 @@ sub qb_fdb_index : Tests(3) {
         {}, q(No data returns empty hash) );
 }
 
+sub qb_fdb_index_shared : Tests(2) {
+    my $test = shift;
+
+    # Shared VLAN learning: VLANs 10, 20 and 30 all use FDB ID 5
+    $test->{info}{store}{dot1qVlanFdbId}
+        = { '0.1' => 1, '0.10' => 5, '0.20' => 5, '0.30' => 5 };
+
+    my $expected = { 1 => 1, 5 => undef };
+    cmp_deeply( $test->{info}->qb_fdb_index(), $expected,
+        q(FDB ID shared by several VLANs maps to no VLAN) );
+
+    my @answers = map { $test->{info}->qb_fdb_index()->{5} // 'undef' } 1 .. 5;
+    cmp_deeply( \@answers, [ ('undef') x 5 ],
+        q(Shared FDB ID gives the same answer on every call) );
+}
+
+sub qb_fw_vlan : Tests(3) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'qb_fw_vlan' );
+
+    $test->{info}{store}{dot1qVlanFdbId}
+        = { '0.91' => 3, '0.10' => 5, '0.20' => 5 };
+    $test->{info}{'_qb_fw_port'} = 1;
+    $test->{info}{store}{qb_fw_port} = {
+        '3.0.17.34.51.68.85' => 1,
+        '5.0.17.34.51.68.86' => 2,
+        '7.0.17.34.51.68.87' => 3,
+    };
+
+    my $expected = {
+        '3.0.17.34.51.68.85' => 91,
+        '5.0.17.34.51.68.86' => undef,
+        '7.0.17.34.51.68.87' => 7,
+    };
+    cmp_deeply( $test->{info}->qb_fw_vlan(), $expected,
+        q(Mapped FDB ID gives its VLAN, shared gives none, unmapped is the VID) );
+
+    $test->{info}->clear_cache();
+    cmp_deeply( $test->{info}->qb_fw_vlan(), {}, q(No data returns empty hash) );
+}
+
 1;

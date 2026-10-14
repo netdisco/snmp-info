@@ -1,9 +1,66 @@
-Version 3.978003 (2026-tbd)
+Version 3.979001 (2026-tbd)
 
   [BUG FIXES]
 
   * #570 Use attached aggregate indexes for H3C Bridge-Aggregation members
     and omit member STP states handled by the logical aggregate
+
+  * #621 Translate ArubaCX JL719C to 8360-48Y6C v2 and HP/Aruba
+    2930M stack identifiers to 2930M Stack
+
+Version 3.979000 (2026-10-13)
+
+  [NEW FEATURES]
+
+  * #617 ArubaCX: add transceivers from ARUBAWIRED-PM-MIB as module
+    entities (netdisco/netdisco#1441); needs netdisco-mibs 4.059 or later
+  * #619 Mikrotik: report PoE ports from mtxrPOETable, power supply and fan
+    status, and temperatures from the RouterOS 7 gauge table
+  * #606 Mikrotik: add mtxrNeighborTable as topology protocol mndp, for
+    neighbors heard only by MNDP or CDP (#427)
+
+  [ENHANCEMENTS]
+
+  * #620 Mikrotik: report port PVIDs as VLAN membership when RouterOS exports
+    no Q-BRIDGE VLAN tables (#498)
+  * #618 AlcatelLucent: read PoE from the standard POWER-ETHERNET-MIB on
+    AOS 8 and native VLAN from vpaTable when dot1qPvid is empty
+    (netdisco/netdisco#1298)
+  * #616 Juniper: report each virtual chassis member as a chassis entity with
+    its own serial and model (netdisco/netdisco#1483)
+  * #614 Extreme: report os voss and os_ver for VOSS / Fabric Engine
+    switches (netdisco/netdisco#1442)
+  * #608 Layer3: read the IPv4 ARP cache from IP-MIB ipNetToPhysicalTable
+    when ipNetToMediaTable and atTable have no entries (AOS-CX, #452)
+  * #607 IPv6: read device IPv6 addresses from IPV6-MIB when IP-MIB and
+    CISCO-IETF-IP-MIB have none (RouterOS)
+
+  [BUG FIXES]
+
+  * #619 Mikrotik: return the model on recent RouterOS 7
+  * #615 Sophos: report layer 2 on CS-series access switches, which omit it
+    from sysServices (netdisco/netdisco#1297)
+  * #613 Ciena: map local LLDP ports to ifIndex once when lldpLocPortDesc
+    matches ifDescr or ifAlias (netdisco/netdisco#1005)
+  * #612 IBMGbTor: read LLDP neighbors from the standard LLDP-MIB, keeping
+    the IBM table as a fallback, so the G8052 reports neighbors (#303)
+  * #611 Huawei: fall back to the main board serial when the chassis serial
+    is empty (#529)
+  * #610 DLink: fall back to ifDescr for ports without ifName in
+    interfaces() (#481, netdisco/netdisco#1343)
+  * #609 Bridge: report no VLAN for forwarding entries whose FDB ID several
+    VLANs share, instead of one picked by hash order (netdisco/netdisco#1278)
+  * #606 Mikrotik: report the chassis MAC and let Netdisco find LLDP
+    neighbors managed on VLAN interfaces (netdisco/netdisco#1495)
+  * #605 Baystack: stop reading software build 303 or 304 in sysDescr as a
+    BayStack 303/304 model (#369)
+  * #604 C6500: report the configured duplex in i_duplex_admin, not the
+    negotiated one (#473)
+  * #603 Timetra: return tmnxHwIndex as the e_index value (#544)
+  * #602 Fixes for TP-Link JetStream and Omada switches (#449)
+  * #581 Juniper: preserve dot1qPvid values which collide with internal
+    VLAN indexes
+  * #575 Mikrotik: read RouterOS LLDP chassis IDs sent as text MACs
 
 Version 3.978002 (2026-10-07)
 

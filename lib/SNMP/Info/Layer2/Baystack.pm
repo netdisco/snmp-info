@@ -45,7 +45,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.978002';
+$VERSION = '3.979000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -132,8 +132,12 @@ sub model {
 
     my $descr = $baystack->description();
 
-    return '303' if ( defined $descr and $descr =~ /\D303\D/ );
-    return '304' if ( defined $descr and $descr =~ /\D304\D/ );
+    # The 303 and 304 share one sysObjectID; other models can carry 303 or
+    # 304 in sysDescr as a software build number
+    if ( $model =~ /BayStack303-304/ and defined $descr ) {
+        return '303' if ( $descr =~ /\D303\D/ );
+        return '304' if ( $descr =~ /\D304\D/ );
+    }
     return 'BPS' if ( $model =~ /BPS2000/i );
 
     # Pull sreg- from all

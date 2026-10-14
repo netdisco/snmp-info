@@ -337,17 +337,35 @@ sub ps2_status : Tests(3) {
   is($test->{info}->ps2_status(), undef, q(No data returns undef));
 }
 
-sub e_index : Tests(3) {
+sub e_index : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'e_index');
 
   my $expected = {
-        '1.50331649' => '1.50331649',
-        '1.83886081' => '1.83886081'
+        '1.50331649' => '50331649',
+        '1.83886081' => '83886081'
       };
 
-  cmp_deeply($test->{info}->e_index(), $expected, q(Entity index returns expected value));
+  cmp_deeply($test->{info}->e_index(), $expected,
+    q(Entity index returns tmnxHwIndex keyed by chassis.hwIndex));
+
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_tmnxHwID' => 1,
+    'store' => {
+      'tmnxHwID' => {
+        '2.50331649' => '.1.3.6.1.4.1.6527.3.1.2.2.1.21.1.4.1.3.1',
+        '50331650'   => '.1.3.6.1.4.1.6527.3.1.2.2.1.21.1.4.1.3.1',
+      },
+    }
+  });
+
+  cmp_deeply(
+    $test->{info}->e_index(),
+    {'2.50331649' => '50331649'},
+    q(Second chassis returns tmnxHwIndex, iid without chassis is skipped)
+  );
 
   $test->{info}->clear_cache();
   is($test->{info}->e_index(), undef, q(No data returns undef));

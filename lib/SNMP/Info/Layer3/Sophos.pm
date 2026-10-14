@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.978002';
+$VERSION = '3.979000';
 
 %MIBS = (%SNMP::Info::Layer3::MIBS);
 
@@ -72,6 +72,14 @@ sub _is_sfos {
 
     return ( ( $sophos->id() || '' )
         =~ /^\.1\.3\.6\.1\.4\.1\.2604\.5(?:\.|$)/ ) ? 1 : 0;
+}
+
+# The CS-series switch MIBs place every model under .1.3.6.1.4.1.2604.6.
+sub _is_cs_switch {
+    my $sophos = shift;
+
+    return ( ( $sophos->id() || '' )
+        =~ /^\.1\.3\.6\.1\.4\.1\.2604\.6(?:\.|$)/ ) ? 1 : 0;
 }
 
 sub os {
@@ -112,7 +120,15 @@ sub layers {
     my $sophos = shift;
 
     return '01001100' if $sophos->_is_sfos();
-    return $sophos->SUPER::layers();
+
+    my $layers = $sophos->SUPER::layers();
+
+    # CS-series access switches report sysServices 72, without layer 2.
+    if ( $layers and $sophos->_is_cs_switch() ) {
+        substr $layers, 6, 1, '1';
+    }
+
+    return $layers;
 }
 
 1;
@@ -226,9 +242,11 @@ Returns the value of C<sfosDeviceAppKey.0>, the appliance key.
 
 Returns 01001100 for appliances whose C<sysObjectID> sits under
 C<.1.3.6.1.4.1.2604.5>. SFOS doesn't report layers, so the class reports them
-itself, reflecting Layer 3,4,7 functionality. Other Sophos devices reaching
-this class through the bare enterprise number fall through to the inherited
-method.
+itself, reflecting Layer 3,4,7 functionality. CS-series access switches,
+whose C<sysObjectID> sits under C<.1.3.6.1.4.1.2604.6>, report
+C<sysServices> 72 (layers 4 and 7 only), so layer 2 is added to the inherited
+value for them. Other Sophos devices reaching this class through the bare
+enterprise number fall through to the inherited method.
 
 =back
 

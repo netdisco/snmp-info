@@ -54,7 +54,7 @@ use SNMP::Info::DocsisHE;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.978002';
+$VERSION = '3.979000';
 
 %MIBS = (
     %SNMP::Info::MIBS,
@@ -400,21 +400,64 @@ sub at_index {
     my $l3      = shift;
     my $partial = shift;
 
-    return $l3->orig_at_index($partial) || $l3->old_at_index($partial);
+    return scalar( $l3->orig_at_index($partial)
+            || $l3->old_at_index($partial)
+            || $l3->_n2p_ipv4_column( 'index', $partial ) );
 }
 
 sub at_paddr {
     my $l3      = shift;
     my $partial = shift;
 
-    return $l3->orig_at_paddr($partial) || $l3->old_at_paddr($partial);
+    return scalar( $l3->orig_at_paddr($partial)
+            || $l3->old_at_paddr($partial)
+            || $l3->_n2p_ipv4_column( 'paddr', $partial ) );
 }
 
 sub at_netaddr {
     my $l3      = shift;
     my $partial = shift;
 
-    return $l3->orig_at_netaddr($partial) || $l3->old_at_netaddr($partial);
+    return scalar( $l3->orig_at_netaddr($partial)
+            || $l3->old_at_netaddr($partial)
+            || $l3->_n2p_ipv4_column( 'netaddr', $partial ) );
+}
+
+# ipNetToPhysicalTable is indexed by ifIndex, InetAddressType and an
+# InetAddress, which Cisco ASA and FTD send without its length octet. Rows
+# are re-keyed as ifIndex.address to match ipNetToMediaTable, so a partial
+# fetch filters the whole table rather than walking from an index. The
+# at_* methods call it in scalar context because subclasses such as ArubaCX
+# pass their result as an argument, where an empty list would shift the rest.
+# Its keys match ipNetToMediaTable keys, so it is read only when neither older
+# table has MAC addresses; otherwise a missing column would be filled from a
+# different table. It reads the IPv6 neighbor methods' leaf, so arpnip walks
+# ipNetToPhysicalTable once.
+sub _n2p_ipv4_column {
+    my ( $l3, $column, $partial ) = @_;
+
+    return if $l3->orig_at_paddr() or $l3->old_at_paddr();
+    my $paddrs = $l3->ip_n2p_phys_addr() or return;
+
+    my $return = {};
+    foreach my $row ( keys %$paddrs ) {
+        my ( $ifindex, $addr_type, @octets ) = split /\./, $row;
+        next unless defined $addr_type and $addr_type == 1;
+        shift @octets if scalar @octets == 5 and $octets[0] == 4;
+        next unless scalar @octets == 4;
+
+        my $address = join( '.', @octets );
+        my $key     = "$ifindex.$address";
+        next if defined $partial and $key !~ /^\Q$partial\E(?:\.|$)/;
+
+        my %value_of = (
+            index   => $ifindex,
+            paddr   => $paddrs->{$row},
+            netaddr => $address,
+        );
+        $return->{$key} = $value_of{$column};
+    }
+    return $return;
 }
 
 1;
@@ -680,7 +723,8 @@ Returns reference to hash.  Maps ARP table entries to Interface IIDs
 (C<ipNetToMediaIfIndex>)
 
 If the device doesn't support C<ipNetToMediaIfIndex>, this will try
-the deprecated C<atIfIndex>.
+the deprecated C<atIfIndex>, then the IPv4 rows of
+C<ipNetToPhysicalTable>.
 
 =item $l3->at_paddr()
 
@@ -689,7 +733,8 @@ Returns reference to hash.  Maps ARP table entries to MAC addresses.
 (C<ipNetToMediaPhysAddress>)
 
 If the device doesn't support C<ipNetToMediaPhysAddress>, this will try
-the deprecated C<atPhysAddress>.
+the deprecated C<atPhysAddress>, then the IPv4 rows of
+C<ipNetToPhysicalTable>.
 
 =item $l3->at_netaddr()
 
@@ -698,7 +743,11 @@ Returns reference to hash.  Maps ARP table entries to IP addresses.
 (C<ipNetToMediaNetAddress>)
 
 If the device doesn't support C<ipNetToMediaNetAddress>, this will try
-the deprecated C<atNetAddress>.
+the deprecated C<atNetAddress>, then the IPv4 rows of
+C<ipNetToPhysicalTable>.
+
+C<ipNetToPhysicalTable> rows are keyed as C<ifIndex.address> to match
+C<ipNetToMediaTable>.
 
 =back
 

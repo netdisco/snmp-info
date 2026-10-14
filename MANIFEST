@@ -1,3 +1,4 @@
+.perlcriticrc
 .perltidyrc
 Build.PL
 Changes
@@ -185,9 +186,7 @@ xt/00_local_perlcritic.t
 xt/00_local_pod-coverage.t
 xt/00_local_pod.t
 xt/00_local_prereq.t
-xt/00_local_spelling.t
 xt/00_local_versionsync.t
-xt/10_remote_snmplabs.t
 xt/21_run.t
 xt/lib/My/Test/Class.pm
 xt/lib/Test/SNMP/Info.pm
@@ -247,6 +246,7 @@ xt/lib/Test/SNMP/Info/Layer2/Nexans.pm
 xt/lib/Test/SNMP/Info/Layer2/NWSS2300.pm
 xt/lib/Test/SNMP/Info/Layer2/Orinoco.pm
 xt/lib/Test/SNMP/Info/Layer2/Sixnet.pm
+xt/lib/Test/SNMP/Info/Layer2/TPLink.pm
 xt/lib/Test/SNMP/Info/Layer2/Trapeze.pm
 xt/lib/Test/SNMP/Info/Layer2/Ubiquiti.pm
 xt/lib/Test/SNMP/Info/Layer2/ZyXEL_DSLAM.pm
@@ -266,6 +266,7 @@ xt/lib/Test/SNMP/Info/Layer3/C6500.pm
 xt/lib/Test/SNMP/Info/Layer3/C9800.pm
 xt/lib/Test/SNMP/Info/Layer3/Cambium.pm
 xt/lib/Test/SNMP/Info/Layer3/CheckPoint.pm
+xt/lib/Test/SNMP/Info/Layer3/Ciena.pm
 xt/lib/Test/SNMP/Info/Layer3/Cisco.pm
 xt/lib/Test/SNMP/Info/Layer3/CiscoASA.pm
 xt/lib/Test/SNMP/Info/Layer3/CiscoFWSM.pm
