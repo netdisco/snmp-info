@@ -100,12 +100,20 @@ sub model {
 }
 
 # ifDescr is the same for all interfaces in a class, but the ifName is
-# unique, so let's use that for port name.
+# unique, so let's use that for port name. Some units return no ifName,
+# so keep the ifDescr name from SUPER for those ports.
 sub interfaces {
-    my $dlink = shift;
+    my $dlink   = shift;
     my $partial = shift;
 
-    my $interfaces = $dlink->orig_i_name($partial);
+    my $interfaces = $dlink->SUPER::interfaces($partial);
+    my $i_name     = $dlink->orig_i_name($partial) || {};
+
+    foreach my $iid ( keys %$i_name ) {
+        my $name = $i_name->{$iid};
+        next unless defined $name and $name =~ /\S/;
+        $interfaces->{$iid} = $name;
+    }
     return $interfaces;
 }
 
@@ -289,6 +297,8 @@ to a hash.
 =item $dlink->interfaces();
 
 Returns the map between SNMP Interface Identifier (iid) and C<ifName>.
+Ports with no C<ifName>, or a blank one, fall back to the C<ifDescr> based
+name that C<SNMP::Info::Layer3> returns.
 
 =back
 
