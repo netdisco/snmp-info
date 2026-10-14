@@ -103,4 +103,159 @@ sub os_ver : Tests(7) {
     q(No description returns undef OS version));
 }
 
+# EXOS 33.6.1.14: ports 1:1 and 1:2 are bridge ports 1 and 2. Port 1 is
+# untagged in VLAN 10 and tagged in VLAN 20, port 2 is untagged in VLAN 1.
+# No ifStackTable or extremeVlanEncapsIfTable.
+sub _prime_qbridge_vlans {
+  my $test = shift;
+
+  $test->{info}{'_bp_index'}      = 1;
+  $test->{info}{'_qb_i_vlan'}     = 1;
+  $test->{info}{'_qb_v_egress'}   = 1;
+  $test->{info}{'_qb_v_untagged'} = 1;
+  $test->{info}{store}{bp_index}  = {1 => 1001, 2 => 1002};
+  $test->{info}{store}{qb_i_vlan} = {1 => 10, 2 => 1};
+  $test->{info}{store}{qb_v_egress}
+    = {1 => pack('B*', '01'), 10 => pack('B*', '10'), 20 => pack('B*', '10')};
+  $test->{info}{store}{qb_v_untagged}
+    = {1 => pack('B*', '01'), 10 => pack('B*', '10'), 20 => pack('B*', '00')};
+  return;
+}
+
+# ExtremeWare: VLAN interfaces 1000007 (VLAN 10) and 1000008 (VLAN 20) stack
+# above ports, VLAN 20 through its encapsulation interface 5000
+sub _prime_ifstack_vlans {
+  my $test = shift;
+
+  $test->{info}{'_ex_vlan_encap_tag'} = 1;
+  $test->{info}{'_ifStackStatus'}     = 1;
+  $test->{info}{store}{ex_vlan_encap_tag} = {5000 => 20};
+  $test->{info}{store}{ifStackStatus} = {
+    '1000007.1001' => 'active',
+    '1000008.5000' => 'active',
+    '5000.1002'    => 'active',
+  };
+  return;
+}
+
+# Records each set passed to the session as [leaf, iid, value]
+sub _capture_sets {
+  my $test = shift;
+
+  my @sets;
+  $test->{info}{sess}->mock(
+    'set',
+    sub {
+      my ($session, $oid, $value) = @_;
+      my ($leaf, $iid) = split(/\./, SNMP::translateObj($oid), 2);
+      push @sets, [$leaf, $iid, $value];
+      return 1;
+    }
+  );
+  return \@sets;
+}
+
+sub set_i_vlan : Tests(7) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'set_i_vlan');
+
+  $test->_prime_qbridge_vlans();
+  my $sets = $test->_capture_sets();
+  ok($test->{info}->set_i_vlan(10, 1002),
+    q(Without ifStack VLAN tables setting untagged VLAN succeeds));
+  cmp_deeply($sets, [['dot1qPvid', 2, 10]],
+    q(Untagged VLAN is set through dot1qPvid on the bridge port));
+
+  @$sets = ();
+  $test->_prime_qbridge_vlans();
+  $test->{info}->set_i_vlan(20, 1001);
+  cmp_deeply(
+    $sets,
+    [
+      ['dot1qVlanStaticEgressPorts', 20, pack('B*', '00')],
+      ['dot1qPvid', 1, 20],
+    ],
+    q(VLAN tagged on the port is removed from the egress list before PVID)
+  );
+
+  @$sets = ();
+  $test->_prime_qbridge_vlans();
+  ok(!defined $test->{info}->set_i_vlan(10, 1003),
+    q(ifIndex that is not a bridge port returns undef));
+  like($test->{info}->error(), qr/1003 is not a bridge port/,
+    q(... and explains why));
+
+  @$sets = ();
+  $test->{info}->clear_cache();
+  $test->_prime_ifstack_vlans();
+  $test->{info}->set_i_vlan(20, 1001);
+  cmp_deeply(
+    $sets,
+    [['ifStackStatus', '1000007.1001', 'destroy'],
+     ['ifStackStatus', '1000008.1001', 'createAndGo']],
+    q(With ifStack VLAN tables the ifStack method is still used)
+  );
+}
+
+sub set_i_pvid : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'set_i_pvid');
+
+  $test->_prime_qbridge_vlans();
+  my $sets = $test->_capture_sets();
+  ok($test->{info}->set_i_pvid(10, 1002),
+    q(Without ifStack VLAN tables setting PVID succeeds));
+  cmp_deeply($sets, [['dot1qPvid', 2, 10]],
+    q(PVID is set through dot1qPvid on the bridge port));
+
+  @$sets = ();
+  $test->_prime_qbridge_vlans();
+  ok(!defined $test->{info}->set_i_pvid(20, 1001),
+    q(PVID of a VLAN tagged on the port returns undef));
+  like($test->{info}->error(), qr/set_i_vlan/,
+    q(... and points the caller at set_i_vlan));
+}
+
+sub set_add_i_vlan_tagged : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'set_add_i_vlan_tagged');
+
+  $test->_prime_qbridge_vlans();
+  my $sets = $test->_capture_sets();
+  ok($test->{info}->set_add_i_vlan_tagged(20, 1002),
+    q(Without ifStack VLAN tables adding a tagged VLAN succeeds));
+  cmp_deeply($sets, [['dot1qVlanStaticEgressPorts', 20, pack('B*', '11')]],
+    q(Bridge port is added to the VLAN egress list));
+
+  @$sets = ();
+  $test->_prime_qbridge_vlans();
+  ok(!defined $test->{info}->set_add_i_vlan_tagged(30, 1002),
+    q(VLAN missing from the egress table returns undef));
+  like($test->{info}->error(), qr/VLAN 30 does not exist/,
+    q(... and says the VLAN must be created first));
+}
+
+sub set_remove_i_vlan_tagged : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'set_remove_i_vlan_tagged');
+
+  $test->_prime_qbridge_vlans();
+  my $sets = $test->_capture_sets();
+  ok($test->{info}->set_remove_i_vlan_tagged(20, 1001),
+    q(Without ifStack VLAN tables removing a tagged VLAN succeeds));
+  cmp_deeply($sets, [['dot1qVlanStaticEgressPorts', 20, pack('B*', '00')]],
+    q(Bridge port is removed from the VLAN egress list));
+
+  @$sets = ();
+  $test->_prime_qbridge_vlans();
+  ok(!defined $test->{info}->set_remove_i_vlan_tagged(10, 1001),
+    q(Removing the untagged VLAN of the port returns undef));
+  like($test->{info}->error(), qr/untagged/,
+    q(... and says the VLAN is untagged on the port));
+}
+
 1;
