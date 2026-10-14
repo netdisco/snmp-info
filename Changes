@@ -7,10 +7,6 @@ Version 3.978003 (2026-tbd)
   * #581 Juniper: preserve dot1qPvid values which collide with internal
     VLAN indexes
   * #575 Mikrotik: read RouterOS LLDP chassis IDs sent as text MACs
-  * Mikrotik: report the chassis MAC and let Netdisco find LLDP neighbors
-    managed on VLAN interfaces (netdisco/netdisco#1495)
-  * Mikrotik: add mtxrNeighborTable as topology protocol mndp, for neighbors
-    heard only by MNDP or CDP (#427)
 
 Version 3.978002 (2026-10-07)
 
