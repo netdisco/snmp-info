@@ -2,8 +2,6 @@ Version 3.978003 (2026-tbd)
 
   [BUG FIXES]
 
-  * #609 Bridge: report no VLAN for forwarding entries whose FDB ID several
-    VLANs share, instead of one picked by hash order (netdisco/netdisco#1278)
   * #603 Timetra: return tmnxHwIndex as the e_index value (#544)
   * #602 Fixes for TP-Link JetStream and Omada switches (#449)
   * #581 Juniper: preserve dot1qPvid values which collide with internal
