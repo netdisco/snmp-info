@@ -72,11 +72,42 @@ sub vendor : Tests(2) {
   is($test->{info}->vendor(), 'avaya', q(Vendor returns 'avaya'));
 }
 
-sub model : Tests(3) {
+sub model : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'model');
   is($test->{info}->model(), '4826GTS-PWR-PLUS', q(Model is expected value));
+
+  # Software build 303 must not be read as a BayStack 303
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_description' => 'Ethernet Routing Switch 4950GTS-PWR+     HW:02       '
+      . 'FW:7.2.0.5   SW:v7.6.2.303 BN:303 (c) Extreme Networks',
+
+    # SYNOPTICS-ROOT-MIB::sreg-ERS4950GTS-PWR-PLUS
+    '_id' => '.1.3.6.1.4.1.45.3.82.4',
+  });
+  is($test->{info}->model(), '4950GTS-PWR-PLUS',
+    q(Build number 303 in sysDescr does not override model));
+
+  # The BayStack 303 and 304 share one sysObjectID
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_description' => 'Bay Networks, Inc. BayStack 303 Ethernet Switch '
+      . 'Rev: 2.2.19.19-2.1.4.16',
+
+    # SYNOPTICS-ROOT-MIB::sreg-BayStack303-304-Sw
+    '_id' => '.1.3.6.1.4.1.45.3.32.1',
+  });
+  is($test->{info}->model(), '303', q(BayStack 303 model from sysDescr));
+
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_description' => 'Bay Networks, Inc. BayStack 304 Ethernet Switch '
+      . 'Rev: 2.2.19.19-2.1.4.16',
+    '_id' => '.1.3.6.1.4.1.45.3.32.1',
+  });
+  is($test->{info}->model(), '304', q(BayStack 304 model from sysDescr));
 
   $test->{info}->clear_cache();
   is($test->{info}->model(), undef, q(No id returns undef model));
