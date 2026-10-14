@@ -84,4 +84,89 @@ sub duplicates : Tests(2) {
     $expected_data, 'Call to interfaces() removes duplicates and cleans up');
 }
 
+# ipNetToPhysicalTable rows: ifIndex, InetAddressType, then InetAddress with
+# its length octet, or without it as on Cisco ASA and FTD
+my %N2P_PADDR = (
+  '8.1.4.192.168.140.253' => pack('H*', '3890a5fe21bf'),
+  '5.1.10.0.0.33'         => pack('H*', '00090f090000'),
+  '8.2.16.254.128.0.3.0.0.0.0.186.56.97.255.254.104.139.40'
+    => pack('H*', 'b83861688b28'),
+);
+
+sub _prime_n2p {
+  my $test = shift;
+
+  $test->{info}{'_ip_n2p_phys_addr'} = 1;
+  $test->{info}{store}{ip_n2p_phys_addr} = {%N2P_PADDR};
+  return;
+}
+
+sub at_paddr : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'at_paddr');
+
+  $test->_prime_n2p();
+  my $expected = {
+    '8.192.168.140.253' => '38:90:a5:fe:21:bf',
+    '5.10.0.0.33'       => '00:09:0f:09:00:00',
+  };
+  cmp_deeply($test->{info}->at_paddr(), $expected,
+    q(ipNetToPhysicalTable IPv4 rows keyed like ipNetToMediaTable));
+
+  cmp_deeply($test->{info}->at_paddr('8'),
+    {'8.192.168.140.253' => '38:90:a5:fe:21:bf'},
+    q(Partial fetch returns the matching ipNetToPhysicalTable rows));
+
+  $test->{info}{'_at_paddr'} = 1;
+  $test->{info}{store}{at_paddr}
+    = {'3.10.1.1.1' => pack('H*', '001122334455')};
+  cmp_deeply($test->{info}->at_paddr(),
+    {'3.10.1.1.1' => '00:11:22:33:44:55'},
+    q(ipNetToMediaTable is preferred when present));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->at_paddr(), undef, q(No data returns undef));
+}
+
+sub at_netaddr : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'at_netaddr');
+
+  $test->_prime_n2p();
+  my $expected = {
+    '8.192.168.140.253' => '192.168.140.253',
+    '5.10.0.0.33'       => '10.0.0.33',
+  };
+  cmp_deeply($test->{info}->at_netaddr(), $expected,
+    q(ipNetToPhysicalTable IPv4 addresses come from the row index));
+
+  $test->{info}{'_at_paddr'} = 1;
+  $test->{info}{store}{at_paddr}
+    = {'3.10.1.1.1' => pack('H*', '001122334455')};
+  is($test->{info}->at_netaddr(), undef,
+    q(ipNetToMediaTable MACs without addresses take none from n2p table));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->at_netaddr(), undef, q(No data returns undef));
+}
+
+sub at_index : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'at_index');
+
+  $test->_prime_n2p();
+  my $expected = {
+    '8.192.168.140.253' => 8,
+    '5.10.0.0.33'       => 5,
+  };
+  cmp_deeply($test->{info}->at_index(), $expected,
+    q(ipNetToPhysicalTable IPv4 rows map to their ifIndex));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->at_index(), undef, q(No data returns undef));
+}
+
 1;
