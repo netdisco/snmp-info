@@ -462,6 +462,21 @@ sub _e_virtual_index {
     return \%v_index;
 }
 
+# Member frames are the K.N.0.0 rows built by _e_virtual_index() under the
+# chassis frame container K, for virtual chassis member id N-1
+sub _e_vc_member {
+    my $juniper = shift;
+    my $iid     = shift;
+
+    return unless $iid =~ /^(\d+)\.(\d+)\.0\.0$/;
+    my ( $container, $slot ) = ( $1, $2 );
+
+    my $containers = $juniper->jnxContainersDescr() || {};
+    my $descr      = $containers->{$container} || '';
+    return unless $descr =~ /chassis/i;
+    return $slot - 1;
+}
+
 sub e_index {
     my $juniper = shift;
 
@@ -520,8 +535,9 @@ sub e_class {
         elsif (($container =~ /chassis/i) and ($is_virtual)) {
             $e_class{$iid} = 'stack';
 	}
-	# Were calling the second level chassis a container in the case
-	# of a virtual chassis but not sure that it really matters
+        elsif ( $is_virtual and defined $juniper->_e_vc_member($iid) ) {
+            $e_class{$iid} = 'chassis';
+        }
         else {
             $e_class{$iid} = 'container';
         }
@@ -571,15 +587,24 @@ sub e_serial {
     my $e_class    = $juniper->e_class() || {};
     my $is_virtual = $juniper->_e_is_virtual();
     my $box_serial = $juniper->serial();
+    my $vc_serials
+        = $is_virtual ? $juniper->jnxVirtualChassisMemberSerialnumber() : {};
+    $vc_serials ||= {};
 
     my %e_serial;
     foreach my $iid ( keys %$e_index ) {
 	my $serial = $serials->{$iid} || '';
 	my $class  = $e_class->{$iid} || '';
+	my $member = $juniper->_e_vc_member($iid);
 	# Chassis serial number is seperate on true chassis
-	# Virtual chassis (stack) report master switch serial
+	# Virtual chassis members report their own serial
 	if (!$is_virtual and ($class =~ /chassis/i)){
 	    $e_serial{$iid} = $box_serial;
+	}
+	elsif ( $class eq 'chassis' and defined $member
+	    and $vc_serials->{$member} )
+	{
+	    $e_serial{$iid} = $vc_serials->{$member};
 	}
 	elsif (($serial !~ /^\w/) or ($serial =~ /builtin/i)) {
 	    next;
@@ -589,6 +614,25 @@ sub e_serial {
 	}
     }
     return  \%e_serial;
+}
+
+sub e_model {
+    my $juniper = shift;
+
+    my $e_model = $juniper->orig_e_model() || {};
+    return $e_model unless $juniper->_e_is_virtual();
+
+    my $e_class   = $juniper->e_class() || {};
+    my $vc_models = $juniper->jnxVirtualChassisMemberModel() || {};
+
+    my %e_model = %$e_model;
+    foreach my $iid ( keys %$e_class ) {
+        next unless $e_class->{$iid} eq 'chassis';
+        my $member = $juniper->_e_vc_member($iid);
+        next unless defined $member and $vc_models->{$member};
+        $e_model{$iid} = uc $vc_models->{$member};
+    }
+    return \%e_model;
 }
 
 sub e_fru {
@@ -915,7 +959,8 @@ if required.
 
 =item $juniper->e_class()
 
-Returns reference to hash.  Key: IID, Value: General hardware type.
+Returns reference to hash.  Key: IID, Value: General hardware type.  A
+virtual chassis is a C<stack> with one C<chassis> per member.
 
 =item $juniper->e_descr()
 
@@ -931,7 +976,16 @@ Returns reference to hash.  Key: IID, Value: juniper
 
 =item $juniper->e_serial()
 
-Returns reference to hash.  Key: IID, Value: Serial number
+Returns reference to hash.  Key: IID, Value: Serial number.  In a virtual
+chassis each member frame reports its own serial
+(C<jnxVirtualChassisMemberSerialnumber>).
+
+=item $juniper->e_model()
+
+Returns reference to hash.  Key: IID, Value: Model name.  In a virtual
+chassis each member frame reports its own model
+(C<jnxVirtualChassisMemberModel>); other entries are from
+F<ENTITY-MIB> (C<entPhysicalModelName>).
 
 =item $juniper->e_pos()
 
