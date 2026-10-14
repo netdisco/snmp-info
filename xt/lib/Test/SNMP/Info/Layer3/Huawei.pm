@@ -248,6 +248,42 @@ sub model : Tests(2) {
   is($test->{info}->model(), 'ce6810-48S4Q-EI', q(Model translates id));
 }
 
+sub serial : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'serial');
+
+  # entity_derived_serial uses a partial fetch of e_serial, which ignores
+  # the cache, so serve the ENTITY-MIB from the mocked session.
+  my $data = {
+    'ENTITY-MIB::entPhysicalClass' =>
+      {3 => 'chassis', 5 => 'container', 9 => 'module', 14 => 'port'},
+    'ENTITY-MIB::entPhysicalContainedIn' =>
+      {3 => 0, 5 => 3, 9 => 5, 14 => 9},
+    'ENTITY-MIB::entPhysicalSerialNum' =>
+      {3 => 'TESTCHASSIS0001', 5 => '', 9 => 'TESTBOARD0001', 14 => ''},
+  };
+  $test->{info}{sess}{Data} = $data;
+  is($test->{info}->serial(), 'TESTCHASSIS0001',
+    q(Chassis serial is preferred when present));
+
+  $test->{info}->clear_cache();
+  $data->{'ENTITY-MIB::entPhysicalSerialNum'}{3} = '';
+  is($test->{info}->serial(), 'TESTBOARD0001',
+    q(Empty chassis serial falls back to the board serial));
+
+  # Numeric order: iid 9 is the main board, iid 14 sorts first as a string
+  $test->{info}->clear_cache();
+  $data->{'ENTITY-MIB::entPhysicalClass'}{14} = 'module';
+  $data->{'ENTITY-MIB::entPhysicalSerialNum'}{14} = 'TESTPOWER0001';
+  is($test->{info}->serial(), 'TESTBOARD0001',
+    q(Fallback picks the lowest numbered module));
+
+  $test->{info}->clear_cache();
+  $test->{info}{sess}{Data} = {};
+  is($test->{info}->serial(), undef, q(No data returns undef));
+}
+
 sub mac : Tests(3) {
   my $test = shift;
 
