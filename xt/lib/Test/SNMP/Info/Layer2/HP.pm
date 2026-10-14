@@ -70,7 +70,7 @@ sub vendor : Tests(2) {
   is($test->{info}->vendor(), 'hp', q(Vendor returns 'hp'));
 }
 
-sub model : Tests(23) {
+sub model : Tests(25) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -78,6 +78,8 @@ sub model : Tests(23) {
 
   # Exercise naming from HP-ICF-OID without requiring a device or recent MIBs.
   my @cases = (
+    ['arubaStack2930M', '2930M Stack'],
+    ['hpSwitchStack2930M', '2930M Stack'],
     ['arubaJL071A', '3810M-24G'],
     ['arubaJL072A', '3810M-48G'],
     ['arubaJL073A', '3810M-24G-PoE+'],

@@ -46,7 +46,7 @@ use SNMP::Info::IEEE802_Bridge;
   agg_ports
 /;
 
-our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MODEL_MAP, %MUNGE);
 
 $VERSION = '3.979000';
 
@@ -98,6 +98,11 @@ $VERSION = '3.979000';
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
     %SNMP::Info::IEEE802_Bridge::MUNGE,
+);
+
+# Product codes reported by ENTITY-MIB or the product OID.
+%MODEL_MAP = (
+    'JL719C' => '8360-48Y6C v2',
 );
 
 sub _at_pbb_one {
@@ -154,7 +159,8 @@ sub model {
     my $id = $cx->id();
     my $translated_id = &SNMP::translateObj($id) || $id;
     $translated_id =~ s/arubaWiredSwitch//i;
-    return $cx->stack_info() || $model->{1} || $translated_id;
+    my $name = $cx->stack_info() || $model->{1} || $translated_id;
+    return defined $MODEL_MAP{$name} ? $MODEL_MAP{$name} : $name;
 }
 
 # Keep client tracking rows separate from the standard neighbour-table indexes.
@@ -440,6 +446,8 @@ Example return value: '6300M (stack of 2)'. Will return undef when VSF is not
 supported or when the device is VSF standalone.
 
 =item $cx->model()
+
+Known product codes are translated to readable model names.
 
 Returns L<stack_info()> if defined, otherwise will fall back to returning the
 model from C<entPhysicalModelName.1>; if that's also not set, will use

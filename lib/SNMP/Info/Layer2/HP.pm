@@ -125,6 +125,8 @@ $VERSION = '3.979000';
 # Model map, reverse sorted by common model name (sort -k2 -r)
 # Potential sources for model information: http://www.hp.com/rnd/software/switches.htm or HP-ICF-OID MIB
 %MODEL_MAP = (
+    'Stack2930M' => '2930M Stack',
+    'arubaStack2930M' => '2930M Stack',
     'J8131A' => 'WAP-420-WW',
     'J8130A' => 'WAP-420-NA',
     'J9833A' => 'PS1810-8G',
