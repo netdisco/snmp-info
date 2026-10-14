@@ -2,6 +2,9 @@ Version 3.979001 (2026-tbd)
 
   [BUG FIXES]
 
+  * #570 Use attached aggregate indexes for H3C Bridge-Aggregation members
+    and omit member STP states handled by the logical aggregate
+
   * #621 Translate ArubaCX JL719C to 8360-48Y6C v2 and HP/Aruba
     2930M stack identifiers to 2930M Stack
 
