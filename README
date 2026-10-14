@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.978000
+    SNMP::Info - Version 3.979000
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -1066,6 +1066,12 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer7::QNAP for details.
 
+        SNMP::Info::Layer7::Synology
+            Subclass for Synology NAS devices running DiskStation Manager
+            (DSM).
+
+            See documentation in SNMP::Info::Layer7::Synology for details.
+
         SNMP::Info::Layer7::Kemp
             Subclass for Kemp LoadMaster appliances.
 
@@ -1196,14 +1202,14 @@ USAGE
         Offline
             Causes SNMP::Info to avoid network activity and return data only
             from its cache. If you ask for something not in the cache, an
-            error is thrown. See also the "cache()" and "offline()" methods.
+            error is thrown. See also the cache() and offline() methods.
 
             (default 0, which means "online")
 
         Cache
             Pass in a HashRef to prime the cache of retrieved data. Useful
             for creating an instance in "Offline" mode from a previously
-            dumped cache. See also the "cache()" method to retrieve a cache
+            dumped cache. See also the cache() method to retrieve a cache
             after running actual queries.
 
         OTHER
@@ -1772,8 +1778,8 @@ USAGE
         on a device.
 
         Returns either a reference to an array of protocols, possible values
-        being: "lldp", "cdp", "sonmp", "fdp", "edp", "amap" or "undef" if no
-        protocols are supported or running.
+        being: "lldp", "cdp", "sonmp", "fdp", "edp", "amap", "mndp" or
+        "undef" if no protocols are supported or running.
 
    Common Topology Table Information
     The common topology table methods below will query the device for
@@ -1790,7 +1796,7 @@ USAGE
 
     If a reference to an array is provided as the second argument, those
     protocols will be queried for information. The supported array values
-    are: "lldp", "cdp", "sonmp", "fdp", "edp", "amap".
+    are: "lldp", "cdp", "sonmp", "fdp", "edp", "amap", "mndp".
 
     If nothing is passed in as the second argument, the methods will call
     has_topo() to determine supported and running topology protocols on the
