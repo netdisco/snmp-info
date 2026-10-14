@@ -2,7 +2,7 @@ Version 3.978003 (2026-tbd)
 
   [BUG FIXES]
 
-  * Juniper: report each virtual chassis member as a chassis entity with
+  * #616 Juniper: report each virtual chassis member as a chassis entity with
     its own serial and model (netdisco/netdisco#1483)
   * #603 Timetra: return tmnxHwIndex as the e_index value (#544)
   * #602 Fixes for TP-Link JetStream and Omada switches (#449)
