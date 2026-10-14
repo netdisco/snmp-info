@@ -96,7 +96,6 @@ sub lldp_loc_id : Tests(2) {
     q(Text MAC local chassis ID returns formatted MAC));
 }
 
-
 sub mac : Tests(3) {
   my $test = shift;
 
@@ -272,6 +271,257 @@ sub mndp_cap : Tests(2) {
 
   can_ok($test->{info}, 'mndp_cap');
   cmp_deeply($test->{info}->mndp_cap(), {}, q(No capabilities in the table));
+}
+
+sub model : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'model');
+
+  is($test->{info}->model(), 'CRS125-24G-1S',
+    q(RouterOS 6 sysDescr returns the board));
+
+  $test->{info}{'_description'}
+    = 'RouterOS CCR2004-1G-12S+2XS 7.24.2 (stable)';
+  is($test->{info}->model(), 'CCR2004-1G-12S+2XS',
+    q(Recent RouterOS 7 sysDescr with version returns the board));
+
+  $test->{info}{'_description'} = 'RouterOS RB5009UPr+S+ 7.19.6 (long-term)';
+  is($test->{info}->model(), 'RB5009UPr+S+',
+    q(Long-term channel sysDescr returns the board));
+
+  $test->{info}{'_description'} = 'RouterOS RB 750';
+  is($test->{info}->model(), 'RB 750', q(Older RB sysDescr returns the board));
+
+  $test->{info}{'_mt_board_name'} = 'RB750Gr3';
+  is($test->{info}->model(), 'RB750Gr3', q(mtxrBoardName is preferred));
+}
+
+sub _prime_gauges {
+  my $test = shift;
+
+  # RouterOS 7.24 CCR2004: whole degrees in mtxrGaugeTable
+  $test->{info}{'_mt_gauge_name'}  = 1;
+  $test->{info}{'_mt_gauge_value'} = 1;
+  $test->{info}{store}{mt_gauge_name} = {
+    17   => 'cpu-temperature',
+    7001 => 'fan1-speed',
+    7101 => 'board-temperature1',
+    7102 => 'board-temperature2',
+  };
+  $test->{info}{store}{mt_gauge_value}
+    = {17 => 41, 7001 => 3825, 7101 => 33, 7102 => 36};
+  return;
+}
+
+sub board_temp : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'board_temp');
+
+  $test->{info}{'_mtxrHlTemperature'} = 350;
+  is($test->{info}->board_temp(), 35,
+    q(Legacy mtxrHlTemperature returns degrees from tenths));
+
+  delete $test->{info}{'_mtxrHlTemperature'};
+  $test->_prime_gauges();
+  is($test->{info}->board_temp(), 33,
+    q(RouterOS 7 returns board-temperature1 from the gauge table));
+
+  $test->{info}->clear_cache();
+  warnings_are { $test->{info}->board_temp() } [],
+    q(No data returns without warnings);
+}
+
+sub cpu_temp : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'cpu_temp');
+
+  $test->{info}{'_mtxrHlProcessorTemperature'} = 440;
+  is($test->{info}->cpu_temp(), 44,
+    q(Legacy mtxrHlProcessorTemperature returns degrees from tenths));
+
+  delete $test->{info}{'_mtxrHlProcessorTemperature'};
+  $test->_prime_gauges();
+  is($test->{info}->cpu_temp(), 41,
+    q(RouterOS 7 returns cpu-temperature from the gauge table));
+
+  $test->{info}->clear_cache();
+  warnings_are { $test->{info}->cpu_temp() } [],
+    q(No data returns without warnings);
+}
+
+sub ps1_status : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ps1_status');
+
+  $test->{info}{'_mt_psu_state'} = 'true';
+  is($test->{info}->ps1_status(), 'ok',
+    q(Legacy mtxrHlPowerSupplyState true returns ok));
+
+  delete $test->{info}{'_mt_psu_state'};
+  $test->{info}{'_mt_gauge_name'}  = 1;
+  $test->{info}{'_mt_gauge_value'} = 1;
+  $test->{info}{store}{mt_gauge_name}  = {7401 => 'psu1-state'};
+  $test->{info}{store}{mt_gauge_value} = {7401 => 1};
+  is($test->{info}->ps1_status(), 'fail',
+    q(RouterOS 7 psu1-state gauge 1 returns fail));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->ps1_status(), undef, q(No data returns undef));
+}
+
+sub ps2_status : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ps2_status');
+
+  $test->{info}{'_mt_backup_psu_state'} = 'false';
+  is($test->{info}->ps2_status(), 'fail',
+    q(Legacy mtxrHlBackupPowerSupplyState false returns fail));
+
+  delete $test->{info}{'_mt_backup_psu_state'};
+  $test->{info}{'_mt_gauge_name'}  = 1;
+  $test->{info}{'_mt_gauge_value'} = 1;
+  $test->{info}{store}{mt_gauge_name}  = {7402 => 'psu2-state'};
+  $test->{info}{store}{mt_gauge_value} = {7402 => 0};
+  is($test->{info}->ps2_status(), 'ok',
+    q(RouterOS 7 psu2-state gauge 0 returns ok));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->ps2_status(), undef, q(No data returns undef));
+}
+
+sub fan : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'fan');
+
+  $test->{info}{'_mt_gauge_name'}  = 1;
+  $test->{info}{'_mt_gauge_value'} = 1;
+  $test->{info}{store}{mt_gauge_name} = {
+    54   => 'fan-state',
+    7001 => 'fan1-speed',
+    7002 => 'fan2-speed',
+    7101 => 'board-temperature1',
+  };
+  $test->{info}{store}{mt_gauge_value}
+    = {54 => 0, 7001 => 3825, 7002 => 3945, 7101 => 33};
+  is($test->{info}->fan(), 'ok, fan1 3825 rpm, fan2 3945 rpm',
+    q(RouterOS 7 returns fan-state and fan speeds from the gauge table));
+
+  $test->{info}{'_mt_fan1_speed'} = 4200;
+  $test->{info}{'_mt_fan2_speed'} = 4245;
+  is($test->{info}->fan(), 'ok, fan1 4200 rpm, fan2 4245 rpm',
+    q(Legacy mtxrHlFanSpeed1/2 are preferred for speeds));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->fan(), undef, q(No data returns undef));
+}
+
+# RouterOS 7.20.6 RB5009UPr+S+: mtxrPOETable indexed by ifIndex
+sub _prime_mt_poe {
+  my $test = shift;
+
+  $test->{info}{'_mt_poe_status'} = 1;
+  $test->{info}{'_mt_poe_power'}  = 1;
+  $test->{info}{store}{mt_poe_status} = {
+    2 => 'poweredOn',
+    3 => 'shortCircuit',
+    4 => 'disabled',
+    5 => 'waitingForLoad',
+    6 => 'controllerInit',
+  };
+  $test->{info}{store}{mt_poe_power}
+    = {2 => 91, 3 => 0, 4 => 0, 5 => 0, 6 => 0};
+  return;
+}
+
+sub peth_port_ifindex : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'peth_port_ifindex');
+
+  $test->_prime_mt_poe();
+  cmp_deeply($test->{info}->peth_port_ifindex(),
+    {'1.2' => 2, '1.3' => 3, '1.4' => 4, '1.5' => 5, '1.6' => 6},
+    q(mtxrPOETable index maps to ifIndex under module 1));
+
+  $test->{info}{'_peth_port_status'} = 1;
+  $test->{info}{store}{peth_port_status} = {'1.7' => 'deliveringPower'};
+  cmp_deeply($test->{info}->peth_port_ifindex(), {'1.7' => 7},
+    q(POWER-ETHERNET-MIB is preferred when present));
+}
+
+sub peth_port_admin : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'peth_port_admin');
+
+  $test->_prime_mt_poe();
+  cmp_deeply(
+    $test->{info}->peth_port_admin(),
+    {'1.2' => 'true', '1.3' => 'true', '1.4' => 'false', '1.5' => 'true',
+      '1.6' => 'true'},
+    q(Only disabled ports are administratively off)
+  );
+}
+
+sub peth_port_status : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'peth_port_status');
+
+  $test->_prime_mt_poe();
+  cmp_deeply(
+    $test->{info}->peth_port_status(),
+    { '1.2' => 'deliveringPower',
+      '1.3' => 'fault',
+      '1.4' => 'disabled',
+      '1.5' => 'searching',
+      '1.6' => 'otherFault',
+    },
+    q(mtxrPOEStatus maps to POWER-ETHERNET-MIB detection status)
+  );
+
+  $test->{info}->clear_cache();
+  is($test->{info}->peth_port_status(), undef, q(No data returns undef));
+}
+
+sub peth_port_power : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'peth_port_power');
+
+  $test->_prime_mt_poe();
+  cmp_deeply($test->{info}->peth_port_power(),
+    {'1.2' => 9100, '1.3' => 0, '1.4' => 0, '1.5' => 0, '1.6' => 0},
+    q(Deciwatts are returned as milliwatts));
+}
+
+sub peth_power_watts : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'peth_power_watts');
+
+  $test->_prime_mt_poe();
+  cmp_deeply($test->{info}->peth_power_watts(), {},
+    q(mtxrPOETable present returns an empty hash, not undef));
+
+  $test->{info}->clear_cache();
+  is($test->{info}->peth_power_watts(), undef, q(No data returns undef));
+}
+
+sub peth_power_status : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'peth_power_status');
+
+  $test->_prime_mt_poe();
+  cmp_deeply($test->{info}->peth_power_status(), {},
+    q(mtxrPOETable present returns an empty hash));
 }
 
 1;
