@@ -2,8 +2,8 @@ Version 3.978003 (2026-tbd)
 
   [ENHANCEMENTS]
 
-  * ArubaCX: add transceivers from ARUBAWIRED-PM-MIB as module entities
-    (netdisco/netdisco#1441, needs netdisco-mibs 4.059)
+  * #617 ArubaCX: add transceivers from ARUBAWIRED-PM-MIB as module
+    entities (netdisco/netdisco#1441, needs netdisco-mibs 4.059)
 
   [BUG FIXES]
 
