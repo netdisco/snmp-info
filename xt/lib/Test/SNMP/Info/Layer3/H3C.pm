@@ -853,4 +853,69 @@ sub v_index : Tests(1) {
     q(v_index keys stay those of Q-BRIDGE));
 }
 
+sub _prime_pvid {
+  my ($info, $bp_index, $i_index, $qb_i_vlan) = @_;
+  my %i_descr = map { $_ => "port$_" } keys %$i_index;
+  $info->clear_cache();
+  $info->cache({
+    '_bp_index'      => 1,
+    '_i_index'       => 1,
+    '_i_description' => 1,
+    '_qb_i_vlan'     => 1,
+    'store'          => {
+      bp_index      => $bp_index,
+      i_index       => $i_index,
+      i_description => \%i_descr,
+      qb_i_vlan     => $qb_i_vlan,
+    },
+  });
+}
+
+sub i_vlan : Tests(7) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'i_vlan');
+
+  # Comware 7 FF 5700: bridge port 1 is ifIndex 164, dot1qPvid keyed by ifIndex
+  _prime_pvid($info, {1 => 164, 4 => 167},
+    {4 => 4, 164 => 164, 167 => 167, 200 => 200},
+    {4 => 10, 164 => 20, 200 => 30});
+  cmp_deeply($info->i_vlan(), {4 => 10, 164 => 20, 200 => 30},
+    q(Comware 7 PVID keyed by ifIndex is used as is));
+  cmp_deeply($info->i_vlan(164), {164 => 20},
+    q(Comware 7 partial returns the one ifIndex));
+
+  # Comware 7 S5820V2: ports are identity, aggregate bridge port 1409 is
+  # ifIndex 1413
+  _prime_pvid($info, {2 => 2, 6 => 6, 1409 => 1413},
+    {2 => 2, 6 => 6, 1413 => 1413}, {2 => 20, 6 => 10, 1413 => 20});
+  cmp_deeply($info->i_vlan(), {2 => 20, 6 => 10, 1413 => 20},
+    q(Comware 7 aggregate PVID keyed by ifIndex is kept));
+
+  # Comware 5 A5500: bridge port equals ifIndex
+  _prime_pvid($info, {4 => 4, 5 => 5}, {4 => 4, 5 => 5}, {4 => 10, 5 => 20});
+  cmp_deeply($info->i_vlan(), {4 => 10, 5 => 20},
+    q(Comware 5 PVID with identity bridge ports unchanged));
+
+  # Standard keying: every key is a bridge port
+  _prime_pvid($info, {1 => 164, 2 => 165}, {164 => 164, 165 => 165},
+    {1 => 10, 2 => 20});
+  cmp_deeply($info->i_vlan(), {164 => 10, 165 => 20},
+    q(PVID keyed by bridge port mapped through bp_index));
+
+  $info->clear_cache();
+  cmp_deeply($info->i_vlan(), {}, q(No data returns empty hash));
+}
+
+sub i_untagged : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  _prime_pvid($info, {2 => 2, 1409 => 1413}, {2 => 2, 1413 => 1413},
+    {2 => 20, 1413 => 20});
+  cmp_deeply($info->i_untagged(), {2 => 20, 1413 => 20},
+    q(i_untagged returns the same ifIndex-keyed PVID as i_vlan));
+}
+
 1;
