@@ -2370,6 +2370,11 @@ sub device_type {
         print "SNMP::Info::device_type() layers:$layers id:$id sysDescr:\"$desc\"\n";
     }
 
+    # Ruckus access points use a generic sysDescr and may not implement
+    # sysServices, so identify their registered product OIDs directly.
+    return 'SNMP::Info::Layer2::Ruckus'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.25053\.3\.1\.[1-4]\.\d+$/;
+
     # Layer 3 Supported
     #   (usually has layer2 as well, so we check for 3 first)
     if ( $info->has_layer(3) ) {
