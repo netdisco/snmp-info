@@ -172,6 +172,17 @@ sub i_stp_state {
     return \%states;
 }
 
+# OfficeConnect 1910/1920 on Comware 5 stall on GETBULK of dot1qTpFdbTable
+# see https://github.com/netdisco/netdisco/issues/1028
+sub bulkwalk_no {
+    my $h3c   = shift;
+    my $descr = $h3c->description() || '';
+
+    return 1
+        if $descr =~ /\bV?19[12]0-\S+.*\bSoftware\s+Version\s+5\./;
+    return 0;
+}
+
 # CH: overwrite and always return empty mapping for qb_fdb_index
 # see https://github.com/netdisco/snmp-info/issues/218
 # if no fdb->vlan mapping is available the fdb is assumed to be the vlan
@@ -266,6 +277,13 @@ Returns the OS extracted from C<sysDescr>.
 
 Returns the software version. Either C<entPhysicalSoftwareRev.2> or extracted from
 C<sysDescr>.
+
+=item $h3c->bulkwalk_no()
+
+Returns 1 for HP/HPE 1910 and 1920 switches running software version 5,
+identified from C<sysDescr>, so their tables are walked without bulkwalk.
+Returns 0 for all other devices. An explicit C<BulkWalk =E<gt> 0> still
+turns bulkwalk off for any device.
 
 =item $h3c->qb_fdb_index()
 

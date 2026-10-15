@@ -14,6 +14,9 @@ Version 3.979001 (2026-tbd)
   * Extreme: read VLAN names and IDs from Q-BRIDGE-MIB when
     extremeVlanIfTable is empty
 
+  * H3C: disable bulkwalk on Comware 5 OfficeConnect 1910/1920
+    (netdisco/netdisco#1028)
+
 Version 3.979000 (2026-10-13)
 
   [NEW FEATURES]

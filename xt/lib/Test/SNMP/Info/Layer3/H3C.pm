@@ -82,4 +82,24 @@ sub i_stp_state : Tests(5) {
   is($info->i_stp_state->{57}, 'blocking', 'Unknown aggregate retains member state');
 }
 
+sub bulkwalk_no : Tests(8) {
+  my $test = shift;
+  my $info = $test->{info};
+  is($info->bulkwalk_no, 0, 'Other Comware 5 model keeps bulkwalk');
+  my %cases = (
+    '1920-48G Switch Software Version 5.20.99, Release 1121 Copyright' => 1,
+    'HP V1910-48G Switch Software Version 5.20 Release 1111P01' => 1,
+    'HP V1910-24G-PoE (170W) Switch Software Version 5.20, Release 1519' => 1,
+    "HP Comware Platform Software, Software Version 5.20.99 Release 2222P08\n"
+      . 'HP A5500-24G EI Switch' => 0,
+    'Switch 4210G 24-Port Software Version 5.20 Release 2222P01' => 0,
+    'HPE OfficeConnect Switch 1920S 24G 2SFP JL381A, PD.01.05' => 0,
+    'HP Comware Platform Software, Software Version 7.1.045, Release 2416' => 0,
+  );
+  foreach my $descr (sort keys %cases) {
+    $info->{_description} = $descr;
+    is($info->bulkwalk_no, $cases{$descr}, "bulkwalk_no for '$descr'");
+  }
+}
+
 1;
