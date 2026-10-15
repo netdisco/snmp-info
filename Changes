@@ -4,8 +4,6 @@ Version 3.979001 (2026-tbd)
 
   * #570 Use attached aggregate indexes for H3C Bridge-Aggregation members
     and omit member STP states handled by the logical aggregate
-  * H3C: disable bulkwalk on OfficeConnect 1910 and 1920 switches running
-    Comware 5, which stall on GETBULK during macsuck (netdisco/netdisco#1028)
 
   * #621 Translate ArubaCX JL719C to 8360-48Y6C v2 and HP/Aruba
     2930M stack identifiers to 2930M Stack
@@ -15,6 +13,9 @@ Version 3.979001 (2026-tbd)
 
   * Extreme: read VLAN names and IDs from Q-BRIDGE-MIB when
     extremeVlanIfTable is empty
+
+  * H3C: disable bulkwalk on Comware 5 OfficeConnect 1910/1920
+    (netdisco/netdisco#1028)
 
 Version 3.979000 (2026-10-13)
 
