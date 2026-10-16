@@ -124,7 +124,7 @@ sub _prime_v2_rman {
   return;
 }
 
-sub _lldp_rem : Tests(3) {
+sub _lldp_rem : Tests(5) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -153,6 +153,29 @@ sub _lldp_rem : Tests(3) {
     ['0.17.1.1', '22612.2.1.1'],
     q(Only the nearest-bridge agent is kept)
   );
+
+  $info->{store}{lldp_v2_rem_id}{'17'} = pack("H*", '20283e6ee311');
+  warnings_are { $info->_lldp_rem('lldp_rem_id') } [],
+    q(A key without a destination index field does not warn);
+
+  # Comware serves both MIBs for the same neighbor; reading both would
+  # report it twice under two keys
+  $info->clear_cache();
+  $info->cache(
+    { '_lldp_rem_id'          => 1,
+      '_lldp_rem_id_type'     => 1,
+      '_lldp_v2_rem_id'       => 1,
+      '_lldp_v2_rem_id_type'  => 1,
+      'store'                 => {
+        'lldp_rem_id'         => {'22612.2.1'   => pack("H*", '62bd1fc10a13')},
+        'lldp_rem_id_type'    => {'22612.2.1'   => 'macAddress'},
+        'lldp_v2_rem_id'      => {'22612.2.1.1' => pack("H*", '62bd1fc10a13')},
+        'lldp_v2_rem_id_type' => {'22612.2.1.1' => 'macAddress'},
+      }
+    }
+  );
+  cmp_deeply($info->lldp_id(), {'22612.2.1' => '62:bd:1f:c1:0a:13'},
+    q(Neighbors in both MIBs are reported once, from LLDP-MIB));
 }
 
 sub hasLLDP : Tests(6) {

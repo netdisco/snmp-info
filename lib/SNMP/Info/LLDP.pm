@@ -207,7 +207,7 @@ sub _lldp_rem {
     return $rows unless defined $agent;
 
     return { map { $_ => $rows->{$_} }
-            grep { ( split /\./, $_ )[2] eq $agent } keys %$rows };
+            grep { ( ( split /\./, $_ )[2] // '' ) eq $agent } keys %$rows };
 }
 
 sub lldp_if {
