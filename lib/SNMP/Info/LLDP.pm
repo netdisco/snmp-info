@@ -159,11 +159,12 @@ sub hasLLDP {
 
 # Neighbors come from one MIB per device: devices serving both report each
 # neighbor in both. LLDP-MIB local data may sit beside LLDP-V2-MIB neighbors,
-# so the remote tables decide.
+# so the remote tables decide. No neighbors is remembered as '' so empty
+# walks are not repeated on every call; clear_cache resets it.
 sub _lldp_source {
     my $lldp = shift;
 
-    return $lldp->{_lldp_source} if defined $lldp->{_lldp_source};
+    return $lldp->{_lldp_source} || undef if exists $lldp->{_lldp_source};
 
     my $source;
     if ( scalar keys %{ $lldp->lldp_rem_id() || {} } ) {
@@ -172,7 +173,7 @@ sub _lldp_source {
     elsif ( scalar keys %{ $lldp->lldp_v2_rem_id() || {} } ) {
         $source = 'v2';
     }
-    $lldp->{_lldp_source} = $source if defined $source;
+    $lldp->{_lldp_source} = $source // '';
     return $source;
 }
 
@@ -180,12 +181,16 @@ sub _lldp_source {
 sub _lldp_v2_agent {
     my $lldp = shift;
 
+    return $lldp->{_lldp_v2_agent} || undef if exists $lldp->{_lldp_v2_agent};
+
+    my $agent;
     my $dest = $lldp->lldp_v2_dest_mac() || {};
     foreach my $idx ( keys %$dest ) {
         my $mac = $dest->{$idx} || '';
-        return $idx if lc $mac eq '01:80:c2:00:00:0e';
+        $agent = $idx if lc $mac eq '01:80:c2:00:00:0e';
     }
-    return;
+    $lldp->{_lldp_v2_agent} = $agent // '';
+    return $agent;
 }
 
 # Remote column from the chosen MIB, named by its LLDP-MIB method. LLDP-V2-MIB

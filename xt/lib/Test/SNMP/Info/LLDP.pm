@@ -141,6 +141,7 @@ sub _lldp_rem : Tests(3) {
     q(Without lldpV2DestAddressTable every agent is kept)
   );
 
+  delete $info->{_lldp_v2_agent};
   $info->{'_lldp_v2_dest_mac'} = 1;
   $info->{store}{lldp_v2_dest_mac} = {
     1 => pack("H*", '0180c200000e'),
@@ -179,7 +180,7 @@ sub hasLLDP : Tests(6) {
   is($test->{info}->hasLLDP(), 1, q(Only LLDP-V2-MIB neighbors, has LLDP));
 }
 
-sub _lldp_source : Tests(4) {
+sub _lldp_source : Tests(5) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -213,8 +214,28 @@ sub _lldp_source : Tests(4) {
     q(LLDP-MIB capabilities do not block LLDP-V2-MIB neighbors));
 
   $info->clear_cache();
-  ok(!defined $info->_lldp_source() && !exists $info->{_lldp_source},
-    q(No neighbors in either MIB is not memoized));
+  is($info->_lldp_source(), undef, q(No neighbors in either MIB));
+
+  # Not walked again: a device without neighbors would otherwise repeat two
+  # empty walks on every topology call
+  $info->{'_lldp_v2_rem_id'} = 1;
+  $info->{store}{lldp_v2_rem_id} = {'0.17.1.1' => pack("H*", '20283e6ee311')};
+  is($info->_lldp_source(), undef, q(No neighbors is memoized until clear_cache));
+}
+
+sub _lldp_v2_agent : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_prime_v2;
+  is($info->_lldp_v2_agent(), undef, q(No lldpV2DestAddressTable, no agent));
+
+  $info->{'_lldp_v2_dest_mac'} = 1;
+  $info->{store}{lldp_v2_dest_mac} = {1 => pack("H*", '0180c200000e')};
+  is($info->_lldp_v2_agent(), undef, q(No agent is memoized until clear_cache));
+
+  delete $info->{_lldp_v2_agent};
+  is($info->_lldp_v2_agent(), 1, q(Nearest-bridge agent index));
 }
 
 sub lldp_if : Tests(6) {
