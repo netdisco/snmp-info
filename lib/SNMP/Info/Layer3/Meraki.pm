@@ -61,6 +61,47 @@ sub layers {
     return '00000110';
 }
 
+sub vendor {
+    return 'Cisco Meraki';
+}
+
+sub model {
+    my $meraki = shift;
+    my $descr = $meraki->description() || '';
+
+    # Meraki sysDescr values begin with the product model, for example:
+    # "Meraki MS120-8FP Cloud Managed PoE Switch".
+    return $1 if $descr =~ /^Meraki\s+(\S+)/i;
+
+    # Keep a fallback for devices whose sysDescr is unavailable or differs
+    # from the usual form. These are observed Meraki product OID suffixes.
+    my %models = (
+        37  => 'MR36',
+        38  => 'MR46',
+        41  => 'MR76',
+        339 => 'MS120-8LP',
+        340 => 'MS120-8FP',
+        375 => 'MS125-48FP',
+        398 => 'MS130-12X',
+        401 => 'MS130-24X',
+        404 => 'MS130-48X',
+    );
+    my $id = $meraki->id() || '';
+    if ( $id =~ /(?:^|\.)29671\.2\.(\d+)$/ && exists $models{$1} ) {
+        return $models{$1};
+    }
+
+    # Do not return the raw sysObjectID as a model.
+    return;
+}
+
+sub serial1 {
+    my $meraki = shift;
+    my $serial = $meraki->entity_derived_serial();
+    return $serial if defined $serial and $serial !~ /^\s*$/;
+    return;
+}
+
 1;
 __END__
 
@@ -120,6 +161,22 @@ These are methods that return scalar value from SNMP
 =item $meraki->layers()
 
 Returns 00000110.
+
+=item $meraki->vendor()
+
+Returns C<'Cisco Meraki'>.
+
+=item $meraki->model()
+
+Returns the model token from C<sysDescr>, with a fallback mapping for
+observed Meraki product sysObjectIDs. Returns undef if the model is unknown
+rather than returning the raw sysObjectID.
+
+=item $meraki->serial1()
+
+Returns the ENTITY-MIB-derived serial when available, allowing consumers that
+use C<serial1> as a chassis identifier to use the same serial already exposed
+by the inherited C<serial> method.
 
 =back
 
