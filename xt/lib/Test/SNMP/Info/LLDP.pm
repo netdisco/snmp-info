@@ -74,7 +74,7 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
-sub hasLLDP : Tests(4) {
+sub hasLLDP : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'hasLLDP');
@@ -87,6 +87,54 @@ sub hasLLDP : Tests(4) {
   $test->{info}->clear_cache();
   is($test->{info}->hasLLDP(),
     undef, q(No 'lldpLocSysCapEnabled' and no neighbors, no LLDP undef));
+
+  $test->{info}{'_lldp_v2_sys_cap'} = pack("H*", '2800');
+  is($test->{info}->hasLLDP(), 1,
+    q(Has 'lldpV2LocSysCapEnabled' has LLDP));
+
+  $test->{info}->clear_cache();
+  $test->{info}{'_lldp_v2_rem_id'} = 1;
+  $test->{info}{store}{lldp_v2_rem_id}
+    = {'0.17.1.1' => pack("H*", '20283e6ee311')};
+  is($test->{info}->hasLLDP(), 1, q(Only LLDP-V2-MIB neighbors, has LLDP));
+}
+
+sub _lldp_source : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  is($info->_lldp_source(), 'v1', q(LLDP-MIB neighbors use LLDP-MIB));
+
+  $info->clear_cache();
+  $info->cache(
+    { '_lldp_rem_id'    => 1,
+      '_lldp_v2_rem_id' => 1,
+      'store'           => {
+        'lldp_rem_id'    => {'22612.2.1'   => pack("H*", '62bd1fc10a13')},
+        'lldp_v2_rem_id' => {'22612.2.1.1' => pack("H*", '62bd1fc10a13')},
+      }
+    }
+  );
+  is($info->_lldp_source(), 'v1',
+    q(Neighbors in both MIBs use LLDP-MIB only));
+
+  $info->clear_cache();
+  $info->cache(
+    { '_lldp_sys_cap'   => pack("H*", '2800'),
+      '_lldp_rem_id'    => 1,
+      '_lldp_v2_rem_id' => 1,
+      'store'           => {
+        'lldp_rem_id'    => {},
+        'lldp_v2_rem_id' => {'0.17.1.1' => pack("H*", '20283e6ee311')},
+      }
+    }
+  );
+  is($info->_lldp_source(), 'v2',
+    q(LLDP-MIB capabilities do not block LLDP-V2-MIB neighbors));
+
+  $info->clear_cache();
+  ok(!defined $info->_lldp_source() && !exists $info->{_lldp_source},
+    q(No neighbors in either MIB is not memoized));
 }
 
 sub lldp_if : Tests(5) {

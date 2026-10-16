@@ -46,6 +46,7 @@ $VERSION = '3.979000';
     'LLDP-EXT-MED-MIB'  => 'lldpXMedMIB',
     'LLDP-EXT-DOT1-MIB' => 'lldpXdot1MIB',
     'LLDP-EXT-DOT3-MIB' => 'lldpXdot3MIB',
+    'LLDP-V2-MIB'       => 'lldpV2LocSysCapEnabled',
 );
 
 %GLOBALS = (
@@ -54,6 +55,7 @@ $VERSION = '3.979000';
     'lldp_sys_cap' => 'lldpLocSysCapEnabled',
     'lldp_loc_id_type'  => 'lldpLocChassisIdSubtype',
     'lldp_loc_id_os'    => 'lldpLocChassisId',
+    'lldp_v2_sys_cap'   => 'lldpV2LocSysCapEnabled',
 );
 
 %FUNCS = (
@@ -89,6 +91,23 @@ $VERSION = '3.979000';
 
     # LLDP-MIB::lldpRemManAddrTable
     'lldp_rman_addr' => 'lldpRemManAddrIfSubtype',
+
+    # LLDP-V2-MIB::lldpV2RemTable
+    'lldp_v2_rem_id_type'  => 'lldpV2RemChassisIdSubtype',
+    'lldp_v2_rem_id'       => 'lldpV2RemChassisId',
+    'lldp_v2_rem_pid_type' => 'lldpV2RemPortIdSubtype',
+    'lldp_v2_rem_pid'      => 'lldpV2RemPortId',
+    'lldp_v2_rem_desc'     => 'lldpV2RemPortDesc',
+    'lldp_v2_rem_sysname'  => 'lldpV2RemSysName',
+    'lldp_v2_rem_sysdesc'  => 'lldpV2RemSysDesc',
+    'lldp_v2_rem_sys_cap'  => 'lldpV2RemSysCapEnabled',
+    'lldp_v2_rem_cap_spt'  => 'lldpV2RemSysCapSupported',
+
+    # LLDP-V2-MIB::lldpV2RemManAddrTable
+    'lldp_v2_rman_addr' => 'lldpV2RemManAddrIfSubtype',
+
+    # LLDP-V2-MIB::lldpV2DestAddressTable
+    'lldp_v2_dest_mac' => 'lldpV2DestMacAddress',
 );
 
 %MUNGE = (
@@ -113,6 +132,13 @@ $VERSION = '3.979000';
 
     'lldp_rem_media_cap'     => \&SNMP::Info::munge_bits,
     'lldp_rem_media_cap_spt' => \&SNMP::Info::munge_bits,
+
+    'lldp_v2_sys_cap'     => \&SNMP::Info::munge_bits,
+    'lldp_v2_rem_sysname' => \&SNMP::Info::munge_null,
+    'lldp_v2_rem_sysdesc' => \&SNMP::Info::munge_null,
+    'lldp_v2_rem_sys_cap' => \&SNMP::Info::munge_bits,
+    'lldp_v2_rem_cap_spt' => \&SNMP::Info::munge_bits,
+    'lldp_v2_dest_mac'    => \&SNMP::Info::munge_mac,
 );
 
 sub hasLLDP {
@@ -122,13 +148,32 @@ sub hasLLDP {
     # so we could be running LLDP but not return any useful information
     my $lldp_cap = $lldp->lldp_sys_cap();
     return 1 if defined $lldp_cap;
+    return 1 if defined $lldp->lldp_v2_sys_cap();
 
     # If the device doesn't return local system capabilities, fallback
     # by checking if it would report neighbors
-    my $lldp_rem = $lldp->lldp_rem_id() || {};
-    return 1 if scalar keys %$lldp_rem;
+    return 1 if defined $lldp->_lldp_source();
 
     return;
+}
+
+# Neighbors come from one MIB per device: devices serving both report each
+# neighbor in both. LLDP-MIB local data may sit beside LLDP-V2-MIB neighbors,
+# so the remote tables decide.
+sub _lldp_source {
+    my $lldp = shift;
+
+    return $lldp->{_lldp_source} if defined $lldp->{_lldp_source};
+
+    my $source;
+    if ( scalar keys %{ $lldp->lldp_rem_id() || {} } ) {
+        $source = 'v1';
+    }
+    elsif ( scalar keys %{ $lldp->lldp_v2_rem_id() || {} } ) {
+        $source = 'v2';
+    }
+    $lldp->{_lldp_source} = $source if defined $source;
+    return $source;
 }
 
 sub lldp_if {
@@ -537,6 +582,8 @@ None.
 
 =item F<LLDP-EXT-DOT3-MIB>
 
+=item F<LLDP-V2-MIB>
+
 =back
 
 =head1 GLOBALS
@@ -551,6 +598,8 @@ Is LLDP is active in this device?
 
 Note:  LLDP may be active, but nothing in C<lldpRemoteSystemsData> Tables so
 the device would not return any useful topology information.
+
+Also true when the device reports LLDP only through F<LLDP-V2-MIB>.
 
 =item $lldp->lldp_sysname()
 
@@ -619,6 +668,15 @@ local system.
 This is used by the above method to decode the octet string in C<lldpLocChassisId>
 
 (C<lldpLocChassisIdSubtype>)
+
+=item $lldp->lldp_v2_sys_cap()
+
+Returns which system capabilities are enabled on the local system, from
+F<LLDP-V2-MIB>. Munged into an ascii binary string, LSB, as
+C<lldp_sys_cap()>, with three more bits: 'cVLANComponent(8)',
+'sVLANComponent(9)' and 'twoPortMACRelay(10)'.
+
+(C<lldpV2LocSysCapEnabled>)
 
 =back
 
@@ -838,6 +896,105 @@ capability and nothing else."
 =back
 
 (C<lldpRemSysCapEnabled>)
+
+=back
+
+=head2 LLDP-V2 Remote Table (C<lldpV2RemTable>)
+
+The F<LLDP-V2-MIB> (IEEE 802.1AB-2009) equivalents of the C<lldpRemTable>
+methods above. Indexed by time mark, local C<ifIndex>, destination address
+index and remote index.
+
+=over
+
+=item $lldp->lldp_v2_rem_id_type()
+
+Returns the type of encoding used to identify the chassis associated with
+the remote system.
+
+(C<lldpV2RemChassisIdSubtype>)
+
+=item $lldp->lldp_v2_rem_id()
+
+Returns the string value used to identify the chassis component associated
+with the remote system.
+
+(C<lldpV2RemChassisId>)
+
+=item $lldp->lldp_v2_rem_pid_type()
+
+Returns the type of port identifier encoding used in the associated
+C<lldpV2RemPortId> object.
+
+(C<lldpV2RemPortIdSubtype>)
+
+=item $lldp->lldp_v2_rem_pid()
+
+Returns the string value used to identify the port component associated with
+the remote system.
+
+(C<lldpV2RemPortId>)
+
+=item $lldp->lldp_v2_rem_desc()
+
+Returns the string value used to identify the description of the given port
+associated with the remote system.
+
+(C<lldpV2RemPortDesc>)
+
+=item $lldp->lldp_v2_rem_sysname()
+
+Returns the string value used to identify the system name of the remote
+system. Nulls are removed before the value is returned.
+
+(C<lldpV2RemSysName>)
+
+=item $lldp->lldp_v2_rem_sysdesc()
+
+Returns the string value used to identify the system description of the
+remote system. Nulls are removed before the value is returned.
+
+(C<lldpV2RemSysDesc>)
+
+=item $lldp->lldp_v2_rem_sys_cap()
+
+Returns which system capabilities are enabled on the remote system. Munged
+as C<lldp_v2_sys_cap()>.
+
+(C<lldpV2RemSysCapEnabled>)
+
+=item $lldp->lldp_v2_rem_cap_spt()
+
+Returns which system capabilities are supported on the remote system. Munged
+as C<lldp_v2_sys_cap()>.
+
+(C<lldpV2RemSysCapSupported>)
+
+=back
+
+=head2 LLDP-V2 Remote Management Address Table (C<lldpV2RemManAddrTable>)
+
+=over
+
+=item $lldp->lldp_v2_rman_addr()
+
+Returns the interface numbering subtype of each remote management address.
+The address itself is in the index.
+
+(C<lldpV2RemManAddrIfSubtype>)
+
+=back
+
+=head2 LLDP-V2 Destination Address Table (C<lldpV2DestAddressTable>)
+
+=over
+
+=item $lldp->lldp_v2_dest_mac()
+
+Returns the destination MAC address of each LLDP agent, keyed by the
+destination address index used in C<lldpV2RemTable>.
+
+(C<lldpV2DestMacAddress>)
 
 =back
 
