@@ -29,15 +29,26 @@ is($device->serial(), 'Q4AC-76H2-SU93', 'retains inherited serial behavior');
 
 $device->{description} = undef;
 my @product_oids = (
+    [27,  'MR33'],
+    [35,  'GR10'],
     [37,  'MR36'],
     [38,  'MR46'],
     [41,  'MR76'],
+    [50,  'CW9162I'],
+    [63,  'CW9179F'],
+    [100, 'Z1'],
+    [107, 'MX64'],
+    [117, 'GX20'],
+    [132, 'C8455-G2'],
+    [200, 'Meraki VM10'],
     [339, 'MS120-8LP'],
     [340, 'MS120-8FP'],
     [375, 'MS125-48FP'],
     [398, 'MS130-12X'],
     [401, 'MS130-24X'],
     [404, 'MS130-48X'],
+    [443, 'MS150-48MP-4X'],
+    [483, 'MS130-8P-I'],
 );
 for my $product (@product_oids) {
     $device->{id} = "enterprises.29671.2.$product->[0]";
