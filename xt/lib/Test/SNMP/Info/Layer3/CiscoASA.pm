@@ -70,4 +70,33 @@ sub ipv6_index : Tests(2) {
     q(IPV6-MIB prefix lengths are not read));
 }
 
+sub i_description : Tests(4) {
+  my $test = shift;
+
+  $test->{info}{'_i_index'}       = 1;
+  $test->{info}{'_i_description'} = 1;
+  $test->{info}{store}{i_index} = {2 => 2, 14 => 14, 15 => 15};
+  $test->{info}{store}{i_description} = {
+    2  => q(Adaptive Security Appliance 'outside' interface),
+    14 => 'Internal-Data0/0',
+    15 => 'Internal-Data0/1',
+  };
+  my $expected = {
+    2  => 'outside',
+    14 => 'Internal-Data0/0',
+    15 => 'Internal-Data0/1',
+  };
+
+  can_ok($test->{info}, 'i_description');
+  is_deeply($test->{info}->i_description(), $expected,
+    q(Quoted name is extracted, unquoted descriptions are kept));
+
+  # #229: a failed match leaves $1 holding the caller's last capture
+  'tunnel 31902 up' =~ /(\d+)/;
+  is_deeply($test->{info}->i_description(), $expected,
+    q(Unquoted descriptions ignore a capture made by the caller));
+  is_deeply($test->{info}->interfaces(), $expected,
+    q(No duplicate interface names are made up));
+}
+
 1;
