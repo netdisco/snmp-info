@@ -76,7 +76,7 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
-sub lldp_if : Tests(2) {
+sub lldp_if : Tests(3) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_if');
@@ -99,6 +99,22 @@ sub lldp_if : Tests(2) {
 
   cmp_deeply($test->{info}->lldp_if(), $expected,
     q(Local ports map to ifIndex once, with or without lldpLocPortDesc));
+
+  # LLDP-V2-MIB rows already carry the ifIndex; 7 is also a bridge port
+  $test->{info}->clear_cache();
+  $test->{info}->cache(
+    { '_bp_index'       => 1,
+      '_lldp_v2_rem_id'  => 1,
+      '_lldp_v2_rem_pid' => 1,
+      'store'            => {
+        'bp_index'        => {7 => 100007},
+        'lldp_v2_rem_id'  => {'0.7.1.1' => pack("H*", '20283e6ee311')},
+        'lldp_v2_rem_pid' => {'0.7.1.1' => 'port 3'},
+      }
+    }
+  );
+  cmp_deeply($test->{info}->lldp_if(), {'0.7.1.1' => 7},
+    q(LLDP-V2-MIB ifIndex is not translated as a bridge port));
 }
 
 1;
