@@ -1,5 +1,10 @@
 Version 3.979001 (2026-tbd)
 
+  [ENHANCEMENTS]
+
+  * #626 LLDP: read neighbors from LLDP-V2-MIB when LLDP-MIB reports none;
+    LLDP-V2-MIB and LLDP-V2-TC-MIB are now required
+
   [BUG FIXES]
 
   * #570 Use attached aggregate indexes for H3C Bridge-Aggregation members
