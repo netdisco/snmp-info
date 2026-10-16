@@ -263,7 +263,10 @@ sub model {
 
     # Meraki sysDescr values begin with the product model, for example:
     # "Meraki MS120-8FP Cloud Managed PoE Switch".
-    return $1 if $descr =~ /^Meraki\s+(\S+)/i;
+    if ( $descr =~ /^Meraki\s+(\S+)/i ) {
+        my $product = $1;
+        return $product unless $product =~ /^(?:cloud|managed|network|networks|security|wireless|access|switch|router)\b/i;
+    }
 
     # Otherwise map a registered Meraki sysObjectID suffix.
     my $id = $meraki->id() || '';

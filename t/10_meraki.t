@@ -27,6 +27,10 @@ is($device->model(), 'MS120-8FP', 'extracts model from sysDescr');
 is($device->serial1(), 'Q4AC-76H2-SU93', 'uses ENTITY-MIB serial for serial1');
 is($device->serial(), 'Q4AC-76H2-SU93', 'retains inherited serial behavior');
 
+$device->{description} = 'Meraki Cloud Managed 802.11n AP';
+$device->{id} = 'enterprises.29671.2.37';
+is($device->model(), 'MR36', 'uses product OID when sysDescr starts with a generic description');
+
 $device->{description} = undef;
 my @product_oids = (
     [27,  'MR33'],
