@@ -115,6 +115,15 @@ sub _prime_v2 {
   return;
 }
 
+# LLDP-V2-MIB management addresses for the Comware-shaped neighbor
+sub _prime_v2_rman {
+  my ($test, @keys) = @_;
+  $test->_prime_v2;
+  $test->{info}{'_lldp_v2_rman_addr'} = 1;
+  $test->{info}{store}{lldp_v2_rman_addr} = {map { $_ => 'ifIndex' } @keys};
+  return;
+}
+
 sub _lldp_rem : Tests(3) {
   my $test = shift;
   my $info = $test->{info};
@@ -263,7 +272,7 @@ sub lldp_if : Tests(6) {
     q(LLDP-V2-MIB takes the ifIndex from the index));
 }
 
-sub lldp_ip : Tests(4) {
+sub lldp_ip : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_ip');
@@ -282,9 +291,13 @@ sub lldp_ip : Tests(4) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_ip(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10', '22612.2.1.1.2.16.32.1.13.184.0.0.0.0.0.0.0.0.0.0.0.10', '22612.2.1.1.6.6.98.189.31.193.10.19');
+  cmp_deeply($test->{info}->lldp_ip(), {'22612.2.1.1' => '192.0.2.10'},
+    q(LLDP-V2-MIB IPv4 keyed like lldp_if));
 }
 
-sub lldp_ipv6 : Tests(4) {
+sub lldp_ipv6 : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_ipv6');
@@ -303,9 +316,16 @@ sub lldp_ipv6 : Tests(4) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_ip(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10', '22612.2.1.1.2.16.32.1.13.184.0.0.0.0.0.0.0.0.0.0.0.10', '22612.2.1.1.6.6.98.189.31.193.10.19');
+  cmp_deeply(
+    $test->{info}->lldp_ipv6(),
+    {'22612.2.1.1' => '2001:0db8:0000:0000:0000:0000:0000:000a'},
+    q(LLDP-V2-MIB IPv6)
+  );
 }
 
-sub lldp_mac : Tests(4) {
+sub lldp_mac : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_mac');
@@ -324,11 +344,15 @@ sub lldp_mac : Tests(4) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_mac(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10', '22612.2.1.1.2.16.32.1.13.184.0.0.0.0.0.0.0.0.0.0.0.10', '22612.2.1.1.6.6.98.189.31.193.10.19');
+  cmp_deeply($test->{info}->lldp_mac(),
+    {'22612.2.1.1' => '62:bd:1f:c1:0a:13'}, q(LLDP-V2-MIB MAC));
 }
 
 # This has been really been tested in the lldp_ip, lldp_ipv6, and lldp_mac but
 # tested here for completeness
-sub lldp_addr : Tests(3) {
+sub lldp_addr : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_addr');
@@ -350,6 +374,12 @@ sub lldp_addr : Tests(3) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_addr(), {}, q(No data returns empty hash));
+
+  # lldp_addr keys by the common index, so one neighbor with three addresses
+  # collapses to one key; use one address
+  $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10');
+  cmp_deeply($test->{info}->lldp_addr(), {'22612.2.1.1' => '192.0.2.10'},
+    q(LLDP-V2-MIB addresses keep the four-part index));
 }
 
 sub lldp_port : Tests(11) {

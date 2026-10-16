@@ -255,7 +255,7 @@ sub lldp_ip {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
+    my $rman_addr = $lldp->_lldp_rem( 'lldp_rman_addr', $partial );
 
     my %lldp_ip;
     foreach my $key ( keys %$rman_addr ) {
@@ -271,7 +271,7 @@ sub lldp_ipv6 {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
+    my $rman_addr = $lldp->_lldp_rem( 'lldp_rman_addr', $partial );
 
     my %lldp_ipv6;
     foreach my $key ( keys %$rman_addr ) {
@@ -287,7 +287,7 @@ sub lldp_mac {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
+    my $rman_addr = $lldp->_lldp_rem( 'lldp_rman_addr', $partial );
 
     my %lldp_ipv6;
     foreach my $key ( keys %$rman_addr ) {
@@ -303,7 +303,7 @@ sub lldp_addr {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
+    my $rman_addr = $lldp->_lldp_rem( 'lldp_rman_addr', $partial );
 
     my %lldp_ip;
     foreach my $key ( keys %$rman_addr ) {
@@ -521,8 +521,11 @@ sub _lldp_addr_index {
     my $lldp = shift;
     my $idx  = shift;
 
+    # LLDP-V2-MIB adds the destination address index
+    my $fields = ( $lldp->_lldp_source() || '' ) eq 'v2' ? 4 : 3;
+
     my @oids = split( /\./, $idx );
-    my $index = join( '.', splice( @oids, 0, 3 ) );
+    my $index = join( '.', splice( @oids, 0, $fields ) );
     my $proto = shift(@oids);
     shift(@oids) if scalar @oids > 4;    # $length
 
@@ -741,15 +744,21 @@ F<LLDP-V2-MIB> rows carry the (C<ifIndex>) in their index.
 Returns remote IPv4 address.  Returns for all other address types, use
 lldp_addr if you want any return address type.
 
+Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
+
 =item  $lldp->lldp_ipv6()
 
 Returns remote IPv6 address, if known.  Returns for all other address types,
 use lldp_addr if you don't care about return address type.
 
+Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
+
 =item  $lldp->lldp_mac()
 
 Returns remote (management) MAC address, if known.  Returns for all other
 address types, use lldp_addr if you don't care about return address type.
+
+Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 
 =item  $lldp->lldp_addr()
 
@@ -759,6 +768,8 @@ returns more than one address type, this method will give only one. Which one
 is returned is decided by chance, phase of the moon and Perl hash ordering.
 
 Use lldp_mac, lldp_ip or lldp_ipv6 if you want a specific address type.
+
+Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 
 =item $lldp->lldp_port()
 
