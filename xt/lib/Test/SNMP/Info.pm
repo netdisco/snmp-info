@@ -2017,7 +2017,7 @@ sub _fresh_walk_info {
   return $test->{info};
 }
 
-sub walk_status : Tests(9) {
+sub walk_status : Tests(10) {
   my $test = shift;
 
   can_ok($test->{info}, 'walk_status');
@@ -2110,6 +2110,28 @@ sub walk_status : Tests(9) {
       $info->walk_status('i_description'),
       superhashof({complete => 0, reason => 'timeout', partial => 2}),
       'partial GET timeout is incomplete'
+    );
+  };
+
+  subtest 'walk_status__partial_get_timeout_bulkwalk_on__records_get' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(op => 'get'));
+    $info->bulkwalk(1);
+    $test->mock_session->clear();
+    is($info->i_description(2), undef, 'returns undef as before');
+    ok(!$test->mock_session->called('bulkwalk'),
+      '... without a bulkwalk after the failed GET');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        complete => 0,
+        reason   => 'timeout',
+        walk     => 'get',
+        errornum => -24,
+        error    => 'Timeout',
+        partial  => 2,
+      }),
+      'outcome records the GET that failed'
     );
   };
 

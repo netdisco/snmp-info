@@ -4915,6 +4915,7 @@ sub _load_attr {
         my $walk       = 'getnext';
         my $reason     = undef;
         my $walk_error = undef;
+        my $walk_errno = 0;
 
         my $vars = [];
         my $bulkwalk_no
@@ -4946,13 +4947,13 @@ sub _load_attr {
                 $errornum = 0;
             }
             elsif ($errornum) {
-                $walk   = 'get';
-                $reason = _walk_reason($errornum);
+                $walk = 'get';
+                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess);
             }
         }
 
         # Use BULKWALK if we can because its faster
-        if ( $bulkwalk && @$vars == 0 ) {
+        if ( $bulkwalk && @$vars == 0 && !$errornum ) {
             $walk = 'bulkwalk';
             ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
             if ( $sess->{ErrorNum} ) {
@@ -4976,7 +4977,8 @@ sub _load_attr {
                 # A failed request leaves the varbind as it was sent, so
                 # leave before it is read. SNMPv1 noSuchName ends the view.
                 if ($errornum) {
-                    $reason = _walk_reason($errornum)
+                    ( $reason, $walk_errno, $walk_error )
+                        = _walk_failure($sess)
                         unless _v1_nosuch( $sess, $ver );
                     last;
                 }
@@ -5058,7 +5060,6 @@ sub _load_attr {
         }
 
         my $rows = scalar keys %{ $localstore || {} };
-        $walk_error ||= $sess->{ErrorStr} if defined $reason;
         $self->_walk_outcome(
             {   method    => $attr,
                 leaf      => $qual_leaf || $oid,
@@ -5066,7 +5067,7 @@ sub _load_attr {
                 complete  => ( defined $reason ? 0 : 1 ),
                 reason    => $reason,
                 error     => $walk_error,
-                errornum  => $sess->{ErrorNum} || 0,
+                errornum  => $walk_errno,
                 walk      => $walk,
                 repeaters => ( $walk eq 'bulkwalk' ? $repeaters : undef ),
                 rows      => $rows,
@@ -5106,16 +5107,18 @@ sub _v1_nosuch {
             and ( $sess->{ErrorStr} || '' ) =~ /nosuch/i );
 }
 
-=item _walk_reason(errornum)
+=item _walk_failure(sess)
 
-Maps a Net-SNMP C<ErrorNum> to the C<reason> of an incomplete walk.
+Returns the C<reason>, C<ErrorNum> and C<ErrorStr> of the request that just
+failed on the session, read before a later request can replace them.
 
 =cut
 
-sub _walk_reason {
-    my $errornum = shift;
+sub _walk_failure {
+    my $sess     = shift;
+    my $errornum = $sess->{ErrorNum};
     my %reasons = ( -24 => 'timeout', 1 => 'toobig', -65 => 'nonincreasing' );
-    return $reasons{$errornum} || 'error';
+    return ( $reasons{$errornum} || 'error', $errornum, $sess->{ErrorStr} );
 }
 
 =item $info->_walk_outcome(\%outcome)
