@@ -89,7 +89,7 @@ sub teardown : Tests(teardown) {
   $sess->{Data} = {};
   delete $sess->{Fault};
   delete $sess->{_fault_count};
-  delete $sess->{_fault_owner};
+  delete $sess->{_fault_raised};
   delete @{$sess}{qw/ErrorNum ErrorStr/};
 }
 
@@ -320,7 +320,7 @@ sub mock_get {
       my $vars = shift;
       my ($leaf, $iid, $oid, $oid_name);
       my $c_data = $self->{Data};
-      _clear_error($self) if $self->{Fault};
+      _clear_error($self);
 
       # From SNMP::Info get will only be passed either an OID or
       # SNMP::Varbind with a fully qualified leaf and potentially
@@ -391,7 +391,7 @@ sub mock_getnext {
       my $vars = shift;
       my ($leaf, $iid, $oid, $oid_name);
       my $c_data = $self->{Data};
-      _clear_error($self) if $self->{Fault};
+      _clear_error($self);
 
       # From SNMP::Info getnext will only be passed a SNMP::Varbind
       # with a fully qualified leaf and potentially a partial
@@ -475,25 +475,29 @@ sub mock_bulkwalk {
   return;
 }
 
-# get and getnext clear only while a Fault is installed, because existing
-# tests plant ErrorStr on the session by hand and expect it to survive.
+# ErrorStr is cleared only once a fault has fired on the session, because
+# existing tests plant ErrorStr by hand and expect it to survive.
 sub _clear_error {
   my $sess = shift;
   $sess->{ErrorNum} = 0;
-  $sess->{ErrorStr} = $EMPTY;
+  $sess->{ErrorStr} = $EMPTY if $sess->{_fault_raised};
   return;
 }
 
-# Return the injected fault when it targets this op and leaf. Counters for
-# getnext 'after' restart whenever a different Fault hash is installed.
+# Install a fault (or remove it with undef) and restart the getnext row
+# counters used by 'after'.
+sub set_fault {
+  my ($sess, $fault) = @_;
+  if ($fault) { $sess->{Fault} = $fault }
+  else        { delete $sess->{Fault} }
+  $sess->{_fault_count} = {};
+  return;
+}
+
+# Return the injected fault when it targets this op and leaf.
 sub _active_fault {
   my ($sess, $op, @leaf_names) = @_;
   my $fault = $sess->{Fault} or return;
-
-  if (($sess->{_fault_owner} || $EMPTY) ne "$fault") {
-    $sess->{_fault_owner} = "$fault";
-    $sess->{_fault_count} = {};
-  }
 
   return unless ($fault->{op} || $EMPTY) eq $op;
   return unless defined $fault->{leaf};
@@ -504,6 +508,7 @@ sub _active_fault {
 
 sub _raise_fault {
   my ($sess, $fault) = @_;
+  $sess->{_fault_raised} = 1;
   $sess->{ErrorNum} = $fault->{ErrorNum};
   $sess->{ErrorStr} = $fault->{ErrorStr};
   return;

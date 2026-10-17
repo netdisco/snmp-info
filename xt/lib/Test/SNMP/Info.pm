@@ -1829,22 +1829,30 @@ sub private_autoload : Tests(3) {
     1, q(Method 'ipDefaultTTL' is now defined in the symbol table));
 }
 
-sub mock_session_faults : Tests(5) {
+sub mock_session_faults : Tests(7) {
   my $test = shift;
   my $sess = $test->mock_session;
+  my $set_fault = \&My::Test::Class::set_fault;
   my $rows = {'IF-MIB::ifDescr' => {1 => 'a', 2 => 'b', 3 => 'c'}};
+  my $getnext_fault = {
+    op       => 'getnext',
+    leaf     => 'IF-MIB::ifDescr',
+    after    => 2,
+    ErrorNum => -24,
+    ErrorStr => 'Timeout',
+  };
 
   subtest
     'getnext__fault_after_two_rows__sets_ErrorNum_and_leaves_varbind' => sub {
     plan tests => 4;
     $sess->{Data}  = $rows;
-    $sess->{Fault} = {
+    $set_fault->($sess, {
       op       => 'getnext',
       leaf     => 'IF-MIB::ifDescr',
       after    => 2,
       ErrorNum => -24,
       ErrorStr => 'Timeout',
-    };
+    });
     my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
     $sess->getnext($var);
     $sess->getnext($var);
@@ -1858,12 +1866,12 @@ sub mock_session_faults : Tests(5) {
   subtest 'getnext__loop_fault__returns_first_row_again' => sub {
     plan tests => 1;
     $sess->{Data}  = $rows;
-    $sess->{Fault} = {
+    $set_fault->($sess, {
       op    => 'getnext',
       leaf  => 'IF-MIB::ifDescr',
       after => 2,
       loop  => 1,
-    };
+    });
     my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
     $sess->getnext($var);
     $sess->getnext($var);
@@ -1874,7 +1882,7 @@ sub mock_session_faults : Tests(5) {
   subtest 'bulkwalk__no_fault__returns_sorted_varbinds' => sub {
     plan tests => 3;
     $sess->{Data} = $rows;
-    delete $sess->{Fault};
+    $set_fault->($sess, undef);
     my $var    = SNMP::Varbind->new(['IF-MIB::ifDescr']);
     my @result = $sess->bulkwalk(0, 20, $var);
     is(scalar @{$result[0]}, 3, 'three varbinds');
@@ -1885,12 +1893,12 @@ sub mock_session_faults : Tests(5) {
   subtest 'bulkwalk__fault__returns_undef_with_error' => sub {
     plan tests => 2;
     $sess->{Data}  = $rows;
-    $sess->{Fault} = {
+    $set_fault->($sess, {
       op       => 'bulkwalk',
       leaf     => 'IF-MIB::ifDescr',
       ErrorNum => 1,
       ErrorStr => '(tooBig) Response message would have been too large.',
-    };
+    });
     my $var    = SNMP::Varbind->new(['IF-MIB::ifDescr']);
     my @result = $sess->bulkwalk(0, 20, $var);
     is($result[0],        undef, 'result undef');
@@ -1898,17 +1906,51 @@ sub mock_session_faults : Tests(5) {
   };
 
   subtest 'get__fault__sets_ErrorNum' => sub {
-    plan tests => 1;
+    plan tests => 2;
     $sess->{Data}  = {'SNMPv2-MIB::sysName' => {0 => 'x'}};
-    $sess->{Fault} = {
+    $set_fault->($sess, {
       op       => 'get',
       leaf     => 'SNMPv2-MIB::sysName',
       ErrorNum => -24,
       ErrorStr => 'Timeout',
-    };
+    });
     my $var = SNMP::Varbind->new(['SNMPv2-MIB::sysName', 0]);
     $sess->get($var);
     is($sess->{ErrorNum}, -24, 'ErrorNum set');
+    $set_fault->($sess, undef);
+    $sess->get($var);
+    is($sess->{ErrorNum}, 0, 'ErrorNum clear after fault removed');
+  };
+
+  subtest 'getnext__fault_cleared__next_walk_has_no_error' => sub {
+    plan tests => 3;
+    $sess->{Data} = $rows;
+    $set_fault->($sess, {%{$getnext_fault}});
+    my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    $sess->getnext($var) for 1 .. 3;
+    $set_fault->($sess, undef);
+    $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    my @iids;
+    while ($sess->getnext($var)) {
+      push @iids, $var->[1];
+    }
+    is($sess->{ErrorNum}, 0,  'ErrorNum clear');
+    is($sess->{ErrorStr}, '', 'ErrorStr clear');
+    is(join(',', @iids), '1,2,3', 'all rows returned');
+  };
+
+  subtest 'getnext__second_fault_installed__counts_rows_afresh' => sub {
+    plan tests => 2;
+    $sess->{Data} = $rows;
+    $set_fault->($sess, {%{$getnext_fault}});
+    my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    $sess->getnext($var) for 1 .. 3;
+    $set_fault->($sess, {%{$getnext_fault}});
+    $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    $sess->getnext($var);
+    $sess->getnext($var);
+    is($var->[1], 2, 'two rows served before second fault fires');
+    is($sess->getnext($var), undef, 'third getnext faults');
   };
 }
 
