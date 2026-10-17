@@ -111,7 +111,6 @@ TODO: {
     unlike(join(' ', grep { defined } map { values %{$_} } @failures),
       qr/public/, 'no outcome contains the community');
     is($info->incomplete_walk(), 'undef', 'option survives update()');
-    $mock->{Community} = 'public';
   };
 }
 
@@ -2060,7 +2059,7 @@ sub _fresh_walk_info {
   return $test->{info};
 }
 
-sub walk_status : Tests(17) {
+sub walk_status : Tests(26) {
   my $test = shift;
 
   can_ok($test->{info}, 'walk_status');
@@ -2299,12 +2298,111 @@ sub walk_status : Tests(17) {
     $info->i_description();
     is($info->walk_status('i_description')->{context},
       'vlan-30', 'SNMPv3 Context is recorded');
-    delete $mock->{Context};
-    $mock->{Version} = 2;
+  };
+
+  my @community_contexts = (
+    ['vlan_index',            'public',    'public@20',    '20'],
+    ['vrf_name',              'public',    'public@MGMT',  'MGMT'],
+    ['base_with_at',          'pa@ssw0rd', 'pa@ssw0rd',    ''],
+    ['base_with_at_reindexed', 'pa@ss',    'pa@ss@20',     '20'],
+    ['other_community',       'public',    'other@20',     ''],
+  );
+  foreach my $case (@community_contexts) {
+    my ($name, $base, $current, $want) = @{$case};
+    subtest "walk_status__community_${name}__context_is_${\ ($want || 'empty')}"
+      => sub {
+      plan tests => 2;
+      my $info = $test->_fresh_community_info($base, $current);
+      $info->i_description();
+      my $outcome = $info->walk_status('i_description');
+      is($outcome->{context}, $want, "context for $current is '$want'");
+      ok(!grep({ defined && index($_, $base) >= 0 } values %{$outcome}),
+        'no outcome field contains the base community');
+      };
+  }
+
+  subtest 'walk_status__v3_no_context__community_index_ignored' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_community_info('public', 'public@20');
+    $test->mock_session->{Version} = 3;
+    $info->i_description();
+    is($info->walk_status('i_description')->{context},
+      '', 'SNMPv3 without Context records no context');
+  };
+
+  subtest 'walk_status__v2c_nosuchname_past_last_row__complete' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        after    => 3,
+        ErrorNum => 2,
+        ErrorStr => '(noSuchName) There is no such variable name in this MIB.'
+      )
+    );
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 1, reason => undef, rows => 3, errornum => 0}),
+      'SNMPv2c noSuchName ends the walk as complete'
+    );
+    cmp_deeply($info->walk_failures(), [], 'no failure recorded');
+  };
+
+  subtest 'walk_status__v2c_generr_past_last_row__incomplete' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        after    => 3,
+        ErrorNum => 5,
+        ErrorStr => '(genErr) A general failure occured'
+      )
+    );
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 0, reason => 'error', errornum => 5}),
+      'genErr ends the walk as incomplete'
+    );
+    is(scalar @{$info->walk_failures()}, 1, 'one failure recorded');
+  };
+
+  subtest 'walk_status__v2c_partial_get_nosuchname__undef_complete' => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        op       => 'get',
+        ErrorNum => 2,
+        ErrorStr => '(noSuchName) There is no such variable name in this MIB.'
+      )
+    );
+    $test->mock_session->clear();
+    is($info->i_description(2), undef, 'returns undef as before');
+    ok(!$test->mock_session->called('getnext'),
+      '... without walking after the GET');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 1, reason => undef, walk => 'get'}),
+      'SNMPv2c noSuchName on the GET is complete'
+    );
+    cmp_deeply($info->walk_failures(), [], 'no failure recorded');
   };
 }
 
-sub incomplete_walk : Tests(5) {
+# Fresh object constructed with the base community, on a session whose
+# community is currently the indexed one
+sub _fresh_community_info {
+  my ($test, $base, $current) = @_;
+  my $info = $test->_fresh_walk_info;
+  my $mock = $test->mock_session;
+  $mock->{Community} = $current;
+  $test->{info} = $test->class->new(%{$info->{args}},
+    Community => $base, Session => $mock);
+  return $test->{info};
+}
+
+sub incomplete_walk : Tests(7) {
   my $test = shift;
 
   can_ok($test->{info}, 'incomplete_walk');
@@ -2328,6 +2426,41 @@ sub incomplete_walk : Tests(5) {
     is($info->walk_status('i_description')->{rows}, 2, 'outcome records rows');
     is(scalar @{$info->walk_failures()}, 1, 'failure recorded');
   };
+
+  subtest 'incomplete_walk__undef_mode_bulkwalk_loop__returns_undef_not_cached'
+    => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(
+      {op => 'bulkwalk', leaf => 'IF-MIB::ifDescr', after => 2, loop => 1});
+    $info->bulkwalk(1);
+    $info->incomplete_walk('undef');
+    is($info->i_description(), undef, 'returns undef');
+    ok(!exists $info->{_i_description}, 'nothing cached');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof(
+        {complete => 0, reason => 'loop', walk => 'bulkwalk', rows => 2}),
+      'outcome records the bulkwalk loop'
+    );
+    is(scalar @{$info->walk_failures()}, 1, 'failure recorded');
+    };
+
+  subtest 'incomplete_walk__undef_mode_getnext_loop__returns_undef_not_cached'
+    => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(
+      {op => 'getnext', leaf => 'IF-MIB::ifDescr', after => 2, loop => 1});
+    $info->incomplete_walk('undef');
+    is($info->i_description(), undef, 'returns undef');
+    ok(!exists $info->{_i_description}, 'nothing cached');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof(
+        {complete => 0, reason => 'loop', walk => 'getnext', rows => 2}),
+      'outcome records the getnext loop'
+    );
+    is(scalar @{$info->walk_failures()}, 1, 'failure recorded');
+    };
 
   subtest 'incomplete_walk__partial_mode_timeout__returns_and_caches_partial'
     => sub {

@@ -91,6 +91,11 @@ sub teardown : Tests(teardown) {
   delete $sess->{_fault_count};
   delete $sess->{_fault_raised};
   delete @{$sess}{qw/ErrorNum ErrorStr/};
+
+  # Restored here so a subtest that dies cannot leak them into later tests
+  $sess->{Community} = 'public';
+  $sess->{Version}   = 2;
+  delete $sess->{Context};
 }
 
 sub constructor : Tests(8) {
@@ -462,14 +467,18 @@ sub mock_bulkwalk {
       my ($leaf) = @{$vars};
       my $leaf_oid = SNMP::translateObj($leaf, 0, 1) || $EMPTY;
       my $fault = _active_fault($self, 'bulkwalk', $leaf, $leaf_oid);
-      if ($fault) {
+      if ($fault && !$fault->{loop}) {
         _raise_fault($self, $fault);
         return (undef);
       }
 
       my $data = $self->{Data}{$leaf} || $self->{Data}{$leaf_oid} || {};
-      my @rows = map { SNMP::Varbind->new([$leaf, $_, $data->{$_}]) }
-        sort keys %{$data};
+      my @iids = sort keys %{$data};
+
+      # A loop fault repeats the first row after 'after' rows, as a
+      # misbehaving agent would, and the bulkwalk itself succeeds.
+      splice @iids, ($fault->{after} || 0), 0, $iids[0] if $fault && @iids;
+      my @rows = map { SNMP::Varbind->new([$leaf, $_, $data->{$_}]) } @iids;
       return (\@rows);
     }
   );

@@ -1389,9 +1389,9 @@ recorded, see L</Incomplete Walks>.
 
 C<'partial'> returns, and caches, the rows collected before the walk ended.
 
-C<'undef'> returns undef and caches nothing, as a failed bulkwalk does. This
-applies to getnext walks, because a failed bulkwalk and a partial GET that
-fails already return nothing.
+C<'undef'> returns undef and caches nothing for any incomplete walk, as a
+failed bulkwalk always does. This includes a getnext walk or a bulkwalk cut
+short by a detected loop.
 
 Any other value is treated as C<'partial'>.
 
@@ -1710,10 +1710,12 @@ together with the C<Offline> option.
 =head2 Incomplete Walks
 
 Each table walk records whether it collected the whole table. A walk that
-ends on a timeout, an SNMP error or a detected loop is incomplete, and the
-method returns the rows collected before it ended, unless the
-C<IncompleteWalk> option says otherwise. These records and the option survive
-$info->clear_cache(), $info->cache() and $info->update(), and carry over to
+ends on a timeout, an SNMP error or a detected loop is incomplete. After a
+failed getnext walk or a detected loop, the method returns the rows
+collected before the walk ended, unless the C<IncompleteWalk> option says
+otherwise. After a failed bulkwalk it returns undef in either mode. These
+records and the option survive $info->clear_cache(), $info->cache() and
+$info->update(), and carry over to
 the object returned by $info->specify(). Only $info->clear_walk_status()
 clears the records. The records never contain the community string.
 
@@ -1735,8 +1737,9 @@ The partial fetch argument given to the method, if any.
 
 =item context
 
-The SNMPv3 Context, or the part of the community after C<@>, or an empty
-string.
+The SNMPv3 Context. On SNMPv1 and SNMPv2c, C<X> when the session community
+is the constructor's Community followed by C<@X>, such as a VLAN number or a
+VRF name. Otherwise an empty string.
 
 =item complete
 
@@ -1744,13 +1747,15 @@ string.
 
 =item reason
 
-Undef for a complete walk, C<'absent'> when the device does not implement the
-object, otherwise one of C<'timeout'>, C<'loop'>, C<'toobig'>,
-C<'nonincreasing'> or C<'error'>.
+Undef for a complete walk, C<'absent'> when the object is not implemented or
+could not be resolved, otherwise one of C<'timeout'>, C<'loop'>, C<'toobig'>,
+C<'nonincreasing'> or C<'error'>. On a GET or GETNEXT, C<'absent'> means
+Net-SNMP could not translate the object locally and sent nothing, which is a
+problem with the poller's MIBs rather than a fact about the device.
 
 =item error
 
-The Net-SNMP error string of an incomplete walk.
+The Net-SNMP error string of an incomplete walk or an C<'absent'> outcome.
 
 =item errornum
 
@@ -5049,7 +5054,8 @@ sub _load_attr {
             }
             elsif ($errornum) {
                 $walk = 'get';
-                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess);
+                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess)
+                    unless _nosuch_end($sess);
             }
         }
 
@@ -5078,11 +5084,12 @@ sub _load_attr {
                 $errornum = $sess->{ErrorNum};
 
                 # A failed request leaves the varbind as it was sent, so
-                # leave before it is read. SNMPv1 noSuchName ends the view.
+                # leave before it is read. noSuchName ends the view.
                 if ($errornum) {
                     ( $reason, $walk_errno, $walk_error )
                         = _walk_failure($sess)
-                        unless _v1_nosuch( $sess, $ver );
+                        unless _nosuch_end($sess)
+                        or _v1_nosuch( $sess, $ver );
                     last;
                 }
             }
@@ -5184,8 +5191,7 @@ sub _load_attr {
             $self->error_throw( "SNMP::Info::_load_attr: $method incomplete: "
                     . "$reason after $rows rows. "
                     . ( $walk_error || '' ) );
-            return
-                if $walk eq 'getnext' and $self->incomplete_walk() eq 'undef';
+            return if $self->incomplete_walk() eq 'undef';
         }
 
         # Cache data if we are not getting partial data:
@@ -5204,8 +5210,9 @@ sub _load_attr {
 
 =item _v1_nosuch(sess, ver)
 
-Returns true when an SNMPv1 request failed with noSuchName, which ends a
-walk rather than interrupting it.
+Returns true when an SNMPv1 request failed with noSuchName. A partial GET
+answered this way goes on to walk the table; on other versions it returns
+nothing, as it always has.
 
 =cut
 
@@ -5214,6 +5221,18 @@ sub _v1_nosuch {
     return (    $ver == 1
             and $sess->{ErrorNum}
             and ( $sess->{ErrorStr} || '' ) =~ /nosuch/i );
+}
+
+=item _nosuch_end(sess)
+
+Returns true when the request that just failed on the session got error
+status noSuchName, which ends a walk cleanly on any SNMP version.
+
+=cut
+
+sub _nosuch_end {
+    my $sess = shift;
+    return ( ( $sess->{ErrorNum} || 0 ) == 2 );
 }
 
 =item _walk_failure(sess)
@@ -5226,7 +5245,7 @@ failed on the session, read before a later request can replace them.
 sub _walk_failure {
     my $sess     = shift;
     my $errornum = $sess->{ErrorNum};
-    my %reasons = (
+    my %reasons  = (
         -24 => 'timeout',
         1   => 'toobig',
         -65 => 'nonincreasing',
@@ -5268,8 +5287,10 @@ sub _walk_outcome {
 
 =item $info->_walk_context()
 
-Returns the SNMPv3 Context of the session, or the part after C<@> in its
-community, or an empty string. Never returns the community itself.
+Returns the SNMPv3 Context of the session. On SNMPv1 and SNMPv2c, returns
+C<X> when the session community is the constructor's Community followed by
+C<@X>. Otherwise returns an empty string. Never returns any part of the
+community itself.
 
 =cut
 
@@ -5279,10 +5300,17 @@ sub _walk_context {
 
     my $context = $sess->{Context};
     return $context if defined $context and length $context;
+    return ''       if ( $sess->{Version} || '' ) eq '3';
 
+    my $base      = ( $self->{args} || {} )->{Community};
     my $community = $sess->{Community};
-    return $1 if defined $community and $community =~ /\@([^@]*)$/;
-    return '';
+    return '' unless defined $base and defined $community;
+
+    my $prefix = $base . '@';
+    return ''
+        unless length $community > length $prefix
+        and substr( $community, 0, length $prefix ) eq $prefix;
+    return substr( $community, length $prefix );
 }
 
 =item $info->_show_attr()
