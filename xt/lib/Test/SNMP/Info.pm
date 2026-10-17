@@ -44,7 +44,7 @@ sub constructor : Tests(+3) {
   is($test->{info}{snmp_user}, 'initial', 'SNMP user arg saved');
 }
 
-sub update : Tests(9) {
+sub update : Tests(10) {
   my $test = shift;
 
   can_ok($test->{info}, 'update');
@@ -86,6 +86,33 @@ TODO: {
     is($test->{info}->{sess}{Context}, 'vlan-100', 'Context changed');
 
   }
+
+  subtest 'update__changes_community_index__keeps_records_and_option' => sub {
+    plan tests => 6;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 1));
+    my $mock = $test->mock_session;
+    $info->incomplete_walk('undef');
+    $info->i_description();
+
+    delete $info->{args}{Session};
+    ok($info->update(Community => 'public@20'), 'update() succeeds');
+
+    # update() swaps in a real session; put the mock back, indexed as update
+    # would have left the community
+    $info->{sess} = $mock;
+    $mock->{Community} = 'public@20';
+    My::Test::Class::set_fault($mock, _ifdescr_timeout(after => 2));
+    $info->load_i_description();
+
+    my @failures = @{$info->walk_failures()};
+    is(scalar @failures, 2, 'both failures survive update()');
+    is($failures[0]{context}, '', 'first failure has no context');
+    is($failures[1]{context}, '20', 'second failure carries the index');
+    unlike(join(' ', grep { defined } map { values %{$_} } @failures),
+      qr/public/, 'no outcome contains the community');
+    is($info->incomplete_walk(), 'undef', 'option survives update()');
+    $mock->{Community} = 'public';
+  };
 }
 
 sub cache_and_clear_cache : Tests(9) {
@@ -341,7 +368,7 @@ sub snmp_ver : Tests(2) {
   is($test->{info}->snmp_ver(), 1, 'SNMP version returned');
 }
 
-sub specify : Tests(4) {
+sub specify : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'specify');
@@ -380,6 +407,22 @@ sub specify : Tests(4) {
     'SNMP::Info::Layer7::APC',
     'Layer 7 device type returns new object of same type');
   $test->{info}->clear_cache();
+
+  subtest 'specify__subclass__carries_records' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 1));
+    $info->i_description();
+    $info->cache({
+      '_layers'      => 64,
+      '_description' => 'My-Test-sysDescr',
+      '_id'          => '.1.3.6.1.4.1.318'
+    });
+    my $sub_obj = $info->specify();
+    isa_ok($sub_obj, 'SNMP::Info::Layer7::APC');
+    is(scalar @{$sub_obj->walk_failures()}, 1, 'failure carried to new object');
+    is($sub_obj->walk_status('i_description')->{complete},
+      0, 'walk_status carried to new object');
+  };
 }
 
 sub cisco_comm_indexing : Tests(2) {
@@ -2017,7 +2060,7 @@ sub _fresh_walk_info {
   return $test->{info};
 }
 
-sub walk_status : Tests(16) {
+sub walk_status : Tests(17) {
   my $test = shift;
 
   can_ok($test->{info}, 'walk_status');
@@ -2245,6 +2288,64 @@ sub walk_status : Tests(16) {
       0, 'walk_status survives clear_cache()');
     is(scalar @{$info->walk_failures()},
       1, 'walk_failures survives clear_cache()');
+  };
+
+  subtest 'walk_status__v3_context__recorded' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info;
+    my $mock = $test->mock_session;
+    $mock->{Version} = 3;
+    $mock->{Context} = 'vlan-30';
+    $info->i_description();
+    is($info->walk_status('i_description')->{context},
+      'vlan-30', 'SNMPv3 Context is recorded');
+    delete $mock->{Context};
+    $mock->{Version} = 2;
+  };
+}
+
+sub incomplete_walk : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'incomplete_walk');
+
+  subtest 'incomplete_walk__default__is_partial' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info;
+    is($info->incomplete_walk(), 'partial', 'unset reads as partial');
+    is($info->incomplete_walk('undef'), 'undef', 'setter returns new value');
+    is($info->incomplete_walk('bogus'), 'partial',
+      'unknown value is treated as partial');
+  };
+
+  subtest 'incomplete_walk__undef_mode_timeout__returns_undef_not_cached' =>
+    sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 2));
+    $info->incomplete_walk('undef');
+    is($info->i_description(), undef, 'returns undef');
+    ok(!exists $info->{_i_description}, 'nothing cached');
+    is($info->walk_status('i_description')->{rows}, 2, 'outcome records rows');
+    is(scalar @{$info->walk_failures()}, 1, 'failure recorded');
+  };
+
+  subtest 'incomplete_walk__partial_mode_timeout__returns_and_caches_partial'
+    => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 2));
+    $info->incomplete_walk('partial');
+    cmp_deeply($info->i_description(),
+      {1 => 'Loopback', 2 => 'eth0'}, 'partial rows returned');
+    ok(exists $info->{_i_description}, 'partial rows cached');
+  };
+
+  subtest 'incomplete_walk__undef_mode_complete__unchanged' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info;
+    $info->incomplete_walk('undef');
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all rows returned');
+    ok(exists $info->{_i_description}, 'rows cached');
   };
 }
 
