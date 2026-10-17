@@ -2017,7 +2017,7 @@ sub _fresh_walk_info {
   return $test->{info};
 }
 
-sub walk_status : Tests(10) {
+sub walk_status : Tests(16) {
   my $test = shift;
 
   can_ok($test->{info}, 'walk_status');
@@ -2152,6 +2152,88 @@ sub walk_status : Tests(10) {
       superhashof({complete => 1, reason => undef, rows => 3}),
       'SNMPv1 noSuchName ends the walk as complete'
     );
+  };
+
+  subtest 'walk_status__bulkwalk_complete__records_repeaters' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info;
+    $info->bulkwalk(1);
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        walk      => 'bulkwalk',
+        repeaters => 20,
+        complete  => 1,
+        rows      => 3,
+      }),
+      'outcome records a complete bulkwalk'
+    );
+  };
+
+  my %bulkwalk_faults = (
+    toobig        => [1,   'Response message would have been too big'],
+    nonincreasing => [-65, 'OID not increasing'],
+    timeout       => [-24, 'Timeout'],
+  );
+  foreach my $reason (sort keys %bulkwalk_faults) {
+    my ($errornum, $errorstr) = @{$bulkwalk_faults{$reason}};
+    subtest "walk_status__bulkwalk_${reason}__records_${reason}" => sub {
+      plan tests => 3;
+      my $info = $test->_fresh_walk_info(
+        _ifdescr_timeout(
+          op       => 'bulkwalk',
+          ErrorNum => $errornum,
+          ErrorStr => $errorstr
+        )
+      );
+      $info->bulkwalk(1);
+      is($info->i_description(), undef, 'returns undef');
+      ok(!exists $info->{_i_description}, '... and caches nothing');
+      cmp_deeply(
+        $info->walk_status('i_description'),
+        superhashof({
+          complete  => 0,
+          reason    => $reason,
+          walk      => 'bulkwalk',
+          errornum  => $errornum,
+          error     => $errorstr,
+          repeaters => 20,
+        }),
+        "outcome records $reason"
+      );
+    };
+  }
+
+  subtest 'walk_status__bulkwalk_unknown_objid__complete_absent' => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        op       => 'bulkwalk',
+        ErrorNum => -58,
+        ErrorStr => 'Unknown object identifier'
+      )
+    );
+    $info->bulkwalk(1);
+    is($info->i_description(), undef, 'returns undef');
+    ok(!exists $info->{_i_description}, '... and caches nothing');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 1, reason => 'absent', walk => 'bulkwalk'}),
+      'outcome is complete and absent'
+    );
+    cmp_deeply($info->walk_failures(), [], 'no failure recorded');
+  };
+
+  subtest 'walk_status__bulkwalk_repeaters_option__recorded' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info;
+    $info->bulkwalk(1);
+    $info->{BulkRepeaters} = 7;
+    $info->i_description();
+    is($info->walk_status('i_description')->{repeaters},
+      7, 'BulkRepeaters is recorded');
   };
 
   subtest 'walk_status__clear_cache__keeps_records' => sub {

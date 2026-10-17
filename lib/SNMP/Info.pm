@@ -4909,13 +4909,14 @@ sub _load_attr {
         # but not for getnext().  We set this flag normally, and if we're
         # using V1, let's try and fetch the data even if we get one of those.
 
-        my $localstore = undef;
-        my $errornum   = 0;
-        my %seen       = ();
-        my $walk       = 'getnext';
-        my $reason     = undef;
-        my $walk_error = undef;
-        my $walk_errno = 0;
+        my $localstore      = undef;
+        my $errornum        = 0;
+        my %seen            = ();
+        my $walk            = 'getnext';
+        my $reason          = undef;
+        my $walk_error      = undef;
+        my $walk_errno      = 0;
+        my $bulkwalk_failed = 0;
 
         my $vars = [];
         my $bulkwalk_no
@@ -4957,10 +4958,12 @@ sub _load_attr {
             $walk = 'bulkwalk';
             ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
             if ( $sess->{ErrorNum} ) {
+                $errornum = $sess->{ErrorNum};
+                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess);
                 $self->error_throw(
                     "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr},
                     "\n" );
-                return;
+                $bulkwalk_failed = 1;
             }
         }
 
@@ -5064,7 +5067,7 @@ sub _load_attr {
             {   method    => $attr,
                 leaf      => $qual_leaf || $oid,
                 partial   => $partial,
-                complete  => ( defined $reason ? 0 : 1 ),
+                complete  => ( _walk_incomplete($reason) ? 0 : 1 ),
                 reason    => $reason,
                 error     => $walk_error,
                 errornum  => $walk_errno,
@@ -5073,7 +5076,11 @@ sub _load_attr {
                 rows      => $rows,
             }
         );
-        if ( defined $reason ) {
+
+        # A failed bulkwalk caches nothing and returns undef, as it always did
+        return if $bulkwalk_failed;
+
+        if ( _walk_incomplete($reason) ) {
             $self->error_throw( "SNMP::Info::_load_attr: $method incomplete: "
                     . "$reason after $rows rows. "
                     . ( $walk_error || '' ) );
@@ -5117,8 +5124,25 @@ failed on the session, read before a later request can replace them.
 sub _walk_failure {
     my $sess     = shift;
     my $errornum = $sess->{ErrorNum};
-    my %reasons = ( -24 => 'timeout', 1 => 'toobig', -65 => 'nonincreasing' );
+    my %reasons = (
+        -24 => 'timeout',
+        1   => 'toobig',
+        -65 => 'nonincreasing',
+        -58 => 'absent',
+    );
     return ( $reasons{$errornum} || 'error', $errornum, $sess->{ErrorStr} );
+}
+
+=item _walk_incomplete(reason)
+
+Returns true when C<reason> means the walk did not finish. An undefined
+reason and C<absent> (the object is not on the device) are both complete.
+
+=cut
+
+sub _walk_incomplete {
+    my $reason = shift;
+    return ( defined $reason and $reason ne 'absent' );
 }
 
 =item $info->_walk_outcome(\%outcome)
