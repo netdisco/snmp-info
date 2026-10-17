@@ -1829,6 +1829,89 @@ sub private_autoload : Tests(3) {
     1, q(Method 'ipDefaultTTL' is now defined in the symbol table));
 }
 
+sub mock_session_faults : Tests(5) {
+  my $test = shift;
+  my $sess = $test->mock_session;
+  my $rows = {'IF-MIB::ifDescr' => {1 => 'a', 2 => 'b', 3 => 'c'}};
+
+  subtest
+    'getnext__fault_after_two_rows__sets_ErrorNum_and_leaves_varbind' => sub {
+    plan tests => 4;
+    $sess->{Data}  = $rows;
+    $sess->{Fault} = {
+      op       => 'getnext',
+      leaf     => 'IF-MIB::ifDescr',
+      after    => 2,
+      ErrorNum => -24,
+      ErrorStr => 'Timeout',
+    };
+    my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    $sess->getnext($var);
+    $sess->getnext($var);
+    is($var->[1], 2, 'two rows returned');
+    my $result = $sess->getnext($var);
+    is($result,           undef, 'third getnext returns undef');
+    is($sess->{ErrorNum}, -24,   'ErrorNum set');
+    is($var->[1],         2,     'varbind left unchanged');
+    };
+
+  subtest 'getnext__loop_fault__returns_first_row_again' => sub {
+    plan tests => 1;
+    $sess->{Data}  = $rows;
+    $sess->{Fault} = {
+      op    => 'getnext',
+      leaf  => 'IF-MIB::ifDescr',
+      after => 2,
+      loop  => 1,
+    };
+    my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    $sess->getnext($var);
+    $sess->getnext($var);
+    $sess->getnext($var);
+    is($var->[1], 1, 'first row returned again');
+  };
+
+  subtest 'bulkwalk__no_fault__returns_sorted_varbinds' => sub {
+    plan tests => 3;
+    $sess->{Data} = $rows;
+    delete $sess->{Fault};
+    my $var    = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    my @result = $sess->bulkwalk(0, 20, $var);
+    is(scalar @{$result[0]}, 3, 'three varbinds');
+    is(join(',', map { $_->[1] } @{$result[0]}), '1,2,3', 'sorted iids');
+    is($sess->{ErrorNum}, 0, 'ErrorNum clear');
+  };
+
+  subtest 'bulkwalk__fault__returns_undef_with_error' => sub {
+    plan tests => 2;
+    $sess->{Data}  = $rows;
+    $sess->{Fault} = {
+      op       => 'bulkwalk',
+      leaf     => 'IF-MIB::ifDescr',
+      ErrorNum => 1,
+      ErrorStr => '(tooBig) Response message would have been too large.',
+    };
+    my $var    = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    my @result = $sess->bulkwalk(0, 20, $var);
+    is($result[0],        undef, 'result undef');
+    is($sess->{ErrorNum}, 1,     'ErrorNum set');
+  };
+
+  subtest 'get__fault__sets_ErrorNum' => sub {
+    plan tests => 1;
+    $sess->{Data}  = {'SNMPv2-MIB::sysName' => {0 => 'x'}};
+    $sess->{Fault} = {
+      op       => 'get',
+      leaf     => 'SNMPv2-MIB::sysName',
+      ErrorNum => -24,
+      ErrorStr => 'Timeout',
+    };
+    my $var = SNMP::Varbind->new(['SNMPv2-MIB::sysName', 0]);
+    $sess->get($var);
+    is($sess->{ErrorNum}, -24, 'ErrorNum set');
+  };
+}
+
 # Prefix with private as we don't want to accidentally override in test class
 sub private_destroy : Tests(2) {
   my $test = shift;

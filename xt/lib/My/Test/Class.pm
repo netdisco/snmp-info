@@ -87,6 +87,10 @@ sub teardown : Tests(teardown) {
   # Make sure we start clear object and any mocked session data after each test
   $test->{info} = undef;
   $sess->{Data} = {};
+  delete $sess->{Fault};
+  delete $sess->{_fault_count};
+  delete $sess->{_fault_owner};
+  delete @{$sess}{qw/ErrorNum ErrorStr/};
 }
 
 sub constructor : Tests(8) {
@@ -287,6 +291,7 @@ sub create_mock_session {
 
   mock_get($mock_session);
   mock_getnext($mock_session);
+  mock_bulkwalk($mock_session);
   mock_set($mock_session);
 
   return $mock_session;
@@ -315,6 +320,7 @@ sub mock_get {
       my $vars = shift;
       my ($leaf, $iid, $oid, $oid_name);
       my $c_data = $self->{Data};
+      _clear_error($self) if $self->{Fault};
 
       # From SNMP::Info get will only be passed either an OID or
       # SNMP::Varbind with a fully qualified leaf and potentially
@@ -331,6 +337,11 @@ sub mock_get {
       # This is a lot of indirection, but we need the base OID, it may be
       # passed with a zero for non table leaf
       my $oid_base = SNMP::translateObj($leaf);
+
+      if (my $fault = _active_fault($self, 'get', $leaf, $oid_base)) {
+        _raise_fault($self, $fault);
+        return;
+      }
 
       $iid ||= 0;
       my $new_iid = $iid;
@@ -380,6 +391,7 @@ sub mock_getnext {
       my $vars = shift;
       my ($leaf, $iid, $oid, $oid_name);
       my $c_data = $self->{Data};
+      _clear_error($self) if $self->{Fault};
 
       # From SNMP::Info getnext will only be passed a SNMP::Varbind
       # with a fully qualified leaf and potentially a partial
@@ -388,6 +400,15 @@ sub mock_getnext {
       # If we captured data using OIDs printed numerically -On option,
       # we need to convert the leaf to an OID for match
       my $leaf_oid = SNMP::translateObj($leaf, 0, 1) || '';
+
+      my $fault     = _active_fault($self, 'getnext', $leaf, $leaf_oid);
+      my $count_key = $leaf_oid || $leaf;
+      if ($fault
+        && ($self->{_fault_count}{$count_key} || 0) >= ($fault->{after} || 0))
+      {
+        return _apply_getnext_fault($self, $fault, $vars,
+          $c_data->{$leaf} || $c_data->{$leaf_oid});
+      }
 
       unless (defined $iid) {
         $iid = -1;
@@ -421,10 +442,86 @@ sub mock_getnext {
       $vars->[0] = $leaf;
       $vars->[1] = $new_iid;
       $vars->[2] = $val;
+      $self->{_fault_count}{$count_key}++ if $fault && $leaf ne 'unknown';
       return (wantarray() ? $vars : $val);
     }
   );
   return;
+}
+
+sub mock_bulkwalk {
+  my $mock_session = shift;
+
+  $mock_session->mock(
+    'bulkwalk',
+    sub {
+      my ($self, undef, undef, $vars) = @_;
+      _clear_error($self);
+
+      my ($leaf) = @{$vars};
+      my $leaf_oid = SNMP::translateObj($leaf, 0, 1) || $EMPTY;
+      my $fault = _active_fault($self, 'bulkwalk', $leaf, $leaf_oid);
+      if ($fault) {
+        _raise_fault($self, $fault);
+        return (undef);
+      }
+
+      my $data = $self->{Data}{$leaf} || $self->{Data}{$leaf_oid} || {};
+      my @rows = map { SNMP::Varbind->new([$leaf, $_, $data->{$_}]) }
+        sort keys %{$data};
+      return (\@rows);
+    }
+  );
+  return;
+}
+
+# get and getnext clear only while a Fault is installed, because existing
+# tests plant ErrorStr on the session by hand and expect it to survive.
+sub _clear_error {
+  my $sess = shift;
+  $sess->{ErrorNum} = 0;
+  $sess->{ErrorStr} = $EMPTY;
+  return;
+}
+
+# Return the injected fault when it targets this op and leaf. Counters for
+# getnext 'after' restart whenever a different Fault hash is installed.
+sub _active_fault {
+  my ($sess, $op, @leaf_names) = @_;
+  my $fault = $sess->{Fault} or return;
+
+  if (($sess->{_fault_owner} || $EMPTY) ne "$fault") {
+    $sess->{_fault_owner} = "$fault";
+    $sess->{_fault_count} = {};
+  }
+
+  return unless ($fault->{op} || $EMPTY) eq $op;
+  return unless defined $fault->{leaf};
+  my %wanted    = map { $_ => 1 } grep {$_} @leaf_names;
+  my $fault_oid = SNMP::translateObj($fault->{leaf}, 0, 1) || $EMPTY;
+  return ($wanted{$fault->{leaf}} || $wanted{$fault_oid}) ? $fault : undef;
+}
+
+sub _raise_fault {
+  my ($sess, $fault) = @_;
+  $sess->{ErrorNum} = $fault->{ErrorNum};
+  $sess->{ErrorStr} = $fault->{ErrorStr};
+  return;
+}
+
+# A timeout leaves the varbind untouched; a loop fault instead serves the
+# table's first row again, as a misbehaving agent would.
+sub _apply_getnext_fault {
+  my ($sess, $fault, $vars, $data) = @_;
+
+  if (!$fault->{loop}) {
+    _raise_fault($sess, $fault);
+    return;
+  }
+  my ($first_iid) = sort keys %{$data};
+  $vars->[1] = $first_iid;
+  $vars->[2] = $data->{$first_iid};
+  return (wantarray() ? $vars : $vars->[2]);
 }
 
 # For testing purposes assume sets worked
