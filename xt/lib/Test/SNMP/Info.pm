@@ -1829,6 +1829,28 @@ sub private_autoload : Tests(3) {
     1, q(Method 'ipDefaultTTL' is now defined in the symbol table));
 }
 
+sub mock_getnext_end_of_table : Tests(3) {
+  my $test = shift;
+  my $sess = $test->mock_session;
+  $sess->{Data} = {'IF-MIB::ifDescr' => {1 => 'a', 2 => 'b', 3 => 'c'}};
+
+  my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+  $sess->getnext($var) for 1 .. 3;
+  my $result = $sess->getnext($var);
+
+  is($var->[0], 'unknown',
+    'getnext__past_last_row__leaves_the_subtree');
+  is($result, q{}, 'getnext__past_last_row__returns_defined_value');
+
+  $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+  my $calls = 0;
+  while ($calls++ < 10) {
+    $sess->getnext($var);
+    last if $var->[0] ne 'IF-MIB::ifDescr';
+  }
+  is($calls, 4, 'getnext__leaf_checked_walk__stops_after_last_row');
+}
+
 sub mock_session_faults : Tests(7) {
   my $test = shift;
   my $sess = $test->mock_session;

@@ -430,9 +430,10 @@ sub mock_getnext {
             last;
           }
         }
-        if ($found && ($new_iid eq $iid)) {
-          $leaf = 'unknown';
-        }
+
+        # Past the last row a real agent returns the next OID in the tree,
+        # so the varbind leaves the requested leaf.
+        $leaf = 'unknown' unless $found;
       }
       else {
         $val  = $data->{$iid};
