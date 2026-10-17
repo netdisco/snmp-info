@@ -1410,7 +1410,7 @@ sub my_all : Tests(9) {
     '... call to all() returns test data, no call to load_all()');
 }
 
-sub private_load_attr : Tests(18) {
+sub private_load_attr : Tests(19) {
   my $test = shift;
 
   can_ok($test->{info}, '_load_attr');
@@ -1574,6 +1574,20 @@ sub private_load_attr : Tests(18) {
 
   cmp_deeply($test->{info}->full_oid(),
     $expected_f_oid_data, 'Full OID leaf returns expected data');
+
+  subtest 'walk_status__endofmibview_nosuch__complete' => sub {
+    plan tests => 4;
+    foreach my $method (
+      qw/ifConnectorPresent ifCounterDiscontinuityTime i_octet_out64/)
+    {
+      is($test->{info}->walk_status($method)->{complete},
+        1, "$method recorded complete");
+    }
+
+    # i_octet_out64 was walked again by a partial fetch, so its ENDOFMIBVIEW
+    # walk shows only as the absence of a failure
+    cmp_deeply($test->{info}->walk_failures(), [], 'no walk recorded a failure');
+  };
 }
 
 sub private_show_attr : Tests(3) {
@@ -1973,6 +1987,193 @@ sub mock_session_faults : Tests(7) {
     $sess->getnext($var);
     is($var->[1], 2, 'two rows served before second fault fires');
     is($sess->getnext($var), undef, 'third getnext faults');
+  };
+}
+
+# Walk outcome records, see "Incomplete Walks" in SNMP::Info
+my $IFDESCR_ROWS
+  = {'IF-MIB::ifDescr' => {1 => 'Loopback', 2 => 'eth0', 3 => 'eth1'}};
+
+sub _ifdescr_timeout {
+  my %args = @_;
+  return {
+    op       => 'getnext',
+    leaf     => 'IF-MIB::ifDescr',
+    ErrorNum => -24,
+    ErrorStr => 'Timeout',
+    %args,
+  };
+}
+
+# Fresh object and session state for each subtest
+sub _fresh_walk_info {
+  my ($test, $fault) = @_;
+
+  # teardown clears the shared session's ErrorStr, which new() rejects
+  $test->teardown;
+  $test->setup;
+  $test->mock_session->{Data} = {%{$IFDESCR_ROWS}};
+  My::Test::Class::set_fault($test->mock_session, $fault);
+  return $test->{info};
+}
+
+sub walk_status : Tests(9) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'walk_status');
+
+  subtest 'walk_status__complete_walk__records_getnext_complete' => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info;
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        method   => 'i_description',
+        leaf     => 'IF-MIB::ifDescr',
+        complete => 1,
+        walk     => 'getnext',
+        rows     => 3,
+        reason   => undef,
+        recovery => [],
+        context  => '',
+      }),
+      'outcome records a complete getnext walk'
+    );
+    cmp_deeply($info->walk_failures(), [], 'no failures recorded');
+    cmp_deeply([keys %{$info->walk_status()}],
+      ['i_description'], 'walk_status() is keyed by method');
+  };
+
+  subtest 'walk_status__timeout_after_two_rows__records_incomplete' => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 2));
+    cmp_deeply(
+      $info->i_description(),
+      {1 => 'Loopback', 2 => 'eth0'},
+      'partial rows returned'
+    );
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        complete => 0,
+        reason   => 'timeout',
+        rows     => 2,
+        errornum => -24,
+        error    => 'Timeout',
+      }),
+      'outcome records the timeout'
+    );
+    is(scalar @{$info->walk_failures()}, 1, 'one failure recorded');
+    ok(defined $info->error(), 'error() is set');
+  };
+
+  subtest 'walk_status__timeout_on_first_row__records_incomplete_not_empty' =>
+    sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 0));
+    $info->i_description();
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({rows => 0, complete => 0}),
+      'zero rows is incomplete, not an empty table'
+    );
+    };
+
+  subtest 'walk_status__timeout__not_reported_as_loop' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 0));
+    $info->i_description();
+    is($info->walk_status('i_description')->{reason},
+      'timeout', 'reason is timeout');
+    unlike($info->error(), qr/Looping/, 'error() does not report a loop');
+  };
+
+  subtest 'walk_status__loop_detected__records_loop' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info(
+      {op => 'getnext', leaf => 'IF-MIB::ifDescr', after => 2, loop => 1});
+    $info->i_description();
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({reason => 'loop', complete => 0}),
+      'outcome records the loop'
+    );
+  };
+
+  subtest 'walk_status__partial_get_timeout__records_incomplete' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(op => 'get'));
+    $info->i_description(2);
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 0, reason => 'timeout', partial => 2}),
+      'partial GET timeout is incomplete'
+    );
+  };
+
+  subtest 'walk_status__v1_nosuchname_past_last_row__complete' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        after    => 3,
+        ErrorNum => 2,
+        ErrorStr => '(noSuchName) There is no such variable name in this MIB.'
+      )
+    );
+    $info->{snmp_ver} = 1;
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 1, reason => undef, rows => 3}),
+      'SNMPv1 noSuchName ends the walk as complete'
+    );
+  };
+
+  subtest 'walk_status__clear_cache__keeps_records' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 1));
+    $info->i_description();
+    $info->clear_cache();
+    is($info->walk_status('i_description')->{complete},
+      0, 'walk_status survives clear_cache()');
+    is(scalar @{$info->walk_failures()},
+      1, 'walk_failures survives clear_cache()');
+  };
+}
+
+sub walk_failures : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'walk_failures');
+
+  subtest 'walk_failures__retry_succeeds__failure_sticks' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 1));
+    $info->i_description();
+    My::Test::Class::set_fault($test->mock_session, undef);
+    $info->load_i_description();
+    is($info->walk_status('i_description')->{complete},
+      1, 'walk_status shows the latest success');
+    is(scalar @{$info->walk_failures()}, 1, 'failure still recorded');
+    is($info->walk_failures()->[0]{reason}, 'timeout', '... as a timeout');
+  };
+}
+
+sub clear_walk_status : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'clear_walk_status');
+
+  subtest 'clear_walk_status__after_failure__empties_both' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 1));
+    $info->i_description();
+    $info->clear_walk_status();
+    cmp_deeply($info->walk_status(),   {}, 'walk_status emptied');
+    cmp_deeply($info->walk_failures(), [], 'walk_failures emptied');
   };
 }
 

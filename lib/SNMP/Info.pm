@@ -1688,6 +1688,60 @@ and table methods.
 The cache can be retrieved or set using the $info->cache() method. This works
 together with the C<Offline> option.
 
+=head2 Incomplete Walks
+
+Each table walk records whether it collected the whole table. A walk that
+ends on a timeout, an SNMP error or a detected loop is incomplete, and the
+method returns the rows collected before it ended. These records survive
+$info->clear_cache().
+
+=over
+
+=item $info->walk_status([method])
+
+Returns a reference to a hash, keyed by method, of the latest walk outcome
+for each table method. With a method name, returns that outcome, or undef
+if the method has not been walked.
+
+=cut
+
+sub walk_status {
+    my $self   = shift;
+    my $method = shift;
+
+    $self->{walk_status} ||= {};
+    return $self->{walk_status} unless defined $method;
+    return $self->{walk_status}{$method};
+}
+
+=item $info->walk_failures()
+
+Returns a reference to an array of the incomplete walk outcomes, in the
+order they happened. A later successful walk of the same method does not
+remove a failure.
+
+=cut
+
+sub walk_failures {
+    my $self = shift;
+    return $self->{walk_failures} ||= [];
+}
+
+=item $info->clear_walk_status()
+
+Clears both $info->walk_status() and $info->walk_failures().
+
+=cut
+
+sub clear_walk_status {
+    my $self = shift;
+    $self->{walk_status}   = {};
+    $self->{walk_failures} = [];
+    return;
+}
+
+=back
+
 =head2 Object Scalar Methods
 
 These are for package related data, not directly supplied
@@ -4858,6 +4912,9 @@ sub _load_attr {
         my $localstore = undef;
         my $errornum   = 0;
         my %seen       = ();
+        my $walk       = 'getnext';
+        my $reason     = undef;
+        my $walk_error = undef;
 
         my $vars = [];
         my $bulkwalk_no
@@ -4881,19 +4938,22 @@ sub _load_attr {
                 $var->[2] = $try;
                 $vars     = [$var];
                 $bulkwalk = 1;        # fake a bulkwalk return
+                $walk     = 'get';
             }
 
             # We want to execute the while loop below for the getnext request.
-            if (    $ver == 1
-                and $sess->{ErrorNum}
-                and $sess->{ErrorStr} =~ /nosuch/i )
-            {
+            if ( _v1_nosuch( $sess, $ver ) ) {
                 $errornum = 0;
+            }
+            elsif ($errornum) {
+                $walk   = 'get';
+                $reason = _walk_reason($errornum);
             }
         }
 
         # Use BULKWALK if we can because its faster
         if ( $bulkwalk && @$vars == 0 ) {
+            $walk = 'bulkwalk';
             ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
             if ( $sess->{ErrorNum} ) {
                 $self->error_throw(
@@ -4912,6 +4972,14 @@ sub _load_attr {
                 # GETNEXT instead of BULKWALK
                 $sess->getnext($var);
                 $errornum = $sess->{ErrorNum};
+
+                # A failed request leaves the varbind as it was sent, so
+                # leave before it is read. SNMPv1 noSuchName ends the view.
+                if ($errornum) {
+                    $reason = _walk_reason($errornum)
+                        unless _v1_nosuch( $sess, $ver );
+                    last;
+                }
             }
 
             if ( $self->debug() > 1 ) {
@@ -4964,7 +5032,9 @@ sub _load_attr {
 
                 # Check to see if we've already seen this IID (looping)
                 if ( defined $seen{$iid} and $seen{$iid} ) {
-                    $self->error_throw("Looping on: $method iid:$iid. ");
+                    $walk_error = "Looping on: $method iid:$iid.";
+                    $self->error_throw("$walk_error ");
+                    $reason = 'loop';
                     last;
                 }
                 else {
@@ -4987,6 +5057,27 @@ sub _load_attr {
 
         }
 
+        my $rows = scalar keys %{ $localstore || {} };
+        $walk_error ||= $sess->{ErrorStr} if defined $reason;
+        $self->_walk_outcome(
+            {   method    => $attr,
+                leaf      => $qual_leaf || $oid,
+                partial   => $partial,
+                complete  => ( defined $reason ? 0 : 1 ),
+                reason    => $reason,
+                error     => $walk_error,
+                errornum  => $sess->{ErrorNum} || 0,
+                walk      => $walk,
+                repeaters => ( $walk eq 'bulkwalk' ? $repeaters : undef ),
+                rows      => $rows,
+            }
+        );
+        if ( defined $reason ) {
+            $self->error_throw( "SNMP::Info::_load_attr: $method incomplete: "
+                    . "$reason after $rows rows. "
+                    . ( $walk_error || '' ) );
+        }
+
         # Cache data if we are not getting partial data:
         if ( !defined $partial ) {
             $self->_cache($attr, $localstore);
@@ -4999,6 +5090,70 @@ sub _load_attr {
 
         return $localstore;
     }
+}
+
+=item _v1_nosuch(sess, ver)
+
+Returns true when an SNMPv1 request failed with noSuchName, which ends a
+walk rather than interrupting it.
+
+=cut
+
+sub _v1_nosuch {
+    my ( $sess, $ver ) = @_;
+    return (    $ver == 1
+            and $sess->{ErrorNum}
+            and ( $sess->{ErrorStr} || '' ) =~ /nosuch/i );
+}
+
+=item _walk_reason(errornum)
+
+Maps a Net-SNMP C<ErrorNum> to the C<reason> of an incomplete walk.
+
+=cut
+
+sub _walk_reason {
+    my $errornum = shift;
+    my %reasons = ( -24 => 'timeout', 1 => 'toobig', -65 => 'nonincreasing' );
+    return $reasons{$errornum} || 'error';
+}
+
+=item $info->_walk_outcome(\%outcome)
+
+Records the outcome of one table walk as the latest for its method, and
+appends it to the failures when the walk is incomplete. Fills in
+C<context> and C<recovery>.
+
+=cut
+
+sub _walk_outcome {
+    my ( $self, $outcome ) = @_;
+
+    $outcome->{context}  = $self->_walk_context();
+    $outcome->{recovery} = [];
+
+    $self->{walk_status}{ $outcome->{method} } = $outcome;
+    push @{ $self->{walk_failures} }, $outcome unless $outcome->{complete};
+    return;
+}
+
+=item $info->_walk_context()
+
+Returns the SNMPv3 Context of the session, or the part after C<@> in its
+community, or an empty string. Never returns the community itself.
+
+=cut
+
+sub _walk_context {
+    my $self = shift;
+    my $sess = $self->session() || {};
+
+    my $context = $sess->{Context};
+    return $context if defined $context and length $context;
+
+    my $community = $sess->{Community};
+    return $1 if defined $community and $community =~ /\@([^@]*)$/;
+    return '';
 }
 
 =item $info->_show_attr()
