@@ -2475,6 +2475,9 @@ sub walk_status : Tests(27) {
         )
       );
       $info->bulkwalk(1);
+
+      # With the check on, -65 is recovered by GETNEXT (bulk_order_recovery)
+      $info->bulk_order_check(0) if $reason eq 'nonincreasing';
       is($info->i_description(), undef, 'returns undef');
       ok(!exists $info->{_i_description}, '... and caches nothing');
       cmp_deeply(
@@ -2777,6 +2780,111 @@ sub clear_walk_status : Tests(2) {
     cmp_deeply($info->walk_status(),   {}, 'walk_status emptied');
     cmp_deeply($info->walk_failures(), [], 'walk_failures emptied');
   };
+}
+
+sub _out_of_order_info {
+  my ($test, %args) = @_;
+  my $info = $test->_fresh_walk_info({
+    op           => 'bulkwalk',
+    leaf         => 'IF-MIB::ifDescr',
+    out_of_order => 1,
+    after        => 1,
+  });
+  $info->bulkwalk(1);
+  $info->bulk_order_check($args{check}) if defined $args{check};
+  $test->mock_session->{NonIncreasing} = $args{nonincreasing}
+    if defined $args{nonincreasing};
+  return $info;
+}
+
+sub bulk_order_recovery : Tests(5) {
+  my $test = shift;
+  my $out_of_order_step = {
+    walk      => 'bulkwalk',
+    repeaters => 20,
+    reason    => 'nonincreasing',
+    errornum  => -65,
+  };
+
+  subtest 'bulk_order__out_of_order_agent__rewalks_with_getnext' => sub {
+    plan tests => 3;
+    my $info = $test->_out_of_order_info;
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        complete  => 1,
+        walk      => 'getnext',
+        repeaters => undef,
+        recovery  => [$out_of_order_step],
+      }),
+      'outcome records the GETNEXT re-walk'
+    );
+    cmp_deeply($info->_walk_recovery(),
+      superhashof({getnext => 1, failed => 1}),
+      'connection switched to GETNEXT');
+  };
+
+  subtest
+    'bulk_order__bulkwalk_call__forces_nonincreasing_and_restores_callers_value'
+    => sub {
+    plan tests => 4;
+    foreach my $callers_value (0, 1) {
+      my $info = $test->_out_of_order_info(nonincreasing => $callers_value);
+      my $sess = $test->mock_session;
+      $info->i_description();
+      is($sess->{_bulkwalk_calls}[0]{nonincreasing},
+        1, "caller value $callers_value: bulkwalk sent NonIncreasing 1");
+      is($sess->{NonIncreasing}, $callers_value,
+        "caller value $callers_value: restored after the walk");
+    }
+    };
+
+  subtest 'bulk_order__second_table_after_switch__uses_getnext_without_bulkwalk'
+    => sub {
+    plan tests => 2;
+    my $info = $test->_out_of_order_info;
+    my $sess = $test->mock_session;
+    $info->i_description();
+    my $calls_before = scalar @{$sess->{_bulkwalk_calls} || []};
+    $info->i_name();
+    is(scalar @{$sess->{_bulkwalk_calls} || []},
+      $calls_before, 'no bulkwalk for the second table');
+    cmp_deeply(
+      $info->walk_status('i_name'),
+      superhashof({walk => 'getnext', recovery => []}),
+      'second table walked by GETNEXT with no recovery'
+    );
+    };
+
+  subtest 'bulk_order__check_off__keeps_todays_silent_drop' => sub {
+    plan tests => 2;
+    my $info = $test->_out_of_order_info(check => 0, nonincreasing => 0);
+    is(scalar keys %{$info->i_description() || {}},
+      1, 'only the in-order row returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 1, walk => 'bulkwalk'}),
+      'outcome cannot see the dropped rows'
+    );
+  };
+
+  subtest 'bulk_order__check_off_caller_nonincreasing__keeps_todays_failure'
+    => sub {
+    plan tests => 2;
+    my $info = $test->_out_of_order_info(check => 0, nonincreasing => 1);
+    is($info->i_description(), undef, 'returns undef');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        reason   => 'nonincreasing',
+        complete => 0,
+        recovery => [],
+      }),
+      'outcome records the failure without recovery'
+    );
+    };
 }
 
 # Prefix with private as we don't want to accidentally override in test class

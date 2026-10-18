@@ -1388,6 +1388,14 @@ Checks that the rows a bulkwalk returns are in increasing OID order, and
 recovers when they are not. Set to C<0> to restore the behavior before this
 release.
 
+When on, SNMP::Info sets the session's C<NonIncreasing> to 1 for each of its
+own bulkwalk calls, and restores the caller's value afterwards. A table whose
+rows come back out of order is walked again by GETNEXT, and the object then
+uses GETNEXT for every later table on the same connection. An agent that
+repeats the last OID of its previous reply also counts as out of order.
+When off, out-of-order rows from the first one onwards are dropped without
+any error, unless the caller set C<NonIncreasing> on the session.
+
 (default 1, which means "on")
 
 =item BulkBackoff
@@ -1836,7 +1844,13 @@ The BulkRepeaters value of a bulkwalk, otherwise undef.
 
 =item recovery
 
-A reference to an array, empty for now.
+A reference to an array of the recovery steps this walk took before its
+final attempt, in order, empty when there were none. Each step is a
+reference to a hash with the C<walk>, C<repeaters>, C<reason> and
+C<errornum> of the attempt that failed. With C<BulkOrderCheck> on, a
+bulkwalk that fails with C<'nonincreasing'> adds the step
+C<< { walk => 'bulkwalk', repeaters => N, reason => 'nonincreasing',
+errornum => -65 } >>, and the table is walked again by GETNEXT.
 
 =item rows
 
@@ -5129,6 +5143,7 @@ sub _load_attr {
             walk_errno      => 0,
             bulkwalk_failed => 0,
             vars            => [],
+            recovery        => [],
         };
 
         $self->_walk_setup($w);
@@ -5180,7 +5195,8 @@ sub _walk_setup {
     my $bulkwalk_on = defined $self->{BulkWalk} ? $self->{BulkWalk} : 1;
     my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
     $w->{repeaters} = $self->{BulkRepeaters} || $REPEATERS;
-    $w->{bulkwalk} = $can_bulkwalk && $ver != 1;
+    $w->{bulkwalk}
+        = $can_bulkwalk && $ver != 1 && !$self->_walk_recovery()->{getnext};
     $w->{loopdetect}
         = defined $self->{LoopDetect} ? $self->{LoopDetect} : 1;
     return;
@@ -5227,8 +5243,9 @@ sub _walk_partial_get {
 
 =item $info->_walk_bulk(\%w)
 
-Runs the bulkwalk when the walk state allows one. The only place
-C<_load_attr> calls C<bulkwalk> on the session.
+Runs the bulkwalk when the walk state allows one. When it fails with
+C<nonincreasing> and C<BulkOrderCheck> is on, sets the walk state up to
+re-walk the table by GETNEXT instead.
 
 =cut
 
@@ -5239,7 +5256,7 @@ sub _walk_bulk {
     # Use BULKWALK if we can because its faster
     if ( $w->{bulkwalk} && @{ $w->{vars} } == 0 && !$w->{errornum} ) {
         $w->{walk} = 'bulkwalk';
-        ( $w->{vars} ) = $sess->bulkwalk( 0, $w->{repeaters}, $w->{var} );
+        ( $w->{vars} ) = $self->_walk_bulkwalk_call($w);
         if ( $sess->{ErrorNum} ) {
             $w->{errornum} = $sess->{ErrorNum};
             @{$w}{qw(reason walk_errno walk_error)} = _walk_failure($sess)
@@ -5247,9 +5264,64 @@ sub _walk_bulk {
             $self->error_throw(
                 "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr},
                 "\n" );
-            $w->{bulkwalk_failed} = 1;
+            if ( $w->{errornum} == -65 && $self->bulk_order_check() ) {
+                $self->_walk_order_fallback($w);
+            }
+            else {
+                $w->{bulkwalk_failed} = 1;
+            }
         }
     }
+    return;
+}
+
+=item $info->_walk_bulkwalk_call(\%w)
+
+The only place C<_load_attr> calls C<bulkwalk> on the session. With
+C<BulkOrderCheck> on, sets the session's C<NonIncreasing> to 1 for this
+call only, so out-of-order rows fail with C<-65> instead of being dropped.
+
+=cut
+
+sub _walk_bulkwalk_call {
+    my ( $self, $w ) = @_;
+    my $sess = $w->{sess};
+
+    return $sess->bulkwalk( 0, $w->{repeaters}, $w->{var} )
+        unless $self->bulk_order_check();
+
+    local $sess->{NonIncreasing} = 1;
+    return $sess->bulkwalk( 0, $w->{repeaters}, $w->{var} );
+}
+
+=item $info->_walk_order_fallback(\%w)
+
+After a bulkwalk failed with C<nonincreasing>: records the recovery step,
+switches the connection to GETNEXT, and resets the walk state so that
+C<_walk_rows> re-walks the table from its start by GETNEXT.
+
+=cut
+
+sub _walk_order_fallback {
+    my ( $self, $w ) = @_;
+
+    push @{ $w->{recovery} },
+        {
+        walk      => 'bulkwalk',
+        repeaters => $w->{repeaters},
+        reason    => $w->{reason},
+        errornum  => $w->{walk_errno},
+        };
+
+    my $state = $self->_walk_recovery();
+    $state->{getnext} = 1;
+    $state->{failed}++;
+
+    @{$w}{qw(errornum walk_errno reason walk_error)} = ( 0, 0, undef, undef );
+    $w->{bulkwalk} = 0;
+    $w->{walk}     = 'getnext';
+    $w->{vars}     = [];
+    $w->{var} = SNMP::Varbind->new( [ $w->{qual_leaf}, $w->{partial} ] );
     return;
 }
 
@@ -5389,6 +5461,7 @@ sub _walk_finish {
             walk      => $walk,
             repeaters => ( $walk eq 'bulkwalk' ? $repeaters : undef ),
             rows      => $rows,
+            recovery  => $w->{recovery},
         }
     );
 
@@ -5490,7 +5563,7 @@ sub _walk_recovery {
 
 Records the outcome of one table walk as the latest for its method, and
 appends it to the failures when the walk is incomplete. Fills in
-C<context> and C<recovery>.
+C<context>, and C<recovery> when the outcome has none.
 
 =cut
 
@@ -5498,7 +5571,7 @@ sub _walk_outcome {
     my ( $self, $outcome ) = @_;
 
     $outcome->{context}  = $self->_walk_context();
-    $outcome->{recovery} = [];
+    $outcome->{recovery} ||= [];
 
     $self->{walk_status}{ $outcome->{method} } = $outcome;
     push @{ $self->{walk_failures} }, $outcome unless $outcome->{complete};
