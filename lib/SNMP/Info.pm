@@ -24,7 +24,8 @@ use NetAddr::IP::Lite ':lower';
 
 our
     ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG, %SPEED_MAP,
-     $NOSUCH, $BIGINT, $REPEATERS);
+     $NOSUCH, $BIGINT, $REPEATERS,
+     $BACKOFF_FLOOR, $MAX_FAILED_BULKWALKS);
 
 $VERSION = '3.980000';
 
@@ -1381,6 +1382,22 @@ Set to C<0> to turn off loop detection.
 
 (default 1, which means "on")
 
+=item BulkOrderCheck
+
+Checks that the rows a bulkwalk returns are in increasing OID order, and
+recovers when they are not. Set to C<0> to restore the behavior before this
+release.
+
+(default 1, which means "on")
+
+=item BulkBackoff
+
+Lowers the number of MaxRepeaters, and falls back to getnext, when a
+bulkwalk fails or times out. Set to C<0> to restore the behavior before this
+release.
+
+(default 1, which means "on")
+
 =item IncompleteWalk
 
 What a table method does when its walk ends before the whole table was read,
@@ -1548,6 +1565,12 @@ sub new {
         delete $sess_args{IncompleteWalk};
     }
 
+    foreach my $option (qw(BulkOrderCheck BulkBackoff)) {
+        next unless defined $args{$option};
+        $new_obj->{$option} = $args{$option};
+        delete $sess_args{$option};
+    }
+
     if ( defined $args{IgnoreNetSNMPConf} ) {
         $new_obj->{IgnoreNetSNMPConf} = $args{IgnoreNetSNMPConf} || 0;
         delete $sess_args{IgnoreNetSNMPConf};
@@ -1665,6 +1688,8 @@ sub update {
     delete $sess_args{BulkWalk};
     delete $sess_args{LoopDetect};
     delete $sess_args{IncompleteWalk};
+    delete $sess_args{BulkOrderCheck};
+    delete $sess_args{BulkBackoff};
     delete $sess_args{IgnoreNetSNMPConf};
     delete $sess_args{BigInt};
     delete $sess_args{MibDirs};
@@ -1687,8 +1712,27 @@ sub update {
         );
         return;
     }
+    $obj->{walk_recovery} = undef if _target_changed( $obj, \%update_args );
     $obj->clear_cache();
     return $obj->session($sess);
+}
+
+=item $info->_target_changed(\%update_args)
+
+Returns true when the update arguments name a different C<DestHost>,
+C<Version> or C<RemotePort> than the object was created with.
+
+=cut
+
+sub _target_changed {
+    my ( $obj, $update_args ) = @_;
+    foreach my $key (qw(DestHost Version RemotePort)) {
+        next unless exists $update_args->{$key};
+        my $old = $obj->{args}{$key};
+        return 1 if defined $old xor defined $update_args->{$key};
+        return 1 if defined $old and $old ne $update_args->{$key};
+    }
+    return 0;
 }
 
 =back
@@ -1718,6 +1762,10 @@ records and the option survive $info->clear_cache(), $info->cache() and
 $info->update(), and carry over to
 the object returned by $info->specify(). Only $info->clear_walk_status()
 clears the records. The records never contain the community string.
+
+The bulkwalk recovery state (see C<BulkOrderCheck> and C<BulkBackoff>) is
+kept the same way, except that $info->update() resets it when it changes
+C<DestHost>, C<Version> or C<RemotePort>.
 
 Each outcome is a reference to a hash with these keys:
 
@@ -1953,6 +2001,42 @@ sub loopdetect {
         $self->{LoopDetect} = $ld;
     }
     return $self->{LoopDetect};
+}
+
+=item $info->bulk_order_check([1|0])
+
+Returns whether the C<BulkOrderCheck> option is on for this object, 1 unless
+set to a false value. Optionally sets it. C<0> restores the behavior before
+this release.
+
+=cut
+
+sub bulk_order_check {
+    my $self  = shift;
+    my $check = shift;
+
+    $self->{BulkOrderCheck} = $check if defined $check;
+    return ( defined $self->{BulkOrderCheck} and !$self->{BulkOrderCheck} )
+        ? 0
+        : 1;
+}
+
+=item $info->bulk_backoff([1|0])
+
+Returns whether the C<BulkBackoff> option is on for this object, 1 unless
+set to a false value. Optionally sets it. C<0> restores the behavior before
+this release.
+
+=cut
+
+sub bulk_backoff {
+    my $self    = shift;
+    my $backoff = shift;
+
+    $self->{BulkBackoff} = $backoff if defined $backoff;
+    return ( defined $self->{BulkBackoff} and !$self->{BulkBackoff} )
+        ? 0
+        : 1;
 }
 
 =item $info->incomplete_walk(['partial'|'undef'])
@@ -2697,6 +2781,9 @@ sub specify {
     $sub_obj->{walk_status}    = $self->{walk_status};
     $sub_obj->{walk_failures}  = $self->{walk_failures};
     $sub_obj->{IncompleteWalk} = $self->{IncompleteWalk};
+    $sub_obj->{walk_recovery} = $self->{walk_recovery};
+    $sub_obj->{BulkOrderCheck} = $self->{BulkOrderCheck};
+    $sub_obj->{BulkBackoff}    = $self->{BulkBackoff};
 
     $self->debug()
         and print "SNMP::Info::specify() - Changed Class to $device_type.\n";
@@ -4047,6 +4134,24 @@ more info.  Can change by passing L</BulkRepeaters> option in new()
 
 $REPEATERS = 20;
 
+=item $BACKOFF_FLOOR
+
+Default 5.  The lowest MaxRepeaters value a bulkwalk is retried with when
+L</BulkBackoff> is on.
+
+=cut
+
+$BACKOFF_FLOOR = 5;
+
+=item $MAX_FAILED_BULKWALKS
+
+Default 3.  How many failed bulkwalks an object tolerates before it walks
+with getnext when L</BulkBackoff> is on.
+
+=cut
+
+$MAX_FAILED_BULKWALKS = 3;
+
 =back
 
 =head2 Data Munging Callback Subroutines
@@ -5349,6 +5454,19 @@ reason and C<absent> (the object is not on the device) are both complete.
 sub _walk_incomplete {
     my $reason = shift;
     return ( defined $reason and $reason ne 'absent' );
+}
+
+=item $info->_walk_recovery()
+
+Returns the hash of bulkwalk recovery state for this object, creating it on
+first use as C<< { repeaters => undef, getnext => 0, failed => 0 } >>.
+
+=cut
+
+sub _walk_recovery {
+    my $self = shift;
+    return $self->{walk_recovery}
+        ||= { repeaters => undef, getnext => 0, failed => 0 };
 }
 
 =item $info->_walk_outcome(\%outcome)

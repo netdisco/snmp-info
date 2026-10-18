@@ -114,6 +114,110 @@ TODO: {
   };
 }
 
+sub bulk_order_check : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'bulk_order_check');
+  subtest 'bulk_order_check__default__is_1' => sub {
+    plan tests => 1;
+    is($test->{info}->bulk_order_check(), 1, 'on by default');
+  };
+  subtest 'bulk_order_check__constructor_0__is_0' => sub {
+    plan tests => 3;
+    $test->teardown;
+    $test->setup;
+    my $info = SNMP::Info->new(
+      Session => $test->mock_session, BulkOrderCheck => 0);
+    is($info->bulk_order_check(), 0, 'constructor 0 turns it off');
+    is($info->bulk_order_check(1), 1, 'setter turns it on');
+    is($info->bulk_order_check(), 1, 'setter value sticks');
+  };
+  subtest 'new__bulk_options__not_passed_to_session' => sub {
+    plan tests => 2;
+    $test->teardown;
+    $test->setup;
+    my $info = SNMP::Info->new(
+      DestHost => 'localhost', Version => 1, Community => 'public',
+      BulkOrderCheck => 0, BulkBackoff => 0);
+    ok(!exists $info->{sess}{BulkOrderCheck}, 'no BulkOrderCheck in session');
+    ok(!exists $info->{sess}{BulkBackoff}, 'no BulkBackoff in session');
+  };
+}
+
+sub bulk_backoff : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'bulk_backoff');
+  subtest 'bulk_backoff__default__is_1' => sub {
+    plan tests => 1;
+    is($test->{info}->bulk_backoff(), 1, 'on by default');
+  };
+  subtest 'bulk_backoff__constructor_0__is_0' => sub {
+    plan tests => 3;
+    $test->teardown;
+    $test->setup;
+    my $info = SNMP::Info->new(
+      Session => $test->mock_session, BulkBackoff => 0);
+    is($info->bulk_backoff(), 0, 'constructor 0 turns it off');
+    is($info->bulk_backoff(1), 1, 'setter turns it on');
+    is($info->bulk_backoff(), 1, 'setter value sticks');
+  };
+}
+
+sub walk_recovery : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, '_walk_recovery');
+  my $set_state = sub {
+    my $info = shift;
+    @{$info->_walk_recovery()}{qw(repeaters getnext failed)} = (5, 1, 2);
+  };
+  my $initial = {repeaters => undef, getnext => 0, failed => 0};
+
+  subtest 'walk_recovery__new_object__starts_blank' => sub {
+    plan tests => 1;
+    $test->teardown;
+    $test->setup;
+    cmp_deeply($test->{info}->_walk_recovery(), $initial, 'blank state');
+  };
+  subtest 'walk_recovery__clear_cache__keeps_state' => sub {
+    plan tests => 1;
+    my $info = $test->{info};
+    $set_state->($info);
+    $info->clear_cache();
+    cmp_deeply($info->_walk_recovery(),
+      {repeaters => 5, getnext => 1, failed => 2}, 'state unchanged');
+  };
+  subtest 'walk_recovery__update_same_host__keeps_state' => sub {
+    plan tests => 2;
+    $test->teardown;
+    $test->setup;
+    my $info = $test->{info};
+    $set_state->($info);
+    delete $info->{args}{Session};
+    ok($info->update(Community => 'public@10'), 'update() succeeds');
+    cmp_deeply($info->_walk_recovery(),
+      {repeaters => 5, getnext => 1, failed => 2}, 'state unchanged');
+  };
+  subtest 'walk_recovery__update_new_target__resets_state' => sub {
+    my %changes = (
+      DestHost   => '192.0.2.2',
+      Version    => 1,
+      RemotePort => 1161,
+    );
+    plan tests => scalar keys %changes;
+    foreach my $key (sort keys %changes) {
+      $test->teardown;
+      $test->setup;
+      my $info = $test->{info};
+      $set_state->($info);
+      delete $info->{args}{Session};
+      $info->update($key => $changes{$key});
+      cmp_deeply($info->_walk_recovery(), $initial, "$key change resets state");
+    }
+  };
+}
+
 sub cache_and_clear_cache : Tests(9) {
   my $test = shift;
 
@@ -367,7 +471,7 @@ sub snmp_ver : Tests(2) {
   is($test->{info}->snmp_ver(), 1, 'SNMP version returned');
 }
 
-sub specify : Tests(5) {
+sub specify : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'specify');
@@ -421,6 +525,26 @@ sub specify : Tests(5) {
     is(scalar @{$sub_obj->walk_failures()}, 1, 'failure carried to new object');
     is($sub_obj->walk_status('i_description')->{complete},
       0, 'walk_status carried to new object');
+  };
+
+  subtest 'specify__recovery_and_options__carried_to_subclass' => sub {
+    plan tests => 4;
+    my $info = $test->{info};
+    my $state = $info->_walk_recovery();
+    @{$state}{qw(repeaters getnext failed)} = (5, 1, 2);
+    $info->bulk_order_check(0);
+    $info->bulk_backoff(0);
+    $info->cache({
+      '_layers'      => 64,
+      '_description' => 'My-Test-sysDescr',
+      '_id'          => '.1.3.6.1.4.1.318'
+    });
+    my $sub_obj = $info->specify();
+    isa_ok($sub_obj, 'SNMP::Info::Layer7::APC');
+    cmp_deeply($sub_obj->_walk_recovery(),
+      {repeaters => 5, getnext => 1, failed => 2}, 'state carried');
+    is($sub_obj->bulk_order_check(), 0, 'BulkOrderCheck carried');
+    is($sub_obj->bulk_backoff(), 0, 'BulkBackoff carried');
   };
 }
 
