@@ -90,9 +90,8 @@ sub i_description {
     my $i_descr = $self->orig_i_description($partial) || {};
 
     foreach my $ifindex ( keys %$i_descr ) {
-        $i_descr->{$ifindex} =~ /'(.*)'/;
         $i_descr->{$ifindex} = $1
-            if defined $1;
+            if $i_descr->{$ifindex} =~ /'(.*)'/;
     }
 
     return $i_descr;
@@ -215,7 +214,8 @@ Overrides base mac function in L<SNMP::Info::Layer3>.
 
 Overrides base interface description function in L<SNMP::Info> to return the
 configured interface name instead of "Adaptive Security Appliance
-'$configured interface name' interface".
+'$configured interface name' interface". Descriptions without a quoted
+name are returned unchanged.
 
 =item $asa->parse_inetaddress()
 

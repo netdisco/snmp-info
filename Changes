@@ -2,10 +2,15 @@ Version 3.979001 (2026-tbd)
 
   [ENHANCEMENTS]
 
+  * #628 Record incomplete table walks (walk_status, walk_failures) and
+    add the IncompleteWalk option
+
   * #626 LLDP: read neighbors from LLDP-V2-MIB when LLDP-MIB reports none;
     LLDP-V2-MIB and LLDP-V2-TC-MIB are now required
 
   [BUG FIXES]
+
+  * #229 CiscoASA: keep ifDescr when it has no quoted interface name
 
   * #570 Use attached aggregate indexes for H3C Bridge-Aggregation members
     and omit member STP states handled by the logical aggregate

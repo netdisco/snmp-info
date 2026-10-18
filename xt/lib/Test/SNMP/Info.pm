@@ -44,7 +44,7 @@ sub constructor : Tests(+3) {
   is($test->{info}{snmp_user}, 'initial', 'SNMP user arg saved');
 }
 
-sub update : Tests(9) {
+sub update : Tests(10) {
   my $test = shift;
 
   can_ok($test->{info}, 'update');
@@ -86,6 +86,32 @@ TODO: {
     is($test->{info}->{sess}{Context}, 'vlan-100', 'Context changed');
 
   }
+
+  subtest 'update__changes_community_index__keeps_records_and_option' => sub {
+    plan tests => 6;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 1));
+    my $mock = $test->mock_session;
+    $info->incomplete_walk('undef');
+    $info->i_description();
+
+    delete $info->{args}{Session};
+    ok($info->update(Community => 'public@20'), 'update() succeeds');
+
+    # update() swaps in a real session; put the mock back, indexed as update
+    # would have left the community
+    $info->{sess} = $mock;
+    $mock->{Community} = 'public@20';
+    My::Test::Class::set_fault($mock, _ifdescr_timeout(after => 2));
+    $info->load_i_description();
+
+    my @failures = @{$info->walk_failures()};
+    is(scalar @failures, 2, 'both failures survive update()');
+    is($failures[0]{context}, '', 'first failure has no context');
+    is($failures[1]{context}, '20', 'second failure carries the index');
+    unlike(join(' ', grep { defined } map { values %{$_} } @failures),
+      qr/public/, 'no outcome contains the community');
+    is($info->incomplete_walk(), 'undef', 'option survives update()');
+  };
 }
 
 sub cache_and_clear_cache : Tests(9) {
@@ -341,7 +367,7 @@ sub snmp_ver : Tests(2) {
   is($test->{info}->snmp_ver(), 1, 'SNMP version returned');
 }
 
-sub specify : Tests(4) {
+sub specify : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'specify');
@@ -380,6 +406,22 @@ sub specify : Tests(4) {
     'SNMP::Info::Layer7::APC',
     'Layer 7 device type returns new object of same type');
   $test->{info}->clear_cache();
+
+  subtest 'specify__subclass__carries_records' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 1));
+    $info->i_description();
+    $info->cache({
+      '_layers'      => 64,
+      '_description' => 'My-Test-sysDescr',
+      '_id'          => '.1.3.6.1.4.1.318'
+    });
+    my $sub_obj = $info->specify();
+    isa_ok($sub_obj, 'SNMP::Info::Layer7::APC');
+    is(scalar @{$sub_obj->walk_failures()}, 1, 'failure carried to new object');
+    is($sub_obj->walk_status('i_description')->{complete},
+      0, 'walk_status carried to new object');
+  };
 }
 
 sub cisco_comm_indexing : Tests(2) {
@@ -1410,7 +1452,7 @@ sub my_all : Tests(9) {
     '... call to all() returns test data, no call to load_all()');
 }
 
-sub private_load_attr : Tests(18) {
+sub private_load_attr : Tests(19) {
   my $test = shift;
 
   can_ok($test->{info}, '_load_attr');
@@ -1574,6 +1616,20 @@ sub private_load_attr : Tests(18) {
 
   cmp_deeply($test->{info}->full_oid(),
     $expected_f_oid_data, 'Full OID leaf returns expected data');
+
+  subtest 'walk_status__endofmibview_nosuch__complete' => sub {
+    plan tests => 4;
+    foreach my $method (
+      qw/ifConnectorPresent ifCounterDiscontinuityTime i_octet_out64/)
+    {
+      is($test->{info}->walk_status($method)->{complete},
+        1, "$method recorded complete");
+    }
+
+    # i_octet_out64 was walked again by a partial fetch, so its ENDOFMIBVIEW
+    # walk shows only as the absence of a failure
+    cmp_deeply($test->{info}->walk_failures(), [], 'no walk recorded a failure');
+  };
 }
 
 sub private_show_attr : Tests(3) {
@@ -1827,6 +1883,656 @@ sub private_autoload : Tests(3) {
     64, q(Method 'ipDefaultTTL' called and returned expected data'));
   is($test->symbol_test('ipDefaultTTL'),
     1, q(Method 'ipDefaultTTL' is now defined in the symbol table));
+}
+
+sub mock_getnext_end_of_table : Tests(3) {
+  my $test = shift;
+  my $sess = $test->mock_session;
+  $sess->{Data} = {'IF-MIB::ifDescr' => {1 => 'a', 2 => 'b', 3 => 'c'}};
+
+  my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+  $sess->getnext($var) for 1 .. 3;
+  my $result = $sess->getnext($var);
+
+  is($var->[0], 'unknown',
+    'getnext__past_last_row__leaves_the_subtree');
+  is($result, q{}, 'getnext__past_last_row__returns_defined_value');
+
+  $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+  my $calls = 0;
+  while ($calls++ < 10) {
+    $sess->getnext($var);
+    last if $var->[0] ne 'IF-MIB::ifDescr';
+  }
+  is($calls, 4, 'getnext__leaf_checked_walk__stops_after_last_row');
+}
+
+sub mock_session_faults : Tests(7) {
+  my $test = shift;
+  my $sess = $test->mock_session;
+  my $set_fault = \&My::Test::Class::set_fault;
+  my $rows = {'IF-MIB::ifDescr' => {1 => 'a', 2 => 'b', 3 => 'c'}};
+  my $getnext_fault = {
+    op       => 'getnext',
+    leaf     => 'IF-MIB::ifDescr',
+    after    => 2,
+    ErrorNum => -24,
+    ErrorStr => 'Timeout',
+  };
+
+  subtest
+    'getnext__fault_after_two_rows__sets_ErrorNum_and_leaves_varbind' => sub {
+    plan tests => 4;
+    $sess->{Data}  = $rows;
+    $set_fault->($sess, {
+      op       => 'getnext',
+      leaf     => 'IF-MIB::ifDescr',
+      after    => 2,
+      ErrorNum => -24,
+      ErrorStr => 'Timeout',
+    });
+    my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    $sess->getnext($var);
+    $sess->getnext($var);
+    is($var->[1], 2, 'two rows returned');
+    my $result = $sess->getnext($var);
+    is($result,           undef, 'third getnext returns undef');
+    is($sess->{ErrorNum}, -24,   'ErrorNum set');
+    is($var->[1],         2,     'varbind left unchanged');
+    };
+
+  subtest 'getnext__loop_fault__returns_first_row_again' => sub {
+    plan tests => 1;
+    $sess->{Data}  = $rows;
+    $set_fault->($sess, {
+      op    => 'getnext',
+      leaf  => 'IF-MIB::ifDescr',
+      after => 2,
+      loop  => 1,
+    });
+    my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    $sess->getnext($var);
+    $sess->getnext($var);
+    $sess->getnext($var);
+    is($var->[1], 1, 'first row returned again');
+  };
+
+  subtest 'bulkwalk__no_fault__returns_sorted_varbinds' => sub {
+    plan tests => 3;
+    $sess->{Data} = $rows;
+    $set_fault->($sess, undef);
+    my $var    = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    my @result = $sess->bulkwalk(0, 20, $var);
+    is(scalar @{$result[0]}, 3, 'three varbinds');
+    is(join(',', map { $_->[1] } @{$result[0]}), '1,2,3', 'sorted iids');
+    is($sess->{ErrorNum}, 0, 'ErrorNum clear');
+  };
+
+  subtest 'bulkwalk__fault__returns_undef_with_error' => sub {
+    plan tests => 2;
+    $sess->{Data}  = $rows;
+    $set_fault->($sess, {
+      op       => 'bulkwalk',
+      leaf     => 'IF-MIB::ifDescr',
+      ErrorNum => 1,
+      ErrorStr => '(tooBig) Response message would have been too large.',
+    });
+    my $var    = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    my @result = $sess->bulkwalk(0, 20, $var);
+    is($result[0],        undef, 'result undef');
+    is($sess->{ErrorNum}, 1,     'ErrorNum set');
+  };
+
+  subtest 'get__fault__sets_ErrorNum' => sub {
+    plan tests => 2;
+    $sess->{Data}  = {'SNMPv2-MIB::sysName' => {0 => 'x'}};
+    $set_fault->($sess, {
+      op       => 'get',
+      leaf     => 'SNMPv2-MIB::sysName',
+      ErrorNum => -24,
+      ErrorStr => 'Timeout',
+    });
+    my $var = SNMP::Varbind->new(['SNMPv2-MIB::sysName', 0]);
+    $sess->get($var);
+    is($sess->{ErrorNum}, -24, 'ErrorNum set');
+    $set_fault->($sess, undef);
+    $sess->get($var);
+    is($sess->{ErrorNum}, 0, 'ErrorNum clear after fault removed');
+  };
+
+  subtest 'getnext__fault_cleared__next_walk_has_no_error' => sub {
+    plan tests => 3;
+    $sess->{Data} = $rows;
+    $set_fault->($sess, {%{$getnext_fault}});
+    my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    $sess->getnext($var) for 1 .. 3;
+    $set_fault->($sess, undef);
+    $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    my @iids;
+    while ($sess->getnext($var)) {
+      push @iids, $var->[1];
+    }
+    is($sess->{ErrorNum}, 0,  'ErrorNum clear');
+    is($sess->{ErrorStr}, '', 'ErrorStr clear');
+    is(join(',', @iids), '1,2,3', 'all rows returned');
+  };
+
+  subtest 'getnext__second_fault_installed__counts_rows_afresh' => sub {
+    plan tests => 2;
+    $sess->{Data} = $rows;
+    $set_fault->($sess, {%{$getnext_fault}});
+    my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    $sess->getnext($var) for 1 .. 3;
+    $set_fault->($sess, {%{$getnext_fault}});
+    $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    $sess->getnext($var);
+    $sess->getnext($var);
+    is($var->[1], 2, 'two rows served before second fault fires');
+    is($sess->getnext($var), undef, 'third getnext faults');
+  };
+}
+
+# Walk outcome records, see "Incomplete Walks" in SNMP::Info
+my $IFDESCR_ROWS
+  = {'IF-MIB::ifDescr' => {1 => 'Loopback', 2 => 'eth0', 3 => 'eth1'}};
+
+sub _ifdescr_timeout {
+  my %args = @_;
+  return {
+    op       => 'getnext',
+    leaf     => 'IF-MIB::ifDescr',
+    ErrorNum => -24,
+    ErrorStr => 'Timeout',
+    %args,
+  };
+}
+
+# Fresh object and session state for each subtest
+sub _fresh_walk_info {
+  my ($test, $fault) = @_;
+
+  # teardown clears the shared session's ErrorStr, which new() rejects
+  $test->teardown;
+  $test->setup;
+  $test->mock_session->{Data} = {%{$IFDESCR_ROWS}};
+  My::Test::Class::set_fault($test->mock_session, $fault);
+  return $test->{info};
+}
+
+sub walk_status : Tests(27) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'walk_status');
+
+  subtest 'walk_status__complete_walk__records_getnext_complete' => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info;
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        method   => 'i_description',
+        leaf     => 'IF-MIB::ifDescr',
+        complete => 1,
+        walk     => 'getnext',
+        rows     => 3,
+        reason   => undef,
+        recovery => [],
+        context  => '',
+      }),
+      'outcome records a complete getnext walk'
+    );
+    cmp_deeply($info->walk_failures(), [], 'no failures recorded');
+    cmp_deeply([keys %{$info->walk_status()}],
+      ['i_description'], 'walk_status() is keyed by method');
+  };
+
+  subtest 'walk_status__timeout_after_two_rows__records_incomplete' => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 2));
+    cmp_deeply(
+      $info->i_description(),
+      {1 => 'Loopback', 2 => 'eth0'},
+      'partial rows returned'
+    );
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        complete => 0,
+        reason   => 'timeout',
+        rows     => 2,
+        errornum => -24,
+        error    => 'Timeout',
+      }),
+      'outcome records the timeout'
+    );
+    is(scalar @{$info->walk_failures()}, 1, 'one failure recorded');
+    ok(defined $info->error(), 'error() is set');
+  };
+
+  subtest 'walk_status__timeout_on_first_row__records_incomplete_not_empty' =>
+    sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 0));
+    $info->i_description();
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({rows => 0, complete => 0}),
+      'zero rows is incomplete, not an empty table'
+    );
+    };
+
+  subtest 'walk_status__timeout__not_reported_as_loop' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 0));
+    $info->i_description();
+    is($info->walk_status('i_description')->{reason},
+      'timeout', 'reason is timeout');
+    unlike($info->error(), qr/Looping/, 'error() does not report a loop');
+  };
+
+  subtest 'walk_status__loop_detected__records_loop' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info(
+      {op => 'getnext', leaf => 'IF-MIB::ifDescr', after => 2, loop => 1});
+    $info->i_description();
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({reason => 'loop', complete => 0}),
+      'outcome records the loop'
+    );
+  };
+
+  subtest 'walk_status__partial_get_timeout__records_incomplete' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(op => 'get'));
+    $info->i_description(2);
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 0, reason => 'timeout', partial => 2}),
+      'partial GET timeout is incomplete'
+    );
+  };
+
+  subtest 'walk_status__partial_get_timeout_bulkwalk_on__records_get' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(op => 'get'));
+    $info->bulkwalk(1);
+    $test->mock_session->clear();
+    is($info->i_description(2), undef, 'returns undef as before');
+    ok(!$test->mock_session->called('bulkwalk'),
+      '... without a bulkwalk after the failed GET');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        complete => 0,
+        reason   => 'timeout',
+        walk     => 'get',
+        errornum => -24,
+        error    => 'Timeout',
+        partial  => 2,
+      }),
+      'outcome records the GET that failed'
+    );
+  };
+
+  subtest 'walk_status__v1_nosuchname_past_last_row__complete' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        after    => 3,
+        ErrorNum => 2,
+        ErrorStr => '(noSuchName) There is no such variable name in this MIB.'
+      )
+    );
+    $info->{snmp_ver} = 1;
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 1, reason => undef, rows => 3}),
+      'SNMPv1 noSuchName ends the walk as complete'
+    );
+  };
+
+  subtest 'walk_status__bulkwalk_complete__records_repeaters' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info;
+    $info->bulkwalk(1);
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        walk      => 'bulkwalk',
+        repeaters => 20,
+        complete  => 1,
+        rows      => 3,
+      }),
+      'outcome records a complete bulkwalk'
+    );
+  };
+
+  my %bulkwalk_faults = (
+    toobig        => [1,   'Response message would have been too big'],
+    nonincreasing => [-65, 'OID not increasing'],
+    timeout       => [-24, 'Timeout'],
+  );
+  foreach my $reason (sort keys %bulkwalk_faults) {
+    my ($errornum, $errorstr) = @{$bulkwalk_faults{$reason}};
+    subtest "walk_status__bulkwalk_${reason}__records_${reason}" => sub {
+      plan tests => 3;
+      my $info = $test->_fresh_walk_info(
+        _ifdescr_timeout(
+          op       => 'bulkwalk',
+          ErrorNum => $errornum,
+          ErrorStr => $errorstr
+        )
+      );
+      $info->bulkwalk(1);
+      is($info->i_description(), undef, 'returns undef');
+      ok(!exists $info->{_i_description}, '... and caches nothing');
+      cmp_deeply(
+        $info->walk_status('i_description'),
+        superhashof({
+          complete  => 0,
+          reason    => $reason,
+          walk      => 'bulkwalk',
+          errornum  => $errornum,
+          error     => $errorstr,
+          repeaters => 20,
+        }),
+        "outcome records $reason"
+      );
+    };
+  }
+
+  subtest 'walk_status__bulkwalk_unknown_objid__complete_absent' => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        op       => 'bulkwalk',
+        ErrorNum => -58,
+        ErrorStr => 'Unknown object identifier'
+      )
+    );
+    $info->bulkwalk(1);
+    is($info->i_description(), undef, 'returns undef');
+    ok(!exists $info->{_i_description}, '... and caches nothing');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 1, reason => 'absent', walk => 'bulkwalk'}),
+      'outcome is complete and absent'
+    );
+    cmp_deeply($info->walk_failures(), [], 'no failure recorded');
+  };
+
+  subtest 'walk_status__bulkwalk_nosuchname__complete' => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        op       => 'bulkwalk',
+        ErrorNum => 2,
+        ErrorStr => '(noSuchName) There is no such variable name in this MIB.'
+      )
+    );
+    $info->bulkwalk(1);
+    is($info->i_description(), undef, 'returns undef as before');
+    ok(!exists $info->{_i_description}, '... and caches nothing');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 1, reason => undef, walk => 'bulkwalk'}),
+      'noSuchName on GETBULK is complete'
+    );
+    cmp_deeply($info->walk_failures(), [], 'no failure recorded');
+  };
+
+  subtest 'walk_status__bulkwalk_repeaters_option__recorded' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info;
+    $info->bulkwalk(1);
+    $info->{BulkRepeaters} = 7;
+    $info->i_description();
+    is($info->walk_status('i_description')->{repeaters},
+      7, 'BulkRepeaters is recorded');
+  };
+
+  subtest 'walk_status__clear_cache__keeps_records' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 1));
+    $info->i_description();
+    $info->clear_cache();
+    is($info->walk_status('i_description')->{complete},
+      0, 'walk_status survives clear_cache()');
+    is(scalar @{$info->walk_failures()},
+      1, 'walk_failures survives clear_cache()');
+  };
+
+  subtest 'walk_status__v3_context__recorded' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info;
+    my $mock = $test->mock_session;
+    $mock->{Version} = 3;
+    $mock->{Context} = 'vlan-30';
+    $info->i_description();
+    is($info->walk_status('i_description')->{context},
+      'vlan-30', 'SNMPv3 Context is recorded');
+  };
+
+  my @community_contexts = (
+    ['vlan_index',            'public',    'public@20',    '20'],
+    ['vrf_name',              'public',    'public@MGMT',  'MGMT'],
+    ['base_with_at',          'pa@ssw0rd', 'pa@ssw0rd',    ''],
+    ['base_with_at_reindexed', 'pa@ss',    'pa@ss@20',     '20'],
+    ['other_community',       'public',    'other@20',     ''],
+  );
+  foreach my $case (@community_contexts) {
+    my ($name, $base, $current, $want) = @{$case};
+    subtest "walk_status__community_${name}__context_is_${\ ($want || 'empty')}"
+      => sub {
+      plan tests => 2;
+      my $info = $test->_fresh_community_info($base, $current);
+      $info->i_description();
+      my $outcome = $info->walk_status('i_description');
+      is($outcome->{context}, $want, "context for $current is '$want'");
+      ok(!grep({ defined && index($_, $base) >= 0 } values %{$outcome}),
+        'no outcome field contains the base community');
+      };
+  }
+
+  subtest 'walk_status__v3_no_context__community_index_ignored' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_community_info('public', 'public@20');
+    $test->mock_session->{Version} = 3;
+    $info->i_description();
+    is($info->walk_status('i_description')->{context},
+      '', 'SNMPv3 without Context records no context');
+  };
+
+  subtest 'walk_status__v2c_nosuchname_past_last_row__complete' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        after    => 3,
+        ErrorNum => 2,
+        ErrorStr => '(noSuchName) There is no such variable name in this MIB.'
+      )
+    );
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 1, reason => undef, rows => 3, errornum => 0}),
+      'SNMPv2c noSuchName ends the walk as complete'
+    );
+    cmp_deeply($info->walk_failures(), [], 'no failure recorded');
+  };
+
+  subtest 'walk_status__v2c_generr_past_last_row__incomplete' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        after    => 3,
+        ErrorNum => 5,
+        ErrorStr => '(genErr) A general failure occured'
+      )
+    );
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 0, reason => 'error', errornum => 5}),
+      'genErr ends the walk as incomplete'
+    );
+    is(scalar @{$info->walk_failures()}, 1, 'one failure recorded');
+  };
+
+  subtest 'walk_status__v2c_partial_get_nosuchname__undef_complete' => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        op       => 'get',
+        ErrorNum => 2,
+        ErrorStr => '(noSuchName) There is no such variable name in this MIB.'
+      )
+    );
+    $test->mock_session->clear();
+    is($info->i_description(2), undef, 'returns undef as before');
+    ok(!$test->mock_session->called('getnext'),
+      '... without walking after the GET');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 1, reason => undef, walk => 'get'}),
+      'SNMPv2c noSuchName on the GET is complete'
+    );
+    cmp_deeply($info->walk_failures(), [], 'no failure recorded');
+  };
+}
+
+# Fresh object constructed with the base community, on a session whose
+# community is currently the indexed one
+sub _fresh_community_info {
+  my ($test, $base, $current) = @_;
+  my $info = $test->_fresh_walk_info;
+  my $mock = $test->mock_session;
+  $mock->{Community} = $current;
+  $test->{info} = $test->class->new(%{$info->{args}},
+    Community => $base, Session => $mock);
+  return $test->{info};
+}
+
+sub incomplete_walk : Tests(7) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'incomplete_walk');
+
+  subtest 'incomplete_walk__default__is_partial' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info;
+    is($info->incomplete_walk(), 'partial', 'unset reads as partial');
+    is($info->incomplete_walk('undef'), 'undef', 'setter returns new value');
+    is($info->incomplete_walk('bogus'), 'partial',
+      'unknown value is treated as partial');
+  };
+
+  subtest 'incomplete_walk__undef_mode_timeout__returns_undef_not_cached' =>
+    sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 2));
+    $info->incomplete_walk('undef');
+    is($info->i_description(), undef, 'returns undef');
+    ok(!exists $info->{_i_description}, 'nothing cached');
+    is($info->walk_status('i_description')->{rows}, 2, 'outcome records rows');
+    is(scalar @{$info->walk_failures()}, 1, 'failure recorded');
+  };
+
+  subtest 'incomplete_walk__undef_mode_bulkwalk_loop__returns_undef_not_cached'
+    => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(
+      {op => 'bulkwalk', leaf => 'IF-MIB::ifDescr', after => 2, loop => 1});
+    $info->bulkwalk(1);
+    $info->incomplete_walk('undef');
+    is($info->i_description(), undef, 'returns undef');
+    ok(!exists $info->{_i_description}, 'nothing cached');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof(
+        {complete => 0, reason => 'loop', walk => 'bulkwalk', rows => 2}),
+      'outcome records the bulkwalk loop'
+    );
+    is(scalar @{$info->walk_failures()}, 1, 'failure recorded');
+    };
+
+  subtest 'incomplete_walk__undef_mode_getnext_loop__returns_undef_not_cached'
+    => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(
+      {op => 'getnext', leaf => 'IF-MIB::ifDescr', after => 2, loop => 1});
+    $info->incomplete_walk('undef');
+    is($info->i_description(), undef, 'returns undef');
+    ok(!exists $info->{_i_description}, 'nothing cached');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof(
+        {complete => 0, reason => 'loop', walk => 'getnext', rows => 2}),
+      'outcome records the getnext loop'
+    );
+    is(scalar @{$info->walk_failures()}, 1, 'failure recorded');
+    };
+
+  subtest 'incomplete_walk__partial_mode_timeout__returns_and_caches_partial'
+    => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 2));
+    $info->incomplete_walk('partial');
+    cmp_deeply($info->i_description(),
+      {1 => 'Loopback', 2 => 'eth0'}, 'partial rows returned');
+    ok(exists $info->{_i_description}, 'partial rows cached');
+  };
+
+  subtest 'incomplete_walk__undef_mode_complete__unchanged' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info;
+    $info->incomplete_walk('undef');
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all rows returned');
+    ok(exists $info->{_i_description}, 'rows cached');
+  };
+}
+
+sub walk_failures : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'walk_failures');
+
+  subtest 'walk_failures__retry_succeeds__failure_sticks' => sub {
+    plan tests => 3;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 1));
+    $info->i_description();
+    My::Test::Class::set_fault($test->mock_session, undef);
+    $info->load_i_description();
+    is($info->walk_status('i_description')->{complete},
+      1, 'walk_status shows the latest success');
+    is(scalar @{$info->walk_failures()}, 1, 'failure still recorded');
+    is($info->walk_failures()->[0]{reason}, 'timeout', '... as a timeout');
+  };
+}
+
+sub clear_walk_status : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'clear_walk_status');
+
+  subtest 'clear_walk_status__after_failure__empties_both' => sub {
+    plan tests => 2;
+    my $info = $test->_fresh_walk_info(_ifdescr_timeout(after => 1));
+    $info->i_description();
+    $info->clear_walk_status();
+    cmp_deeply($info->walk_status(),   {}, 'walk_status emptied');
+    cmp_deeply($info->walk_failures(), [], 'walk_failures emptied');
+  };
 }
 
 # Prefix with private as we don't want to accidentally override in test class
