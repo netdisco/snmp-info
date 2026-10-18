@@ -1393,8 +1393,14 @@ own bulkwalk calls, and restores the caller's value afterwards. A table whose
 rows come back out of order is walked again by GETNEXT, and the object then
 uses GETNEXT for every later table on the same connection. An agent that
 repeats the last OID of its previous reply also counts as out of order.
-When off, out-of-order rows from the first one onwards are dropped without
-any error, unless the caller set C<NonIncreasing> on the session.
+Net-SNMP checks the order only from the second reply of a bulkwalk on, so a
+table that fits in one reply is never checked, and rows out of order
+inside the first reply are not detected.
+
+When off, and unless the caller set C<NonIncreasing> on the session,
+Net-SNMP drops without any error each row that is not above the highest OID
+already accepted, and keeps the later rows that are. A reply that is wholly
+below the last OID is requested again without end.
 
 (default 1, which means "on")
 
@@ -1410,10 +1416,17 @@ getnext instead. With the default L</BulkRepeaters> of 20, the attempts are
 20, 10, 5 and then getnext. The lowered value, and the switch to getnext,
 are kept for every later table on the same connection.
 
+Before the first halving for a timeout, one GETNEXT is sent for the
+table's first row. When it also times out, the target is taken to be
+unreachable, such as a VLAN community the agent ignores: the method returns
+undef, and the lowered value and the switch to getnext are left as they
+were.
+
 A connection tolerates at most C<$MAX_FAILED_BULKWALKS> (3) failed
-bulkwalks, counting tooBig, timeouts and the out-of-order failures of
-L</BulkOrderCheck> together. The table whose bulkwalk fails for the third
-time is walked by getnext, and so is every later table on the connection.
+bulkwalks, counting tooBig, timeouts, unreachable tables and the
+out-of-order failures of L</BulkOrderCheck> together. The table whose
+bulkwalk fails for the third time is walked by getnext, unless it is
+unreachable, and so is every later table on the connection.
 Other errors, and an object that is not on the device, are not retried.
 
 (default 1, which means "on")
@@ -1684,9 +1697,9 @@ sub new {
 =item update()
 
 Replace the existing session with a new one with updated values,
-without re-identifying the device.  The only supported changes are
-to Community or Context. Changing DestHost, Version or RemotePort also
-resets the walk recovery state.
+without re-identifying the device.  It is meant for changes to Community
+or Context, which keep the walk recovery state. A change to DestHost,
+Version or RemotePort resets that state.
 
 Clears the object cache.
 
@@ -1743,34 +1756,6 @@ sub update {
     return $obj->session($sess);
 }
 
-=item _walk_target(\%session_args)
-
-Returns the C<DestHost>, C<Version> and C<RemotePort> a session was asked
-for, the target that the walk recovery state belongs to.
-
-=cut
-
-sub _walk_target {
-    my $session_args = shift;
-    return { map { $_ => $session_args->{$_} } qw(DestHost Version RemotePort) };
-}
-
-=item _same_target(\%old, \%new)
-
-True when two targets from C<_walk_target> are equal.
-
-=cut
-
-sub _same_target {
-    my ( $old, $new ) = @_;
-    foreach my $key ( keys %$new ) {
-        my ( $was, $now ) = ( $old->{$key}, $new->{$key} );
-        return 0 if defined $was xor defined $now;
-        return 0 if defined $was and $was ne $now;
-    }
-    return 1;
-}
-
 =back
 
 =head2 Data is Cached
@@ -1794,7 +1779,10 @@ ends on a timeout, an SNMP error or a detected loop is incomplete. After a
 failed getnext walk or a detected loop, the method returns the rows
 collected before the walk ended, unless the C<IncompleteWalk> option says
 otherwise. After a failed bulkwalk that is not recovered (see
-C<BulkOrderCheck> and C<BulkBackoff>) it returns undef in either mode. These
+C<BulkOrderCheck> and C<BulkBackoff>) it returns undef in either mode. A
+recovered bulkwalk whose GETNEXT re-walk ends early counts as a failed
+getnext walk instead, so in C<partial> mode it returns the rows collected
+before then. These
 records and the option survive $info->clear_cache(), $info->cache() and
 $info->update(), and carry over to
 the object returned by $info->specify(). Only $info->clear_walk_status()
@@ -4194,8 +4182,9 @@ $BACKOFF_FLOOR = 5;
 
 =item $MAX_FAILED_BULKWALKS
 
-Default 3.  How many failed bulkwalks an object tolerates before it walks
-with getnext when L</BulkBackoff> is on.
+Default 3.  How many failed bulkwalks a target tolerates before it walks
+with getnext, counting every bulkwalk failure that L</BulkBackoff> or
+L</BulkOrderCheck> acts on.
 
 =cut
 
@@ -5148,7 +5137,6 @@ sub _load_attr {
             oid             => $oid,
             sess            => $sess,
             ver             => $ver,
-            load            => $load,
             raw             => $raw,
             attr            => $attr,
             partial         => $partial,
@@ -5160,6 +5148,7 @@ sub _load_attr {
             walk_error      => undef,
             walk_errno      => 0,
             bulkwalk_failed => 0,
+            probed          => 0,
             vars            => [],
             recovery        => [],
         };
@@ -5212,11 +5201,15 @@ sub _walk_setup {
         = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
     my $bulkwalk_on = defined $self->{BulkWalk} ? $self->{BulkWalk} : 1;
     my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
-    my $lowered = $self->_walk_recovery()->{repeaters};
+    my $state   = $self->_walk_recovery();
+    my $lowered = $state->{repeaters};
     $w->{repeaters}
         = defined $lowered ? $lowered : $self->{BulkRepeaters} || $REPEATERS;
     $w->{bulkwalk}
-        = $can_bulkwalk && $ver != 1 && !$self->_walk_recovery()->{getnext};
+        = $can_bulkwalk
+        && $ver != 1
+        && !$state->{getnext}
+        && $state->{failed} < $MAX_FAILED_BULKWALKS;
     $w->{loopdetect}
         = defined $self->{LoopDetect} ? $self->{LoopDetect} : 1;
     return;
@@ -5265,7 +5258,8 @@ sub _walk_partial_get {
 
 Runs the bulkwalk when the walk state allows one. A bulkwalk that fails
 with C<toobig> or C<timeout> while C<BulkBackoff> is on is retried with
-half the repeaters. When the halved value is below C<$BACKOFF_FLOOR>, the
+half the repeaters, unless C<_walk_unreachable> finds the target does not
+answer at all. When the halved value is below C<$BACKOFF_FLOOR>, the
 connection has failed C<$MAX_FAILED_BULKWALKS> bulkwalks, or a bulkwalk
 fails with C<nonincreasing> while C<BulkOrderCheck> is on, sets the walk
 state up to re-walk the table by GETNEXT instead.
@@ -5291,7 +5285,7 @@ sub _walk_bulk {
             "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr}, "\n" );
 
         my $retry = $self->_walk_bulk_retry_reason($w);
-        if ( !$retry ) {
+        if ( !$retry or $self->_walk_unreachable( $w, $retry ) ) {
             $w->{bulkwalk_failed} = 1;
             return;
         }
@@ -5301,6 +5295,30 @@ sub _walk_bulk {
         $self->_walk_getnext_fallback($w);
         return;
     }
+}
+
+=item $info->_walk_unreachable(\%w, retry)
+
+On the table's first bulkwalk C<timeout>, sends one GETNEXT for the
+table's first row. When that also times out, counts the failed bulkwalk
+against the connection and returns true: the target is unreachable, and
+the table is not recovered. Otherwise returns false.
+
+=cut
+
+sub _walk_unreachable {
+    my ( $self, $w, $retry ) = @_;
+    my $sess = $w->{sess};
+
+    return 0 if $retry ne 'timeout' or $w->{probed};
+    $w->{probed} = 1;
+
+    my $probe = SNMP::Varbind->new( [ $w->{qual_leaf}, $w->{partial} ] );
+    $sess->getnext($probe);
+    return 0 unless ( $sess->{ErrorNum} || 0 ) == -24;    # SNMPERR_TIMEOUT
+
+    $self->_walk_recovery()->{failed}++;
+    return 1;
 }
 
 =item $info->_walk_bulk_retry_reason(\%w)
@@ -5627,6 +5645,7 @@ sub _walk_incomplete {
 
 Returns the hash of bulkwalk recovery state for this object, creating it on
 first use as C<< { repeaters => undef, getnext => 0, failed => 0 } >>.
+After C<getnext> is set, C<repeaters> keeps its last lowered value.
 
 =cut
 
@@ -5634,6 +5653,35 @@ sub _walk_recovery {
     my $self = shift;
     return $self->{walk_recovery}
         ||= { repeaters => undef, getnext => 0, failed => 0 };
+}
+
+=item _walk_target(\%session_args)
+
+Returns the C<DestHost>, C<Version> and C<RemotePort> a session was asked
+for, the target that the walk recovery state belongs to.
+
+=cut
+
+sub _walk_target {
+    my $session_args = shift;
+    return { map { $_ => $session_args->{$_} }
+            qw(DestHost Version RemotePort) };
+}
+
+=item _same_target(\%old, \%new)
+
+True when two targets from C<_walk_target> are equal.
+
+=cut
+
+sub _same_target {
+    my ( $old, $new ) = @_;
+    foreach my $key ( keys %$new ) {
+        my ( $was, $now ) = ( $old->{$key}, $new->{$key} );
+        return 0 if defined $was xor defined $now;
+        return 0 if defined $was and $was ne $now;
+    }
+    return 1;
 }
 
 =item $info->_walk_outcome(\%outcome)

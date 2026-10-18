@@ -526,8 +526,8 @@ sub _clear_error {
   return;
 }
 
-# Install a fault (or remove it with undef) and restart the getnext row
-# counters used by 'after'.
+# Install a fault, or an arrayref of faults (or remove them with undef), and
+# restart the getnext row counters used by 'after'.
 sub set_fault {
   my ($sess, $fault) = @_;
   if ($fault) { $sess->{Fault} = $fault }
@@ -537,10 +537,19 @@ sub set_fault {
   return;
 }
 
-# Return the injected fault when it targets this op and leaf.
+# Return the first injected fault that targets this op and leaf.
 sub _active_fault {
   my ($sess, $op, @leaf_names) = @_;
-  my $fault = $sess->{Fault} or return;
+  my $faults = $sess->{Fault} or return;
+
+  foreach my $fault (ref $faults eq 'ARRAY' ? @{$faults} : $faults) {
+    return $fault if _fault_fires($sess, $fault, $op, @leaf_names);
+  }
+  return;
+}
+
+sub _fault_fires {
+  my ($sess, $fault, $op, @leaf_names) = @_;
 
   return unless ($fault->{op} || $EMPTY) eq $op;
   return unless defined $fault->{leaf};
@@ -560,7 +569,7 @@ sub _active_fault {
     return if ($sess->{_fault_count}{$key} || 0) >= $fault->{times};
     $sess->{_fault_count}{$key}++;
   }
-  return $fault;
+  return 1;
 }
 
 sub _raise_fault {
