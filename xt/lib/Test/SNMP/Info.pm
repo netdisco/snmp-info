@@ -2059,7 +2059,7 @@ sub _fresh_walk_info {
   return $test->{info};
 }
 
-sub walk_status : Tests(26) {
+sub walk_status : Tests(27) {
   my $test = shift;
 
   can_ok($test->{info}, 'walk_status');
@@ -2264,6 +2264,26 @@ sub walk_status : Tests(26) {
       $info->walk_status('i_description'),
       superhashof({complete => 1, reason => 'absent', walk => 'bulkwalk'}),
       'outcome is complete and absent'
+    );
+    cmp_deeply($info->walk_failures(), [], 'no failure recorded');
+  };
+
+  subtest 'walk_status__bulkwalk_nosuchname__complete' => sub {
+    plan tests => 4;
+    my $info = $test->_fresh_walk_info(
+      _ifdescr_timeout(
+        op       => 'bulkwalk',
+        ErrorNum => 2,
+        ErrorStr => '(noSuchName) There is no such variable name in this MIB.'
+      )
+    );
+    $info->bulkwalk(1);
+    is($info->i_description(), undef, 'returns undef as before');
+    ok(!exists $info->{_i_description}, '... and caches nothing');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({complete => 1, reason => undef, walk => 'bulkwalk'}),
+      'noSuchName on GETBULK is complete'
     );
     cmp_deeply($info->walk_failures(), [], 'no failure recorded');
   };

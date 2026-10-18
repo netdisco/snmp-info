@@ -5065,7 +5065,8 @@ sub _load_attr {
             ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
             if ( $sess->{ErrorNum} ) {
                 $errornum = $sess->{ErrorNum};
-                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess);
+                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess)
+                    unless _nosuch_end($sess);
                 $self->error_throw(
                     "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr},
                     "\n" );
