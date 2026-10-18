@@ -62,7 +62,7 @@ sub layers {
 }
 
 sub vendor {
-    return 'Cisco Meraki';
+    return 'cisco meraki';
 }
 
 # Keep a fallback for devices whose sysDescr is unavailable or differs
@@ -133,6 +133,11 @@ my %MERAKI_PRODUCT_MODELS = (
     62  => 'CW9174I',
     63  => 'CW9179F',
     100 => 'Z1',
+
+    # In older Dashboard copies of the MIB only
+    101 => 'MX70',
+    102 => 'MX80',
+    103 => 'MX90',
     104 => 'MX400',
     105 => 'MX600',
     106 => 'MX100',
@@ -231,6 +236,9 @@ my %MERAKI_PRODUCT_MODELS = (
     373 => 'MS125-48',
     374 => 'MS125-48LP',
     375 => 'MS125-48FP',
+
+    # Cloud-managed Catalyst, not in the MIB; identified from Dashboard
+    388 => 'C9300',
     395 => 'MS130-8',
     396 => 'MS130-8P',
     397 => 'MS130-8X',
@@ -263,19 +271,23 @@ sub model {
 
     # Meraki sysDescr values begin with the product model, for example:
     # "Meraki MS120-8FP Cloud Managed PoE Switch".
-    if ( $descr =~ /^Meraki\s+(\S+)/i ) {
+    # Some APs prefix it with "=", as in "=Meraki MR28 Cloud Managed AP".
+    if ( $descr =~ /^=?Meraki\s+(\S+)/i ) {
         my $product = $1;
-        return $product unless $product =~ /^(?:cloud|managed|network|networks|security|wireless|access|switch|router)\b/i;
+        return $product
+            unless $product =~ /^(?:cloud|managed|network|networks|security
+                |wireless|access|switch|router)\b/ix;
     }
 
     # Otherwise map a registered Meraki sysObjectID suffix.
     my $id = $meraki->id() || '';
-    if ( $id =~ /(?:^|\.)29671\.2\.(\d+)$/ && exists $MERAKI_PRODUCT_MODELS{$1} ) {
+    if (    $id =~ /(?:^|\.)29671\.2\.(\d+)$/
+        and exists $MERAKI_PRODUCT_MODELS{$1} )
+    {
         return $MERAKI_PRODUCT_MODELS{$1};
     }
 
-    # Do not return the raw sysObjectID as a model.
-    return;
+    return $meraki->SUPER::model();
 }
 
 sub serial1 {
@@ -347,13 +359,13 @@ Returns 00000110.
 
 =item $meraki->vendor()
 
-Returns C<'Cisco Meraki'>.
+Returns C<'cisco meraki'>.
 
 =item $meraki->model()
 
 Returns the model token from C<sysDescr>, with a fallback mapping for
-Meraki product sysObjectIDs listed in C<MERAKI-CLOUD-CONTROLLER-MIB>. Returns
-undef if the model is unknown rather than returning the raw sysObjectID.
+Meraki product sysObjectIDs listed in F<MERAKI-CLOUD-CONTROLLER-MIB>. For an
+unmapped sysObjectID, returns the inherited L<SNMP::Info::Layer3> model.
 
 =item $meraki->serial1()
 

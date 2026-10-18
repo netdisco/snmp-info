@@ -179,7 +179,6 @@ META.json
 META.yml
 README
 t/00_load.t
-t/10_meraki.t
 xt/.perltidyrc
 xt/00_local_distribution.t
 xt/00_local_docininfo.t
