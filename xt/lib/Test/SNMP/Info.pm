@@ -2476,8 +2476,10 @@ sub walk_status : Tests(27) {
       );
       $info->bulkwalk(1);
 
-      # With the check on, -65 is recovered by GETNEXT (bulk_order_recovery)
+      # With the checks on, these are recovered (bulk_order_recovery and
+      # bulk_backoff_recovery)
       $info->bulk_order_check(0) if $reason eq 'nonincreasing';
+      $info->bulk_backoff(0);
       is($info->i_description(), undef, 'returns undef');
       ok(!exists $info->{_i_description}, '... and caches nothing');
       cmp_deeply(
@@ -2885,6 +2887,227 @@ sub bulk_order_recovery : Tests(5) {
       'outcome records the failure without recovery'
     );
     };
+}
+
+# More IF-MIB tables, for tests that walk several tables on one connection
+my $MORE_IF_ROWS = {
+  'IF-MIB::ifName'  => {1 => 'lo', 2 => 'e0', 3 => 'e1'},
+  'IF-MIB::ifAlias' => {1 => 'loop', 2 => 'uplink', 3 => 'downlink'},
+  'IF-MIB::ifMtu'   => {1 => 65536, 2 => 1500, 3 => 1500},
+};
+
+sub _backoff_info {
+  my ($test, %fault) = @_;
+  my $info = $test->_fresh_walk_info({
+    op       => 'bulkwalk',
+    leaf     => 'IF-MIB::ifDescr',
+    ErrorNum => 1,
+    ErrorStr => 'Response message would have been too big',
+    %fault,
+  });
+  $test->mock_session->{Data} = {%{$IFDESCR_ROWS}, %{$MORE_IF_ROWS}};
+  $info->bulkwalk(1);
+  return $info;
+}
+
+sub _bulkwalk_repeaters {
+  my $test = shift;
+  return [map { $_->{repeaters} }
+      @{$test->mock_session->{_bulkwalk_calls} || []}];
+}
+
+sub _backoff_step {
+  my ($repeaters, $reason) = @_;
+  my %errornum = (toobig => 1, timeout => -24);
+  return {
+    walk      => 'bulkwalk',
+    repeaters => $repeaters,
+    reason    => $reason,
+    errornum  => $errornum{$reason},
+  };
+}
+
+sub bulk_backoff_recovery : Tests(9) {
+  my $test = shift;
+
+  subtest 'bulk_backoff__toobig_above_5__succeeds_at_5' => sub {
+    plan tests => 4;
+    my $info = $test->_backoff_info(min_repeaters => 6);
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned');
+    cmp_deeply($test->_bulkwalk_repeaters, [20, 10, 5],
+      'repeaters halved down to 5');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        walk      => 'bulkwalk',
+        repeaters => 5,
+        complete  => 1,
+        recovery  =>
+          [_backoff_step(20, 'toobig'), _backoff_step(10, 'toobig')],
+      }),
+      'outcome records the backed-off bulkwalk'
+    );
+    cmp_deeply($info->_walk_recovery(),
+      {repeaters => 5, failed => 2, getnext => 0},
+      'connection keeps the lowered value');
+  };
+
+  subtest 'bulk_backoff__lowered_value__sticks_for_next_table' => sub {
+    plan tests => 2;
+    my $info = $test->_backoff_info(min_repeaters => 6);
+    $info->i_description();
+    My::Test::Class::set_fault($test->mock_session, undef);
+    $info->i_name();
+    cmp_deeply($test->_bulkwalk_repeaters, [5],
+      'next table starts at the lowered value');
+    cmp_deeply(
+      $info->walk_status('i_name'),
+      superhashof({walk => 'bulkwalk', repeaters => 5, recovery => []}),
+      'next table records the lowered value without recovery'
+    );
+  };
+
+  subtest 'bulk_backoff__timeout_every_call__ends_on_getnext_after_three' =>
+    sub {
+    plan tests => 4;
+    my $info = $test->_backoff_info(ErrorNum => -24, ErrorStr => 'Timeout');
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned by GETNEXT');
+    cmp_deeply($test->_bulkwalk_repeaters, [20, 10, 5],
+      'three bulkwalks tried');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        walk      => 'getnext',
+        repeaters => undef,
+        complete  => 1,
+        recovery  => [map { _backoff_step($_, 'timeout') } 20, 10, 5],
+      }),
+      'outcome records three timeouts then GETNEXT'
+    );
+    cmp_deeply($info->_walk_recovery(),
+      superhashof({getnext => 1, failed => 3}),
+      'connection switched to GETNEXT');
+    };
+
+  subtest 'bulk_backoff__repeaters_below_floor__goes_straight_to_getnext' =>
+    sub {
+    plan tests => 3;
+    my $info = $test->_backoff_info;
+    $info->{BulkRepeaters} = 4;
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned by GETNEXT');
+    cmp_deeply($test->_bulkwalk_repeaters, [4], 'one bulkwalk tried');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        walk      => 'getnext',
+        repeaters => undef,
+        recovery  => [_backoff_step(4, 'toobig')],
+      }),
+      'outcome records one tooBig then GETNEXT'
+    );
+    };
+
+  subtest 'bulk_backoff__cap_reached_before_floor__later_tables_skip_bulkwalk'
+    => sub {
+    plan tests => 9;
+    my $info = $test->_backoff_info(min_repeaters => 21);
+    my $sess = $test->mock_session;
+    $info->{BulkRepeaters} = 40;
+    $info->i_description();
+    cmp_deeply($test->_bulkwalk_repeaters, [40, 20],
+      'table 1: tooBig at 40, then 20');
+    is($info->walk_status('i_description')->{repeaters},
+      20, 'table 1 bulkwalked at 20');
+
+    My::Test::Class::set_fault($sess, {
+      op => 'bulkwalk', leaf => 'IF-MIB::ifName', min_repeaters => 11,
+      ErrorNum => -24, ErrorStr => 'Timeout'});
+    $info->i_name();
+    cmp_deeply($test->_bulkwalk_repeaters, [20, 10],
+      'table 2: timeout at 20, then 10');
+    is($info->walk_status('i_name')->{repeaters}, 10,
+      'table 2 bulkwalked at 10');
+
+    My::Test::Class::set_fault($sess, {
+      op => 'bulkwalk', leaf => 'IF-MIB::ifAlias', min_repeaters => 6,
+      ErrorNum => 1, ErrorStr => 'Response message would have been too big'});
+    cmp_deeply($info->i_alias(), $MORE_IF_ROWS->{'IF-MIB::ifAlias'},
+      'table 3 rows returned by GETNEXT');
+    cmp_deeply($test->_bulkwalk_repeaters, [10],
+      'table 3: tooBig at 10 reaches the cap');
+    cmp_deeply(
+      $info->walk_status('i_alias'),
+      superhashof({
+        walk     => 'getnext',
+        recovery => [_backoff_step(10, 'toobig')],
+      }),
+      'table 3 walked by GETNEXT although 5 is not below the floor'
+    );
+
+    My::Test::Class::set_fault($sess, undef);
+    $info->i_mtu();
+    cmp_deeply($test->_bulkwalk_repeaters, [], 'table 4: no bulkwalk');
+    cmp_deeply(
+      $info->walk_status('i_mtu'),
+      superhashof({walk => 'getnext', recovery => []}),
+      'table 4 walked by GETNEXT with no recovery'
+    );
+    };
+
+  subtest 'bulk_backoff__off__failed_bulkwalk_returns_undef_as_today' => sub {
+    plan tests => 3;
+    my $info = $test->_backoff_info;
+    $info->bulk_backoff(0);
+    is($info->i_description(), undef, 'returns undef');
+    cmp_deeply($test->_bulkwalk_repeaters, [20], 'one bulkwalk tried');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({reason => 'toobig', complete => 0, recovery => []}),
+      'outcome records the failure without recovery'
+    );
+  };
+
+  subtest 'bulk_backoff__generr__not_retried' => sub {
+    plan tests => 3;
+    my $info = $test->_backoff_info(
+      ErrorNum => 5,
+      ErrorStr => '(genErr) A general failure occured'
+    );
+    is($info->i_description(), undef, 'returns undef');
+    cmp_deeply($test->_bulkwalk_repeaters, [20], 'one bulkwalk tried');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({reason => 'error', complete => 0, recovery => []}),
+      'outcome records the error without recovery'
+    );
+  };
+
+  subtest 'bulk_backoff__minus_58__not_retried' => sub {
+    plan tests => 3;
+    my $info = $test->_backoff_info(
+      ErrorNum => -58,
+      ErrorStr => 'Unknown object identifier'
+    );
+    is($info->i_description(), undef, 'returns undef');
+    cmp_deeply($test->_bulkwalk_repeaters, [20], 'one bulkwalk tried');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({reason => 'absent', complete => 1, recovery => []}),
+      'outcome records absent without recovery'
+    );
+  };
+
+  subtest 'bulk_backoff__bulkwalk_off__never_calls_bulkwalk' => sub {
+    plan tests => 2;
+    my $info = $test->_backoff_info;
+    $info->bulkwalk(0);
+    cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
+      'all three rows returned by GETNEXT');
+    cmp_deeply($test->_bulkwalk_repeaters, [], 'no bulkwalk call logged');
+  };
 }
 
 # Prefix with private as we don't want to accidentally override in test class

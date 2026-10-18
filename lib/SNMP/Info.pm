@@ -1401,8 +1401,20 @@ any error, unless the caller set C<NonIncreasing> on the session.
 =item BulkBackoff
 
 Lowers the number of MaxRepeaters, and falls back to getnext, when a
-bulkwalk fails or times out. Set to C<0> to restore the behavior before this
-release.
+bulkwalk fails with tooBig or times out. Set to C<0> to restore the
+behavior before this release, where such a table method returns undef.
+
+When on, the failed bulkwalk is retried with half the MaxRepeaters. When the
+halved value would be below C<$BACKOFF_FLOOR> (5), the table is walked by
+getnext instead. With the default L</BulkRepeaters> of 20, the attempts are
+20, 10, 5 and then getnext. The lowered value, and the switch to getnext,
+are kept for every later table on the same connection.
+
+A connection tolerates at most C<$MAX_FAILED_BULKWALKS> (3) failed
+bulkwalks, counting tooBig, timeouts and the out-of-order failures of
+L</BulkOrderCheck> together. The table whose bulkwalk fails for the third
+time is walked by getnext, and so is every later table on the connection.
+Other errors, and an object that is not on the device, are not retried.
 
 (default 1, which means "on")
 
@@ -1781,7 +1793,8 @@ Each table walk records whether it collected the whole table. A walk that
 ends on a timeout, an SNMP error or a detected loop is incomplete. After a
 failed getnext walk or a detected loop, the method returns the rows
 collected before the walk ended, unless the C<IncompleteWalk> option says
-otherwise. After a failed bulkwalk it returns undef in either mode. These
+otherwise. After a failed bulkwalk that is not recovered (see
+C<BulkOrderCheck> and C<BulkBackoff>) it returns undef in either mode. These
 records and the option survive $info->clear_cache(), $info->cache() and
 $info->update(), and carry over to
 the object returned by $info->specify(). Only $info->clear_walk_status()
@@ -1840,7 +1853,8 @@ a single GET.
 
 =item repeaters
 
-The BulkRepeaters value of a bulkwalk, otherwise undef.
+The MaxRepeaters value of the final bulkwalk attempt, which is the lowered
+value after a back-off (see C<BulkBackoff>), otherwise undef.
 
 =item recovery
 
@@ -1850,7 +1864,11 @@ reference to a hash with the C<walk>, C<repeaters>, C<reason> and
 C<errornum> of the attempt that failed. With C<BulkOrderCheck> on, a
 bulkwalk that fails with C<'nonincreasing'> adds the step
 C<< { walk => 'bulkwalk', repeaters => N, reason => 'nonincreasing',
-errornum => -65 } >>, and the table is walked again by GETNEXT.
+errornum => -65 } >>, and the table is walked again by GETNEXT. With
+C<BulkBackoff> on, each bulkwalk that fails with C<'toobig'> or
+C<'timeout'> adds a step with the repeaters it was sent with, such as
+C<< { walk => 'bulkwalk', repeaters => 20, reason => 'toobig',
+errornum => 1 } >>, before the retry with fewer repeaters or by GETNEXT.
 
 =item rows
 
@@ -5194,7 +5212,9 @@ sub _walk_setup {
         = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
     my $bulkwalk_on = defined $self->{BulkWalk} ? $self->{BulkWalk} : 1;
     my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
-    $w->{repeaters} = $self->{BulkRepeaters} || $REPEATERS;
+    my $lowered = $self->_walk_recovery()->{repeaters};
+    $w->{repeaters}
+        = defined $lowered ? $lowered : $self->{BulkRepeaters} || $REPEATERS;
     $w->{bulkwalk}
         = $can_bulkwalk && $ver != 1 && !$self->_walk_recovery()->{getnext};
     $w->{loopdetect}
@@ -5243,9 +5263,12 @@ sub _walk_partial_get {
 
 =item $info->_walk_bulk(\%w)
 
-Runs the bulkwalk when the walk state allows one. When it fails with
-C<nonincreasing> and C<BulkOrderCheck> is on, sets the walk state up to
-re-walk the table by GETNEXT instead.
+Runs the bulkwalk when the walk state allows one. A bulkwalk that fails
+with C<toobig> or C<timeout> while C<BulkBackoff> is on is retried with
+half the repeaters. When the halved value is below C<$BACKOFF_FLOOR>, the
+connection has failed C<$MAX_FAILED_BULKWALKS> bulkwalks, or a bulkwalk
+fails with C<nonincreasing> while C<BulkOrderCheck> is on, sets the walk
+state up to re-walk the table by GETNEXT instead.
 
 =cut
 
@@ -5254,24 +5277,48 @@ sub _walk_bulk {
     my $sess = $w->{sess};
 
     # Use BULKWALK if we can because its faster
-    if ( $w->{bulkwalk} && @{ $w->{vars} } == 0 && !$w->{errornum} ) {
-        $w->{walk} = 'bulkwalk';
+    return unless $w->{bulkwalk} && @{ $w->{vars} } == 0 && !$w->{errornum};
+    $w->{walk} = 'bulkwalk';
+
+    while (1) {
         ( $w->{vars} ) = $self->_walk_bulkwalk_call($w);
-        if ( $sess->{ErrorNum} ) {
-            $w->{errornum} = $sess->{ErrorNum};
-            @{$w}{qw(reason walk_errno walk_error)} = _walk_failure($sess)
-                unless _nosuch_end($sess);
-            $self->error_throw(
-                "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr},
-                "\n" );
-            if ( $w->{errornum} == -65 && $self->bulk_order_check() ) {
-                $self->_walk_order_fallback($w);
-            }
-            else {
-                $w->{bulkwalk_failed} = 1;
-            }
+        return unless $sess->{ErrorNum};
+
+        $w->{errornum} = $sess->{ErrorNum};
+        @{$w}{qw(reason walk_errno walk_error)} = _walk_failure($sess)
+            unless _nosuch_end($sess);
+        $self->error_throw(
+            "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr}, "\n" );
+
+        my $retry = $self->_walk_bulk_retry_reason($w);
+        if ( !$retry ) {
+            $w->{bulkwalk_failed} = 1;
+            return;
         }
+        $self->_walk_bulk_step($w);
+        next if $retry ne 'nonincreasing' and $self->_walk_backoff($w);
+
+        $self->_walk_getnext_fallback($w);
+        return;
     }
+}
+
+=item $info->_walk_bulk_retry_reason(\%w)
+
+Returns the reason of the bulkwalk that just failed when SNMP::Info
+recovers from it: C<nonincreasing> with C<BulkOrderCheck> on, C<toobig> or
+C<timeout> with C<BulkBackoff> on. Otherwise returns undef.
+
+=cut
+
+sub _walk_bulk_retry_reason {
+    my ( $self, $w ) = @_;
+    my $errornum = $w->{errornum};
+
+    return 'nonincreasing' if $errornum == -65 and $self->bulk_order_check();
+    return unless $self->bulk_backoff();
+    return 'toobig'  if $errornum == 1;      # SNMP_ERR_TOOBIG
+    return 'timeout' if $errornum == -24;    # SNMPERR_TIMEOUT
     return;
 }
 
@@ -5294,15 +5341,15 @@ sub _walk_bulkwalk_call {
     return $sess->bulkwalk( 0, $w->{repeaters}, $w->{var} );
 }
 
-=item $info->_walk_order_fallback(\%w)
+=item $info->_walk_bulk_step(\%w)
 
-After a bulkwalk failed with C<nonincreasing>: records the recovery step,
-switches the connection to GETNEXT, and resets the walk state so that
-C<_walk_rows> re-walks the table from its start by GETNEXT.
+After a bulkwalk failed in a way SNMP::Info recovers from: records the
+recovery step, counts the failure against the connection, and resets the
+walk state for the next attempt.
 
 =cut
 
-sub _walk_order_fallback {
+sub _walk_bulk_step {
     my ( $self, $w ) = @_;
 
     push @{ $w->{recovery} },
@@ -5312,16 +5359,46 @@ sub _walk_order_fallback {
         reason    => $w->{reason},
         errornum  => $w->{walk_errno},
         };
-
-    my $state = $self->_walk_recovery();
-    $state->{getnext} = 1;
-    $state->{failed}++;
+    $self->_walk_recovery()->{failed}++;
 
     @{$w}{qw(errornum walk_errno reason walk_error)} = ( 0, 0, undef, undef );
+    $w->{vars} = [];
+    $w->{var} = SNMP::Varbind->new( [ $w->{qual_leaf}, $w->{partial} ] );
+    return;
+}
+
+=item $info->_walk_backoff(\%w)
+
+Halves the repeaters of the walk and of the connection, and returns true,
+unless the halved value is below C<$BACKOFF_FLOOR> or the connection has
+failed C<$MAX_FAILED_BULKWALKS> bulkwalks.
+
+=cut
+
+sub _walk_backoff {
+    my ( $self, $w ) = @_;
+    my $state     = $self->_walk_recovery();
+    my $repeaters = int( $w->{repeaters} / 2 );
+
+    return 0 if $state->{failed} >= $MAX_FAILED_BULKWALKS;
+    return 0 if $repeaters < $BACKOFF_FLOOR;
+    $state->{repeaters} = $w->{repeaters} = $repeaters;
+    return 1;
+}
+
+=item $info->_walk_getnext_fallback(\%w)
+
+Switches the connection to GETNEXT and sets the walk state up so that
+C<_walk_rows> re-walks the table from its start by GETNEXT.
+
+=cut
+
+sub _walk_getnext_fallback {
+    my ( $self, $w ) = @_;
+
+    $self->_walk_recovery()->{getnext} = 1;
     $w->{bulkwalk} = 0;
     $w->{walk}     = 'getnext';
-    $w->{vars}     = [];
-    $w->{var} = SNMP::Varbind->new( [ $w->{qual_leaf}, $w->{partial} ] );
     return;
 }
 
