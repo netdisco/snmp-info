@@ -1,5 +1,10 @@
 Version 3.979001 (2026-tbd)
 
+  [ENHANCEMENTS]
+
+  * #628 Record incomplete table walks (walk_status, walk_failures) and
+    add the IncompleteWalk option
+
   [BUG FIXES]
 
   * #570 Use attached aggregate indexes for H3C Bridge-Aggregation members
