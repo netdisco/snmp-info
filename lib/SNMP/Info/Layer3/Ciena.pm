@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.979000';
+$VERSION = '3.980000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -99,7 +99,11 @@ sub lldp_if {
     my $ciena   = shift;
     my $partial = shift;
 
-    my $lldp     = $ciena->SUPER::lldp_if($partial) || {};
+    my $lldp = $ciena->SUPER::lldp_if($partial) || {};
+
+    # LLDP-V2-MIB rows are keyed by ifIndex, not by bridge port
+    return $lldp if ( $ciena->_lldp_source() || '' ) eq 'v2';
+
     my $bp_index = $ciena->bp_index() || {};
     foreach my $key ( keys %$lldp ) {
         my $port = ( split /\./x, $key )[1];

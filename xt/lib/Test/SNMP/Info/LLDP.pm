@@ -74,7 +74,111 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
-sub hasLLDP : Tests(4) {
+# LLDP-V2-MIB rows in the shapes seen on a PAN-OS vsys capture ('0.17.1.1')
+# and a live Comware 7 switch ('22612.2.1.1'), with no LLDP-MIB neighbors
+sub _prime_v2 {
+  my $test = shift;
+  $test->{info}->clear_cache();
+  $test->{info}->cache(
+    { '_i_description'        => 1,
+      '_lldp_v2_rem_id'       => 1,
+      '_lldp_v2_rem_id_type'  => 1,
+      '_lldp_v2_rem_pid'      => 1,
+      '_lldp_v2_rem_pid_type' => 1,
+      '_lldp_v2_rem_desc'     => 1,
+      '_lldp_v2_rem_sysname'  => 1,
+      '_lldp_v2_rem_sysdesc'  => 1,
+      '_lldp_v2_rem_cap_spt'  => 1,
+      'store'                 => {
+        'i_description' => {'2' => 'GigabitEthernet1/0/1', '17' => 'ethernet1/12'},
+        'lldp_v2_rem_id' => {
+          '0.17.1.1'    => pack("H*", '20283e6ee311'),
+          '22612.2.1.1' => pack("H*", '62bd1fc10a13'),
+        },
+        'lldp_v2_rem_id_type' =>
+          {'0.17.1.1' => 'macAddress', '22612.2.1.1' => 'macAddress'},
+        'lldp_v2_rem_pid' => {
+          '0.17.1.1'    => '10GE2/4/0/7',
+          '22612.2.1.1' => pack("H*", '62bd1fc10a13'),
+        },
+        'lldp_v2_rem_pid_type' =>
+          {'0.17.1.1' => 'interfaceName', '22612.2.1.1' => 'macAddress'},
+        'lldp_v2_rem_desc' =>
+          {'0.17.1.1' => 'Core uplink', '22612.2.1.1' => 'eth1'},
+        'lldp_v2_rem_sysname' =>
+          {'0.17.1.1' => 'core-router-1', '22612.2.1.1' => 'lab-host'},
+        'lldp_v2_rem_sysdesc' => {'22612.2.1.1' => 'Alpine Linux v3.20'},
+        'lldp_v2_rem_cap_spt' => {'0.17.1.1' => pack("H*", '28c0')},
+      }
+    }
+  );
+  return;
+}
+
+# LLDP-V2-MIB management addresses for the Comware-shaped neighbor
+sub _prime_v2_rman {
+  my ($test, @keys) = @_;
+  $test->_prime_v2;
+  $test->{info}{'_lldp_v2_rman_addr'} = 1;
+  $test->{info}{store}{lldp_v2_rman_addr} = {map { $_ => 'ifIndex' } @keys};
+  return;
+}
+
+sub _lldp_rem : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  cmp_deeply($info->_lldp_rem('lldp_rem_id'),
+    {'0.6.1' => pack("H*", 'ABCD12345678')},
+    q(LLDP-MIB rows pass through));
+
+  $test->_prime_v2;
+  $info->{store}{lldp_v2_rem_id}{'22612.2.2.1'} = pack("H*", '62bd1fc10a13');
+  $info->{store}{lldp_v2_rem_id}{'22612.2.3.1'} = pack("H*", '62bd1fc10a13');
+  cmp_deeply(
+    [sort keys %{$info->_lldp_rem('lldp_rem_id')}],
+    ['0.17.1.1', '22612.2.1.1', '22612.2.2.1', '22612.2.3.1'],
+    q(Without lldpV2DestAddressTable every agent is kept)
+  );
+
+  delete $info->{_lldp_v2_agent};
+  $info->{'_lldp_v2_dest_mac'} = 1;
+  $info->{store}{lldp_v2_dest_mac} = {
+    1 => pack("H*", '0180c200000e'),
+    2 => pack("H*", '0180c2000003'),
+    3 => pack("H*", '0180c2000000'),
+  };
+  cmp_deeply(
+    [sort keys %{$info->_lldp_rem('lldp_rem_id')}],
+    ['0.17.1.1', '22612.2.1.1'],
+    q(Only the nearest-bridge agent is kept)
+  );
+
+  $info->{store}{lldp_v2_rem_id}{'17'} = pack("H*", '20283e6ee311');
+  warnings_are { $info->_lldp_rem('lldp_rem_id') } [],
+    q(A key without a destination index field does not warn);
+
+  # Comware serves both MIBs for the same neighbor; reading both would
+  # report it twice under two keys
+  $info->clear_cache();
+  $info->cache(
+    { '_lldp_rem_id'          => 1,
+      '_lldp_rem_id_type'     => 1,
+      '_lldp_v2_rem_id'       => 1,
+      '_lldp_v2_rem_id_type'  => 1,
+      'store'                 => {
+        'lldp_rem_id'         => {'22612.2.1'   => pack("H*", '62bd1fc10a13')},
+        'lldp_rem_id_type'    => {'22612.2.1'   => 'macAddress'},
+        'lldp_v2_rem_id'      => {'22612.2.1.1' => pack("H*", '62bd1fc10a13')},
+        'lldp_v2_rem_id_type' => {'22612.2.1.1' => 'macAddress'},
+      }
+    }
+  );
+  cmp_deeply($info->lldp_id(), {'22612.2.1' => '62:bd:1f:c1:0a:13'},
+    q(Neighbors in both MIBs are reported once, from LLDP-MIB));
+}
+
+sub hasLLDP : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'hasLLDP');
@@ -87,9 +191,77 @@ sub hasLLDP : Tests(4) {
   $test->{info}->clear_cache();
   is($test->{info}->hasLLDP(),
     undef, q(No 'lldpLocSysCapEnabled' and no neighbors, no LLDP undef));
+
+  $test->{info}{'_lldp_v2_sys_cap'} = pack("H*", '2800');
+  is($test->{info}->hasLLDP(), 1,
+    q(Has 'lldpV2LocSysCapEnabled' has LLDP));
+
+  $test->{info}->clear_cache();
+  $test->{info}{'_lldp_v2_rem_id'} = 1;
+  $test->{info}{store}{lldp_v2_rem_id}
+    = {'0.17.1.1' => pack("H*", '20283e6ee311')};
+  is($test->{info}->hasLLDP(), 1, q(Only LLDP-V2-MIB neighbors, has LLDP));
 }
 
-sub lldp_if : Tests(5) {
+sub _lldp_source : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  is($info->_lldp_source(), 'v1', q(LLDP-MIB neighbors use LLDP-MIB));
+
+  $info->clear_cache();
+  $info->cache(
+    { '_lldp_rem_id'    => 1,
+      '_lldp_v2_rem_id' => 1,
+      'store'           => {
+        'lldp_rem_id'    => {'22612.2.1'   => pack("H*", '62bd1fc10a13')},
+        'lldp_v2_rem_id' => {'22612.2.1.1' => pack("H*", '62bd1fc10a13')},
+      }
+    }
+  );
+  is($info->_lldp_source(), 'v1',
+    q(Neighbors in both MIBs use LLDP-MIB only));
+
+  $info->clear_cache();
+  $info->cache(
+    { '_lldp_sys_cap'   => pack("H*", '2800'),
+      '_lldp_rem_id'    => 1,
+      '_lldp_v2_rem_id' => 1,
+      'store'           => {
+        'lldp_rem_id'    => {},
+        'lldp_v2_rem_id' => {'0.17.1.1' => pack("H*", '20283e6ee311')},
+      }
+    }
+  );
+  is($info->_lldp_source(), 'v2',
+    q(LLDP-MIB capabilities do not block LLDP-V2-MIB neighbors));
+
+  $info->clear_cache();
+  is($info->_lldp_source(), undef, q(No neighbors in either MIB));
+
+  # Not walked again: a device without neighbors would otherwise repeat two
+  # empty walks on every topology call
+  $info->{'_lldp_v2_rem_id'} = 1;
+  $info->{store}{lldp_v2_rem_id} = {'0.17.1.1' => pack("H*", '20283e6ee311')};
+  is($info->_lldp_source(), undef, q(No neighbors is memoized until clear_cache));
+}
+
+sub _lldp_v2_agent : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_prime_v2;
+  is($info->_lldp_v2_agent(), undef, q(No lldpV2DestAddressTable, no agent));
+
+  $info->{'_lldp_v2_dest_mac'} = 1;
+  $info->{store}{lldp_v2_dest_mac} = {1 => pack("H*", '0180c200000e')};
+  is($info->_lldp_v2_agent(), undef, q(No agent is memoized until clear_cache));
+
+  delete $info->{_lldp_v2_agent};
+  is($info->_lldp_v2_agent(), 1, q(Nearest-bridge agent index));
+}
+
+sub lldp_if : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_if');
@@ -138,9 +310,13 @@ sub lldp_if : Tests(5) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_if(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2;
+  cmp_deeply($test->{info}->lldp_if(), {'0.17.1.1' => 17, '22612.2.1.1' => 2},
+    q(LLDP-V2-MIB takes the ifIndex from the index));
 }
 
-sub lldp_ip : Tests(4) {
+sub lldp_ip : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_ip');
@@ -159,9 +335,13 @@ sub lldp_ip : Tests(4) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_ip(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10', '22612.2.1.1.2.16.32.1.13.184.0.0.0.0.0.0.0.0.0.0.0.10', '22612.2.1.1.6.6.98.189.31.193.10.19');
+  cmp_deeply($test->{info}->lldp_ip(), {'22612.2.1.1' => '192.0.2.10'},
+    q(LLDP-V2-MIB IPv4 keyed like lldp_if));
 }
 
-sub lldp_ipv6 : Tests(4) {
+sub lldp_ipv6 : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_ipv6');
@@ -180,9 +360,16 @@ sub lldp_ipv6 : Tests(4) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_ip(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10', '22612.2.1.1.2.16.32.1.13.184.0.0.0.0.0.0.0.0.0.0.0.10', '22612.2.1.1.6.6.98.189.31.193.10.19');
+  cmp_deeply(
+    $test->{info}->lldp_ipv6(),
+    {'22612.2.1.1' => '2001:0db8:0000:0000:0000:0000:0000:000a'},
+    q(LLDP-V2-MIB IPv6)
+  );
 }
 
-sub lldp_mac : Tests(4) {
+sub lldp_mac : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_mac');
@@ -201,11 +388,15 @@ sub lldp_mac : Tests(4) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_mac(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10', '22612.2.1.1.2.16.32.1.13.184.0.0.0.0.0.0.0.0.0.0.0.10', '22612.2.1.1.6.6.98.189.31.193.10.19');
+  cmp_deeply($test->{info}->lldp_mac(),
+    {'22612.2.1.1' => '62:bd:1f:c1:0a:13'}, q(LLDP-V2-MIB MAC));
 }
 
 # This has been really been tested in the lldp_ip, lldp_ipv6, and lldp_mac but
 # tested here for completeness
-sub lldp_addr : Tests(3) {
+sub lldp_addr : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_addr');
@@ -227,9 +418,15 @@ sub lldp_addr : Tests(3) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_addr(), {}, q(No data returns empty hash));
+
+  # lldp_addr keys by the common index, so one neighbor with three addresses
+  # collapses to one key; use one address
+  $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10');
+  cmp_deeply($test->{info}->lldp_addr(), {'22612.2.1.1' => '192.0.2.10'},
+    q(LLDP-V2-MIB addresses keep the four-part index));
 }
 
-sub lldp_port : Tests(10) {
+sub lldp_port : Tests(11) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_port');
@@ -325,9 +522,16 @@ sub lldp_port : Tests(10) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_port(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2;
+  cmp_deeply(
+    $test->{info}->lldp_port(),
+    {'0.17.1.1' => '10GE2/4/0/7', '22612.2.1.1' => 'eth1'},
+    q(LLDP-V2-MIB interfaceName port ID, and description over a MAC port ID)
+  );
 }
 
-sub lldp_id : Tests(4) {
+sub lldp_id : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_id');
@@ -349,6 +553,13 @@ sub lldp_id : Tests(4) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_id(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2;
+  cmp_deeply(
+    $test->{info}->lldp_id(),
+    {'0.17.1.1' => '20:28:3e:6e:e3:11', '22612.2.1.1' => '62:bd:1f:c1:0a:13'},
+    q(LLDP-V2-MIB chassis IDs)
+  );
 }
 
 sub lldp_loc_id : Tests(2) {
@@ -364,7 +575,7 @@ sub lldp_loc_id : Tests(2) {
 
 
 
-sub lldp_platform : Tests(4) {
+sub lldp_platform : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_platform');
@@ -384,9 +595,16 @@ sub lldp_platform : Tests(4) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_platform(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2;
+  cmp_deeply(
+    $test->{info}->lldp_platform(),
+    {'0.17.1.1' => 'core-router-1', '22612.2.1.1' => 'Alpine Linux v3.20'},
+    q(LLDP-V2-MIB platform from description, else name)
+  );
 }
 
-sub lldp_cap : Tests(4) {
+sub lldp_cap : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_cap');
@@ -404,6 +622,13 @@ sub lldp_cap : Tests(4) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_cap(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2;
+  cmp_deeply(
+    $test->{info}->lldp_cap(),
+    {'0.17.1.1' => [qw/bridge router cVLANComponent sVLANComponent/]},
+    q(LLDP-V2-MIB capability bits 8 and 9 are named)
+  );
 }
 
 sub lldp_media_cap : Tests(4) {
