@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.979000
+    SNMP::Info - Version 3.980000
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -139,10 +139,8 @@ REQUIREMENTS
 
         Net-SNMP can be found at http://net-snmp.sourceforge.net
 
-        Version 5.3.2 or greater is recommended.
-
-        Versions 5.0.1, 5.0301 and 5.0203 have issues with bulkwalk and are
-        not supported.
+        No minimum Net-SNMP version is enforced. The walk code SNMP::Info
+        uses has been stable since Net-SNMP 5.7.3.
 
         Redhat Users: Some versions that come with certain versions of
         Redhat/Fedora don't have the Perl library installed. Uninstall the
@@ -1133,9 +1131,6 @@ USAGE
         BulkWalk
             Set to 0 to turn off BULKWALK commands for SNMPv2 connections.
 
-            Note that BULKWALK is turned off for Net-SNMP versions 5.1.x
-            because of a bug.
-
             (default 1, which means "on")
 
         BulkRepeaters
@@ -1154,6 +1149,24 @@ USAGE
             Set to 0 to turn off loop detection.
 
             (default 1, which means "on")
+
+        IncompleteWalk
+            What a table method does when its walk ends before the whole
+            table was read, because of a timeout, an SNMP error or a
+            detected loop. Either way the walk is recorded, see "Incomplete
+            Walks".
+
+            'partial' returns, and caches, the rows collected before the
+            walk ended.
+
+            'undef' returns undef and caches nothing for any incomplete
+            walk, as a failed bulkwalk always does. This includes a getnext
+            walk or a bulkwalk cut short by a detected loop.
+
+            Any other value is treated as 'partial'.
+
+            (default 'partial', which will change to 'undef' in a future
+            release)
 
         IgnoreNetSNMPConf
             Net-SNMP version 5.0 and higher read configuration files,
@@ -1262,6 +1275,77 @@ USAGE
     The cache can be retrieved or set using the $info->cache() method. This
     works together with the "Offline" option.
 
+  Incomplete Walks
+    Each table walk records whether it collected the whole table. A walk
+    that ends on a timeout, an SNMP error or a detected loop is incomplete.
+    After a failed getnext walk or a detected loop, the method returns the
+    rows collected before the walk ended, unless the "IncompleteWalk" option
+    says otherwise. After a failed bulkwalk it returns undef in either mode.
+    These records and the option survive $info->clear_cache(),
+    $info->cache() and $info->update(), and carry over to the object
+    returned by $info->specify(). Only $info->clear_walk_status() clears the
+    records. The records never contain the community string.
+
+    Each outcome is a reference to a hash with these keys:
+
+    method
+        The table method, without any "load_", "orig_" or "_raw" affix.
+
+    leaf
+        The qualified leaf name, or the OID when it could not be translated.
+
+    partial
+        The partial fetch argument given to the method, if any.
+
+    context
+        The SNMPv3 Context. On SNMPv1 and SNMPv2c, "X" when the session
+        community is the constructor's Community followed by @X, such as a
+        VLAN number or a VRF name. Otherwise an empty string.
+
+    complete
+        1 when the whole table was read, 0 otherwise.
+
+    reason
+        Undef for a complete walk, 'absent' when the object is not
+        implemented or could not be resolved, otherwise one of 'timeout',
+        'loop', 'toobig', 'nonincreasing' or 'error'. On a GET or GETNEXT,
+        'absent' means Net-SNMP could not translate the object locally and
+        sent nothing, which is a problem with the poller's MIBs rather than
+        a fact about the device.
+
+    error
+        The Net-SNMP error string of an incomplete walk or an 'absent'
+        outcome.
+
+    errornum
+        The Net-SNMP error number at the end of the walk.
+
+    walk
+        'getnext', 'bulkwalk', or 'get' when a partial fetch was answered by
+        a single GET.
+
+    repeaters
+        The BulkRepeaters value of a bulkwalk, otherwise undef.
+
+    recovery
+        A reference to an array, empty for now.
+
+    rows
+        The number of rows collected before the walk ended.
+
+    $info->walk_status([method])
+        Returns a reference to a hash, keyed by method, of the latest walk
+        outcome for each table method. With a method name, returns that
+        outcome, or undef if the method has not been walked.
+
+    $info->walk_failures()
+        Returns a reference to an array of the incomplete walk outcomes, in
+        the order they happened. A later successful walk of the same method
+        does not remove a failure.
+
+    $info->clear_walk_status()
+        Clears both $info->walk_status() and $info->walk_failures().
+
   Object Scalar Methods
     These are for package related data, not directly supplied from SNMP.
 
@@ -1293,6 +1377,11 @@ USAGE
         Returns if loopdetect is currently turned on for this object.
 
         Optionally sets the loopdetect parameter.
+
+    $info->incomplete_walk(['partial'|'undef'])
+        Returns the "IncompleteWalk" mode of this object, 'partial' when
+        unset or set to any other value. Optionally sets the mode. See the
+        "IncompleteWalk" constructor option.
 
     $info->device_type()
         Returns the Subclass name for this device. "SNMP::Info" is returned
@@ -2331,6 +2420,37 @@ SNMP::INFO INTERNALS
         See "Partial Table Fetches" in SNMP::Info.
 
         These methods return data as a reference to a hash.
+
+    _v1_nosuch(sess, ver)
+        Returns true when an SNMPv1 request failed with noSuchName. A
+        partial GET answered this way goes on to walk the table; on other
+        versions it returns nothing, as it always has.
+
+    _nosuch_end(sess)
+        Returns true when the request that just failed on the session got
+        error status noSuchName, which ends a walk cleanly on any SNMP
+        version.
+
+    _walk_failure(sess)
+        Returns the "reason", "ErrorNum" and "ErrorStr" of the request that
+        just failed on the session, read before a later request can replace
+        them.
+
+    _walk_incomplete(reason)
+        Returns true when "reason" means the walk did not finish. An
+        undefined reason and "absent" (the object is not on the device) are
+        both complete.
+
+    $info->_walk_outcome(\%outcome)
+        Records the outcome of one table walk as the latest for its method,
+        and appends it to the failures when the walk is incomplete. Fills in
+        "context" and "recovery".
+
+    $info->_walk_context()
+        Returns the SNMPv3 Context of the session. On SNMPv1 and SNMPv2c,
+        returns "X" when the session community is the constructor's
+        Community followed by @X. Otherwise returns an empty string. Never
+        returns any part of the community itself.
 
     $info->_show_attr()
         Used internally by AUTOLOAD to return data called by methods listed
