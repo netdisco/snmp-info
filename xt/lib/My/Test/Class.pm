@@ -412,7 +412,8 @@ sub mock_getnext {
       # data column it extends, as a real agent would find the next row.
       my $numeric = $leaf =~ /^[.]\d/;
       if ($numeric && !($c_data->{$leaf} || $c_data->{$leaf_oid})) {
-        my ($column) = grep { index($leaf, "$_.") == 0 } keys %{$c_data};
+        my ($column) = sort { length $b <=> length $a }
+          grep { index($leaf, "$_.") == 0 } keys %{$c_data};
         if (defined $column) {
           $iid  = substr($leaf, length($column) + 1);
           $leaf = $leaf_oid = $column;

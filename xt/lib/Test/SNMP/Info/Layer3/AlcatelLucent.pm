@@ -190,7 +190,7 @@ sub peth_port_ifindex : Tests(3) {
     {'1.7' => 1007}, q(Vendor PoE ports map to OmniSwitch ifIndex values));
 }
 
-sub alu8_vpa_type : Tests(7) {
+sub alu8_vpa_type : Tests(9) {
   my $test = shift;
   my $info = $test->{info};
   my $base = '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3';
@@ -221,11 +221,12 @@ sub alu8_vpa_type : Tests(7) {
   };
 
   subtest 'alu8_vpa_type__timeout_after_one_row__records_incomplete' => sub {
-    plan tests => 3;
+    plan tests => 4;
     my $walked = $test->_fresh_vpa_info(
       {op => 'getnext', leaf => $base, after => 1, ErrorNum => -24,
         ErrorStr => 'Timeout'});
     is(scalar keys %{$walked->alu8_vpa_type()}, 1, 'partial row returned');
+    ok($walked->{'_alu8_vpa_type'}, 'partial rows cached');
     cmp_deeply(
       $walked->walk_status('alu8_vpa_type'),
       superhashof({complete => 0, reason => 'timeout', rows => 1}),
@@ -258,6 +259,60 @@ sub alu8_vpa_type : Tests(7) {
       'outcome records the loop'
     );
   };
+
+  subtest 'alu8_vpa_type__symbolic_tags__reads_rows_through_translateObj' =>
+    sub {
+    plan tests => 2;
+    my $tag = 'ALCATEL-IND1-BASE::alcatel.801.1.2.1.3.1.1.2.1.1.3';
+    my $walked = $test->_fresh_vpa_info();
+    $test->_script_getnext(["$tag.5.1001", 1], ["$tag.12.1001", 2],
+      ['.1.3.6.1.4.1.6486.801.2.1.1.1', 0]);
+    cmp_deeply(
+      $walked->alu8_vpa_type(),
+      {'5.1001' => 1, '12.1001' => 2},
+      'rows read from whole-instance symbolic tags'
+    );
+    cmp_deeply(
+      $walked->walk_status('alu8_vpa_type'),
+      superhashof({complete => 1, rows => 2, reason => undef}),
+      'outcome is complete'
+    );
+    My::Test::Class::mock_getnext($test->mock_session);
+    };
+
+  subtest 'alu8_vpa_type__end_of_mib_view__ends_cleanly' => sub {
+    plan tests => 2;
+    my $walked = $test->_fresh_vpa_info();
+    $test->_script_getnext(
+      [$base . '.5.1001', 1],
+      [$base . '.12.1001', 2],
+      [$base . '.12.1001', 'ENDOFMIBVIEW']
+    );
+    is(scalar keys %{$walked->alu8_vpa_type()}, 2, 'both rows returned');
+    cmp_deeply(
+      $walked->walk_status('alu8_vpa_type'),
+      superhashof({complete => 1, rows => 2, reason => undef}),
+      'endOfMibView is a clean end, not a loop'
+    );
+    My::Test::Class::mock_getnext($test->mock_session);
+    };
+}
+
+# Serve the given [oid, value] rows in order with an empty iid, as Net-SNMP
+# does for a column with no MIB node
+sub _script_getnext {
+  my ($test, @rows) = @_;
+  $test->mock_session->mock(
+    'getnext',
+    sub {
+      my ($sess, $vars) = @_;
+      $sess->{ErrorNum} = 0;
+      my $row = shift @rows or return;
+      @{$vars} = ($row->[0], '', $row->[1]);
+      return wantarray ? $vars : $row->[1];
+    }
+  );
+  return;
 }
 
 sub _fresh_vpa_info {

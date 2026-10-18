@@ -364,7 +364,13 @@ sub _alu8_vpa_walk {
         my $oid = $name =~ m/^[.]\d/
             ? $name
             : SNMP::translateObj($name) // $name;
-        return ( $vpa_type, ['loop'] ) if $seen{$oid}++;
+
+        # endOfMibView repeats the last OID, so test it before the loop check
+        last if defined $var->[2] and $var->[2] eq 'ENDOFMIBVIEW';
+        if ( $seen{$oid}++ ) {
+            return ( $vpa_type,
+                [ 'loop', 0, "Looping on: alu8_vpa_type oid:$oid." ] );
+        }
         last unless $oid =~ m/^\Q$base\E\.(\d+\.\d+)$/;
         $vpa_type->{$1} = $var->[2];
         $next_oid = $oid;
@@ -605,8 +611,9 @@ in more than one VLAN is omitted.
 Returns C<vpaType> from the AOS 8 copy of C<vpaTable>
 (C<.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3>), keyed by
 C<vpaVlanNumber.vpaIfIndex>.  The table is walked by number because
-F<ALCATEL-IND1-VLAN-MGR-MIB> only defines the AOS 6 location.  The walk is recorded in
-C<walk_status>.
+F<ALCATEL-IND1-VLAN-MGR-MIB> only defines the AOS 6 location.  The walk is
+recorded in C<walk_status>.  C<LoopDetect> is not consulted: this walk always
+stops on a repeated OID.
 
 =item $alu->peth_port_ifindex()
 
