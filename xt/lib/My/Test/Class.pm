@@ -90,6 +90,7 @@ sub teardown : Tests(teardown) {
   delete $sess->{Fault};
   delete $sess->{_fault_count};
   delete $sess->{_fault_raised};
+  delete $sess->{_bulkwalk_calls};
   delete @{$sess}{qw/ErrorNum ErrorStr/};
 
   # Restored here so a subtest that dies cannot leak them into later tests
@@ -461,19 +462,36 @@ sub mock_bulkwalk {
   $mock_session->mock(
     'bulkwalk',
     sub {
-      my ($self, undef, undef, $vars) = @_;
+      my ($self, undef, $repeaters, $vars) = @_;
       _clear_error($self);
 
       my ($leaf) = @{$vars};
+      push @{$self->{_bulkwalk_calls}}, {
+        repeaters     => $repeaters,
+        nonincreasing => $self->{NonIncreasing},
+        leaf          => $leaf,
+      };
       my $leaf_oid = SNMP::translateObj($leaf, 0, 1) || $EMPTY;
       my $fault = _active_fault($self, 'bulkwalk', $leaf, $leaf_oid);
-      if ($fault && !$fault->{loop}) {
+      if ($fault && $fault->{out_of_order} && $self->{NonIncreasing}) {
+        $fault = {%{$fault}, ErrorNum => -65, ErrorStr => 'OID not increasing'};
+        _raise_fault($self, $fault);
+        return (undef);
+      }
+      if ($fault && !$fault->{loop} && !$fault->{out_of_order}) {
         _raise_fault($self, $fault);
         return (undef);
       }
 
       my $data = $self->{Data}{$leaf} || $self->{Data}{$leaf_oid} || {};
       my @iids = sort keys %{$data};
+
+      # Without NonIncreasing, Net-SNMP drops everything from the first
+      # out-of-order row onwards and reports success.
+      if ($fault && $fault->{out_of_order}) {
+        splice @iids, ($fault->{after} || 0);
+        $fault = undef;
+      }
 
       # A loop fault repeats the first row after 'after' rows, as a
       # misbehaving agent would, and the bulkwalk itself succeeds.
@@ -513,7 +531,21 @@ sub _active_fault {
   return unless defined $fault->{leaf};
   my %wanted    = map { $_ => 1 } grep {$_} @leaf_names;
   my $fault_oid = SNMP::translateObj($fault->{leaf}, 0, 1) || $EMPTY;
-  return ($wanted{$fault->{leaf}} || $wanted{$fault_oid}) ? $fault : undef;
+  return unless $wanted{$fault->{leaf}} || $wanted{$fault_oid};
+
+  # min_repeaters reads the call just logged by mock_bulkwalk
+  if (defined $fault->{min_repeaters}) {
+    my $call = $sess->{_bulkwalk_calls}[-1] || {};
+    return if ($call->{repeaters} || 0) < $fault->{min_repeaters};
+  }
+
+  # Separate from the getnext row counters, which are keyed by OID
+  if (defined $fault->{times}) {
+    my $key = join ':', 'times', $op, $fault->{leaf};
+    return if ($sess->{_fault_count}{$key} || 0) >= $fault->{times};
+    $sess->{_fault_count}{$key}++;
+  }
+  return $fault;
 }
 
 sub _raise_fault {

@@ -1907,7 +1907,7 @@ sub mock_getnext_end_of_table : Tests(3) {
   is($calls, 4, 'getnext__leaf_checked_walk__stops_after_last_row');
 }
 
-sub mock_session_faults : Tests(7) {
+sub mock_session_faults : Tests(12) {
   my $test = shift;
   my $sess = $test->mock_session;
   my $set_fault = \&My::Test::Class::set_fault;
@@ -2030,6 +2030,95 @@ sub mock_session_faults : Tests(7) {
     is($var->[1], 2, 'two rows served before second fault fires');
     is($sess->getnext($var), undef, 'third getnext faults');
   };
+
+  subtest 'bulkwalk__any_call__logs_repeaters_and_nonincreasing' => sub {
+    plan tests => 1;
+    $sess->{Data} = $rows;
+    $set_fault->($sess, undef);
+    $sess->{NonIncreasing} = 1;
+    delete $sess->{_bulkwalk_calls};
+    my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    $sess->bulkwalk(0, 20, $var);
+    cmp_deeply(
+      $sess->{_bulkwalk_calls},
+      [{repeaters => 20, nonincreasing => 1, leaf => 'IF-MIB::ifDescr'}],
+      'call logged'
+    );
+  };
+
+  subtest 'bulkwalk__min_repeaters_fault__fails_only_at_or_above_threshold'
+    => sub {
+    plan tests => 4;
+    $sess->{Data} = $rows;
+    $set_fault->($sess, {
+      op            => 'bulkwalk',
+      leaf          => 'IF-MIB::ifDescr',
+      min_repeaters => 10,
+      ErrorNum      => 1,
+      ErrorStr      => 'tooBig',
+    });
+    my $var    = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    my @result = $sess->bulkwalk(0, 20, $var);
+    is($result[0],        undef, 'repeaters 20 returns undef');
+    is($sess->{ErrorNum}, 1,     'repeaters 20 sets ErrorNum');
+    @result = $sess->bulkwalk(0, 5, $var);
+    is(scalar @{$result[0]}, 3, 'repeaters 5 returns three rows');
+    is($sess->{ErrorNum},    0, 'repeaters 5 leaves ErrorNum clear');
+    };
+
+  subtest 'bulkwalk__times_fault__succeeds_after_n_failures' => sub {
+    plan tests => 4;
+    $sess->{Data} = $rows;
+    $set_fault->($sess, {
+      op       => 'bulkwalk',
+      leaf     => 'IF-MIB::ifDescr',
+      times    => 2,
+      ErrorNum => -24,
+      ErrorStr => 'Timeout',
+    });
+    my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    my @result;
+    for my $call (1 .. 2) {
+      @result = $sess->bulkwalk(0, 20, $var);
+      is($sess->{ErrorNum}, -24, "call $call fails");
+    }
+    @result = $sess->bulkwalk(0, 20, $var);
+    is(scalar @{$result[0]}, 3, 'call 3 returns three rows');
+    is($sess->{ErrorNum},    0, 'call 3 leaves ErrorNum clear');
+  };
+
+  subtest 'bulkwalk__out_of_order_with_nonincreasing__returns_minus_65' => sub {
+    plan tests => 2;
+    $sess->{Data} = $rows;
+    $set_fault->($sess, {
+      op           => 'bulkwalk',
+      leaf         => 'IF-MIB::ifDescr',
+      out_of_order => 1,
+      after        => 1,
+    });
+    $sess->{NonIncreasing} = 1;
+    my $var    = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    my @result = $sess->bulkwalk(0, 20, $var);
+    is($result[0],        undef, 'result undef');
+    is($sess->{ErrorNum}, -65,   'ErrorNum is -65');
+  };
+
+  subtest 'bulkwalk__out_of_order_without_nonincreasing__drops_rows_silently'
+    => sub {
+    plan tests => 2;
+    $sess->{Data} = $rows;
+    $set_fault->($sess, {
+      op           => 'bulkwalk',
+      leaf         => 'IF-MIB::ifDescr',
+      out_of_order => 1,
+      after        => 1,
+    });
+    $sess->{NonIncreasing} = 0;
+    my $var    = SNMP::Varbind->new(['IF-MIB::ifDescr']);
+    my @result = $sess->bulkwalk(0, 20, $var);
+    is(scalar @{$result[0]}, 1, 'only the in-order row returned');
+    is($sess->{ErrorNum},    0, 'ErrorNum clear');
+    };
 }
 
 # Walk outcome records, see "Incomplete Walks" in SNMP::Info
