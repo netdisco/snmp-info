@@ -175,9 +175,8 @@ distribution.
 
 Net-SNMP can be found at http://net-snmp.sourceforge.net
 
-Version 5.3.2 or greater is recommended.
-
-Versions 5.0.1, 5.0301 and 5.0203 have issues with bulkwalk and are not supported.
+No minimum Net-SNMP version is enforced. The walk code SNMP::Info uses has
+been stable since Net-SNMP 5.7.3.
 
 B<Redhat Users>: Some versions that come with certain versions of
 Redhat/Fedora don't have the Perl library installed.  Uninstall the RPM and
@@ -1362,8 +1361,6 @@ not object.
 
 Set to C<0> to turn off BULKWALK commands for SNMPv2 connections.
 
-Note that BULKWALK is turned off for Net-SNMP versions 5.1.x because of a bug.
-
 (default 1, which means "on")
 
 =item BulkRepeaters
@@ -1383,6 +1380,22 @@ operation, Net-SNMP's internal bulkwalk function must detect the loop.
 Set to C<0> to turn off loop detection.
 
 (default 1, which means "on")
+
+=item IncompleteWalk
+
+What a table method does when its walk ends before the whole table was read,
+because of a timeout, an SNMP error or a detected loop. Either way the walk is
+recorded, see L</Incomplete Walks>.
+
+C<'partial'> returns, and caches, the rows collected before the walk ended.
+
+C<'undef'> returns undef and caches nothing for any incomplete walk, as a
+failed bulkwalk always does. This includes a getnext walk or a bulkwalk cut
+short by a detected loop.
+
+Any other value is treated as C<'partial'>.
+
+(default C<'partial'>, which will change to C<'undef'> in a future release)
 
 =item IgnoreNetSNMPConf
 
@@ -1530,6 +1543,11 @@ sub new {
         delete $sess_args{LoopDetect};
     }
 
+    if ( defined $args{IncompleteWalk} ) {
+        $new_obj->{IncompleteWalk} = $args{IncompleteWalk};
+        delete $sess_args{IncompleteWalk};
+    }
+
     if ( defined $args{IgnoreNetSNMPConf} ) {
         $new_obj->{IgnoreNetSNMPConf} = $args{IgnoreNetSNMPConf} || 0;
         delete $sess_args{IgnoreNetSNMPConf};
@@ -1646,6 +1664,7 @@ sub update {
     delete $sess_args{BulkRepeaters};
     delete $sess_args{BulkWalk};
     delete $sess_args{LoopDetect};
+    delete $sess_args{IncompleteWalk};
     delete $sess_args{IgnoreNetSNMPConf};
     delete $sess_args{BigInt};
     delete $sess_args{MibDirs};
@@ -1687,6 +1706,126 @@ and table methods.
 
 The cache can be retrieved or set using the $info->cache() method. This works
 together with the C<Offline> option.
+
+=head2 Incomplete Walks
+
+Each table walk records whether it collected the whole table. A walk that
+ends on a timeout, an SNMP error or a detected loop is incomplete. After a
+failed getnext walk or a detected loop, the method returns the rows
+collected before the walk ended, unless the C<IncompleteWalk> option says
+otherwise. After a failed bulkwalk it returns undef in either mode. These
+records and the option survive $info->clear_cache(), $info->cache() and
+$info->update(), and carry over to
+the object returned by $info->specify(). Only $info->clear_walk_status()
+clears the records. The records never contain the community string.
+
+Each outcome is a reference to a hash with these keys:
+
+=over 4
+
+=item method
+
+The table method, without any C<load_>, C<orig_> or C<_raw> affix.
+
+=item leaf
+
+The qualified leaf name, or the OID when it could not be translated.
+
+=item partial
+
+The partial fetch argument given to the method, if any.
+
+=item context
+
+The SNMPv3 Context. On SNMPv1 and SNMPv2c, C<X> when the session community
+is the constructor's Community followed by C<@X>, such as a VLAN number or a
+VRF name. Otherwise an empty string.
+
+=item complete
+
+1 when the whole table was read, 0 otherwise.
+
+=item reason
+
+Undef for a complete walk, C<'absent'> when the object is not implemented or
+could not be resolved, otherwise one of C<'timeout'>, C<'loop'>, C<'toobig'>,
+C<'nonincreasing'> or C<'error'>. On a GET or GETNEXT, C<'absent'> means
+Net-SNMP could not translate the object locally and sent nothing, which is a
+problem with the poller's MIBs rather than a fact about the device.
+
+=item error
+
+The Net-SNMP error string of an incomplete walk or an C<'absent'> outcome.
+
+=item errornum
+
+The Net-SNMP error number at the end of the walk.
+
+=item walk
+
+C<'getnext'>, C<'bulkwalk'>, or C<'get'> when a partial fetch was answered by
+a single GET.
+
+=item repeaters
+
+The BulkRepeaters value of a bulkwalk, otherwise undef.
+
+=item recovery
+
+A reference to an array, empty for now.
+
+=item rows
+
+The number of rows collected before the walk ended.
+
+=back
+
+=over
+
+=item $info->walk_status([method])
+
+Returns a reference to a hash, keyed by method, of the latest walk outcome
+for each table method. With a method name, returns that outcome, or undef
+if the method has not been walked.
+
+=cut
+
+sub walk_status {
+    my $self   = shift;
+    my $method = shift;
+
+    $self->{walk_status} ||= {};
+    return $self->{walk_status} unless defined $method;
+    return $self->{walk_status}{$method};
+}
+
+=item $info->walk_failures()
+
+Returns a reference to an array of the incomplete walk outcomes, in the
+order they happened. A later successful walk of the same method does not
+remove a failure.
+
+=cut
+
+sub walk_failures {
+    my $self = shift;
+    return $self->{walk_failures} ||= [];
+}
+
+=item $info->clear_walk_status()
+
+Clears both $info->walk_status() and $info->walk_failures().
+
+=cut
+
+sub clear_walk_status {
+    my $self = shift;
+    $self->{walk_status}   = {};
+    $self->{walk_failures} = [];
+    return;
+}
+
+=back
 
 =head2 Object Scalar Methods
 
@@ -1814,6 +1953,22 @@ sub loopdetect {
         $self->{LoopDetect} = $ld;
     }
     return $self->{LoopDetect};
+}
+
+=item $info->incomplete_walk(['partial'|'undef'])
+
+Returns the C<IncompleteWalk> mode of this object, C<'partial'> when unset or
+set to any other value. Optionally sets the mode. See the C<IncompleteWalk>
+constructor option.
+
+=cut
+
+sub incomplete_walk {
+    my $self = shift;
+    my $mode = shift;
+
+    $self->{IncompleteWalk} = $mode if defined $mode;
+    return ( $self->{IncompleteWalk} || '' ) eq 'undef' ? 'undef' : 'partial';
 }
 
 =item $info->device_type()
@@ -2538,6 +2693,10 @@ sub specify {
         );
         return $self;
     }
+
+    $sub_obj->{walk_status}    = $self->{walk_status};
+    $sub_obj->{walk_failures}  = $self->{walk_failures};
+    $sub_obj->{IncompleteWalk} = $self->{IncompleteWalk};
 
     $self->debug()
         and print "SNMP::Info::specify() - Changed Class to $device_type.\n";
@@ -4855,9 +5014,14 @@ sub _load_attr {
         # but not for getnext().  We set this flag normally, and if we're
         # using V1, let's try and fetch the data even if we get one of those.
 
-        my $localstore = undef;
-        my $errornum   = 0;
-        my %seen       = ();
+        my $localstore      = undef;
+        my $errornum        = 0;
+        my %seen            = ();
+        my $walk            = 'getnext';
+        my $reason          = undef;
+        my $walk_error      = undef;
+        my $walk_errno      = 0;
+        my $bulkwalk_failed = 0;
 
         my $vars = [];
         my $bulkwalk_no
@@ -4881,25 +5045,32 @@ sub _load_attr {
                 $var->[2] = $try;
                 $vars     = [$var];
                 $bulkwalk = 1;        # fake a bulkwalk return
+                $walk     = 'get';
             }
 
             # We want to execute the while loop below for the getnext request.
-            if (    $ver == 1
-                and $sess->{ErrorNum}
-                and $sess->{ErrorStr} =~ /nosuch/i )
-            {
+            if ( _v1_nosuch( $sess, $ver ) ) {
                 $errornum = 0;
+            }
+            elsif ($errornum) {
+                $walk = 'get';
+                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess)
+                    unless _nosuch_end($sess);
             }
         }
 
         # Use BULKWALK if we can because its faster
-        if ( $bulkwalk && @$vars == 0 ) {
+        if ( $bulkwalk && @$vars == 0 && !$errornum ) {
+            $walk = 'bulkwalk';
             ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
             if ( $sess->{ErrorNum} ) {
+                $errornum = $sess->{ErrorNum};
+                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess)
+                    unless _nosuch_end($sess);
                 $self->error_throw(
                     "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr},
                     "\n" );
-                return;
+                $bulkwalk_failed = 1;
             }
         }
 
@@ -4912,6 +5083,16 @@ sub _load_attr {
                 # GETNEXT instead of BULKWALK
                 $sess->getnext($var);
                 $errornum = $sess->{ErrorNum};
+
+                # A failed request leaves the varbind as it was sent, so
+                # leave before it is read. noSuchName ends the view.
+                if ($errornum) {
+                    ( $reason, $walk_errno, $walk_error )
+                        = _walk_failure($sess)
+                        unless _nosuch_end($sess)
+                        or _v1_nosuch( $sess, $ver );
+                    last;
+                }
             }
 
             if ( $self->debug() > 1 ) {
@@ -4964,7 +5145,9 @@ sub _load_attr {
 
                 # Check to see if we've already seen this IID (looping)
                 if ( defined $seen{$iid} and $seen{$iid} ) {
-                    $self->error_throw("Looping on: $method iid:$iid. ");
+                    $walk_error = "Looping on: $method iid:$iid.";
+                    $self->error_throw("$walk_error ");
+                    $reason = 'loop';
                     last;
                 }
                 else {
@@ -4987,6 +5170,31 @@ sub _load_attr {
 
         }
 
+        my $rows = scalar keys %{ $localstore || {} };
+        $self->_walk_outcome(
+            {   method    => $attr,
+                leaf      => $qual_leaf || $oid,
+                partial   => $partial,
+                complete  => ( _walk_incomplete($reason) ? 0 : 1 ),
+                reason    => $reason,
+                error     => $walk_error,
+                errornum  => $walk_errno,
+                walk      => $walk,
+                repeaters => ( $walk eq 'bulkwalk' ? $repeaters : undef ),
+                rows      => $rows,
+            }
+        );
+
+        # A failed bulkwalk caches nothing and returns undef, as it always did
+        return if $bulkwalk_failed;
+
+        if ( _walk_incomplete($reason) ) {
+            $self->error_throw( "SNMP::Info::_load_attr: $method incomplete: "
+                    . "$reason after $rows rows. "
+                    . ( $walk_error || '' ) );
+            return if $self->incomplete_walk() eq 'undef';
+        }
+
         # Cache data if we are not getting partial data:
         if ( !defined $partial ) {
             $self->_cache($attr, $localstore);
@@ -4999,6 +5207,111 @@ sub _load_attr {
 
         return $localstore;
     }
+}
+
+=item _v1_nosuch(sess, ver)
+
+Returns true when an SNMPv1 request failed with noSuchName. A partial GET
+answered this way goes on to walk the table; on other versions it returns
+nothing, as it always has.
+
+=cut
+
+sub _v1_nosuch {
+    my ( $sess, $ver ) = @_;
+    return (    $ver == 1
+            and $sess->{ErrorNum}
+            and ( $sess->{ErrorStr} || '' ) =~ /nosuch/i );
+}
+
+=item _nosuch_end(sess)
+
+Returns true when the request that just failed on the session got error
+status noSuchName, which ends a walk cleanly on any SNMP version.
+
+=cut
+
+sub _nosuch_end {
+    my $sess = shift;
+    return ( ( $sess->{ErrorNum} || 0 ) == 2 );    # SNMP_ERR_NOSUCHNAME
+}
+
+=item _walk_failure(sess)
+
+Returns the C<reason>, C<ErrorNum> and C<ErrorStr> of the request that just
+failed on the session, read before a later request can replace them.
+
+=cut
+
+sub _walk_failure {
+    my $sess     = shift;
+    my $errornum = $sess->{ErrorNum};
+    my %reasons  = (
+        -24 => 'timeout',          # SNMPERR_TIMEOUT
+        1   => 'toobig',           # SNMP_ERR_TOOBIG
+        -65 => 'nonincreasing',    # SNMPERR_OID_NONINCREASING
+        -58 => 'absent',           # SNMPERR_UNKNOWN_OBJID
+    );
+    return ( $reasons{$errornum} || 'error', $errornum, $sess->{ErrorStr} );
+}
+
+=item _walk_incomplete(reason)
+
+Returns true when C<reason> means the walk did not finish. An undefined
+reason and C<absent> (the object is not on the device) are both complete.
+
+=cut
+
+sub _walk_incomplete {
+    my $reason = shift;
+    return ( defined $reason and $reason ne 'absent' );
+}
+
+=item $info->_walk_outcome(\%outcome)
+
+Records the outcome of one table walk as the latest for its method, and
+appends it to the failures when the walk is incomplete. Fills in
+C<context> and C<recovery>.
+
+=cut
+
+sub _walk_outcome {
+    my ( $self, $outcome ) = @_;
+
+    $outcome->{context}  = $self->_walk_context();
+    $outcome->{recovery} = [];
+
+    $self->{walk_status}{ $outcome->{method} } = $outcome;
+    push @{ $self->{walk_failures} }, $outcome unless $outcome->{complete};
+    return;
+}
+
+=item $info->_walk_context()
+
+Returns the SNMPv3 Context of the session. On SNMPv1 and SNMPv2c, returns
+C<X> when the session community is the constructor's Community followed by
+C<@X>. Otherwise returns an empty string. Never returns any part of the
+community itself.
+
+=cut
+
+sub _walk_context {
+    my $self = shift;
+    my $sess = $self->session() || {};
+
+    my $context = $sess->{Context};
+    return $context if defined $context and length $context;
+    return ''       if ( $sess->{Version} || '' ) eq '3';
+
+    my $base      = ( $self->{args} || {} )->{Community};
+    my $community = $sess->{Community};
+    return '' unless defined $base and defined $community;
+
+    my $prefix = $base . '@';
+    return ''
+        unless length $community > length $prefix
+        and substr( $community, 0, length $prefix ) eq $prefix;
+    return substr( $community, length $prefix );
 }
 
 =item $info->_show_attr()
