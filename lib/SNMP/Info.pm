@@ -5232,7 +5232,7 @@ status noSuchName, which ends a walk cleanly on any SNMP version.
 
 sub _nosuch_end {
     my $sess = shift;
-    return ( ( $sess->{ErrorNum} || 0 ) == 2 );
+    return ( ( $sess->{ErrorNum} || 0 ) == 2 );    # SNMP_ERR_NOSUCHNAME
 }
 
 =item _walk_failure(sess)
@@ -5246,10 +5246,10 @@ sub _walk_failure {
     my $sess     = shift;
     my $errornum = $sess->{ErrorNum};
     my %reasons  = (
-        -24 => 'timeout',
-        1   => 'toobig',
-        -65 => 'nonincreasing',
-        -58 => 'absent',
+        -24 => 'timeout',          # SNMPERR_TIMEOUT
+        1   => 'toobig',           # SNMP_ERR_TOOBIG
+        -65 => 'nonincreasing',    # SNMPERR_OID_NONINCREASING
+        -58 => 'absent',           # SNMPERR_UNKNOWN_OBJID
     );
     return ( $reasons{$errornum} || 'error', $errornum, $sess->{ErrorStr} );
 }
