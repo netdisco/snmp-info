@@ -1,3 +1,10 @@
+Version 3.980001 (2026-tbd)
+
+  [ENHANCEMENTS]
+
+  * #627 Meraki: report the model from sysDescr or the product sysObjectID,
+    vendor "cisco meraki", and the ENTITY-MIB serial as serial1
+
 Version 3.980000 (2026-10-17)
 
   [ENHANCEMENTS]
