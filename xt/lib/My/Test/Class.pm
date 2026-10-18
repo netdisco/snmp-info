@@ -408,8 +408,20 @@ sub mock_getnext {
       # we need to convert the leaf to an OID for match
       my $leaf_oid = SNMP::translateObj($leaf, 0, 1) || '';
 
+      # A numeric OID with no MIB node is resent whole; resolve it to the
+      # data column it extends, as a real agent would find the next row.
+      my $numeric = $leaf =~ /^[.]\d/;
+      if ($numeric && !($c_data->{$leaf} || $c_data->{$leaf_oid})) {
+        my ($column) = grep { index($leaf, "$_.") == 0 } keys %{$c_data};
+        if (defined $column) {
+          $iid  = substr($leaf, length($column) + 1);
+          $leaf = $leaf_oid = $column;
+          $vars->[0] = $leaf;
+        }
+      }
+
       my $fault     = _active_fault($self, 'getnext', $leaf, $leaf_oid);
-      my $count_key = $leaf_oid || $leaf;
+      my $count_key = $numeric ? $leaf : ($leaf_oid || $leaf);
       if ($fault
         && ($self->{_fault_count}{$count_key} || 0) >= ($fault->{after} || 0))
       {

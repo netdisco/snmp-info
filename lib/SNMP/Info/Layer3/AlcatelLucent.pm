@@ -311,7 +311,41 @@ sub alu8_vpa_type {
     return if $alu->{Offline};
     my $sess = $alu->session() or return;
 
-    my $base     = '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3';
+    my $base = '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3';
+    my ( $vpa_type, $failure ) = _alu8_vpa_walk( $sess, $base );
+    my ( $reason, $errornum, $error ) = @{$failure};
+
+    my $rows = scalar keys %{$vpa_type};
+    $alu->_walk_outcome(
+        {   method    => 'alu8_vpa_type',
+            leaf      => $base,
+            partial   => undef,
+            complete  => ( SNMP::Info::_walk_incomplete($reason) ? 0 : 1 ),
+            reason    => $reason,
+            error     => $error,
+            errornum  => $errornum,
+            walk      => 'getnext',
+            repeaters => undef,
+            rows      => $rows,
+            recovery  => [],
+        }
+    );
+
+    if ( SNMP::Info::_walk_incomplete($reason) ) {
+        $alu->error_throw( "SNMP::Info::Layer3::AlcatelLucent: "
+                . "alu8_vpa_type incomplete: $reason after $rows rows. "
+                . ( $error || '' ) );
+        return if $alu->incomplete_walk() eq 'undef';
+    }
+    $alu->_cache( 'alu8_vpa_type', $vpa_type );
+    return $vpa_type;
+}
+
+# Walks the numeric column. Returns the rows and a [reason, errornum, error]
+# triple that is empty when the walk ended cleanly.
+sub _alu8_vpa_walk {
+    my ( $sess, $base ) = @_;
+
     my $next_oid = $base;
     my $vpa_type = {};
     my %seen;
@@ -320,17 +354,22 @@ sub alu8_vpa_type {
         # The returned tag cannot be resent, so ask again by number.
         my $var = SNMP::Varbind->new( [$next_oid] );
         $sess->getnext($var);
-        last if $sess->{ErrorNum} or !defined $var->[0];
+        if ( $sess->{ErrorNum} ) {
+            return ( $vpa_type, [] ) if SNMP::Info::_nosuch_end($sess);
+            return ( $vpa_type, [ SNMP::Info::_walk_failure($sess) ] );
+        }
+        last if !defined $var->[0];
         my $name = $var->[0];
         $name .= ".$var->[1]" if defined $var->[1] and length $var->[1];
-        my $oid = SNMP::translateObj($name) // $name;
-        last if $seen{$oid}++;
+        my $oid = $name =~ m/^[.]\d/
+            ? $name
+            : SNMP::translateObj($name) // $name;
+        return ( $vpa_type, ['loop'] ) if $seen{$oid}++;
         last unless $oid =~ m/^\Q$base\E\.(\d+\.\d+)$/;
         $vpa_type->{$1} = $var->[2];
         $next_oid = $oid;
     }
-    $alu->_cache( 'alu8_vpa_type', $vpa_type );
-    return $vpa_type;
+    return ( $vpa_type, [] );
 }
 
 # One PoE source per device: the standard MIB when its port table has
@@ -566,7 +605,8 @@ in more than one VLAN is omitted.
 Returns C<vpaType> from the AOS 8 copy of C<vpaTable>
 (C<.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3>), keyed by
 C<vpaVlanNumber.vpaIfIndex>.  The table is walked by number because
-F<ALCATEL-IND1-VLAN-MGR-MIB> only defines the AOS 6 location.
+F<ALCATEL-IND1-VLAN-MGR-MIB> only defines the AOS 6 location.  The walk is recorded in
+C<walk_status>.
 
 =item $alu->peth_port_ifindex()
 
