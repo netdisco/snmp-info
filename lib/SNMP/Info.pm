@@ -4982,31 +4982,6 @@ sub _load_attr {
             return;
         }
 
-        # We want the qualified leaf name so that we can
-        # specify the Module (MIB) in the case of private leaf naming
-        # conflicts.  Example: ALTEON-TIGON-SWITCH-MIB::agSoftwareVersion
-        # and ALTEON-CHEETAH-SWITCH-MIB::agSoftwareVersion
-        # Third argument to translateObj specifies the Module prefix
-
-        my $qual_leaf = SNMP::translateObj($oid,0,1) || '';
-
-        # We still want just the leaf since a SNMP get in the case of a
-        # partial fetch may strip the Module portion upon return.  We need
-        # the match to make sure we didn't leave the table during getnext
-        # requests
-
-        my ($leaf) = $qual_leaf =~ /::(.+)$/;
-
-        # If we weren't able to translate, we'll only have an OID
-        $leaf = $oid unless defined $leaf;
-
-        $self->debug()
-            and print "SNMP::Info::_load_attr $method : $qual_leaf",
-            defined $partial ? "($partial)" : '', " : $oid" ,
-            defined $partial ? ".$partial" : '', "\n";
-
-        my $var = SNMP::Varbind->new( [$qual_leaf, $partial] );
-
         # So devices speaking SNMP v.1 are not supposed to give out
         # data from SNMP2, but most do.  Net-SNMP, being very precise
         # will tell you that the SNMP OID doesn't exist for the device.
@@ -5014,199 +4989,308 @@ sub _load_attr {
         # but not for getnext().  We set this flag normally, and if we're
         # using V1, let's try and fetch the data even if we get one of those.
 
-        my $localstore      = undef;
-        my $errornum        = 0;
-        my %seen            = ();
-        my $walk            = 'getnext';
-        my $reason          = undef;
-        my $walk_error      = undef;
-        my $walk_errno      = 0;
-        my $bulkwalk_failed = 0;
+        my $w = {
+            method          => $method,
+            oid             => $oid,
+            sess            => $sess,
+            ver             => $ver,
+            load            => $load,
+            raw             => $raw,
+            attr            => $attr,
+            partial         => $partial,
+            localstore      => undef,
+            errornum        => 0,
+            seen            => {},
+            walk            => 'getnext',
+            reason          => undef,
+            walk_error      => undef,
+            walk_errno      => 0,
+            bulkwalk_failed => 0,
+            vars            => [],
+        };
 
-        my $vars = [];
-        my $bulkwalk_no
-            = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
-        my $bulkwalk_on = defined $self->{BulkWalk} ? $self->{BulkWalk} : 1;
-        my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
-        my $repeaters = $self->{BulkRepeaters} || $REPEATERS;
-        my $bulkwalk = $can_bulkwalk && $ver != 1;
-        my $loopdetect
-            = defined $self->{LoopDetect} ? $self->{LoopDetect} : 1;
+        $self->_walk_setup($w);
+        $self->_walk_partial_get($w);
+        $self->_walk_bulk($w);
+        $self->_walk_rows($w);
+        return $self->_walk_finish($w);
+    }
+}
 
-        if ( defined $partial ) {
+=item $info->_walk_setup(\%w)
 
-            # Try a GET, in case the partial is a leaf OID.
-            # Would like to only do this if we know the OID is
-            # long enough; implementing that would require a
-            # lot of MIB mucking.
-            my $try = $sess->get($var);
-            $errornum = $sess->{ErrorNum};
-            if ( defined($try) && $errornum == 0 && $try !~ /^NOSUCH/ ) {
-                $var->[2] = $try;
-                $vars     = [$var];
-                $bulkwalk = 1;        # fake a bulkwalk return
-                $walk     = 'get';
-            }
+Fills in the walk state for one C<_load_attr> call: the qualified and bare
+leaf names, the varbind, the repeaters, and whether to bulkwalk.
 
-            # We want to execute the while loop below for the getnext request.
-            if ( _v1_nosuch( $sess, $ver ) ) {
-                $errornum = 0;
-            }
-            elsif ($errornum) {
-                $walk = 'get';
-                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess)
-                    unless _nosuch_end($sess);
+=cut
+
+sub _walk_setup {
+    my ( $self, $w ) = @_;
+    my ( $method, $oid, $partial, $ver ) = @{$w}{qw(method oid partial ver)};
+
+    # We want the qualified leaf name so that we can
+    # specify the Module (MIB) in the case of private leaf naming
+    # conflicts.  Example: ALTEON-TIGON-SWITCH-MIB::agSoftwareVersion
+    # and ALTEON-CHEETAH-SWITCH-MIB::agSoftwareVersion
+    # Third argument to translateObj specifies the Module prefix
+
+    $w->{qual_leaf} = SNMP::translateObj($oid,0,1) || '';
+
+    # We still want just the leaf since a SNMP get in the case of a
+    # partial fetch may strip the Module portion upon return.  We need
+    # the match to make sure we didn't leave the table during getnext
+    # requests
+
+    ( $w->{leaf} ) = $w->{qual_leaf} =~ /::(.+)$/;
+
+    # If we weren't able to translate, we'll only have an OID
+    $w->{leaf} = $oid unless defined $w->{leaf};
+
+    $self->debug()
+        and print "SNMP::Info::_load_attr $method : $w->{qual_leaf}",
+        defined $partial ? "($partial)" : '', " : $oid" ,
+        defined $partial ? ".$partial" : '', "\n";
+
+    $w->{var} = SNMP::Varbind->new( [$w->{qual_leaf}, $partial] );
+
+    my $bulkwalk_no
+        = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
+    my $bulkwalk_on = defined $self->{BulkWalk} ? $self->{BulkWalk} : 1;
+    my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
+    $w->{repeaters} = $self->{BulkRepeaters} || $REPEATERS;
+    $w->{bulkwalk} = $can_bulkwalk && $ver != 1;
+    $w->{loopdetect}
+        = defined $self->{LoopDetect} ? $self->{LoopDetect} : 1;
+    return;
+}
+
+=item $info->_walk_partial_get(\%w)
+
+For a partial fetch, tries a GET first in case the partial is a leaf OID,
+and records its result or failure in the walk state.
+
+=cut
+
+sub _walk_partial_get {
+    my ( $self, $w ) = @_;
+    my ( $sess, $ver, $var ) = @{$w}{qw(sess ver var)};
+
+    if ( defined $w->{partial} ) {
+
+        # Try a GET, in case the partial is a leaf OID.
+        # Would like to only do this if we know the OID is
+        # long enough; implementing that would require a
+        # lot of MIB mucking.
+        my $try = $sess->get($var);
+        $w->{errornum} = $sess->{ErrorNum};
+        if ( defined($try) && $w->{errornum} == 0 && $try !~ /^NOSUCH/ ) {
+            $var->[2]      = $try;
+            $w->{vars}     = [$var];
+            $w->{bulkwalk} = 1;        # fake a bulkwalk return
+            $w->{walk}     = 'get';
+        }
+
+        # We want to execute the while loop below for the getnext request.
+        if ( _v1_nosuch( $sess, $ver ) ) {
+            $w->{errornum} = 0;
+        }
+        elsif ( $w->{errornum} ) {
+            $w->{walk} = 'get';
+            @{$w}{qw(reason walk_errno walk_error)} = _walk_failure($sess)
+                unless _nosuch_end($sess);
+        }
+    }
+    return;
+}
+
+=item $info->_walk_bulk(\%w)
+
+Runs the bulkwalk when the walk state allows one. The only place
+C<_load_attr> calls C<bulkwalk> on the session.
+
+=cut
+
+sub _walk_bulk {
+    my ( $self, $w ) = @_;
+    my $sess = $w->{sess};
+
+    # Use BULKWALK if we can because its faster
+    if ( $w->{bulkwalk} && @{ $w->{vars} } == 0 && !$w->{errornum} ) {
+        $w->{walk} = 'bulkwalk';
+        ( $w->{vars} ) = $sess->bulkwalk( 0, $w->{repeaters}, $w->{var} );
+        if ( $sess->{ErrorNum} ) {
+            $w->{errornum} = $sess->{ErrorNum};
+            @{$w}{qw(reason walk_errno walk_error)} = _walk_failure($sess)
+                unless _nosuch_end($sess);
+            $self->error_throw(
+                "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr},
+                "\n" );
+            $w->{bulkwalk_failed} = 1;
+        }
+    }
+    return;
+}
+
+=item $info->_walk_rows(\%w)
+
+Reads rows from the bulkwalk result or by GETNEXT into the walk state's
+C<localstore>, stopping at the end of the table, the partial, or a loop.
+
+=cut
+
+sub _walk_rows {
+    my ( $self, $w ) = @_;
+    my ( $sess, $ver, $method, $oid ) = @{$w}{qw(sess ver method oid)};
+    my ( $leaf, $partial, $seen ) = @{$w}{qw(leaf partial seen)};
+
+    while ( !$w->{errornum} ) {
+        if ( $w->{bulkwalk} ) {
+            $w->{var} = shift @{ $w->{vars} } or last;
+        }
+        else {
+
+            # GETNEXT instead of BULKWALK
+            $sess->getnext( $w->{var} );
+            $w->{errornum} = $sess->{ErrorNum};
+
+            # A failed request leaves the varbind as it was sent, so
+            # leave before it is read. noSuchName ends the view.
+            if ( $w->{errornum} ) {
+                @{$w}{qw(reason walk_errno walk_error)}
+                    = _walk_failure($sess)
+                    unless _nosuch_end($sess)
+                    or _v1_nosuch( $sess, $ver );
+                last;
             }
         }
 
-        # Use BULKWALK if we can because its faster
-        if ( $bulkwalk && @$vars == 0 && !$errornum ) {
-            $walk = 'bulkwalk';
-            ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
-            if ( $sess->{ErrorNum} ) {
-                $errornum = $sess->{ErrorNum};
-                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess)
-                    unless _nosuch_end($sess);
-                $self->error_throw(
-                    "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr},
-                    "\n" );
-                $bulkwalk_failed = 1;
-            }
+        if ( $self->debug() > 1 ) {
+            use Data::Dumper;
+            print "SNMP::Info::_load_attr $method : leaf = $oid , var = ",
+                Dumper( $w->{var} );
         }
 
-        while ( !$errornum ) {
-            if ($bulkwalk) {
-                $var = shift @$vars or last;
+        # Check if we've left the requested subtree
+        last if $w->{var}->[0] !~ /$leaf$/;
+        my $iid = $w->{var}->[1];
+        my $val = $w->{var}->[2];
+
+        unless ( defined $iid ) {
+            $self->error_throw(
+                "SNMP::Info::_load_attr: $method not here");
+            next;
+        }
+
+        # Check to make sure we are still in partial land
+        if (    defined $partial
+            and $iid !~ /^$partial$/
+            and $iid !~ /^$partial\./ )
+        {
+            $self->debug()
+                and print "$iid makes us leave partial land.\n";
+            last;
+        }
+
+       # Check if last element, V2 devices may report ENDOFMIBVIEW even if
+       # instance or object doesn't exist.
+        if ( $val eq 'ENDOFMIBVIEW' ) {
+            last;
+        }
+
+        # Similarly for SNMPv1 - noSuchName return results in both $iid
+        # and $val being empty strings.
+        if ( $val eq '' and $iid eq '' ) {
+            last;
+        }
+
+     # Another check for SNMPv1 - noSuchName return may results in an $iid
+     # we've already seen and $val an empty string.  If we don't catch
+     # this here we erroneously report a loop below.
+        if ( defined $seen->{$iid} and $seen->{$iid} and $val eq '' ) {
+            last;
+        }
+
+        if ( $w->{loopdetect} ) {
+
+            # Check to see if we've already seen this IID (looping)
+            if ( defined $seen->{$iid} and $seen->{$iid} ) {
+                $w->{walk_error} = "Looping on: $method iid:$iid.";
+                $self->error_throw("$w->{walk_error} ");
+                $w->{reason} = 'loop';
+                last;
             }
             else {
-
-                # GETNEXT instead of BULKWALK
-                $sess->getnext($var);
-                $errornum = $sess->{ErrorNum};
-
-                # A failed request leaves the varbind as it was sent, so
-                # leave before it is read. noSuchName ends the view.
-                if ($errornum) {
-                    ( $reason, $walk_errno, $walk_error )
-                        = _walk_failure($sess)
-                        unless _nosuch_end($sess)
-                        or _v1_nosuch( $sess, $ver );
-                    last;
-                }
+                $seen->{$iid}++;
             }
-
-            if ( $self->debug() > 1 ) {
-                use Data::Dumper;
-                print "SNMP::Info::_load_attr $method : leaf = $oid , var = ",
-                    Dumper($var);
-            }
-
-            # Check if we've left the requested subtree
-            last if $var->[0] !~ /$leaf$/;
-            my $iid = $var->[1];
-            my $val = $var->[2];
-
-            unless ( defined $iid ) {
-                $self->error_throw(
-                    "SNMP::Info::_load_attr: $method not here");
-                next;
-            }
-
-            # Check to make sure we are still in partial land
-            if (    defined $partial
-                and $iid !~ /^$partial$/
-                and $iid !~ /^$partial\./ )
-            {
-                $self->debug()
-                    and print "$iid makes us leave partial land.\n";
-                last;
-            }
-
-           # Check if last element, V2 devices may report ENDOFMIBVIEW even if
-           # instance or object doesn't exist.
-            if ( $val eq 'ENDOFMIBVIEW' ) {
-                last;
-            }
-
-            # Similarly for SNMPv1 - noSuchName return results in both $iid
-            # and $val being empty strings.
-            if ( $val eq '' and $iid eq '' ) {
-                last;
-            }
-
-         # Another check for SNMPv1 - noSuchName return may results in an $iid
-         # we've already seen and $val an empty string.  If we don't catch
-         # this here we erroneously report a loop below.
-            if ( defined $seen{$iid} and $seen{$iid} and $val eq '' ) {
-                last;
-            }
-
-            if ($loopdetect) {
-
-                # Check to see if we've already seen this IID (looping)
-                if ( defined $seen{$iid} and $seen{$iid} ) {
-                    $walk_error = "Looping on: $method iid:$iid.";
-                    $self->error_throw("$walk_error ");
-                    $reason = 'loop';
-                    last;
-                }
-                else {
-                    $seen{$iid}++;
-                }
-            }
-
-            if ( $val eq 'NOSUCHOBJECT' ) {
-                $self->error_throw(
-                    "SNMP::Info::_load_attr: $method :  NOSUCHOBJECT");
-                next;
-            }
-            if ( $val eq 'NOSUCHINSTANCE' ) {
-                $self->error_throw(
-                    "SNMP::Info::_load_attr: $method :  NOSUCHINSTANCE");
-                next;
-            }
-
-            $localstore->{$iid} = $val;
-
         }
 
-        my $rows = scalar keys %{ $localstore || {} };
-        $self->_walk_outcome(
-            {   method    => $attr,
-                leaf      => $qual_leaf || $oid,
-                partial   => $partial,
-                complete  => ( _walk_incomplete($reason) ? 0 : 1 ),
-                reason    => $reason,
-                error     => $walk_error,
-                errornum  => $walk_errno,
-                walk      => $walk,
-                repeaters => ( $walk eq 'bulkwalk' ? $repeaters : undef ),
-                rows      => $rows,
-            }
-        );
-
-        # A failed bulkwalk caches nothing and returns undef, as it always did
-        return if $bulkwalk_failed;
-
-        if ( _walk_incomplete($reason) ) {
-            $self->error_throw( "SNMP::Info::_load_attr: $method incomplete: "
-                    . "$reason after $rows rows. "
-                    . ( $walk_error || '' ) );
-            return if $self->incomplete_walk() eq 'undef';
+        if ( $val eq 'NOSUCHOBJECT' ) {
+            $self->error_throw(
+                "SNMP::Info::_load_attr: $method :  NOSUCHOBJECT");
+            next;
+        }
+        if ( $val eq 'NOSUCHINSTANCE' ) {
+            $self->error_throw(
+                "SNMP::Info::_load_attr: $method :  NOSUCHINSTANCE");
+            next;
         }
 
-        # Cache data if we are not getting partial data:
-        if ( !defined $partial ) {
-            $self->_cache($attr, $localstore);
-        }
+        $w->{localstore}->{$iid} = $val;
 
-        # Data Munging
-        if ( !$raw ) {
-            $localstore = $self->_munge($attr, $localstore);
-        }
-
-        return $localstore;
     }
+    return;
+}
+
+=item $info->_walk_finish(\%w)
+
+Records the walk outcome, applies C<IncompleteWalk>, caches a full walk and
+munges the rows. Returns what C<_load_attr> returns.
+
+=cut
+
+sub _walk_finish {
+    my ( $self, $w ) = @_;
+    my ( $attr, $method, $partial, $raw )
+        = @{$w}{qw(attr method partial raw)};
+    my ( $reason, $walk, $repeaters ) = @{$w}{qw(reason walk repeaters)};
+    my $localstore = $w->{localstore};
+
+    my $rows = scalar keys %{ $localstore || {} };
+    $self->_walk_outcome(
+        {   method    => $attr,
+            leaf      => $w->{qual_leaf} || $w->{oid},
+            partial   => $partial,
+            complete  => ( _walk_incomplete($reason) ? 0 : 1 ),
+            reason    => $reason,
+            error     => $w->{walk_error},
+            errornum  => $w->{walk_errno},
+            walk      => $walk,
+            repeaters => ( $walk eq 'bulkwalk' ? $repeaters : undef ),
+            rows      => $rows,
+        }
+    );
+
+    # A failed bulkwalk caches nothing and returns undef, as it always did
+    return if $w->{bulkwalk_failed};
+
+    if ( _walk_incomplete($reason) ) {
+        $self->error_throw( "SNMP::Info::_load_attr: $method incomplete: "
+                . "$reason after $rows rows. "
+                . ( $w->{walk_error} || '' ) );
+        return if $self->incomplete_walk() eq 'undef';
+    }
+
+    # Cache data if we are not getting partial data:
+    if ( !defined $partial ) {
+        $self->_cache($attr, $localstore);
+    }
+
+    # Data Munging
+    if ( !$raw ) {
+        $localstore = $self->_munge($attr, $localstore);
+    }
+
+    return $localstore;
 }
 
 =item _v1_nosuch(sess, ver)
