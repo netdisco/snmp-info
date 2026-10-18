@@ -164,7 +164,7 @@ sub bulk_backoff : Tests(3) {
   };
 }
 
-sub walk_recovery : Tests(6) {
+sub walk_recovery : Tests(8) {
   my $test = shift;
 
   can_ok($test->{info}, '_walk_recovery');
@@ -198,6 +198,30 @@ sub walk_recovery : Tests(6) {
     ok($info->update(Community => 'public@10'), 'update() succeeds');
     cmp_deeply($info->_walk_recovery(),
       {repeaters => 5, getnext => 1, failed => 2}, 'state unchanged');
+  };
+  subtest 'walk_recovery__update_same_new_host_twice__resets_once' => sub {
+    plan tests => 3;
+    $test->teardown;
+    $test->setup;
+    my $info = $test->{info};
+    delete $info->{args}{Session};
+    ok($info->update(DestHost => '192.0.2.2'), 'first update() succeeds');
+    $set_state->($info);
+    ok($info->update(DestHost => '192.0.2.2'), 'second update() succeeds');
+    cmp_deeply($info->_walk_recovery(),
+      {repeaters => 5, getnext => 1, failed => 2}, 'state kept');
+  };
+  subtest 'walk_recovery__update_back_to_original_host__resets' => sub {
+    plan tests => 3;
+    $test->teardown;
+    $test->setup;
+    my $info = $test->{info};
+    my $original = $info->{args}{DestHost};
+    delete $info->{args}{Session};
+    ok($info->update(DestHost => '192.0.2.2'), 'update() to new host');
+    $set_state->($info);
+    ok($info->update(DestHost => $original), 'update() back');
+    cmp_deeply($info->_walk_recovery(), $initial, 'state reset');
   };
   subtest 'walk_recovery__update_new_target__resets_state' => sub {
     my %changes = (

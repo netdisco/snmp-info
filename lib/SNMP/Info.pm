@@ -1620,6 +1620,8 @@ sub new {
         $$init_ref = 1;
     }
 
+    $new_obj->{walk_target} = _walk_target( \%args );
+
     # Connects to device unless open session is provided.
     $sess = SNMP::Session->new(
         'UseEnums' => 1,
@@ -1663,7 +1665,8 @@ sub new {
 
 Replace the existing session with a new one with updated values,
 without re-identifying the device.  The only supported changes are
-to Community or Context.
+to Community or Context. Changing DestHost, Version or RemotePort also
+resets the walk recovery state.
 
 Clears the object cache.
 
@@ -1712,27 +1715,40 @@ sub update {
         );
         return;
     }
-    $obj->{walk_recovery} = undef if _target_changed( $obj, \%update_args );
+    my $target = _walk_target( \%sess_args );
+    $obj->{walk_recovery} = undef
+        unless _same_target( $obj->{walk_target}, $target );
+    $obj->{walk_target} = $target;
     $obj->clear_cache();
     return $obj->session($sess);
 }
 
-=item $info->_target_changed(\%update_args)
+=item _walk_target(\%session_args)
 
-Returns true when the update arguments name a different C<DestHost>,
-C<Version> or C<RemotePort> than the object was created with.
+Returns the C<DestHost>, C<Version> and C<RemotePort> a session was asked
+for, the target that the walk recovery state belongs to.
 
 =cut
 
-sub _target_changed {
-    my ( $obj, $update_args ) = @_;
-    foreach my $key (qw(DestHost Version RemotePort)) {
-        next unless exists $update_args->{$key};
-        my $old = $obj->{args}{$key};
-        return 1 if defined $old xor defined $update_args->{$key};
-        return 1 if defined $old and $old ne $update_args->{$key};
+sub _walk_target {
+    my $session_args = shift;
+    return { map { $_ => $session_args->{$_} } qw(DestHost Version RemotePort) };
+}
+
+=item _same_target(\%old, \%new)
+
+True when two targets from C<_walk_target> are equal.
+
+=cut
+
+sub _same_target {
+    my ( $old, $new ) = @_;
+    foreach my $key ( keys %$new ) {
+        my ( $was, $now ) = ( $old->{$key}, $new->{$key} );
+        return 0 if defined $was xor defined $now;
+        return 0 if defined $was and $was ne $now;
     }
-    return 0;
+    return 1;
 }
 
 =back
@@ -2781,7 +2797,8 @@ sub specify {
     $sub_obj->{walk_status}    = $self->{walk_status};
     $sub_obj->{walk_failures}  = $self->{walk_failures};
     $sub_obj->{IncompleteWalk} = $self->{IncompleteWalk};
-    $sub_obj->{walk_recovery} = $self->{walk_recovery};
+    $sub_obj->{walk_recovery}  = $self->{walk_recovery};
+    $sub_obj->{walk_target}    = $self->{walk_target};
     $sub_obj->{BulkOrderCheck} = $self->{BulkOrderCheck};
     $sub_obj->{BulkBackoff}    = $self->{BulkBackoff};
 
