@@ -2032,17 +2032,24 @@ sub mock_session_faults : Tests(12) {
   };
 
   subtest 'bulkwalk__any_call__logs_repeaters_and_nonincreasing' => sub {
-    plan tests => 1;
+    plan tests => 2;
     $sess->{Data} = $rows;
     $set_fault->($sess, undef);
     $sess->{NonIncreasing} = 1;
-    delete $sess->{_bulkwalk_calls};
     my $var = SNMP::Varbind->new(['IF-MIB::ifDescr']);
     $sess->bulkwalk(0, 20, $var);
     cmp_deeply(
       $sess->{_bulkwalk_calls},
       [{repeaters => 20, nonincreasing => 1, leaf => 'IF-MIB::ifDescr'}],
       'call logged'
+    );
+    delete $sess->{NonIncreasing};
+    $set_fault->($sess, undef);
+    $sess->bulkwalk(0, 5, $var);
+    cmp_deeply(
+      $sess->{_bulkwalk_calls},
+      [{repeaters => 5, nonincreasing => 0, leaf => 'IF-MIB::ifDescr'}],
+      'unset NonIncreasing logged as 0'
     );
   };
 

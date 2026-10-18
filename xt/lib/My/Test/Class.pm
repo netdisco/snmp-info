@@ -91,6 +91,7 @@ sub teardown : Tests(teardown) {
   delete $sess->{_fault_count};
   delete $sess->{_fault_raised};
   delete $sess->{_bulkwalk_calls};
+  delete $sess->{NonIncreasing};
   delete @{$sess}{qw/ErrorNum ErrorStr/};
 
   # Restored here so a subtest that dies cannot leak them into later tests
@@ -468,7 +469,7 @@ sub mock_bulkwalk {
       my ($leaf) = @{$vars};
       push @{$self->{_bulkwalk_calls}}, {
         repeaters     => $repeaters,
-        nonincreasing => $self->{NonIncreasing},
+        nonincreasing => ($self->{NonIncreasing} ? 1 : 0),
         leaf          => $leaf,
       };
       my $leaf_oid = SNMP::translateObj($leaf, 0, 1) || $EMPTY;
@@ -519,6 +520,7 @@ sub set_fault {
   if ($fault) { $sess->{Fault} = $fault }
   else        { delete $sess->{Fault} }
   $sess->{_fault_count} = {};
+  delete $sess->{_bulkwalk_calls};
   return;
 }
 
