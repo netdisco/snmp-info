@@ -1413,8 +1413,10 @@ behavior before this release, where such a table method returns undef.
 When on, the failed bulkwalk is retried with half the MaxRepeaters. When the
 halved value would be below C<$BACKOFF_FLOOR> (5), the table is walked by
 getnext instead. With the default L</BulkRepeaters> of 20, the attempts are
-20, 10, 5 and then getnext. The lowered value, and the switch to getnext,
-are kept for every later table on the same connection.
+20, 10, 5 and then getnext. After tooBig, the lowered value, and the switch
+to getnext, are kept for every later table on the same connection. After a
+timeout they are kept for that table only, which starts from its lowered
+value, or uses getnext, in every later context on the connection.
 
 Before the first halving for a timeout, one GETNEXT is sent for the
 table's first row. When it also times out, the target is taken to be
@@ -5290,9 +5292,11 @@ sub _walk_bulk {
             return;
         }
         $self->_walk_bulk_step($w);
-        next if $retry ne 'nonincreasing' and $self->_walk_backoff($w);
+        next
+            if $retry ne 'nonincreasing'
+            and $self->_walk_backoff( $w, $retry );
 
-        $self->_walk_getnext_fallback($w);
+        $self->_walk_getnext_fallback( $w, $retry );
         return;
     }
 }
@@ -5385,36 +5389,58 @@ sub _walk_bulk_step {
     return;
 }
 
-=item $info->_walk_backoff(\%w)
+=item $info->_walk_backoff(\%w, reason)
 
-Halves the repeaters of the walk and of the connection, and returns true,
-unless the halved value is below C<$BACKOFF_FLOOR> or the connection has
-failed C<$MAX_FAILED_BULKWALKS> bulkwalks.
+Halves the repeaters of the walk and returns true, unless the halved value
+is below C<$BACKOFF_FLOOR> or the connection has failed
+C<$MAX_FAILED_BULKWALKS> bulkwalks. The halved value is kept for the
+connection when C<reason> is C<toobig>, and for the table alone when it is
+C<timeout>. When it returns false, the limit that stopped it, C<floor> or
+C<cap>, is left in C<< $w->{backoff_stop} >>. The floor is checked first.
 
 =cut
 
 sub _walk_backoff {
-    my ( $self, $w ) = @_;
+    my ( $self, $w, $reason ) = @_;
     my $state     = $self->_walk_recovery();
     my $repeaters = int( $w->{repeaters} / 2 );
 
-    return 0 if $state->{failed} >= $MAX_FAILED_BULKWALKS;
+    $w->{backoff_stop} = 'floor';
     return 0 if $repeaters < $BACKOFF_FLOOR;
-    $state->{toobig_repeaters} = $w->{repeaters} = $repeaters;
+    $w->{backoff_stop} = 'cap';
+    return 0 if $state->{failed} >= $MAX_FAILED_BULKWALKS;
+
+    delete $w->{backoff_stop};
+    $w->{repeaters} = $repeaters;
+    if ( $reason eq 'timeout' ) {
+        $self->_walk_table_set( $w, repeaters => $repeaters );
+    }
+    else {
+        $state->{toobig_repeaters} = $repeaters;
+    }
     return 1;
 }
 
-=item $info->_walk_getnext_fallback(\%w)
+=item $info->_walk_getnext_fallback(\%w, reason)
 
-Switches the connection to GETNEXT and sets the walk state up so that
-C<_walk_rows> re-walks the table from its start by GETNEXT.
+Sets the walk state up so that C<_walk_rows> re-walks the table from its
+start by GETNEXT. A C<timeout> that stopped at the floor switches only the
+table to GETNEXT. Every other reason, and any walk stopped by the
+C<$MAX_FAILED_BULKWALKS> cap, switches the connection.
 
 =cut
 
 sub _walk_getnext_fallback {
-    my ( $self, $w ) = @_;
+    my ( $self, $w, $reason ) = @_;
+    my $table_only = $reason eq 'timeout'
+        && ( $w->{backoff_stop} || '' ) eq 'floor';
 
-    $self->_walk_recovery()->{getnext} = 1;
+    if ($table_only) {
+        $self->_walk_table_set( $w, getnext => 1 );
+    }
+    else {
+        $self->_walk_recovery()->{getnext} = 1;
+    }
     $w->{bulkwalk} = 0;
     $w->{walk}     = 'getnext';
     return;

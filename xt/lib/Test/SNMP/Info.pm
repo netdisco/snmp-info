@@ -3018,7 +3018,7 @@ sub _unreachable_info {
   return $info;
 }
 
-sub bulk_backoff_recovery : Tests(16) {
+sub bulk_backoff_recovery : Tests(19) {
   my $test = shift;
 
   subtest 'bulk_backoff__toobig_above_5__succeeds_at_5' => sub {
@@ -3061,7 +3061,7 @@ sub bulk_backoff_recovery : Tests(16) {
 
   subtest 'bulk_backoff__timeout_every_call__ends_on_getnext_after_three' =>
     sub {
-    plan tests => 4;
+    plan tests => 5;
     my $info = $test->_backoff_info(ErrorNum => -24, ErrorStr => 'Timeout');
     cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
       'all three rows returned by GETNEXT');
@@ -3078,12 +3078,14 @@ sub bulk_backoff_recovery : Tests(16) {
       'outcome records three timeouts then GETNEXT'
     );
     cmp_deeply($info->_walk_recovery(),
-      superhashof({getnext => 1, failed => 3}),
-      'connection switched to GETNEXT');
+      superhashof({getnext => 0, failed => 3}),
+      'connection not switched to GETNEXT');
+    cmp_deeply($info->_walk_table({qual_leaf => 'IF-MIB::ifDescr'}),
+      superhashof({getnext => 1}), 'the timed-out table uses GETNEXT');
     };
 
   subtest 'bulk_backoff__slow_agent__probes_once_then_backs_off' => sub {
-    plan tests => 4;
+    plan tests => 5;
     my $info = $test->_backoff_info(
       min_repeaters => 11,
       ErrorNum      => -24,
@@ -3107,8 +3109,10 @@ sub bulk_backoff_recovery : Tests(16) {
       'outcome records the backed-off bulkwalk'
     );
     cmp_deeply($info->_walk_recovery(),
-      superhashof({toobig_repeaters => 10, getnext => 0, failed => 1}),
-      'connection keeps the lowered value');
+      superhashof({toobig_repeaters => undef, getnext => 0, failed => 1}),
+      'connection keeps no lowered value');
+    cmp_deeply($info->_walk_table({qual_leaf => 'IF-MIB::ifDescr'}),
+      superhashof({repeaters => 10}), 'the table keeps the lowered value');
   };
 
   subtest 'bulk_backoff__unreachable_target__records_timeout_without_recovery'
@@ -3251,13 +3255,13 @@ sub bulk_backoff_recovery : Tests(16) {
       ErrorNum => 1, ErrorStr => 'Response message would have been too big'});
     cmp_deeply($info->i_alias(), $MORE_IF_ROWS->{'IF-MIB::ifAlias'},
       'table 3 rows returned by GETNEXT');
-    cmp_deeply($test->_bulkwalk_repeaters, [10],
-      'table 3: tooBig at 10 reaches the cap');
+    cmp_deeply($test->_bulkwalk_repeaters, [20],
+      'table 3: tooBig at 20 reaches the cap');
     cmp_deeply(
       $info->walk_status('i_alias'),
       superhashof({
         walk     => 'getnext',
-        recovery => [_backoff_step(10, 'toobig')],
+        recovery => [_backoff_step(20, 'toobig')],
       }),
       'table 3 walked by GETNEXT although 5 is not below the floor'
     );
@@ -3271,6 +3275,63 @@ sub bulk_backoff_recovery : Tests(16) {
       'table 4 walked by GETNEXT with no recovery'
     );
     };
+
+  subtest 'bulk_backoff__one_slow_table__others_keep_20' => sub {
+    plan tests => 3;
+    my $info = $test->_backoff_info(
+      min_repeaters => 11, ErrorNum => -24, ErrorStr => 'Timeout');
+    $info->$_() for qw(i_description i_name i_mtu);
+    cmp_deeply($test->_bulkwalk_repeaters, [20, 10, 20, 20],
+      'only the slow table backs off');
+    for my $method (qw(i_name i_mtu)) {
+      cmp_deeply(
+        $info->walk_status($method),
+        superhashof({repeaters => 20, recovery => []}),
+        "$method bulkwalked at 20 without recovery"
+      );
+    }
+  };
+
+  subtest 'bulk_backoff__learned_table__reused_in_next_context' => sub {
+    plan tests => 4;
+    my $info = $test->_backoff_info(
+      min_repeaters => 11, ErrorNum => -24, ErrorStr => 'Timeout');
+    is($info->{args}{Community}, 'public', 'base community is public');
+    $info->i_description();
+    $test->mock_session->{Community} = 'public@20';
+    $info->clear_cache;
+    $test->mock_session->clear();
+    $info->i_description();
+    my $calls = $test->_bulkwalk_repeaters;
+    is($calls->[-1], 10, 'next context starts from the learned value');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({repeaters => 10, recovery => [], context => '20'}),
+      'record shows the learned value and the context'
+    );
+    cmp_deeply($info->_walk_recovery(),
+      superhashof({toobig_repeaters => undef, getnext => 0}),
+      'the connection learned nothing');
+  };
+
+  subtest 'bulk_backoff__toobig_and_timeout_tables__each_at_own_scope' => sub {
+    plan tests => 4;
+    my $info = $test->_backoff_info();
+    My::Test::Class::set_fault($test->mock_session, [
+      {op => 'bulkwalk', leaf => 'IF-MIB::ifDescr', min_repeaters => 11,
+        ErrorNum => 1, ErrorStr => 'Response message would have been too big'},
+      {op => 'bulkwalk', leaf => 'IF-MIB::ifName', min_repeaters => 6,
+        ErrorNum => -24, ErrorStr => 'Timeout'},
+    ]);
+    $info->$_() for qw(i_description i_name i_mtu);
+    cmp_deeply($test->_bulkwalk_repeaters, [20, 10, 10, 5, 10],
+      'tooBig lowers later tables, the timeout only its table');
+    is($info->_walk_recovery()->{toobig_repeaters}, 10, 'tooBig value kept');
+    cmp_deeply($info->_walk_table({qual_leaf => 'IF-MIB::ifName'}),
+      superhashof({repeaters => 5}), 'timed-out table keeps 5');
+    cmp_deeply($info->walk_status('i_mtu'),
+      superhashof({repeaters => 10, recovery => []}), 'ifMtu walked at 10');
+  };
 
   subtest 'bulk_backoff__off__failed_bulkwalk_returns_undef_as_today' => sub {
     plan tests => 3;
