@@ -3074,7 +3074,7 @@ sub _unreachable_info {
   return $info;
 }
 
-sub bulk_backoff_recovery : Tests(19) {
+sub bulk_backoff_recovery : Tests(21) {
   my $test = shift;
 
   subtest 'bulk_backoff__toobig_above_5__succeeds_at_5' => sub {
@@ -3191,28 +3191,79 @@ sub bulk_backoff_recovery : Tests(19) {
       'outcome records the bulkwalk timeout without recovery'
     );
     cmp_deeply($info->_walk_recovery(),
-      superhashof({toobig_repeaters => undef, getnext => 0, failed => 1}),
-      'only the failed bulkwalk count changes');
+      superhashof({failed => 0, contexts => {'' => 1}}),
+      'the context is marked unreachable, not counted as failed');
     };
 
-  subtest 'bulk_backoff__three_unreachable_tables__next_table_uses_getnext'
+  subtest 'bulk_backoff__unreachable_context__later_tables_skip_bulkwalk_and_probe'
     => sub {
     plan tests => 4;
     my $info = $test->_unreachable_info(
-      map {"IF-MIB::$_"} qw(ifDescr ifName ifAlias));
-    $info->$_() for qw(i_description i_name i_alias);
-    cmp_deeply($test->_bulkwalk_repeaters, [20, 20, 20],
-      'one bulkwalk per unreachable table');
-    cmp_deeply($info->_walk_recovery(),
-      superhashof({toobig_repeaters => undef, getnext => 0, failed => 3}),
-      'three failed bulkwalks counted without a GETNEXT switch');
-    cmp_deeply($info->i_mtu(), $MORE_IF_ROWS->{'IF-MIB::ifMtu'},
-      'fourth table rows returned');
+      map {"IF-MIB::$_"} qw(ifDescr ifName));
+    my $sess = $test->mock_session;
+    $sess->{Community} = 'public@20';
+    $info->i_description();
+    $sess->clear();
+    $info->i_name();
+    cmp_deeply($test->_bulkwalk_repeaters, [20],
+      'only the first table bulkwalked');
+    cmp_deeply([map { scalar $sess->call_pos($_) } 1 .. 2],
+      ['getnext', undef], 'the second table sent one GETNEXT, no probe');
     cmp_deeply(
-      [$test->_bulkwalk_repeaters, $info->walk_status('i_mtu')],
-      [[20, 20, 20], superhashof({walk => 'getnext', recovery => []})],
-      'fourth table walked by GETNEXT without a bulkwalk'
+      $info->walk_status('i_name'),
+      superhashof({
+        complete => 0,
+        reason   => 'timeout',
+        walk     => 'getnext',
+        recovery => [],
+        context  => '20',
+      }),
+      'outcome records the GETNEXT timeout'
     );
+    cmp_deeply($info->_walk_recovery(),
+      superhashof({failed => 0, contexts => {'20' => 1}}),
+      'nothing counted against the connection');
+    };
+
+  subtest 'bulk_backoff__unreachable_context__other_context_still_bulkwalks'
+    => sub {
+    plan tests => 3;
+    my $info = $test->_unreachable_info(
+      map {"IF-MIB::$_"} qw(ifDescr ifName));
+    my $sess = $test->mock_session;
+    $sess->{Community} = 'public@20';
+    $info->i_description();
+    $info->i_name();
+    $sess->{Community} = 'public';
+    My::Test::Class::set_fault($sess, undef);
+    $info->clear_cache;
+    cmp_deeply($info->i_mtu(), $MORE_IF_ROWS->{'IF-MIB::ifMtu'},
+      'rows returned in the live context');
+    cmp_deeply($test->_bulkwalk_repeaters, [20],
+      'one bulkwalk at 20');
+    cmp_deeply(
+      $info->walk_status('i_mtu'),
+      superhashof({complete => 1, walk => 'bulkwalk', context => ''}),
+      'outcome records a complete bulkwalk'
+    );
+    };
+
+  subtest 'bulk_backoff__ten_unreachable_contexts__backstop_untouched' => sub {
+    plan tests => 3;
+    my $info = $test->_unreachable_info('IF-MIB::ifDescr');
+    my $sess = $test->mock_session;
+    foreach my $vlan (1 .. 10) {
+      $sess->{Community} = "public\@$vlan";
+      My::Test::Class::set_fault($sess, $sess->{Fault});
+      $info->clear_cache;
+      $info->i_description();
+    }
+    cmp_deeply($info->_walk_recovery(),
+      superhashof({failed => 0, getnext => 0}), 'backstop untouched');
+    cmp_deeply($test->_bulkwalk_repeaters, [20],
+      'the last context tried one bulkwalk');
+    cmp_deeply([sort { $a <=> $b } keys %{$info->_walk_recovery()->{contexts}}],
+      [1 .. 10], 'ten contexts marked');
     };
 
   subtest 'bulk_backoff__recovered_walk_cut_short__returns_partial_rows' =>

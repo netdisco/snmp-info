@@ -1424,13 +1424,15 @@ Before the first halving for a timeout, one GETNEXT is sent for the
 table's first row. When it also times out, the target is taken to be
 unreachable, such as a VLAN community the agent ignores: the method returns
 undef, and the lowered value and the switch to getnext are left as they
-were.
+were. The context is marked unreachable. Every later table in it is walked
+by getnext without a bulkwalk or a probe, and other contexts are unaffected.
+An unreachable context does not count toward C<$MAX_FAILED_BULKWALKS>.
 
 A connection tolerates at most C<$MAX_FAILED_BULKWALKS> (3) failed
-bulkwalks, counting tooBig, timeouts, unreachable tables and the
+bulkwalks, counting tooBig, timeouts that reach a live agent and the
 out-of-order failures of L</BulkOrderCheck> together. The table whose
-bulkwalk fails for the third time is walked by getnext, unless it is
-unreachable, and so is every later table on the connection.
+bulkwalk fails for the third time is walked by getnext, and so is every
+later table on the connection.
 Other errors, and an object that is not on the device, are not retried.
 
 (default 1, which means "on")
@@ -5306,9 +5308,10 @@ sub _walk_bulk {
 =item $info->_walk_unreachable(\%w, retry)
 
 On the table's first bulkwalk C<timeout>, sends one GETNEXT for the
-table's first row. When that also times out, counts the failed bulkwalk
-against the connection and returns true: the target is unreachable, and
-the table is not recovered. Otherwise returns false.
+table's first row. When that also times out, marks the current context
+unreachable and returns true: the table is not recovered, and later tables
+in the context skip the bulkwalk. Nothing counts toward
+C<$MAX_FAILED_BULKWALKS>. Otherwise returns false.
 
 =cut
 
@@ -5323,7 +5326,7 @@ sub _walk_unreachable {
     $sess->getnext($probe);
     return 0 unless ( $sess->{ErrorNum} || 0 ) == -24;    # SNMPERR_TIMEOUT
 
-    $self->_walk_recovery()->{failed}++;
+    $self->_walk_recovery()->{contexts}{ $self->_walk_context() } = 1;
     return 1;
 }
 
