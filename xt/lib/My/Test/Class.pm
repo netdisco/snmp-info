@@ -91,6 +91,7 @@ sub teardown : Tests(teardown) {
   delete $sess->{_fault_count};
   delete $sess->{_fault_raised};
   delete $sess->{_bulkwalk_calls};
+  delete $sess->{_getnext_served};
   delete $sess->{NonIncreasing};
   delete @{$sess}{qw/ErrorNum ErrorStr/};
 
@@ -534,6 +535,7 @@ sub set_fault {
   else        { delete $sess->{Fault} }
   $sess->{_fault_count} = {};
   delete $sess->{_bulkwalk_calls};
+  delete $sess->{_getnext_served};
   return;
 }
 
@@ -581,10 +583,13 @@ sub _raise_fault {
 }
 
 # A timeout leaves the varbind untouched; a loop fault instead serves the
-# table's first row again, as a misbehaving agent would.
+# table's first row again, as a misbehaving agent would. An order fault
+# serves the rows in the order it lists, as a hashed H3C table does.
 sub _apply_getnext_fault {
   my ($sess, $fault, $vars, $data) = @_;
 
+  return _getnext_in_order($sess, $fault->{order}, $vars, $data)
+    if $fault->{order};
   if (!$fault->{loop}) {
     _raise_fault($sess, $fault);
     return;
@@ -592,6 +597,26 @@ sub _apply_getnext_fault {
   my ($first_iid) = sort keys %{$data};
   $vars->[1] = $first_iid;
   $vars->[2] = $data->{$first_iid};
+  return (wantarray() ? $vars : $vars->[2]);
+}
+
+# Each served iid is logged in _getnext_served. An iid missing from the
+# order ends the column rather than continuing lexicographically.
+sub _getnext_in_order {
+  my ($sess, $order, $vars, $data) = @_;
+
+  my $position = 0;
+  if (defined $vars->[1]) {
+    my ($sent) = grep { $order->[$_] eq $vars->[1] } 0 .. $#{$order};
+    $position = defined $sent ? $sent + 1 : scalar @{$order};
+  }
+  if ($position > $#{$order}) {
+    $vars->[0] = 'unknown';
+    return (wantarray() ? $vars : $EMPTY);
+  }
+  $vars->[1] = $order->[$position];
+  $vars->[2] = $data->{$vars->[1]};
+  push @{$sess->{_getnext_served}}, $vars->[1];
   return (wantarray() ? $vars : $vars->[2]);
 }
 

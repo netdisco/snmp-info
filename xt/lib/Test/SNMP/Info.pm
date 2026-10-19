@@ -2832,7 +2832,7 @@ sub _out_of_order_info {
   return $info;
 }
 
-sub bulk_order_recovery : Tests(9) {
+sub bulk_order_recovery : Tests(10) {
   my $test = shift;
   my $out_of_order_step = {
     walk      => 'bulkwalk',
@@ -2897,6 +2897,37 @@ sub bulk_order_recovery : Tests(9) {
       'second table walked by bulkwalk with no recovery'
     );
   };
+
+  subtest 'bulk_order__getnext_also_out_of_order__rewalk_returns_every_row'
+    => sub {
+    plan tests => 3;
+    my $info = $test->_out_of_order_info;
+    my $rows = {map { ($_ => "port$_") } 1 .. 6};
+    $test->mock_session->{Data} = {'IF-MIB::ifDescr' => $rows};
+    My::Test::Class::set_fault(
+      $test->mock_session,
+      [
+        {op => 'bulkwalk', leaf => 'IF-MIB::ifDescr', out_of_order => 1,
+          after => 2},
+        {op => 'getnext', leaf => 'IF-MIB::ifDescr',
+          order => [4, 1, 6, 2, 5, 3]},
+      ]
+    );
+    cmp_deeply($info->i_description(), $rows, 'all six rows returned');
+    cmp_deeply($test->mock_session->{_getnext_served}, [4, 1, 6, 2, 5, 3],
+      'rows served in the shuffled order');
+    cmp_deeply(
+      $info->walk_status('i_description'),
+      superhashof({
+        complete => 1,
+        reason   => undef,
+        rows     => 6,
+        walk     => 'getnext',
+        recovery => [$out_of_order_step],
+      }),
+      'outcome records a complete GETNEXT re-walk with no loop'
+    );
+    };
 
   subtest 'bulk_order__two_hashed_tables__each_pays_once' => sub {
     plan tests => 5;
