@@ -1390,8 +1390,10 @@ release.
 
 When on, SNMP::Info sets the session's C<NonIncreasing> to 1 for each of its
 own bulkwalk calls, and restores the caller's value afterwards. A table whose
-rows come back out of order is walked again by GETNEXT, and the object then
-uses GETNEXT for every later table on the same connection. An agent that
+rows come back out of order is walked again by GETNEXT, and that table uses
+GETNEXT for the rest of the object, in every later context. Later tables
+are unaffected, unless the connection has reached its limit of failed
+bulkwalks (see L</BulkBackoff>). An agent that
 repeats the last OID of its previous reply also counts as out of order.
 Net-SNMP checks the order only from the second reply of a bulkwalk on, so a
 table that fits in one reply is never checked, and rows out of order
@@ -5424,22 +5426,29 @@ sub _walk_backoff {
 =item $info->_walk_getnext_fallback(\%w, reason)
 
 Sets the walk state up so that C<_walk_rows> re-walks the table from its
-start by GETNEXT. A C<timeout> that stopped at the floor switches only the
-table to GETNEXT. Every other reason, and any walk stopped by the
-C<$MAX_FAILED_BULKWALKS> cap, switches the connection.
+start by GETNEXT. A C<timeout> that stopped at the floor, and a
+C<nonincreasing> failure, switch only the table to GETNEXT, and a
+C<nonincreasing> failure after the connection reached the cap stops at the
+cap. Every other
+reason, and any walk stopped by the C<$MAX_FAILED_BULKWALKS> cap, switches
+the connection.
 
 =cut
 
 sub _walk_getnext_fallback {
     my ( $self, $w, $reason ) = @_;
-    my $table_only = $reason eq 'timeout'
-        && ( $w->{backoff_stop} || '' ) eq 'floor';
+    my $state = $self->_walk_recovery();
+    $w->{backoff_stop} = 'cap'
+        if $reason eq 'nonincreasing'
+        and $state->{failed} >= $MAX_FAILED_BULKWALKS;
+    my $table_only = ( $w->{backoff_stop} || '' ) ne 'cap'
+        && ( $reason eq 'timeout' or $reason eq 'nonincreasing' );
 
     if ($table_only) {
         $self->_walk_table_set( $w, getnext => 1 );
     }
     else {
-        $self->_walk_recovery()->{getnext} = 1;
+        $state->{getnext} = 1;
     }
     $w->{bulkwalk} = 0;
     $w->{walk}     = 'getnext';

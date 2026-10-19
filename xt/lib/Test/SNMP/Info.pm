@@ -2825,7 +2825,7 @@ sub _out_of_order_info {
   return $info;
 }
 
-sub bulk_order_recovery : Tests(7) {
+sub bulk_order_recovery : Tests(9) {
   my $test = shift;
   my $out_of_order_step = {
     walk      => 'bulkwalk',
@@ -2835,7 +2835,7 @@ sub bulk_order_recovery : Tests(7) {
   };
 
   subtest 'bulk_order__out_of_order_agent__rewalks_with_getnext' => sub {
-    plan tests => 3;
+    plan tests => 4;
     my $info = $test->_out_of_order_info;
     cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
       'all three rows returned');
@@ -2854,8 +2854,13 @@ sub bulk_order_recovery : Tests(7) {
       'outcome records the GETNEXT re-walk with the failure cleared'
     );
     cmp_deeply($info->_walk_recovery(),
-      superhashof({getnext => 1, failed => 1}),
-      'connection switched to GETNEXT');
+      superhashof({getnext => 0, failed => 1}),
+      'connection not switched to GETNEXT');
+    cmp_deeply(
+      $info->_walk_table({qual_leaf => 'IF-MIB::ifDescr'}),
+      superhashof({getnext => 1}),
+      'ifDescr table switched to GETNEXT'
+    );
   };
 
   subtest
@@ -2873,22 +2878,73 @@ sub bulk_order_recovery : Tests(7) {
     }
     };
 
-  subtest 'bulk_order__second_table_after_switch__uses_getnext_without_bulkwalk'
+  subtest 'bulk_order__second_table_after_switch__still_bulkwalks' => sub {
+    plan tests => 2;
+    my $info = $test->_out_of_order_info;
+    my $sess = $test->mock_session;
+    $info->i_description();
+    $info->i_mtu();
+    cmp_deeply($test->_bulkwalk_repeaters, [20, 20], 'second table bulkwalks');
+    cmp_deeply(
+      $info->walk_status('i_mtu'),
+      superhashof({walk => 'bulkwalk', recovery => []}),
+      'second table walked by bulkwalk with no recovery'
+    );
+  };
+
+  subtest 'bulk_order__two_hashed_tables__each_pays_once' => sub {
+    plan tests => 5;
+    my $info = $test->_out_of_order_info;
+    my $sess = $test->mock_session;
+    $sess->{Data} = {%{$IFDESCR_ROWS}, %{$MORE_IF_ROWS}};
+    My::Test::Class::set_fault(
+      $sess,
+      [
+        {op => 'bulkwalk', leaf => 'IF-MIB::ifDescr', out_of_order => 1,
+          after => 1},
+        {op => 'bulkwalk', leaf => 'IF-MIB::ifName', out_of_order => 1,
+          after => 1},
+      ]
+    );
+    $info->i_description();
+    $info->i_name();
+    $info->i_mtu();
+    cmp_deeply($test->_bulkwalk_repeaters, [20, 20, 20],
+      'one bulkwalk per table');
+    foreach my $method (qw(i_description i_name)) {
+      cmp_deeply(
+        $info->walk_status($method),
+        superhashof({walk => 'getnext', recovery => [$out_of_order_step]}),
+        "$method re-walked by GETNEXT after one step"
+      );
+    }
+    cmp_deeply(
+      $info->walk_status('i_mtu'),
+      superhashof({walk => 'bulkwalk', recovery => []}),
+      'i_mtu bulkwalked'
+    );
+    cmp_deeply($info->_walk_recovery(), superhashof({failed => 2}),
+      'two failures counted');
+  };
+
+  subtest 'bulk_order__hashed_table__rewalked_by_getnext_in_next_context'
     => sub {
     plan tests => 2;
     my $info = $test->_out_of_order_info;
     my $sess = $test->mock_session;
     $info->i_description();
     my $calls_before = scalar @{$sess->{_bulkwalk_calls} || []};
-    $info->i_name();
+    $sess->{Community} = 'public@20';
+    $info->clear_cache;
+    $info->i_description();
     is(scalar @{$sess->{_bulkwalk_calls} || []},
-      $calls_before, 'no bulkwalk for the second table');
+      $calls_before, 'no new bulkwalk call in the next context');
     cmp_deeply(
-      $info->walk_status('i_name'),
+      $info->walk_status('i_description'),
       superhashof({walk => 'getnext', recovery => []}),
-      'second table walked by GETNEXT with no recovery'
+      'table walked by GETNEXT with no recovery'
     );
-    };
+  };
 
   subtest 'bulk_order__partial_fetch_out_of_order__rewalks_from_partial' =>
     sub {
