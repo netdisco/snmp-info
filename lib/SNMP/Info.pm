@@ -25,7 +25,7 @@ use NetAddr::IP::Lite ':lower';
 our
     ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG, %SPEED_MAP,
      $NOSUCH, $BIGINT, $REPEATERS,
-     $BACKOFF_FLOOR, $MAX_FAILED_BULKWALKS);
+     $BACKOFF_FLOOR, $MAX_FAILED_BULKWALKS, $SLOW_DEVICE_TABLES);
 
 $VERSION = '3.980000';
 
@@ -1393,9 +1393,8 @@ own bulkwalk calls, and restores the caller's value afterwards. A table whose
 rows come back out of order is walked again by GETNEXT, and that table uses
 GETNEXT for the rest of the object, in every later context. Later tables
 are unaffected, unless the connection has reached its limit of failed
-bulkwalks (see L</BulkBackoff>). An agent that
-repeats the last OID of its previous reply also counts as out of order.
-Net-SNMP checks the order only from the second reply of a bulkwalk on, so a
+bulkwalks (see L</BulkBackoff>). An agent that repeats the last OID of its
+previous reply also counts as out of order. Net-SNMP checks the order only from the second reply of a bulkwalk on, so a
 table that fits in one reply is never checked, and rows out of order
 inside the first reply are not detected.
 
@@ -1426,12 +1425,18 @@ unreachable, such as a VLAN community the agent ignores: the method returns
 undef, and the lowered value and the switch to getnext are left as they
 were. The context is marked unreachable. Every later table in it is walked
 by getnext without a bulkwalk or a probe, and other contexts are unaffected.
-An unreachable context does not count toward C<$MAX_FAILED_BULKWALKS>.
+An unreachable context counts toward neither C<$MAX_FAILED_BULKWALKS> nor
+C<$SLOW_DEVICE_TABLES>.
 
-A connection tolerates at most C<$MAX_FAILED_BULKWALKS> (3) failed
+A table that timed out on a live agent and was then read counts as slow.
+Once C<$SLOW_DEVICE_TABLES> (3) tables are slow, every later table starts at
+the smallest value those tables ended on, or at C<$BACKOFF_FLOOR> when they
+all ended on getnext.
+
+A connection tolerates at most C<$MAX_FAILED_BULKWALKS> (9) failed
 bulkwalks, counting tooBig, timeouts that reach a live agent and the
 out-of-order failures of L</BulkOrderCheck> together. The table whose
-bulkwalk fails for the third time is walked by getnext, and so is every
+bulkwalk fails for the ninth time is walked by getnext, and so is every
 later table on the connection.
 Other errors, and an object that is not on the device, are not retried.
 
@@ -4188,13 +4193,26 @@ $BACKOFF_FLOOR = 5;
 
 =item $MAX_FAILED_BULKWALKS
 
-Default 3.  How many failed bulkwalks a target tolerates before it walks
+Default 9.  How many failed bulkwalks a target tolerates before it walks
 with getnext, counting every bulkwalk failure that L</BulkBackoff> or
-L</BulkOrderCheck> acts on.
+L</BulkOrderCheck> acts on. A context that does not answer at all counts
+toward nothing.
 
 =cut
 
-$MAX_FAILED_BULKWALKS = 3;
+$MAX_FAILED_BULKWALKS = 9;
+
+=item $SLOW_DEVICE_TABLES
+
+Default 3.  How many distinct tables must time out on a live agent and
+then be read before the target is treated as slow, and every later table
+starts from the smallest repeaters those tables ended on (or
+C<$BACKOFF_FLOOR> when they all ended on getnext). A context that does not
+answer at all counts toward nothing.
+
+=cut
+
+$SLOW_DEVICE_TABLES = 3;
 
 =back
 
@@ -5215,7 +5233,7 @@ sub _walk_setup {
         && !$state->{getnext}
         && !$self->_walk_table($w)->{getnext}
         && !$state->{contexts}{ $self->_walk_context() }
-        && $state->{failed} < $MAX_FAILED_BULKWALKS;
+        && !$self->_walk_at_cap();
     $w->{loopdetect}
         = defined $self->{LoopDetect} ? $self->{LoopDetect} : 1;
     return;
@@ -5398,7 +5416,7 @@ sub _walk_bulk_step {
 
 Halves the repeaters of the walk and returns true, unless the halved value
 is below C<$BACKOFF_FLOOR> or the connection has failed
-C<$MAX_FAILED_BULKWALKS> bulkwalks. The halved value is kept for the
+C<$MAX_FAILED_BULKWALKS> (9) bulkwalks. The halved value is kept for the
 connection when C<reason> is C<toobig>, and for the table alone when it is
 C<timeout>. When it returns false, the limit that stopped it, C<floor> or
 C<cap>, is left in C<< $w->{backoff_stop} >>. The floor is checked first.
@@ -5413,7 +5431,7 @@ sub _walk_backoff {
     $w->{backoff_stop} = 'floor';
     return 0 if $repeaters < $BACKOFF_FLOOR;
     $w->{backoff_stop} = 'cap';
-    return 0 if $state->{failed} >= $MAX_FAILED_BULKWALKS;
+    return 0 if $self->_walk_at_cap();
 
     delete $w->{backoff_stop};
     $w->{repeaters} = $repeaters;
@@ -5426,24 +5444,33 @@ sub _walk_backoff {
     return 1;
 }
 
+=item $info->_walk_at_cap()
+
+Returns true when the connection has failed C<$MAX_FAILED_BULKWALKS>
+bulkwalks, so no table is walked by bulkwalk any more.
+
+=cut
+
+sub _walk_at_cap {
+    my $self = shift;
+    return $self->_walk_recovery()->{failed} >= $MAX_FAILED_BULKWALKS;
+}
+
 =item $info->_walk_getnext_fallback(\%w, reason)
 
 Sets the walk state up so that C<_walk_rows> re-walks the table from its
 start by GETNEXT. A C<timeout> that stopped at the floor, and a
-C<nonincreasing> failure, switch only the table to GETNEXT, and a
-C<nonincreasing> failure after the connection reached the cap stops at the
-cap. Every other
-reason, and any walk stopped by the C<$MAX_FAILED_BULKWALKS> cap, switches
-the connection.
+C<nonincreasing> failure, switch only the table to GETNEXT, unless the
+connection has failed C<$MAX_FAILED_BULKWALKS> bulkwalks, which counts as the
+C<cap> whatever stopped the walk. Every other reason, and any walk stopped by
+the cap, switches the connection.
 
 =cut
 
 sub _walk_getnext_fallback {
     my ( $self, $w, $reason ) = @_;
     my $state = $self->_walk_recovery();
-    $w->{backoff_stop} = 'cap'
-        if $reason eq 'nonincreasing'
-        and $state->{failed} >= $MAX_FAILED_BULKWALKS;
+    $w->{backoff_stop} = 'cap' if $self->_walk_at_cap();
     my $table_only = ( $w->{backoff_stop} || '' ) ne 'cap'
         && ( $reason eq 'timeout' or $reason eq 'nonincreasing' );
 
@@ -5568,6 +5595,38 @@ sub _walk_rows {
     return;
 }
 
+=item $info->_walk_note_slow(\%w)
+
+Called once per walk, after its last bulkwalk or GETNEXT attempt. When the
+walk recovered from a C<timeout> on a live agent (a C<timeout> step in
+C<recovery>) and its table is not yet slow, marks the table slow, keeping
+the repeaters it ended on, or undef when it ended on GETNEXT, and counts it
+in C<slow_tables>. When C<slow_tables> reaches C<$SLOW_DEVICE_TABLES> and
+C<slow_repeaters> is not set, sets it to the smallest repeaters kept by a
+slow table, or to C<$BACKOFF_FLOOR> when there is none.
+
+=cut
+
+sub _walk_note_slow {
+    my ( $self, $w ) = @_;
+    my $state = $self->_walk_recovery();
+    my $final = $w->{walk} eq 'bulkwalk' ? $w->{repeaters} : undef;
+
+    return unless grep { $_->{reason} eq 'timeout' } @{ $w->{recovery} };
+    return if $self->_walk_table($w)->{slow};
+
+    $self->_walk_table_set( $w, slow => 1, slow_final => $final );
+    $state->{slow_tables}++;
+    return
+        if $state->{slow_tables} < $SLOW_DEVICE_TABLES
+        or defined $state->{slow_repeaters};
+
+    my ($smallest) = sort { $a <=> $b } grep {defined}
+        map { $_->{slow_final} } values %{ $state->{tables} };
+    $state->{slow_repeaters} = defined $smallest ? $smallest : $BACKOFF_FLOOR;
+    return;
+}
+
 =item $info->_walk_finish(\%w)
 
 Records the walk outcome, applies C<IncompleteWalk>, caches a full walk and
@@ -5582,6 +5641,7 @@ sub _walk_finish {
     my ( $reason, $walk, $repeaters ) = @{$w}{qw(reason walk repeaters)};
     my $localstore = $w->{localstore};
 
+    $self->_walk_note_slow($w);
     my $rows = scalar keys %{ $localstore || {} };
     $self->_walk_outcome(
         {   method    => $attr,
@@ -5689,7 +5749,9 @@ keeps it after C<getnext> is set. C<getnext> is the object-wide GETNEXT
 switch and C<failed> counts failed bulkwalks. C<slow_tables> and
 C<slow_repeaters> track tables that timed out and recovered. C<contexts>
 holds unreachable contexts keyed by C<_walk_context>. C<tables> holds a
-per-table entry, keyed by qualified leaf, of C<< { repeaters, getnext, slow } >>.
+per-table entry, keyed by qualified leaf, of
+C<< { repeaters, getnext, slow, slow_final } >>. C<slow_final> is the
+repeaters a slow table's last bulkwalk used, undef when it ended on getnext.
 
 =cut
 
@@ -5709,8 +5771,8 @@ sub _walk_recovery {
 =item $info->_walk_table(\%w)
 
 Returns the recovery entry of the table being walked, keyed by
-C<< $w->{qual_leaf} >>, as C<< { repeaters, getnext, slow } >>. Returns an
-empty hashref when the table has none, and never creates one.
+C<< $w->{qual_leaf} >>, as C<< { repeaters, getnext, slow, slow_final } >>.
+Returns an empty hashref when the table has none, and never creates one.
 
 =cut
 
