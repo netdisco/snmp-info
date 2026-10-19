@@ -1394,9 +1394,10 @@ rows come back out of order is walked again by GETNEXT, and that table uses
 GETNEXT for the rest of the object, in every later context. Later tables
 are unaffected, unless the connection has reached its limit of failed
 bulkwalks (see L</BulkBackoff>). An agent that repeats the last OID of its
-previous reply also counts as out of order. Net-SNMP checks the order only from the second reply of a bulkwalk on, so a
-table that fits in one reply is never checked, and rows out of order
-inside the first reply are not detected.
+previous reply also counts as out of order. Net-SNMP checks the order only
+from the second reply of a bulkwalk on, so a table that fits in one reply is
+never checked, and rows out of order inside the first reply are not
+detected.
 
 When off, and unless the caller set C<NonIncreasing> on the session,
 Net-SNMP drops without any error each row that is not above the highest OID
