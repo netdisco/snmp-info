@@ -1421,18 +1421,21 @@ timeout they are kept for that table only, which starts from its lowered
 value, or uses getnext, in every later context on the connection.
 
 Before the first halving for a timeout, one GETNEXT is sent for the
-table's first row. When it also times out, the target is taken to be
-unreachable, such as a VLAN community the agent ignores: the method returns
-undef, and the lowered value and the switch to getnext are left as they
-were. The context is marked unreachable. Every later table in it is walked
-by getnext without a bulkwalk or a probe, and other contexts are unaffected.
-An unreachable context counts toward neither C<$MAX_FAILED_BULKWALKS> nor
-C<$SLOW_DEVICE_TABLES>.
+table's first row. When it also times out in a VLAN, VRF or SNMPv3
+context, the context is taken to be unreachable, such as a VLAN community
+the agent ignores: the method returns undef, and the lowered value and the
+switch to getnext are left as they were. The context is marked unreachable.
+Every later table in it is walked by getnext without a bulkwalk or a probe,
+and other contexts are unaffected. A getnext walk in the context that
+returns rows clears the mark, and later tables bulkwalk again. An
+unreachable context counts toward neither C<$MAX_FAILED_BULKWALKS> nor
+C<$SLOW_DEVICE_TABLES>. The context the object connected with is never
+marked: there the timeout is backed off as any other.
 
-A table that timed out on a live agent and was then read counts as slow.
-Once C<$SLOW_DEVICE_TABLES> (3) tables are slow, every later table starts at
-the smallest value those tables ended on, or at C<$BACKOFF_FLOOR> when they
-all ended on getnext.
+A table that timed out on an agent that still answered the probe counts as
+slow. Once C<$SLOW_DEVICE_TABLES> (3) tables are slow, every later table
+starts at the smallest value with which one of them completed by bulkwalk,
+or at C<$BACKOFF_FLOOR> when none did.
 
 A connection tolerates at most C<$MAX_FAILED_BULKWALKS> (9) failed
 bulkwalks, counting tooBig, timeouts that reach a live agent and the
@@ -4205,10 +4208,10 @@ $MAX_FAILED_BULKWALKS = 9;
 
 =item $SLOW_DEVICE_TABLES
 
-Default 3.  How many distinct tables must time out on a live agent and
-then be read before the target is treated as slow, and every later table
-starts from the smallest repeaters those tables ended on (or
-C<$BACKOFF_FLOOR> when they all ended on getnext). A context that does not
+Default 3.  How many distinct tables must time out on an agent that still
+answered the probe before the target is treated as slow, and every later
+table starts from the smallest repeaters with which one of them completed
+by bulkwalk (or C<$BACKOFF_FLOOR> when none did). A context that does not
 answer at all counts toward nothing.
 
 =cut
@@ -5327,10 +5330,12 @@ sub _walk_bulk {
 =item $info->_walk_unreachable(\%w, retry)
 
 On the table's first bulkwalk C<timeout>, sends one GETNEXT for the
-table's first row. When that also times out, marks the current context
-unreachable and returns true: the table is not recovered, and later tables
-in the context skip the bulkwalk. Nothing counts toward
-C<$MAX_FAILED_BULKWALKS>. Otherwise returns false.
+table's first row. When that also times out in a VLAN, VRF or SNMPv3
+context, marks the context unreachable and returns true: the table is not
+recovered, and later tables in the context skip the bulkwalk. Nothing
+counts toward C<$MAX_FAILED_BULKWALKS>. Otherwise returns false, also when
+the probe times out in the base context (C<_walk_context> returns an empty
+string), which is never marked, so the table backs off as for any timeout.
 
 =cut
 
@@ -5345,7 +5350,10 @@ sub _walk_unreachable {
     $sess->getnext($probe);
     return 0 unless ( $sess->{ErrorNum} || 0 ) == -24;    # SNMPERR_TIMEOUT
 
-    $self->_walk_recovery()->{contexts}{ $self->_walk_context() } = 1;
+    my $context = $self->_walk_context();
+    return 0 if $context eq '';
+
+    $self->_walk_recovery()->{contexts}{$context} = 1;
     return 1;
 }
 
@@ -5601,17 +5609,21 @@ sub _walk_rows {
 Called once per walk, after its last bulkwalk or GETNEXT attempt. When the
 walk recovered from a C<timeout> on a live agent (a C<timeout> step in
 C<recovery>) and its table is not yet slow, marks the table slow, keeping
-the repeaters it ended on, or undef when it ended on GETNEXT, and counts it
-in C<slow_tables>. When C<slow_tables> reaches C<$SLOW_DEVICE_TABLES> and
-C<slow_repeaters> is not set, sets it to the smallest repeaters kept by a
-slow table, or to C<$BACKOFF_FLOOR> when there is none.
+the repeaters of the bulkwalk that completed it, or undef when it ended on
+GETNEXT or on a failed bulkwalk, and counts it in C<slow_tables>. When
+C<slow_tables> reaches C<$SLOW_DEVICE_TABLES> and C<slow_repeaters> is not
+set, sets it to the smallest repeaters kept by a slow table, or to
+C<$BACKOFF_FLOOR> when there is none.
 
 =cut
 
 sub _walk_note_slow {
     my ( $self, $w ) = @_;
     my $state = $self->_walk_recovery();
-    my $final = $w->{walk} eq 'bulkwalk' ? $w->{repeaters} : undef;
+    my $final
+        = ( $w->{walk} eq 'bulkwalk' && !$w->{bulkwalk_failed} )
+        ? $w->{repeaters}
+        : undef;
 
     return unless grep { $_->{reason} eq 'timeout' } @{ $w->{recovery} };
     return if $self->_walk_table($w)->{slow};
@@ -5625,6 +5637,21 @@ sub _walk_note_slow {
     my ($smallest) = sort { $a <=> $b } grep {defined}
         map { $_->{slow_final} } values %{ $state->{tables} };
     $state->{slow_repeaters} = defined $smallest ? $smallest : $BACKOFF_FLOOR;
+    return;
+}
+
+=item $info->_walk_heal_context(\%w, rows)
+
+Called once per walk, beside C<_walk_note_slow>. When the walk ended by
+GETNEXT with at least one row, clears the unreachable mark of the current
+context, so later tables in it bulkwalk again.
+
+=cut
+
+sub _walk_heal_context {
+    my ( $self, $w, $rows ) = @_;
+    return unless $w->{walk} eq 'getnext' and $rows;
+    delete $self->_walk_recovery()->{contexts}{ $self->_walk_context() };
     return;
 }
 
@@ -5644,6 +5671,7 @@ sub _walk_finish {
 
     $self->_walk_note_slow($w);
     my $rows = scalar keys %{ $localstore || {} };
+    $self->_walk_heal_context( $w, $rows );
     $self->_walk_outcome(
         {   method    => $attr,
             leaf      => $w->{qual_leaf} || $w->{oid},
