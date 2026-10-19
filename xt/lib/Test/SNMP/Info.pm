@@ -3166,6 +3166,7 @@ sub bulk_backoff_recovery : Tests(32) {
       ErrorStr      => 'Timeout'
     );
     my $sess = $test->mock_session;
+    $sess->{Community} = 'public@20';
     $sess->clear();
     cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
       'all three rows returned');
@@ -3290,6 +3291,7 @@ sub bulk_backoff_recovery : Tests(32) {
     sub {
     plan tests => 3;
     my $info = $test->_backoff_info(ErrorNum => -24, ErrorStr => 'Timeout');
+    $test->mock_session->{Community} = 'public@20';
 
     # The probe's answer is the first of the three rows 'after' counts
     My::Test::Class::set_fault($test->mock_session, [
@@ -3647,18 +3649,23 @@ sub bulk_backoff_recovery : Tests(32) {
       'slow repeaters taken from the completed tables only');
     };
 
-  subtest 'bulk_backoff__base_context_probe_timeout__backs_off_as_timeout'
+  subtest 'bulk_backoff__base_context_timeout__backs_off_without_probe'
     => sub {
-    plan tests => 4;
+    plan tests => 5;
     my $info = $test->_backoff_info();
     My::Test::Class::set_fault($test->mock_session, [
       _ifdescr_timeout(op => 'bulkwalk', min_repeaters => 11),
       _ifdescr_timeout(times => 1),
     ]);
+    my $sess = $test->mock_session;
+    $sess->clear();
     cmp_deeply($info->i_description(), $IFDESCR_ROWS->{'IF-MIB::ifDescr'},
       'all three rows returned');
+    cmp_deeply([map { scalar $sess->call_pos($_) } 1 .. 3],
+      ['bulkwalk', 'bulkwalk', undef],
+      'no GETNEXT probe between the timeout and the retry');
     cmp_deeply($test->_bulkwalk_repeaters, [20, 10],
-      'backed off to 10 after the probe timed out');
+      'backed off to 10 after the timeout');
     cmp_deeply(
       $info->walk_status('i_description'),
       superhashof({

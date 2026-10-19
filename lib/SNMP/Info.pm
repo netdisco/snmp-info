@@ -1420,9 +1420,9 @@ to getnext, are kept for every later table on the same connection. After a
 timeout they are kept for that table only, which starts from its lowered
 value, or uses getnext, in every later context on the connection.
 
-Before the first halving for a timeout, one GETNEXT is sent for the
-table's first row. When it also times out in a VLAN, VRF or SNMPv3
-context, the context is taken to be unreachable, such as a VLAN community
+Before the first halving for a timeout in a VLAN, VRF or SNMPv3 context,
+one GETNEXT is sent for the table's first row. When it also times out, the
+context is taken to be unreachable, such as a VLAN community
 the agent ignores: the method returns undef, and the lowered value and the
 switch to getnext are left as they were. The context is marked unreachable.
 Every later table in it is walked by getnext without a bulkwalk or a probe,
@@ -1430,7 +1430,7 @@ and other contexts are unaffected. A getnext walk in the context that
 returns rows clears the mark, and later tables bulkwalk again. An
 unreachable context counts toward neither C<$MAX_FAILED_BULKWALKS> nor
 C<$SLOW_DEVICE_TABLES>. The context the object connected with is never
-marked: there the timeout is backed off as any other.
+marked and gets no probe: there the timeout is backed off as any other.
 
 A table that timed out on an agent that still answered the probe counts as
 slow. Once C<$SLOW_DEVICE_TABLES> (3) tables are slow, every later table
@@ -5329,13 +5329,14 @@ sub _walk_bulk {
 
 =item $info->_walk_unreachable(\%w, retry)
 
-On the table's first bulkwalk C<timeout>, sends one GETNEXT for the
-table's first row. When that also times out in a VLAN, VRF or SNMPv3
-context, marks the context unreachable and returns true: the table is not
+On the table's first bulkwalk C<timeout> in a VLAN, VRF or SNMPv3 context,
+sends one GETNEXT for the table's first row. When that also times out,
+marks the context unreachable and returns true: the table is not
 recovered, and later tables in the context skip the bulkwalk. Nothing
-counts toward C<$MAX_FAILED_BULKWALKS>. Otherwise returns false, also when
-the probe times out in the base context (C<_walk_context> returns an empty
-string), which is never marked, so the table backs off as for any timeout.
+counts toward C<$MAX_FAILED_BULKWALKS>. Otherwise returns false. In the
+base context (C<_walk_context> returns an empty string) no probe is sent
+and the context is never marked, so the table backs off as for any
+timeout.
 
 =cut
 
@@ -5344,16 +5345,14 @@ sub _walk_unreachable {
     my $sess = $w->{sess};
 
     return 0 if $retry ne 'timeout' or $w->{probed};
+    return 0 if $self->_walk_context() eq '';
     $w->{probed} = 1;
 
     my $probe = SNMP::Varbind->new( [ $w->{qual_leaf}, $w->{partial} ] );
     $sess->getnext($probe);
     return 0 unless ( $sess->{ErrorNum} || 0 ) == -24;    # SNMPERR_TIMEOUT
 
-    my $context = $self->_walk_context();
-    return 0 if $context eq '';
-
-    $self->_walk_recovery()->{contexts}{$context} = 1;
+    $self->_walk_recovery()->{contexts}{ $self->_walk_context() } = 1;
     return 1;
 }
 
