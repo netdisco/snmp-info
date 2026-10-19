@@ -1396,8 +1396,8 @@ are unaffected, unless the connection has reached its limit of failed
 bulkwalks (see L</BulkBackoff>). An agent that repeats the last OID of its
 previous reply also counts as out of order. Net-SNMP checks the order only
 from the second reply of a bulkwalk on, so a table that fits in one reply is
-never checked, and rows out of order inside the first reply are not
-detected.
+never checked, and rows out of order inside the first reply are
+not detected.
 
 When off, and unless the caller set C<NonIncreasing> on the session,
 Net-SNMP drops without any error each row that is not above the highest OID
@@ -1432,10 +1432,10 @@ unreachable context counts toward neither C<$MAX_FAILED_BULKWALKS> nor
 C<$SLOW_DEVICE_TABLES>. The context the object connected with is never
 marked and gets no probe: there the timeout is backed off as any other.
 
-A table that timed out on an agent that still answered the probe counts as
-slow. Once C<$SLOW_DEVICE_TABLES> (3) tables are slow, every later table
-starts at the smallest value with which one of them completed by bulkwalk,
-or at C<$BACKOFF_FLOOR> when none did.
+A table that timed out on bulkwalk without its context being marked
+unreachable counts as slow. Once C<$SLOW_DEVICE_TABLES> (3) tables are slow,
+every later table starts at the smallest value with which one of them
+completed by bulkwalk, or at C<$BACKOFF_FLOOR> when none did.
 
 A connection tolerates at most C<$MAX_FAILED_BULKWALKS> (9) failed
 bulkwalks, counting tooBig, timeouts that reach a live agent and the
@@ -4208,11 +4208,11 @@ $MAX_FAILED_BULKWALKS = 9;
 
 =item $SLOW_DEVICE_TABLES
 
-Default 3.  How many distinct tables must time out on an agent that still
-answered the probe before the target is treated as slow, and every later
-table starts from the smallest repeaters with which one of them completed
-by bulkwalk (or C<$BACKOFF_FLOOR> when none did). A context that does not
-answer at all counts toward nothing.
+Default 3.  How many distinct tables must time out on bulkwalk without their
+context being marked unreachable before the target is treated as slow, and
+every later table starts from the smallest repeaters with which one of them
+completed by bulkwalk (or C<$BACKOFF_FLOOR> when none did). A context that
+does not answer at all counts toward nothing.
 
 =cut
 
@@ -5287,10 +5287,11 @@ sub _walk_partial_get {
 Runs the bulkwalk when the walk state allows one. A bulkwalk that fails
 with C<toobig> or C<timeout> while C<BulkBackoff> is on is retried with
 half the repeaters, unless C<_walk_unreachable> finds the target does not
-answer at all. When the halved value is below C<$BACKOFF_FLOOR>, the
-connection has failed C<$MAX_FAILED_BULKWALKS> bulkwalks, or a bulkwalk
-fails with C<nonincreasing> while C<BulkOrderCheck> is on, sets the walk
-state up to re-walk the table by GETNEXT instead.
+answer at all. That check runs only in a VLAN, VRF or SNMPv3 context. When
+the halved value is below C<$BACKOFF_FLOOR>, the connection has failed
+C<$MAX_FAILED_BULKWALKS> bulkwalks, or a bulkwalk fails with
+C<nonincreasing> while C<BulkOrderCheck> is on, sets the walk state up to
+re-walk the table by GETNEXT instead.
 
 =cut
 
@@ -5345,14 +5346,15 @@ sub _walk_unreachable {
     my $sess = $w->{sess};
 
     return 0 if $retry ne 'timeout' or $w->{probed};
-    return 0 if $self->_walk_context() eq '';
+    my $context = $self->_walk_context();
+    return 0 if $context eq '';
     $w->{probed} = 1;
 
     my $probe = SNMP::Varbind->new( [ $w->{qual_leaf}, $w->{partial} ] );
     $sess->getnext($probe);
     return 0 unless ( $sess->{ErrorNum} || 0 ) == -24;    # SNMPERR_TIMEOUT
 
-    $self->_walk_recovery()->{contexts}{ $self->_walk_context() } = 1;
+    $self->_walk_recovery()->{contexts}{$context} = 1;
     return 1;
 }
 
