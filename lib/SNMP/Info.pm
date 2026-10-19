@@ -1924,6 +1924,77 @@ sub clear_walk_status {
     return;
 }
 
+=item $info->bulkwalk_recovery()
+
+Returns a copy of what this object has learned from failed bulkwalks (see
+C<BulkOrderCheck> and C<BulkBackoff>), as a reference to a hash. Changing
+the copy does not change how later walks run. C<update()> resets the state
+when C<DestHost>, C<Version> or C<RemotePort> changes, and keeps it when
+only C<Community> or C<Context> changes. Keys may be added in later
+releases; ignore any you do not know.
+
+=over
+
+=item toobig_repeaters
+
+The repeaters every table starts from after a tooBig back-off, otherwise
+undef.
+
+=item slow_repeaters
+
+The repeaters every table starts from once C<slow_tables> reached three,
+otherwise undef.
+
+=item slow_tables
+
+The number of tables that needed timeout recovery.
+
+=item failed
+
+The number of failed bulkwalks, not counting those in unreachable
+contexts. At C<$MAX_FAILED_BULKWALKS> (9) the object stops bulkwalking.
+
+=item getnext
+
+1 when every later table is walked by GETNEXT: after the failed bulkwalk
+cap, or when tooBig back-off reached the floor.
+
+=item contexts
+
+A reference to a sorted array of the contexts marked unreachable, as in the
+C<context> of a walk outcome.
+
+=item tables
+
+A reference to a hash, keyed by qualified leaf, of what each table learned:
+C<repeaters>, the repeaters a timeout back-off lowered it to, or undef;
+C<getnext>, 1 when the table is walked by GETNEXT; C<getnext_reason>,
+C<'nonincreasing'> or C<'timeout'>, why it was; and C<slow>, 1 when the
+table needed timeout recovery.
+
+=back
+
+=cut
+
+sub bulkwalk_recovery {
+    my $self  = shift;
+    my $state = $self->_walk_recovery();
+    my %tables;
+    foreach my $leaf ( keys %{ $state->{tables} } ) {
+        my $entry = $state->{tables}{$leaf};
+        $tables{$leaf} = {
+            map { $_ => $entry->{$_} }
+                qw(repeaters getnext getnext_reason slow)
+        };
+    }
+    return {
+        ( map { $_ => $state->{$_} }
+            qw(toobig_repeaters slow_repeaters slow_tables failed getnext) ),
+        contexts => [ sort keys %{ $state->{contexts} } ],
+        tables   => \%tables,
+    };
+}
+
 =back
 
 =head2 Object Scalar Methods
@@ -5485,7 +5556,7 @@ sub _walk_getnext_fallback {
         && ( $reason eq 'timeout' or $reason eq 'nonincreasing' );
 
     if ($table_only) {
-        $self->_walk_table_set( $w, getnext => 1 );
+        $self->_walk_table_set( $w, getnext => 1, getnext_reason => $reason );
     }
     else {
         $state->{getnext} = 1;
@@ -5780,8 +5851,9 @@ switch and C<failed> counts failed bulkwalks. C<slow_tables> and
 C<slow_repeaters> track tables that timed out and recovered. C<contexts>
 holds unreachable contexts keyed by C<_walk_context>. C<tables> holds a
 per-table entry, keyed by qualified leaf, of
-C<< { repeaters, getnext, slow, slow_final } >>. C<slow_final> is the
-repeaters a slow table's last bulkwalk used, undef when it ended on getnext.
+C<< { repeaters, getnext, getnext_reason, slow, slow_final } >>.
+C<slow_final> is the repeaters a slow table's last bulkwalk used, undef
+when it ended on getnext.
 
 =cut
 
@@ -5801,7 +5873,8 @@ sub _walk_recovery {
 =item $info->_walk_table(\%w)
 
 Returns the recovery entry of the table being walked, keyed by
-C<< $w->{qual_leaf} >>, as C<< { repeaters, getnext, slow, slow_final } >>.
+C<< $w->{qual_leaf} >>, as
+C<< { repeaters, getnext, getnext_reason, slow, slow_final } >>.
 Returns an empty hashref when the table has none, and never creates one.
 
 =cut

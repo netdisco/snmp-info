@@ -2810,6 +2810,87 @@ sub clear_walk_status : Tests(2) {
   };
 }
 
+sub bulkwalk_recovery : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'bulkwalk_recovery');
+
+  subtest 'bulkwalk_recovery__fresh_object__reports_nothing_learned' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info(undef);
+    cmp_deeply(
+      $info->bulkwalk_recovery(),
+      {
+        toobig_repeaters => undef,
+        slow_repeaters   => undef,
+        slow_tables      => 0,
+        failed           => 0,
+        getnext          => 0,
+        contexts         => [],
+        tables           => {},
+      },
+      'empty state'
+    );
+  };
+
+  subtest 'bulkwalk_recovery__out_of_order_table__reports_nonincreasing' =>
+    sub {
+    plan tests => 2;
+    my $info = $test->_out_of_order_info;
+    $info->i_description();
+    my $recovery = $info->bulkwalk_recovery();
+    cmp_deeply(
+      $recovery->{tables},
+      {
+        'IF-MIB::ifDescr' => {
+          repeaters      => undef,
+          getnext        => 1,
+          getnext_reason => 'nonincreasing',
+          slow           => undef,
+        }
+      },
+      'table on GETNEXT because of the order'
+    );
+    cmp_deeply($recovery, superhashof({getnext => 0, failed => 1}),
+      'object still bulkwalks');
+    };
+
+  subtest 'bulkwalk_recovery__timeout_ladder_ends_on_getnext__reports_timeout'
+    => sub {
+    plan tests => 1;
+    my $info = $test->_backoff_info(ErrorNum => -24, ErrorStr => 'Timeout');
+    $info->i_description();
+    cmp_deeply(
+      $info->bulkwalk_recovery()->{tables}{'IF-MIB::ifDescr'},
+      {repeaters => 5, getnext => 1, getnext_reason => 'timeout', slow => 1},
+      'table on GETNEXT after its timeout ladder'
+    );
+    };
+
+  subtest 'bulkwalk_recovery__unreachable_contexts__listed_sorted' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info(undef);
+    $info->_walk_recovery()->{contexts} = {30 => 1, 20 => 1};
+    cmp_deeply($info->bulkwalk_recovery()->{contexts},
+      [20, 30], 'contexts sorted');
+  };
+
+  subtest 'bulkwalk_recovery__copy_changed__state_unchanged' => sub {
+    plan tests => 2;
+    my $info = $test->_out_of_order_info;
+    $info->i_description();
+    my $copy = $info->bulkwalk_recovery();
+    $copy->{getnext} = 1;
+    $copy->{tables}{'IF-MIB::ifDescr'}{getnext} = 0;
+    push @{$copy->{contexts}}, '20';
+    cmp_deeply($info->_walk_recovery(),
+      superhashof({getnext => 0, contexts => {}}),
+      'object state unchanged');
+    cmp_deeply($info->_walk_table({qual_leaf => 'IF-MIB::ifDescr'}),
+      superhashof({getnext => 1}), 'table state unchanged');
+  };
+}
+
 # More IF-MIB tables, for tests that walk several tables on one connection
 my $MORE_IF_ROWS = {
   'IF-MIB::ifName'  => {1 => 'lo', 2 => 'e0', 3 => 'e1'},
