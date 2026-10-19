@@ -170,9 +170,12 @@ sub walk_recovery : Tests(8) {
   can_ok($test->{info}, '_walk_recovery');
   my $set_state = sub {
     my $info = shift;
-    @{$info->_walk_recovery()}{qw(repeaters getnext failed)} = (5, 1, 2);
+    @{$info->_walk_recovery()}{qw(toobig_repeaters getnext failed)} = (5, 1, 2);
   };
-  my $initial = {repeaters => undef, getnext => 0, failed => 0};
+  my $initial = {
+    toobig_repeaters => undef, getnext => 0, failed => 0, slow_tables => 0,
+    slow_repeaters => undef, contexts => {}, tables => {},
+  };
 
   subtest 'walk_recovery__new_object__starts_blank' => sub {
     plan tests => 1;
@@ -186,7 +189,7 @@ sub walk_recovery : Tests(8) {
     $set_state->($info);
     $info->clear_cache();
     cmp_deeply($info->_walk_recovery(),
-      {repeaters => 5, getnext => 1, failed => 2}, 'state unchanged');
+      superhashof({toobig_repeaters => 5, getnext => 1, failed => 2}), 'state unchanged');
   };
   subtest 'walk_recovery__update_same_host__keeps_state' => sub {
     plan tests => 2;
@@ -197,7 +200,7 @@ sub walk_recovery : Tests(8) {
     delete $info->{args}{Session};
     ok($info->update(Community => 'public@10'), 'update() succeeds');
     cmp_deeply($info->_walk_recovery(),
-      {repeaters => 5, getnext => 1, failed => 2}, 'state unchanged');
+      superhashof({toobig_repeaters => 5, getnext => 1, failed => 2}), 'state unchanged');
   };
   subtest 'walk_recovery__update_same_new_host_twice__resets_once' => sub {
     plan tests => 3;
@@ -209,7 +212,7 @@ sub walk_recovery : Tests(8) {
     $set_state->($info);
     ok($info->update(DestHost => '192.0.2.2'), 'second update() succeeds');
     cmp_deeply($info->_walk_recovery(),
-      {repeaters => 5, getnext => 1, failed => 2}, 'state kept');
+      superhashof({toobig_repeaters => 5, getnext => 1, failed => 2}), 'state kept');
   };
   subtest 'walk_recovery__update_back_to_original_host__resets' => sub {
     plan tests => 3;
@@ -555,7 +558,7 @@ sub specify : Tests(6) {
     plan tests => 4;
     my $info = $test->{info};
     my $state = $info->_walk_recovery();
-    @{$state}{qw(repeaters getnext failed)} = (5, 1, 2);
+    @{$state}{qw(toobig_repeaters getnext failed)} = (5, 1, 2);
     $info->bulk_order_check(0);
     $info->bulk_backoff(0);
     $info->cache({
@@ -566,7 +569,7 @@ sub specify : Tests(6) {
     my $sub_obj = $info->specify();
     isa_ok($sub_obj, 'SNMP::Info::Layer7::APC');
     cmp_deeply($sub_obj->_walk_recovery(),
-      {repeaters => 5, getnext => 1, failed => 2}, 'state carried');
+      superhashof({toobig_repeaters => 5, getnext => 1, failed => 2}), 'state carried');
     is($sub_obj->bulk_order_check(), 0, 'BulkOrderCheck carried');
     is($sub_obj->bulk_backoff(), 0, 'BulkBackoff carried');
   };
@@ -2934,7 +2937,7 @@ sub bulk_order_recovery : Tests(7) {
       'second table records the out-of-order step at 5'
     );
     cmp_deeply($info->_walk_recovery(),
-      {repeaters => 5, getnext => 1, failed => 3},
+      superhashof({toobig_repeaters => 5, getnext => 1, failed => 3}),
       'third failure reaches the cap');
     My::Test::Class::set_fault($sess, undef);
     $info->i_alias();
@@ -3015,7 +3018,7 @@ sub _unreachable_info {
   return $info;
 }
 
-sub bulk_backoff_recovery : Tests(14) {
+sub bulk_backoff_recovery : Tests(16) {
   my $test = shift;
 
   subtest 'bulk_backoff__toobig_above_5__succeeds_at_5' => sub {
@@ -3037,7 +3040,7 @@ sub bulk_backoff_recovery : Tests(14) {
       'outcome records the backed-off bulkwalk'
     );
     cmp_deeply($info->_walk_recovery(),
-      {repeaters => 5, failed => 2, getnext => 0},
+      superhashof({toobig_repeaters => 5, failed => 2, getnext => 0}),
       'connection keeps the lowered value');
   };
 
@@ -3104,7 +3107,7 @@ sub bulk_backoff_recovery : Tests(14) {
       'outcome records the backed-off bulkwalk'
     );
     cmp_deeply($info->_walk_recovery(),
-      {repeaters => 10, getnext => 0, failed => 1},
+      superhashof({toobig_repeaters => 10, getnext => 0, failed => 1}),
       'connection keeps the lowered value');
   };
 
@@ -3128,7 +3131,7 @@ sub bulk_backoff_recovery : Tests(14) {
       'outcome records the bulkwalk timeout without recovery'
     );
     cmp_deeply($info->_walk_recovery(),
-      {repeaters => undef, getnext => 0, failed => 1},
+      superhashof({toobig_repeaters => undef, getnext => 0, failed => 1}),
       'only the failed bulkwalk count changes');
     };
 
@@ -3141,7 +3144,7 @@ sub bulk_backoff_recovery : Tests(14) {
     cmp_deeply($test->_bulkwalk_repeaters, [20, 20, 20],
       'one bulkwalk per unreachable table');
     cmp_deeply($info->_walk_recovery(),
-      {repeaters => undef, getnext => 0, failed => 3},
+      superhashof({toobig_repeaters => undef, getnext => 0, failed => 3}),
       'three failed bulkwalks counted without a GETNEXT switch');
     cmp_deeply($info->i_mtu(), $MORE_IF_ROWS->{'IF-MIB::ifMtu'},
       'fourth table rows returned');
@@ -3176,6 +3179,31 @@ sub bulk_backoff_recovery : Tests(14) {
       }),
       'outcome records the recovery and the cut-short GETNEXT walk'
     );
+    };
+
+  subtest
+    'bulk_backoff__lowered_bulk_repeaters_after_toobig__starts_at_caller_value'
+    => sub {
+    plan tests => 2;
+    my $info = $test->_backoff_info(min_repeaters => 11);
+    $info->i_description();
+    is($info->_walk_recovery()->{toobig_repeaters}, 10, 'toobig value learned');
+    $info->{BulkRepeaters} = 6;
+    My::Test::Class::set_fault($test->mock_session, undef);
+    $info->i_name();
+    cmp_deeply($test->_bulkwalk_repeaters, [6], 'caller value obeyed');
+    };
+
+  subtest 'bulk_backoff__table_learned_value__used_for_that_table_only' =>
+    sub {
+    plan tests => 1;
+    my $info = $test->_backoff_info();
+    My::Test::Class::set_fault($test->mock_session, undef);
+    $info->_walk_table_set({qual_leaf => 'IF-MIB::ifDescr'}, repeaters => 5);
+    $info->i_description();
+    $info->i_name();
+    cmp_deeply($test->_bulkwalk_repeaters, [5, 20],
+      'learned value applies to its own table only');
     };
 
   subtest 'bulk_backoff__repeaters_below_floor__goes_straight_to_getnext' =>
@@ -3266,7 +3294,7 @@ sub bulk_backoff_recovery : Tests(14) {
     is($info->i_description(), undef, 'returns undef');
     ok(!$sess->called('getnext'), 'no GETNEXT probe sent');
     cmp_deeply($info->_walk_recovery(),
-      {repeaters => undef, getnext => 0, failed => 0},
+      superhashof({toobig_repeaters => undef, getnext => 0, failed => 0}),
       'recovery state unchanged');
   };
 

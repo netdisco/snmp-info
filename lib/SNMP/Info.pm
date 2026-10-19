@@ -5201,14 +5201,14 @@ sub _walk_setup {
         = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
     my $bulkwalk_on = defined $self->{BulkWalk} ? $self->{BulkWalk} : 1;
     my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
-    my $state   = $self->_walk_recovery();
-    my $lowered = $state->{repeaters};
-    $w->{repeaters}
-        = defined $lowered ? $lowered : $self->{BulkRepeaters} || $REPEATERS;
+    my $state = $self->_walk_recovery();
+    $w->{repeaters} = $self->_walk_start_repeaters($w);
     $w->{bulkwalk}
         = $can_bulkwalk
         && $ver != 1
         && !$state->{getnext}
+        && !$self->_walk_table($w)->{getnext}
+        && !$state->{contexts}{ $self->_walk_context() }
         && $state->{failed} < $MAX_FAILED_BULKWALKS;
     $w->{loopdetect}
         = defined $self->{LoopDetect} ? $self->{LoopDetect} : 1;
@@ -5400,7 +5400,7 @@ sub _walk_backoff {
 
     return 0 if $state->{failed} >= $MAX_FAILED_BULKWALKS;
     return 0 if $repeaters < $BACKOFF_FLOOR;
-    $state->{repeaters} = $w->{repeaters} = $repeaters;
+    $state->{toobig_repeaters} = $w->{repeaters} = $repeaters;
     return 1;
 }
 
@@ -5644,15 +5644,76 @@ sub _walk_incomplete {
 =item $info->_walk_recovery()
 
 Returns the hash of bulkwalk recovery state for this object, creating it on
-first use as C<< { repeaters => undef, getnext => 0, failed => 0 } >>.
-After C<getnext> is set, C<repeaters> keeps its last lowered value.
+first use as C<< { toobig_repeaters => undef, getnext => 0, failed => 0,
+slow_tables => 0, slow_repeaters => undef, contexts => {}, tables => {} } >>.
+C<toobig_repeaters> is the object-wide value a tooBig back-off lowered, and
+keeps it after C<getnext> is set. C<getnext> is the object-wide GETNEXT
+switch and C<failed> counts failed bulkwalks. C<slow_tables> and
+C<slow_repeaters> track tables that timed out and recovered. C<contexts>
+holds unreachable contexts keyed by C<_walk_context>. C<tables> holds a
+per-table entry, keyed by qualified leaf, of C<< { repeaters, getnext, slow } >>.
 
 =cut
 
 sub _walk_recovery {
     my $self = shift;
-    return $self->{walk_recovery}
-        ||= { repeaters => undef, getnext => 0, failed => 0 };
+    return $self->{walk_recovery} ||= {
+        toobig_repeaters => undef,
+        getnext          => 0,
+        failed           => 0,
+        slow_tables      => 0,
+        slow_repeaters   => undef,
+        contexts         => {},
+        tables           => {},
+    };
+}
+
+=item $info->_walk_table(\%w)
+
+Returns the recovery entry of the table being walked, keyed by
+C<< $w->{qual_leaf} >>, as C<< { repeaters, getnext, slow } >>. Returns an
+empty hashref when the table has none, and never creates one.
+
+=cut
+
+sub _walk_table {
+    my ( $self, $w ) = @_;
+    return $self->_walk_recovery()->{tables}{ $w->{qual_leaf} } || {};
+}
+
+=item $info->_walk_table_set(\%w, %fields)
+
+Creates the recovery entry of the table being walked if needed and sets
+C<%fields> in it.
+
+=cut
+
+sub _walk_table_set {
+    my ( $self, $w, %fields ) = @_;
+    my $entry = $self->_walk_recovery()->{tables}{ $w->{qual_leaf} } ||= {};
+    @{$entry}{ keys %fields } = values %fields;
+    return $entry;
+}
+
+=item $info->_walk_start_repeaters(\%w)
+
+Returns the repeaters a walk of the table starts with: the smallest defined
+of the caller's C<BulkRepeaters> (or C<$REPEATERS>), the object's
+C<toobig_repeaters> and C<slow_repeaters>, and the table's own learned
+C<repeaters>.
+
+=cut
+
+sub _walk_start_repeaters {
+    my ( $self, $w ) = @_;
+    my $state  = $self->_walk_recovery();
+    my @values = grep {defined} (
+        $self->{BulkRepeaters} || $REPEATERS,
+        @{$state}{qw(toobig_repeaters slow_repeaters)},
+        $self->_walk_table($w)->{repeaters},
+    );
+    my ($smallest) = sort { $a <=> $b } @values;
+    return $smallest;
 }
 
 =item _walk_target(\%session_args)
