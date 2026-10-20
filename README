@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.980000
+    SNMP::Info - Version 3.981000
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -1150,6 +1150,79 @@ USAGE
 
             (default 1, which means "on")
 
+        BulkOrderCheck
+            Checks that the rows a bulkwalk returns are in increasing OID
+            order, and recovers when they are not. Set to 0 to restore the
+            3.980000 behavior.
+
+            When on, SNMP::Info sets the session's "NonIncreasing" to 1 for
+            each of its own bulkwalk calls, and restores the caller's value
+            afterwards. A table whose rows come back out of order is walked
+            again by GETNEXT, and that table uses GETNEXT for the rest of
+            the object, in every later context. Later tables are unaffected,
+            unless the object has reached its limit of failed bulkwalks (see
+            "BulkBackoff"). An agent that repeats the last OID of its
+            previous reply also counts as out of order. Net-SNMP checks the
+            order only from the second reply of a bulkwalk on, so a table
+            that fits in one reply is never checked, and rows out of order
+            inside the first reply are not detected.
+
+            When off, SNMP::Info leaves "NonIncreasing" as the caller set
+            it. With it unset, Net-SNMP keeps a row only when its OID is
+            higher than the highest OID kept so far in that walk. Any other
+            row is dropped with no error, so the table comes back with rows
+            missing and the walk is recorded as complete. When every row of
+            a reply is dropped, Net-SNMP asks again from the same OID, gets
+            the same reply, and the walk never ends.
+
+            (default 1, which means "on")
+
+        BulkBackoff
+            Lowers the number of MaxRepeaters, and falls back to GETNEXT,
+            when a bulkwalk fails with tooBig or times out. Set to 0 to
+            restore the 3.980000 behavior, where such a table method returns
+            undef.
+
+            When on, the failed bulkwalk is retried with half the
+            MaxRepeaters. When the halved value would be below
+            $BACKOFF_FLOOR (5), the table is walked by GETNEXT instead. With
+            the default "BulkRepeaters" of 20, the attempts are 20, 10, 5
+            and then GETNEXT. After tooBig, the lowered value, and the
+            switch to GETNEXT, are kept for every later table on the object.
+            After a timeout they are kept for that table only, which starts
+            from its lowered value, or uses GETNEXT, in every later context
+            on the object.
+
+            Before the first halving for a timeout in a VLAN, VRF or SNMPv3
+            context, one GETNEXT is sent for the table's first row. When it
+            also times out, the context is taken to be unreachable, such as
+            a VLAN community the agent ignores: the method returns undef,
+            and the lowered value and the switch to GETNEXT are left as they
+            were. The context is marked unreachable. Every later table in it
+            is walked by GETNEXT without a bulkwalk or a probe, and other
+            contexts are unaffected. A GETNEXT walk in the context that
+            returns rows clears the mark, and later tables bulkwalk again.
+            An unreachable context counts toward neither
+            $MAX_FAILED_BULKWALKS nor $SLOW_DEVICE_TABLES. The context the
+            object connected with is never marked and gets no probe: there
+            the timeout is backed off as any other.
+
+            A table that timed out on bulkwalk without its context being
+            marked unreachable counts as slow. Once $SLOW_DEVICE_TABLES (3)
+            tables are slow, every later table starts at the smallest value
+            with which one of them completed by bulkwalk, or at
+            $BACKOFF_FLOOR when none did.
+
+            An object tolerates at most $MAX_FAILED_BULKWALKS (9) failed
+            bulkwalks, counting tooBig, timeouts that reach a live agent and
+            the out-of-order failures of "BulkOrderCheck" together. The
+            table whose bulkwalk fails for the ninth time is walked by
+            GETNEXT, and so is every later table on the object. Other
+            errors, and a MIB object the device does not implement, are not
+            retried.
+
+            (default 1, which means "on")
+
         IncompleteWalk
             What a table method does when its walk ends before the whole
             table was read, because of a timeout, an SNMP error or a
@@ -1160,13 +1233,14 @@ USAGE
             walk ended.
 
             'undef' returns undef and caches nothing for any incomplete
-            walk, as a failed bulkwalk always does. This includes a getnext
-            walk or a bulkwalk cut short by a detected loop.
+            walk, as a failed bulkwalk that is not recovered does. This
+            includes a getnext walk or a bulkwalk cut short by a detected
+            loop.
 
             Any other value is treated as 'partial'.
 
-            (default 'partial', which will change to 'undef' in a future
-            release)
+            (default 'partial'. Callers that rewrite stored data from a
+            table should set 'undef' rather than rely on the default.)
 
         IgnoreNetSNMPConf
             Net-SNMP version 5.0 and higher read configuration files,
@@ -1251,8 +1325,9 @@ USAGE
 
     update()
         Replace the existing session with a new one with updated values,
-        without re-identifying the device. The only supported changes are to
-        Community or Context.
+        without re-identifying the device. It is meant for changes to
+        Community or Context, which keep the walk recovery state. A change
+        to DestHost, Version or RemotePort resets that state.
 
         Clears the object cache.
 
@@ -1280,11 +1355,18 @@ USAGE
     that ends on a timeout, an SNMP error or a detected loop is incomplete.
     After a failed getnext walk or a detected loop, the method returns the
     rows collected before the walk ended, unless the "IncompleteWalk" option
-    says otherwise. After a failed bulkwalk it returns undef in either mode.
-    These records and the option survive $info->clear_cache(),
+    says otherwise. After a failed bulkwalk that is not recovered (see
+    "BulkOrderCheck" and "BulkBackoff") it returns undef in either mode. A
+    recovered bulkwalk whose GETNEXT re-walk ends early counts as a failed
+    getnext walk instead, so in "partial" mode it returns the rows collected
+    before then. These records and the option survive $info->clear_cache(),
     $info->cache() and $info->update(), and carry over to the object
     returned by $info->specify(). Only $info->clear_walk_status() clears the
     records. The records never contain the community string.
+
+    The bulkwalk recovery state (see "BulkOrderCheck" and "BulkBackoff") is
+    kept the same way, except that $info->update() resets it when it changes
+    "DestHost", "Version" or "RemotePort".
 
     Each outcome is a reference to a hash with these keys:
 
@@ -1325,10 +1407,21 @@ USAGE
         a single GET.
 
     repeaters
-        The BulkRepeaters value of a bulkwalk, otherwise undef.
+        The MaxRepeaters value of the final bulkwalk attempt, which is the
+        lowered value after a back-off (see "BulkBackoff"), otherwise undef.
 
     recovery
-        A reference to an array, empty for now.
+        A reference to an array of the recovery steps this walk took before
+        its final attempt, in order, empty when there were none. Each step
+        is a reference to a hash with the "walk", "repeaters", "reason" and
+        "errornum" of the attempt that failed. With "BulkOrderCheck" on, a
+        bulkwalk that fails with 'nonincreasing' adds the step "{ walk =>
+        'bulkwalk', repeaters => N, reason => 'nonincreasing', errornum =>
+        -65 }", and the table is walked again by GETNEXT. With "BulkBackoff"
+        on, each bulkwalk that fails with 'toobig' or 'timeout' adds a step
+        with the repeaters it was sent with, such as "{ walk => 'bulkwalk',
+        repeaters => 20, reason => 'toobig', errornum => 1 }", before the
+        retry with fewer repeaters or by GETNEXT.
 
     rows
         The number of rows collected before the walk ended.
@@ -1345,6 +1438,45 @@ USAGE
 
     $info->clear_walk_status()
         Clears both $info->walk_status() and $info->walk_failures().
+
+    $info->bulkwalk_recovery()
+        Returns a copy of what this object has learned from failed bulkwalks
+        (see "BulkOrderCheck" and "BulkBackoff"), as a reference to a hash.
+        Changing the copy does not change how later walks run. update()
+        resets the state when "DestHost", "Version" or "RemotePort" changes,
+        and keeps it when only "Community" or "Context" changes. Keys may be
+        added in later releases; ignore any you do not know.
+
+        toobig_repeaters
+            The repeaters every table starts from after a tooBig back-off,
+            otherwise undef.
+
+        slow_repeaters
+            The repeaters every table starts from once "slow_tables" reached
+            three, otherwise undef.
+
+        slow_tables
+            The number of tables that needed timeout recovery.
+
+        failed
+            The number of failed bulkwalks, not counting those in
+            unreachable contexts. At $MAX_FAILED_BULKWALKS (9) the object
+            stops bulkwalking.
+
+        getnext
+            1 when every later table is walked by GETNEXT: after the failed
+            bulkwalk cap, or when tooBig back-off reached the floor.
+
+        contexts
+            A reference to a sorted array of the contexts marked
+            unreachable, as in the "context" of a walk outcome.
+
+        tables
+            A reference to a hash, keyed by qualified leaf, of what each
+            table learned: "repeaters", the repeaters a timeout back-off
+            lowered it to, or undef; "getnext", 1 when the table is walked
+            by GETNEXT; "getnext_reason", 'nonincreasing' or 'timeout', why
+            it was; and "slow", 1 when the table needed timeout recovery.
 
   Object Scalar Methods
     These are for package related data, not directly supplied from SNMP.
@@ -1377,6 +1509,16 @@ USAGE
         Returns if loopdetect is currently turned on for this object.
 
         Optionally sets the loopdetect parameter.
+
+    $info->bulk_order_check([1|0])
+        Returns whether the "BulkOrderCheck" option is on for this object, 1
+        unless set to a false value. Optionally sets it. 0 restores the
+        3.980000 behavior.
+
+    $info->bulk_backoff([1|0])
+        Returns whether the "BulkBackoff" option is on for this object, 1
+        unless set to a false value. Optionally sets it. 0 restores the
+        3.980000 behavior.
 
     $info->incomplete_walk(['partial'|'undef'])
         Returns the "IncompleteWalk" mode of this object, 'partial' when
@@ -2182,6 +2324,24 @@ SNMP::INFO INTERNALS
         Default 20. MaxRepeaters for BULKWALK operations. See "perldoc SNMP"
         for more info. Can change by passing "BulkRepeaters" option in new()
 
+    $BACKOFF_FLOOR
+        Default 5. The lowest MaxRepeaters value a bulkwalk is retried with
+        when "BulkBackoff" is on.
+
+    $MAX_FAILED_BULKWALKS
+        Default 9. How many failed bulkwalks an object tolerates before it
+        walks every later table with GETNEXT, counting every bulkwalk
+        failure that "BulkBackoff" or "BulkOrderCheck" acts on. Failures in
+        a context marked unreachable are not counted.
+
+    $SLOW_DEVICE_TABLES
+        Default 3. How many distinct tables must time out on bulkwalk
+        without their context being marked unreachable before the object is
+        treated as slow, and every later table starts from the smallest
+        repeaters with which one of them completed by bulkwalk (or
+        $BACKOFF_FLOOR when none did). Tables in a context marked
+        unreachable are not counted.
+
   Data Munging Callback Subroutines
     munge_speed()
         Makes human friendly speed ratings using %SPEED_MAP.
@@ -2421,6 +2581,98 @@ SNMP::INFO INTERNALS
 
         These methods return data as a reference to a hash.
 
+    $info->_walk_setup(\%w)
+        Fills in the walk state for one "_load_attr" call: the qualified and
+        bare leaf names, the varbind, the repeaters, and whether to
+        bulkwalk.
+
+    $info->_walk_partial_get(\%w)
+        For a partial fetch, tries a GET first in case the partial is a leaf
+        OID, and records its result or failure in the walk state.
+
+    $info->_walk_bulk(\%w)
+        Runs the bulkwalk when the walk state allows one. A bulkwalk that
+        fails with "toobig" or "timeout" while "BulkBackoff" is on is
+        retried with half the repeaters, unless "_walk_unreachable" finds
+        the context does not answer at all. That check runs only in a VLAN,
+        VRF or SNMPv3 context. When the halved value is below
+        $BACKOFF_FLOOR, the object has failed $MAX_FAILED_BULKWALKS
+        bulkwalks, or a bulkwalk fails with "nonincreasing" while
+        "BulkOrderCheck" is on, sets the walk state up to re-walk the table
+        by GETNEXT instead.
+
+    $info->_walk_unreachable(\%w, retry)
+        On the table's first bulkwalk "timeout" in a VLAN, VRF or SNMPv3
+        context, sends one GETNEXT for the table's first row. When that also
+        times out, marks the context unreachable and returns true: the table
+        is not recovered, and later tables in the context skip the bulkwalk.
+        Nothing counts toward $MAX_FAILED_BULKWALKS. Otherwise returns
+        false. In the base context ("_walk_context" returns an empty string)
+        no probe is sent and the context is never marked, so the table backs
+        off as for any timeout.
+
+    $info->_walk_bulk_retry_reason(\%w)
+        Returns the reason of the bulkwalk that just failed when SNMP::Info
+        recovers from it: "nonincreasing" with "BulkOrderCheck" on, "toobig"
+        or "timeout" with "BulkBackoff" on. Otherwise returns undef.
+
+    $info->_walk_bulkwalk_call(\%w)
+        The only place "_load_attr" calls "bulkwalk" on the session. With
+        "BulkOrderCheck" on, sets the session's "NonIncreasing" to 1 for
+        this call only, so out-of-order rows fail with -65 instead of being
+        dropped.
+
+    $info->_walk_bulk_step(\%w)
+        After a bulkwalk failed in a way SNMP::Info recovers from: records
+        the recovery step, counts the failure against the object, and resets
+        the walk state for the next attempt.
+
+    $info->_walk_backoff(\%w, reason)
+        Halves the repeaters of the walk and returns true, unless the halved
+        value is below $BACKOFF_FLOOR or the object has failed
+        $MAX_FAILED_BULKWALKS (9) bulkwalks. The halved value is kept for
+        the object when "reason" is "toobig", and for the table alone when
+        it is "timeout". When it returns false, the limit that stopped it,
+        "floor" or "cap", is left in "$w->{backoff_stop}". The floor is
+        checked first.
+
+    $info->_walk_at_cap()
+        Returns true when the object has failed $MAX_FAILED_BULKWALKS
+        bulkwalks, so no table is walked by bulkwalk any more.
+
+    $info->_walk_getnext_fallback(\%w, reason)
+        Sets the walk state up so that "_walk_rows" re-walks the table from
+        its start by GETNEXT. A "timeout" that stopped at the floor, and a
+        "nonincreasing" failure, switch only the table to GETNEXT, unless
+        the object has failed $MAX_FAILED_BULKWALKS bulkwalks, which counts
+        as the "cap" whatever stopped the walk. Every other reason, and any
+        walk stopped by the cap, switches the object.
+
+    $info->_walk_rows(\%w)
+        Reads rows from the bulkwalk result or by GETNEXT into the walk
+        state's "localstore", stopping at the end of the table, the partial,
+        or a loop.
+
+    $info->_walk_note_slow(\%w)
+        Called once per walk, after its last bulkwalk or GETNEXT attempt.
+        When the walk recovered from a "timeout" on a live agent (a
+        "timeout" step in "recovery") and its table is not yet slow, marks
+        the table slow, keeping the repeaters of the bulkwalk that completed
+        it, or undef when it ended on GETNEXT or on a failed bulkwalk, and
+        counts it in "slow_tables". When "slow_tables" reaches
+        $SLOW_DEVICE_TABLES and "slow_repeaters" is not set, sets it to the
+        smallest repeaters kept by a slow table, or to $BACKOFF_FLOOR when
+        there is none.
+
+    $info->_walk_heal_context(\%w, rows)
+        Called once per walk, beside "_walk_note_slow". When the walk ended
+        by GETNEXT with at least one row, clears the unreachable mark of the
+        current context, so later tables in it bulkwalk again.
+
+    $info->_walk_finish(\%w)
+        Records the walk outcome, applies "IncompleteWalk", caches a full
+        walk and munges the rows. Returns what "_load_attr" returns.
+
     _v1_nosuch(sess, ver)
         Returns true when an SNMPv1 request failed with noSuchName. A
         partial GET answered this way goes on to walk the table; on other
@@ -2441,10 +2693,47 @@ SNMP::INFO INTERNALS
         undefined reason and "absent" (the object is not on the device) are
         both complete.
 
+    $info->_walk_recovery()
+        Returns the hash of bulkwalk recovery state for this object,
+        creating it on first use as "{ toobig_repeaters => undef, getnext =>
+        0, failed => 0, slow_tables => 0, slow_repeaters => undef, contexts
+        => {}, tables => {} }". "toobig_repeaters" is the object-wide value
+        a tooBig back-off lowered, and keeps it after "getnext" is set.
+        "getnext" is the object-wide GETNEXT switch and "failed" counts
+        failed bulkwalks. "slow_tables" and "slow_repeaters" track tables
+        that timed out and recovered. "contexts" holds unreachable contexts
+        keyed by "_walk_context". "tables" holds a per-table entry, keyed by
+        qualified leaf, of "{ repeaters, getnext, getnext_reason, slow,
+        slow_final }". "slow_final" is the repeaters a slow table's last
+        bulkwalk used, undef when it ended on getnext.
+
+    $info->_walk_table(\%w)
+        Returns the recovery entry of the table being walked, keyed by
+        "$w->{qual_leaf}", as "{ repeaters, getnext, getnext_reason, slow,
+        slow_final }". Returns an empty hashref when the table has none, and
+        never creates one.
+
+    $info->_walk_table_set(\%w, %fields)
+        Creates the recovery entry of the table being walked if needed and
+        sets %fields in it.
+
+    $info->_walk_start_repeaters(\%w)
+        Returns the repeaters a walk of the table starts with: the smallest
+        defined of the caller's "BulkRepeaters" (or $REPEATERS), the
+        object's "toobig_repeaters" and "slow_repeaters", and the table's
+        own learned "repeaters".
+
+    _walk_target(\%session_args)
+        Returns the "DestHost", "Version" and "RemotePort" a session was
+        asked for, the target that the walk recovery state belongs to.
+
+    _same_target(\%old, \%new)
+        True when two targets from "_walk_target" are equal.
+
     $info->_walk_outcome(\%outcome)
         Records the outcome of one table walk as the latest for its method,
         and appends it to the failures when the walk is incomplete. Fills in
-        "context" and "recovery".
+        "context", and "recovery" when the outcome has none.
 
     $info->_walk_context()
         Returns the SNMPv3 Context of the session. On SNMPv1 and SNMPv2c,

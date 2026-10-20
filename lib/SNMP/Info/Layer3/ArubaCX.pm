@@ -48,7 +48,7 @@ use SNMP::Info::IEEE802_Bridge;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MODEL_MAP, %MUNGE);
 
-$VERSION = '3.980000';
+$VERSION = '3.981000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
