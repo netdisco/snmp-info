@@ -1457,12 +1457,13 @@ recorded, see L</Incomplete Walks>.
 C<'partial'> returns, and caches, the rows collected before the walk ended.
 
 C<'undef'> returns undef and caches nothing for any incomplete walk, as a
-failed bulkwalk always does. This includes a getnext walk or a bulkwalk cut
-short by a detected loop.
+failed bulkwalk that is not recovered does. This includes a getnext walk or
+a bulkwalk cut short by a detected loop.
 
 Any other value is treated as C<'partial'>.
 
-(default C<'partial'>, which will change to C<'undef'> in a future release)
+(default C<'partial'>. Callers that rewrite stored data from a table should
+set C<'undef'> rather than rely on the default.)
 
 =item IgnoreNetSNMPConf
 
