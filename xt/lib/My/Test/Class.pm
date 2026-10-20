@@ -268,12 +268,9 @@ TODO: {
 
 sub create_mock_session {
 
-  my $home = dir($ENV{HOME}, 'netdisco-mibs');
-
-  local $ENV{'SNMPCONFPATH'}        = $EMPTY;
-  local $ENV{'MIBDIRS'}             = $EMPTY;
-  local $ENV{'MIBS'}                = $EMPTY;
-  local $ENV{'SNMP_PERSISTENT_DIR'} = $home;
+  local $ENV{'SNMPCONFPATH'} = $EMPTY;
+  local $ENV{'MIBDIRS'}      = $EMPTY;
+  local $ENV{'MIBS'}         = $EMPTY;
 
   SNMP::initMib();
 
