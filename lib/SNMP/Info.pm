@@ -1385,48 +1385,49 @@ Set to C<0> to turn off loop detection.
 =item BulkOrderCheck
 
 Checks that the rows a bulkwalk returns are in increasing OID order, and
-recovers when they are not. Set to C<0> to restore the behavior before this
-release.
+recovers when they are not. Set to C<0> to restore the 3.980000 behavior.
 
 When on, SNMP::Info sets the session's C<NonIncreasing> to 1 for each of its
 own bulkwalk calls, and restores the caller's value afterwards. A table whose
 rows come back out of order is walked again by GETNEXT, and that table uses
 GETNEXT for the rest of the object, in every later context. Later tables
-are unaffected, unless the connection has reached its limit of failed
+are unaffected, unless the object has reached its limit of failed
 bulkwalks (see L</BulkBackoff>). An agent that repeats the last OID of its
 previous reply also counts as out of order. Net-SNMP checks the order only
 from the second reply of a bulkwalk on, so a table that fits in one reply is
 never checked, and rows out of order inside the first reply are
 not detected.
 
-When off, and unless the caller set C<NonIncreasing> on the session,
-Net-SNMP drops without any error each row that is not above the highest OID
-already accepted, and keeps the later rows that are. A reply that is wholly
-below the last OID is requested again without end.
+When off, SNMP::Info leaves C<NonIncreasing> as the caller set it. With it
+unset, Net-SNMP keeps a row only when its OID is higher than the highest OID
+kept so far in that walk. Any other row is dropped with no error, so the
+table comes back with rows missing and the walk is recorded as complete.
+When every row of a reply is dropped, Net-SNMP asks again from the same
+OID, gets the same reply, and the walk never ends.
 
 (default 1, which means "on")
 
 =item BulkBackoff
 
-Lowers the number of MaxRepeaters, and falls back to getnext, when a
+Lowers the number of MaxRepeaters, and falls back to GETNEXT, when a
 bulkwalk fails with tooBig or times out. Set to C<0> to restore the
-behavior before this release, where such a table method returns undef.
+3.980000 behavior, where such a table method returns undef.
 
 When on, the failed bulkwalk is retried with half the MaxRepeaters. When the
 halved value would be below C<$BACKOFF_FLOOR> (5), the table is walked by
-getnext instead. With the default L</BulkRepeaters> of 20, the attempts are
-20, 10, 5 and then getnext. After tooBig, the lowered value, and the switch
-to getnext, are kept for every later table on the same connection. After a
+GETNEXT instead. With the default L</BulkRepeaters> of 20, the attempts are
+20, 10, 5 and then GETNEXT. After tooBig, the lowered value, and the switch
+to GETNEXT, are kept for every later table on the object. After a
 timeout they are kept for that table only, which starts from its lowered
-value, or uses getnext, in every later context on the connection.
+value, or uses GETNEXT, in every later context on the object.
 
 Before the first halving for a timeout in a VLAN, VRF or SNMPv3 context,
 one GETNEXT is sent for the table's first row. When it also times out, the
 context is taken to be unreachable, such as a VLAN community
 the agent ignores: the method returns undef, and the lowered value and the
-switch to getnext are left as they were. The context is marked unreachable.
-Every later table in it is walked by getnext without a bulkwalk or a probe,
-and other contexts are unaffected. A getnext walk in the context that
+switch to GETNEXT are left as they were. The context is marked unreachable.
+Every later table in it is walked by GETNEXT without a bulkwalk or a probe,
+and other contexts are unaffected. A GETNEXT walk in the context that
 returns rows clears the mark, and later tables bulkwalk again. An
 unreachable context counts toward neither C<$MAX_FAILED_BULKWALKS> nor
 C<$SLOW_DEVICE_TABLES>. The context the object connected with is never
@@ -1437,12 +1438,13 @@ unreachable counts as slow. Once C<$SLOW_DEVICE_TABLES> (3) tables are slow,
 every later table starts at the smallest value with which one of them
 completed by bulkwalk, or at C<$BACKOFF_FLOOR> when none did.
 
-A connection tolerates at most C<$MAX_FAILED_BULKWALKS> (9) failed
+An object tolerates at most C<$MAX_FAILED_BULKWALKS> (9) failed
 bulkwalks, counting tooBig, timeouts that reach a live agent and the
 out-of-order failures of L</BulkOrderCheck> together. The table whose
-bulkwalk fails for the ninth time is walked by getnext, and so is every
-later table on the connection.
-Other errors, and an object that is not on the device, are not retried.
+bulkwalk fails for the ninth time is walked by GETNEXT, and so is every
+later table on the object.
+Other errors, and a MIB object the device does not implement, are not
+retried.
 
 (default 1, which means "on")
 
@@ -1797,11 +1799,10 @@ otherwise. After a failed bulkwalk that is not recovered (see
 C<BulkOrderCheck> and C<BulkBackoff>) it returns undef in either mode. A
 recovered bulkwalk whose GETNEXT re-walk ends early counts as a failed
 getnext walk instead, so in C<partial> mode it returns the rows collected
-before then. These
-records and the option survive $info->clear_cache(), $info->cache() and
-$info->update(), and carry over to
-the object returned by $info->specify(). Only $info->clear_walk_status()
-clears the records. The records never contain the community string.
+before then. These records and the option survive $info->clear_cache(),
+$info->cache() and $info->update(), and carry over to the object returned
+by $info->specify(). Only $info->clear_walk_status() clears the records.
+The records never contain the community string.
 
 The bulkwalk recovery state (see C<BulkOrderCheck> and C<BulkBackoff>) is
 kept the same way, except that $info->update() resets it when it changes
@@ -2128,8 +2129,8 @@ sub loopdetect {
 =item $info->bulk_order_check([1|0])
 
 Returns whether the C<BulkOrderCheck> option is on for this object, 1 unless
-set to a false value. Optionally sets it. C<0> restores the behavior before
-this release.
+set to a false value. Optionally sets it. C<0> restores the 3.980000
+behavior.
 
 =cut
 
@@ -2146,8 +2147,8 @@ sub bulk_order_check {
 =item $info->bulk_backoff([1|0])
 
 Returns whether the C<BulkBackoff> option is on for this object, 1 unless
-set to a false value. Optionally sets it. C<0> restores the behavior before
-this release.
+set to a false value. Optionally sets it. C<0> restores the 3.980000
+behavior.
 
 =cut
 
@@ -4268,10 +4269,10 @@ $BACKOFF_FLOOR = 5;
 
 =item $MAX_FAILED_BULKWALKS
 
-Default 9.  How many failed bulkwalks a target tolerates before it walks
-with getnext, counting every bulkwalk failure that L</BulkBackoff> or
-L</BulkOrderCheck> acts on. A context that does not answer at all counts
-toward nothing.
+Default 9.  How many failed bulkwalks an object tolerates before it walks
+every later table with GETNEXT, counting every bulkwalk failure that
+L</BulkBackoff> or L</BulkOrderCheck> acts on. Failures in a context marked
+unreachable are not counted.
 
 =cut
 
@@ -4280,10 +4281,10 @@ $MAX_FAILED_BULKWALKS = 9;
 =item $SLOW_DEVICE_TABLES
 
 Default 3.  How many distinct tables must time out on bulkwalk without their
-context being marked unreachable before the target is treated as slow, and
+context being marked unreachable before the object is treated as slow, and
 every later table starts from the smallest repeaters with which one of them
-completed by bulkwalk (or C<$BACKOFF_FLOOR> when none did). A context that
-does not answer at all counts toward nothing.
+completed by bulkwalk (or C<$BACKOFF_FLOOR> when none did). Tables in a
+context marked unreachable are not counted.
 
 =cut
 
@@ -5357,9 +5358,9 @@ sub _walk_partial_get {
 
 Runs the bulkwalk when the walk state allows one. A bulkwalk that fails
 with C<toobig> or C<timeout> while C<BulkBackoff> is on is retried with
-half the repeaters, unless C<_walk_unreachable> finds the target does not
+half the repeaters, unless C<_walk_unreachable> finds the context does not
 answer at all. That check runs only in a VLAN, VRF or SNMPv3 context. When
-the halved value is below C<$BACKOFF_FLOOR>, the connection has failed
+the halved value is below C<$BACKOFF_FLOOR>, the object has failed
 C<$MAX_FAILED_BULKWALKS> bulkwalks, or a bulkwalk fails with
 C<nonincreasing> while C<BulkOrderCheck> is on, sets the walk state up to
 re-walk the table by GETNEXT instead.
@@ -5441,6 +5442,7 @@ sub _walk_bulk_retry_reason {
     my ( $self, $w ) = @_;
     my $errornum = $w->{errornum};
 
+    # SNMPERR_OID_NONINCREASING
     return 'nonincreasing' if $errornum == -65 and $self->bulk_order_check();
     return unless $self->bulk_backoff();
     return 'toobig'  if $errornum == 1;      # SNMP_ERR_TOOBIG
@@ -5470,7 +5472,7 @@ sub _walk_bulkwalk_call {
 =item $info->_walk_bulk_step(\%w)
 
 After a bulkwalk failed in a way SNMP::Info recovers from: records the
-recovery step, counts the failure against the connection, and resets the
+recovery step, counts the failure against the object, and resets the
 walk state for the next attempt.
 
 =cut
@@ -5496,9 +5498,9 @@ sub _walk_bulk_step {
 =item $info->_walk_backoff(\%w, reason)
 
 Halves the repeaters of the walk and returns true, unless the halved value
-is below C<$BACKOFF_FLOOR> or the connection has failed
+is below C<$BACKOFF_FLOOR> or the object has failed
 C<$MAX_FAILED_BULKWALKS> (9) bulkwalks. The halved value is kept for the
-connection when C<reason> is C<toobig>, and for the table alone when it is
+object when C<reason> is C<toobig>, and for the table alone when it is
 C<timeout>. When it returns false, the limit that stopped it, C<floor> or
 C<cap>, is left in C<< $w->{backoff_stop} >>. The floor is checked first.
 
@@ -5527,7 +5529,7 @@ sub _walk_backoff {
 
 =item $info->_walk_at_cap()
 
-Returns true when the connection has failed C<$MAX_FAILED_BULKWALKS>
+Returns true when the object has failed C<$MAX_FAILED_BULKWALKS>
 bulkwalks, so no table is walked by bulkwalk any more.
 
 =cut
@@ -5542,9 +5544,9 @@ sub _walk_at_cap {
 Sets the walk state up so that C<_walk_rows> re-walks the table from its
 start by GETNEXT. A C<timeout> that stopped at the floor, and a
 C<nonincreasing> failure, switch only the table to GETNEXT, unless the
-connection has failed C<$MAX_FAILED_BULKWALKS> bulkwalks, which counts as the
+object has failed C<$MAX_FAILED_BULKWALKS> bulkwalks, which counts as the
 C<cap> whatever stopped the walk. Every other reason, and any walk stopped by
-the cap, switches the connection.
+the cap, switches the object.
 
 =cut
 
@@ -5819,6 +5821,10 @@ failed on the session, read before a later request can replace them.
 sub _walk_failure {
     my $sess     = shift;
     my $errornum = $sess->{ErrorNum};
+
+    # ErrorNum: negative values are Net-SNMP library errors (SNMPERR_* in
+    # net-snmp/library/snmp_api.h), positive values the PDU error-status
+    # (SNMP_ERR_* in net-snmp/library/snmp.h).
     my %reasons  = (
         -24 => 'timeout',          # SNMPERR_TIMEOUT
         1   => 'toobig',           # SNMP_ERR_TOOBIG
