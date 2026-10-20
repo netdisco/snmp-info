@@ -20,6 +20,11 @@ Version 3.981000 (2026-10-19)
   * #627 Meraki: report the model from sysDescr or the product sysObjectID,
     vendor "cisco meraki", and the ENTITY-MIB serial as serial1
 
+  [NEW FEATURES]
+
+  * Add Siemens SIMATIC, SINAMICS, and soft starter device detection and
+    extract model, firmware, and SIMATIC serial details from sysDescr
+
   [BUG FIXES]
 
   * #629 AlcatelLucent: alu8_vpa_type records its walk like other table

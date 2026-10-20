@@ -1137,6 +1137,12 @@ Subclass for Siemens Scalance devices.
 
 See documentation in L<SNMP::Info::Layer3::Scalance> for details.
 
+=item SNMP::Info::Layer3::Siemens
+
+Subclass for Siemens SIMATIC, SINAMICS, and soft starter devices.
+
+See documentation in L<SNMP::Info::Layer3::Siemens> for details.
+
 =item SNMP::Info::Layer3::SonicWALL
 
 Subclass for generic SonicWALL devices.
@@ -2517,6 +2523,12 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::Scalance'
 	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
 
+        # Siemens automation devices which identify themselves in sysDescr.
+        # Keep Scalance on its dedicated class above; Siemens PLCs, drives,
+        # HMIs, and soft starters use this description-based fallback.
+        $objtype = 'SNMP::Info::Layer3::Siemens'
+            if ( $desc =~ /^Siemens,?\s*(?:SIMATIC\s+(?:S7|HMI)\b|SINAMICS\b|Soft\s+starter\b)/i );
+
         # Aruba wireless switches (issue #403)
         $objtype = 'SNMP::Info::Layer3::Aruba'
             if ( $desc =~ /ArubaOS/ );
@@ -2753,6 +2765,12 @@ sub device_type {
         # it would flip/flop between those
         $objtype = 'SNMP::Info::Layer3::Scalance'
 	    if ( $soid =~ /\.1\.3\.6\.1\.4\.1\.4329\.6\.1\.2/i );
+
+        # Siemens automation devices which identify themselves in sysDescr.
+        # Keep Scalance on its dedicated class above; Siemens PLCs, drives,
+        # HMIs, and soft starters use this description-based fallback.
+        $objtype = 'SNMP::Info::Layer3::Siemens'
+            if ( $desc =~ /^Siemens,?\s*(?:SIMATIC\s+(?:S7|HMI)\b|SINAMICS\b|Soft\s+starter\b)/i );
 	    
         # Whiterabbit Timing
         $objtype = 'SNMP::Info::Layer3::Whiterabbit'
