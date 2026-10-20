@@ -55,4 +55,84 @@ sub layers : Tests(2) {
     is( $test->{info}->layers(), '00000110', q(Layers returns '00000110') );
 }
 
+sub vendor : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'vendor');
+  is($test->{info}->vendor(), 'cisco meraki',
+    q(Vendor returns 'cisco meraki'));
+}
+
+sub model : Tests(9) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'model');
+
+  my $model_for = sub {
+    my ($descr, $id) = @_;
+    $info->clear_cache();
+    $info->cache({'_description' => $descr, '_id' => $id});
+    return $info->model();
+  };
+
+  is($model_for->(
+      'Meraki MS120-8FP Cloud Managed PoE Switch',
+      '.1.3.6.1.4.1.29671.2.340'
+    ),
+    'MS120-8FP',
+    q(model__switch_sysdescr__returns_model_token));
+  is($model_for->(
+      'Meraki MR36 Cloud Managed Indoor AP', '.1.3.6.1.4.1.29671.2.37'
+    ),
+    'MR36',
+    q(model__ap_sysdescr__returns_model_token));
+  is($model_for->(
+      '=Meraki MR28 Cloud Managed AP', '.1.3.6.1.4.1.29671.2.28'
+    ),
+    'MR28',
+    q(model__sysdescr_with_leading_equals__returns_model_token));
+  is($model_for->(
+      'Meraki Cloud Managed 802.11n AP', '.1.3.6.1.4.1.29671.2.37'
+    ),
+    'MR36',
+    q(model__generic_sysdescr__maps_product_oid));
+  is($model_for->(undef, '.1.3.6.1.4.1.29671.2.388'),
+    'C9300', q(model__cloud_managed_c9300_oid__returns_C9300));
+  is($model_for->(undef, '.1.3.6.1.4.1.29671.2.102'),
+    'MX80', q(model__legacy_mx80_oid__returns_MX80));
+  like($model_for->(undef, '.1.3.6.1.4.1.29671.2.99999'),
+    qr/29671[.]2[.]99999$/,
+    q(model__unmapped_oid__falls_back_to_inherited_model));
+
+  $info->clear_cache();
+  is($info->model(), undef, q(model__no_data__returns_undef));
+}
+
+sub serial1 : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'serial1');
+
+  # entity_derived_serial makes a partial fetch of e_serial, which
+  # bypasses the cache, so the serial comes from the mocked session.
+  $info->cache({
+    '_e_parent' => 1,
+    '_e_class'  => 1,
+    'store'     => {
+      'e_parent' => {2000 => 0},
+      'e_class'  => {2000 => 'chassis'},
+    },
+  });
+  $info->{sess}{Data}
+    = {'ENTITY-MIB::entPhysicalSerialNum' => {2000 => 'Q2AB-CDEF-GHIJ'}};
+  is($info->serial1(), 'Q2AB-CDEF-GHIJ',
+    q(serial1__entity_chassis_serial__returns_it));
+
+  $info->clear_cache();
+  $info->{sess}{Data} = {};
+  is($info->serial1(), undef, q(serial1__no_entity_serial__returns_undef));
+}
+
 1;
