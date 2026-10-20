@@ -124,4 +124,33 @@ drives, and soft starters whose
 C<sysDescr> uses the Siemens product description format. SCALANCE devices
 continue to use L<SNMP::Info::Layer3::Scalance>.
 
+=head1 METHODS
+
+=head2 Overrides
+
+=over 4
+
+=item $siemens->vendor()
+
+Returns C<siemens>.
+
+=item $siemens->os()
+
+Returns C<siemens>.
+
+=item $siemens->model()
+
+Extracts the product model from the Siemens C<sysDescr> string.
+
+=item $siemens->os_ver()
+
+Extracts the firmware or software version from the Siemens C<sysDescr> string.
+
+=item $siemens->serial()
+
+Extracts a serial number from the Siemens C<sysDescr> string, falling back to
+the inherited serial number method when the description has no match.
+
+=back
+
 =cut
