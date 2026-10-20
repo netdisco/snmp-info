@@ -75,6 +75,7 @@ sub model {
     if ( $descr =~ /^Siemens,?\s*SIMATIC\s+(?:S7|HMI),\s*([^,]+)/i ) {
         return $1 if lc($1) ne 'unknown';
     }
+    return $1 if $descr =~ /^Siemens,?\s*(SIMOCODE\s+[^,]+)/i;
     return $1 if $descr =~ /^Siemens,?\s*SINAMICS,\s*([^,]+)/i;
     return $1 if $descr =~ /^Siemens\s+Soft\s+starter\s+([^,]+)/i;
     return $1 if $descr =~ /\b(6[A-Z0-9]{3}\s+\d{3}-[A-Z0-9]+-[A-Z0-9]+)\b/i;
@@ -118,7 +119,8 @@ SNMP::Info::Layer3::Siemens - SNMP interface to Siemens automation devices
 =head1 DESCRIPTION
 
 Provides manufacturer, model, firmware, and serial details for Siemens SIMATIC
-S7 controllers, SIMATIC HMIs, SINAMICS drives, and soft starters whose
+S7 controllers, SIMATIC HMIs, SIMOCODE motor management devices, SINAMICS
+drives, and soft starters whose
 C<sysDescr> uses the Siemens product description format. SCALANCE devices
 continue to use L<SNMP::Info::Layer3::Scalance>.
 
