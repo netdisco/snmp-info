@@ -2,8 +2,18 @@ Version 3.981000 (2026-tbd)
 
   [ENHANCEMENTS]
 
+  * #629 Recover from bulkwalk failures within the object: re-walk an
+    out-of-order table by GETNEXT (BulkOrderCheck), back off repeaters per
+    table on timeouts and per object on tooBig (BulkBackoff), skip
+    unreachable VLAN, VRF and v3 contexts, record repeaters and recovery in
+    walk_status, and add bulkwalk_recovery() (netdisco/netdisco#1744)
   * #627 Meraki: report the model from sysDescr or the product sysObjectID,
     vendor "cisco meraki", and the ENTITY-MIB serial as serial1
+
+  [BUG FIXES]
+
+  * #629 AlcatelLucent: alu8_vpa_type records its walk like other table
+    methods and ends cleanly on endOfMibView
 
 Version 3.980000 (2026-10-17)
 
