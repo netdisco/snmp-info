@@ -90,6 +90,9 @@ sub teardown : Tests(teardown) {
   delete $sess->{Fault};
   delete $sess->{_fault_count};
   delete $sess->{_fault_raised};
+  delete $sess->{_bulkwalk_calls};
+  delete $sess->{_getnext_served};
+  delete $sess->{NonIncreasing};
   delete @{$sess}{qw/ErrorNum ErrorStr/};
 
   # Restored here so a subtest that dies cannot leak them into later tests
@@ -406,8 +409,21 @@ sub mock_getnext {
       # we need to convert the leaf to an OID for match
       my $leaf_oid = SNMP::translateObj($leaf, 0, 1) || '';
 
+      # A numeric OID with no MIB node is resent whole; resolve it to the
+      # data column it extends, as a real agent would find the next row.
+      my $numeric = $leaf =~ /^[.]\d/;
+      if ($numeric && !($c_data->{$leaf} || $c_data->{$leaf_oid})) {
+        my ($column) = sort { length $b <=> length $a }
+          grep { index($leaf, "$_.") == 0 } keys %{$c_data};
+        if (defined $column) {
+          $iid  = substr($leaf, length($column) + 1);
+          $leaf = $leaf_oid = $column;
+          $vars->[0] = $leaf;
+        }
+      }
+
       my $fault     = _active_fault($self, 'getnext', $leaf, $leaf_oid);
-      my $count_key = $leaf_oid || $leaf;
+      my $count_key = $numeric ? $leaf : ($leaf_oid || $leaf);
       if ($fault
         && ($self->{_fault_count}{$count_key} || 0) >= ($fault->{after} || 0))
       {
@@ -461,19 +477,36 @@ sub mock_bulkwalk {
   $mock_session->mock(
     'bulkwalk',
     sub {
-      my ($self, undef, undef, $vars) = @_;
+      my ($self, undef, $repeaters, $vars) = @_;
       _clear_error($self);
 
       my ($leaf) = @{$vars};
+      push @{$self->{_bulkwalk_calls}}, {
+        repeaters     => $repeaters,
+        nonincreasing => ($self->{NonIncreasing} ? 1 : 0),
+        leaf          => $leaf,
+      };
       my $leaf_oid = SNMP::translateObj($leaf, 0, 1) || $EMPTY;
       my $fault = _active_fault($self, 'bulkwalk', $leaf, $leaf_oid);
-      if ($fault && !$fault->{loop}) {
+      if ($fault && $fault->{out_of_order} && $self->{NonIncreasing}) {
+        $fault = {%{$fault}, ErrorNum => -65, ErrorStr => 'OID not increasing'};
+        _raise_fault($self, $fault);
+        return (undef);
+      }
+      if ($fault && !$fault->{loop} && !$fault->{out_of_order}) {
         _raise_fault($self, $fault);
         return (undef);
       }
 
       my $data = $self->{Data}{$leaf} || $self->{Data}{$leaf_oid} || {};
       my @iids = sort keys %{$data};
+
+      # Without NonIncreasing, Net-SNMP drops everything from the first
+      # out-of-order row onwards and reports success.
+      if ($fault && $fault->{out_of_order}) {
+        splice @iids, ($fault->{after} || 0);
+        $fault = undef;
+      }
 
       # A loop fault repeats the first row after 'after' rows, as a
       # misbehaving agent would, and the bulkwalk itself succeeds.
@@ -494,26 +527,51 @@ sub _clear_error {
   return;
 }
 
-# Install a fault (or remove it with undef) and restart the getnext row
-# counters used by 'after'.
+# Install a fault, or an arrayref of faults (or remove them with undef), and
+# restart the getnext row counters used by 'after'.
 sub set_fault {
   my ($sess, $fault) = @_;
   if ($fault) { $sess->{Fault} = $fault }
   else        { delete $sess->{Fault} }
   $sess->{_fault_count} = {};
+  delete $sess->{_bulkwalk_calls};
+  delete $sess->{_getnext_served};
   return;
 }
 
-# Return the injected fault when it targets this op and leaf.
+# Return the first injected fault that targets this op and leaf.
 sub _active_fault {
   my ($sess, $op, @leaf_names) = @_;
-  my $fault = $sess->{Fault} or return;
+  my $faults = $sess->{Fault} or return;
+
+  foreach my $fault (ref $faults eq 'ARRAY' ? @{$faults} : $faults) {
+    return $fault if _fault_fires($sess, $fault, $op, @leaf_names);
+  }
+  return;
+}
+
+sub _fault_fires {
+  my ($sess, $fault, $op, @leaf_names) = @_;
 
   return unless ($fault->{op} || $EMPTY) eq $op;
   return unless defined $fault->{leaf};
   my %wanted    = map { $_ => 1 } grep {$_} @leaf_names;
   my $fault_oid = SNMP::translateObj($fault->{leaf}, 0, 1) || $EMPTY;
-  return ($wanted{$fault->{leaf}} || $wanted{$fault_oid}) ? $fault : undef;
+  return unless $wanted{$fault->{leaf}} || $wanted{$fault_oid};
+
+  # min_repeaters reads the call just logged by mock_bulkwalk
+  if (defined $fault->{min_repeaters}) {
+    my $call = $sess->{_bulkwalk_calls}[-1] || {};
+    return if ($call->{repeaters} || 0) < $fault->{min_repeaters};
+  }
+
+  # Separate from the getnext row counters, which are keyed by OID
+  if (defined $fault->{times}) {
+    my $key = join ':', 'times', $op, $fault->{leaf};
+    return if ($sess->{_fault_count}{$key} || 0) >= $fault->{times};
+    $sess->{_fault_count}{$key}++;
+  }
+  return 1;
 }
 
 sub _raise_fault {
@@ -525,10 +583,13 @@ sub _raise_fault {
 }
 
 # A timeout leaves the varbind untouched; a loop fault instead serves the
-# table's first row again, as a misbehaving agent would.
+# table's first row again, as a misbehaving agent would. An order fault
+# serves the rows in the order it lists, as a hashed H3C table does.
 sub _apply_getnext_fault {
   my ($sess, $fault, $vars, $data) = @_;
 
+  return _getnext_in_order($sess, $fault->{order}, $vars, $data)
+    if $fault->{order};
   if (!$fault->{loop}) {
     _raise_fault($sess, $fault);
     return;
@@ -536,6 +597,26 @@ sub _apply_getnext_fault {
   my ($first_iid) = sort keys %{$data};
   $vars->[1] = $first_iid;
   $vars->[2] = $data->{$first_iid};
+  return (wantarray() ? $vars : $vars->[2]);
+}
+
+# Each served iid is logged in _getnext_served. An iid missing from the
+# order ends the column rather than continuing lexicographically.
+sub _getnext_in_order {
+  my ($sess, $order, $vars, $data) = @_;
+
+  my $position = 0;
+  if (defined $vars->[1]) {
+    my ($sent) = grep { $order->[$_] eq $vars->[1] } 0 .. $#{$order};
+    $position = defined $sent ? $sent + 1 : scalar @{$order};
+  }
+  if ($position > $#{$order}) {
+    $vars->[0] = 'unknown';
+    return (wantarray() ? $vars : $EMPTY);
+  }
+  $vars->[1] = $order->[$position];
+  $vars->[2] = $data->{$vars->[1]};
+  push @{$sess->{_getnext_served}}, $vars->[1];
   return (wantarray() ? $vars : $vars->[2]);
 }
 

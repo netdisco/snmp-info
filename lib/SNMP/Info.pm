@@ -24,7 +24,8 @@ use NetAddr::IP::Lite ':lower';
 
 our
     ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD, $INIT, $DEBUG, %SPEED_MAP,
-     $NOSUCH, $BIGINT, $REPEATERS);
+     $NOSUCH, $BIGINT, $REPEATERS,
+     $BACKOFF_FLOOR, $MAX_FAILED_BULKWALKS, $SLOW_DEVICE_TABLES);
 
 $VERSION = '3.980000';
 
@@ -1381,6 +1382,72 @@ Set to C<0> to turn off loop detection.
 
 (default 1, which means "on")
 
+=item BulkOrderCheck
+
+Checks that the rows a bulkwalk returns are in increasing OID order, and
+recovers when they are not. Set to C<0> to restore the 3.980000 behavior.
+
+When on, SNMP::Info sets the session's C<NonIncreasing> to 1 for each of its
+own bulkwalk calls, and restores the caller's value afterwards. A table whose
+rows come back out of order is walked again by GETNEXT, and that table uses
+GETNEXT for the rest of the object, in every later context. Later tables
+are unaffected, unless the object has reached its limit of failed
+bulkwalks (see L</BulkBackoff>). An agent that repeats the last OID of its
+previous reply also counts as out of order. Net-SNMP checks the order only
+from the second reply of a bulkwalk on, so a table that fits in one reply is
+never checked, and rows out of order inside the first reply are
+not detected.
+
+When off, SNMP::Info leaves C<NonIncreasing> as the caller set it. With it
+unset, Net-SNMP keeps a row only when its OID is higher than the highest OID
+kept so far in that walk. Any other row is dropped with no error, so the
+table comes back with rows missing and the walk is recorded as complete.
+When every row of a reply is dropped, Net-SNMP asks again from the same
+OID, gets the same reply, and the walk never ends.
+
+(default 1, which means "on")
+
+=item BulkBackoff
+
+Lowers the number of MaxRepeaters, and falls back to GETNEXT, when a
+bulkwalk fails with tooBig or times out. Set to C<0> to restore the
+3.980000 behavior, where such a table method returns undef.
+
+When on, the failed bulkwalk is retried with half the MaxRepeaters. When the
+halved value would be below C<$BACKOFF_FLOOR> (5), the table is walked by
+GETNEXT instead. With the default L</BulkRepeaters> of 20, the attempts are
+20, 10, 5 and then GETNEXT. After tooBig, the lowered value, and the switch
+to GETNEXT, are kept for every later table on the object. After a
+timeout they are kept for that table only, which starts from its lowered
+value, or uses GETNEXT, in every later context on the object.
+
+Before the first halving for a timeout in a VLAN, VRF or SNMPv3 context,
+one GETNEXT is sent for the table's first row. When it also times out, the
+context is taken to be unreachable, such as a VLAN community
+the agent ignores: the method returns undef, and the lowered value and the
+switch to GETNEXT are left as they were. The context is marked unreachable.
+Every later table in it is walked by GETNEXT without a bulkwalk or a probe,
+and other contexts are unaffected. A GETNEXT walk in the context that
+returns rows clears the mark, and later tables bulkwalk again. An
+unreachable context counts toward neither C<$MAX_FAILED_BULKWALKS> nor
+C<$SLOW_DEVICE_TABLES>. The context the object connected with is never
+marked and gets no probe: there the timeout is backed off as any other.
+
+A table that timed out on bulkwalk without its context being marked
+unreachable counts as slow. Once C<$SLOW_DEVICE_TABLES> (3) tables are slow,
+every later table starts at the smallest value with which one of them
+completed by bulkwalk, or at C<$BACKOFF_FLOOR> when none did.
+
+An object tolerates at most C<$MAX_FAILED_BULKWALKS> (9) failed
+bulkwalks, counting tooBig, timeouts that reach a live agent and the
+out-of-order failures of L</BulkOrderCheck> together. The table whose
+bulkwalk fails for the ninth time is walked by GETNEXT, and so is every
+later table on the object.
+Other errors, and a MIB object the device does not implement, are not
+retried.
+
+(default 1, which means "on")
+
 =item IncompleteWalk
 
 What a table method does when its walk ends before the whole table was read,
@@ -1390,12 +1457,13 @@ recorded, see L</Incomplete Walks>.
 C<'partial'> returns, and caches, the rows collected before the walk ended.
 
 C<'undef'> returns undef and caches nothing for any incomplete walk, as a
-failed bulkwalk always does. This includes a getnext walk or a bulkwalk cut
-short by a detected loop.
+failed bulkwalk that is not recovered does. This includes a getnext walk or
+a bulkwalk cut short by a detected loop.
 
 Any other value is treated as C<'partial'>.
 
-(default C<'partial'>, which will change to C<'undef'> in a future release)
+(default C<'partial'>. Callers that rewrite stored data from a table should
+set C<'undef'> rather than rely on the default.)
 
 =item IgnoreNetSNMPConf
 
@@ -1548,6 +1616,12 @@ sub new {
         delete $sess_args{IncompleteWalk};
     }
 
+    foreach my $option (qw(BulkOrderCheck BulkBackoff)) {
+        next unless defined $args{$option};
+        $new_obj->{$option} = $args{$option};
+        delete $sess_args{$option};
+    }
+
     if ( defined $args{IgnoreNetSNMPConf} ) {
         $new_obj->{IgnoreNetSNMPConf} = $args{IgnoreNetSNMPConf} || 0;
         delete $sess_args{IgnoreNetSNMPConf};
@@ -1597,6 +1671,8 @@ sub new {
         $$init_ref = 1;
     }
 
+    $new_obj->{walk_target} = _walk_target( \%args );
+
     # Connects to device unless open session is provided.
     $sess = SNMP::Session->new(
         'UseEnums' => 1,
@@ -1639,8 +1715,9 @@ sub new {
 =item update()
 
 Replace the existing session with a new one with updated values,
-without re-identifying the device.  The only supported changes are
-to Community or Context.
+without re-identifying the device.  It is meant for changes to Community
+or Context, which keep the walk recovery state. A change to DestHost,
+Version or RemotePort resets that state.
 
 Clears the object cache.
 
@@ -1665,6 +1742,8 @@ sub update {
     delete $sess_args{BulkWalk};
     delete $sess_args{LoopDetect};
     delete $sess_args{IncompleteWalk};
+    delete $sess_args{BulkOrderCheck};
+    delete $sess_args{BulkBackoff};
     delete $sess_args{IgnoreNetSNMPConf};
     delete $sess_args{BigInt};
     delete $sess_args{MibDirs};
@@ -1687,6 +1766,10 @@ sub update {
         );
         return;
     }
+    my $target = _walk_target( \%sess_args );
+    $obj->{walk_recovery} = undef
+        unless _same_target( $obj->{walk_target}, $target );
+    $obj->{walk_target} = $target;
     $obj->clear_cache();
     return $obj->session($sess);
 }
@@ -1713,11 +1796,18 @@ Each table walk records whether it collected the whole table. A walk that
 ends on a timeout, an SNMP error or a detected loop is incomplete. After a
 failed getnext walk or a detected loop, the method returns the rows
 collected before the walk ended, unless the C<IncompleteWalk> option says
-otherwise. After a failed bulkwalk it returns undef in either mode. These
-records and the option survive $info->clear_cache(), $info->cache() and
-$info->update(), and carry over to
-the object returned by $info->specify(). Only $info->clear_walk_status()
-clears the records. The records never contain the community string.
+otherwise. After a failed bulkwalk that is not recovered (see
+C<BulkOrderCheck> and C<BulkBackoff>) it returns undef in either mode. A
+recovered bulkwalk whose GETNEXT re-walk ends early counts as a failed
+getnext walk instead, so in C<partial> mode it returns the rows collected
+before then. These records and the option survive $info->clear_cache(),
+$info->cache() and $info->update(), and carry over to the object returned
+by $info->specify(). Only $info->clear_walk_status() clears the records.
+The records never contain the community string.
+
+The bulkwalk recovery state (see C<BulkOrderCheck> and C<BulkBackoff>) is
+kept the same way, except that $info->update() resets it when it changes
+C<DestHost>, C<Version> or C<RemotePort>.
 
 Each outcome is a reference to a hash with these keys:
 
@@ -1768,11 +1858,22 @@ a single GET.
 
 =item repeaters
 
-The BulkRepeaters value of a bulkwalk, otherwise undef.
+The MaxRepeaters value of the final bulkwalk attempt, which is the lowered
+value after a back-off (see C<BulkBackoff>), otherwise undef.
 
 =item recovery
 
-A reference to an array, empty for now.
+A reference to an array of the recovery steps this walk took before its
+final attempt, in order, empty when there were none. Each step is a
+reference to a hash with the C<walk>, C<repeaters>, C<reason> and
+C<errornum> of the attempt that failed. With C<BulkOrderCheck> on, a
+bulkwalk that fails with C<'nonincreasing'> adds the step
+C<< { walk => 'bulkwalk', repeaters => N, reason => 'nonincreasing',
+errornum => -65 } >>, and the table is walked again by GETNEXT. With
+C<BulkBackoff> on, each bulkwalk that fails with C<'toobig'> or
+C<'timeout'> adds a step with the repeaters it was sent with, such as
+C<< { walk => 'bulkwalk', repeaters => 20, reason => 'toobig',
+errornum => 1 } >>, before the retry with fewer repeaters or by GETNEXT.
 
 =item rows
 
@@ -1823,6 +1924,77 @@ sub clear_walk_status {
     $self->{walk_status}   = {};
     $self->{walk_failures} = [];
     return;
+}
+
+=item $info->bulkwalk_recovery()
+
+Returns a copy of what this object has learned from failed bulkwalks (see
+C<BulkOrderCheck> and C<BulkBackoff>), as a reference to a hash. Changing
+the copy does not change how later walks run. C<update()> resets the state
+when C<DestHost>, C<Version> or C<RemotePort> changes, and keeps it when
+only C<Community> or C<Context> changes. Keys may be added in later
+releases; ignore any you do not know.
+
+=over
+
+=item toobig_repeaters
+
+The repeaters every table starts from after a tooBig back-off, otherwise
+undef.
+
+=item slow_repeaters
+
+The repeaters every table starts from once C<slow_tables> reached three,
+otherwise undef.
+
+=item slow_tables
+
+The number of tables that needed timeout recovery.
+
+=item failed
+
+The number of failed bulkwalks, not counting those in unreachable
+contexts. At C<$MAX_FAILED_BULKWALKS> (9) the object stops bulkwalking.
+
+=item getnext
+
+1 when every later table is walked by GETNEXT: after the failed bulkwalk
+cap, or when tooBig back-off reached the floor.
+
+=item contexts
+
+A reference to a sorted array of the contexts marked unreachable, as in the
+C<context> of a walk outcome.
+
+=item tables
+
+A reference to a hash, keyed by qualified leaf, of what each table learned:
+C<repeaters>, the repeaters a timeout back-off lowered it to, or undef;
+C<getnext>, 1 when the table is walked by GETNEXT; C<getnext_reason>,
+C<'nonincreasing'> or C<'timeout'>, why it was; and C<slow>, 1 when the
+table needed timeout recovery.
+
+=back
+
+=cut
+
+sub bulkwalk_recovery {
+    my $self  = shift;
+    my $state = $self->_walk_recovery();
+    my %tables;
+    foreach my $leaf ( keys %{ $state->{tables} } ) {
+        my $entry = $state->{tables}{$leaf};
+        $tables{$leaf} = {
+            map { $_ => $entry->{$_} }
+                qw(repeaters getnext getnext_reason slow)
+        };
+    }
+    return {
+        ( map { $_ => $state->{$_} }
+            qw(toobig_repeaters slow_repeaters slow_tables failed getnext) ),
+        contexts => [ sort keys %{ $state->{contexts} } ],
+        tables   => \%tables,
+    };
 }
 
 =back
@@ -1953,6 +2125,42 @@ sub loopdetect {
         $self->{LoopDetect} = $ld;
     }
     return $self->{LoopDetect};
+}
+
+=item $info->bulk_order_check([1|0])
+
+Returns whether the C<BulkOrderCheck> option is on for this object, 1 unless
+set to a false value. Optionally sets it. C<0> restores the 3.980000
+behavior.
+
+=cut
+
+sub bulk_order_check {
+    my $self  = shift;
+    my $check = shift;
+
+    $self->{BulkOrderCheck} = $check if defined $check;
+    return ( defined $self->{BulkOrderCheck} and !$self->{BulkOrderCheck} )
+        ? 0
+        : 1;
+}
+
+=item $info->bulk_backoff([1|0])
+
+Returns whether the C<BulkBackoff> option is on for this object, 1 unless
+set to a false value. Optionally sets it. C<0> restores the 3.980000
+behavior.
+
+=cut
+
+sub bulk_backoff {
+    my $self    = shift;
+    my $backoff = shift;
+
+    $self->{BulkBackoff} = $backoff if defined $backoff;
+    return ( defined $self->{BulkBackoff} and !$self->{BulkBackoff} )
+        ? 0
+        : 1;
 }
 
 =item $info->incomplete_walk(['partial'|'undef'])
@@ -2697,6 +2905,10 @@ sub specify {
     $sub_obj->{walk_status}    = $self->{walk_status};
     $sub_obj->{walk_failures}  = $self->{walk_failures};
     $sub_obj->{IncompleteWalk} = $self->{IncompleteWalk};
+    $sub_obj->{walk_recovery}  = $self->{walk_recovery};
+    $sub_obj->{walk_target}    = $self->{walk_target};
+    $sub_obj->{BulkOrderCheck} = $self->{BulkOrderCheck};
+    $sub_obj->{BulkBackoff}    = $self->{BulkBackoff};
 
     $self->debug()
         and print "SNMP::Info::specify() - Changed Class to $device_type.\n";
@@ -4047,6 +4259,38 @@ more info.  Can change by passing L</BulkRepeaters> option in new()
 
 $REPEATERS = 20;
 
+=item $BACKOFF_FLOOR
+
+Default 5.  The lowest MaxRepeaters value a bulkwalk is retried with when
+L</BulkBackoff> is on.
+
+=cut
+
+$BACKOFF_FLOOR = 5;
+
+=item $MAX_FAILED_BULKWALKS
+
+Default 9.  How many failed bulkwalks an object tolerates before it walks
+every later table with GETNEXT, counting every bulkwalk failure that
+L</BulkBackoff> or L</BulkOrderCheck> acts on. Failures in a context marked
+unreachable are not counted.
+
+=cut
+
+$MAX_FAILED_BULKWALKS = 9;
+
+=item $SLOW_DEVICE_TABLES
+
+Default 3.  How many distinct tables must time out on bulkwalk without their
+context being marked unreachable before the object is treated as slow, and
+every later table starts from the smallest repeaters with which one of them
+completed by bulkwalk (or C<$BACKOFF_FLOOR> when none did). Tables in a
+context marked unreachable are not counted.
+
+=cut
+
+$SLOW_DEVICE_TABLES = 3;
+
 =back
 
 =head2 Data Munging Callback Subroutines
@@ -4982,31 +5226,6 @@ sub _load_attr {
             return;
         }
 
-        # We want the qualified leaf name so that we can
-        # specify the Module (MIB) in the case of private leaf naming
-        # conflicts.  Example: ALTEON-TIGON-SWITCH-MIB::agSoftwareVersion
-        # and ALTEON-CHEETAH-SWITCH-MIB::agSoftwareVersion
-        # Third argument to translateObj specifies the Module prefix
-
-        my $qual_leaf = SNMP::translateObj($oid,0,1) || '';
-
-        # We still want just the leaf since a SNMP get in the case of a
-        # partial fetch may strip the Module portion upon return.  We need
-        # the match to make sure we didn't leave the table during getnext
-        # requests
-
-        my ($leaf) = $qual_leaf =~ /::(.+)$/;
-
-        # If we weren't able to translate, we'll only have an OID
-        $leaf = $oid unless defined $leaf;
-
-        $self->debug()
-            and print "SNMP::Info::_load_attr $method : $qual_leaf",
-            defined $partial ? "($partial)" : '', " : $oid" ,
-            defined $partial ? ".$partial" : '', "\n";
-
-        my $var = SNMP::Varbind->new( [$qual_leaf, $partial] );
-
         # So devices speaking SNMP v.1 are not supposed to give out
         # data from SNMP2, but most do.  Net-SNMP, being very precise
         # will tell you that the SNMP OID doesn't exist for the device.
@@ -5014,199 +5233,556 @@ sub _load_attr {
         # but not for getnext().  We set this flag normally, and if we're
         # using V1, let's try and fetch the data even if we get one of those.
 
-        my $localstore      = undef;
-        my $errornum        = 0;
-        my %seen            = ();
-        my $walk            = 'getnext';
-        my $reason          = undef;
-        my $walk_error      = undef;
-        my $walk_errno      = 0;
-        my $bulkwalk_failed = 0;
+        my $w = {
+            method          => $method,
+            oid             => $oid,
+            sess            => $sess,
+            ver             => $ver,
+            raw             => $raw,
+            attr            => $attr,
+            partial         => $partial,
+            localstore      => undef,
+            errornum        => 0,
+            seen            => {},
+            walk            => 'getnext',
+            reason          => undef,
+            walk_error      => undef,
+            walk_errno      => 0,
+            bulkwalk_failed => 0,
+            probed          => 0,
+            vars            => [],
+            recovery        => [],
+        };
 
-        my $vars = [];
-        my $bulkwalk_no
-            = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
-        my $bulkwalk_on = defined $self->{BulkWalk} ? $self->{BulkWalk} : 1;
-        my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
-        my $repeaters = $self->{BulkRepeaters} || $REPEATERS;
-        my $bulkwalk = $can_bulkwalk && $ver != 1;
-        my $loopdetect
-            = defined $self->{LoopDetect} ? $self->{LoopDetect} : 1;
+        $self->_walk_setup($w);
+        $self->_walk_partial_get($w);
+        $self->_walk_bulk($w);
+        $self->_walk_rows($w);
+        return $self->_walk_finish($w);
+    }
+}
 
-        if ( defined $partial ) {
+=item $info->_walk_setup(\%w)
 
-            # Try a GET, in case the partial is a leaf OID.
-            # Would like to only do this if we know the OID is
-            # long enough; implementing that would require a
-            # lot of MIB mucking.
-            my $try = $sess->get($var);
-            $errornum = $sess->{ErrorNum};
-            if ( defined($try) && $errornum == 0 && $try !~ /^NOSUCH/ ) {
-                $var->[2] = $try;
-                $vars     = [$var];
-                $bulkwalk = 1;        # fake a bulkwalk return
-                $walk     = 'get';
-            }
+Fills in the walk state for one C<_load_attr> call: the qualified and bare
+leaf names, the varbind, the repeaters, and whether to bulkwalk.
 
-            # We want to execute the while loop below for the getnext request.
-            if ( _v1_nosuch( $sess, $ver ) ) {
-                $errornum = 0;
-            }
-            elsif ($errornum) {
-                $walk = 'get';
-                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess)
-                    unless _nosuch_end($sess);
+=cut
+
+sub _walk_setup {
+    my ( $self, $w ) = @_;
+    my ( $method, $oid, $partial, $ver ) = @{$w}{qw(method oid partial ver)};
+
+    # We want the qualified leaf name so that we can
+    # specify the Module (MIB) in the case of private leaf naming
+    # conflicts.  Example: ALTEON-TIGON-SWITCH-MIB::agSoftwareVersion
+    # and ALTEON-CHEETAH-SWITCH-MIB::agSoftwareVersion
+    # Third argument to translateObj specifies the Module prefix
+
+    $w->{qual_leaf} = SNMP::translateObj($oid,0,1) || '';
+
+    # We still want just the leaf since a SNMP get in the case of a
+    # partial fetch may strip the Module portion upon return.  We need
+    # the match to make sure we didn't leave the table during getnext
+    # requests
+
+    ( $w->{leaf} ) = $w->{qual_leaf} =~ /::(.+)$/;
+
+    # If we weren't able to translate, we'll only have an OID
+    $w->{leaf} = $oid unless defined $w->{leaf};
+
+    $self->debug()
+        and print "SNMP::Info::_load_attr $method : $w->{qual_leaf}",
+        defined $partial ? "($partial)" : '', " : $oid" ,
+        defined $partial ? ".$partial" : '', "\n";
+
+    $w->{var} = SNMP::Varbind->new( [$w->{qual_leaf}, $partial] );
+
+    my $bulkwalk_no
+        = $self->can('bulkwalk_no') ? $self->bulkwalk_no() : 0;
+    my $bulkwalk_on = defined $self->{BulkWalk} ? $self->{BulkWalk} : 1;
+    my $can_bulkwalk = $bulkwalk_on && !$bulkwalk_no;
+    my $state = $self->_walk_recovery();
+    $w->{repeaters} = $self->_walk_start_repeaters($w);
+    $w->{bulkwalk}
+        = $can_bulkwalk
+        && $ver != 1
+        && !$state->{getnext}
+        && !$self->_walk_table($w)->{getnext}
+        && !$state->{contexts}{ $self->_walk_context() }
+        && !$self->_walk_at_cap();
+    $w->{loopdetect}
+        = defined $self->{LoopDetect} ? $self->{LoopDetect} : 1;
+    return;
+}
+
+=item $info->_walk_partial_get(\%w)
+
+For a partial fetch, tries a GET first in case the partial is a leaf OID,
+and records its result or failure in the walk state.
+
+=cut
+
+sub _walk_partial_get {
+    my ( $self, $w ) = @_;
+    my ( $sess, $ver, $var ) = @{$w}{qw(sess ver var)};
+
+    if ( defined $w->{partial} ) {
+
+        # Try a GET, in case the partial is a leaf OID.
+        # Would like to only do this if we know the OID is
+        # long enough; implementing that would require a
+        # lot of MIB mucking.
+        my $try = $sess->get($var);
+        $w->{errornum} = $sess->{ErrorNum};
+        if ( defined($try) && $w->{errornum} == 0 && $try !~ /^NOSUCH/ ) {
+            $var->[2]      = $try;
+            $w->{vars}     = [$var];
+            $w->{bulkwalk} = 1;        # fake a bulkwalk return
+            $w->{walk}     = 'get';
+        }
+
+        # We want to execute the while loop below for the getnext request.
+        if ( _v1_nosuch( $sess, $ver ) ) {
+            $w->{errornum} = 0;
+        }
+        elsif ( $w->{errornum} ) {
+            $w->{walk} = 'get';
+            @{$w}{qw(reason walk_errno walk_error)} = _walk_failure($sess)
+                unless _nosuch_end($sess);
+        }
+    }
+    return;
+}
+
+=item $info->_walk_bulk(\%w)
+
+Runs the bulkwalk when the walk state allows one. A bulkwalk that fails
+with C<toobig> or C<timeout> while C<BulkBackoff> is on is retried with
+half the repeaters, unless C<_walk_unreachable> finds the context does not
+answer at all. That check runs only in a VLAN, VRF or SNMPv3 context. When
+the halved value is below C<$BACKOFF_FLOOR>, the object has failed
+C<$MAX_FAILED_BULKWALKS> bulkwalks, or a bulkwalk fails with
+C<nonincreasing> while C<BulkOrderCheck> is on, sets the walk state up to
+re-walk the table by GETNEXT instead.
+
+=cut
+
+sub _walk_bulk {
+    my ( $self, $w ) = @_;
+    my $sess = $w->{sess};
+
+    # Use BULKWALK if we can because its faster
+    return unless $w->{bulkwalk} && @{ $w->{vars} } == 0 && !$w->{errornum};
+    $w->{walk} = 'bulkwalk';
+
+    while (1) {
+        ( $w->{vars} ) = $self->_walk_bulkwalk_call($w);
+        return unless $sess->{ErrorNum};
+
+        $w->{errornum} = $sess->{ErrorNum};
+        @{$w}{qw(reason walk_errno walk_error)} = _walk_failure($sess)
+            unless _nosuch_end($sess);
+        $self->error_throw(
+            "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr}, "\n" );
+
+        my $retry = $self->_walk_bulk_retry_reason($w);
+        if ( !$retry or $self->_walk_unreachable( $w, $retry ) ) {
+            $w->{bulkwalk_failed} = 1;
+            return;
+        }
+        $self->_walk_bulk_step($w);
+        next
+            if $retry ne 'nonincreasing'
+            and $self->_walk_backoff( $w, $retry );
+
+        $self->_walk_getnext_fallback( $w, $retry );
+        return;
+    }
+}
+
+=item $info->_walk_unreachable(\%w, retry)
+
+On the table's first bulkwalk C<timeout> in a VLAN, VRF or SNMPv3 context,
+sends one GETNEXT for the table's first row. When that also times out,
+marks the context unreachable and returns true: the table is not
+recovered, and later tables in the context skip the bulkwalk. Nothing
+counts toward C<$MAX_FAILED_BULKWALKS>. Otherwise returns false. In the
+base context (C<_walk_context> returns an empty string) no probe is sent
+and the context is never marked, so the table backs off as for any
+timeout.
+
+=cut
+
+sub _walk_unreachable {
+    my ( $self, $w, $retry ) = @_;
+    my $sess = $w->{sess};
+
+    return 0 if $retry ne 'timeout' or $w->{probed};
+    my $context = $self->_walk_context();
+    return 0 if $context eq '';
+    $w->{probed} = 1;
+
+    my $probe = SNMP::Varbind->new( [ $w->{qual_leaf}, $w->{partial} ] );
+    $sess->getnext($probe);
+    return 0 unless ( $sess->{ErrorNum} || 0 ) == -24;    # SNMPERR_TIMEOUT
+
+    $self->_walk_recovery()->{contexts}{$context} = 1;
+    return 1;
+}
+
+=item $info->_walk_bulk_retry_reason(\%w)
+
+Returns the reason of the bulkwalk that just failed when SNMP::Info
+recovers from it: C<nonincreasing> with C<BulkOrderCheck> on, C<toobig> or
+C<timeout> with C<BulkBackoff> on. Otherwise returns undef.
+
+=cut
+
+sub _walk_bulk_retry_reason {
+    my ( $self, $w ) = @_;
+    my $errornum = $w->{errornum};
+
+    # SNMPERR_OID_NONINCREASING
+    return 'nonincreasing' if $errornum == -65 and $self->bulk_order_check();
+    return unless $self->bulk_backoff();
+    return 'toobig'  if $errornum == 1;      # SNMP_ERR_TOOBIG
+    return 'timeout' if $errornum == -24;    # SNMPERR_TIMEOUT
+    return;
+}
+
+=item $info->_walk_bulkwalk_call(\%w)
+
+The only place C<_load_attr> calls C<bulkwalk> on the session. With
+C<BulkOrderCheck> on, sets the session's C<NonIncreasing> to 1 for this
+call only, so out-of-order rows fail with C<-65> instead of being dropped.
+
+=cut
+
+sub _walk_bulkwalk_call {
+    my ( $self, $w ) = @_;
+    my $sess = $w->{sess};
+
+    return $sess->bulkwalk( 0, $w->{repeaters}, $w->{var} )
+        unless $self->bulk_order_check();
+
+    local $sess->{NonIncreasing} = 1;
+    return $sess->bulkwalk( 0, $w->{repeaters}, $w->{var} );
+}
+
+=item $info->_walk_bulk_step(\%w)
+
+After a bulkwalk failed in a way SNMP::Info recovers from: records the
+recovery step, counts the failure against the object, and resets the
+walk state for the next attempt.
+
+=cut
+
+sub _walk_bulk_step {
+    my ( $self, $w ) = @_;
+
+    push @{ $w->{recovery} },
+        {
+        walk      => 'bulkwalk',
+        repeaters => $w->{repeaters},
+        reason    => $w->{reason},
+        errornum  => $w->{walk_errno},
+        };
+    $self->_walk_recovery()->{failed}++;
+
+    @{$w}{qw(errornum walk_errno reason walk_error)} = ( 0, 0, undef, undef );
+    $w->{vars} = [];
+    $w->{var} = SNMP::Varbind->new( [ $w->{qual_leaf}, $w->{partial} ] );
+    return;
+}
+
+=item $info->_walk_backoff(\%w, reason)
+
+Halves the repeaters of the walk and returns true, unless the halved value
+is below C<$BACKOFF_FLOOR> or the object has failed
+C<$MAX_FAILED_BULKWALKS> (9) bulkwalks. The halved value is kept for the
+object when C<reason> is C<toobig>, and for the table alone when it is
+C<timeout>. When it returns false, the limit that stopped it, C<floor> or
+C<cap>, is left in C<< $w->{backoff_stop} >>. The floor is checked first.
+
+=cut
+
+sub _walk_backoff {
+    my ( $self, $w, $reason ) = @_;
+    my $state     = $self->_walk_recovery();
+    my $repeaters = int( $w->{repeaters} / 2 );
+
+    $w->{backoff_stop} = 'floor';
+    return 0 if $repeaters < $BACKOFF_FLOOR;
+    $w->{backoff_stop} = 'cap';
+    return 0 if $self->_walk_at_cap();
+
+    delete $w->{backoff_stop};
+    $w->{repeaters} = $repeaters;
+    if ( $reason eq 'timeout' ) {
+        $self->_walk_table_set( $w, repeaters => $repeaters );
+    }
+    else {
+        $state->{toobig_repeaters} = $repeaters;
+    }
+    return 1;
+}
+
+=item $info->_walk_at_cap()
+
+Returns true when the object has failed C<$MAX_FAILED_BULKWALKS>
+bulkwalks, so no table is walked by bulkwalk any more.
+
+=cut
+
+sub _walk_at_cap {
+    my $self = shift;
+    return $self->_walk_recovery()->{failed} >= $MAX_FAILED_BULKWALKS;
+}
+
+=item $info->_walk_getnext_fallback(\%w, reason)
+
+Sets the walk state up so that C<_walk_rows> re-walks the table from its
+start by GETNEXT. A C<timeout> that stopped at the floor, and a
+C<nonincreasing> failure, switch only the table to GETNEXT, unless the
+object has failed C<$MAX_FAILED_BULKWALKS> bulkwalks, which counts as the
+C<cap> whatever stopped the walk. Every other reason, and any walk stopped by
+the cap, switches the object.
+
+=cut
+
+sub _walk_getnext_fallback {
+    my ( $self, $w, $reason ) = @_;
+    my $state = $self->_walk_recovery();
+    $w->{backoff_stop} = 'cap' if $self->_walk_at_cap();
+    my $table_only = ( $w->{backoff_stop} || '' ) ne 'cap'
+        && ( $reason eq 'timeout' or $reason eq 'nonincreasing' );
+
+    if ($table_only) {
+        $self->_walk_table_set( $w, getnext => 1, getnext_reason => $reason );
+    }
+    else {
+        $state->{getnext} = 1;
+    }
+    $w->{bulkwalk} = 0;
+    $w->{walk}     = 'getnext';
+    return;
+}
+
+=item $info->_walk_rows(\%w)
+
+Reads rows from the bulkwalk result or by GETNEXT into the walk state's
+C<localstore>, stopping at the end of the table, the partial, or a loop.
+
+=cut
+
+sub _walk_rows {
+    my ( $self, $w ) = @_;
+    my ( $sess, $ver, $method, $oid ) = @{$w}{qw(sess ver method oid)};
+    my ( $leaf, $partial, $seen ) = @{$w}{qw(leaf partial seen)};
+
+    while ( !$w->{errornum} ) {
+        if ( $w->{bulkwalk} ) {
+            $w->{var} = shift @{ $w->{vars} } or last;
+        }
+        else {
+
+            # GETNEXT instead of BULKWALK
+            $sess->getnext( $w->{var} );
+            $w->{errornum} = $sess->{ErrorNum};
+
+            # A failed request leaves the varbind as it was sent, so
+            # leave before it is read. noSuchName ends the view.
+            if ( $w->{errornum} ) {
+                @{$w}{qw(reason walk_errno walk_error)}
+                    = _walk_failure($sess)
+                    unless _nosuch_end($sess)
+                    or _v1_nosuch( $sess, $ver );
+                last;
             }
         }
 
-        # Use BULKWALK if we can because its faster
-        if ( $bulkwalk && @$vars == 0 && !$errornum ) {
-            $walk = 'bulkwalk';
-            ($vars) = $sess->bulkwalk( 0, $repeaters, $var );
-            if ( $sess->{ErrorNum} ) {
-                $errornum = $sess->{ErrorNum};
-                ( $reason, $walk_errno, $walk_error ) = _walk_failure($sess)
-                    unless _nosuch_end($sess);
-                $self->error_throw(
-                    "SNMP::Info::_load_attr: BULKWALK " . $sess->{ErrorStr},
-                    "\n" );
-                $bulkwalk_failed = 1;
-            }
+        if ( $self->debug() > 1 ) {
+            use Data::Dumper;
+            print "SNMP::Info::_load_attr $method : leaf = $oid , var = ",
+                Dumper( $w->{var} );
         }
 
-        while ( !$errornum ) {
-            if ($bulkwalk) {
-                $var = shift @$vars or last;
+        # Check if we've left the requested subtree
+        last if $w->{var}->[0] !~ /$leaf$/;
+        my $iid = $w->{var}->[1];
+        my $val = $w->{var}->[2];
+
+        unless ( defined $iid ) {
+            $self->error_throw(
+                "SNMP::Info::_load_attr: $method not here");
+            next;
+        }
+
+        # Check to make sure we are still in partial land
+        if (    defined $partial
+            and $iid !~ /^$partial$/
+            and $iid !~ /^$partial\./ )
+        {
+            $self->debug()
+                and print "$iid makes us leave partial land.\n";
+            last;
+        }
+
+       # Check if last element, V2 devices may report ENDOFMIBVIEW even if
+       # instance or object doesn't exist.
+        if ( $val eq 'ENDOFMIBVIEW' ) {
+            last;
+        }
+
+        # Similarly for SNMPv1 - noSuchName return results in both $iid
+        # and $val being empty strings.
+        if ( $val eq '' and $iid eq '' ) {
+            last;
+        }
+
+     # Another check for SNMPv1 - noSuchName return may results in an $iid
+     # we've already seen and $val an empty string.  If we don't catch
+     # this here we erroneously report a loop below.
+        if ( defined $seen->{$iid} and $seen->{$iid} and $val eq '' ) {
+            last;
+        }
+
+        if ( $w->{loopdetect} ) {
+
+            # Check to see if we've already seen this IID (looping)
+            if ( defined $seen->{$iid} and $seen->{$iid} ) {
+                $w->{walk_error} = "Looping on: $method iid:$iid.";
+                $self->error_throw("$w->{walk_error} ");
+                $w->{reason} = 'loop';
+                last;
             }
             else {
-
-                # GETNEXT instead of BULKWALK
-                $sess->getnext($var);
-                $errornum = $sess->{ErrorNum};
-
-                # A failed request leaves the varbind as it was sent, so
-                # leave before it is read. noSuchName ends the view.
-                if ($errornum) {
-                    ( $reason, $walk_errno, $walk_error )
-                        = _walk_failure($sess)
-                        unless _nosuch_end($sess)
-                        or _v1_nosuch( $sess, $ver );
-                    last;
-                }
+                $seen->{$iid}++;
             }
-
-            if ( $self->debug() > 1 ) {
-                use Data::Dumper;
-                print "SNMP::Info::_load_attr $method : leaf = $oid , var = ",
-                    Dumper($var);
-            }
-
-            # Check if we've left the requested subtree
-            last if $var->[0] !~ /$leaf$/;
-            my $iid = $var->[1];
-            my $val = $var->[2];
-
-            unless ( defined $iid ) {
-                $self->error_throw(
-                    "SNMP::Info::_load_attr: $method not here");
-                next;
-            }
-
-            # Check to make sure we are still in partial land
-            if (    defined $partial
-                and $iid !~ /^$partial$/
-                and $iid !~ /^$partial\./ )
-            {
-                $self->debug()
-                    and print "$iid makes us leave partial land.\n";
-                last;
-            }
-
-           # Check if last element, V2 devices may report ENDOFMIBVIEW even if
-           # instance or object doesn't exist.
-            if ( $val eq 'ENDOFMIBVIEW' ) {
-                last;
-            }
-
-            # Similarly for SNMPv1 - noSuchName return results in both $iid
-            # and $val being empty strings.
-            if ( $val eq '' and $iid eq '' ) {
-                last;
-            }
-
-         # Another check for SNMPv1 - noSuchName return may results in an $iid
-         # we've already seen and $val an empty string.  If we don't catch
-         # this here we erroneously report a loop below.
-            if ( defined $seen{$iid} and $seen{$iid} and $val eq '' ) {
-                last;
-            }
-
-            if ($loopdetect) {
-
-                # Check to see if we've already seen this IID (looping)
-                if ( defined $seen{$iid} and $seen{$iid} ) {
-                    $walk_error = "Looping on: $method iid:$iid.";
-                    $self->error_throw("$walk_error ");
-                    $reason = 'loop';
-                    last;
-                }
-                else {
-                    $seen{$iid}++;
-                }
-            }
-
-            if ( $val eq 'NOSUCHOBJECT' ) {
-                $self->error_throw(
-                    "SNMP::Info::_load_attr: $method :  NOSUCHOBJECT");
-                next;
-            }
-            if ( $val eq 'NOSUCHINSTANCE' ) {
-                $self->error_throw(
-                    "SNMP::Info::_load_attr: $method :  NOSUCHINSTANCE");
-                next;
-            }
-
-            $localstore->{$iid} = $val;
-
         }
 
-        my $rows = scalar keys %{ $localstore || {} };
-        $self->_walk_outcome(
-            {   method    => $attr,
-                leaf      => $qual_leaf || $oid,
-                partial   => $partial,
-                complete  => ( _walk_incomplete($reason) ? 0 : 1 ),
-                reason    => $reason,
-                error     => $walk_error,
-                errornum  => $walk_errno,
-                walk      => $walk,
-                repeaters => ( $walk eq 'bulkwalk' ? $repeaters : undef ),
-                rows      => $rows,
-            }
-        );
-
-        # A failed bulkwalk caches nothing and returns undef, as it always did
-        return if $bulkwalk_failed;
-
-        if ( _walk_incomplete($reason) ) {
-            $self->error_throw( "SNMP::Info::_load_attr: $method incomplete: "
-                    . "$reason after $rows rows. "
-                    . ( $walk_error || '' ) );
-            return if $self->incomplete_walk() eq 'undef';
+        if ( $val eq 'NOSUCHOBJECT' ) {
+            $self->error_throw(
+                "SNMP::Info::_load_attr: $method :  NOSUCHOBJECT");
+            next;
+        }
+        if ( $val eq 'NOSUCHINSTANCE' ) {
+            $self->error_throw(
+                "SNMP::Info::_load_attr: $method :  NOSUCHINSTANCE");
+            next;
         }
 
-        # Cache data if we are not getting partial data:
-        if ( !defined $partial ) {
-            $self->_cache($attr, $localstore);
-        }
+        $w->{localstore}->{$iid} = $val;
 
-        # Data Munging
-        if ( !$raw ) {
-            $localstore = $self->_munge($attr, $localstore);
-        }
-
-        return $localstore;
     }
+    return;
+}
+
+=item $info->_walk_note_slow(\%w)
+
+Called once per walk, after its last bulkwalk or GETNEXT attempt. When the
+walk recovered from a C<timeout> on a live agent (a C<timeout> step in
+C<recovery>) and its table is not yet slow, marks the table slow, keeping
+the repeaters of the bulkwalk that completed it, or undef when it ended on
+GETNEXT or on a failed bulkwalk, and counts it in C<slow_tables>. When
+C<slow_tables> reaches C<$SLOW_DEVICE_TABLES> and C<slow_repeaters> is not
+set, sets it to the smallest repeaters kept by a slow table, or to
+C<$BACKOFF_FLOOR> when there is none.
+
+=cut
+
+sub _walk_note_slow {
+    my ( $self, $w ) = @_;
+    my $state = $self->_walk_recovery();
+    my $final
+        = ( $w->{walk} eq 'bulkwalk' && !$w->{bulkwalk_failed} )
+        ? $w->{repeaters}
+        : undef;
+
+    return unless grep { $_->{reason} eq 'timeout' } @{ $w->{recovery} };
+    return if $self->_walk_table($w)->{slow};
+
+    $self->_walk_table_set( $w, slow => 1, slow_final => $final );
+    $state->{slow_tables}++;
+    return
+        if $state->{slow_tables} < $SLOW_DEVICE_TABLES
+        or defined $state->{slow_repeaters};
+
+    my ($smallest) = sort { $a <=> $b } grep {defined}
+        map { $_->{slow_final} } values %{ $state->{tables} };
+    $state->{slow_repeaters} = defined $smallest ? $smallest : $BACKOFF_FLOOR;
+    return;
+}
+
+=item $info->_walk_heal_context(\%w, rows)
+
+Called once per walk, beside C<_walk_note_slow>. When the walk ended by
+GETNEXT with at least one row, clears the unreachable mark of the current
+context, so later tables in it bulkwalk again.
+
+=cut
+
+sub _walk_heal_context {
+    my ( $self, $w, $rows ) = @_;
+    return unless $w->{walk} eq 'getnext' and $rows;
+    delete $self->_walk_recovery()->{contexts}{ $self->_walk_context() };
+    return;
+}
+
+=item $info->_walk_finish(\%w)
+
+Records the walk outcome, applies C<IncompleteWalk>, caches a full walk and
+munges the rows. Returns what C<_load_attr> returns.
+
+=cut
+
+sub _walk_finish {
+    my ( $self, $w ) = @_;
+    my ( $attr, $method, $partial, $raw )
+        = @{$w}{qw(attr method partial raw)};
+    my ( $reason, $walk, $repeaters ) = @{$w}{qw(reason walk repeaters)};
+    my $localstore = $w->{localstore};
+
+    $self->_walk_note_slow($w);
+    my $rows = scalar keys %{ $localstore || {} };
+    $self->_walk_heal_context( $w, $rows );
+    $self->_walk_outcome(
+        {   method    => $attr,
+            leaf      => $w->{qual_leaf} || $w->{oid},
+            partial   => $partial,
+            complete  => ( _walk_incomplete($reason) ? 0 : 1 ),
+            reason    => $reason,
+            error     => $w->{walk_error},
+            errornum  => $w->{walk_errno},
+            walk      => $walk,
+            repeaters => ( $walk eq 'bulkwalk' ? $repeaters : undef ),
+            rows      => $rows,
+            recovery  => $w->{recovery},
+        }
+    );
+
+    # A failed bulkwalk caches nothing and returns undef, as it always did
+    return if $w->{bulkwalk_failed};
+
+    if ( _walk_incomplete($reason) ) {
+        $self->error_throw( "SNMP::Info::_load_attr: $method incomplete: "
+                . "$reason after $rows rows. "
+                . ( $w->{walk_error} || '' ) );
+        return if $self->incomplete_walk() eq 'undef';
+    }
+
+    # Cache data if we are not getting partial data:
+    if ( !defined $partial ) {
+        $self->_cache($attr, $localstore);
+    }
+
+    # Data Munging
+    if ( !$raw ) {
+        $localstore = $self->_munge($attr, $localstore);
+    }
+
+    return $localstore;
 }
 
 =item _v1_nosuch(sess, ver)
@@ -5246,6 +5822,10 @@ failed on the session, read before a later request can replace them.
 sub _walk_failure {
     my $sess     = shift;
     my $errornum = $sess->{ErrorNum};
+
+    # ErrorNum: negative values are Net-SNMP library errors (SNMPERR_* in
+    # net-snmp/library/snmp_api.h), positive values the PDU error-status
+    # (SNMP_ERR_* in net-snmp/library/snmp.h).
     my %reasons  = (
         -24 => 'timeout',          # SNMPERR_TIMEOUT
         1   => 'toobig',           # SNMP_ERR_TOOBIG
@@ -5267,11 +5847,119 @@ sub _walk_incomplete {
     return ( defined $reason and $reason ne 'absent' );
 }
 
+=item $info->_walk_recovery()
+
+Returns the hash of bulkwalk recovery state for this object, creating it on
+first use as C<< { toobig_repeaters => undef, getnext => 0, failed => 0,
+slow_tables => 0, slow_repeaters => undef, contexts => {}, tables => {} } >>.
+C<toobig_repeaters> is the object-wide value a tooBig back-off lowered, and
+keeps it after C<getnext> is set. C<getnext> is the object-wide GETNEXT
+switch and C<failed> counts failed bulkwalks. C<slow_tables> and
+C<slow_repeaters> track tables that timed out and recovered. C<contexts>
+holds unreachable contexts keyed by C<_walk_context>. C<tables> holds a
+per-table entry, keyed by qualified leaf, of
+C<< { repeaters, getnext, getnext_reason, slow, slow_final } >>.
+C<slow_final> is the repeaters a slow table's last bulkwalk used, undef
+when it ended on getnext.
+
+=cut
+
+sub _walk_recovery {
+    my $self = shift;
+    return $self->{walk_recovery} ||= {
+        toobig_repeaters => undef,
+        getnext          => 0,
+        failed           => 0,
+        slow_tables      => 0,
+        slow_repeaters   => undef,
+        contexts         => {},
+        tables           => {},
+    };
+}
+
+=item $info->_walk_table(\%w)
+
+Returns the recovery entry of the table being walked, keyed by
+C<< $w->{qual_leaf} >>, as
+C<< { repeaters, getnext, getnext_reason, slow, slow_final } >>.
+Returns an empty hashref when the table has none, and never creates one.
+
+=cut
+
+sub _walk_table {
+    my ( $self, $w ) = @_;
+    return $self->_walk_recovery()->{tables}{ $w->{qual_leaf} } || {};
+}
+
+=item $info->_walk_table_set(\%w, %fields)
+
+Creates the recovery entry of the table being walked if needed and sets
+C<%fields> in it.
+
+=cut
+
+sub _walk_table_set {
+    my ( $self, $w, %fields ) = @_;
+    my $entry = $self->_walk_recovery()->{tables}{ $w->{qual_leaf} } ||= {};
+    @{$entry}{ keys %fields } = values %fields;
+    return $entry;
+}
+
+=item $info->_walk_start_repeaters(\%w)
+
+Returns the repeaters a walk of the table starts with: the smallest defined
+of the caller's C<BulkRepeaters> (or C<$REPEATERS>), the object's
+C<toobig_repeaters> and C<slow_repeaters>, and the table's own learned
+C<repeaters>.
+
+=cut
+
+sub _walk_start_repeaters {
+    my ( $self, $w ) = @_;
+    my $state  = $self->_walk_recovery();
+    my @values = grep {defined} (
+        $self->{BulkRepeaters} || $REPEATERS,
+        @{$state}{qw(toobig_repeaters slow_repeaters)},
+        $self->_walk_table($w)->{repeaters},
+    );
+    my ($smallest) = sort { $a <=> $b } @values;
+    return $smallest;
+}
+
+=item _walk_target(\%session_args)
+
+Returns the C<DestHost>, C<Version> and C<RemotePort> a session was asked
+for, the target that the walk recovery state belongs to.
+
+=cut
+
+sub _walk_target {
+    my $session_args = shift;
+    return { map { $_ => $session_args->{$_} }
+            qw(DestHost Version RemotePort) };
+}
+
+=item _same_target(\%old, \%new)
+
+True when two targets from C<_walk_target> are equal.
+
+=cut
+
+sub _same_target {
+    my ( $old, $new ) = @_;
+    foreach my $key ( keys %$new ) {
+        my ( $was, $now ) = ( $old->{$key}, $new->{$key} );
+        return 0 if defined $was xor defined $now;
+        return 0 if defined $was and $was ne $now;
+    }
+    return 1;
+}
+
 =item $info->_walk_outcome(\%outcome)
 
 Records the outcome of one table walk as the latest for its method, and
 appends it to the failures when the walk is incomplete. Fills in
-C<context> and C<recovery>.
+C<context>, and C<recovery> when the outcome has none.
 
 =cut
 
@@ -5279,7 +5967,7 @@ sub _walk_outcome {
     my ( $self, $outcome ) = @_;
 
     $outcome->{context}  = $self->_walk_context();
-    $outcome->{recovery} = [];
+    $outcome->{recovery} ||= [];
 
     $self->{walk_status}{ $outcome->{method} } = $outcome;
     push @{ $self->{walk_failures} }, $outcome unless $outcome->{complete};
