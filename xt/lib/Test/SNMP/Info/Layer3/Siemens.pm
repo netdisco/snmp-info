@@ -18,7 +18,7 @@ sub setup : Tests(setup) {
   });
 }
 
-sub device_type : Tests(6) {
+sub device_type : Tests(7) {
   my $test = shift;
 
   is($test->{info}->device_type(), 'SNMP::Info::Layer3::Siemens',
@@ -53,6 +53,15 @@ sub device_type : Tests(6) {
 
   $test->{info}->cache({
     '_layers' => 92,
+    '_description' => 'Siemens, SIMOCODE pro V PN, 3UF7 011-1AB00-0, FW: Version V01.02.00',
+    '_id' => '.1.3.6.1.4.1.2021',
+    'store' => {},
+  });
+  is($test->{info}->device_type(), 'SNMP::Info::Layer3::Siemens',
+    'SIMOCODE description selects Siemens class');
+
+  $test->{info}->cache({
+    '_layers' => 92,
     '_description' => 'Siemens, SIMATIC NET, SCALANCE XR524-8C 2PS, 6GK5 524-8GS00-4AR2',
     '_id' => '.1.3.6.1.4.1.4329.6.1.2',
     'store' => {},
@@ -80,7 +89,7 @@ sub os : Tests(1) {
   is($test->{info}->os(), 'siemens', 'OS is siemens');
 }
 
-sub model : Tests(5) {
+sub model : Tests(6) {
   my $test = shift;
 
   is($test->{info}->model(), 'CPU315-2 PN/DP', 'SIMATIC S7 model extracted');
@@ -96,6 +105,11 @@ sub model : Tests(5) {
   is($test->{info}->model(), 'G120 CU240E-2', 'SINAMICS model extracted');
 
   $test->{info}->cache({
+    '_description' => 'Siemens, SIMOCODE pro V PN, 3UF7 011-1AB00-0, FW: Version V01.02.00',
+  });
+  is($test->{info}->model(), 'SIMOCODE pro V PN', 'SIMOCODE model extracted');
+
+  $test->{info}->cache({
     '_description' => 'Siemens Soft starter 3RW44 Profinet',
   });
   is($test->{info}->model(), '3RW44 Profinet', 'Soft starter model extracted');
@@ -106,7 +120,7 @@ sub model : Tests(5) {
   is($test->{info}->model(), '6AV2 124-0GC01-0AX0', 'HMI part number used when model is unknown');
 }
 
-sub os_ver : Tests(3) {
+sub os_ver : Tests(4) {
   my $test = shift;
 
   $test->{info}->cache({
@@ -118,6 +132,11 @@ sub os_ver : Tests(3) {
     '_description' => 'Siemens, SINAMICS, G120, FW: Version V04.71.52',
   });
   is($test->{info}->os_ver(), '04.71.52', 'SINAMICS firmware version extracted');
+
+  $test->{info}->cache({
+    '_description' => 'Siemens, SIMOCODE pro V PN, 3UF7 011-1AB00-0, FW: Version V01.02.00',
+  });
+  is($test->{info}->os_ver(), '01.02.00', 'SIMOCODE firmware version extracted');
 
   $test->{info}->cache({
     '_description' => 'Siemens, SIMATIC HMI, unknown, 6AV2 124-0GC01-0AX0, SW: V 16 0 0',
