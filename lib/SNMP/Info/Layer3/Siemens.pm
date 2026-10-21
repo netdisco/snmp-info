@@ -1,6 +1,6 @@
 # SNMP::Info::Layer3::Siemens - SNMP interface to Siemens automation devices
 #
-# Copyright (c) 2026
+# Copyright (c) 2026 The SNMP::Info Developers
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.981000';
+$VERSION = '3.981001';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -89,7 +89,7 @@ sub os_ver {
 
     return unless defined $descr;
 
-    if ( $descr =~ /\b(?:FW|SW):\s*(?:Version\s*)?V?\s*([\w.-]+(?:\s+[\w.-]+){0,2})/i ) {
+    if ( $descr =~ /\b(?:FW|SW):\s*(?:Version\s*)?V?\.?\s*(\d+(?:[.\s]\d+)*)/i ) {
         my $version = $1;
         $version =~ s/\s+/./g;
         return $version;
@@ -104,7 +104,7 @@ sub serial {
 
     return unless defined $descr;
 
-    return $1 if $descr =~ /\b(?:SN:\s*)?(S\s+C-[A-Z0-9]+)\b/i;
+    return $1 if $descr =~ /,\s+(?:SN:\s*)?(S\s+C-[A-Z0-9]+)\b/i;
 
     return $siemens->SUPER::serial();
 }
@@ -116,6 +116,25 @@ __END__
 
 SNMP::Info::Layer3::Siemens - SNMP interface to Siemens automation devices
 
+=head1 AUTHOR
+
+SNMP::Info Developers
+
+=head1 SYNOPSIS
+
+ # Let SNMP::Info determine the correct subclass for you.
+ my $siemens = new SNMP::Info(
+                          AutoSpecify => 1,
+                          Debug       => 1,
+                          DestHost    => 'mydevice',
+                          Community   => 'public',
+                          Version     => 2
+                        )
+    or die "Can't connect to DestHost.\n";
+
+ my $class = $siemens->class();
+ print "SNMP::Info determined this device to fall under subclass : $class\n";
+
 =head1 DESCRIPTION
 
 Provides manufacturer, model, firmware, and serial details for Siemens SIMATIC
@@ -124,11 +143,28 @@ drives, and soft starters whose
 C<sysDescr> uses the Siemens product description format. SCALANCE devices
 continue to use L<SNMP::Info::Layer3::Scalance>.
 
-=head1 METHODS
+=head2 Inherited Classes
 
-=head2 Overrides
+=over
 
-=over 4
+=item SNMP::Info::Layer3
+
+=back
+
+=head2 Required MIBs
+
+No additional MIBs are required. Device details are extracted from
+C<sysDescr>.
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info::Layer3/"Required MIBs"> for its MIB requirements.
+
+=head1 GLOBALS
+
+These methods return scalar values.
+
+=over
 
 =item $siemens->vendor()
 
@@ -144,13 +180,17 @@ Extracts the product model from the Siemens C<sysDescr> string.
 
 =item $siemens->os_ver()
 
-Extracts the firmware or software version from the Siemens C<sysDescr> string.
+Extracts the numeric firmware or software version from C<sysDescr>.
 
 =item $siemens->serial()
 
-Extracts a serial number from the Siemens C<sysDescr> string, falling back to
-the inherited serial number method when the description has no match.
+Extracts a serial number from C<sysDescr>, falling back to the inherited
+serial method when no match is present.
 
 =back
+
+=head2 Global Methods imported from SNMP::Info::Layer3
+
+See L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =cut

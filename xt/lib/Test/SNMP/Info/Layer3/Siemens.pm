@@ -120,7 +120,7 @@ sub model : Tests(6) {
   is($test->{info}->model(), '6AV2 124-0GC01-0AX0', 'HMI part number used when model is unknown');
 }
 
-sub os_ver : Tests(4) {
+sub os_ver : Tests(6) {
   my $test = shift;
 
   $test->{info}->cache({
@@ -142,9 +142,19 @@ sub os_ver : Tests(4) {
     '_description' => 'Siemens, SIMATIC HMI, unknown, 6AV2 124-0GC01-0AX0, SW: V 16 0 0',
   });
   is($test->{info}->os_ver(), '16.0.0', 'HMI software version extracted');
+
+  $test->{info}->cache({
+    '_description' => 'Siemens, SIMATIC HMI, TP700, SW: V 16 0 0 Build 12',
+  });
+  is($test->{info}->os_ver(), '16.0.0', 'HMI version stops before trailing build text');
+
+  $test->{info}->cache({
+    '_description' => 'Siemens, SIMATIC HMI, TP700, FW: V.4.2.3',
+  });
+  is($test->{info}->os_ver(), '4.2.3', 'HMI version accepts V.x notation');
 }
 
-sub serial : Tests(2) {
+sub serial : Tests(3) {
   my $test = shift;
 
   $test->{info}->cache({
@@ -156,6 +166,11 @@ sub serial : Tests(2) {
     '_description' => 'Siemens, SIMATIC S7, IM151-3PN, FW: V7.0.5, SN: S C-FDCW23442015',
   });
   is($test->{info}->serial(), 'S C-FDCW23442015', 'SIMATIC serial with SN label extracted');
+
+  $test->{info}->cache({
+    '_description' => 'Siemens device reports S C-UNRELATED elsewhere in the description',
+  });
+  is($test->{info}->serial(), undef, 'serial pattern must follow the product separator');
 }
 
 1;

@@ -7,6 +7,8 @@ Version 3.981001 (2026-10-21)
     VLANs; os is now ios-xe (#630)
   * #633 Airespace: store wireless clients on their VLAN instead of
     VLAN 0 and name client VLANs (#630)
+  * #631 Siemens: detect SIMATIC, SIMOCODE, SINAMICS, and soft starter
+    devices; extract model, firmware, and serial details from sysDescr
 
 Version 3.981000 (2026-10-19)
 
@@ -19,11 +21,6 @@ Version 3.981000 (2026-10-19)
     walk_status, and add bulkwalk_recovery() (netdisco/netdisco#1744)
   * #627 Meraki: report the model from sysDescr or the product sysObjectID,
     vendor "cisco meraki", and the ENTITY-MIB serial as serial1
-
-  [NEW FEATURES]
-
-  * Add Siemens SIMATIC, SINAMICS, and soft starter device detection and
-    extract model, firmware, and SIMATIC serial details from sysDescr
 
   [BUG FIXES]
 
