@@ -16,6 +16,8 @@ sub setup : Tests(setup) {
     '_id'          => '.1.3.6.1.4.1.25053.3.1.4.121',
     '_ruckus_model'  => 'R350',
     '_ruckus_serial' => 'SERIAL-REDACTED',
+    '_ruckus_sw_rev'        => 1,
+    '_ruckus_sw_rev_status' => 1,
     'store' => {
       'ruckus_sw_rev' => {
         1 => '6.0.0.0.1234',
@@ -56,6 +58,8 @@ sub os_ver : Tests(2) {
     'Returns the revision whose status marks it active');
 
   $test->{info}->cache({
+    '_ruckus_sw_rev'        => 1,
+    '_ruckus_sw_rev_status' => 1,
     'store' => {
       'ruckus_sw_rev' => {
         1 => '6.0.0.0.1234',
