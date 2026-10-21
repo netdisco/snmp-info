@@ -726,6 +726,12 @@ Subclass for Orinoco/Proxim wireless access points.
 
 See documentation in L<SNMP::Info::Layer2::Orinoco> for details.
 
+=item SNMP::Info::Layer2::Ruckus
+
+Subclass for Ruckus wireless access points.
+
+See documentation in L<SNMP::Info::Layer2::Ruckus> for details.
+
 =item SNMP::Info::Layer2::TPLink
 
 SNMP Interface to TPLink devices

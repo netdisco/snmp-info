@@ -349,7 +349,7 @@ sub loopdetect : Tests(4) {
     'Loopdetect off');
 }
 
-sub device_type : Tests(+6) {
+sub device_type : Tests(+7) {
   my $test = shift;
   $test->SUPER::device_type();
 
@@ -392,6 +392,17 @@ sub device_type : Tests(+6) {
   $test->{info}->cache($cache_data);
   is($test->{info}->device_type,
     'SNMP::Info::Layer2::Orinoco', 'Layer 2 device type by sysObjectID');
+  $test->{info}->clear_cache();
+
+  # Some Ruckus access points omit sysServices and use a generic sysDescr.
+  $cache_data = {
+    '_layers'      => 0,
+    '_description' => 'Ruckus Wireless Inc (C) 2006',
+    '_id'          => '.1.3.6.1.4.1.25053.3.1.4.121'
+  };
+  $test->{info}->cache($cache_data);
+  is($test->{info}->device_type,
+    'SNMP::Info::Layer2::Ruckus', 'Ruckus product OID without sysServices');
   $test->{info}->clear_cache();
 
   # Layer 1

@@ -7,6 +7,8 @@ Version 3.981001 (2026-10-21)
     VLANs; os is now ios-xe (#630)
   * #633 Airespace: store wireless clients on their VLAN instead of
     VLAN 0 and name client VLANs (#630)
+  * #632 Ruckus: detect access points by product OID and report model,
+    serial number, and the active software revision
 
 Version 3.981000 (2026-10-19)
 
@@ -48,10 +50,6 @@ Version 3.980000 (2026-10-17)
 Version 3.979000 (2026-10-13)
 
   [NEW FEATURES]
-
-  * Detect Ruckus access points by their registered product OIDs and read
-    model, serial number, and software version from Ruckus enterprise OIDs
-
 
   * #617 ArubaCX: add transceivers from ARUBAWIRED-PM-MIB as module
     entities (netdisco/netdisco#1441); needs netdisco-mibs 4.059 or later
