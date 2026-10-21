@@ -27,7 +27,7 @@ our
      $NOSUCH, $BIGINT, $REPEATERS,
      $BACKOFF_FLOOR, $MAX_FAILED_BULKWALKS, $SLOW_DEVICE_TABLES);
 
-$VERSION = '3.981000';
+$VERSION = '3.981001';
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.981000
+SNMP::Info - Version 3.981001
 
 =head1 AUTHOR
 
