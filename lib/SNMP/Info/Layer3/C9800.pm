@@ -9,13 +9,20 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::CiscoStats;
+use SNMP::Info::CiscoVTP;
 use SNMP::Info::Entity;
+use SNMP::Info::EtherLike;
+use SNMP::Info::LLDP;
 use SNMP::Info::Layer2::Airespace;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 @SNMP::Info::Layer3::C9800::ISA = qw/
     SNMP::Info::Layer2::Airespace
+    SNMP::Info::CiscoVTP
+    SNMP::Info::CiscoStats
+    SNMP::Info::LLDP
+    SNMP::Info::EtherLike
     Exporter
 /;
 
@@ -25,17 +32,36 @@ $VERSION = '3.981000';
 
 %MIBS = (
     %SNMP::Info::Layer2::Airespace::MIBS,
+    %SNMP::Info::CiscoVTP::MIBS,
+    %SNMP::Info::CiscoStats::MIBS,
+    %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::EtherLike::MIBS,
     %SNMP::Info::Entity::MIBS,
     'CISCO-LWAPP-CDP-MIB' => 'clcCdpApCacheNeighInterface',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer2::Airespace::GLOBALS,
+    %SNMP::Info::CiscoVTP::GLOBALS,
+    %SNMP::Info::CiscoStats::GLOBALS,
+    %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::EtherLike::GLOBALS,
     'c9800_os_ver' => '.1.3.6.1.2.1.16.19.2.0',
+    'serial1' =>
+        '.1.3.6.1.4.1.9.3.6.3.0',    # OLD-CISCO-CHASSIS-MIB::chassisId.0
 );
 
+# CiscoVTP after Layer2::Airespace: v_name is vtpVlanName, the controller's
+# VLANs, not Q-BRIDGE dot1qVlanStaticName, which the 9800 leaves empty
 %FUNCS = (
     %SNMP::Info::Layer2::Airespace::FUNCS,
+    %SNMP::Info::CiscoVTP::FUNCS,
+    %SNMP::Info::CiscoStats::FUNCS,
+    %SNMP::Info::LLDP::FUNCS,
+    %SNMP::Info::EtherLike::FUNCS,
+    # CISCO-LWAPP-AP-MIB::cLApRadioWlanInfoTable
+    'c9800_radio_wlan_ssid'  => 'cLApRadioWlanSsid',
+    'c9800_radio_wlan_bssid' => 'cLApRadioWlanBssid',
     'c9800_entity_descr'  => 'entPhysicalDescr',
     'c9800_entity_class'  => 'entPhysicalClass',
     'c9800_entity_name'   => 'entPhysicalName',
@@ -64,6 +90,11 @@ $VERSION = '3.981000';
 
 %MUNGE = (
     %SNMP::Info::Layer2::Airespace::MUNGE,
+    %SNMP::Info::CiscoVTP::MUNGE,
+    %SNMP::Info::CiscoStats::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::EtherLike::MUNGE,
+    'c9800_radio_wlan_bssid' => \&SNMP::Info::munge_mac,
     'c9800_cdp_address' => \&SNMP::Info::munge_ip,
     'c9800_entity_type' => \&SNMP::Info::munge_e_type,
 );
@@ -91,6 +122,180 @@ sub os_ver {
     return $os_ver if defined $os_ver && $os_ver ne '';
 
     return SNMP::Info::CiscoStats::os_ver($c9800);
+}
+
+sub os {
+    my $c9800 = shift;
+    return SNMP::Info::CiscoStats::os($c9800);
+}
+
+# FlexConnect clients sit on VLANs the controller never defines, so the
+# controller's VTP table misses them. Take those names from the client table,
+# but never replace a name someone gave the VLAN: only a gap, or the default
+# a switch invents ("VLAN0415").
+sub v_name {
+    my $c9800   = shift;
+    my $partial = shift;
+
+    my $v_name  = { %{ $c9800->SUPER::v_name($partial) || {} } };
+    my $names   = $c9800->airespace_vlan_names() || {};
+    my %key_for = map { ( ( split /\./ )[-1] => $_ ) } keys %$v_name;
+
+    foreach my $vlan ( keys %$names ) {
+        my $key = $key_for{$vlan} // $vlan;
+        next if defined $partial and $partial ne $key;
+
+        my $have = $v_name->{$key};
+        next
+            if defined $have
+            and length $have
+            and $have !~ /^VLAN\s?0*\Q$vlan\E$/i;
+
+        $v_name->{$key} = $names->{$vlan};
+    }
+
+    return $v_name;
+}
+
+# VTP keys are domain.vlan, client-only VLANs are the bare VLAN ID
+sub v_index {
+    my $c9800   = shift;
+    my $partial = shift;
+
+    my $v_name  = $c9800->v_name($partial) || {};
+    my %v_index = map { ( $_ => ( split /\./ )[-1] ) } keys %$v_name;
+    return \%v_index;
+}
+
+sub i_vlan {
+    my $c9800   = shift;
+    my $partial = shift;
+
+    return {
+        %{ $c9800->SUPER::i_vlan($partial) || {} },
+        %{ SNMP::Info::CiscoVTP::i_vlan( $c9800, $partial ) || {} },
+    };
+}
+
+sub i_vlan_membership {
+    my $c9800   = shift;
+    my $partial = shift;
+
+    return {
+        %{ $c9800->SUPER::i_vlan_membership($partial) || {} },
+        %{  SNMP::Info::CiscoVTP::i_vlan_membership( $c9800, $partial ) || {}
+        },
+    };
+}
+
+sub i_vlan_membership_untagged {
+    my $c9800   = shift;
+    my $partial = shift;
+
+    return {
+        %{ $c9800->SUPER::i_vlan_membership_untagged($partial) || {} },
+        %{  SNMP::Info::CiscoVTP::i_vlan_membership_untagged( $c9800,
+                $partial )
+                || {}
+        },
+    };
+}
+
+# Bridge, reached through Layer2::Airespace, comes before CiscoVTP in method
+# resolution, so these would otherwise use Q-BRIDGE-MIB, which the 9800 lacks
+sub i_untagged {
+    my $c9800 = shift;
+    return SNMP::Info::CiscoVTP::i_untagged( $c9800, @_ );
+}
+
+sub set_i_pvid {
+    my $c9800 = shift;
+    return SNMP::Info::CiscoVTP::set_i_pvid( $c9800, @_ );
+}
+
+sub set_i_vlan {
+    my $c9800 = shift;
+    return SNMP::Info::CiscoVTP::set_i_vlan( $c9800, @_ );
+}
+
+sub set_i_untagged {
+    my $c9800 = shift;
+    return SNMP::Info::CiscoVTP::set_i_untagged( $c9800, @_ );
+}
+
+sub set_add_i_vlan_tagged {
+    my $c9800 = shift;
+    return SNMP::Info::CiscoVTP::set_add_i_vlan_tagged( $c9800, @_ );
+}
+
+sub set_remove_i_vlan_tagged {
+    my $c9800 = shift;
+    return SNMP::Info::CiscoVTP::set_remove_i_vlan_tagged( $c9800, @_ );
+}
+
+sub _validate_vlan_param {
+    my $c9800 = shift;
+    return SNMP::Info::CiscoVTP::_validate_vlan_param( $c9800, @_ );
+}
+
+sub i_duplex {
+    my $c9800   = shift;
+    my $partial = shift;
+
+    my %i_duplex  = %{ $c9800->SUPER::i_duplex($partial) || {} };
+    my $el_index  = $c9800->el_index($partial)  || {};
+    my $el_duplex = $c9800->el_duplex($partial) || {};
+
+    foreach my $el_port ( keys %$el_duplex ) {
+        my $iid    = $el_index->{$el_port};
+        my $duplex = $el_duplex->{$el_port};
+        next unless defined $iid and defined $duplex;
+        next unless $duplex =~ /^(half|full)$/;
+
+        $i_duplex{$iid} = $duplex;
+    }
+
+    return \%i_duplex;
+}
+
+# The 9800 leaves bsnDot11EssSsid empty; the radio WLAN table is keyed
+# like the AP radio ports with the WLAN index appended
+sub i_ssidlist {
+    my $c9800   = shift;
+    my $partial = shift;
+
+    my $ssids      = $c9800->c9800_radio_wlan_ssid($partial) || {};
+    my %i_ssidlist = map { ( $_ => $ssids->{$_} ) }
+        grep { defined $ssids->{$_} and length $ssids->{$_} } keys %$ssids;
+    return \%i_ssidlist;
+}
+
+sub i_ssidmac {
+    my $c9800   = shift;
+    my $partial = shift;
+
+    return $c9800->c9800_radio_wlan_bssid($partial) || {};
+}
+
+sub i_ssidbcast {
+    my $c9800   = shift;
+    my $partial = shift;
+
+    my $ssidlist  = $c9800->i_ssidlist($partial)  || {};
+    my $ess_bcast = $c9800->airespace_ess_bcast() || {};
+    my %bcmap     = qw/enable 1 disable 0/;
+
+    my %i_ssidbcast;
+    foreach my $iid ( keys %$ssidlist ) {
+
+        # assumes bsnDot11EssIndex equals cLWlanIndex, as on 17.12 and 17.18
+        my $wlan = ( split /\./, $iid )[-1];
+        my $bc   = $ess_bcast->{$wlan};
+        next unless defined $bc and exists $bcmap{$bc};
+
+        $i_ssidbcast{$iid} = $bcmap{$bc};
+    }
+    return \%i_ssidbcast;
 }
 
 sub interfaces {
@@ -345,13 +550,22 @@ SNMP::Info::Layer3::C9800 - SNMP Interface to Cisco Catalyst 9800 Wireless Contr
 =head1 DESCRIPTION
 
 Subclass for Cisco Catalyst 9800 Wireless Controllers using the Airespace
-wireless controller MIBs for managed access points and clients.
+wireless controller MIBs for managed access points and clients, and the
+Cisco IOS-XE MIBs for the controller's own ports, VLANs and LLDP neighbors.
 
 =head1 INHERITED CLASSES
 
 =over
 
 =item SNMP::Info::Layer2::Airespace
+
+=item SNMP::Info::CiscoVTP
+
+=item SNMP::Info::CiscoStats
+
+=item SNMP::Info::LLDP
+
+=item SNMP::Info::EtherLike
 
 =back
 
@@ -369,6 +583,79 @@ indexes.
 
 Returns the IOS-XE version from C<.1.3.6.1.2.1.16.19.2.0>, falling back to
 the standard Cisco sysDescr parsing.
+
+=item os()
+
+Returns C<ios-xe>, from the sysDescr parsing in L<SNMP::Info::CiscoStats>.
+
+=item serial1()
+
+Chassis serial number (C<OLD-CISCO-CHASSIS-MIB::chassisId.0>), as for other
+Cisco IOS-XE devices.
+
+=item v_name()
+
+Returns the controller's VLAN names from C<CISCO-VTP-MIB::vtpVlanName>, keyed
+by management domain and VLAN.  Adds the VLANs that wireless clients are on,
+keyed by VLAN ID, using the interface name each client reports in
+C<AIRESPACE-WIRELESS-MIB::bsnMobileStationInterface>.  FlexConnect APs switch
+clients onto VLANs the controller does not define, so these are often the
+only names for them.  A name already given to the VLAN is kept, unless it is
+only the default C<VLANnnnn> name.
+
+=item v_index()
+
+Returns reference to hash.  Key: v_name() index, Value: VLAN ID.
+
+=item i_vlan()
+
+=item i_vlan_membership()
+
+=item i_vlan_membership_untagged()
+
+Native VLAN and VLAN membership of the controller's own ports from
+L<SNMP::Info::CiscoVTP>, merged with the Airespace interface VLANs.
+
+=item i_untagged()
+
+=item set_i_pvid()
+
+=item set_i_vlan()
+
+=item set_i_untagged()
+
+=item set_add_i_vlan_tagged()
+
+=item set_remove_i_vlan_tagged()
+
+The L<SNMP::Info::CiscoVTP> methods.  L<SNMP::Info::Bridge> comes first in
+method resolution and would use F<Q-BRIDGE-MIB>, which the 9800 does not
+implement.
+
+=item i_duplex()
+
+Duplex of the controller's own ports from
+C<EtherLike-MIB::dot3StatsDuplexStatus>, merged with the Airespace port
+duplex.
+
+=item i_ssidlist()
+
+Returns reference to hash.  SSID of each WLAN on each AP radio, from
+c9800_radio_wlan_ssid().  The key is the AP radio interface iid followed by
+the WLAN index.
+
+=item i_ssidmac()
+
+Returns reference to hash.  BSSID of each WLAN on each AP radio, from
+c9800_radio_wlan_bssid(), keyed like i_ssidlist().
+
+=item i_ssidbcast()
+
+Returns reference to hash.  Whether each WLAN on each AP radio broadcasts its
+SSID, from C<AIRESPACE-WIRELESS-MIB::bsnDot11EssBroadcastSsid> of its WLAN,
+keyed like i_ssidlist().  The WLAN index is used as the
+C<bsnDot11EssIndex>, as the 9800 numbers both the same.  WLANs without a
+broadcast setting are omitted.
 
 =item interfaces()
 
@@ -440,6 +727,23 @@ How the tags were assigned: none, static, filterengine, pnpserver, default
 or location.
 
 (C<cLApTagSource>)
+
+=back
+
+=head2 Radio WLAN Table (C<CISCO-LWAPP-AP-MIB::cLApRadioWlanInfoTable>)
+
+These tables are indexed by the AP radio MAC address, the radio slot and the
+WLAN index.
+
+=over
+
+=item $c9800->c9800_radio_wlan_ssid()
+
+(C<cLApRadioWlanSsid>)
+
+=item $c9800->c9800_radio_wlan_bssid()
+
+(C<cLApRadioWlanBssid>)
 
 =back
 
