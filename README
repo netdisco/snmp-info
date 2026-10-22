@@ -999,9 +999,15 @@ SUBCLASSES
             See documentation in SNMP::Info::Layer3::Tasman for details.
 
         SNMP::Info::Layer3::Teltonika
-            Subclass for Teltonika RUT9xx series routers.
+            Subclass for legacy Teltonika RUT9xx series devices.
 
             See documentation in SNMP::Info::Layer3::Teltonika for details.
+
+        SNMP::Info::Layer3::TeltonikaRutOS
+            Subclass for current Teltonika RutOS devices, including RUT, RUTX,
+            RUTM, TRB, OTD, TCR, TSW, and TAP product codes.
+
+            See documentation in SNMP::Info::Layer3::TeltonikaRutOS for details.
 
         SNMP::Info::Layer3::Timetra
             Alcatel-Lucent SR Class.
