@@ -64,7 +64,9 @@ $VERSION = '3.981001';
 
 sub model {
     my $self = shift;
-    return $self->ruckus_model() || $self->SUPER::model();
+    my $description = $self->description() || '';
+    my ($unleashed_model) = $description =~ /^Ruckus Wireless ([A-Z]\d{3}\w*)/;
+    return $self->ruckus_model() || $unleashed_model || $self->SUPER::model();
 }
 
 sub vendor { return 'ruckus'; }

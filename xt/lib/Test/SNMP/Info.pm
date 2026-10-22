@@ -349,7 +349,7 @@ sub loopdetect : Tests(4) {
     'Loopdetect off');
 }
 
-sub device_type : Tests(+7) {
+sub device_type : Tests(+12) {
   my $test = shift;
   $test->SUPER::device_type();
 
@@ -404,6 +404,39 @@ sub device_type : Tests(+7) {
   is($test->{info}->device_type,
     'SNMP::Info::Layer2::RuckusAP', 'Ruckus product OID without sysServices');
   $test->{info}->clear_cache();
+
+  # Unleashed APs report a null or ZoneDirector sysObjectID; R850 Unleashed
+  # and a ZD1200 share 25053.3.1.5.15, so only sysDescr separates them.
+  my %unleashed = (
+    'Ruckus Wireless R650' => '0.0.0',
+    'Ruckus Wireless R850' => '.1.3.6.1.4.1.25053.3.1.5.15',
+    'Ruckus Wireless T300' => '.1.3.6.1.4.1.25053.3.1.5.20',
+  );
+  foreach my $description (sort keys %unleashed) {
+    $test->{info}->cache({
+      '_layers'      => 0,
+      '_description' => $description,
+      '_id'          => $unleashed{$description},
+    });
+    is($test->{info}->device_type, 'SNMP::Info::Layer2::RuckusAP',
+      "Unleashed AP by sysDescr: $description");
+    $test->{info}->clear_cache();
+  }
+
+  my %zonedirector = (
+    'Ruckus Wireless ZD1106' => '.1.3.6.1.4.1.25053.3.1.5.2',
+    'Ruckus Wireless ZD1200' => '.1.3.6.1.4.1.25053.3.1.5.15',
+  );
+  foreach my $description (sort keys %zonedirector) {
+    $test->{info}->cache({
+      '_layers'      => 0,
+      '_description' => $description,
+      '_id'          => $zonedirector{$description},
+    });
+    isnt($test->{info}->device_type, 'SNMP::Info::Layer2::RuckusAP',
+      "ZoneDirector is not an access point: $description");
+    $test->{info}->clear_cache();
+  }
 
   # Layer 1
   $cache_data = {

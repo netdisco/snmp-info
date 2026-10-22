@@ -2381,6 +2381,12 @@ sub device_type {
     return 'SNMP::Info::Layer2::RuckusAP'
         if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.25053\.3\.1\.[1-4]\.\d+$/;
 
+    # Unleashed APs report a null or ZoneDirector sysObjectID, and an R850
+    # shares 25053.3.1.5.15 with the ZD1200. Their sysDescr names the AP
+    # model, where a ZoneDirector's names "ZD" and four digits.
+    return 'SNMP::Info::Layer2::RuckusAP'
+        if $desc =~ /^Ruckus Wireless [A-Z]\d{3}/;
+
     # Layer 3 Supported
     #   (usually has layer2 as well, so we check for 3 first)
     if ( $info->has_layer(3) ) {

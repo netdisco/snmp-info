@@ -41,9 +41,19 @@ sub os : Tests(1) {
   is($test->{info}->os(), 'ruckus', 'OS is ruckus');
 }
 
-sub model : Tests(1) {
+sub model : Tests(2) {
   my $test = shift;
   is($test->{info}->model(), 'R350', 'Model comes from the hardware MIB');
+
+  # An Unleashed R770 does not answer RUCKUS-HWINFO-MIB.
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_layers'      => 0,
+    '_description' => 'Ruckus Wireless R770',
+    '_id'          => '.1.3.6.1.4.1.25053.3.1.4.125',
+  });
+  is($test->{info}->model(), 'R770',
+    'Model comes from sysDescr when the hardware MIB is silent');
 }
 
 sub serial : Tests(1) {
