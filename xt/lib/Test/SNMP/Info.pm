@@ -144,6 +144,37 @@ sub bulk_order_check : Tests(4) {
   };
 }
 
+# net-snmp labels an object defined in two MIBs after whichever loaded first,
+# and SNMP::Info loads %MIBS in hash order, so a class can ask for
+# RFC1213-MIB::ifDescr while a test stored IF-MIB::ifDescr.
+sub mock_module_labels : Tests(3) {
+  my $test = shift;
+
+  SNMP::loadModules('RFC1213-MIB');
+  my $session = $test->mock_session;
+  $session->{Data}{'IF-MIB::ifDescr'}
+    = {1 => 'GigabitEthernet1', 3 => 'GigabitEthernet3'};
+
+  subtest 'mock_get__data_under_other_module_label__answers_by_oid' => sub {
+    plan tests => 1;
+    my $vb = SNMP::Varbind->new(['RFC1213-MIB::ifDescr', 1]);
+    is(scalar $session->get($vb), 'GigabitEthernet1', 'row 1 found');
+  };
+  subtest 'mock_getnext__data_under_other_module_label__answers_by_oid' => sub {
+    plan tests => 2;
+    my $vb = SNMP::Varbind->new(['RFC1213-MIB::ifDescr', 1]);
+    $session->getnext($vb);
+    is($vb->[1], 3, 'next row is 3');
+    is($vb->[2], 'GigabitEthernet3', 'with its value');
+  };
+  subtest 'mock_bulkwalk__data_under_other_module_label__answers_by_oid' => sub {
+    plan tests => 1;
+    my ($rows) = $session->bulkwalk(0, 10,
+      SNMP::Varbind->new(['RFC1213-MIB::ifDescr']));
+    is(scalar @{$rows || []}, 2, 'both rows walked');
+  };
+}
+
 sub bulk_backoff : Tests(3) {
   my $test = shift;
 
