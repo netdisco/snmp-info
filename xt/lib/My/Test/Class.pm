@@ -351,7 +351,7 @@ sub mock_get {
       $iid ||= 0;
       my $new_iid = $iid;
       my $val     = $EMPTY;
-      my $data    = $c_data->{$leaf} || $c_data->{$oid_base} || {};
+      my $data    = _data_for($c_data, $leaf, $oid_base) || {};
       my $count   = scalar keys %{$data} || 0;
       if ($count > 1) {
         my $found = 0;
@@ -425,7 +425,7 @@ sub mock_getnext {
         && ($self->{_fault_count}{$count_key} || 0) >= ($fault->{after} || 0))
       {
         return _apply_getnext_fault($self, $fault, $vars,
-          $c_data->{$leaf} || $c_data->{$leaf_oid});
+          _data_for($c_data, $leaf, $leaf_oid));
       }
 
       unless (defined $iid) {
@@ -433,7 +433,7 @@ sub mock_getnext {
       }
       my $new_iid = $iid;
       my $val     = $EMPTY;
-      my $data    = $c_data->{$leaf} || $c_data->{$leaf_oid};
+      my $data    = _data_for($c_data, $leaf, $leaf_oid);
       my $count   = scalar keys %{$data} || 0;
       if ($count) {
         my $found = 0;
@@ -495,7 +495,7 @@ sub mock_bulkwalk {
         return (undef);
       }
 
-      my $data = $self->{Data}{$leaf} || $self->{Data}{$leaf_oid} || {};
+      my $data = _data_for($self->{Data}, $leaf, $leaf_oid) || {};
       my @iids = sort keys %{$data};
 
       # Without NonIncreasing, Net-SNMP drops everything from the first
@@ -512,6 +512,26 @@ sub mock_bulkwalk {
       return (\@rows);
     }
   );
+  return;
+}
+
+# Data stored under one module's label must answer a request for the same
+# object under another: net-snmp names an object that two MIBs define (IF-MIB
+# and RFC1213-MIB both define ifDescr) after whichever MIB loaded first.
+sub _data_for {
+  my ($c_data, $leaf, $leaf_oid) = @_;
+
+  my $data = $c_data->{$leaf} || ($leaf_oid && $c_data->{$leaf_oid});
+  return $data if $data;
+
+  my ($object) = ($leaf // $EMPTY) =~ /::(\w+)$/x;
+  return unless $object && $leaf_oid;
+  (my $want = $leaf_oid) =~ s/^[.]//x;
+  foreach my $key (grep {/::\Q$object\E$/x} keys %{$c_data}) {
+    my $key_oid = SNMP::translateObj($key) or next;
+    $key_oid =~ s/^[.]//x;
+    return $c_data->{$key} if $key_oid eq $want;
+  }
   return;
 }
 
