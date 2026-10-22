@@ -1,5 +1,10 @@
 Version 3.981002
 
+  [ENHANCEMENTS]
+
+  * #631 Siemens: detect SIMATIC, SIMOCODE, SINAMICS, and soft starter
+    devices; extract model, firmware, and serial details from sysDescr
+
   [BUG FIXES]
 
   * #638 Extreme: i_stp_state reads dot1dStpPortState, so XOS ports
