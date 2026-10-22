@@ -1181,9 +1181,16 @@ See documentation in L<SNMP::Info::Layer3::Tasman> for details.
 
 =item SNMP::Info::Layer3::Teltonika
 
-Subclass for Teltonika RUT9xx series routers.
+Subclass for legacy Teltonika RUT9xx series routers.
 
 See documentation in L<SNMP::Info::Layer3::Teltonika> for details.
+
+=item SNMP::Info::Layer3::TeltonikaRutOS
+
+Subclass for Teltonika devices using the current RutOS SNMP enterprise OID
+layout.
+
+See documentation in L<SNMP::Info::Layer3::TeltonikaRutOS> for details.
 
 =item SNMP::Info::Layer3::Timetra
 
@@ -2368,6 +2375,39 @@ sub device_type {
     if ($info->debug()) {
         print "SNMP::Info $VERSION\n";
         print "SNMP::Info::device_type() layers:$layers id:$id sysDescr:\"$desc\"\n";
+    }
+
+    # Teltonika devices commonly report Net-SNMP's generic sysObjectID, so
+    # identify current RutOS devices by the product code in Teltonika's
+    # enterprise tree. Older RUT9xx firmware uses a separate product-code OID
+    # and remains mapped to the legacy class below.
+    if ( defined($id) && ( $id eq '8072' || $id eq '48690' ) ) {
+        my $sess = $info->session();
+        if ($sess) {
+            my $product_code = eval {
+                $sess->get('.1.3.6.1.4.1.48690.1.3.0');
+            };
+
+            if ( defined($product_code)
+                && $product_code =~ /^(?:RUT[A-Z]{0,2}|TRB|OTD|TCR|TSW|TAP)\d/i ) {
+                print "SNMP::Info::device_type() detected Teltonika RutOS "
+                    . "product:$product_code\n"
+                    if $info->debug();
+                return 'SNMP::Info::Layer3::TeltonikaRutOS';
+            }
+
+            my $legacy_product_code = eval {
+                $sess->get('.1.3.6.1.4.1.48690.1.8.0');
+            };
+
+            if ( defined($legacy_product_code)
+                && $legacy_product_code =~ /^RUT9\d{2}/i ) {
+                print "SNMP::Info::device_type() detected legacy Teltonika "
+                    . "product:$legacy_product_code\n"
+                    if $info->debug();
+                return 'SNMP::Info::Layer3::Teltonika';
+            }
+        }
     }
 
     # Layer 3 Supported
