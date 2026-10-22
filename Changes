@@ -1,3 +1,10 @@
+Version 3.981002
+
+  [BUG FIXES]
+
+  * #638 Extreme: i_stp_state reads dot1dStpPortState, so XOS ports
+    report their spanning-tree state
+
 Version 3.981001 (2026-10-21)
 
   [ENHANCEMENTS]
