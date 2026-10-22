@@ -684,6 +684,12 @@ Class for Kentrox DataSMART DSU/CSU.
 
 See documentation in L<SNMP::Info::Layer2::Kentrox> for details.
 
+=item SNMP::Info::Layer2::LigoWave
+
+SNMP interface to LigoWave DLB radios.
+
+See documentation in L<SNMP::Info::Layer2::LigoWave> for details.
+
 =item SNMP::Info::Layer2::Microsens
 
 Subclass for MICROSENS managed switches, including G6 and G6+.
@@ -2392,6 +2398,13 @@ sub device_type {
     # model, where a ZoneDirector's names "ZD" and four digits.
     return 'SNMP::Info::Layer2::RuckusAP'
         if $desc =~ /^Ruckus Wireless [A-Z]\d{3}/;
+
+    # LigoDLB radios report a generic enterprise sysObjectID and sysServices
+    # that does not identify them as a Layer 2 device. Match their product
+    # description before the generic layer-based fallbacks.
+    if ( $id eq '32750' and $desc =~ /^LigoDLB\b/i ) {
+        return 'SNMP::Info::Layer2::LigoWave';
+    }
 
     # Layer 3 Supported
     #   (usually has layer2 as well, so we check for 3 first)
