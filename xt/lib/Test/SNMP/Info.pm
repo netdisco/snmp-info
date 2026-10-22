@@ -402,7 +402,7 @@ sub device_type : Tests(+7) {
   };
   $test->{info}->cache($cache_data);
   is($test->{info}->device_type,
-    'SNMP::Info::Layer2::Ruckus', 'Ruckus product OID without sysServices');
+    'SNMP::Info::Layer2::RuckusAP', 'Ruckus product OID without sysServices');
   $test->{info}->clear_cache();
 
   # Layer 1

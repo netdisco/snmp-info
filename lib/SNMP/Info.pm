@@ -726,11 +726,11 @@ Subclass for Orinoco/Proxim wireless access points.
 
 See documentation in L<SNMP::Info::Layer2::Orinoco> for details.
 
-=item SNMP::Info::Layer2::Ruckus
+=item SNMP::Info::Layer2::RuckusAP
 
 Subclass for Ruckus wireless access points.
 
-See documentation in L<SNMP::Info::Layer2::Ruckus> for details.
+See documentation in L<SNMP::Info::Layer2::RuckusAP> for details.
 
 =item SNMP::Info::Layer2::TPLink
 
@@ -2378,7 +2378,7 @@ sub device_type {
 
     # Ruckus access points use a generic sysDescr and may not implement
     # sysServices, so identify their registered product OIDs directly.
-    return 'SNMP::Info::Layer2::Ruckus'
+    return 'SNMP::Info::Layer2::RuckusAP'
         if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.25053\.3\.1\.[1-4]\.\d+$/;
 
     # Layer 3 Supported

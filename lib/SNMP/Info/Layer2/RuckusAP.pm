@@ -1,4 +1,4 @@
-# SNMP::Info::Layer2::Ruckus - SNMP interface to Ruckus access points
+# SNMP::Info::Layer2::RuckusAP - SNMP interface to Ruckus access points
 #
 # Copyright (c) 2026 The SNMP::Info Developers
 # All rights reserved.
@@ -28,7 +28,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-package SNMP::Info::Layer2::Ruckus;
+package SNMP::Info::Layer2::RuckusAP;
 
 use strict;
 use warnings;
@@ -37,8 +37,8 @@ use SNMP::Info::Layer2;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 $VERSION = '3.981001';
-@SNMP::Info::Layer2::Ruckus::ISA = qw(SNMP::Info::Layer2 Exporter);
-@SNMP::Info::Layer2::Ruckus::EXPORT_OK = qw//;
+@SNMP::Info::Layer2::RuckusAP::ISA = qw(SNMP::Info::Layer2 Exporter);
+@SNMP::Info::Layer2::RuckusAP::EXPORT_OK = qw//;
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -98,7 +98,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Ruckus - SNMP interface to Ruckus access points
+SNMP::Info::Layer2::RuckusAP - SNMP interface to Ruckus access points
 
 =head1 AUTHOR
 

@@ -1,10 +1,10 @@
-# Test::SNMP::Info::Layer2::Ruckus
+# Test::SNMP::Info::Layer2::RuckusAP
 
-package Test::SNMP::Info::Layer2::Ruckus;
+package Test::SNMP::Info::Layer2::RuckusAP;
 
 use Test::Class::Most parent => 'My::Test::Class';
 
-use SNMP::Info::Layer2::Ruckus;
+use SNMP::Info::Layer2::RuckusAP;
 
 sub setup : Tests(setup) {
   my $test = shift;
