@@ -129,7 +129,8 @@ SNMP::Info Developers
 =head1 DESCRIPTION
 
 Provides model, serial number, and software version information for Ruckus
-access points registered below the Ruckus wireless product OID branches.
+access points registered below the Ruckus wireless product OID branches, and
+for Unleashed access points identified by C<sysDescr>.
 
 =head2 Inherited Classes
 
@@ -159,6 +160,24 @@ These methods return scalar values.
 
 =over
 
+=item $ruckus->ruckus_model()
+
+Returns the model number reported by the access point.
+
+(C<ruckusHwInfoModelNumber>)
+
+=item $ruckus->ruckus_serial()
+
+Returns the serial number reported by the access point.
+
+(C<ruckusHwInfoSerialNumber>)
+
+=back
+
+=head2 Overrides
+
+=over
+
 =item $ruckus->vendor()
 
 Returns C<ruckus>.
@@ -169,7 +188,8 @@ Returns C<ruckus>.
 
 =item $ruckus->model()
 
-Returns the model from C<ruckusHwInfoModelNumber>, falling back to the
+Returns the model from C<ruckusHwInfoModelNumber>. Unleashed access points
+do not answer it, so the model named in C<sysDescr> is used next, then the
 inherited model method.
 
 =item $ruckus->serial()
@@ -179,12 +199,42 @@ the inherited serial method.
 
 =item $ruckus->os_ver()
 
-Returns the software revision whose C<ruckusSwRevStatus> is active.
+Returns the software revision whose C<ruckusSwRevStatus> is active. When no
+revision has a status, returns the lowest-indexed revision, then falls back
+to the inherited method.
 
 =back
 
 =head2 Global Methods imported from SNMP::Info::Layer2
 
 See L<SNMP::Info::Layer2/"GLOBALS"> for details.
+
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=head2 Ruckus Software Revision Table (C<ruckusSwRevTable>)
+
+=over
+
+=item $ruckus->ruckus_sw_rev()
+
+Returns reference to hash. Key: revision index, Value: software revision.
+
+(C<ruckusSwRevision>)
+
+=item $ruckus->ruckus_sw_rev_status()
+
+Returns reference to hash. Key: revision index, Value: C<active> for the
+running revision, otherwise C<inactive>.
+
+(C<ruckusSwRevStatus>)
+
+=back
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =cut
