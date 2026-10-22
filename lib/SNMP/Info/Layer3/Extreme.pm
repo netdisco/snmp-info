@@ -978,6 +978,28 @@ sub stp_p_stg_id {
     return $stp_p_stg_id;
 }
 
+# stp_p_state here is extremeStpPortTable, keyed <instance>.<ifIndex>, which
+# matches no bp_index key, so read BRIDGE-MIB directly.
+sub i_stp_state {
+    my $extreme = shift;
+    my $partial = shift;
+
+    my $bp_index    = $extreme->bp_index($partial);
+    my $stp_p_state = $extreme->dot1dStpPortState($partial);
+
+    my %i_stp_state;
+
+    foreach my $index ( keys %$stp_p_state ) {
+        my $state = $stp_p_state->{$index};
+        my $iid   = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $state;
+        $i_stp_state{$iid} = $state;
+    }
+
+    return \%i_stp_state;
+}
+
 1;
 
 __END__
@@ -1166,6 +1188,16 @@ Ignores VLAN meta interfaces and loopback
 
 Returns the mapping to the SNMP Interface Table. Extreme LLDP uses the
 bridge index rather than ifIndex.
+
+=item $extreme->i_stp_state()
+
+Returns reference to hash.  Key: C<ifIndex>, Value: the port state in the
+device's default spanning tree, from C<dot1dStpPortState> mapped through
+C<bp_index>.  Returns an empty hash when the device serves no
+C<BRIDGE-MIB> STP port table; the vendor C<extremeStpPortTable> is not
+used, since it is keyed by STP domain.
+
+(C<dot1dStpPortState>)
 
 =item $extreme->i_vlan()
 
