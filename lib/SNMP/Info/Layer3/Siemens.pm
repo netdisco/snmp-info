@@ -164,6 +164,8 @@ See L<SNMP::Info::Layer3/"Required MIBs"> for its MIB requirements.
 
 These methods return scalar values.
 
+=head2 Overrides
+
 =over
 
 =item $siemens->vendor()
@@ -192,5 +194,14 @@ serial method when no match is present.
 =head2 Global Methods imported from SNMP::Info::Layer3
 
 See L<SNMP::Info::Layer3/"GLOBALS"> for details.
+
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See L<SNMP::Info::Layer3/"TABLE METHODS"> for details.
 
 =cut
