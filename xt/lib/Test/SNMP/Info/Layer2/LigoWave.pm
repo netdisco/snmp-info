@@ -77,42 +77,42 @@ sub identity : Tests(4) {
 
 sub peer_tables : Tests(3) {
     my $test = shift;
-    my $peer_iid = '0.6.0.25.59.36.55.77';
+    my $peer_iid = '0.6.2.0.0.0.0.41';
     $test->mock_session->{Data} = {
-        $PEER_IP_OID => { $peer_iid => '172.30.225.41' },
-        $PEER_NAME_OID => { $peer_iid => 'AMT-WIFI2' },
+        $PEER_IP_OID => { $peer_iid => '192.0.2.41' },
+        $PEER_NAME_OID => { $peer_iid => 'bridge-peer' },
     };
     is_deeply($test->{info}->ligo_peer_ip(),
-        { $peer_iid => '172.30.225.41' }, 'Numeric OID peer IP column walked');
+        { $peer_iid => '192.0.2.41' }, 'Numeric OID peer IP column walked');
     is_deeply($test->{info}->ligo_peer_name(),
-        { $peer_iid => 'AMT-WIFI2' }, 'Numeric OID peer name column walked');
+        { $peer_iid => 'bridge-peer' }, 'Numeric OID peer name column walked');
     is_deeply($test->{info}->ligo_peer_ip(),
-        { $peer_iid => '172.30.225.41' }, 'Peer table uses cache');
+        { $peer_iid => '192.0.2.41' }, 'Peer table uses cache');
 }
 
 sub vendor_columns : Tests(28) {
     my $test = shift;
     my $iid = '7';
     my %sample = map { $_ => 1 } keys %COLUMN_OIDS;
-    $sample{ligo_wifi_mac} = pack('C*', 0, 25, 59, 31, 174, 77);
-    $sample{ligo_peer_mac} = pack('C*', 0, 25, 59, 36, 55, 77);
-    $sample{ligo_wifi_essid} = 'AMT-BRIDGE';
+    $sample{ligo_wifi_mac} = pack('C*', 2, 0, 0, 0, 0, 40);
+    $sample{ligo_peer_mac} = pack('C*', 2, 0, 0, 0, 0, 41);
+    $sample{ligo_wifi_essid} = 'example-ssid';
     $sample{ligo_wifi_country} = 'GB';
     $sample{ligo_wifi_tx_streams} = 8;
     $sample{ligo_wifi_quality} = 105;
     $sample{ligo_wifi_status} = 1;
     $sample{ligo_wifi_state} = 'up';
-    $sample{ligo_peer_ip} = '172.30.225.41';
+    $sample{ligo_peer_ip} = '192.0.2.41';
     $sample{ligo_peer_remote_port} = 0;
-    $sample{ligo_peer_name} = 'AMT-WIFI2';
+    $sample{ligo_peer_name} = 'bridge-peer';
 
     foreach my $method (sort keys %COLUMN_OIDS) {
         $test->mock_session->{Data} = {
             $COLUMN_OIDS{$method} => { $iid => $sample{$method} },
         };
         my $expected = $sample{$method};
-        $expected = '00:19:3b:1f:ae:4d' if $method eq 'ligo_wifi_mac';
-        $expected = '00:19:3b:24:37:4d' if $method eq 'ligo_peer_mac';
+        $expected = '02:00:00:00:00:28' if $method eq 'ligo_wifi_mac';
+        $expected = '02:00:00:00:00:29' if $method eq 'ligo_peer_mac';
         is_deeply($test->{info}->$method(), { $iid => $expected },
             "$method numeric OID column walked");
     }
