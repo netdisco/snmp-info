@@ -11,9 +11,9 @@ sub setup : Tests(setup) {
   $test->SUPER::setup;
 
   $test->{info}->cache({
-    '_layers' => 92,
+    '_layers' => 78,
     '_description' => 'Siemens, SIMATIC S7, CPU315-2 PN/DP, 6ES7 315-2EH14-0AB0, HW: 7, FW: V3.2.11, S C-F1V122652015',
-    '_id' => '.1.3.6.1.4.1.311.1.1',
+    '_id' => '.0.0',
     'store' => {},
   });
 }
@@ -25,36 +25,37 @@ sub device_type : Tests(7) {
     'SIMATIC S7 description selects Siemens class');
 
   $test->{info}->cache({
-    '_layers' => 92,
+    '_layers' => 76,
     '_description' => 'Siemens, SINAMICS, G120 CU240E-2, 6SL3 244-0BB12-1FA0, HW: Version 401, FW: Version V04.71.52',
-    '_id' => '.1.3.6.1.4.1.2021',
+    '_id' => '.0.0',
     'store' => {},
   });
   is($test->{info}->device_type(), 'SNMP::Info::Layer3::Siemens',
     'SINAMICS description selects Siemens class');
 
+  # The HMI answers no sysServices and reports a Windows CE sysObjectID.
+  $test->{info}->clear_cache();
   $test->{info}->cache({
-    '_layers' => 92,
-    '_description' => 'Siemens, SIMATIC HMI, TP700 Comfort, 6AV2 124-0GC01-0AX0, HW: 0, SW: V16.0.0',
-    '_id' => '.1.3.6.1.4.1.311.1.1',
+    '_description' => 'Siemens, SIMATIC HMI, TP700 Comfort, 6AV2 124-0GC01-0AX0, HW: 0, SW: V 16 0 0',
+    '_id' => '.1.3.6.1.4.1.311.1.1.3.3',
     'store' => {},
   });
   is($test->{info}->device_type(), 'SNMP::Info::Layer3::Siemens',
-    'SIMATIC HMI description selects Siemens class');
+    'SIMATIC HMI without sysServices selects Siemens class');
 
   $test->{info}->cache({
-    '_layers' => 92,
+    '_layers' => 76,
     '_description' => 'Siemens Soft starter 3RW44 Profinet',
-    '_id' => '.1.3.6.1.4.1.2021',
+    '_id' => '.0.0',
     'store' => {},
   });
   is($test->{info}->device_type(), 'SNMP::Info::Layer3::Siemens',
     'soft starter description selects Siemens class');
 
   $test->{info}->cache({
-    '_layers' => 92,
+    '_layers' => 76,
     '_description' => 'Siemens, SIMOCODE pro V PN, 3UF7 011-1AB00-0, FW: Version V01.02.00',
-    '_id' => '.1.3.6.1.4.1.2021',
+    '_id' => '.0.0',
     'store' => {},
   });
   is($test->{info}->device_type(), 'SNMP::Info::Layer3::Siemens',
@@ -89,7 +90,7 @@ sub os : Tests(1) {
   is($test->{info}->os(), 'siemens', 'OS is siemens');
 }
 
-sub model : Tests(6) {
+sub model : Tests(7) {
   my $test = shift;
 
   is($test->{info}->model(), 'CPU315-2 PN/DP', 'SIMATIC S7 model extracted');
@@ -118,6 +119,11 @@ sub model : Tests(6) {
     '_description' => 'Siemens, SIMATIC HMI, unknown, 6AV2 124-0GC01-0AX0, HW: 0, SW: V 16 0 0',
   });
   is($test->{info}->model(), '6AV2 124-0GC01-0AX0', 'HMI part number used when model is unknown');
+
+  $test->{info}->cache({
+    '_description' => 'Siemens, SIMATIC S7, IM151-8 PN/DP CPU, 6ES7 151-8AB01-0AB0 , HW: 3, FW: V3.2.10, S C-X4U421302009',
+  });
+  is($test->{info}->model(), 'IM151-8 PN/DP CPU', 'SIMATIC S7 model extracted when the order number has a trailing space');
 }
 
 sub os_ver : Tests(6) {
