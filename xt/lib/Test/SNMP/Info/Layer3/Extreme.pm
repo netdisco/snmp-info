@@ -305,4 +305,59 @@ sub set_remove_i_vlan_tagged : Tests(5) {
     q(... and says the VLAN is untagged on the port));
 }
 
+sub _prime_stp {
+  my ($test, %store) = @_;
+
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    (map { ('_' . $_) => 1 } keys %store), store => \%store,
+  });
+  return;
+}
+
+sub i_stp_state : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_stp_state');
+
+  $test->_prime_stp(
+    dot1dStpPortState => {1 => 'forwarding', 3 => 'blocking',
+      12 => 'forwarding'},
+    bp_index    => {1 => 1001, 3 => 1003},
+    stp_p_state => {'1.1001' => 'forwarding'},
+  );
+  cmp_deeply($test->{info}->i_stp_state(),
+    {1001 => 'forwarding', 1003 => 'blocking'},
+    q(BRIDGE-MIB port states are keyed by ifIndex, unmapped ports skipped));
+
+  $test->_prime_stp(
+    dot1dStpPortState => {},
+    bp_index    => {1 => 1001, 3 => 1003},
+    stp_p_state => {'1.1001' => 'forwarding', '1.1003' => 'blocking'},
+  );
+  cmp_deeply($test->{info}->i_stp_state(), {},
+    q(Without BRIDGE-MIB STP the vendor table is not used));
+
+  # Without dot1dBasePortIfIndex, bp_index falls back to an ifIndex
+  # identity map, so a bridge port number is read as an ifIndex.
+  $test->_prime_stp(
+    dot1dStpPortState => {1 => 'forwarding', 2 => 'blocking'},
+    bp_index => {},
+    i_index  => {1 => 1, 1001 => 1001},
+  );
+  cmp_deeply($test->{info}->i_stp_state(), {1 => 'forwarding'},
+    q(Without dot1dBasePortIfIndex a port number matching an ifIndex is kept));
+
+  $test->_prime_stp(
+    dot1dStpPortState => {1 => 'forwarding'},
+    bp_index => {},
+    i_index  => {1001 => 1001},
+  );
+  cmp_deeply($test->{info}->i_stp_state(), {},
+    q(Without dot1dBasePortIfIndex a port number matching no ifIndex is skipped));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->i_stp_state(), {}, q(No data returns empty hash));
+}
+
 1;
