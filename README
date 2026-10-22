@@ -993,6 +993,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Sun for details.
 
+        SNMP::Info::Layer3::Tachyon
+            Subclass for Tachyon TNA-series devices.
+
+            See documentation in SNMP::Info::Layer3::Tachyon for details.
+
         SNMP::Info::Layer3::Tasman
             Subclass for Avaya Secure Routers.
 

@@ -2307,6 +2307,7 @@ sub device_type {
         46242 => 'SNMP::Info::Layer3::Netonix',
         47196 => 'SNMP::Info::Layer3::ArubaCX',
         48690 => 'SNMP::Info::Layer3::Teltonika',
+        57344 => 'SNMP::Info::Layer3::Tachyon',
     );
 
     my %l2sysoidmap = (
@@ -2352,6 +2353,7 @@ sub device_type {
         46242 => 'SNMP::Info::Layer3::Netonix',
         47196 => 'SNMP::Info::Layer3::ArubaCX',
         48690 => 'SNMP::Info::Layer3::Teltonika',
+        57344 => 'SNMP::Info::Layer3::Tachyon',
     );
 
     my %l1sysoidmap = (
