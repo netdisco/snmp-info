@@ -83,6 +83,11 @@ sub os_ver {
             if $status =~ /^(?:active|2)$/i;
     }
 
+    # Some firmware (R500 on 9.13) answers ruckusSwRevision with no status.
+    my ($first_revision) = grep { defined and /\S/ }
+        @$revisions{ sort { $a <=> $b } keys %$revisions };
+    return $first_revision if !%$statuses and defined $first_revision;
+
     return $self->SUPER::os_ver();
 }
 sub serial {

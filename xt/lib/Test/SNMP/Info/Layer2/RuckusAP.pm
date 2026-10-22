@@ -51,7 +51,7 @@ sub serial : Tests(1) {
   is($test->{info}->serial(), 'SERIAL-REDACTED', 'Serial comes from the hardware MIB');
 }
 
-sub os_ver : Tests(2) {
+sub os_ver : Tests(3) {
   my $test = shift;
 
   is($test->{info}->os_ver(), '6.1.2.0.4172',
@@ -73,6 +73,17 @@ sub os_ver : Tests(2) {
   });
   is($test->{info}->os_ver(), '6.0.0.0.1234',
     'Accepts the active enum label as well as its numeric value');
+
+  # An R500 on 9.13 answers ruckusSwRevision.1 but has no ruckusSwRevStatus.
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_ruckus_sw_rev' => 1,
+    'store' => {
+      'ruckus_sw_rev' => { 1 => '9.13.3.0.145' },
+    },
+  });
+  is($test->{info}->os_ver(), '9.13.3.0.145',
+    'Falls back to the first revision when no row has a status');
 }
 
 1;
