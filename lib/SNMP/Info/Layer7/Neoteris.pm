@@ -100,8 +100,8 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer7::Neoteris - SNMP Interface to Pulse
-Secure / Juniper SSL VPN appliances
+SNMP::Info::Layer7::Neoteris - SNMP Interface to Ivanti /
+Pulse Secure / Juniper SSL VPN appliances
 
 =head1 AUTHORS
 
@@ -124,7 +124,7 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-Subclass for Pulse Secure / Juniper SSL VPN appliances
+Subclass for Ivanti / Pulse Secure / Juniper SSL VPN appliances
 
 =head2 Inherited Classes
 
