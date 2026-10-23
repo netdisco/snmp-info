@@ -374,8 +374,108 @@ Tachyon MIB does not need to be installed.
 
 =head1 GLOBALS
 
-Returns vendor C<tachyon>, OS C<Tachyon>, model from C<deviceModel>, firmware
-version from C<firmwareVersion>, and serial number from C<deviceSerialNo>.
+These methods return scalar values from the device.
+
+=over
+
+=item $info->vendor()
+
+Returns C<'tachyon'>.
+
+=item $info->os()
+
+Returns C<'Tachyon'>.
+
+=item $info->model()
+
+Returns the device model from C<deviceModel>.
+
+=item $info->os_ver()
+
+Returns the firmware version from C<firmwareVersion>.
+
+=item $info->serial()
+
+Returns the serial number from C<deviceSerialNo>.
+
+=item $info->description()
+
+Returns the device description from the Tachyon system extension group.
+
+=back
+
+=head1 TABLE METHODS
+
+These methods return tables as references to hashes.
+
+=over
+
+=item $info->fw_mac()
+
+Returns wireless peer MAC addresses keyed by the peer table index.
+
+=item $info->fw_port()
+
+Returns the interface index associated with each wireless peer.
+
+=item $info->fw_status()
+
+Returns forwarding status C<3> for each active wireless peer.
+
+=item $info->bp_index()
+
+Maps interface indexes to themselves for bridge forwarding table lookups.
+
+=item $info->i_up()
+
+Returns interface operational status, including Tachyon Ethernet port state.
+
+=item $info->i_up_admin()
+
+Returns interface administrative status, including Tachyon Ethernet port
+state.
+
+=item $info->i_duplex()
+
+Returns duplex mode for Tachyon Ethernet interfaces.
+
+=item $info->i_type()
+
+Reports Tachyon Ethernet interfaces as C<ethernetCsmacd>.
+
+=item $info->i_vlan()
+
+Maps VLAN interfaces to VLAN IDs using their interface names.
+
+=item $info->v_name()
+
+Maps VLAN IDs to names derived from the device's VLAN interface names.
+
+=item $info->i_vlan_membership()
+
+Returns VLAN membership for the logical VLAN interfaces reported by the
+device.
+
+=item $info->i_vlan_membership_untagged()
+
+Returns an empty table because untagged VLAN membership is not available from
+the device's SNMP data.
+
+=item $info->ip_index()
+
+Maps the management address used for SNMP discovery to its management bridge
+when standard IP-MIB tables are unavailable.
+
+=item $info->ip_table()
+
+Returns the management address used for SNMP discovery when standard IP-MIB
+tables are unavailable.
+
+=back
+
+=head2 Table Methods imported from SNMP::Info::Layer3
+
+See documentation in L<SNMP::Info::Layer3> for details.
 
 =cut
 
