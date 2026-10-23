@@ -1173,6 +1173,12 @@ Subclass for Generic Sun Routers running SunOS.
 
 See documentation in L<SNMP::Info::Layer3::Sun> for details.
 
+=item SNMP::Info::Layer3::Tachyon
+
+Subclass for Tachyon TNA-series devices.
+
+See documentation in L<SNMP::Info::Layer3::Tachyon> for details.
+
 =item SNMP::Info::Layer3::Tasman
 
 Subclass for Avaya Secure Routers.
