@@ -111,13 +111,28 @@ sub device_type_variants : Tests(+12) {
         'Generic Net-SNMP device without Teltonika product code stays generic');
 }
 
-sub model_firmware_and_serial : Tests(5) {
+sub vendor : Tests(1) {
     my $test = shift;
-
     is($test->{info}->vendor(), 'teltonika', 'Vendor');
+}
+
+sub os : Tests(1) {
+    my $test = shift;
     is($test->{info}->os(), 'rutos', 'OS');
+}
+
+sub model : Tests(1) {
+    my $test = shift;
     is($test->{info}->model(), 'RUTX1100XXXX', 'Product code');
+}
+
+sub os_ver : Tests(1) {
+    my $test = shift;
     is($test->{info}->os_ver(), 'RUTX_R_00.07.22.3', 'RutOS firmware');
+}
+
+sub serial : Tests(1) {
+    my $test = shift;
     is($test->{info}->serial(), 'SYNTHETIC-SERIAL-001', 'Serial');
 }
 
