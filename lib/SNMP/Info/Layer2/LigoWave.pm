@@ -134,6 +134,7 @@ my %LIGO_COLUMNS = (
 );
 
 {
+    ## no critic (TestingAndDebugging::ProhibitNoStrict)
     no strict 'refs';
     foreach my $attr ( keys %LIGO_COLUMNS ) {
         my $method = $attr;
@@ -279,5 +280,184 @@ tested firmware does not expose an address prefix or netmask.
 The C<ligo_unit_id> scalar is distinct on the tested devices, but the published
 vendor MIB does not identify it as a serial number, so it is not returned by
 C<serial()>.
+
+=head1 METHODS
+
+=head2 Device identity
+
+=over 4
+
+=item $ligo->vendor()
+
+Returns C<ligowave>.
+
+=item $ligo->model()
+
+Returns the model name parsed from C<sysDescr>, without the firmware version.
+
+=item $ligo->os()
+
+Returns C<LigoWave OS>.
+
+=item $ligo->os_ver()
+
+Returns the firmware version parsed from C<sysDescr>.
+
+=back
+
+=head2 Wireless and peer tables
+
+The following methods return hash references keyed by the LigoWave table
+instance. Wireless values describe the local radio. Peer values describe its
+associated remote radio.
+
+=over 4
+
+=item ligo_wifi_mac()
+
+Radio MAC address.
+
+=item ligo_wifi_protocol()
+
+Wireless protocol name.
+
+=item ligo_wifi_mode()
+
+Wireless operating mode code.
+
+=item ligo_wifi_essid()
+
+Configured wireless network name.
+
+=item ligo_wifi_country()
+
+Configured regulatory country code.
+
+=item ligo_wifi_frequency()
+
+Radio frequency in MHz.
+
+=item ligo_wifi_channel()
+
+Configured wireless channel.
+
+=item ligo_wifi_width()
+
+Configured channel width in MHz.
+
+=item ligo_wifi_tx_streams()
+
+Number of transmit streams.
+
+=item ligo_wifi_tx_power()
+
+Transmit power reported by the radio.
+
+=item ligo_wifi_bitrate()
+
+Wireless bitrate reported by the radio.
+
+=item ligo_wifi_snr()
+
+Signal-to-noise ratio reported by the radio.
+
+=item ligo_wifi_quality()
+
+Wireless link quality value reported by the radio.
+
+=item ligo_wifi_signal()
+
+Received signal level in dBm.
+
+=item ligo_wifi_noise()
+
+Noise level in dBm.
+
+=item ligo_wifi_status()
+
+Numeric wireless interface status.
+
+=item ligo_wifi_state()
+
+Text wireless interface state.
+
+=item ligo_peer_mac()
+
+Associated peer MAC address.
+
+=item ligo_peer_associated()
+
+Peer association status.
+
+=item ligo_peer_tx_bytes()
+
+Bytes transmitted to the peer.
+
+=item ligo_peer_rx_bytes()
+
+Bytes received from the peer.
+
+=item ligo_peer_signal()
+
+Signal level reported for the peer link in dBm.
+
+=item ligo_peer_noise()
+
+Noise level reported for the peer link in dBm.
+
+=item ligo_peer_ip()
+
+Peer management address.
+
+=item ligo_peer_remote_port()
+
+Remote port value reported by the peer table.
+
+=item ligo_peer_name()
+
+Peer name.
+
+=item ligo_peer_rx_rate()
+
+Receive rate reported for the peer link.
+
+=item ligo_peer_tx_rate()
+
+Transmit rate reported for the peer link.
+
+=back
+
+=head2 VLAN and address methods
+
+=over 4
+
+=item $ligo->v_name()
+
+Returns VLAN IDs and labels inferred from logical interface names such as
+C<br99> and C<eth0.99>.
+
+=item $ligo->v_index()
+
+Returns the VLAN IDs as both keys and values.
+
+=item $ligo->i_vlan_membership()
+
+Associates each recognized logical VLAN interface with its VLAN ID.
+
+=item $ligo->i_vlan_membership_untagged()
+
+Returns an empty hash reference because untagged membership is not reported.
+
+=item $ligo->ip_index()
+
+Returns IP addresses and interface indexes. When IP-MIB is unavailable, the
+discovery address is associated with C<br0> if that interface is present.
+
+=item $ligo->ip_table()
+
+Returns the IP address table, including the discovery address when IP-MIB is
+unavailable.
+
+=back
 
 =cut
