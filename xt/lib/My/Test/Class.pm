@@ -380,6 +380,7 @@ sub mock_get {
         $vars->[1] = $new_iid;
         $vars->[2] = $val;
       }
+      _non_leaf_tag($vars) if ref($vars) =~ /SNMP::Varbind/x && length $val;
       return (wantarray() ? $vars : $val);
     }
   );
@@ -461,6 +462,7 @@ sub mock_getnext {
       $vars->[0] = $leaf;
       $vars->[1] = $new_iid;
       $vars->[2] = $val;
+      _non_leaf_tag($vars, 1) if $leaf ne 'unknown';
       $self->{_fault_count}{$count_key}++ if $fault && $leaf ne 'unknown';
       return (wantarray() ? $vars : $val);
     }
@@ -509,9 +511,25 @@ sub mock_bulkwalk {
       # misbehaving agent would, and the bulkwalk itself succeeds.
       splice @iids, ($fault->{after} || 0), 0, $iids[0] if $fault && @iids;
       my @rows = map { SNMP::Varbind->new([$leaf, $_, $data->{$_}]) } @iids;
+      _non_leaf_tag($_) foreach @rows;
       return (\@rows);
     }
   );
+  return;
+}
+
+# When no loaded MIB defines the column, net-snmp cannot tell where its iid
+# starts: it returns the whole OID as the tag and an empty iid (NON_LEAF_NAME
+# in perl/SNMP/SNMP.xs). Only getnext keeps the module prefix on that tag;
+# get and bulkwalk drop it.
+sub _non_leaf_tag {
+  my ($vars, $keep_module) = @_;
+  my $label = $vars->[0];
+  $label = SNMP::translateObj($label, 0, 1) // $EMPTY if $label =~ /^[.]?\d/x;
+  return unless $label =~ /::[^.]+[.]\d/x;
+  $label =~ s/^\S+:://x unless $keep_module;
+  $vars->[0] = join '.', $label, $vars->[1];
+  $vars->[1] = $EMPTY;
   return;
 }
 
