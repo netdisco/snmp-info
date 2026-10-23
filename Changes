@@ -16,6 +16,10 @@ Version 3.981001 (2026-10-21)
 
   [ENHANCEMENTS]
 
+  * Teltonika: identify current RutOS devices by product code, including
+    devices reporting a generic Net-SNMP sysObjectID; map product code, serial
+    number, and firmware across current RUT, RUTX, RUTM, TRB, OTD, TCR, TSW,
+    and TAP product families, while retaining legacy RUT9xx detection
   * #633 C9800: report port VLANs, duplex, LLDP neighbors, per-radio
     SSIDs and the chassis serial; VLAN names include FlexConnect client
     VLANs; os is now ios-xe (#630)
