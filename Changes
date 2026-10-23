@@ -9,6 +9,8 @@ Version 3.982000 (2026-10-24)
     and software revision (#426)
   * #641 Add AGENTS.md and skills to guide AI coding agents writing and
     reviewing device classes
+  * #640 Ruckus: detect SmartZone and SmartCell Gateway controllers by
+    product OID and report the controller model
 
   [BUG FIXES]
 
