@@ -1179,6 +1179,12 @@ Subclass for Generic Sun Routers running SunOS.
 
 See documentation in L<SNMP::Info::Layer3::Sun> for details.
 
+=item SNMP::Info::Layer3::Tachyon
+
+Subclass for Tachyon TNA-series devices.
+
+See documentation in L<SNMP::Info::Layer3::Tachyon> for details.
+
 =item SNMP::Info::Layer3::Tasman
 
 Subclass for Avaya Secure Routers.
@@ -2301,6 +2307,7 @@ sub device_type {
         46242 => 'SNMP::Info::Layer3::Netonix',
         47196 => 'SNMP::Info::Layer3::ArubaCX',
         48690 => 'SNMP::Info::Layer3::Teltonika',
+        57344 => 'SNMP::Info::Layer3::Tachyon',
     );
 
     my %l2sysoidmap = (
@@ -2346,6 +2353,7 @@ sub device_type {
         46242 => 'SNMP::Info::Layer3::Netonix',
         47196 => 'SNMP::Info::Layer3::ArubaCX',
         48690 => 'SNMP::Info::Layer3::Teltonika',
+        57344 => 'SNMP::Info::Layer3::Tachyon',
     );
 
     my %l1sysoidmap = (

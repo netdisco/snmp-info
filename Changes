@@ -16,6 +16,9 @@ Version 3.981001 (2026-10-21)
 
   [ENHANCEMENTS]
 
+  * Tachyon: identify TNA devices, report model, serial, firmware, Ethernet
+    port state, wireless peers, logical VLAN interfaces, and the management
+    address when standard IP-MIB tables are unavailable
   * #633 C9800: report port VLANs, duplex, LLDP neighbors, per-radio
     SSIDs and the chassis serial; VLAN names include FlexConnect client
     VLANs; os is now ios-xe (#630)

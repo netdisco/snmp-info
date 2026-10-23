@@ -147,6 +147,7 @@ lib/SNMP/Info/Layer3/Steelfusion.pm
 lib/SNMP/Info/Layer3/Steelhead.pm
 lib/SNMP/Info/Layer3/SteelheadEx.pm
 lib/SNMP/Info/Layer3/Sun.pm
+lib/SNMP/Info/Layer3/Tachyon.pm
 lib/SNMP/Info/Layer3/Tasman.pm
 lib/SNMP/Info/Layer3/Teltonika.pm
 lib/SNMP/Info/Layer3/Timetra.pm
