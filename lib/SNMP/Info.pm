@@ -5626,6 +5626,8 @@ sub _walk_rows {
                 Dumper( $w->{var} );
         }
 
+        _split_non_leaf_tag( $w->{var}, $w->{qual_leaf}, $leaf );
+
         # Check if we've left the requested subtree
         last if $w->{var}->[0] !~ /$leaf$/;
         my $iid = $w->{var}->[1];
@@ -5693,6 +5695,30 @@ sub _walk_rows {
 
         $w->{localstore}->{$iid} = $val;
 
+    }
+    return;
+}
+
+=item _split_non_leaf_tag($varbind, $qual_leaf, $leaf)
+
+When no loaded MIB defines the column, net-snmp cannot tell where the
+instance starts, so it returns the whole OID as the tag and an empty iid.
+GETNEXT keeps the module prefix on that tag and GET and bulkwalk drop it.
+When the tag extends C<$qual_leaf> or C<$leaf>, moves the remainder into
+the iid.
+
+=cut
+
+sub _split_non_leaf_tag {
+    my ( $var, @columns ) = @_;
+    return if length( $var->[1] // '' );
+
+    foreach my $column ( grep { defined and length } @columns ) {
+        my $prefix = "$column.";
+        next if index( $var->[0], $prefix ) != 0;
+        $var->[1] = substr( $var->[0], length $prefix );
+        $var->[0] = $column;
+        return;
     }
     return;
 }
