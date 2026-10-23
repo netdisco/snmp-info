@@ -1125,6 +1125,12 @@ Subclass for redlion routers.
 
 See documentation in L<SNMP::Info::Layer3::Redlion> for details.
 
+=item SNMP::Info::Layer3::RuckusController
+
+Subclass for Ruckus SmartZone and SmartCell Gateway controllers.
+
+See documentation in L<SNMP::Info::Layer3::RuckusController> for details.
+
 =item SNMP::Info::Layer3::SilverPeak
 
 Subclass for SilverPeak devices.
@@ -2211,6 +2217,14 @@ sub device_type {
     my $desc = $info->description() || 'undef';
     $desc =~ s/[\r\n\l]+/ /g;
 
+    my $id = $info->id() || 'undef';
+    my $soid = $id;
+
+    # Identify controller product OIDs before generic layer and description
+    # fallbacks. This also handles controllers without sysServices/sysDescr.
+    return 'SNMP::Info::Layer3::RuckusController'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.25053\.3\.1\.(?:10|11)(?:\.|$)/;
+
     # Some devices don't implement sysServices, but do return a description.
     # In that case, log a warning and continue.
     if ( $layers eq '00000000' ) {
@@ -2221,9 +2235,6 @@ sub device_type {
             return;
         }
     }
-
-    my $id = $info->id() || 'undef';
-    my $soid = $id;
 
     # Hash for generic fallback to a device class if unable to determine using
     # the sysDescr regex.
