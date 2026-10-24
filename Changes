@@ -4,6 +4,9 @@ Version 3.981002
 
   * #631 Siemens: detect SIMATIC, SIMOCODE, SINAMICS, and soft starter
     devices; extract model, firmware, and serial details from sysDescr
+  * #632 RuckusAP: detect Ruckus access points by product OID, and
+    Unleashed access points by sysDescr; report model, serial number,
+    and software revision (#426)
   * #641 Add AGENTS.md and skills to guide AI coding agents writing and
     reviewing device classes
 

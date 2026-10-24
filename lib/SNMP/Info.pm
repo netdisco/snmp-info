@@ -726,6 +726,12 @@ Subclass for Orinoco/Proxim wireless access points.
 
 See documentation in L<SNMP::Info::Layer2::Orinoco> for details.
 
+=item SNMP::Info::Layer2::RuckusAP
+
+Subclass for Ruckus wireless access points.
+
+See documentation in L<SNMP::Info::Layer2::RuckusAP> for details.
+
 =item SNMP::Info::Layer2::TPLink
 
 SNMP Interface to TPLink devices
@@ -2375,6 +2381,17 @@ sub device_type {
         print "SNMP::Info $VERSION\n";
         print "SNMP::Info::device_type() layers:$layers id:$id sysDescr:\"$desc\"\n";
     }
+
+    # Ruckus access points use a generic sysDescr and may not implement
+    # sysServices, so identify their registered product OIDs directly.
+    return 'SNMP::Info::Layer2::RuckusAP'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.25053\.3\.1\.[1-4]\.\d+$/;
+
+    # Unleashed APs report a null or ZoneDirector sysObjectID, and an R850
+    # shares 25053.3.1.5.15 with the ZD1200. Their sysDescr names the AP
+    # model, where a ZoneDirector's names "ZD" and four digits.
+    return 'SNMP::Info::Layer2::RuckusAP'
+        if $desc =~ /^Ruckus Wireless [A-Z]\d{3}/;
 
     # Layer 3 Supported
     #   (usually has layer2 as well, so we check for 3 first)
