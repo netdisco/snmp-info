@@ -42,7 +42,7 @@ sub model : Tests(6) {
     is($info->model(), $model, "$oid maps to $model");
   }
 
-  $info->cache({ '_id' => '.1.3.6.1.4.1.25053.3.1.10.99' });
+  $info->cache({ '_id' => '.1.3.6.1.4.1.25053.3.1.12.99' });
   is($info->model(), SNMP::Info::Layer3::model($info),
     'unknown controller models fall back to the inherited model');
 }
