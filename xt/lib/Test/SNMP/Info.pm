@@ -1865,6 +1865,35 @@ sub private_load_attr : Tests(19) {
   };
 }
 
+# net-snmp returns the whole OID as the tag, with an empty iid, for a row of
+# a column no loaded MIB defines, such as Layer3::DLink's dlink_serial_no.
+sub private_load_attr_non_leaf_tag : Tests(3) {
+  my $test   = shift;
+  my $column = '.1.3.6.1.4.1.171.12.1.1.12';
+  my $rows   = {1 => 'SERIAL-1', 2 => 'SERIAL-2'};
+
+  foreach my $case ([getnext => 0], [bulkwalk => 1]) {
+    my ($walk, $bulkwalk) = @{$case};
+    subtest "load_attr__non_leaf_tag_${walk}__returns_every_row" => sub {
+      plan tests => 1;
+      my $info = $test->_fresh_walk_info();
+      $test->mock_session->{Data}{$column} = {%{$rows}};
+      $info->bulkwalk($bulkwalk);
+      $info->{funcs}{non_leaf_oid} = $column;
+      cmp_deeply($info->non_leaf_oid(), $rows, "$walk stores each row by iid");
+    };
+  }
+
+  subtest 'load_attr__non_leaf_tag_partial__returns_that_row' => sub {
+    plan tests => 1;
+    my $info = $test->_fresh_walk_info();
+    $test->mock_session->{Data}{$column} = {%{$rows}};
+    $info->{funcs}{non_leaf_oid} = $column;
+    cmp_deeply($info->non_leaf_oid(2), {2 => 'SERIAL-2'},
+      'partial fetch stores the row under its iid');
+  };
+}
+
 sub private_show_attr : Tests(3) {
   my $test = shift;
 

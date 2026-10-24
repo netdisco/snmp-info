@@ -7,6 +7,15 @@ Version 3.981002
   * #632 RuckusAP: detect Ruckus access points by product OID, and
     Unleashed access points by sysDescr; report model, serial number,
     and software revision (#426)
+  * #641 Add AGENTS.md and skills to guide AI coding agents writing and
+    reviewing device classes
+
+  [BUG FIXES]
+
+  * #638 Extreme: i_stp_state reads dot1dStpPortState, so XOS ports
+    report their spanning-tree state
+  * #639 Table methods defined by numeric OID return their rows when no
+    loaded MIB defines the column, so DLink reports dlink_serial_no
 
 Version 3.981001 (2026-10-21)
 
