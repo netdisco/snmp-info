@@ -9,6 +9,8 @@ Version 3.982000 (2026-10-24)
     and software revision (#426)
   * #641 Add AGENTS.md and skills to guide AI coding agents writing and
     reviewing device classes
+  * #635 LigoWave: identify DLB radios and report wireless, bridge-peer, and
+    logical VLAN data using numeric MIB column OIDs
 
   [BUG FIXES]
 
@@ -21,8 +23,6 @@ Version 3.981001 (2026-10-21)
 
   [ENHANCEMENTS]
 
-  * LigoWave: identify DLB radios and report firmware, logical VLAN
-    interfaces, management addresses, wireless details, and bridge peers
   * #633 C9800: report port VLANs, duplex, LLDP neighbors, per-radio
     SSIDs and the chassis serial; VLAN names include FlexConnect client
     VLANs; os is now ios-xe (#630)

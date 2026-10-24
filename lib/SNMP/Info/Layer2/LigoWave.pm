@@ -40,7 +40,7 @@ use SNMP::Info::Layer2;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.981001';
+$VERSION = '3.982000';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -56,6 +56,36 @@ $VERSION = '3.981001';
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
     %SNMP::Info::IEEE802dot11::FUNCS,
+    # The LigoWave private MIB is not included in netdisco-mibs. Keep these
+    # documented table columns numeric until that MIB is available there.
+    'ligo_wifi_mac'         => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.1',
+    'ligo_wifi_protocol'    => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.2',
+    'ligo_wifi_mode'        => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.3',
+    'ligo_wifi_essid'       => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.4',
+    'ligo_wifi_country'     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.5',
+    'ligo_wifi_frequency'   => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.6',
+    'ligo_wifi_channel'     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.7',
+    'ligo_wifi_width'       => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.8',
+    'ligo_wifi_tx_streams'  => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.9',
+    'ligo_wifi_tx_power'    => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.10',
+    'ligo_wifi_bitrate'     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.11',
+    'ligo_wifi_snr'         => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.12',
+    'ligo_wifi_quality'     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.13',
+    'ligo_wifi_signal'      => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.14',
+    'ligo_wifi_noise'       => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.15',
+    'ligo_wifi_status'      => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.16',
+    'ligo_wifi_state'       => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.17',
+    'ligo_peer_mac'         => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.1',
+    'ligo_peer_associated'  => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.2',
+    'ligo_peer_tx_bytes'    => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.3',
+    'ligo_peer_rx_bytes'    => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.4',
+    'ligo_peer_signal'      => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.5',
+    'ligo_peer_noise'       => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.6',
+    'ligo_peer_ip'          => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.7',
+    'ligo_peer_remote_port' => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.8',
+    'ligo_peer_name'        => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.9',
+    'ligo_peer_rx_rate'     => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.10',
+    'ligo_peer_tx_rate'     => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.11',
 );
 
 %MUNGE = (
@@ -65,102 +95,24 @@ $VERSION = '3.981001';
     'ligo_peer_mac' => \&SNMP::Info::munge_mac,
 );
 
-# Walk numeric vendor table columns directly. SNMP::Info's normal table
-# walker needs a loaded MIB leaf name, while Netdisco's MIB bundle does not
-# include the LigoWave MIBs. Keep the raw OID walk independent of that bundle.
-sub _ligo_column {
-    my ( $self, $attr, $base ) = @_;
-    return $self->_show_attr( $attr, 0 ) if defined $self->{"_$attr"};
-
-    my $sess = $self->session() or return {};
-    my %rows;
-    my %seen;
-    my $next_oid = $base;
-
-    while (1) {
-        my $var = SNMP::Varbind->new( [$next_oid] );
-        $sess->getnext($var);
-        if ( $sess->{ErrorNum} ) {
-            last if SNMP::Info::_nosuch_end($sess);
-            $self->error_throw("LigoWave table walk failed for $attr");
-            return;
-        }
-
-        my $name = $var->[0];
-        last unless defined $name;
-        $name .= ".$var->[1]" if defined $var->[1] and length $var->[1];
-        my $oid = $name =~ /^\.[0-9]/ ? $name : (SNMP::translateObj($name) || $name);
-        last if defined $var->[2] and $var->[2] eq 'ENDOFMIBVIEW';
-        last unless $oid =~ /^\Q$base\E\.(\d+(?:\.\d+)*)$/;
-        last if $seen{$oid}++;
-
-        $rows{$1} = $var->[2] if defined $var->[2];
-        $next_oid = $oid;
-    }
-
-    $self->_cache( $attr, \%rows );
-    return $self->_show_attr( $attr, 0 );
-}
-
-my %LIGO_COLUMNS = (
-    ligo_wifi_mac       => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.1',
-    ligo_wifi_protocol  => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.2',
-    ligo_wifi_mode      => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.3',
-    ligo_wifi_essid     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.4',
-    ligo_wifi_country   => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.5',
-    ligo_wifi_frequency => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.6',
-    ligo_wifi_channel   => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.7',
-    ligo_wifi_width     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.8',
-    ligo_wifi_tx_streams => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.9',
-    ligo_wifi_tx_power  => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.10',
-    ligo_wifi_bitrate   => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.11',
-    ligo_wifi_snr       => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.12',
-    ligo_wifi_quality   => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.13',
-    ligo_wifi_signal    => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.14',
-    ligo_wifi_noise     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.15',
-    ligo_wifi_status    => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.16',
-    ligo_wifi_state     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.17',
-    ligo_peer_mac       => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.1',
-    ligo_peer_associated => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.2',
-    ligo_peer_tx_bytes  => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.3',
-    ligo_peer_rx_bytes  => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.4',
-    ligo_peer_signal    => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.5',
-    ligo_peer_noise     => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.6',
-    ligo_peer_ip        => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.7',
-    ligo_peer_remote_port => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.8',
-    ligo_peer_name      => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.9',
-    ligo_peer_rx_rate   => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.10',
-    ligo_peer_tx_rate   => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.11',
-);
-
-{
-    ## no critic (TestingAndDebugging::ProhibitNoStrict)
-    no strict 'refs';
-    foreach my $attr ( keys %LIGO_COLUMNS ) {
-        my $method = $attr;
-        my $column = $LIGO_COLUMNS{$method};
-        *{$method} = sub { return _ligo_column( $_[0], $method, $column ); };
-    }
-}
-
 sub vendor { return 'ligowave'; }
 
 sub model {
     my $self = shift;
     my $desc = $self->description() || '';
-    return unless $desc =~ /^(LigoDLB\s+.+)$/i;
+    return $self->SUPER::model() unless $desc =~ /^(LigoDLB\s+.+)$/i;
     my $model = $1;
     $model =~ s/\s+v\d+(?:\.\d+)*\s*$//i;
     return $model;
 }
 
-sub os { return 'LigoWave OS'; }
+sub os { return 'ligowave os'; }
 
 sub os_ver {
     my $self = shift;
     my $desc = $self->description() || '';
     return $1 if $desc =~ /\bv([\d]+(?:\.[\d]+)*)\b/i;
-    return;
+    return $self->SUPER::os_ver();
 }
 
 sub _vlan_interfaces {
@@ -212,48 +164,6 @@ sub i_vlan_membership {
 
 sub i_vlan_membership_untagged { return {}; }
 
-# The management address used by Netdisco is the one address we can report
-# reliably on every tested radio. LigoWave's agent omits IP-MIB, so associate
-# that known address with br0 when the interface is present. The agent does
-# not publish a prefix length, so ip_netmask() intentionally has no entry.
-sub _management_ip {
-    my $self = shift;
-    my $args = $self->args() || {};
-    my $ip = $args->{DestHost} || '';
-    return unless $ip =~ /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-    return if grep { $_ > 255 } ($1, $2, $3, $4);
-    return if $ip eq '0.0.0.0' or $ip eq '255.255.255.255';
-    return $ip;
-}
-
-sub _management_ifindex {
-    my $self = shift;
-    my $names = $self->i_name() || {};
-    my $descr = $self->i_description() || {};
-    foreach my $ifindex ( keys %$names, keys %$descr ) {
-        my $name = $names->{$ifindex} || $descr->{$ifindex} || '';
-        return $ifindex if $name =~ /^br0$/i;
-    }
-    return 0;
-}
-
-sub ip_index {
-    my $self = shift;
-    my %indices = %{ $self->SUPER::ip_index() || {} };
-    my $ip = $self->_management_ip();
-    $indices{$ip} = $self->_management_ifindex()
-        if defined $ip and not exists $indices{$ip};
-    return \%indices;
-}
-
-sub ip_table {
-    my $self = shift;
-    my %addresses = %{ $self->SUPER::ip_table() || {} };
-    my $ip = $self->_management_ip();
-    $addresses{$ip} = $ip if defined $ip and not exists $addresses{$ip};
-    return \%addresses;
-}
-
 1;
 
 __END__
@@ -272,10 +182,6 @@ On tested firmware, VLAN 99 appears as logical interfaces named C<br99>,
 C<eth0.99>, and C<ath0.99>. VLAN methods report these logical interfaces;
 they do not imply switch-port VLAN membership. The tested devices do not
 implement the standard IP address or bridge VLAN tables.
-
-The management address used for SNMP discovery is reported as an address on
-C<br0> when that interface is present. No subnet is reported because the
-tested firmware does not expose an address prefix or netmask.
 
 The C<ligo_unit_id> scalar is distinct on the tested devices, but the published
 vendor MIB does not identify it as a serial number, so it is not returned by
@@ -297,7 +203,7 @@ Returns the model name parsed from C<sysDescr>, without the firmware version.
 
 =item $ligo->os()
 
-Returns C<LigoWave OS>.
+Returns C<ligowave os>.
 
 =item $ligo->os_ver()
 
@@ -427,7 +333,7 @@ Transmit rate reported for the peer link.
 
 =back
 
-=head2 VLAN and address methods
+=head2 VLAN methods
 
 =over 4
 
@@ -447,16 +353,6 @@ Associates each recognized logical VLAN interface with its VLAN ID.
 =item $ligo->i_vlan_membership_untagged()
 
 Returns an empty hash reference because untagged membership is not reported.
-
-=item $ligo->ip_index()
-
-Returns IP addresses and interface indexes. When IP-MIB is unavailable, the
-discovery address is associated with C<br0> if that interface is present.
-
-=item $ligo->ip_table()
-
-Returns the IP address table, including the discovery address when IP-MIB is
-unavailable.
 
 =back
 

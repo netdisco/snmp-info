@@ -38,12 +38,6 @@ my %COLUMN_OIDS = (
     ligo_peer_tx_rate    => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.11',
 );
 
-sub startup : Tests(startup => 1) {
-    my $test = shift;
-    $test->SUPER::startup();
-    $test->todo_methods(1);
-}
-
 sub setup : Tests(setup) {
     my $test = shift;
     $test->SUPER::setup;
@@ -59,7 +53,6 @@ sub setup : Tests(setup) {
             },
         },
     });
-    $test->{info}{args}{DestHost} = '192.0.2.10';
 }
 
 sub device_type : Tests(1) {
@@ -67,12 +60,20 @@ sub device_type : Tests(1) {
         'LigoDLB detected by enterprise and description');
 }
 
-sub identity : Tests(4) {
-    my $info = shift->{info};
-    is($info->vendor(), 'ligowave', 'Vendor');
-    is($info->model(), 'LigoDLB 5-20ac', 'Model');
-    is($info->os(), 'LigoWave OS', 'OS');
-    is($info->os_ver(), '7.69.87740', 'Firmware version');
+sub vendor : Tests(1) {
+    is(shift->{info}->vendor(), 'ligowave', 'Vendor');
+}
+
+sub model : Tests(1) {
+    is(shift->{info}->model(), 'LigoDLB 5-20ac', 'Model');
+}
+
+sub os : Tests(1) {
+    is(shift->{info}->os(), 'ligowave os', 'OS');
+}
+
+sub os_ver : Tests(1) {
+    is(shift->{info}->os_ver(), '7.69.87740', 'Firmware version');
 }
 
 sub peer_tables : Tests(3) {
@@ -152,27 +153,29 @@ sub ligo_peer_remote_port : Tests(1) {
     _check_column(shift, 'ligo_peer_remote_port', 0);
 }
 
-sub vlans : Tests(4) {
+sub v_name : Tests(1) {
     my $info = shift->{info};
     is_deeply($info->v_name(), { 99 => 'VLAN 99' },
         'VLAN identified from logical interface names');
+}
+
+sub v_index : Tests(1) {
+    my $info = shift->{info};
     is_deeply($info->v_index(), { 99 => 99 },
         'VLAN index generated from logical interface number');
+}
+
+sub i_vlan_membership : Tests(1) {
+    my $info = shift->{info};
     is_deeply($info->i_vlan_membership(), {
         5199 => [99], 21099 => [99], 41099 => [99],
     }, 'Logical interfaces mapped to VLAN 99');
-    is_deeply($info->i_vlan_membership_untagged(), {},
-        'No untagged membership inferred');
 }
 
-sub management_address : Tests(3) {
+sub i_vlan_membership_untagged : Tests(1) {
     my $info = shift->{info};
-    is_deeply($info->ip_index(), { '192.0.2.10' => 510 },
-        'Discovery address is associated with br0 ifIndex');
-    is_deeply($info->ip_table(), { '192.0.2.10' => '192.0.2.10' },
-        'Discovery address is reported even without IP-MIB');
-    is_deeply($info->ip_netmask(), {},
-        'No mask is invented when the radio does not expose one');
+    is_deeply($info->i_vlan_membership_untagged(), {},
+        'No untagged membership inferred');
 }
 
 1;
