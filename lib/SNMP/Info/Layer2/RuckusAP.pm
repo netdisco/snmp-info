@@ -36,7 +36,7 @@ use Exporter;
 use SNMP::Info::Layer2;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
-$VERSION = '3.981001';
+$VERSION = '3.982000';
 @SNMP::Info::Layer2::RuckusAP::ISA = qw(SNMP::Info::Layer2 Exporter);
 @SNMP::Info::Layer2::RuckusAP::EXPORT_OK = qw//;
 
