@@ -4,6 +4,8 @@ Version 3.981002
 
   * #631 Siemens: detect SIMATIC, SIMOCODE, SINAMICS, and soft starter
     devices; extract model, firmware, and serial details from sysDescr
+  * #641 Add AGENTS.md and skills to guide AI coding agents writing and
+    reviewing device classes
 
   [BUG FIXES]
 
