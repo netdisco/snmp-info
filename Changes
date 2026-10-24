@@ -9,6 +9,8 @@ Version 3.982000 (2026-10-24)
     and software revision (#426)
   * #641 Add AGENTS.md and skills to guide AI coding agents writing and
     reviewing device classes
+  * #636 Tachyon: add TNA device support for identity, wireless peers,
+    Ethernet status, and logical VLAN interfaces
 
   [BUG FIXES]
 
@@ -21,9 +23,6 @@ Version 3.981001 (2026-10-21)
 
   [ENHANCEMENTS]
 
-  * Tachyon: identify TNA devices, report model, serial, firmware, Ethernet
-    port state, wireless peers, logical VLAN interfaces, and the management
-    address when standard IP-MIB tables are unavailable
   * #633 C9800: report port VLANs, duplex, LLDP neighbors, per-radio
     SSIDs and the chassis serial; VLAN names include FlexConnect client
     VLANs; os is now ios-xe (#630)

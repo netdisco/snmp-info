@@ -1,6 +1,6 @@
 # SNMP::Info::Layer3::Tachyon - SNMP interface to Tachyon Networks TNA devices
 #
-# Copyright (c) 2026 by The Netdisco Developer Team.
+# Copyright (c) 2026 by SNMP::Info Developers.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -38,12 +38,22 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.981001';
+$VERSION = '3.982000';
 
 # Tachyon's private MIB is not included in netdisco-mibs. Poll its stable
 # numeric OIDs directly so discovery does not depend on an external MIB file.
 %MIBS = (%SNMP::Info::Layer3::MIBS);
-%FUNCS = (%SNMP::Info::Layer3::FUNCS);
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,
+    # Numeric vendor columns are used because Tachyon's private MIB is not in
+    # the netdisco-mibs release yet.
+    'tachyon_peer_mac'          => '.1.3.6.1.4.1.57344.1.2.6.1.1',
+    'tachyon_peer_ifindex'      => '.1.3.6.1.4.1.57344.1.2.6.1.3',
+    'tachyon_ethernet_ifname'   => '.1.3.6.1.4.1.57344.1.1.3.1.2',
+    'tachyon_ethernet_link'     => '.1.3.6.1.4.1.57344.1.1.3.1.5',
+    'tachyon_ethernet_duplex'   => '.1.3.6.1.4.1.57344.1.1.3.1.8',
+    'tachyon_ethernet_admin'    => '.1.3.6.1.4.1.57344.1.1.3.1.10',
+);
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
@@ -57,7 +67,7 @@ $VERSION = '3.981001';
 
 sub vendor { return 'tachyon'; }
 
-sub os { return 'Tachyon'; }
+sub os { return 'tachyon'; }
 
 sub model {
     my $self = shift;
@@ -70,7 +80,7 @@ sub os_ver {
     my $self = shift;
     my $version = $self->tachyon_firmware();
     return $version if defined $version and $version =~ /\S/;
-    return;
+    return $self->SUPER::os_ver();
 }
 
 sub serial {
@@ -87,53 +97,10 @@ sub description {
     return $self->SUPER::description();
 }
 
-# Walk a column numerically because the vendor MIB is not required by
-# SNMP::Info or Netdisco. The returned indexes are the SNMP table indexes.
-sub _tachyon_column {
-    my ( $self, $attr, $base ) = @_;
-    return $self->_show_attr( $attr, 0 ) if defined $self->{"_$attr"};
-
-    my $sess = $self->session() or return {};
-    my %rows;
-    my %seen;
-    my $next_oid = $base;
-
-    while (1) {
-        my $var = SNMP::Varbind->new( [$next_oid] );
-        $sess->getnext($var);
-        if ( $sess->{ErrorNum} ) {
-            last if SNMP::Info::_nosuch_end($sess);
-            $self->error_throw("Tachyon table walk failed for $attr");
-            return;
-        }
-
-        my $name = $var->[0];
-        $name .= ".$var->[1]" if defined $var->[1] and length $var->[1];
-        my $oid = $name =~ /^\.[0-9]/ ? $name : (SNMP::translateObj($name) || $name);
-        last if defined $var->[2] and $var->[2] eq 'ENDOFMIBVIEW';
-        last unless $oid =~ /^\Q$base\E\.(\d+(?:\.\d+)*)$/;
-        last if $seen{$oid}++;
-
-        $rows{$1} = $var->[2] if defined $var->[2];
-        $next_oid = $oid;
-    }
-
-    $self->_cache( $attr, \%rows );
-    return $self->_show_attr( $attr, 0 );
-}
-
-my %TACHYON_COLUMNS = (
-    tachyon_peer_mac     => '.1.3.6.1.4.1.57344.1.2.6.1.1',
-    tachyon_peer_ifindex => '.1.3.6.1.4.1.57344.1.2.6.1.3',
-    tachyon_ethernet_ifname => '.1.3.6.1.4.1.57344.1.1.3.1.2',
-    tachyon_ethernet_link   => '.1.3.6.1.4.1.57344.1.1.3.1.5',
-    tachyon_ethernet_duplex => '.1.3.6.1.4.1.57344.1.1.3.1.8',
-    tachyon_ethernet_admin  => '.1.3.6.1.4.1.57344.1.1.3.1.10',
-);
-
 sub _tachyon_munge_mac {
     my $mac = shift;
     return unless defined $mac;
+    return SNMP::Info::munge_mac($mac) if length($mac) == 6;
 
     $mac =~ s/[^0-9A-Fa-f]//g;
     return unless length($mac) == 12;
@@ -142,7 +109,7 @@ sub _tachyon_munge_mac {
 
 sub fw_mac {
     my $self = shift;
-    my $macs = _tachyon_column( $self, 'tachyon_peer_mac', $TACHYON_COLUMNS{tachyon_peer_mac} ) || {};
+    my $macs = $self->tachyon_peer_mac() || {};
     my %fw_mac;
     foreach my $index ( keys %$macs ) {
         my $mac = _tachyon_munge_mac( $macs->{$index} );
@@ -153,7 +120,7 @@ sub fw_mac {
 
 sub fw_port {
     my $self = shift;
-    return _tachyon_column( $self, 'tachyon_peer_ifindex', $TACHYON_COLUMNS{tachyon_peer_ifindex} ) || {};
+    return $self->tachyon_peer_ifindex() || {};
 }
 
 # The peer table lists active wireless associations, so they have learned
@@ -173,9 +140,7 @@ sub bp_index {
 
 sub _tachyon_ethernet_ifindexes {
     my $self = shift;
-    my $ifnames = _tachyon_column(
-        $self, 'tachyon_ethernet_ifname', $TACHYON_COLUMNS{tachyon_ethernet_ifname}
-    ) || {};
+    my $ifnames = $self->tachyon_ethernet_ifname() || {};
     my $if_descriptions = $self->i_description() || {};
     my %ifindex_for_name = map { $if_descriptions->{$_} => $_ }
         grep { defined $if_descriptions->{$_} } keys %$if_descriptions;
@@ -189,19 +154,20 @@ sub _tachyon_ethernet_ifindexes {
     return \%ifindex_for_row;
 }
 
+# IF-MIB remains the primary source; these vendor columns fill missing
+# Ethernet values on firmware that omits them from IF-MIB.
 sub i_up {
     my ( $self, $partial ) = @_;
     my $up = $self->SUPER::i_up($partial) || {};
     my $ifindex_for_row = _tachyon_ethernet_ifindexes($self);
-    my $link = _tachyon_column(
-        $self, 'tachyon_ethernet_link', $TACHYON_COLUMNS{tachyon_ethernet_link}
-    ) || {};
+    my $link = $self->tachyon_ethernet_link() || {};
 
     foreach my $row ( keys %$link ) {
         my $ifindex = $ifindex_for_row->{$row};
         next unless defined $ifindex;
         next if defined $partial and $partial ne $ifindex;
-        $up->{$ifindex} = $link->{$row} ? 'up' : 'down';
+        $up->{$ifindex} = $link->{$row} ? 'up' : 'down'
+            unless exists $up->{$ifindex};
     }
 
     return $up;
@@ -211,15 +177,14 @@ sub i_up_admin {
     my ( $self, $partial ) = @_;
     my $admin = $self->SUPER::i_up_admin($partial) || {};
     my $ifindex_for_row = _tachyon_ethernet_ifindexes($self);
-    my $enabled = _tachyon_column(
-        $self, 'tachyon_ethernet_admin', $TACHYON_COLUMNS{tachyon_ethernet_admin}
-    ) || {};
+    my $enabled = $self->tachyon_ethernet_admin() || {};
 
     foreach my $row ( keys %$enabled ) {
         my $ifindex = $ifindex_for_row->{$row};
         next unless defined $ifindex;
         next if defined $partial and $partial ne $ifindex;
-        $admin->{$ifindex} = $enabled->{$row} ? 'up' : 'down';
+        $admin->{$ifindex} = $enabled->{$row} ? 'up' : 'down'
+            unless exists $admin->{$ifindex};
     }
 
     return $admin;
@@ -229,16 +194,15 @@ sub i_duplex {
     my ( $self, $partial ) = @_;
     my $duplex = $self->SUPER::i_duplex($partial) || {};
     my $ifindex_for_row = _tachyon_ethernet_ifindexes($self);
-    my $ethernet_duplex = _tachyon_column(
-        $self, 'tachyon_ethernet_duplex', $TACHYON_COLUMNS{tachyon_ethernet_duplex}
-    ) || {};
+    my $ethernet_duplex = $self->tachyon_ethernet_duplex() || {};
 
     foreach my $row ( keys %$ethernet_duplex ) {
         my $ifindex = $ifindex_for_row->{$row};
         next unless defined $ifindex;
         next if defined $partial and $partial ne $ifindex;
         my $value = lc( $ethernet_duplex->{$row} || '' );
-        $duplex->{$ifindex} = $value if $value =~ /^(?:full|half)$/;
+        $duplex->{$ifindex} = $value
+            if $value =~ /^(?:full|half)$/ and not exists $duplex->{$ifindex};
     }
 
     return $duplex;
@@ -251,67 +215,10 @@ sub i_type {
 
     foreach my $ifindex ( values %$ifindex_for_row ) {
         next if defined $partial and $partial ne $ifindex;
-        $type->{$ifindex} = 'ethernetCsmacd';
+        $type->{$ifindex} = 'ethernetCsmacd' unless exists $type->{$ifindex};
     }
 
     return $type;
-}
-
-# Tachyon firmware 1.12.1 does not populate the standard IP-MIB address
-# tables. The management address is assigned to br-wan, or to br-mgmt<VLAN>
-# when management VLAN is enabled. NetDisco's SNMP target is that address.
-sub _tachyon_management_ip {
-    my $self = shift;
-    my $session = $self->session() or return;
-    my $ip = $session->{DestHost};
-    $ip = $self->{args}->{DestHost} if !defined($ip) or $ip eq '';
-    return unless defined $ip and $ip ne '';
-
-    # Net-SNMP records the peer as "address:port" for IPv4 sessions.
-    $ip =~ s/:\d+$// if $ip =~ /^\d{1,3}(?:\.\d{1,3}){3}:\d+$/;
-
-    $ip = SNMP::Info::resolve_desthost($ip)
-        unless $ip =~ /^\d{1,3}(?:\.\d{1,3}){3}$/;
-    return unless defined $ip and $ip =~ /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-    return if grep { $_ > 255 } ( $1, $2, $3, $4 );
-
-    my $names = $self->i_name() || {};
-    my $ifindex;
-    foreach my $index ( keys %$names ) {
-        if ( $names->{$index} =~ /^br-mgmt\d+$/i ) {
-            $ifindex = $index;
-            last;
-        }
-    }
-    if ( !defined $ifindex ) {
-        foreach my $index ( keys %$names ) {
-            if ( $names->{$index} eq 'br-wan' ) {
-                $ifindex = $index;
-                last;
-            }
-        }
-    }
-
-    return unless defined $ifindex;
-    return ( $ip, $ifindex );
-}
-
-sub ip_index {
-    my $self = shift;
-    my $ip_index = $self->SUPER::ip_index() || {};
-    return $ip_index if scalar keys %$ip_index;
-
-    my ( $ip, $ifindex ) = _tachyon_management_ip($self);
-    return defined $ip ? { $ip => $ifindex } : {};
-}
-
-sub ip_table {
-    my $self = shift;
-    my $ip_table = $self->SUPER::ip_table() || {};
-    return $ip_table if scalar keys %$ip_table;
-
-    my ( $ip ) = _tachyon_management_ip($self);
-    return defined $ip ? { $ip => $ip } : {};
 }
 
 sub _tachyon_vlan_ifindexes {
@@ -364,6 +271,37 @@ sub i_vlan_membership_untagged { return {}; }
 
 SNMP::Info::Layer3::Tachyon - SNMP support for Tachyon TNA devices
 
+=head1 AUTHOR
+
+SNMP::Info Developers
+
+=head1 SYNOPSIS
+
+ use SNMP::Info;
+
+ my $info = SNMP::Info->new(
+     AutoSpecify => 1,
+     DestHost    => 'mydevice',
+     Community   => 'public',
+     Version     => 2,
+ );
+
+=head2 Inherited Classes
+
+=over
+
+=item SNMP::Info::Layer3
+
+=back
+
+=head2 Required MIBs
+
+No additional MIBs are required. Tachyon objects are read by numeric OID.
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info::Layer3/Required MIBs> for inherited MIB requirements.
+
 =head1 DESCRIPTION
 
 Supports Tachyon TNA-300 series devices using the Tachyon private MIB. Reads
@@ -384,7 +322,7 @@ Returns C<'tachyon'>.
 
 =item $info->os()
 
-Returns C<'Tachyon'>.
+Returns C<'tachyon'>.
 
 =item $info->model()
 
@@ -460,16 +398,6 @@ device.
 
 Returns an empty table because untagged VLAN membership is not available from
 the device's SNMP data.
-
-=item $info->ip_index()
-
-Maps the management address used for SNMP discovery to its management bridge
-when standard IP-MIB tables are unavailable.
-
-=item $info->ip_table()
-
-Returns the management address used for SNMP discovery when standard IP-MIB
-tables are unavailable.
 
 =back
 
