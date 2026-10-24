@@ -172,6 +172,41 @@ __END__
 
 SNMP::Info::Layer2::LigoWave - SNMP interface to LigoWave DLB radios
 
+=head1 AUTHOR
+
+SNMP::Info Developers
+
+=head1 SYNOPSIS
+
+ use SNMP::Info;
+
+ my $info = SNMP::Info->new(
+     AutoSpecify => 1,
+     DestHost    => 'mydevice',
+     Community   => 'public',
+     Version     => 2,
+ );
+
+=head2 Inherited Classes
+
+=over
+
+=item SNMP::Info::IEEE802dot11
+
+=item SNMP::Info::Layer2
+
+=back
+
+=head2 Required MIBs
+
+No additional MIBs are required. LigoWave tables are read by numeric OID
+while their vendor MIB contribution is pending in netdisco-mibs.
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info::IEEE802dot11/Required MIBs> and
+L<SNMP::Info::Layer2/Required MIBs> for inherited MIB requirements.
+
 =head1 DESCRIPTION
 
 Identifies LigoDLB devices and parses the model and firmware version from
