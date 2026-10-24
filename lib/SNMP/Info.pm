@@ -3911,29 +3911,79 @@ to accept the SNMP data from your device and make an attempt at the class
 themselves. Usually a "beta" release will go to CPAN for you to verify the
 implementation.
 
+=head2 Coding agents
+
+To write or change a device class, start by cloning the
+L<github repository|https://github.com/netdisco/snmp-info> and develop
+there, then open a pull request. The repository includes guidance for
+coding agents:
+
+=over
+
+=item * L<AGENTS.md|https://github.com/netdisco/snmp-info/blob/master/AGENTS.md>:
+how the library works, the tests CI runs, and the pull request checklist.
+
+=item * L<device-class-authoring|https://github.com/netdisco/snmp-info/blob/master/.claude/skills/device-class-authoring/SKILL.md>:
+writing or changing a device class, its detection, tests and POD.
+
+=item * L<device-class-review|https://github.com/netdisco/snmp-info/blob/master/.claude/skills/device-class-review/SKILL.md>:
+reviewing a device class change, including your own before you open a
+pull request.
+
+=back
+
+Claude Code and GitHub Copilot pick these up when run in the clone. Keep
+personal agent instructions in an untracked F<CLAUDE.local.md>.
+
 =head2 Gathering MIB data for SNMP::Info Developers
 
-The preference is to open a pull request in the github project. This
-allows all developers to have visibility into the request.  Please include
-pointers to the applicable platform MIBs.  For development we will need an
-C<snmpwalk> of the device.  There is a tool now included in the SNMP::Info
-distribution to help with this task, although you'll most likely need to
-download the distribution from CPAN as it's included in the "C<contrib/util>"
-directory.
+The preference is to open an issue or pull request in the github project.
+This allows all developers to have visibility into the request.  Please
+include pointers to the applicable platform MIBs.  For development we will
+need a numeric C<snmpwalk> of the whole device:
 
-The utility is named C<make_snmpdata.pl>. Run it with a command line like:
+ snmpwalk -v2c -c community -ObentU device_ip .1
 
- ./make_snmpdata.pl -c community -i -d device_ip \
-  -m /home/netdisco-mibs/rfc:/home/netdisco-mibs/net-snmp:/home/netdisco-mibs/dir3 \
-  SNMPv2-MIB IF-MIB EtherLike-MIB BRIDGE-MIB Q-BRIDGE-MIB ENTITY-MIB \
-  POWER-ETHERNET-MIB IPV6-MIB LLDP-MIB DEVICE-SPECIFIC-MIB-NAME(s) > output.txt
+or, with SNMPv3:
 
-This will print to the file every MIB entry with data in a format that the
-developers can use to emulate read operations without needing access to the
-device.  Preference would be to mask any sensitive data in the output, zip
-the file, and attach it to the github pull request. However, if you do not
-feel comfortable uploading the output to the tracker you could e-mail it
-to the developer that has claimed the ticket.
+ snmpwalk -v3 -l authPriv -u user -a SHA -A authpass -x AES -X privpass \
+  -ObentU device_ip .1
+
+Numeric output keeps the objects that no loaded MIB defines, and developers
+can serve it from an SNMP simulator to emulate the device without needing
+access to it.  C<snmpbulkwalk> takes the same options and is faster on large
+devices; if the walk times out, raise the timeout and retries with
+C<-t 5 -r 2>.
+
+=head3 Removing sensitive data
+
+A full walk can contain:
+
+=over
+
+=item * Names and descriptions: C<sysName>, C<sysContact>, C<sysLocation>,
+interface descriptions (C<ifAlias>), VLAN names, SSIDs, neighbor names.
+
+=item * Addresses: the device's own IP and MAC addresses, and those of
+neighbors, ARP and forwarding table entries, and wireless clients.  These
+often appear in the OID index as well as in the value.
+
+=item * Serial numbers, user names, and any keys or passwords that a vendor
+MIB exposes.
+
+=back
+
+Replace each sensitive value consistently: map each distinct value to one
+stand-in and use it everywhere, in values and in OID indexes, so that tables
+still join on the same keys.  Documentation ranges make good stand-ins:
+C<192.0.2.0/24>, C<198.51.100.0/24>, C<203.0.113.0/24>, C<2001:db8::/32>,
+and MAC addresses such as C<02:00:00:00:00:01>.  Keep the OIDs, value types,
+and index shapes unchanged, and do not delete rows or tables; if something
+must go, say what was removed.  Read the result before sharing it.
+
+Compress the file and attach it to the github issue or pull request.
+However, if you do not feel comfortable uploading the output to the tracker
+you could e-mail it to the developer that has claimed the ticket.
 
 =head2 Data Structures required in new Subclass
 
