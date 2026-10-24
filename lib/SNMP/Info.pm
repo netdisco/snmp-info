@@ -3911,11 +3911,11 @@ to accept the SNMP data from your device and make an attempt at the class
 themselves. Usually a "beta" release will go to CPAN for you to verify the
 implementation.
 
-=head2 Coding agents
+=head2 AI coding agents
 
 To write or change a device class, start by cloning the
 L<github repository|https://github.com/netdisco/snmp-info> and develop
-there, then open a pull request. The repository includes guidance for
+there, then open a pull request. The repository includes guidance for AI
 coding agents:
 
 =over
