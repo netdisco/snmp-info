@@ -65,16 +65,18 @@ sub _set_device {
 sub _set_oid_values {
     my ($test, $values) = @_;
     $test->mock_session->{teltonika_oid_values} = $values;
+    $test->mock_session->{teltonika_get_calls} = [];
     $test->mock_session->mock(
         'get',
         sub {
             my ($session, $oid) = @_;
+            push @{ $session->{teltonika_get_calls} }, $oid;
             return $session->{teltonika_oid_values}{$oid};
         }
     );
 }
 
-sub device_type_variants : Tests(+12) {
+sub device_type : Tests(+14) {
     my $test = shift;
 
     my @modern_products = qw(
@@ -109,6 +111,13 @@ sub device_type_variants : Tests(+12) {
     _set_oid_values($test, {});
     is($test->{info}->device_type(), 'SNMP::Info::Layer3::NetSNMP',
         'Generic Net-SNMP device without Teltonika product code stays generic');
+
+    _set_device($test, '.1.3.6.1.4.1.8072.3.2.11');
+    _set_oid_values($test, {});
+    is($test->{info}->device_type(), 'SNMP::Info::Layer3::NetSNMP',
+        'Neighboring Net-SNMP product keeps its generic class');
+    is_deeply($test->mock_session->{teltonika_get_calls}, [],
+        'Neighboring Net-SNMP product receives no Teltonika probes');
 }
 
 sub vendor : Tests(1) {

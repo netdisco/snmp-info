@@ -38,7 +38,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.981001';
+$VERSION = '3.982000';
 
 # Current RutOS devices share this OID layout across router and gateway lines.
 # Numeric OIDs avoid dependence on optional vendor MIB installation.

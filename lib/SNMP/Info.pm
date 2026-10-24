@@ -2404,7 +2404,11 @@ sub device_type {
     # identify current RutOS devices by the product code in Teltonika's
     # enterprise tree. Older RUT9xx firmware uses a separate product-code OID
     # and remains mapped to the legacy class below.
-    if ( defined($id) && ( $id eq '8072' || $id eq '48690' ) ) {
+    if (
+        defined($id)
+        && ( $soid eq '.1.3.6.1.4.1.8072.3.2.10' || $id eq '48690' )
+        )
+    {
         my $sess = $info->session();
         if ($sess) {
             my $product_code = eval {
