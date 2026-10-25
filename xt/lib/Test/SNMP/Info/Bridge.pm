@@ -140,4 +140,126 @@ sub stp_decode_ids : Tests(5) {
     is( $pid->('80'),  undef, q(Short port ID gives undef) );
 }
 
+# swC of a three-switch RSTP ring, from the RouterOS survey capture
+# (sweep 20261024T050022Z): port 1 root towards swA, port 2 alternate
+# towards swB. MACs are synthetic.
+sub _stp_rstp_cache {
+    return {
+        '_b_mac'        => pack( 'H*', '02000000000c' ),
+        '_stp_priority' => 32768,
+        '_stp_root'     => pack( 'H*', '100002000000000a' ),
+        '_stp_p_id'     => 1,
+        '_stp_p_state'  => 1,
+        '_stp_p_bridge' => 1,
+        '_stp_p_port'   => 1,
+        '_bp_index'     => 1,
+        'store'         => {
+            'stp_p_id'     => { 1 => 1, 2 => 2 },
+            'stp_p_state'  => { 1 => 'forwarding', 2 => 'blocking' },
+            'stp_p_bridge' => {
+                1 => pack( 'H*', '100002000000000a' ),
+                2 => pack( 'H*', '200002000000000b' )
+            },
+            'stp_p_port' =>
+                { 1 => pack( 'H*', '8002' ), 2 => pack( 'H*', '8002' ) },
+            'bp_index' => { 1 => 3, 2 => 4 },
+        },
+    };
+}
+
+sub stp_flavors : Tests(3) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'stp_flavors' );
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    cmp_deeply( $test->{info}->stp_flavors(),
+        ['dot1d'], q(BRIDGE-MIB tree served, flavor not served) );
+
+    $test->{info}->clear_cache();
+    is( $test->{info}->stp_flavors(), undef, q(No STP data gives no flavors) );
+}
+
+sub stp_trees : Tests(3) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'stp_trees' );
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    my $expected = {
+        'cist.0' => {
+            type           => 'cist',
+            id             => 0,
+            flavor         => undef,
+            measured       => 0,
+            ports_complete => 1,
+            context        => { kind => 'none' },
+            bridge         => {
+                priority   => 32768,
+                sys_id_ext => 0,
+                mac        => '02:00:00:00:00:0c',
+                raw        => '80:00:02:00:00:00:00:0c'
+            },
+            root => {
+                priority   => 4096,
+                sys_id_ext => 0,
+                mac        => '02:00:00:00:00:0a',
+                raw        => '10:00:02:00:00:00:00:0a'
+            },
+        }
+    };
+    cmp_deeply( $test->{info}->stp_trees(),
+        $expected, q(Default tree reported as the common tree) );
+
+    $test->{info}->clear_cache();
+    cmp_deeply( $test->{info}->stp_trees(), {}, q(No STP data gives no trees) );
+}
+
+sub stp_trees_memo : Tests(3) {
+    my $test = shift;
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    my $first = $test->{info}->stp_trees();
+    ok( exists $first->{'cist.0'}, q(First call builds the tree list) );
+
+    delete $test->{info}{store}{stp_p_id};
+    delete $test->{info}{_stp_p_id};
+    delete $test->{info}{_stp_root};
+    ok( exists $test->{info}->stp_trees()->{'cist.0'},
+        q(Second call returns the memoized list) );
+
+    $test->{info}->clear_cache();
+    cmp_deeply( $test->{info}->stp_trees(), {},
+        q(clear_cache drops the memoized list) );
+}
+
+sub stp_trees_context : Tests(4) {
+    my $test = shift;
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    local $test->{info}{args}{Context} = 'vlan-10';
+    is( $test->{info}->stp_trees(), undef, q(Refused in a v3 context) );
+    like( $test->{info}->error(), qr/default context/,
+        q(Error names the default context) );
+
+    $test->{info}{args}{Context} = '';
+    local $test->{info}{args}{Community} = 'public@10';
+    is( $test->{info}->stp_trees(), undef, q(Refused in a community context) );
+    like( $test->{info}->error(), qr/public\@10/,
+        q(Error names the community in use) );
+}
+
+sub stp_trees_complete : Tests(3) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'stp_trees_complete' );
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    is( $test->{info}->stp_trees_complete(), 0,
+        q(Common-tree default may hide MSTIs) );
+
+    $test->{info}->clear_cache();
+    is( $test->{info}->stp_trees_complete(), undef, q(No trees gives undef) );
+}
+
 1;

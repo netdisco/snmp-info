@@ -363,6 +363,81 @@ sub i_stp_bridge {
     return \%i_stp_bridge;
 }
 
+sub stp_flavors {
+    my $bridge = shift;
+
+    my $trees = $bridge->stp_trees() || {};
+    return unless keys %$trees;
+    return ['dot1d'];
+}
+
+sub stp_trees {
+    my $bridge = shift;
+
+    if ( $bridge->_stp_in_context() ) {
+        my $in = $bridge->{args}{Context} || $bridge->{args}{Community};
+        $bridge->error_throw(
+            "SNMP::Info::Bridge::stp_trees() reads the tree list, which only"
+                . " the default context serves whole. This session is in"
+                . " context or community '$in'. Call update() back to the"
+                . " default context, read the list, and keep it while you"
+                . " switch contexts.\n" );
+        return;
+    }
+    return $bridge->{_stp_trees} if $bridge->{_stp_trees};
+    return {} unless $bridge->_stp_default_is_common();
+
+    my $ports = $bridge->stp_p_id() || {};
+    my $root  = $bridge->stp_root();
+    return {} unless keys %$ports or defined $root;
+
+    $bridge->{_stp_trees} = {
+        'cist.0' => {
+            type           => 'cist',
+            id             => 0,
+            flavor         => undef,
+            measured       => 0,
+            ports_complete => 1,
+            context        => { kind => 'none' },
+            bridge         => $bridge->_stp_own_bridge_id(),
+            root           => _stp_decode_bridge_id($root),
+        }
+    };
+    return $bridge->{_stp_trees};
+}
+
+sub stp_trees_complete {
+    my $bridge = shift;
+
+    my $trees = $bridge->stp_trees() || {};
+    return unless keys %$trees;
+    return 0;
+}
+
+sub _stp_default_is_common { return 1; }
+
+sub _stp_in_context {
+    my $bridge = shift;
+
+    my $args = $bridge->{args} || {};
+    return 1 if $args->{Context};
+    return 1 if defined $args->{Community} and $args->{Community} =~ /\@/;
+    return 0;
+}
+
+sub _stp_own_bridge_id {
+    my $bridge = shift;
+
+    my $priority = $bridge->stp_priority();
+    my $mac      = $bridge->b_mac();
+    return unless defined $priority and defined $mac;
+
+    my $prio_hex = sprintf( '%04x', $priority );
+    return _stp_decode_bridge_id(
+        join( ':', substr( $prio_hex, 0, 2 ), substr( $prio_hex, 2, 2 ), $mac )
+    );
+}
+
 # 802.1t fixed format: top 4 bits priority, low 12 bits system ID extension
 sub _stp_decode_bridge_id {
     my $id = shift;
@@ -957,6 +1032,14 @@ instances, a tree per VLAN, or vendor STP domains) this is the one tree
 the agent exposes in the polled context, not the port's state in every
 VLAN.
 
+Which tree that is, as measured in a lab against each device's CLI: the
+one tree under RSTP and 802.1D; the CIST under MSTP on Extreme EXOS,
+MikroTik RouterOS and H3C Comware 7; VLAN 1's tree, listing only VLAN
+1's member ports, under Cisco PVST+ and Rapid-PVST+, and the CIST's
+globals over VLAN 1's ports under Cisco MST.  Arista cEOS, Juniper MSTP
+and VSTP, and Extreme VOSS MSTP serve no rows.  See L</"Spanning Tree
+Trees"> for every tree the device runs.
+
 =item $bridge->i_stp_id()
 
 Returns the mapping of (C<dot1dStpPort>) to the interface index (iid).
@@ -965,6 +1048,60 @@ Returns the mapping of (C<dot1dStpPort>) to the interface index (iid).
 
 Returns the mapping of (C<dot1dStpPortDesignatedBridge>) to the interface
 index (iid).
+
+=back
+
+=head2 Spanning Tree Trees
+
+These methods report each spanning tree a device runs, and its ports'
+state, role, designated bridge and designated port, one tree at a time.
+Every record names its tree, so a row read out of context still says
+which tree it describes.  Read the tree list in the default context and
+keep it: C<update()> clears the cache on every context switch.
+
+This class reports the C<BRIDGE-MIB> tree as the common tree, the one
+tree under RSTP and the CIST under MSTP, with its flavor unknown.
+Classes that read a vendor's flavor and trees override these methods.
+
+=over
+
+=item $bridge->stp_flavors()
+
+Returns a reference to an array of the spanning tree flavors the device
+runs, or nothing when it serves no tree.  C<dot1d> means a C<BRIDGE-MIB>
+tree is served but no object says which flavor it is.
+
+=item $bridge->stp_trees()
+
+Returns reference to hash of tree records, keyed by tree key (C<cist.0>).
+Each record holds C<type> and C<id>; C<flavor>, undef where the device
+does not say; C<measured>, true only where the platform's data was
+checked against its CLI in a lab; C<ports_complete>, false when port rows
+were dropped; C<context>, where to read the tree (C<kind> C<none> means
+the default context); C<bridge>, the device's own bridge ID; and C<root>,
+the designated root.  Bridge IDs are hashes of C<priority>,
+C<sys_id_ext>, C<mac> and C<raw>, the served value.
+
+Returns nothing, with C<error()> set, when the session is in a
+non-default context, since only the default context serves the whole
+list.
+
+=item $bridge->stp_trees_complete()
+
+Returns 1 when the tree list holds every tree the device runs, 0 when
+trees may exist that were not read, and nothing when there are no trees.
+
+=item $bridge->stp_tree_ports($tree_key)
+
+Returns reference to hash of port records for the tree C<$tree_key>,
+keyed by interface index (iid), read in the session's current context.
+Each record holds C<tree_type> and C<tree_id>, C<state>, C<role> (undef
+where not served), C<designated_bridge> (a bridge ID as above) and
+C<designated_port> (a hash of C<priority>, C<port> and C<raw>).  A port
+whose designated bridge is another bridge connects to that bridge's
+designated port.
+
+Returns nothing, with C<error()> set, for a key not in C<stp_trees()>.
 
 =back
 
