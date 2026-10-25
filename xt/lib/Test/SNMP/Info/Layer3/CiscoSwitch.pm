@@ -51,7 +51,7 @@ sub cisco_comm_indexing : Tests(2) {
   is($test->{info}->cisco_comm_indexing(), 1, 'Cisco community indexing on');
 }
 
-sub stp_trees : Tests(4) {
+sub stp_trees : Tests(5) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -62,6 +62,9 @@ sub stp_trees : Tests(4) {
   $info->cache($cache);
   my @measured = map { $_->{measured} } values %{$info->stp_trees()};
   cmp_deeply(\@measured, [1, 1, 1], 'IOS XE trees are measured');
+  cmp_deeply($info->stp_trees()->{'vlan.10'}{contexts},
+    [{kind => 'vlan', id => 10, v2c => '%s@10', v3 => 'vlan-10'}],
+    'The mixin names the VLAN context through the device class');
 
   $info->clear_cache();
   $cache->{_description} = 'Cisco Systems WS-C5505 Cisco Catalyst Operating'

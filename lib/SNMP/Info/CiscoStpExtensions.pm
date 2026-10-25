@@ -308,7 +308,8 @@ sub stp_protocols {
     return [$protocol];
 }
 
-sub snmp_context {
+# Called by SNMP::Info::snmp_context, which a mixin cannot override
+sub _snmp_context {
     my ( $stpx, $kind, $id ) = @_;
 
     return unless defined $kind and $kind eq 'vlan' and defined $id;
@@ -626,7 +627,7 @@ instances are served under every mode, so they are not the test.
 
 =item $stpx->snmp_context($kind, $id)
 
-Overrides L<SNMP::Info/"snmp_context">.  A C<vlan> context is reached as
+See L<SNMP::Info/"snmp_context">.  A C<vlan> context is reached as
 the community suffix C<@N> under SNMPv2c and the context C<vlan-N> under
 SNMPv3.  No C<mst> context is served.
 

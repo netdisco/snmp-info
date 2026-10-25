@@ -2968,7 +2968,10 @@ sub cisco_comm_indexing {
 
 Returns how to address SNMP context C<$kind> C<$id> on this platform, as a
 reference to hash, or nothing where the class knows no form for it.  This
-class knows none; a class that does overrides it.
+class knows none.  A class that does defines C<_snmp_context()>, which this
+method calls: a feature role mixed into a device class sits behind
+C<SNMP::Info> in method resolution, so it could not override this method
+itself.
 
 Keys: C<kind> and C<id> as passed; C<v2c>, a C<sprintf> format taking the
 caller's community (C<'%s@10'>), undef where SNMPv2c cannot reach the
@@ -2981,7 +2984,12 @@ reserved.
 
 =cut
 
-sub snmp_context { return; }
+sub snmp_context {
+    my $self = shift;
+
+    return $self->_snmp_context(@_) if $self->can('_snmp_context');
+    return;
+}
 
 =back
 

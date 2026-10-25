@@ -85,7 +85,7 @@ sub os_ver {
 # NX-OS refuses a community map for VLAN and MST contexts: SNMPv3 only.
 # An MST context exists only under MST, so it is offered only where
 # cContextMappingTable lists it (index: the length-prefixed context name).
-sub snmp_context {
+sub _snmp_context {
 	my ( $nexus, $kind, $id ) = @_;
 
 	return unless defined $kind and defined $id;
@@ -369,7 +369,7 @@ C<dot1dBaseBridgeAddress>
 
 =item $nexus->snmp_context($kind, $id)
 
-Overrides L<SNMP::Info::CiscoStpExtensions/"snmp_context">.  NX-OS serves
+See L<SNMP::Info/"snmp_context">.  NX-OS serves
 VLAN and MST contexts over SNMPv3 only: C<vlan-N> for a VLAN, and
 C<mst-N> for an MST instance when (C<cContextMappingTable>) lists it,
 which it does only under MST.  C<mst-0> serves the CIST's port states,
