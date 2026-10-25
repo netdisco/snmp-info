@@ -265,7 +265,7 @@ sub oct2str {
 }
 
 # Default tree is not the common tree: VLAN 1's tree under PVST+, VLAN 1's
-# ports under MST (lab survey 2026-10).
+# ports under MST
 sub _stp_default_is_common { return 0; }
 
 1;
@@ -302,6 +302,11 @@ directly.
 For debugging you can call new() directly as you would in SNMP::Info
 
  my $stpx = new SNMP::Info::CiscoStpExtensions(...);
+
+In the default context, C<i_stp_state()> reports VLAN 1's tree under PVST+
+and Rapid-PVST+, with rows for VLAN 1's member ports only.  Under MST the
+C<BRIDGE-MIB> globals are the CIST's and the port rows are again VLAN 1's
+member ports.
 
 =head2 Inherited Classes
 

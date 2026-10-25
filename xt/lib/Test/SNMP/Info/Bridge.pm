@@ -140,9 +140,8 @@ sub stp_decode_ids : Tests(5) {
     is( $pid->('80'),  undef, q(Short port ID gives undef) );
 }
 
-# swC of a three-switch RSTP ring, from the RouterOS survey capture
-# (sweep 20261024T050022Z): port 1 root towards swA, port 2 alternate
-# towards swB. MACs are synthetic.
+# swC of a three-switch RSTP ring: port 1 root towards swA, port 2
+# alternate towards swB. MACs are synthetic.
 sub _stp_rstp_cache {
     return {
         '_b_mac'        => pack( 'H*', '02000000000c' ),
@@ -167,17 +166,17 @@ sub _stp_rstp_cache {
     };
 }
 
-sub stp_flavors : Tests(3) {
+sub stp_protocols : Tests(3) {
     my $test = shift;
 
-    can_ok( $test->{info}, 'stp_flavors' );
+    can_ok( $test->{info}, 'stp_protocols' );
 
     $test->{info}->cache( _stp_rstp_cache() );
-    cmp_deeply( $test->{info}->stp_flavors(),
-        ['dot1d'], q(BRIDGE-MIB tree served, flavor not served) );
+    cmp_deeply( $test->{info}->stp_protocols(),
+        ['dot1d'], q(BRIDGE-MIB tree served, protocol not served) );
 
     $test->{info}->clear_cache();
-    is( $test->{info}->stp_flavors(), undef, q(No STP data gives no flavors) );
+    is( $test->{info}->stp_protocols(), undef, q(No STP data gives no protocols) );
 }
 
 sub stp_trees : Tests(3) {
@@ -190,7 +189,7 @@ sub stp_trees : Tests(3) {
         'cist.0' => {
             type           => 'cist',
             id             => 0,
-            flavor         => undef,
+            protocol       => undef,
             measured       => 0,
             ports_complete => 1,
             context        => { kind => 'none' },
@@ -369,7 +368,7 @@ sub stp_default_context_ok : Tests(2) {
     );
 }
 
-sub stp_has_flavor_absent : Tests(4) {
+sub stp_has_protocol_absent : Tests(4) {
     my $test = shift;
 
     foreach my $method (qw/hasSTP hasRSTP hasMSTP hasPVST/) {

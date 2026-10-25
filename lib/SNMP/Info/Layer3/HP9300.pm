@@ -193,7 +193,7 @@ sub interfaces {
 }
 
 # Default tree is not the common tree: Foundry OEM, per-VLAN STP
-# (snPortStp*), not yet measured.
+# (snPortStp*)
 sub _stp_default_is_common { return 0; }
 
 1;

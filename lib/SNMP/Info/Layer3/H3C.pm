@@ -183,7 +183,7 @@ sub qb_fdb_index {
 }
 
 # Default tree is not the common tree: dot1dStp matches no VLAN's tree under
-# PVST (lab survey 2026-10).
+# PVST
 sub _stp_default_is_common { return 0; }
 
 1;
@@ -307,7 +307,8 @@ Returns inherited STP states, omitting physical members of confirmed
 Bridge-Aggregation interfaces. STP applies to the logical aggregate; an omitted
 member state does not mean that the member or aggregate is forwarding.
 The aggregate and non-member states are retained. No MSTP instance states
-are combined into this single per-interface result.
+are combined into this single per-interface result.  Under MSTP the
+inherited states are the CIST's; under PVST they match no VLAN's tree.
 
 =item $h3c->ad_port_attached_agg()
 

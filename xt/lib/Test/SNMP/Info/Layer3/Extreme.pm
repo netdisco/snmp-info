@@ -360,9 +360,8 @@ sub i_stp_state : Tests(6) {
   cmp_deeply($test->{info}->i_stp_state(), {}, q(No data returns empty hash));
 }
 
-# swC of the three-switch EXOS 33.6 STP lab, one builder per flavor, from
-# survey sweeps 20261023T125322Z (MSTP), 20261023T125500Z (802.1W) and
-# 20261023T130442Z (PVST+). MACs are synthetic: swA 0a, swB 0b, swC 0c.
+# swC of a three-switch EXOS ring, one builder per protocol (MSTP, 802.1W,
+# PVST+). MACs are synthetic: swA 0a, swB 0b, swC 0c.
 sub _exos_bid {
     my ( $prio, $sw ) = @_;
     return pack( 'H*', $prio . '0200000000' . $sw );
@@ -504,7 +503,7 @@ sub _exos_bid_rec {
     };
 }
 
-sub stp_trees_mstp : Tests(6) {
+sub stp_trees : Tests(14) {
     my $test = shift;
 
     can_ok( $test->{info}, 'stp_trees' );
@@ -517,7 +516,7 @@ sub stp_trees_mstp : Tests(6) {
         {   type           => 'domain',
             id             => 2,
             name           => 's1',
-            flavor         => undef,
+            protocol       => undef,
             measured       => 1,
             ports_complete => 1,
             context        => { kind => 'none' },
@@ -526,35 +525,46 @@ sub stp_trees_mstp : Tests(6) {
         },
         q(MSTI domain record)
     );
-    is( $trees->{'domain.1'}{flavor}, undef,
+    is( $trees->{'domain.1'}{protocol}, undef,
         q(Several domains: device-wide version names no domain) );
     ok( !exists $trees->{'domain.1'}{vlan}, q(Untagged domain has no vlan) );
-    is( $test->{info}->stp_trees_complete(), 1, q(Every domain read) );
-}
 
-sub stp_trees_rstp : Tests(2) {
-    my $test = shift;
-
+    $test->{info}->clear_cache();
     $test->{info}->cache( _exos_rstp_cache() );
-    my $trees = $test->{info}->stp_trees();
+    $trees = $test->{info}->stp_trees();
     cmp_deeply( [ keys %$trees ], ['domain.1'], q(802.1W has one domain) );
-    is( $trees->{'domain.1'}{flavor}, 'rstp', q(One domain takes the version) );
+    is( $trees->{'domain.1'}{protocol}, 'rstp',
+        q(One domain takes the version) );
+
+    $test->{info}->clear_cache();
+    $test->{info}->cache( _exos_pvst_cache() );
+    $trees = $test->{info}->stp_trees();
+    is( $trees->{'domain.1'}{protocol}, 'stp',
+        q(s0 under PVST+: version 0 and 802.1D ports) );
+    is( $trees->{'domain.2'}{protocol}, 'pvst', q(pvstp ports make s1 PVST+) );
+    is( $trees->{'domain.2'}{vlan},     10,     q(s1 carries its tag) );
+    is( $trees->{'domain.3'}{vlan},     20,     q(s2 carries its tag) );
+    ok( !exists $trees->{'domain.1'}{vlan}, q(s0 tag 0 gives no vlan) );
+
+    $test->{info}->clear_cache();
+    $test->{info}->cache( _exos_mstp_cache() );
+    $test->{info}->session()->{Context} = 'vlan-10';
+    is( $test->{info}->stp_trees(), undef, q(Refused in a context) );
+    like( $test->{info}->error(), qr/default context/,
+        q(Error names the default context) );
 }
 
-sub stp_trees_pvst : Tests(5) {
+sub stp_trees_complete : Tests(2) {
     my $test = shift;
 
-    $test->{info}->cache( _exos_pvst_cache() );
-    my $trees = $test->{info}->stp_trees();
-    is( $trees->{'domain.1'}{flavor}, 'stp',
-        q(s0 under PVST+: version 0 and 802.1D ports) );
-    is( $trees->{'domain.2'}{flavor}, 'pvst', q(pvstp ports make s1 PVST+) );
-    is( $trees->{'domain.2'}{vlan},   10,     q(s1 carries its tag) );
-    is( $trees->{'domain.3'}{vlan},   20,     q(s2 carries its tag) );
-    ok( !exists $trees->{'domain.1'}{vlan}, q(s0 tag 0 gives no vlan) );
+    $test->{info}->cache( _exos_mstp_cache() );
+    is( $test->{info}->stp_trees_complete(), 1, q(Every domain read) );
+
+    $test->{info}->clear_cache();
+    is( $test->{info}->stp_trees_complete(), 0, q(No domain table read) );
 }
 
-sub stp_tree_ports_mstp : Tests(2) {
+sub stp_tree_ports : Tests(4) {
     my $test = shift;
 
     can_ok( $test->{info}, 'stp_tree_ports' );
@@ -577,31 +587,93 @@ sub stp_tree_ports_mstp : Tests(2) {
         },
         q(Only domain 2's rows, keyed by ifIndex)
     );
+    is( $test->{info}->stp_tree_ports('domain.9'), undef,
+        q(Unknown key refused) );
+    like( $test->{info}->error(), qr/no tree 'domain\.9'/,
+        q(Error names the unknown key) );
 }
 
-sub stp_flavors_exos : Tests(5) {
+sub stp_protocols : Tests(3) {
     my $test = shift;
 
     $test->{info}->cache( _exos_mstp_cache() );
-    cmp_deeply( $test->{info}->stp_flavors(), ['mstp'], q(MSTP) );
-    ok( $test->{info}->can('hasMSTP') && $test->{info}->hasMSTP(),
-        q(hasMSTP from dot1dStpVersion 3) );
+    cmp_deeply( $test->{info}->stp_protocols(), ['mstp'], q(MSTP) );
 
     $test->{info}->clear_cache();
     $test->{info}->cache( _exos_rstp_cache() );
     $test->{info}{_dot1dStpVersion} = 'rstp';
-    cmp_deeply( $test->{info}->stp_flavors(), ['rstp'],
+    cmp_deeply( $test->{info}->stp_protocols(), ['rstp'],
         q(802.1W, enum label form) );
 
     $test->{info}->clear_cache();
     $test->{info}->cache( _exos_pvst_cache() );
-    cmp_deeply( $test->{info}->stp_flavors(), [ 'stp', 'pvst' ],
+    cmp_deeply( $test->{info}->stp_protocols(), [ 'stp', 'pvst' ],
         q(PVST+ with an 802.1D s0) );
-    $test->{info}{_dot1dStpVersion} = 'stpCompatible';
-    ok( $test->{info}->hasSTP(), q(hasSTP, enum label form) );
 }
 
-sub stp_vlan_map_exos : Tests(3) {
+sub hasMSTP : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _exos_mstp_cache() );
+    is( $test->{info}->hasMSTP(), 1, q(dot1dStpVersion 3) );
+
+    $test->{info}->clear_cache();
+    $test->{info}->cache( _exos_rstp_cache() );
+    is( $test->{info}->hasMSTP(), 0, q(Not under 802.1W) );
+}
+
+sub hasRSTP : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _exos_rstp_cache() );
+    $test->{info}{_dot1dStpVersion} = 'rstp';
+    is( $test->{info}->hasRSTP(), 1, q(dot1dStpVersion rstp label) );
+
+    $test->{info}->clear_cache();
+    $test->{info}->cache( _exos_mstp_cache() );
+    is( $test->{info}->hasRSTP(), 0, q(Not under MSTP) );
+}
+
+sub hasPVST : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _exos_pvst_cache() );
+    is( $test->{info}->hasPVST(), 1, q(pvstp port mode) );
+
+    $test->{info}->clear_cache();
+    $test->{info}->cache( _exos_mstp_cache() );
+    is( $test->{info}->hasPVST(), 0, q(No pvstp ports under MSTP) );
+}
+
+sub hasSTP : Tests(3) {
+    my $test = shift;
+
+    $test->{info}->cache( _exos_pvst_cache() );
+    $test->{info}{_dot1dStpVersion} = 'stpCompatible';
+    is( $test->{info}->hasSTP(), 1, q(802.1D s0, enum label form) );
+
+    $test->{info}->clear_cache();
+    $test->{info}->cache(
+        _exos_cache(
+            version   => 0,
+            vlan_rows => [qw/1000007.2/],
+            domains   => {
+                2 => {
+                    name  => 's1', tag => 10, mode => 'pvstp',
+                    root  => [ '1000', '0a' ],
+                    ports => { 1001 => [ 'forwarding', [ '1000', '0a' ] ] },
+                },
+            },
+        )
+    );
+    is( $test->{info}->hasSTP(), 0, q(Every domain in PVST+ mode) );
+
+    $test->{info}->clear_cache();
+    $test->{info}->cache( _exos_mstp_cache() );
+    is( $test->{info}->hasSTP(), 0, q(Not under MSTP) );
+}
+
+sub stp_vlan_map : Tests(3) {
     my $test = shift;
 
     can_ok( $test->{info}, 'stp_vlan_map' );
@@ -635,18 +707,8 @@ sub stp_voss_unread : Tests(4) {
     );
     cmp_deeply( $test->{info}->stp_trees(), {}, q(VOSS: no EXOS domains) );
     is( $test->{info}->stp_trees_complete(), 0, q(VOSS: trees unread) );
-    is( $test->{info}->stp_flavors(), undef, q(VOSS: no flavors) );
+    is( $test->{info}->stp_protocols(), undef, q(VOSS: no protocols) );
     is( $test->{info}->os(), 'voss', q(Fixture is VOSS) );
-}
-
-sub stp_trees_context_exos : Tests(2) {
-    my $test = shift;
-
-    $test->{info}->cache( _exos_mstp_cache() );
-    $test->{info}->session()->{Context} = 'vlan-10';
-    is( $test->{info}->stp_trees(), undef, q(Refused in a context) );
-    like( $test->{info}->error(), qr/default context/,
-        q(Error names the default context) );
 }
 
 1;

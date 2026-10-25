@@ -868,7 +868,7 @@ sub i_stp_state {
 }
 
 # Default tree is not the common tree: VOSS serves forwarding on a blocked
-# port under RSTP (lab survey 2026-10).
+# port under RSTP
 sub _stp_default_is_common { return 0; }
 
 1;
@@ -1049,7 +1049,8 @@ Values are ifIndex of the corresponding master ports.
 =item $rapidcity->i_stp_state()
 
 Returns the mapping of (C<dot1dStpPortState>) to the interface
-index (iid).
+index (iid).  Under RSTP, VOSS serves forwarding for a port its CLI
+shows blocked.
 
 =item $rapidcity->mst_vlan2instance()
 

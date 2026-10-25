@@ -912,8 +912,7 @@ sub i_stp_state {
     return \%i_stp_state;
 }
 
-# Default tree is not the common tree: per-VLAN STP (snPortStp*), not yet
-# measured.
+# Default tree is not the common tree: per-VLAN STP (snPortStp*)
 sub _stp_default_is_common { return 0; }
 
 1;

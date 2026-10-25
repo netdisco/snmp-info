@@ -363,7 +363,7 @@ sub i_stp_bridge {
     return \%i_stp_bridge;
 }
 
-sub stp_flavors {
+sub stp_protocols {
     my $bridge = shift;
 
     my $trees = $bridge->stp_trees() || {};
@@ -389,7 +389,7 @@ sub stp_trees {
         'cist.0' => {
             type           => 'cist',
             id             => 0,
-            flavor         => undef,
+            protocol       => undef,
             measured       => 0,
             ports_complete => $unmapped ? 0 : 1,
             context        => { kind => 'none' },
@@ -1073,15 +1073,9 @@ C<BRIDGE-MIB> indexes spanning tree ports by port number alone, with no
 instance or VLAN.  On a device running more than one tree (MSTP
 instances, a tree per VLAN, or vendor STP domains) this is the one tree
 the agent exposes in the polled context, not the port's state in every
-VLAN.
-
-Which tree that is, as measured in a lab against each device's CLI: the
-one tree under RSTP and 802.1D; the CIST under MSTP on Extreme EXOS,
-MikroTik RouterOS and H3C Comware 7; VLAN 1's tree, listing only VLAN
-1's member ports, under Cisco PVST+ and Rapid-PVST+, and the CIST's
-globals over VLAN 1's ports under Cisco MST.  Arista cEOS, Juniper MSTP
-and VSTP, and Extreme VOSS MSTP serve no rows.  See L</"Spanning Tree
-Trees"> for every tree the device runs.
+VLAN.  A class whose platform exposes a different tree says so in its
+own documentation.  See L</"Spanning Tree Trees"> for every tree the
+device runs.
 
 =item $bridge->i_stp_id()
 
@@ -1103,30 +1097,30 @@ which tree it describes.  Read the tree list in the default context and
 keep it: C<update()> clears the cache on every context switch.
 
 This class reports the C<BRIDGE-MIB> tree as the common tree, the one
-tree under RSTP and the CIST under MSTP, with its flavor unknown.
-Classes that read a vendor's flavor and trees override these methods.
+tree under RSTP and the CIST under MSTP, with its protocol unknown.
+Classes that read a vendor's protocol and trees override these methods.
 
-A class that can read which flavor a device runs also defines
+A class that can read which protocol a device runs also defines
 C<hasSTP()>, C<hasRSTP()>, C<hasMSTP()> or C<hasPVST()>, each true when
-the device runs that flavor, read from a flavor object and never from a
-table having rows.  As with C<has_topo()> in L<SNMP::Info>, test C<can()>
+the device runs that protocol, read from an object that names the
+protocol and never from a table having rows.  As with C<has_topo()> in L<SNMP::Info>, test C<can()>
 before calling one.
 
 =over
 
-=item $bridge->stp_flavors()
+=item $bridge->stp_protocols()
 
-Returns a reference to an array of the spanning tree flavors the device
+Returns a reference to an array of the spanning tree protocols the device
 runs, or nothing when no tree was read.  C<dot1d> means a C<BRIDGE-MIB>
-tree is served but no object says which flavor it is.  Nothing does not
+tree is served but no object says which protocol it is.  Nothing does not
 mean the device runs no spanning tree: check C<stp_trees_complete()>.
 
 =item $bridge->stp_trees()
 
 Returns reference to hash of tree records, keyed by tree key (C<cist.0>).
-Each record holds C<type> and C<id>; C<flavor>, undef where the device
+Each record holds C<type> and C<id>; C<protocol>, undef where the device
 does not say; C<measured>, true only where the platform's data was
-checked against its CLI in a lab; C<ports_complete>, false when port rows
+checked against the device's CLI; C<ports_complete>, false when port rows
 were dropped; C<context>, where to read the tree (C<kind> C<none> means
 the default context); C<bridge>, the device's own bridge ID; and C<root>,
 the designated root.  Bridge IDs are hashes of C<priority>,
@@ -1141,7 +1135,7 @@ list.
 
 Returns 1 when the tree list holds every tree the device runs, 0 when
 trees may exist that were not read (including a device whose class does
-not yet read its trees), and nothing when the device serves no tree.
+not read its trees), and nothing when the device serves no tree.
 
 =item $bridge->stp_vlan_map()
 

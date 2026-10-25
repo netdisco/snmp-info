@@ -1006,8 +1006,7 @@ sub i_stp_state {
 }
 
 # Keeps the base from reporting the default tree: on EXOS the domains are
-# the trees, and VOSS serves forwarding on a blocked port under RSTP (lab
-# survey 2026-10).
+# the trees, and VOSS serves forwarding on a blocked port under RSTP
 sub _stp_default_is_common { return 0; }
 
 # dot1dStpVersion: RSTP-MIB names 0 and 2 only, so 3 (MSTP) comes back bare
@@ -1027,7 +1026,6 @@ sub _ex_stp_version {
     return $ex_stp_version{$version};
 }
 
-# Instances whose ports run in PVST+ mode
 sub _ex_stp_pvst_instances {
     my $extreme = shift;
 
@@ -1056,7 +1054,6 @@ sub hasPVST {
     return keys %{ $extreme->_ex_stp_pvst_instances() } ? 1 : 0;
 }
 
-# 802.1D: version 0 with at least one domain not bound in PVST+ mode
 sub hasSTP {
     my $extreme = shift;
 
@@ -1066,15 +1063,15 @@ sub hasSTP {
     return ( grep { !$pvst->{$_} } keys %$names ) ? 1 : 0;
 }
 
-sub stp_flavors {
+sub stp_protocols {
     my $extreme = shift;
 
-    my @flavors = grep {
+    my @protocols = grep {
         my $method = 'has' . uc $_;
         $extreme->$method();
     } qw/stp rstp mstp pvst/;
-    return unless @flavors;
-    return \@flavors;
+    return unless @protocols;
+    return \@protocols;
 }
 
 sub stp_trees {
@@ -1091,7 +1088,7 @@ sub stp_trees {
     my $roots = $extreme->stp_i_root()    || {};
     my $pvst  = $extreme->_ex_stp_pvst_instances();
     my $version = $extreme->_ex_stp_version() || '';
-    my $device_flavor
+    my $device_protocol
         = ( keys %$names == 1 and length $version ) ? $version : undef;
     my $measured = ( $extreme->os() || '' ) eq 'xos' ? 1 : 0;
 
@@ -1101,9 +1098,9 @@ sub stp_trees {
             type           => 'domain',
             id             => $inst,
             name           => $names->{$inst},
-            flavor         => $pvst->{$inst} ? 'pvst'
+            protocol       => $pvst->{$inst} ? 'pvst'
                 : $version eq 'stp' ? 'stp'
-                : $device_flavor,
+                : $device_protocol,
             measured       => $measured,
             ports_complete => 1,
             context        => { kind => 'none' },
@@ -1394,8 +1391,9 @@ bridge index rather than ifIndex.
 Returns reference to hash.  Key: C<ifIndex>, Value: the port state in the
 device's default spanning tree, from C<dot1dStpPortState> mapped through
 C<bp_index>.  Returns an empty hash when the device serves no
-C<BRIDGE-MIB> STP port table; the vendor C<extremeStpPortTable> is not
-used, since it is keyed by STP domain.
+C<BRIDGE-MIB> STP port table, as VOSS does under MSTP; the vendor
+C<extremeStpPortTable> is not used, since it is keyed by STP domain.
+Under RSTP, VOSS serves forwarding for a port its CLI shows blocked.
 
 (C<dot1dStpPortState>)
 
@@ -1556,18 +1554,18 @@ EXOS runs one spanning tree per STP domain, served in the default
 context.  These override L<SNMP::Info::Bridge/"Spanning Tree Trees">;
 records are as described there, with C<type> C<domain>, C<id> the domain
 instance, C<name> the domain name and, under PVST+, C<vlan> the carrier
-VLAN.  A domain's C<flavor> is C<pvst> when its ports run in PVST+ mode;
+VLAN.  A domain's C<protocol> is C<pvst> when its ports run in PVST+ mode;
 C<stp> when C<dot1dStpVersion> is 0 and they do not, since that version
-leaves only 802.1D; the device's flavor when the device has one domain;
+leaves only 802.1D; the device's protocol when the device has one domain;
 and undef otherwise, since C<dot1dStpVersion> is device-wide.
 C<measured> is 1 on EXOS.
 VOSS, also handled by this class, serves none of these tables.
 
 =over
 
-=item $extreme->stp_flavors()
+=item $extreme->stp_protocols()
 
-Returns reference to an array of the flavors C<hasSTP()>, C<hasRSTP()>,
+Returns reference to an array of the protocols C<hasSTP()>, C<hasRSTP()>,
 C<hasMSTP()> and C<hasPVST()> report, or nothing.
 
 =item $extreme->stp_trees()
