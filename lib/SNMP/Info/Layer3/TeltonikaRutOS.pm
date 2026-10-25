@@ -42,7 +42,10 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 $VERSION = '3.982000';
 
 # Current RutOS devices share this OID layout across router and gateway lines.
-# Numeric OIDs avoid dependence on optional vendor MIB installation.
+# The released TELTONIKA-MIB_RUT9XX assigns .1.1.0, .1.3.0, and .1.6.0 to
+# modemImei, modemManufacturer, and imsi; current RutOS uses those same OIDs
+# for serial, product code, and firmware. Keep these leaves numeric so the
+# legacy MIB cannot apply misleading names or semantics.
 %MIBS = (
     %SNMP::Info::Layer3::NetSNMP::MIBS,
 );
