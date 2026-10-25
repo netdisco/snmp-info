@@ -346,4 +346,36 @@ sub stp_trees_ports_complete_upfront : Tests(1) {
         0, q(Unmapped port row marks the list incomplete before port reads) );
 }
 
+sub stp_vlan_map : Tests(2) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'stp_vlan_map' );
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    is( $test->{info}->stp_vlan_map(), undef,
+        q(One BRIDGE-MIB tree serves no VLAN map) );
+}
+
+sub stp_default_context_ok : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    $test->{info}->session()->{Context} = 'vlan-10';
+    is( $test->{info}->stp_trees(), undef, q(Refused in a context) );
+    like(
+        $test->{info}->error(),
+        qr/stp_trees\(\).*'vlan-10'.*default context/s,
+        q(Error names the method, the context and the default context)
+    );
+}
+
+sub stp_has_flavor_absent : Tests(4) {
+    my $test = shift;
+
+    foreach my $method (qw/hasSTP hasRSTP hasMSTP hasPVST/) {
+        ok( !$test->{info}->can($method),
+            qq(Base class does not claim to detect $method) );
+    }
+}
+
 1;

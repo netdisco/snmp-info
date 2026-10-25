@@ -374,16 +374,7 @@ sub stp_flavors {
 sub stp_trees {
     my $bridge = shift;
 
-    my $context = $bridge->_walk_context();
-    if ( length $context ) {
-        $bridge->error_throw(
-            "SNMP::Info::Bridge::stp_trees() reads the tree list, which only"
-                . " the default context serves whole. This session is in"
-                . " context '$context'. Call update() back to the default"
-                . " context, read the list, and keep it while you switch"
-                . " contexts.\n" );
-        return;
-    }
+    return unless $bridge->_stp_default_context_ok();
     return $bridge->{_stp_trees} if $bridge->{_stp_trees};
     return {} unless $bridge->_stp_default_is_common();
 
@@ -407,6 +398,24 @@ sub stp_trees {
         }
     };
     return $bridge->{_stp_trees};
+}
+
+sub stp_vlan_map { return; }
+
+# Only the default context serves the whole tree list
+sub _stp_default_context_ok {
+    my $bridge = shift;
+
+    my $context = $bridge->_walk_context();
+    return 1 unless length $context;
+
+    my $method = ( caller(1) )[3];
+    $bridge->error_throw(
+        "$method() reads the tree list, which only the default context"
+            . " serves whole. This session is in context '$context'. Call"
+            . " update() back to the default context, read the list, and"
+            . " keep it while you switch contexts.\n" );
+    return 0;
 }
 
 sub stp_tree_ports {
@@ -1097,6 +1106,12 @@ This class reports the C<BRIDGE-MIB> tree as the common tree, the one
 tree under RSTP and the CIST under MSTP, with its flavor unknown.
 Classes that read a vendor's flavor and trees override these methods.
 
+A class that can read which flavor a device runs also defines
+C<hasSTP()>, C<hasRSTP()>, C<hasMSTP()> or C<hasPVST()>, each true when
+the device runs that flavor, read from a flavor object and never from a
+table having rows.  As with C<has_topo()> in L<SNMP::Info>, test C<can()>
+before calling one.
+
 =over
 
 =item $bridge->stp_flavors()
@@ -1127,6 +1142,12 @@ list.
 Returns 1 when the tree list holds every tree the device runs, 0 when
 trees may exist that were not read (including a device whose class does
 not yet read its trees), and nothing when the device serves no tree.
+
+=item $bridge->stp_vlan_map()
+
+Returns reference to hash mapping each VLAN id to the key of the tree
+that carries it, as the device serves the map, or nothing where it serves
+none.  This class serves none: one C<BRIDGE-MIB> tree carries every VLAN.
 
 =item $bridge->stp_tree_ports($tree_key)
 
