@@ -264,6 +264,10 @@ sub oct2str {
     return sprintf('%s', unpack('H*', $v));
 }
 
+# Default tree is not the common tree: VLAN 1's tree under PVST+, VLAN 1's
+# ports under MST (lab survey 2026-10).
+sub _stp_default_is_common { return 0; }
+
 1;
 __END__
 

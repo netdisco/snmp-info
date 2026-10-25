@@ -867,6 +867,10 @@ sub i_stp_state {
     return \%i_stp_state;
 }
 
+# Default tree is not the common tree: VOSS serves forwarding on a blocked
+# port under RSTP (lab survey 2026-10).
+sub _stp_default_is_common { return 0; }
+
 1;
 
 __END__

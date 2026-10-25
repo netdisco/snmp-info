@@ -438,8 +438,10 @@ sub stp_tree_ports {
             tree_id           => $tree->{id},
             state             => $states->{$index},
             role              => undef,
-            designated_bridge => scalar _stp_decode_bridge_id( $d_bridge->{$index} ),
-            designated_port   => scalar _stp_decode_port_id( $d_port->{$index} ),
+            designated_bridge =>
+                scalar _stp_decode_bridge_id( $d_bridge->{$index} ),
+            designated_port =>
+                scalar _stp_decode_port_id( $d_port->{$index} ),
         };
     }
     return \%tree_ports;
@@ -472,9 +474,8 @@ sub _stp_own_bridge_id {
     return unless defined $priority and defined $mac;
 
     my $prio_hex = sprintf( '%04x', $priority );
-    return _stp_decode_bridge_id(
-        join( ':', substr( $prio_hex, 0, 2 ), substr( $prio_hex, 2, 2 ), $mac )
-    );
+    my $prio_octets = join( ':', unpack( '(A2)2', $prio_hex ) );
+    return _stp_decode_bridge_id( join( ':', $prio_octets, $mac ) );
 }
 
 # 802.1t fixed format: top 4 bits priority, low 12 bits system ID extension

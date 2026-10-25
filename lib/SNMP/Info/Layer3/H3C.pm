@@ -182,6 +182,10 @@ sub qb_fdb_index {
     return {};
 }
 
+# Default tree is not the common tree: dot1dStp matches no VLAN's tree under
+# PVST (lab survey 2026-10).
+sub _stp_default_is_common { return 0; }
+
 1;
 __END__
 

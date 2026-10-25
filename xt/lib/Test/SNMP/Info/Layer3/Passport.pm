@@ -57,4 +57,22 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
+# A served common-tree shape: the default must stay off until the family's own
+# STP role reads its trees (VOSS serves forwarding on a blocked port under
+# RSTP).
+sub stp_trees_default_off : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        {   '_b_mac'        => pack( 'H*', '02000000000c' ),
+            '_stp_priority' => 32768,
+            '_stp_root'     => pack( 'H*', '100002000000000a' ),
+            '_stp_p_id'     => 1,
+            'store'         => { 'stp_p_id' => { 1 => 1, 2 => 2 } },
+        }
+    );
+    cmp_deeply( $test->{info}->stp_trees(), {}, q(No common-tree default) );
+    is( $test->{info}->stp_flavors(), undef, q(No flavors reported) );
+}
+
 1;
