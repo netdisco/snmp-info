@@ -399,11 +399,50 @@ sub stp_trees {
             measured       => 0,
             ports_complete => 1,
             context        => { kind => 'none' },
-            bridge         => $bridge->_stp_own_bridge_id(),
-            root           => _stp_decode_bridge_id($root),
+            bridge         => scalar $bridge->_stp_own_bridge_id(),
+            root           => scalar _stp_decode_bridge_id($root),
         }
     };
     return $bridge->{_stp_trees};
+}
+
+sub stp_tree_ports {
+    my $bridge   = shift;
+    my $tree_key = shift;
+
+    my $trees = $bridge->stp_trees() || {};
+    my $tree  = defined $tree_key ? $trees->{$tree_key} : undef;
+    unless ($tree) {
+        my $key = defined $tree_key ? $tree_key : 'undef';
+        $bridge->error_throw(
+            "SNMP::Info::Bridge::stp_tree_ports() has no tree '$key'. Pass a"
+                . " key from stp_trees(), read in the default context.\n" );
+        return;
+    }
+
+    my $ports    = $bridge->stp_p_id()     || {};
+    my $states   = $bridge->stp_p_state()  || {};
+    my $d_bridge = $bridge->stp_p_bridge() || {};
+    my $d_port   = $bridge->stp_p_port()   || {};
+    my $bp_index = $bridge->bp_index()     || {};
+
+    my %tree_ports;
+    foreach my $index ( keys %$ports ) {
+        my $iid = $bp_index->{ $ports->{$index} };
+        unless ( defined $iid ) {
+            $tree->{ports_complete} = 0;
+            next;
+        }
+        $tree_ports{$iid} = {
+            tree_type         => $tree->{type},
+            tree_id           => $tree->{id},
+            state             => $states->{$index},
+            role              => undef,
+            designated_bridge => scalar _stp_decode_bridge_id( $d_bridge->{$index} ),
+            designated_port   => scalar _stp_decode_port_id( $d_port->{$index} ),
+        };
+    }
+    return \%tree_ports;
 }
 
 sub stp_trees_complete {

@@ -262,4 +262,74 @@ sub stp_trees_complete : Tests(3) {
     is( $test->{info}->stp_trees_complete(), undef, q(No trees gives undef) );
 }
 
+sub stp_tree_ports : Tests(2) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'stp_tree_ports' );
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    my $expected = {
+        3 => {
+            tree_type         => 'cist',
+            tree_id           => 0,
+            state             => 'forwarding',
+            role              => undef,
+            designated_bridge => {
+                priority   => 4096,
+                sys_id_ext => 0,
+                mac        => '02:00:00:00:00:0a',
+                raw        => '10:00:02:00:00:00:00:0a'
+            },
+            designated_port => { priority => 128, port => 2, raw => '80:02' },
+        },
+        4 => {
+            tree_type         => 'cist',
+            tree_id           => 0,
+            state             => 'blocking',
+            role              => undef,
+            designated_bridge => {
+                priority   => 8192,
+                sys_id_ext => 0,
+                mac        => '02:00:00:00:00:0b',
+                raw        => '20:00:02:00:00:00:00:0b'
+            },
+            designated_port => { priority => 128, port => 2, raw => '80:02' },
+        },
+    };
+    cmp_deeply( $test->{info}->stp_tree_ports('cist.0'),
+        $expected, q(Ports keyed by iid with designated bridge and port) );
+}
+
+sub stp_tree_ports_unknown_key : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    is( $test->{info}->stp_tree_ports('pvst.10'), undef,
+        q(Unknown tree key gives undef) );
+    like( $test->{info}->error(), qr/pvst\.10.*stp_trees/,
+        q(Error names the key and where keys come from) );
+}
+
+sub stp_tree_ports_unmapped : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    delete $test->{info}{store}{bp_index}{2};
+    my $ports = $test->{info}->stp_tree_ports('cist.0');
+    ok( !exists $ports->{4}, q(Row with no bp_index mapping is dropped) );
+    is( $test->{info}->stp_trees()->{'cist.0'}{ports_complete},
+        0, q(Dropped row marks the tree's ports incomplete) );
+}
+
+sub stp_tree_ports_bad_bridge : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    $test->{info}{store}{stp_p_bridge}{2} = pack( 'H*', '02000000000b' );
+    my $port = $test->{info}->stp_tree_ports('cist.0')->{4};
+    is( $port->{state}, 'blocking', q(Port keeps its state) );
+    is( $port->{designated_bridge},
+        undef, q(Malformed designated bridge gives undef) );
+}
+
 1;
