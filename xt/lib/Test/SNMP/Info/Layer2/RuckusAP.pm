@@ -96,4 +96,222 @@ sub os_ver : Tests(3) {
     'Falls back to the first revision when no row has a status');
 }
 
+sub _wireless_cache {
+  my $info = shift;
+  $info->cache({
+    '_i_index' => 1,
+    '_ruckus_wlan_ssid' => 1,
+    '_ruckus_wlan_bssid' => 1,
+    '_ruckus_wlan_channel' => 1,
+    '_ruckus_wlan_admin_status' => 1,
+    '_ruckus_wlan_bcast_disabled' => 1,
+    '_ruckus_wlan_ifindex' => 1,
+    'store' => {
+      i_index => { 5 => 5, 6 => 6 },
+      ruckus_wlan_ssid => {
+        1 => 'R_WLAN_IPP',
+        2 => 'Wireless2',
+        3 => 'Wireless3',
+      },
+      ruckus_wlan_bssid => {
+        1 => pack('C*', 0, 17, 34, 51, 68, 85),
+        2 => pack('C*', 0, 17, 34, 51, 68, 102),
+        3 => pack('C*', 0, 17, 34, 51, 68, 119),
+      },
+      ruckus_wlan_channel => { 1 => 44, 2 => 44, 3 => 149 },
+      ruckus_wlan_admin_status => { 1 => 1, 2 => 2, 3 => 1 },
+      ruckus_wlan_bcast_disabled => { 1 => 2, 2 => 1, 3 => 2 },
+      ruckus_wlan_ifindex => { 1 => 5, 2 => 6, 3 => 100 },
+    },
+  });
+}
+
+sub i_ssidlist : Tests(1) {
+  my $test = shift;
+  _wireless_cache($test->{info});
+  is_deeply($test->{info}->i_ssidlist(), { '5.1' => 'R_WLAN_IPP' },
+    'only active WLANs mapped to real IF-MIB interfaces are returned');
+}
+
+sub i_ssidmac : Tests(1) {
+  my $test = shift;
+  _wireless_cache($test->{info});
+  is_deeply($test->{info}->i_ssidmac(), { '5.1' => '00:11:22:33:44:55' },
+    'active WLAN BSSID uses the SSID interface key');
+}
+
+sub i_ssidbcast : Tests(1) {
+  my $test = shift;
+  _wireless_cache($test->{info});
+  is_deeply($test->{info}->i_ssidbcast(), { '5.1' => 1 },
+    'SSID broadcast state is the inverse of the disable flag');
+}
+
+sub i_80211channel : Tests(1) {
+  my $test = shift;
+  _wireless_cache($test->{info});
+  is_deeply($test->{info}->i_80211channel(), { 5 => 44 },
+    'active WLAN channels map to real IF-MIB indexes');
+}
+
+sub fw_mac : Tests(1) {
+  my $test = shift;
+  _wireless_cache($test->{info});
+  $test->{info}{_ruckus_station_mac} = 1;
+  $test->{info}{store}{ruckus_station_mac} = {
+    '1.6.0.17.34.51.68.85' => pack('C*', 0, 17, 34, 51, 68, 85),
+  };
+  is($test->{info}->fw_mac()->{'1.6.0.17.34.51.68.85'}, '00:11:22:33:44:55',
+    'associated station MAC is decoded');
+}
+
+sub fw_port : Tests(1) {
+  my $test = shift;
+  _wireless_cache($test->{info});
+  $test->{info}{_ruckus_station_mac} = 1;
+  $test->{info}{store}{ruckus_station_mac} = {
+    '1.6.0.17.34.51.68.85' => pack('C*', 0, 17, 34, 51, 68, 85),
+  };
+  is($test->{info}->fw_port()->{'1.6.0.17.34.51.68.85'}, 5,
+    'associated station maps to its AP interface');
+}
+
+sub fw_ssid : Tests(1) {
+  my $test = shift;
+  _wireless_cache($test->{info});
+  $test->{info}{_ruckus_station_mac} = 1;
+  $test->{info}{store}{ruckus_station_mac} = {
+    '1.6.0.17.34.51.68.85' => pack('C*', 0, 17, 34, 51, 68, 85),
+    '3.6.0.17.34.51.68.102' => pack('C*', 0, 17, 34, 51, 68, 102),
+  };
+  is_deeply($test->{info}->fw_ssid(), {
+    '1.6.0.17.34.51.68.85' => 'R_WLAN_IPP',
+  }, 'station maps only through an active WLAN with a real interface');
+}
+
+sub bp_index : Tests(1) {
+  my $test = shift;
+  _wireless_cache($test->{info});
+  is_deeply($test->{info}->bp_index(), { 5 => 5, 6 => 6 },
+    'AP interface indexes map to themselves');
+}
+
+sub cd11_mac : Tests(1) {
+  my $test = shift;
+  $test->{info}->cache({
+    '_ruckus_station_stats_mac' => 1,
+    'store' => { ruckus_station_stats_mac => {
+      '5.6.0.17.34.51.68.85' => pack('C*', 0, 17, 34, 51, 68, 85),
+    } },
+  });
+  is_deeply($test->{info}->cd11_mac(), {
+    '5.6.0.17.34.51.68.85' => '00:11:22:33:44:55',
+  }, 'wireless metrics MAC is decoded');
+}
+
+sub cd11_ssid : Tests(1) {
+  my $test = shift;
+  $test->{info}->cache({
+    '_ruckus_station_stats_ssid' => 1,
+    'store' => { ruckus_station_stats_ssid => {
+      '5.6.0.17.34.51.68.85' => 'R_WLAN_IPP',
+    } },
+  });
+  is_deeply($test->{info}->cd11_ssid(), {
+    '5.6.0.17.34.51.68.85' => 'R_WLAN_IPP',
+  }, 'wireless metrics include the associated SSID');
+}
+
+sub cd11_txrate : Tests(1) {
+  my $test = shift;
+  $test->{info}->cache({
+    '_ruckus_station_rks_txrate' => 1,
+    'store' => { ruckus_station_rks_txrate => {
+      '5.0.17.34.51.68.85' => 200000,
+    } },
+  });
+  is_deeply($test->{info}->cd11_txrate(), {
+    '5.6.0.17.34.51.68.85' => [200],
+  }, 'PHY rate is normalized to Mbps and the station stats index');
+}
+
+sub cd11_rateset : Tests(1) {
+  my $test = shift;
+  $test->{info}->cache({
+    '_ruckus_station_rates' => 1,
+    'store' => { ruckus_station_rates => {
+      '5.6.0.17.34.51.68.85' => '6 12 24',
+    } },
+  });
+  is_deeply($test->{info}->cd11_rateset(), {
+    '5.6.0.17.34.51.68.85' => [6, 12, 24],
+  }, 'supported rates are decoded as Mbps');
+}
+
+sub cd11_sigstrength : Tests(1) {
+  my $test = shift;
+  $test->{info}->cache({
+    '_ruckus_station_stats_rssi' => 1,
+    'store' => { ruckus_station_stats_rssi => {
+      '5.6.0.17.34.51.68.85' => 37,
+    } },
+  });
+  is_deeply($test->{info}->cd11_sigstrength(), {
+    '5.6.0.17.34.51.68.85' => 37,
+  }, 'station RSSI is returned');
+}
+
+sub cd11_rxpkt : Tests(1) {
+  my $test = shift;
+  $test->{info}->cache({ '_ruckus_station_stats_rxpkt' => 1,
+    'store' => { ruckus_station_stats_rxpkt => {
+      '5.6.0.17.34.51.68.85' => 12,
+    } } });
+  is_deeply($test->{info}->cd11_rxpkt(), {
+    '5.6.0.17.34.51.68.85' => 12,
+  }, 'received data frames are returned');
+}
+
+sub cd11_txpkt : Tests(1) {
+  my $test = shift;
+  $test->{info}->cache({ '_ruckus_station_stats_txpkt' => 1,
+    'store' => { ruckus_station_stats_txpkt => {
+      '5.6.0.17.34.51.68.85' => 34,
+    } } });
+  is_deeply($test->{info}->cd11_txpkt(), {
+    '5.6.0.17.34.51.68.85' => 34,
+  }, 'transmitted data frames are returned');
+}
+
+sub cd11_rxbyte : Tests(1) {
+  my $test = shift;
+  $test->{info}->cache({ '_ruckus_station_stats_rxbyte' => 1,
+    'store' => { ruckus_station_stats_rxbyte => {
+      '5.6.0.17.34.51.68.85' => 1200,
+    } } });
+  is_deeply($test->{info}->cd11_rxbyte(), {
+    '5.6.0.17.34.51.68.85' => 1200,
+  }, 'received bytes are returned');
+}
+
+sub cd11_txbyte : Tests(1) {
+  my $test = shift;
+  $test->{info}->cache({ '_ruckus_station_stats_txbyte' => 1,
+    'store' => { ruckus_station_stats_txbyte => {
+      '5.6.0.17.34.51.68.85' => 3400,
+    } } });
+  is_deeply($test->{info}->cd11_txbyte(), {
+    '5.6.0.17.34.51.68.85' => 3400,
+  }, 'transmitted bytes are returned');
+}
+
+sub ruckus_mibs : Tests(1) {
+  my %mibs = %SNMP::Info::Layer2::RuckusAP::MIBS;
+  is_deeply(
+    [ @mibs{qw/RUCKUS-HWINFO-MIB RUCKUS-SWINFO-MIB RUCKUS-WLAN-MIB/} ],
+    [qw/ruckusHwInfoModelNumber ruckusSwRevision ruckusWLANSSID/],
+    'identity and wireless methods load their declared Ruckus MIBs'
+  );
+}
+
 1;

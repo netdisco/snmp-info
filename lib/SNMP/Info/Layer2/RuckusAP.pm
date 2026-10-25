@@ -44,6 +44,7 @@ $VERSION = '3.982000';
     %SNMP::Info::Layer2::MIBS,
     'RUCKUS-HWINFO-MIB' => 'ruckusHwInfoModelNumber',
     'RUCKUS-SWINFO-MIB' => 'ruckusSwRevision',
+    'RUCKUS-WLAN-MIB'   => 'ruckusWLANSSID',
 );
 
 %GLOBALS = (
@@ -56,11 +57,250 @@ $VERSION = '3.982000';
     %SNMP::Info::Layer2::FUNCS,
     'ruckus_sw_rev'        => 'ruckusSwRevision',
     'ruckus_sw_rev_status' => 'ruckusSwRevStatus',
+    'ruckus_wlan_ssid'           => 'ruckusWLANSSID',
+    'ruckus_wlan_bssid'          => 'ruckusWLANBSSID',
+    'ruckus_wlan_channel'        => 'ruckusWLANChannel',
+    'ruckus_wlan_admin_status'   => 'ruckusWLANAdminStatus',
+    'ruckus_wlan_bcast_disabled' => 'ruckusWLANSSIDBcastDisable',
+    'ruckus_wlan_ifindex'        => 'ruckusWLANIfIndex',
+    'ruckus_station_mac'         => 'ruckusWLANStaAddr',
+    'ruckus_station_rates'       => 'ruckusWLANStaRates',
+    'ruckus_station_stats_mac'   => 'ruckusWLANStaStatsMacAddr',
+    'ruckus_station_stats_ssid'  => 'ruckusWLANStaStatsSSID',
+    'ruckus_station_stats_rxpkt' => 'ruckusWLANStaStatsRxDataFrames',
+    'ruckus_station_stats_rxbyte' => 'ruckusWLANStaStatsRxBytes',
+    'ruckus_station_stats_txpkt' => 'ruckusWLANStaStatsTxDataFrames',
+    'ruckus_station_stats_txbyte' => 'ruckusWLANStaStatsTxBytes',
+    'ruckus_station_stats_rssi'  => 'ruckusWLANStaStatsRSSI',
+    'ruckus_station_rks_txrate'  => 'ruckusWLANStaRksTxRate',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer2::MUNGE,
 );
+
+# Ruckus' WLAN table may expose spare/default rows that are not real
+# interfaces. Keep only active rows whose mapped IF-MIB index exists.
+sub _ruckus_active_wlan_rows {
+    my $self = shift;
+    my $status = $self->ruckus_wlan_admin_status() || {};
+    my $ifindex = $self->ruckus_wlan_ifindex() || {};
+    my $interfaces = $self->i_index() || {};
+    my %active;
+
+    foreach my $row ( keys %$status ) {
+        my $state = $status->{$row};
+        next unless defined $state and ( $state eq '1' or lc($state) eq 'up' );
+        my $port = $ifindex->{$row};
+        next unless defined $port and $port =~ /^\d+$/;
+        next unless exists $interfaces->{$port};
+        $active{$row} = $port;
+    }
+
+    return \%active;
+}
+
+sub _ruckus_wlan_values_by_interface {
+    my ( $self, $method, $partial ) = @_;
+    my $values = $self->$method() || {};
+    my $rows = _ruckus_active_wlan_rows($self);
+    my %result;
+
+    foreach my $row ( keys %$rows ) {
+        my $port = $rows->{$row};
+        next if defined $partial and $partial ne $port;
+        next unless defined $values->{$row};
+        $result{"$port.$row"} = $values->{$row};
+    }
+
+    return \%result;
+}
+
+sub i_ssidlist {
+    my ( $self, $partial ) = @_;
+    my $ssids = $self->ruckus_wlan_ssid() || {};
+    my $rows = _ruckus_active_wlan_rows($self);
+    my %result;
+
+    foreach my $row ( keys %$rows ) {
+        my $port = $rows->{$row};
+        next if defined $partial and $partial ne $port;
+        my $ssid = $ssids->{$row};
+        next unless defined $ssid and $ssid =~ /\S/;
+        $result{"$port.$row"} = $ssid;
+    }
+
+    return \%result;
+}
+
+sub i_ssidmac {
+    my ( $self, $partial ) = @_;
+    my $values = _ruckus_wlan_values_by_interface(
+        $self, 'ruckus_wlan_bssid', $partial
+    );
+    foreach my $key ( keys %$values ) {
+        $values->{$key} = SNMP::Info::munge_mac( $values->{$key} );
+    }
+    return $values;
+}
+
+sub i_ssidbcast {
+    my ( $self, $partial ) = @_;
+    my $disabled = _ruckus_wlan_values_by_interface(
+        $self, 'ruckus_wlan_bcast_disabled', $partial
+    );
+    my %broadcast;
+    foreach my $key ( keys %$disabled ) {
+        my $value = $disabled->{$key};
+        $broadcast{$key} = ( $value eq '1' or lc($value) eq 'true' ) ? 0 : 1;
+    }
+    return \%broadcast;
+}
+
+sub i_80211channel {
+    my ( $self, $partial ) = @_;
+    my $channels = $self->ruckus_wlan_channel() || {};
+    my $rows = _ruckus_active_wlan_rows($self);
+    my %result;
+
+    # Each active WLAN row repeats the radio channel. Return one channel per
+    # mapped IF-MIB interface, as Netdisco's wireless radio consumers expect.
+    foreach my $row ( sort { $a <=> $b } keys %$rows ) {
+        my $port = $rows->{$row};
+        next if defined $partial and $partial ne $port;
+        next unless defined $channels->{$row};
+        $result{$port} = $channels->{$row} unless exists $result{$port};
+    }
+
+    return \%result;
+}
+
+sub fw_mac {
+    my $self = shift;
+    my $standard = $self->SUPER::fw_mac() || {};
+    my $macs = $self->ruckus_station_mac() || {};
+    my $rows = _ruckus_active_wlan_rows($self);
+    my %result = %$standard;
+
+    foreach my $idx ( keys %$macs ) {
+        next unless $idx =~ /^(\d+)\.6\.\d+(?:\.\d+){5}$/;
+        next unless exists $rows->{$1};
+        $result{$idx} = SNMP::Info::munge_mac( $macs->{$idx} );
+    }
+
+    return \%result;
+}
+
+sub fw_port {
+    my $self = shift;
+    my $standard = $self->SUPER::fw_port() || {};
+    my $macs = $self->ruckus_station_mac() || {};
+    my $rows = _ruckus_active_wlan_rows($self);
+    my %result = %$standard;
+
+    foreach my $idx ( keys %$macs ) {
+        next unless $idx =~ /^(\d+)\.6\.\d+(?:\.\d+){5}$/;
+        next unless exists $rows->{$1};
+        $result{$idx} = $rows->{$1};
+    }
+
+    return \%result;
+}
+
+sub fw_ssid {
+    my $self = shift;
+    my $macs = $self->ruckus_station_mac() || {};
+    my $ssids = $self->ruckus_wlan_ssid() || {};
+    my $rows = _ruckus_active_wlan_rows($self);
+    my %result;
+
+    foreach my $idx ( keys %$macs ) {
+        next unless $idx =~ /^(\d+)\.6\.\d+(?:\.\d+){5}$/;
+        my $row = $1;
+        next unless exists $rows->{$row};
+        next unless defined $ssids->{$row} and $ssids->{$row} =~ /\S/;
+        $result{$idx} = $ssids->{$row};
+    }
+
+    return \%result;
+}
+
+sub _ruckus_stats_index {
+    my ($idx) = @_;
+    return $idx if $idx =~ /^\d+\.6(?:\.\d+){6}$/;
+    return "$1.6.$2" if $idx =~ /^(\d+)\.(\d+(?:\.\d+){5})$/;
+    return;
+}
+
+sub cd11_mac {
+    my $self = shift;
+    my $macs = $self->ruckus_station_stats_mac() || {};
+    return { map { $_ => SNMP::Info::munge_mac( $macs->{$_} ) } keys %$macs };
+}
+
+sub cd11_ssid {
+    my $self = shift;
+    return $self->ruckus_station_stats_ssid() || {};
+}
+
+sub cd11_txrate {
+    my $self = shift;
+    my $rates = $self->ruckus_station_rks_txrate() || {};
+    my %result;
+    foreach my $idx ( keys %$rates ) {
+        my $stats_idx = _ruckus_stats_index($idx);
+        next unless defined $stats_idx and defined $rates->{$idx};
+        # Live AP data reports this PHY rate in Kbps; Netdisco stores Mbps.
+        $result{$stats_idx} = [ $rates->{$idx} / 1000 ];
+    }
+    return \%result;
+}
+
+sub cd11_rateset {
+    my $self = shift;
+    my $raw_rates = $self->ruckus_station_rates() || {};
+    my %result;
+    foreach my $idx ( keys %$raw_rates ) {
+        my $raw = $raw_rates->{$idx};
+        next unless defined $raw and length $raw;
+        my @rates = ($raw =~ /^\s*\d+(?:[\s,]+\d+)*\s*$/)
+          ? map { 0 + $_ } split /[\s,]+/, $raw
+          : map { (($_ & 0x7f) / 2) } unpack 'C*', $raw;
+        $result{$idx} = \@rates if @rates;
+    }
+    return \%result;
+}
+
+sub cd11_sigstrength {
+    my $self = shift;
+    return $self->ruckus_station_stats_rssi() || {};
+}
+
+sub cd11_rxpkt {
+    my $self = shift;
+    return $self->ruckus_station_stats_rxpkt() || {};
+}
+
+sub cd11_txpkt {
+    my $self = shift;
+    return $self->ruckus_station_stats_txpkt() || {};
+}
+
+sub cd11_rxbyte {
+    my $self = shift;
+    return $self->ruckus_station_stats_rxbyte() || {};
+}
+
+sub cd11_txbyte {
+    my $self = shift;
+    return $self->ruckus_station_stats_txbyte() || {};
+}
+
+sub bp_index {
+    my $self = shift;
+    my $ifindexes = $self->i_index() || {};
+    return { map { $_ => $_ } keys %$ifindexes };
+}
 
 sub model {
     my $self = shift;
@@ -130,7 +370,9 @@ SNMP::Info Developers
 
 Provides model, serial number, and software version information for Ruckus
 access points registered below the Ruckus wireless product OID branches, and
-for Unleashed access points identified by C<sysDescr>.
+for Unleashed access points identified by C<sysDescr>. It also maps active
+WLANs, radio channels, and associated station data to the standard SNMP::Info
+wireless methods.
 
 =head2 Inherited Classes
 
@@ -147,6 +389,8 @@ for Unleashed access points identified by C<sysDescr>.
 =item F<RUCKUS-HWINFO-MIB>
 
 =item F<RUCKUS-SWINFO-MIB>
+
+=item F<RUCKUS-WLAN-MIB>
 
 =back
 
@@ -230,6 +474,142 @@ Returns reference to hash. Key: revision index, Value: C<active> for the
 running revision, otherwise C<inactive>.
 
 (C<ruckusSwRevStatus>)
+
+=back
+
+=head2 Ruckus WLAN Table (C<ruckusWLANTable>)
+
+=over
+
+=item $ruckus->ruckus_wlan_ssid()
+
+Returns reference to hash. Key: WLAN row, Value: SSID name
+(C<ruckusWLANSSID>).
+
+=item $ruckus->ruckus_wlan_bssid()
+
+Returns reference to hash. Key: WLAN row, Value: BSSID
+(C<ruckusWLANBSSID>).
+
+=item $ruckus->ruckus_wlan_channel()
+
+Returns reference to hash. Key: WLAN row, Value: channel
+(C<ruckusWLANChannel>).
+
+=item $ruckus->ruckus_wlan_admin_status()
+
+Returns reference to hash. Key: WLAN row, Value: admin status
+(C<ruckusWLANAdminStatus>).
+
+=item $ruckus->ruckus_wlan_bcast_disabled()
+
+Returns reference to hash. Key: WLAN row, Value: SSID broadcast disable flag
+(C<ruckusWLANSSIDBcastDisable>).
+
+=item $ruckus->ruckus_wlan_ifindex()
+
+Returns reference to hash. Key: WLAN row, Value: mapped IF-MIB index
+(C<ruckusWLANIfIndex>).
+
+=back
+
+=head2 Ruckus Station Tables (C<ruckusWLANStaTable>, C<ruckusWLANStaStatsTable>, C<ruckusWLANStaRksTable>)
+
+=over
+
+=item $ruckus->ruckus_station_mac()
+
+Returns reference to hash. Key: WLAN row and station address, Value: station
+MAC address (C<ruckusWLANStaAddr>).
+
+=item $ruckus->ruckus_station_rates()
+
+Returns reference to hash. Key: station row, Value: supported rates
+(C<ruckusWLANStaRates>).
+
+=item $ruckus->ruckus_station_stats_mac()
+
+Returns reference to hash. Key: interface index and station address, Value:
+station MAC address (C<ruckusWLANStaStatsMacAddr>).
+
+=item $ruckus->ruckus_station_stats_ssid()
+
+Returns reference to hash. Key: interface index and station address, Value:
+SSID name (C<ruckusWLANStaStatsSSID>).
+
+=item $ruckus->ruckus_station_stats_rxpkt()
+
+Returns reference to hash. Key: station row, Value: received data frames
+(C<ruckusWLANStaStatsRxDataFrames>).
+
+=item $ruckus->ruckus_station_stats_rxbyte()
+
+Returns reference to hash. Key: station row, Value: received bytes
+(C<ruckusWLANStaStatsRxBytes>).
+
+=item $ruckus->ruckus_station_stats_txpkt()
+
+Returns reference to hash. Key: station row, Value: transmitted data frames
+(C<ruckusWLANStaStatsTxDataFrames>).
+
+=item $ruckus->ruckus_station_stats_txbyte()
+
+Returns reference to hash. Key: station row, Value: transmitted bytes
+(C<ruckusWLANStaStatsTxBytes>).
+
+=item $ruckus->ruckus_station_stats_rssi()
+
+Returns reference to hash. Key: station row, Value: received signal strength
+(C<ruckusWLANStaStatsRSSI>).
+
+=item $ruckus->ruckus_station_rks_txrate()
+
+Returns reference to hash. Key: interface index and station address, Value:
+current PHY rate (C<ruckusWLANStaRksTxRate>).
+
+=back
+
+=head2 Wireless Methods
+
+=over
+
+=item $ruckus->i_ssidlist()
+
+Returns active SSIDs keyed by interface and WLAN row.
+
+=item $ruckus->i_ssidmac()
+
+Returns BSSIDs with the same keys as C<i_ssidlist()>.
+
+=item $ruckus->i_ssidbcast()
+
+Returns SSID broadcast state with the same keys as C<i_ssidlist()>.
+
+=item $ruckus->i_80211channel()
+
+Returns operating channels keyed by IF-MIB interface index.
+
+=item $ruckus->fw_mac(), $ruckus->fw_port(), and $ruckus->fw_ssid()
+
+Return associated client MAC addresses, their mapped interfaces, and their
+active SSID names. Standard forwarding data is retained alongside Ruckus
+station-table rows.
+
+=item $ruckus->bp_index()
+
+Returns reference to hash mapping IF-MIB indexes to themselves for wireless
+station rows that already carry IF-MIB indexes.
+
+=item $ruckus->cd11_mac(), $ruckus->cd11_ssid(), $ruckus->cd11_txrate(), and $ruckus->cd11_rateset()
+
+Return client MAC addresses, SSIDs, current transmit PHY rates in Mbps, and
+supported rates in Mbps, keyed by the station stats index.
+
+=item $ruckus->cd11_sigstrength(), $ruckus->cd11_rxpkt(), $ruckus->cd11_txpkt(), $ruckus->cd11_rxbyte(), and $ruckus->cd11_txbyte()
+
+Return station RSSI and RX/TX data counters. The Ruckus AP MIB does not expose
+a verified signal-to-noise or signal-quality value, so C<cd11_sigqual> is not
+provided.
 
 =back
 
