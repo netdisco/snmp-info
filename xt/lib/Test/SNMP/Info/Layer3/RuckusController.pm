@@ -47,7 +47,7 @@ sub model : Tests(6) {
     'unknown controller models fall back to the inherited model');
 }
 
-sub device_type : Tests(5) {
+sub device_type : Tests(6) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -73,6 +73,14 @@ sub device_type : Tests(5) {
   });
   is($info->device_type(), 'SNMP::Info::Layer2::RuckusAP',
     'Ruckus access point OIDs still select the AP class');
+
+  $info->cache({
+    '_layers' => 0,
+    '_description' => 'Ruckus controller',
+    '_id' => '.1.3.6.1.4.1.25053.3.1.12.99',
+  });
+  isnt($info->device_type(), 'SNMP::Info::Layer3::RuckusController',
+    'Unknown neighboring product OIDs do not select controller class');
 }
 
 1;
