@@ -316,7 +316,8 @@ sub _snmp_context {
     return { kind => 'vlan', id => $id, v2c => "%s\@$id", v3 => "vlan-$id" };
 }
 
-# MSTI => [VLANs]: 1k2k bit N is VLAN N, 3k4k bit N is VLAN 2048 + N
+# MSTI => [VLANs]: 1k2k bit N is VLAN N, 3k4k bit N is VLAN 2048 + N. The
+# agent may serve fewer than 256 octets; the missing ones are zero.
 sub _stpx_mst_vlans {
     my $stpx = shift;
 
@@ -325,12 +326,10 @@ sub _stpx_mst_vlans {
 
     my %vlans;
     foreach my $inst ( keys %{ { %$low, %$high } } ) {
-        my @bits = (
-            split( //, unpack( 'B2048', $low->{$inst}  // '' ) ),
-            split( //, unpack( 'B2048', $high->{$inst} // '' ) ),
-        );
-        $vlans{$inst} = [ grep { $bits[$_] and $_ >= 1 and $_ <= 4094 }
-                0 .. $#bits ];
+        my $bits = join '', map { substr( unpack( 'B*', $_ // '' ) . '0' x 2048,
+                0, 2048 ) } $low->{$inst}, $high->{$inst};
+        $vlans{$inst}
+            = [ grep { substr( $bits, $_, 1 ) } 1 .. 4094 ];
     }
     return \%vlans;
 }
@@ -401,8 +400,9 @@ sub _stpx_pvst_trees {
     return \%trees;
 }
 
-# The CIST's trunk ports have no row in any IOS context, so it is complete
-# only where the platform serves it an MST context of its own
+# The CIST's trunk ports have no row in any IOS context. NX-OS serves them in
+# mst-0, but whether mst-0 maps bridge ports to ifIndex is unmeasured, so the
+# CIST is never claimed complete
 sub _stpx_mst_trees {
     my $stpx = shift;
 
@@ -429,7 +429,7 @@ sub _stpx_mst_trees {
         }
         else {
             $tree->{contexts}       = [ $own || { kind => 'none' } ];
-            $tree->{ports_complete} = $own ? 1 : 0;
+            $tree->{ports_complete} = 0;
             $tree->{root} = SNMP::Info::Bridge::_stp_decode_bridge_id(
                 $stpx->stp_root() );
         }

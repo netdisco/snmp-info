@@ -372,8 +372,10 @@ C<dot1dBaseBridgeAddress>
 See L<SNMP::Info/"snmp_context">.  NX-OS serves
 VLAN and MST contexts over SNMPv3 only: C<vlan-N> for a VLAN, and
 C<mst-N> for an MST instance when (C<cContextMappingTable>) lists it,
-which it does only under MST.  C<mst-0> serves the CIST's port states,
-which the default context does not.
+which it does only under MST.  C<mst-0> serves the CIST's
+C<dot1dStpPortTable>, which the default context does not; whether it also
+serves C<dot1dBasePortTable> was not measured, so C<cist.0> keeps
+C<ports_complete> 0.
 
 =back
 

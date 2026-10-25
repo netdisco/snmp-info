@@ -146,8 +146,8 @@ sub stp_trees : Tests(7) {
   $trees = $info->stp_trees();
   cmp_deeply(
     [@{$trees->{'cist.0'}}{qw/contexts ports_complete/}],
-    [[{kind => 'mst', id => 0, v2c => undef, v3 => 'mst-0'}], 1],
-    'CIST read in mst-0, complete');
+    [[{kind => 'mst', id => 0, v2c => undef, v3 => 'mst-0'}], 0],
+    'CIST read in mst-0; whether it maps ports to ifIndex is unmeasured');
   cmp_deeply([map { $_->{v3} } @{$trees->{'msti.1'}{contexts}}],
     [qw/mst-1 vlan-10/], 'MSTI 1: its own context first, then VLAN 10');
 

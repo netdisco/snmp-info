@@ -324,7 +324,7 @@ sub hasMSTP : Tests(2) {
     is( $test->{info}->hasMSTP(), 0, q(MST region served outside MST) );
 }
 
-sub stp_vlan_map : Tests(6) {
+sub stp_vlan_map : Tests(7) {
     my $test = shift;
 
     $test->{info}->cache( _iol_mst_cache() );
@@ -338,6 +338,23 @@ sub stp_vlan_map : Tests(6) {
     $test->{info}->clear_cache();
     $test->{info}->cache( _iol_pvst_cache('rapidPvstPlus') );
     is( $test->{info}->stp_vlan_map(), undef, q(No map under PVST) );
+
+    # A short 1k2k bitmap must not shift the 3k4k VLANs: missing octets are 0
+    $test->{info}->clear_cache();
+    $test->{info}->cache(
+        {   '_stpx_stp_type'               => 'mst',
+            '_stpx_smst_vlans_mapped_1k2k' => 1,
+            '_stpx_smst_vlans_mapped_3k4k' => 1,
+            'store'                        => {
+                'stpx_smst_vlans_mapped_1k2k' => { 1 => pack( 'H*', '0020' ) },
+                'stpx_smst_vlans_mapped_3k4k' =>
+                    { 1 => pack( 'H*', ( '00' x 119 ) . '80' ) },
+            },
+        }
+    );
+    cmp_deeply( $test->{info}->stp_vlan_map(),
+        { 10 => 'msti.1', 3000 => 'msti.1' },
+        q(VLAN 3000 stays 3000 behind a two-octet 1k2k) );
 }
 
 sub snmp_context : Tests(2) {
