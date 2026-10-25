@@ -46,10 +46,17 @@ sub setup : Tests(setup) {
     };
 }
 
-sub device_type : Tests(2) {
+sub device_type : Tests(3) {
     my $info = shift->{info};
     can_ok($info, 'device_type');
     is($info->device_type(), 'SNMP::Info::Layer3::Tachyon', 'TNA detection');
+    $info->cache({
+        '_id' => '.1.3.6.1.4.1.57345',
+        '_description' => 'Linux generic-device 5.10.0',
+        '_layers' => 4,
+    });
+    isnt($info->device_type(), 'SNMP::Info::Layer3::Tachyon',
+        'Neighboring enterprise is not classified as Tachyon');
 }
 
 sub vendor : Tests(1) {
