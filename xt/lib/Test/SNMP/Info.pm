@@ -672,6 +672,15 @@ sub snmp_context : Tests(3) {
   is($test->{info}->snmp_context('mst', 0), undef, 'No MST context form');
 }
 
+sub context_kinds : Tests(4) {
+  my $test = shift;
+
+  can_ok $test->{info}, 'context_kinds';
+  is($test->{info}->context_kinds('fdb'), undef, 'FDB: default context');
+  is($test->{info}->context_kinds('stp'), undef, 'STP: default context');
+  is($test->{info}->context_kinds(), undef, 'No feature named');
+}
+
 sub if_ignore : Tests(2) {
   my $test = shift;
 

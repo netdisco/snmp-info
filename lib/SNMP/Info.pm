@@ -2011,6 +2011,100 @@ sub bulkwalk_recovery {
 
 =back
 
+=head2 SNMP Contexts
+
+Some devices serve part of a feature only in non-default SNMP contexts.
+Cisco IOS serves each VLAN's forwarding table in that VLAN's context.
+SNMPv2c reaches a context by a community suffix (C<public@10>).  SNMPv3
+reaches it by a context name (C<vlan-10>).
+
+To read such a feature:
+
+=over
+
+=item 1.
+
+Call C<context_kinds($feature)>.  Nothing means the default context
+serves the whole feature: read it as usual.
+
+=item 2.
+
+In the default context, list what to visit: VLAN ids from C<v_index()>
+for C<fdb>, tree keys from C<stp_trees()> for C<stp>.  Keep the lists:
+C<update()> clears the cache on every switch.
+
+=item 3.
+
+For each one, take its context from C<snmp_context()> (a tree record's
+C<contexts> already holds them), switch with C<update()>, and read.
+
+=item 4.
+
+Call C<update()> with no arguments to return to the default context.
+
+=back
+
+A context whose C<v2c> or C<v3> is undef cannot be reached over that
+SNMP version.  NX-OS refuses community suffixes, so its VLAN and MST
+contexts need SNMPv3.
+
+Both examples below switch with this helper.  C<kind> C<none> is the
+default context.
+
+ # Switch to $context; false where this session's SNMP version cannot
+ # reach it
+ sub enter_context {
+     my ( $info, $context, $community ) = @_;
+
+     return $info->update() if $context->{kind} eq 'none';
+     if ( $info->snmp_ver() == 3 ) {
+         return unless defined $context->{v3};
+         return $info->update( Context => $context->{v3} );
+     }
+     return unless defined $context->{v2c};
+     return $info->update(
+         Community => sprintf( $context->{v2c}, $community ) );
+ }
+
+ my $community = $info->snmp_comm();    # before the first switch
+
+Forwarding table, per VLAN where the device needs it:
+
+ my %fw_mac;    # VLAN => { iid => MAC }, or 'all' => { ... }
+ if ( $info->context_kinds('fdb') ) {
+     my @vlans = sort { $a <=> $b } values %{ $info->v_index() || {} };
+     foreach my $vlan (@vlans) {
+         my $context = $info->snmp_context( 'vlan', $vlan ) or next;
+         enter_context( $info, $context, $community ) or next;
+         $fw_mac{$vlan} = { %{ $info->fw_mac() || {} } };
+     }
+     $info->update();
+ }
+ else {
+     $fw_mac{all} = { %{ $info->fw_mac() || {} } };
+ }
+
+MST instance ports.  NX-OS serves each instance in its own C<mst-N>
+context.  IOS serves it in the context of any VLAN the instance carries,
+so the rows of every listed context are merged:
+
+ my $trees = $info->stp_trees() || {};
+ my $switch = $info->context_kinds('stp');
+ my %msti_ports;    # tree key => { iid => port record }
+ my @mstis = grep { $trees->{$_}{type} eq 'msti' } sort keys %$trees;
+ foreach my $key (@mstis) {
+     unless ($switch) {
+         $msti_ports{$key} = { %{ $info->stp_tree_ports($key) || {} } };
+         next;
+     }
+     foreach my $context ( @{ $trees->{$key}{contexts} } ) {
+         enter_context( $info, $context, $community ) or next;
+         my $ports = $info->stp_tree_ports($key) || {};
+         $msti_ports{$key}{$_} = $ports->{$_} foreach keys %$ports;
+     }
+ }
+ $info->update() if $switch;
+
 =head2 Object Scalar Methods
 
 These are for package related data, not directly supplied
@@ -2958,29 +3052,73 @@ snmp calls on certain Cisco devices.
 
 See L<ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html>
 
+To ask the same of any feature, use C<context_kinds()>.
+
 =cut
 
 sub cisco_comm_indexing {
     return 0;
 }
 
+=item $info->context_kinds($feature)
+
+Returns a reference to an array of the kinds of SNMP context the device
+uses to serve C<$feature>, or nothing when the default context serves it
+all.  See L</"SNMP Contexts">.
+
+Features: C<fdb>, the forwarding table (C<fw_mac()>, C<fw_port()>);
+C<stp>, the spanning tree ports (C<stp_tree_ports()>).
+
+Kinds: C<vlan>, one context per VLAN; C<mst>, one context per MST
+instance.  The answer describes the platform, not the trees or VLANs the
+device has now.
+
+ if (my $kinds = $info->context_kinds('fdb')) {
+     # Read the forwarding table once per VLAN
+ }
+
+=cut
+
+# A feature role sits behind SNMP::Info in every class's method
+# resolution, so classes answer through _context_kinds and _snmp_context.
+sub context_kinds {
+    my ( $self, $feature ) = @_;
+
+    return unless defined $feature;
+    return ['vlan'] if $feature eq 'fdb' and $self->cisco_comm_indexing();
+    return $self->_context_kinds($feature) if $self->can('_context_kinds');
+    return;
+}
+
 =item $info->snmp_context($kind, $id)
 
-Returns how to address SNMP context C<$kind> C<$id> on this platform, as a
-reference to hash, or nothing where the class knows no form for it.  This
-class knows none.  A class that does defines C<_snmp_context()>, which this
-method calls: a feature role mixed into a device class sits behind
-C<SNMP::Info> in method resolution, so it could not override this method
-itself.
+Returns how to reach one SNMP context on this device, as a reference to
+hash, or nothing where the device has no such context.  C<$kind> is a
+kind from C<context_kinds()>; C<$id> is a VLAN id for C<vlan> and an MST
+instance for C<mst>.  See L</"SNMP Contexts">.
 
-Keys: C<kind> and C<id> as passed; C<v2c>, a C<sprintf> format taking the
-caller's community (C<'%s@10'>), undef where SNMPv2c cannot reach the
-context; C<v3>, the SNMPv3 context name (C<vlan-10>), undef where SNMPv3
-cannot.  A site-configured SNMPv3 context prefix in the caller wins over
-C<v3>.
+ my $context = $info->snmp_context('vlan', 10);
+ # { kind => 'vlan', id => 10, v2c => '%s@10', v3 => 'vlan-10' }
 
-Kinds: C<vlan> (a VLAN id) and C<mst> (an MST instance).  C<vrf> is
-reserved.
+=over
+
+=item C<kind>, C<id>
+
+As passed.
+
+=item C<v2c>
+
+A C<sprintf> format for the SNMPv2c community: C<sprintf($context-E<gt>{v2c},
+'public')> gives C<public@10>.  Undef where SNMPv2c cannot reach the
+context.
+
+=item C<v3>
+
+The SNMPv3 context name.  Undef where SNMPv3 cannot reach the context.
+The device answers only for the names its SNMP configuration binds, so a
+site's own context naming wins over this one.
+
+=back
 
 =cut
 

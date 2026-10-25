@@ -44,11 +44,13 @@ sub device_type : Tests(1) {
 
 }
 
-sub cisco_comm_indexing : Tests(2) {
+sub cisco_comm_indexing : Tests(3) {
   my $test = shift;
 
   can_ok $test->{info}, 'cisco_comm_indexing';
   is($test->{info}->cisco_comm_indexing(), 1, 'Cisco community indexing on');
+  cmp_deeply($test->{info}->context_kinds('fdb'), ['vlan'],
+    'FDB in VLAN contexts');
 }
 
 sub stp_trees : Tests(5) {

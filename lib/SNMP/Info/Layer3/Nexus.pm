@@ -82,6 +82,13 @@ sub os_ver {
 	return $descr;
 }
 
+sub _context_kinds {
+	my ( $nexus, $feature ) = @_;
+
+	return [ 'vlan', 'mst' ] if $feature eq 'stp';
+	return;
+}
+
 # NX-OS refuses a community map for VLAN and MST contexts: SNMPv3 only.
 # An MST context exists only under MST, so it is offered only where
 # cContextMappingTable lists it (index: the length-prefixed context name).
@@ -366,6 +373,11 @@ Removes C<'cevChassis'> for readability.
 =item $nexus->mac()
 
 C<dot1dBaseBridgeAddress>
+
+=item $nexus->context_kinds($feature)
+
+See L<SNMP::Info/"context_kinds">.  Returns C<['vlan', 'mst']> for
+C<stp>, and C<['vlan']> for C<fdb>.
 
 =item $nexus->snmp_context($kind, $id)
 

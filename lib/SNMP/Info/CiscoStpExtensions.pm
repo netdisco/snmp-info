@@ -308,6 +308,14 @@ sub stp_protocols {
     return [$protocol];
 }
 
+# Called by SNMP::Info::context_kinds, which a mixin cannot override
+sub _context_kinds {
+    my ( $stpx, $feature ) = @_;
+
+    return ['vlan'] if $feature eq 'stp';
+    return;
+}
+
 # Called by SNMP::Info::snmp_context, which a mixin cannot override
 sub _snmp_context {
     my ( $stpx, $kind, $id ) = @_;
@@ -625,6 +633,11 @@ Returns 1 when C<stpxSpanningTreeType> is C<rapidPvstPlus>.
 Returns 1 when C<stpxSpanningTreeType> is C<mst>.  The MST region and its
 instances are served under every mode, so they are not the test.
 
+=item $stpx->context_kinds($feature)
+
+See L<SNMP::Info/"context_kinds">.  Returns C<['vlan']> for C<stp>: each
+VLAN's tree is served in that VLAN's context.
+
 =item $stpx->snmp_context($kind, $id)
 
 See L<SNMP::Info/"snmp_context">.  A C<vlan> context is reached as
@@ -705,7 +718,8 @@ given port.  Format is a hash reference with key = C<ifIndex>, value = [1|0]
 These override L<SNMP::Info::Bridge/"Spanning Tree Trees">; records are as
 described there.  The tree list, protocol, port roles and MST VLAN map are
 served in the default context; each tree's port states and designated
-bridge and port are served in BRIDGE-MIB in the tree's own context.
+bridge and port are served in BRIDGE-MIB in the tree's own context.  To
+switch contexts, see L<SNMP::Info/"SNMP Contexts">.
 
 Trees are keyed C<vlan.N> (one per VLAN under PVST+ and Rapid-PVST+, with
 C<vlan> the VLAN id), C<cist.0> and C<msti.N> under MST.  Each record's

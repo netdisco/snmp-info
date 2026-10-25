@@ -369,6 +369,16 @@ sub snmp_context : Tests(2) {
         q(No MST context on IOS) );
 }
 
+sub context_kinds : Tests(3) {
+    my $test = shift;
+
+    cmp_deeply( $test->{info}->context_kinds('stp'),
+        ['vlan'], q(STP trees in VLAN contexts) );
+    is( $test->{info}->context_kinds('fdb'), undef,
+        q(FDB follows cisco_comm_indexing) );
+    is( $test->{info}->context_kinds('vrf'), undef, q(No VRF contexts) );
+}
+
 # BRIDGE-MIB rows as one context serves them: { <port> => [state, prio, sw] }
 sub _dot1d_rows {
     my %ports = @_;

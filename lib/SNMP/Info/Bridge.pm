@@ -760,22 +760,17 @@ Max Baker
  }
 
  # Spanning trees: read the list in the default context and keep it, then
- # read each tree's ports in the contexts that serve it
- my $trees = $bridge->stp_trees() || {};
+ # read each tree's ports in the contexts that serve it.  enter_context()
+ # is the helper in "SNMP Contexts" in SNMP::Info.
+ my $community = $bridge->snmp_comm();
+ my $trees     = $bridge->stp_trees() || {};
  foreach my $key (sort keys %$trees) {
     my %ports;
     foreach my $context (@{ $trees->{$key}{contexts} }) {
-        if ($context->{kind} eq 'none') {
-            $bridge->update(Community => 'public');
-        }
-        elsif (defined $context->{v2c}) {
-            $bridge->update(
-                Community => sprintf($context->{v2c}, 'public'));
-        }
-        else { next }    # SNMPv3: update(Context => $context->{v3})
+        enter_context($bridge, $context, $community) or next;
         %ports = (%ports, %{ $bridge->stp_tree_ports($key) || {} });
     }
-    $bridge->update(Community => 'public');
+    $bridge->update();
 
     foreach my $iid (sort keys %ports) {
         printf "%s %s: %s\n", $key, $interfaces->{$iid},
@@ -933,6 +928,9 @@ Returns VLAN IDs
 =back
 
 =head2 Forwarding Table (C<dot1dTpFdbEntry>)
+
+Some devices serve this table once per VLAN, each in its own SNMP
+context.  Check with L<SNMP::Info/"context_kinds">.
 
 =over
 
@@ -1125,7 +1123,8 @@ These methods report each spanning tree a device runs, and its ports'
 state, role, designated bridge and designated port, one tree at a time.
 Every record names its tree, so a row read out of context still says
 which tree it describes.  Read the tree list in the default context and
-keep it: C<update()> clears the cache on every context switch.
+keep it: C<update()> clears the cache on every context switch.  Where
+trees are served in other contexts, see L<SNMP::Info/"SNMP Contexts">.
 
 This class reports the C<BRIDGE-MIB> tree as the common tree, the one
 tree under RSTP and the CIST under MSTP, with its protocol unknown.

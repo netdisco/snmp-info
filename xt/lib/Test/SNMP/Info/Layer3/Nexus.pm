@@ -125,6 +125,15 @@ sub snmp_context : Tests(3) {
   is($info->snmp_context('mst', 1), undef, 'No MST context unlisted');
 }
 
+sub context_kinds : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  cmp_deeply($info->context_kinds('stp'), ['vlan', 'mst'],
+    'STP trees in VLAN and MST contexts');
+  cmp_deeply($info->context_kinds('fdb'), ['vlan'], 'FDB in VLAN contexts');
+}
+
 sub stp_trees : Tests(7) {
   my $test = shift;
   my $info = $test->{info};
