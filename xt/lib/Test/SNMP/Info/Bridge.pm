@@ -111,4 +111,33 @@ sub qb_fw_vlan : Tests(3) {
     cmp_deeply( $test->{info}->qb_fw_vlan(), {}, q(No data returns empty hash) );
 }
 
+sub stp_decode_ids : Tests(5) {
+    my $test = shift;
+    my $bid  = \&SNMP::Info::Bridge::_stp_decode_bridge_id;
+    my $pid  = \&SNMP::Info::Bridge::_stp_decode_port_id;
+
+    cmp_deeply(
+        $bid->('10:00:02:00:00:00:00:0a'),
+        {   priority   => 4096,
+            sys_id_ext => 0,
+            mac        => '02:00:00:00:00:0a',
+            raw        => '10:00:02:00:00:00:00:0a'
+        },
+        q(RSTP bridge ID decodes)
+    );
+    cmp_deeply(
+        $bid->('80:01:02:00:00:00:00:0b'),
+        {   priority   => 32768,
+            sys_id_ext => 1,
+            mac        => '02:00:00:00:00:0b',
+            raw        => '80:01:02:00:00:00:00:0b'
+        },
+        q(PVST VLAN 1 keeps the extension apart)
+    );
+    cmp_deeply( $pid->('80:02'), { priority => 128, port => 2, raw => '80:02' },
+        q(Port ID decodes) );
+    is( $bid->(undef), undef, q(Undef bridge ID gives undef) );
+    is( $pid->('80'),  undef, q(Short port ID gives undef) );
+}
+
 1;

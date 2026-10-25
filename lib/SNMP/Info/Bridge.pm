@@ -363,6 +363,39 @@ sub i_stp_bridge {
     return \%i_stp_bridge;
 }
 
+# 802.1t fixed format: top 4 bits priority, low 12 bits system ID extension
+sub _stp_decode_bridge_id {
+    my $id = shift;
+    return unless defined $id;
+
+    my @octets = split /:/, $id;
+    return unless @octets == 8;
+
+    my $prio = hex( $octets[0] . $octets[1] );
+    return {
+        priority   => ( $prio >> 12 ) * 4096,
+        sys_id_ext => $prio & 0x0fff,
+        mac        => join( ':', @octets[ 2 .. 7 ] ),
+        raw        => $id,
+    };
+}
+
+# 802.1t fixed format: top 4 bits priority, low 12 bits port number
+sub _stp_decode_port_id {
+    my $id = shift;
+    return unless defined $id;
+
+    my @octets = split /:/, $id;
+    return unless @octets == 2;
+
+    my $value = hex( $octets[0] . $octets[1] );
+    return {
+        priority => ( $value >> 12 ) * 16,
+        port     => $value & 0x0fff,
+        raw      => $id,
+    };
+}
+
 # Non-accessible, but needed for consistency with other classes
 sub v_index {
     my $bridge  = shift;
