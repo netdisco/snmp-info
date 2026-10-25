@@ -101,6 +101,8 @@ $VERSION = '3.982000';
     'stp_i_root_port' => 'extremeStpDomainRootPortIfIndex',
     'stp_i_priority'  => 'extremeStpDomainBridgePriority',
     'ex_stp_i_mac'    => 'extremeStpDomainBridgeId',
+    'ex_stp_i_name'   => 'extremeStpDomainStpdName',
+    'ex_stp_i_tag'    => 'extremeStpDomainStpdTag',
     # EXTREME-STP-EXTENSIONS-MIB::extremeStpPortTable
     'stp_p_priority' => 'extremeStpPortPortPriority',
     'stp_p_state'    => 'extremeStpPortPortState',
@@ -108,6 +110,9 @@ $VERSION = '3.982000';
     'stp_p_root'     => 'extremeStpPortDesignatedRoot',
     'stp_p_bridge'   => 'extremeStpPortDesignatedBridge',
     'stp_p_port'     => 'extremeStpPortDesignatedPort',
+    'ex_stp_p_mode'  => 'extremeStpPortPortMode',
+    # EXTREME-STP-EXTENSIONS-MIB::extremeStpVlanPortTable
+    'ex_stp_vlan_mask' => 'extremeStpVlanPortPortMask',
 );
 
 %MUNGE = (
@@ -1000,10 +1005,179 @@ sub i_stp_state {
     return \%i_stp_state;
 }
 
-# Default tree is not the common tree: on EXOS s0 is the Default VLAN's
-# 802.1D tree under PVST+, and VOSS serves forwarding on a blocked port
-# under RSTP (lab survey 2026-10).
+# Keeps the base from reporting the default tree: on EXOS the domains are
+# the trees, and VOSS serves forwarding on a blocked port under RSTP (lab
+# survey 2026-10).
 sub _stp_default_is_common { return 0; }
+
+# dot1dStpVersion: RSTP-MIB names 0 and 2 only, so 3 (MSTP) comes back bare
+my %ex_stp_version = (
+    0               => 'stp',
+    'stpCompatible' => 'stp',
+    2               => 'rstp',
+    'rstp'          => 'rstp',
+    3               => 'mstp',
+);
+
+sub _ex_stp_version {
+    my $extreme = shift;
+
+    my $version = $extreme->dot1dStpVersion();
+    return unless defined $version;
+    return $ex_stp_version{$version};
+}
+
+# Instances whose ports run in PVST+ mode
+sub _ex_stp_pvst_instances {
+    my $extreme = shift;
+
+    my $modes = $extreme->ex_stp_p_mode() || {};
+    my %pvst;
+    foreach my $idx ( keys %$modes ) {
+        next unless ( $modes->{$idx} || '' ) eq 'pvstp';
+        my ($inst) = _ex_stpport_index($idx);
+        $pvst{$inst} = 1;
+    }
+    return \%pvst;
+}
+
+sub hasMSTP {
+    my $extreme = shift;
+    return ( $extreme->_ex_stp_version() || '' ) eq 'mstp' ? 1 : 0;
+}
+
+sub hasRSTP {
+    my $extreme = shift;
+    return ( $extreme->_ex_stp_version() || '' ) eq 'rstp' ? 1 : 0;
+}
+
+sub hasPVST {
+    my $extreme = shift;
+    return keys %{ $extreme->_ex_stp_pvst_instances() } ? 1 : 0;
+}
+
+# 802.1D: version 0 with at least one domain not bound in PVST+ mode
+sub hasSTP {
+    my $extreme = shift;
+
+    return 0 unless ( $extreme->_ex_stp_version() || '' ) eq 'stp';
+    my $names = $extreme->ex_stp_i_name() || {};
+    my $pvst  = $extreme->_ex_stp_pvst_instances();
+    return ( grep { !$pvst->{$_} } keys %$names ) ? 1 : 0;
+}
+
+sub stp_flavors {
+    my $extreme = shift;
+
+    my @flavors = grep {
+        my $method = 'has' . uc $_;
+        $extreme->$method();
+    } qw/stp rstp mstp pvst/;
+    return unless @flavors;
+    return \@flavors;
+}
+
+sub stp_trees {
+    my $extreme = shift;
+
+    return unless $extreme->_stp_default_context_ok();
+    return $extreme->{_stp_trees} if $extreme->{_stp_trees};
+
+    my $names = $extreme->ex_stp_i_name() || {};
+    return {} unless keys %$names;
+
+    my $tags  = $extreme->ex_stp_i_tag()  || {};
+    my $bids  = $extreme->ex_stp_i_mac()  || {};
+    my $roots = $extreme->stp_i_root()    || {};
+    my $pvst  = $extreme->_ex_stp_pvst_instances();
+    my $device_flavor
+        = keys %$names == 1 ? $extreme->_ex_stp_version() : undef;
+    my $measured = ( $extreme->os() || '' ) eq 'xos' ? 1 : 0;
+
+    my %trees;
+    foreach my $inst ( keys %$names ) {
+        my $tree = {
+            type           => 'domain',
+            id             => $inst,
+            name           => $names->{$inst},
+            flavor         => $pvst->{$inst} ? 'pvst' : $device_flavor,
+            measured       => $measured,
+            ports_complete => 1,
+            context        => { kind => 'none' },
+            bridge => scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $bids->{$inst} ),
+            root => scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $roots->{$inst} ),
+        };
+        $tree->{vlan} = $tags->{$inst} if $tags->{$inst};
+        $trees{"domain.$inst"} = $tree;
+    }
+    $extreme->{_stp_trees} = \%trees;
+    return $extreme->{_stp_trees};
+}
+
+sub stp_tree_ports {
+    my $extreme  = shift;
+    my $tree_key = shift;
+
+    my $trees = $extreme->stp_trees() || {};
+    my $tree  = defined $tree_key ? $trees->{$tree_key} : undef;
+    unless ($tree) {
+        my $key = defined $tree_key ? $tree_key : 'undef';
+        $extreme->error_throw(
+            "SNMP::Info::Layer3::Extreme::stp_tree_ports() has no tree"
+                . " '$key'. Pass a key from stp_trees(), read in the default"
+                . " context.\n" );
+        return;
+    }
+
+    my $states   = $extreme->stp_p_state()  || {};
+    my $d_bridge = $extreme->stp_p_bridge() || {};
+    my $d_port   = $extreme->stp_p_port()   || {};
+
+    my %tree_ports;
+    foreach my $idx ( keys %$states ) {
+        my ( $inst, $ifindex ) = _ex_stpport_index($idx);
+        next unless $inst eq $tree->{id};
+        $tree_ports{$ifindex} = {
+            tree_type         => $tree->{type},
+            tree_id           => $tree->{id},
+            state             => $states->{$idx},
+            role              => undef,
+            designated_bridge =>
+                scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $d_bridge->{$idx} ),
+            designated_port => scalar SNMP::Info::Bridge::_stp_decode_port_id(
+                $d_port->{$idx} ),
+        };
+    }
+    return \%tree_ports;
+}
+
+sub stp_trees_complete {
+    my $extreme = shift;
+
+    my $trees = $extreme->stp_trees() || {};
+    return keys %$trees ? 1 : 0;
+}
+
+# extremeStpVlanPortTable is indexed <vlan ifIndex>.<domain instance>
+sub stp_vlan_map {
+    my $extreme = shift;
+
+    my $rows     = $extreme->ex_stp_vlan_mask() || {};
+    my $vlan_ids = $extreme->ex_vlan_id()       || {};
+
+    my %map;
+    foreach my $idx ( keys %$rows ) {
+        my ( $vlan_if, $inst ) = split /\./, $idx;
+        my $vlan = $vlan_ids->{$vlan_if};
+        next unless defined $vlan;
+        $map{$vlan} = "domain.$inst";
+    }
+    return unless keys %map;
+    return \%map;
+}
 
 1;
 
@@ -1130,6 +1304,24 @@ Returns fan status
 Returns base mac
 
 (C<dot1dBaseBridgeAddress>)
+
+=item $extreme->hasMSTP()
+
+Returns 1 when the device runs MSTP: C<dot1dStpVersion> is 3.
+
+=item $extreme->hasRSTP()
+
+Returns 1 when the device runs 802.1W: C<dot1dStpVersion> is 2.
+
+=item $extreme->hasPVST()
+
+Returns 1 when any domain's ports run in PVST+ mode
+(C<extremeStpPortPortMode> C<pvstp>).
+
+=item $extreme->hasSTP()
+
+Returns 1 when C<dot1dStpVersion> is 0 and a domain runs 802.1D, with no
+port in PVST+ mode.
 
 =back
 
@@ -1352,6 +1544,61 @@ to the root bridge.
 =item $extreme->stp_p_port()
 
 (C<extremeStpPortDesignatedPort>)
+
+=back
+
+=head2 Spanning Tree Domains
+
+EXOS runs one spanning tree per STP domain, served in the default
+context.  These override L<SNMP::Info::Bridge/"Spanning Tree Trees">;
+records are as described there, with C<type> C<domain>, C<id> the domain
+instance, C<name> the domain name and, under PVST+, C<vlan> the carrier
+VLAN.  A domain's C<flavor> is C<pvst> when its ports run in PVST+ mode,
+or the device's flavor when the device has one domain, and undef
+otherwise: C<dot1dStpVersion> is device-wide.  C<measured> is 1 on EXOS.
+VOSS, also handled by this class, serves none of these tables.
+
+=over
+
+=item $extreme->stp_flavors()
+
+Returns reference to an array of the flavors C<hasSTP()>, C<hasRSTP()>,
+C<hasMSTP()> and C<hasPVST()> report, or nothing.
+
+=item $extreme->stp_trees()
+
+Returns reference to hash of domain records keyed
+C<domain.E<lt>instanceE<gt>>.
+
+=item $extreme->stp_tree_ports($tree_key)
+
+Returns reference to hash of the domain's port records keyed by ifIndex,
+from (C<extremeStpPortTable>).  C<role> is undef: the MIB serves none.
+
+=item $extreme->stp_trees_complete()
+
+Returns 1 when the domain table was read, 0 otherwise.
+
+=item $extreme->stp_vlan_map()
+
+Returns reference to hash mapping VLAN id to domain key, from the index of
+(C<extremeStpVlanPortTable>) and (C<extremeVlanIfVlanId>).
+
+=item $extreme->ex_stp_i_name()
+
+(C<extremeStpDomainStpdName>)
+
+=item $extreme->ex_stp_i_tag()
+
+(C<extremeStpDomainStpdTag>)
+
+=item $extreme->ex_stp_p_mode()
+
+(C<extremeStpPortPortMode>)
+
+=item $extreme->ex_stp_vlan_mask()
+
+(C<extremeStpVlanPortPortMask>)
 
 =back
 
