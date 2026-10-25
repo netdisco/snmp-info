@@ -73,8 +73,12 @@ $VERSION = '3.982000';
     'ligo_wifi_quality'     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.13',
     'ligo_wifi_signal'      => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.14',
     'ligo_wifi_noise'       => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.15',
-    'ligo_wifi_status'      => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.16',
+    # The released LIGO-WIRELESS-MIB defines column 16 as the number of
+    # associated nodes, not an interface status.
+    'ligo_wifi_assoc_count' => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.16',
     'ligo_wifi_state'       => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.17',
+    # Netdisco reads these standard wireless interface methods.
+    'i_ssidlist'            => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.4',
     'ligo_peer_mac'         => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.1',
     'ligo_peer_associated'  => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.2',
     'ligo_peer_tx_bytes'    => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.3',
@@ -113,6 +117,20 @@ sub os_ver {
     my $desc = $self->description() || '';
     return $1 if $desc =~ /\bv([\d]+(?:\.[\d]+)*)\b/i;
     return $self->SUPER::os_ver();
+}
+
+# LigoWave's wireless configuration table is indexed by IF-MIB ifIndex, so
+# its ESSID and MAC columns provide the standard SSID interface data directly.
+sub i_ssidmac {
+    my ( $self, $partial ) = @_;
+    return $self->ligo_wifi_mac($partial) || {};
+}
+
+# LigoWave publishes the current channel in its wireless table; the inherited
+# IEEE802dot11 table is not populated on the tested firmware.
+sub i_80211channel {
+    my ( $self, $partial ) = @_;
+    return $self->ligo_wifi_channel($partial) || {};
 }
 
 sub _vlan_interfaces {
@@ -314,9 +332,9 @@ Received signal level in dBm.
 
 Noise level in dBm.
 
-=item ligo_wifi_status()
+=item ligo_wifi_assoc_count()
 
-Numeric wireless interface status.
+Number of associated remote nodes reported for the wireless interface.
 
 =item ligo_wifi_state()
 
@@ -368,7 +386,7 @@ Transmit rate reported for the peer link.
 
 =back
 
-=head2 VLAN methods
+=head2 VLAN and wireless methods
 
 =over 4
 
@@ -388,6 +406,18 @@ Associates each recognized logical VLAN interface with its VLAN ID.
 =item $ligo->i_vlan_membership_untagged()
 
 Returns an empty hash reference because untagged membership is not reported.
+
+=item $ligo->i_ssidlist()
+
+Returns the SSID configured on each wireless interface.
+
+=item $ligo->i_ssidmac()
+
+Returns the wireless interface MAC address keyed by its ifIndex.
+
+=item $ligo->i_80211channel()
+
+Returns the current channel for each wireless interface.
 
 =back
 

@@ -23,7 +23,7 @@ my %COLUMN_OIDS = (
     ligo_wifi_quality    => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.13',
     ligo_wifi_signal     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.14',
     ligo_wifi_noise      => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.15',
-    ligo_wifi_status     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.16',
+    ligo_wifi_assoc_count => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.16',
     ligo_wifi_state      => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.17',
     ligo_peer_mac        => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.1',
     ligo_peer_associated => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.2',
@@ -109,7 +109,7 @@ sub vendor_columns : Tests(28) {
     $sample{ligo_wifi_country} = 'GB';
     $sample{ligo_wifi_tx_streams} = 8;
     $sample{ligo_wifi_quality} = 105;
-    $sample{ligo_wifi_status} = 1;
+    $sample{ligo_wifi_assoc_count} = 7;
     $sample{ligo_wifi_state} = 'up';
     $sample{ligo_peer_ip} = '192.0.2.41';
     $sample{ligo_peer_remote_port} = 0;
@@ -149,8 +149,8 @@ sub ligo_wifi_quality : Tests(1) {
     _check_column(shift, 'ligo_wifi_quality', 105);
 }
 
-sub ligo_wifi_status : Tests(1) {
-    _check_column(shift, 'ligo_wifi_status', 1);
+sub ligo_wifi_assoc_count : Tests(1) {
+    _check_column(shift, 'ligo_wifi_assoc_count', 7);
 }
 
 sub ligo_wifi_state : Tests(1) {
@@ -184,6 +184,36 @@ sub i_vlan_membership_untagged : Tests(1) {
     my $info = shift->{info};
     is_deeply($info->i_vlan_membership_untagged(), {},
         'No untagged membership inferred');
+}
+
+sub i_ssidlist : Tests(1) {
+    my $test = shift;
+    my $iid = '410';
+    $test->mock_session->{Data} = {
+        $COLUMN_OIDS{ligo_wifi_essid} => { $iid => 'example-ssid' },
+    };
+    is_deeply($test->{info}->i_ssidlist(), { $iid => 'example-ssid' },
+        'Standard SSID list uses LigoWave ESSID table');
+}
+
+sub i_ssidmac : Tests(1) {
+    my $test = shift;
+    my $iid = '410';
+    $test->mock_session->{Data} = {
+        $COLUMN_OIDS{ligo_wifi_mac} => { $iid => pack('C*', 2, 0, 0, 0, 0, 40) },
+    };
+    is_deeply($test->{info}->i_ssidmac(), { $iid => '02:00:00:00:00:28' },
+        'Standard SSID MAC uses LigoWave interface MAC');
+}
+
+sub i_80211channel : Tests(1) {
+    my $test = shift;
+    my $iid = '410';
+    $test->mock_session->{Data} = {
+        $COLUMN_OIDS{ligo_wifi_channel} => { $iid => 36 },
+    };
+    is_deeply($test->{info}->i_80211channel(), { $iid => 36 },
+        'Standard wireless channel uses LigoWave channel table');
 }
 
 1;
