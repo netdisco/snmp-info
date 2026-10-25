@@ -374,14 +374,14 @@ sub stp_flavors {
 sub stp_trees {
     my $bridge = shift;
 
-    if ( $bridge->_stp_in_context() ) {
-        my $in = $bridge->{args}{Context} || $bridge->{args}{Community};
+    my $context = $bridge->_walk_context();
+    if ( length $context ) {
         $bridge->error_throw(
             "SNMP::Info::Bridge::stp_trees() reads the tree list, which only"
                 . " the default context serves whole. This session is in"
-                . " context or community '$in'. Call update() back to the"
-                . " default context, read the list, and keep it while you"
-                . " switch contexts.\n" );
+                . " context '$context'. Call update() back to the default"
+                . " context, read the list, and keep it while you switch"
+                . " contexts.\n" );
         return;
     }
     return $bridge->{_stp_trees} if $bridge->{_stp_trees};
@@ -391,13 +391,16 @@ sub stp_trees {
     my $root  = $bridge->stp_root();
     return {} unless keys %$ports or defined $root;
 
+    my $bp_index = $bridge->bp_index() || {};
+    my $unmapped = grep { !defined $bp_index->{$_} } values %$ports;
+
     $bridge->{_stp_trees} = {
         'cist.0' => {
             type           => 'cist',
             id             => 0,
             flavor         => undef,
             measured       => 0,
-            ports_complete => 1,
+            ports_complete => $unmapped ? 0 : 1,
             context        => { kind => 'none' },
             bridge         => scalar $bridge->_stp_own_bridge_id(),
             root           => scalar _stp_decode_bridge_id($root),
@@ -429,10 +432,7 @@ sub stp_tree_ports {
     my %tree_ports;
     foreach my $index ( keys %$ports ) {
         my $iid = $bp_index->{ $ports->{$index} };
-        unless ( defined $iid ) {
-            $tree->{ports_complete} = 0;
-            next;
-        }
+        next unless defined $iid;
         $tree_ports{$iid} = {
             tree_type         => $tree->{type},
             tree_id           => $tree->{id},
@@ -450,21 +450,15 @@ sub stp_tree_ports {
 sub stp_trees_complete {
     my $bridge = shift;
 
+    # A class that keeps the default off has trees this class does not read
+    return 0 unless $bridge->_stp_default_is_common();
+
     my $trees = $bridge->stp_trees() || {};
     return unless keys %$trees;
     return 0;
 }
 
 sub _stp_default_is_common { return 1; }
-
-sub _stp_in_context {
-    my $bridge = shift;
-
-    my $args = $bridge->{args} || {};
-    return 1 if $args->{Context};
-    return 1 if defined $args->{Community} and $args->{Community} =~ /\@/;
-    return 0;
-}
 
 sub _stp_own_bridge_id {
     my $bridge = shift;
@@ -1108,8 +1102,9 @@ Classes that read a vendor's flavor and trees override these methods.
 =item $bridge->stp_flavors()
 
 Returns a reference to an array of the spanning tree flavors the device
-runs, or nothing when it serves no tree.  C<dot1d> means a C<BRIDGE-MIB>
-tree is served but no object says which flavor it is.
+runs, or nothing when no tree was read.  C<dot1d> means a C<BRIDGE-MIB>
+tree is served but no object says which flavor it is.  Nothing does not
+mean the device runs no spanning tree: check C<stp_trees_complete()>.
 
 =item $bridge->stp_trees()
 
@@ -1120,7 +1115,8 @@ checked against its CLI in a lab; C<ports_complete>, false when port rows
 were dropped; C<context>, where to read the tree (C<kind> C<none> means
 the default context); C<bridge>, the device's own bridge ID; and C<root>,
 the designated root.  Bridge IDs are hashes of C<priority>,
-C<sys_id_ext>, C<mac> and C<raw>, the served value.
+C<sys_id_ext>, C<mac> and C<raw>, the served value; the device's own
+C<raw> is built from C<dot1dStpPriority> and C<dot1dBaseBridgeAddress>.
 
 Returns nothing, with C<error()> set, when the session is in a
 non-default context, since only the default context serves the whole
@@ -1129,7 +1125,8 @@ list.
 =item $bridge->stp_trees_complete()
 
 Returns 1 when the tree list holds every tree the device runs, 0 when
-trees may exist that were not read, and nothing when there are no trees.
+trees may exist that were not read (including a device whose class does
+not yet read its trees), and nothing when the device serves no tree.
 
 =item $bridge->stp_tree_ports($tree_key)
 

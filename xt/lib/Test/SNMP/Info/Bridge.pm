@@ -233,20 +233,25 @@ sub stp_trees_memo : Tests(3) {
         q(clear_cache drops the memoized list) );
 }
 
-sub stp_trees_context : Tests(4) {
+sub stp_trees_context : Tests(5) {
     my $test = shift;
+    my $sess = $test->{info}->session();
 
     $test->{info}->cache( _stp_rstp_cache() );
-    local $test->{info}{args}{Context} = 'vlan-10';
+    $sess->{Context} = 'vlan-10';
     is( $test->{info}->stp_trees(), undef, q(Refused in a v3 context) );
-    like( $test->{info}->error(), qr/default context/,
-        q(Error names the default context) );
+    like( $test->{info}->error(), qr/vlan-10.*default context/s,
+        q(Error names the context and the default context) );
 
-    $test->{info}{args}{Context} = '';
-    local $test->{info}{args}{Community} = 'public@10';
+    delete $sess->{Context};
+    $sess->{Community} = $test->{info}{args}{Community} . '@10';
     is( $test->{info}->stp_trees(), undef, q(Refused in a community context) );
-    like( $test->{info}->error(), qr/public\@10/,
-        q(Error names the community in use) );
+    like( $test->{info}->error(), qr/'10'/, q(Error names the VLAN context) );
+
+    local $test->{info}{args}{Community} = 'p@ss';
+    $sess->{Community} = 'p@ss';
+    ok( exists $test->{info}->stp_trees()->{'cist.0'},
+        q(A community containing @ is still the default context) );
 }
 
 sub stp_trees_complete : Tests(3) {
@@ -330,6 +335,15 @@ sub stp_tree_ports_bad_bridge : Tests(2) {
     is( $port->{state}, 'blocking', q(Port keeps its state) );
     is( $port->{designated_bridge},
         undef, q(Malformed designated bridge gives undef) );
+}
+
+sub stp_trees_ports_complete_upfront : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    delete $test->{info}{store}{bp_index}{2};
+    is( $test->{info}->stp_trees()->{'cist.0'}{ports_complete},
+        0, q(Unmapped port row marks the list incomplete before port reads) );
 }
 
 1;

@@ -147,7 +147,7 @@ sub eigrp_peers : Tests(3) {
 # A served common-tree shape: the default must stay off until the family's own
 # STP role reads its trees (VLAN 1's tree under PVST, VLAN 1's ports under
 # MST).
-sub stp_trees_default_off : Tests(2) {
+sub stp_trees_default_off : Tests(3) {
     my $test = shift;
 
     $test->{info}->cache(
@@ -160,6 +160,8 @@ sub stp_trees_default_off : Tests(2) {
     );
     cmp_deeply( $test->{info}->stp_trees(), {}, q(No common-tree default) );
     is( $test->{info}->stp_flavors(), undef, q(No flavors reported) );
+    is( $test->{info}->stp_trees_complete(),
+        0, q(Trees may exist unread) );
 }
 
 1;
