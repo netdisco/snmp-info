@@ -144,8 +144,8 @@ sub eigrp_peers : Tests(3) {
     {}, q(No data data returns empty hash));
 }
 
-# A served common-tree shape still reports no trees, since the default tree is
-# not the common tree: VLAN 1's tree under PVST, VLAN 1's ports under MST.
+# A served common-tree shape with no stpxSpanningTreeType reports no trees:
+# the default tree is VLAN 1's under PVST, VLAN 1's ports under MST.
 sub stp_trees_default_off : Tests(3) {
     my $test = shift;
 
