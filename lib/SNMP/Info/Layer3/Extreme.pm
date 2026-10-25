@@ -45,7 +45,7 @@ use SNMP::Info::EDP;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.978000';
+$VERSION = '3.982000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -167,6 +167,8 @@ sub os {
         return 'xos';
     }
 
+    return 'voss' if defined _voss_version($desc);
+
     return 'extremeware';
 }
 
@@ -177,6 +179,18 @@ sub os_ver {
     return unless defined $descr;
 
     if ( $descr =~ m/Version\s+([^ ]+)/i ) {
+        return $1;
+    }
+
+    return _voss_version($descr);
+}
+
+# VOSS / Fabric Engine sysDescr is "<model> (<a.b.c.d>[_build])"
+sub _voss_version {
+    my $descr = shift;
+    return unless defined $descr;
+
+    if ( $descr =~ m/^\S+\s+\((\d+(?:\.\d+){3})/ ) {
         return $1;
     }
 
@@ -377,11 +391,17 @@ sub _if2tag {
 # the VLAN interface.
 sub v_name {
     my $extreme = shift;
-    return $extreme->ex_vlan_descr();
+
+    my $names = $extreme->ex_vlan_descr() || {};
+    return $names if scalar keys %$names;
+    return $extreme->qb_v_name() || {};
 }
 
 sub v_index {
     my $extreme = shift;
+
+    my $names = $extreme->ex_vlan_descr() || {};
+    return $extreme->SUPER::v_index() unless scalar keys %$names;
     return $extreme->ex_vlan_id || $extreme->_if2tag();
 }
 
@@ -631,15 +651,101 @@ sub _extremeware_i_vlan_membership_untagged {
 # VLAN management.
 # See extreme-vlan.mib for a detailed description of
 # Extreme's use of ifStackTable and EXTREME-VLAN-MIB.
+# EXOS no longer has those tables, so it is managed through Q-BRIDGE-MIB.
+
+sub _has_vlan_encaps {
+    my $extreme   = shift;
+    my $encap_tag = $extreme->ex_vlan_encap_tag() || {};
+    return scalar keys %$encap_tag;
+}
 
 sub set_i_vlan {
     my $extreme = shift;
+    return $extreme->_qb_set_i_vlan( 0, @_ )
+        unless $extreme->_has_vlan_encaps();
     return $extreme->_extreme_set_i_vlan( 0, @_ );
 }
 
 sub set_i_pvid {
     my $extreme = shift;
+    return $extreme->_qb_set_i_vlan( 1, @_ )
+        unless $extreme->_has_vlan_encaps();
     return $extreme->_extreme_set_i_vlan( 1, @_ );
+}
+
+sub _qb_bridge_port {
+    my ( $extreme, $ifindex ) = @_;
+    my $bp_index = $extreme->bp_index() || {};
+    my %if_bp    = reverse %$bp_index;
+
+    my $bp = $if_bp{$ifindex};
+    $extreme->error_throw(
+        "ifIndex $ifindex is not a bridge port, so its VLANs cannot be set")
+        unless defined $bp;
+    return $bp;
+}
+
+sub _qb_port_in_list {
+    my ( $extreme, $method, $vlan_id, $bp ) = @_;
+    my $lists = $extreme->$method() || {};
+    my $list  = $lists->{$vlan_id}  || [];
+    return $list->[ $bp - 1 ];
+}
+
+sub _qb_port_is_tagged {
+    my ( $extreme, $vlan_id, $bp ) = @_;
+    return
+        unless $extreme->_qb_port_in_list( 'qb_v_egress', $vlan_id, $bp );
+    return !$extreme->_qb_port_in_list( 'qb_v_untagged', $vlan_id, $bp );
+}
+
+sub _qb_set_egress {
+    my ( $extreme, $vlan_id, $bp, $member ) = @_;
+    my $egress = $extreme->qb_v_egress() || {};
+
+    unless ( defined $egress->{$vlan_id} ) {
+        $extreme->error_throw(
+            "VLAN $vlan_id does not exist in dot1qVlanStaticEgressPorts; create it on the device first"
+        );
+        return;
+    }
+    my $portlist = $extreme->modify_port_list( [ @{ $egress->{$vlan_id} } ],
+        $bp - 1, $member );
+    return $extreme->set_qb_v_egress( $portlist, $vlan_id );
+}
+
+# Writing dot1qPvid moves the port's untagged membership to the new VLAN.
+# A VLAN already tagged on the port would stay tagged, leaving the port
+# with no untagged VLAN, so set_i_vlan removes the tag first.
+sub _qb_set_i_vlan {
+    my ( $extreme, $is_pvid, $vlan_id, $ifindex ) = @_;
+    my $bp = $extreme->_qb_bridge_port($ifindex);
+    return unless defined $bp;
+
+    if ( $extreme->_qb_port_is_tagged( $vlan_id, $bp ) ) {
+        if ($is_pvid) {
+            $extreme->error_throw(
+                "VLAN $vlan_id is tagged on ifIndex $ifindex and cannot also be its PVID; use set_i_vlan to make it the untagged VLAN"
+            );
+            return;
+        }
+        return unless $extreme->_qb_set_egress( $vlan_id, $bp, '0' );
+    }
+    return $extreme->set_qb_i_vlan( $vlan_id, $bp );
+}
+
+sub _qb_set_i_vlan_tagged {
+    my ( $extreme, $member, $vlan_id, $ifindex ) = @_;
+    my $bp = $extreme->_qb_bridge_port($ifindex);
+    return unless defined $bp;
+
+    if ( $extreme->_qb_port_in_list( 'qb_v_untagged', $vlan_id, $bp ) ) {
+        $extreme->error_throw(
+            "VLAN $vlan_id is untagged on ifIndex $ifindex; use set_i_vlan to change the untagged VLAN"
+        );
+        return;
+    }
+    return $extreme->_qb_set_egress( $vlan_id, $bp, $member );
 }
 
 # set_i_vlan implicitly turns off any encapsulation
@@ -721,6 +827,9 @@ sub _extreme_set_i_vlan {
 
 sub set_remove_i_vlan_tagged {
     my $extreme = shift;
+    return $extreme->_qb_set_i_vlan_tagged( '0', @_ )
+        unless $extreme->_has_vlan_encaps();
+
     my ( $vlan_id, $ifindex ) = @_;
     my $encap_tag = $extreme->ex_vlan_encap_tag();
 
@@ -749,6 +858,9 @@ sub set_remove_i_vlan_tagged {
 
 sub set_add_i_vlan_tagged {
     my $extreme = shift;
+    return $extreme->_qb_set_i_vlan_tagged( '1', @_ )
+        unless $extreme->_has_vlan_encaps();
+
     my ( $vlan_id, $ifindex ) = @_;
     my $encap_tag = $extreme->ex_vlan_encap_tag();
 
@@ -866,6 +978,28 @@ sub stp_p_stg_id {
     return $stp_p_stg_id;
 }
 
+# stp_p_state here is extremeStpPortTable, keyed <instance>.<ifIndex>, which
+# matches no bp_index key, so read BRIDGE-MIB directly.
+sub i_stp_state {
+    my $extreme = shift;
+    my $partial = shift;
+
+    my $bp_index    = $extreme->bp_index($partial);
+    my $stp_p_state = $extreme->dot1dStpPortState($partial);
+
+    my %i_stp_state;
+
+    foreach my $index ( keys %$stp_p_state ) {
+        my $state = $stp_p_state->{$index};
+        my $iid   = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $state;
+        $i_stp_state{$iid} = $state;
+    }
+
+    return \%i_stp_state;
+}
+
 1;
 
 __END__
@@ -949,7 +1083,8 @@ Returns C<extreme>
 
 =item $extreme->os()
 
-Returns C<xos> or C<extremeware> depending on description()
+Returns C<xos>, C<voss> (VOSS / Fabric Engine) or C<extremeware>
+depending on description()
 
 =item $extreme->os_ver()
 
@@ -1054,6 +1189,16 @@ Ignores VLAN meta interfaces and loopback
 Returns the mapping to the SNMP Interface Table. Extreme LLDP uses the
 bridge index rather than ifIndex.
 
+=item $extreme->i_stp_state()
+
+Returns reference to hash.  Key: C<ifIndex>, Value: the port state in the
+device's default spanning tree, from C<dot1dStpPortState> mapped through
+C<bp_index>.  Returns an empty hash when the device serves no
+C<BRIDGE-MIB> STP port table; the vendor C<extremeStpPortTable> is not
+used, since it is keyed by STP domain.
+
+(C<dot1dStpPortState>)
+
 =item $extreme->i_vlan()
 
 Returns a mapping between C<ifIndex> and the VLAN.
@@ -1081,11 +1226,13 @@ the port.
 
 =item $extreme->v_index()
 
-Returns VLAN IDs
+Returns VLAN IDs from C<extremeVlanIfTable>, or from C<Q-BRIDGE-MIB> when
+that table is empty.
 
 =item $extreme->v_name()
 
-Returns VLAN names
+Returns VLAN names from C<extremeVlanIfDescr>, or C<dot1qVlanStaticName>
+when C<extremeVlanIfTable> is empty.
 
 (C<extremeVlanIfDescr>)
 
@@ -1222,13 +1369,19 @@ or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
 operations.
 
+ExtremeWare is configured through C<ifStackTable> and
+C<extremeVlanEncapsIfTable>. ExtremeXOS has neither table, so when
+C<extremeVlanEncapsIfTable> is empty these methods use C<dot1qPvid> and
+C<dot1qVlanStaticEgressPorts> from C<Q-BRIDGE-MIB> instead.
+
 =over
 
 =item $extreme->set_i_vlan ( vlan, ifIndex )
 
 Changes an access (untagged) port VLAN, must be supplied with the numeric
 VLAN ID and port C<ifIndex>.  This method should only be used on end station
-(non-trunk) ports.
+(non-trunk) ports.  Through C<Q-BRIDGE-MIB>, a VLAN already tagged on the
+port is removed from its egress list first.
 
   Example:
   my %if_map = reverse %{$extreme->interfaces()};
@@ -1238,7 +1391,8 @@ VLAN ID and port C<ifIndex>.  This method should only be used on end station
 =item $extreme->set_i_pvid ( pvid, ifIndex )
 
 Sets port default VLAN, must be supplied with the numeric VLAN ID and
-port C<ifIndex>.  This method should only be used on trunk ports.
+port C<ifIndex>.  This method should only be used on trunk ports.  Through
+C<Q-BRIDGE-MIB>, a VLAN tagged on the port is refused; use C<set_i_vlan>.
 
   Example:
   my %if_map = reverse %{$extreme->interfaces()};

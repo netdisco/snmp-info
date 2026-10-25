@@ -44,7 +44,7 @@ use SNMP::Info::IEEE802dot3ad;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.978000';
+$VERSION = '3.982000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -209,6 +209,26 @@ sub mac {
     my $huawei  = shift;
 
     return $huawei->b_mac();
+}
+
+sub serial {
+    my $huawei = shift;
+
+    my $serial = $huawei->SUPER::serial();
+    return $serial if defined $serial and $serial !~ /^\s*$/;
+
+    my $e_class  = $huawei->e_class()  || {};
+    my $e_serial = $huawei->e_serial() || {};
+
+    # Some models (AC6605) leave the chassis serial empty and report it
+    # on the main board, which has the lowest module index.
+    foreach my $iid ( sort { $a <=> $b } keys %$e_class ) {
+        next unless $e_class->{$iid} eq 'module';
+        my $board_serial = $e_serial->{$iid};
+        return $board_serial
+            if defined $board_serial and $board_serial !~ /^\s*$/;
+    }
+    return;
 }
 
 sub i_ignore {
@@ -639,6 +659,14 @@ extracted from C<sysDescr>.
 Base MAC of the device.
 
 (C<dot1dBaseBridgeAddress>)
+
+=item $huawei->serial()
+
+Returns the serial number derived from the C<ENTITY-MIB> chassis entry.
+When the chassis serial is empty, returns the serial of the lowest
+numbered module, the main board on models such as the AC6605.
+
+(C<entPhysicalSerialNum>)
 
 =item $huawei->fan()
 

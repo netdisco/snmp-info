@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.978000';
+$VERSION = '3.982000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -912,7 +912,7 @@ sub e_class {
 	if ( $iid eq 0 ) {
 	    $e_class{$iid} = 'chassis';
 	}
-	elsif ( $iid =~ /\d+/ ) {
+	elsif ( $iid =~ /^\d+$/ ) {
 	    $e_class{$iid} = 'module';
 	}
 

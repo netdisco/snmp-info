@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.978000';
+$VERSION = '3.982000';
 
 %MIBS = (
     %SNMP::Info::MIBS,
@@ -116,6 +116,8 @@ $VERSION = '3.978000';
     'airespace_sta_ssid'    => 'bsnMobileStationSsid',
     'airespace_sta_delete'  => 'bsnMobileStationDeleteAction',
     'airespace_sta_ip'      => 'bsnMobileStationIpAddress',
+    'airespace_sta_vlan'    => 'bsnMobileStationVlanId',
+    'airespace_sta_if'      => 'bsnMobileStationInterface',
 
     # AIRESPACE-WIRELESS-MIB::bsnUsersTable
     'airespace_user_name'    => 'bsnUserName',
@@ -602,6 +604,64 @@ sub fw_port {
     }
 
     return \%fw_port;
+}
+
+# Wireless controllers have no Q-BRIDGE-MIB forwarding table, but the mobile
+# station table says which VLAN each client was placed on. Keyed by the same
+# index as fw_mac() and fw_port() so Netdisco macsuck can pair them up.
+sub qb_fw_vlan {
+    my $airespace = shift;
+    my $partial   = shift;
+
+    my $sta_vlan = $airespace->airespace_sta_vlan($partial) || {};
+
+    my %qb_fw_vlan;
+    foreach my $iid ( keys %$sta_vlan ) {
+        my $vlan = $sta_vlan->{$iid};
+
+        # 0 means "no VLAN known"; leave it out so callers fall back to 0
+        next unless defined $vlan and $vlan =~ /^\d+$/ and $vlan > 0;
+
+        $qb_fw_vlan{$iid} = $vlan;
+    }
+
+    return \%qb_fw_vlan;
+}
+
+# A wireless controller has no VLAN table to walk, yet the mobile station
+# table names the interface of every client next to its VLAN ID. That is the
+# only place the controller says which name goes with which VLAN.
+sub airespace_vlan_names {
+    my $airespace = shift;
+
+    my $sta_vlan = $airespace->airespace_sta_vlan() || {};
+    my $sta_if   = $airespace->airespace_sta_if()   || {};
+
+    # how many clients report each name on each VLAN
+    my %seen;
+    foreach my $iid ( keys %$sta_vlan ) {
+        my $vlan = $sta_vlan->{$iid};
+        next unless defined $vlan and $vlan =~ /^\d+$/ and $vlan > 0;
+
+        my $name = $sta_if->{$iid};
+        next unless defined $name;
+        $name =~ s/^\s+|\s+$//g;
+        next unless length $name;
+
+        ++$seen{$vlan}{$name};
+    }
+
+    # clients on one VLAN can report different names: the most common wins,
+    # and ties go alphabetically so every walk gives the same answer
+    my %vlan_names;
+    foreach my $vlan ( keys %seen ) {
+        my $count = $seen{$vlan};
+        my ($best) = sort { $count->{$b} <=> $count->{$a} or $a cmp $b }
+            keys %$count;
+        $vlan_names{$vlan} = $best;
+    }
+
+    return \%vlan_names;
 }
 
 sub i_ssidlist {
@@ -1500,6 +1560,18 @@ Action to Deauthenticate the Mobile Station. Set the State to delete.
 
 (C<bsnMobileStationDeleteAction>)
 
+=item $airespace->airespace_sta_vlan()
+
+Vlan ID of the Interface to which the Mobile Station is associated.
+
+(C<bsnMobileStationVlanId>)
+
+=item $airespace->airespace_sta_if()
+
+Name of the Interface of the Mobile Station to the switch.
+
+(C<bsnMobileStationInterface>)
+
 =back
 
 =head2 Users Table (C<bsnUsersTable>)
@@ -1756,6 +1828,20 @@ airespace_sta_slot() combined to match the interface iid.
 =item $airespace->fw_mac()
 
 (C<bsnMobileStationMacAddress>)
+
+=item $airespace->qb_fw_vlan()
+
+Simulates the Q-BRIDGE-MIB forwarding table VLAN by returning a reference to a
+hash, keyed like fw_mac(), with the value being airespace_sta_vlan(). Clients
+reported with VLAN 0 are omitted.
+
+=item $airespace->airespace_vlan_names()
+
+Returns reference to a hash mapping each VLAN ID reported by
+airespace_sta_vlan() to the interface name that clients on it report in
+airespace_sta_if(). When clients on one VLAN report different names the most
+common one is used, and a tie goes to the name that sorts first. VLAN 0 and
+clients without a name are left out.
 
 =back
 

@@ -150,15 +150,27 @@ sub i_duplex : Tests(4) {
     {}, q(No duplex data returns empty hash));
 }
 
-sub i_duplex_admin : Tests(4) {
+sub i_duplex_admin : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'i_duplex_admin');
 
-  my $expected = {2 => 'auto', 3 => 'half', 4 => 'full', 26 => 'auto'};
+  cmp_deeply(
+    $test->{info}->i_duplex_admin(),
+    {1 => 'auto', 2 => 'auto', 3 => 'half', 4 => 'full'},
+    q(MAU-MIB admin settings are used when present)
+  );
 
-  cmp_deeply($test->{info}->i_duplex_admin(),
-    $expected, q(Interfaces have expected duplex admin values using etherlike));
+  foreach my $mau (qw(mau_index mau_autostat mau_type_admin)) {
+    delete $test->{info}{"_$mau"};
+    delete $test->{info}{store}{$mau};
+  }
+
+  # A connected port reports its negotiated duplex in portDuplex
+  $test->{info}{store}{p_duplex}{'0.1'} = 'full';
+  my $expected = {2 => 'auto', 3 => 'half', 4 => 'full', 26 => 'auto'};
+  cmp_deeply($test->{info}->i_duplex_admin(), $expected,
+    q(Without MAU-MIB, ports with auto speed report auto duplex));
 
   delete $test->{info}{_el_duplex};
   delete $test->{info}{store}{el_duplex};

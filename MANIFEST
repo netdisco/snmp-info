@@ -1,3 +1,4 @@
+.perlcriticrc
 .perltidyrc
 Build.PL
 Changes
@@ -7,7 +8,6 @@ contrib/util/make_dev_matrix.pl
 contrib/util/make_snmpdata.pl
 contrib/util/push_ver
 contrib/util/run_test
-contrib/util/test_aruba_instant.pl
 contrib/util/test_class.pl
 contrib/util/test_class_mocked.pl
 lib/SNMP/Info.pm
@@ -73,6 +73,7 @@ lib/SNMP/Info/Layer2/Netgear.pm
 lib/SNMP/Info/Layer2/Nexans.pm
 lib/SNMP/Info/Layer2/NWSS2300.pm
 lib/SNMP/Info/Layer2/Orinoco.pm
+lib/SNMP/Info/Layer2/RuckusAP.pm
 lib/SNMP/Info/Layer2/Sixnet.pm
 lib/SNMP/Info/Layer2/TPLink.pm
 lib/SNMP/Info/Layer2/Trapeze.pm
@@ -140,6 +141,7 @@ lib/SNMP/Info/Layer3/Pf.pm
 lib/SNMP/Info/Layer3/Pica8.pm
 lib/SNMP/Info/Layer3/Redlion.pm
 lib/SNMP/Info/Layer3/Scalance.pm
+lib/SNMP/Info/Layer3/Siemens.pm
 lib/SNMP/Info/Layer3/SilverPeak.pm
 lib/SNMP/Info/Layer3/SonicWALL.pm
 lib/SNMP/Info/Layer3/Sophos.pm
@@ -187,9 +189,7 @@ xt/00_local_perlcritic.t
 xt/00_local_pod-coverage.t
 xt/00_local_pod.t
 xt/00_local_prereq.t
-xt/00_local_spelling.t
 xt/00_local_versionsync.t
-xt/10_remote_snmplabs.t
 xt/21_run.t
 xt/fixtures/aruba-instant-8.10.json
 xt/fixtures/aruba-instant-8.4-radios.json
@@ -250,7 +250,9 @@ xt/lib/Test/SNMP/Info/Layer2/Netgear.pm
 xt/lib/Test/SNMP/Info/Layer2/Nexans.pm
 xt/lib/Test/SNMP/Info/Layer2/NWSS2300.pm
 xt/lib/Test/SNMP/Info/Layer2/Orinoco.pm
+xt/lib/Test/SNMP/Info/Layer2/RuckusAP.pm
 xt/lib/Test/SNMP/Info/Layer2/Sixnet.pm
+xt/lib/Test/SNMP/Info/Layer2/TPLink.pm
 xt/lib/Test/SNMP/Info/Layer2/Trapeze.pm
 xt/lib/Test/SNMP/Info/Layer2/Ubiquiti.pm
 xt/lib/Test/SNMP/Info/Layer2/ZyXEL_DSLAM.pm
@@ -271,6 +273,7 @@ xt/lib/Test/SNMP/Info/Layer3/C6500.pm
 xt/lib/Test/SNMP/Info/Layer3/C9800.pm
 xt/lib/Test/SNMP/Info/Layer3/Cambium.pm
 xt/lib/Test/SNMP/Info/Layer3/CheckPoint.pm
+xt/lib/Test/SNMP/Info/Layer3/Ciena.pm
 xt/lib/Test/SNMP/Info/Layer3/Cisco.pm
 xt/lib/Test/SNMP/Info/Layer3/CiscoASA.pm
 xt/lib/Test/SNMP/Info/Layer3/CiscoFWSM.pm
@@ -312,6 +315,7 @@ xt/lib/Test/SNMP/Info/Layer3/Pf.pm
 xt/lib/Test/SNMP/Info/Layer3/Pica8.pm
 xt/lib/Test/SNMP/Info/Layer3/Redlion.pm
 xt/lib/Test/SNMP/Info/Layer3/Scalance.pm
+xt/lib/Test/SNMP/Info/Layer3/Siemens.pm
 xt/lib/Test/SNMP/Info/Layer3/SilverPeak.pm
 xt/lib/Test/SNMP/Info/Layer3/SonicWALL.pm
 xt/lib/Test/SNMP/Info/Layer3/Sophos.pm
@@ -340,3 +344,5 @@ xt/lib/Test/SNMP/Info/NortelStack.pm
 xt/lib/Test/SNMP/Info/PowerEthernet.pm
 xt/lib/Test/SNMP/Info/RapidCity.pm
 xt/lib/Test/SNMP/Info/SONMP.pm
+xt/fixtures/arubacx-cipt.json
+xt/lib/Test/SNMP/Info/Layer3/ArubaCX.pm

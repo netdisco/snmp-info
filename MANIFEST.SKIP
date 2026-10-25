@@ -66,6 +66,12 @@
 .travis
 README.md
 
+# Agent guidance, repository only
+^AGENTS\.md$
+^CLAUDE\.md$
+^CLAUDE\.local\.md$
+^\.claude/
+
 # Avoid Komodo project file
 \.komodoproject$
 

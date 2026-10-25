@@ -45,7 +45,7 @@ use constant {
     IPV6MIB => 3,
 };
 
-$VERSION = '3.978000';
+$VERSION = '3.982000';
 
 
 
@@ -80,6 +80,7 @@ $VERSION = '3.978000';
     #'ip_addr6_pfxlen'   => 'ipAddressPrefixLength',        # IP-MIB
     #'c_addr6_pfxlen'    => 'cIpAddressPfxLength',          # CISCO-IETF-IP-MIB
     'i6_addr_pfxlen'    => 'ipv6AddrPfxLength',             # IPV6-MIB
+    'i6_addr_anycast'   => 'ipv6AddrAnycastFlag',           # IPV6-MIB
 
     'ip_addr6_index'    => 'ipAddressIfIndex',              # IP-MIB
     'c_addr6_index'     => 'cIpAddressIfIndex',             # CISCO-IETF-IP-MIB
@@ -323,7 +324,7 @@ sub ipv6_index {
         ip_addr6_index  => IPMIB,
         c_addr6_index   => CISCO,
     });
-    return unless defined $ipv6_index;
+    return $info->_i6_addr_column('ifindex') unless scalar keys %$ipv6_index;
     foreach my $row (keys %$ipv6_index) {
         my $parsed_address = $info->parse_inetaddress($row);
         next
@@ -345,7 +346,7 @@ sub ipv6_type {
         ip_addr6_type  => IPMIB,
         c_addr6_type   => CISCO,
     });
-    return unless defined $ipv6_type;
+    return $info->_i6_addr_column('type') unless scalar keys %$ipv6_type;
     foreach my $row (keys %$ipv6_type){
         my $parsed_address = $info->parse_inetaddress($row);
         next
@@ -417,7 +418,8 @@ sub ipv6_addr_prefixlength {
         ip_addr6_pfx  => IPMIB,
         c_addr6_pfx   => CISCO,
     });
-    return unless defined $ipv6_addr_prefix;
+    return $info->_i6_addr_column('pfxlen')
+        unless scalar keys %$ipv6_addr_prefix;
     foreach my $row (keys %$ipv6_addr_prefix) {
         if ($row =~ /^(\d+)\.[\d\.]+$/) {
             my $type = $1;
@@ -450,6 +452,45 @@ sub ipv6_addr {
             unless $parsed_address->{type} == 2 || $parsed_address->{type} == 4;
 
         $return->{$row} = $parsed_address->{address};
+    }
+    return $return;
+}
+
+# IPV6-MIB ipv6AddrTable is indexed by ifIndex and a 16 octet address.
+# Rows are re-keyed as InetAddress (type.length.address) so ipv6_addr() can
+# parse them; link-local addresses repeat across interfaces, so they become
+# IPv6z with the ifIndex as zone index. The re-keyed rows match IP-MIB keys,
+# so IPV6-MIB is read only when neither address table has rows; otherwise a
+# missing IP-MIB column would be filled from a different MIB.
+sub _i6_addr_column {
+    my ( $info, $column ) = @_;
+
+    foreach my $index_method (qw/ip_addr6_index c_addr6_index/) {
+        my $index = $info->$index_method() || {};
+        return if scalar keys %$index;
+    }
+
+    my $pfxlens = $info->i6_addr_pfxlen() || {};
+    return unless scalar keys %$pfxlens;
+    my $anycast = $info->i6_addr_anycast() || {};
+    $info::METHOD = IPV6MIB;
+
+    my $return = {};
+    foreach my $row ( keys %$pfxlens ) {
+        my ( $ifindex, @octets ) = split /\./, $row;
+        next unless scalar @octets == 16;
+        my $link_local = $octets[0] == 0xfe && ( $octets[1] & 0xc0 ) == 0x80;
+        my @zone = unpack( 'C4', pack( 'N', $ifindex ) );
+        my $key  = $link_local
+            ? join( '.', 4, 20, @octets, @zone )
+            : join( '.', 2, 16, @octets );
+        my %value_of = (
+            ifindex => $ifindex,
+            pfxlen  => $pfxlens->{$row},
+            type    => ( $anycast->{$row} || '' ) eq 'true'
+                ? 'anycast' : 'unicast',
+        );
+        $return->{$key} = $value_of{$column};
     }
     return $return;
 }
@@ -583,6 +624,12 @@ to a hash.
 =item $info->ipv6_index()
 
 Maps an IPv6 address to an interface C<ifIndex>
+
+When neither F<IP-MIB> nor F<CISCO-IETF-IP-MIB> has addresses,
+C<ipv6_index()>, C<ipv6_type()> and C<ipv6_addr_prefixlength()> read
+F<IPV6-MIB> C<ipv6AddrTable>. Its rows are keyed as C<InetAddress>, with
+link-local addresses as C<InetAddressIPv6z> using the C<ifIndex> as zone
+index.
 
 =item $info->ipv6_type()
 

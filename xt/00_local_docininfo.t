@@ -6,20 +6,19 @@ use strict;
 use File::Find;
 use Test::More;
 
-eval "use File::Slurp";
-plan skip_all => "File::Slurp required for testing version sync"
-    if $@;
+eval { require File::Slurp; File::Slurp->import('read_file'); 1 }
+    or plan skip_all => "File::Slurp required for testing version sync";
 
 plan qw(no_plan);
 
 my %Items;
 # Grab all the =item's from Info.pm
-open (I,"lib/SNMP/Info.pm") or fail("Can't open Info.pm");
-while (<I>) {
+open( my $info_fh, '<', 'lib/SNMP/Info.pm' ) or fail("Can't open Info.pm");
+while (<$info_fh>) {
     next unless /^\s*=item\s*(\S+)/;
     $Items{$1}++;
 }
-close I;
+close $info_fh;
 
 #warn "items : ",join(', ',keys %Items),"\n";
 

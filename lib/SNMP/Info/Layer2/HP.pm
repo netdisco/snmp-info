@@ -50,7 +50,7 @@ use SNMP::Info::Aggregate 'agg_ports_ifstack';
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MODEL_MAP, %MUNGE);
 
-$VERSION = '3.978000';
+$VERSION = '3.982000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -125,6 +125,8 @@ $VERSION = '3.978000';
 # Model map, reverse sorted by common model name (sort -k2 -r)
 # Potential sources for model information: http://www.hp.com/rnd/software/switches.htm or HP-ICF-OID MIB
 %MODEL_MAP = (
+    'Stack2930M' => '2930M Stack',
+    'arubaStack2930M' => '2930M Stack',
     'J8131A' => 'WAP-420-WW',
     'J8130A' => 'WAP-420-NA',
     'J9833A' => 'PS1810-8G',
