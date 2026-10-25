@@ -13,6 +13,7 @@ sub setup : Tests(setup) {
     '_layers' => 3,
     '_description' => 'Ruckus SmartZone Controller',
     '_id' => '.1.3.6.1.4.1.25053.3.1.11',
+    '_ruckus_sz_serial' => 'SYNTHETIC-SZ-SERIAL',
     'store' => {},
   });
 }
@@ -24,6 +25,24 @@ sub vendor : Tests(1) {
 
 sub os : Tests(1) {
   is(shift->{info}->os(), 'ruckus smartzone/scg', 'controller OS family is identified');
+}
+
+sub serial : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+  is($info->serial(), 'SYNTHETIC-SZ-SERIAL',
+    'serial is read from the SmartZone system MIB');
+
+  $info->cache({
+    '_ruckus_sz_serial' => '',
+    '_ruckus_scg_serial' => 'SYNTHETIC-SCG-SERIAL',
+  });
+  is($info->serial(), 'SYNTHETIC-SCG-SERIAL',
+    'serial falls back to the SmartCell Gateway system MIB');
+
+  $info->cache({ '_ruckus_sz_serial' => '', '_ruckus_scg_serial' => '' });
+  is($info->serial(), SNMP::Info::Layer3::serial($info),
+    'empty vendor serials use the inherited serial method');
 }
 
 sub model : Tests(6) {

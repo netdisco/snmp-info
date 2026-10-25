@@ -40,8 +40,17 @@ use SNMP::Info::Layer3;
 our ( $VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE );
 $VERSION = '3.982000';
 
-%MIBS = ( %SNMP::Info::Layer3::MIBS );
-%GLOBALS = ( %SNMP::Info::Layer3::GLOBALS );
+%MIBS = (
+    %SNMP::Info::Layer3::MIBS,
+    'RUCKUS-PRODUCTS-MIB'   => 'ruckusSCG200',
+    'RUCKUS-SZ-SYSTEM-MIB'  => 'ruckusSZSystemStatsSerialNumber',
+    'RUCKUS-SCG-SYSTEM-MIB' => 'ruckusSystemStatsSerialNumber',
+);
+%GLOBALS = (
+    %SNMP::Info::Layer3::GLOBALS,
+    'ruckus_sz_serial'  => 'ruckusSZSystemStatsSerialNumber',
+    'ruckus_scg_serial' => 'ruckusSystemStatsSerialNumber',
+);
 %FUNCS = ( %SNMP::Info::Layer3::FUNCS );
 %MUNGE = ( %SNMP::Info::Layer3::MUNGE );
 
@@ -50,12 +59,21 @@ sub vendor { return 'ruckus'; }
 sub model {
     my $self = shift;
     my $id = $self->id() || '';
-    return 'SCG200' if $id =~ /\.25053\.3\.1\.10\.1(?:\.|$)/;
-    return 'SZ100' if $id =~ /\.25053\.3\.1\.11\.1(?:\.|$)/;
-    return 'SZ50' if $id =~ /\.25053\.3\.1\.11\.2(?:\.|$)/;
-    return 'SCG' if $id =~ /\.25053\.3\.1\.10(?:\.|$)/;
-    return 'SmartZone' if $id =~ /\.25053\.3\.1\.11(?:\.|$)/;
+    my $product = SNMP::translateObj($id) || '';
+    return 'SCG200' if $product eq 'ruckusSCG200';
+    return 'SZ100' if $product eq 'ruckusSZ100';
+    return 'SZ50' if $product eq 'ruckusSZ50';
+    return 'SCG' if $product eq 'ruckusWirelessSmartCellGatewayProducts';
+    return 'SmartZone' if $product eq 'ruckusWirelessSmartZoneProducts';
     return $self->SUPER::model();
+}
+
+sub serial {
+    my $self = shift;
+    my $serial = $self->ruckus_sz_serial();
+    $serial = $self->ruckus_scg_serial() unless defined $serial && $serial =~ /\S/;
+    return $serial if defined $serial && $serial =~ /\S/;
+    return $self->SUPER::serial();
 }
 
 sub os { return 'ruckus smartzone/scg'; }
@@ -104,7 +122,15 @@ some SmartZone-based platforms.
 
 =head2 Required MIBs
 
-No additional MIBs are required. Product identification uses C<sysObjectID>.
+=over
+
+=item F<RUCKUS-PRODUCTS-MIB>
+
+=item F<RUCKUS-SZ-SYSTEM-MIB>
+
+=item F<RUCKUS-SCG-SYSTEM-MIB>
+
+=back
 
 =head2 Inherited MIBs
 
@@ -126,11 +152,25 @@ Returns C<ruckus>.
 
 Returns C<ruckus smartzone/scg>.
 
+=item $controller->ruckus_sz_serial()
+
+Returns the SmartZone serial number (C<ruckusSZSystemStatsSerialNumber>).
+
+=item $controller->ruckus_scg_serial()
+
+Returns the SmartCell Gateway serial number
+(C<ruckusSystemStatsSerialNumber>).
+
 =item $controller->model()
 
 Returns the controller model identified by its product sysObjectID. Known
 models include C<SCG200>, C<SZ100>, and C<SZ50>; generic product branches
 return C<SCG> or C<SmartZone>. Unrecognized IDs use the inherited model.
+
+=item $controller->serial()
+
+Returns the serial number from the SmartZone or SmartCell Gateway system MIB,
+falling back to the inherited serial method.
 
 =back
 
