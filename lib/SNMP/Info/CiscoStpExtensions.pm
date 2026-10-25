@@ -476,6 +476,64 @@ sub stp_vlan_map {
     return \%map;
 }
 
+# In the default context the key must be a tree read there; in a tree's own
+# context the list cannot be read, so rows are labeled from the key alone
+sub _stpx_tree_key_ok {
+    my ( $stpx, $key ) = @_;
+
+    return 1 if length $stpx->_walk_context();
+    my $tree = ( $stpx->stp_trees() || {} )->{$key};
+    unless ($tree) {
+        $stpx->error_throw( "SNMP::Info::CiscoStpExtensions::stp_tree_ports()"
+                . " has no tree '$key'. Pass a key from stp_trees(), read in"
+                . " the default context.\n" );
+        return 0;
+    }
+    return 1 if grep { $_->{kind} eq 'none' } @{ $tree->{contexts} };
+
+    my $names = join( ', ',
+        map { "v2c '" . ( $_->{v2c} // 'none' ) . "', v3 '"
+                . ( $_->{v3} // 'none' ) . "'" } @{ $tree->{contexts} } );
+    $stpx->error_throw( "SNMP::Info::CiscoStpExtensions::stp_tree_ports():"
+            . " tree '$key' is served in its own context ($names): switch to"
+            . " one with update() and call stp_tree_ports('$key') there.\n" );
+    return 0;
+}
+
+sub stp_tree_ports {
+    my $stpx = shift;
+    my $key  = shift;
+
+    my ( $type, $id ) = ( $key // '' ) =~ /^(vlan|cist|msti)\.(\d+)$/;
+    unless ( defined $type ) {
+        my $shown = $key // 'undef';
+        $stpx->error_throw( "SNMP::Info::CiscoStpExtensions::stp_tree_ports()"
+                . " takes a tree key from stp_trees(), of the form vlan.N,"
+                . " cist.0 or msti.N; got '$shown'.\n" );
+        return;
+    }
+    return unless $stpx->_stpx_tree_key_ok($key);
+
+    my $rows = $stpx->_stp_dot1d_port_rows( { type => $type, id => $id } );
+    my $roles    = $stpx->stpx_rstp_port_role() || {};
+    my $bp_index = $stpx->bp_index()            || {};
+    foreach my $idx ( keys %$roles ) {
+        my ( $inst, $port ) = split /\./, $idx;
+        next unless $inst == $id;
+        my $iid = $bp_index->{$port};
+        next unless defined $iid;
+        $rows->{$iid} ||= {
+            tree_type         => $type,
+            tree_id           => $id,
+            state             => undef,
+            designated_bridge => undef,
+            designated_port   => undef,
+        };
+        $rows->{$iid}{role} = $roles->{$idx};
+    }
+    return $rows;
+}
+
 # Default tree is not the common tree: VLAN 1's tree under PVST+, VLAN 1's
 # ports under MST
 sub _stp_default_is_common { return 0; }
@@ -684,6 +742,22 @@ Returns reference to hash mapping each VLAN 1 to 4094 to its tree key under
 MST, from (C<stpxSMSTInstanceVlansMapped1k2k>) and
 (C<stpxSMSTInstanceVlansMapped3k4k>), as served; nothing under PVST+ and
 Rapid-PVST+, where each VLAN is its own tree.
+
+=item $stpx->stp_tree_ports($tree_key)
+
+Returns reference to hash of port records keyed by ifIndex, read in the
+session's current context: states and designated bridge and port from
+BRIDGE-MIB, and C<role> (the served C<stpxRSTPPortRoleValue> label) from
+(C<stpxRSTPPortRoleTable>) where the context serves it.  IOL-L2 serves no
+role in a VLAN context, and PVST+ serves no role anywhere.  Rows are
+labeled from C<$tree_key>, never from the context string.
+
+Call it in the default context for a tree whose C<contexts> include
+C<kind> C<none>, or in one of the tree's own contexts.  In the default
+context it refuses, with C<error()> naming the contexts, a tree that is
+read elsewhere; in another context it cannot check the key against the
+list, and rows read in a context the tree does not list describe another
+tree.
 
 =item $stpx->stpx_pvst_vlan_enable()
 

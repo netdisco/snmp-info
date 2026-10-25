@@ -759,6 +759,30 @@ Max Baker
     print "Port:$port forwarding to $mac\n";
  }
 
+ # Spanning trees: read the list in the default context and keep it, then
+ # read each tree's ports in the contexts that serve it
+ my $trees = $bridge->stp_trees() || {};
+ foreach my $key (sort keys %$trees) {
+    my %ports;
+    foreach my $context (@{ $trees->{$key}{contexts} }) {
+        if ($context->{kind} eq 'none') {
+            $bridge->update(Community => 'public');
+        }
+        elsif (defined $context->{v2c}) {
+            $bridge->update(
+                Community => sprintf($context->{v2c}, 'public'));
+        }
+        else { next }    # SNMPv3: update(Context => $context->{v3})
+        %ports = (%ports, %{ $bridge->stp_tree_ports($key) || {} });
+    }
+    $bridge->update(Community => 'public');
+
+    foreach my $iid (sort keys %ports) {
+        printf "%s %s: %s\n", $key, $interfaces->{$iid},
+            $ports{$iid}{state} // 'no state';
+    }
+ }
+
 =head1 DESCRIPTION
 
 F<BRIDGE-MIB> is used by most Layer 2 devices, and holds information like the

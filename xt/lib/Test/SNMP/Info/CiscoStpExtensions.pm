@@ -352,4 +352,108 @@ sub snmp_context : Tests(2) {
         q(No MST context on IOS) );
 }
 
+# BRIDGE-MIB rows as one context serves them: { <port> => [state, prio, sw] }
+sub _dot1d_rows {
+    my %ports = @_;
+    my %store = (
+        stp_p_id     => { map { $_ => $_ } keys %ports },
+        bp_index     => { map { $_ => $_ } keys %ports },
+        stp_p_state  => { map { $_ => $ports{$_}[0] } keys %ports },
+        stp_p_bridge => {
+            map { $_ => pack( 'H*', $ports{$_}[1] . '0200000000' . $ports{$_}[2] ) }
+                keys %ports
+        },
+        stp_p_port => { map { $_ => pack( 'H*', $ports{$_}[3] ) } keys %ports },
+    );
+    return ( ( map { ( "_$_" => 1 ) } keys %store ), store => \%store );
+}
+
+sub _in_context {
+    my ( $info, $cache, $vlan ) = @_;
+    $info->clear_cache();
+    $info->cache($cache);
+    $info->{args}{Community}     = 'public';
+    $info->session()->{Community} = "public\@$vlan";
+}
+
+sub _port {
+    my ( $type, $id, $state, $role, $bid, $port ) = @_;
+    return {
+        tree_type         => $type,
+        tree_id           => $id,
+        state             => $state,
+        role              => $role,
+        designated_bridge => $bid ? _bid(@$bid) : undef,
+        designated_port   => $port,
+    };
+}
+
+sub stp_tree_ports : Tests(10) {
+    my $test = shift;
+    my $info = $test->{info};
+    my $p4   = { priority => 128, port => 4, raw => '80:04' };
+    my $p3   = { priority => 128, port => 3, raw => '80:03' };
+
+    can_ok( $info, 'stp_tree_ports' );
+
+    my $default = _iol_pvst_cache('rapidPvstPlus');
+    my %rows = _dot1d_rows( 4 => [ 'forwarding', '8001', '0c', '8004' ] );
+    $default->{$_} = $rows{$_} foreach grep { $_ ne 'store' } keys %rows;
+    $default->{store} = { %{ $default->{store} }, %{ $rows{store} } };
+    $info->cache($default);
+    cmp_deeply(
+        $info->stp_tree_ports('vlan.1'),
+        { 4 => _port( 'vlan', 1, 'forwarding', 'designated', [ '8001', '0c' ], $p4 ) },
+        q(Default context: VLAN 1's port with its role)
+    );
+    is( $info->stp_tree_ports('vlan.10'), undef,
+        q(Default context refuses a context tree) );
+    like( $info->error(), qr/vlan\.10.*\@10.*vlan-10/s,
+        q(Error names the tree's contexts) );
+
+    my %ctx10 = _dot1d_rows(
+        2 => [ 'forwarding', '100a', '0a', '8003' ],
+        3 => [ 'blocking',   '800a', '0b', '8003' ],
+    );
+    _in_context( $info, {%ctx10}, 10 );
+    cmp_deeply(
+        $info->stp_tree_ports('vlan.10'),
+        {   2 => _port( 'vlan', 10, 'forwarding', undef, [ '100a', '0a' ], $p3 ),
+            3 => _port( 'vlan', 10, 'blocking',   undef, [ '800a', '0b' ], $p3 ),
+        },
+        q(IOL-L2 VLAN context: states, no role served there)
+    );
+
+    my %ios10 = %ctx10;
+    $ios10{_stpx_rstp_port_role} = 1;
+    $ios10{store} = { %{ $ctx10{store} },
+        stpx_rstp_port_role => { '10.2' => 'root', '10.3' => 'alternate' } };
+    _in_context( $info, \%ios10, 10 );
+    is( $info->stp_tree_ports('vlan.10')->{3}{role}, 'alternate',
+        q(IOSvL2 VLAN context serves the role too) );
+
+    $info->{args}{Community} = $info->session()->{Community} = 'public';
+    $info->clear_cache();
+    my $mst = _iol_mst_cache();
+    %rows = _dot1d_rows( 4 => [ 'forwarding', '8000', '0c', '8004' ] );
+    $mst->{$_} = $rows{$_} foreach grep { $_ ne 'store' } keys %rows;
+    $mst->{store} = { %{ $mst->{store} }, %{ $rows{store} } };
+    $info->cache($mst);
+    cmp_deeply(
+        $info->stp_tree_ports('cist.0'),
+        { 4 => _port( 'cist', 0, 'forwarding', 'designated', [ '8000', '0c' ], $p4 ) },
+        q(CIST: port 4 only; the trunks' roles have no ifIndex here)
+    );
+
+    _in_context( $info, {%ctx10}, 10 );
+    my $msti = $info->stp_tree_ports('msti.1');
+    cmp_deeply( [ map { "$_->{tree_type}.$_->{tree_id}" } values %$msti ],
+        [ 'msti.1', 'msti.1' ], q(Rows read through VLAN 10 are MSTI 1's) );
+
+    is( $info->stp_tree_ports('pvst.10'), undef, q(Bad key refused) );
+    like( $info->error(), qr/vlan\.N.*cist\.0.*msti\.N/s,
+        q(Error names the key forms) );
+    $info->{args}{Community} = $info->session()->{Community} = 'public';
+}
+
 1;
