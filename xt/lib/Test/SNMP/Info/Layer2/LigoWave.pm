@@ -55,9 +55,17 @@ sub setup : Tests(setup) {
     });
 }
 
-sub device_type : Tests(1) {
-    is(shift->{info}->device_type(), 'SNMP::Info::Layer2::LigoWave',
+sub device_type : Tests(2) {
+    my $info = shift->{info};
+    is($info->device_type(), 'SNMP::Info::Layer2::LigoWave',
         'LigoDLB detected by enterprise and description');
+    $info->cache({
+        '_id' => '.1.3.6.1.4.1.32750',
+        '_description' => 'Unrelated device description',
+        '_layers' => 0,
+    });
+    isnt($info->device_type(), 'SNMP::Info::Layer2::LigoWave',
+        'Other devices under the LigoWave enterprise are not classified as DLB');
 }
 
 sub vendor : Tests(1) {
