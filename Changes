@@ -1,3 +1,10 @@
+Version 3.982001
+
+  [ENHANCEMENTS]
+
+  * #635 LigoWave: identify DLB radios and report wireless SSIDs, channels,
+    association counts, bridge-peer, and logical VLAN data
+
 Version 3.982000 (2026-10-24)
 
   [ENHANCEMENTS]
@@ -9,8 +16,6 @@ Version 3.982000 (2026-10-24)
     and software revision (#426)
   * #641 Add AGENTS.md and skills to guide AI coding agents writing and
     reviewing device classes
-  * #635 LigoWave: identify DLB radios and report wireless SSIDs, channels,
-    association counts, bridge-peer, and logical VLAN data
 
   [BUG FIXES]
 
