@@ -2,8 +2,8 @@ Version 3.982001
 
   [ENHANCEMENTS]
 
-  * RuckusAP: map active WLANs, channels, and associated client details to
-    standard wireless methods, including each client's SSID
+  * #643 RuckusAP: map active WLANs, channels, and client details to
+    standard wireless methods, including each client's SSID (#496)
 
 Version 3.982000 (2026-10-24)
 
