@@ -130,19 +130,51 @@ sub os : Tests(1) {
     is($test->{info}->os(), 'rutos', 'OS');
 }
 
-sub model : Tests(1) {
+sub model : Tests(2) {
     my $test = shift;
-    is($test->{info}->model(), 'RUTX1100XXXX', 'Product code');
+    my $info = $test->{info};
+    is($info->model(), 'RUTX1100XXXX', 'Product code');
+    $info->cache({ '_teltonika_model' => '' });
+    is($info->model(), SNMP::Info::Layer3::model($info),
+        'Unknown product falls back to inherited model');
 }
 
-sub os_ver : Tests(1) {
+sub os_ver : Tests(2) {
     my $test = shift;
-    is($test->{info}->os_ver(), 'RUTX_R_00.07.22.3', 'RutOS firmware');
+    my $info = $test->{info};
+    is($info->os_ver(), 'RUTX_R_00.07.22.3', 'RutOS firmware');
+    $info->cache({ '_teltonika_firmware' => '' });
+    is($info->os_ver(), '5.10.0', 'Missing firmware falls back to Net-SNMP');
 }
 
 sub serial : Tests(1) {
     my $test = shift;
     is($test->{info}->serial(), 'SYNTHETIC-SERIAL-001', 'Serial');
+}
+
+sub base_class : Tests(1) {
+    isa_ok(shift->{info}, 'SNMP::Info::Layer3::NetSNMP');
+}
+
+sub i_ignore : Tests(1) {
+    my $info = shift->{info};
+    $info->cache({
+        '_i_index' => 1,
+        '_i_description' => 1,
+        'store' => {
+            'i_index' => { 1 => 1, 2 => 2, 3 => 3 },
+            'i_description' => { 1 => 'lo', 2 => 'lo0', 3 => 'eth0' },
+        },
+    });
+    is_deeply($info->i_ignore(), { 1 => 1, 2 => 1 },
+        'Inherited Net-SNMP behavior ignores loopback interfaces');
+}
+
+sub uptime : Tests(1) {
+    my $info = shift->{info};
+    $info->cache({ '_hrSystemUptime' => 123456 });
+    is($info->uptime(), 123456,
+        'Inherited Net-SNMP behavior uses system uptime');
 }
 
 1;

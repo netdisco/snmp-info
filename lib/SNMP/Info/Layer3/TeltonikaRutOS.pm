@@ -1,6 +1,6 @@
 # SNMP::Info::Layer3::TeltonikaRutOS - SNMP interface to Teltonika RutOS devices
 #
-# Copyright (c) 2026 by The Netdisco Developer Team.
+# Copyright (c) 2026 by SNMP::Info Developers.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -31,9 +31,10 @@ package SNMP::Info::Layer3::TeltonikaRutOS;
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info::Layer3;
+use SNMP::Info::Layer3::NetSNMP;
 
-@SNMP::Info::Layer3::TeltonikaRutOS::ISA = qw/SNMP::Info::Layer3 Exporter/;
+@SNMP::Info::Layer3::TeltonikaRutOS::ISA
+    = qw/SNMP::Info::Layer3::NetSNMP Exporter/;
 @SNMP::Info::Layer3::TeltonikaRutOS::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
@@ -43,23 +44,18 @@ $VERSION = '3.982000';
 # Current RutOS devices share this OID layout across router and gateway lines.
 # Numeric OIDs avoid dependence on optional vendor MIB installation.
 %MIBS = (
-    %SNMP::Info::Layer3::MIBS,
-    'UCD-SNMP-MIB'        => 'versionTag',
-    'NET-SNMP-TC'         => 'netSnmpAliasDomain',
-    'HOST-RESOURCES-MIB'  => 'hrSystem',
+    %SNMP::Info::Layer3::NetSNMP::MIBS,
 );
 
 %GLOBALS = (
-    %SNMP::Info::Layer3::GLOBALS,
-    'snmpd_vers'          => 'versionTag',
-    'hrSystemUptime'      => 'hrSystemUptime',
+    %SNMP::Info::Layer3::NetSNMP::GLOBALS,
     'serial1'             => '.1.3.6.1.4.1.48690.1.1.0',
     'teltonika_model'     => '.1.3.6.1.4.1.48690.1.3.0',
     'teltonika_firmware'  => '.1.3.6.1.4.1.48690.1.6.0',
 );
 
-%FUNCS = (%SNMP::Info::Layer3::FUNCS);
-%MUNGE = (%SNMP::Info::Layer3::MUNGE);
+%FUNCS = (%SNMP::Info::Layer3::NetSNMP::FUNCS);
+%MUNGE = (%SNMP::Info::Layer3::NetSNMP::MUNGE);
 
 sub vendor { return 'teltonika'; }
 
@@ -67,12 +63,23 @@ sub os { return 'rutos'; }
 
 sub model {
     my $dev = shift;
-    return $dev->teltonika_model();
+    my $model = $dev->teltonika_model();
+    return $model if defined $model and $model =~ /\S/;
+    return $dev->SUPER::model();
 }
 
 sub os_ver {
     my $dev = shift;
-    return $dev->teltonika_firmware();
+    my $version = $dev->teltonika_firmware();
+    return $version if defined $version and $version =~ /\S/;
+    return $dev->SUPER::os_ver();
+}
+
+sub serial {
+    my $dev = shift;
+    my $serial = $dev->serial1();
+    return $serial if defined $serial and $serial =~ /\S/;
+    return $dev->SUPER::serial();
 }
 
 1;
@@ -81,6 +88,46 @@ __END__
 =head1 NAME
 
 SNMP::Info::Layer3::TeltonikaRutOS - SNMP interface to Teltonika RutOS devices
+
+=head1 AUTHOR
+
+SNMP::Info Developers
+
+=head1 SYNOPSIS
+
+ use SNMP::Info;
+
+ my $info = SNMP::Info->new(
+     AutoSpecify => 1,
+     DestHost    => 'mydevice',
+     Community   => 'public',
+     Version     => 2,
+ );
+
+=head2 Inherited Classes
+
+=over
+
+=item SNMP::Info::Layer3::NetSNMP
+
+=back
+
+=head2 Required MIBs
+
+=over
+
+=item F<UCD-SNMP-MIB>
+
+=item F<NET-SNMP-TC>
+
+=item F<HOST-RESOURCES-MIB>
+
+=item Inherited MIBs
+
+See L<SNMP::Info::Layer3::NetSNMP/Required MIBs> for its inherited
+requirements.
+
+=back
 
 =head1 DESCRIPTION
 
@@ -93,22 +140,33 @@ reports Net-SNMP as its C<sysObjectID>.
 
 =over
 
-=item vendor()
+=item $info->vendor()
 
 Returns C<'teltonika'>.
 
-=item os()
+=item $info->os()
 
 Returns C<'rutos'>.
 
-=item model()
+=item $info->model()
 
 Returns the Teltonika product code.
 
-=item os_ver()
+=item $info->os_ver()
 
 Returns the RutOS firmware version.
 
+=item $info->serial()
+
+Returns the device serial number, falling back to the inherited Net-SNMP
+behavior when the Teltonika serial object is empty.
+
 =back
+
+=head1 TABLE METHODS
+
+Interface filtering and system uptime are inherited from
+L<SNMP::Info::Layer3::NetSNMP>. Other table methods are inherited from
+L<SNMP::Info::Layer3>.
 
 =cut
