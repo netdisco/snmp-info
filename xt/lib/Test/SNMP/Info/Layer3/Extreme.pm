@@ -546,8 +546,8 @@ sub stp_trees_pvst : Tests(5) {
 
     $test->{info}->cache( _exos_pvst_cache() );
     my $trees = $test->{info}->stp_trees();
-    is( $trees->{'domain.1'}{flavor}, undef,
-        q(s0 under PVST+ shares the device with other domains) );
+    is( $trees->{'domain.1'}{flavor}, 'stp',
+        q(s0 under PVST+: version 0 and 802.1D ports) );
     is( $trees->{'domain.2'}{flavor}, 'pvst', q(pvstp ports make s1 PVST+) );
     is( $trees->{'domain.2'}{vlan},   10,     q(s1 carries its tag) );
     is( $trees->{'domain.3'}{vlan},   20,     q(s2 carries its tag) );

@@ -1090,8 +1090,9 @@ sub stp_trees {
     my $bids  = $extreme->ex_stp_i_mac()  || {};
     my $roots = $extreme->stp_i_root()    || {};
     my $pvst  = $extreme->_ex_stp_pvst_instances();
+    my $version = $extreme->_ex_stp_version() || '';
     my $device_flavor
-        = keys %$names == 1 ? $extreme->_ex_stp_version() : undef;
+        = ( keys %$names == 1 and length $version ) ? $version : undef;
     my $measured = ( $extreme->os() || '' ) eq 'xos' ? 1 : 0;
 
     my %trees;
@@ -1100,7 +1101,9 @@ sub stp_trees {
             type           => 'domain',
             id             => $inst,
             name           => $names->{$inst},
-            flavor         => $pvst->{$inst} ? 'pvst' : $device_flavor,
+            flavor         => $pvst->{$inst} ? 'pvst'
+                : $version eq 'stp' ? 'stp'
+                : $device_flavor,
             measured       => $measured,
             ports_complete => 1,
             context        => { kind => 'none' },
@@ -1553,9 +1556,11 @@ EXOS runs one spanning tree per STP domain, served in the default
 context.  These override L<SNMP::Info::Bridge/"Spanning Tree Trees">;
 records are as described there, with C<type> C<domain>, C<id> the domain
 instance, C<name> the domain name and, under PVST+, C<vlan> the carrier
-VLAN.  A domain's C<flavor> is C<pvst> when its ports run in PVST+ mode,
-or the device's flavor when the device has one domain, and undef
-otherwise: C<dot1dStpVersion> is device-wide.  C<measured> is 1 on EXOS.
+VLAN.  A domain's C<flavor> is C<pvst> when its ports run in PVST+ mode;
+C<stp> when C<dot1dStpVersion> is 0 and they do not, since that version
+leaves only 802.1D; the device's flavor when the device has one domain;
+and undef otherwise, since C<dot1dStpVersion> is device-wide.
+C<measured> is 1 on EXOS.
 VOSS, also handled by this class, serves none of these tables.
 
 =over
