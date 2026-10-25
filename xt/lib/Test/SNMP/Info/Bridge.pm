@@ -192,7 +192,7 @@ sub stp_trees : Tests(3) {
             protocol       => undef,
             measured       => 0,
             ports_complete => 1,
-            context        => { kind => 'none' },
+            contexts       => [ { kind => 'none' } ],
             bridge         => {
                 priority   => 32768,
                 sys_id_ext => 0,

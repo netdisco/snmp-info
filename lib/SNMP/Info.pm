@@ -2964,6 +2964,25 @@ sub cisco_comm_indexing {
     return 0;
 }
 
+=item $info->snmp_context($kind, $id)
+
+Returns how to address SNMP context C<$kind> C<$id> on this platform, as a
+reference to hash, or nothing where the class knows no form for it.  This
+class knows none; a class that does overrides it.
+
+Keys: C<kind> and C<id> as passed; C<v2c>, a C<sprintf> format taking the
+caller's community (C<'%s@10'>), undef where SNMPv2c cannot reach the
+context; C<v3>, the SNMPv3 context name (C<vlan-10>), undef where SNMPv3
+cannot.  A site-configured SNMPv3 context prefix in the caller wins over
+C<v3>.
+
+Kinds: C<vlan> (a VLAN id) and C<mst> (an MST instance).  C<vrf> is
+reserved.
+
+=cut
+
+sub snmp_context { return; }
+
 =back
 
 =head2 GLOBALS (Scalar Methods)

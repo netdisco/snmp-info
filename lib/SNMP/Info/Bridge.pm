@@ -392,7 +392,7 @@ sub stp_trees {
             protocol       => undef,
             measured       => 0,
             ports_complete => $unmapped ? 0 : 1,
-            context        => { kind => 'none' },
+            contexts       => [ { kind => 'none' } ],
             bridge         => scalar $bridge->_stp_own_bridge_id(),
             root           => scalar _stp_decode_bridge_id($root),
         }
@@ -431,6 +431,13 @@ sub stp_tree_ports {
                 . " key from stp_trees(), read in the default context.\n" );
         return;
     }
+    return $bridge->_stp_dot1d_port_rows($tree);
+}
+
+# BRIDGE-MIB port rows in the session's current context, labeled with $tree
+sub _stp_dot1d_port_rows {
+    my $bridge = shift;
+    my $tree   = shift;
 
     my $ports    = $bridge->stp_p_id()     || {};
     my $states   = $bridge->stp_p_state()  || {};
@@ -1101,17 +1108,19 @@ tree under RSTP and the CIST under MSTP, with its protocol unknown.
 Classes that read a vendor's protocol and trees override these methods.
 
 A class that can read which protocol a device runs also defines
-C<hasSTP()>, C<hasRSTP()>, C<hasMSTP()> or C<hasPVST()>, each true when
-the device runs that protocol, read from an object that names the
-protocol and never from a table having rows.  As with C<has_topo()> in L<SNMP::Info>, test C<can()>
-before calling one.
+C<hasSTP()>, C<hasRSTP()>, C<hasMSTP()>, C<hasPVST()> or
+C<hasRapidPVST()>, each true when the device runs that protocol, read
+from an object that names the protocol and never from a table having
+rows.  As with C<has_topo()> in L<SNMP::Info>, test C<can()> before
+calling one.
 
 =over
 
 =item $bridge->stp_protocols()
 
 Returns a reference to an array of the spanning tree protocols the device
-runs, or nothing when no tree was read.  C<dot1d> means a C<BRIDGE-MIB>
+runs, or nothing when no tree was read: C<stp>, C<rstp>, C<mstp>,
+C<pvst> (PVST+), C<rapid-pvst> (Rapid-PVST+) or C<dot1d>.  C<dot1d> means a C<BRIDGE-MIB>
 tree is served but no object says which protocol it is.  Nothing does not
 mean the device runs no spanning tree: check C<stp_trees_complete()>.
 
@@ -1121,8 +1130,10 @@ Returns reference to hash of tree records, keyed by tree key (C<cist.0>).
 Each record holds C<type> and C<id>; C<protocol>, undef where the device
 does not say; C<measured>, true only where the platform's data was
 checked against the device's CLI; C<ports_complete>, false when port rows
-were dropped; C<context>, where to read the tree (C<kind> C<none> means
-the default context); C<bridge>, the device's own bridge ID; and C<root>,
+were dropped; C<contexts>, the contexts that serve the tree, in order, each
+as L<SNMP::Info/"snmp_context"> describes it (C<kind> C<none> means the
+default context); read the tree's ports in any one of them, and union the
+rows where several are listed; C<bridge>, the device's own bridge ID; and C<root>,
 the designated root.  Bridge IDs are hashes of C<priority>,
 C<sys_id_ext>, C<mac> and C<raw>, the served value; the device's own
 C<raw> is built from C<dot1dStpPriority> and C<dot1dBaseBridgeAddress>.

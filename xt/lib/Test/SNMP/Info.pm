@@ -664,6 +664,14 @@ sub cisco_comm_indexing : Tests(2) {
   is($test->{info}->cisco_comm_indexing(), 0, 'Cisco community indexing off');
 }
 
+sub snmp_context : Tests(3) {
+  my $test = shift;
+
+  can_ok $test->{info}, 'snmp_context';
+  is($test->{info}->snmp_context('vlan', 10), undef, 'No VLAN context form');
+  is($test->{info}->snmp_context('mst', 0), undef, 'No MST context form');
+}
+
 sub if_ignore : Tests(2) {
   my $test = shift;
 

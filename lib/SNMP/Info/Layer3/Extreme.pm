@@ -1103,7 +1103,7 @@ sub stp_trees {
                 : $device_protocol,
             measured       => $measured,
             ports_complete => 1,
-            context        => { kind => 'none' },
+            contexts       => [ { kind => 'none' } ],
             bridge => scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
                 $bids->{$inst} ),
             root => scalar SNMP::Info::Bridge::_stp_decode_bridge_id(

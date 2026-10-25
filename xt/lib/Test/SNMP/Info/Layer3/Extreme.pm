@@ -519,7 +519,7 @@ sub stp_trees : Tests(14) {
             protocol       => undef,
             measured       => 1,
             ports_complete => 1,
-            context        => { kind => 'none' },
+            contexts       => [ { kind => 'none' } ],
             bridge         => _exos_bid_rec( '8000', '0c' ),
             root           => _exos_bid_rec( '1000', '0a' ),
         },
