@@ -661,7 +661,9 @@ Returns reference to an array holding the protocol, or nothing.
 =item $h3c->stp_trees()
 
 Returns reference to hash of tree records, or an empty hash when no force
-version is served.
+version is served.  Without the force-version object PVST cannot be told from
+RSTP or MSTP, and C<BRIDGE-MIB> states are wrong under PVST, so no
+C<dot1dStp> tree is reported.
 
 =item $h3c->stp_tree_ports($tree_key)
 
