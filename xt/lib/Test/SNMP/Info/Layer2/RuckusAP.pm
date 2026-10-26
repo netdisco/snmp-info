@@ -36,6 +36,12 @@ sub vendor : Tests(1) {
   is($test->{info}->vendor(), 'ruckus', 'Vendor is ruckus');
 }
 
+sub layers : Tests(1) {
+  my $test = shift;
+  is($test->{info}->layers(), '00000010',
+    'Reports layer 2 when the AP does not implement sysServices');
+}
+
 sub os : Tests(1) {
   my $test = shift;
   is($test->{info}->os(), 'ruckus', 'OS is ruckus');

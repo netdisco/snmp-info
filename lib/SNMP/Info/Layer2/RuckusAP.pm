@@ -79,6 +79,13 @@ $VERSION = '3.982000';
     %SNMP::Info::Layer2::MUNGE,
 );
 
+# Ruckus APs do not implement SNMPv2-MIB::sysServices. They bridge wireless
+# clients onto their WLAN interfaces, so report layer 2 for Netdisco's
+# layer-aware discovery and MAC collection.
+sub layers {
+    return '00000010';
+}
+
 # Ruckus' WLAN table may expose spare/default rows that are not real
 # interfaces. Keep only active rows whose mapped IF-MIB index exists.
 sub _ruckus_active_wlan_rows {

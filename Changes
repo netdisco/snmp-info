@@ -4,6 +4,8 @@ Version 3.982001
 
   * #643 RuckusAP: map active WLANs, channels, and client details to
     standard wireless methods, including each client's SSID (#496)
+  * #644 Agent skills: check a class against a walk before review, and
+    find the skills from Codex as well
 
 Version 3.982000 (2026-10-24)
 

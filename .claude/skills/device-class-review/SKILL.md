@@ -27,7 +27,8 @@ netdisco-mibs release.
 - **Detection.** Every sample routes to the new class, neighboring products
   still reach their own classes, and the change adds no GET for devices
   outside the target branch. Count the GETs a plain device of the same
-  enterprise now receives.
+  enterprise now receives, across repeated `device_type()` calls and with
+  `Offline` set.
   Check the vendor's MIBs for other product lines under the matched
   branch; a whole-enterprise match needs a reason.
 - **Merge order.** For each hash a class merges, the parents appear in
@@ -40,7 +41,13 @@ netdisco-mibs release.
   better uptime source, a serial) needs a reason.
 - **Calling application.** Check each method against what the calling
   application reads (authoring skill, "What the calling application
-  reads"). Data only in vendor-named methods is not stored.
+  reads"). Data only in vendor-named methods is not stored. On a walk,
+  check that the keys join: `i_*` and wireless keys appear in
+  `interfaces()`, every `fw_port` value appears in `bp_index`, and
+  `layers` includes layer 2 where `fw_mac` should be collected.
+- **Test data.** Compare the tests' index shapes and value forms with a
+  walk. A test built from the MIB's `INDEX` passes where an agent that
+  departs from it fails.
 - **Walk integrity.** Before trusting an odd value, check index shapes,
   decoded strings and values the MIB calls impossible. Third-party captures
   can be hand-built. A walk of a TimeFilter table whose index keeps
