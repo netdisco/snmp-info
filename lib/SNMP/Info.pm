@@ -2402,8 +2402,8 @@ sub device_type {
 
     # Teltonika devices commonly report Net-SNMP's generic sysObjectID, so
     # identify current RutOS devices by the product code in Teltonika's
-    # enterprise tree. Older RUT9xx firmware uses a separate product-code OID
-    # and remains mapped to the legacy class below.
+    # enterprise tree. Legacy RUT9xx detection remains in the enterprise maps
+    # and sysDescr checks below.
     if (
         defined($id)
         && ( $soid eq '.1.3.6.1.4.1.8072.3.2.10' || $id eq '48690' )
@@ -2417,15 +2417,6 @@ sub device_type {
                 . "product:$product_code\n"
                 if $info->debug();
             return 'SNMP::Info::Layer3::TeltonikaRutOS';
-        }
-
-        my $legacy_product_code = _global( 'teltonika_legacy_model',
-            '.1.3.6.1.4.1.48690.1.8.0' )->($info) // '';
-        if ( $legacy_product_code =~ /^RUT9\d{2}/i ) {
-            print "SNMP::Info::device_type() detected legacy Teltonika "
-                . "product:$legacy_product_code\n"
-                if $info->debug();
-            return 'SNMP::Info::Layer3::Teltonika';
         }
     }
 

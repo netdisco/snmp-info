@@ -2,6 +2,8 @@ Version 3.982001
 
   [ENHANCEMENTS]
 
+  * #644 Agent skills: check a class against a walk before review, and
+    find the skills from Codex as well
   * #637 Teltonika: detect current RutOS devices by product code, map model,
     serial and firmware across current product families, and retain legacy
     RUT9xx detection

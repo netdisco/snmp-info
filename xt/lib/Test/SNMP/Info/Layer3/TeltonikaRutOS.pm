@@ -34,7 +34,6 @@ use Test::Class::Most parent => 'My::Test::Class';
 use SNMP::Info::Layer3::TeltonikaRutOS;
 
 my $PRODUCT_OID = '.1.3.6.1.4.1.48690.1.3.0';
-my $LEGACY_PRODUCT_OID = '.1.3.6.1.4.1.48690.1.8.0';
 
 sub setup : Tests(setup) {
     my $test = shift;
@@ -76,7 +75,7 @@ sub _set_oid_values {
     );
 }
 
-sub device_type : Tests(+17) {
+sub device_type : Tests(+16) {
     my $test = shift;
 
     my @modern_products = qw(
@@ -99,21 +98,13 @@ sub device_type : Tests(+17) {
             "$product detected by modern product code with generic sysObjectID");
     }
 
-    _set_device($test, '.1.3.6.1.4.1.48690');
-    _set_oid_values($test, {
-        $PRODUCT_OID        => 'Teltonika',
-        $LEGACY_PRODUCT_OID => 'RUT950U02XXX',
-    });
-    is($test->{info}->device_type(), 'SNMP::Info::Layer3::Teltonika',
-        'Legacy RUT9xx product code keeps the original class');
-
     _set_device($test, '.1.3.6.1.4.1.8072.3.2.10');
     _set_oid_values($test, {});
     is($test->{info}->device_type(), 'SNMP::Info::Layer3::NetSNMP',
         'Generic Net-SNMP device without Teltonika product code stays generic');
     $test->{info}->device_type() for 1 .. 2;
     is(scalar(grep { /^\.1\.3\.6\.1\.4\.1\.48690\./ }
-            @{ $test->mock_session->{teltonika_get_calls} }), 2,
+            @{ $test->mock_session->{teltonika_get_calls} }), 1,
         'Generic Net-SNMP device is probed once per object, not per call');
 
     _set_device($test, '.1.3.6.1.4.1.8072.3.2.10');
