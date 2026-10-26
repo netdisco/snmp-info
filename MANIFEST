@@ -87,6 +87,7 @@ lib/SNMP/Info/Layer3/Altiga.pm
 lib/SNMP/Info/Layer3/Arista.pm
 lib/SNMP/Info/Layer3/Aruba.pm
 lib/SNMP/Info/Layer3/ArubaCX.pm
+lib/SNMP/Info/Layer3/ArubaInstant.pm
 lib/SNMP/Info/Layer3/BayRS.pm
 lib/SNMP/Info/Layer3/BlueCoatSG.pm
 lib/SNMP/Info/Layer3/C1300.pm
@@ -190,6 +191,8 @@ xt/00_local_pod.t
 xt/00_local_prereq.t
 xt/00_local_versionsync.t
 xt/21_run.t
+xt/fixtures/aruba-instant-8.10.json
+xt/fixtures/aruba-instant-8.4-radios.json
 xt/lib/My/Test/Class.pm
 xt/lib/Test/SNMP/Info.pm
 xt/lib/Test/SNMP/Info/AdslLine.pm
@@ -260,6 +263,7 @@ xt/lib/Test/SNMP/Info/Layer3/AlteonAD.pm
 xt/lib/Test/SNMP/Info/Layer3/Altiga.pm
 xt/lib/Test/SNMP/Info/Layer3/Arista.pm
 xt/lib/Test/SNMP/Info/Layer3/Aruba.pm
+xt/lib/Test/SNMP/Info/Layer3/ArubaInstant.pm
 xt/lib/Test/SNMP/Info/Layer3/BayRS.pm
 xt/lib/Test/SNMP/Info/Layer3/BlueCoatSG.pm
 xt/lib/Test/SNMP/Info/Layer3/C1300.pm
