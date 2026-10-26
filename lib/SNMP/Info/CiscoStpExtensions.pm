@@ -76,6 +76,7 @@ $VERSION = '3.982000';
 %MUNGE   = (
             %SNMP::Info::Bridge::MUNGE,
            'stpx_mst_config_digest'      => \&SNMP::Info::CiscoStpExtensions::oct2str,
+           'stpx_rstp_port_role'         => \&SNMP::Info::munge_stpx_port_role,
            );
 
 
@@ -524,8 +525,9 @@ sub stp_tree_ports {
     return unless $stpx->_stpx_tree_key_ok($key);
 
     my $rows = $stpx->_stp_dot1d_port_rows( { type => $type, id => $id } );
-    my $roles    = $stpx->stpx_rstp_port_role() || {};
-    my $bp_index = $stpx->bp_index()            || {};
+    my $roles     = $stpx->stpx_rstp_port_role()     || {};
+    my $raw_roles = $stpx->stpx_rstp_port_role_raw() || {};
+    my $bp_index  = $stpx->bp_index()                || {};
     foreach my $idx ( keys %$roles ) {
         my ( $inst, $port ) = split /\./, $idx;
         next unless $inst == $id;
@@ -535,10 +537,13 @@ sub stp_tree_ports {
             tree_type         => $type,
             tree_id           => $id,
             state             => undef,
+            role              => undef,
+            role_raw          => undef,
             designated_bridge => undef,
             designated_port   => undef,
         };
-        $rows->{$iid}{role} = $roles->{$idx};
+        $rows->{$iid}{role}     = $roles->{$idx};
+        $rows->{$iid}{role_raw} = $raw_roles->{$idx};
     }
     return $rows;
 }
@@ -762,7 +767,9 @@ Rapid-PVST+, where each VLAN is its own tree.
 
 Returns reference to hash of port records keyed by ifIndex, read in the
 session's current context: states and designated bridge and port from
-BRIDGE-MIB, and C<role> (the served C<stpxRSTPPortRoleValue> label) from
+BRIDGE-MIB, and C<role> (C<stpxRSTPPortRoleValue> normalized by
+C<munge_stpx_port_role()>, undef for a label it does not know) and
+C<role_raw> (as served) from
 (C<stpxRSTPPortRoleTable>) where the context serves it.  IOL-L2 serves no
 role in a VLAN context, and PVST+ serves no role anywhere.  Rows are
 labeled from C<$tree_key>, never from the context string.

@@ -454,6 +454,7 @@ sub _stp_dot1d_port_rows {
             tree_id           => $tree->{id},
             state             => $states->{$index},
             role              => undef,
+            role_raw          => undef,
             designated_bridge =>
                 scalar _stp_decode_bridge_id( $d_bridge->{$index} ),
             designated_port =>
@@ -1181,8 +1182,10 @@ none.  This class serves none: one C<BRIDGE-MIB> tree carries every VLAN.
 
 Returns reference to hash of port records for the tree C<$tree_key>,
 keyed by interface index (iid), read in the session's current context.
-Each record holds C<tree_type> and C<tree_id>, C<state>, C<role> (undef
-where not served), C<designated_bridge> (a bridge ID as above) and
+Each record holds C<tree_type> and C<tree_id>, C<state>, C<role> (one of C<disabled>, C<root>,
+C<designated>, C<alternate>, C<backup>, C<boundary> or C<master>, undef where
+not served or not known), C<role_raw> (the role as served, undef where not
+served), C<designated_bridge> (a bridge ID as above) and
 C<designated_port> (a hash of C<priority>, C<port> and C<raw>).  A port
 whose designated bridge is another bridge connects to that bridge's
 designated port.

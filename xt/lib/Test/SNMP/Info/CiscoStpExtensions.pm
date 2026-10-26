@@ -404,18 +404,19 @@ sub _in_context {
 }
 
 sub _port {
-    my ( $type, $id, $state, $role, $bid, $port ) = @_;
+    my ( $type, $id, $state, $role, $bid, $port, $role_raw ) = @_;
     return {
         tree_type         => $type,
         tree_id           => $id,
         state             => $state,
         role              => $role,
+        role_raw          => $role_raw // $role,
         designated_bridge => $bid ? _bid(@$bid) : undef,
         designated_port   => $port,
     };
 }
 
-sub stp_tree_ports : Tests(10) {
+sub stp_tree_ports : Tests(14) {
     my $test = shift;
     my $info = $test->{info};
     my $p4   = { priority => 128, port => 4, raw => '80:04' };
@@ -458,6 +459,23 @@ sub stp_tree_ports : Tests(10) {
     _in_context( $info, \%ios10, 10 );
     is( $info->stp_tree_ports('vlan.10')->{3}{role}, 'alternate',
         q(IOSvL2 VLAN context serves the role too) );
+    is( $info->stp_tree_ports('vlan.10')->{3}{role_raw}, 'alternate',
+        q(The served role is kept as role_raw) );
+
+    $ios10{store}{stpx_rstp_port_role}{'10.2'} = 'backUp';
+    $ios10{store}{stpx_rstp_port_role}{'10.3'} = 'bogus';
+    _in_context( $info, \%ios10, 10 );
+    my $odd = $info->stp_tree_ports('vlan.10');
+    cmp_deeply(
+        [ @{ $odd->{2} }{qw/role role_raw/} ],
+        [ 'backup', 'backUp' ],
+        q(backUp is normalized to backup, served value kept)
+    );
+    cmp_deeply(
+        [ @{ $odd->{3} }{qw/role role_raw/} ],
+        [ undef, 'bogus' ],
+        q(Unknown label gives undef role, served value kept)
+    );
 
     $info->{args}{Community} = $info->session()->{Community} = 'public';
     $info->clear_cache();

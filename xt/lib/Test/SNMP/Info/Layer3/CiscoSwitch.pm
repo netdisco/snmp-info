@@ -53,7 +53,7 @@ sub cisco_comm_indexing : Tests(3) {
     'FDB in VLAN contexts');
 }
 
-sub stp_trees : Tests(5) {
+sub stp_trees : Tests(6) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -67,6 +67,14 @@ sub stp_trees : Tests(5) {
   cmp_deeply($info->stp_trees()->{'vlan.10'}{contexts},
     [{kind => 'vlan', id => 10, v2c => '%s@10', v3 => 'vlan-10'}],
     'The mixin names the VLAN context through the device class');
+
+  $cache->{_bp_index} = 1;
+  $cache->{store}{bp_index} = {4 => 4};
+  $cache->{store}{stpx_rstp_port_role}{'1.4'} = 'backUp';
+  $info->cache($cache);
+  my $backup = $info->stp_tree_ports('vlan.1')->{4};
+  cmp_deeply([@{$backup}{qw/role role_raw/}], ['backup', 'backUp'],
+    'The merged munge normalizes backUp, the raw value is kept');
 
   $info->clear_cache();
   $cache->{_description} = 'Cisco Systems WS-C5505 Cisco Catalyst Operating'

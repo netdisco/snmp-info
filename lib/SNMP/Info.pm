@@ -4741,6 +4741,85 @@ sub munge_prio_mac {
     return;
 }
 
+=item munge_stpx_port_role()
+
+Changes the served C<stpxRSTPPortRoleValue> of CISCO-STP-EXTENSIONS-MIB to the
+shared port role vocabulary: C<disabled>, C<root>, C<designated>,
+C<alternate>, C<backup>, C<boundary> or C<master>.  Accepts the label or the
+number, C<disabled(1)> to C<master(7)>.  The label C<backUp> becomes
+C<backup>.  Returns undef for anything else.  The served value is returned by
+the same method with a C<_raw> suffix.
+
+=cut
+
+my %STPX_PORT_ROLE = (
+    1 => 'disabled', 2 => 'root',     3 => 'designated', 4 => 'alternate',
+    5 => 'backup',   6 => 'boundary', 7 => 'master',
+);
+
+sub munge_stpx_port_role {
+    return _munge_port_role( shift, \%STPX_PORT_ROLE );
+}
+
+=item munge_dot1s_port_role()
+
+Changes the served 802.1s port role of JUNIPER-MIMSTP-MIB and
+NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB to the shared port role vocabulary
+(see C<munge_stpx_port_role()>).  Accepts the label or the number:
+
+    0 disabled    1 alternate    2 backup
+    3 root        4 designated   5 master
+
+Returns undef for anything else.  The served value is returned by the same
+method with a C<_raw> suffix.
+
+=cut
+
+my %DOT1S_PORT_ROLE = (
+    0 => 'disabled', 1 => 'alternate',  2 => 'backup',
+    3 => 'root',     4 => 'designated', 5 => 'master',
+);
+
+sub munge_dot1s_port_role {
+    return _munge_port_role( shift, \%DOT1S_PORT_ROLE );
+}
+
+=item munge_dot1w_port_role()
+
+Changes the served port role of NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB to
+the shared port role vocabulary (see C<munge_stpx_port_role()>).  Accepts the
+label or the number, and drops the C<Port> suffix of the label:
+
+    0 disabledPort    1 alternatePort   2 backupPort
+    3 rootPort        4 designatedPort
+
+Returns undef for anything else.  The served value is returned by the same
+method with a C<_raw> suffix.
+
+=cut
+
+my %DOT1W_PORT_ROLE = (
+    0 => 'disabled', 1 => 'alternate',  2 => 'backup',
+    3 => 'root',     4 => 'designated',
+);
+
+sub munge_dot1w_port_role {
+    my $served = shift;
+    $served =~ s/Port\z// if defined $served;
+    return _munge_port_role( $served, \%DOT1W_PORT_ROLE );
+}
+
+# A label is only valid if it is a value of the table; backUp is the one label
+# whose spelling differs from the shared vocabulary
+sub _munge_port_role {
+    my ( $served, $by_number ) = @_;
+    return unless defined $served;
+    return $by_number->{$served} if exists $by_number->{$served};
+    return 'backup' if $served eq 'backUp';
+    my %valid = map { $_ => 1 } values %$by_number;
+    return $valid{$served} ? $served : undef;
+}
+
 =item munge_prio_port()
 
 Takes an 2-byte octet stream (HEX-STRING) and returns a colon separated ASCII

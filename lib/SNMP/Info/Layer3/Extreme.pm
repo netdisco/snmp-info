@@ -1144,6 +1144,7 @@ sub stp_tree_ports {
             tree_id           => $tree->{id},
             state             => $states->{$idx},
             role              => undef,
+            role_raw          => undef,
             designated_bridge =>
                 scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
                 $d_bridge->{$idx} ),
@@ -1576,7 +1577,7 @@ C<domain.E<lt>instanceE<gt>>.
 =item $extreme->stp_tree_ports($tree_key)
 
 Returns reference to hash of the domain's port records keyed by ifIndex,
-from (C<extremeStpPortTable>).  C<role> is undef: the MIB serves none.
+from (C<extremeStpPortTable>).  C<role> and C<role_raw> are undef: the MIB serves none.
 
 =item $extreme->stp_trees_complete()
 

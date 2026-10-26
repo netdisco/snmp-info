@@ -278,6 +278,7 @@ sub stp_tree_ports : Tests(2) {
             tree_id           => 0,
             state             => 'forwarding',
             role              => undef,
+            role_raw          => undef,
             designated_bridge => {
                 priority   => 4096,
                 sys_id_ext => 0,
@@ -291,6 +292,7 @@ sub stp_tree_ports : Tests(2) {
             tree_id           => 0,
             state             => 'blocking',
             role              => undef,
+            role_raw          => undef,
             designated_bridge => {
                 priority   => 8192,
                 sys_id_ext => 0,

@@ -998,6 +998,62 @@ sub munge_prio_mac : Tests(4) {
     undef, 'Too short of an octet string returns undef');
 }
 
+sub munge_stpx_port_role : Tests(8) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_stpx_port_role');
+
+  my %by_label = (
+    disabled => 'disabled', root => 'root', designated => 'designated',
+    alternate => 'alternate', backUp => 'backup', boundary => 'boundary',
+    master => 'master',
+  );
+  my @numbers = qw/disabled root designated alternate backup boundary master/;
+  is_deeply({map { $_ => SNMP::Info::munge_stpx_port_role($_) } keys %by_label},
+    \%by_label, 'Every label maps to the shared vocabulary');
+  is_deeply([map { SNMP::Info::munge_stpx_port_role($_) } 1 .. 7],
+    \@numbers, 'Every number maps to the shared vocabulary');
+  is(SNMP::Info::munge_stpx_port_role('backUp'), 'backup',
+    'backUp label gives backup');
+  is(SNMP::Info::munge_stpx_port_role(5), 'backup', 'Number 5 gives backup');
+  is(SNMP::Info::munge_stpx_port_role('bogus'), undef,
+    'Unknown label gives undef');
+  is(SNMP::Info::munge_stpx_port_role(undef), undef, 'Undef gives undef');
+  is(SNMP::Info::munge_stpx_port_role(8), undef, 'Unknown number gives undef');
+}
+
+sub munge_dot1s_port_role : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_dot1s_port_role');
+
+  my @labels = qw/disabled alternate backup root designated master/;
+  is_deeply([map { SNMP::Info::munge_dot1s_port_role($_) } @labels],
+    \@labels, 'Every label maps to itself');
+  is_deeply([map { SNMP::Info::munge_dot1s_port_role($_) } 0 .. 5],
+    \@labels, 'Every number maps to its label');
+  is(SNMP::Info::munge_dot1s_port_role('bogus'), undef,
+    'Unknown label gives undef');
+  is(SNMP::Info::munge_dot1s_port_role(undef), undef, 'Undef gives undef');
+  is(SNMP::Info::munge_dot1s_port_role(6), undef, 'Unknown number gives undef');
+}
+
+sub munge_dot1w_port_role : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_dot1w_port_role');
+
+  my @labels = qw/disabled alternate backup root designated/;
+  is_deeply([map { SNMP::Info::munge_dot1w_port_role($_ . 'Port') } @labels],
+    \@labels, 'Every label loses the Port suffix');
+  is_deeply([map { SNMP::Info::munge_dot1w_port_role($_) } 0 .. 4],
+    \@labels, 'Every number maps to its label');
+  is(SNMP::Info::munge_dot1w_port_role('bogusPort'), undef,
+    'Unknown label gives undef');
+  is(SNMP::Info::munge_dot1w_port_role(undef), undef, 'Undef gives undef');
+  is(SNMP::Info::munge_dot1w_port_role(5), undef, 'Unknown number gives undef');
+}
+
 sub munge_prio_port : Tests(4) {
   my $test = shift;
 

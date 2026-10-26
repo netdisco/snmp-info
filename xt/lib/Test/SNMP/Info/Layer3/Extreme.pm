@@ -576,6 +576,7 @@ sub stp_tree_ports : Tests(4) {
             tree_id           => 2,
             state             => $state,
             role              => undef,
+            role_raw          => undef,
             designated_bridge => _exos_bid_rec( $prio, $sw ),
             designated_port   => { priority => 128, port => 2, raw => '80:02' },
         };
