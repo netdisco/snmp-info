@@ -812,6 +812,11 @@ Subclass for Aruba wireless switches.
 
 See documentation in L<SNMP::Info::Layer3::Aruba> for details.
 
+=item SNMP::Info::Layer3::ArubaInstant
+
+SNMP Interface to Aruba Instant 8.x access points.
+See L<SNMP::Info::Layer3::ArubaInstant> for details.
+
 =item SNMP::Info::Layer3::ArubaCX
 
 SNMP Interface to L3 Devices running ArubaOS-CX
@@ -1184,6 +1189,12 @@ See documentation in L<SNMP::Info::Layer3::SteelheadEx> for details.
 Subclass for Generic Sun Routers running SunOS.
 
 See documentation in L<SNMP::Info::Layer3::Sun> for details.
+
+=item SNMP::Info::Layer3::Tachyon
+
+Subclass for Tachyon TNA-series devices.
+
+See documentation in L<SNMP::Info::Layer3::Tachyon> for details.
 
 =item SNMP::Info::Layer3::Tasman
 
@@ -2400,6 +2411,11 @@ sub device_type {
     return 'SNMP::Info::Layer2::RuckusAP'
         if $desc =~ /^Ruckus Wireless [A-Z]\d{3}/;
 
+    # Tachyon TNA radios register under 57344.1 and may not implement
+    # sysServices; the TNS switches under 57344.2 keep the generic classes.
+    return 'SNMP::Info::Layer3::Tachyon'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.57344\.1(?:\.|$)/;
+
     # Teltonika devices commonly report Net-SNMP's generic sysObjectID, so
     # identify current RutOS devices by the product code in Teltonika's
     # enterprise tree. Legacy RUT9xx detection remains in the enterprise maps
@@ -2851,6 +2867,12 @@ sub device_type {
             }
         }
     }
+
+    # Instant APs use AI-AP-MIB, not the mobility controller WLAN tables.
+    # Restrict this initial support to the 8.x evidence in issue #536.
+    $objtype = 'SNMP::Info::Layer3::ArubaInstant'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.14823\.1\.2\.\d+$/
+        && $desc =~ /(?:ArubaOS|AOS-8).*Version\s+8\./;
 
     return $objtype;
 }
@@ -6538,6 +6560,16 @@ sub AUTOLOAD {
     }
 
     return unless my $meth_ref = $self->can($sub_name, @_);
+
+    # can() returns a bodyless stub like any other sub, and calling one
+    # lands back here, so this would otherwise recurse until memory runs out
+    croak(    "$AUTOLOAD is declared but has no body, so the inherited or "
+            . "generated $sub_name method cannot be reached. A reference "
+            . "such as \\&$AUTOLOAD, or a forward declaration "
+            . "'sub $sub_name;', declares the stub. Define the sub, or test "
+            . "whether it exists with defined(&$AUTOLOAD), which declares "
+            . "nothing" )
+        unless defined &$meth_ref;
     return $self->$meth_ref(@_);
 
 }
