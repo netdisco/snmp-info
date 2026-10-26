@@ -96,7 +96,12 @@ sub _stp_cache {
                 1    => 1, 10   => 2,  20 => 3,
                 4048 => 1, 4051 => 63, 4052 => 63,
             },
-            rc_stp_p_enable => { '192.1' => 'true', '193.2' => 'false' },
+            rc_stp_p_enable => { '192.1' => 'false', '193.2' => 'false' },
+            nn_cist_p_enable => { 192 => 'enabled', 193 => 'disabled' },
+            nn_msti_p_enable => {
+                '192.1' => 'enabled', '193.1' => 'disabled',
+                '193.2' => 'enabled',
+            },
             nn_cist_p_state =>
                 { 192 => 'discarding', 193 => 'forwarding' },
             nn_cist_p_role   => { 192 => 1, 193 => 3 },
@@ -308,7 +313,7 @@ sub stp_trees : Tests(21) {
         q(No enable rows: STGs count as running) );
 }
 
-sub stp_tree_ports : Tests(18) {
+sub stp_tree_ports : Tests(21) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -329,18 +334,30 @@ sub stp_tree_ports : Tests(18) {
         },
         q(cist.0: 192 discarding, alternate)
     );
-    is( $rows->{193}{enabled}, 1,
-        q(cist.0: 193 enabled from dot1dStpPortEnable) );
+    is( $rows->{193}{enabled}, 0,
+        q(cist.0: 193 disabled by nnMstCistForcePortState) );
 
     $rows = $info->stp_tree_ports('msti.1');
     is( $rows->{193}{state}, 'discarding', q(msti.1: 193 discarding) );
     is( $rows->{193}{role},  'alternate',  q(msti.1: 193 alternate) );
     is( $rows->{192}{tree_id}, 1, q(msti.1: tree id) );
-    is( $rows->{192}{enabled}, 1, q(msti.1: 192 from dot1dStpPortEnable) );
-    is( $rows->{193}{enabled}, 0, q(msti.1: 193 rcStgPortEnableStp false) );
+    is( $rows->{192}{enabled}, 1, q(msti.1: 192 enabled by ForcePortState) );
+    is( $rows->{193}{enabled}, 0, q(msti.1: 193 disabled by ForcePortState) );
     $rows = $info->stp_tree_ports('msti.2');
-    is( $rows->{193}{enabled}, 1, q(msti.2: 193 no STG row, dot1d enabled) );
+    is( $rows->{193}{enabled}, 1, q(msti.2: 193 enabled by ForcePortState) );
+    is( $rows->{192}{enabled}, undef,
+        q(msti.2: 192 no ForcePortState row, never rcStg or dot1d) );
     is( $rows->{193}{role}, 'root', q(msti.2: 193 root) );
+
+    $info->{store}{nn_cist_p_enable} = { 192 => 1, 193 => 0 };
+    $rows = $info->stp_tree_ports('cist.0');
+    cmp_deeply( [ map { $rows->{$_}{enabled} } 192, 193 ], [ 1, 0 ],
+        q(Numeric ForcePortState: 0 gives 0, not undef) );
+    delete $info->{store}{nn_cist_p_enable}{193};
+    delete $info->{_stp_trees};
+    $rows = $info->stp_tree_ports('cist.0');
+    is( $rows->{193}{enabled}, undef,
+        q(cist.0: 193 no ForcePortState row, rcStg and dot1d not used) );
 
     $info->{store}{nn_cist_p_state}{9} = 'forwarding';
     delete $info->{_stp_trees};

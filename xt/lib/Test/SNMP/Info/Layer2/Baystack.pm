@@ -126,6 +126,7 @@ sub _stp_cache {
   my %store = (
     bp_index          => {map { $_ => $_ } 1, 2, 434},
     rc_dot1d_p_enable => {map { $_ => 'disabled' } @ports},
+    nn_cist_p_enable  => {map { $_ => 'enabled' } @ports},
     nn_cist_p_state   => {map { $_ => 'forwarding' } @ports},
     nn_cist_p_role    => {map { $_ => 'designated' } @ports},
     nn_cist_p_bridge  =>
@@ -133,6 +134,7 @@ sub _stp_cache {
     nn_cist_p_port => {map { $_ => $id->('8001') } @ports},
   );
   $store{nn_cist_p_role}{2} = 'root';
+  $store{nn_cist_p_enable}{2} = 'disabled';
   $store{nn_cist_p_state}{434} = 'discarding';
   $store{nn_cist_p_role}{434} = 'alternate';
 
@@ -182,8 +184,8 @@ sub stp_tree_ports : Tests(7) {
   is($rows->{434}{state}, 'discarding', q(State as served));
   is($rows->{434}{role}, 'alternate', q(Role normalized));
   is($rows->{2}{role_raw}, 'root', q(Role as served));
-  cmp_deeply([map { $rows->{$_}{enabled} } 1, 2, 434], [0, 0, 0],
-    q(enabled 0 from dot1dStpPortEnable disabled));
+  cmp_deeply([map { $rows->{$_}{enabled} } 1, 2, 434], [1, 0, 1],
+    q(enabled from nnMstCistForcePortState, not dot1dStpPortEnable));
 
   $test->_stp_cache(900);
   cmp_deeply([sort { $a <=> $b } keys %{$info->stp_tree_ports('cist.0')}],
@@ -193,23 +195,47 @@ sub stp_tree_ports : Tests(7) {
   is(scalar $info->stp_tree_ports('msti.1'), undef, q(No MSTI rows: no tree));
 }
 
-# rcStgPortEnableStp is indexed by ifIndex, dot1dStpPortEnable by bridge port
+# The nnMst ForcePortState columns are indexed by bridge port, not ifIndex
 sub stp_tree_ports_enable_index : Tests(2) {
   my $test = shift;
   my $info = $test->{info};
 
   $test->_stp_cache();
   $info->{store}{bp_index} = {1 => 101, 2 => 102, 434 => 534};
-  $info->{store}{rc_stp_p_enable} = {
-    '101.1' => 'true', '1.1' => 'false',
-    '534.1' => 'false', '434.1' => 'true',
-  };
-  $info->{_rc_stp_p_enable} = 1;
+  $info->{store}{nn_cist_p_enable} = {1 => 'enabled', 2 => 'disabled'};
   my $rows = $info->stp_tree_ports('cist.0');
-  cmp_deeply([map { $rows->{$_}{enabled} } 101, 534], [1, 0],
-    q(rcStgPortEnableStp read at the ifIndex, not the bridge port));
-  is($rows->{102}{enabled}, 0,
-    q(No rcStgPort row: dot1dStpPortEnable at the bridge port));
+  cmp_deeply([map { $rows->{$_}{enabled} } 101, 102], [1, 0],
+    q(ForcePortState read at the bridge port, not the ifIndex));
+  is($rows->{534}{enabled}, undef,
+    q(No ForcePortState row: undef, never dot1dStpPortEnable));
+}
+
+# Under RSTP rcStgPortEnableStp is indexed by ifIndex, dot1dStpPortEnable by
+# bridge port
+sub stp_tree_ports_rstp_enable_index : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache();
+  my %store = (
+    bp_index          => {1 => 101, 2 => 102},
+    nn_rst_p_state    => {1 => 'forwarding', 2 => 'forwarding'},
+    rc_dot1d_p_enable => {1 => 'disabled', 2 => 'enabled'},
+    rc_stp_p_enable   => {'101.1' => 'true'},
+    nn_cist_p_enable  => {1 => 'disabled', 2 => 'disabled'},
+  );
+  $info->{store}{$_} = $store{$_} for keys %store;
+  $info->{'_' . $_} = 1 for keys %store;
+  $info->cache({
+    _nn_mst_version => 'rstp', _nn_rst_version => 'rstp',
+    _nn_mst_brg_address => 'x',
+  });
+  delete $info->{_stp_trees};
+  my $rows = $info->stp_tree_ports('cist.0');
+  is($rows->{101}{enabled}, 1,
+    q(RSTP: rcStgPortEnableStp read at the ifIndex));
+  is($rows->{102}{enabled}, 1,
+    q(RSTP: no rcStgPort row, dot1dStpPortEnable at the bridge port));
 }
 
 1;

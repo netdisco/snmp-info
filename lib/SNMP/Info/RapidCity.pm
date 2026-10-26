@@ -206,12 +206,14 @@ $VERSION = '3.982000';
     'nn_cist_p_role'   => 'nnMstCistCurrentPortRole',
     'nn_cist_p_bridge' => 'nnMstCistPortDesignatedBridge',
     'nn_cist_p_port'   => 'nnMstCistPortDesignatedPort',
+    'nn_cist_p_enable' => 'nnMstCistForcePortState',
 
     # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB, indexed <port>.<instance>
     'nn_msti_p_state'  => 'nnMstPortState',
     'nn_msti_p_role'   => 'nnMstPortCurrentPortRole',
     'nn_msti_p_bridge' => 'nnMstPortDesignatedBridge',
     'nn_msti_p_port'   => 'nnMstPortDesignatedPort',
+    'nn_msti_p_enable' => 'nnMstPortForcePortState',
 
     # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB, indexed by bridge port
     'nn_rst_p_state' => 'nnRstDot1wPortStateTransSmState',
@@ -1090,13 +1092,37 @@ sub stp_tree_ports {
     return $rapidcity->_rc_rstp_port_rows($tree);
 }
 
-# rcStgPortEnableStp is indexed <ifIndex>.<STG id>, and a tree's STG is its
-# instance plus one; the BRIDGE-MIB enable, indexed by bridge port, is the
-# fallback
-sub _rc_port_enabled {
-    my ( $rapidcity, $port, $iid, $instance ) = @_;
+# Under MSTP the per-port enable is the nnMst ForcePortState of the tree, as
+# rcStgPortEnableStp is 1 on every port and dot1dStpPortEnable is inert there;
+# a port without a row is unknown, not a fallback to either.  The enum has
+# disabled(0), which _stp_enabled would read as unknown.
+sub _rc_mstp_port_enabled {
+    my ( $rapidcity, $port, $instance ) = @_;
 
-    my $stg_row    = $iid . '.' . ( $instance + 1 );
+    my $value;
+    if ( $instance == 0 ) {
+        $value = ( $rapidcity->nn_cist_p_enable() || {} )->{$port};
+    }
+    else {
+        $value
+            = ( $rapidcity->nn_msti_p_enable() || {} )->{"$port.$instance"};
+    }
+    return unless defined $value;
+
+    return 0 if $value =~ /^(?:disabled|0)$/;
+    return scalar SNMP::Info::Bridge::_stp_enabled($value);
+}
+
+# Under RSTP and STP, rcStgPortEnableStp is indexed <ifIndex>.<STG id>, and
+# a tree's STG is its instance plus one; the BRIDGE-MIB enable, indexed by
+# bridge port, is the fallback
+sub _rc_port_enabled {
+    my ( $rapidcity, $tree, $port, $iid ) = @_;
+
+    return $rapidcity->_rc_mstp_port_enabled( $port, $tree->{id} )
+        if ( $tree->{protocol} || '' ) eq 'mstp';
+
+    my $stg_row    = $iid . '.' . ( $tree->{id} + 1 );
     my $stg_enable = ( $rapidcity->rc_stp_p_enable() || {} )->{$stg_row};
     $stg_enable = ( $rapidcity->rc_dot1d_p_enable() || {} )->{$port}
         unless defined $stg_enable;
@@ -1112,7 +1138,8 @@ sub _rc_port_row {
         state     => $served->{state}{$key},
         role      => $served->{role}{$key},
         role_raw  => $served->{role_raw}{$key},
-        enabled   => $rapidcity->_rc_port_enabled( $port, $iid, $tree->{id} ),
+        enabled =>
+            scalar $rapidcity->_rc_port_enabled( $tree, $port, $iid ),
         designated_bridge =>
             scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
             $served->{bridge}{$key} ),
@@ -1901,10 +1928,15 @@ under RSTP.
 
 The port state under RSTP and STP is C<nnRstDot1wPortStateTransSmState>: the
 C<BRIDGE-MIB> and C<rcStgPortTable> states serve forwarding on a blocked port.
-C<enabled> is C<rcStgPortEnableStp> for the port and the tree's STG, else
-C<dot1dStpPortEnable>.  A port row with no C<bp_index> entry is left out and
-makes C<ports_complete> 0, as does an RSTP or STP device that serves no
-C<nnRstDot1wPortStateTransSmState> rows.  C<measured> is 0.  Only the default
+Under RSTP and STP C<enabled> is C<rcStgPortEnableStp> for the port and the
+tree's STG, else C<dot1dStpPortEnable>.  Under MSTP it is
+C<nnMstCistForcePortState> for C<cist.0> and C<nnMstPortForcePortState> for
+each C<msti.N>, both indexed by bridge port, with C<disabled(0)> as 0 and
+C<enabled(1)> as 1; a port with no row has C<enabled> undef, as neither
+C<rcStgPortEnableStp> nor C<dot1dStpPortEnable> carries the MSTP setting.
+A port row with no C<bp_index> entry is left out and makes C<ports_complete>
+0. An RSTP or STP device that serves no C<nnRstDot1wPortStateTransSmState>
+rows also gives C<ports_complete> 0. C<measured> is 0. Only the default
 context is read.
 
 =over
@@ -1974,6 +2006,10 @@ tree are left out.  Otherwise nothing.
 
 (C<nnMstCistPortDesignatedPort>)
 
+=item $rapidcity->nn_cist_p_enable()
+
+(C<nnMstCistForcePortState>)
+
 =item $rapidcity->nn_msti_p_state()
 
 (C<nnMstPortState>)
@@ -1989,6 +2025,10 @@ tree are left out.  Otherwise nothing.
 =item $rapidcity->nn_msti_p_port()
 
 (C<nnMstPortDesignatedPort>)
+
+=item $rapidcity->nn_msti_p_enable()
+
+(C<nnMstPortForcePortState>)
 
 =item $rapidcity->nn_rst_p_state()
 
