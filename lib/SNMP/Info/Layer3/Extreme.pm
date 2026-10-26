@@ -106,6 +106,7 @@ $VERSION = '3.982000';
     # EXTREME-STP-EXTENSIONS-MIB::extremeStpPortTable
     'stp_p_priority' => 'extremeStpPortPortPriority',
     'stp_p_state'    => 'extremeStpPortPortState',
+    'stp_p_enable'   => 'extremeStpPortStpEnabled',
     'stp_p_cost'     => 'extremeStpPortPathCost',
     'stp_p_root'     => 'extremeStpPortDesignatedRoot',
     'stp_p_bridge'   => 'extremeStpPortDesignatedBridge',
@@ -1132,6 +1133,7 @@ sub stp_tree_ports {
     }
 
     my $states   = $extreme->stp_p_state()  || {};
+    my $enable   = $extreme->stp_p_enable() || {};
     my $d_bridge = $extreme->stp_p_bridge() || {};
     my $d_port   = $extreme->stp_p_port()   || {};
 
@@ -1145,6 +1147,8 @@ sub stp_tree_ports {
             state             => $states->{$idx},
             role              => undef,
             role_raw          => undef,
+            enabled           =>
+                scalar SNMP::Info::Bridge::_stp_enabled( $enable->{$idx} ),
             designated_bridge =>
                 scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
                 $d_bridge->{$idx} ),
@@ -1530,6 +1534,10 @@ to the root bridge.
 =item $extreme->stp_p_state()
 
 (C<extremeStpPortPortState>)
+
+=item $extreme->stp_p_enable()
+
+(C<extremeStpPortStpEnabled>)
 
 =item $extreme->stp_p_cost()
 

@@ -386,6 +386,7 @@ sub _dot1d_rows {
         stp_p_id     => { map { $_ => $_ } keys %ports },
         bp_index     => { map { $_ => $_ } keys %ports },
         stp_p_state  => { map { $_ => $ports{$_}[0] } keys %ports },
+        stp_p_enable => { map { $_ => 'enabled' } keys %ports },
         stp_p_bridge => {
             map { $_ => pack( 'H*', $ports{$_}[1] . '0200000000' . $ports{$_}[2] ) }
                 keys %ports
@@ -404,8 +405,9 @@ sub _in_context {
 }
 
 sub _port {
-    my ( $type, $id, $state, $role, $bid, $port, $role_raw ) = @_;
+    my ( $type, $id, $state, $role, $bid, $port, $role_raw, $enabled ) = @_;
     return {
+        enabled           => $enabled // 1,
         tree_type         => $type,
         tree_id           => $id,
         state             => $state,
@@ -416,7 +418,7 @@ sub _port {
     };
 }
 
-sub stp_tree_ports : Tests(14) {
+sub stp_tree_ports : Tests(16) {
     my $test = shift;
     my $info = $test->{info};
     my $p4   = { priority => 128, port => 4, raw => '80:04' };
@@ -461,6 +463,16 @@ sub stp_tree_ports : Tests(14) {
         q(IOSvL2 VLAN context serves the role too) );
     is( $info->stp_tree_ports('vlan.10')->{3}{role_raw}, 'alternate',
         q(The served role is kept as role_raw) );
+
+    $ios10{store}{stpx_rstp_port_role}{'10.5'} = 'root';
+    $ios10{store}{bp_index}{5} = 5;
+    _in_context( $info, \%ios10, 10 );
+    my $role_only = $info->stp_tree_ports('vlan.10');
+    is( $role_only->{5}{enabled}, undef,
+        q(A role-only row has no enabled value) );
+    is( $role_only->{3}{enabled}, 1,
+        q(A BRIDGE-MIB row takes enabled from stp_p_enable) );
+    delete $ios10{store}{stpx_rstp_port_role}{'10.5'};
 
     $ios10{store}{stpx_rstp_port_role}{'10.2'} = 'backUp';
     $ios10{store}{stpx_rstp_port_role}{'10.3'} = 'bogus';

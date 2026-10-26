@@ -539,6 +539,7 @@ sub stp_tree_ports {
             state             => undef,
             role              => undef,
             role_raw          => undef,
+            enabled           => undef,
             designated_bridge => undef,
             designated_port   => undef,
         };

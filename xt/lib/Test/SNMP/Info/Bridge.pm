@@ -279,6 +279,7 @@ sub stp_tree_ports : Tests(2) {
             state             => 'forwarding',
             role              => undef,
             role_raw          => undef,
+            enabled           => undef,
             designated_bridge => {
                 priority   => 4096,
                 sys_id_ext => 0,
@@ -293,6 +294,7 @@ sub stp_tree_ports : Tests(2) {
             state             => 'blocking',
             role              => undef,
             role_raw          => undef,
+            enabled           => undef,
             designated_bridge => {
                 priority   => 8192,
                 sys_id_ext => 0,
@@ -304,6 +306,32 @@ sub stp_tree_ports : Tests(2) {
     };
     cmp_deeply( $test->{info}->stp_tree_ports('cist.0'),
         $expected, q(Ports keyed by iid with designated bridge and port) );
+}
+
+sub stp_tree_ports_enabled : Tests(6) {
+    my $test = shift;
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    $test->{info}{_stp_p_enable} = 1;
+    $test->{info}{store}{stp_p_enable} = { 1 => 'enabled', 2 => 'disabled' };
+    my $ports = $test->{info}->stp_tree_ports('cist.0');
+    is( $ports->{3}{enabled}, 1, q(enabled gives 1) );
+    is( $ports->{4}{enabled}, 0, q(disabled gives 0) );
+
+    $test->{info}{store}{stp_p_enable} = { 1 => 'true', 2 => 'false' };
+    $ports = $test->{info}->stp_tree_ports('cist.0');
+    is_deeply( [ map { $_->{enabled} } @{$ports}{ 3, 4 } ],
+        [ 1, 0 ], q(TruthValue labels true and false) );
+
+    $test->{info}{store}{stp_p_enable} = { 1 => 1, 2 => 2 };
+    $ports = $test->{info}->stp_tree_ports('cist.0');
+    is_deeply( [ map { $_->{enabled} } @{$ports}{ 3, 4 } ],
+        [ 1, 0 ], q(Numeric 1 and 2 give 1 and 0) );
+
+    $test->{info}{store}{stp_p_enable} = { 1 => 'bogus' };
+    $ports = $test->{info}->stp_tree_ports('cist.0');
+    is( $ports->{3}{enabled}, undef, q(Unknown value gives undef) );
+    is( $ports->{4}{enabled}, undef, q(Port with no row gives undef) );
 }
 
 sub stp_tree_ports_unknown_key : Tests(2) {

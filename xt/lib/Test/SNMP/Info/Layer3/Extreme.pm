@@ -564,11 +564,16 @@ sub stp_trees_complete : Tests(2) {
     is( $test->{info}->stp_trees_complete(), 0, q(No domain table read) );
 }
 
-sub stp_tree_ports : Tests(4) {
+sub stp_tree_ports : Tests(5) {
     my $test = shift;
 
     can_ok( $test->{info}, 'stp_tree_ports' );
     $test->{info}->cache( _exos_mstp_cache() );
+    $test->{info}{_stp_p_enable} = 1;
+    $test->{info}{store}{stp_p_enable} = { '2.1001' => 'true' };
+    is( $test->{info}->stp_tree_ports('domain.2')->{1001}{enabled},
+        1, q(extremeStpPortStpEnabled true gives enabled 1) );
+    $test->{info}{store}{stp_p_enable} = {};
     my $port = sub {
         my ( $state, $prio, $sw ) = @_;
         return {
@@ -577,6 +582,7 @@ sub stp_tree_ports : Tests(4) {
             state             => $state,
             role              => undef,
             role_raw          => undef,
+            enabled           => undef,
             designated_bridge => _exos_bid_rec( $prio, $sw ),
             designated_port   => { priority => 128, port => 2, raw => '80:02' },
         };
