@@ -429,6 +429,11 @@ Returns the serial number reported by the access point.
 
 =over
 
+=item $ruckus->layers()
+
+Ruckus access points do not implement C<sysServices>. Returns the layer 2
+capability bit so layer-aware applications can collect wireless client MACs.
+
 =item $ruckus->vendor()
 
 Returns C<ruckus>.
