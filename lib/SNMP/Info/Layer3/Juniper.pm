@@ -49,6 +49,7 @@ $VERSION = '3.982000';
     'JUNIPER-VIRTUALCHASSIS-MIB'  => 'jnxVirtualChassisMemberTable',
     'JUNIPER-VLAN-MIB'            => 'jnxVlanMIBObjects',
     'JUNIPER-L2ALD-MIB'           => 'jnxL2aldVlanFdbId',
+    'JUNIPER-MIMSTP-MIB'          => 'jnxMIMstSystemControl',
 );
 
 %GLOBALS = (
@@ -58,6 +59,9 @@ $VERSION = '3.982000';
     'box_descr' => 'jnxBoxDescr',
     'version'   => 'jnxVirtualChassisMemberSWVersion',
     'vc_model'  => 'jnxVirtualChassisMemberModel',
+
+    # RSTP-MIB, which names only stpCompatible(0) and rstp(2)
+    'jnx_stp_version' => 'dot1dStpVersion',
 );
 
 %FUNCS = (
@@ -87,12 +91,47 @@ $VERSION = '3.982000';
 
     # JUNIPER-IF-MIB::ifChassisTable
     'i_logical_unit' => 'ifChassisLogicalUnit',
+
+    # JUNIPER-MIMSTP-MIB, indexed by context
+    'jnx_mst_control'       => 'jnxMIMstSystemControl',
+    'jnx_mst_brg_address'   => 'jnxMIMstBrgAddress',
+    'jnx_mst_cist_root'     => 'jnxMIMstCistRoot',
+    'jnx_mst_cist_priority' => 'jnxMIMstCistBridgePriority',
+
+    # JUNIPER-MIMSTP-MIB, indexed <context>.<MSTI>
+    'jnx_msti_priority' => 'jnxMIMstMstiBridgePriority',
+    'jnx_msti_root'     => 'jnxMIMstMstiBridgeRegionalRoot',
+    'jnx_msti_vlans_1k' => 'jnxMIMstInstanceVlanMapped',
+    'jnx_msti_vlans_2k' => 'jnxMIMstInstanceVlanMapped2k',
+    'jnx_msti_vlans_3k' => 'jnxMIMstInstanceVlanMapped3k',
+    'jnx_msti_vlans_4k' => 'jnxMIMstInstanceVlanMapped4k',
+
+    # JUNIPER-MIMSTP-MIB, indexed by bridge port
+    'jnx_cist_p_state'  => 'jnxMIMstCistPortState',
+    'jnx_cist_p_role'   => 'jnxMIMstCistCurrentPortRole',
+    'jnx_cist_p_bridge' => 'jnxMIMstCistPortDesignatedBridge',
+    'jnx_cist_p_port'   => 'jnxMIMstCistPortDesignatedPort',
+
+    # JUNIPER-MIMSTP-MIB, indexed <bridge port>.<MSTI>
+    'jnx_msti_p_state'  => 'jnxMIMstMstiPortState',
+    'jnx_msti_p_role'   => 'jnxMIMstMstiCurrentPortRole',
+    'jnx_msti_p_bridge' => 'jnxMIMstMstiPortDesignatedBridge',
+    'jnx_msti_p_port'   => 'jnxMIMstMstiPortDesignatedPort',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
     'e_containers_type' => \&SNMP::Info::munge_e_type,
     'e_contents_type'   => \&SNMP::Info::munge_e_type,
+    'jnx_mst_brg_address' => \&SNMP::Info::munge_mac,
+    'jnx_mst_cist_root'   => \&SNMP::Info::munge_prio_mac,
+    'jnx_msti_root'       => \&SNMP::Info::munge_prio_mac,
+    'jnx_cist_p_bridge'   => \&SNMP::Info::munge_prio_mac,
+    'jnx_msti_p_bridge'   => \&SNMP::Info::munge_prio_mac,
+    'jnx_cist_p_port'     => \&SNMP::Info::munge_prio_port,
+    'jnx_msti_p_port'     => \&SNMP::Info::munge_prio_port,
+    'jnx_cist_p_role'     => \&SNMP::Info::munge_dot1s_port_role,
+    'jnx_msti_p_role'     => \&SNMP::Info::munge_dot1s_port_role,
 );
 
 sub vendor {
@@ -770,6 +809,236 @@ sub peth_port_ifindex {
     return $peth_port_ifindex;
 }
 
+# 'mstp' when MST is started, else the BRIDGE-MIB protocol dot1dStpVersion
+# names. Undef when neither is served.
+sub _jnx_stp_protocol {
+    my $juniper = shift;
+
+    my $control = $juniper->jnx_mst_control() || {};
+    my $started = $control->{0};
+    return 'mstp' if defined $started and $started =~ /^(?:start|1)$/;
+
+    my $version = $juniper->jnx_stp_version();
+    return unless defined $version;
+    return 'rstp' if $version =~ /^(?:rstp|2)$/;
+    return 'stp'  if $version =~ /^(?:stpCompatible|0)$/;
+    return;
+}
+
+sub hasSTP {
+    my $juniper = shift;
+    return ( $juniper->_jnx_stp_protocol() || '' ) eq 'stp' ? 1 : 0;
+}
+
+sub hasRSTP {
+    my $juniper = shift;
+    return ( $juniper->_jnx_stp_protocol() || '' ) eq 'rstp' ? 1 : 0;
+}
+
+sub hasMSTP {
+    my $juniper = shift;
+    return ( $juniper->_jnx_stp_protocol() || '' ) eq 'mstp' ? 1 : 0;
+}
+
+sub stp_protocols {
+    my $juniper = shift;
+
+    my $protocol = $juniper->_jnx_stp_protocol();
+    return [$protocol] if defined $protocol;
+    return unless $juniper->_stp_dot1d_tree();
+    return ['dot1d'];
+}
+
+sub stp_trees {
+    my $juniper = shift;
+
+    return unless $juniper->_stp_default_context_ok();
+    return $juniper->{_stp_trees} if $juniper->{_stp_trees};
+
+    my $protocol = $juniper->_jnx_stp_protocol();
+    my $trees
+        = ( $protocol || '' ) eq 'mstp'
+        ? $juniper->_jnx_mstp_trees()
+        : $juniper->_jnx_dot1d_trees($protocol);
+    $juniper->{_stp_trees} = $trees if keys %$trees;
+    return $trees;
+}
+
+sub _jnx_measured {
+    my ( $juniper, $protocol ) = @_;
+
+    return 0 unless defined $protocol;
+    return 0 unless $protocol =~ /^(?:rstp|mstp)$/;
+    return $juniper->os() eq 'junos' ? 1 : 0;
+}
+
+sub _jnx_dot1d_trees {
+    my ( $juniper, $protocol ) = @_;
+
+    my $record = $juniper->_stp_dot1d_tree() or return {};
+    return {
+        'cist.0' => {
+            %$record,
+            protocol => $protocol,
+            measured => $juniper->_jnx_measured($protocol),
+        }
+    };
+}
+
+sub _jnx_tree_key {
+    my $instance = shift;
+    return $instance ? "msti.$instance" : 'cist.0';
+}
+
+# Instances with a port row at a bridge port that bp_index does not map
+sub _jnx_unmapped_instances {
+    my $juniper = shift;
+
+    my $bp_index = $juniper->bp_index() || {};
+    my %unmapped;
+    foreach my $port ( keys %{ $juniper->jnx_cist_p_state() || {} } ) {
+        $unmapped{0} = 1 unless defined $bp_index->{$port};
+    }
+    foreach my $row ( keys %{ $juniper->jnx_msti_p_state() || {} } ) {
+        my ( $port, $instance ) = split /\./, $row, 2;
+        $unmapped{$instance} = 1 unless defined $bp_index->{$port};
+    }
+    return \%unmapped;
+}
+
+sub _jnx_mstp_trees {
+    my $juniper = shift;
+
+    my $address    = ( $juniper->jnx_mst_brg_address() || {} )->{0};
+    my $priorities = $juniper->jnx_msti_priority() || {};
+    my $roots      = $juniper->jnx_msti_root() || {};
+    my $cist_prio  = ( $juniper->jnx_mst_cist_priority() || {} )->{0};
+    my $cist_root  = ( $juniper->jnx_mst_cist_root() || {} )->{0};
+    my $unmapped   = $juniper->_jnx_unmapped_instances();
+    my $measured   = $juniper->_jnx_measured('mstp');
+
+    my %instances = ( 0 => [ $cist_prio, $cist_root ] );
+    foreach my $row ( keys %$priorities ) {
+        my ( $context, $instance ) = split /\./, $row, 2;
+        next unless $context == 0;
+        $instances{$instance} = [ $priorities->{$row}, $roots->{$row} ];
+    }
+
+    my %trees;
+    foreach my $instance ( keys %instances ) {
+        my ( $priority, $root ) = @{ $instances{$instance} };
+        $trees{ _jnx_tree_key($instance) } = {
+            type           => $instance ? 'msti' : 'cist',
+            id             => $instance,
+            protocol       => 'mstp',
+            measured       => $measured,
+            ports_complete => $unmapped->{$instance} ? 0 : 1,
+            contexts       => [ { kind => 'none' } ],
+            bridge         =>
+                scalar SNMP::Info::Bridge::_stp_bridge_id_from( $priority,
+                $address ),
+            root => scalar SNMP::Info::Bridge::_stp_decode_bridge_id($root),
+        };
+    }
+    return \%trees;
+}
+
+sub stp_tree_ports {
+    my ( $juniper, $tree_key ) = @_;
+
+    my $tree = $juniper->_stp_tree_for_key($tree_key) or return;
+    return $juniper->_stp_dot1d_port_rows($tree)
+        unless ( $tree->{protocol} || '' ) eq 'mstp';
+    return $juniper->_jnx_mstp_port_rows($tree);
+}
+
+sub _jnx_mstp_port_rows {
+    my ( $juniper, $tree ) = @_;
+
+    my $cist   = $tree->{id} == 0;
+    my $prefix = $cist ? 'jnx_cist_p_' : 'jnx_msti_p_';
+    my %served;
+    foreach my $column (qw/state role role_raw bridge port/) {
+        my $method = $prefix . $column;
+        $served{$column} = $juniper->$method() || {};
+    }
+    my $bp_index = $juniper->bp_index() || {};
+
+    my %rows;
+    foreach my $row ( keys %{ $served{state} } ) {
+        my ( $port, $instance ) = split /\./, $row, 2;
+        next if !$cist and $instance != $tree->{id};
+
+        my $iid = $bp_index->{$port};
+        next unless defined $iid;
+        $rows{$iid} = {
+            tree_type         => $tree->{type},
+            tree_id           => $tree->{id},
+            state             => $served{state}{$row},
+            role              => $served{role}{$row},
+            role_raw          => $served{role_raw}{$row},
+            enabled           => undef,
+            designated_bridge =>
+                scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $served{bridge}{$row} ),
+            designated_port =>
+                scalar SNMP::Info::Bridge::_stp_decode_port_id(
+                $served{port}{$row} ),
+        };
+    }
+    return \%rows;
+}
+
+sub stp_trees_complete {
+    my $juniper = shift;
+
+    return 0 unless defined $juniper->_jnx_stp_protocol();
+    my $trees = $juniper->stp_trees() || {};
+    return keys %$trees ? 1 : 0;
+}
+
+# Each bitmap holds 1024 VLANs, most significant bit first; a short bitmap
+# stands for zero-padding
+sub stp_vlan_map {
+    my $juniper = shift;
+
+    return unless ( $juniper->_jnx_stp_protocol() || '' ) eq 'mstp';
+
+    my %first_vlan = (
+        jnx_msti_vlans_1k => 1,
+        jnx_msti_vlans_2k => 1025,
+        jnx_msti_vlans_3k => 2049,
+        jnx_msti_vlans_4k => 3073,
+    );
+    my %map;
+    foreach my $method ( keys %first_vlan ) {
+        my $bitmaps = $juniper->$method() || {};
+        foreach my $row ( keys %$bitmaps ) {
+            my ( $context, $instance ) = split /\./, $row, 2;
+            next unless $context == 0;
+            $map{$_} = _jnx_tree_key($instance) for _jnx_mapped_vlans(
+                $bitmaps->{$row}, $first_vlan{$method} );
+        }
+    }
+    return \%map;
+}
+
+sub _jnx_mapped_vlans {
+    my ( $bitmap, $first_vlan ) = @_;
+
+    my @vlans;
+    my $bit = 0;
+    foreach my $set ( split //, unpack( 'B*', $bitmap // '' ) ) {
+        my $vlan = $first_vlan + $bit++;
+        push @vlans, $vlan if $set and $vlan <= 4094;
+    }
+    return @vlans;
+}
+
+# Default tree is not the common tree: the BRIDGE-MIB tree is only the
+# default context's under RSTP and STP
+sub _stp_default_is_common { return 0; }
+
 1;
 __END__
 
@@ -821,6 +1090,8 @@ Subclass for Juniper Devices running JUNOS
 =item F<JUNIPER-VIRTUALCHASSIS-MIB>
 
 =item F<JUNIPER-L2ALD-MIB>
+
+=item F<JUNIPER-MIMSTP-MIB>
 
 =back
 
@@ -884,6 +1155,24 @@ The name, model, or detailed description of the device.
 
 (C<jnxVirtualChassisMemberModel>)
 
+=item $juniper->jnx_stp_version()
+
+(C<dot1dStpVersion>)
+
+=item $juniper->hasSTP()
+
+Returns 1 when C<dot1dStpVersion> is C<stpCompatible(0)> and MSTP is not
+started, else 0.
+
+=item $juniper->hasRSTP()
+
+Returns 1 when C<dot1dStpVersion> is C<rstp(2)> and MSTP is not started,
+else 0.
+
+=item $juniper->hasMSTP()
+
+Returns 1 when C<jnxMIMstSystemControl> for context 0 is C<start(1)>, else 0.
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -941,6 +1230,128 @@ Returns reference to a hash: key= PowerEthernet MIB interface number,
 value = C<ifIndex>. As Juniper does not provide a mapping function,
 this does it manually.
 For example, ge-0/0/1 registers as PowerEthernet interface '1.2'
+
+
+=item $juniper->jnx_mst_control()
+
+(C<jnxMIMstSystemControl>)
+
+=item $juniper->jnx_mst_brg_address()
+
+(C<jnxMIMstBrgAddress>)
+
+=item $juniper->jnx_mst_cist_root()
+
+(C<jnxMIMstCistRoot>)
+
+=item $juniper->jnx_mst_cist_priority()
+
+(C<jnxMIMstCistBridgePriority>)
+
+=item $juniper->jnx_msti_priority()
+
+(C<jnxMIMstMstiBridgePriority>)
+
+=item $juniper->jnx_msti_root()
+
+(C<jnxMIMstMstiBridgeRegionalRoot>)
+
+=item $juniper->jnx_msti_vlans_1k()
+
+(C<jnxMIMstInstanceVlanMapped>)
+
+=item $juniper->jnx_msti_vlans_2k()
+
+(C<jnxMIMstInstanceVlanMapped2k>)
+
+=item $juniper->jnx_msti_vlans_3k()
+
+(C<jnxMIMstInstanceVlanMapped3k>)
+
+=item $juniper->jnx_msti_vlans_4k()
+
+(C<jnxMIMstInstanceVlanMapped4k>)
+
+=item $juniper->jnx_cist_p_state()
+
+(C<jnxMIMstCistPortState>)
+
+=item $juniper->jnx_cist_p_role()
+
+(C<jnxMIMstCistCurrentPortRole>)
+
+=item $juniper->jnx_cist_p_bridge()
+
+(C<jnxMIMstCistPortDesignatedBridge>)
+
+=item $juniper->jnx_cist_p_port()
+
+(C<jnxMIMstCistPortDesignatedPort>)
+
+=item $juniper->jnx_msti_p_state()
+
+(C<jnxMIMstMstiPortState>)
+
+=item $juniper->jnx_msti_p_role()
+
+(C<jnxMIMstMstiCurrentPortRole>)
+
+=item $juniper->jnx_msti_p_bridge()
+
+(C<jnxMIMstMstiPortDesignatedBridge>)
+
+=item $juniper->jnx_msti_p_port()
+
+(C<jnxMIMstMstiPortDesignatedPort>)
+
+=back
+
+=head2 Spanning Tree Trees
+
+These override L<SNMP::Info::Bridge/"Spanning Tree Trees">; records are as
+described there.  The protocol is C<mstp> when C<jnxMIMstSystemControl> for
+context 0 is C<start(1)>, else C<rstp> or C<stp> as C<dot1dStpVersion> says
+(C<rstp(2)>, C<stpCompatible(0)>).  Under MSTP the CIST is C<cist.0> and each
+row of C<jnxMIMstMstiBridgePriority> is a C<msti.N>, from
+C<JUNIPER-MIMSTP-MIB>; the MSTI bridge ID is the configured priority plus the
+MSTI number, with the bridge address.  Under RSTP and STP the one tree is
+the C<BRIDGE-MIB> tree.  When no indicator is served but C<BRIDGE-MIB> serves
+the tree, C<cist.0> is reported with an undefined protocol, C<stp_protocols()>
+is C<['dot1d']> and C<stp_trees_complete()> is 0.  C<measured> is 1 under RSTP
+and MSTP.  C<enabled> is undef under MSTP, which does not serve
+C<dot1dStpPortEnable>.  A port row with no C<bp_index> entry is left out and
+makes C<ports_complete> 0.  Only the default context is read.
+
+=over
+
+=item $juniper->stp_protocols()
+
+Returns reference to an array holding the protocol, C<['dot1d']> when only
+C<BRIDGE-MIB> is served, or nothing.
+
+=item $juniper->stp_trees()
+
+Returns reference to hash of tree records, or an empty hash when nothing is
+served.
+
+=item $juniper->stp_tree_ports($tree_key)
+
+Returns reference to hash of the tree's port records keyed by ifIndex.  Under
+MSTP C<role> is the C<jnxMIMstCistCurrentPortRole> or
+C<jnxMIMstMstiCurrentPortRole> value in the shared vocabulary, and C<role_raw>
+as served.
+
+=item $juniper->stp_trees_complete()
+
+Returns 1 when a protocol is identified and trees are listed, 0 otherwise,
+including when only C<BRIDGE-MIB> is served.
+
+=item $juniper->stp_vlan_map()
+
+Under MSTP returns reference to hash mapping VLAN id to C<msti.N>, from the
+four C<jnxMIMstInstanceVlanMapped> bitmaps (VLANs 1 to 4094).  Only VLANs
+mapped to an MSTI appear: the device serves no row for the CIST.  Otherwise
+nothing.
 
 =back
 

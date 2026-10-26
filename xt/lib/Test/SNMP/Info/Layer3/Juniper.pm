@@ -972,4 +972,313 @@ sub peth_port_ifindex : Tests(3) {
     {}, q(No data returns empty hash));
 }
 
+
+# swA ports 1 and 2 are bridge ports mapped to ifIndex 521 and 522. MACs are
+# synthetic. The device is swA, with swB as the root.
+sub _stp_cache {
+  my ($test, $protocol) = @_;
+  my $info = $test->{info};
+  $info->clear_cache();
+
+  my $id = sub { pack('H*', shift) };
+  my %store = (
+    bp_index    => {1 => 521, 2 => 522},
+    stp_p_id    => {1 => 1,   2 => 2},
+    stp_p_state => {1 => 'forwarding', 2 => 'blocking'},
+    stp_p_enable => {1 => 'enabled', 2 => 'enabled'},
+    stp_p_bridge => {
+      1 => $id->('800002000000000b'), 2 => $id->('800002000000000b'),
+    },
+    stp_p_port   => {1 => $id->('8001'), 2 => $id->('8002')},
+  );
+  my %cache = (
+    _description  => 'Juniper Networks, Inc. ex4300-48t, kernel JUNOS 21.4R3',
+    _b_mac        => $id->('02000000000a'),
+    _stp_priority => 32768,
+    _stp_root     => $id->('800002000000000b'),
+  );
+
+  if ($protocol eq 'mstp') {
+    %store = (
+      %store,
+      jnx_mst_control       => {0 => 'start'},
+      jnx_mst_brg_address   => {0 => $id->('02000000000a')},
+      jnx_mst_cist_priority => {0 => 32768},
+      jnx_mst_cist_root     => {0 => $id->('200002000000000b')},
+      jnx_msti_priority     => {'0.1' => 4097, '0.2' => 32770},
+      jnx_msti_root         => {
+        '0.1' => $id->('100102000000000b'),
+        '0.2' => $id->('800202000000000a'),
+      },
+      jnx_msti_vlans_1k => {'0.1' => "\x00\x40", '0.2' => "\x00\x00\x10"},
+      jnx_msti_vlans_2k => {'0.1' => "\x00" x 16, '0.2' => "\x00" x 16},
+      jnx_msti_vlans_3k => {'0.1' => "\x00" x 16, '0.2' => "\x00" x 16},
+      jnx_msti_vlans_4k => {'0.1' => "\x00" x 16, '0.2' => "\x00" x 16},
+      jnx_cist_p_state  => {1 => 'forwarding', 2 => 'discarding'},
+      jnx_cist_p_role   => {1 => 'root',       2 => 'alternate'},
+      jnx_cist_p_bridge => {
+        1 => $id->('200002000000000b'), 2 => $id->('200002000000000b'),
+      },
+      jnx_cist_p_port => {1 => $id->('8001'), 2 => $id->('8002')},
+      jnx_msti_p_state => {
+        '1.1' => 'forwarding', '1.2' => 'forwarding',
+        '2.1' => 'forwarding', '2.2' => 'discarding',
+      },
+      jnx_msti_p_role => {
+        '1.1' => 'designated', '1.2' => 'root',
+        '2.1' => 'designated', '2.2' => 'alternate',
+      },
+      jnx_msti_p_bridge => {
+        map { $_ => $id->('100102000000000b') } qw/1.1 1.2 2.1 2.2/
+      },
+      jnx_msti_p_port => {
+        map { $_ => $id->('8001') } qw/1.1 1.2 2.1 2.2/
+      },
+    );
+  }
+  else {
+    $store{jnx_mst_control} = {0 => 'shutdown'};
+    $cache{_jnx_stp_version} = $protocol eq 'stp' ? 0 : 2;
+  }
+
+  $info->{store}{$_} = $store{$_} for keys %store;
+  $info->{'_' . $_} = 1 for keys %store;
+  $info->cache(\%cache);
+  return;
+}
+
+sub _bridge {
+  my ($priority, $ext, $mac) = @_;
+  return {priority => $priority, sys_id_ext => $ext, mac => $mac,
+    raw => ignore()};
+}
+
+sub _jnx_stp_protocol : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('mstp');
+  is($info->_jnx_stp_protocol(), 'mstp', 'MST started: mstp');
+  $test->_stp_cache('rstp');
+  is($info->_jnx_stp_protocol(), 'rstp', 'dot1dStpVersion 2: rstp');
+  $test->_stp_cache('stp');
+  is($info->_jnx_stp_protocol(), 'stp', 'dot1dStpVersion 0: stp');
+  $info->{_jnx_stp_version} = 'rstp';
+  is($info->_jnx_stp_protocol(), 'rstp', 'Version as a label');
+  delete $info->{_jnx_stp_version};
+  is($info->_jnx_stp_protocol(), undef, 'No indicator: undef');
+}
+
+sub hasSTP : Tests(3) {
+  my $test = shift;
+  $test->_stp_cache('stp');
+  is($test->{info}->hasSTP(), 1, 'stp');
+  $test->_stp_cache('rstp');
+  is($test->{info}->hasSTP(), 0, 'Not under rstp');
+  $test->_stp_cache('mstp');
+  is($test->{info}->hasSTP(), 0, 'Not under mstp');
+}
+
+sub hasRSTP : Tests(2) {
+  my $test = shift;
+  $test->_stp_cache('rstp');
+  is($test->{info}->hasRSTP(), 1, 'rstp');
+  $test->_stp_cache('mstp');
+  is($test->{info}->hasRSTP(), 0, 'Not under mstp');
+}
+
+sub hasMSTP : Tests(2) {
+  my $test = shift;
+  $test->_stp_cache('mstp');
+  is($test->{info}->hasMSTP(), 1, 'mstp');
+  $test->_stp_cache('rstp');
+  is($test->{info}->hasMSTP(), 0, 'Not under rstp');
+}
+
+sub stp_protocols : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('mstp');
+  cmp_deeply($info->stp_protocols(), ['mstp'], 'mstp');
+  $test->_stp_cache('rstp');
+  cmp_deeply($info->stp_protocols(), ['rstp'], 'rstp');
+  $test->_stp_cache('stp');
+  cmp_deeply($info->stp_protocols(), ['stp'], 'stp');
+
+  $test->_stp_cache('rstp');
+  delete $info->{_jnx_stp_version};
+  delete $info->{store}{jnx_mst_control};
+  cmp_deeply($info->stp_protocols(), ['dot1d'],
+    'BRIDGE-MIB tree and no indicator: dot1d');
+
+  $info->clear_cache();
+  is(scalar $info->stp_protocols(), undef, 'Nothing served: undef');
+}
+
+sub stp_trees : Tests(16) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('rstp');
+  my $trees = $info->stp_trees();
+  cmp_deeply([keys %$trees], ['cist.0'], 'RSTP: the CIST only');
+  cmp_deeply([@{$trees->{'cist.0'}}{qw/protocol measured/}], ['rstp', 1],
+    'RSTP: protocol, measured on JUNOS');
+  cmp_deeply($trees->{'cist.0'}{root}{mac}, '02:00:00:00:00:0b', 'RSTP root');
+
+  $test->_stp_cache('stp');
+  $trees = $info->stp_trees();
+  cmp_deeply([@{$trees->{'cist.0'}}{qw/protocol measured/}], ['stp', 0],
+    'STP: protocol set, not measured');
+
+  $test->_stp_cache('mstp');
+  $trees = $info->stp_trees();
+  cmp_deeply([sort keys %$trees], [qw/cist.0 msti.1 msti.2/],
+    'MSTP: one tree per instance');
+  cmp_deeply(
+    $trees->{'cist.0'},
+    {
+      type           => 'cist',
+      id             => 0,
+      protocol       => 'mstp',
+      measured       => 1,
+      ports_complete => 1,
+      contexts       => [{kind => 'none'}],
+      bridge         => _bridge(32768, 0, '02:00:00:00:00:0a'),
+      root           => _bridge(8192,  0, '02:00:00:00:00:0b'),
+    },
+    'MSTP: cist.0 record'
+  );
+  cmp_deeply(
+    $trees->{'msti.1'}{bridge},
+    _bridge(4096, 1, '02:00:00:00:00:0a'),
+    'MSTP: msti.1 bridge, configured priority plus the MSTI number'
+  );
+  cmp_deeply(
+    $trees->{'msti.2'}{bridge},
+    _bridge(32768, 2, '02:00:00:00:00:0a'),
+    'MSTP: msti.2 bridge'
+  );
+  is($trees->{'msti.1'}{root}{mac}, '02:00:00:00:00:0b', 'msti.1 root');
+  is($info->stp_trees(), $trees, 'Memoized');
+
+  $info->{store}{jnx_msti_p_state}{'9.1'} = 'forwarding';
+  delete $info->{_stp_trees};
+  $trees = $info->stp_trees();
+  is($trees->{'msti.1'}{ports_complete}, 0,
+    'Port row without a bp_index entry: that tree incomplete');
+  is($trees->{'msti.2'}{ports_complete}, 1, 'Other trees stay complete');
+
+  $test->_stp_cache('rstp');
+  delete $info->{_jnx_stp_version};
+  delete $info->{store}{jnx_mst_control};
+  $trees = $info->stp_trees();
+  cmp_deeply([keys %$trees], ['cist.0'], 'No indicator: BRIDGE-MIB tree');
+  cmp_deeply([@{$trees->{'cist.0'}}{qw/protocol measured/}], [undef, 0],
+    'No indicator: protocol undef, not measured');
+
+  $test->_stp_cache('mstp');
+  $info->session()->{Context} = 'vlan-10';
+  is(scalar $info->stp_trees(), undef, 'Non-default context: nothing');
+  $info->session()->{Context} = '';
+
+  $info->clear_cache();
+  cmp_deeply($info->stp_trees(), {}, 'Nothing served: no trees');
+}
+
+sub stp_tree_ports : Tests(15) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('mstp');
+  my $rows = $info->stp_tree_ports('cist.0');
+  cmp_deeply([sort keys %$rows], [521, 522], 'MSTP: CIST rows by ifIndex');
+  cmp_deeply(
+    $rows->{522},
+    {
+      tree_type         => 'cist',
+      tree_id           => 0,
+      state             => 'discarding',
+      role              => 'alternate',
+      role_raw          => 'alternate',
+      enabled           => undef,
+      designated_bridge => _bridge(8192, 0, '02:00:00:00:00:0b'),
+      designated_port   => {priority => 128, port => 2, raw => '80:02'},
+    },
+    'MSTP: 522 discarding, alternate'
+  );
+  is($rows->{521}{role}, 'root', 'MSTP: 521 root');
+
+  $rows = $info->stp_tree_ports('msti.2');
+  is($rows->{522}{state}, 'discarding', 'msti.2: 522 discarding');
+  is($rows->{522}{tree_id}, 2, 'msti.2: tree id');
+  is($rows->{521}{role}, 'root', 'msti.2: 521 root');
+
+  $info->{store}{jnx_msti_p_state}{'9.1'} = 'forwarding';
+  delete $info->{_stp_trees};
+  cmp_deeply([sort keys %{$info->stp_tree_ports('msti.1')}], [521, 522],
+    'Row at an unmapped bridge port is absent');
+  is($info->stp_trees()->{'msti.1'}{ports_complete}, 0, 'and flagged');
+
+  is(scalar $info->stp_tree_ports('msti.7'), undef, 'Unknown key: nothing');
+  like($info->error(1), qr/stp_tree_ports\(\) has no tree 'msti\.7'/,
+    'Error names the method');
+
+  $test->_stp_cache('rstp');
+  $rows = $info->stp_tree_ports('cist.0');
+  cmp_deeply([sort keys %$rows], [521, 522], 'RSTP: BRIDGE-MIB rows');
+  is($rows->{522}{state}, 'blocking', 'RSTP: state');
+  is($rows->{522}{enabled}, 1, 'RSTP: enabled from dot1dStpPortEnable');
+  $test->_stp_cache('stp');
+  cmp_deeply([sort keys %{$info->stp_tree_ports('cist.0')}], [521, 522],
+    'STP: BRIDGE-MIB rows');
+  $info->clear_cache();
+  is(scalar $info->stp_tree_ports('cist.0'), undef, 'Nothing served: none');
+}
+
+sub stp_trees_complete : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  is($info->stp_trees_complete(), 0, 'Nothing served');
+  $test->_stp_cache('mstp');
+  is($info->stp_trees_complete(), 1, 'MSTP');
+  $test->_stp_cache('rstp');
+  is($info->stp_trees_complete(), 1, 'RSTP');
+  delete $info->{_jnx_stp_version};
+  delete $info->{store}{jnx_mst_control};
+  delete $info->{_stp_trees};
+  is($info->stp_trees_complete(), 0, 'dot1d fallback: protocol unknown');
+  $info->clear_cache();
+  is($info->stp_trees_complete(), 0, 'Cleared again');
+}
+
+sub stp_vlan_map : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('mstp');
+  cmp_deeply(scalar $info->stp_vlan_map(), {10 => 'msti.1', 20 => 'msti.2'},
+    'MSTP: only VLANs mapped to an MSTI');
+
+  $info->{store}{jnx_msti_vlans_2k}{'0.2'} = "\x80" . "\x00" x 15;
+  $info->{store}{jnx_msti_vlans_3k}{'0.2'} = "\x80" . "\x00" x 15;
+  $info->{store}{jnx_msti_vlans_4k}{'0.1'} = "\x00" x 127 . "\x0f";
+  cmp_deeply(
+    scalar $info->stp_vlan_map(),
+    {
+      10 => 'msti.1', 20 => 'msti.2', 1025 => 'msti.2', 2049 => 'msti.2',
+      4093 => 'msti.1', 4094 => 'msti.1',
+    },
+    'Bitmap origins 1025, 2049, 3073; VLANs capped at 4094'
+  );
+
+  $test->_stp_cache('rstp');
+  is(scalar $info->stp_vlan_map(), undef, 'RSTP: nothing');
+  $info->clear_cache();
+  is(scalar $info->stp_vlan_map(), undef, 'Nothing served: nothing');
+}
+
 1;
