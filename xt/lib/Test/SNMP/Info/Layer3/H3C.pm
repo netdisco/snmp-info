@@ -82,23 +82,290 @@ sub i_stp_state : Tests(5) {
   is($info->i_stp_state->{57}, 'blocking', 'Unknown aggregate retains member state');
 }
 
-# A served common-tree shape still reports no trees, since the default tree is
-# not the common tree: it matches no tree under PVST.
-sub stp_trees_default_off : Tests(3) {
-    my $test = shift;
+my $COMWARE7
+    = 'H3C Comware Platform Software, Software Version 7.1.059, Alpha 7159';
+my $COMWARE5 = 'H3C Comware Platform Software, Software Version 5.20, Release 2208';
 
-    $test->{info}->cache(
-        {   '_b_mac'        => pack( 'H*', '02000000000c' ),
-            '_stp_priority' => 32768,
-            '_stp_root'     => pack( 'H*', '100002000000000a' ),
-            '_stp_p_id'     => 1,
-            'store'         => { 'stp_p_id' => { 1 => 1, 2 => 2 } },
+# swC of a three-switch triangle. Ports 2 and 3 face the other switches, 4 is
+# an access port, 5 is a member of Bridge-Aggregation1. MACs are synthetic.
+sub _stp_cache {
+    my ( $test, $version, $description ) = @_;
+    my $info = $test->{info};
+
+    my $id = sub { pack( 'H*', shift ) };
+    my %store = (
+        i_index       => { map { $_ => $_ } ( 2 .. 5, 58 ) },
+        i_description => {
+            ( map { $_ => "GigabitEthernet1/0/$_" } 2 .. 5 ),
+            58 => 'Bridge-Aggregation1',
+        },
+        bp_index             => { map { $_ => $_ } 2 .. 5 },
+        ad_port_attached_agg => { 5 => 58 },
+        stp_p_enable         => { 2 => 2, 3 => 1, 4 => 1, 5 => 1 },
+        h3c_stp_i_id         => { 0 => 0, 1 => 1, 2 => 2 },
+        h3c_stp_i_bridge     => {
+            0 => $id->('800002000000000c'),
+            1 => $id->('800102000000000c'),
+            2 => $id->('800202000000000c'),
+        },
+        h3c_stp_i_root => {
+            0 => $id->('800002000000000a'),
+            1 => $id->('100102000000000a'),
+            2 => $id->('100202000000000b'),
+        },
+        h3c_stp_p_state => {
+            '0.2' => 'forwarding', '0.3' => 'forwarding',
+            '0.4' => 'discarding', '0.5' => 'forwarding',
+            '1.3' => 'forwarding', '1.4' => 'discarding',
+            '1.5' => 'forwarding', '2.3' => 'discarding',
+            '2.4' => 'forwarding', '2.5' => 'forwarding',
+        },
+        h3c_stp_vlan_mst => { 1 => 0, 10 => 1, 20 => 2, 30 => 0 },
+        stp_p_id         => { map { $_ => $_ } 2 .. 5 },
+        stp_p_state      => {
+            2 => 'forwarding', 3 => 'forwarding',
+            4 => 'blocking',   5 => 'forwarding',
+        },
+    );
+    $store{h3c_stp_p_bridge} = {
+        map { $_ => $id->('800002000000000a') } keys %{ $store{h3c_stp_p_state} }
+    };
+    $store{h3c_stp_p_port} = {
+        map { $_ => $id->('8004') } keys %{ $store{h3c_stp_p_state} }
+    };
+    $store{stp_p_bridge} = { map { $_ => $id->('100002000000000a') } 2 .. 5 };
+    $store{stp_p_port}   = { map { $_ => $id->('8002') } 2 .. 5 };
+
+    $info->{store}{$_} = $store{$_} for keys %store;
+    $info->{ '_' . $_ } = 1 for keys %store;
+    $info->cache(
+        {   _description     => $description,
+            _h3c_stp_version => $version,
+            _b_mac           => $id->('02000000000c'),
+            _stp_priority    => 32768,
+            _stp_root        => $id->('100002000000000a'),
         }
     );
-    cmp_deeply( $test->{info}->stp_trees(), {}, q(No common-tree default) );
-    is( $test->{info}->stp_protocols(), undef, q(No protocols reported) );
-    is( $test->{info}->stp_trees_complete(),
-        0, q(Trees may exist unread) );
+    return;
+}
+
+sub _h3c_stp_protocol__served_versions__maps_enum_and_number : Tests(7) {
+    my $test = shift;
+    my $info = $test->{info};
+    my %cases = (
+        stp => 'stp', 0 => 'stp', rstp => 'rstp',
+        2   => 'rstp', mstp => 'mstp', 3 => 'mstp',
+    );
+    foreach my $served ( sort keys %cases ) {
+        $info->{_h3c_stp_version} = $served;
+        is( $info->_h3c_stp_protocol(), $cases{$served}, "Version $served" );
+    }
+    delete $info->{_h3c_stp_version};
+    is( $info->_h3c_stp_protocol(), undef, 'Not served' );
+}
+
+sub _h3c_comware7__sysdescr__only_version_7_matches : Tests(2) {
+    my $test = shift;
+    $test->{info}{_description} = $COMWARE7;
+    is( $test->{info}->_h3c_comware7(), 1, 'Comware 7' );
+    $test->{info}{_description} = $COMWARE5;
+    is( $test->{info}->_h3c_comware7(), 0, 'Comware 5' );
+}
+
+sub hasSTP : Tests(2) {
+    my $test = shift;
+    $test->_stp_cache( 'stp', $COMWARE7 );
+    is( $test->{info}->hasSTP(), 1, 'Force version stp' );
+    $test->{info}{_h3c_stp_version} = 'mstp';
+    is( $test->{info}->hasSTP(), 0, 'Not under mstp' );
+}
+
+sub hasRSTP : Tests(2) {
+    my $test = shift;
+    $test->_stp_cache( 'rstp', $COMWARE7 );
+    is( $test->{info}->hasRSTP(), 1, 'Force version rstp' );
+    $test->{info}{_h3c_stp_version} = 'mstp';
+    is( $test->{info}->hasRSTP(), 0, 'Not under mstp' );
+}
+
+sub hasMSTP : Tests(2) {
+    my $test = shift;
+    $test->_stp_cache( 'mstp', $COMWARE7 );
+    is( $test->{info}->hasMSTP(), 1, 'Force version mstp' );
+    $test->{info}{_h3c_stp_version} = 'rstp';
+    is( $test->{info}->hasMSTP(), 0, 'Not under rstp' );
+}
+
+sub stp_protocols : Tests(4) {
+    my $test = shift;
+    my $info = $test->{info};
+    is( scalar $info->stp_protocols(), undef, 'Nothing served: no protocols' );
+    $test->_stp_cache( 'mstp', $COMWARE7 );
+    cmp_deeply( $info->stp_protocols(), ['mstp'], 'mstp' );
+    $info->{_h3c_stp_version} = 'rstp';
+    cmp_deeply( $info->stp_protocols(), ['rstp'], 'rstp' );
+    $info->{_h3c_stp_version} = 'stp';
+    cmp_deeply( $info->stp_protocols(), ['stp'], 'stp' );
+}
+
+sub _bridge {
+    my ( $priority, $ext, $mac ) = @_;
+    return {
+        priority   => $priority,
+        sys_id_ext => $ext,
+        mac        => $mac,
+        raw        => ignore(),
+    };
+}
+
+sub stp_trees : Tests(13) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_stp_cache( 'mstp', $COMWARE7 );
+    my $trees = $info->stp_trees();
+    cmp_deeply( [ sort keys %$trees ], [qw/cist.0 msti.1 msti.2/],
+        'MSTP: one tree per instance' );
+    cmp_deeply(
+        $trees->{'msti.1'},
+        {   type           => 'msti',
+            id             => 1,
+            protocol       => 'mstp',
+            measured       => 1,
+            ports_complete => 1,
+            contexts       => [ { kind => 'none' } ],
+            bridge         => _bridge( 32768, 1, '02:00:00:00:00:0c' ),
+            root           => _bridge( 4096,  1, '02:00:00:00:00:0a' ),
+        },
+        'MSTP: msti.1 record, MSTID in the bridge ID low 12 bits'
+    );
+    is( $trees->{'cist.0'}{type}, 'cist', 'Instance 0 is the CIST' );
+    is( $trees->{'msti.2'}{root}{mac}, '02:00:00:00:00:0b', 'msti.2 root' );
+
+    $info->{store}{h3c_stp_p_state}{'1.9'} = 'forwarding';
+    delete $info->{_stp_trees};
+    $trees = $info->stp_trees();
+    is( $trees->{'msti.1'}{ports_complete},
+        0, 'A state row at an unmapped bridge port: that tree incomplete' );
+    is( $trees->{'msti.2'}{ports_complete}, 1, 'Other trees stay complete' );
+    is( $trees->{'cist.0'}{ports_complete}, 1, 'The CIST stays complete' );
+    is( $info->stp_trees(), $trees, 'Memoized' );
+
+    $info->{store}{h3c_stp_p_state}{'1.9'} = 'forwarding';
+    $test->_stp_cache( 'rstp', $COMWARE7 );
+    delete $info->{_stp_trees};
+    $trees = $info->stp_trees();
+    cmp_deeply( [ keys %$trees ], ['cist.0'], 'RSTP: the CIST only' );
+    cmp_deeply(
+        [ @{ $trees->{'cist.0'} }{qw/protocol measured/} ],
+        [ 'rstp', 1 ],
+        'RSTP: protocol and measured'
+    );
+
+    $info->{_h3c_stp_version} = 'stp';
+    delete $info->{_stp_trees};
+    cmp_deeply(
+        [ @{ $info->stp_trees()->{'cist.0'} }{qw/protocol measured/} ],
+        [ 'stp', 0 ],
+        'STP: protocol set, not measured'
+    );
+
+    $test->_stp_cache( 'mstp', $COMWARE5 );
+    delete $info->{_stp_trees};
+    is( $info->stp_trees()->{'msti.1'}{measured},
+        0, 'Comware 5 under MSTP: not measured' );
+
+    delete $info->{_h3c_stp_version};
+    delete $info->{_stp_trees};
+    cmp_deeply( $info->stp_trees(), {}, 'No force version: no trees' );
+}
+
+sub stp_tree_ports : Tests(12) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_stp_cache( 'mstp', $COMWARE7 );
+    my $rows = $info->stp_tree_ports('msti.2');
+    cmp_deeply(
+        $rows->{3},
+        {   tree_type         => 'msti',
+            tree_id           => 2,
+            state             => 'discarding',
+            role              => undef,
+            role_raw          => undef,
+            enabled           => 1,
+            designated_bridge => _bridge( 32768, 0, '02:00:00:00:00:0a' ),
+            designated_port   => {
+                priority => 128,
+                port     => 4,
+                raw      => '80:04',
+            },
+        },
+        'MSTP: port 3 discarding, no role served'
+    );
+    is( $rows->{4}{state}, 'forwarding', 'MSTP: port 4 forwarding' );
+    cmp_deeply( [ sort keys %$rows ], [ 3, 4 ],
+        'Only the instance rows; aggregate member 5 dropped' );
+    is( $info->stp_tree_ports('cist.0')->{2}{enabled},
+        0, 'CIST port 2: STP disabled on the port' );
+    is( $info->stp_tree_ports('cist.0')->{2}{state},
+        'forwarding', 'CIST port 2 state' );
+
+    $info->{store}{h3c_stp_p_state}{'1.9'} = 'forwarding';
+    delete $info->{_stp_trees};
+    cmp_deeply( [ sort keys %{ $info->stp_tree_ports('msti.1') } ],
+        [ 3, 4 ], 'Unmapped bridge port dropped' );
+
+    $info->{store}{ad_port_attached_agg} = {};
+    cmp_deeply( [ sort keys %{ $info->stp_tree_ports('msti.1') } ],
+        [ 3, 4, 5 ], 'Without membership the port is kept' );
+
+    is( scalar $info->stp_tree_ports('msti.7'), undef, 'Unknown key: nothing' );
+    like(
+        $info->error(1),
+        qr/stp_tree_ports\(\) has no tree 'msti\.7'/,
+        'Error names the method'
+    );
+
+    $test->_stp_cache( 'rstp', $COMWARE7 );
+    $info->{store}{ad_port_attached_agg} = { 5 => 58 };
+    delete $info->{_stp_trees};
+    $rows = $info->stp_tree_ports('cist.0');
+    cmp_deeply( [ sort keys %$rows ], [ 2, 3, 4 ],
+        'RSTP: BRIDGE-MIB rows, aggregate member dropped' );
+    is( $rows->{4}{state}, 'blocking',
+        'RSTP: state from BRIDGE-MIB, not the instance table copy' );
+    is( $rows->{2}{enabled}, 0, 'RSTP: enabled from dot1dStpPortEnable' );
+}
+
+sub stp_trees_complete : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+    is( $info->stp_trees_complete(), 0, 'No trees: not complete' );
+    $test->_stp_cache( 'mstp', $COMWARE7 );
+    is( $info->stp_trees_complete(), 1, 'MSTP trees read' );
+    $test->_stp_cache( 'rstp', $COMWARE7 );
+    delete $info->{_stp_trees};
+    is( $info->stp_trees_complete(), 1, 'RSTP tree read' );
+}
+
+sub stp_vlan_map : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+    $test->_stp_cache( 'mstp', $COMWARE7 );
+    cmp_deeply(
+        scalar $info->stp_vlan_map(),
+        {   1  => 'cist.0',
+            10 => 'msti.1',
+            20 => 'msti.2',
+            30 => 'cist.0',
+        },
+        'MSTP: VLAN to tree key'
+    );
+    $info->{_h3c_stp_version} = 'rstp';
+    is( scalar $info->stp_vlan_map(), undef, 'RSTP: the region map is unused' );
+    delete $info->{_h3c_stp_version};
+    is( scalar $info->stp_vlan_map(), undef, 'Nothing served: nothing' );
 }
 
 1;

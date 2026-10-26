@@ -56,6 +56,7 @@ $VERSION = '3.982000';
     'HH3C-LSW-DEV-ADM-MIB' => 'hh3cLswSysVersion',
     'HH3C-PRODUCT-ID-MIB'  => 'hh3c-s5500-28C-EI',
     'HH3C-ENTITY-VENDORTYPE-OID-MIB' => 'hh3cevtOther',
+    'HH3C-LswMSTP-MIB'     => 'hh3cdot1sStpForceVersion',
 );
 
 %GLOBALS = (
@@ -63,6 +64,9 @@ $VERSION = '3.982000';
     'fan' => 'hh3cDevMFanStatus.1',
     'ps1_status' => 'hh3cDevMPowerStatus.1',
     'ps2_status' => 'hh3cDevMPowerStatus.2',
+
+    # HH3C-LswMSTP-MIB
+    'h3c_stp_version' => 'hh3cdot1sStpForceVersion',
 );
 
 %FUNCS = (
@@ -70,11 +74,28 @@ $VERSION = '3.982000';
     %SNMP::Info::IEEE802dot3ad::FUNCS,
     i_duplex_admin => 'hh3cifEthernetDuplex',
     ad_port_attached_agg => 'dot3adAggPortAttachedAggID',
+
+    # HH3C-LswMSTP-MIB::hh3cdot1sInstanceTable, indexed by instance
+    'h3c_stp_i_id'     => 'hh3cdot1sInstanceID',
+    'h3c_stp_i_bridge' => 'hh3cdot1sMstiBridgeID',
+    'h3c_stp_i_root'   => 'hh3cdot1sMstiDesignedRoot',
+
+    # HH3C-LswMSTP-MIB::hh3cdot1sPortTable, indexed <instance>.<bridge port>
+    'h3c_stp_p_state'  => 'hh3cdot1sMstiState',
+    'h3c_stp_p_bridge' => 'hh3cdot1sMstiDesignatedBridge',
+    'h3c_stp_p_port'   => 'hh3cdot1sMstiDesignatedPort',
+
+    # HH3C-LswMSTP-MIB::hh3cdot1sMstiVlanTable, indexed by VLAN id
+    'h3c_stp_vlan_mst' => 'hh3cdot1sOperMstID',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
+    'h3c_stp_i_bridge' => \&SNMP::Info::munge_prio_mac,
+    'h3c_stp_i_root'   => \&SNMP::Info::munge_prio_mac,
+    'h3c_stp_p_bridge' => \&SNMP::Info::munge_prio_mac,
+    'h3c_stp_p_port'   => \&SNMP::Info::munge_prio_port,
 );
 
 sub vendor {
@@ -182,6 +203,176 @@ sub qb_fdb_index {
     return {};
 }
 
+# The OS version is not in os_ver(), whose regex misses some Comware 7
+# sysDescr strings
+sub _h3c_comware7 {
+    my $h3c = shift;
+    return ( $h3c->description() || '' ) =~ /Software Version 7\./ ? 1 : 0;
+}
+
+# The version is a read-write setting, so it names the protocol the device
+# runs; pvst is not one of its values
+sub _h3c_stp_protocol {
+    my $h3c = shift;
+
+    my $version = $h3c->h3c_stp_version();
+    return unless defined $version;
+    return 'stp'  if $version =~ /^(?:stp|0)$/;
+    return 'rstp' if $version =~ /^(?:rstp|2)$/;
+    return 'mstp' if $version =~ /^(?:mstp|3)$/;
+    return;
+}
+
+sub hasSTP {
+    my $h3c = shift;
+    return ( $h3c->_h3c_stp_protocol() || '' ) eq 'stp' ? 1 : 0;
+}
+
+sub hasRSTP {
+    my $h3c = shift;
+    return ( $h3c->_h3c_stp_protocol() || '' ) eq 'rstp' ? 1 : 0;
+}
+
+sub hasMSTP {
+    my $h3c = shift;
+    return ( $h3c->_h3c_stp_protocol() || '' ) eq 'mstp' ? 1 : 0;
+}
+
+sub stp_protocols {
+    my $h3c = shift;
+
+    my $protocol = $h3c->_h3c_stp_protocol();
+    return unless defined $protocol;
+    return [$protocol];
+}
+
+sub stp_trees {
+    my $h3c = shift;
+
+    return unless $h3c->_stp_default_context_ok();
+    return $h3c->{_stp_trees} if $h3c->{_stp_trees};
+
+    my $protocol = $h3c->_h3c_stp_protocol() or return {};
+    my $measured
+        = ( $h3c->_h3c_comware7() and $protocol =~ /^(?:mstp|rstp)$/ ) ? 1 : 0;
+
+    my $trees;
+    if ( $protocol eq 'mstp' ) {
+        $trees = $h3c->_h3c_mstp_trees($measured);
+    }
+    else {
+        my $record = $h3c->_stp_dot1d_tree();
+        $trees
+            = $record
+            ? { 'cist.0' => { %$record, protocol => $protocol,
+                measured => $measured } }
+            : {};
+    }
+    $h3c->{_stp_trees} = $trees if keys %$trees;
+    return $trees;
+}
+
+sub _h3c_tree_key {
+    my $instance = shift;
+    return $instance ? "msti.$instance" : 'cist.0';
+}
+
+sub _h3c_mstp_trees {
+    my ( $h3c, $measured ) = @_;
+
+    my $instances = $h3c->h3c_stp_i_id()     || {};
+    my $bridges   = $h3c->h3c_stp_i_bridge() || {};
+    my $roots     = $h3c->h3c_stp_i_root()   || {};
+    my $states    = $h3c->h3c_stp_p_state()  || {};
+    my $bp_index  = $h3c->bp_index()         || {};
+
+    my %unmapped;
+    foreach my $row ( keys %$states ) {
+        my ( $instance, $port ) = split /\./, $row, 2;
+        $unmapped{$instance} = 1 unless defined $bp_index->{$port};
+    }
+
+    my %trees;
+    foreach my $instance ( keys %$instances ) {
+        $trees{ _h3c_tree_key($instance) } = {
+            type           => $instance ? 'msti' : 'cist',
+            id             => $instance,
+            protocol       => 'mstp',
+            measured       => $measured,
+            ports_complete => $unmapped{$instance} ? 0 : 1,
+            contexts       => [ { kind => 'none' } ],
+            bridge => scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $bridges->{$instance} ),
+            root => scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $roots->{$instance} ),
+        };
+    }
+    return \%trees;
+}
+
+sub stp_tree_ports {
+    my ( $h3c, $tree_key ) = @_;
+
+    my $tree = $h3c->_stp_tree_for_key($tree_key) or return;
+    my $rows
+        = $tree->{protocol} eq 'mstp'
+        ? $h3c->_h3c_mstp_port_rows($tree)
+        : $h3c->_stp_dot1d_port_rows($tree);
+
+    delete @{$rows}{ keys %{ $h3c->_attached_agg_ports() } };
+    return $rows;
+}
+
+sub _h3c_mstp_port_rows {
+    my ( $h3c, $tree ) = @_;
+
+    my $states   = $h3c->h3c_stp_p_state()  || {};
+    my $d_bridge = $h3c->h3c_stp_p_bridge() || {};
+    my $d_port   = $h3c->h3c_stp_p_port()   || {};
+    my $enable   = $h3c->stp_p_enable()     || {};
+    my $bp_index = $h3c->bp_index()         || {};
+
+    my %rows;
+    foreach my $row ( keys %$states ) {
+        my ( $instance, $port ) = split /\./, $row, 2;
+        next unless $instance == $tree->{id};
+
+        my $iid = $bp_index->{$port};
+        next unless defined $iid;
+        $rows{$iid} = {
+            tree_type         => $tree->{type},
+            tree_id           => $tree->{id},
+            state             => $states->{$row},
+            role              => undef,
+            role_raw          => undef,
+            enabled           =>
+                scalar SNMP::Info::Bridge::_stp_enabled( $enable->{$port} ),
+            designated_bridge =>
+                scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $d_bridge->{$row} ),
+            designated_port =>
+                scalar SNMP::Info::Bridge::_stp_decode_port_id(
+                $d_port->{$row} ),
+        };
+    }
+    return \%rows;
+}
+
+sub stp_trees_complete {
+    my $h3c = shift;
+
+    my $trees = $h3c->stp_trees() || {};
+    return keys %$trees ? 1 : 0;
+}
+
+sub stp_vlan_map {
+    my $h3c = shift;
+
+    return unless ( $h3c->_h3c_stp_protocol() || '' ) eq 'mstp';
+    my $instances = $h3c->h3c_stp_vlan_mst() || {};
+    return { map { $_ => _h3c_tree_key( $instances->{$_} ) } keys %$instances };
+}
+
 # Default tree is not the common tree: dot1dStp matches no VLAN's tree under
 # PVST
 sub _stp_default_is_common { return 0; }
@@ -240,6 +431,8 @@ Subclass for H3C & HP A-series devices
 
 =item F<HH3C-ENTITY-VENDORTYPE-OID-MIB>
 
+=item F<HH3C-LswMSTP-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
@@ -275,6 +468,22 @@ C<sysDescr>.
 
 overwritten to always return empty hash as implementation on 
 h3c is broken.
+
+=item $h3c->h3c_stp_version()
+
+(C<hh3cdot1sStpForceVersion>)
+
+=item $h3c->hasSTP()
+
+Returns 1 when C<hh3cdot1sStpForceVersion> is C<stp(0)>, else 0.
+
+=item $h3c->hasRSTP()
+
+Returns 1 when C<hh3cdot1sStpForceVersion> is C<rstp(2)>, else 0.
+
+=item $h3c->hasMSTP()
+
+Returns 1 when C<hh3cdot1sStpForceVersion> is C<mstp(3)>, else 0.
 
 =back
 
@@ -324,6 +533,81 @@ available.
 Returns a HASH reference mapping from slave to master port for each member of
 a port bundle on the device. Keys are ifIndex of the slave ports, Values are
 ifIndex of the corresponding master ports.
+
+=back
+
+=head2 Table Methods
+
+=over
+
+=item $h3c->h3c_stp_i_id()
+
+(C<hh3cdot1sInstanceID>)
+
+=item $h3c->h3c_stp_i_bridge()
+
+(C<hh3cdot1sMstiBridgeID>)
+
+=item $h3c->h3c_stp_i_root()
+
+(C<hh3cdot1sMstiDesignedRoot>)
+
+=item $h3c->h3c_stp_p_state()
+
+(C<hh3cdot1sMstiState>)
+
+=item $h3c->h3c_stp_p_bridge()
+
+(C<hh3cdot1sMstiDesignatedBridge>)
+
+=item $h3c->h3c_stp_p_port()
+
+(C<hh3cdot1sMstiDesignatedPort>)
+
+=item $h3c->h3c_stp_vlan_mst()
+
+(C<hh3cdot1sOperMstID>)
+
+=back
+
+=head2 Spanning Tree Trees
+
+These override L<SNMP::Info::Bridge/"Spanning Tree Trees">; records are as
+described there.  The protocol is the one C<hh3cdot1sStpForceVersion> names.
+Under MSTP the CIST and each MSTI come from the C<HH3C-LswMSTP-MIB>
+instance and port tables, keyed C<cist.0> and C<msti.E<lt>instanceE<gt>>;
+their bridge IDs carry the instance number in the low 12 bits.  Under RSTP
+and STP the one tree comes from C<BRIDGE-MIB>, whose values the instance
+tables only copy.  The MIBs serve no port role, so C<role> and C<role_raw>
+are undef.  Physical members of a Bridge-Aggregation interface are omitted,
+as in C<i_stp_state()>.  C<measured> is 1 on Comware 7 under MSTP and RSTP.
+Under PVST, which C<hh3cdot1sStpForceVersion> does not name, no trees are
+reported.
+
+=over
+
+=item $h3c->stp_protocols()
+
+Returns reference to an array holding the protocol, or nothing.
+
+=item $h3c->stp_trees()
+
+Returns reference to hash of tree records, or an empty hash when no force
+version is served.
+
+=item $h3c->stp_tree_ports($tree_key)
+
+Returns reference to hash of the tree's port records keyed by ifIndex.
+
+=item $h3c->stp_trees_complete()
+
+Returns 1 when trees were read, 0 otherwise.
+
+=item $h3c->stp_vlan_map()
+
+Under MSTP returns reference to hash mapping VLAN id to tree key, from
+C<hh3cdot1sOperMstID>.  Otherwise nothing; RSTP still serves the unused
+region map.
 
 =back
 
