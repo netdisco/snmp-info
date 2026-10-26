@@ -9,13 +9,49 @@ use SNMP::Info::Layer3::RuckusController;
 sub setup : Tests(setup) {
   my $test = shift;
   $test->SUPER::setup;
+  # Node table index: the serial as a length-prefixed string
+  my $node = _node_iid('SYNTHETIC-SZ-SERIAL');
+  my $peer = _node_iid('SYNTHETIC-PEER-SERIAL');
   $test->{info}->cache({
-    '_layers' => 3,
-    '_description' => 'Ruckus SmartZone Controller',
-    '_id' => '.1.3.6.1.4.1.25053.3.1.11',
+    '_layers' => 78,
+    '_description' => 'SmartZone',
+    '_id' => '.1.3.6.1.4.1.25053.3.1.11.1',
     '_ruckus_sz_serial' => 'SYNTHETIC-SZ-SERIAL',
-    'store' => {},
+    '_ruckus_node_model' => 1,
+    '_ruckus_node_version' => 1,
+    'store' => {
+      'ruckus_node_model'   => { $node => 'vSZ-E',       $peer => 'vSZ-H' },
+      'ruckus_node_version' => { $node => '6.1.2.0.487', $peer => '6.1.1.0.959' },
+    },
   });
+}
+
+sub _node_iid {
+  my $serial = shift;
+  return join('.', length $serial, map { ord } split //, $serial);
+}
+
+sub layers : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+  $info->cache({ '_layers' => 6 });
+  is($info->layers(), '00000110', 'served sysServices are used');
+
+  $info->cache({ '_layers' => undef });
+  is($info->layers(), '01001110', 'no sysServices gives layers 2, 3, 4 and 7');
+}
+
+sub os_ver : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+  is($info->os_ver(), '6.1.2.0.487', 'os_ver is this node\'s version');
+
+  $info->cache({ '_ruckus_sz_serial' => 'SYNTHETIC-PEER-SERIAL' });
+  is($info->os_ver(), '6.1.1.0.959', 'the node row follows the serial');
+
+  $info->cache({ '_ruckus_node_model' => 0, '_ruckus_node_version' => 0,
+    'store' => {} });
+  is($info->os_ver(), undef, 'no node table gives no version');
 }
 
 sub vendor : Tests(1) {
@@ -45,9 +81,21 @@ sub serial : Tests(3) {
     'empty vendor serials use the inherited serial method');
 }
 
-sub model : Tests(6) {
+sub model : Tests(8) {
   my $test = shift;
   my $info = $test->{info};
+  is($info->model(), 'vSZ-E', 'model is this node\'s model');
+
+  my $single = _node_iid('SYNTHETIC-ONLY-NODE');
+  $info->cache({
+    '_ruckus_sz_serial' => '', '_ruckus_scg_serial' => '',
+    '_ruckus_node_version' => 0,
+    'store' => { 'ruckus_node_model' => { $single => 'SZ104' } },
+  });
+  is($info->model(), 'SZ104', 'a single node row is used without a serial');
+
+  $info->cache({ '_ruckus_node_model' => 0,
+    '_id' => '.1.3.6.1.4.1.25053.3.1.11', 'store' => {} });
   is($info->model(), 'SmartZone', 'generic SmartZone product OID is identified');
 
   foreach my $case (
@@ -66,7 +114,7 @@ sub model : Tests(6) {
     'unknown controller models fall back to the inherited model');
 }
 
-sub device_type : Tests(6) {
+sub device_type : Tests(7) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -92,6 +140,14 @@ sub device_type : Tests(6) {
   });
   is($info->device_type(), 'SNMP::Info::Layer2::RuckusAP',
     'Ruckus access point OIDs still select the AP class');
+
+  $info->cache({
+    '_layers' => 6,
+    '_description' => 'Ruckus Wireless ZoneDirector',
+    '_id' => '.1.3.6.1.4.1.25053.3.1.5.15',
+  });
+  isnt($info->device_type(), 'SNMP::Info::Layer3::RuckusController',
+    'ZoneDirector does not select the controller class');
 
   $info->cache({
     '_layers' => 0,

@@ -45,19 +45,78 @@ $VERSION = '3.982000';
     'RUCKUS-PRODUCTS-MIB'   => 'ruckusSCG200',
     'RUCKUS-SZ-SYSTEM-MIB'  => 'ruckusSZSystemStatsSerialNumber',
     'RUCKUS-SCG-SYSTEM-MIB' => 'ruckusSystemStatsSerialNumber',
+    'RUCKUS-CTRL-MIB'       => 'ruckusCtrlSystemNodeModel',
 );
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    'ruckus_sz_serial'  => 'ruckusSZSystemStatsSerialNumber',
+
+    # RUCKUS-SZ-SYSTEM-MIB
+    'ruckus_sz_serial' => 'ruckusSZSystemStatsSerialNumber',
+
+    # RUCKUS-SCG-SYSTEM-MIB
     'ruckus_scg_serial' => 'ruckusSystemStatsSerialNumber',
 );
-%FUNCS = ( %SNMP::Info::Layer3::FUNCS );
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,
+
+    # RUCKUS-CTRL-MIB::ruckusCTRLSystemNodeTable, one row per cluster node
+    'ruckus_node_model'   => 'ruckusCtrlSystemNodeModel',
+    'ruckus_node_version' => 'ruckusCtrlSystemNodeVersion',
+);
 %MUNGE = ( %SNMP::Info::Layer3::MUNGE );
 
 sub vendor { return 'ruckus'; }
 
+# Some agents serve no sysServices; vSZ serves 78
+sub layers {
+    my $self = shift;
+    return $self->SUPER::layers() || '01001110';
+}
+
+# A cluster serves a row per node, indexed by the node's serial as a
+# length-prefixed string; some agents do not serve the serial column
+sub _ruckus_node_iid {
+    my $self = shift;
+
+    my %iids = map { $_ => 1 } keys %{ $self->ruckus_node_model() || {} },
+        keys %{ $self->ruckus_node_version() || {} };
+    my $serial = $self->serial();
+    if ( defined $serial ) {
+        my ($iid) = grep { _ruckus_iid_string($_) eq $serial } keys %iids;
+        return $iid if defined $iid;
+    }
+    my @iids = keys %iids;
+    return $iids[0] if @iids == 1;
+    return;
+}
+
+sub _ruckus_iid_string {
+    my ( $length, @octets ) = split /\./, shift;
+    return '' unless defined $length and @octets == $length;
+    return join '', map {chr} @octets;
+}
+
+sub _ruckus_node_value {
+    my ( $self, $column ) = @_;
+
+    my $iid = $self->_ruckus_node_iid();
+    return unless defined $iid;
+    my $value = ( $self->$column() || {} )->{$iid};
+    return $value if defined $value and $value =~ /\S/;
+    return;
+}
+
+sub os_ver {
+    my $self = shift;
+    return $self->_ruckus_node_value('ruckus_node_version')
+        || $self->SUPER::os_ver();
+}
+
 sub model {
     my $self = shift;
+    my $node_model = $self->_ruckus_node_value('ruckus_node_model');
+    return $node_model if defined $node_model;
+
     my $id = $self->id() || '';
     my $product = SNMP::translateObj($id) || '';
     return 'SCG200' if $product eq 'ruckusSCG200';
@@ -130,6 +189,8 @@ some SmartZone-based platforms.
 
 =item F<RUCKUS-SCG-SYSTEM-MIB>
 
+=item F<RUCKUS-CTRL-MIB>
+
 =back
 
 =head2 Inherited MIBs
@@ -139,6 +200,20 @@ See L<SNMP::Info::Layer3/"Required MIBs"> for its MIB requirements.
 =head1 GLOBALS
 
 These methods return scalar values.
+
+=over
+
+=item $controller->ruckus_sz_serial()
+
+Returns the SmartZone serial number (C<ruckusSZSystemStatsSerialNumber>,
+F<RUCKUS-SZ-SYSTEM-MIB>).
+
+=item $controller->ruckus_scg_serial()
+
+Returns the SmartCell Gateway serial number
+(C<ruckusSystemStatsSerialNumber>, F<RUCKUS-SCG-SYSTEM-MIB>).
+
+=back
 
 =head2 Overrides
 
@@ -152,18 +227,21 @@ Returns C<ruckus>.
 
 Returns C<ruckus smartzone/scg>.
 
-=item $controller->ruckus_sz_serial()
+=item $controller->layers()
 
-Returns the SmartZone serial number (C<ruckusSZSystemStatsSerialNumber>).
+Returns the served C<sysServices> layers, or C<01001110> (layers 2, 3, 4 and
+7, as virtual SmartZone serves) where the agent serves none.
 
-=item $controller->ruckus_scg_serial()
+=item $controller->os_ver()
 
-Returns the SmartCell Gateway serial number
-(C<ruckusSystemStatsSerialNumber>).
+Returns this node's software version from C<ruckusCTRLSystemNodeTable>
+(C<ruckusCtrlSystemNodeVersion>), falling back to the inherited method.
 
 =item $controller->model()
 
-Returns the controller model identified by its product sysObjectID. Known
+Returns this node's model from C<ruckusCTRLSystemNodeTable>
+(C<ruckusCtrlSystemNodeModel>), such as C<SZ104> or C<vSZ-E>.  Where the
+table is not served, returns the model identified by its product sysObjectID. Known
 models include C<SCG200>, C<SZ100>, and C<SZ50>; generic product branches
 return C<SCG> or C<SmartZone>. Unrecognized IDs use the inherited model.
 
@@ -179,6 +257,26 @@ falling back to the inherited serial method.
 See L<SNMP::Info::Layer3/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
+
+=head2 Ruckus Controller Node Table (C<ruckusCTRLSystemNodeTable>)
+
+The table holds one row per cluster node, indexed by the node's serial
+number.  This node's row is the one whose index is C<serial()>, or the only
+row.
+
+=over
+
+=item $controller->ruckus_node_model()
+
+Returns reference to hash.  Key: node index, value: node model
+(C<ruckusCtrlSystemNodeModel>).
+
+=item $controller->ruckus_node_version()
+
+Returns reference to hash.  Key: node index, value: node software version
+(C<ruckusCtrlSystemNodeVersion>).
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
