@@ -338,7 +338,7 @@ sub stp_tree_ports : Tests(12) {
     is( $rows->{2}{enabled}, 0, 'RSTP: enabled from dot1dStpPortEnable' );
 }
 
-sub stp_trees_complete : Tests(3) {
+sub stp_trees_complete : Tests(5) {
     my $test = shift;
     my $info = $test->{info};
     is( $info->stp_trees_complete(), 0, 'No trees: not complete' );
@@ -347,6 +347,10 @@ sub stp_trees_complete : Tests(3) {
     $test->_stp_cache( 'rstp', $COMWARE7 );
     delete $info->{_stp_trees};
     is( $info->stp_trees_complete(), 1, 'RSTP tree read' );
+    $test->_pvst_cache($COMWARE7);
+    is( $info->stp_trees_complete(), 1, 'PVST: every VLAN tree listed' );
+    $info->session()->{Context} = 'vlan-10';
+    is( $info->stp_trees_complete(), 0, 'PVST in a context: no trees listed' );
 }
 
 sub stp_vlan_map : Tests(3) {
@@ -366,6 +370,107 @@ sub stp_vlan_map : Tests(3) {
     is( scalar $info->stp_vlan_map(), undef, 'RSTP: the region map is unused' );
     delete $info->{_h3c_stp_version};
     is( scalar $info->stp_vlan_map(), undef, 'Nothing served: nothing' );
+}
+
+# swC with force version rstp: the instance table lists VLANs 1, 10, 20 and
+# 4094 as well as 0, and no bridge, root or port-state column is served.
+sub _pvst_cache {
+    my ( $test, $description ) = @_;
+    my $info = $test->{info};
+
+    $test->_stp_cache( 'rstp', $description );
+    $info->{store}{h3c_stp_i_id}
+        = { map { $_ => $_ } ( 0, 1, 10, 20, 4094 ) };
+    $info->{store}{$_} = {} for qw/h3c_stp_i_bridge h3c_stp_i_root
+        h3c_stp_p_state h3c_stp_p_bridge h3c_stp_p_port/;
+    $info->{walk_status} = {};
+    delete $info->{_stp_trees};
+    return;
+}
+
+sub pvst_trees : Tests(9) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_pvst_cache($COMWARE7);
+    my $trees = $info->stp_trees();
+    cmp_deeply( [ sort keys %$trees ],
+        [ sort qw/vlan.1 vlan.10 vlan.20 vlan.4094/ ],
+        'PVST: one tree per VLAN' );
+    cmp_deeply(
+        $trees->{'vlan.10'},
+        {   type           => 'vlan',
+            id             => 10,
+            vlan           => 10,
+            protocol       => 'pvst',
+            measured       => 1,
+            ports_complete => 0,
+            contexts       => [],
+            bridge         => undef,
+            root           => undef,
+        },
+        'PVST: vlan.10 record, no context serves it'
+    );
+    cmp_deeply( $info->stp_protocols(), ['pvst'], 'stp_protocols' );
+    is( $info->hasRSTP(), 0, 'Not hasRSTP' );
+    cmp_deeply( $info->stp_tree_ports('vlan.10'), {}, 'No port data' );
+    is( $info->stp_trees_complete(), 1, 'Every VLAN tree is listed' );
+
+    $info->{walk_status}{h3c_stp_i_bridge}
+        = { complete => 1, reason => 'absent' };
+    cmp_deeply( $info->stp_protocols(), ['pvst'],
+        'Absent column: still pvst' );
+
+    $test->_pvst_cache($COMWARE5);
+    is( $info->stp_trees()->{'vlan.10'}{measured}, 0,
+        'Comware 5: not measured' );
+
+    $test->_stp_cache( 'rstp', $COMWARE7 );
+    $info->{store}{h3c_stp_i_bridge} = {};
+    delete $info->{_stp_trees};
+    cmp_deeply( $info->stp_protocols(), ['rstp'],
+        'Empty bridge column but port states served: rstp' );
+}
+
+sub pvst_unreadable_column : Tests(4) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_pvst_cache($COMWARE7);
+    $info->{walk_status}{h3c_stp_i_bridge}
+        = { complete => 0, reason => 'timeout' };
+    is( scalar $info->stp_protocols(), undef,
+        'Timed-out column: no protocol' );
+    cmp_deeply( $info->stp_trees(), {}, 'No trees' );
+    is( $info->stp_trees_complete(), 0, 'Not complete' );
+    cmp_deeply( [ sort keys %{ $info->i_stp_state() } ], [ 2, 3, 4 ],
+        'i_stp_state keeps its values' );
+}
+
+sub hasPVST : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+    $test->_pvst_cache($COMWARE7);
+    is( $info->hasPVST(), 1, 'PVST tables' );
+    $info->{walk_status}{h3c_stp_i_bridge}
+        = { complete => 0, reason => 'timeout' };
+    is( $info->hasPVST(), 0, 'Unreadable column: not known' );
+    $test->_stp_cache( 'rstp', $COMWARE7 );
+    is( $info->hasPVST(), 0, 'RSTP tables' );
+}
+
+sub i_stp_state_pvst : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_pvst_cache($COMWARE7);
+    cmp_deeply( $info->i_stp_state(), {}, 'PVST on Comware 7: nothing' );
+    $test->_pvst_cache($COMWARE5);
+    cmp_deeply( [ sort keys %{ $info->i_stp_state() } ], [ 2, 3, 4 ],
+        'PVST on Comware 5: values kept' );
+    $test->_stp_cache( 'rstp', $COMWARE7 );
+    cmp_deeply( [ sort keys %{ $info->i_stp_state() } ], [ 2, 3, 4 ],
+        'RSTP on Comware 7: values kept' );
 }
 
 1;
