@@ -2,6 +2,8 @@ Version 3.982001
 
   [ENHANCEMENTS]
 
+  * #644 Agent skills: check a class against a walk before review, and
+    find the skills from Codex as well
   * #640 Ruckus: detect SmartZone and SmartCell Gateway controllers by
     product OID and report model and serial number
 
