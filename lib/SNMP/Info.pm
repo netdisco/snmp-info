@@ -6522,6 +6522,16 @@ sub AUTOLOAD {
     }
 
     return unless my $meth_ref = $self->can($sub_name, @_);
+
+    # can() returns a bodyless stub like any other sub, and calling one
+    # lands back here, so this would otherwise recurse until memory runs out
+    croak(    "$AUTOLOAD is declared but has no body, so the inherited or "
+            . "generated $sub_name method cannot be reached. A reference "
+            . "such as \\&$AUTOLOAD, or a forward declaration "
+            . "'sub $sub_name;', declares the stub. Define the sub, or test "
+            . "whether it exists with defined(&$AUTOLOAD), which declares "
+            . "nothing" )
+        unless defined &$meth_ref;
     return $self->$meth_ref(@_);
 
 }
