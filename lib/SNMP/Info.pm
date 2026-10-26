@@ -6335,8 +6335,9 @@ sub _walk_outcome {
 Returns the SNMPv3 Context of the session. On SNMPv1 and SNMPv2c, returns
 C<X> when the session community is the constructor's Community followed by
 C<@X>, or C<X> followed by C<@> and the Community (Junos puts the context
-first, C<default::20@public>). Otherwise returns an empty string. Never
-returns any part of the community itself.
+first, C<default::20@public>). Otherwise, and always when the constructor's
+Community is empty or undefined, returns an empty string. Never returns any
+part of the community itself.
 
 =cut
 
@@ -6350,7 +6351,9 @@ sub _walk_context {
 
     my $base      = ( $self->{args} || {} )->{Community};
     my $community = $sess->{Community};
-    return '' unless defined $base and defined $community;
+    return '' unless defined $base
+        and length $base
+        and defined $community;
 
     my $prefix = $base . '@';
     return substr( $community, length $prefix )

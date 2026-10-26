@@ -2889,6 +2889,13 @@ sub _walk_context : Tests(5) {
     '', 'Empty instance: default context');
 }
 
+sub walk_context__empty_base__returns_empty : Tests(1) {
+  my $test = shift;
+
+  is($test->_fresh_community_info('', 'x@')->_walk_context(), '',
+    'No base community: no part of the session community is a context');
+}
+
 sub incomplete_walk : Tests(7) {
   my $test = shift;
 
