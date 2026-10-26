@@ -1185,8 +1185,8 @@ runs, or nothing when no tree was read: C<stp>, C<rstp>, C<mstp>,
 C<pvst> (PVST+), C<rapid-pvst> (Rapid-PVST+), C<vstp> (Juniper VLAN
 Spanning Tree, one tree per VLAN in its own context) or C<dot1d>.  C<dot1d>
 means a C<BRIDGE-MIB> tree is served but no object says which protocol it
-is.  Nothing does not
-mean the device runs no spanning tree: check C<stp_trees_complete()>.
+is.  Nothing does not mean the device runs no spanning tree: check
+C<stp_trees_complete()>.
 
 =item $bridge->stp_trees()
 

@@ -819,6 +819,9 @@ sub peth_port_ifindex {
 sub _jnx_stp_protocol {
     my $juniper = shift;
 
+    # A VSTP VLAN's own context serves that VLAN's tree as RSTP
+    return if length $juniper->_walk_context();
+
     my $control = $juniper->jnx_mst_control() || {};
     my $started = $control->{0};
     return 'mstp' if defined $started and $started =~ /^(?:start|1)$/;
@@ -936,6 +939,7 @@ sub _jnx_vstp_trees {
 sub stp_protocols {
     my $juniper = shift;
 
+    return unless $juniper->_stp_default_context_ok();
     my $protocol = $juniper->_jnx_stp_protocol();
     return [$protocol] if defined $protocol;
     return unless $juniper->_stp_dot1d_tree();
@@ -962,7 +966,7 @@ sub _jnx_measured {
     my ( $juniper, $protocol ) = @_;
 
     return 0 unless defined $protocol;
-    return 0 unless $protocol =~ /^(?:rstp|mstp|vstp)$/;
+    return 0 unless $protocol =~ /^(?:stp|rstp|mstp|vstp)$/;
     return $juniper->os() eq 'junos' ? 1 : 0;
 }
 
@@ -1312,10 +1316,11 @@ Returns 1 when C<jnxMIMstSystemControl> for context 0 is C<start(1)>, else 0.
 
 =item $juniper->hasVSTP()
 
-Returns 1 when the default context serves neither C<dot1dStpVersion> nor an
-MST control row at context 0, C<jnxMIMstSystemControl> has rows at other
-contexts, and C<jnxMIMstMstiBridgePriority> has none, else 0.  The device
-sets no flag for VSTP.
+Returns 1 when the default context serves no C<dot1dStpVersion> and
+C<jnxMIMstSystemControl> does not start MSTP at context 0, its walk
+completed with rows at contexts other than 0, and
+C<jnxMIMstMstiBridgePriority> has none, else 0.  The device sets no flag for
+VSTP.
 
 =back
 
@@ -1465,8 +1470,8 @@ C<JUNIPER-MIMSTP-MIB>; the MSTI bridge ID is the configured priority plus the
 MSTI number, with the bridge address.  Under RSTP and STP the one tree is
 the C<BRIDGE-MIB> tree.  When no indicator is served but C<BRIDGE-MIB> serves
 the tree, C<cist.0> is reported with an undefined protocol, C<stp_protocols()>
-is C<['dot1d']> and C<stp_trees_complete()> is 0.  C<measured> is 1 under RSTP
-and MSTP.  C<enabled> is undef under MSTP, which does not serve
+is C<['dot1d']> and C<stp_trees_complete()> is 0.  C<measured> is 1 under STP,
+RSTP, MSTP and VSTP.  C<enabled> is undef under MSTP, which does not serve
 C<dot1dStpPortEnable>.  A port row with no C<bp_index> entry is left out and
 makes C<ports_complete> 0.  Only the default context is read, except for
 VSTP below.
@@ -1481,10 +1486,11 @@ needs an exact VACM C<context-prefix default::N> on the device.  The VLANs
 come from C<vacmContextName>, keeping the names of the form C<default::N>.
 The MST control rows and the VLAN table are not used: the first carry context
 ids, and the second lists VLANs that do not run VSTP.  When the agent's view
-excludes C<SNMP-VIEW-BASED-ACM-MIB> (1.3.6.1.6.3.16), as a read-only view
-often does, the VLAN list is unknown: C<stp_trees()> is an empty hash and
-C<stp_trees_complete()> is 0.  Grant the community or user read access to
-1.3.6.1.6.3.16.  A VSTP record has an undefined C<bridge> and C<root>, which
+excludes C<SNMP-VIEW-BASED-ACM-MIB> (1.3.6.1.6.3.16), the VLAN list is
+unknown: C<stp_trees()> is an empty hash and C<stp_trees_complete()> is 0.
+Grant the community or user read access to 1.3.6.1.6.3.16.  Other VLAN
+contexts get no reply at all, not an error, so ask only the listed ones.
+A VSTP record has an undefined C<bridge> and C<root>, which
 only its own context serves, and C<measured> is 1.
 
 =over
@@ -1492,7 +1498,9 @@ only its own context serves, and C<measured> is 1.
 =item $juniper->stp_protocols()
 
 Returns reference to an array holding the protocol, C<['dot1d']> when only
-C<BRIDGE-MIB> is served, or nothing.
+C<BRIDGE-MIB> is served, or nothing.  Protocol methods answer only in the
+default context: C<stp_protocols()> reports an error in any other, and
+C<hasSTP()> to C<hasVSTP()> return 0.
 
 =item $juniper->stp_trees()
 
@@ -1504,8 +1512,7 @@ served.
 Returns reference to hash of the tree's port records keyed by ifIndex.  A
 C<vlan.N> key is read in the session's own context C<default::N>; in the
 default context it returns nothing, with C<error()> naming the contexts.
-Under
-MSTP C<role> is the C<jnxMIMstCistCurrentPortRole> or
+Under MSTP C<role> is the C<jnxMIMstCistCurrentPortRole> or
 C<jnxMIMstMstiCurrentPortRole> value in the shared vocabulary, and C<role_raw>
 as served.
 

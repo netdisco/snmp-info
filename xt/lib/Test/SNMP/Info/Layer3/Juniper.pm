@@ -981,21 +981,10 @@ sub _stp_cache {
   $info->clear_cache();
 
   my $id = sub { pack('H*', shift) };
-  my %store = (
-    bp_index    => {1 => 521, 2 => 522},
-    stp_p_id    => {1 => 1,   2 => 2},
-    stp_p_state => {1 => 'forwarding', 2 => 'blocking'},
-    stp_p_enable => {1 => 'enabled', 2 => 'enabled'},
-    stp_p_bridge => {
-      1 => $id->('800002000000000b'), 2 => $id->('800002000000000b'),
-    },
-    stp_p_port   => {1 => $id->('8001'), 2 => $id->('8002')},
-  );
+  my %store = (bp_index => {1 => 521, 2 => 522});
   my %cache = (
     _description  => 'Juniper Networks, Inc. ex4300-48t, kernel JUNOS 21.4R3',
     _b_mac        => $id->('02000000000a'),
-    _stp_priority => 32768,
-    _stp_root     => $id->('800002000000000b'),
   );
 
   if ($protocol eq 'mstp') {
@@ -1010,10 +999,13 @@ sub _stp_cache {
         '0.1' => $id->('100102000000000b'),
         '0.2' => $id->('800202000000000a'),
       },
-      jnx_msti_vlans_1k => {'0.1' => "\x00\x40", '0.2' => "\x00\x00\x10"},
-      jnx_msti_vlans_2k => {'0.1' => "\x00" x 16, '0.2' => "\x00" x 16},
-      jnx_msti_vlans_3k => {'0.1' => "\x00" x 16, '0.2' => "\x00" x 16},
-      jnx_msti_vlans_4k => {'0.1' => "\x00" x 16, '0.2' => "\x00" x 16},
+      jnx_msti_vlans_1k => {
+        '0.1' => "\x00\x40" . "\x00" x 126,
+        '0.2' => "\x00\x00\x10" . "\x00" x 125,
+      },
+      jnx_msti_vlans_2k => {'0.1' => "\x00" x 128, '0.2' => "\x00" x 128},
+      jnx_msti_vlans_3k => {'0.1' => "\x00" x 128, '0.2' => "\x00" x 128},
+      jnx_msti_vlans_4k => {'0.1' => "\x00" x 128, '0.2' => "\x00" x 128},
       jnx_cist_p_state  => {1 => 'forwarding', 2 => 'discarding'},
       jnx_cist_p_role   => {1 => 'root',       2 => 'alternate'},
       jnx_cist_p_bridge => {
@@ -1050,13 +1042,53 @@ sub _stp_cache {
     );
   }
   else {
-    $store{jnx_mst_control} = {0 => 'shutdown'};
-    $cache{_jnx_stp_version} = $protocol eq 'stp' ? 0 : 2;
+    my ($bridge_store, $bridge_cache) = $test->_bridge_mib_rows();
+    %store = (%store, %$bridge_store, jnx_mst_control => {0 => 'shutdown'});
+    %cache = (%cache, %$bridge_cache,
+      _jnx_stp_version => $protocol eq 'stp' ? 0 : 2);
   }
 
   $info->{store}{$_} = $store{$_} for keys %store;
   $info->{'_' . $_} = 1 for keys %store;
   $info->cache(\%cache);
+  return;
+}
+
+# What dot1dStp serves: the default context under RSTP and STP, and a VSTP
+# VLAN's own context (the default context serves none under MSTP or VSTP)
+sub _bridge_mib_rows {
+  my $id = sub { pack('H*', shift) };
+  my %store = (
+    stp_p_id    => {1 => 1,   2 => 2},
+    stp_p_state => {1 => 'forwarding', 2 => 'blocking'},
+    stp_p_enable => {1 => 'enabled', 2 => 'enabled'},
+    stp_p_bridge => {
+      1 => $id->('800002000000000b'), 2 => $id->('800002000000000b'),
+    },
+    stp_p_port   => {1 => $id->('8001'), 2 => $id->('8002')},
+  );
+  my %cache = (
+    _stp_priority => 32768,
+    _stp_root     => $id->('800002000000000b'),
+  );
+  return (\%store, \%cache);
+}
+
+# The session sits in the VLAN's own context, which serves that VLAN's tree
+# as BRIDGE-MIB, dot1dStpVersion 2 and its own MST control row
+sub _enter_vstp_context {
+  my ($test, $vlan) = @_;
+  my $info = $test->{info};
+
+  my ($store, $cache) = $test->_bridge_mib_rows();
+  my $vlan_bridge = pack('H*', sprintf('%04x02000000000b', 0x8000 + $vlan));
+  $store->{stp_p_bridge} = {1 => $vlan_bridge, 2 => $vlan_bridge};
+  $info->{store}{$_} = $store->{$_} for keys %$store;
+  $info->{'_' . $_} = 1 for keys %$store;
+  $info->{store}{jnx_mst_control} = {2 => 'shutdown'};
+  $info->cache({%$cache, _jnx_stp_version => 2});
+  $info->{args}{Community} = 'public';
+  $info->session()->{Community} = "default::$vlan\@public";
   return;
 }
 
@@ -1142,8 +1174,8 @@ sub stp_trees : Tests(16) {
 
   $test->_stp_cache('stp');
   $trees = $info->stp_trees();
-  cmp_deeply([@{$trees->{'cist.0'}}{qw/protocol measured/}], ['stp', 0],
-    'STP: protocol set, not measured');
+  cmp_deeply([@{$trees->{'cist.0'}}{qw/protocol measured/}], ['stp', 1],
+    'STP: protocol set, measured on JUNOS');
 
   $test->_stp_cache('mstp');
   $trees = $info->stp_trees();
@@ -1300,17 +1332,27 @@ sub _jnx_stp_protocol__vstp : Tests(6) {
   $info->{walk_status}{jnx_mst_control}
     = {complete => 0, reason => 'timeout'};
   is($info->_jnx_stp_protocol(), undef, 'Incomplete control walk: undef');
-  delete $info->{store}{stp_p_id};
-  delete $info->{_stp_root};
   is(scalar $info->stp_protocols(), undef, 'stp_protocols undef');
   is($info->stp_trees_complete(), 0, 'stp_trees_complete 0');
 }
 
-sub stp_protocols__vstp : Tests(1) {
+sub stp_protocols__vstp : Tests(7) {
   my $test = shift;
+  my $info = $test->{info};
 
   $test->_stp_cache('vstp');
-  cmp_deeply($test->{info}->stp_protocols(), ['vstp'], 'vstp');
+  cmp_deeply($info->stp_protocols(), ['vstp'], 'vstp');
+
+  $test->_enter_vstp_context(20);
+  is(scalar $info->stp_protocols(), undef, 'VLAN context: nothing');
+  like($info->error(1), qr/default context/, 'Error names the context');
+  is($info->hasRSTP(), 0, 'VLAN context: not rstp');
+  is($info->hasVSTP(), 0, 'VLAN context: no answer');
+  is($info->context_kinds('stp'), undef, 'VLAN context: no kinds');
+  my $rows = $info->stp_tree_ports('vlan.20');
+  cmp_deeply([sort keys %$rows], [521, 522],
+    'VLAN context: its ports still read');
+  $info->session()->{Community} = 'public';
 }
 
 sub _context_kinds : Tests(4) {
@@ -1406,7 +1448,7 @@ sub stp_trees__vstp : Tests(8) {
   cmp_deeply([keys %{$info->stp_trees()}], ['cist.0'], 'RSTP unchanged');
 }
 
-sub stp_tree_ports__vstp : Tests(9) {
+sub stp_tree_ports__vstp : Tests(10) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -1417,11 +1459,12 @@ sub stp_tree_ports__vstp : Tests(9) {
   like($info->error(1), qr/stp_tree_ports/, 'Error names the method');
 
   $test->_stp_cache('vstp');
-  $info->{args}{Community} = 'public';
-  $info->session()->{Community} = 'default::20@public';
+  $test->_enter_vstp_context(20);
   my $rows = $info->stp_tree_ports('vlan.20');
   cmp_deeply([sort keys %$rows], [521, 522], 'In context: rows by ifIndex');
   is($rows->{522}{state}, 'blocking', '522 blocking');
+  cmp_deeply($rows->{522}{designated_bridge}, _bridge(32768, 20,
+    '02:00:00:00:00:0b'), '522 designated bridge, VLAN as extension');
   is($rows->{522}{tree_type}, 'vlan', 'Labeled vlan');
   is($rows->{522}{tree_id}, 20, 'Labeled 20');
 
@@ -1452,7 +1495,7 @@ sub stp_trees_complete__vstp : Tests(4) {
   is($info->stp_trees_complete(), 0, 'No VSTP contexts named');
 }
 
-sub stp_vlan_map : Tests(4) {
+sub stp_vlan_map : Tests(5) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -1460,8 +1503,8 @@ sub stp_vlan_map : Tests(4) {
   cmp_deeply(scalar $info->stp_vlan_map(), {10 => 'msti.1', 20 => 'msti.2'},
     'MSTP: only VLANs mapped to an MSTI');
 
-  $info->{store}{jnx_msti_vlans_2k}{'0.2'} = "\x80" . "\x00" x 15;
-  $info->{store}{jnx_msti_vlans_3k}{'0.2'} = "\x80" . "\x00" x 15;
+  $info->{store}{jnx_msti_vlans_2k}{'0.2'} = "\x80" . "\x00" x 127;
+  $info->{store}{jnx_msti_vlans_3k}{'0.2'} = "\x80" . "\x00" x 127;
   $info->{store}{jnx_msti_vlans_4k}{'0.1'} = "\x00" x 127 . "\x0f";
   cmp_deeply(
     scalar $info->stp_vlan_map(),
@@ -1471,6 +1514,11 @@ sub stp_vlan_map : Tests(4) {
     },
     'Bitmap origins 1025, 2049, 3073; VLANs capped at 4094'
   );
+
+  $test->_stp_cache('mstp');
+  $info->{store}{jnx_msti_vlans_1k}{'0.1'} = "\x00\x40";
+  cmp_deeply(scalar $info->stp_vlan_map(), {10 => 'msti.1', 20 => 'msti.2'},
+    'A short bitmap stands for zero-padding');
 
   $test->_stp_cache('rstp');
   is(scalar $info->stp_vlan_map(), undef, 'RSTP: nothing');
