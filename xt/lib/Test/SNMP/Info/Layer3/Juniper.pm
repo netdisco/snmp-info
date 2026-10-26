@@ -979,6 +979,7 @@ sub _stp_cache {
   my ($test, $protocol) = @_;
   my $info = $test->{info};
   $info->clear_cache();
+  delete $info->{walk_status};
 
   my $id = sub { pack('H*', shift) };
   my %store = (bp_index => {1 => 521, 2 => 522});
@@ -1034,7 +1035,7 @@ sub _stp_cache {
     my $iid = sub { join('.', length($_[0]), map { ord } split //, $_[0]) };
     my @names = ('', ':gribi', 'default', 'mgmt_junos', 'default::10',
       'default::20', '__mpls-oam__', 'default-switch', '__master.anon__',
-      '__pfe_private__', 'default::x', 'default::10::2', 'xdefault::30');
+      '__pfe_private__', 'default::x', 'default::10::2');
     %store = (
       %store,
       jnx_mst_control       => {1 => 'shutdown', 2 => 'shutdown'},
@@ -1312,7 +1313,7 @@ sub hasVSTP : Tests(4) {
   is($info->hasVSTP(), 0, 'Not under rstp');
 }
 
-sub _jnx_stp_protocol__vstp : Tests(6) {
+sub _jnx_stp_protocol__vstp : Tests(12) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -1327,6 +1328,21 @@ sub _jnx_stp_protocol__vstp : Tests(6) {
   $test->_stp_cache('vstp');
   $info->{_jnx_stp_version} = 2;
   is($info->_jnx_stp_protocol(), 'rstp', 'dot1dStpVersion wins');
+
+  $test->_stp_cache('vstp');
+  $info->{store}{jnx_mst_control} = {1 => 'start', 2 => 'start'};
+  is($info->_jnx_stp_protocol(), undef, 'MSTP in instances: not vstp');
+  is(scalar $info->stp_protocols(), undef, 'MX960 shape: no protocol');
+  is($info->hasVSTP(), 0, 'MX960 shape: hasVSTP 0');
+  cmp_deeply($info->stp_trees(), {}, 'MX960 shape: no trees');
+
+  $test->_stp_cache('vstp');
+  $info->{store}{jnx_mst_control} = {1 => 'shutdown', 2 => 'start'};
+  is($info->_jnx_stp_protocol(), undef, 'One row started: not vstp');
+
+  $test->_stp_cache('vstp');
+  $info->{store}{jnx_mst_control} = {1 => 2, 2 => 2};
+  is($info->_jnx_stp_protocol(), 'vstp', 'Numeric shutdown(2) rows: vstp');
 
   $test->_stp_cache('vstp');
   $info->{walk_status}{jnx_mst_control}
@@ -1380,7 +1396,19 @@ sub _snmp_context : Tests(2) {
   is($info->snmp_context('mst', 1), undef, 'No mst context');
 }
 
-sub _jnx_vstp_vlans : Tests(5) {
+# vacmContextName is indexed by the name as a length-prefixed OID suffix
+sub _set_context_names {
+  my ($test, @names) = @_;
+  my $info = $test->{info};
+
+  my $iid = sub { join('.', length($_[0]), map { ord } split //, $_[0]) };
+  $info->{store}{jnx_vacm_context_name} = {map { $iid->($_) => $_ } @names};
+  $info->{_jnx_vacm_context_name} = 1;
+  delete $info->{_stp_trees};
+  return;
+}
+
+sub _jnx_vstp_vlans : Tests(6) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -1391,6 +1419,10 @@ sub _jnx_vstp_vlans : Tests(5) {
   my $iid_9 = '10.100.101.102.97.117.108.116.58.58.57';
   $info->{store}{jnx_vacm_context_name}{$iid_9} = 'default::9';
   cmp_deeply($info->_jnx_vstp_vlans(), [9, 10, 20], 'Sorted numerically');
+
+  $test->_set_context_names('default::10', 'xdefault::30', 'vs1::30');
+  cmp_deeply($info->_jnx_vstp_vlans(), [10],
+    'Other prefixes and instances are not default::N');
 
   $test->_stp_cache('vstp');
   $info->{store}{jnx_vacm_context_name} = {};
@@ -1474,7 +1506,7 @@ sub stp_tree_ports__vstp : Tests(10) {
   $info->session()->{Community} = 'public';
 }
 
-sub stp_trees_complete__vstp : Tests(4) {
+sub stp_trees_complete__vstp : Tests(9) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -1493,6 +1525,43 @@ sub stp_trees_complete__vstp : Tests(4) {
   $test->_stp_cache('vstp');
   $info->{store}{jnx_vacm_context_name} = {'0' => ''};
   is($info->stp_trees_complete(), 0, 'No VSTP contexts named');
+
+  $test->_stp_cache('vstp');
+  $test->_set_context_names('default::10', 'vs1::30');
+  cmp_deeply([sort keys %{$info->stp_trees()}], ['vlan.10'],
+    'Instance vs1: only the default VLANs listed');
+  is($info->stp_trees_complete(), 0, 'VSTP in vs1 is not represented');
+
+  $test->_stp_cache('vstp');
+  $test->_set_context_names('default::10', 'default::20', 'default-switch');
+  is($info->stp_trees_complete(), 1, 'Only default::N names: complete');
+
+  $test->_stp_cache('rstp');
+  $test->_set_context_names('default', 'default::20');
+  cmp_deeply([sort keys %{$info->stp_trees()}], ['cist.0'],
+    'RSTP beside VSTP: trees unchanged');
+  is($info->stp_trees_complete(), 0, 'VLAN trees beside RSTP are not listed');
+}
+
+sub stp_trees_complete__rstp_contexts : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('rstp');
+  $test->_set_context_names('default', 'default-switch', 'mgmt_junos');
+  is($info->stp_trees_complete(), 1, 'RSTP, no VLAN context names');
+
+  $test->_stp_cache('stp');
+  $test->_set_context_names('default::20');
+  is($info->stp_trees_complete(), 0, 'STP beside VSTP');
+
+  $test->_stp_cache('rstp');
+  $test->_set_context_names('vs1::30');
+  is($info->stp_trees_complete(), 0, 'RSTP, any instance::N name');
+
+  $test->_stp_cache('mstp');
+  $test->_set_context_names('default::20');
+  is($info->stp_trees_complete(), 1, 'MSTP: context names do not matter');
 }
 
 sub stp_vlan_map : Tests(5) {
