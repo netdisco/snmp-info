@@ -1236,7 +1236,7 @@ sub stp_trees__virtual_switch : Tests(4) {
       vlan           => 30,
       instance       => 'vs1',
       protocol       => 'vstp',
-      measured       => 0,
+      measured       => 1,
       ports_complete => 1,
       bridge         => undef,
       root           => undef,
@@ -1245,7 +1245,7 @@ sub stp_trees__virtual_switch : Tests(4) {
         v3 => 'vs1::30',
       }],
     },
-    'vlan.30@vs1 record, not measured'
+    'vlan.30@vs1 record, measured'
   );
   cmp_deeply([@{$trees->{'vlan.10'}}{qw/instance measured/}],
     ['default', 1], 'vlan.10 in default, measured');

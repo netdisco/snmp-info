@@ -964,14 +964,13 @@ sub _jnx_vstp_trees {
         my $default = $instance eq 'default';
         my $key     = $default ? "vlan.$vlan" : "vlan.$vlan\@$instance";
 
-        # Junos documents VSTP in a virtual switch for MX only
         $trees{$key} = {
             type           => 'vlan',
             id             => $vlan,
             vlan           => $vlan,
             instance       => $instance,
             protocol       => 'vstp',
-            measured       => $default ? $measured : 0,
+            measured       => $measured,
             ports_complete => 1,
             contexts       => [ _jnx_vlan_context( $instance, $vlan ) ],
             bridge         => undef,
@@ -1544,9 +1543,9 @@ context's tree is the C<BRIDGE-MIB> tree C<cist.0>, and any VSTP trees are
 listed beside it.  When
 no indicator is served but C<BRIDGE-MIB> serves the tree, C<cist.0> is
 reported with an undefined protocol, C<stp_protocols()> is C<['dot1d']> and
-C<stp_trees_complete()> is 0.  C<measured> is 1 under STP, RSTP and MSTP, and
-for VSTP trees in the C<default> instance.  C<enabled> is undef under MSTP,
-which does not serve C<dot1dStpPortEnable>.  A port row with no C<bp_index>
+C<stp_trees_complete()> is 0.  C<measured> is 1 under STP, RSTP, MSTP and
+VSTP.  C<enabled> is undef under MSTP, which does not serve
+C<dot1dStpPortEnable>.  A port row with no C<bp_index>
 entry is left out and makes C<ports_complete> 0.  Only the default context
 is read, except for VSTP below.
 
@@ -1576,8 +1575,6 @@ C<stp_trees()> holds no VSTP tree and C<stp_trees_complete()> is 0.  Grant
 the community or user read access to 1.3.6.1.6.3.16.  Other VLAN contexts get
 no reply at all, not an error, so ask only the listed ones.  A VSTP record
 has an undefined C<bridge> and C<root>, which only its own context serves.
-C<measured> is 0 outside the C<default> instance: Juniper documents VSTP in a
-virtual switch for MX Series routers only.
 
 Each VSTP tree has one C<jnxMIMstSystemControl> row at a context other than
 0, and the agent lists one C<instance::N> name for it.  A listed name can
