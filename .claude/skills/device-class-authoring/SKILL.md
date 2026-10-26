@@ -38,12 +38,18 @@ holds the build, test and pull request checklist.
 - Every GET added to `device_type()` runs for every device that reaches
   it. Place a probe inside the narrowest branch (one enterprise, one
   `sysObjectID` prefix), never across a shared enterprise such as Net-SNMP
-  `8072`.
+  `8072` unless the product reports only that `sysObjectID`.
+- Read a probe with `_global()`, as the Synology probe does: it caches the
+  answer for the object and sends nothing in Offline mode. A raw
+  `$session->get` is sent again on every `device_type()` call.
 - Anchor `sysDescr` patterns, and test that neighboring products still
   reach their own classes.
 - When the device returns no `sysServices`, `layers` is undef and the
-  calling application may skip it for forwarding tables. Override `layers`
-  as `Layer2/Aerohive.pm` does.
+  calling application skips its forwarding table (layer 2) and ARP cache
+  (layer 3). Fall back rather than replace:
+  `$self->SUPER::layers() || '<bits>'` with the value a walk of the
+  product serves, or add layer 2 when `fw_mac` has rows
+  (`Layer3/Juniper.pm`).
 
 ## Choosing a data source
 
@@ -81,8 +87,8 @@ holds the build, test and pull request checklist.
 
 - Name MIB objects when netdisco-mibs defines them, and list the MIB in
   `%MIBS`. Use a numeric OID only when netdisco-mibs lacks or misnames the
-  object, with a comment naming the object and the netdisco-mibs issue or
-  PR.
+  object, with a comment naming the netdisco-mibs issue or PR and the MIB
+  object beside each OID.
 - Since 3.981002, numeric OIDs in `%FUNCS` walk as table columns, with
   bulkwalk and caching. Do not write custom walkers or generate methods in
   a `no strict 'refs'` loop.
@@ -142,9 +148,14 @@ stored. Its discover, macsuck and arpnip workers
   Q-BRIDGE: one may list VLANs the other omits.
 - **Forwarding** (devices with layer 2 in `layers`): `fw_mac` and
   `fw_port` through `bp_index` to `interfaces`, each entry's VLAN from
-  `qb_fw_vlan`. Per-VLAN walks use `v_name`, `v_state`,
-  `i_vlan_membership`, `i_auth_vlan_membership` and
-  `cisco_comm_indexing`. `fw_status` is not read.
+  `qb_fw_vlan`. `bp_index` must map every port `fw_port` returns; an
+  unmapped port's entries are dropped. Where `fw_port` returns ifIndexes,
+  map them to themselves from `interfaces()` or `fw_port()`, not from a
+  column a walk may lack. Overriding `bp_index` replaces BRIDGE-MIB's map
+  for every port, so keep the inherited one where the device serves it.
+  Per-VLAN walks use `v_name`, `v_state`, `i_vlan_membership`,
+  `i_auth_vlan_membership` and `cisco_comm_indexing`. `fw_status` is not
+  read.
 - **ARP and neighbor cache** (layer 3): `at_paddr`/`at_netaddr`,
   `ipv6_n2p_mac`/`ipv6_n2p_addr`.
 - **Neighbors**: `has_topo`, then `c_ip` (and `lldp_ipv6`), `c_if`,
@@ -162,17 +173,38 @@ stored. Its discover, macsuck and arpnip workers
   (`admin`, `status`, `class`, `power`) keyed `module.port`, mapped to
   ports by `peth_port_ifindex`.
 - **Wireless**: `i_ssidlist`, `i_ssidmac`, `i_ssidbcast`, `i_80211channel`,
-  `dot11_cur_tx_pwr_mw`, keyed by interface. Clients from `cd11_*`.
+  `dot11_cur_tx_pwr_mw`, keyed by `interfaces()` key. A vendor table keyed
+  otherwise, even where its MIB says `INDEX { ifIndex }`, is mapped to
+  ifIndex first; an unmatched key is dropped. Clients from `cd11_*`.
 - **802.1X**: `dot1x`, `pae_*`.
 
 Vendor-named methods (`vendor_wifi_essid`) are not read. Emulate the
 standard method from the vendor table instead.
+
+## Check it against a walk
+
+Before opening the pull request, serve a walk of the device (an SNMP
+simulator on a private port, or the mocked session) and run the class
+against it. Reading the code is not evidence.
+
+- Check that the keys join, for every method the calling application
+  reads: `i_*` and wireless keys appear in `interfaces()`, and every
+  `fw_port` value appears in `bp_index`.
+- Check `layers`: it includes layer 2 when `fw_mac` should be collected.
+- Count the GETs `device_type()` sends to a neighboring device of the same
+  enterprise, before and after the change.
+- With no walk of the product, ask for one (`AGENTS.md`, "Device data")
+  rather than build the class from the MIB alone.
 
 ## Tests
 
 - One test class per device class, one test method per public sub.
 - Test data is synthetic and derived from real walks at full fidelity: same
   OIDs, index shapes, value forms, edge cases. Never commit the walk.
+- Copy each index as the walk shows it, including where the agent departs
+  from its MIB's `INDEX`. Data shaped from the MIB passes where the device
+  fails. Prime `_layers`, `_description` and `_id` with the walk's values;
+  `_layers` is the raw `sysServices` integer.
 - Every fallback path is exercised by a test, using data shaped like the
   walk that needs it.
 - Add a `device_type` test method to the class's test class

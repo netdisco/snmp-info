@@ -1,3 +1,10 @@
+Version 3.982001
+
+  [ENHANCEMENTS]
+
+  * #644 Agent skills: check a class against a walk before review, and
+    find the skills from Codex as well
+
 Version 3.982000 (2026-10-24)
 
   [ENHANCEMENTS]
