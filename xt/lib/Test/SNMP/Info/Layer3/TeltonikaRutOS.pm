@@ -76,7 +76,7 @@ sub _set_oid_values {
     );
 }
 
-sub device_type : Tests(+14) {
+sub device_type : Tests(+17) {
     my $test = shift;
 
     my @modern_products = qw(
@@ -111,6 +111,19 @@ sub device_type : Tests(+14) {
     _set_oid_values($test, {});
     is($test->{info}->device_type(), 'SNMP::Info::Layer3::NetSNMP',
         'Generic Net-SNMP device without Teltonika product code stays generic');
+    $test->{info}->device_type() for 1 .. 2;
+    is(scalar(grep { /^\.1\.3\.6\.1\.4\.1\.48690\./ }
+            @{ $test->mock_session->{teltonika_get_calls} }), 2,
+        'Generic Net-SNMP device is probed once per object, not per call');
+
+    _set_device($test, '.1.3.6.1.4.1.8072.3.2.10');
+    _set_oid_values($test, { $PRODUCT_OID => 'RUTX1100XXXX' });
+    $test->{info}->offline(1);
+    is($test->{info}->device_type(), 'SNMP::Info::Layer3::NetSNMP',
+        'Offline Net-SNMP device without cached product code stays generic');
+    is_deeply($test->mock_session->{teltonika_get_calls}, [],
+        'Offline device receives no Teltonika probes');
+    $test->{info}->offline(0);
 
     _set_device($test, '.1.3.6.1.4.1.8072.3.2.11');
     _set_oid_values($test, {});

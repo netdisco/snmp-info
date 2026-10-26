@@ -2409,31 +2409,23 @@ sub device_type {
         && ( $soid eq '.1.3.6.1.4.1.8072.3.2.10' || $id eq '48690' )
         )
     {
-        my $sess = $info->session();
-        if ($sess) {
-            my $product_code = eval {
-                $sess->get('.1.3.6.1.4.1.48690.1.3.0');
-            };
+        my $product_code
+            = _global( 'teltonika_model', '.1.3.6.1.4.1.48690.1.3.0' )->($info)
+            // '';
+        if ( $product_code =~ /^(?:RUT[A-Z]{0,2}|TRB|OTD|TCR|TSW|TAP)\d/i ) {
+            print "SNMP::Info::device_type() detected Teltonika RutOS "
+                . "product:$product_code\n"
+                if $info->debug();
+            return 'SNMP::Info::Layer3::TeltonikaRutOS';
+        }
 
-            if ( defined($product_code)
-                && $product_code =~ /^(?:RUT[A-Z]{0,2}|TRB|OTD|TCR|TSW|TAP)\d/i ) {
-                print "SNMP::Info::device_type() detected Teltonika RutOS "
-                    . "product:$product_code\n"
-                    if $info->debug();
-                return 'SNMP::Info::Layer3::TeltonikaRutOS';
-            }
-
-            my $legacy_product_code = eval {
-                $sess->get('.1.3.6.1.4.1.48690.1.8.0');
-            };
-
-            if ( defined($legacy_product_code)
-                && $legacy_product_code =~ /^RUT9\d{2}/i ) {
-                print "SNMP::Info::device_type() detected legacy Teltonika "
-                    . "product:$legacy_product_code\n"
-                    if $info->debug();
-                return 'SNMP::Info::Layer3::Teltonika';
-            }
+        my $legacy_product_code = _global( 'teltonika_legacy_model',
+            '.1.3.6.1.4.1.48690.1.8.0' )->($info) // '';
+        if ( $legacy_product_code =~ /^RUT9\d{2}/i ) {
+            print "SNMP::Info::device_type() detected legacy Teltonika "
+                . "product:$legacy_product_code\n"
+                if $info->debug();
+            return 'SNMP::Info::Layer3::Teltonika';
         }
     }
 
