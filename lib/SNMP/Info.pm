@@ -1204,9 +1204,16 @@ See documentation in L<SNMP::Info::Layer3::Tasman> for details.
 
 =item SNMP::Info::Layer3::Teltonika
 
-Subclass for Teltonika RUT9xx series routers.
+Subclass for legacy Teltonika RUT9xx series routers.
 
 See documentation in L<SNMP::Info::Layer3::Teltonika> for details.
+
+=item SNMP::Info::Layer3::TeltonikaRutOS
+
+Subclass for Teltonika devices using the current RutOS SNMP enterprise OID
+layout.
+
+See documentation in L<SNMP::Info::Layer3::TeltonikaRutOS> for details.
 
 =item SNMP::Info::Layer3::Timetra
 
@@ -2408,6 +2415,26 @@ sub device_type {
     # sysServices; the TNS switches under 57344.2 keep the generic classes.
     return 'SNMP::Info::Layer3::Tachyon'
         if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.57344\.1(?:\.|$)/;
+
+    # Teltonika devices commonly report Net-SNMP's generic sysObjectID, so
+    # identify current RutOS devices by the product code in Teltonika's
+    # enterprise tree. Legacy RUT9xx detection remains in the enterprise maps
+    # and sysDescr checks below.
+    if (
+        defined($id)
+        && ( $soid eq '.1.3.6.1.4.1.8072.3.2.10' || $id eq '48690' )
+        )
+    {
+        my $product_code
+            = _global( 'teltonika_model', '.1.3.6.1.4.1.48690.1.3.0' )->($info)
+            // '';
+        if ( $product_code =~ /^(?:RUT[A-Z]{0,2}|TRB|OTD|TCR|TSW|TAP)\d/i ) {
+            print "SNMP::Info::device_type() detected Teltonika RutOS "
+                . "product:$product_code\n"
+                if $info->debug();
+            return 'SNMP::Info::Layer3::TeltonikaRutOS';
+        }
+    }
 
     # Layer 3 Supported
     #   (usually has layer2 as well, so we check for 3 first)

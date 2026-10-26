@@ -11,6 +11,9 @@ Version 3.982001
     find the skills from Codex as well
   * #636 Tachyon: add TNA device support for identity, wireless peers,
     Ethernet status, and logical VLAN interfaces
+  * #637 Teltonika: detect current RutOS devices by product code, map model,
+    serial and firmware across current product families, and retain legacy
+    RUT9xx detection
 
   [BUG FIXES]
 
