@@ -71,6 +71,7 @@ README.md
 ^CLAUDE\.md$
 ^CLAUDE\.local\.md$
 ^\.claude/
+^\.agents/
 
 # Avoid Komodo project file
 \.komodoproject$
