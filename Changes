@@ -9,6 +9,8 @@ Version 3.982001
 
   * #644 Agent skills: check a class against a walk before review, and
     find the skills from Codex as well
+  * #636 Tachyon: add TNA device support for identity, wireless peers,
+    Ethernet status, and logical VLAN interfaces
 
   [BUG FIXES]
 

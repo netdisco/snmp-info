@@ -1190,6 +1190,12 @@ Subclass for Generic Sun Routers running SunOS.
 
 See documentation in L<SNMP::Info::Layer3::Sun> for details.
 
+=item SNMP::Info::Layer3::Tachyon
+
+Subclass for Tachyon TNA-series devices.
+
+See documentation in L<SNMP::Info::Layer3::Tachyon> for details.
+
 =item SNMP::Info::Layer3::Tasman
 
 Subclass for Avaya Secure Routers.
@@ -2397,6 +2403,11 @@ sub device_type {
     # model, where a ZoneDirector's names "ZD" and four digits.
     return 'SNMP::Info::Layer2::RuckusAP'
         if $desc =~ /^Ruckus Wireless [A-Z]\d{3}/;
+
+    # Tachyon TNA radios register under 57344.1 and may not implement
+    # sysServices; the TNS switches under 57344.2 keep the generic classes.
+    return 'SNMP::Info::Layer3::Tachyon'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.57344\.1(?:\.|$)/;
 
     # Layer 3 Supported
     #   (usually has layer2 as well, so we check for 3 first)
