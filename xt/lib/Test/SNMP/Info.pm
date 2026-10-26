@@ -2874,6 +2874,21 @@ sub _fresh_community_info {
   return $test->{info};
 }
 
+sub _walk_context : Tests(5) {
+  my $test = shift;
+
+  is($test->_fresh_community_info('public', 'public@10')->_walk_context(),
+    '10', 'Base first: the instance');
+  is($test->_fresh_community_info('public', 'default::20@public')
+      ->_walk_context(), 'default::20', 'Instance first: the instance');
+  is($test->_fresh_community_info('public', 'public')->_walk_context(),
+    '', 'Base alone: default context');
+  is($test->_fresh_community_info('public', 'other@private')
+      ->_walk_context(), '', 'Unrelated community: default context');
+  is($test->_fresh_community_info('public', '@public')->_walk_context(),
+    '', 'Empty instance: default context');
+}
+
 sub incomplete_walk : Tests(7) {
   my $test = shift;
 

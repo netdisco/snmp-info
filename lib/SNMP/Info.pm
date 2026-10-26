@@ -1841,7 +1841,8 @@ The partial fetch argument given to the method, if any.
 
 The SNMPv3 Context. On SNMPv1 and SNMPv2c, C<X> when the session community
 is the constructor's Community followed by C<@X>, such as a VLAN number or a
-VRF name. Otherwise an empty string.
+VRF name, or C<X> followed by C<@> and the Community (C<default::20@public>).
+Otherwise an empty string.
 
 =item complete
 
@@ -6333,8 +6334,9 @@ sub _walk_outcome {
 
 Returns the SNMPv3 Context of the session. On SNMPv1 and SNMPv2c, returns
 C<X> when the session community is the constructor's Community followed by
-C<@X>. Otherwise returns an empty string. Never returns any part of the
-community itself.
+C<@X>, or C<X> followed by C<@> and the Community (Junos puts the context
+first, C<default::20@public>). Otherwise returns an empty string. Never
+returns any part of the community itself.
 
 =cut
 
@@ -6351,10 +6353,15 @@ sub _walk_context {
     return '' unless defined $base and defined $community;
 
     my $prefix = $base . '@';
-    return ''
-        unless length $community > length $prefix
+    return substr( $community, length $prefix )
+        if length $community > length $prefix
         and substr( $community, 0, length $prefix ) eq $prefix;
-    return substr( $community, length $prefix );
+
+    my $suffix = '@' . $base;
+    return substr( $community, 0, length($community) - length $suffix )
+        if length $community > length $suffix
+        and substr( $community, -length $suffix ) eq $suffix;
+    return '';
 }
 
 =item $info->_show_attr()

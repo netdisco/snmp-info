@@ -1036,6 +1036,19 @@ sub _stp_cache {
       },
     );
   }
+  elsif ($protocol eq 'vstp') {
+    # Context ids 1 and 2 hold the VLAN 10 and VLAN 20 trees' control rows,
+    # which are not VLAN ids. The context names carry the VLAN ids.
+    my $iid = sub { join('.', length($_[0]), map { ord } split //, $_[0]) };
+    my @names = ('', ':gribi', 'default', 'mgmt_junos', 'default::10',
+      'default::20', '__mpls-oam__', 'default-switch', '__master.anon__',
+      '__pfe_private__', 'default::x', 'default::10::2', 'xdefault::30');
+    %store = (
+      %store,
+      jnx_mst_control       => {1 => 'shutdown', 2 => 'shutdown'},
+      jnx_vacm_context_name => {map { $iid->($_) => $_ } @names},
+    );
+  }
   else {
     $store{jnx_mst_control} = {0 => 'shutdown'};
     $cache{_jnx_stp_version} = $protocol eq 'stp' ? 0 : 2;
@@ -1253,6 +1266,190 @@ sub stp_trees_complete : Tests(5) {
   is($info->stp_trees_complete(), 0, 'dot1d fallback: protocol unknown');
   $info->clear_cache();
   is($info->stp_trees_complete(), 0, 'Cleared again');
+}
+
+sub hasVSTP : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('vstp');
+  is($info->hasVSTP(), 1, 'vstp');
+  is($info->hasRSTP(), 0, 'Not rstp');
+  is($info->hasMSTP(), 0, 'Not mstp');
+  $test->_stp_cache('rstp');
+  is($info->hasVSTP(), 0, 'Not under rstp');
+}
+
+sub _jnx_stp_protocol__vstp : Tests(6) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('vstp');
+  is($info->_jnx_stp_protocol(), 'vstp', 'Control only at other contexts');
+
+  $test->_stp_cache('vstp');
+  $info->{store}{jnx_msti_priority} = {'1.1' => 4097};
+  $info->{_jnx_msti_priority} = 1;
+  is($info->_jnx_stp_protocol(), undef, 'MSTI priority row: not vstp');
+
+  $test->_stp_cache('vstp');
+  $info->{_jnx_stp_version} = 2;
+  is($info->_jnx_stp_protocol(), 'rstp', 'dot1dStpVersion wins');
+
+  $test->_stp_cache('vstp');
+  $info->{walk_status}{jnx_mst_control}
+    = {complete => 0, reason => 'timeout'};
+  is($info->_jnx_stp_protocol(), undef, 'Incomplete control walk: undef');
+  delete $info->{store}{stp_p_id};
+  delete $info->{_stp_root};
+  is(scalar $info->stp_protocols(), undef, 'stp_protocols undef');
+  is($info->stp_trees_complete(), 0, 'stp_trees_complete 0');
+}
+
+sub stp_protocols__vstp : Tests(1) {
+  my $test = shift;
+
+  $test->_stp_cache('vstp');
+  cmp_deeply($test->{info}->stp_protocols(), ['vstp'], 'vstp');
+}
+
+sub _context_kinds : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('vstp');
+  cmp_deeply($info->context_kinds('stp'), ['vlan'], 'VSTP: vlan for stp');
+  is($info->context_kinds('fdb'), undef, 'VSTP: nothing for fdb');
+  $test->_stp_cache('mstp');
+  is($info->context_kinds('stp'), undef, 'MSTP: nothing');
+  $test->_stp_cache('rstp');
+  is($info->context_kinds('stp'), undef, 'RSTP: nothing');
+}
+
+sub _snmp_context : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  cmp_deeply(
+    $info->snmp_context('vlan', 10),
+    {kind => 'vlan', id => 10, v2c => 'default::10@%s', v3 => 'default::10'},
+    'vlan context: instance first for v2c'
+  );
+  is($info->snmp_context('mst', 1), undef, 'No mst context');
+}
+
+sub _jnx_vstp_vlans : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('vstp');
+  cmp_deeply($info->_jnx_vstp_vlans(), [10, 20],
+    'VLAN ids from default::N names only, not control context ids');
+
+  my $iid_9 = '10.100.101.102.97.117.108.116.58.58.57';
+  $info->{store}{jnx_vacm_context_name}{$iid_9} = 'default::9';
+  cmp_deeply($info->_jnx_vstp_vlans(), [9, 10, 20], 'Sorted numerically');
+
+  $test->_stp_cache('vstp');
+  $info->{store}{jnx_vacm_context_name} = {};
+  cmp_deeply($info->_jnx_vstp_vlans(), [], 'Not served: empty');
+
+  $test->_stp_cache('vstp');
+  delete $info->{store}{jnx_vacm_context_name};
+  delete $info->{_jnx_vacm_context_name};
+  cmp_deeply($info->_jnx_vstp_vlans(), [], 'Absent: empty');
+  $info->clear_cache();
+  cmp_deeply($info->_jnx_vstp_vlans(), [], 'Cleared: empty');
+}
+
+sub stp_trees__vstp : Tests(8) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('vstp');
+  my $trees = $info->stp_trees();
+  cmp_deeply([sort keys %$trees], [qw/vlan.10 vlan.20/],
+    'Exactly the VSTP VLANs');
+  cmp_deeply(
+    $trees->{'vlan.20'},
+    {
+      type           => 'vlan',
+      id             => 20,
+      vlan           => 20,
+      protocol       => 'vstp',
+      measured       => 1,
+      ports_complete => 1,
+      bridge         => undef,
+      root           => undef,
+      contexts       => [{
+        kind => 'vlan', id => 20, v2c => 'default::20@%s',
+        v3 => 'default::20',
+      }],
+    },
+    'vlan.20 record'
+  );
+  is($info->stp_trees(), $trees, 'Memoized');
+
+  $test->_stp_cache('vstp');
+  $info->{store}{jnx_vacm_context_name} = {};
+  cmp_deeply($info->stp_trees(), {}, 'vacmContextName not served: no trees');
+
+  $test->_stp_cache('vstp');
+  $info->session()->{Context} = 'default::20';
+  is(scalar $info->stp_trees(), undef, 'Non-default context: nothing');
+  $info->session()->{Context} = '';
+
+  $test->_stp_cache('mstp');
+  cmp_deeply([sort keys %{$info->stp_trees()}], [qw/cist.0 msti.1 msti.2/],
+    'MSTP unchanged');
+  $test->_stp_cache('rstp');
+  cmp_deeply([keys %{$info->stp_trees()}], ['cist.0'], 'RSTP unchanged');
+}
+
+sub stp_tree_ports__vstp : Tests(9) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('vstp');
+  is(scalar $info->stp_tree_ports('vlan.20'), undef,
+    'Default context: nothing');
+  like($info->error(1), qr/default::20/, 'Error names the context');
+  like($info->error(1), qr/stp_tree_ports/, 'Error names the method');
+
+  $test->_stp_cache('vstp');
+  $info->{args}{Community} = 'public';
+  $info->session()->{Community} = 'default::20@public';
+  my $rows = $info->stp_tree_ports('vlan.20');
+  cmp_deeply([sort keys %$rows], [521, 522], 'In context: rows by ifIndex');
+  is($rows->{522}{state}, 'blocking', '522 blocking');
+  is($rows->{522}{tree_type}, 'vlan', 'Labeled vlan');
+  is($rows->{522}{tree_id}, 20, 'Labeled 20');
+
+  is(scalar $info->stp_tree_ports('vlan.10'), undef,
+    'Context of another VLAN: nothing');
+  like($info->error(1), qr/default::10/, 'Error names the wanted context');
+  $info->session()->{Community} = 'public';
+}
+
+sub stp_trees_complete__vstp : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('vstp');
+  is($info->stp_trees_complete(), 1, 'vacmContextName served');
+
+  $test->_stp_cache('vstp');
+  $info->{walk_status}{jnx_vacm_context_name}
+    = {complete => 0, reason => 'timeout'};
+  is($info->stp_trees_complete(), 0, 'Context walk incomplete');
+
+  $test->_stp_cache('vstp');
+  $info->{store}{jnx_vacm_context_name} = {};
+  is($info->stp_trees_complete(), 0, 'vacmContextName not served');
+
+  $test->_stp_cache('vstp');
+  $info->{store}{jnx_vacm_context_name} = {'0' => ''};
+  is($info->stp_trees_complete(), 0, 'No VSTP contexts named');
 }
 
 sub stp_vlan_map : Tests(4) {
