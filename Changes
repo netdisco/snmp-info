@@ -1,9 +1,14 @@
-Version 3.982001 (2026-tbd)
+Version 3.982001
 
   [NEW FEATURES]
 
-  * #595 Add Aruba Instant 8.x WLAN SSIDs, associated clients, radio channels and
-    transmit power using AI-AP-MIB (#536)
+  * #595 ArubaInstant: add Instant 8.x SSIDs, associated clients, radio
+    channels and transmit power using AI-AP-MIB (#536)
+
+  [ENHANCEMENTS]
+
+  * #644 Agent skills: check a class against a walk before review, and
+    find the skills from Codex as well
 
 Version 3.982000 (2026-10-24)
 
