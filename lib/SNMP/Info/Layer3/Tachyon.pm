@@ -40,32 +40,48 @@ our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
 $VERSION = '3.982000';
 
-# Tachyon's private MIB is not included in netdisco-mibs. Poll its stable
-# numeric OIDs directly so discovery does not depend on an external MIB file.
+# TACHYON-MIB is not in a netdisco-mibs release yet (netdisco-mibs#310), so
+# its objects are read by numeric OID. Switch to the names once it ships.
 %MIBS = (%SNMP::Info::Layer3::MIBS);
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    # Numeric vendor columns are used because Tachyon's private MIB is not in
-    # the netdisco-mibs release yet.
-    'tachyon_peer_mac'          => '.1.3.6.1.4.1.57344.1.2.6.1.1',
-    'tachyon_peer_ifindex'      => '.1.3.6.1.4.1.57344.1.2.6.1.3',
-    'tachyon_ethernet_ifname'   => '.1.3.6.1.4.1.57344.1.1.3.1.2',
-    'tachyon_ethernet_link'     => '.1.3.6.1.4.1.57344.1.1.3.1.5',
-    'tachyon_ethernet_duplex'   => '.1.3.6.1.4.1.57344.1.1.3.1.8',
-    'tachyon_ethernet_admin'    => '.1.3.6.1.4.1.57344.1.1.3.1.10',
+
+    # wirelessPeersTable: wirelessPeerMac, wirelessPeerVapIfIndex
+    'tachyon_peer_mac'     => '.1.3.6.1.4.1.57344.1.2.6.1.1',
+    'tachyon_peer_ifindex' => '.1.3.6.1.4.1.57344.1.2.6.1.3',
+
+    # ethernetTable: ethernetIfaceName, ethernetLink, ethernetDuplex,
+    # ethernetEnabled
+    'tachyon_ethernet_ifname' => '.1.3.6.1.4.1.57344.1.1.3.1.2',
+    'tachyon_ethernet_link'   => '.1.3.6.1.4.1.57344.1.1.3.1.5',
+    'tachyon_ethernet_duplex' => '.1.3.6.1.4.1.57344.1.1.3.1.8',
+    'tachyon_ethernet_admin'  => '.1.3.6.1.4.1.57344.1.1.3.1.10',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    'tachyon_device_model'  => '.1.3.6.1.4.1.57344.1.3.1.0',
-    'tachyon_serial'        => '.1.3.6.1.4.1.57344.1.3.2.0',
-    'tachyon_firmware'      => '.1.3.6.1.4.1.57344.1.3.4.0',
-    'tachyon_description'   => '.1.3.6.1.4.1.57344.1.3.9.0',
+
+    # deviceModel, deviceSerialNo, firmwareVersion, deviceDescription
+    'tachyon_device_model' => '.1.3.6.1.4.1.57344.1.3.1.0',
+    'tachyon_serial'       => '.1.3.6.1.4.1.57344.1.3.2.0',
+    'tachyon_firmware'     => '.1.3.6.1.4.1.57344.1.3.4.0',
+    'tachyon_description'  => '.1.3.6.1.4.1.57344.1.3.9.0',
 );
 
 %MUNGE = (%SNMP::Info::Layer3::MUNGE);
 
 sub vendor { return 'tachyon'; }
+
+# The radio may serve no sysServices; peers in the forwarding table make it a
+# layer 2 device whatever it reports.
+sub layers {
+    my $self = shift;
+
+    my $layers = $self->SUPER::layers() || '00000100';
+    my $macs   = $self->fw_mac() || {};
+    substr( $layers, 6, 1, '1' ) if keys %$macs;
+    return $layers;
+}
 
 sub os { return 'tachyon'; }
 
@@ -90,11 +106,12 @@ sub serial {
     return $self->SUPER::serial();
 }
 
+# deviceDescription is user-entered, so sysDescr comes first
 sub description {
     my $self = shift;
-    my $description = $self->tachyon_description();
+    my $description = $self->SUPER::description();
     return $description if defined $description and $description =~ /\S/;
-    return $self->SUPER::description();
+    return $self->tachyon_description();
 }
 
 sub _tachyon_munge_mac {
@@ -132,10 +149,14 @@ sub fw_status {
     return { map { $_ => 3 } keys %$macs };
 }
 
+# Some agents serve no ifIndex column, so map every interface and every
+# peer port to itself
 sub bp_index {
     my $self = shift;
-    my $if_index = $self->i_index() || {};
-    return { map { $_ => $_ } keys %$if_index };
+    my $interfaces = $self->interfaces() || {};
+    my $ports      = $self->fw_port()    || {};
+    return { map { $_ => $_ } keys %$interfaces,
+            grep {defined} values %$ports };
 }
 
 sub _tachyon_ethernet_ifindexes {
@@ -286,6 +307,14 @@ SNMP::Info Developers
      Version     => 2,
  );
 
+=head1 DESCRIPTION
+
+Supports Tachyon TNA-300 series devices using the Tachyon private MIB. Reads
+model, serial number, and firmware version from the system extension group,
+learns wireless peers from the peer table, and identifies VLAN interfaces by
+their reported interface names. Tachyon's TNS switches are not handled by
+this class.
+
 =head2 Inherited Classes
 
 =over
@@ -296,19 +325,12 @@ SNMP::Info Developers
 
 =head2 Required MIBs
 
-No additional MIBs are required. Tachyon objects are read by numeric OID.
+None. C<TACHYON-MIB> objects are read by numeric OID until the MIB is in a
+netdisco-mibs release.
 
 =head2 Inherited MIBs
 
 See L<SNMP::Info::Layer3/Required MIBs> for inherited MIB requirements.
-
-=head1 DESCRIPTION
-
-Supports Tachyon TNA-300 series devices using the Tachyon private MIB. Reads
-model, serial number, and firmware version from the system extension group,
-learns wireless peers from the peer table, and identifies VLAN interfaces by
-their reported interface names. Vendor OIDs are polled numerically, so the
-Tachyon MIB does not need to be installed.
 
 =head1 GLOBALS
 
@@ -324,6 +346,11 @@ Returns C<'tachyon'>.
 
 Returns C<'tachyon'>.
 
+=item $info->layers()
+
+Returns the served C<sysServices> layers, or layer 3 where none are served,
+with layer 2 added whenever the peer table lists a peer.
+
 =item $info->model()
 
 Returns the device model from C<deviceModel>.
@@ -338,7 +365,8 @@ Returns the serial number from C<deviceSerialNo>.
 
 =item $info->description()
 
-Returns the device description from the Tachyon system extension group.
+Returns C<sysDescr>, or the user-entered C<deviceDescription> where
+C<sysDescr> is empty.
 
 =back
 
@@ -362,7 +390,8 @@ Returns forwarding status C<3> for each active wireless peer.
 
 =item $info->bp_index()
 
-Maps interface indexes to themselves for bridge forwarding table lookups.
+Maps each interface and each peer port to itself, since C<fw_port()> returns
+interface indexes.
 
 =item $info->i_up()
 

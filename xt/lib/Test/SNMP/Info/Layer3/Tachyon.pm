@@ -20,7 +20,7 @@ sub setup : Tests(setup) {
     $test->{info}->cache({
         '_layers' => 4,
         '_description' => 'Linux TNA-301 test 1.12.1',
-        '_id' => '.1.3.6.1.4.1.57344',
+        '_id' => '.1.3.6.1.4.1.57344.1',
         '_tachyon_device_model' => 'TNA-301',
         '_tachyon_serial' => 'SYNTHETIC-SERIAL',
         '_tachyon_firmware' => '1.12.1',
@@ -46,10 +46,20 @@ sub setup : Tests(setup) {
     };
 }
 
-sub device_type : Tests(3) {
+sub device_type : Tests(5) {
     my $info = shift->{info};
     can_ok($info, 'device_type');
     is($info->device_type(), 'SNMP::Info::Layer3::Tachyon', 'TNA detection');
+    $info->cache({ '_layers' => undef });
+    is($info->device_type(), 'SNMP::Info::Layer3::Tachyon',
+        'TNA detection without sysServices');
+    $info->cache({
+        '_id' => '.1.3.6.1.4.1.57344.2',
+        '_description' => 'TNS-100',
+        '_layers' => 6,
+    });
+    is($info->device_type(), 'SNMP::Info::Layer3',
+        'TNS switch keeps the generic class');
     $info->cache({
         '_id' => '.1.3.6.1.4.1.57345',
         '_description' => 'Linux generic-device 5.10.0',
@@ -87,13 +97,31 @@ sub serial : Tests(1) {
 
 sub description : Tests(2) {
     my $info = shift->{info};
-    is($info->description(), 'Tachyon TNA-301', 'Vendor description');
-    $info->cache({ '_tachyon_description' => '' });
-    is($info->description(), 'Linux TNA-301 test 1.12.1', 'Inherited description fallback');
+    is($info->description(), 'Linux TNA-301 test 1.12.1', 'sysDescr first');
+    $info->cache({ '_description' => '' });
+    is($info->description(), 'Tachyon TNA-301', 'Vendor description fallback');
 }
 
-sub fw_mac : Tests(1) {
-    is_deeply(shift->{info}->fw_mac(), { '1.2.3.4' => '02:00:00:00:00:2a' }, 'Peer MACs');
+sub layers : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+    is($info->layers(), '00000110', 'peers add layer 2 to served layers');
+    $info->cache({ '_layers' => undef });
+    is($info->layers(), '00000110', 'no sysServices gives layer 3, plus 2 with peers');
+    $info->clear_cache();
+    $info->cache({ '_layers' => undef });
+    $test->mock_session->{Data}{ $TABLES{tachyon_peer_mac} } = {};
+    is($info->layers(), '00000100', 'no sysServices and no peers gives layer 3');
+}
+
+sub fw_mac : Tests(2) {
+    my $test = shift;
+    is_deeply($test->{info}->fw_mac(), { '1.2.3.4' => '02:00:00:00:00:2a' }, 'Peer MACs');
+    $test->{info}->clear_cache();
+    $test->mock_session->{Data}{ $TABLES{tachyon_peer_mac} }
+        = { 1 => '02:00:00:00:00:2B' };
+    is_deeply($test->{info}->fw_mac(), { 1 => '02:00:00:00:00:2b' },
+        'Peer MACs served as text');
 }
 
 sub fw_port : Tests(1) {
@@ -104,8 +132,18 @@ sub fw_status : Tests(1) {
     is_deeply(shift->{info}->fw_status(), { '1.2.3.4' => 3 }, 'Active peer status');
 }
 
-sub bp_index : Tests(1) {
-    is_deeply(shift->{info}->bp_index(), { 1 => 1, 2 => 2, 3 => 3 }, 'Bridge port index map');
+sub bp_index : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+    is_deeply($info->bp_index(), { 1 => 1, 2 => 2, 3 => 3 }, 'Bridge port index map');
+    $info->clear_cache();
+    $info->cache({
+        '_i_description' => 1,
+        'store' => { 'i_description' => { 1 => 'eth0', 50 => 'wlan0' } },
+    });
+    $test->mock_session->{Data}{ $TABLES{tachyon_peer_ifindex} } = { '1.2.3.4' => 50 };
+    is_deeply($info->bp_index(), { 1 => 1, 50 => 50 },
+        'Interfaces map to themselves without an ifIndex column');
 }
 
 sub i_up : Tests(1) {

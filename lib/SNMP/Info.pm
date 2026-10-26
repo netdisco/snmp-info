@@ -2313,7 +2313,6 @@ sub device_type {
         46242 => 'SNMP::Info::Layer3::Netonix',
         47196 => 'SNMP::Info::Layer3::ArubaCX',
         48690 => 'SNMP::Info::Layer3::Teltonika',
-        57344 => 'SNMP::Info::Layer3::Tachyon',
     );
 
     my %l2sysoidmap = (
@@ -2359,7 +2358,6 @@ sub device_type {
         46242 => 'SNMP::Info::Layer3::Netonix',
         47196 => 'SNMP::Info::Layer3::ArubaCX',
         48690 => 'SNMP::Info::Layer3::Teltonika',
-        57344 => 'SNMP::Info::Layer3::Tachyon',
     );
 
     my %l1sysoidmap = (
@@ -2400,6 +2398,11 @@ sub device_type {
     # model, where a ZoneDirector's names "ZD" and four digits.
     return 'SNMP::Info::Layer2::RuckusAP'
         if $desc =~ /^Ruckus Wireless [A-Z]\d{3}/;
+
+    # Tachyon TNA radios register under 57344.1 and may not implement
+    # sysServices; the TNS switches under 57344.2 keep the generic classes.
+    return 'SNMP::Info::Layer3::Tachyon'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.57344\.1(?:\.|$)/;
 
     # Layer 3 Supported
     #   (usually has layer2 as well, so we check for 3 first)
