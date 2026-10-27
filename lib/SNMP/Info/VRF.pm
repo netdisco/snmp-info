@@ -343,6 +343,10 @@ sub _vrf_context_i_vrf {
     my $vrf = shift;
 
     my $name = $vrf->_vrf_context_instance();
+    return $vrf->_vrf_membership()
+        if defined $name
+        and $name eq 'default'
+        and $vrf->_vrf_default_context_leaks();
     return $vrf->_vrf_context_ports($name) if defined $name;
 
     my $context = $vrf->_walk_context();
@@ -481,20 +485,47 @@ sub vrf_addresses {
     return if !$context_mode and !$vrf->_vrf_is_listed($name);
 
     my $rows = $vrf->_vrf_address_rows($name);
-    return $rows if $context_mode;
+    return $vrf->_vrf_drop_leaked( $rows, $name ) if $context_mode;
     return $vrf->_vrf_keep_owned( $rows, $name );
+}
+
+# Context mode: drops the rows on ports another instance holds
+sub _vrf_drop_leaked {
+    my ( $vrf, $rows, $name ) = @_;
+
+    my $leaked = $vrf->_vrf_leaked_ports($name);
+    foreach my $key ( keys %$rows ) {
+        delete $rows->{$key} if exists $leaked->{ $rows->{$key}{ifindex} };
+    }
+    return $rows;
 }
 
 # Context mode: drops the rows on ports holding no address of $name here
 sub _vrf_keep_context_ports {
     my ( $vrf, $rows, $name ) = @_;
 
-    my $ports = $vrf->_vrf_context_ports($name);
+    my $ports  = $vrf->_vrf_context_ports($name);
+    my $leaked = $vrf->_vrf_leaked_ports($name);
     foreach my $key ( keys %$rows ) {
+        my $ifindex = $rows->{$key}{ifindex};
         delete $rows->{$key}
-            unless exists $ports->{ $rows->{$key}{ifindex} };
+            if !exists $ports->{$ifindex}
+            or exists $leaked->{$ifindex};
     }
     return $rows;
+}
+
+# The ports the default context's membership tables give another instance,
+# where the default context serves their rows too; {} everywhere else. The
+# membership walk decides which rows go, so it counts toward the read.
+sub _vrf_leaked_ports {
+    my $vrf  = shift;
+    my $name = shift;
+
+    return {}
+        unless $name eq 'default' and $vrf->_vrf_default_context_leaks();
+    $vrf->_vrf_record_walk( $name, 'vrf_l3vpn_if' );
+    return $vrf->_vrf_membership();
 }
 
 # Drops the rows whose port is not in the instance. The membership walk
@@ -555,7 +586,22 @@ sub vrf_read_complete {
         my $status = $vrf->walk_status($method) or next;
         return 0 unless $status->{complete};
     }
+    return 0 if $walked and $vrf->_vrf_leak_unfiltered($name);
     return 1;
+}
+
+# True in the default context of a class whose default context leaks while
+# a listed instance has no port there: its rows cannot be told from the
+# default instance's
+sub _vrf_leak_unfiltered {
+    my $vrf  = shift;
+    my $name = shift;
+
+    return 0 unless $name eq 'default' and $vrf->_vrf_default_context_leaks();
+    return 0 if length $vrf->_walk_context();
+    my $instances = $vrf->{_vrf_instances} ||= $vrf->_vrf_all_instances();
+    return ( grep { $_->{name} ne 'default' and !$_->{sources}{members} }
+            values %$instances ) ? 1 : 0;
 }
 
 sub _vrf_has_subnet {
@@ -683,12 +729,16 @@ sub _vrf_context_route_subnets {
 
     my $protos = $vrf->_vrf_column( 'vrf_cidr_proto', $name );
     my $ifs    = $vrf->_vrf_column( 'vrf_cidr_if',    $name );
+    my $leaked = $vrf->_vrf_leaked_ports($name);
     my @subnets;
     foreach my $iid ( sort keys %$protos ) {
         next unless $iid =~ /^\d+(?:\.\d+)*$/;
         next unless _vrf_connected_proto( $protos->{$iid} );
         my $subnet = _vrf_route_subnet( split /\./, $iid ) or next;
         $subnet->{ifindex} = _vrf_route_ifindex( $ifs->{$iid} );
+        next
+            if defined $subnet->{ifindex}
+            and exists $leaked->{ $subnet->{ifindex} };
         push @subnets, $subnet;
     }
     return \@subnets;
@@ -876,7 +926,7 @@ sub _vrf_arp_rows {
     my %rows;
     foreach my $key ( keys %$macs ) {
         my ($ifindex) = $key =~ /^(\d+)\./ or next;
-        next unless defined $ips->{$key} and defined $macs->{$key};
+        next unless defined $ips->{$key} and _vrf_has_mac( $macs->{$key} );
         $rows{$key} = {
             ifindex => $ifindex,
             ip      => $ips->{$key},
@@ -897,6 +947,7 @@ sub _vrf_nd_rows {
     my %rows;
     foreach my $key ( keys %$macs ) {
         next unless defined $ips->{$key} and defined $ifs->{$key};
+        next unless _vrf_has_mac( $macs->{$key} );
         $rows{$key} = {
             ifindex => $ifs->{$key},
             ip      => $ips->{$key},
@@ -904,10 +955,50 @@ sub _vrf_nd_rows {
             family  => 'ipv6',
         };
     }
+    $vrf->_vrf_add_ipv6_mib_rows( \%rows, $name )
+        if $vrf->_vrf_nd_from_ipv6_mib();
     return \%rows;
 }
 
+# ipv6NetToMediaTable rows, indexed ifIndex then 16 address octets, for
+# the (port, address) pairs the IP-MIB rows lack
+sub _vrf_add_ipv6_mib_rows {
+    my ( $vrf, $rows, $name ) = @_;
+
+    my %listed = map { "$_->{ifindex} " . lc $_->{ip} => 1 } values %$rows;
+    my $macs   = $vrf->_vrf_column( 'i6_n2p_phys_addr', $name );
+    foreach my $key ( keys %$macs ) {
+        my ( $ifindex, @octets ) = split /\./, $key;
+        next if @octets != 16 or grep { $_ > 255 } @octets;
+        next unless _vrf_has_mac( $macs->{$key} );
+        my $ip = join q{:}, unpack '(H4)*', pack 'C*', @octets;
+        next if $listed{"$ifindex $ip"};
+        $rows->{$key} = {
+            ifindex => $ifindex,
+            ip      => $ip,
+            mac     => substr( $macs->{$key}, 0, 17 ),
+            family  => 'ipv6',
+        };
+    }
+    return;
+}
+
+# An undef, empty or all-zero MAC is no hardware address: the device
+# serves its own addresses that way
+sub _vrf_has_mac {
+    my $mac = shift;
+
+    return ( defined $mac and $mac =~ /[^0:.\-]/ ) ? 1 : 0;
+}
+
 sub _vrf_context_filters { return 0; }
+
+# True where the default context also serves other instances' rows on their
+# ports, which only the default context's membership tables can name
+sub _vrf_default_context_leaks { return 0; }
+
+# True where host link-locals are only in IPV6-MIB ipv6NetToMediaTable
+sub _vrf_nd_from_ipv6_mib { return 0; }
 
 # { name => record } a vendor MIB lists where MPLS-L3VPN-STD-MIB serves
 # none; records come from _vrf_record with sources->{list} set.
@@ -1154,6 +1245,22 @@ context, and kept across the switches, since C<update()> clears the cache:
 A port with no address in its context, such as an unnumbered one, is in
 no instance in context mode, and its neighbors are dropped.
 
+On some platforms the default context leaks: it serves every instance's
+neighbors and addresses on the instances' ports, alongside the default
+instance's own. A class for such a platform has the readers of
+C<default>, in the default context, drop the rows on each port that the
+default context's membership table, C<mplsL3VpnIfConfTable>, gives
+another instance, and C<i_vrf()> there returns that membership. An
+instance the table holds no port for, such as a virtual router, cannot be
+told apart there, so its rows stay in C<default> and
+C<vrf_read_complete('default')> returns 0. L<SNMP::Info::Layer3::Juniper>
+is such a class.
+
+Some platforms serve host link-local neighbors only in the F<IPV6-MIB>
+C<ipv6NetToMediaTable>, not in C<ipNetToPhysicalTable>. A class for such a
+platform adds those rows to C<vrf_neighbors()>, one per port and address,
+keeping the C<ipNetToPhysicalTable> row where both tables list one.
+
 A caller tells the modes apart from each instance's C<contexts>. It is
 C<< [ { kind => 'none' } ] >>, the default context, in attribution mode.
 In context mode it lists the instance's own contexts, each as
@@ -1193,10 +1300,12 @@ The list is whole as far as F<MPLS-L3VPN-STD-MIB> lists instances.
 =back
 
 Completeness measures F<MPLS-L3VPN-STD-MIB> only. Some platforms hold
-layer 3 instances that MIB does not list, such as virtual routers. Those
-instances are absent from C<vrf_instances()>, their ports are absent from
-C<i_vrf()>, and their rows are read as the instance C<default>, even when
-C<vrf_instances_complete()> returns 1.
+layer 3 instances that MIB does not list, such as virtual routers. Unless
+the class lists them from another source, those instances are absent from
+C<vrf_instances()>, their ports are absent from C<i_vrf()>, and their rows
+are read as the instance C<default>, even when C<vrf_instances_complete()>
+returns 1. A class whose default context leaks, as L</"Reading Instances">
+describes, reports that through C<vrf_read_complete('default')>.
 
 C<vrf_read_complete($name)> says whether the readers saw the whole of the
 tables they walked for C<$name>.
@@ -1260,8 +1369,9 @@ are absent.
 In context mode it works in any context. It maps each port holding an
 address in the current context's C<ipAddressTable> or C<ipAdEntTable> to
 the instance whose context the session is in, or to C<default> in the
-default context. It returns nothing, with C<error()> set, in a context no
-listed instance has.
+default context. In the default context of a class whose default context
+leaks, it is the C<mplsL3VpnIfConfTable> membership instead. It returns
+nothing, with C<error()> set, in a context no listed instance has.
 
 (C<mplsL3VpnIfConfRowStatus>, or a class's vendor table when
 C<MPLS-L3VPN-STD-MIB> lists no instance, such as
@@ -1283,11 +1393,16 @@ with no source table for a reader contributes no rows to it.
 
 Returns reference to hash of the ARP and IPv6 neighbor rows of instance
 C<$name>, keyed as C<at_paddr()> and C<ipv6_n2p_mac()> key them. Each row
-holds C<ifindex>, C<ip>, C<mac> and C<family> (C<ipv4> or C<ipv6>).
+holds C<ifindex>, C<ip>, C<mac> and C<family> (C<ipv4> or C<ipv6>). A row
+whose MAC is undef, empty or all zeros is not returned: it names no
+hardware address, and devices serve their own addresses that way. Rows a
+class adds from C<ipv6NetToMediaTable> are keyed by ifIndex then the
+sixteen address octets, as that table indexes them.
 
 (C<at_paddr()> and C<at_netaddr()>, with the fallbacks to C<atTable> and
-C<ipNetToPhysicalTable> of L<SNMP::Info::Layer3>, and the C<ipv6_n2p_*>
-methods of L<SNMP::Info::IPv6>)
+C<ipNetToPhysicalTable> of L<SNMP::Info::Layer3>, the C<ipv6_n2p_*>
+methods of L<SNMP::Info::IPv6>, and C<ipv6NetToMediaPhysAddress> where the
+class reads it)
 
 =item $vrf->vrf_addresses($name)
 
@@ -1324,7 +1439,9 @@ C<walk_status()> (see L<SNMP::Info/"Incomplete Walks">), otherwise 1. A
 table the device does not implement counts as complete. In attribution
 mode the membership table C<mplsL3VpnIfConfTable> counts too, since it
 decides which rows are the instance's; in context mode the address tables
-do.
+do, and for C<default> in a leaking default context the membership table
+as well. There it also returns 0 while a listed instance has no port in
+the membership table, since its rows cannot be told from C<default>'s.
 
 Call it after the readers, in the same context. C<clear_cache()>, and so
 C<update()>, forgets which tables were walked, after which it returns 1

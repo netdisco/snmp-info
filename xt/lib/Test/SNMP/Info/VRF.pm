@@ -433,7 +433,7 @@ sub decode_name__length_prefixed__returns_name_and_rest : Tests(4) {
     [], q(An empty index returns nothing));
 }
 
-sub vrf_private_defaults : Tests(5) {
+sub vrf_private_defaults : Tests(7) {
   my $test = shift;
 
   is($test->{info}->_vrf_context_filters(), 0, q(No context filtering));
@@ -444,6 +444,10 @@ sub vrf_private_defaults : Tests(5) {
     q(No instance is internal in the base role));
   ok(defined &SNMP::Info::VRF::_vrf_default_context_ok,
     q(The default context guard is defined));
+  is($test->{info}->_vrf_default_context_leaks(), 0,
+    q(The default context serves only its own rows));
+  is($test->{info}->_vrf_nd_from_ipv6_mib(), 0,
+    q(IPV6-MIB adds no neighbor rows));
 }
 
 my %BUILT_PACKAGE;
@@ -781,6 +785,51 @@ sub vrf_neighbors__unknown_name__sets_error : Tests(2) {
   like($info->error(),
     qr/^\S+vrf_neighbors\(\) reads instance 'purple', which is not in vrf_instances\(\)/,
     q(error() names the instance and says it is not listed));
+}
+
+# A row with no hardware address is no evidence of a host. Ports 2 and 4
+# are red's, 3 and 5 blue's; each holds one IPv4 and one IPv6 row.
+my %RAW_MAC = (
+  2 => undef,
+  3 => q(),
+  4 => '00:00:00:00:00:00',
+  5 => '02:00:00:00:00:05',
+);
+my $V6_ROW_ARCS = '32.1.13.184.0.64.0.0.0.0.0.0.0.0.0';
+
+sub _raw_mac_rows {
+  my $value = shift;
+  return {map { ("$_.10.40.0.$_" => $value->($_)) } keys %RAW_MAC};
+}
+
+sub _raw_mac_v6_rows {
+  my $value = shift;
+  return {map { ("$_.2.16.$V6_ROW_ARCS.$_" => $value->($_)) } keys %RAW_MAC};
+}
+
+sub vrf_neighbors__zero_mac__dropped : Tests(3) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::RawMacs',
+    \@NEIGHBOR_PARENTS,
+    at_paddr      => sub { _raw_mac_rows(sub { $RAW_MAC{$_[0]} }) },
+    at_netaddr    => sub { _raw_mac_rows(sub { "10.40.0.$_[0]" }) },
+    ipv6_n2p_mac  => sub { _raw_mac_v6_rows(sub { $RAW_MAC{$_[0]} }) },
+    ipv6_n2p_addr => sub {
+      _raw_mac_v6_rows(sub { sprintf '2001:0db8:0040:0000:0000:0000:0000:%04x',
+        $_[0] }) },
+    ipv6_n2p_if   => sub { _raw_mac_v6_rows(sub { $_[0] }) },
+  );
+  $test->{info} = $info;
+  $test->_prime_vrf_table();
+  $test->_prime_members();
+
+  cmp_deeply($info->vrf_neighbors('red'), {},
+    q(Undef and all-zero MACs are dropped, IPv4 and IPv6));
+  my $blue = $info->vrf_neighbors('blue');
+  cmp_deeply([sort keys %$blue], ['5.10.40.0.5', "5.2.16.$V6_ROW_ARCS.5"],
+    q(An empty MAC is dropped; a real one is kept));
+  is($blue->{'5.10.40.0.5'}{mac}, '02:00:00:00:00:05', q(... with its MAC));
 }
 
 sub vrf_neighbors__role_without_neighbor_methods__has_no_rows : Tests(1) {

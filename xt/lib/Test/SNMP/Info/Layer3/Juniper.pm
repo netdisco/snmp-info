@@ -1856,6 +1856,314 @@ sub vrf_instances_complete__vacm_walk_partial__is_0 : Tests(2) {
   is($info->vrf_instances_complete(), 0, 'A partial jnxVpnName walk');
 }
 
+# Junos 26.2 vJunos-switch, per context, synthetic from its captures. The
+# router's own port MACs end 01 to 04 and 09; neighbors' end 05 to 08 and
+# 0a to 0c. arp rows are ipNetToMediaTable [port, ip, mac]; n2p rows are
+# ipNetToPhysicalTable [port, ip, mac, zoned]; nd rows are IPV6-MIB
+# ipv6NetToMediaTable [port, ip, mac], mac undef for an empty value; addr
+# rows are ipAddressTable [port, ip, network, length, zoned]. A mac of 0
+# is all zeros. Every context serves the MPLS-L3VPN membership.
+my %JNX_CONTEXT = (
+  default => {
+    arp => [
+      [13,  '10.0.0.2',    11], [21,  '127.0.0.1', 0],
+      [508, '128.0.0.127', 0],  [514, '10.34.0.1', 0],
+      # Not in the capture: a grey neighbor with a hardware address
+      [514, '10.34.0.2',   12],
+      [536, '10.30.0.2',   5], [540, '10.30.0.2', 7],
+      [545, '10.31.0.2',   6], [549, '10.32.0.2', 8],
+    ],
+    n2p => [
+      [13,  '10.0.0.2', 11], [21, '127.0.0.1', 0], [514, '10.34.0.1', 0],
+      [514, '10.34.0.2', 12], [536, '10.30.0.2', 5],
+      [536, '2001:db8:30:0:0:0:0:2', 5],
+      [555, '2001:db8:33:0:0:0:0:2', 10],
+    ],
+    nd => [
+      [13,  'fe80:0:0:0:0:0:0:2',        11],
+      [514, '2001:db8:34:0:0:0:0:1',     undef],
+      [536, 'fe80:0:0:0:0:ff:fe00:301',  5],
+      [549, 'fe80:0:0:0:0:ff:fe00:303',  8],
+      [555, 'fe80:0:0:0:0:ff:fe00:304',  10],
+    ],
+    addr => [
+      [13,  '10.0.0.15',   '10.0.0.0',  24],
+      [21,  '127.0.0.1',   '127.0.0.1', 32],
+      [508, '128.0.0.127', '128.0.0.0', 2],
+      [514, '10.34.0.1',   '10.34.0.1', 32],
+      [536, '10.30.0.1',   '10.30.0.0', 24],
+      [545, '10.31.0.1',   '10.31.0.0', 24],
+      [549, '10.32.0.1',   '10.32.0.0', 24],
+      [536, '2001:db8:30:0:0:0:0:1', '2001:db8:30:0:0:0:0:0', 64],
+      [555, '2001:db8:33:0:0:0:0:1', '2001:db8:33:0:0:0:0:0', 64],
+    ],
+  },
+  red => {
+    arp => [
+      [536, '10.30.0.1', 1], [536, '10.30.0.2', 5],
+      [545, '10.31.0.1', 2], [545, '10.31.0.2', 6],
+    ],
+    n2p => [
+      [536, '10.30.0.1', 1], [536, '10.30.0.2', 5],
+      [536, '2001:db8:30:0:0:0:0:1', 1], [536, '2001:db8:30:0:0:0:0:2', 5],
+      [536, 'fe80:0:0:0:0:0:0:1', 1, 1],
+      [545, '10.31.0.1', 2], [545, '10.31.0.2', 6],
+      [545, '2001:db8:31:0:0:0:0:1', 2], [545, '2001:db8:31:0:0:0:0:2', 6],
+      [545, 'fe80:0:0:0:0:0:0:1', 2, 1],
+    ],
+    nd => [
+      [536, '2001:db8:30:0:0:0:0:1', 1], [536, '2001:db8:30:0:0:0:0:2', 5],
+      [536, 'fe80:0:0:0:0:0:0:1', 1], [536, 'fe80:0:0:0:0:0:0:2', 5],
+      [536, 'fe80:0:0:0:0:ff:fe00:301', 5],
+      [545, '2001:db8:31:0:0:0:0:1', 2], [545, '2001:db8:31:0:0:0:0:2', 6],
+      [545, 'fe80:0:0:0:0:0:0:1', 2], [545, 'fe80:0:0:0:0:ff:fe00:303', 6],
+    ],
+    addr => [
+      [536, '10.30.0.1', '10.30.0.0', 24],
+      [545, '10.31.0.1', '10.31.0.0', 24],
+      [536, '2001:db8:30:0:0:0:0:1', '2001:db8:30:0:0:0:0:0', 64],
+      [545, '2001:db8:31:0:0:0:0:1', '2001:db8:31:0:0:0:0:0', 64],
+      [536, 'fe80:0:0:0:0:0:0:1', 'fe80:0:0:0:0:0:0:0', 64, 1],
+    ],
+  },
+  blue => {
+    addr => [
+      [540, '10.30.0.1', '10.30.0.0', 24],
+      [549, '10.32.0.1', '10.32.0.0', 24],
+      [540, '2001:db8:30:0:0:0:0:1', '2001:db8:30:0:0:0:0:0', 64],
+      [549, '2001:db8:32:0:0:0:0:1', '2001:db8:32:0:0:0:0:0', 64],
+      [540, 'fe80:0:0:0:0:0:0:1', 'fe80:0:0:0:0:0:0:0', 64, 1],
+    ],
+  },
+  grey => {
+    arp => [[514, '10.34.0.1', 0]],
+    n2p => [
+      [514, '10.34.0.1', 0], [514, '2001:db8:34:0:0:0:0:1', 0],
+      [514, 'fe80:0:0:0:e00:c90f:fc2a:b000', 0, 1],
+    ],
+    nd => [
+      [514, '2001:db8:34:0:0:0:0:1',         undef],
+      [514, 'fe80:0:0:0:e00:c90f:fc2a:b000', undef],
+    ],
+    addr => [
+      [514, '10.34.0.1', '10.34.0.1', 32],
+      [514, '2001:db8:34:0:0:0:0:1', '2001:db8:34:0:0:0:0:1', 128],
+      [514, 'fe80:0:0:0:e00:c90f:fc2a:b000',
+        'fe80:0:0:0:e00:c90f:fc2a:b000', 128, 1],
+    ],
+  },
+);
+my $JNX_PFX = '.1.3.6.1.2.1.4.32.1.5';
+
+# The index arcs of an IPv6 address written as eight hex groups
+sub _jnx_v6_arcs {
+  my $ip = shift;
+  return join('.', unpack('C*', pack('n8', map { hex } split /:/, $ip)));
+}
+
+# An InetAddress index: type, length, octets, and four zone octets for ipv6z
+sub _jnx_inet_iid {
+  my ($ip, $zoned) = @_;
+  return "1.4.$ip" if $ip !~ /:/;
+  return '4.20.' . _jnx_v6_arcs($ip) . '.0.0.0.0' if $zoned;
+  return '2.16.' . _jnx_v6_arcs($ip);
+}
+
+sub _jnx_mac {
+  my $last = shift;
+  return pack('C6', $last ? (2, 0, 0, 0, 0, $last) : (0) x 6);
+}
+
+sub _jnx_neighbor_store {
+  my ($store, $tables) = @_;
+  foreach my $row (@{$tables->{arp} || []}) {
+    my ($port, $ip, $mac) = @$row;
+    $store->{at_paddr}{"$port.$ip"}   = _jnx_mac($mac);
+    $store->{at_netaddr}{"$port.$ip"} = $ip;
+  }
+  foreach my $row (@{$tables->{n2p} || []}) {
+    my ($port, $ip, $mac, $zoned) = @$row;
+    $store->{ip_n2p_phys_addr}{"$port." . _jnx_inet_iid($ip, $zoned)}
+      = _jnx_mac($mac);
+  }
+  foreach my $row (@{$tables->{nd} || []}) {
+    my ($port, $ip, $mac) = @$row;
+    $store->{i6_n2p_phys_addr}{"$port." . _jnx_v6_arcs($ip)}
+      = defined $mac ? _jnx_mac($mac) : q();
+  }
+  return;
+}
+
+# The prefix RowPointer as Junos serves it: an ipv6z prefix has no zone
+sub _jnx_address_store {
+  my ($store, $tables) = @_;
+  foreach my $row (@{$tables->{addr} || []}) {
+    my ($port, $ip, $network, $length, $zoned) = @$row;
+    my $iid = _jnx_inet_iid($ip, $zoned);
+    my $net = $zoned ? '4.20.' . _jnx_v6_arcs($network)
+      : _jnx_inet_iid($network);
+    $store->{new_ip_index}{$iid}  = $port;
+    $store->{new_ip_type}{$iid}   = 'unicast';
+    $store->{new_ip_prefix}{$iid} = "$JNX_PFX.$port.$net.$length";
+  }
+  return;
+}
+
+# Enters $context ('default' for the default context) on a cache holding
+# that context's tables
+sub _prime_jnx_context {
+  my ($test, $context) = @_;
+  my $info = $test->_prime_vrf();
+  my $iid = sub { join('.', length($_[0]), map { ord } split //, $_[0]) };
+
+  my %store = map { $_ => {} } qw/at_paddr at_netaddr old_at_paddr
+    old_at_netaddr ip_n2p_phys_addr c_inet_phys_addr i6_n2p_phys_addr
+    new_ip_index new_ip_type new_ip_prefix old_ip_index old_ip_netmask/;
+  _jnx_neighbor_store(\%store, $JNX_CONTEXT{$context});
+  _jnx_address_store(\%store, $JNX_CONTEXT{$context});
+  $store{vrf_l3vpn_if} = {
+    $iid->('red')  . '.536' => 'active',
+    $iid->('red')  . '.545' => 'active',
+    $iid->('grey') . '.514' => 'active',
+  };
+  foreach my $method (keys %store) {
+    $info->{"_$method"} = 1;
+    $info->{store}{$method} = $store{$method};
+  }
+
+  $info->{args}{Community} = 'public';
+  $info->session()->{Version}   = 2;
+  $info->session()->{Community}
+    = $context eq 'default' ? 'public' : "$context\@public";
+  return $info;
+}
+
+sub vrf_neighbors__red_context__adds_ipv6_mib_link_locals : Tests(5) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('red');
+
+  my %link_local = map { ("$_->[0]." . _jnx_v6_arcs($_->[1]) => $_->[0]) } (
+    [536, 'fe80:0:0:0:0:0:0:2'], [536, 'fe80:0:0:0:0:ff:fe00:301'],
+    [545, 'fe80:0:0:0:0:ff:fe00:303'],
+  );
+  my @own_link_local
+    = map { "$_." . _jnx_v6_arcs('fe80:0:0:0:0:0:0:1') } 536, 545;
+  my @global = (
+    (map { '536.2.16.' . _jnx_v6_arcs("2001:db8:30:0:0:0:0:$_") } 1, 2),
+    (map { '545.2.16.' . _jnx_v6_arcs("2001:db8:31:0:0:0:0:$_") } 1, 2),
+  );
+  my $rows = $info->vrf_neighbors('red');
+  cmp_deeply([sort keys %$rows], [sort('536.10.30.0.1', '536.10.30.0.2',
+      '545.10.31.0.1', '545.10.31.0.2', @global, keys %link_local,
+      @own_link_local)],
+    'IPv4, the IP-MIB globals, the IPV6-MIB link-locals, and the own'
+      . ' addresses at the port MAC');
+  cmp_deeply(
+    $rows->{'536.' . _jnx_v6_arcs('fe80:0:0:0:0:ff:fe00:301')},
+    {
+      ifindex => 536,
+      ip      => 'fe80:0000:0000:0000:0000:00ff:fe00:0301',
+      mac     => '02:00:00:00:00:05',
+      family  => 'ipv6',
+    },
+    'An IPV6-MIB row in the form of an IP-MIB one');
+  my %seen;
+  $seen{"$_->{ifindex} $_->{ip}"}++ for values %$rows;
+  cmp_deeply([grep { $seen{$_} > 1 } sort keys %seen], [],
+    'No port holds an address twice');
+  ok(!exists $rows->{'536.' . _jnx_v6_arcs('2001:db8:30:0:0:0:0:2')},
+    'Where both tables list a row, the IP-MIB one is kept');
+  is($info->{_vrf_walked}{red}{i6_n2p_phys_addr}, 1,
+    'The IPV6-MIB walk is recorded for red');
+}
+
+sub vrf_neighbors__grey_context__own_rows_dropped : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('grey');
+
+  cmp_deeply($info->vrf_neighbors('grey'), {},
+    'Its own addresses at a zero or empty MAC are no neighbors');
+}
+
+sub vrf_neighbors__default_context__drops_mpls_ports : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  my $rows = $info->vrf_neighbors('default');
+  cmp_deeply([sort keys %$rows], [sort('13.10.0.0.2',
+      '13.' . _jnx_v6_arcs('fe80:0:0:0:0:0:0:2'),
+      '549.10.32.0.2', '549.' . _jnx_v6_arcs('fe80:0:0:0:0:ff:fe00:303'),
+      '555.2.16.' . _jnx_v6_arcs('2001:db8:33:0:0:0:0:2'),
+      '555.' . _jnx_v6_arcs('fe80:0:0:0:0:ff:fe00:304'))],
+    'Management rows kept; virtual router ports have no known owner here');
+  cmp_deeply([grep { /^(?:514|536|545)$/ } map { $_->{ifindex} }
+      values %$rows], [], 'No row on a port MPLS-L3VPN gives red or grey');
+}
+
+sub vrf_addresses__default_context__drops_mpls_ports : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  cmp_deeply([sort keys %{$info->vrf_addresses('default')}],
+    [sort('13.10.0.0.15', '21.127.0.0.1', '508.128.0.0.127',
+      '549.10.32.0.1', '555.2001:0db8:0033:0000:0000:0000:0000:0001')],
+    'Addresses on red and grey ports are dropped');
+}
+
+sub vrf_subnets__default_context__drops_mpls_ports : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  cmp_deeply([sort keys %{$info->vrf_subnets('default')}],
+    [sort('10.0.0.0/24', '127.0.0.1/32', '128.0.0.0/2', '10.32.0.0/24',
+      '2001:0db8:0033:0000:0000:0000:0000:0000/64')],
+    'Subnets on red and grey ports are dropped');
+}
+
+sub vrf_read_complete__default_with_virtual_routers__is_0 : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  $info->vrf_neighbors('default');
+  is($info->vrf_read_complete('default'), 0,
+    'blue and green have no membership the default context serves');
+
+  $info = $test->_prime_jnx_context('default');
+  my $iid = sub { join('.', length($_[0]), map { ord } split //, $_[0]) };
+  delete $info->{store}{vrf_vacm_context}{$iid->($_)} for qw/blue green/;
+  $info->vrf_neighbors('default');
+  is($info->vrf_read_complete('default'), 1,
+    'With every instance a member of MPLS-L3VPN, the read is whole');
+}
+
+sub vrf_read_complete__red__is_1 : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('red');
+
+  $info->vrf_neighbors('red');
+  is($info->vrf_read_complete('red'), 1, 'Every walk was complete');
+  $info->{walk_status}{i6_n2p_phys_addr}
+    = {complete => 0, reason => 'timeout'};
+  is($info->vrf_read_complete('red'), 0,
+    'A partial ipv6NetToMediaTable walk makes the read incomplete');
+}
+
+sub i_vrf__blue_context__blue_ports : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('blue');
+
+  cmp_deeply($info->i_vrf(), {540 => 'blue', 549 => 'blue'},
+    'The ports holding an address in blue\'s context');
+}
+
+sub i_vrf__default_context__mpls_membership : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  cmp_deeply($info->i_vrf(), {536 => 'red', 545 => 'red', 514 => 'grey'},
+    'The membership MPLS-L3VPN-STD-MIB serves');
+}
+
 sub _context_kinds : Tests(4) {
   my $test = shift;
   my $info = $test->{info};

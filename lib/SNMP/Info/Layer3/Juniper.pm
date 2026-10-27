@@ -951,6 +951,13 @@ sub _jnx_vrf_context {
 # Each routing instance reads in its own context
 sub _vrf_context_filters { return 1; }
 
+# The default context also serves every instance's neighbors and addresses
+# on the instances' ports
+sub _vrf_default_context_leaks { return 1; }
+
+# Host link-locals are only in IPV6-MIB ipv6NetToMediaTable
+sub _vrf_nd_from_ipv6_mib { return 1; }
+
 # Platform-internal and management instances: the global table, the layer 2
 # default, the management instance, double-underscore names and the gRIBI
 # context
@@ -995,7 +1002,8 @@ sub _jnx_vacm_names {
         next if $name =~ /^[^:]+::\d+$/;
         $names{$name} = 1;
     }
-    return sort keys %names;
+    my @names = sort keys %names;
+    return @names;
 }
 
 # { name => 1 } for each name jnxVpnTable lists with a type other than
@@ -1753,6 +1761,19 @@ A layer 2 instance with no C<jnxVpnTable> row, such as a C<virtual-switch>,
 is listed as a C<virtual-router> and reads no address in its context, since
 the device holds none there.  C<vrf_instances_complete()> is 0 when the
 C<vacmContextName> or C<jnxVpnName> walk was incomplete.
+
+Each instance reads in its own context.  The default context also serves
+every instance's neighbors and addresses on the instances' ports, so the
+readers of C<default> drop the rows on the ports C<mplsL3VpnIfConfTable>
+gives a VRF, and C<i_vrf()> in the default context is that membership.  A
+virtual router has no row there, so C<vrf_read_complete('default')> is 0
+while one is listed, and its rows stay in C<default>.
+
+Junos serves host link-local neighbors only in C<ipv6NetToMediaTable>
+(C<IPV6-MIB>), so C<vrf_neighbors()> adds them to the
+C<ipNetToPhysicalTable> rows, once per port and address.  Junos serves an
+instance's own addresses at an all-zero or empty MAC, which are dropped,
+and some at the port's MAC, which are kept.
 
 =over
 
