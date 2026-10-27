@@ -1,3 +1,31 @@
+Version 3.982001
+
+  [NEW FEATURES]
+
+  * #595 ArubaInstant: add Instant 8.x SSIDs, associated clients, radio
+    channels and transmit power using AI-AP-MIB (#536)
+
+  [ENHANCEMENTS]
+
+  * #643 RuckusAP: map active WLANs, channels, and client details to
+    standard wireless methods, including each client's SSID (#496)
+  * #644 Agent skills: check a class against a walk before review, and
+    find the skills from Codex as well
+  * #636 Tachyon: add TNA device support for identity, wireless peers,
+    Ethernet status, and logical VLAN interfaces
+  * #637 Teltonika: detect current RutOS devices by product code, map model,
+    serial and firmware across current product families, and retain legacy
+    RUT9xx detection
+  * #640 Ruckus: detect SmartZone and SmartCell Gateway controllers by
+    product OID and report model and serial number
+  * #635 LigoWave: identify DLB radios, report model and firmware, the
+    SSID and channel on the radio interface, and logical VLAN interfaces
+
+  [BUG FIXES]
+
+  * #645 Die with an error instead of looping until out of memory when a
+    test takes a reference to a method that does not exist yet
+
 Version 3.982000 (2026-10-24)
 
   [ENHANCEMENTS]

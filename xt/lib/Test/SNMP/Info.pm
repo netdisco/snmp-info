@@ -2224,6 +2224,33 @@ sub private_autoload : Tests(3) {
     1, q(Method 'ipDefaultTTL' is now defined in the symbol table));
 }
 
+sub private_autoload_bodyless_stub : Tests(3) {
+  my $test  = shift;
+  my $class = 'Test::SNMP::Info::BodylessStub';
+
+  {
+    no strict 'refs';    ## no critic (ProhibitNoStrict)
+    @{"${class}::ISA"} = (ref $test->{info});
+  }
+  my $info = bless {%{$test->{info}}}, $class;
+  $info->cache({'_name' => 'StubTestName'});
+
+  is($info->name(), 'StubTestName',
+    'autoload__no_stub__returns_the_generated_method');
+
+  # Taking a reference to a sub that does not exist declares a bodyless
+  # stub, which method resolution finds before the generated method
+  my $stub = do {
+    no strict 'refs';    ## no critic (ProhibitNoStrict)
+    \&{"${class}::name"};
+  };
+  ok(!defined &$stub, 'autoload__stub__is_declared_without_a_body');
+
+  throws_ok { $info->name() }
+  qr/\Q${class}::name\E is declared but has no body/,
+    'autoload__bodyless_stub__croaks_instead_of_recursing';
+}
+
 sub mock_getnext_end_of_table : Tests(3) {
   my $test = shift;
   my $sess = $test->mock_session;
