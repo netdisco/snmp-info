@@ -199,7 +199,6 @@ sub _vrf_vendor_instances {
         next if $cisco->_vrf_internal_instance($name);
         my $record = SNMP::Info::VRF::_vrf_record( $name, 'vrf', 'device' );
         $record->{sources}{list} = 'CISCO-VRF-MIB';
-        $cisco->_vrf_set_contexts($record);
         $instances{$name} = $record;
     }
     return \%instances;

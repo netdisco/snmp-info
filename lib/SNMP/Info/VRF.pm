@@ -204,9 +204,15 @@ sub _vrf_add_members {
     my $vrf       = shift;
     my $instances = shift;
 
+    my $vendor_ports
+        = $vrf->_vrf_vendor_listed() ? $vrf->_vrf_vendor_membership() : {};
+    my %vendor_named = map { $_ => 1 } values %$vendor_ports;
     foreach my $name ( values %{ $vrf->_vrf_membership() } ) {
         next unless $instances->{$name};
-        $instances->{$name}{sources}{members} = $LIST_SOURCE;
+        $instances->{$name}{sources}{members}
+            = $vendor_named{$name}
+            ? $instances->{$name}{sources}{list}
+            : $LIST_SOURCE;
     }
     return;
 }
@@ -377,13 +383,15 @@ sub _vrf_context_ports {
 }
 
 # The contexts _walk_context() reports in $name's context: the v3 name,
-# and the context of a community the v2c template builds. With no context
-# record the instance's context is its name.
+# and the context of a community the v2c template builds. Where the class
+# has no VRF context kind the instance's context is its name; where it has
+# one and gives this instance none, the instance has no context.
 sub _vrf_contexts_of {
     my $vrf  = shift;
     my $name = shift;
 
-    my $context = $vrf->_vrf_context_for($name) or return $name;
+    return $name unless $vrf->context_kinds('vrf');
+    my $context = $vrf->snmp_context( 'vrf', $name ) or return;
     my $v2c     = $context->{v2c};
     my @v2c
         = !defined $v2c        ? ()
@@ -527,7 +535,12 @@ sub vrf_subnets {
         = $context_mode
         ? $vrf->_vrf_context_route_subnets($name)
         : $vrf->_vrf_attributed_route_subnets($name);
-    _vrf_add_subnet( \%subnets, $_, 'route' ) for @$routes;
+    foreach my $route (@$routes) {
+        next
+            if _vrf_special_purpose($route)
+            and !_vrf_has_subnet( \%subnets, $route );
+        _vrf_add_subnet( \%subnets, $route, 'route' );
+    }
     return \%subnets;
 }
 
@@ -543,6 +556,42 @@ sub vrf_read_complete {
         return 0 unless $status->{complete};
     }
     return 1;
+}
+
+sub _vrf_has_subnet {
+    my ( $subnets, $subnet ) = @_;
+
+    return exists $subnets->{"$subnet->{prefix}/$subnet->{len}"};
+}
+
+# Space no VRF routes to a neighbor: this and loopback networks, multicast,
+# and limited broadcast for IPv4; unspecified and loopback, link-local and
+# multicast for IPv6. A route-only subnet within it is not a VRF subnet.
+my @SPECIAL_PURPOSE = (
+    [ ipv4 => '0.0.0.0',            8 ],
+    [ ipv4 => '127.0.0.0',          8 ],
+    [ ipv4 => '224.0.0.0',          4 ],
+    [ ipv4 => '255.255.255.255',    32 ],
+    [ ipv6 => '0:0:0:0:0:0:0:0',    127 ],
+    [ ipv6 => 'fe80:0:0:0:0:0:0:0', 10 ],
+    [ ipv6 => 'ff00:0:0:0:0:0:0:0', 8 ],
+);
+
+sub _vrf_special_purpose {
+    my $subnet = shift;
+
+    my $bits = unpack 'B*', pack 'C*',
+        _vrf_ip_octets( $subnet->{family}, $subnet->{prefix} );
+    foreach my $special (@SPECIAL_PURPOSE) {
+        my ( $family, $address, $length ) = @$special;
+        next if $family ne $subnet->{family} or $subnet->{len} < $length;
+        my $special_bits = unpack 'B*', pack 'C*',
+            _vrf_ip_octets( $family, $address );
+        return 1
+            if substr( $bits, 0, $length ) eq
+            substr( $special_bits, 0, $length );
+    }
+    return 0;
 }
 
 # Adds one source to the subnet; the first port seen keeps the record
@@ -1214,8 +1263,10 @@ the instance whose context the session is in, or to C<default> in the
 default context. It returns nothing, with C<error()> set, in a context no
 listed instance has.
 
-(C<mplsL3VpnIfConfRowStatus>; in context mode C<ipAddressIfIndex>,
-C<ipAdEntIfIndex>)
+(C<mplsL3VpnIfConfRowStatus>, or a class's vendor table when
+C<MPLS-L3VPN-STD-MIB> lists no instance, such as
+L<SNMP::Info::Layer3::Cisco>'s C<cvVrfInterfaceRowStatus>; in context mode
+C<ipAddressIfIndex>, C<ipAdEntIfIndex>)
 
 =back
 
@@ -1256,8 +1307,11 @@ Returns reference to hash of the subnets of instance C<$name>, keyed
 C<prefix/len>. Each holds C<prefix>, C<len>, C<family>, C<ifindex> and
 C<sources>: C<address> for the network of an interface address that has a
 prefix length, C<route> for a connected route, C<address> first when both
-apply. Host routes are not subnets. C<ifindex> is undef for a route with
-no interface. See L</"Collapsed Subnets">.
+apply. Host routes are not subnets, and neither is a route-only prefix in
+special-purpose space: IPv4 C<0.0.0.0/8>, C<127.0.0.0/8>, C<224.0.0.0/4>
+and C<255.255.255.255/32>, IPv6 C<::/127>, C<fe80::/10> and C<ff00::/8>.
+An interface address in that space is kept. C<ifindex> is undef for a route
+with no interface. See L</"Collapsed Subnets">.
 
 (C<vrf_addresses()>, C<mplsL3VpnVrfRteInetCidrProto>,
 C<mplsL3VpnVrfRteInetCidrIfIndex>, C<inetCidrRouteProto>,

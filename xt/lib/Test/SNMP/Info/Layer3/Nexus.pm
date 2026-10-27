@@ -186,6 +186,32 @@ sub snmp_context__vrf_unmapped__v3_is_name : Tests(2) {
     'Another VRF context does not hide this one');
 }
 
+sub snmp_context__vrf_name_is_context_of_other_vrf__nothing : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_vrf_context_cache(red => 'blue'));
+  is($info->snmp_context('vrf', 'red'), undef,
+    'red is unmapped and its name is blue\'s context: no answer');
+  is($info->snmp_context('vrf', 'blue')->{v3}, 'red',
+    'blue is served by the context named red');
+
+  _nx_enter_context($info, 'red');
+  is($info->vrf_neighbors('red'), undef,
+    'A caller-named red cannot read blue\'s context as its own');
+}
+
+sub snmp_context__vrf_malformed_context_index__ignored : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nxos_cache(store => {vrf_name => {'2.99.100.101' => 'red'}}));
+  is($info->snmp_context('vrf', 'red')->{v3}, 'red',
+    'An index whose length prefix is wrong names no context');
+}
+
 sub snmp_context__vrf_default__nothing : Tests(3) {
   my $test = shift;
   my $info = $test->{info};
@@ -197,7 +223,7 @@ sub snmp_context__vrf_default__nothing : Tests(3) {
   is($info->snmp_context('vrf'),            undef, 'no name: nothing');
 }
 
-# nexus1 shape: the default context map lists the VLAN 1 contexts with no
+# NX-OS 9000v shape: the default context map lists the VLAN 1 contexts with no
 # VRF, and one context per VRF named like it.
 sub _vrf_list_cache {
   return _vrf_context_cache(
@@ -221,6 +247,21 @@ sub vrf_instances : Tests(8) {
   ok(!exists $instances->{'vlan-1'} && !exists $instances->{q()} &&
     !exists $instances->{1}, 'Empty-valued rows are never instances');
   is($instances->{red}{listed_by}, 'device', 'Listed by the device');
+}
+
+sub vrf_instances__context_map_value_default__never_an_instance : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_vrf_context_cache(red => 'red', 'ctx-d' => 'default'));
+  my $instances = $info->vrf_instances();
+  cmp_deeply([sort keys %$instances], [qw/default red/],
+    'A context mapped to default adds no instance');
+  cmp_deeply($instances->{default}{contexts}, [{kind => 'none'}],
+    'default keeps the default context');
+  is($info->snmp_context('vrf', 'default'), undef,
+    'default has no context to switch to');
 }
 
 sub vrf_instances_complete__context_map_walked__is_1 : Tests(1) {
@@ -296,7 +337,7 @@ sub vrf_name__unchanged : Tests(1) {
     'The raw context map, as served');
 }
 
-# nexus1 ports of the VRF interfaces: red holds two, as does blue
+# Ports of the VRF interfaces on an NX-OS 9000v: red holds two, as does blue
 my %NX_PORT = (
   red_a  => 436207616,
   blue_a => 436208128,
@@ -314,7 +355,7 @@ sub _v6_arcs {
 
 sub _nx_mac { return pack('C6', 2, 0, 0, 0, 0, shift) }
 
-# The neighbor rows nexus1 serves on one VRF port, in any context: a
+# The neighbor rows NX-OS serves on one VRF port, in any context: a
 # global, an EUI-64 and a link-local IPv6 neighbor. $net is the third
 # group of the port's prefix.
 sub _nx_port_neighbors {
@@ -328,7 +369,7 @@ sub _nx_port_neighbors {
 }
 
 # Address tables of the context: ipAddressTable rows by type, length and
-# octets, with the RowPointer form nexus1 serves, and ipAdEntTable rows
+# octets, with the RowPointer form NX-OS serves, and ipAdEntTable rows
 sub _nx_addresses {
   my @rows = @_;
   my (%index, %type, %prefix, %adent, %mask);
@@ -366,7 +407,7 @@ sub _nx_enter_context {
   return;
 }
 
-# nexus1-red: red's two ports hold 10.10.10.1/24, 10.11.0.1/24 and
+# NX-OS 9000v, red context: red's two ports hold 10.10.10.1/24, 10.11.0.1/24 and
 # 2001:db8:10::1/64, 2001:db8:11::1/64; two ARP and six IPv6 neighbors
 sub _nx_red_cache {
   my ($red_a, $red_b) = @NX_PORT{qw/red_a red_b/};
@@ -397,7 +438,7 @@ sub _nx_red_cache {
   return $cache;
 }
 
-# nexus1-default: no address row, and the IPv6 neighbors of every VRF
+# NX-OS 9000v, default context: no address row, and the IPv6 neighbors of every VRF
 # port, which the default context serves although no port is its own
 sub _nx_default_cache {
   my $cache = _vrf_list_cache();
@@ -461,9 +502,11 @@ sub vrf_neighbors__red_context__red_rows : Tests(4) {
   $info->clear_cache();
   $info->cache(_nx_red_cache());
   _nx_enter_context($info, 'red');
+  $info->{store}{ip_n2p_phys_addr}{"$NX_PORT{blue_a}.2.16."
+      . _v6_arcs('2001:db8:10:0:0:0:0:2')} = _nx_mac(2);
   my $rows = $info->vrf_neighbors('red');
   my @rows = values %$rows;
-  is(scalar @rows, 8, 'Eight neighbor rows');
+  is(scalar @rows, 8, 'Eight neighbor rows, a row on a blue port dropped');
   is(scalar(grep { $_->{family} eq 'ipv4' } @rows), 2, 'Two are IPv4');
   is(scalar(grep { $_->{family} eq 'ipv6' } @rows), 6, 'Six are IPv6');
   cmp_deeply([sort map { $_->{ifindex} } @rows],
@@ -484,6 +527,19 @@ sub vrf_neighbors__wrong_context__error : Tests(2) {
     'The error names both contexts and the switch');
 }
 
+sub i_vrf__context_no_instance_has__error : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_red_cache());
+  _nx_enter_context($info, 'zzz');
+  is(scalar $info->i_vrf(), undef, 'No ports for an unclaimed context');
+  like($info->error(),
+    qr/i_vrf\(\) maps the ports of the instance whose context this session is in, but no instance in vrf_instances\(\) has the context 'zzz'\. Switch to the context snmp_context\('vrf'\) gives for a name vrf_instances\(\) lists\./,
+    'The error names the context and the way to a listed one');
+}
+
 sub vrf_neighbors__default_name_in_vrf_context__error : Tests(2) {
   my $test = shift;
   my $info = $test->{info};
@@ -498,7 +554,7 @@ sub vrf_neighbors__default_name_in_vrf_context__error : Tests(2) {
     'The error names the context and the way back');
 }
 
-# nexus1-green: one IPv6 address, and its connected and host routes
+# NX-OS 9000v, green context: one IPv6 address, and its connected and host routes
 sub vrf_subnets__green_context__ipv6_only : Tests(2) {
   my $test = shift;
   my $info = $test->{info};

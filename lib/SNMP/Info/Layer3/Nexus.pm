@@ -112,17 +112,17 @@ sub _snmp_context {
 # Each distinct non-empty VRF name cContextMappingTable maps. An empty
 # value is a VLAN or MST context, never a VRF.
 sub _vrf_vendor_instances {
-    my $nexus = shift;
+	my $nexus = shift;
 
-    my $mapped = $nexus->vrf_name() || {};
-    my %instances;
-    foreach my $name ( grep { defined && length } values %$mapped ) {
-        next if $name eq 'default';
-        my $record = SNMP::Info::VRF::_vrf_record( $name, 'vrf', 'device' );
-        $record->{sources}{list} = 'CISCO-CONTEXT-MAPPING-MIB';
-        $instances{$name} = $record;
-    }
-    return \%instances;
+	my $mapped = $nexus->vrf_name() || {};
+	my %instances;
+	foreach my $name ( grep { defined && length } values %$mapped ) {
+		next if $name eq 'default';
+		my $record = SNMP::Info::VRF::_vrf_record( $name, 'vrf', 'device' );
+		$record->{sources}{list} = 'CISCO-CONTEXT-MAPPING-MIB';
+		$instances{$name} = $record;
+	}
+	return \%instances;
 }
 
 sub _vrf_vendor_list_methods { return ('vrf_name'); }
@@ -136,26 +136,31 @@ sub _vrf_vendor_membership { return {}; }
 sub _vrf_context_filters { return 1; }
 
 # The context cContextMappingTable maps to the VRF: the one named like the
-# VRF, else the lowest sorted name; with none mapped, the VRF name. The
-# default VRF is the default context, and an unnamed one is not a VRF.
+# VRF, else the lowest sorted name; with none mapped, the VRF name, unless
+# that name is a context mapped to another VRF. The default VRF is the
+# default context, and an unnamed one is not a VRF.
 sub _vrf_snmp_context {
-    my ( $nexus, $name ) = @_;
+	my ( $nexus, $name ) = @_;
 
-    return if $name eq q() or $name eq 'default';
-    my $mapped = $nexus->vrf_name() || {};
-    my %contexts;
-    foreach my $index ( keys %$mapped ) {
-        next unless defined $mapped->{$index} and $mapped->{$index} eq $name;
-        my ( $length, @octets ) = split /\./, $index;
-        $contexts{ join q(), map { chr } @octets } = 1;
-    }
-    my ($context) = exists $contexts{$name} ? $name : sort keys %contexts;
-    return {
-        kind => 'vrf',
-        id   => $name,
-        v2c  => undef,
-        v3   => defined $context ? $context : $name,
-    };
+	return if !defined $name or $name eq q() or $name eq 'default';
+	my $mapped = $nexus->vrf_name() || {};
+	my ( %contexts, %of_other_vrf );
+	foreach my $index ( keys %$mapped ) {
+		next unless defined $mapped->{$index} and length $mapped->{$index};
+		my ( $length, @octets ) = split /\./, $index;
+		next unless $length == @octets;
+		my $context = join q(), map {chr} @octets;
+		my $owner = $mapped->{$index} eq $name ? \%contexts : \%of_other_vrf;
+		$owner->{$context} = 1;
+	}
+	return if !%contexts and $of_other_vrf{$name};
+	my ($context) = exists $contexts{$name} ? $name : sort keys %contexts;
+	return {
+		kind => 'vrf',
+		id   => $name,
+		v2c  => undef,
+		v3   => defined $context ? $context : $name,
+	};
 }
 
 sub _get_snmpid_chassis {
@@ -441,13 +446,16 @@ serves C<dot1dBasePortTable> was not measured, so C<cist.0> keeps
 C<ports_complete> 0.
 
 For C<vrf>, C<$id> is a name from C<vrf_instances()> and the answer is
-C<{ kind =E<gt> 'vrf', id =E<gt> $name, v2c =E<gt> undef, v3 =E<gt> $context }>.
-C<$context> is the context C<cContextMappingTable> maps to the VRF: the one
-named like the VRF if it is mapped, else the lowest sorted name among those
-mapped to it, else the VRF name itself.  The default VRF and an empty name
-have no context, so nothing is returned.  A site's community map
+C<{ kind =E<gt> 'vrf', id =E<gt> $name, v2c =E<gt> undef,
+v3 =E<gt> $context }>.  C<$context> is the context
+C<cContextMappingTable> maps to the VRF: the one named like the VRF if it
+is mapped, else the lowest sorted name among those mapped to it, else the
+VRF name itself.  The default VRF and an empty name have no context, so
+nothing is returned, and neither does a VRF with no mapped context whose
+name is a context mapped to another VRF.  A site's community map
 (C<snmp-server mib community-map>) reaches a VRF over SNMPv2c, but the
-class cannot derive its name, so C<v2c> is undef.
+class cannot derive its name, so C<v2c> is undef.  Over such a community
+the readers see the default context; read VRF contexts over SNMPv3.
 
 VRF reads use context mode (see L<SNMP::Info::VRF/"Reading Instances">):
 each VRF context serves only that VRF's address rows, while C<ifTable> is

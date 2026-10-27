@@ -163,7 +163,7 @@ sub stp_trees_default_off : Tests(3) {
         0, q(Trees may exist unread) );
 }
 
-# iol1 shape: mplsL3VpnVrfTable and mplsL3VpnIfConfTable rows, with the
+# IOS-XE (IOL) PE shape: mplsL3VpnVrfTable and mplsL3VpnIfConfTable rows, with the
 # length-prefixed VRF name as the first index arcs.
 my %NAME_IID = (
     red   => '3.114.101.100',
@@ -190,7 +190,7 @@ sub _prime_mpls_rows {
     return;
 }
 
-# CISCO-VRF-MIB as iol1 serves it: cvVrfName by cvVrfIndex, and
+# CISCO-VRF-MIB as an IOS-XE PE serves it: cvVrfName by cvVrfIndex, and
 # cvVrfInterfaceRowStatus by cvVrfIndex.ifIndex
 sub _prime_cisco_vrf_mib {
     my $test = shift;
@@ -207,7 +207,7 @@ sub _prime_cisco_vrf_mib {
     return;
 }
 
-sub vrf_instances__cisco_vrf_mib__fallback : Tests(4) {
+sub vrf_instances__cisco_vrf_mib__fallback : Tests(5) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -229,6 +229,59 @@ sub vrf_instances__cisco_vrf_mib__fallback : Tests(4) {
         [ grep { $instances->{$_}{sources}{members} } sort keys %$instances ],
         [qw/blue green grey red/],
         q(Each instance holding a port records the members source)
+    );
+    is( $instances->{red}{sources}{members},
+        'CISCO-VRF-MIB', q(The members source is the vendor MIB) );
+}
+
+sub vrf_instances__mpls_list_vendor_members__members_source_is_mpls
+    : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_mpls_rows();
+    my $instances = $info->vrf_instances();
+    is( $instances->{red}{sources}{members},
+        'MPLS-L3VPN-STD-MIB', q(MPLS-L3VPN-STD-MIB rows name their MIB) );
+}
+
+sub vrf_instances__vendor_list__contexts_set_once : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_cisco_vrf_mib();
+    my %calls;
+    no warnings qw/once redefine/;
+    local *SNMP::Info::Layer3::Cisco::_vrf_set_contexts
+        = sub { $calls{ $_[1]{name} }++; return };
+    $info->vrf_instances();
+    cmp_deeply( \%calls, { map { $_ => 1 } qw/red blue green grey/ },
+        q(Each vendor-listed record gets its contexts once) );
+}
+
+sub i_vrf__cisco_vrf_mib_rows_skipped__only_active_valid_named : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_cisco_vrf_mib();
+    $info->{store}{vrf_cv_name}{5} = 'default';
+    $info->{store}{vrf_cv_name}{6} = q();
+    $info->{store}{vrf_cv_name}{7} = 'mgmt';
+    $info->{store}{vrf_cv_if} = {
+        '1.2'   => 'active',
+        '1.4'   => 'notInService',
+        '2.3.9' => 'active',
+        '2'     => 'active',
+        '5.7'   => 'active',
+        '6.8'   => 'active',
+        '9.11'  => 'active',
+        '7.12'  => 'active',
+    };
+    no warnings qw/once redefine/;
+    local *SNMP::Info::Layer3::Cisco::_vrf_internal_instance
+        = sub { return $_[1] eq 'mgmt' ? 1 : 0 };
+    cmp_deeply( $info->i_vrf(), { 2 => 'red' },
+        q(Inactive, malformed, default, internal, unnamed and unknown rows skip)
     );
 }
 
@@ -271,7 +324,7 @@ sub vrf_instances_complete__mpls_rows_cv_walk_partial__is_1 : Tests(1) {
         1, q(A vendor walk not used for the list does not count) );
 }
 
-# iol1: the address tables hold 10.40.0.1/24 on blue's port 3 only, and the
+# IOS-XE PE: the address tables hold 10.40.0.1/24 on blue's port 3 only, and the
 # routes of both VRFs hold 10.40.0.0/24.
 sub vrf_subnets__overlap__restored_from_routes : Tests(2) {
     my $test = shift;

@@ -2069,7 +2069,8 @@ serves the whole feature: read it as usual.
 =item 2.
 
 In the default context, list what to visit: VLAN ids from C<v_index()>
-for C<fdb>, tree keys from C<stp_trees()> for C<stp>.  Keep the lists:
+for C<fdb>, tree keys from C<stp_trees()> for C<stp>, instance names from
+C<vrf_instances()> for C<vrf>.  Keep the lists:
 C<update()> clears the cache on every switch.
 
 =item 3.
@@ -2087,9 +2088,10 @@ A context whose C<v2c> or C<v3> is undef cannot be reached over that
 SNMP version.  NX-OS refuses community suffixes, so its VLAN and MST
 contexts need SNMPv3.  A site's community map (NX-OS
 C<snmp-server mib community-map>) reaches a VRF context over SNMPv2c, but
-SNMP::Info cannot derive its name.
+SNMP::Info cannot derive its name.  Over such a community the readers see
+the default context; read VRF contexts over SNMPv3.
 
-Both examples below switch with this helper.  C<kind> C<none> is the
+The examples below switch with this helper.  C<kind> C<none> is the
 default context.
 
  # Switch to $context; false where this session's SNMP version cannot
@@ -2154,9 +2156,11 @@ Per-VRF neighbors, where the device filters them by context:
      my $contexts = $instances->{$name}{contexts};
      if ( $info->context_kinds('vrf') and $name ne 'default' ) {
          enter_context( $info, $contexts->[0], $community ) or next;
+         $vrf_neighbors{$name} = { %{ $info->vrf_neighbors($name) || {} } };
+         $info->update();
+         next;
      }
      $vrf_neighbors{$name} = { %{ $info->vrf_neighbors($name) || {} } };
-     $info->update();
  }
 
 =head2 Object Scalar Methods
@@ -3167,10 +3171,10 @@ C<stp>, the spanning tree ports (C<stp_tree_ports()>); C<vrf>, the
 per-instance readers of L<SNMP::Info::VRF>.
 
 Kinds: C<vlan>, one context per VLAN; C<mst>, one context per MST
-instance; C<vrf>, one context per VRF.  The answer names kinds of context, not the trees or VLANs the
-device has now.  Where only one protocol uses contexts, a class answers
-while that protocol runs and returns nothing otherwise
-(L<SNMP::Info::Layer3::Juniper> for VSTP).
+instance; C<vrf>, one context per VRF.  The answer names kinds of context,
+not the trees or VLANs the device has now.  Where only one protocol uses
+contexts, a class answers while that protocol runs and returns nothing
+otherwise (L<SNMP::Info::Layer3::Juniper> for VSTP).
 
  if (my $kinds = $info->context_kinds('fdb')) {
      # Read the forwarding table once per VLAN
@@ -3194,7 +3198,8 @@ sub context_kinds {
 Returns how to reach one SNMP context on this device, as a reference to
 hash, or nothing where the device has no such context.  C<$kind> is a
 kind from C<context_kinds()>; C<$id> is a VLAN id for C<vlan>, an MST
-instance for C<mst> and a VRF name from C<vrf_instances()> for C<vrf>.  See L</"SNMP Contexts">.
+instance for C<mst> and a VRF name from C<vrf_instances()> for C<vrf>.
+See L</"SNMP Contexts">.
 
  my $context = $info->snmp_context('vlan', 10);
  # { kind => 'vlan', id => 10, v2c => '%s@10', v3 => 'vlan-10' }

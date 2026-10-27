@@ -1259,6 +1259,89 @@ sub vrf_subnets__context_mode__connected_route_read : Tests(3) {
   ok(!exists $subnets->{'10.43.0.0/24'}, q(A non-connected route is not));
 }
 
+# destType.destLen.dest.pfxLen.policyLen.policy.nhType.nhLen.nh of a route
+sub _route_iid {
+  my ($family, $prefix, $length) = @_;
+
+  my @octets = $family eq 'ipv4'
+    ? split(/\./, $prefix)
+    : unpack('C*', pack('n8', map { hex } split /:/, $prefix));
+  my ($type, $hop) = $family eq 'ipv4'
+    ? ('1.4', $ZERO_V4_HOP) : ('2.16', $ZERO_V6_HOP);
+  return join('.', $type, @octets, $length, '2.0.0', $hop);
+}
+
+# Special-purpose space, with one ordinary prefix per family beside it
+my @SPECIAL_ROUTES = (
+  ['ipv4', '0.0.0.0',                            8],
+  ['ipv4', '127.0.0.0',                          8],
+  ['ipv4', '224.0.0.0',                          4],
+  ['ipv4', '255.255.255.255',                    32],
+  ['ipv6', '0:0:0:0:0:0:0:0',                    127],
+  ['ipv6', 'fe80:0:0:0:0:0:0:0',                 10],
+  ['ipv6', 'ff00:0:0:0:0:0:0:0',                 8],
+  ['ipv6', '2001:db8:50:0:0:0:0:0',              64],
+  ['ipv4', '10.50.0.0',                          24],
+);
+
+sub vrf_subnets__special_purpose_routes__dropped_attribution : Tests(3) {
+  my $test = shift;
+
+  my $info = $test->_subnet_info(routes => 1);
+  foreach my $route (@SPECIAL_ROUTES) {
+    my $iid = "$RED_NAME." . _route_iid(@$route);
+    $info->{store}{vrf_l3vpn_rte_proto}{$iid} = 'local';
+    $info->{store}{vrf_l3vpn_rte_if}{$iid}    = 2;
+  }
+  my $red = $info->vrf_subnets('red');
+  cmp_deeply(
+    [grep { /^(?:0\.|127\.|224\.|255\.|0000:0000:0000:0000:0000:0000:0000:0000|fe80|ff00)/ } keys %$red],
+    [], q(No route into special-purpose space is a subnet));
+  ok(exists $red->{'10.50.0.0/24'}, q(An ordinary IPv4 route is kept));
+  ok(exists $red->{'2001:0db8:0050:0000:0000:0000:0000:0000/64'},
+    q(An ordinary IPv6 route is kept));
+}
+
+sub vrf_subnets__special_purpose_routes__dropped_context : Tests(3) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::SubnetContext',
+    \@NEIGHBOR_PARENTS,
+    _vrf_context_filters     => sub {1},
+    _vrf_subnets_from_routes => sub {1});
+  $test->{info} = $info;
+  $test->_prime_members();
+  my %iid = map { _route_iid(@$_) => 1 } @SPECIAL_ROUTES;
+  $info->{_vrf_cidr_if}    = 1;
+  $info->{_vrf_cidr_proto} = 1;
+  $info->{store}{vrf_cidr_proto} = {map { $_ => 'local' } keys %iid};
+  $info->{store}{vrf_cidr_if}    = {map { $_ => 2 } keys %iid};
+  $test->_enter_context($info);
+  my $subnets = $info->vrf_subnets('red');
+  cmp_deeply([sort keys %$subnets],
+    ['10.50.0.0/24', '2001:0db8:0050:0000:0000:0000:0000:0000/64'],
+    q(Only the ordinary prefixes remain));
+  is($subnets->{'10.50.0.0/24'}{sources}[0], 'route', q(... from routes));
+  is(scalar(grep { $_->{family} eq 'ipv6' } values %$subnets), 1,
+    q(One IPv6 subnet));
+}
+
+sub vrf_subnets__special_purpose_prefix_in_addresses__kept : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_subnet_info(routes => 1);
+  $info->{store}{new_ip_index}{'1.4.127.0.0.1'}  = 2;
+  $info->{store}{new_ip_type}{'1.4.127.0.0.1'}   = 'unicast';
+  $info->{store}{new_ip_prefix}{'1.4.127.0.0.1'} = "$PFX_OID.2.1.4.127.0.0.0.8";
+  my $iid = "$RED_NAME." . _route_iid('ipv4', '127.0.0.0', 8);
+  $info->{store}{vrf_l3vpn_rte_proto}{$iid} = 'local';
+  $info->{store}{vrf_l3vpn_rte_if}{$iid}    = 2;
+  my $subnet = $info->vrf_subnets('red')->{'127.0.0.0/8'};
+  ok($subnet, q(A prefix the address tables list is kept));
+  cmp_deeply($subnet->{sources}, ['address', 'route'],
+    q(... and still lists both sources));
+}
+
 sub vrf_subnets__attribution_in_vrf_context__throws : Tests(2) {
   my $test = shift;
 
