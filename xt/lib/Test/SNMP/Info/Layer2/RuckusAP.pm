@@ -64,7 +64,8 @@ sub model : Tests(2) {
 
 sub serial : Tests(1) {
   my $test = shift;
-  is($test->{info}->serial(), 'SERIAL-REDACTED', 'Serial comes from the hardware MIB');
+  is($test->{info}->serial(), 'SERIAL-REDACTED',
+    'Serial comes from the hardware MIB');
 }
 
 sub os_ver : Tests(3) {
@@ -115,19 +116,19 @@ sub _wireless_cache {
     'store' => {
       i_index => { 5 => 5, 6 => 6 },
       ruckus_wlan_ssid => {
-        1 => 'R_WLAN_IPP',
-        2 => 'Wireless2',
-        3 => 'Wireless3',
+        5   => 'R_WLAN_IPP',
+        6   => 'Wireless2',
+        100 => 'Wireless3',
       },
       ruckus_wlan_bssid => {
-        1 => pack('C*', 0, 17, 34, 51, 68, 85),
-        2 => pack('C*', 0, 17, 34, 51, 68, 102),
-        3 => pack('C*', 0, 17, 34, 51, 68, 119),
+        5   => pack('C*', 0, 17, 34, 51, 68, 85),
+        6   => pack('C*', 0, 17, 34, 51, 68, 102),
+        100 => pack('C*', 0, 17, 34, 51, 68, 119),
       },
-      ruckus_wlan_channel => { 1 => 44, 2 => 44, 3 => 149 },
-      ruckus_wlan_admin_status => { 1 => 1, 2 => 2, 3 => 1 },
-      ruckus_wlan_bcast_disabled => { 1 => 2, 2 => 1, 3 => 2 },
-      ruckus_wlan_ifindex => { 1 => 5, 2 => 6, 3 => 100 },
+      ruckus_wlan_channel => { 5 => 44, 6 => 44, 100 => 149 },
+      ruckus_wlan_admin_status => { 5 => 1, 6 => 2, 100 => 1 },
+      ruckus_wlan_bcast_disabled => { 5 => 2, 6 => 1, 100 => 2 },
+      ruckus_wlan_ifindex => { 5 => 5, 6 => 6, 100 => 100 },
     },
   });
 }
@@ -135,21 +136,21 @@ sub _wireless_cache {
 sub i_ssidlist : Tests(1) {
   my $test = shift;
   _wireless_cache($test->{info});
-  is_deeply($test->{info}->i_ssidlist(), { '5.1' => 'R_WLAN_IPP' },
+  is_deeply($test->{info}->i_ssidlist(), { '5.5' => 'R_WLAN_IPP' },
     'only active WLANs mapped to real IF-MIB interfaces are returned');
 }
 
 sub i_ssidmac : Tests(1) {
   my $test = shift;
   _wireless_cache($test->{info});
-  is_deeply($test->{info}->i_ssidmac(), { '5.1' => '00:11:22:33:44:55' },
+  is_deeply($test->{info}->i_ssidmac(), { '5.5' => '00:11:22:33:44:55' },
     'active WLAN BSSID uses the SSID interface key');
 }
 
 sub i_ssidbcast : Tests(1) {
   my $test = shift;
   _wireless_cache($test->{info});
-  is_deeply($test->{info}->i_ssidbcast(), { '5.1' => 1 },
+  is_deeply($test->{info}->i_ssidbcast(), { '5.5' => 1 },
     'SSID broadcast state is the inverse of the disable flag');
 }
 
@@ -165,21 +166,27 @@ sub fw_mac : Tests(1) {
   _wireless_cache($test->{info});
   $test->{info}{_ruckus_station_mac} = 1;
   $test->{info}{store}{ruckus_station_mac} = {
-    '1.6.0.17.34.51.68.85' => pack('C*', 0, 17, 34, 51, 68, 85),
+    '5.6.0.17.34.51.68.85' => pack('C*', 0, 17, 34, 51, 68, 85),
   };
-  is($test->{info}->fw_mac()->{'1.6.0.17.34.51.68.85'}, '00:11:22:33:44:55',
+  is($test->{info}->fw_mac()->{'5.6.0.17.34.51.68.85'}, '00:11:22:33:44:55',
     'associated station MAC is decoded');
 }
 
-sub fw_port : Tests(1) {
+sub fw_port : Tests(2) {
   my $test = shift;
   _wireless_cache($test->{info});
   $test->{info}{_ruckus_station_mac} = 1;
   $test->{info}{store}{ruckus_station_mac} = {
-    '1.6.0.17.34.51.68.85' => pack('C*', 0, 17, 34, 51, 68, 85),
+    '5.6.0.17.34.51.68.85' => pack('C*', 0, 17, 34, 51, 68, 85),
   };
-  is($test->{info}->fw_port()->{'1.6.0.17.34.51.68.85'}, 5,
+  is($test->{info}->fw_port()->{'5.6.0.17.34.51.68.85'}, 5,
     'associated station maps to its AP interface');
+
+  # The station index starts with an ifIndex, whatever the WLAN row number.
+  $test->{info}{store}{ruckus_wlan_admin_status} = { 1 => 1 };
+  $test->{info}{store}{ruckus_wlan_ifindex}      = { 1 => 5 };
+  is($test->{info}->fw_port()->{'5.6.0.17.34.51.68.85'}, 5,
+    'station maps by ifIndex when the WLAN row number differs');
 }
 
 sub fw_ssid : Tests(1) {
@@ -187,11 +194,11 @@ sub fw_ssid : Tests(1) {
   _wireless_cache($test->{info});
   $test->{info}{_ruckus_station_mac} = 1;
   $test->{info}{store}{ruckus_station_mac} = {
-    '1.6.0.17.34.51.68.85' => pack('C*', 0, 17, 34, 51, 68, 85),
-    '3.6.0.17.34.51.68.102' => pack('C*', 0, 17, 34, 51, 68, 102),
+    '5.6.0.17.34.51.68.85' => pack('C*', 0, 17, 34, 51, 68, 85),
+    '100.6.0.17.34.51.68.102' => pack('C*', 0, 17, 34, 51, 68, 102),
   };
   is_deeply($test->{info}->fw_ssid(), {
-    '1.6.0.17.34.51.68.85' => 'R_WLAN_IPP',
+    '5.6.0.17.34.51.68.85' => 'R_WLAN_IPP',
   }, 'station maps only through an active WLAN with a real interface');
 }
 
@@ -241,7 +248,7 @@ sub cd11_txrate : Tests(1) {
   }, 'PHY rate is normalized to Mbps and the station stats index');
 }
 
-sub cd11_rateset : Tests(1) {
+sub cd11_rateset : Tests(2) {
   my $test = shift;
   $test->{info}->cache({
     '_ruckus_station_rates' => 1,
@@ -252,6 +259,16 @@ sub cd11_rateset : Tests(1) {
   is_deeply($test->{info}->cd11_rateset(), {
     '5.6.0.17.34.51.68.85' => [6, 12, 24],
   }, 'supported rates are decoded as Mbps');
+
+  $test->{info}->cache({
+    '_ruckus_station_rates' => 1,
+    'store' => { ruckus_station_rates => {
+      '5.6.0.17.34.51.68.85' => '1 2 5.5 11',
+    } },
+  });
+  is_deeply($test->{info}->cd11_rateset(), {
+    '5.6.0.17.34.51.68.85' => [1, 2, 5.5, 11],
+  }, 'fractional rates in a rate string are kept');
 }
 
 sub cd11_sigstrength : Tests(1) {
