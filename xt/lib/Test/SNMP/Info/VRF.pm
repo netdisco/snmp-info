@@ -433,7 +433,7 @@ sub decode_name__length_prefixed__returns_name_and_rest : Tests(4) {
     [], q(An empty index returns nothing));
 }
 
-sub vrf_private_defaults : Tests(7) {
+sub vrf_private_defaults : Tests(8) {
   my $test = shift;
 
   is($test->{info}->_vrf_context_filters(), 0, q(No context filtering));
@@ -448,6 +448,8 @@ sub vrf_private_defaults : Tests(7) {
     q(The default context serves only its own rows));
   is($test->{info}->_vrf_nd_from_ipv6_mib(), 0,
     q(IPV6-MIB adds no neighbor rows));
+  is($test->{info}->_vrf_context_is_instance_name(), 0,
+    q(A context's instance comes from the list));
 }
 
 my %BUILT_PACKAGE;
@@ -608,6 +610,17 @@ sub _prime_neighbors {
   $info->{store}{at_paddr}         = \%arp;
   $info->{store}{at_netaddr}       = \%ips;
   $info->{store}{ip_n2p_phys_addr} = {$RED_V6 => pack('C6', 2, 0, 0, 0, 0, 7)};
+  return;
+}
+
+# ifPhysAddress as IOS-XE serves it: 10.40.0.1 is the device's own on
+# ifIndex 2 and 3, at the port's MAC
+sub _prime_port_macs {
+  my $info = shift;
+
+  $info->{_i_mac}       = 1;
+  $info->{store}{i_mac} = {map { $_->[0] => pack('C6', 2, 0, 0, 0, 0, $_->[1]) }
+      [1 => 8], [2 => 2], [3 => 4], [4 => 9]};
   return;
 }
 
@@ -870,15 +883,34 @@ sub vrf_neighbors__collapsed_own_address__dropped_where_listed : Tests(3) {
 
   my $info = $test->_address_info();
   $test->_prime_neighbors($info);
+  _prime_port_macs($info);
   ok(!exists $info->vrf_neighbors('blue')->{'3.10.40.0.1'},
     q(blue holds 10.40.0.1, so its own row is dropped));
   ok(exists $info->vrf_neighbors('blue')->{'3.10.40.0.2'},
     q(... and its neighbor kept));
-  ok(exists $info->vrf_neighbors('red')->{'2.10.40.0.1'},
-    q(red's copy survives: red lists no such address));
+  ok(!exists $info->vrf_neighbors('red')->{'2.10.40.0.1'},
+    q(red's copy is dropped too: it is at its port's MAC));
 }
 
-sub vrf_neighbors__local_type__dropped : Tests(3) {
+sub vrf_neighbors__row_at_own_port_mac__dropped : Tests(4) {
+  my $test = shift;
+
+  my $info = $test->_neighbor_info();
+  _prime_port_macs($info);
+  my $red = $info->vrf_neighbors('red');
+  ok(!exists $red->{'2.10.40.0.1'},
+    q(A row at its port's ifPhysAddress is the device's own));
+  ok(exists $red->{'2.10.40.0.2'}, q(... a host on that port is kept));
+  is($info->{_vrf_walked}{red}{i_mac}, 1,
+    q(The ifPhysAddress walk counts toward the read));
+
+  $info->{store}{at_paddr}{'4.10.41.0.2'} = pack('C6', 2, 0, 0, 0, 0, 2);
+  ok(exists $info->vrf_neighbors('red')->{'4.10.41.0.2'},
+    q(The MAC of another port is no match));
+}
+
+# EOS types its hosts' link-locals local(5) at the host's MAC
+sub vrf_neighbors__local_type__kept : Tests(2) {
   my $test = shift;
 
   my $info = $test->_neighbor_info();
@@ -886,12 +918,8 @@ sub vrf_neighbors__local_type__dropped : Tests(3) {
   $info->{_ip_n2p_phys_type}       = 1;
   $info->{store}{ip_n2p_phys_type} = {$red_v4 => 'local', $RED_V6 => 5};
   my $red = $info->vrf_neighbors('red');
-  ok(!exists $red->{'2.10.40.0.2'}, q(An IPv4 row typed local is dropped));
-  ok(!exists $red->{$RED_V6}, q(... and an IPv6 row typed local(5)));
-
-  $info->{store}{ip_n2p_phys_type} = {$RED_V6 => 4};
-  ok(exists $info->vrf_neighbors('red')->{$RED_V6},
-    q(4 is static in IP-MIB, so the row is kept));
+  ok(exists $red->{'2.10.40.0.2'}, q(An IPv4 row typed local is kept));
+  ok(exists $red->{$RED_V6}, q(... and an IPv6 row typed local(5)));
 }
 
 sub i_vrf__context_mode__ports_with_context_addresses : Tests(3) {

@@ -163,6 +163,9 @@ sub _vrf_context_filters { return 1; }
 
 sub _vrf_default_context_members { return 1; }
 
+# A VRF context, named for its VRF, serves no aristaVrfTable row
+sub _vrf_context_is_instance_name { return 1; }
+
 # aristaVrfTable is indexed by the length-prefixed VRF name. INVALID is no
 # route distinguisher. aristaVrfState is not read into oper: see the POD.
 sub _vrf_vendor_instances {
@@ -348,7 +351,7 @@ ifIndex of the corresponding master ports.
 =head2 VRF Instances
 
 See L<SNMP::Info::VRF/"VRF Instances"> for the readers. EOS has no
-C<MPLS-L3VPN-STD-MIB>, so C<F<ARISTA-VRF-MIB>> lists the VRFs and the ports
+C<MPLS-L3VPN-STD-MIB>, so F<ARISTA-VRF-MIB> lists the VRFs and the ports
 they hold; the source is C<ARISTA-VRF-MIB>. A route distinguisher of
 C<INVALID> is none. C<oper> is undef: EOS 4.36 serves C<aristaVrfState>
 C<inactive> for VRFs its CLI shows routing, so the state is not used as an
@@ -357,7 +360,9 @@ operational status.
 Each VRF reads in its own context, which serves only that VRF's addresses
 and neighbors. The default context serves the default instance only, such
 as C<Management0>, yet C<i_vrf()> there maps every VRF port from
-C<aristaVrfIfTable>.
+C<aristaVrfIfTable>. A VRF context serves no F<ARISTA-VRF-MIB> row, so
+C<i_vrf()> there takes the instance from the context name, which is the
+VRF name.
 
 =over
 

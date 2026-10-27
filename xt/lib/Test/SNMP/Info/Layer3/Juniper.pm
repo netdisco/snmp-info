@@ -1991,6 +1991,16 @@ my %JNX_CONTEXT = (
 );
 my $JNX_PFX = '.1.3.6.1.2.1.4.32.1.5';
 
+# ifPhysAddress as each context serves it: its own ports, every port in
+# the default context, none for grey's loopback
+my %JNX_PORT_MAC = (536 => 1, 545 => 2, 540 => 3, 549 => 4, 555 => 9);
+my %JNX_CONTEXT_PORTS = (
+  default => [sort keys %JNX_PORT_MAC],
+  red     => [536, 545],
+  blue    => [540, 549],
+  grey    => [],
+);
+
 # The index arcs of an IPv6 address written as eight hex groups
 sub _jnx_v6_arcs {
   my $ip = shift;
@@ -2066,6 +2076,8 @@ sub _prime_jnx_context {
     ip_n2p_phys_type c_inet_phys_type i6_n2p_phys_type new_ip_index new_ip_type new_ip_prefix old_ip_index old_ip_netmask/;
   _jnx_neighbor_store(\%store, $JNX_CONTEXT{$context});
   _jnx_address_store(\%store, $JNX_CONTEXT{$context});
+  $store{i_mac} = {map { $_ => _jnx_mac($JNX_PORT_MAC{$_}) }
+      @{$JNX_CONTEXT_PORTS{$context} || []}};
   $store{vrf_l3vpn_if} = {
     $iid->('red')  . '.536' => 'active',
     $iid->('red')  . '.545' => 'active',
@@ -2131,7 +2143,7 @@ sub vrf_neighbors__red_context__own_addresses_dropped : Tests(4) {
   ok(!exists $info->vrf_addresses('red')->{'545.fe80:0000:0000:0000:0000:'
       . '0000:0000:0001'}, 'ipAddressTable lists fe80::1 on 536 only');
   ok(!exists $rows->{'545.' . _jnx_v6_arcs('fe80:0:0:0:0:0:0:1')},
-    '... and its local row on 545 is dropped by its type');
+    '... and its row on 545, at the port MAC, is dropped');
 }
 
 sub vrf_neighbors__red_context__neighbor_at_own_link_local_elsewhere__kept
@@ -2141,7 +2153,6 @@ sub vrf_neighbors__red_context__neighbor_at_own_link_local_elsewhere__kept
 
   my $key = '545.' . _jnx_v6_arcs('fe80:0:0:0:0:0:0:1');
   $info->{store}{i6_n2p_phys_addr}{$key} = _jnx_mac(6);
-  $info->{store}{i6_n2p_phys_type}{$key} = 'dynamic';
   my $ll  = 'fe80:0:0:0:0:0:0:9';
   my $iid = '4.20.' . _jnx_v6_arcs($ll) . '.0.0.0.0';
   $info->{store}{new_ip_index}{$iid}  = 545;

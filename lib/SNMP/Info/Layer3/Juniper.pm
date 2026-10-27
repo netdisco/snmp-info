@@ -1789,7 +1789,7 @@ instance's own addresses as neighbors too: at an all-zero or empty MAC, or
 at the port's MAC, static in IPv4 and local in IPv6.  C<vrf_neighbors()>
 drops them all.  Junos holds C<fe80::1> on every port of an instance but
 lists it in C<ipAddressTable> on one only; its rows on the other ports go
-by their type, local.
+by the port's MAC.
 
 =over
 

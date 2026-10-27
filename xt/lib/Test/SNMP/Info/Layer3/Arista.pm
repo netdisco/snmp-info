@@ -93,8 +93,10 @@ sub os_ver : Tests(3) {
 
 # EOS 4.36 cEOSLab with VRFs red, blue, green and grey. The default
 # context lists them in aristaVrfTable and aristaVrfIfTable; each VRF
-# context serves only its own addresses and neighbors. red (ports 1 and 3)
-# and blue (ports 2 and 4) share 10.100.0.1/24 and 2001:db8:100::1/64.
+# context serves only its own addresses and neighbors, and no
+# ARISTA-VRF-MIB or ifTable row. red (ports 1 and 3) and blue (ports 2
+# and 4) share 10.100.0.1/24 and 2001:db8:100::1/64. Host link-locals are
+# typed local(5) at the host's MAC; every other neighbor row is dynamic.
 my @VRF_ROWS = (
   [red => 1], [blue => 2], [red => 3], [blue => 4], [green => 5],
   [grey => 5000001],
@@ -131,10 +133,16 @@ sub _arista_cache {
 
     # ARISTA-PRODUCTS-MIB::aristaDCS7048TA
     '_id'   => '.1.3.6.1.4.1.30065.1.3011.7048.427.3648',
-    'store' => {_vrf_list_store(), %store},
+    'store' => \%store,
   };
   $cache->{"_$_"} = 1 for keys %{$cache->{store}};
   return $cache;
+}
+
+sub _netmask {
+  my $len = shift;
+  my $bits = (0xffffffff << (32 - $len)) & 0xffffffff;
+  return join('.', unpack('C4', pack('N', $bits)));
 }
 
 # ipAddressTable and ipAdEntTable rows: [ifIndex, address, prefix length]
@@ -150,7 +158,7 @@ sub _addresses {
     else {
       ($iid, $pointer) = ("1.4.$ip", ".1.3.6.1.2.1.4.32.1.5.$port.1.4.$ip.$len");
       $adent{$ip} = $port;
-      $mask{$ip}  = '255.255.255.0';
+      $mask{$ip}  = _netmask($len);
     }
     $index{$iid}  = $port;
     $type{$iid}   = 'unicast';
@@ -165,19 +173,30 @@ sub _addresses {
   );
 }
 
-# A host's neighbor rows on one port: IPv4 and global IPv6
+# A host's neighbor rows on one port: [ifIndex, MAC, addresses]. IPv4 is
+# in ipNetToMediaTable and ipNetToPhysicalTable, IPv6 in the latter only.
 sub _neighbors {
-  my @hosts = @_;
-  my (%paddr, %netaddr, %n2p);
-  foreach my $host (@hosts) {
-    my ($port, $v4, $v6, $mac) = @$host;
-    $paddr{"$port.$v4"}   = _mac($mac);
-    $netaddr{"$port.$v4"} = $v4;
-    $n2p{"$port.1.4.$v4"} = _mac($mac);
-    $n2p{"$port.2.16." . _v6_arcs($v6)} = _mac($mac);
+  my (%paddr, %netaddr, %n2p, %type);
+  foreach my $host (@_) {
+    my ($port, $mac, @ips) = @$host;
+    foreach my $ip (@ips) {
+      my $iid = $ip =~ /:/ ? "$port.2.16." . _v6_arcs($ip) : "$port.1.4.$ip";
+      $n2p{$iid}  = _mac($mac);
+      $type{$iid} = $ip =~ /^fe80:/ ? 'local' : 'dynamic';
+      next if $ip =~ /:/;
+      $paddr{"$port.$ip"}   = _mac($mac);
+      $netaddr{"$port.$ip"} = $ip;
+    }
   }
   return (at_paddr => \%paddr, at_netaddr => \%netaddr,
-    ip_n2p_phys_addr => \%n2p);
+    ip_n2p_phys_addr => \%n2p, ip_n2p_phys_type => \%type);
+}
+
+# A host at 2001:db8:$net::2 and its EUI-64 address, and their link-locals
+sub _v6_host {
+  my ($net, $host) = @_;
+  return ("2001:db8:$net:0:0:0:0:2", "2001:db8:$net:0:0:ff:fe00:$host",
+    'fe80:0:0:0:0:0:0:2', "fe80:0:0:0:0:ff:fe00:$host");
 }
 
 sub _red_cache {
@@ -187,8 +206,8 @@ sub _red_cache {
       [1, '2001:db8:100:0:0:0:0:1', 64], [3, '2001:db8:101:0:0:0:0:1', 64],
     ),
     _neighbors(
-      [1, '10.100.0.2', '2001:db8:100:0:0:0:0:2', 1],
-      [3, '10.101.0.2', '2001:db8:101:0:0:0:0:2', 3],
+      [1, 1, '10.100.0.2', _v6_host(100, 101)],
+      [3, 3, '10.101.0.2', _v6_host(101, 103)],
     ),
   );
 }
@@ -197,19 +216,40 @@ sub _blue_cache {
   return _arista_cache(
     _addresses(
       [2, '10.100.0.1', 24], [4, '10.102.0.1', 24],
-      [2, '2001:db8:100:0:0:0:0:1', 64],
+      [2, '2001:db8:100:0:0:0:0:1', 64], [4, '2001:db8:102:0:0:0:0:1', 64],
     ),
-    _neighbors([2, '10.100.0.2', '2001:db8:100:0:0:0:0:2', 2]),
+    _neighbors(
+      [2, 2, '10.100.0.2', _v6_host(100, 102)],
+      [4, 3, '10.102.0.2', _v6_host(102, 103)],
+    ),
+  );
+}
+
+# green serves IPv6 only, on port 5
+sub _green_cache {
+  return _arista_cache(
+    _addresses([5, '2001:db8:103:0:0:0:0:1', 64]),
+    _neighbors([5, 4, _v6_host(103, 104)]),
+  );
+}
+
+sub _grey_cache {
+  return _arista_cache(
+    _addresses(
+      [5000001, '10.104.0.1', 32], [5000001, '2001:db8:104:0:0:0:0:1', 128],
+    ),
   );
 }
 
 # Management0 (ifIndex 999000) is the only port the default context serves
+# addresses and neighbors for, and only the default context serves the
+# list and ifTable
 sub _default_cache {
   return _arista_cache(
+    _vrf_list_store(),
     _addresses([999000, '172.20.20.23', 24]),
-    at_paddr   => {'999000.172.20.20.1' => _mac(9)},
-    at_netaddr => {'999000.172.20.20.1' => '172.20.20.1'},
-    ip_n2p_phys_addr => {'999000.1.4.172.20.20.1' => _mac(9)},
+    _neighbors([999000, 9, '172.20.20.1']),
+    i_mac => {999000 => _mac(10)},
   );
 }
 
@@ -290,13 +330,30 @@ sub i_vrf : Tests(1) {
     'aristaVrfIfTable gives every VRF port in the default context');
 }
 
-sub i_vrf__red_context__own_ports : Tests(1) {
+# EOS serves no ARISTA-VRF-MIB row in a VRF context, and update() clears
+# the list, so the instance comes from the context name
+sub i_vrf__red_context__own_ports : Tests(3) {
   my $test = shift;
   my $info = _use_cache($test, _red_cache());
 
   _enter_context($info, 'red');
   cmp_deeply(scalar $info->i_vrf(), {1 => 'red', 3 => 'red'},
     'The ports holding an address in the red context');
+  is($info->error(), undef, 'No error');
+  ok(!exists $info->{_vrf_instances}, 'No list is read in the context');
+}
+
+sub i_vrf__green_and_grey_contexts__own_ports : Tests(2) {
+  my $test = shift;
+
+  my $info = _use_cache($test, _green_cache());
+  _enter_context($info, 'green');
+  cmp_deeply(scalar $info->i_vrf(), {5 => 'green'},
+    'green\'s IPv6-only port');
+
+  $info = _use_cache($test, _grey_cache());
+  _enter_context($info, 'grey');
+  cmp_deeply(scalar $info->i_vrf(), {5000001 => 'grey'}, 'grey\'s loopback');
 }
 
 sub vrf_instances_complete : Tests(2) {
@@ -310,22 +367,61 @@ sub vrf_instances_complete : Tests(2) {
   is($info->vrf_instances_complete(), 0, 'A partial state walk is not');
 }
 
+sub vrf_instances_complete__partial_membership_or_rd__is_0 : Tests(2) {
+  my $test = shift;
+
+  foreach my $method (qw/vrf_arista_if vrf_arista_rd/) {
+    my $info = _use_cache($test, _default_cache());
+    $info->{walk_status}{$method} = {complete => 0, reason => 'timeout'};
+    is($info->vrf_instances_complete(), 0, "A partial $method walk is not");
+  }
+}
+
 sub vrf_neighbors__red_context__own_rows : Tests(4) {
   my $test = shift;
   my $info = _use_cache($test, _red_cache());
 
   _enter_context($info, 'red');
   my @rows = values %{$info->vrf_neighbors('red')};
-  cmp_deeply([sort map { "$_->{ifindex} $_->{ip}" } @rows],
-    [sort '1 10.100.0.2', '3 10.101.0.2',
-      '1 2001:0db8:0100:0000:0000:0000:0000:0002',
-      '3 2001:0db8:0101:0000:0000:0000:0000:0002'],
-    'The hosts on ports 1 and 3, IPv4 and IPv6');
+  my @expected;
+  foreach my $host ([1, 100, '0101'], [3, 101, '0103']) {
+    my ($port, $net, $eui) = @$host;
+    push @expected, "$port 10.$net.0.2",
+      map { "$port $_" } "2001:0db8:0$net:0000:0000:0000:0000:0002",
+      "2001:0db8:0$net:0000:0000:00ff:fe00:$eui",
+      'fe80:0000:0000:0000:0000:0000:0000:0002',
+      "fe80:0000:0000:0000:0000:00ff:fe00:$eui";
+  }
+  cmp_deeply([sort map { "$_->{ifindex} $_->{ip}" } @rows], [sort @expected],
+    'The hosts on ports 1 and 3: IPv4, global and link-local IPv6');
   is(scalar(grep { $_->{ip} =~ /^10\.10[01]\.0\.1$/ } @rows), 0,
     'No row of the router itself');
   is(scalar(grep { $_->{ifindex} == 999000 } @rows), 0,
     'None on Management0');
-  is(scalar @rows, 4, 'Four rows');
+  is(scalar @rows, 10, 'Ten rows, as the device CLI lists');
+}
+
+sub vrf_neighbors__red_context__host_link_locals_typed_local__kept
+  : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _red_cache());
+
+  _enter_context($info, 'red');
+  my $key  = '1.2.16.' . _v6_arcs('fe80:0:0:0:0:0:0:2');
+  is($info->{store}{ip_n2p_phys_type}{$key}, 'local',
+    'EOS types the host link-local local(5)');
+  is($info->vrf_neighbors('red')->{$key}{mac}, '02:00:00:00:00:01',
+    '... and the row is kept, at the host MAC');
+}
+
+sub vrf_neighbors__green_context__ipv6_hosts : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _green_cache());
+
+  _enter_context($info, 'green');
+  my @rows = values %{$info->vrf_neighbors('green')};
+  is(scalar @rows, 4, 'The global, EUI-64 and two link-local rows');
+  is($info->vrf_read_complete('green'), 1, 'The read is complete');
 }
 
 sub vrf_neighbors__default_context__management_only : Tests(1) {
@@ -350,14 +446,19 @@ sub vrf_addresses__blue_context__shared_subnet : Tests(2) {
     'And the shared subnet');
 }
 
-sub vrf_addresses__grey_context__loopback_no_neighbor : Tests(2) {
+sub vrf_addresses__grey_context__loopback_no_neighbor : Tests(3) {
   my $test = shift;
-  my $info = _use_cache($test,
-    _arista_cache(_addresses([5000001, '10.200.0.1', 32])));
+  my $info = _use_cache($test, _grey_cache());
 
   _enter_context($info, 'grey');
-  cmp_deeply([map { $_->{ifindex} } values %{$info->vrf_addresses('grey')}],
-    [5000001], 'The loopback address is in grey\'s context');
+  my $addresses = $info->vrf_addresses('grey');
+  cmp_deeply([sort map { "$_->{ifindex} $_->{ip}" } values %$addresses],
+    ['5000001 10.104.0.1',
+      '5000001 2001:0db8:0104:0000:0000:0000:0000:0001'],
+    'The loopback addresses are in grey\'s context');
+  cmp_deeply([sort keys %{$info->vrf_subnets('grey')}],
+    ['10.104.0.1/32', '2001:0db8:0104:0000:0000:0000:0000:0001/128'],
+    '... with their host subnets');
   cmp_deeply($info->vrf_neighbors('grey'), {}, 'It has no neighbor');
 }
 

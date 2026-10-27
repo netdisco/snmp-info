@@ -68,7 +68,6 @@ my $LIST_SOURCE = 'MPLS-L3VPN-STD-MIB';
 
 # The IPv6 role's ipv6_n2p_* subs walk these columns, which walk_status names
 my @ND_COLUMNS      = qw/ip_n2p_phys_addr c_inet_phys_addr i6_n2p_phys_addr/;
-my @ND_TYPE_COLUMNS = qw/ip_n2p_phys_type c_inet_phys_type i6_n2p_phys_type/;
 
 # Layer3's at_* subs fall back to atTable, then ipNetToPhysicalTable, and
 # its at_netaddr fallback reads the paddr columns to choose
@@ -360,14 +359,16 @@ sub _vrf_context_i_vrf {
     return;
 }
 
-# default in the default context, else the listed instance whose context
-# is the session's. The list is read without the default context guard,
-# since the context map serves it in every context.
+# default in the default context, else the instance whose context is the
+# session's: the context name itself where the class says so, otherwise
+# the listed instance with that context. The list is read without the
+# default context guard, since the context map serves it in every context.
 sub _vrf_context_instance {
     my $vrf = shift;
 
     my $context = $vrf->_walk_context();
     return 'default' unless length $context;
+    return $context if $vrf->_vrf_context_is_instance_name();
 
     my $instances = $vrf->{_vrf_instances} ||= $vrf->_vrf_all_instances();
     foreach my $name ( sort keys %$instances ) {
@@ -478,8 +479,10 @@ sub vrf_neighbors {
 }
 
 # Drops the rows that are the instance's own addresses: a global address
-# the instance holds on any port, a link-local one it holds on that port.
-# The address walks decide which rows go, so they count toward the read.
+# the instance holds on any port, a link-local one it holds on that port,
+# and any row at the MAC of its own port. Devices type a host's row local
+# as well as their own, so the type is not used. The address and port MAC
+# walks decide which rows go, so they count toward the read.
 sub _vrf_drop_own_rows {
     my ( $vrf, $rows, $name ) = @_;
 
@@ -487,11 +490,22 @@ sub _vrf_drop_own_rows {
     foreach my $address ( values %{ $vrf->_vrf_instance_addresses($name) } ) {
         $own{ _vrf_own_key( $address->{ifindex}, $address->{ip} ) } = 1;
     }
+    my $port_macs = $vrf->_vrf_column( 'i_mac', $name );
     foreach my $key ( keys %$rows ) {
         my $row = $rows->{$key};
-        delete $rows->{$key} if $own{ _vrf_own_key( @$row{qw/ifindex ip/} ) };
+        delete $rows->{$key}
+            if $own{ _vrf_own_key( @$row{qw/ifindex ip/} ) }
+            or _vrf_at_port_mac( $row, $port_macs );
     }
     return $rows;
+}
+
+sub _vrf_at_port_mac {
+    my ( $row, $port_macs ) = @_;
+
+    my $port_mac = $port_macs->{ $row->{ifindex} };
+    return 0 unless defined $port_mac;
+    return lc $port_mac eq lc $row->{mac} ? 1 : 0;
 }
 
 # A link-local address is one per link, so its port is part of the key
@@ -989,12 +1003,10 @@ sub _vrf_arp_rows {
 
     my $macs = $vrf->_vrf_column( 'at_paddr',   $name, @ARP_PADDR_COLUMNS );
     my $ips  = $vrf->_vrf_column( 'at_netaddr', $name, @ARP_NETADDR_COLUMNS );
-    my $local = $vrf->_vrf_local_arp_keys($name);
     my %rows;
     foreach my $key ( keys %$macs ) {
         my ($ifindex) = $key =~ /^(\d+)\./ or next;
         next unless defined $ips->{$key} and _vrf_has_mac( $macs->{$key} );
-        next if $local->{$key};
         $rows{$key} = {
             ifindex => $ifindex,
             ip      => $ips->{$key},
@@ -1005,24 +1017,6 @@ sub _vrf_arp_rows {
     return \%rows;
 }
 
-# { ifIndex.address => 1 } for each IPv4 row ipNetToPhysicalTable types
-# local(5), keyed as at_paddr() keys its rows
-sub _vrf_local_arp_keys {
-    my $vrf  = shift;
-    my $name = shift;
-
-    my $types = $vrf->_vrf_column( 'ip_n2p_phys_type', $name );
-    my %local;
-    foreach my $iid ( keys %$types ) {
-        next unless _vrf_is_local( $types->{$iid}, 5 );
-        my ( $ifindex, $addr_type, @octets ) = split /\./, $iid;
-        next unless defined $addr_type and $addr_type == 1;
-        shift @octets if @octets == 5 and $octets[0] == 4;
-        $local{ join q{.}, $ifindex, @octets } = 1 if @octets == 4;
-    }
-    return \%local;
-}
-
 sub _vrf_nd_rows {
     my $vrf  = shift;
     my $name = shift;
@@ -1030,12 +1024,10 @@ sub _vrf_nd_rows {
     my $macs  = $vrf->_vrf_column( 'ipv6_n2p_mac',  $name, @ND_COLUMNS );
     my $ips   = $vrf->_vrf_column( 'ipv6_n2p_addr', $name, @ND_COLUMNS );
     my $ifs   = $vrf->_vrf_column( 'ipv6_n2p_if',   $name, @ND_COLUMNS );
-    my $types = $vrf->_vrf_column( 'ipv6_n2p_type', $name, @ND_TYPE_COLUMNS );
     my %rows;
     foreach my $key ( keys %$macs ) {
         next unless defined $ips->{$key} and defined $ifs->{$key};
         next unless _vrf_has_mac( $macs->{$key} );
-        next if _vrf_is_local( $types->{$key}, _vrf_nd_local_number($key) );
         $rows{$key} = {
             ifindex => $ifs->{$key},
             ip      => $ips->{$key},
@@ -1055,12 +1047,10 @@ sub _vrf_add_ipv6_mib_rows {
 
     my %listed = map { "$_->{ifindex} " . lc $_->{ip} => 1 } values %$rows;
     my $macs   = $vrf->_vrf_column( 'i6_n2p_phys_addr', $name );
-    my $types  = $vrf->_vrf_column( 'i6_n2p_phys_type', $name );
     foreach my $key ( keys %$macs ) {
         my ( $ifindex, @octets ) = split /\./, $key;
         next if @octets != 16 or grep { $_ > 255 } @octets;
         next unless _vrf_has_mac( $macs->{$key} );
-        next if _vrf_is_local( $types->{$key}, 4 );
         my $ip = join q{:}, unpack '(H4)*', pack 'C*', @octets;
         next if $listed{"$ifindex $ip"};
         $rows->{$key} = {
@@ -1081,25 +1071,6 @@ sub _vrf_has_mac {
     return ( defined $mac and $mac =~ /[^0:.\-]/ ) ? 1 : 0;
 }
 
-# A neighbor type of local is the device's own address. The number is
-# local(5) in IP-MIB and CISCO-IETF-IP-MIB, local(4) in IPV6-MIB, where 4
-# is static in the others.
-sub _vrf_is_local {
-    my ( $type, $local_number ) = @_;
-
-    return 0 unless defined $type;
-    return ( $type eq 'local' or $type eq $local_number ) ? 1 : 0;
-}
-
-# ipv6_n2p_type() keys: ifIndex then sixteen octets from IPV6-MIB, a
-# longer InetAddress index from the others
-sub _vrf_nd_local_number {
-    my $key = shift;
-
-    my @arcs = split /\./, $key;
-    return @arcs == 17 ? 4 : 5;
-}
-
 sub _vrf_context_filters { return 0; }
 
 # True where the default context also serves other instances' rows on their
@@ -1109,6 +1080,10 @@ sub _vrf_default_context_leaks { return 0; }
 # True where the default context serves only the default instance's rows,
 # yet i_vrf() there maps every instance's ports from the membership table
 sub _vrf_default_context_members { return 0; }
+
+# True where a VRF context's name is its instance's name and the context
+# serves no VRF list, so the instance comes from the name alone
+sub _vrf_context_is_instance_name { return 0; }
 
 # True where host link-locals are only in IPV6-MIB ipv6NetToMediaTable
 sub _vrf_nd_from_ipv6_mib { return 0; }
@@ -1348,9 +1323,12 @@ to the instance's context before calling the readers. A context can still
 serve other instances' rows, such as neighbors on their ports, so the
 readers keep only the rows on ports holding an address in the current
 context's C<ipAddressTable> or C<ipAdEntTable>. C<i_vrf()> maps those
-ports to the instance whose context the session is in, or to C<default>
-in the default context. The instance list is still read in the default
-context, and kept across the switches, since C<update()> clears the cache:
+ports to the instance whose context the session is in. In the default
+context it maps them to C<default>, unless the default context leaks or
+the class maps every instance's ports there from its membership table
+(L<SNMP::Info::Layer3::Arista>); then it is that membership. The
+instance list is still read in the default context, and kept across the
+switches, since C<update()> clears the cache:
 
     my $instances = $vrf->vrf_instances();
     foreach my $name ( sort keys %$instances ) {
@@ -1489,8 +1467,13 @@ In context mode it works in any context. It maps each port holding an
 address in the current context's C<ipAddressTable> or C<ipAdEntTable> to
 the instance whose context the session is in, or to C<default> in the
 default context. In the default context of a class whose default context
-leaks, it is the C<mplsL3VpnIfConfTable> membership instead. It returns
-nothing, with C<error()> set, in a context no listed instance has.
+leaks, or that maps every instance's ports there from its membership
+table, it is that membership instead. The instance is the one in
+C<vrf_instances()> whose context the session is in, and C<i_vrf()>
+returns nothing, with C<error()> set, in a context no listed instance
+has. A class whose contexts are named for their instances and serve no
+list takes the instance from the context name instead, without reading
+the list (L<SNMP::Info::Layer3::Arista>).
 
 (C<mplsL3VpnIfConfRowStatus>, or a class's vendor table when
 C<MPLS-L3VPN-STD-MIB> lists no instance, such as
@@ -1519,19 +1502,19 @@ class adds from C<ipv6NetToMediaTable> are keyed by ifIndex then the
 sixteen address octets, as that table indexes them.
 
 Rows that are the instance's own addresses are not returned either: a
-row whose neighbor type is local (C<ipNetToPhysicalType> local(5),
-C<ipv6NetToMediaType> local(4)), a global address that
-C<vrf_addresses($name)> holds on any port, and a link-local address it
-holds on the row's port. The devices seen serve their own IPv4 rows as
-static, not local, so the address match is what drops those. On a device
-that lists an address two instances share on one port only (see
-L</"Collapsed Subnets">), the other instance's own row is kept.
+global address that C<vrf_addresses($name)> holds on any port, a
+link-local address it holds on the row's port, and a row whose MAC is the
+C<ifPhysAddress> of the row's port. The neighbor type is not used: some
+devices type a host's link-local local, and others type their own
+addresses static. The MAC match drops the device's own row on a port
+whose address table does not list the address, such as the other
+instance's copy of an address two instances share (see
+L</"Collapsed Subnets">).
 
 (C<at_paddr()> and C<at_netaddr()>, with the fallbacks to C<atTable> and
 C<ipNetToPhysicalTable> of L<SNMP::Info::Layer3>, the C<ipv6_n2p_*>
-methods of L<SNMP::Info::IPv6>, C<ipNetToPhysicalType>,
-C<ipv6NetToMediaPhysAddress> and C<ipv6NetToMediaType> where the class
-reads them, and C<vrf_addresses()>)
+methods of L<SNMP::Info::IPv6>, C<ipv6NetToMediaPhysAddress> where the
+class reads it, C<vrf_addresses()> and C<i_mac()>)
 
 =item $vrf->vrf_addresses($name)
 
