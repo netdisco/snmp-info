@@ -643,9 +643,12 @@ sub _faststart_cache {
   $test->{info}->clear_cache();
   my $descr = exists $store{description} ? delete $store{description}
     : $VRP5_DESCR;
+  my $id = exists $store{id} ? delete $store{id}
+    : '.1.3.6.1.4.1.2011.2.239.12';
   $store{hw_l2if_port_idx} ||= {26 => 30, 27 => 31, 28 => 32};
   my %cache = ((map { ("_$_" => 1) } keys %store), store => \%store);
   $cache{_description}          = $descr   if defined $descr;
+  $cache{_id}                   = $id      if defined $id;
   $cache{_hw_mstp_edge_default} = $default if defined $default;
   $test->{info}->cache(\%cache);
   return;
@@ -791,6 +794,19 @@ sub i_faststart_enabled__vrp8_key_not_an_interface__skipped : Tests(1) {
   );
   cmp_deeply($test->{info}->i_faststart_enabled(),
     {5 => 1}, q(VRP 8 key with no interface table row is skipped));
+}
+
+sub i_faststart_enabled__vrp8_not_cloudengine__returns_empty : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('disabled',
+    description    => $VRP8_DESCR,
+    id             => '.1.3.6.1.4.1.2011.2.23.1',
+    i_index        => {5 => 5},
+    hw_mstp_p_edge => {'0.5' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {}, q(VRP 8 outside CloudEngine has no known index form));
 }
 
 sub i_faststart_enabled__vrp5__keys_mapped_through_bp_index : Tests(1) {

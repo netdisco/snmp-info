@@ -568,14 +568,18 @@ sub i_faststart_enabled {
 }
 
 # hwMstpiPortIndex is a bridge port on VRP 5 but an ifIndex on VRP 8
-# (CloudEngine), though the MIB says bridge port.  With no VRP version the
-# form is unknown, and a guessed one puts values on the wrong ports.
+# CloudEngine, though the MIB says bridge port.  Only CloudEngine has shown
+# the VRP 8 form, so other VRP 8 families and an unknown VRP version stay
+# empty: a guessed form puts values on the wrong ports.
 sub _hw_mstp_port_index {
     my ( $huawei, $partial ) = @_;
 
     my $vrp = $huawei->_vrp_major();
     return unless defined $vrp;
     return $huawei->bp_index($partial) if $vrp < 8;
+
+    my $id = $huawei->id() || '';
+    return unless $id =~ /^\.?1\.3\.6\.1\.4\.1\.2011\.2\.239\./;
 
     my $i_index = $huawei->i_index($partial) || {};
     return { map { $_ => $_ } keys %$i_index };
@@ -841,9 +845,11 @@ Returns 1 or 0 for each port by whether it is configured as an edge port.
 Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads the
 instance 0 rows of C<hwMstpiStpPortEdgeport>; C<undo> takes the default in
 C<hwMstpEdgedPortDefault>.  The row index is a bridge port on VRP 5, mapped
-to C<ifIndex> through C<bp_index()>, and an C<ifIndex> on VRP 8, kept when
-the interface table has it.  The VRP version comes from the C<Version N.>
-in C<sysDescr>; without one the result is empty.  With no instance 0 rows,
+to C<ifIndex> through C<bp_index()>, and an C<ifIndex> on VRP 8
+CloudEngine (C<sysObjectID> under C<.1.3.6.1.4.1.2011.2.239>), kept when the
+interface table has it.  The VRP version comes from the C<Version N.> in
+C<sysDescr>.  Without one, or on VRP 8 outside CloudEngine, the result is
+empty.  With no instance 0 rows,
 falls back to C<dot1dStpPortAdminEdgePort> through L<SNMP::Info::Bridge>.
 
 =back
