@@ -902,16 +902,19 @@ sub hasVSTP {
 sub _context_kinds {
     my ( $juniper, $feature ) = @_;
 
+    return ['vrf'] if ( $feature // '' ) eq 'vrf';
     return unless ( $feature // '' ) eq 'stp';
     return unless $juniper->_jnx_runs('vstp');
     return ['vlan'];
 }
 
-# Junos puts the VLAN context first in the v2c community, the reverse of
-# Cisco's community@VLAN
+# Junos puts the context first in the v2c community, the reverse of Cisco's
+# community@VLAN: red@labro for routing instance red
 sub _snmp_context {
     my ( $juniper, $kind, $id ) = @_;
 
+    return $juniper->_jnx_vrf_context($id)
+        if ( $kind // '' ) eq 'vrf';
     return unless ( $kind // '' ) eq 'vlan' and defined $id;
     return {
         kind => 'vlan',
@@ -920,6 +923,23 @@ sub _snmp_context {
         v3   => "default::$id",
     };
 }
+
+# A Junos v3 context name is the routing instance name; the default
+# instance is the default context
+sub _jnx_vrf_context {
+    my ( $juniper, $name ) = @_;
+
+    return if !defined $name or $name eq q() or $name eq 'default';
+    return {
+        kind => 'vrf',
+        id   => $name,
+        v2c  => "$name\@%s",
+        v3   => $name,
+    };
+}
+
+# Each routing instance reads in its own context
+sub _vrf_context_filters { return 1; }
 
 sub _jnx_vlan_context {
     my ( $instance, $vlan ) = @_;
@@ -1624,15 +1644,21 @@ was incomplete.
 =item $juniper->context_kinds($feature)
 
 C<['vlan']> for C<stp> while VSTP runs, since each VSTP tree is served in
-its own VLAN context; nothing otherwise, and nothing for other features.
-See L<SNMP::Info/"context_kinds">.
+its own VLAN context; C<['vrf']> for C<vrf>, since each routing instance is
+served in its own context; nothing otherwise, and nothing for other
+features.  See L<SNMP::Info/"context_kinds">.
 
 =item $juniper->snmp_context($kind, $id)
 
 For C<vlan> returns C<< { kind => 'vlan', id => N, v2c =>
 'default::N@%s', v3 => 'default::N' } >>, the context of VLAN N in the
 C<default> instance, with the context before the community; nothing for
-other kinds.  See L<SNMP::Info/"snmp_context">.
+other kinds.  For C<vrf> and an instance name returns C<< { kind => 'vrf',
+id => $name, v2c => '$name@%s', v3 => $name } >>, with the instance before
+the community (C<red@community>, never C<community@red>); a Junos SNMPv3
+context name is the instance name.  The C<default> instance, an empty name
+and no name get nothing, since the default context serves the default
+instance.  See L<SNMP::Info/"snmp_context">.
 
 =item $juniper->stp_protocols()
 

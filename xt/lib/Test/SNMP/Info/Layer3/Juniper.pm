@@ -1672,6 +1672,69 @@ sub stp_protocols__vstp : Tests(7) {
   $info->session()->{Community} = 'public';
 }
 
+sub context_kinds__vrf__is_vrf : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  cmp_deeply($info->context_kinds('vrf'), ['vrf'], 'One context per instance');
+  $test->_stp_cache('vstp');
+  cmp_deeply($info->context_kinds('stp'), ['vlan'], 'stp unchanged: VSTP');
+  $test->_stp_cache('rstp');
+  is($info->context_kinds('stp'), undef, 'stp unchanged: RSTP');
+}
+
+sub snmp_context__vrf__junos_order : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  my $context = $info->snmp_context('vrf', 'red');
+  cmp_deeply($context,
+    {kind => 'vrf', id => 'red', v2c => 'red@%s', v3 => 'red'},
+    'Instance name first, v3 is the instance name');
+  is(sprintf($context->{v2c}, 'labro'), 'red@labro', 'Junos order');
+  $info->{args}{Community} = 'labro';
+  $info->session()->{Community} = 'red@labro';
+  is($info->_walk_context(), 'red', 'The context is derived from red@labro');
+}
+
+sub snmp_context__vrf_default__nothing : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  is($info->snmp_context('vrf', 'default'), undef, 'default: nothing');
+  is($info->snmp_context('vrf', q()),       undef, 'empty name: nothing');
+  is($info->snmp_context('vrf'),            undef, 'no name: nothing');
+}
+
+sub snmp_context__vlan__unchanged : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  cmp_deeply(
+    $info->snmp_context('vlan', 10),
+    {kind => 'vlan', id => 10, v2c => 'default::10@%s', v3 => 'default::10'},
+    'vlan context unchanged'
+  );
+  is($info->snmp_context('mst', 1), undef, 'Other kinds: nothing');
+}
+
+sub vrf_neighbors__session_red_at_labro__reads_red : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->{args}{Community} = 'labro';
+  $info->session()->{Version}   = 2;
+  $info->session()->{Community} = 'red@labro';
+  $info->clear_error();
+  isnt($info->vrf_neighbors('red'), undef, 'red reads in red@labro');
+  is($info->error(1), undef, 'No error for red');
+  is($info->vrf_neighbors('blue'), undef, 'blue is refused');
+  like($info->error(1),
+    qr/vrf_neighbors\(\) reads instance 'blue' from its own context, but this session is in context 'red'\. Switch with snmp_context\('vrf', 'blue'\) first\./,
+    'The error names both contexts and the switch');
+  $info->session()->{Community} = 'public';
+}
+
 sub _context_kinds : Tests(4) {
   my $test = shift;
   my $info = $test->{info};
