@@ -1294,6 +1294,22 @@ sub vrf_subnets__from_addresses__network_and_length : Tests(4) {
     q(A broadcast-typed address row gives no subnet));
 }
 
+sub vrf_subnets__link_local_address__dropped : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_subnet_info();
+  my $link_local = '254.128.0.0.0.0.0.0.0.0.0.0.0.0.0.1';
+  my $iid        = "4.20.$link_local.30.0.0.1";
+  $info->{store}{new_ip_index}{$iid}  = 2;
+  $info->{store}{new_ip_type}{$iid}   = 'unicast';
+  $info->{store}{new_ip_prefix}{$iid} = "$PFX_OID.2.2.16.$link_local.10";
+  my $red = $info->vrf_subnets('red');
+  cmp_deeply([grep { /^fe80/ } keys %$red], [],
+    q(An address in fe80::/10 gives no subnet whatever its prefix length));
+  ok(exists $red->{'2001:0db8:0040:0000:0000:0000:0000:0000/64'},
+    q(... and the global IPv6 subnet is kept));
+}
+
 sub vrf_subnets__no_prefix_length__no_subnet : Tests(1) {
   my $test = shift;
 

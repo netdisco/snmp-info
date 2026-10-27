@@ -554,7 +554,8 @@ sub _prime_h3c_vrf {
         vrf_l3vpn_if    => {
             map {
                 my $name = $_;
-                map { ( "$VRF_IID{$name}.$_" => 'active' ) } @{ $VRF_PORTS{$name} }
+                map { ( "$VRF_IID{$name}.$_" => 'active' ) }
+                    @{ $VRF_PORTS{$name} }
             } keys %VRF_PORTS
         },
         old_ip_index   => { '10.0.0.15' => 1412 },
@@ -715,6 +716,22 @@ sub vrf_subnets__grey_loopback__host_prefix : Tests(3) {
         q(Another instance's subnet is not blue's) );
 }
 
+sub vrf_subnets__link_local_address__dropped : Tests(3) {
+    my $test = shift;
+    my $info = $test->_prime_h3c_vrf();
+
+    foreach my $name (qw/red blue/) {
+        cmp_deeply(
+            [ grep {/^fe80/} keys %{ $info->vrf_subnets($name) } ],
+            [], qq($name holds no fe80::/10 subnet from fe80::1/10)
+        );
+    }
+    ok( exists $info->vrf_subnets('red')
+            ->{'2001:0db8:0080:0000:0000:0000:0000:0000/64'},
+        q(... and the global IPv6 subnet is kept)
+    );
+}
+
 sub vrf_neighbors__link_locals_from_ipv6_mib : Tests(4) {
     my $test = shift;
     my $info = $test->_prime_h3c_vrf();
@@ -754,9 +771,7 @@ sub vrf_read_complete__vendor_walk_partial__is_0 : Tests(5) {
     }
     $info->{walk_status}
         = { vrf_h3c_addr_mask => { complete => 0, reason => 'timeout' } };
-    $info->vrf_addresses('red');
-    $info->{_vrf_walked} = {};
-    is( $info->vrf_read_complete('red'), 1,
+    is( $info->vrf_read_complete('blue'), 1,
         q(An instance whose read walked nothing is complete) );
 }
 
@@ -764,7 +779,6 @@ sub ip_index__unchanged : Tests(2) {
     my $test = shift;
     my $info = $test->_prime_h3c_vrf();
 
-    $info->{store}{old_ip_index} = { '10.0.0.15' => 1412 };
     cmp_deeply( $info->ip_index(), { '10.0.0.15' => 1412 },
         q(ip_index is the ipAddrTable as served) );
     cmp_deeply( $info->ip_netmask(), { '10.0.0.15' => '255.255.255.0' },

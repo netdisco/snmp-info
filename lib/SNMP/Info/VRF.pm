@@ -596,6 +596,7 @@ sub vrf_subnets {
     my $addresses = $vrf->vrf_addresses($name) || {};
     foreach my $key ( sort keys %$addresses ) {
         my $subnet = _vrf_address_subnet( $addresses->{$key} ) or next;
+        next if _vrf_link_local($subnet);
         _vrf_add_subnet( \%subnets, $subnet, 'address' );
     }
     return \%subnets unless $vrf->_vrf_subnets_from_routes();
@@ -674,18 +675,32 @@ my @SPECIAL_PURPOSE = (
 sub _vrf_special_purpose {
     my $subnet = shift;
 
-    my $bits = unpack 'B*', pack 'C*',
-        _vrf_ip_octets( $subnet->{family}, $subnet->{prefix} );
     foreach my $special (@SPECIAL_PURPOSE) {
-        my ( $family, $address, $length ) = @$special;
-        next if $family ne $subnet->{family} or $subnet->{len} < $length;
-        my $special_bits = unpack 'B*', pack 'C*',
-            _vrf_ip_octets( $family, $address );
-        return 1
-            if substr( $bits, 0, $length ) eq
-            substr( $special_bits, 0, $length );
+        return 1 if _vrf_within_range( $subnet, $special );
     }
     return 0;
+}
+
+# IPv6 link-local space is per link, so it is no VRF subnet whatever
+# table served it: a device may list its fe80::1 with a short prefix length
+sub _vrf_link_local {
+    my $subnet = shift;
+
+    return _vrf_within_range( $subnet, [ ipv6 => 'fe80:0:0:0:0:0:0:0', 10 ] );
+}
+
+sub _vrf_within_range {
+    my ( $subnet, $range ) = @_;
+
+    my ( $family, $address, $length ) = @$range;
+    return 0 if $family ne $subnet->{family} or $subnet->{len} < $length;
+    my $bits = unpack 'B*', pack 'C*',
+        _vrf_ip_octets( $subnet->{family}, $subnet->{prefix} );
+    my $range_bits = unpack 'B*', pack 'C*',
+        _vrf_ip_octets( $family, $address );
+    return substr( $bits, 0, $length ) eq substr( $range_bits, 0, $length )
+        ? 1
+        : 0;
 }
 
 # Adds one source to the subnet; the first port seen keeps the record
