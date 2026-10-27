@@ -124,7 +124,9 @@ $VERSION = '3.983000';
     'vrf_rc_vlan_if'  => 'rcVlanIfIndex',
     'vrf_rc_vlan_vrf' => 'rcVlanVrfId',
     # RAPID-CITY::rcIpAddrTable (VOSS)
-    'vrf_rc_ip_vrf' => 'rcIpAdEntVrfId',
+    'vrf_rc_ip_vrf'  => 'rcIpAdEntVrfId',
+    'vrf_rc_ip_addr' => 'rcIpAdEntAddr',
+    'vrf_rc_ip_mask' => 'rcIpAdEntNetMask',
 );
 
 %MUNGE = (
@@ -1261,7 +1263,6 @@ sub _vrf_context_is_instance_name  { return $_[0]->_exos_vrf_context(); }
 sub _vrf_context_ports_from_routes { return $_[0]->_vrf_context_os(); }
 sub _vrf_subnets_from_routes       { return $_[0]->_vrf_context_os(); }
 sub _vrf_default_context_members   { return $_[0]->_voss_vrf_context(); }
-sub _vrf_nd_from_ipv6_mib          { return $_[0]->_voss_vrf_context(); }
 
 # rcVrfConfigTable is indexed by vrfid. vrfid 0, GlobalRouter, is the
 # instance default; the I-SID of an IP VPN is its layer 3 I-SID.
@@ -1350,8 +1351,10 @@ sub _voss_vrf_name {
 }
 
 # VOSS: the ports this context's rcVlanTable and rcIpAddrTable give the VRF,
-# and the interfaces of its connected routes. A route learned over the
-# fabric sits on the fabric VLAN's interface, which is no port of the VRF.
+# the interfaces of its connected routes, and those of the ipAddrTable
+# addresses a connected route names as its next hop. A route learned over
+# the fabric sits on the fabric VLAN's interface, which is no port of the
+# VRF.
 sub _voss_route_ports {
     my ( $extreme, $name ) = @_;
 
@@ -1365,7 +1368,22 @@ sub _voss_route_ports {
         my $ifindex = SNMP::Info::VRF::_vrf_route_ifindex( $ifs->{$iid} );
         $ports{$ifindex} = $name if defined $ifindex;
     }
+    $ports{$_} = $name for $extreme->_voss_next_hop_ports($name);
     return \%ports;
+}
+
+# The default context's ipAddrTable places the management CLIP's address
+# on the CLIP's ifIndex, while its local host route sits on the management
+# VLAN's interface: the route's next hop is the address, so the CLIP is a
+# port of the context. Other VRFs' addresses there have no such route.
+sub _voss_next_hop_ports {
+    my ( $extreme, $name ) = @_;
+
+    my %hops = map { join( q{.}, @{ $_->{hop} } ) => 1 }
+        grep { $_->{family} eq 'ipv4' }
+        @{ $extreme->_voss_connected_routes($name) };
+    my $rows = $extreme->_vrf_ipadent_rows($name);
+    return map { $_->{ifindex} } grep { $hops{ $_->{ip} } } values %$rows;
 }
 
 # VOSS indexes inetCidrRouteTable with no length octet before either
@@ -1431,36 +1449,64 @@ sub _vrf_context_route_subnets {
             ifindex => $route->{ifindex},
         };
     }
+    push @subnets, @{ $extreme->_voss_standard_route_subnets($name) };
     return \@subnets;
 }
 
-# VOSS: a VRF context serves no IP-MIB address table. A connected route's
-# next hop is the interface's own address, so each IPv4 one stands for an
-# address with the route's prefix length. IPv6 addresses are in IPV6-MIB
-# ipv6AddrTable.
+# Connected routes in the standard index shape, which the VOSS parser
+# rejects, read by the standard parser
+sub _voss_standard_route_subnets {
+    my ( $extreme, $name ) = @_;
+
+    my $protos = $extreme->_vrf_column( 'vrf_cidr_proto', $name );
+    my $ifs    = $extreme->_vrf_column( 'vrf_cidr_if',    $name );
+    my @subnets;
+    foreach my $iid ( sort keys %$protos ) {
+        next unless SNMP::Info::VRF::_vrf_connected_proto( $protos->{$iid} );
+        next if _voss_route_index($iid) or $iid !~ /^\d+(?:\.\d+)*$/;
+        my $subnet = SNMP::Info::VRF::_vrf_route_subnet( split /\./, $iid )
+            or next;
+        $subnet->{ifindex}
+            = SNMP::Info::VRF::_vrf_route_ifindex( $ifs->{$iid} );
+        push @subnets, $subnet;
+    }
+    return \@subnets;
+}
+
+# VOSS: a VRF context serves no IP-MIB address table. Its IPv4 addresses
+# are the rcIpAddrTable rows whose rcIpAdEntVrfId is the VRF's; in the
+# default context those of vrfid 0 add to ipAddrTable. IPv6 addresses are
+# in IPV6-MIB ipv6AddrTable.
 sub _vrf_vendor_address_rows {
     my ( $extreme, $name ) = @_;
 
     return {} unless $extreme->_voss_vrf_context();
     return {
-        %{ $extreme->_voss_route_addresses($name) },
+        %{ $extreme->_voss_rc_ip_addresses($name) },
         %{ $extreme->_voss_ipv6_addresses($name) },
     };
 }
 
-sub _voss_route_addresses {
+# rcIpAddrTable is indexed by ifIndex then address, so an address two VRFs
+# share on their own VLANs is two rows
+sub _voss_rc_ip_addresses {
     my ( $extreme, $name ) = @_;
 
+    my $names = $extreme->_vrf_column( 'vrf_rc_name',    $name );
+    my $vrfs  = $extreme->_vrf_column( 'vrf_rc_ip_vrf',  $name );
+    my $ips   = $extreme->_vrf_column( 'vrf_rc_ip_addr', $name );
+    my $masks = $extreme->_vrf_column( 'vrf_rc_ip_mask', $name );
     my %rows;
-    foreach my $route ( @{ $extreme->_voss_connected_routes($name) } ) {
-        next unless $route->{family} eq 'ipv4' and defined $route->{ifindex};
-        my $ip = join q{.}, @{ $route->{hop} };
-        next if $ip eq '0.0.0.0';
-        $rows{"$route->{ifindex}.$ip"} = {
-            ifindex    => $route->{ifindex},
-            ip         => $ip,
-            prefix_len => $route->{len},
-            family     => 'ipv4',
+    foreach my $iid ( keys %$ips ) {
+        my ($ifindex) = $iid =~ /^(\d+)\./ or next;
+        my $vrf = _voss_vrf_name( $names, $vrfs->{$iid} );
+        next unless defined $vrf and $vrf eq $name;
+        $rows{"$ifindex.$ips->{$iid}"} = {
+            ifindex    => $ifindex,
+            ip         => $ips->{$iid},
+            prefix_len =>
+                scalar SNMP::Info::VRF::_vrf_mask_length( $masks->{$iid} ),
+            family => 'ipv4',
         };
     }
     return \%rows;
@@ -1850,12 +1896,20 @@ A route learned over the fabric sits on the fabric VLAN's interface, which
 is not a port of the VRF.
 
 A VOSS VRF context serves no F<IP-MIB> address table, so a VRF's IPv4
-addresses are the next hops of its connected routes, each with the route's
-prefix length.  Its IPv6 addresses are those F<IPV6-MIB>
+addresses are the C<rcIpAddrTable> rows whose C<rcIpAdEntVrfId> is the
+VRF's, each with the prefix length of C<rcIpAdEntNetMask>.  No route is an
+address source.  In the default context the addresses are those
+C<ipAddrTable> serves, with the C<rcIpAddrTable> rows of vrfid 0; there
+C<ipAddrTable> lists every VRF's addresses, and only those on the ports of
+C<GlobalRouter> are kept.  Those ports include the interface of each
+C<ipAddrTable> address a connected route names as its next hop, as the
+management CLIP's, whose host route sits on the management VLAN's
+interface.  A VRF's IPv6 addresses are those F<IPV6-MIB>
 C<ipv6AddrTable> serves, and its IPv6 neighbors those of
 C<ipv6NetToMediaTable>.  VOSS indexes C<inetCidrRouteTable> with no length
 octet before either address, and the subnets of the connected routes are
-read from that index.  A context's ARP table holds the VRF's own addresses
+read from that index; a row in the standard index shape is read as the
+standard one.  A context's ARP table holds the VRF's own addresses
 at the VLAN interface's MAC and each subnet broadcast address at the
 broadcast MAC; neither is a neighbor.  A subnet two VRFs share is read in
 each one's own context, on its own VLAN.
@@ -1887,6 +1941,14 @@ each one's own context, on its own VLAN.
 =item $extreme->vrf_rc_ip_vrf()
 
 (C<rcIpAdEntVrfId>)
+
+=item $extreme->vrf_rc_ip_addr()
+
+(C<rcIpAdEntAddr>)
+
+=item $extreme->vrf_rc_ip_mask()
+
+(C<rcIpAdEntNetMask>)
 
 =back
 

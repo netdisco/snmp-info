@@ -1258,6 +1258,26 @@ sub vrf_addresses__vendor_rows__standard_row_wins : Tests(5) {
     q(The shared address is held once));
 }
 
+# The unspecified address of either family is no interface address, and
+# its network would be the whole address space
+sub vrf_addresses__unspecified_address__dropped : Tests(4) {
+  my $test = shift;
+
+  my $v6_zero = join '.', (0) x 16;
+  my %zero = ('1.4.0.0.0.0' => '1.1.4.0.0.0.0.0',
+    "2.16.$v6_zero" => "2.2.16.$v6_zero.0");
+  my $info = $test->_address_info(
+    extra_ifindex => {map { $_ => 3 } keys %zero},
+    extra_prefix  => {map { $_ => "$PFX_OID.3.$zero{$_}" } keys %zero},
+  );
+  my $rows = $info->vrf_addresses('blue');
+  ok(!(grep { $_->{ip} eq '0.0.0.0' } values %$rows), q(IPv4 0.0.0.0));
+  ok(!(grep { $_->{ip} =~ /^[0:]+$/ } values %$rows), q(IPv6 ::));
+  ok(exists $rows->{'3.10.40.0.1'}, q(... and the port's address is kept));
+  cmp_deeply([grep { m{/0$} } keys %{$info->vrf_subnets('blue')}], [],
+    q(No subnet of length 0));
+}
+
 sub vrf_addresses__unknown_name__returns_nothing : Tests(1) {
   my $test = shift;
 

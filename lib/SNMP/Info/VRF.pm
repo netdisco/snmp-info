@@ -890,7 +890,8 @@ sub _vrf_route_subnet {
 
 # ipAddressTable, with ipAdEntTable standing in for IPv4 when the first
 # serves no IPv4 row; a vendor row stands in for a (port, address) the
-# standard tables lack
+# standard tables lack. An unspecified address (0.0.0.0, ::) is no
+# interface address: VOSS serves 0.0.0.0 in ipAddrTable.
 sub _vrf_address_rows {
     my $vrf  = shift;
     my $name = shift;
@@ -898,7 +899,10 @@ sub _vrf_address_rows {
     my $rows = $vrf->_vrf_inet_address_rows($name);
     $rows = { %$rows, %{ $vrf->_vrf_ipadent_rows($name) } }
         if !grep { $_->{family} eq 'ipv4' } values %$rows;
-    return { %{ $vrf->_vrf_vendor_address_rows($name) }, %$rows };
+    $rows = { %{ $vrf->_vrf_vendor_address_rows($name) }, %$rows };
+    delete @$rows{ grep { ( $rows->{$_}{ip} // q{} ) =~ /^[0.:]+$/ }
+            keys %$rows };
+    return $rows;
 }
 
 # Index is type, length, address octets; types 3 and 4 end with four zone
@@ -1563,7 +1567,8 @@ on one port that differ only by zone are one address: the row first in
 sorted index order is kept. Rows typed C<unicast> or C<anycast> are kept:
 an anycast address is still the device's own, and some devices type their
 IPv6 interface addresses so. C<ipAdEntTable> is read for IPv4 only when
-C<ipAddressTable> serves no IPv4 row.
+C<ipAddressTable> serves no IPv4 row. The unspecified address, IPv4
+C<0.0.0.0> or IPv6 C<::>, is no interface address and is dropped.
 
 (C<ipAddressIfIndex>, C<ipAddressType>, C<ipAddressPrefix>,
 C<ipAdEntIfIndex>, C<ipAdEntNetMask>)
