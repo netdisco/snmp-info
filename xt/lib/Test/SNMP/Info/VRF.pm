@@ -33,6 +33,8 @@ package Test::SNMP::Info::VRF;
 use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info::VRF;
+use Sub::Util 'set_subname';
+use Carp 'croak';
 
 # MPLS-L3VPN-STD-MIB mplsL3VpnVrfTable and mplsL3VpnVrfRTTable as an IOS-XE
 # device serves them: the VRF name is a length-prefixed octet string index
@@ -379,6 +381,136 @@ sub vrf_private_defaults : Tests(3) {
     q(No instance is internal in the base role));
   ok(defined &SNMP::Info::VRF::_vrf_default_context_ok,
     q(The default context guard is defined));
+}
+
+my %BUILT_PACKAGE;
+
+# Builds an object of a test-local package on the same mock session the
+# base class uses. @ISA is the parent list as given; hashes merge in
+# reverse @ISA order, the package's own entries last, so the first parent
+# wins a shared key as AGENTS.md prescribes. A package is built once; a
+# later call must ask for the same parents and the same sub names.
+sub _make_info {
+  my $test = shift;
+  my ($package, $parents, %subs) = @_;
+
+  my $shape = join(q(,), @$parents) . q(|) . join(q(,), sort keys %subs);
+  croak "_make_info('$package') was already built with a different parent"
+    . " list or set of subs ($BUILT_PACKAGE{$package}); use a new package"
+    . " name for the new shape."
+    if exists $BUILT_PACKAGE{$package} and $BUILT_PACKAGE{$package} ne $shape;
+
+  if (!exists $BUILT_PACKAGE{$package}) {
+    $BUILT_PACKAGE{$package} = $shape;
+    no strict 'refs';
+    @{"${package}::ISA"} = @$parents;
+    foreach my $hash (qw/MIBS GLOBALS FUNCS MUNGE/) {
+      %{"${package}::$hash"} = map { %{"${_}::$hash"} } reverse @$parents;
+    }
+    *{"${package}::$_"} = set_subname("${package}::$_", $subs{$_})
+      for keys %subs;
+  }
+
+  return $package->new(
+    'AutoSpecify' => 0,
+    'BulkWalk'    => 0,
+    'UseEnums'    => 1,
+    'RetryNoSuch' => 1,
+    'DestHost'    => '127.0.0.1',
+    'Community'   => 'public',
+    'Version'     => 2,
+    'Session'     => $test->mock_session,
+    'Debug'       => ($ENV{INFO_TRACE} || 0),
+    'DebugSNMP'   => ($ENV{SNMP_TRACE} || 0),
+  );
+}
+
+# Teardown in My::Test::Class restores the shared session's Community
+sub _enter_context {
+  my ($test, $info) = @_;
+
+  $info->{args}{Community} = 'public';
+  $info->session()->{Community} = 'public@red';
+  return;
+}
+
+sub reader_context__attribution_in_vrf_context__throws : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::Reader',
+    ['SNMP::Info::VRF'],
+    probe_reader => sub { $_[0]->_vrf_in_reader_context('red') });
+  $test->_enter_context($info);
+  is($info->probe_reader(), 0, q(Refused in a context));
+  like($info->error(),
+    qr/^Test::SNMP::Info::VRF::Reader::probe_reader\(\) reads instance 'red' from the default context, attributing rows by port, on this device\. This session is in context 'red'\. Call update\(\) back to the default context first\./,
+    q(Error names the reader, instance, context and the way back));
+}
+
+sub reader_context__attribution_default_context__ok : Tests(1) {
+  my $test = shift;
+
+  is($test->{info}->_vrf_in_reader_context('red'), 1,
+    q(Allowed in the default context));
+}
+
+sub reader_context__context_mode_default_context_nondefault_name__throws
+  : Tests(4) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::ContextMode',
+    ['SNMP::Info::VRF'],
+    _vrf_context_filters => sub { 1 },
+    probe_reader         => sub { $_[0]->_vrf_in_reader_context($_[1]) });
+  is($info->probe_reader('red'), 0,
+    q(Refused for a named instance in the default context));
+  like($info->error(),
+    qr/^\S+\(\) reads instance 'red' from its own context.*snmp_context\('vrf', 'red'\)/s,
+    q(Error names the instance and says how to switch));
+  is($info->_vrf_in_reader_context('default'), 1,
+    q(The default instance reads in the default context));
+
+  $test->_enter_context($info);
+  is($info->_vrf_in_reader_context('red'), 1,
+    q(Allowed once in a context));
+}
+
+sub make_info__two_parents__first_parent_wins_shared_key : Tests(4) {
+  my $test = shift;
+
+  no strict 'refs';
+  @{"Test::SNMP::Info::VRF::${_}::ISA"} = ('SNMP::Info') for qw/First Second/;
+  %{'Test::SNMP::Info::VRF::First::FUNCS'}  = (shared => 'firstLeaf');
+  %{'Test::SNMP::Info::VRF::Second::FUNCS'} = (shared => 'secondLeaf',
+    only_second => 'otherLeaf');
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::TwoParents',
+    ['Test::SNMP::Info::VRF::First', 'Test::SNMP::Info::VRF::Second']);
+  is($info->funcs()->{shared}, 'firstLeaf',
+    q(The first @ISA parent wins a shared key));
+  is($info->funcs()->{only_second}, 'otherLeaf',
+    q(... and the second parent still contributes its own keys));
+
+  my $again = eval {
+    $test->_make_info('Test::SNMP::Info::VRF::TwoParents',
+      ['Test::SNMP::Info::VRF::Second'])
+  };
+  ok(!defined $again, q(A package is not rebuilt with another shape));
+  like($@, qr/Test::SNMP::Info::VRF::TwoParents.*already built/s,
+    q(... and the error names the package));
+}
+
+sub vrf_owner_of : Tests(4) {
+  my $test = shift;
+
+  $test->_prime_members();
+  is($test->{info}->_vrf_owner_of(2), 'red', q(A member port maps to its VRF));
+  is($test->{info}->_vrf_owner_of(99), 'default',
+    q(A port absent from i_vrf is in the default instance));
+
+  $test->_enter_context($test->{info});
+  is($test->{info}->_vrf_owner_of(2), undef,
+    q(Unknown when i_vrf is refused in a context));
+  ok(defined &SNMP::Info::VRF::_vrf_owner_of, q(Owner lookup is defined));
 }
 
 1;

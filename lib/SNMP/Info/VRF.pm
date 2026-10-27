@@ -308,6 +308,43 @@ sub _vrf_default_context_ok {
     return 0;
 }
 
+# Attribution mode reads the default context and sorts rows by port. Context
+# mode reads one instance per context, so the default context only serves
+# the instance named default.
+sub _vrf_in_reader_context {
+    my $vrf  = shift;
+    my $name = shift;
+
+    my $context = $vrf->_walk_context();
+    my $method  = ( caller(1) )[3];
+
+    if ( !$vrf->_vrf_context_filters() ) {
+        return 1 unless length $context;
+        $vrf->error_throw(
+                  "$method() reads instance '$name' from the default"
+                . " context, attributing rows by port, on this device."
+                . " This session is in context '$context'. Call update()"
+                . " back to the default context first.\n" );
+        return 0;
+    }
+
+    return 1 if length $context or $name eq 'default';
+    $vrf->error_throw(
+              "$method() reads instance '$name' from its own context on"
+            . " this device, but this session is in the default context."
+            . " Switch with snmp_context('vrf', '$name') first.\n" );
+    return 0;
+}
+
+# A port the membership table does not list belongs to the global table
+sub _vrf_owner_of {
+    my $vrf     = shift;
+    my $ifindex = shift;
+
+    my $members = $vrf->i_vrf() or return;
+    return exists $members->{$ifindex} ? $members->{$ifindex} : 'default';
+}
+
 1;
 
 __END__
