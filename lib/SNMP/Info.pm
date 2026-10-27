@@ -485,6 +485,14 @@ Avaya/Nortel/Bay/Synoptics switches and hubs.
 
 See documentation in L<SNMP::Info::SONMP> for details.
 
+=item SNMP::Info::VRF
+
+VRF instances, their ports, neighbors, interface addresses and subnets,
+from F<MPLS-L3VPN-STD-MIB> and F<IP-FORWARD-MIB>.  Inherited by
+SNMP::Info::Layer3.
+
+See documentation in L<SNMP::Info::VRF> for details.
+
 =back
 
 =head2 Device Subclasses

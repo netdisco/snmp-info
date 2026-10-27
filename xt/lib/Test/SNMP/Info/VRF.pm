@@ -787,7 +787,8 @@ sub vrf_addresses__same_address_two_ports__both_kept : Tests(4) {
     q(blue holds the address once, though two table rows land on ifIndex 3));
 }
 
-sub vrf_addresses__zoned_copies_same_port__one_row_lowest_index : Tests(2) {
+sub vrf_addresses__zoned_copies_same_port__one_row_first_in_sorted_index_order
+  : Tests(2) {
   my $test = shift;
 
   my $info = $test->_address_info(
@@ -801,7 +802,7 @@ sub vrf_addresses__zoned_copies_same_port__one_row_lowest_index : Tests(2) {
   is(scalar(grep { $_->{ip} eq '10.43.0.1' } values %$rows), 1,
     q(Two zoned copies on one port make one row));
   is($rows->{'2.10.43.0.1'}{prefix_len}, 24,
-    q(... from the copy with the lowest index, so the choice is stable));
+    q(... from the copy first in sorted index order, so the choice is stable));
 }
 
 sub vrf_addresses__no_ipaddresstable__falls_back_to_ipadent : Tests(4) {
@@ -1070,6 +1071,122 @@ sub vrf_subnets__attribution_in_vrf_context__throws : Tests(2) {
   is(scalar $info->vrf_subnets('red'), undef, q(Refused in a context));
   like($info->error(), qr/^\S+vrf_subnets\(\) reads instance 'red'/,
     q(Error names the reader));
+}
+
+sub vrf_subnets__route_ifindex_zero__is_undef : Tests(2) {
+  my $test = shift;
+
+  my $info  = $test->_subnet_info(routes => 1);
+  my $route = "$RED_NAME.1.4.10.45.0.0.24.2.0.0.$ZERO_V4_HOP";
+  $info->{store}{vrf_l3vpn_rte_proto}{$route} = 'local';
+  $info->{store}{vrf_l3vpn_rte_if}{$route}    = 0;
+  my $subnet = $info->vrf_subnets('red')->{'10.45.0.0/24'};
+  ok($subnet, q(A connected route with no interface still gives a subnet));
+  is($subnet->{ifindex}, undef,
+    q(... and ifIndex 0, InterfaceIndexOrZero's none, is undef));
+}
+
+sub vrf_subnets__context_mode_route_ifindex_zero__is_undef : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::SubnetContext',
+    \@NEIGHBOR_PARENTS,
+    _vrf_context_filters     => sub {1},
+    _vrf_subnets_from_routes => sub {1});
+  $test->{info} = $info;
+  $test->_prime_members();
+  my $iid = "1.4.10.45.0.0.24.2.0.0.$ZERO_V4_HOP";
+  $info->{_vrf_cidr_if}    = 1;
+  $info->{_vrf_cidr_proto} = 1;
+  $info->{store}{vrf_cidr_proto} = {$iid => 'local'};
+  $info->{store}{vrf_cidr_if}    = {$iid => 0};
+  $test->_enter_context($info);
+  my $subnet = $info->vrf_subnets('red')->{'10.45.0.0/24'};
+  ok($subnet, q(A context-mode connected route with no interface is a subnet));
+  is($subnet->{ifindex}, undef, q(... and its ifIndex 0 is undef));
+}
+
+sub vrf_subnets__context_mode_non_numeric_index__skipped : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::SubnetContext',
+    \@NEIGHBOR_PARENTS,
+    _vrf_context_filters     => sub {1},
+    _vrf_subnets_from_routes => sub {1});
+  $test->{info} = $info;
+  $test->_prime_members();
+  my $iid = "1.4.10.47.x.0.24.2.0.0.$ZERO_V4_HOP";
+  $info->{_vrf_cidr_if}    = 1;
+  $info->{_vrf_cidr_proto} = 1;
+  $info->{store}{vrf_cidr_proto} = {$iid => 'local'};
+  $info->{store}{vrf_cidr_if}    = {$iid => 2};
+  $test->_enter_context($info);
+  cmp_deeply($info->vrf_subnets('red'), {},
+    q(A route index that is not digits and dots gives no subnet));
+}
+
+sub vrf_ip_octets__short_ipv4__returns_nothing : Tests(2) {
+  my $test = shift;
+
+  cmp_deeply([SNMP::Info::VRF::_vrf_ip_octets('ipv4', '10.46.0')], [],
+    q(An IPv4 address of three octets has no octets));
+  cmp_deeply([SNMP::Info::VRF::_vrf_ip_octets('ipv4', '10.46.0.1')],
+    [10, 46, 0, 1], q(... and one of four keeps them));
+}
+
+# Every reader of red, with routes on, so each source table is walked
+sub _read_red {
+  my $test = shift;
+
+  my $info = $test->_subnet_info(routes => 1);
+  $test->_prime_neighbors($info);
+  $info->vrf_neighbors('red');
+  $info->vrf_subnets('red');
+  return $info;
+}
+
+sub vrf_read_complete : Tests(1) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'vrf_read_complete');
+}
+
+sub vrf_read_complete__clean_walks__is_1 : Tests(3) {
+  my $test = shift;
+
+  my $info = $test->_read_red();
+  is($info->vrf_read_complete('red'), 1, q(Every walk was complete));
+  cmp_deeply(
+    [sort keys %{$info->{_vrf_walked}{red}}],
+    superbagof(qw/at_paddr at_netaddr ip_n2p_phys_addr new_ip_index
+      new_ip_prefix vrf_l3vpn_if vrf_l3vpn_rte_proto/),
+    q(The readers recorded the tables they walked for red)
+  );
+  is($info->vrf_read_complete('purple'), 1,
+    q(A name no reader walked has no incomplete walk));
+}
+
+sub vrf_read_complete__incomplete_walk__is_0 : Tests(8) {
+  my $test = shift;
+
+  my $info = $test->_read_red();
+  $info->vrf_addresses('blue');
+  $info->{walk_status}{at_paddr} = {complete => 0, reason => 'timeout'};
+  is($info->vrf_read_complete('red'), 0,
+    q(An incomplete ARP walk makes red's read incomplete));
+  is($info->vrf_read_complete('blue'), 1,
+    q(... but not blue's, whose reader did not walk it));
+
+  foreach my $method (qw/ip_n2p_phys_addr new_ip_index vrf_l3vpn_rte_if
+    old_at_paddr old_at_netaddr/) {
+    $info->{walk_status} = {$method => {complete => 0, reason => 'timeout'}};
+    is($info->vrf_read_complete('red'), 0,
+      qq(An incomplete walk of $method makes red's read incomplete));
+  }
+
+  $info->{walk_status} = {at_paddr => {complete => 1, reason => 'absent'}};
+  is($info->vrf_read_complete('red'), 1,
+    q(An absent table is complete));
 }
 
 1;

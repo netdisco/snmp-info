@@ -104,4 +104,53 @@ sub stp_trees : Tests(6) {
     [qw/vlan.1 vlan.10 vlan.20/], 'VTP defaults 1002 to 1005 dropped');
 }
 
+# An IOS-XE device detects as this class, so the VRF role must reach it
+# through Layer3. mplsL3VpnVrfTable as such a device serves it, with one VRF.
+sub vrf_instances__through_layer3__resolves : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  ok($info->can('vrf_instances'), q(vrf_instances resolves));
+  is($info->funcs()->{vrf_l3vpn_rd}, 'mplsL3VpnVrfRD',
+    q(The role's table methods are merged into the class));
+
+  my $red = '3.114.101.100';
+  $info->{"_$_"} = 1 for qw/vrf_l3vpn_rd vrf_l3vpn_descr vrf_l3vpn_oper
+    vrf_l3vpn_rt vrf_l3vpn_if/;
+  $info->{store}{vrf_l3vpn_rd}    = {$red => '64512:30'};
+  $info->{store}{vrf_l3vpn_descr} = {$red => q{}};
+  $info->{store}{vrf_l3vpn_oper}  = {$red => 'up'};
+  $info->{store}{vrf_l3vpn_rt}    = {};
+  $info->{store}{vrf_l3vpn_if}    = {"$red.2" => 'active'};
+  cmp_deeply([sort keys %{$info->vrf_instances()}], ['default', 'red'],
+    q(The served VRF and default are listed));
+}
+
+# A device that serves only the atTable: ipNetToMediaTable is left
+# unprimed, so the mock serves none and Layer3's at_paddr falls back to
+# old_at_paddr, whose walk is recorded under its own name
+sub vrf_read_complete__attable_walk_incomplete__is_0 : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  my $red = '3.114.101.100';
+  $info->{"_$_"} = 1 for qw/vrf_l3vpn_rd vrf_l3vpn_descr vrf_l3vpn_oper
+    vrf_l3vpn_rt vrf_l3vpn_if old_at_paddr old_at_netaddr/;
+  $info->{store}{vrf_l3vpn_rd}    = {$red => '64512:30'};
+  $info->{store}{vrf_l3vpn_descr} = {$red => q{}};
+  $info->{store}{vrf_l3vpn_oper}  = {$red => 'up'};
+  $info->{store}{vrf_l3vpn_rt}    = {};
+  $info->{store}{vrf_l3vpn_if}    = {"$red.2" => 'active'};
+  $info->{store}{old_at_paddr}
+    = {'2.1.10.40.0.2' => pack('C6', 2, 0, 0, 0, 0, 1)};
+  $info->{store}{old_at_netaddr} = {'2.1.10.40.0.2' => '10.40.0.2'};
+
+  ok(scalar keys %{$info->vrf_neighbors('red')},
+    q(red's neighbor comes from the atTable fallback));
+  is($info->vrf_read_complete('red'), 1, q(Complete walks read 1));
+  $info->{walk_status}{old_at_paddr} = {complete => 0, reason => 'timeout'};
+  is($info->vrf_read_complete('red'), 0,
+    q(An incomplete atTable walk makes the read incomplete));
+}
+
 1;
