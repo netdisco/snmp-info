@@ -18,6 +18,8 @@ Version 3.982001
     RUT9xx detection
   * #640 Ruckus: detect SmartZone and SmartCell Gateway controllers by
     product OID and report model and serial number
+  * #635 LigoWave: identify DLB radios, report model and firmware, the
+    SSID and channel on the radio interface, and logical VLAN interfaces
 
   [BUG FIXES]
 
