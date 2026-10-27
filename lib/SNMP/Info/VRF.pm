@@ -167,9 +167,19 @@ sub _vrf_served_instances {
         $instances{$name} = $record;
     }
 
+    %instances = %{ $vrf->_vrf_vendor_records() } if !%instances;
     $vrf->_vrf_add_route_targets( \%instances );
     $vrf->_vrf_add_members( \%instances );
     return \%instances;
+}
+
+# The vendor list, used only when MPLS-L3VPN-STD-MIB served no instance row
+sub _vrf_vendor_records {
+    my $vrf = shift;
+
+    my $records = $vrf->_vrf_vendor_instances() || {};
+    $vrf->_vrf_set_contexts($_) for values %$records;
+    return $records;
 }
 
 # Membership is the sources key; i_vrf holds the ports themselves
@@ -317,6 +327,7 @@ sub vrf_instances_complete {
     return 0 if $vrf->_vrf_walk_incomplete();
     my @rows = grep { $_->{name} ne 'default' } @listed;
     return 0 if defined $configured and $configured > @rows;
+    return 1 if $vrf->_vrf_context_filters();
     return 0 if $vrf->_vrf_split_agent( \@rows, $configured );
     return 1;
 }
@@ -324,7 +335,9 @@ sub vrf_instances_complete {
 sub _vrf_walk_incomplete {
     my $vrf = shift;
 
-    foreach my $method (qw/vrf_l3vpn_rd vrf_l3vpn_if vrf_l3vpn_rt/) {
+    my @walked = ( qw/vrf_l3vpn_rd vrf_l3vpn_if vrf_l3vpn_rt/,
+        $vrf->_vrf_vendor_list_methods() );
+    foreach my $method (@walked) {
         my $status = $vrf->walk_status($method) or next;
         return 1 unless $status->{complete};
     }
@@ -748,6 +761,13 @@ sub _vrf_nd_rows {
 }
 
 sub _vrf_context_filters { return 0; }
+
+# { name => record } a vendor MIB lists where MPLS-L3VPN-STD-MIB serves
+# none; records come from _vrf_record with sources->{list} set.
+sub _vrf_vendor_instances { return {}; }
+
+# The table methods _vrf_vendor_instances walks, for walk completeness
+sub _vrf_vendor_list_methods { return (); }
 
 sub _vrf_subnets_from_routes { return 0; }
 

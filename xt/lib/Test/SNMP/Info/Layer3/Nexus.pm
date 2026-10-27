@@ -197,6 +197,107 @@ sub snmp_context__vrf_default__nothing : Tests(3) {
   is($info->snmp_context('vrf'),            undef, 'no name: nothing');
 }
 
+# nexus1 shape: the default context map lists the VLAN 1 contexts with no
+# VRF, and one context per VRF named like it.
+sub _vrf_list_cache {
+  return _vrf_context_cache(
+    map { $_ => $_ } qw/red blue grey green/);
+}
+
+sub vrf_instances : Tests(8) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_vrf_list_cache());
+  my $instances = $info->vrf_instances();
+  cmp_deeply([sort keys %$instances], [qw/blue default green grey red/],
+    'Each non-empty mapped VRF name, and default');
+  foreach my $name (qw/red blue grey green/) {
+    is($instances->{$name}{sources}{list}, 'CISCO-CONTEXT-MAPPING-MIB',
+      "$name is listed by the context map");
+  }
+  is($instances->{red}{contexts}[0]{v3}, 'red', 'The context is the name');
+  ok(!exists $instances->{'vlan-1'} && !exists $instances->{q()} &&
+    !exists $instances->{1}, 'Empty-valued rows are never instances');
+  is($instances->{red}{listed_by}, 'device', 'Listed by the device');
+}
+
+my $FILTERING = 'Test::SNMP::Info::Layer3::Nexus::Filtering';
+
+# A Nexus whose context mode is on, as it will be once readers filter
+sub _filtering_info {
+  my $test = shift;
+
+  no strict 'refs';
+  if (!@{"${FILTERING}::ISA"}) {
+    @{"${FILTERING}::ISA"} = ('SNMP::Info::Layer3::Nexus');
+    foreach my $hash (qw/MIBS GLOBALS FUNCS MUNGE/) {
+      %{"${FILTERING}::$hash"} = %{"SNMP::Info::Layer3::Nexus::$hash"};
+    }
+    *{"${FILTERING}::_vrf_context_filters"} = sub { 1 };
+  }
+  return $FILTERING->new(
+    'AutoSpecify' => 0,
+    'BulkWalk'    => 0,
+    'UseEnums'    => 1,
+    'RetryNoSuch' => 1,
+    'DestHost'    => '127.0.0.1',
+    'Community'   => 'public',
+    'Version'     => 2,
+    'Session'     => $test->mock_session,
+  );
+}
+
+sub vrf_instances_complete__context_map_walked__is_1 : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_filtering_info();
+  $info->cache(_vrf_list_cache());
+  is($info->vrf_instances_complete(), 1,
+    'A complete context map walk lists every VRF');
+}
+
+sub vrf_instances_complete__context_map_partial__is_0 : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_filtering_info();
+  $info->cache(_vrf_list_cache());
+  $info->{walk_status}{vrf_name} = {complete => 0, reason => 'timeout'};
+  is($info->vrf_instances_complete(), 0, 'A partial context map walk');
+}
+
+sub vrf_instances__mpls_rows_present__ignore_context_map : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  my $cache = _vrf_list_cache();
+  $cache->{_vrf_l3vpn_descr} = 1;
+  $cache->{store}{vrf_l3vpn_descr} = {'3.114.101.100' => q()};
+  $info->cache($cache);
+  my $instances = $info->vrf_instances();
+  cmp_deeply([sort keys %$instances], [qw/default red/],
+    'Only the MPLS-L3VPN row is listed');
+  is($instances->{red}{sources}{list}, 'MPLS-L3VPN-STD-MIB',
+    'Listed by MPLS-L3VPN-STD-MIB');
+  ok(!exists $instances->{blue}, 'The context map adds nothing');
+}
+
+sub vrf_name__unchanged : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_vrf_context_cache(red => 'red'));
+  cmp_deeply($info->vrf_name(), {
+      _context_index('vlan-1') => '',
+      _context_index('1')      => '',
+      _context_index('red')    => 'red',
+    },
+    'The raw context map, as served');
+}
+
 sub snmp_context__vlan_and_mst__unchanged : Tests(3) {
   my $test = shift;
   my $info = $test->{info};

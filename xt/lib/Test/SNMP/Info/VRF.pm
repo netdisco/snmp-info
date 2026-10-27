@@ -270,6 +270,37 @@ sub i_vrf__membership_rows__maps_ifindex_to_name : Tests(1) {
   );
 }
 
+sub vrf_instances__vendor_hook__used_only_without_mpls_rows : Tests(5) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::Vendor',
+    ['SNMP::Info::VRF'],
+    _vrf_context_filters => sub { 1 },
+    _vrf_vendor_list_methods => sub { return ('vrf_l3vpn_descr') },
+    _vrf_vendor_instances => sub {
+      my $record = SNMP::Info::VRF::_vrf_record('amber', 'vrf', 'device');
+      $record->{sources}{list} = 'VENDOR-MIB';
+      return {amber => $record};
+    });
+  my $instances = $info->vrf_instances();
+  cmp_deeply([sort keys %$instances], [qw/amber default/],
+    q(Vendor list used without MPLS rows));
+  is($instances->{amber}{sources}{list}, 'VENDOR-MIB', q(Vendor source));
+  is($info->vrf_instances_complete(), 1,
+    q(Context mode skips the split agent rule));
+
+  $info->{walk_status}{vrf_l3vpn_descr} = {complete => 0, reason => 'x'};
+  is($info->vrf_instances_complete(), 0, q(Vendor walk counted));
+  $info->{walk_status} = {};
+
+  $info->{_vrf_l3vpn_descr} = 1;
+  $info->{store}{vrf_l3vpn_descr} = {$NAME_IID{red} => q()};
+  delete $info->{_vrf_instances};
+  $instances = $info->vrf_instances();
+  cmp_deeply([sort keys %$instances], [qw/default red/],
+    q(MPLS rows win over the vendor list));
+}
+
 sub vrf_instances_complete : Tests(1) {
   my $test = shift;
 
@@ -402,10 +433,13 @@ sub decode_name__length_prefixed__returns_name_and_rest : Tests(4) {
     [], q(An empty index returns nothing));
 }
 
-sub vrf_private_defaults : Tests(3) {
+sub vrf_private_defaults : Tests(5) {
   my $test = shift;
 
   is($test->{info}->_vrf_context_filters(), 0, q(No context filtering));
+  cmp_deeply($test->{info}->_vrf_vendor_instances(), {}, q(No vendor list));
+  cmp_deeply([$test->{info}->_vrf_vendor_list_methods()], [],
+    q(No vendor list methods));
   is($test->{info}->_vrf_internal_instance('red'), 0,
     q(No instance is internal in the base role));
   ok(defined &SNMP::Info::VRF::_vrf_default_context_ok,

@@ -109,6 +109,24 @@ sub _snmp_context {
 	return { kind => 'mst', id => $id, v2c => undef, v3 => $name };
 }
 
+# Each distinct non-empty VRF name cContextMappingTable maps. An empty
+# value is a VLAN or MST context, never a VRF.
+sub _vrf_vendor_instances {
+    my $nexus = shift;
+
+    my $mapped = $nexus->vrf_name() || {};
+    my %instances;
+    foreach my $name ( grep { defined && length } values %$mapped ) {
+        next if $name eq 'default';
+        my $record = SNMP::Info::VRF::_vrf_record( $name, 'vrf', 'device' );
+        $record->{sources}{list} = 'CISCO-CONTEXT-MAPPING-MIB';
+        $instances{$name} = $record;
+    }
+    return \%instances;
+}
+
+sub _vrf_vendor_list_methods { return ('vrf_name'); }
+
 # The context cContextMappingTable maps to the VRF: the one named like the
 # VRF, else the lowest sorted name; with none mapped, the VRF name. The
 # default VRF is the default context, and an unnamed one is not a VRF.
