@@ -86,6 +86,10 @@ my %INET_TYPE = (
     4 => { family => 'ipv6', bytes => 16, length => 20 },
 );
 
+# ipAddressType values that are the device's own address. An anycast
+# address still is, and EXOS types its IPv6 interface addresses so.
+my %OWN_ADDRESS_TYPE = ( unicast => 1, anycast => 1 );
+
 sub vrf_instances {
     my $vrf          = shift;
     my $caller_names = shift;
@@ -473,9 +477,9 @@ sub _vrf_split_agent {
 
 # ARP and IPv6 neighbor rows of one instance, keyed as the source tables
 # are: ifIndex, then the address arcs. Attribution mode keeps the rows whose
-# port belongs to the instance; context mode keeps the rows on the ports
-# holding an address in this context, which a context can serve for ports
-# of other instances.
+# port belongs to the instance; context mode keeps the rows on the ports of
+# this context (_vrf_context_ports), since a context can serve rows for
+# ports of other instances.
 sub vrf_neighbors {
     my $vrf  = shift;
     my $name = shift;
@@ -535,7 +539,8 @@ sub _vrf_own_key {
 # Interface addresses of one instance, keyed ifIndex.address. The device
 # serves one address table per port, so an address two VRFs share survives
 # in each, and ownership comes from the port as for neighbors. In context
-# mode the addresses are what decides the ports, so all are kept.
+# mode the addresses decide the ports, so all are kept, unless the routes
+# decide them; then only those on the context's ports are.
 sub vrf_addresses {
     my $vrf  = shift;
     my $name = shift;
@@ -572,7 +577,7 @@ sub _vrf_drop_leaked {
     return $rows;
 }
 
-# Context mode: drops the rows on ports holding no address of $name here
+# Context mode: drops the rows on ports that are not this context's
 sub _vrf_keep_context_ports {
     my ( $vrf, $rows, $name ) = @_;
 
@@ -910,7 +915,7 @@ sub _vrf_inet_address_rows {
 
     my %rows;
     foreach my $iid ( sort keys %$ifindexes ) {
-        next unless ( $types->{$iid} // q{} ) eq 'unicast';
+        next unless $OWN_ADDRESS_TYPE{ $types->{$iid} // q{} };
         my $address = _vrf_parse_address($iid) or next;
         my $key     = "$ifindexes->{$iid}.$address->{ip}";
         next if exists $rows{$key};
@@ -1367,6 +1372,8 @@ no instance in context mode, and its neighbors are dropped.
 Where a context serves the device's whole address table, as EXOS does, the
 ports of the context are the interfaces of its C<inetCidrRouteTable> rows
 instead, and the addresses and neighbors on any other port are dropped.
+A class can add the interface a route's interface stands for, as
+L<SNMP::Info::Layer3::Extreme> does for an EXOS router interface.
 
 On some platforms the default context leaks: it serves every instance's
 neighbors and addresses on the instances' ports, alongside the default
@@ -1549,7 +1556,9 @@ Returns reference to hash of the interface addresses of instance
 C<$name>, keyed by ifIndex and address. Each row holds C<ifindex>, C<ip>,
 C<prefix_len> (undef when the device gives none) and C<family>. Two rows
 on one port that differ only by zone are one address: the row first in
-sorted index order is kept. C<ipAdEntTable> is read for IPv4 only when
+sorted index order is kept. Rows typed C<unicast> or C<anycast> are kept:
+an anycast address is still the device's own, and some devices type their
+IPv6 interface addresses so. C<ipAdEntTable> is read for IPv4 only when
 C<ipAddressTable> serves no IPv4 row.
 
 (C<ipAddressIfIndex>, C<ipAddressType>, C<ipAddressPrefix>,

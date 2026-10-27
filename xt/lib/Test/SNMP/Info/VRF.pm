@@ -1073,6 +1073,27 @@ sub vrf_addresses__ipv4__attributed_by_ifindex : Tests(5) {
     q(A broadcast row is not an address));
 }
 
+sub vrf_addresses__anycast_type__kept : Tests(3) {
+  my $test = shift;
+
+  my $arcs = '32.1.13.184.0.65.0.0.0.0.0.0.0.0.0';
+  my $iid  = "2.16.$arcs.1";
+  my $info = $test->_address_info(
+    extra_ifindex => {$iid => 4},
+    extra_type    => {$iid => 'anycast'},
+    extra_prefix  => {$iid => "$PFX_OID.4.2.16.$arcs.0.64"},
+  );
+  my $ip = '2001:0db8:0041:0000:0000:0000:0000:0001';
+  cmp_deeply($info->vrf_addresses('red')->{"4.$ip"},
+    {ifindex => 4, ip => $ip, prefix_len => 64, family => 'ipv6'},
+    q(An anycast row is the instance's own address));
+  ok(exists $info->vrf_addresses('red')->{'4.10.41.0.1'},
+    q(... beside the unicast ones));
+  ok(!(grep { $_->{ip} eq '10.42.0.255' }
+      values %{$info->vrf_addresses('default')}),
+    q(A broadcast row is still not an address));
+}
+
 sub vrf_addresses__ipv6z__zone_stripped : Tests(4) {
   my $test = shift;
 

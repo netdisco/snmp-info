@@ -1202,7 +1202,8 @@ sub _exos_vrf_context { return ( $_[0]->os() || '' ) eq 'xos' ? 1 : 0; }
 sub _context_kinds {
     my ( $extreme, $feature ) = @_;
 
-    return unless ( $feature // '' ) eq 'vrf' and $extreme->_exos_vrf_context();
+    return
+        unless ( $feature // '' ) eq 'vrf' and $extreme->_exos_vrf_context();
     return ['vrf'];
 }
 
@@ -1221,6 +1222,27 @@ sub _vrf_context_filters           { return $_[0]->_exos_vrf_context(); }
 sub _vrf_context_is_instance_name  { return $_[0]->_exos_vrf_context(); }
 sub _vrf_context_ports_from_routes { return $_[0]->_exos_vrf_context(); }
 sub _vrf_subnets_from_routes       { return $_[0]->_exos_vrf_context(); }
+
+# EXOS puts a VLAN's IPv4 routes on its router interface, ifName
+# "<vlan> rtif(<address>)", and the VLAN's addresses on the interface named
+# "<vlan>", so a router interface adds its VLAN's. EXOS forbids two VLANs of
+# one name. ifName decides membership, so it counts toward the read.
+sub _vrf_route_ports {
+    my ( $extreme, $name ) = @_;
+
+    my $ports = $extreme->SUPER::_vrf_route_ports($name);
+    return $ports unless $extreme->_exos_vrf_context();
+
+    my $if_names = $extreme->_vrf_column( 'orig_i_name', $name, 'i_name' );
+    my %port_named
+        = map { $if_names->{$_} => $_ } sort { $a <=> $b } keys %$if_names;
+    foreach my $port ( keys %$ports ) {
+        my ($vlan) = ( $if_names->{$port} // q{} ) =~ /^(.+) rtif\(/
+            or next;
+        $ports->{ $port_named{$vlan} } = $name if exists $port_named{$vlan};
+    }
+    return $ports;
+}
 
 1;
 
@@ -1528,7 +1550,12 @@ C<MPLS-L3VPN-STD-MIB> has no row.  The caller supplies the names with
 C<vrf_instances(\@names)>, and each reads in the context of its name.  The
 address table is the same in every context, so the ports of a context are
 the interfaces of its C<inetCidrRouteTable> rows, and its addresses,
-neighbors and subnets are those on them.  A subnet two virtual routers
+neighbors and subnets are those on them.  EXOS puts a VLAN's IPv4 routes on
+its router interface, whose C<ifName> is C<< <vlan> rtif(<address>) >>,
+and the VLAN's addresses on the interface named C<< <vlan> >>, so a router
+interface also makes its VLAN's interface a port of the context.  This
+holds in the default context too, where the default virtual router's
+addresses are read the same way.  A subnet two virtual routers
 share is read from each one's connected route.  A name the device lacks has
 no route, so it reads no port, address or neighbor.
 
