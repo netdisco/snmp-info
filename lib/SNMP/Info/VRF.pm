@@ -67,7 +67,8 @@ $VERSION = '3.983000';
 my $LIST_SOURCE = 'MPLS-L3VPN-STD-MIB';
 
 # The IPv6 role's ipv6_n2p_* subs walk these columns, which walk_status names
-my @ND_COLUMNS = qw/ip_n2p_phys_addr c_inet_phys_addr i6_n2p_phys_addr/;
+my @ND_COLUMNS      = qw/ip_n2p_phys_addr c_inet_phys_addr i6_n2p_phys_addr/;
+my @ND_TYPE_COLUMNS = qw/ip_n2p_phys_type c_inet_phys_type i6_n2p_phys_type/;
 
 # Layer3's at_* subs fall back to atTable, then ipNetToPhysicalTable, and
 # its at_netaddr fallback reads the paddr columns to choose
@@ -468,8 +469,36 @@ sub vrf_neighbors {
     my %rows
         = ( %{ $vrf->_vrf_arp_rows($name) }, %{ $vrf->_vrf_nd_rows($name) },
         );
-    return $vrf->_vrf_keep_context_ports( \%rows, $name ) if $context_mode;
-    return $vrf->_vrf_keep_owned( \%rows, $name );
+    my $kept
+        = $context_mode
+        ? $vrf->_vrf_keep_context_ports( \%rows, $name )
+        : $vrf->_vrf_keep_owned( \%rows, $name );
+    return $vrf->_vrf_drop_own_rows( $kept, $name );
+}
+
+# Drops the rows that are the instance's own addresses: a global address
+# the instance holds on any port, a link-local one it holds on that port.
+# The address walks decide which rows go, so they count toward the read.
+sub _vrf_drop_own_rows {
+    my ( $vrf, $rows, $name ) = @_;
+
+    my %own;
+    foreach my $address ( values %{ $vrf->_vrf_instance_addresses($name) } ) {
+        $own{ _vrf_own_key( $address->{ifindex}, $address->{ip} ) } = 1;
+    }
+    foreach my $key ( keys %$rows ) {
+        my $row = $rows->{$key};
+        delete $rows->{$key} if $own{ _vrf_own_key( @$row{qw/ifindex ip/} ) };
+    }
+    return $rows;
+}
+
+# A link-local address is one per link, so its port is part of the key
+sub _vrf_own_key {
+    my ( $ifindex, $ip ) = @_;
+
+    $ip = lc $ip;
+    return $ip =~ /^fe[89ab]/ ? "$ifindex $ip" : $ip;
 }
 
 # Interface addresses of one instance, keyed ifIndex.address. The device
@@ -484,8 +513,17 @@ sub vrf_addresses {
     my $context_mode = $vrf->_vrf_context_filters();
     return if !$context_mode and !$vrf->_vrf_is_listed($name);
 
+    return $vrf->_vrf_instance_addresses($name);
+}
+
+# vrf_addresses() past its guards
+sub _vrf_instance_addresses {
+    my $vrf  = shift;
+    my $name = shift;
+
     my $rows = $vrf->_vrf_address_rows($name);
-    return $vrf->_vrf_drop_leaked( $rows, $name ) if $context_mode;
+    return $vrf->_vrf_drop_leaked( $rows, $name )
+        if $vrf->_vrf_context_filters();
     return $vrf->_vrf_keep_owned( $rows, $name );
 }
 
@@ -591,8 +629,10 @@ sub vrf_read_complete {
 }
 
 # True in the default context of a class whose default context leaks while
-# a listed instance has no port there: its rows cannot be told from the
-# default instance's
+# a listed instance is one the membership table does not cover, such as a
+# virtual router: its rows cannot be told from the default instance's. A
+# partial list walk may hide such an instance. An MPLS-listed VRF with no
+# port has no row to leak.
 sub _vrf_leak_unfiltered {
     my $vrf  = shift;
     my $name = shift;
@@ -600,8 +640,16 @@ sub _vrf_leak_unfiltered {
     return 0 unless $name eq 'default' and $vrf->_vrf_default_context_leaks();
     return 0 if length $vrf->_walk_context();
     my $instances = $vrf->{_vrf_instances} ||= $vrf->_vrf_all_instances();
-    return ( grep { $_->{name} ne 'default' and !$_->{sources}{members} }
+    return 1 if $vrf->_vrf_walk_incomplete();
+    return ( grep { $_->{name} ne 'default' and _vrf_uncovered($_) }
             values %$instances ) ? 1 : 0;
+}
+
+sub _vrf_uncovered {
+    my $record = shift;
+
+    return 0 if $record->{sources}{members};
+    return ( $record->{sources}{list} // q() ) ne $LIST_SOURCE ? 1 : 0;
 }
 
 sub _vrf_has_subnet {
@@ -923,10 +971,12 @@ sub _vrf_arp_rows {
 
     my $macs = $vrf->_vrf_column( 'at_paddr',   $name, @ARP_PADDR_COLUMNS );
     my $ips  = $vrf->_vrf_column( 'at_netaddr', $name, @ARP_NETADDR_COLUMNS );
+    my $local = $vrf->_vrf_local_arp_keys($name);
     my %rows;
     foreach my $key ( keys %$macs ) {
         my ($ifindex) = $key =~ /^(\d+)\./ or next;
         next unless defined $ips->{$key} and _vrf_has_mac( $macs->{$key} );
+        next if $local->{$key};
         $rows{$key} = {
             ifindex => $ifindex,
             ip      => $ips->{$key},
@@ -937,17 +987,37 @@ sub _vrf_arp_rows {
     return \%rows;
 }
 
+# { ifIndex.address => 1 } for each IPv4 row ipNetToPhysicalTable types
+# local(5), keyed as at_paddr() keys its rows
+sub _vrf_local_arp_keys {
+    my $vrf  = shift;
+    my $name = shift;
+
+    my $types = $vrf->_vrf_column( 'ip_n2p_phys_type', $name );
+    my %local;
+    foreach my $iid ( keys %$types ) {
+        next unless _vrf_is_local( $types->{$iid}, 5 );
+        my ( $ifindex, $addr_type, @octets ) = split /\./, $iid;
+        next unless defined $addr_type and $addr_type == 1;
+        shift @octets if @octets == 5 and $octets[0] == 4;
+        $local{ join q{.}, $ifindex, @octets } = 1 if @octets == 4;
+    }
+    return \%local;
+}
+
 sub _vrf_nd_rows {
     my $vrf  = shift;
     my $name = shift;
 
-    my $macs = $vrf->_vrf_column( 'ipv6_n2p_mac',  $name, @ND_COLUMNS );
-    my $ips  = $vrf->_vrf_column( 'ipv6_n2p_addr', $name, @ND_COLUMNS );
-    my $ifs  = $vrf->_vrf_column( 'ipv6_n2p_if',   $name, @ND_COLUMNS );
+    my $macs  = $vrf->_vrf_column( 'ipv6_n2p_mac',  $name, @ND_COLUMNS );
+    my $ips   = $vrf->_vrf_column( 'ipv6_n2p_addr', $name, @ND_COLUMNS );
+    my $ifs   = $vrf->_vrf_column( 'ipv6_n2p_if',   $name, @ND_COLUMNS );
+    my $types = $vrf->_vrf_column( 'ipv6_n2p_type', $name, @ND_TYPE_COLUMNS );
     my %rows;
     foreach my $key ( keys %$macs ) {
         next unless defined $ips->{$key} and defined $ifs->{$key};
         next unless _vrf_has_mac( $macs->{$key} );
+        next if _vrf_is_local( $types->{$key}, _vrf_nd_local_number($key) );
         $rows{$key} = {
             ifindex => $ifs->{$key},
             ip      => $ips->{$key},
@@ -967,10 +1037,12 @@ sub _vrf_add_ipv6_mib_rows {
 
     my %listed = map { "$_->{ifindex} " . lc $_->{ip} => 1 } values %$rows;
     my $macs   = $vrf->_vrf_column( 'i6_n2p_phys_addr', $name );
+    my $types  = $vrf->_vrf_column( 'i6_n2p_phys_type', $name );
     foreach my $key ( keys %$macs ) {
         my ( $ifindex, @octets ) = split /\./, $key;
         next if @octets != 16 or grep { $_ > 255 } @octets;
         next unless _vrf_has_mac( $macs->{$key} );
+        next if _vrf_is_local( $types->{$key}, 4 );
         my $ip = join q{:}, unpack '(H4)*', pack 'C*', @octets;
         next if $listed{"$ifindex $ip"};
         $rows->{$key} = {
@@ -989,6 +1061,25 @@ sub _vrf_has_mac {
     my $mac = shift;
 
     return ( defined $mac and $mac =~ /[^0:.\-]/ ) ? 1 : 0;
+}
+
+# A neighbor type of local is the device's own address. The number is
+# local(5) in IP-MIB and CISCO-IETF-IP-MIB, local(4) in IPV6-MIB, where 4
+# is static in the others.
+sub _vrf_is_local {
+    my ( $type, $local_number ) = @_;
+
+    return 0 unless defined $type;
+    return ( $type eq 'local' or $type eq $local_number ) ? 1 : 0;
+}
+
+# ipv6_n2p_type() keys: ifIndex then sixteen octets from IPV6-MIB, a
+# longer InetAddress index from the others
+sub _vrf_nd_local_number {
+    my $key = shift;
+
+    my @arcs = split /\./, $key;
+    return @arcs == 17 ? 4 : 5;
 }
 
 sub _vrf_context_filters { return 0; }
@@ -1251,9 +1342,10 @@ instance's own. A class for such a platform has the readers of
 C<default>, in the default context, drop the rows on each port that the
 default context's membership table, C<mplsL3VpnIfConfTable>, gives
 another instance, and C<i_vrf()> there returns that membership. An
-instance the table holds no port for, such as a virtual router, cannot be
-told apart there, so its rows stay in C<default> and
-C<vrf_read_complete('default')> returns 0. L<SNMP::Info::Layer3::Juniper>
+instance the table does not cover, one listed by another source such as
+a virtual router, cannot be told apart there, so its rows stay in
+C<default> and C<vrf_read_complete('default')> returns 0. A VRF the
+table lists with no port has no rows to leak. L<SNMP::Info::Layer3::Juniper>
 is such a class.
 
 Some platforms serve host link-local neighbors only in the F<IPV6-MIB>
@@ -1399,10 +1491,20 @@ hardware address, and devices serve their own addresses that way. Rows a
 class adds from C<ipv6NetToMediaTable> are keyed by ifIndex then the
 sixteen address octets, as that table indexes them.
 
+Rows that are the instance's own addresses are not returned either: a
+row whose neighbor type is local (C<ipNetToPhysicalType> local(5),
+C<ipv6NetToMediaType> local(4)), a global address that
+C<vrf_addresses($name)> holds on any port, and a link-local address it
+holds on the row's port. The devices seen serve their own IPv4 rows as
+static, not local, so the address match is what drops those. On a device
+that lists an address two instances share on one port only (see
+L</"Collapsed Subnets">), the other instance's own row is kept.
+
 (C<at_paddr()> and C<at_netaddr()>, with the fallbacks to C<atTable> and
 C<ipNetToPhysicalTable> of L<SNMP::Info::Layer3>, the C<ipv6_n2p_*>
-methods of L<SNMP::Info::IPv6>, and C<ipv6NetToMediaPhysAddress> where the
-class reads it)
+methods of L<SNMP::Info::IPv6>, C<ipNetToPhysicalType>,
+C<ipv6NetToMediaPhysAddress> and C<ipv6NetToMediaType> where the class
+reads them, and C<vrf_addresses()>)
 
 =item $vrf->vrf_addresses($name)
 
@@ -1440,8 +1542,10 @@ table the device does not implement counts as complete. In attribution
 mode the membership table C<mplsL3VpnIfConfTable> counts too, since it
 decides which rows are the instance's; in context mode the address tables
 do, and for C<default> in a leaking default context the membership table
-as well. There it also returns 0 while a listed instance has no port in
-the membership table, since its rows cannot be told from C<default>'s.
+as well. There it also returns 0 while a listed instance is one the
+membership table does not cover, since its rows cannot be told from
+C<default>'s, and while a walk of the instance list was incomplete, since
+it may hide such an instance.
 
 Call it after the readers, in the same context. C<clear_cache()>, and so
 C<update()>, forgets which tables were walked, after which it returns 1

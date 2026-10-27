@@ -788,12 +788,14 @@ sub vrf_neighbors__unknown_name__sets_error : Tests(2) {
 }
 
 # A row with no hardware address is no evidence of a host. Ports 2 and 4
-# are red's, 3 and 5 blue's; each holds one IPv4 and one IPv6 row.
+# are red's, 3 and 5 blue's, 6 green's; each holds one IPv4 and one IPv6
+# row.
 my %RAW_MAC = (
   2 => undef,
   3 => q(),
   4 => '00:00:00:00:00:00',
   5 => '02:00:00:00:00:05',
+  6 => '0000.0000.0000',
 );
 my $V6_ROW_ARCS = '32.1.13.184.0.64.0.0.0.0.0.0.0.0.0';
 
@@ -807,7 +809,7 @@ sub _raw_mac_v6_rows {
   return {map { ("$_.2.16.$V6_ROW_ARCS.$_" => $value->($_)) } keys %RAW_MAC};
 }
 
-sub vrf_neighbors__zero_mac__dropped : Tests(3) {
+sub vrf_neighbors__zero_mac__dropped : Tests(4) {
   my $test = shift;
 
   my $info = $test->_make_info('Test::SNMP::Info::VRF::RawMacs',
@@ -830,6 +832,8 @@ sub vrf_neighbors__zero_mac__dropped : Tests(3) {
   cmp_deeply([sort keys %$blue], ['5.10.40.0.5', "5.2.16.$V6_ROW_ARCS.5"],
     q(An empty MAC is dropped; a real one is kept));
   is($blue->{'5.10.40.0.5'}{mac}, '02:00:00:00:00:05', q(... with its MAC));
+  cmp_deeply($info->vrf_neighbors('green'), {},
+    q(A dotted all-zero MAC is dropped));
 }
 
 sub vrf_neighbors__role_without_neighbor_methods__has_no_rows : Tests(1) {
@@ -853,10 +857,41 @@ sub vrf_neighbors__context_mode__rows_on_context_address_ports : Tests(2) {
   $test->_enter_context($info);
   my $rows = $info->vrf_neighbors('red');
   cmp_deeply([sort keys %$rows],
-    [sort('1.172.20.20.1', '2.10.40.0.1', '2.10.40.0.2', '3.10.40.0.1',
-      '3.10.40.0.2', $RED_V6)],
-    q(Rows on ports with an address in the context, whatever i_vrf says));
-  is($rows->{'3.10.40.0.1'}{ifindex}, 3, q(... with its own ifIndex));
+    [sort('1.172.20.20.1', '2.10.40.0.2', '3.10.40.0.2')],
+    q(Rows on ports with an address in the context, whatever i_vrf says,)
+      . q( less the addresses the context holds));
+  is($rows->{'3.10.40.0.2'}{ifindex}, 3, q(... with its own ifIndex));
+}
+
+# IOS-XE serves its own ARP rows static at the port MAC. 10.40.0.1 is on
+# ifIndex 2 (red) and 3 (blue), but ipAddressTable lists it on 3 only.
+sub vrf_neighbors__collapsed_own_address__dropped_where_listed : Tests(3) {
+  my $test = shift;
+
+  my $info = $test->_address_info();
+  $test->_prime_neighbors($info);
+  ok(!exists $info->vrf_neighbors('blue')->{'3.10.40.0.1'},
+    q(blue holds 10.40.0.1, so its own row is dropped));
+  ok(exists $info->vrf_neighbors('blue')->{'3.10.40.0.2'},
+    q(... and its neighbor kept));
+  ok(exists $info->vrf_neighbors('red')->{'2.10.40.0.1'},
+    q(red's copy survives: red lists no such address));
+}
+
+sub vrf_neighbors__local_type__dropped : Tests(3) {
+  my $test = shift;
+
+  my $info = $test->_neighbor_info();
+  my $red_v4 = '2.1.4.10.40.0.2';
+  $info->{_ip_n2p_phys_type}       = 1;
+  $info->{store}{ip_n2p_phys_type} = {$red_v4 => 'local', $RED_V6 => 5};
+  my $red = $info->vrf_neighbors('red');
+  ok(!exists $red->{'2.10.40.0.2'}, q(An IPv4 row typed local is dropped));
+  ok(!exists $red->{$RED_V6}, q(... and an IPv6 row typed local(5)));
+
+  $info->{store}{ip_n2p_phys_type} = {$RED_V6 => 4};
+  ok(exists $info->vrf_neighbors('red')->{$RED_V6},
+    q(4 is static in IP-MIB, so the row is kept));
 }
 
 sub i_vrf__context_mode__ports_with_context_addresses : Tests(3) {
