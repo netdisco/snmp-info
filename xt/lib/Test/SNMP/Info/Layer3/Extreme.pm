@@ -1550,6 +1550,19 @@ sub vrf_neighbors__voss_red_context : Tests(3) {
     'The IPv6 host, from IPV6-MIB');
 }
 
+# A VRF context that serves no rcVrfConfigTable row for its own VRF:
+# the reader cannot confirm the context, and says how to check
+sub vrf_neighbors__voss_context_without_own_row__error : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_cache([]));
+
+  _enter_vr($info, 'vrf512');
+  is($info->vrf_neighbors('MgmtRouter'), undef, 'No rows');
+  like($info->error(),
+    qr/cannot confirm that context 'vrf512' belongs to instance 'MgmtRouter'/,
+    'The error names the unconfirmed context');
+}
+
 sub vrf_addresses__voss_red_context : Tests(3) {
   my $test = shift;
   my $info = _use_cache($test, _voss_red_cache());

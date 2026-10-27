@@ -1206,7 +1206,17 @@ sub _vrf_in_own_context {
         return 0;
     }
 
-    return 1 if grep { $_ eq $context } $vrf->_vrf_contexts_of($name);
+    my @contexts = $vrf->_vrf_contexts_of($name);
+    return 1 if grep { $_ eq $context } @contexts;
+    if ( !@contexts ) {
+        $vrf->error_throw( "$method() cannot confirm that context"
+                . " '$context' belongs to instance '$name': the instance list"
+                . " this session reads names no context for '$name'. Read"
+                . " vrf_instances() in the default context to check the"
+                . " name, and use the context snmp_context('vrf', '$name')"
+                . " gives there.\n" );
+        return 0;
+    }
     $vrf->error_throw( "$method() reads instance '$name' from its own"
             . " context, but this session is in context '$context'."
             . " Switch with snmp_context('vrf', '$name') first.\n" );
