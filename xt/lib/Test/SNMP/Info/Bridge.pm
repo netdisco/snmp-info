@@ -134,8 +134,11 @@ sub stp_decode_ids : Tests(5) {
         },
         q(PVST VLAN 1 keeps the extension apart)
     );
-    cmp_deeply( $pid->('80:02'), { priority => 128, port => 2, raw => '80:02' },
-        q(Port ID decodes) );
+    cmp_deeply(
+        $pid->('80:02'),
+        { priority => 128, port => 2, raw => '80:02' },
+        q(Port ID decodes)
+    );
     is( $bid->(undef), undef, q(Undef bridge ID gives undef) );
     is( $pid->('80'),  undef, q(Short port ID gives undef) );
 }
@@ -176,7 +179,8 @@ sub stp_protocols : Tests(3) {
         ['dot1d'], q(BRIDGE-MIB tree served, protocol not served) );
 
     $test->{info}->clear_cache();
-    is( $test->{info}->stp_protocols(), undef, q(No STP data gives no protocols) );
+    is( $test->{info}->stp_protocols(),
+        undef, q(No STP data gives no protocols) );
 }
 
 sub stp_trees : Tests(3) {
@@ -211,7 +215,8 @@ sub stp_trees : Tests(3) {
         $expected, q(Default tree reported as the common tree) );
 
     $test->{info}->clear_cache();
-    cmp_deeply( $test->{info}->stp_trees(), {}, q(No STP data gives no trees) );
+    cmp_deeply( $test->{info}->stp_trees(),
+        {}, q(No STP data gives no trees) );
 }
 
 sub stp_trees_memo : Tests(3) {
@@ -244,7 +249,8 @@ sub stp_trees_context : Tests(5) {
 
     delete $sess->{Context};
     $sess->{Community} = $test->{info}{args}{Community} . '@10';
-    is( $test->{info}->stp_trees(), undef, q(Refused in a community context) );
+    is( $test->{info}->stp_trees(),
+        undef, q(Refused in a community context) );
     like( $test->{info}->error(), qr/'10'/, q(Error names the VLAN context) );
 
     local $test->{info}{args}{Community} = 'p@ss';

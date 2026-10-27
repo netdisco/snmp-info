@@ -1217,6 +1217,7 @@ sub stp_vlan_map {
         next unless $rapidcity->_rc_stg_running($stg);
         $map{$vlan} = _rc_tree_key( $stg - 1 );
     }
+    return unless keys %map;
     return \%map;
 }
 

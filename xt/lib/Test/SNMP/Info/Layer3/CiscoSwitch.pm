@@ -88,7 +88,8 @@ sub stp_trees : Tests(6) {
   delete $cache->{$_}, delete $cache->{store}{substr $_, 1}
     for qw/_stpx_faststart_oper _stpx_rstp_port_role/;
   $info->cache($cache);
-  cmp_deeply([sort { $a <=> $b } map { $_->{id} } values %{$info->stp_trees()}],
+  cmp_deeply(
+    [sort { $a <=> $b } map { $_->{id} } values %{$info->stp_trees()}],
     [1, 10, 20, 1002 .. 1005], 'No VTP types: every enabled VLAN');
 
   $info->clear_cache();

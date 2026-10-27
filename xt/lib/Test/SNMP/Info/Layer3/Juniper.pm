@@ -1027,6 +1027,8 @@ sub _stp_cache {
       jnx_msti_p_port => {
         map { $_ => $id->('8001') } qw/1.1 1.2 2.1 2.2/
       },
+      jnx_cist_p_enable => {1 => 'enabled', 2 => 'enabled'},
+      jnx_msti_p_enable => {map { $_ => 'enabled' } qw/1.1 1.2 2.1 2.2/},
     );
   }
   elsif ($protocol eq 'vstp' or $protocol eq 'vs1') {
@@ -1478,7 +1480,7 @@ sub stp_trees : Tests(16) {
   cmp_deeply($info->stp_trees(), {}, 'Nothing served: no trees');
 }
 
-sub stp_tree_ports : Tests(15) {
+sub stp_tree_ports : Tests(18) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -1493,7 +1495,7 @@ sub stp_tree_ports : Tests(15) {
       state             => 'discarding',
       role              => 'alternate',
       role_raw          => 'alternate',
-      enabled           => undef,
+      enabled           => 1,
       designated_bridge => _bridge(8192, 0, '02:00:00:00:00:0b'),
       designated_port   => {priority => 128, port => 2, raw => '80:02'},
     },
@@ -1505,6 +1507,15 @@ sub stp_tree_ports : Tests(15) {
   is($rows->{522}{state}, 'discarding', 'msti.2: 522 discarding');
   is($rows->{522}{tree_id}, 2, 'msti.2: tree id');
   is($rows->{521}{role}, 'root', 'msti.2: 521 root');
+
+  $info->{store}{jnx_msti_p_enable}{'1.2'} = 'disabled';
+  delete $info->{store}{jnx_msti_p_enable}{'2.2'};
+  $rows = $info->stp_tree_ports('msti.2');
+  is($rows->{521}{enabled}, 0, 'msti.2: ForcePortState disabled(0) is 0');
+  is($rows->{522}{enabled}, undef, 'msti.2: no ForcePortState row is undef');
+  $info->{store}{jnx_cist_p_enable}{2} = 0;
+  is($info->stp_tree_ports('cist.0')->{522}{enabled}, 0,
+    'cist.0: numeric disabled(0) is 0');
 
   $info->{store}{jnx_msti_p_state}{'9.1'} = 'forwarding';
   delete $info->{_stp_trees};
@@ -1611,6 +1622,35 @@ sub _jnx_stp_protocols__vstp : Tests(14) {
     'Incomplete control walk: none');
   is(scalar $info->stp_protocols(), undef, 'stp_protocols undef');
   is($info->stp_trees_complete(), 0, 'stp_trees_complete 0');
+}
+
+# jnx_msti_priority is walked, not primed, so the walk records the timeout
+sub _jnx_is_vstp__msti_walk_times_out__is_0 : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('vstp');
+  My::Test::Class::set_fault($test->mock_session,
+    {op => 'getnext', after => 0, ErrorNum => -24, ErrorStr => 'Timeout',
+      leaf => 'JUNIPER-MIMSTP-MIB::jnxMIMstMstiBridgePriority'});
+  cmp_deeply($info->_jnx_stp_protocols(), [],
+    'Timed-out MSTI walk: not vstp');
+  cmp_deeply($info->walk_status('jnx_msti_priority'),
+    superhashof({complete => 0, reason => 'timeout'}),
+    'The walk recorded the timeout');
+  is($info->hasVSTP(), 0, 'Not hasVSTP');
+}
+
+sub _jnx_is_vstp__sparse_control_row__no_warning : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('vstp');
+  $info->{store}{jnx_mst_control} = {1 => undef, 2 => 'shutdown'};
+  my @warnings;
+  local $SIG{__WARN__} = sub { push @warnings, @_ };
+  cmp_deeply($info->_jnx_stp_protocols(), [], 'Undefined row: not vstp');
+  cmp_deeply(\@warnings, [], 'No warning');
 }
 
 sub stp_protocols__vstp : Tests(7) {
@@ -1748,7 +1788,7 @@ sub stp_trees__vstp : Tests(8) {
   cmp_deeply([keys %{$info->stp_trees()}], ['cist.0'], 'RSTP unchanged');
 }
 
-sub stp_tree_ports__vstp : Tests(10) {
+sub stp_tree_ports__vstp : Tests(12) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -1757,6 +1797,12 @@ sub stp_tree_ports__vstp : Tests(10) {
     'Default context: nothing');
   like($info->error(1), qr/default::20/, 'Error names the context');
   like($info->error(1), qr/stp_tree_ports/, 'Error names the method');
+
+  is(scalar $info->stp_tree_ports('vlan.99'), undef,
+    'Default context, unknown VLAN: nothing');
+  like($info->error(1),
+    qr/^SNMP::Info::Layer3::Juniper::stp_tree_ports\(\) has no tree/,
+    'Error names the public method');
 
   $test->_stp_cache('vstp');
   $test->_enter_vstp_context(20);
@@ -1857,7 +1903,7 @@ sub stp_trees_complete__control_walk_incomplete__is_0 : Tests(3) {
   is($info->stp_trees_complete(), 0, 'Incomplete control walk: incomplete');
 }
 
-sub stp_vlan_map : Tests(5) {
+sub stp_vlan_map : Tests(6) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -1881,6 +1927,10 @@ sub stp_vlan_map : Tests(5) {
   $info->{store}{jnx_msti_vlans_1k}{'0.1'} = "\x00\x40";
   cmp_deeply(scalar $info->stp_vlan_map(), {10 => 'msti.1', 20 => 'msti.2'},
     'A short bitmap stands for zero-padding');
+
+  $test->_stp_cache('mstp');
+  $info->{store}{$_} = {} for map {"jnx_msti_vlans_${_}k"} 1 .. 4;
+  is(scalar $info->stp_vlan_map(), undef, 'MSTP, no VLAN mapped: nothing');
 
   $test->_stp_cache('rstp');
   is(scalar $info->stp_vlan_map(), undef, 'RSTP: nothing');

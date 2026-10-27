@@ -239,11 +239,12 @@ sub _h3c_stp_protocol {
     return 'mstp' if $version =~ /^(?:mstp|3)$/;
     return unless $version =~ /^(?:rstp|2)$/;
 
-    return unless $h3c->_h3c_stp_shape_ok(
-        qw/h3c_stp_i_id h3c_stp_i_bridge h3c_stp_p_state/);
+    # walk_status is set by the walk, so read the columns before checking it
     my $has_instances = %{ $h3c->h3c_stp_i_id() || {} };
     my $has_bridges   = %{ $h3c->h3c_stp_i_bridge() || {} };
     my $has_states    = %{ $h3c->h3c_stp_p_state() || {} };
+    return unless $h3c->_h3c_stp_shape_ok(
+        qw/h3c_stp_i_id h3c_stp_i_bridge h3c_stp_p_state/);
     return 'pvst' if $has_instances and !$has_bridges and !$has_states;
     return 'rstp';
 }
@@ -427,7 +428,10 @@ sub stp_vlan_map {
 
     return unless ( $h3c->_h3c_stp_protocol() || '' ) eq 'mstp';
     my $instances = $h3c->h3c_stp_vlan_mst() || {};
-    return { map { $_ => _h3c_tree_key( $instances->{$_} ) } keys %$instances };
+    return unless keys %$instances;
+    return {
+        map { $_ => _h3c_tree_key( $instances->{$_} ) } keys %$instances
+    };
 }
 
 # Default tree is not the common tree: dot1dStp matches no VLAN's tree under
@@ -642,8 +646,8 @@ their bridge IDs carry the instance number in the low 12 bits.  Under RSTP
 and STP the one tree comes from C<BRIDGE-MIB>, whose values the instance
 tables only copy.  The MIBs serve no port role, so C<role> and C<role_raw>
 are undef.  Physical members of a Bridge-Aggregation interface are omitted,
-as in C<i_stp_state()>.  C<measured> is 1 on Comware 7 under MSTP and RSTP.
-Under PVST, which C<hh3cdot1sStpForceVersion> does not name, the
+as in C<i_stp_state()>.  C<measured> is 1 on Comware 7 under MSTP, RSTP
+and PVST.  Under PVST, which C<hh3cdot1sStpForceVersion> does not name, the
 protocol is C<pvst> when the force version is C<rstp>, the instance table
 lists instances and neither C<hh3cdot1sMstiBridgeID> nor
 C<hh3cdot1sMstiState> has rows.  Each VLAN in the instance table (not 0)

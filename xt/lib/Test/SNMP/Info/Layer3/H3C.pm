@@ -84,7 +84,8 @@ sub i_stp_state : Tests(5) {
 
 my $COMWARE7
     = 'H3C Comware Platform Software, Software Version 7.1.059, Alpha 7159';
-my $COMWARE5 = 'H3C Comware Platform Software, Software Version 5.20, Release 2208';
+my $COMWARE5
+    = 'H3C Comware Platform Software, Software Version 5.20, Release 2208';
 
 # swC of a three-switch triangle. Ports 2 and 3 face the other switches, 4 is
 # an access port, 5 is a member of Bridge-Aggregation1. MACs are synthetic.
@@ -128,7 +129,8 @@ sub _stp_cache {
         },
     );
     $store{h3c_stp_p_bridge} = {
-        map { $_ => $id->('800002000000000a') } keys %{ $store{h3c_stp_p_state} }
+        map { $_ => $id->('800002000000000a') }
+            keys %{ $store{h3c_stp_p_state} }
     };
     $store{h3c_stp_p_port} = {
         map { $_ => $id->('8004') } keys %{ $store{h3c_stp_p_state} }
@@ -199,7 +201,8 @@ sub hasMSTP : Tests(2) {
 sub stp_protocols : Tests(4) {
     my $test = shift;
     my $info = $test->{info};
-    is( scalar $info->stp_protocols(), undef, 'Nothing served: no protocols' );
+    is( scalar $info->stp_protocols(),
+        undef, 'Nothing served: no protocols' );
     $test->_stp_cache( 'mstp', $COMWARE7 );
     cmp_deeply( $info->stp_protocols(), ['mstp'], 'mstp' );
     $info->{_h3c_stp_version} = 'rstp';
@@ -320,7 +323,8 @@ sub stp_tree_ports : Tests(12) {
     cmp_deeply( [ sort keys %{ $info->stp_tree_ports('msti.1') } ],
         [ 3, 4, 5 ], 'Without membership the port is kept' );
 
-    is( scalar $info->stp_tree_ports('msti.7'), undef, 'Unknown key: nothing' );
+    is( scalar $info->stp_tree_ports('msti.7'),
+        undef, 'Unknown key: nothing' );
     like(
         $info->error(1),
         qr/stp_tree_ports\(\) has no tree 'msti\.7'/,
@@ -350,10 +354,11 @@ sub stp_trees_complete : Tests(5) {
     $test->_pvst_cache($COMWARE7);
     is( $info->stp_trees_complete(), 1, 'PVST: every VLAN tree listed' );
     $info->session()->{Context} = 'vlan-10';
-    is( $info->stp_trees_complete(), 0, 'PVST in a context: no trees listed' );
+    is( $info->stp_trees_complete(),
+        0, 'PVST in a context: no trees listed' );
 }
 
-sub stp_vlan_map : Tests(3) {
+sub stp_vlan_map : Tests(4) {
     my $test = shift;
     my $info = $test->{info};
     $test->_stp_cache( 'mstp', $COMWARE7 );
@@ -366,8 +371,11 @@ sub stp_vlan_map : Tests(3) {
         },
         'MSTP: VLAN to tree key'
     );
+    $info->{store}{h3c_stp_vlan_mst} = {};
+    is( scalar $info->stp_vlan_map(), undef, 'MSTP, empty map: nothing' );
     $info->{_h3c_stp_version} = 'rstp';
-    is( scalar $info->stp_vlan_map(), undef, 'RSTP: the region map is unused' );
+    is( scalar $info->stp_vlan_map(), undef,
+        'RSTP: the region map is unused' );
     delete $info->{_h3c_stp_version};
     is( scalar $info->stp_vlan_map(), undef, 'Nothing served: nothing' );
 }
@@ -445,6 +453,41 @@ sub pvst_unreadable_column : Tests(4) {
     is( $info->stp_trees_complete(), 0, 'Not complete' );
     cmp_deeply( [ sort keys %{ $info->i_stp_state() } ], [ 2, 3, 4 ],
         'i_stp_state keeps its values' );
+}
+
+# The bridge column is walked, not primed, so the walk itself records its
+# timeout during the first call
+sub _h3c_stp_protocol__first_walk_times_out__is_unknown : Tests(4) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_pvst_cache($COMWARE7);
+    delete $info->{_h3c_stp_i_bridge};
+    delete $info->{store}{h3c_stp_i_bridge};
+    My::Test::Class::set_fault(
+        $test->mock_session,
+        {   op       => 'getnext',
+            leaf     => 'HH3C-LswMSTP-MIB::hh3cdot1sMstiBridgeID',
+            after    => 0,
+            ErrorNum => -24,
+            ErrorStr => 'Timeout',
+        }
+    );
+    is( scalar $info->stp_protocols(), undef, 'First call: no protocol' );
+    cmp_deeply(
+        $info->walk_status('h3c_stp_i_bridge'),
+        superhashof( { complete => 0, reason => 'timeout' } ),
+        'The walk recorded the timeout'
+    );
+
+    $test->_pvst_cache($COMWARE7);
+    delete $info->{_h3c_stp_i_bridge};
+    delete $info->{store}{h3c_stp_i_bridge};
+    My::Test::Class::set_fault( $test->mock_session,
+        $test->mock_session->{Fault} );
+    cmp_deeply( [ sort keys %{ $info->i_stp_state() } ], [ 2, 3, 4 ],
+        'First call to i_stp_state: values kept' );
+    is( $info->hasPVST(), 0, 'Not hasPVST' );
 }
 
 sub hasPVST : Tests(3) {

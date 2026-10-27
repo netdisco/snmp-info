@@ -59,7 +59,7 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
-# NX-OSv swA of the NX-OS STP survey lab (Rapid-PVST+ and MST): no VLAN 1
+# A captured NX-OSv, swA (Rapid-PVST+ and MST): no VLAN 1
 # port is up, so the default context serves no STP scalar under
 # Rapid-PVST+. cContextMappingTable names vlan-N contexts, and mst-N ones
 # under MST only.
@@ -147,7 +147,8 @@ sub stp_trees : Tests(7) {
   cmp_deeply($trees->{'vlan.10'}{contexts},
     [{kind => 'vlan', id => 10, v2c => undef, v3 => 'vlan-10'}],
     'VLAN 10 read over SNMPv3');
-  is($trees->{'vlan.10'}{root}, undef, 'No root served in the default context');
+  is($trees->{'vlan.10'}{root}, undef,
+    'No root served in the default context');
   is($trees->{'vlan.10'}{measured}, 1, 'NX-OS Rapid-PVST+ is measured');
 
   $info->clear_cache();

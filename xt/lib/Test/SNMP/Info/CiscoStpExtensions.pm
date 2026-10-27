@@ -72,7 +72,7 @@ sub _all_vlans_bitmaps {
     );
 }
 
-sub _survey_mst_bitmaps {
+sub _captured_mst_bitmaps {
     my $msti1 = shift || '0020';
     return _mst_bitmaps(
         low => {
@@ -122,7 +122,7 @@ sub _iol_pvst_cache {
 
 sub _iol_mst_cache {
     my $msti1 = shift;
-    my %bitmaps = _survey_mst_bitmaps($msti1);
+    my %bitmaps = _captured_mst_bitmaps($msti1);
     my %store = (
         'stpx_pvst_vlan_enable' => { _pvst_vlan_enable() },
         'stpx_rstp_port_role'   => {
@@ -171,7 +171,8 @@ sub _bid {
         priority   => hex($prio) & 0xf000,
         sys_id_ext => hex($prio) & 0x0fff,
         mac        => '02:00:00:00:00:' . $sw,
-        raw        => join( ':', unpack( '(A2)*', $prio . '0200000000' . $sw ) ),
+        raw        =>
+            join( ':', unpack( '(A2)*', $prio . '0200000000' . $sw ) ),
     };
 }
 
@@ -240,7 +241,8 @@ sub stp_trees : Tests(17) {
     my $cache = _iol_pvst_cache('rapidPvstPlus');
     delete $cache->{_stpx_stp_type};
     $info->cache($cache);
-    cmp_deeply( $info->stp_trees(), {}, q(No stpxSpanningTreeType: no trees) );
+    cmp_deeply( $info->stp_trees(), {},
+        q(No stpxSpanningTreeType: no trees) );
 
     $info->clear_cache();
     $cache->{_stpx_stp_type} = 'mistp';
@@ -346,7 +348,8 @@ sub stp_vlan_map : Tests(7) {
             '_stpx_smst_vlans_mapped_1k2k' => 1,
             '_stpx_smst_vlans_mapped_3k4k' => 1,
             'store'                        => {
-                'stpx_smst_vlans_mapped_1k2k' => { 1 => pack( 'H*', '0020' ) },
+                'stpx_smst_vlans_mapped_1k2k' =>
+                    { 1 => pack( 'H*', '0020' ) },
                 'stpx_smst_vlans_mapped_3k4k' =>
                     { 1 => pack( 'H*', ( '00' x 119 ) . '80' ) },
             },
@@ -388,10 +391,13 @@ sub _dot1d_rows {
         stp_p_state  => { map { $_ => $ports{$_}[0] } keys %ports },
         stp_p_enable => { map { $_ => 'enabled' } keys %ports },
         stp_p_bridge => {
-            map { $_ => pack( 'H*', $ports{$_}[1] . '0200000000' . $ports{$_}[2] ) }
-                keys %ports
+            map {
+                $_ => pack( 'H*',
+                    $ports{$_}[1] . '0200000000' . $ports{$_}[2] )
+            } keys %ports
         },
-        stp_p_port => { map { $_ => pack( 'H*', $ports{$_}[3] ) } keys %ports },
+        stp_p_port =>
+            { map { $_ => pack( 'H*', $ports{$_}[3] ) } keys %ports },
     );
     return ( ( map { ( "_$_" => 1 ) } keys %store ), store => \%store );
 }
@@ -433,7 +439,10 @@ sub stp_tree_ports : Tests(16) {
     $info->cache($default);
     cmp_deeply(
         $info->stp_tree_ports('vlan.1'),
-        { 4 => _port( 'vlan', 1, 'forwarding', 'designated', [ '8001', '0c' ], $p4 ) },
+        {   4 => _port(
+                'vlan', 1, 'forwarding', 'designated', [ '8001', '0c' ], $p4
+            )
+        },
         q(Default context: VLAN 1's port with its role)
     );
     is( $info->stp_tree_ports('vlan.10'), undef,
@@ -448,8 +457,12 @@ sub stp_tree_ports : Tests(16) {
     _in_context( $info, {%ctx10}, 10 );
     cmp_deeply(
         $info->stp_tree_ports('vlan.10'),
-        {   2 => _port( 'vlan', 10, 'forwarding', undef, [ '100a', '0a' ], $p3 ),
-            3 => _port( 'vlan', 10, 'blocking',   undef, [ '800a', '0b' ], $p3 ),
+        {   2 => _port(
+                'vlan', 10, 'forwarding', undef, [ '100a', '0a' ], $p3
+            ),
+            3 => _port(
+                'vlan', 10, 'blocking', undef, [ '800a', '0b' ], $p3
+            ),
         },
         q(IOL-L2 VLAN context: states, no role served there)
     );
@@ -498,7 +511,10 @@ sub stp_tree_ports : Tests(16) {
     $info->cache($mst);
     cmp_deeply(
         $info->stp_tree_ports('cist.0'),
-        { 4 => _port( 'cist', 0, 'forwarding', 'designated', [ '8000', '0c' ], $p4 ) },
+        {   4 => _port(
+                'cist', 0, 'forwarding', 'designated', [ '8000', '0c' ], $p4
+            )
+        },
         q(CIST: port 4 only; the trunks' roles have no ifIndex here)
     );
 

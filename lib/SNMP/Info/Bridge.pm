@@ -1170,11 +1170,11 @@ tree under RSTP and the CIST under MSTP, with its protocol unknown.
 Classes that read a vendor's protocol and trees override these methods.
 
 A class that can read which protocol a device runs also defines
-C<hasSTP()>, C<hasRSTP()>, C<hasMSTP()>, C<hasPVST()> or
-C<hasRapidPVST()>, each true when the device runs that protocol, read
-from an object that names the protocol and never from a table having
-rows.  As with C<has_topo()> in L<SNMP::Info>, test C<can()> before
-calling one.
+C<hasSTP()>, C<hasRSTP()>, C<hasMSTP()>, C<hasPVST()>,
+C<hasRapidPVST()> or C<hasVSTP()>, each true when the device runs that
+protocol, read from an object that names the protocol and never from a
+table having rows.  As with C<has_topo()> in L<SNMP::Info>, test C<can()>
+before calling one.
 
 =over
 
@@ -1197,8 +1197,8 @@ checked against the device's CLI; C<ports_complete>, false when port rows
 were dropped; C<contexts>, the contexts that serve the tree, in order, each
 as L<SNMP::Info/"snmp_context"> describes it (C<kind> C<none> means the
 default context); read the tree's ports in any one of them, and union the
-rows where several are listed; C<bridge>, the device's own bridge ID; and C<root>,
-the designated root.  Bridge IDs are hashes of C<priority>,
+rows where several are listed; C<bridge>, the device's own bridge ID; and
+C<root>, the designated root.  Bridge IDs are hashes of C<priority>,
 C<sys_id_ext>, C<mac> and C<raw>, the served value; the device's own
 C<raw> is built from C<dot1dStpPriority> and C<dot1dBaseBridgeAddress>.
 
@@ -1210,7 +1210,9 @@ list.
 
 Returns 1 when the tree list holds every tree the device runs, 0 when
 trees may exist that were not read (including a device whose class does
-not read its trees), and nothing when the device serves no tree.
+not read its trees), and nothing when the device serves no tree.  Vendor
+classes that read their own trees return 0, not nothing, when no tree was
+read.
 
 =item $bridge->stp_vlan_map()
 
@@ -1222,15 +1224,14 @@ none.  This class serves none: one C<BRIDGE-MIB> tree carries every VLAN.
 
 Returns reference to hash of port records for the tree C<$tree_key>,
 keyed by interface index (iid), read in the session's current context.
-Each record holds C<tree_type> and C<tree_id>, C<state>, C<enabled> (1 when
-the device runs spanning tree on the port, 0 when it does not, undef where
-not served), C<role> (one of C<disabled>, C<root>,
-C<designated>, C<alternate>, C<backup>, C<boundary> or C<master>, undef where
-not served or not known), C<role_raw> (the role as served, undef where not
-served), C<designated_bridge> (a bridge ID as above) and
-C<designated_port> (a hash of C<priority>, C<port> and C<raw>).  A port
-whose designated bridge is another bridge connects to that bridge's
-designated port.
+Each record holds C<tree_type> and C<tree_id>, C<state>, C<enabled> (1
+when the device runs spanning tree on the port, 0 when it does not, undef
+where not served), C<role> (one of C<disabled>, C<root>, C<designated>,
+C<alternate>, C<backup>, C<boundary> or C<master>, undef where not served
+or not known), C<role_raw> (the role as served, undef where not served),
+C<designated_bridge> (a bridge ID as above) and C<designated_port> (a hash
+of C<priority>, C<port> and C<raw>).  A port whose designated bridge is
+another bridge connects to that bridge's designated port.
 
 Returns nothing, with C<error()> set, for a key not in C<stp_trees()>.
 

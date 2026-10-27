@@ -3071,8 +3071,10 @@ Features: C<fdb>, the forwarding table (C<fw_mac()>, C<fw_port()>);
 C<stp>, the spanning tree ports (C<stp_tree_ports()>).
 
 Kinds: C<vlan>, one context per VLAN; C<mst>, one context per MST
-instance.  The answer describes the platform, not the trees or VLANs the
-device has now.
+instance.  The answer names kinds of context, not the trees or VLANs the
+device has now.  Where only one protocol uses contexts, a class answers
+while that protocol runs and returns nothing otherwise
+(L<SNMP::Info::Layer3::Juniper> for VSTP).
 
  if (my $kinds = $info->context_kinds('fdb')) {
      # Read the forwarding table once per VLAN

@@ -76,7 +76,7 @@ $VERSION = '3.982000';
 %MUNGE   = (
             %SNMP::Info::Bridge::MUNGE,
            'stpx_mst_config_digest'      => \&SNMP::Info::CiscoStpExtensions::oct2str,
-           'stpx_rstp_port_role'         => \&SNMP::Info::munge_stpx_port_role,
+           'stpx_rstp_port_role' => \&SNMP::Info::munge_stpx_port_role,
            );
 
 
@@ -335,8 +335,9 @@ sub _stpx_mst_vlans {
 
     my %vlans;
     foreach my $inst ( keys %{ { %$low, %$high } } ) {
-        my $bits = join '', map { substr( unpack( 'B*', $_ // '' ) . '0' x 2048,
-                0, 2048 ) } $low->{$inst}, $high->{$inst};
+        my $bits = join '',
+            map { substr( unpack( 'B*', $_ // '' ) . '0' x 2048, 0, 2048 ) }
+            $low->{$inst}, $high->{$inst};
         $vlans{$inst}
             = [ grep { substr( $bits, $_, 1 ) } 1 .. 4094 ];
     }
@@ -432,7 +433,8 @@ sub _stpx_mst_trees {
             root           => undef,
         };
         if ($inst) {
-            my @vlans = grep { !%listed or $listed{$_} } @{ $mapped->{$inst} };
+            my @vlans
+                = grep { !%listed or $listed{$_} } @{ $mapped->{$inst} };
             $tree->{contexts} = [ ( $own ? $own : () ),
                 map { @{ $stpx->_stpx_vlan_contexts($_) } } @vlans ];
         }
@@ -480,7 +482,8 @@ sub stp_vlan_map {
 
     my %map;
     foreach my $inst ( keys %$mapped ) {
-        $map{$_} = $inst ? "msti.$inst" : 'cist.0' foreach @{ $mapped->{$inst} };
+        $map{$_} = $inst ? "msti.$inst" : 'cist.0'
+            foreach @{ $mapped->{$inst} };
     }
     return unless keys %map;
     return \%map;

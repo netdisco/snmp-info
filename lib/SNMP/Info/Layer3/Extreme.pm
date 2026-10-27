@@ -1585,7 +1585,8 @@ C<domain.E<lt>instanceE<gt>>.
 =item $extreme->stp_tree_ports($tree_key)
 
 Returns reference to hash of the domain's port records keyed by ifIndex,
-from (C<extremeStpPortTable>).  C<role> and C<role_raw> are undef: the MIB serves none.
+from (C<extremeStpPortTable>).  C<role> and C<role_raw> are undef: the MIB
+serves none.
 
 =item $extreme->stp_trees_complete()
 

@@ -1009,7 +1009,8 @@ sub munge_stpx_port_role : Tests(8) {
     master => 'master',
   );
   my @numbers = qw/disabled root designated alternate backup boundary master/;
-  is_deeply({map { $_ => SNMP::Info::munge_stpx_port_role($_) } keys %by_label},
+  is_deeply(
+    {map { $_ => SNMP::Info::munge_stpx_port_role($_) } keys %by_label},
     \%by_label, 'Every label maps to the shared vocabulary');
   is_deeply([map { SNMP::Info::munge_stpx_port_role($_) } 1 .. 7],
     \@numbers, 'Every number maps to the shared vocabulary');
@@ -1019,7 +1020,8 @@ sub munge_stpx_port_role : Tests(8) {
   is(SNMP::Info::munge_stpx_port_role('bogus'), undef,
     'Unknown label gives undef');
   is(SNMP::Info::munge_stpx_port_role(undef), undef, 'Undef gives undef');
-  is(SNMP::Info::munge_stpx_port_role(8), undef, 'Unknown number gives undef');
+  is(SNMP::Info::munge_stpx_port_role(8), undef,
+    'Unknown number gives undef');
 }
 
 sub munge_dot1s_port_role : Tests(6) {
@@ -1035,7 +1037,8 @@ sub munge_dot1s_port_role : Tests(6) {
   is(SNMP::Info::munge_dot1s_port_role('bogus'), undef,
     'Unknown label gives undef');
   is(SNMP::Info::munge_dot1s_port_role(undef), undef, 'Undef gives undef');
-  is(SNMP::Info::munge_dot1s_port_role(6), undef, 'Unknown number gives undef');
+  is(SNMP::Info::munge_dot1s_port_role(6), undef,
+    'Unknown number gives undef');
 }
 
 sub munge_dot1w_port_role : Tests(6) {
@@ -1051,7 +1054,8 @@ sub munge_dot1w_port_role : Tests(6) {
   is(SNMP::Info::munge_dot1w_port_role('bogusPort'), undef,
     'Unknown label gives undef');
   is(SNMP::Info::munge_dot1w_port_role(undef), undef, 'Undef gives undef');
-  is(SNMP::Info::munge_dot1w_port_role(5), undef, 'Unknown number gives undef');
+  is(SNMP::Info::munge_dot1w_port_role(5), undef,
+    'Unknown number gives undef');
 }
 
 sub munge_prio_port : Tests(4) {

@@ -410,7 +410,7 @@ sub stp_trees_complete : Tests(4) {
     $info->session()->{Context} = '';
 }
 
-sub stp_vlan_map : Tests(3) {
+sub stp_vlan_map : Tests(4) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -420,6 +420,8 @@ sub stp_vlan_map : Tests(3) {
         { 1 => 'cist.0', 10 => 'msti.1', 20 => 'msti.2', 4048 => 'cist.0' },
         q(MSTP: VLANs of the SPBM tree are left out)
     );
+    $info->{store}{rc_vlan_stg} = {};
+    is( scalar $info->stp_vlan_map(), undef, q(MSTP, empty map: nothing) );
     $test->_stp_cache('rstp');
     is( scalar $info->stp_vlan_map(), undef, q(RSTP: nothing) );
     $test->_stp_cache('none');

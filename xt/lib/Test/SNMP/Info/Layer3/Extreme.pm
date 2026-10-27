@@ -376,7 +376,7 @@ sub _exos_cache {
         $tag{$inst}  = $d->{tag};
         $mac{$inst}  = _exos_bid( '8000', '0c' );
         $root{$inst} = _exos_bid( @{ $d->{root} } );
-        foreach my $if ( 1001, 1002 ) {
+        foreach my $if ( sort { $a <=> $b } keys %{ $d->{ports} } ) {
             my $p = $d->{ports}{$if};
             $mode{"$inst.$if"}    = $d->{mode};
             $state{"$inst.$if"}   = $p->[0];
@@ -388,8 +388,9 @@ sub _exos_cache {
         '_description' => 'ExtremeXOS (VM) version 33.6.1.14 33.6.1.14',
         '_dot1dStpVersion' => $arg{version},
         map( { ( "_$_" => 1 ) }
-            qw/ex_stp_i_name ex_stp_i_tag ex_stp_i_mac stp_i_root ex_stp_p_mode
-                stp_p_state stp_p_bridge stp_p_port ex_stp_vlan_mask ex_vlan_id/
+            qw/ex_stp_i_name ex_stp_i_tag ex_stp_i_mac stp_i_root
+                ex_stp_p_mode stp_p_state stp_p_bridge stp_p_port
+                ex_stp_vlan_mask ex_vlan_id/
         ),
         'store' => {
             'ex_stp_i_name'    => \%name,
@@ -541,9 +542,10 @@ sub stp_trees : Tests(14) {
     $trees = $test->{info}->stp_trees();
     is( $trees->{'domain.1'}{protocol}, 'stp',
         q(s0 under PVST+: version 0 and 802.1D ports) );
-    is( $trees->{'domain.2'}{protocol}, 'pvst', q(pvstp ports make s1 PVST+) );
-    is( $trees->{'domain.2'}{vlan},     10,     q(s1 carries its tag) );
-    is( $trees->{'domain.3'}{vlan},     20,     q(s2 carries its tag) );
+    is( $trees->{'domain.2'}{protocol},
+        'pvst', q(pvstp ports make s1 PVST+) );
+    is( $trees->{'domain.2'}{vlan}, 10, q(s1 carries its tag) );
+    is( $trees->{'domain.3'}{vlan}, 20, q(s2 carries its tag) );
     ok( !exists $trees->{'domain.1'}{vlan}, q(s0 tag 0 gives no vlan) );
 
     $test->{info}->clear_cache();
@@ -584,7 +586,8 @@ sub stp_tree_ports : Tests(5) {
             role_raw          => undef,
             enabled           => undef,
             designated_bridge => _exos_bid_rec( $prio, $sw ),
-            designated_port   => { priority => 128, port => 2, raw => '80:02' },
+            designated_port   =>
+                { priority => 128, port => 2, raw => '80:02' },
         };
     };
     cmp_deeply(
