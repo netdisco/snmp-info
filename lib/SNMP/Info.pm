@@ -2455,7 +2455,7 @@ sub device_type {
     # LigoDLB radios report a generic enterprise sysObjectID and sysServices
     # that does not identify them as a Layer 2 device. Match their product
     # description before the generic layer-based fallbacks.
-    if ( $id eq '32750' and $desc =~ /^LigoDLB\b/i ) {
+    if ( defined $id and $id eq '32750' and $desc =~ /^LigoDLB\b/i ) {
         return 'SNMP::Info::Layer2::LigoWave';
     }
 

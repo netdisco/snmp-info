@@ -50,14 +50,16 @@ $VERSION = '3.982000';
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
     %SNMP::Info::IEEE802dot11::GLOBALS,
+    # LIGO-GENERIC-MIB subtree, beyond the published objects
     'ligo_unit_id' => '.1.3.6.1.4.1.32750.3.1.1.1.0.1.2.0',
 );
 
 %FUNCS = (
     %SNMP::Info::Layer2::FUNCS,
     %SNMP::Info::IEEE802dot11::FUNCS,
-    # The LigoWave private MIB is not included in netdisco-mibs. Keep these
-    # documented table columns numeric until that MIB is available there.
+    # LIGO-WIRELESS-MIB, read by numeric OID until netdisco-mibs#310 is
+    # released. ligoWiIfConfTable columns 1 to 16, in MIB order, from
+    # ligoWiIfMacAddress to ligoWiIfAssocNodeCount:
     'ligo_wifi_mac'         => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.1',
     'ligo_wifi_protocol'    => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.2',
     'ligo_wifi_mode'        => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.3',
@@ -66,19 +68,18 @@ $VERSION = '3.982000';
     'ligo_wifi_frequency'   => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.6',
     'ligo_wifi_channel'     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.7',
     'ligo_wifi_width'       => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.8',
-    'ligo_wifi_tx_streams'  => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.9',
+    'ligo_wifi_encryption'  => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.9',
     'ligo_wifi_tx_power'    => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.10',
     'ligo_wifi_bitrate'     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.11',
     'ligo_wifi_snr'         => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.12',
-    'ligo_wifi_quality'     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.13',
+    'ligo_wifi_max_snr'     => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.13',
     'ligo_wifi_signal'      => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.14',
     'ligo_wifi_noise'       => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.15',
-    # The released LIGO-WIRELESS-MIB defines column 16 as the number of
-    # associated nodes, not an interface status.
     'ligo_wifi_assoc_count' => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.16',
+    # Column 17 is served beyond the published table.
     'ligo_wifi_state'       => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.17',
-    # Netdisco reads these standard wireless interface methods.
-    'i_ssidlist'            => '.1.3.6.1.4.1.32750.3.10.1.2.1.1.4',
+    # ligoWiRemoteNodeStatsTable, ligoWiRmtNode*; the agent also serves
+    # columns 7 to 11, beyond the published table.
     'ligo_peer_mac'         => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.1',
     'ligo_peer_associated'  => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.2',
     'ligo_peer_tx_bytes'    => '.1.3.6.1.4.1.32750.3.10.1.3.2.1.3',
@@ -119,18 +120,53 @@ sub os_ver {
     return $self->SUPER::os_ver();
 }
 
-# LigoWave's wireless configuration table is indexed by IF-MIB ifIndex, so
-# its ESSID and MAC columns provide the standard SSID interface data directly.
-sub i_ssidmac {
-    my ( $self, $partial ) = @_;
-    return $self->ligo_wifi_mac($partial) || {};
+# ligoWiIfConfTable says INDEX { ifIndex }, but the agent numbers its rows
+# otherwise (7 and 10 on captures where ath0 is ifIndex 410). Join each row
+# to the athN interface that has the row's MAC address.
+sub _ligo_wifi_ifindex {
+    my $self     = shift;
+    my $wifi_mac = $self->ligo_wifi_mac() || {};
+    my $names    = $self->interfaces()    || {};
+    my $macs     = $self->i_mac()         || {};
+
+    my @radios = grep { ( $names->{$_} || '' ) =~ /^ath\d+$/ } keys %$names;
+    my %ifindex;
+    foreach my $row ( keys %$wifi_mac ) {
+        my $mac = lc( $wifi_mac->{$row} || '' );
+        my @match = grep { lc( $macs->{$_} || '' ) eq $mac } @radios;
+        $ifindex{$row} = $match[0] if $mac and @match == 1;
+    }
+    return \%ifindex;
 }
 
-# LigoWave publishes the current channel in its wireless table; the inherited
-# IEEE802dot11 table is not populated on the tested firmware.
+sub _ligo_by_ifindex {
+    my ( $self, $column, $partial ) = @_;
+    my $values  = $self->$column() || {};
+    my $ifindex = $self->_ligo_wifi_ifindex();
+    my %by_ifindex;
+    foreach my $row ( keys %$ifindex ) {
+        next if defined $partial and $ifindex->{$row} ne $partial;
+        next unless defined $values->{$row};
+        $by_ifindex{ $ifindex->{$row} } = $values->{$row};
+    }
+    return \%by_ifindex;
+}
+
+sub i_ssidlist {
+    my ( $self, $partial ) = @_;
+    return $self->_ligo_by_ifindex( 'ligo_wifi_essid', $partial );
+}
+
+sub i_ssidmac {
+    my ( $self, $partial ) = @_;
+    return $self->_ligo_by_ifindex( 'ligo_wifi_mac', $partial );
+}
+
+# The inherited IEEE802dot11 channel method needs dot11PHYType, which this
+# firmware does not serve.
 sub i_80211channel {
     my ( $self, $partial ) = @_;
-    return $self->ligo_wifi_channel($partial) || {};
+    return $self->_ligo_by_ifindex( 'ligo_wifi_channel', $partial );
 }
 
 sub _vlan_interfaces {
@@ -205,6 +241,13 @@ SNMP::Info Developers
      Version     => 2,
  );
 
+=head1 DESCRIPTION
+
+Identifies LigoDLB radios, and reports model and firmware from C<sysDescr>.
+Reports the SSID and channel on the radio interface, and logical VLAN
+interfaces. The tested devices do not serve IP-MIB addresses, BRIDGE-MIB or
+Q-BRIDGE-MIB.
+
 =head2 Inherited Classes
 
 =over
@@ -217,34 +260,31 @@ SNMP::Info Developers
 
 =head2 Required MIBs
 
-No additional MIBs are required. LigoWave tables are read by numeric OID
-while their vendor MIB contribution is pending in netdisco-mibs.
+None. The F<LIGO-WIRELESS-MIB> and F<LIGO-GENERIC-MIB> objects are read by
+numeric OID until those MIBs are in a netdisco-mibs release.
 
 =head2 Inherited MIBs
 
-See L<SNMP::Info::IEEE802dot11/Required MIBs> and
-L<SNMP::Info::Layer2/Required MIBs> for inherited MIB requirements.
+See L<SNMP::Info::IEEE802dot11/"Required MIBs"> and
+L<SNMP::Info::Layer2/"Required MIBs"> for their MIB requirements.
 
-=head1 DESCRIPTION
+=head1 GLOBALS
 
-Identifies LigoDLB devices and parses the model and firmware version from
-C<sysDescr>. Exposes the wireless-interface and remote-node columns provided
-under the LigoWave enterprise MIB.
+These are methods that return scalar values.
 
-On tested firmware, VLAN 99 appears as logical interfaces named C<br99>,
-C<eth0.99>, and C<ath0.99>. VLAN methods report these logical interfaces;
-they do not imply switch-port VLAN membership. The tested devices do not
-implement the standard IP address or bridge VLAN tables.
+=over
 
-The C<ligo_unit_id> scalar is distinct on the tested devices, but the published
-vendor MIB does not identify it as a serial number, so it is not returned by
-C<serial()>.
+=item $ligo->ligo_unit_id()
 
-=head1 METHODS
+Returns a unit identifier from the F<LIGO-GENERIC-MIB> subtree, beyond the
+published objects. It differs between devices, but the MIB does not call it
+a serial number, so C<serial()> does not use it.
 
-=head2 Device identity
+=back
 
-=over 4
+=head2 Overrides
+
+=over
 
 =item $ligo->vendor()
 
@@ -252,7 +292,7 @@ Returns C<ligowave>.
 
 =item $ligo->model()
 
-Returns the model name parsed from C<sysDescr>, without the firmware version.
+Returns the model name from C<sysDescr>, without the firmware version.
 
 =item $ligo->os()
 
@@ -260,165 +300,264 @@ Returns C<ligowave os>.
 
 =item $ligo->os_ver()
 
-Returns the firmware version parsed from C<sysDescr>.
+Returns the firmware version from C<sysDescr>.
 
 =back
 
-=head2 Wireless and peer tables
+=head2 Global Methods imported from SNMP::Info::IEEE802dot11
 
-The following methods return hash references keyed by the LigoWave table
-instance. Wireless values describe the local radio. Peer values describe its
-associated remote radio.
+See L<SNMP::Info::IEEE802dot11/"GLOBALS"> for details.
 
-=over 4
+=head2 Global Methods imported from SNMP::Info::Layer2
 
-=item ligo_wifi_mac()
+See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
-Radio MAC address.
+=head1 TABLE METHODS
 
-=item ligo_wifi_protocol()
+These are methods that return tables of information in the form of a reference
+to a hash.
 
-Wireless protocol name.
+=head2 Overrides
 
-=item ligo_wifi_mode()
+The firmware represents a VLAN as logical interfaces, such as C<br99>,
+C<eth0.99> and C<ath0.99>. These methods report those interfaces, not
+switch-port membership.
 
-Wireless operating mode code.
-
-=item ligo_wifi_essid()
-
-Configured wireless network name.
-
-=item ligo_wifi_country()
-
-Configured regulatory country code.
-
-=item ligo_wifi_frequency()
-
-Radio frequency in MHz.
-
-=item ligo_wifi_channel()
-
-Configured wireless channel.
-
-=item ligo_wifi_width()
-
-Configured channel width in MHz.
-
-=item ligo_wifi_tx_streams()
-
-Number of transmit streams.
-
-=item ligo_wifi_tx_power()
-
-Transmit power reported by the radio.
-
-=item ligo_wifi_bitrate()
-
-Wireless bitrate reported by the radio.
-
-=item ligo_wifi_snr()
-
-Signal-to-noise ratio reported by the radio.
-
-=item ligo_wifi_quality()
-
-Wireless link quality value reported by the radio.
-
-=item ligo_wifi_signal()
-
-Received signal level in dBm.
-
-=item ligo_wifi_noise()
-
-Noise level in dBm.
-
-=item ligo_wifi_assoc_count()
-
-Number of associated remote nodes reported for the wireless interface.
-
-=item ligo_wifi_state()
-
-Text wireless interface state.
-
-=item ligo_peer_mac()
-
-Associated peer MAC address.
-
-=item ligo_peer_associated()
-
-Peer association status.
-
-=item ligo_peer_tx_bytes()
-
-Bytes transmitted to the peer.
-
-=item ligo_peer_rx_bytes()
-
-Bytes received from the peer.
-
-=item ligo_peer_signal()
-
-Signal level reported for the peer link in dBm.
-
-=item ligo_peer_noise()
-
-Noise level reported for the peer link in dBm.
-
-=item ligo_peer_ip()
-
-Peer management address.
-
-=item ligo_peer_remote_port()
-
-Remote port value reported by the peer table.
-
-=item ligo_peer_name()
-
-Peer name.
-
-=item ligo_peer_rx_rate()
-
-Receive rate reported for the peer link.
-
-=item ligo_peer_tx_rate()
-
-Transmit rate reported for the peer link.
-
-=back
-
-=head2 VLAN and wireless methods
-
-=over 4
+=over
 
 =item $ligo->v_name()
 
-Returns VLAN IDs and labels inferred from logical interface names such as
-C<br99> and C<eth0.99>.
+Returns reference to hash. Key: VLAN ID, Value: C<VLAN> and the ID.
 
 =item $ligo->v_index()
 
-Returns the VLAN IDs as both keys and values.
+Returns reference to hash. Key: VLAN ID, Value: VLAN ID.
 
 =item $ligo->i_vlan_membership()
 
-Associates each recognized logical VLAN interface with its VLAN ID.
+Returns reference to hash. Key: ifIndex of a logical VLAN interface, Value:
+array reference holding its VLAN ID.
 
 =item $ligo->i_vlan_membership_untagged()
 
-Returns an empty hash reference because untagged membership is not reported.
+Returns reference to an empty hash: untagged membership is not reported.
+
+=back
+
+=head2 LigoWave Wireless Interface Table (C<ligoWiIfConfTable>)
+
+Keys are the agent's row number, which does not equal the ifIndex.
+
+=over
+
+=item $ligo->ligo_wifi_mac()
+
+Returns reference to hash. Key: row, Value: radio MAC address.
+
+(C<ligoWiIfMacAddress>)
+
+=item $ligo->ligo_wifi_protocol()
+
+Returns reference to hash. Key: row, Value: wireless protocol name.
+
+(C<ligoWiIfProtocol>)
+
+=item $ligo->ligo_wifi_mode()
+
+Returns reference to hash. Key: row, Value: operating mode.
+
+(C<ligoWiIfMode>)
+
+=item $ligo->ligo_wifi_essid()
+
+Returns reference to hash. Key: row, Value: SSID.
+
+(C<ligoWiIfESSID>)
+
+=item $ligo->ligo_wifi_country()
+
+Returns reference to hash. Key: row, Value: regulatory country code.
+
+(C<ligoWiIfCountryCode>)
+
+=item $ligo->ligo_wifi_frequency()
+
+Returns reference to hash. Key: row, Value: frequency in MHz.
+
+(C<ligoWiIfFrequency>)
+
+=item $ligo->ligo_wifi_channel()
+
+Returns reference to hash. Key: row, Value: channel.
+
+(C<ligoWiIfChannel>)
+
+=item $ligo->ligo_wifi_width()
+
+Returns reference to hash. Key: row, Value: channel width.
+
+(C<ligoWiIfChannelBandwidth>)
+
+=item $ligo->ligo_wifi_encryption()
+
+Returns reference to hash. Key: row, Value: encryption mode.
+
+(C<ligoWiIfEncryption>)
+
+=item $ligo->ligo_wifi_tx_power()
+
+Returns reference to hash. Key: row, Value: transmit power.
+
+(C<ligoWiIfTxPower>)
+
+=item $ligo->ligo_wifi_bitrate()
+
+Returns reference to hash. Key: row, Value: bit rate.
+
+(C<ligoWiIfBitRate>)
+
+=item $ligo->ligo_wifi_snr()
+
+Returns reference to hash. Key: row, Value: signal-to-noise ratio.
+
+(C<ligoWiIfSNR>)
+
+=item $ligo->ligo_wifi_max_snr()
+
+Returns reference to hash. Key: row, Value: maximum signal-to-noise ratio.
+
+(C<ligoWiIfMaxSNR>)
+
+=item $ligo->ligo_wifi_signal()
+
+Returns reference to hash. Key: row, Value: signal level in dBm.
+
+(C<ligoWiIfSignalLevel>)
+
+=item $ligo->ligo_wifi_noise()
+
+Returns reference to hash. Key: row, Value: noise level in dBm.
+
+(C<ligoWiIfNoiseLevel>)
+
+=item $ligo->ligo_wifi_assoc_count()
+
+Returns reference to hash. Key: row, Value: number of associated remote nodes.
+
+(C<ligoWiIfAssocNodeCount>)
+
+=item $ligo->ligo_wifi_state()
+
+Returns reference to hash. Key: row, Value: interface state. Column 17,
+beyond the published table.
+
+=back
+
+=head2 LigoWave Remote Node Table (C<ligoWiRemoteNodeStatsTable>)
+
+Keys are C<0>, the address length and the remote node's MAC address, as
+the agent serves them.
+
+=over
+
+=item $ligo->ligo_peer_mac()
+
+Returns reference to hash. Key: node, Value: remote node MAC address.
+
+(C<ligoWiRmtNodeMacAddress>)
+
+=item $ligo->ligo_peer_associated()
+
+Returns reference to hash. Key: node, Value: association status.
+
+(C<ligoWiRmtNodeAssociated>)
+
+=item $ligo->ligo_peer_tx_bytes()
+
+Returns reference to hash. Key: node, Value: bytes transmitted to the node.
+
+(C<ligoWiRmtNodeTxBytes>)
+
+=item $ligo->ligo_peer_rx_bytes()
+
+Returns reference to hash. Key: node, Value: bytes received from the node.
+
+(C<ligoWiRmtNodeRxBytes>)
+
+=item $ligo->ligo_peer_signal()
+
+Returns reference to hash. Key: node, Value: signal level in dBm.
+
+(C<ligoWiRmtNodeSignalLevel>)
+
+=item $ligo->ligo_peer_noise()
+
+Returns reference to hash. Key: node, Value: noise level in dBm.
+
+(C<ligoWiRmtNodeNoiseLevel>)
+
+=item $ligo->ligo_peer_ip()
+
+Returns reference to hash. Key: node, Value: remote node management address.
+Column 7, beyond the published table.
+
+=item $ligo->ligo_peer_remote_port()
+
+Returns reference to hash. Key: node, Value: remote port value.
+Column 8, beyond the published table.
+
+=item $ligo->ligo_peer_name()
+
+Returns reference to hash. Key: node, Value: remote node name.
+Column 9, beyond the published table.
+
+=item $ligo->ligo_peer_rx_rate()
+
+Returns reference to hash. Key: node, Value: receive rate.
+Column 10, beyond the published table.
+
+=item $ligo->ligo_peer_tx_rate()
+
+Returns reference to hash. Key: node, Value: transmit rate.
+Column 11, beyond the published table.
+
+=back
+
+=head2 802.11 Interface Table Emulation
+
+These methods emulate the F<IEEE802dot11-MIB> SSID and channel methods using
+the F<LIGO-WIRELESS-MIB> C<ligoWiIfConfTable>. Each row is matched to the
+C<athN> interface whose C<ifPhysAddress> equals the row's MAC address. A row
+that matches no interface, or several, is left out.
+
+=over
 
 =item $ligo->i_ssidlist()
 
-Returns the SSID configured on each wireless interface.
+Returns reference to hash. Key: ifIndex, Value: SSID.
+
+(C<ligoWiIfESSID>)
 
 =item $ligo->i_ssidmac()
 
-Returns the wireless interface MAC address keyed by its ifIndex.
+Returns reference to hash. Key: ifIndex, Value: BSSID.
+
+(C<ligoWiIfMacAddress>)
 
 =item $ligo->i_80211channel()
 
-Returns the current channel for each wireless interface.
+Returns reference to hash. Key: ifIndex, Value: channel.
+
+(C<ligoWiIfChannel>)
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::IEEE802dot11
+
+See L<SNMP::Info::IEEE802dot11/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =cut
