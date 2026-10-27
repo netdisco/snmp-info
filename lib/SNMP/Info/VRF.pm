@@ -288,6 +288,82 @@ sub _vrf_split_agent {
     return %$members ? 0 : 1;
 }
 
+# ARP and IPv6 neighbor rows of one instance, keyed as the source tables
+# are: ifIndex, then the address arcs. Attribution mode keeps the rows whose
+# port belongs to the instance; context mode already reads one instance.
+sub vrf_neighbors {
+    my $vrf  = shift;
+    my $name = shift;
+
+    return unless defined $name and $vrf->_vrf_in_reader_context($name);
+    my $context_mode = $vrf->_vrf_context_filters();
+    return if !$context_mode and !$vrf->_vrf_is_listed($name);
+
+    my %rows = ( %{ $vrf->_vrf_arp_rows() }, %{ $vrf->_vrf_nd_rows() } );
+    return \%rows if $context_mode;
+
+    foreach my $key ( keys %rows ) {
+        my $owner = $vrf->_vrf_owner_of( $rows{$key}{ifindex} );
+        delete $rows{$key} if !defined $owner or $owner ne $name;
+    }
+    return \%rows;
+}
+
+sub _vrf_is_listed {
+    my $vrf  = shift;
+    my $name = shift;
+
+    my $instances = $vrf->vrf_instances() or return 0;
+    return exists $instances->{$name} ? 1 : 0;
+}
+
+# A method the class does not have contributes no rows
+sub _vrf_column {
+    my $vrf    = shift;
+    my $method = shift;
+
+    return {} unless $vrf->can($method);
+    return $vrf->$method() || {};
+}
+
+sub _vrf_arp_rows {
+    my $vrf = shift;
+
+    my $macs = $vrf->_vrf_column('at_paddr');
+    my $ips  = $vrf->_vrf_column('at_netaddr');
+    my %rows;
+    foreach my $key ( keys %$macs ) {
+        my ($ifindex) = $key =~ /^(\d+)\./ or next;
+        next unless defined $ips->{$key} and defined $macs->{$key};
+        $rows{$key} = {
+            ifindex => $ifindex,
+            ip      => $ips->{$key},
+            mac     => $macs->{$key},
+            family  => 'ipv4',
+        };
+    }
+    return \%rows;
+}
+
+sub _vrf_nd_rows {
+    my $vrf = shift;
+
+    my $macs = $vrf->_vrf_column('ipv6_n2p_mac');
+    my $ips  = $vrf->_vrf_column('ipv6_n2p_addr');
+    my $ifs  = $vrf->_vrf_column('ipv6_n2p_if');
+    my %rows;
+    foreach my $key ( keys %$macs ) {
+        next unless defined $ips->{$key} and defined $ifs->{$key};
+        $rows{$key} = {
+            ifindex => $ifs->{$key},
+            ip      => $ips->{$key},
+            mac     => $macs->{$key},
+            family  => 'ipv6',
+        };
+    }
+    return \%rows;
+}
+
 sub _vrf_context_filters { return 0; }
 
 sub _vrf_internal_instance { return 0; }
@@ -435,6 +511,14 @@ given. A device that reports zero configured VRFs returns 1.
 Returns a hashref of VRF name keyed by ifIndex, from the active rows of
 F<MPLS-L3VPN-STD-MIB> C<mplsL3VpnIfConfTable>. Ports in the default instance
 are absent. Reads the default context only.
+
+=item $vrf->vrf_neighbors($name)
+
+Returns a hashref of the neighbor rows of instance C<$name>, keyed by
+ifIndex and address as C<at_paddr> and C<ipv6_n2p_mac> key them. Each row
+holds C<ifindex>, C<ip>, C<mac> and C<family> (C<ipv4> or C<ipv6>). Returns
+nothing for a name the device does not list, or when the session is in the
+wrong context for the device; the error says how to change it.
 
 =back
 

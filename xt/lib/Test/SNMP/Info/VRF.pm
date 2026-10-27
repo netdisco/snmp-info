@@ -33,6 +33,7 @@ package Test::SNMP::Info::VRF;
 use Test::Class::Most parent => 'My::Test::Class';
 
 use SNMP::Info::VRF;
+use SNMP::Info::Layer3;
 use Sub::Util 'set_subname';
 use Carp 'croak';
 
@@ -511,6 +512,150 @@ sub vrf_owner_of : Tests(4) {
   is($test->{info}->_vrf_owner_of(2), undef,
     q(Unknown when i_vrf is refused in a context));
   ok(defined &SNMP::Info::VRF::_vrf_owner_of, q(Owner lookup is defined));
+}
+
+my @NEIGHBOR_PARENTS = ('SNMP::Info::VRF', 'SNMP::Info::Layer3');
+
+# ipNetToMediaTable rows of an IOS-XE device: 10.40.0.1 is served on
+# ifIndex 2 (red) and ifIndex 3 (blue). IPv6 comes from ipNetToPhysicalTable.
+my $RED_V6 = '2.2.16.32.1.13.184.0.64.0.0.0.0.0.0.0.0.0.2';
+
+sub _prime_neighbors {
+  my $test = shift;
+  my $info = shift;
+
+  # The cache holds the raw octets; the munge turns them into text
+  my %arp = map { $_->[0] => pack('C6', 2, 0, 0, 0, 0, $_->[1]) } (
+    ['1.172.20.20.1' => 1],
+    ['2.10.40.0.1'   => 2],
+    ['2.10.40.0.2'   => 3],
+    ['3.10.40.0.1'   => 4],
+    ['3.10.40.0.2'   => 5],
+    ['4.10.41.0.2'   => 6],
+  );
+  my %ips = map { my $ip = $_; $ip =~ s/^\d+\.//; ($_ => $ip) } keys %arp;
+  $info->{_at_paddr}               = 1;
+  $info->{_at_netaddr}             = 1;
+  $info->{_ip_n2p_phys_addr}       = 1;
+  $info->{store}{at_paddr}         = \%arp;
+  $info->{store}{at_netaddr}       = \%ips;
+  $info->{store}{ip_n2p_phys_addr} = {$RED_V6 => pack('C6', 2, 0, 0, 0, 0, 7)};
+  return;
+}
+
+sub _neighbor_info {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::Neighbors',
+    \@NEIGHBOR_PARENTS);
+  $test->{info} = $info;
+  $test->_prime_vrf_table();
+  $test->_prime_members();
+  $test->_prime_neighbors($info);
+  return $info;
+}
+
+sub vrf_neighbors : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'vrf_neighbors');
+  my $info = $test->_neighbor_info();
+  cmp_deeply(
+    $info->vrf_neighbors('blue')->{'3.10.40.0.2'},
+    {
+      ifindex => 3,
+      ip      => '10.40.0.2',
+      mac     => '02:00:00:00:00:05',
+      family  => 'ipv4',
+    },
+    q(A neighbor row holds its port, address, MAC and family)
+  );
+}
+
+sub vrf_neighbors__overlapping_ip__each_vrf_keeps_its_row : Tests(4) {
+  my $test = shift;
+
+  my $info = $test->_neighbor_info();
+  my $red  = $info->vrf_neighbors('red');
+  my $blue = $info->vrf_neighbors('blue');
+  cmp_deeply([grep { /^\d+\.10\.40/ } sort keys %$red],
+    ['2.10.40.0.1', '2.10.40.0.2'], q(red holds its two rows on ifIndex 2));
+  cmp_deeply([sort keys %$blue], ['3.10.40.0.1', '3.10.40.0.2'],
+    q(blue holds its two rows on ifIndex 3));
+  is($red->{'2.10.40.0.1'}{ip}, '10.40.0.1', q(red has 10.40.0.1));
+  isnt($red->{'2.10.40.0.1'}{mac}, $blue->{'3.10.40.0.1'}{mac},
+    q(... with a different MAC than blue's 10.40.0.1));
+}
+
+sub vrf_neighbors__unmapped_port__belongs_to_default : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_neighbor_info();
+  cmp_deeply([sort keys %{$info->vrf_neighbors('default')}],
+    ['1.172.20.20.1'], q(default holds the port i_vrf does not list));
+}
+
+sub vrf_neighbors__ipv6__attributed_by_ifindex : Tests(3) {
+  my $test = shift;
+
+  my $info = $test->_neighbor_info();
+  cmp_deeply(
+    $info->vrf_neighbors('red')->{$RED_V6},
+    {
+      ifindex => 2,
+      ip      => '2001:0db8:0040:0000:0000:0000:0000:0002',
+      mac     => '02:00:00:00:00:07',
+      family  => 'ipv6',
+    },
+    q(red holds the IPv6 row, attributed by its ifIndex)
+  );
+  ok(!exists $info->vrf_neighbors('blue')->{$RED_V6},
+    q(blue does not hold it));
+  ok(!exists $info->vrf_neighbors('default')->{$RED_V6},
+    q(default does not hold it));
+}
+
+sub vrf_neighbors__unknown_name__returns_nothing : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_neighbor_info();
+  is(scalar $info->vrf_neighbors('purple'), undef,
+    q(An instance the device does not list has no neighbors));
+}
+
+sub vrf_neighbors__role_without_neighbor_methods__has_no_rows : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_vrf_table();
+  cmp_deeply($test->{info}->vrf_neighbors('default'), {},
+    q(A class with no at_* or ipv6_n2p_* methods contributes no rows));
+}
+
+sub vrf_neighbors__context_mode__rows_not_filtered_by_owner : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::NeighborContext',
+    \@NEIGHBOR_PARENTS, _vrf_context_filters => sub { 1 });
+  $test->{info} = $info;
+  $test->_prime_members();
+  $test->_prime_neighbors($info);
+  $test->_enter_context($info);
+  my $rows = $info->vrf_neighbors('red');
+  cmp_deeply([sort keys %$rows],
+    [sort('1.172.20.20.1', '2.10.40.0.1', '2.10.40.0.2', '3.10.40.0.1',
+      '3.10.40.0.2', '4.10.41.0.2', $RED_V6)],
+    q(Every row the context serves is kept, whatever i_vrf says));
+  is($rows->{'3.10.40.0.1'}{ifindex}, 3, q(... with its own ifIndex));
+}
+
+sub vrf_neighbors__attribution_in_vrf_context__throws : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_neighbor_info();
+  $test->_enter_context($info);
+  is(scalar $info->vrf_neighbors('red'), undef, q(Refused in a context));
+  like($info->error(), qr/^\S+vrf_neighbors\(\) reads instance 'red'/,
+    q(Error names the reader));
 }
 
 1;
