@@ -57,7 +57,12 @@ $VERSION = '3.982000';
     'teltonika_firmware'  => '.1.3.6.1.4.1.48690.1.6.0',
 );
 
-%FUNCS = (%SNMP::Info::Layer3::NetSNMP::FUNCS);
+%FUNCS = (
+    %SNMP::Info::Layer3::NetSNMP::FUNCS,
+    # TELTONIKA-MIB portTable pName on TSW switches. That MIB shares its
+    # module name with the RUT9xx one in netdisco-mibs, so read it by OID.
+    'teltonika_port_name' => '.1.3.6.1.4.1.48690.10.2.1.2',
+);
 %MUNGE = (%SNMP::Info::Layer3::NetSNMP::MUNGE);
 
 sub vendor { return 'teltonika'; }
@@ -83,6 +88,40 @@ sub serial {
     my $serial = $dev->serial1();
     return $serial if defined $serial and $serial =~ /\S/;
     return $dev->SUPER::serial();
+}
+
+# TSW switches serve dot1dTpFdbPort but no dot1dBasePortIfIndex. Their port
+# table rows are numbered as the bridge numbers its ports, so join each row
+# to the interface whose ifDescr carries the same name.
+sub bp_index {
+    my $dev = shift;
+    my $standard = $dev->SUPER::bp_index();
+    return $standard if ref {} eq ref $standard and scalar keys %$standard;
+
+    my $port_names = $dev->teltonika_port_name() || {};
+    my $i_descr    = $dev->i_description()       || {};
+    my %ifindex_by_name;
+    foreach my $ifindex ( keys %$i_descr ) {
+        my $name = $i_descr->{$ifindex};
+        next unless defined $name;
+        push @{ $ifindex_by_name{$name} }, $ifindex;
+    }
+
+    my %rows_named;
+    foreach my $name ( values %$port_names ) {
+        next unless defined $name;
+        $rows_named{$name}++;
+    }
+
+    my %bp_index;
+    foreach my $bridge_port ( keys %$port_names ) {
+        my $name = $port_names->{$bridge_port};
+        next unless defined $name and $rows_named{$name} == 1;
+        my $matches = $ifindex_by_name{$name};
+        next unless $matches and @$matches == 1;
+        $bp_index{$bridge_port} = $matches->[0];
+    }
+    return \%bp_index;
 }
 
 1;
@@ -171,5 +210,31 @@ behavior when the Teltonika serial object is empty.
 Interface filtering and system uptime are inherited from
 L<SNMP::Info::Layer3::NetSNMP>. Other table methods are inherited from
 L<SNMP::Info::Layer3>.
+
+=head2 Overrides
+
+=over
+
+=item $info->bp_index()
+
+Returns reference to hash. Key: bridge port, Value: ifIndex. Uses
+C<dot1dBasePortIfIndex> where the device serves it. TSW switches do not,
+so each Teltonika port table row is matched to the interface whose
+C<ifDescr> equals its name; a name that matches no interface, or several,
+is left out.
+
+=back
+
+=head2 Teltonika Port Table (C<portTable>)
+
+=over
+
+=item $info->teltonika_port_name()
+
+Returns reference to hash. Key: port number, Value: port name.
+
+(C<pName>, C<.1.3.6.1.4.1.48690.10.2.1.2>)
+
+=back
 
 =cut
