@@ -31,6 +31,8 @@ Version 3.983000
     standard wireless methods, including each client's SSID (#496)
   * #644 Agent skills: check a class against a walk before review, and
     find the skills from Codex as well
+  * #646 Teltonika: map TSW switch bridge ports to interfaces by port
+    name, so MAC addresses land on ports (#634)
 
   [BUG FIXES]
 
