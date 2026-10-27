@@ -465,8 +465,9 @@ each VRF context serves only that VRF's address rows, while C<ifTable> is
 not scoped and the default context serves the IPv6 neighbors of every
 VRF's ports.  The readers therefore keep only rows on ports holding an
 address in the current context.  C<cContextMappingTable> lists the VRFs;
-any row it serves lists C<default> too, so a device that maps only VLAN
-or MST contexts reports C<vrf_instances_complete()> 1, none configured.
+a device that maps only VLAN or MST contexts reports
+C<vrf_instances_complete()> 1, none configured (see
+L<SNMP::Info::VRF/"Completeness">).
 
 =back
 

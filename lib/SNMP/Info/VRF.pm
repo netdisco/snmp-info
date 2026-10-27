@@ -157,8 +157,7 @@ sub _vrf_served_instances {
 # The one rule for a served default. A list source that served any row,
 # even only the global or an internal instance's, lists default too, so a
 # device with zero VRFs reads none rather than unsupported, and caller
-# names add nothing. The first source to call it names default's list:
-# the vendor hook, then MPLS-L3VPN-STD-MIB.
+# names add nothing. The first source to call it names default's list.
 sub _vrf_list_default {
     my ( $vrf, $instances, $source ) = @_;
 
@@ -1425,7 +1424,8 @@ switches, since C<update()> clears the cache:
 
     my $instances = $vrf->vrf_instances();
     foreach my $name ( sort keys %$instances ) {
-        my $context = $instances->{$name}{contexts}[0];
+        # No context: the device gives this instance none to read in
+        my $context = $instances->{$name}{contexts}[0] or next;
         # switch to $context->{v3} unless $name is default, then update()
         my $neighbors = $vrf->vrf_neighbors($name);
         my $whole     = $vrf->vrf_read_complete($name);
@@ -1478,7 +1478,7 @@ C<vrf_instances_complete()> separates four states:
 
 =item unsupported, undef
 
-No list source served a row, the device counts no configured VRFs, and
+No list source served a row, the device serves no configured VRF count, and
 the caller named no instance. C<vrf_instances()> lists only C<default>.
 
 =item none, 1

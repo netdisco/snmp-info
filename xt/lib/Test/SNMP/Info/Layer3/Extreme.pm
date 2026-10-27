@@ -1739,7 +1739,7 @@ sub vrf_instances_complete__voss_global_and_mgmt_routers_only__is_1
   foreach my $vrfids ([0], [0, 512]) {
     my $label = join '+', map { $VOSS_VRF_NAMES{$_} } @$vrfids;
     my $info = _use_cache($test, _voss_cache($vrfids));
-    is($info->vrf_instances_complete(), 1, "$label: none configured");
+    is($info->vrf_instances_complete(), 1, "$label: read in full");
     is($info->vrf_instances()->{default}{sources}{list}, 'RAPID-CITY',
       "$label: rcVrfConfigTable lists default");
     ok(!exists $info->vrf_instances(['red'])->{red},

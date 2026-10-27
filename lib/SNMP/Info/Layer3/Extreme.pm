@@ -1869,11 +1869,10 @@ no route, so it reads no port, address or neighbor.
 
 On VOSS the device lists its VRFs in C<rcVrfConfigTable>, which the default
 context serves whole.  vrfid 0, C<GlobalRouter>, is the instance
-C<default>, and any row of the table lists C<default>, so a device with no
-VRF but C<GlobalRouter> and C<MgmtRouter> reports
-C<vrf_instances_complete()> 1, none configured.  C<MgmtRouter> is listed
-as a VRF; reading it in its own context has not been checked against a
-device.  C<l3_isid> is the I-SID
+C<default> (see L<SNMP::Info::VRF/"Completeness">), so a device with only
+C<GlobalRouter> and C<MgmtRouter> reports C<vrf_instances_complete()> 1
+with one VRF, C<MgmtRouter>.  Reading C<MgmtRouter> in its own context has
+not been checked against a device.  C<l3_isid> is the I-SID
 C<rcVrfIpVpnTable> gives the VRF's IP VPN, and undef where it serves none.
 Each VRF reads in its own context, which serves only that VRF's rows.  In
 the default context C<i_vrf()> maps each VRF VLAN's interface from

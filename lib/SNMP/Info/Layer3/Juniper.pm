@@ -1759,7 +1759,8 @@ with a type other than C<bgpIpVpn>, such as a VPLS instance.  The default
 instance is always the C<default> record, listed by C<MPLS-L3VPN-STD-MIB>
 when that serves a row and otherwise by C<SNMP-VIEW-BASED-ACM-MIB>
 whenever C<vacmContextName> serves a row, so a device that lists no other
-instance there reports C<vrf_instances_complete()> 1, none configured.
+instance there reports C<vrf_instances_complete()> 1, none configured (see
+L<SNMP::Info::VRF/"Completeness">).
 
 A layer 2 instance with no C<jnxVpnTable> row, such as a C<virtual-switch>,
 is listed as a C<virtual-router> and reads no address in its context, since
@@ -1777,9 +1778,8 @@ there.  To separate them, read each virtual router in its own context
 first, then drop from C<default>'s rows those on the ports C<i_vrf()>
 reported in that router's context; C<vrf_read_complete('default')> stays
 0, since the class cannot check the result.  An internal instance that no
-list source names, such
-as C<__juniper_private1__> on the internal links, keeps its rows in
-C<default> whatever is listed.
+list source names, such as C<__juniper_private1__> on the internal links,
+keeps its rows in C<default> whatever is listed.
 
 Junos serves host link-local neighbors only in C<ipv6NetToMediaTable>
 (C<IPV6-MIB>), so C<vrf_neighbors()> adds them to the

@@ -378,7 +378,8 @@ of the default instance, absent from C<i_vrf()>.
 C<aristaVrfTable> has no row for the default VRF, so a device with no VRF
 serves it no row at all. A complete walk of C<aristaVrfRouteDistinguisher>
 and C<aristaVrfState> lists C<default> with the source C<ARISTA-VRF-MIB>
-even then, and C<vrf_instances_complete()> reports 1, none configured.
+even then, and C<vrf_instances_complete()> reports 1, none configured (see
+L<SNMP::Info::VRF/"Completeness">).
 Where neither walk was recorded, such as on an object primed from a cache,
 or the poller could not resolve the MIB, the list reads as unsupported,
 undef. A device that does not implement the MIB answers the walk as one

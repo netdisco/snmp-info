@@ -413,10 +413,10 @@ show on one VRF's port only, is listed for both.
 
 C<CISCO-VRF-MIB> lists the VRFs, and the ports they hold, when
 C<MPLS-L3VPN-STD-MIB> serves no VRF row. Its source is
-C<CISCO-VRF-MIB>. Any C<cvVrfTable> row lists C<default> too, so a device
-serving only its global row there reports C<vrf_instances_complete()> 1,
-none configured. When C<MPLS-L3VPN-STD-MIB> serves rows, the vendor MIB is
-not read.
+C<CISCO-VRF-MIB>. A device serving only its global row there reports
+C<vrf_instances_complete()> 1, none configured (see
+L<SNMP::Info::VRF/"Completeness">). When C<MPLS-L3VPN-STD-MIB> serves
+rows, the vendor MIB is not read.
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 

@@ -609,8 +609,6 @@ sub _prime_h3c_vrf {
                 => 1410,
         },
     );
-    $store{i6_addr_anycast}
-        = { map { $_ => 'false' } keys %{ $store{i6_addr_pfxlen} } };
     foreach my $method (
         qw/at_paddr at_netaddr old_at_paddr old_at_netaddr c_inet_phys_addr
         c_inet_phys_type new_ip_index new_ip_type new_ip_prefix/
