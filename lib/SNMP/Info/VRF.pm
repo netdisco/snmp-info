@@ -379,14 +379,30 @@ sub _vrf_context_instance {
     return;
 }
 
-# { ifIndex => $name } for each port holding an address in this context.
-# The address walks decide membership, so they count toward the read.
+# { ifIndex => $name } for each port holding an address in this context,
+# or, where the class says so, each port a route of this context uses. The
+# walks decide membership, so they count toward the read.
 sub _vrf_context_ports {
     my $vrf  = shift;
     my $name = shift;
 
+    return $vrf->_vrf_route_ports($name)
+        if $vrf->_vrf_context_ports_from_routes();
     my $rows = $vrf->_vrf_address_rows($name);
     return { map { $_->{ifindex} => $name } values %$rows };
+}
+
+# The ports inetCidrRouteIfIndex gives the routes of this context; 0 is no
+# interface
+sub _vrf_route_ports {
+    my $vrf  = shift;
+    my $name = shift;
+
+    my $ifs = $vrf->_vrf_column( 'vrf_cidr_if', $name );
+    my %ports
+        = map { $_ => $name }
+        grep { defined _vrf_route_ifindex($_) } values %$ifs;
+    return \%ports;
 }
 
 # The contexts _walk_context() reports in $name's context: the v3 name,
@@ -537,6 +553,9 @@ sub _vrf_instance_addresses {
     my $name = shift;
 
     my $rows = $vrf->_vrf_address_rows($name);
+    return $vrf->_vrf_keep_context_ports( $rows, $name )
+        if $vrf->_vrf_context_filters()
+        and $vrf->_vrf_context_ports_from_routes();
     return $vrf->_vrf_drop_leaked( $rows, $name )
         if $vrf->_vrf_context_filters();
     return $vrf->_vrf_keep_owned( $rows, $name );
@@ -1112,6 +1131,10 @@ sub _vrf_vendor_address_rows { return {}; }
 
 sub _vrf_subnets_from_routes { return 0; }
 
+# True where a context serves the whole address table of the device, so
+# the ports of the context are those its routes use
+sub _vrf_context_ports_from_routes { return 0; }
+
 sub _vrf_internal_instance { return 0; }
 
 # Only the default context serves the whole VRF list
@@ -1340,6 +1363,10 @@ switches, since C<update()> clears the cache:
 
 A port with no address in its context, such as an unnumbered one, is in
 no instance in context mode, and its neighbors are dropped.
+
+Where a context serves the device's whole address table, as EXOS does, the
+ports of the context are the interfaces of its C<inetCidrRouteTable> rows
+instead, and the addresses and neighbors on any other port are dropped.
 
 On some platforms the default context leaks: it serves every instance's
 neighbors and addresses on the instances' ports, alongside the default

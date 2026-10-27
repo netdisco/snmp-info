@@ -1195,6 +1195,33 @@ sub vrf_instances_complete {
     return;
 }
 
+sub _exos_vrf_context { return ( $_[0]->os() || '' ) eq 'xos' ? 1 : 0; }
+
+# Each EXOS virtual router is an SNMPv3 context named like it; there is no
+# v2c form
+sub _context_kinds {
+    my ( $extreme, $feature ) = @_;
+
+    return unless ( $feature // '' ) eq 'vrf' and $extreme->_exos_vrf_context();
+    return ['vrf'];
+}
+
+sub _snmp_context {
+    my ( $extreme, $kind, $id ) = @_;
+
+    return unless ( $kind // '' ) eq 'vrf' and $extreme->_exos_vrf_context();
+    return if !defined $id or $id eq q() or $id eq 'default';
+    return { kind => 'vrf', id => $id, v2c => undef, v3 => $id };
+}
+
+# Each virtual router reads in its own context, named for it. EXOS serves
+# the same address table in every context and scopes only routes and
+# neighbors, so the ports of a context are those its routes use.
+sub _vrf_context_filters           { return $_[0]->_exos_vrf_context(); }
+sub _vrf_context_is_instance_name  { return $_[0]->_exos_vrf_context(); }
+sub _vrf_context_ports_from_routes { return $_[0]->_exos_vrf_context(); }
+sub _vrf_subnets_from_routes       { return $_[0]->_exos_vrf_context(); }
+
 1;
 
 __END__
@@ -1465,6 +1492,19 @@ serves C<mplsL3VpnConfiguredVrfs> as 0 with virtual routers configured,
 which answer only as SNMPv3 contexts, so the list is never known to be
 whole.  A caller-supplied name still returns 0.
 
+=item $extreme->context_kinds($feature)
+
+On ExtremeXOS returns C<['vrf']> for C<vrf>, since each virtual router
+answers in its own SNMPv3 context; nothing otherwise, and nothing on VOSS
+or ExtremeWare.  See L<SNMP::Info/"context_kinds">.
+
+=item $extreme->snmp_context($kind, $id)
+
+On ExtremeXOS, for C<vrf> and a virtual router name returns C<< { kind =E<gt>
+'vrf', id =E<gt> $name, v2c =E<gt> undef, v3 =E<gt> $name } >>.  The default
+virtual router is the default context, so C<default> and an empty name get
+nothing.  See L<SNMP::Info/"snmp_context">.
+
 =item $extreme->peth_port_power()
 
 Power supplied by PoE ports, in milliwatts
@@ -1478,6 +1518,19 @@ The configured maximum amount of in-line power available to the slot.
 (C<extremePethSlotPowerLimit>)
 
 =back
+
+=head2 VRF Instances
+
+See L<SNMP::Info::VRF/"VRF Instances"> for the readers.  On ExtremeXOS 33.6
+the virtual routers answer only as SNMPv3 contexts, and the device serves
+no list of them: C<mplsL3VpnConfiguredVrfs> is 0 and
+C<MPLS-L3VPN-STD-MIB> has no row.  The caller supplies the names with
+C<vrf_instances(\@names)>, and each reads in the context of its name.  The
+address table is the same in every context, so the ports of a context are
+the interfaces of its C<inetCidrRouteTable> rows, and its addresses,
+neighbors and subnets are those on them.  A subnet two virtual routers
+share is read from each one's connected route.  A name the device lacks has
+no route, so it reads no port, address or neighbor.
 
 =head2 Spanning Tree Instance Globals
 

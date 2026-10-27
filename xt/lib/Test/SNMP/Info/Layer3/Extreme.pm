@@ -760,4 +760,268 @@ sub vrf_instances_complete__not_exos__unchanged : Tests(1) {
     1, q(VOSS keeps the standard reading of a zero count));
 }
 
+# EXOS 33.6 with virtual routers red, blue, green and grey, as SNMPv3
+# contexts. The address table is the same in every context. Routes and
+# neighbors are scoped, and a VLAN's IPv4 route sits on a different ifIndex
+# (the router interface) from its IPv6 address and neighbors.
+my $PFX = '.1.3.6.1.2.1.4.32.1.5';
+my @EXOS_ADDRESSES = (
+  [1000005, '10.0.0.15',    24],  [1000011, '10.200.0.1', 24],
+  [1000015, '10.201.0.1',   24],  [1000017, '10.202.0.1', 24],
+  [1000020, '10.204.0.1',   32],  [1000022, '203.0.113.21', 32],
+  [1000011, '2001:db8:0:0:0:0:0:1', 64],
+  [1000015, '2001:db8:1:0:0:0:0:1', 64],
+  [1000017, '2001:db8:2:0:0:0:0:1', 64],
+  [1000019, '2001:db8:3:0:0:0:0:1', 64],
+  [1000020, '2001:db8:4:0:0:0:0:1', 128],
+);
+
+sub _arcs {
+  my $ip = shift;
+  return $ip =~ /:/
+    ? (2, 16, unpack('C*', pack('n8', map { hex } split /:/, $ip)))
+    : (1, 4, split /\./, $ip);
+}
+
+sub _exos_address_store {
+  my (%index, %type, %prefix);
+  foreach my $row (@EXOS_ADDRESSES) {
+    my ($port, $ip, $length) = @$row;
+    my $iid = join '.', _arcs($ip);
+    $index{$iid}  = $port;
+    $type{$iid}   = 'unicast';
+    $prefix{$iid} = "$PFX.$port.$iid.$length";
+  }
+  return (new_ip_index => \%index, new_ip_type => \%type,
+    new_ip_prefix => \%prefix);
+}
+
+# inetCidrRouteTable rows: [prefix, length, next hop, ifIndex, proto]
+sub _exos_route_store {
+  my (%if, %proto);
+  foreach my $row (@_) {
+    my ($prefix, $length, $hop, $port, $proto) = @$row;
+    my @hop  = _arcs($hop);
+    my @dest = _arcs($prefix);
+    my $iid  = join '.', @dest, $length, 0, @hop;
+    $if{$iid}    = $port;
+    $proto{$iid} = $proto // 'local';
+  }
+  return (vrf_cidr_if => \%if, vrf_cidr_proto => \%proto);
+}
+
+# ipNetToPhysicalTable rows: [ifIndex, address, MAC octet]
+sub _exos_neighbor_store {
+  my %mac;
+  foreach my $row (@_) {
+    my ($port, $ip, $octet) = @$row;
+    $mac{join '.', $port, _arcs($ip)} = pack('C6', 2, 0, 0, 0, 2, $octet);
+  }
+  return (ip_n2p_phys_addr => \%mac);
+}
+
+sub _exos_vrf_cache {
+  my %store = @_;
+  my $cache = {
+    '_layers'      => 78,
+    '_description' => 'ExtremeXOS (Stack) version 33.6.1.7 by release-manager',
+    '_id'          => '.1.3.6.1.4.1.1916.2.65',
+    'store'        => \%store,
+  };
+  $cache->{"_$_"} = 1 for keys %store;
+  return $cache;
+}
+
+my @RED_ROUTES = (
+  ['10.200.0.0', 24, '10.200.0.1', 1000012], ['10.200.0.1', 32, '10.200.0.1', 1000012],
+  ['10.201.0.0', 24, '10.201.0.1', 1000016], ['10.201.0.1', 32, '10.201.0.1', 1000016],
+  ['2001:db8:0:0:0:0:0:0', 64, '2001:db8:0:0:0:0:0:1', 1000011],
+  ['2001:db8:1:0:0:0:0:0', 64, '2001:db8:1:0:0:0:0:1', 1000015],
+);
+
+my @BLUE_ROUTES = (
+  ['10.200.0.0', 24, '10.200.0.1', 1000014], ['10.200.0.1', 32, '10.200.0.1', 1000014],
+  ['10.202.0.0', 24, '10.202.0.1', 1000018],
+  ['2001:db8:0:0:0:0:0:0', 64, '2001:db8:0:0:0:0:0:1', 1000013],
+  ['2001:db8:2:0:0:0:0:0', 64, '2001:db8:2:0:0:0:0:1', 1000017],
+);
+
+sub _red_cache {
+  return _exos_vrf_cache(
+    _exos_address_store(), _exos_route_store(@RED_ROUTES),
+    _exos_neighbor_store(
+      [1000012, '10.200.0.2', 1], [1000016, '10.201.0.2', 3],
+      [1000011, '2001:db8:0:0:0:0:0:2', 1], [1000011, 'fe80:0:0:0:0:0:0:2', 1],
+      [1000011, 'fe80:0:0:0:0:ff:fe00:201', 1],
+      [1000015, '2001:db8:1:0:0:0:0:2', 3], [1000015, 'fe80:0:0:0:0:0:0:2', 3],
+      [1000015, 'fe80:0:0:0:0:ff:fe00:203', 3],
+    ),
+  );
+}
+
+sub _blue_cache {
+  return _exos_vrf_cache(_exos_address_store(),
+    _exos_route_store(@BLUE_ROUTES));
+}
+
+sub _enter_vr {
+  my ($info, $context) = @_;
+  $info->session()->{Version} = 3;
+  $info->session()->{Context} = $context;
+  return;
+}
+
+sub _use_cache {
+  my ($test, $cache) = @_;
+  $test->{info}->clear_cache();
+  $test->{info}->cache($cache);
+  return $test->{info};
+}
+
+sub context_kinds__vrf__xos_only : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  cmp_deeply($info->context_kinds('vrf'), ['vrf'], 'EXOS: one context per VR');
+  is($info->context_kinds('stp'), undef, 'EXOS: no other feature has one');
+  $info->{_description} = '5520-48SE-FabricEngine (8.10.1.0)';
+  is($info->context_kinds('vrf'), undef, 'VOSS: none');
+  $info->{_description} = 'Summit48si - Version 7.8.4b4';
+  is($info->context_kinds('vrf'), undef, 'ExtremeWare: none');
+}
+
+sub snmp_context__vrf__v3_only : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  cmp_deeply($info->snmp_context('vrf', 'red'),
+    {kind => 'vrf', id => 'red', v2c => undef, v3 => 'red'},
+    'A VR is an SNMPv3 context of its name, with no v2c form');
+  is($info->snmp_context('vrf', 'default'), undef, 'default has none');
+  is($info->snmp_context('vrf', q()), undef, 'An empty name has none');
+  is($info->snmp_context('vlan', 10), undef, 'Another kind has none');
+  $info->{_description} = '5520-48SE-FabricEngine (8.10.1.0)';
+  is($info->snmp_context('vrf', 'red'), undef, 'VOSS: none');
+}
+
+sub vrf_instances__caller_names__listed_by_caller : Tests(7) {
+  my $test = shift;
+
+  $test->_prime_vrf_none_counted();
+  my $instances = $test->{info}->vrf_instances([qw/red blue green grey/]);
+  cmp_deeply([sort keys %$instances], [qw/blue default green grey red/],
+    'The caller names and default');
+  is($instances->{red}{listed_by}, 'caller', 'Listed by the caller');
+  cmp_deeply($instances->{red}{contexts},
+    [{kind => 'vrf', id => 'red', v2c => undef, v3 => 'red'}],
+    'Each in the SNMPv3 context of its name');
+  is($instances->{grey}{contexts}[0]{v3}, 'grey', 'grey too');
+  is($test->{info}->vrf_instances_complete([qw/red blue green grey/]), 0,
+    'A caller list is never complete');
+  is($instances->{default}{listed_by}, 'device', 'default is the device\'s');
+  is($test->{info}->vrf_instances_complete(), undef,
+    'Without names the list stays unknown');
+}
+
+sub i_vrf__red_context__route_ports : Tests(3) {
+  my $test = shift;
+  my $info = _use_cache($test, _red_cache());
+
+  _enter_vr($info, 'red');
+  cmp_deeply(scalar $info->i_vrf(),
+    {1000011 => 'red', 1000012 => 'red', 1000015 => 'red', 1000016 => 'red'},
+    'The interfaces red\'s routes use, IPv6 and IPv4 ports both');
+  is($info->error(), undef, 'No error');
+  ok(!exists $info->{_vrf_instances}, 'No list is read in the context');
+}
+
+sub i_vrf__unknown_vr_context__no_ports : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _exos_vrf_cache(
+    _exos_address_store(), _exos_route_store()));
+
+  _enter_vr($info, 'purple');
+  cmp_deeply(scalar $info->i_vrf(), {}, 'A VR the device lacks holds no port');
+}
+
+sub vrf_addresses__blue_context__not_reds : Tests(3) {
+  my $test = shift;
+  my $info = _use_cache($test, _blue_cache());
+
+  _enter_vr($info, 'blue');
+  my $rows = $info->vrf_addresses('blue');
+  cmp_deeply([sort map { "$_->{ifindex} $_->{ip}" } values %$rows],
+    ['1000017 10.202.0.1', '1000017 2001:0db8:0002:0000:0000:0000:0000:0001'],
+    'Only the addresses on blue\'s route ports');
+  ok(!(grep { $_->{ip} eq '10.200.0.1' } values %$rows),
+    'Not red\'s 10.200.0.1');
+  is(scalar(grep { $_->{ifindex} == 1000005 } values %$rows), 0,
+    'Not the management port');
+}
+
+sub vrf_addresses__unknown_vr__empty : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _exos_vrf_cache(
+    _exos_address_store(), _exos_route_store()));
+
+  _enter_vr($info, 'purple');
+  cmp_deeply($info->vrf_addresses('purple'), {}, 'No route, no address');
+}
+
+sub vrf_neighbors__red_context__both_families : Tests(3) {
+  my $test = shift;
+  my $info = _use_cache($test, _red_cache());
+
+  _enter_vr($info, 'red');
+  my @rows = values %{$info->vrf_neighbors('red')};
+  my @vlan_one = map { "1000011 $_" }
+    '2001:0db8:0000:0000:0000:0000:0000:0002',
+    'fe80:0000:0000:0000:0000:0000:0000:0002',
+    'fe80:0000:0000:0000:0000:00ff:fe00:0201';
+  my @vlan_two = map { "1000015 $_" }
+    '2001:0db8:0001:0000:0000:0000:0000:0002',
+    'fe80:0000:0000:0000:0000:0000:0000:0002',
+    'fe80:0000:0000:0000:0000:00ff:fe00:0203';
+  cmp_deeply([sort map { "$_->{ifindex} $_->{ip}" } @rows],
+    [sort '1000012 10.200.0.2', '1000016 10.201.0.2', @vlan_one, @vlan_two],
+    'IPv4 on the router interfaces, IPv6 on the VLAN ones, as the CLI lists');
+  is(scalar @rows, 8, 'Eight rows');
+  is(scalar(grep { $_->{ip} eq '10.200.0.1' } @rows), 0,
+    'None of the router\'s own addresses');
+}
+
+sub vrf_neighbors__unknown_vr__empty : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _exos_vrf_cache(
+    _exos_address_store(), _exos_route_store(),
+    _exos_neighbor_store([1000012, '10.200.0.2', 1])));
+
+  _enter_vr($info, 'purple');
+  cmp_deeply($info->vrf_neighbors('purple'), {}, 'A VR with no route');
+}
+
+sub vrf_subnets__blue_context__overlap_from_route : Tests(4) {
+  my $test = shift;
+  my $info = _use_cache($test, _blue_cache());
+
+  _enter_vr($info, 'blue');
+  my $subnets = $info->vrf_subnets('blue');
+  cmp_deeply($subnets->{'10.200.0.0/24'},
+    superhashof({ifindex => 1000014, sources => ['route']}),
+    'blue\'s 10.200.0.0/24 is read from its connected route');
+  cmp_deeply($subnets->{'10.202.0.0/24'}{sources}, ['address', 'route'],
+    'A subnet in both the address table and the routes lists both');
+  ok(!exists $subnets->{'10.201.0.0/24'}, 'red\'s subnet is not blue\'s');
+  ok(!exists $subnets->{'10.200.0.1/32'}, 'A host route is not a subnet');
+}
+
+sub vrf_subnets__voss__no_context_mode : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->{_description} = '5520-48SE-FabricEngine (8.10.1.0)';
+  is($info->_vrf_context_filters(), 0, 'VOSS: no context filtering');
+  is($info->_vrf_context_ports_from_routes(), 0, 'VOSS: no route ports');
+}
+
 1;

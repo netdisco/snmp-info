@@ -942,6 +942,29 @@ sub i_vrf__context_mode__ports_with_context_addresses : Tests(3) {
   is(scalar $info->i_vrf(), undef, q(Nothing in a context no VRF has));
 }
 
+sub i_vrf__context_ports_from_routes__hook : Tests(3) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::RoutePorts',
+    \@NEIGHBOR_PARENTS,
+    _vrf_context_filters           => sub { 1 },
+    _vrf_context_ports_from_routes => sub { 1 });
+  $test->{info} = $info;
+  $test->_prime_vrf_table();
+  $test->_prime_members();
+  $test->_prime_addresses($info);
+  $info->{_vrf_cidr_if} = 1;
+  $info->{store}{vrf_cidr_if} = {'a' => 2, 'b' => 2, 'c' => 3, 'd' => 0};
+  $test->_enter_context($info);
+  cmp_deeply(scalar $info->i_vrf(), {2 => 'red', 3 => 'red'},
+    q(The ports the routes use, not the ports holding an address));
+  ok(exists $info->{_vrf_walked}{red}{vrf_cidr_if},
+    q(The route walk counts toward the read));
+  $info->{store}{vrf_cidr_if} = {};
+  cmp_deeply(scalar $info->i_vrf(), {},
+    q(A context with no route has no port));
+}
+
 sub vrf_neighbors__context_mode_other_context__throws : Tests(2) {
   my $test = shift;
 
