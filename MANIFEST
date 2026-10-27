@@ -88,6 +88,7 @@ lib/SNMP/Info/Layer3/Altiga.pm
 lib/SNMP/Info/Layer3/Arista.pm
 lib/SNMP/Info/Layer3/Aruba.pm
 lib/SNMP/Info/Layer3/ArubaCX.pm
+lib/SNMP/Info/Layer3/ArubaInstant.pm
 lib/SNMP/Info/Layer3/BayRS.pm
 lib/SNMP/Info/Layer3/BlueCoatSG.pm
 lib/SNMP/Info/Layer3/C1300.pm
@@ -140,6 +141,7 @@ lib/SNMP/Info/Layer3/Passport.pm
 lib/SNMP/Info/Layer3/Pf.pm
 lib/SNMP/Info/Layer3/Pica8.pm
 lib/SNMP/Info/Layer3/Redlion.pm
+lib/SNMP/Info/Layer3/RuckusController.pm
 lib/SNMP/Info/Layer3/Scalance.pm
 lib/SNMP/Info/Layer3/Siemens.pm
 lib/SNMP/Info/Layer3/SilverPeak.pm
@@ -149,8 +151,10 @@ lib/SNMP/Info/Layer3/Steelfusion.pm
 lib/SNMP/Info/Layer3/Steelhead.pm
 lib/SNMP/Info/Layer3/SteelheadEx.pm
 lib/SNMP/Info/Layer3/Sun.pm
+lib/SNMP/Info/Layer3/Tachyon.pm
 lib/SNMP/Info/Layer3/Tasman.pm
 lib/SNMP/Info/Layer3/Teltonika.pm
+lib/SNMP/Info/Layer3/TeltonikaRutOS.pm
 lib/SNMP/Info/Layer3/Timetra.pm
 lib/SNMP/Info/Layer3/VMware.pm
 lib/SNMP/Info/Layer3/VyOS.pm
@@ -191,6 +195,8 @@ xt/00_local_pod.t
 xt/00_local_prereq.t
 xt/00_local_versionsync.t
 xt/21_run.t
+xt/fixtures/aruba-instant-8.10.json
+xt/fixtures/aruba-instant-8.4-radios.json
 xt/lib/My/Test/Class.pm
 xt/lib/Test/SNMP/Info.pm
 xt/lib/Test/SNMP/Info/AdslLine.pm
@@ -262,6 +268,7 @@ xt/lib/Test/SNMP/Info/Layer3/AlteonAD.pm
 xt/lib/Test/SNMP/Info/Layer3/Altiga.pm
 xt/lib/Test/SNMP/Info/Layer3/Arista.pm
 xt/lib/Test/SNMP/Info/Layer3/Aruba.pm
+xt/lib/Test/SNMP/Info/Layer3/ArubaInstant.pm
 xt/lib/Test/SNMP/Info/Layer3/BayRS.pm
 xt/lib/Test/SNMP/Info/Layer3/BlueCoatSG.pm
 xt/lib/Test/SNMP/Info/Layer3/C1300.pm
@@ -312,6 +319,7 @@ xt/lib/Test/SNMP/Info/Layer3/Passport.pm
 xt/lib/Test/SNMP/Info/Layer3/Pf.pm
 xt/lib/Test/SNMP/Info/Layer3/Pica8.pm
 xt/lib/Test/SNMP/Info/Layer3/Redlion.pm
+xt/lib/Test/SNMP/Info/Layer3/RuckusController.pm
 xt/lib/Test/SNMP/Info/Layer3/Scalance.pm
 xt/lib/Test/SNMP/Info/Layer3/Siemens.pm
 xt/lib/Test/SNMP/Info/Layer3/SilverPeak.pm
@@ -319,8 +327,10 @@ xt/lib/Test/SNMP/Info/Layer3/SonicWALL.pm
 xt/lib/Test/SNMP/Info/Layer3/Sophos.pm
 xt/lib/Test/SNMP/Info/Layer3/Steelhead.pm
 xt/lib/Test/SNMP/Info/Layer3/Sun.pm
+xt/lib/Test/SNMP/Info/Layer3/Tachyon.pm
 xt/lib/Test/SNMP/Info/Layer3/Tasman.pm
 xt/lib/Test/SNMP/Info/Layer3/Teltonika.pm
+xt/lib/Test/SNMP/Info/Layer3/TeltonikaRutOS.pm
 xt/lib/Test/SNMP/Info/Layer3/Timetra.pm
 xt/lib/Test/SNMP/Info/Layer3/VMware.pm
 xt/lib/Test/SNMP/Info/Layer3/VyOS.pm
