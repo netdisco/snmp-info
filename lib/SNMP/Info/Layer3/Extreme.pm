@@ -120,7 +120,9 @@ $VERSION = '3.983000';
     'vrf_rc_context' => 'rcVrfContextName',
     # RAPID-CITY::rcVrfIpVpnTable (VOSS)
     'vrf_rc_isid' => 'rcVrfIpVpnIsidNumber',
-    # RAPID-CITY::rcVlanTable (VOSS)
+    # RAPID-CITY::rcVlanTable (VOSS). RapidCity.pm reads rcVlanIfIndex and
+    # rcIpAdEntAddr too, as rc_vlan_if and rc_ip_addr, but it is not a
+    # parent of this class.
     'vrf_rc_vlan_if'  => 'rcVlanIfIndex',
     'vrf_rc_vlan_vrf' => 'rcVlanVrfId',
     # RAPID-CITY::rcIpAddrTable (VOSS)
@@ -1265,7 +1267,8 @@ sub _vrf_subnets_from_routes       { return $_[0]->_vrf_context_os(); }
 sub _vrf_default_context_members   { return $_[0]->_voss_vrf_context(); }
 
 # rcVrfConfigTable is indexed by vrfid. vrfid 0, GlobalRouter, is the
-# instance default; the I-SID of an IP VPN is its layer 3 I-SID.
+# instance default, which any row lists; the I-SID of an IP VPN is its
+# layer 3 I-SID.
 sub _vrf_vendor_instances {
     my $extreme = shift;
 
@@ -1285,6 +1288,7 @@ sub _vrf_vendor_instances {
             if defined $record->{l3_isid};
         $instances{$name} = $record;
     }
+    $extreme->_vrf_list_default( \%instances, 'RAPID-CITY' ) if %$names;
     return \%instances;
 }
 
@@ -1383,7 +1387,9 @@ sub _voss_next_hop_ports {
         grep { $_->{family} eq 'ipv4' }
         @{ $extreme->_voss_connected_routes($name) };
     my $rows = $extreme->_vrf_ipadent_rows($name);
-    return map { $_->{ifindex} } grep { $hops{ $_->{ip} } } values %$rows;
+    return map { $_->{ifindex} }
+        grep { !SNMP::Info::VRF::_vrf_unspecified( $_->{ip} ) }
+        grep { $hops{ $_->{ip} } } values %$rows;
 }
 
 # VOSS indexes inetCidrRouteTable with no length octet before either
@@ -1483,7 +1489,7 @@ sub _vrf_vendor_address_rows {
     return {} unless $extreme->_voss_vrf_context();
     return {
         %{ $extreme->_voss_rc_ip_addresses($name) },
-        %{ $extreme->_voss_ipv6_addresses($name) },
+        %{ $extreme->_vrf_ipv6_mib_address_rows($name) },
     };
 }
 
@@ -1507,26 +1513,6 @@ sub _voss_rc_ip_addresses {
             prefix_len =>
                 scalar SNMP::Info::VRF::_vrf_mask_length( $masks->{$iid} ),
             family => 'ipv4',
-        };
-    }
-    return \%rows;
-}
-
-# ipv6AddrTable is indexed by ifIndex then the 16 address octets
-sub _voss_ipv6_addresses {
-    my ( $extreme, $name ) = @_;
-
-    my $lengths = $extreme->_vrf_column( 'i6_addr_pfxlen', $name );
-    my %rows;
-    foreach my $iid ( keys %$lengths ) {
-        my ( $ifindex, @octets ) = split /\./, $iid;
-        next if @octets != 16 or grep { $_ > 255 } @octets;
-        my $ip = join q{:}, unpack '(H4)*', pack 'C*', @octets;
-        $rows{"$ifindex.$ip"} = {
-            ifindex    => $ifindex,
-            ip         => $ip,
-            prefix_len => $lengths->{$iid},
-            family     => 'ipv6',
         };
     }
     return \%rows;
@@ -1883,7 +1869,11 @@ no route, so it reads no port, address or neighbor.
 
 On VOSS the device lists its VRFs in C<rcVrfConfigTable>, which the default
 context serves whole.  vrfid 0, C<GlobalRouter>, is the instance
-C<default>; C<MgmtRouter> is listed as a VRF.  C<l3_isid> is the I-SID
+C<default>, and any row of the table lists C<default>, so a device with no
+VRF but C<GlobalRouter> and C<MgmtRouter> reports
+C<vrf_instances_complete()> 1, none configured.  C<MgmtRouter> is listed
+as a VRF; reading it in its own context has not been checked against a
+device.  C<l3_isid> is the I-SID
 C<rcVrfIpVpnTable> gives the VRF's IP VPN, and undef where it serves none.
 Each VRF reads in its own context, which serves only that VRF's rows.  In
 the default context C<i_vrf()> maps each VRF VLAN's interface from

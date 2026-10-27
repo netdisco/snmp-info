@@ -2073,7 +2073,7 @@ sub _prime_jnx_context {
 
   my %store = map { $_ => {} } qw/at_paddr at_netaddr old_at_paddr
     old_at_netaddr ip_n2p_phys_addr c_inet_phys_addr i6_n2p_phys_addr
-    ip_n2p_phys_type c_inet_phys_type i6_n2p_phys_type new_ip_index new_ip_type new_ip_prefix old_ip_index old_ip_netmask/;
+    new_ip_index new_ip_type new_ip_prefix old_ip_index old_ip_netmask/;
   _jnx_neighbor_store(\%store, $JNX_CONTEXT{$context});
   _jnx_address_store(\%store, $JNX_CONTEXT{$context});
   $store{i_mac} = {map { $_ => _jnx_mac($JNX_PORT_MAC{$_}) }
@@ -2591,6 +2591,14 @@ sub stp_vlan_map : Tests(6) {
   is(scalar $info->stp_vlan_map(), undef, 'RSTP: nothing');
   $info->clear_cache();
   is(scalar $info->stp_vlan_map(), undef, 'Nothing served: nothing');
+}
+
+sub vrf_instances__mpls_rows__default_listed_by_mpls : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_vrf();
+
+  is($info->vrf_instances()->{default}{sources}{list}, 'MPLS-L3VPN-STD-MIB',
+    'MPLS-L3VPN-STD-MIB served rows, so it lists default before vacm');
 }
 
 1;

@@ -446,7 +446,7 @@ sub _vrf_vendor_address_rows {
     my ( $h3c, $name ) = @_;
 
     return {
-        %{ $h3c->_h3c_ipv6_address_rows($name) },
+        %{ $h3c->_vrf_ipv6_mib_address_rows($name) },
         %{ $h3c->_h3c_ipv4_address_rows($name) },
     };
 }
@@ -467,28 +467,6 @@ sub _h3c_ipv4_address_rows {
             prefix_len =>
                 scalar SNMP::Info::VRF::_vrf_mask_length( $masks->{$iid} ),
             family => 'ipv4',
-        };
-    }
-    return \%rows;
-}
-
-sub _h3c_ipv6_address_rows {
-    my ( $h3c, $name ) = @_;
-
-    my $lengths = $h3c->_vrf_column( 'i6_addr_pfxlen',   $name );
-    my $anycast = $h3c->_vrf_column( 'i6_addr_anycast', $name );
-    my %rows;
-    foreach my $iid ( keys %$lengths ) {
-        my ( $ifindex, @octets ) = split /\./, $iid;
-        next unless @octets == 16;
-        next if ( $anycast->{$iid} // q() ) eq 'true';
-        my $address = SNMP::Info::VRF::_vrf_parse_address(
-            join q(.), 2, 16, @octets ) or next;
-        $rows{"$ifindex.$address->{ip}"} = {
-            ifindex    => $ifindex,
-            ip         => $address->{ip},
-            prefix_len => $lengths->{$iid} + 0,
-            family     => 'ipv6',
         };
     }
     return \%rows;
@@ -704,12 +682,15 @@ ifIndex of the corresponding master ports.
 
 =item $h3c->vrf_h3c_addr_mask()
 
-(C<hh3cIpAddrSetMask>) The IPv4 address masks of every routing instance,
-indexed by ifIndex, address type, length and address. Comware 7 serves no
-C<ipAddressTable> and an C<ipAddrTable> holding the default instance only.
+The IPv4 address masks of every routing instance, indexed by ifIndex,
+address type, length and address. Comware 7 serves no C<ipAddressTable>
+and an C<ipAddrTable> holding the default instance only.
 L<SNMP::Info::VRF/"vrf_addresses"> reads this table, and IPV6-MIB
-C<ipv6AddrTable> for IPv6, so each instance lists its own addresses, and
-host link-locals come from IPV6-MIB C<ipv6NetToMediaTable>.
+C<ipv6AddrTable> for IPv6, anycast addresses included, so each instance
+lists its own addresses, and host link-locals come from IPV6-MIB
+C<ipv6NetToMediaTable>.
+
+(C<hh3cIpAddrSetMask>)
 
 =back
 

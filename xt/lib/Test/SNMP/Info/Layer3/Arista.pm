@@ -462,4 +462,44 @@ sub vrf_addresses__grey_context__loopback_no_neighbor : Tests(3) {
   cmp_deeply($info->vrf_neighbors('grey'), {}, 'It has no neighbor');
 }
 
+# EOS serves no aristaVrfTable row for the default VRF, so an EOS with no
+# VRFs answers the walk with no row
+sub vrf_instances_complete__no_vrfs_walked__is_1 : Tests(5) {
+  my $test = shift;
+  my %empty = map { $_ => {} } qw/vrf_arista_rd vrf_arista_state
+    vrf_arista_if/;
+
+  $test->{info}->clear_walk_status();
+  my $info = _use_cache($test, _arista_cache(%empty));
+  is($info->vrf_instances_complete(), undef,
+    'No walk recorded: unsupported');
+
+  $info = _use_cache($test, _arista_cache(%empty));
+  $info->{walk_status}{$_} = {complete => 1, reason => undef, rows => 0}
+    for qw/vrf_arista_rd vrf_arista_state/;
+  is($info->vrf_instances_complete(), 1, 'Walked with no row: none');
+  is($info->vrf_instances()->{default}{sources}{list}, 'ARISTA-VRF-MIB',
+    'ARISTA-VRF-MIB lists default');
+  ok(!exists $info->vrf_instances(['red'])->{red},
+    'Caller names add nothing');
+
+  $info = _use_cache($test, _arista_cache(%empty));
+  $info->{walk_status}{$_} = {complete => 1, reason => 'absent', rows => 0}
+    for qw/vrf_arista_rd vrf_arista_state/;
+  is($info->vrf_instances_complete(), undef,
+    'An absent MIB is not an answer');
+  $info->clear_walk_status();
+}
+
+sub i_vrf__membership_default__absent : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _default_cache());
+
+  $info->{store}{vrf_arista_if}{999000} = 'default';
+  cmp_deeply(scalar $info->i_vrf(),
+    {1 => 'red', 3 => 'red', 2 => 'blue', 4 => 'blue', 5 => 'green',
+      5000001 => 'grey'},
+    'A port aristaVrfIfTable gives default is absent');
+}
+
 1;

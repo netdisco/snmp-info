@@ -110,7 +110,7 @@ sub _snmp_context {
 }
 
 # Each distinct non-empty VRF name cContextMappingTable maps. An empty
-# value is a VLAN or MST context, never a VRF.
+# value is a VLAN or MST context, never a VRF; any row lists default.
 sub _vrf_vendor_instances {
 	my $nexus = shift;
 
@@ -122,6 +122,8 @@ sub _vrf_vendor_instances {
 		$record->{sources}{list} = 'CISCO-CONTEXT-MAPPING-MIB';
 		$instances{$name} = $record;
 	}
+	$nexus->_vrf_list_default( \%instances, 'CISCO-CONTEXT-MAPPING-MIB' )
+		if %$mapped;
 	return \%instances;
 }
 
@@ -452,7 +454,8 @@ C<cContextMappingTable> maps to the VRF: the one named like the VRF if it
 is mapped, else the lowest sorted name among those mapped to it, else the
 VRF name itself.  The default VRF and an empty name have no context, so
 nothing is returned, and neither does a VRF with no mapped context whose
-name is a context mapped to another VRF.  A site's community map
+name is a context mapped to another VRF; its C<contexts> in
+C<vrf_instances()> is then empty.  A site's community map
 (C<snmp-server mib community-map>) reaches a VRF over SNMPv2c, but the
 class cannot derive its name, so C<v2c> is undef.  Over such a community
 the readers see the default context; read VRF contexts over SNMPv3.
@@ -461,7 +464,9 @@ VRF reads use context mode (see L<SNMP::Info::VRF/"Reading Instances">):
 each VRF context serves only that VRF's address rows, while C<ifTable> is
 not scoped and the default context serves the IPv6 neighbors of every
 VRF's ports.  The readers therefore keep only rows on ports holding an
-address in the current context.
+address in the current context.  C<cContextMappingTable> lists the VRFs;
+any row it serves lists C<default> too, so a device that maps only VLAN
+or MST contexts reports C<vrf_instances_complete()> 1, none configured.
 
 =back
 

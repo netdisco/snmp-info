@@ -115,8 +115,8 @@ sub vrf_instances__context_kinds_vrf__records_carry_context : Tests(4) {
   cmp_deeply($instances->{red}{contexts},
     [{kind => 'vrf', id => 'red', v2c => undef, v3 => 'ctx-red'}],
     q(A VRF record carries the context of its name));
-  cmp_deeply($instances->{grey}{contexts}, [{kind => 'none'}],
-    q(... or none where the device answers nothing));
+  cmp_deeply($instances->{grey}{contexts}, [],
+    q(... or no context where the device answers none));
   cmp_deeply($instances->{default}{contexts}, [{kind => 'none'}],
     q(The default instance stays in the default context));
   my $with_caller = $info->vrf_instances([]);
@@ -1685,8 +1685,8 @@ sub vrf_read_complete__clean_walks__is_1 : Tests(3) {
       new_ip_prefix vrf_l3vpn_if vrf_l3vpn_rte_proto/),
     q(The readers recorded the tables they walked for red)
   );
-  is($info->vrf_read_complete('purple'), 1,
-    q(A name no reader walked has no incomplete walk));
+  is($info->vrf_read_complete('purple'), undef,
+    q(A name no reader walked is unknown));
 }
 
 sub vrf_read_complete__incomplete_walk__is_0 : Tests(8) {
@@ -1710,6 +1710,64 @@ sub vrf_read_complete__incomplete_walk__is_0 : Tests(8) {
   $info->{walk_status} = {at_paddr => {complete => 1, reason => 'absent'}};
   is($info->vrf_read_complete('red'), 1,
     q(An absent table is complete));
+}
+
+
+sub vrf_read_complete__after_update__is_undef : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_read_red();
+  is($info->vrf_read_complete('red'), 1, q(Read in this session));
+  $info->clear_cache();
+  is($info->vrf_read_complete('red'), undef,
+    q(After clear_cache, and so update(), no reader has run));
+}
+
+sub vrf_instances_complete__incomplete_descr_or_oper__is_0 : Tests(2) {
+  my $test = shift;
+
+  foreach my $method (qw/vrf_l3vpn_descr vrf_l3vpn_oper/) {
+    $test->_prime_vrf_table();
+    $test->_prime_members(configured => 4);
+    delete $test->{info}{$_} for qw/_vrf_instances _vrf_vendor_listed/;
+    $test->{info}{walk_status}{$method}
+      = {complete => 0, reason => 'timeout'};
+    is($test->{info}->vrf_instances_complete(), 0,
+      qq(An incomplete walk of $method));
+    $test->{info}{walk_status} = {};
+  }
+}
+
+sub vrf_instances__served_table__default_carries_list_source : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_vrf_table();
+  is($test->{info}->vrf_instances()->{default}{sources}{list},
+    'MPLS-L3VPN-STD-MIB', q(The list source that served rows lists default));
+}
+
+# An agent that serves mplsL3VpnVrfTable rows only for an internal instance
+# serves the list, which holds no VRF
+sub vrf_instances_complete__mpls_internal_row_only__is_1 : Tests(4) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::InternalOnly',
+    ['SNMP::Info::VRF'],
+    _vrf_internal_instance => sub { ($_[1] // q()) =~ /^__.*__$/ ? 1 : 0 });
+  my $internal = join '.', 8, map {ord} split //, '__mgmt__';
+  $info->{"_$_"} = 1 for qw/vrf_l3vpn_rd vrf_l3vpn_descr vrf_l3vpn_oper
+    vrf_l3vpn_rt vrf_l3vpn_if/;
+  $info->{store}{$_} = {} for qw/vrf_l3vpn_rd vrf_l3vpn_rt vrf_l3vpn_if/;
+  $info->{store}{vrf_l3vpn_descr} = {$internal => q()};
+  $info->{store}{vrf_l3vpn_oper}  = {$internal => 'up'};
+
+  cmp_deeply([keys %{$info->vrf_instances()}], ['default'],
+    q(The internal instance is not listed));
+  is($info->vrf_instances()->{default}{sources}{list}, 'MPLS-L3VPN-STD-MIB',
+    q(... but its row lists default));
+  is($info->vrf_instances_complete(), 1, q(None configured));
+  ok(!exists $info->vrf_instances(['vr-red'])->{'vr-red'},
+    q(Caller names add nothing));
 }
 
 1;

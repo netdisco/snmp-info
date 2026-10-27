@@ -2150,12 +2150,14 @@ so the rows of every listed context are merged:
 
 Per-VRF neighbors, where the device filters them by context:
 
+ # Where the device lists none, as EXOS, pass vrf_instances(\@names)
  my $instances = $info->vrf_instances() || {};
  my %vrf_neighbors;    # VRF name => { iid => neighbor record }
  foreach my $name ( sort keys %$instances ) {
-     my $contexts = $instances->{$name}{contexts};
      if ( $info->context_kinds('vrf') and $name ne 'default' ) {
-         enter_context( $info, $contexts->[0], $community ) or next;
+         # No context: the device gives this instance none to read in
+         my $context = $instances->{$name}{contexts}[0] or next;
+         enter_context( $info, $context, $community ) or next;
          $vrf_neighbors{$name} = { %{ $info->vrf_neighbors($name) || {} } };
          $info->update();
          next;

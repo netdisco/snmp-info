@@ -1732,4 +1732,41 @@ sub vrf_addresses__voss_default_context__globalrouter_only : Tests(5) {
     ['1344 10.255.0.13'], 'Without ipAddrTable, rcIpAddrTable of vrfid 0');
 }
 
+sub vrf_instances_complete__voss_global_and_mgmt_routers_only__is_1
+  : Tests(6) {
+  my $test = shift;
+
+  foreach my $vrfids ([0], [0, 512]) {
+    my $label = join '+', map { $VOSS_VRF_NAMES{$_} } @$vrfids;
+    my $info = _use_cache($test, _voss_cache($vrfids));
+    is($info->vrf_instances_complete(), 1, "$label: none configured");
+    is($info->vrf_instances()->{default}{sources}{list}, 'RAPID-CITY',
+      "$label: rcVrfConfigTable lists default");
+    ok(!exists $info->vrf_instances(['red'])->{red},
+      "$label: caller names add nothing");
+  }
+}
+
+# ipAddrTable serves 0.0.0.0 on an interface, and a connected route has
+# the next hop 0.0.0.0: that interface is no port of the context
+sub vrf_neighbors__voss_default_unspecified_next_hop__no_port : Tests(2) {
+  my $test = shift;
+  my $cache = _voss_default_ipadent_cache();
+  my %routes = _voss_route_store(['10.9.0.0', 24, '0.0.0.0', 6141]);
+  my %arp = _voss_neighbor_store(arp => [[6140, '10.9.0.5', 7],
+      [6141, '10.9.0.6', 8]]);
+  $cache->{store}{old_ip_index}{'0.0.0.0'} = 6140;
+  foreach my $method (keys %routes, keys %arp) {
+    my $rows = $routes{$method} || $arp{$method};
+    $cache->{store}{$method} = {%{$cache->{store}{$method} || {}}, %$rows};
+    $cache->{"_$method"} = 1;
+  }
+  my $info = _use_cache($test, $cache);
+
+  my $rows = $info->vrf_neighbors('default');
+  ok(exists $rows->{'6141.10.9.0.6'}, 'The route\'s interface is a port');
+  ok(!exists $rows->{'6140.10.9.0.5'},
+    'The interface holding 0.0.0.0 is not');
+}
+
 1;

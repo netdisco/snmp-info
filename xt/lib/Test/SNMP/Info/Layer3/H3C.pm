@@ -756,14 +756,13 @@ sub vrf_neighbors__link_locals_from_ipv6_mib : Tests(4) {
         1, q(The IPV6-MIB walk is recorded for red) );
 }
 
-sub vrf_read_complete__vendor_walk_partial__is_0 : Tests(5) {
+sub vrf_read_complete__vendor_walk_partial__is_0 : Tests(4) {
     my $test = shift;
     my $info = $test->_prime_h3c_vrf();
 
     $info->vrf_addresses('red');
     is( $info->vrf_read_complete('red'), 1, q(Complete walks: complete) );
-    foreach my $method (qw/vrf_h3c_addr_mask i6_addr_pfxlen i6_addr_anycast/)
-    {
+    foreach my $method (qw/vrf_h3c_addr_mask i6_addr_pfxlen/) {
         $info->{walk_status}
             = { $method => { complete => 0, reason => 'timeout' } };
         is( $info->vrf_read_complete('red'),
@@ -771,8 +770,8 @@ sub vrf_read_complete__vendor_walk_partial__is_0 : Tests(5) {
     }
     $info->{walk_status}
         = { vrf_h3c_addr_mask => { complete => 0, reason => 'timeout' } };
-    is( $info->vrf_read_complete('blue'), 1,
-        q(An instance whose read walked nothing is complete) );
+    is( $info->vrf_read_complete('blue'), undef,
+        q(An instance no reader walked is unknown) );
 }
 
 sub ip_index__unchanged : Tests(2) {
@@ -783,6 +782,20 @@ sub ip_index__unchanged : Tests(2) {
         q(ip_index is the ipAddrTable as served) );
     cmp_deeply( $info->ip_netmask(), { '10.0.0.15' => '255.255.255.0' },
         q(ip_netmask is the ipAddrTable as served) );
+}
+
+sub vrf_addresses__anycast_flag__kept : Tests(1) {
+    my $test = shift;
+    my $info = $test->_prime_h3c_vrf();
+
+    my $global = '1413.' . _h3c_v6_arcs('2001:db8:80:0:0:0:0:1');
+    $info->{store}{i6_addr_anycast}{$global} = 'true';
+    cmp_deeply(
+        $info->vrf_addresses('red')
+            ->{'1413.2001:0db8:0080:0000:0000:0000:0000:0001'},
+        superhashof( { ifindex => 1413, prefix_len => 64 } ),
+        q(An anycast address is still the device's own, as in VRF.pm)
+    );
 }
 
 1;

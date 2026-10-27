@@ -643,4 +643,19 @@ sub stp_trees : Tests(7) {
     'Without mst-0 the CIST falls back to the default context');
 }
 
+sub vrf_instances_complete__vlan_contexts_only__is_1 : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_vrf_context_cache());
+  cmp_deeply([keys %{$info->vrf_instances()}], ['default'],
+    'Only VLAN contexts mapped: default only');
+  is($info->vrf_instances()->{default}{sources}{list},
+    'CISCO-CONTEXT-MAPPING-MIB', 'The context map lists default');
+  is($info->vrf_instances_complete(), 1, 'None configured');
+  ok(!exists $info->vrf_instances(['red'])->{red},
+    'Caller names add nothing');
+}
+
 1;

@@ -255,7 +255,8 @@ sub vrf_instances__vendor_list__contexts_set_once : Tests(1) {
     local *SNMP::Info::Layer3::Cisco::_vrf_set_contexts
         = sub { $calls{ $_[1]{name} }++; return };
     $info->vrf_instances();
-    cmp_deeply( \%calls, { map { $_ => 1 } qw/red blue green grey/ },
+    cmp_deeply( \%calls,
+        { map { $_ => 1 } qw/red blue green grey default/ },
         q(Each vendor-listed record gets its contexts once) );
 }
 
@@ -357,6 +358,20 @@ sub vrf_subnets__overlap__restored_from_routes : Tests(2) {
     cmp_deeply( $info->vrf_subnets('blue')->{'10.40.0.0/24'},
         superhashof( { ifindex => 3, sources => [ 'address', 'route' ] } ),
         q(Blue's subnet is found both ways) );
+}
+
+sub vrf_instances_complete__cisco_vrf_mib_default_row_only__is_1 : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_cisco_vrf_mib();
+    $info->{store}{vrf_cv_name} = { 1 => 'default' };
+    $info->{store}{vrf_cv_if}   = {};
+    cmp_deeply( [ keys %{ $info->vrf_instances() } ],
+        ['default'], q(The global row is no VRF) );
+    is( $info->vrf_instances_complete(), 1, q(None configured) );
+    ok( !exists $info->vrf_instances( ['amber'] )->{amber},
+        q(Caller names add nothing) );
 }
 
 1;

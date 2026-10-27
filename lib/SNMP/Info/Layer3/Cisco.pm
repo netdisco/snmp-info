@@ -188,7 +188,7 @@ sub eigrp_peers {
 sub _vrf_subnets_from_routes { return 1; }
 
 # CISCO-VRF-MIB lists the VRFs where MPLS-L3VPN-STD-MIB serves none. The
-# index of cvVrfName is cvVrfIndex.
+# index of cvVrfName is cvVrfIndex. Any row it serves lists default.
 sub _vrf_vendor_instances {
     my $cisco = shift;
 
@@ -201,6 +201,7 @@ sub _vrf_vendor_instances {
         $record->{sources}{list} = 'CISCO-VRF-MIB';
         $instances{$name} = $record;
     }
+    $cisco->_vrf_list_default( \%instances, 'CISCO-VRF-MIB' ) if %$names;
     return \%instances;
 }
 
@@ -412,7 +413,9 @@ show on one VRF's port only, is listed for both.
 
 C<CISCO-VRF-MIB> lists the VRFs, and the ports they hold, when
 C<MPLS-L3VPN-STD-MIB> serves no VRF row. Its source is
-C<CISCO-VRF-MIB>. When C<MPLS-L3VPN-STD-MIB> serves rows, the vendor MIB is
+C<CISCO-VRF-MIB>. Any C<cvVrfTable> row lists C<default> too, so a device
+serving only its global row there reports C<vrf_instances_complete()> 1,
+none configured. When C<MPLS-L3VPN-STD-MIB> serves rows, the vendor MIB is
 not read.
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP

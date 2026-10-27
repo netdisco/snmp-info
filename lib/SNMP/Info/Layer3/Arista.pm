@@ -168,6 +168,8 @@ sub _vrf_context_is_instance_name { return 1; }
 
 # aristaVrfTable is indexed by the length-prefixed VRF name. INVALID is no
 # route distinguisher. aristaVrfState is not read into oper: see the POD.
+# The table has no row for the default VRF, so a whole walk of it lists
+# default even with no row.
 sub _vrf_vendor_instances {
     my $arista = shift;
 
@@ -188,7 +190,21 @@ sub _vrf_vendor_instances {
         $record->{sources}{rd}   = 'ARISTA-VRF-MIB' if defined $record->{rd};
         $instances{$name} = $record;
     }
+    $arista->_vrf_list_default( \%instances, 'ARISTA-VRF-MIB' )
+        if %iids or $arista->_arista_vrf_table_answered();
     return \%instances;
+}
+
+# True when both aristaVrfTable walks were recorded complete. An absent
+# outcome is a poller MIB problem, not an answer from the device.
+sub _arista_vrf_table_answered {
+    my $arista = shift;
+
+    foreach my $method (qw/vrf_arista_rd vrf_arista_state/) {
+        my $status = $arista->walk_status($method) or return 0;
+        return 0 if !$status->{complete} or defined $status->{reason};
+    }
+    return 1;
 }
 
 sub _vrf_vendor_list_methods {
@@ -201,8 +217,9 @@ sub _vrf_vendor_membership {
 
     my $rows = $arista->vrf_arista_if() || {};
     return {
-        map { $_ => $rows->{$_} }
-            grep { defined $rows->{$_} and length $rows->{$_} } keys %$rows
+        map  { $_ => $rows->{$_} }
+        grep { length( $rows->{$_} // q() ) and $rows->{$_} ne 'default' }
+            keys %$rows
     };
 }
 
@@ -355,7 +372,17 @@ C<MPLS-L3VPN-STD-MIB>, so F<ARISTA-VRF-MIB> lists the VRFs and the ports
 they hold; the source is C<ARISTA-VRF-MIB>. A route distinguisher of
 C<INVALID> is none. C<oper> is undef: EOS 4.36 serves C<aristaVrfState>
 C<inactive> for VRFs its CLI shows routing, so the state is not used as an
-operational status.
+operational status. A port C<aristaVrfIfTable> gives C<default> is a port
+of the default instance, absent from C<i_vrf()>.
+
+C<aristaVrfTable> has no row for the default VRF, so a device with no VRF
+serves it no row at all. A complete walk of C<aristaVrfRouteDistinguisher>
+and C<aristaVrfState> lists C<default> with the source C<ARISTA-VRF-MIB>
+even then, and C<vrf_instances_complete()> reports 1, none configured.
+Where neither walk was recorded, such as on an object primed from a cache,
+or the poller could not resolve the MIB, the list reads as unsupported,
+undef. A device that does not implement the MIB answers the walk as one
+with no VRF does, so it reads none.
 
 Each VRF reads in its own context, which serves only that VRF's addresses
 and neighbors. The default context serves the default instance only, such
