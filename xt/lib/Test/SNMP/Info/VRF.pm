@@ -152,19 +152,197 @@ sub vrf_instances__rd_sentinel__is_undef : Tests(2) {
     '00:01:fc:00:00:00:00:1e', q(A binary RD is colon hex));
 }
 
-sub vrf_instances__caller_names__are_marked_as_caller : Tests(4) {
+sub _prime_members {
+  my $test = shift;
+  my %opt  = @_;
+
+  $test->{info}{_vrf_configured} = $opt{configured} if exists $opt{configured};
+  my %active = $opt{no_members} ? () : (
+    '3.114.101.100.2'          => 'active',
+    '3.114.101.100.4'          => 'active',
+    '4.98.108.117.101.3'       => 'active',
+    '4.98.108.117.101.5'       => 'active',
+    '4.103.114.101.121.10'     => 'active',
+    '5.103.114.101.101.110.6'  => 'active',
+  );
+  $test->{info}{_vrf_l3vpn_if} = 1;
+  $test->{info}{store}{vrf_l3vpn_if} = \%active;
+  return;
+}
+
+sub vrf_instances__caller_names_listing_device__ignored : Tests(3) {
   my $test = shift;
 
   $test->_prime_vrf_table();
+  $test->_prime_members(configured => 4);
   my $instances = $test->{info}->vrf_instances(['red', 'orange']);
 
   is($instances->{red}{listed_by}, 'device',
     q(A name the device served stays device-listed));
-  is($instances->{orange}{listed_by}, 'caller',
-    q(An unserved caller name is marked caller));
-  is($instances->{orange}{kind}, 'vrf', q(... and is a vrf));
-  ok(!exists $test->{info}{_vrf_instances},
-    q(Caller names are never memoized));
+  ok(!exists $instances->{orange}, q(A caller name is ignored));
+  ok(exists $test->{info}{_vrf_instances},
+    q(The device list is memoized));
+}
+
+sub vrf_instances__caller_names_unsupported_device__marked_caller : Tests(6) {
+  my $test = shift;
+
+  $test->{info}{_vrf_l3vpn_rd}  = 1;
+  $test->{info}{_vrf_l3vpn_descr} = 1;
+  $test->{info}{_vrf_l3vpn_oper}  = 1;
+  $test->{info}{_vrf_l3vpn_rt}    = 1;
+  $test->{info}{_vrf_l3vpn_if}    = 1;
+  $test->{info}{store}{$_} = {} for
+    qw/vrf_l3vpn_rd vrf_l3vpn_descr vrf_l3vpn_oper vrf_l3vpn_rt vrf_l3vpn_if/;
+
+  cmp_deeply([keys %{$test->{info}->vrf_instances()}], ['default'],
+    q(No names: default only, even after memoizing));
+  my $instances = $test->{info}->vrf_instances(['vr-red']);
+  is($instances->{'vr-red'}{listed_by}, 'caller', q(Marked caller));
+  is($instances->{'vr-red'}{kind}, 'vrf', q(... a vrf));
+  cmp_deeply($instances->{'vr-red'}{sources}, {}, q(... with no sources));
+  is($test->{info}->vrf_instances_complete(['vr-red']), 0,
+    q(A caller list is never complete));
+  is($test->{info}->vrf_instances_complete(), undef,
+    q(Without names the device is unsupported));
+}
+
+sub i_vrf : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_vrf');
+  $test->_prime_vrf_table();
+  $test->_prime_members();
+  $test->{info}{store}{vrf_l3vpn_if}{'4.98.108.117.101.7'} = 'notInService';
+  $test->{info}{store}{vrf_l3vpn_if}{'7.100.101.102.97.117.108.116.8'}
+    = 'active';
+  cmp_deeply(
+    $test->{info}->i_vrf(),
+    {2 => 'red', 4 => 'red', 3 => 'blue', 5 => 'blue', 10 => 'grey',
+      6 => 'green'},
+    q(Active rows map ifIndex to name; inactive and default rows do not)
+  );
+  $test->{info}->session()->{Community} = 'public@red';
+  $test->{info}{args}{Community} = 'public';
+  is($test->{info}->i_vrf(), undef, q(Refused in a context));
+}
+
+sub i_vrf__membership_rows__maps_ifindex_to_name : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_members();
+  cmp_deeply(
+    $test->{info}->i_vrf(),
+    {2 => 'red', 4 => 'red', 3 => 'blue', 5 => 'blue', 10 => 'grey',
+      6 => 'green'},
+    q(ifIndex maps to VRF name)
+  );
+}
+
+sub vrf_instances_complete : Tests(1) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'vrf_instances_complete');
+}
+
+sub vrf_instances_complete__served_and_mapped__is_1 : Tests(2) {
+  my $test = shift;
+
+  $test->_prime_vrf_table();
+  $test->_prime_members(configured => 4);
+  is($test->{info}->vrf_instances_complete(), 1, q(Complete));
+  is($test->{info}->vrf_instances()->{red}{sources}{members},
+    'MPLS-L3VPN-STD-MIB', q(Members are a recorded source));
+}
+
+sub vrf_instances_complete__no_mib__is_undef : Tests(2) {
+  my $test = shift;
+
+  $test->{info}{$_} = 1 for qw/_vrf_l3vpn_rd _vrf_l3vpn_descr
+    _vrf_l3vpn_oper _vrf_l3vpn_rt _vrf_l3vpn_if/;
+  $test->{info}{store}{$_} = {} for
+    qw/vrf_l3vpn_rd vrf_l3vpn_descr vrf_l3vpn_oper vrf_l3vpn_rt vrf_l3vpn_if/;
+  is($test->{info}->vrf_instances_complete(), undef, q(Unsupported));
+  cmp_deeply([keys %{$test->{info}->vrf_instances()}], ['default'],
+    q(Only default is listed));
+}
+
+sub vrf_instances_complete__configured_zero__is_1 : Tests(2) {
+  my $test = shift;
+
+  $test->{info}{$_} = 1 for qw/_vrf_l3vpn_rd _vrf_l3vpn_descr
+    _vrf_l3vpn_oper _vrf_l3vpn_rt _vrf_l3vpn_if/;
+  $test->{info}{store}{$_} = {} for
+    qw/vrf_l3vpn_rd vrf_l3vpn_descr vrf_l3vpn_oper vrf_l3vpn_rt vrf_l3vpn_if/;
+  $test->{info}{_vrf_configured} = 0;
+  is($test->{info}->vrf_instances_complete(), 1, q(None configured));
+  cmp_deeply([keys %{$test->{info}->vrf_instances()}], ['default'],
+    q(Only default is listed));
+}
+
+sub vrf_instances_complete__fewer_rows_than_configured__is_0 : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_vrf_table();
+  $test->_prime_members(configured => 5);
+  is($test->{info}->vrf_instances_complete(), 0, q(A row is missing));
+}
+
+sub vrf_instances_complete__no_membership_rows__is_0 : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_vrf_table();
+  $test->_prime_members(configured => 4, no_members => 1);
+  is($test->{info}->vrf_instances_complete(), 0, q(Split agent));
+}
+
+sub vrf_instances_complete__unknown_count_and_unmapped_row__is_0 : Tests(2) {
+  my $test = shift;
+
+  $test->_prime_vrf_table();
+  $test->_prime_members();
+  $test->{info}{_vrf_configured} = undef;
+  is($test->{info}->vrf_instances_complete(), 1,
+    q(Unknown count, every row has a port));
+  delete $test->{info}{store}{vrf_l3vpn_if}{$_}
+    for qw/4.103.114.101.121.10/;
+  delete $test->{info}{_vrf_instances};
+  is($test->{info}->vrf_instances_complete(), 0,
+    q(Unknown count, a row with no port));
+}
+
+sub vrf_instances_complete__known_count_portless_row__is_1 : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_vrf_table();
+  $test->_prime_members(configured => 4);
+  delete $test->{info}{store}{vrf_l3vpn_if}{'4.103.114.101.121.10'};
+  is($test->{info}->vrf_instances_complete(), 1,
+    q(A VRF with no ports is allowed when others have them));
+}
+
+sub vrf_instances_complete__incomplete_walk__is_0 : Tests(2) {
+  my $test = shift;
+
+  foreach my $method (qw/vrf_l3vpn_rd vrf_l3vpn_if/) {
+    $test->_prime_vrf_table();
+    $test->_prime_members(configured => 4);
+    delete $test->{info}{_vrf_instances};
+    $test->{info}{walk_status}{$method}
+      = {complete => 0, reason => 'timeout'};
+    is($test->{info}->vrf_instances_complete(), 0,
+      qq(An incomplete walk of $method));
+    $test->{info}{walk_status} = {};
+  }
+}
+
+sub vrf_instances_complete__xr_default_row__not_counted__is_1 : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_vrf_table(with_default => 1);
+  $test->_prime_members(configured => 4);
+  is($test->{info}->vrf_instances_complete(), 1,
+    q(The default row is not one of the configured VRFs));
 }
 
 sub vrf_instances__in_a_context__throws_naming_default_context : Tests(2) {
