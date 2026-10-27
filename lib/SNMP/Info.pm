@@ -2089,8 +2089,10 @@ SNMP version.  NX-OS refuses community suffixes, so its VLAN and MST
 contexts need SNMPv3.  A site's community map (NX-OS
 C<snmp-server mib community-map>) reaches a VRF context over SNMPv2c: on
 NX-OS the VRF readers read the session's VRF from its SNMP-COMMUNITY-MIB
-row.  On other devices a community-mapped session reads as the default
-context; read VRF contexts over SNMPv3.
+row, and on VOSS from the one C<rcVrfConfigTable> row its VRF context
+serves.  ExtremeXOS reaches no VR context over SNMPv2c.  On other devices
+a community-mapped session reads as the default context; read VRF
+contexts over SNMPv3.
 
 The examples below switch with this helper.  C<kind> C<none> is the
 default context.

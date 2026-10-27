@@ -1494,8 +1494,10 @@ $name)> names it, and for the instance C<default> the default context.
 The session's context is its SNMPv3 Context or community suffix. Where the
 class can read it from the device, an SNMPv2c session on a community the
 device maps to a context reads that context too
-(L<SNMP::Info::Layer3::Nexus>); elsewhere such a session reads as the
-default context, so use SNMPv3.
+(L<SNMP::Info::Layer3::Nexus>, from its community table;
+L<SNMP::Info::Layer3::Extreme> on VOSS, from the one C<rcVrfConfigTable>
+row its VRF context serves); elsewhere such a session reads as the default
+context, so use SNMPv3.
 
 =head2 Completeness
 

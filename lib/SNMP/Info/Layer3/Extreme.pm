@@ -1255,6 +1255,28 @@ sub _voss_snmp_context {
     return { kind => 'vrf', id => $id, v2c => undef, v3 => $context };
 }
 
+# The context a VOSS VRF context's own rcVrfConfigTable row names. A VRF
+# context serves only its own row; the default context serves every row,
+# vrfid 0 (GlobalRouter, context '') among them. '' is the default context.
+# Undef over SNMPv3 (its Context decides), on EXOS, which answers no v2c
+# session, when the table is not served, or when a VRF context's one row
+# names no context.
+sub _vrf_community_context {
+    my $extreme = shift;
+
+    return unless $extreme->_voss_vrf_context();
+    my $version = ( $extreme->session() || {} )->{Version};
+    return if defined $version and $version eq '3';
+
+    my $contexts = $extreme->vrf_rc_context();
+    return unless $contexts and %$contexts;
+    my @vrfids = sort keys %$contexts;
+    return q() if @vrfids > 1 or grep { $_ eq '0' } @vrfids;
+    my $context = SNMP::Info::VRF::_vrf_text( $contexts->{ $vrfids[0] } );
+    return unless defined $context and length $context;
+    return $context;
+}
+
 # Each virtual router reads in its own context, named for it. EXOS serves
 # the same address table in every context and scopes only routes and
 # neighbors, so the ports of a context are those its routes use. Each VOSS
@@ -1834,6 +1856,12 @@ binds a v2c community to a context by site configuration, so there is no
 v2c form; a community C<community@name> reaches the default context.
 C<default>, which is C<GlobalRouter>, and a name the device does not list
 get nothing.
+
+A VOSS SNMPv2c session on a site-mapped community reads as that VRF: a VRF
+context serves only its own C<rcVrfConfigTable> row, and the VRF readers
+take the context from it.  The default context serves every row, so it
+reads as the default.  ExtremeXOS answers no SNMPv2c session in a virtual
+router; read it over SNMPv3.
 
 =item $extreme->peth_port_power()
 

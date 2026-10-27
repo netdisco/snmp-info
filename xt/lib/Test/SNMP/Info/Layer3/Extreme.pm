@@ -1769,4 +1769,124 @@ sub vrf_neighbors__voss_default_unspecified_next_hop__no_port : Tests(2) {
     'The interface holding 0.0.0.0 is not');
 }
 
+sub _enter_community {
+  my ($info, $community) = @_;
+  $info->{args}{Community}      = 'public';
+  $info->session()->{Version}   = 2;
+  $info->session()->{Community} = $community;
+  return;
+}
+
+sub _vrf_community_context__voss_red_context__returns_vrf1 : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_community($info, 'public-red');
+  is($info->_vrf_community_context(), 'vrf1',
+    'The one row red\'s context serves names its context');
+}
+
+sub _vrf_community_context__voss_mgmt_context__returns_vrf512 : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_cache([512], _voss_port_macs()));
+
+  _enter_community($info, 'public-mgmt');
+  is($info->_vrf_community_context(), 'vrf512',
+    'The management router\'s row names vrf512');
+}
+
+sub _vrf_community_context__voss_default_context__returns_empty : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_default_cache());
+
+  _enter_community($info, 'public');
+  is($info->_vrf_community_context(), q(),
+    'The default context serves every row');
+  is($info->_vrf_session_context(), q(), 'The session reads the default');
+}
+
+sub _vrf_community_context__voss_only_global_router__returns_empty : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_cache([0]));
+
+  _enter_community($info, 'public');
+  is($info->_vrf_community_context(), q(), 'vrfid 0 alone is the default');
+}
+
+sub _vrf_community_context__voss_table_not_served__undef : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  $info->{store}{vrf_rc_context} = undef;
+  _enter_community($info, 'public-red');
+  is($info->_vrf_community_context(), undef, 'No rows are served');
+  is($info->_vrf_session_context(), q(), 'The session reads the default');
+}
+
+sub _vrf_community_context__voss_v3__undef_without_walking : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_vr($info, 'vrf1');
+  my $walks = 0;
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Extreme::vrf_rc_context
+    = sub { $walks++; return {} };
+  is($info->_vrf_community_context(), undef, 'No answer over SNMPv3');
+  is($walks, 0, 'The VRF table was not walked');
+}
+
+sub _vrf_community_context__xos__undef : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _red_cache());
+
+  $info->{store}{vrf_rc_context} = {1 => 'vrf1'};
+  _enter_community($info, 'public-red');
+  is($info->_vrf_community_context(), undef,
+    'ExtremeXOS answers no v2c session');
+}
+
+sub vrf_neighbors__voss_mapped_community_red__reads_red : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_community($info, 'public-red');
+  my $rows = $info->vrf_neighbors('red');
+  cmp_deeply(_address_list($rows),
+    [sort '2089 10.100.1.10', '2091 10.101.1.10',
+      '2089 ' . _v6('2001:db8:1001:0:0:0:0:16')],
+    'The same hosts as over the SNMPv3 context');
+  is($info->error(), undef, 'No error');
+}
+
+sub vrf_instances__voss_mapped_community__refused : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_community($info, 'public-red');
+  is($info->vrf_instances(), undef, 'The list is refused over red');
+  like($info->error(), qr/only the default context.*context 'vrf1'/s,
+    'The error names the default context and the session\'s');
+}
+
+sub _vrf_community_context__voss_row_without_context__undef : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  $info->{store}{vrf_rc_context} = {1 => q()};
+  _enter_community($info, q(public-red));
+  is($info->_vrf_community_context(), undef,
+    q(A VRF row naming no context is not the default context));
+}
+
+sub vrf_neighbors__voss_mapped_community_red__default_refused : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_community($info, q(public-red));
+  is($info->vrf_neighbors(q(default)), undef, q(default is refused over red));
+  like($info->error(), qr/default context.*context 'vrf1'/s,
+    q(The error names the session's context));
+}
+
 1;
