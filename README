@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.982000
+    SNMP::Info - Version 3.983000
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -567,6 +567,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer2::Kentrox for details.
 
+        SNMP::Info::Layer2::LigoWave
+            SNMP interface to LigoWave DLB radios.
+
+            See documentation in SNMP::Info::Layer2::LigoWave for details.
+
         SNMP::Info::Layer2::Microsens
             Subclass for MICROSENS managed switches, including G6 and G6+.
 
@@ -671,6 +676,10 @@ SUBCLASSES
             Subclass for Aruba wireless switches.
 
             See documentation in SNMP::Info::Layer3::Aruba for details.
+
+        SNMP::Info::Layer3::ArubaInstant
+            SNMP Interface to Aruba Instant 8.x access points. See
+            SNMP::Info::Layer3::ArubaInstant for details.
 
         SNMP::Info::Layer3::ArubaCX
             SNMP Interface to L3 Devices running ArubaOS-CX
@@ -945,6 +954,12 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Redlion for details.
 
+        SNMP::Info::Layer3::RuckusController
+            Subclass for Ruckus SmartZone and SmartCell Gateway controllers.
+
+            See documentation in SNMP::Info::Layer3::RuckusController for
+            details.
+
         SNMP::Info::Layer3::SilverPeak
             Subclass for SilverPeak devices.
 
@@ -993,15 +1008,27 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::Sun for details.
 
+        SNMP::Info::Layer3::Tachyon
+            Subclass for Tachyon TNA-series devices.
+
+            See documentation in SNMP::Info::Layer3::Tachyon for details.
+
         SNMP::Info::Layer3::Tasman
             Subclass for Avaya Secure Routers.
 
             See documentation in SNMP::Info::Layer3::Tasman for details.
 
         SNMP::Info::Layer3::Teltonika
-            Subclass for Teltonika RUT9xx series routers.
+            Subclass for legacy Teltonika RUT9xx series routers.
 
             See documentation in SNMP::Info::Layer3::Teltonika for details.
+
+        SNMP::Info::Layer3::TeltonikaRutOS
+            Subclass for Teltonika devices using the current RutOS SNMP
+            enterprise OID layout.
+
+            See documentation in SNMP::Info::Layer3::TeltonikaRutOS for
+            details.
 
         SNMP::Info::Layer3::Timetra
             Alcatel-Lucent SR Class.
@@ -1393,7 +1420,8 @@ USAGE
     context
         The SNMPv3 Context. On SNMPv1 and SNMPv2c, "X" when the session
         community is the constructor's Community followed by @X, such as a
-        VLAN number or a VRF name. Otherwise an empty string.
+        VLAN number or a VRF name, or "X" followed by "@" and the Community
+        ("default::20@public"). Otherwise an empty string.
 
     complete
         1 when the whole table was read, 0 otherwise.
@@ -1488,6 +1516,87 @@ USAGE
             lowered it to, or undef; "getnext", 1 when the table is walked
             by GETNEXT; "getnext_reason", 'nonincreasing' or 'timeout', why
             it was; and "slow", 1 when the table needed timeout recovery.
+
+  SNMP Contexts
+    Some devices serve part of a feature only in non-default SNMP contexts.
+    Cisco IOS serves each VLAN's forwarding table in that VLAN's context.
+    SNMPv2c reaches a context by a community suffix ("public@10"). SNMPv3
+    reaches it by a context name ("vlan-10").
+
+    To read such a feature:
+
+    1.  Call context_kinds($feature). Nothing means the default context
+        serves the whole feature: read it as usual.
+
+    2.  In the default context, list what to visit: VLAN ids from v_index()
+        for "fdb", tree keys from stp_trees() for "stp". Keep the lists:
+        update() clears the cache on every switch.
+
+    3.  For each one, take its context from snmp_context() (a tree record's
+        "contexts" already holds them), switch with update(), and read.
+
+    4.  Call update() with no arguments to return to the default context.
+
+    A context whose "v2c" or "v3" is undef cannot be reached over that SNMP
+    version. NX-OS refuses community suffixes, so its VLAN and MST contexts
+    need SNMPv3.
+
+    Both examples below switch with this helper. "kind" "none" is the
+    default context.
+
+     # Switch to $context; false where this session's SNMP version cannot
+     # reach it
+     sub enter_context {
+         my ( $info, $context, $community ) = @_;
+
+         return $info->update() if $context->{kind} eq 'none';
+         if ( $info->snmp_ver() == 3 ) {
+             return unless defined $context->{v3};
+             return $info->update( Context => $context->{v3} );
+         }
+         return unless defined $context->{v2c};
+         return $info->update(
+             Community => sprintf( $context->{v2c}, $community ) );
+     }
+
+     my $community = $info->snmp_comm();    # before the first switch
+
+    Forwarding table, per VLAN where the device needs it:
+
+     my %fw_mac;    # VLAN => { iid => MAC }, or 'all' => { ... }
+     if ( $info->context_kinds('fdb') ) {
+         my @vlans = sort { $a <=> $b } values %{ $info->v_index() || {} };
+         foreach my $vlan (@vlans) {
+             my $context = $info->snmp_context( 'vlan', $vlan ) or next;
+             enter_context( $info, $context, $community ) or next;
+             $fw_mac{$vlan} = { %{ $info->fw_mac() || {} } };
+         }
+         $info->update();
+     }
+     else {
+         $fw_mac{all} = { %{ $info->fw_mac() || {} } };
+     }
+
+    MST instance ports. NX-OS serves each instance in its own "mst-N"
+    context. IOS serves it in the context of any VLAN the instance carries,
+    so the rows of every listed context are merged:
+
+     my $trees = $info->stp_trees() || {};
+     my $switch = $info->context_kinds('stp');
+     my %msti_ports;    # tree key => { iid => port record }
+     my @mstis = grep { $trees->{$_}{type} eq 'msti' } sort keys %$trees;
+     foreach my $key (@mstis) {
+         unless ($switch) {
+             $msti_ports{$key} = { %{ $info->stp_tree_ports($key) || {} } };
+             next;
+         }
+         foreach my $context ( @{ $trees->{$key}{contexts} } ) {
+             enter_context( $info, $context, $community ) or next;
+             my $ports = $info->stp_tree_ports($key) || {};
+             $msti_ports{$key}{$_} = $ports->{$_} foreach keys %$ports;
+         }
+     }
+     $info->update() if $switch;
 
   Object Scalar Methods
     These are for package related data, not directly supplied from SNMP.
@@ -1586,6 +1695,49 @@ USAGE
         See
         <ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-community
         Indexing.html>
+
+        To ask the same of any feature, use context_kinds().
+
+    $info->context_kinds($feature)
+        Returns a reference to an array of the kinds of SNMP context the
+        device uses to serve $feature, or nothing when the default context
+        serves it all. See "SNMP Contexts".
+
+        Features: "fdb", the forwarding table (fw_mac(), fw_port()); "stp",
+        the spanning tree ports (stp_tree_ports()).
+
+        Kinds: "vlan", one context per VLAN; "mst", one context per MST
+        instance. The answer names kinds of context, not the trees or VLANs
+        the device has now. Where only one protocol uses contexts, a class
+        answers while that protocol runs and returns nothing otherwise
+        (SNMP::Info::Layer3::Juniper for VSTP).
+
+         if (my $kinds = $info->context_kinds('fdb')) {
+             # Read the forwarding table once per VLAN
+         }
+
+    $info->snmp_context($kind, $id)
+        Returns how to reach one SNMP context on this device, as a reference
+        to hash, or nothing where the device has no such context. $kind is a
+        kind from context_kinds(); $id is a VLAN id for "vlan" and an MST
+        instance for "mst". See "SNMP Contexts".
+
+         my $context = $info->snmp_context('vlan', 10);
+         # { kind => 'vlan', id => 10, v2c => '%s@10', v3 => 'vlan-10' }
+
+        "kind", "id"
+            As passed.
+
+        "v2c"
+            A "sprintf" format for the SNMPv2c community:
+            "sprintf($context->{v2c}, 'public')" gives "public@10". Undef
+            where SNMPv2c cannot reach the context.
+
+        "v3"
+            The SNMPv3 context name. Undef where SNMPv3 cannot reach the
+            context. The device answers only for the names its SNMP
+            configuration binds, so a site's own context naming wins over
+            this one.
 
   GLOBALS (Scalar Methods)
     These are methods to return scalar data from RFC1213.
@@ -2469,6 +2621,39 @@ SNMP::INFO INTERNALS
         Takes an 8-byte octet stream (HEX-STRING) and returns a colon
         separated ASCII hex string.
 
+    munge_stpx_port_role()
+        Changes the served "stpxRSTPPortRoleValue" of
+        CISCO-STP-EXTENSIONS-MIB to the shared port role vocabulary:
+        "disabled", "root", "designated", "alternate", "backup", "boundary"
+        or "master". Accepts the label or the number, disabled(1) to
+        master(7). The label "backUp" becomes "backup". Returns undef for
+        anything else. The served value is returned by the same method with
+        a "_raw" suffix.
+
+    munge_dot1s_port_role()
+        Changes the served 802.1s port role of JUNIPER-MIMSTP-MIB and
+        NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB to the shared port role
+        vocabulary (see munge_stpx_port_role()). Accepts the label or the
+        number:
+
+            0 disabled    1 alternate    2 backup
+            3 root        4 designated   5 master
+
+        Returns undef for anything else. The served value is returned by the
+        same method with a "_raw" suffix.
+
+    munge_dot1w_port_role()
+        Changes the served port role of
+        NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB to the shared port role
+        vocabulary (see munge_stpx_port_role()). Accepts the label or the
+        number, and drops the "Port" suffix of the label:
+
+            0 disabledPort    1 alternatePort   2 backupPort
+            3 rootPort        4 designatedPort
+
+        Returns undef for anything else. The served value is returned by the
+        same method with a "_raw" suffix.
+
     munge_prio_port()
         Takes an 2-byte octet stream (HEX-STRING) and returns a colon
         separated ASCII hex string.
@@ -2803,8 +2988,11 @@ SNMP::INFO INTERNALS
     $info->_walk_context()
         Returns the SNMPv3 Context of the session. On SNMPv1 and SNMPv2c,
         returns "X" when the session community is the constructor's
-        Community followed by @X. Otherwise returns an empty string. Never
-        returns any part of the community itself.
+        Community followed by @X, or "X" followed by "@" and the Community
+        (Junos puts the context first, "default::20@public"). Otherwise, and
+        always when the constructor's Community is empty or undefined,
+        returns an empty string. Never returns any part of the community
+        itself.
 
     $info->_show_attr()
         Used internally by AUTOLOAD to return data called by methods listed
