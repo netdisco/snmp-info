@@ -208,6 +208,9 @@ $VERSION = '3.983000';
     'nn_cist_p_port'   => 'nnMstCistPortDesignatedPort',
     'nn_cist_p_enable' => 'nnMstCistForcePortState',
 
+    # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB admin edge, by bridge port
+    'nn_cist_p_edge_admin' => 'nnMstCistPortAdminEdgeStatus',
+
     # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB, indexed <port>.<instance>
     'nn_msti_p_state'  => 'nnMstPortState',
     'nn_msti_p_role'   => 'nnMstPortCurrentPortRole',
@@ -218,6 +221,9 @@ $VERSION = '3.983000';
     # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB, indexed by bridge port
     'nn_rst_p_state' => 'nnRstDot1wPortStateTransSmState',
     'nn_rst_p_role'  => 'nnRstDot1wPortRole',
+
+    # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB admin edge, by bridge port
+    'nn_rst_p_edge_admin' => 'nnRstDot1dStpPortAdminEdgePort',
 
     # BRIDGE-MIB beside nnRst; stp_p_* prefer rcStgPortTable
     'rc_dot1d_p_bridge' => 'dot1dStpPortDesignatedBridge',
@@ -899,6 +905,34 @@ sub i_bpduguard_enabled {
     return $rapidcity->rcPortBpduFilteringOperEnabled();
 }
 
+sub i_faststart_enabled {
+    my $rapidcity = shift;
+    my $partial   = shift;
+
+    # The role's @ISA is SNMP::Info, so SUPER:: would not reach Bridge
+    my $edge_admin = $rapidcity->_rc_edge_admin();
+    return SNMP::Info::Bridge::i_faststart_enabled( $rapidcity, $partial )
+        unless $edge_admin;
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $rapidcity,
+        $edge_admin, $partial );
+}
+
+# Admin edge by bridge port from the running protocol's table: nnMst CIST
+# under MSTP, nnRst under RSTP.  Under MSTP the nnMst rows are the per-port
+# truth even where nnRst lists more ports.
+sub _rc_edge_admin {
+    my $rapidcity = shift;
+
+    my %table_for = (
+        mstp => 'nn_cist_p_edge_admin',
+        rstp => 'nn_rst_p_edge_admin',
+    );
+    my $method = $table_for{ $rapidcity->_rc_stp_protocol() || '' }
+        or return;
+    my $edge_admin = $rapidcity->$method() || {};
+    return keys %$edge_admin ? $edge_admin : undef;
+}
+
 sub i_stp_state {
     my $rapidcity = shift;
     my $partial   = shift;
@@ -1453,6 +1487,14 @@ Returns true or false depending on whether C<BpduGuard> is enabled on a given
 port.  Format is a hash reference with key = C<ifIndex>, value = [true|false]
 
 (C<rcPortBpduFilteringOperEnabled>)
+
+=item $rapidcity->i_faststart_enabled()
+
+Returns 1 or 0 for each port by whether it is configured as an edge port.
+Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads
+C<nnMstCistPortAdminEdgeStatus> under MSTP or
+C<nnRstDot1dStpPortAdminEdgePort> under RSTP; otherwise, or when that table
+has no rows, C<dot1dStpPortAdminEdgePort> through L<SNMP::Info::Bridge>.
 
 =back
 
@@ -2011,6 +2053,10 @@ tree are left out.  Otherwise nothing.
 
 (C<nnMstCistForcePortState>)
 
+=item $rapidcity->nn_cist_p_edge_admin()
+
+(C<nnMstCistPortAdminEdgeStatus>)
+
 =item $rapidcity->nn_msti_p_state()
 
 (C<nnMstPortState>)
@@ -2038,6 +2084,10 @@ tree are left out.  Otherwise nothing.
 =item $rapidcity->nn_rst_p_role()
 
 (C<nnRstDot1wPortRole>)
+
+=item $rapidcity->nn_rst_p_edge_admin()
+
+(C<nnRstDot1dStpPortAdminEdgePort>)
 
 =item $rapidcity->rc_dot1d_p_bridge()
 

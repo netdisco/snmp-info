@@ -449,6 +449,20 @@ sub i_faststart_enabled__no_rstp_mib__returns_empty : Tests(1) {
         {}, q(No admin edge values gives an empty hash) );
 }
 
+sub i_faststart_enabled__mixed_value_forms__keeps_known_only : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        _faststart_cache(
+            is_edgeport_admin => { 1 => 'bogus', 2 => 'disabled', 3 => 2 },
+            bp_index          => { 1 => 101,     2 => 102,        3 => 103 },
+        )
+    );
+    cmp_deeply( $test->{info}->i_faststart_enabled(),
+        { 102 => 0, 103 => 0 },
+        q(Unknown value skipped; disabled and 2 both read as 0) );
+}
+
 sub i_faststart_enabled__oper_only__ignored : Tests(1) {
     my $test = shift;
 

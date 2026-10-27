@@ -311,19 +311,28 @@ sub i_faststart_enabled {
     my $bridge  = shift;
     my $partial = shift;
 
-    my $bp_index   = $bridge->bp_index($partial);
     my $edge_admin = $bridge->is_edgeport_admin();
+    return _stp_edge_by_ifindex( $bridge, $edge_admin, $partial );
+}
+
+# Admin edge values keyed by bridge port, mapped to ifIndex through bp_index
+# and read as 1 or 0 by $decode (default _stp_enabled); a port missing from
+# bp_index, or a value $decode does not know, is absent.  Called as a
+# function by classes outside Bridge's inheritance (RapidCity).
+sub _stp_edge_by_ifindex {
+    my ( $bridge, $edge_admin, $partial, $decode ) = @_;
+    $decode ||= \&_stp_enabled;
+
+    my $bp_index = $bridge->bp_index($partial) || {};
 
     my %i_faststart_enabled;
-
-    foreach my $index ( keys %$edge_admin ) {
-        my $iid     = $bp_index->{$index};
-        my $enabled = _stp_enabled( $edge_admin->{$index} );
+    foreach my $port ( keys %{ $edge_admin || {} } ) {
+        my $iid     = $bp_index->{$port};
+        my $enabled = $decode->( $edge_admin->{$port} );
         next unless defined $iid;
         next unless defined $enabled;
         $i_faststart_enabled{$iid} = $enabled;
     }
-
     return \%i_faststart_enabled;
 }
 

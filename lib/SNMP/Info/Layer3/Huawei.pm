@@ -56,9 +56,15 @@ $VERSION = '3.983000';
     'HUAWEI-POE-MIB'           => 'hwPoePower',
     'HUAWEI-SYS-MAN-MIB'       => 'hwPatchVersion',
     'HUAWEI-ENTITY-EXTENT-MIB' => 'hwEntityFanState',
+    'HUAWEI-MSTP-MIB'          => 'hwMstpiStpPortEdgeport',
 );
 
-%GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, );
+%GLOBALS = (
+    %SNMP::Info::Layer3::GLOBALS,
+
+    # HUAWEI-MSTP-MIB
+    'hw_mstp_edge_default' => 'hwMstpEdgedPortDefault',
+);
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
@@ -101,6 +107,9 @@ $VERSION = '3.983000';
 
     # HUAWEI-SYS-MAN-MIB::hwPatchFileTable
     'hw_patch_version' => 'hwPatchVersion',
+
+    # HUAWEI-MSTP-MIB::hwMstpPortTable, indexed <instance>.<bridge port>
+    'hw_mstp_p_edge' => 'hwMstpiStpPortEdgeport',
 );
 
 %MUNGE = (
@@ -535,6 +544,38 @@ sub i_mtu {
     return $mtus;
 }
 
+sub i_faststart_enabled {
+    my $huawei  = shift;
+    my $partial = shift;
+
+    my $edge = $huawei->hw_mstp_p_edge() || {};
+    my %cist_edge;
+    foreach my $row ( keys %$edge ) {
+        my ( $instance, $port ) = split /\./, $row, 2;
+        $cist_edge{$port} = $edge->{$row} if $instance eq '0';
+    }
+    return $huawei->SUPER::i_faststart_enabled($partial)
+        unless keys %cist_edge;
+
+    my $default
+        = SNMP::Info::Bridge::_stp_enabled( $huawei->hw_mstp_edge_default() );
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $huawei, \%cist_edge,
+        $partial, sub { _hw_edge_enabled( shift, $default ) } );
+}
+
+# hwMstpiStpPortEdgeport is disable(1), enable(2), undo(3), the reverse of
+# EnabledStatus, so _stp_enabled would misread it; undo takes the device
+# default from hwMstpEdgedPortDefault
+sub _hw_edge_enabled {
+    my ( $value, $default ) = @_;
+    return unless defined $value;
+
+    return 1        if $value =~ /^(?:enable|2)$/;
+    return 0        if $value =~ /^(?:disable|1)$/;
+    return $default if $value =~ /^(?:undo|3)$/;
+    return;
+}
+
 sub munge_hw_peth_admin {
     my $admin = shift;
 
@@ -626,6 +667,8 @@ Subclass for Huawei switches
 =item F<HUAWEI-POE-MIB>
 
 =item F<HUAWEI-ENTITY-EXTENT-MIB>
+
+=item F<HUAWEI-MSTP-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -760,6 +803,28 @@ first and then C<dot3adAggPortListPorts> if that is unavailable.
 
 Interface MTU value. Overridden with corresponding frame size entry from
 C<hwEthernetJumboframeMaxLength> if one exists.
+
+=item $huawei->i_faststart_enabled()
+
+Returns 1 or 0 for each port by whether it is configured as an edge port.
+Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads the
+instance 0 rows of C<hwMstpiStpPortEdgeport>; C<undo> takes the default in
+C<hwMstpEdgedPortDefault>.  Falls back to C<dot1dStpPortAdminEdgePort>
+through L<SNMP::Info::Bridge>.
+
+=back
+
+=head2 Spanning Tree Edge Port Sources
+
+=over
+
+=item $huawei->hw_mstp_edge_default()
+
+(C<hwMstpEdgedPortDefault>)
+
+=item $huawei->hw_mstp_p_edge()
+
+(C<hwMstpiStpPortEdgeport>)
 
 =back
 

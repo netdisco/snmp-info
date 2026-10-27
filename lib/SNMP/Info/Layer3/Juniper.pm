@@ -117,6 +117,9 @@ $VERSION = '3.983000';
     'jnx_cist_p_port'   => 'jnxMIMstCistPortDesignatedPort',
     'jnx_cist_p_enable' => 'jnxMIMstCistForcePortState',
 
+    # JUNIPER-MIMSTP-MIB admin edge, indexed by bridge port
+    'jnx_cist_p_edge_admin' => 'jnxMIMstCistPortAdminEdgeStatus',
+
     # JUNIPER-MIMSTP-MIB, indexed <bridge port>.<MSTI>
     'jnx_msti_p_state'  => 'jnxMIMstMstiPortState',
     'jnx_msti_p_role'   => 'jnxMIMstMstiCurrentPortRole',
@@ -815,6 +818,17 @@ sub peth_port_ifindex {
     return $peth_port_ifindex;
 }
 
+sub i_faststart_enabled {
+    my $juniper = shift;
+    my $partial = shift;
+
+    my $edge_admin = $juniper->jnx_cist_p_edge_admin() || {};
+    return $juniper->SUPER::i_faststart_enabled($partial)
+        unless keys %$edge_admin;
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $juniper, $edge_admin,
+        $partial );
+}
+
 # The protocols the default context reports: 'mstp' when MST is started at
 # context 0, else the BRIDGE-MIB protocol dot1dStpVersion names, then 'vstp'
 # when VSTP runs, beside that protocol or alone. Empty in any other context.
@@ -1468,6 +1482,13 @@ value = C<ifIndex>. As Juniper does not provide a mapping function,
 this does it manually.
 For example, ge-0/0/1 registers as PowerEthernet interface '1.2'
 
+=item $juniper->i_faststart_enabled()
+
+Returns 1 or 0 for each port by whether it is configured as an edge port.
+Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads
+C<jnxMIMstCistPortAdminEdgeStatus>, else C<dot1dStpPortAdminEdgePort>
+through L<SNMP::Info::Bridge>.
+
 =item $juniper->jnx_vacm_context_name()
 
 (C<vacmContextName>)
@@ -1531,6 +1552,10 @@ For example, ge-0/0/1 registers as PowerEthernet interface '1.2'
 =item $juniper->jnx_cist_p_enable()
 
 (C<jnxMIMstCistForcePortState>)
+
+=item $juniper->jnx_cist_p_edge_admin()
+
+(C<jnxMIMstCistPortAdminEdgeStatus>)
 
 =item $juniper->jnx_msti_p_state()
 

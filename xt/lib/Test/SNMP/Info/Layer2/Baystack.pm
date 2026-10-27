@@ -30,6 +30,7 @@
 package Test::SNMP::Info::Layer2::Baystack;
 
 use Test::Class::Most parent => 'My::Test::Class';
+use B ();
 
 use SNMP::Info::Layer2::Baystack;
 
@@ -236,6 +237,167 @@ sub stp_tree_ports_rstp_enable_index : Tests(2) {
     q(RSTP: rcStgPortEnableStp read at the ifIndex));
   is($rows->{102}{enabled}, 1,
     q(RSTP: no rcStgPort row, dot1dStpPortEnable at the bridge port));
+}
+
+# Versions as _rc_stp_protocol reads them: nnMstForceProtocolVersion, then
+# nnRstDot1dStpVersion. No protocol primes neither.
+my %faststart_versions = (
+  mstp => {_nn_mst_version => 'mstp'},
+  rstp => {_nn_mst_version => 'rstp', _nn_rst_version => 'rstp'},
+  stp  => {_nn_mst_version => 'rstp', _nn_rst_version => 'stpCompatible'},
+);
+
+sub _faststart_cache {
+  my ($test, $protocol, %store) = @_;
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    (map { ("_$_" => 1) } keys %store),
+    %{$faststart_versions{$protocol // ''} || {}},
+    store => \%store,
+  });
+  return;
+}
+
+sub i_faststart_enabled__baystack_class__resolves_to_rapidcity : Tests(1) {
+  my $test = shift;
+
+  is(
+    B::svref_2object($test->{info}->can('i_faststart_enabled'))
+      ->STASH->NAME,
+    'SNMP::Info::RapidCity',
+    q(Baystack resolves i_faststart_enabled to RapidCity)
+  );
+}
+
+sub i_faststart_enabled__mstp__reads_nnmst_by_ifindex : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('mstp',
+    nn_cist_p_edge_admin => {1 => 'true', 2 => 'false', 434 => 'true'},
+    nn_rst_p_edge_admin  => {1 => 'false', 2 => 'true', 9 => 'true'},
+    is_edgeport_admin    => {1 => 'false'},
+    bp_index             => {1 => 1001, 2 => 1002, 434 => 1434, 9 => 1009},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {1001 => 1, 1002 => 0, 1434 => 1},
+    q(MSTP: nnMstCistPortAdminEdgeStatus only, mapped to ifIndex)
+  );
+}
+
+sub i_faststart_enabled__nnmst_numeric__maps_1_and_2 : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('mstp',
+    nn_cist_p_edge_admin => {1 => 1, 2 => 2},
+    bp_index             => {1 => 1001, 2 => 1002},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {1001 => 1, 1002 => 0},
+    q(TruthValue true(1) and false(2) read as 1 and 0)
+  );
+}
+
+sub i_faststart_enabled__rstp__reads_nnrst : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('rstp',
+    nn_cist_p_edge_admin => {},
+    nn_rst_p_edge_admin  => {1 => 'false', 2 => 'true'},
+    is_edgeport_admin    => {1 => 'true'},
+    bp_index             => {1 => 1001, 2 => 1002},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {1001 => 0, 1002 => 1},
+    q(RSTP: nnRstDot1dStpPortAdminEdgePort)
+  );
+}
+
+sub i_faststart_enabled__rstp_with_nnmst_rows__ignores_nnmst : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('rstp',
+    nn_cist_p_edge_admin => {1 => 'true', 2 => 'true', 3 => 'true'},
+    nn_rst_p_edge_admin  => {1 => 'false', 2 => 'true'},
+    bp_index             => {1 => 1001, 2 => 1002, 3 => 1003},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {1001 => 0, 1002 => 1},
+    q(RSTP: nnMst rows are not read)
+  );
+}
+
+sub i_faststart_enabled__mstp_with_only_nnrst__falls_back_to_rstp_mib :
+  Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('mstp',
+    nn_cist_p_edge_admin => {},
+    nn_rst_p_edge_admin  => {1 => 'true', 2 => 'true'},
+    is_edgeport_admin    => {1 => 'false', 2 => 'true'},
+    bp_index             => {1 => 1001, 2 => 1002},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {1001 => 0, 1002 => 1},
+    q(MSTP with no nnMst rows: dot1dStpPortAdminEdgePort, not nnRst)
+  );
+}
+
+sub i_faststart_enabled__rstp_nortel_tables_empty__falls_back_to_rstp_mib :
+  Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('rstp',
+    nn_cist_p_edge_admin => {},
+    nn_rst_p_edge_admin  => {},
+    is_edgeport_admin    => {1 => 'true', 2 => 'false'},
+    bp_index             => {1 => 1001, 2 => 1002},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {1001 => 1, 1002 => 0},
+    q(dot1dStpPortAdminEdgePort when neither Nortel table has rows)
+  );
+}
+
+sub i_faststart_enabled__no_mstp_or_rstp__falls_back_to_rstp_mib :
+  Tests(2) {
+  my $test = shift;
+
+  my %store = (
+    nn_cist_p_edge_admin => {1 => 'true', 2 => 'true'},
+    nn_rst_p_edge_admin  => {1 => 'true', 2 => 'true'},
+    is_edgeport_admin    => {1 => 'false', 2 => 'true'},
+    bp_index             => {1 => 1001, 2 => 1002},
+  );
+  $test->_faststart_cache(undef, %store);
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {1001 => 0, 1002 => 1},
+    q(No protocol detected: dot1dStpPortAdminEdgePort)
+  );
+
+  $test->_faststart_cache('stp', %store);
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {1001 => 0, 1002 => 1},
+    q(STP compatible: dot1dStpPortAdminEdgePort)
+  );
+}
+
+sub i_faststart_enabled__port_absent_from_bp_index__skipped : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('mstp',
+    nn_cist_p_edge_admin => {1 => 'true', 9 => 'true'},
+    bp_index             => {1 => 1001},
+  );
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {1001 => 1}, q(Bridge port without a bp_index row is skipped));
 }
 
 1;

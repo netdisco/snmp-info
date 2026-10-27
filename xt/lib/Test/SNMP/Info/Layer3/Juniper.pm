@@ -30,6 +30,7 @@
 package Test::SNMP::Info::Layer3::Juniper;
 
 use Test::Class::Most parent => 'My::Test::Class';
+use B ();
 
 use SNMP::Info::Layer3::Juniper;
 
@@ -1936,6 +1937,81 @@ sub stp_vlan_map : Tests(6) {
   is(scalar $info->stp_vlan_map(), undef, 'RSTP: nothing');
   $info->clear_cache();
   is(scalar $info->stp_vlan_map(), undef, 'Nothing served: nothing');
+}
+
+sub _faststart_cache {
+  my ($test, %store) = @_;
+  $test->{info}->clear_cache();
+  $test->{info}
+    ->cache({(map { ("_$_" => 1) } keys %store), store => \%store});
+  return;
+}
+
+# ex4300-shaped: CIST rows at bridge ports 4, 491 and 492
+sub i_faststart_enabled : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache(
+    jnx_cist_p_edge_admin => {4 => 'false', 491 => 'true', 492 => 'true'},
+    is_edgeport_admin     => {4 => 'true'},
+    bp_index              => {4 => 662, 491 => 509, 492 => 510},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {662 => 0, 509 => 1, 510 => 1},
+    q(jnxMIMstCistPortAdminEdgeStatus maps bridge port to ifIndex)
+  );
+}
+
+sub i_faststart_enabled__cist_numeric__maps_1_and_2 : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache(
+    jnx_cist_p_edge_admin => {4 => 2, 491 => 1},
+    bp_index              => {4 => 662, 491 => 509},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {662 => 0, 509 => 1},
+    q(TruthValue true(1) and false(2) read as 1 and 0)
+  );
+}
+
+sub i_faststart_enabled__cist_empty__falls_back_to_rstp_mib : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache(
+    jnx_cist_p_edge_admin => {},
+    is_edgeport_admin     => {1 => 'false', 2 => 'true'},
+    bp_index              => {1 => 521, 2 => 522},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {521 => 0, 522 => 1},
+    q(dot1dStpPortAdminEdgePort when the CIST table has no rows)
+  );
+}
+
+sub i_faststart_enabled__port_absent_from_bp_index__skipped : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache(
+    jnx_cist_p_edge_admin => {4 => 'true', 9 => 'true'},
+    bp_index              => {4 => 662},
+  );
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {662 => 1}, q(Bridge port without a bp_index row is skipped));
+}
+
+sub i_faststart_enabled__juniper_class__resolves_to_juniper : Tests(1) {
+  my $test = shift;
+
+  is(
+    B::svref_2object($test->{info}->can('i_faststart_enabled'))
+      ->STASH->NAME,
+    'SNMP::Info::Layer3::Juniper',
+    q(Juniper resolves i_faststart_enabled to its own override)
+  );
 }
 
 1;

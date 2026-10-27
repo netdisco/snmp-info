@@ -30,6 +30,7 @@
 package Test::SNMP::Info::Layer3::Huawei;
 
 use Test::Class::Most parent => 'My::Test::Class';
+use B ();
 
 use SNMP::Info::Layer3::Huawei;
 
@@ -628,6 +629,140 @@ sub munge_hw_peth_status : Tests(6) {
 
   is(SNMP::Info::Layer3::Huawei::munge_hw_peth_status('huh'),
     'huh', q(... anything else not munged));
+}
+
+# Rows are <instance>.<bridge port>; hwL2IfPortIfIndex maps bridge ports 26,
+# 27 and 28 to ifIndex 30, 31 and 32
+sub _faststart_cache {
+  my ($test, $default, %store) = @_;
+  $test->{info}->clear_cache();
+  $store{hw_l2if_port_idx} = {26 => 30, 27 => 31, 28 => 32};
+  my %cache = ((map { ("_$_" => 1) } keys %store), store => \%store);
+  $cache{_hw_mstp_edge_default} = $default if defined $default;
+  $test->{info}->cache(\%cache);
+  return;
+}
+
+sub i_faststart_enabled : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('disabled',
+    hw_mstp_p_edge    => {'0.26' => 'enable', '0.27' => 'disable'},
+    is_edgeport_admin => {26 => 'false'},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {30 => 1, 31 => 0},
+    q(hwMstpiStpPortEdgeport enable and disable map to 1 and 0)
+  );
+}
+
+sub i_faststart_enabled__numeric_values__read_as_the_enum : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache(2,
+    hw_mstp_p_edge => {'0.26' => 2, '0.27' => 1, '0.28' => 3},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {30 => 1, 31 => 0, 32 => 0},
+    q(enable(2), disable(1), and undo(3) with default disabled(2))
+  );
+}
+
+sub i_faststart_enabled__undo_with_default_disabled__returns_0 : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('disabled',
+    hw_mstp_p_edge => {'0.26' => 'undo', '0.27' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {30 => 0, 31 => 1}, q(undo follows hwMstpEdgedPortDefault disabled));
+}
+
+sub i_faststart_enabled__undo_with_default_enabled__returns_1 : Tests(2) {
+  my $test = shift;
+
+  $test->_faststart_cache('enabled',
+    hw_mstp_p_edge => {'0.26' => 'undo', '0.27' => 'disable'},
+  );
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {30 => 1, 31 => 0}, q(undo follows hwMstpEdgedPortDefault enabled));
+
+  $test->_faststart_cache(1, hw_mstp_p_edge => {'0.26' => 3});
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {30 => 1}, q(undo(3) follows hwMstpEdgedPortDefault enabled(1)));
+}
+
+sub i_faststart_enabled__undo_without_default__absent : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache(undef,
+    hw_mstp_p_edge => {'0.26' => 'undo', '0.27' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {31 => 1}, q(undo with no default served is absent));
+}
+
+sub i_faststart_enabled__instance_1_row__ignored : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('disabled',
+    hw_mstp_p_edge =>
+      {'0.26' => 'disable', '1.26' => 'enable', '1.27' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {30 => 0}, q(Only instance 0, the CIST, is read));
+}
+
+sub i_faststart_enabled__port_absent_from_bp_index__skipped : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('disabled',
+    hw_mstp_p_edge => {'0.26' => 'enable', '0.99' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {30 => 1}, q(Bridge port without a bp_index row is skipped));
+}
+
+sub i_faststart_enabled__no_mstp_rows__falls_back_to_rstp_mib : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('disabled',
+    hw_mstp_p_edge    => {},
+    is_edgeport_admin => {26 => 'true', 27 => 'false'},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {30 => 1, 31 => 0},
+    q(dot1dStpPortAdminEdgePort when HUAWEI-MSTP-MIB has no rows)
+  );
+}
+
+sub i_faststart_enabled__only_nonzero_instances__falls_back_to_rstp_mib :
+  Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('disabled',
+    hw_mstp_p_edge    => {'1.26' => 'enable', '2.27' => 'enable'},
+    is_edgeport_admin => {26 => 'false', 27 => 'true'},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {30 => 0, 31 => 1},
+    q(No instance 0 rows: dot1dStpPortAdminEdgePort)
+  );
+}
+
+sub i_faststart_enabled__huawei_class__resolves_to_huawei : Tests(1) {
+  my $test = shift;
+
+  is(
+    B::svref_2object($test->{info}->can('i_faststart_enabled'))
+      ->STASH->NAME,
+    'SNMP::Info::Layer3::Huawei',
+    q(Huawei resolves i_faststart_enabled to its own override)
+  );
 }
 
 1;
