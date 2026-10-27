@@ -181,4 +181,58 @@ sub uptime : Tests(1) {
         'Inherited Net-SNMP behavior uses system uptime');
 }
 
+
+# Shaped as a TSW202: ifDescr numbers port1 to sfp2 from ifIndex 3, and
+# the Teltonika port table numbers the same ports from 1, as the bridge does.
+sub _tsw_cache {
+    my ( $info, %store ) = @_;
+    my @ports = ( map( {"port$_"} 1 .. 8 ), 'sfp1', 'sfp2' );
+    my %i_description = (
+        1 => 'lo', 2 => 'eth0',
+        ( map { ( $_ + 3 ) => $ports[$_] } 0 .. $#ports ),
+        13 => 'br0', 14 => 'br0.1', 15 => 'br0.1400',
+    );
+    $info->cache({
+        '_i_index'             => 1,
+        '_i_description'       => 1,
+        '_teltonika_port_name' => 1,
+        'store' => {
+            'i_index'       => { map { $_ => $_ } keys %i_description },
+            'i_description' => \%i_description,
+            'teltonika_port_name' =>
+                { map { ( $_ + 1 ) => $ports[$_] } 0 .. $#ports },
+            %store,
+        },
+    });
+}
+
+sub bp_index : Tests(4) {
+    my $info = shift->{info};
+
+    _tsw_cache($info);
+    is_deeply(
+        $info->bp_index(),
+        { map { $_ => $_ + 2 } 1 .. 10 },
+        'Without BRIDGE-MIB ports, each bridge port joins ifDescr by name'
+    );
+
+    _tsw_cache( $info,
+        'teltonika_port_name' =>
+            { 1 => 'port1', 2 => 'port9', 3 => 'port2', 4 => 'port2' } );
+    is_deeply( $info->bp_index(), { 1 => 3 },
+        'A name matching no ifDescr, or matched twice, is left out' );
+
+    _tsw_cache( $info, 'teltonika_port_name' => {} );
+    ok( !%{ $info->bp_index() || {} },
+        'A device without the port table gets no mapping' );
+
+    _tsw_cache($info);
+    $info->cache({
+        '_bp_index' => 1,
+        'store'     => { 'bp_index' => { 1 => 7, 2 => 8 } },
+    });
+    is_deeply( $info->bp_index(), { 1 => 7, 2 => 8 },
+        'BRIDGE-MIB dot1dBasePortIfIndex is used whenever it is served' );
+}
+
 1;
