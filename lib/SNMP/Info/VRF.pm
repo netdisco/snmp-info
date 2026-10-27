@@ -69,6 +69,14 @@ my $LIST_SOURCE = 'MPLS-L3VPN-STD-MIB';
 # mplsL3VpnVrfRTType values, which sit in the last arc of the index
 my %RT_TYPE = ( 1 => 'import', 2 => 'export', 3 => 'both' );
 
+# ipAddressTable index types: bytes is the address part, length the whole
+my %INET_TYPE = (
+    1 => { family => 'ipv4', bytes => 4,  length => 4 },
+    2 => { family => 'ipv6', bytes => 16, length => 16 },
+    3 => { family => 'ipv4', bytes => 4,  length => 8 },
+    4 => { family => 'ipv6', bytes => 16, length => 20 },
+);
+
 sub vrf_instances {
     my $vrf          = shift;
     my $caller_names = shift;
@@ -309,6 +317,120 @@ sub vrf_neighbors {
     return \%rows;
 }
 
+# Interface addresses of one instance, keyed ifIndex.address. The device
+# serves one address table per port, so an address two VRFs share survives
+# in each, and ownership comes from the port as for neighbors.
+sub vrf_addresses {
+    my $vrf  = shift;
+    my $name = shift;
+
+    return unless defined $name and $vrf->_vrf_in_reader_context($name);
+    my $context_mode = $vrf->_vrf_context_filters();
+    return if !$context_mode and !$vrf->_vrf_is_listed($name);
+
+    my $rows = $vrf->_vrf_address_rows();
+    return $rows if $context_mode;
+
+    foreach my $key ( keys %$rows ) {
+        my $owner = $vrf->_vrf_owner_of( $rows->{$key}{ifindex} );
+        delete $rows->{$key} if !defined $owner or $owner ne $name;
+    }
+    return $rows;
+}
+
+# ipAddressTable, with ipAdEntTable standing in for IPv4 when the first
+# serves no IPv4 row
+sub _vrf_address_rows {
+    my $vrf = shift;
+
+    my $rows = $vrf->_vrf_inet_address_rows();
+    return $rows if grep { $_->{family} eq 'ipv4' } values %$rows;
+    return { %$rows, %{ $vrf->_vrf_ipadent_rows() } };
+}
+
+# Index is type, length, address octets; types 3 and 4 end with four zone
+# octets that are not part of the address. Two rows on one port that differ
+# only by zone are one address: the lowest index is kept so the choice
+# does not depend on hash order.
+sub _vrf_inet_address_rows {
+    my $vrf = shift;
+
+    my $ifindexes = $vrf->new_ip_index()  || {};
+    my $types     = $vrf->new_ip_type()   || {};
+    my $prefixes  = $vrf->new_ip_prefix() || {};
+
+    my %rows;
+    foreach my $iid ( sort keys %$ifindexes ) {
+        next unless ( $types->{$iid} // q{} ) eq 'unicast';
+        my $address = _vrf_parse_address($iid) or next;
+        my $key     = "$ifindexes->{$iid}.$address->{ip}";
+        next if exists $rows{$key};
+
+        $rows{$key} = {
+            ifindex    => $ifindexes->{$iid},
+            ip         => $address->{ip},
+            prefix_len => scalar _vrf_pointer_length( $prefixes->{$iid} ),
+            family     => $address->{family},
+        };
+    }
+    return \%rows;
+}
+
+# { ip, family } from type.length.octets, or nothing for a shape the
+# address types do not allow
+sub _vrf_parse_address {
+    my $iid = shift;
+
+    my ( $type, $length, @octets ) = split /\./, $iid;
+    my $shape = $INET_TYPE{ $type // q{} } or return;
+    return unless defined $length and $length == $shape->{length};
+    return unless @octets == $length;
+
+    my @address = @octets[ 0 .. $shape->{bytes} - 1 ];
+    return {
+        family => $shape->{family},
+        ip     => $shape->{family} eq 'ipv4'
+        ? join( q{.}, @address )
+        : join( q{:}, unpack '(H4)*', pack 'C*', @address ),
+    };
+}
+
+# The last arc of an ipAddressPrefix RowPointer is the prefix length; the
+# null pointer 0.0 says the device holds none
+sub _vrf_pointer_length {
+    my $pointer = shift;
+
+    return if !defined $pointer or $pointer =~ /^(?:\.?0\.0|zeroDotZero)$/;
+    return $pointer =~ /\.(\d+)$/ ? $1 + 0 : undef;
+}
+
+sub _vrf_ipadent_rows {
+    my $vrf = shift;
+
+    my $ifindexes = $vrf->old_ip_index()   || {};
+    my $masks     = $vrf->old_ip_netmask() || {};
+
+    my %rows;
+    foreach my $ip ( keys %$ifindexes ) {
+        $rows{"$ifindexes->{$ip}.$ip"} = {
+            ifindex    => $ifindexes->{$ip},
+            ip         => $ip,
+            prefix_len => scalar _vrf_mask_length( $masks->{$ip} ),
+            family     => 'ipv4',
+        };
+    }
+    return \%rows;
+}
+
+# 255.255.255.0 is 24; a mask with a gap in it has no length
+sub _vrf_mask_length {
+    my $mask = shift;
+
+    return unless defined $mask and $mask =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/;
+    my $bits = unpack 'B32', pack 'C4', $1, $2, $3, $4;
+    return $bits =~ /^(1*)0*$/ ? length $1 : undef;
+}
+
 sub _vrf_is_listed {
     my $vrf  = shift;
     my $name = shift;
@@ -519,6 +641,15 @@ ifIndex and address as C<at_paddr> and C<ipv6_n2p_mac> key them. Each row
 holds C<ifindex>, C<ip>, C<mac> and C<family> (C<ipv4> or C<ipv6>). Returns
 nothing for a name the device does not list, or when the session is in the
 wrong context for the device; the error says how to change it.
+
+=item $vrf->vrf_addresses($name)
+
+Returns a hashref of the interface addresses of instance C<$name>, keyed
+by ifIndex and address. Each row holds C<ifindex>, C<ip>, C<prefix_len>
+(undef when the device gives none) and C<family>. IPv6 addresses are in the
+form C<ipv6_n2p_addr> returns, without any zone. Reads C<ipAddressTable>,
+and C<ipAdEntTable> for IPv4 when the first serves no IPv4 row. Returns
+nothing for a name the device does not list, or in the wrong context.
 
 =back
 

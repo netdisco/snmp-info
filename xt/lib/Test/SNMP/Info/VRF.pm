@@ -658,4 +658,240 @@ sub vrf_neighbors__attribution_in_vrf_context__throws : Tests(2) {
     q(Error names the reader));
 }
 
+# ipAddressTable rows of an IOS-XE device. The ipv6z index is type 4,
+# length 20: sixteen address octets then four zone octets.
+my $V6_ONE = '32.1.13.184.0.64.0.0.0.0.0.0.0.0.0.1';
+my $V6_TWO = '32.1.13.184.0.64.0.0.0.0.0.0.0.0.0.2';
+my $PFX_OID = '.1.3.6.1.2.1.4.32.1.5';
+
+sub _prime_addresses {
+  my $test = shift;
+  my $info = shift;
+  my %opt  = @_;
+
+  my %ifindex = (
+    '1.4.10.40.0.1'      => 3,
+    '1.4.10.41.0.1'      => 4,
+    '1.4.172.20.20.14'   => 1,
+    "4.20.$V6_ONE.30.0.0.1" => 2,
+    "4.20.$V6_TWO.30.0.0.1" => 3,
+    '1.4.10.42.0.255'    => 5,
+    %{$opt{extra_ifindex} || {}},
+  );
+  my %type = map { $_ => 'unicast' } keys %ifindex;
+  $type{'1.4.10.42.0.255'} = 'broadcast';
+  my %prefix = (
+    '1.4.10.40.0.1'      => "$PFX_OID.3.1.4.10.40.0.0.24",
+    '1.4.10.41.0.1'      => "$PFX_OID.4.1.4.10.41.0.0.24",
+    '1.4.172.20.20.14'   => "$PFX_OID.1.1.4.172.20.20.0.24",
+    "4.20.$V6_ONE.30.0.0.1" => "$PFX_OID.2.2.16.$V6_ONE.64",
+    "4.20.$V6_TWO.30.0.0.1" => '.0.0',
+    '1.4.10.42.0.255'    => "$PFX_OID.5.1.4.10.42.0.0.24",
+    %{$opt{extra_prefix} || {}},
+  );
+  $info->{_new_ip_index}  = 1;
+  $info->{_new_ip_type}   = 1;
+  $info->{_new_ip_prefix} = 1;
+  $info->{store}{new_ip_index}  = \%ifindex;
+  $info->{store}{new_ip_type}   = {%type, %{$opt{extra_type} || {}}};
+  $info->{store}{new_ip_prefix} = \%prefix;
+  return;
+}
+
+sub _address_info {
+  my $test = shift;
+  my %opt  = @_;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::Addresses',
+    \@NEIGHBOR_PARENTS);
+  $test->{info} = $info;
+  $test->_prime_vrf_table();
+  $test->_prime_members();
+  $test->_prime_addresses($info, %opt);
+  return $info;
+}
+
+sub vrf_addresses : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'vrf_addresses');
+  my $info = $test->_address_info();
+  cmp_deeply(
+    $info->vrf_addresses('blue')->{'3.10.40.0.1'},
+    {ifindex => 3, ip => '10.40.0.1', prefix_len => 24, family => 'ipv4'},
+    q(An address row holds its port, address, prefix length and family)
+  );
+}
+
+sub vrf_addresses__ipv4__attributed_by_ifindex : Tests(5) {
+  my $test = shift;
+
+  my $info    = $test->_address_info();
+  my $red     = $info->vrf_addresses('red');
+  my $blue    = $info->vrf_addresses('blue');
+  my $default = $info->vrf_addresses('default');
+  cmp_deeply($red->{'4.10.41.0.1'},
+    superhashof({ifindex => 4, ip => '10.41.0.1', prefix_len => 24}),
+    q(red holds the address on its port));
+  ok(!exists $red->{'3.10.40.0.1'} && !grep({ $_->{ip} eq '10.40.0.1' } values %$red),
+    q(red does not hold 10.40.0.1, which the device collapsed to blue));
+  ok(!exists $blue->{'4.10.41.0.1'}, q(blue does not hold red's address));
+  cmp_deeply([sort keys %$default], ['1.172.20.20.14'],
+    q(default holds the address on the unlisted port));
+  ok(!(grep { $_->{ip} eq '10.42.0.255' } map { values %$_ } $red, $blue, $default),
+    q(A broadcast row is not an address));
+}
+
+sub vrf_addresses__ipv6z__zone_stripped : Tests(4) {
+  my $test = shift;
+
+  my $info = $test->_address_info();
+  my $red  = $info->vrf_addresses('red');
+  cmp_deeply(
+    $red->{'2.2001:0db8:0040:0000:0000:0000:0000:0001'},
+    {
+      ifindex    => 2,
+      ip         => '2001:0db8:0040:0000:0000:0000:0000:0001',
+      prefix_len => 64,
+      family     => 'ipv6',
+    },
+    q(red holds the IPv6 address in ipv6_n2p_addr's form, without the zone)
+  );
+  is(scalar keys %$red, 2, q(red holds its IPv4 row and the IPv6 row));
+  my $blue = $info->vrf_addresses('blue');
+  is($blue->{'3.2001:0db8:0040:0000:0000:0000:0000:0002'}{prefix_len}, undef,
+    q(A zeroDotZero prefix pointer gives an undef prefix length));
+  is($blue->{'3.2001:0db8:0040:0000:0000:0000:0000:0002'}{family}, 'ipv6',
+    q(... and the family is still ipv6));
+}
+
+sub vrf_addresses__same_address_two_ports__both_kept : Tests(4) {
+  my $test = shift;
+
+  my $info = $test->_address_info(
+    extra_ifindex => {'3.8.10.40.0.1.0.0.0.2' => 2, '3.8.10.40.0.1.0.0.0.3' => 3},
+    extra_prefix  => {
+      '3.8.10.40.0.1.0.0.0.2' => "$PFX_OID.2.1.4.10.40.0.0.24",
+      '3.8.10.40.0.1.0.0.0.3' => "$PFX_OID.3.1.4.10.40.0.0.24",
+    },
+  );
+  my $red  = $info->vrf_addresses('red');
+  my $blue = $info->vrf_addresses('blue');
+  cmp_deeply($red->{'2.10.40.0.1'}, superhashof({ifindex => 2, ip => '10.40.0.1'}),
+    q(red holds the zoned copy on ifIndex 2));
+  cmp_deeply($blue->{'3.10.40.0.1'}, superhashof({ifindex => 3, ip => '10.40.0.1'}),
+    q(blue keeps the copy on ifIndex 3));
+  is(scalar(grep { $_->{ip} eq '10.40.0.1' } values %$red), 1,
+    q(red holds the address once));
+  is(scalar(grep { $_->{ip} eq '10.40.0.1' } values %$blue), 1,
+    q(blue holds the address once, though two table rows land on ifIndex 3));
+}
+
+sub vrf_addresses__zoned_copies_same_port__one_row_lowest_index : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_address_info(
+    extra_ifindex => {'3.8.10.43.0.1.0.0.0.9' => 2, '3.8.10.43.0.1.0.0.0.1' => 2},
+    extra_prefix  => {
+      '3.8.10.43.0.1.0.0.0.9' => "$PFX_OID.2.1.4.10.43.0.0.16",
+      '3.8.10.43.0.1.0.0.0.1' => "$PFX_OID.2.1.4.10.43.0.0.24",
+    },
+  );
+  my $rows = $info->vrf_addresses('red');
+  is(scalar(grep { $_->{ip} eq '10.43.0.1' } values %$rows), 1,
+    q(Two zoned copies on one port make one row));
+  is($rows->{'2.10.43.0.1'}{prefix_len}, 24,
+    q(... from the copy with the lowest index, so the choice is stable));
+}
+
+sub vrf_addresses__no_ipaddresstable__falls_back_to_ipadent : Tests(4) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::AddressesOld',
+    \@NEIGHBOR_PARENTS);
+  $test->{info} = $info;
+  $test->_prime_vrf_table();
+  $test->_prime_members();
+  $info->{_old_ip_index}   = 1;
+  $info->{_old_ip_netmask} = 1;
+  $info->{store}{old_ip_index} = {
+    '10.40.0.1'    => 3,
+    '10.41.0.1'    => 4,
+    '172.20.20.14' => 1,
+    '10.44.0.1'    => 2,
+  };
+  $info->{store}{old_ip_netmask} = {
+    '10.40.0.1'    => '255.255.255.0',
+    '10.41.0.1'    => '255.255.255.0',
+    '172.20.20.14' => '255.255.255.0',
+    '10.44.0.1'    => '255.0.255.0',
+  };
+  cmp_deeply(
+    $info->vrf_addresses('blue'),
+    {
+      '3.10.40.0.1' => {
+        ifindex => 3, ip => '10.40.0.1', prefix_len => 24, family => 'ipv4',
+      },
+    },
+    q(blue reads its address from ipAdEntTable)
+  );
+  is($info->vrf_addresses('red')->{'4.10.41.0.1'}{prefix_len}, 24,
+    q(red gets its address and mask length too));
+  is($info->vrf_addresses('red')->{'2.10.44.0.1'}{prefix_len}, undef,
+    q(A mask that is not contiguous gives an undef length));
+  cmp_deeply([keys %{$info->vrf_addresses('default')}], ['1.172.20.20.14'],
+    q(default holds the unlisted port's address));
+}
+
+sub vrf_addresses__ipaddresstable_has_ipv4__ipadent_ignored : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_address_info();
+  $info->{_old_ip_index} = 1;
+  $info->{store}{old_ip_index} = {'10.99.0.1' => 3};
+  ok(!(grep { $_->{ip} eq '10.99.0.1' } values %{$info->vrf_addresses('blue')}),
+    q(ipAdEntTable is read only when ipAddressTable yields no IPv4 row));
+}
+
+sub vrf_addresses__unknown_name__returns_nothing : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_address_info();
+  is(scalar $info->vrf_addresses('purple'), undef,
+    q(An instance the device does not list has no addresses));
+}
+
+sub vrf_addresses__role_without_address_methods__has_no_rows : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_vrf_table();
+  cmp_deeply($test->{info}->vrf_addresses('default'), {},
+    q(A device serving neither address table gives no rows));
+}
+
+sub vrf_addresses__context_mode__rows_not_filtered_by_owner : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::AddressContext',
+    \@NEIGHBOR_PARENTS, _vrf_context_filters => sub { 1 });
+  $test->{info} = $info;
+  $test->_prime_members();
+  $test->_prime_addresses($info);
+  $test->_enter_context($info);
+  my $rows = $info->vrf_addresses('red');
+  cmp_deeply([sort grep { /^\d+\.10\./ || /^1\./ } keys %$rows],
+    ['1.172.20.20.14', '3.10.40.0.1', '4.10.41.0.1'],
+    q(Every unicast row the context serves is kept, whatever i_vrf says));
+}
+
+sub vrf_addresses__attribution_in_vrf_context__throws : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_address_info();
+  $test->_enter_context($info);
+  is(scalar $info->vrf_addresses('red'), undef, q(Refused in a context));
+  like($info->error(), qr/^\S+vrf_addresses\(\) reads instance 'red'/,
+    q(Error names the reader));
+}
+
 1;
