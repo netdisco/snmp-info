@@ -1860,8 +1860,11 @@ get nothing.
 A VOSS SNMPv2c session on a site-mapped community reads as that VRF: a VRF
 context serves only its own C<rcVrfConfigTable> row, and the VRF readers
 take the context from it.  The default context serves every row, so it
-reads as the default.  ExtremeXOS answers no SNMPv2c session in a virtual
-router; read it over SNMPv3.
+reads as the default.  The ExtremeXOS user guide documents an SNMPv2c read
+community of the form C<vr_name@community_name> for a user virtual router.
+That form is unverified, so it is not offered as C<v2c>.  If you can
+confirm it on a device, please open an issue with a walk.  SNMPv3 with the
+virtual router name as the context is verified; use it.
 
 =item $extreme->peth_port_power()
 
