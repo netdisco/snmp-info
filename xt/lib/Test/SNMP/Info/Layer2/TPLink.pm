@@ -30,7 +30,6 @@
 package Test::SNMP::Info::Layer2::TPLink;
 
 use Test::Class::Most parent => 'My::Test::Class';
-use B ();
 
 use SNMP::Info::Layer2::TPLink;
 
@@ -1170,60 +1169,6 @@ sub topology : Tests(4) {
     q(c_port has every TP-Link neighbor once));
   cmp_deeply([keys %{$info->c_ip()}], bag(qw(49167.1 49168.1)),
     q(c_ip has the neighbors with an IPv4 address));
-}
-
-# tpStpPortConfigTable is indexed by ifIndex; bp_index is primed with other
-# values to show it is not consulted
-sub _faststart_cache {
-  my ($test, %store) = @_;
-  $test->{info}->clear_cache();
-  $store{bp_index} = {49153 => 1, 49154 => 2, 1 => 49160};
-  $test->{info}
-    ->cache({(map { ("_$_" => 1) } keys %store), store => \%store});
-  return;
-}
-
-sub i_faststart_enabled : Tests(1) {
-  my $test = shift;
-
-  $test->_faststart_cache(
-    is_edgeport_admin => {49153 => 'enable', 49154 => 'disable'});
-  cmp_deeply(
-    $test->{info}->i_faststart_enabled(),
-    {49153 => 1, 49154 => 0},
-    q(tpStpEdgePortStatus enable and disable keyed by ifIndex)
-  );
-}
-
-sub i_faststart_enabled__numeric_values__map_1_and_0 : Tests(1) {
-  my $test = shift;
-
-  $test->_faststart_cache(is_edgeport_admin => {49153 => 1, 49154 => 0});
-  cmp_deeply(
-    $test->{info}->i_faststart_enabled(),
-    {49153 => 1, 49154 => 0},
-    q(enable(1) and disable(0) read as 1 and 0)
-  );
-}
-
-sub i_faststart_enabled__unknown_value__absent : Tests(1) {
-  my $test = shift;
-
-  $test->_faststart_cache(
-    is_edgeport_admin => {49153 => 'bogus', 49154 => 2, 49155 => 'true'});
-  cmp_deeply($test->{info}->i_faststart_enabled(),
-    {}, q(Values outside the enum are absent));
-}
-
-sub i_faststart_enabled__tplink_class__resolves_to_tplink : Tests(1) {
-  my $test = shift;
-
-  is(
-    B::svref_2object($test->{info}->can('i_faststart_enabled'))
-      ->STASH->NAME,
-    'SNMP::Info::Layer2::TPLink',
-    q(TPLink resolves i_faststart_enabled to its own override)
-  );
 }
 
 1;

@@ -757,25 +757,6 @@ sub fw_port {
     return \%out;
 }
 
-# tpStpPortConfigTable is indexed by ifIndex, not bridge port, and
-# tpStpEdgePortStatus is disable(0), enable(1), which _stp_enabled would
-# read as unknown and true, so Bridge's method cannot read it
-sub i_faststart_enabled {
-    my $tp      = shift;
-    my $partial = shift;
-
-    my $edge_admin = $tp->is_edgeport_admin($partial) || {};
-
-    my %i_faststart_enabled;
-    foreach my $iid ( keys %$edge_admin ) {
-        my $value = $edge_admin->{$iid};
-        next unless defined $value;
-        $i_faststart_enabled{$iid} = 1 if $value =~ /^(?:enable|1)$/;
-        $i_faststart_enabled{$iid} = 0 if $value =~ /^(?:disable|0)$/;
-    }
-    return \%i_faststart_enabled;
-}
-
 1;
 __END__
 
@@ -1080,14 +1061,6 @@ C<tpl2BridgeManageDynPort> (index C<mac.vlan>). A C<u/s/p> value resolves
 through the interface port map, a port number through the single
 C<u/s/number> interface, then C<bp_index>. Unresolved values stay as
 reported.
-
-=item $tplink->i_faststart_enabled()
-
-Returns reference to hash. 1 or 0 per ifIndex by whether the port is
-configured as an edge port.  The table is indexed by ifIndex, so
-C<bp_index> is not used.
-
-(C<tpStpEdgePortStatus>)
 
 =back
 
