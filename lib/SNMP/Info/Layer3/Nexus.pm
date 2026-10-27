@@ -86,6 +86,7 @@ sub _context_kinds {
 	my ( $nexus, $feature ) = @_;
 
 	return [ 'vlan', 'mst' ] if $feature eq 'stp';
+	return ['vrf'] if $feature eq 'vrf';
 	return;
 }
 
@@ -98,6 +99,7 @@ sub _snmp_context {
 	return unless defined $kind and defined $id;
 	return { kind => 'vlan', id => $id, v2c => undef, v3 => "vlan-$id" }
 		if $kind eq 'vlan';
+	return $nexus->_vrf_snmp_context($id) if $kind eq 'vrf';
 	return unless $kind eq 'mst';
 
 	my $name   = "mst-$id";
@@ -105,6 +107,29 @@ sub _snmp_context {
 	my $index  = join( '.', length $name, map {ord} split //, $name );
 	return unless exists $mapped->{$index};
 	return { kind => 'mst', id => $id, v2c => undef, v3 => $name };
+}
+
+# The context cContextMappingTable maps to the VRF: the one named like the
+# VRF, else the lowest sorted name; with none mapped, the VRF name. The
+# default VRF is the default context, and an unnamed one is not a VRF.
+sub _vrf_snmp_context {
+    my ( $nexus, $name ) = @_;
+
+    return if $name eq q() or $name eq 'default';
+    my $mapped = $nexus->vrf_name() || {};
+    my %contexts;
+    foreach my $index ( keys %$mapped ) {
+        next unless defined $mapped->{$index} and $mapped->{$index} eq $name;
+        my ( $length, @octets ) = split /\./, $index;
+        $contexts{ join q(), map { chr } @octets } = 1;
+    }
+    my ($context) = exists $contexts{$name} ? $name : sort keys %contexts;
+    return {
+        kind => 'vrf',
+        id   => $name,
+        v2c  => undef,
+        v3   => defined $context ? $context : $name,
+    };
 }
 
 sub _get_snmpid_chassis {
@@ -377,7 +402,7 @@ C<dot1dBaseBridgeAddress>
 =item $nexus->context_kinds($feature)
 
 See L<SNMP::Info/"context_kinds">.  Returns C<['vlan', 'mst']> for
-C<stp>, and C<['vlan']> for C<fdb>.
+C<stp>, and C<['vlan']> for C<fdb>, and C<['vrf']> for C<vrf>.
 
 =item $nexus->snmp_context($kind, $id)
 
@@ -388,6 +413,15 @@ which it does only under MST.  C<mst-0> serves the CIST's
 C<dot1dStpPortTable>, which the default context does not; whether it also
 serves C<dot1dBasePortTable> was not measured, so C<cist.0> keeps
 C<ports_complete> 0.
+
+For C<vrf>, C<$id> is a name from C<vrf_instances()> and the answer is
+C<{ kind =E<gt> 'vrf', id =E<gt> $name, v2c =E<gt> undef, v3 =E<gt> $context }>.
+C<$context> is the context C<cContextMappingTable> maps to the VRF: the one
+named like the VRF if it is mapped, else the lowest sorted name among those
+mapped to it, else the VRF name itself.  The default VRF and an empty name
+have no context, so nothing is returned.  A site's community map
+(C<snmp-server mib community-map>) reaches a VRF over SNMPv2c, but the
+class cannot derive its name, so C<v2c> is undef.
 
 =back
 

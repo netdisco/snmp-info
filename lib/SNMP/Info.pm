@@ -2085,7 +2085,9 @@ Call C<update()> with no arguments to return to the default context.
 
 A context whose C<v2c> or C<v3> is undef cannot be reached over that
 SNMP version.  NX-OS refuses community suffixes, so its VLAN and MST
-contexts need SNMPv3.
+contexts need SNMPv3.  A site's community map (NX-OS
+C<snmp-server mib community-map>) reaches a VRF context over SNMPv2c, but
+SNMP::Info cannot derive its name.
 
 Both examples below switch with this helper.  C<kind> C<none> is the
 default context.
@@ -2143,6 +2145,19 @@ so the rows of every listed context are merged:
      }
  }
  $info->update() if $switch;
+
+Per-VRF neighbors, where the device filters them by context:
+
+ my $instances = $info->vrf_instances() || {};
+ my %vrf_neighbors;    # VRF name => { iid => neighbor record }
+ foreach my $name ( sort keys %$instances ) {
+     my $contexts = $instances->{$name}{contexts};
+     if ( $info->context_kinds('vrf') and $name ne 'default' ) {
+         enter_context( $info, $contexts->[0], $community ) or next;
+     }
+     $vrf_neighbors{$name} = { %{ $info->vrf_neighbors($name) || {} } };
+     $info->update();
+ }
 
 =head2 Object Scalar Methods
 
@@ -3148,10 +3163,11 @@ uses to serve C<$feature>, or nothing when the default context serves it
 all.  See L</"SNMP Contexts">.
 
 Features: C<fdb>, the forwarding table (C<fw_mac()>, C<fw_port()>);
-C<stp>, the spanning tree ports (C<stp_tree_ports()>).
+C<stp>, the spanning tree ports (C<stp_tree_ports()>); C<vrf>, the
+per-instance readers of L<SNMP::Info::VRF>.
 
 Kinds: C<vlan>, one context per VLAN; C<mst>, one context per MST
-instance.  The answer names kinds of context, not the trees or VLANs the
+instance; C<vrf>, one context per VRF.  The answer names kinds of context, not the trees or VLANs the
 device has now.  Where only one protocol uses contexts, a class answers
 while that protocol runs and returns nothing otherwise
 (L<SNMP::Info::Layer3::Juniper> for VSTP).
@@ -3177,8 +3193,8 @@ sub context_kinds {
 
 Returns how to reach one SNMP context on this device, as a reference to
 hash, or nothing where the device has no such context.  C<$kind> is a
-kind from C<context_kinds()>; C<$id> is a VLAN id for C<vlan> and an MST
-instance for C<mst>.  See L</"SNMP Contexts">.
+kind from C<context_kinds()>; C<$id> is a VLAN id for C<vlan>, an MST
+instance for C<mst> and a VRF name from C<vrf_instances()> for C<vrf>.  See L</"SNMP Contexts">.
 
  my $context = $info->snmp_context('vlan', 10);
  # { kind => 'vlan', id => 10, v2c => '%s@10', v3 => 'vlan-10' }

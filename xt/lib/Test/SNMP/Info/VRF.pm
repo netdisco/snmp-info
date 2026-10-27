@@ -97,6 +97,34 @@ sub vrf_instances : Tests(3) {
   );
 }
 
+sub vrf_instances__context_kinds_vrf__records_carry_context : Tests(4) {
+  my $test = shift;
+
+  my $info = $test->_make_info(
+    'Test::SNMP::Info::VRF::VrfContexts',
+    ['SNMP::Info::VRF'],
+    _context_kinds => sub { $_[1] eq 'vrf' ? ['vrf'] : () },
+    _snmp_context  => sub {
+      my ($self, $kind, $id) = @_;
+      return if $id eq 'grey';
+      return {kind => $kind, id => $id, v2c => undef, v3 => "ctx-$id"};
+    });
+  $test->{info} = $info;
+  $test->_prime_vrf_table(with_default => 1);
+  my $instances = $info->vrf_instances();
+  cmp_deeply($instances->{red}{contexts},
+    [{kind => 'vrf', id => 'red', v2c => undef, v3 => 'ctx-red'}],
+    q(A VRF record carries the context of its name));
+  cmp_deeply($instances->{grey}{contexts}, [{kind => 'none'}],
+    q(... or none where the device answers nothing));
+  cmp_deeply($instances->{default}{contexts}, [{kind => 'none'}],
+    q(The default instance stays in the default context));
+  my $with_caller = $info->vrf_instances([]);
+  cmp_deeply($with_caller->{blue}{contexts},
+    [{kind => 'vrf', id => 'blue', v2c => undef, v3 => 'ctx-blue'}],
+    q(Every listed VRF is answered the same way));
+}
+
 sub vrf_instances__served_table__lists_each_vrf_and_default : Tests(6) {
   my $test = shift;
 

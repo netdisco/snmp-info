@@ -53,6 +53,20 @@ sub cisco_comm_indexing : Tests(3) {
     'FDB in VLAN contexts');
 }
 
+sub context_kinds__vrf__nothing : Tests(1) {
+  my $test = shift;
+
+  is($test->{info}->context_kinds('vrf'), undef,
+    'Attribution devices have no VRF contexts');
+}
+
+sub snmp_context__vrf__nothing : Tests(1) {
+  my $test = shift;
+
+  is($test->{info}->snmp_context('vrf', 'red'), undef,
+    'No VRF context to switch to');
+}
+
 sub stp_trees : Tests(6) {
   my $test = shift;
   my $info = $test->{info};

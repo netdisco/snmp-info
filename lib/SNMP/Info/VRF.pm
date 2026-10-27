@@ -97,7 +97,9 @@ sub vrf_instances {
 
     my %with_caller = %$instances;
     foreach my $name (@$names) {
-        $with_caller{$name} ||= _vrf_record( $name, 'vrf', 'caller' );
+        next if $with_caller{$name};
+        $with_caller{$name} = _vrf_record( $name, 'vrf', 'caller' );
+        $vrf->_vrf_set_contexts( $with_caller{$name} );
     }
     return \%with_caller;
 }
@@ -109,6 +111,26 @@ sub _vrf_all_instances {
     $instances->{default} ||= _vrf_record( 'default', 'default', 'device' );
     $instances->{default}{kind} = 'default';
     return $instances;
+}
+
+# The context that filters to one VRF, as snmp_context('vrf') answers it,
+# or undef where the device has none.
+sub _vrf_context_for {
+    my $vrf  = shift;
+    my $name = shift;
+
+    return unless $vrf->context_kinds('vrf');
+    return $vrf->snmp_context( 'vrf', $name );
+}
+
+sub _vrf_set_contexts {
+    my $vrf    = shift;
+    my $record = shift;
+
+    return if $record->{name} eq 'default';
+    my $context = $vrf->_vrf_context_for( $record->{name} );
+    $record->{contexts} = [$context] if $context;
+    return;
 }
 
 # True when the device served a VRF row, so caller names have nothing to
@@ -141,7 +163,8 @@ sub _vrf_served_instances {
         $record->{rd}            = $vrf->_vrf_rd( $rd->{$iid} );
         $record->{sources}{list} = $LIST_SOURCE;
         $record->{sources}{rd}   = $LIST_SOURCE if defined $record->{rd};
-        $instances{$name}        = $record;
+        $vrf->_vrf_set_contexts($record);
+        $instances{$name} = $record;
     }
 
     $vrf->_vrf_add_route_targets( \%instances );

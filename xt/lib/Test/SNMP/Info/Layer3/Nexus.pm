@@ -125,6 +125,91 @@ sub snmp_context : Tests(3) {
   is($info->snmp_context('mst', 1), undef, 'No MST context unlisted');
 }
 
+sub context_kinds__vrf__is_vrf : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  cmp_deeply($info->context_kinds('vrf'), ['vrf'], 'One context per VRF');
+  cmp_deeply($info->context_kinds('stp'), ['vlan', 'mst'],
+    'STP answer is unchanged');
+}
+
+sub _vrf_context_cache {
+  my %mapped = @_;
+  my $cache = _nxos_cache(store => {vrf_name => {
+    _context_index('vlan-1') => '',
+    _context_index('1')      => '',
+    map { _context_index($_) => $mapped{$_} } keys %mapped,
+  }});
+  return $cache;
+}
+
+sub snmp_context__vrf_mapped__v3_is_context : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_vrf_context_cache(red => 'red'));
+  cmp_deeply($info->snmp_context('vrf', 'red'),
+    {kind => 'vrf', id => 'red', v2c => undef, v3 => 'red'},
+    'The context mapped to the VRF, v3 only');
+}
+
+sub snmp_context__vrf_other_context_name__v3_is_that_name : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_vrf_context_cache('ctx-r' => 'red'));
+  cmp_deeply($info->snmp_context('vrf', 'red'),
+    {kind => 'vrf', id => 'red', v2c => undef, v3 => 'ctx-r'},
+    'A context named otherwise is the VRF context');
+
+  $info->clear_cache();
+  $info->cache(_vrf_context_cache('zeta' => 'red', 'alpha' => 'red'));
+  is($info->snmp_context('vrf', 'red')->{v3}, 'alpha',
+    'With several contexts, the lowest sorted name');
+}
+
+sub snmp_context__vrf_unmapped__v3_is_name : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_vrf_context_cache());
+  is($info->snmp_context('vrf', 'red')->{v3}, 'red',
+    'No mapped context: the VRF name');
+
+  $info->clear_cache();
+  $info->cache(_vrf_context_cache(red => 'red', 'ctx-b' => 'blue'));
+  is($info->snmp_context('vrf', 'blue')->{v3}, 'ctx-b',
+    'Another VRF context does not hide this one');
+}
+
+sub snmp_context__vrf_default__nothing : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_vrf_context_cache());
+  is($info->snmp_context('vrf', 'default'), undef, 'default: nothing');
+  is($info->snmp_context('vrf', q()),       undef, 'empty name: nothing');
+  is($info->snmp_context('vrf'),            undef, 'no name: nothing');
+}
+
+sub snmp_context__vlan_and_mst__unchanged : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nxos_mst_cache(qw/mst-0 mst-1/));
+  cmp_deeply($info->snmp_context('vlan', 10),
+    {kind => 'vlan', id => 10, v2c => undef, v3 => 'vlan-10'}, 'vlan');
+  cmp_deeply($info->snmp_context('mst', 1),
+    {kind => 'mst', id => 1, v2c => undef, v3 => 'mst-1'}, 'mst');
+  is($info->snmp_context('mst', 2), undef, 'unlisted mst');
+}
+
 sub context_kinds : Tests(2) {
   my $test = shift;
   my $info = $test->{info};
