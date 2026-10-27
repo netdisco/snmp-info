@@ -631,13 +631,21 @@ sub munge_hw_peth_status : Tests(6) {
     'huh', q(... anything else not munged));
 }
 
-# Rows are <instance>.<bridge port>; hwL2IfPortIfIndex maps bridge ports 26,
-# 27 and 28 to ifIndex 30, 31 and 32
+my $VRP5_DESCR = "Huawei Versatile Routing Platform Software\r\n"
+  . " VRP (R) software,Version 5.170 (S5700 V200R010C00SPC600)";
+my $VRP8_DESCR = "Huawei Versatile Routing Platform Software\r\n"
+  . "VRP (R) software, Version 8.160 (CE6810EI V200R003C00SPC810)";
+
+# Rows are <instance>.<port>.  The description is VRP 5 unless given, where
+# hwL2IfPortIfIndex maps bridge ports 26, 27 and 28 to ifIndex 30, 31, 32
 sub _faststart_cache {
   my ($test, $default, %store) = @_;
   $test->{info}->clear_cache();
-  $store{hw_l2if_port_idx} = {26 => 30, 27 => 31, 28 => 32};
+  my $descr = exists $store{description} ? delete $store{description}
+    : $VRP5_DESCR;
+  $store{hw_l2if_port_idx} ||= {26 => 30, 27 => 31, 28 => 32};
   my %cache = ((map { ("_$_" => 1) } keys %store), store => \%store);
+  $cache{_description}          = $descr   if defined $descr;
   $cache{_hw_mstp_edge_default} = $default if defined $default;
   $test->{info}->cache(\%cache);
   return;
@@ -752,6 +760,80 @@ sub i_faststart_enabled__only_nonzero_instances__falls_back_to_rstp_mib :
     {30 => 0, 31 => 1},
     q(No instance 0 rows: dot1dStpPortAdminEdgePort)
   );
+}
+
+sub i_faststart_enabled__vrp8__keys_read_as_ifindex : Tests(1) {
+  my $test = shift;
+
+  # CloudEngine shape: ifIndex 5 and 6 are bridge ports 1 and 2, and
+  # bridge port 5 is ifIndex 9, so a bridge port reading would misplace 5
+  $test->_faststart_cache('disabled',
+    description      => $VRP8_DESCR,
+    i_index          => {5 => 5, 6 => 6, 9 => 9, 176 => 176},
+    hw_l2if_port_idx => {1 => 5, 2 => 6, 5 => 9},
+    hw_mstp_p_edge =>
+      {'0.5' => 'enable', '0.6' => 'disable', '0.176' => 'enable'},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {5 => 1, 6 => 0, 176 => 1},
+    q(VRP 8 hwMstpiPortIndex is an ifIndex, Eth-Trunk included)
+  );
+}
+
+sub i_faststart_enabled__vrp8_key_not_an_interface__skipped : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('disabled',
+    description    => $VRP8_DESCR,
+    i_index        => {5 => 5},
+    hw_mstp_p_edge => {'0.5' => 'enable', '0.99' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {5 => 1}, q(VRP 8 key with no interface table row is skipped));
+}
+
+sub i_faststart_enabled__vrp5__keys_mapped_through_bp_index : Tests(1) {
+  my $test = shift;
+
+  # S5700 shape: bridge ports 1 and 2 are ifIndex 6 and 7, and 1 is also
+  # an ifIndex, so an ifIndex reading would misplace it
+  $test->_faststart_cache('disabled',
+    i_index          => {1 => 1, 6 => 6, 7 => 7},
+    hw_l2if_port_idx => {1 => 6, 2 => 7},
+    hw_mstp_p_edge   => {'0.1' => 'enable', '0.2' => 'disable'},
+  );
+  cmp_deeply(
+    $test->{info}->i_faststart_enabled(),
+    {6 => 1, 7 => 0},
+    q(VRP 5 hwMstpiPortIndex is a bridge port)
+  );
+}
+
+sub i_faststart_enabled__vrp_version_unknown__returns_empty : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('disabled',
+    description       => 'Huawei Versatile Routing Platform Software',
+    i_index           => {30 => 30},
+    hw_mstp_p_edge    => {'0.26' => 'enable'},
+    is_edgeport_admin => {26 => 'true'},
+  );
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {}, q(No VRP version: index form unknown, no RSTP-MIB fallback));
+}
+
+sub i_faststart_enabled__yunshan_os__returns_empty : Tests(1) {
+  my $test = shift;
+
+  $test->_faststart_cache('disabled',
+    description =>
+      "Huawei YunShan OS\nVersion 1.23.1.1 (S5700 V600R023C10SPC500)\n",
+    i_index        => {26 => 26, 30 => 30},
+    hw_mstp_p_edge => {'0.26' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_faststart_enabled(),
+    {}, q(YunShan OS Version 1 is not a VRP version: absent));
 }
 
 sub i_faststart_enabled__huawei_class__resolves_to_huawei : Tests(1) {

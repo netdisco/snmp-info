@@ -316,14 +316,16 @@ sub i_faststart_enabled {
 }
 
 # Admin edge values keyed by bridge port, mapped to ifIndex through bp_index
-# and read as 1 or 0 by $decode (default _stp_enabled); a port missing from
-# bp_index, or a value $decode does not know, is absent.  Called as a
-# function by classes outside Bridge's inheritance (RapidCity).
+# (or $port_index, when the caller knows the keys are not bridge ports) and
+# read as 1 or 0 by $decode (default _stp_enabled); a port missing from the
+# map, or a value $decode does not know, is absent.  Called as a function by
+# classes outside Bridge's inheritance (RapidCity).
 sub _stp_edge_by_ifindex {
-    my ( $bridge, $edge_admin, $partial, $decode ) = @_;
+    my ( $bridge, $edge_admin, $partial, $decode, $port_index ) = @_;
     $decode ||= \&_stp_enabled;
+    return {} unless keys %{ $edge_admin || {} };
 
-    my $bp_index = $bridge->bp_index($partial) || {};
+    my $bp_index = $port_index || $bridge->bp_index($partial) || {};
 
     my %i_faststart_enabled;
     foreach my $port ( keys %{ $edge_admin || {} } ) {

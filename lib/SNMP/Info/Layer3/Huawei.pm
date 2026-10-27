@@ -108,7 +108,8 @@ $VERSION = '3.983000';
     # HUAWEI-SYS-MAN-MIB::hwPatchFileTable
     'hw_patch_version' => 'hwPatchVersion',
 
-    # HUAWEI-MSTP-MIB::hwMstpPortTable, indexed <instance>.<bridge port>
+    # HUAWEI-MSTP-MIB::hwMstpPortTable, indexed <instance>.<port>: a bridge
+    # port on VRP 5, an ifIndex on VRP 8
     'hw_mstp_p_edge' => 'hwMstpiStpPortEdgeport',
 );
 
@@ -557,10 +558,40 @@ sub i_faststart_enabled {
     return $huawei->SUPER::i_faststart_enabled($partial)
         unless keys %cist_edge;
 
+    my $port_index = $huawei->_hw_mstp_port_index($partial);
+    return {} unless $port_index;
+
     my $default
         = SNMP::Info::Bridge::_stp_enabled( $huawei->hw_mstp_edge_default() );
     return SNMP::Info::Bridge::_stp_edge_by_ifindex( $huawei, \%cist_edge,
-        $partial, sub { _hw_edge_enabled( shift, $default ) } );
+        $partial, sub { _hw_edge_enabled( shift, $default ) }, $port_index );
+}
+
+# hwMstpiPortIndex is a bridge port on VRP 5 but an ifIndex on VRP 8
+# (CloudEngine), though the MIB says bridge port.  With no VRP version the
+# form is unknown, and a guessed one puts values on the wrong ports.
+sub _hw_mstp_port_index {
+    my ( $huawei, $partial ) = @_;
+
+    my $vrp = $huawei->_vrp_major();
+    return unless defined $vrp;
+    return $huawei->bp_index($partial) if $vrp < 8;
+
+    my $i_index = $huawei->i_index($partial) || {};
+    return { map { $_ => $_ } keys %$i_index };
+}
+
+# The sysDescr "Version N." that _os_ver_legacy reads; the V200R010-style
+# string os_ver prefers is the same on VRP 5 and VRP 8.  YunShan OS
+# numbers its own versions, so it has no VRP major.
+sub _vrp_major {
+    my $huawei = shift;
+
+    my $os    = $huawei->os();
+    my $descr = $huawei->description();
+    return unless defined $os and $os eq 'VRP';
+    return unless defined $descr and $descr =~ /Version\s(\d+)\./i;
+    return $1;
 }
 
 # hwMstpiStpPortEdgeport is disable(1), enable(2), undo(3), the reverse of
@@ -809,8 +840,11 @@ C<hwEthernetJumboframeMaxLength> if one exists.
 Returns 1 or 0 for each port by whether it is configured as an edge port.
 Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads the
 instance 0 rows of C<hwMstpiStpPortEdgeport>; C<undo> takes the default in
-C<hwMstpEdgedPortDefault>.  Falls back to C<dot1dStpPortAdminEdgePort>
-through L<SNMP::Info::Bridge>.
+C<hwMstpEdgedPortDefault>.  The row index is a bridge port on VRP 5, mapped
+to C<ifIndex> through C<bp_index()>, and an C<ifIndex> on VRP 8, kept when
+the interface table has it.  The VRP version comes from the C<Version N.>
+in C<sysDescr>; without one the result is empty.  With no instance 0 rows,
+falls back to C<dot1dStpPortAdminEdgePort> through L<SNMP::Info::Bridge>.
 
 =back
 

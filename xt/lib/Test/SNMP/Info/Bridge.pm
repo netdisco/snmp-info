@@ -476,7 +476,7 @@ sub i_faststart_enabled__oper_only__ignored : Tests(1) {
         {}, q(Operational edge state is not reported) );
 }
 
-sub i_faststart_enabled__partial__filters_to_ifindex : Tests(2) {
+sub i_faststart_enabled__partial__passed_to_bp_index : Tests(1) {
     my $test = shift;
 
     $test->{info}->cache(
@@ -486,19 +486,33 @@ sub i_faststart_enabled__partial__filters_to_ifindex : Tests(2) {
         )
     );
 
-    # A partial fetch bypasses the cache, so stand in for the walk that
-    # bp_index would make, which serves only the requested row.
     my @partials;
     no warnings 'redefine';
     local *SNMP::Info::Bridge::bp_index = sub {
         my ( $self, $partial ) = @_;
         push @partials, $partial;
-        return defined $partial ? { 1 => 101 } : { 1 => 101, 2 => 102 };
+        return { 1 => 101 };
     };
 
-    cmp_deeply( $test->{info}->i_faststart_enabled(101),
-        { 101 => 1 }, q(Partial limits the result to that ifIndex) );
+    $test->{info}->i_faststart_enabled(101);
     cmp_deeply( \@partials, [101], q(Partial is passed to bp_index) );
+}
+
+sub i_faststart_enabled__no_edge_rows__skips_bp_index : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _faststart_cache( is_edgeport_admin => {} ) );
+
+    my $bp_index_calls = 0;
+    no warnings 'redefine';
+    local *SNMP::Info::Bridge::bp_index = sub {
+        $bp_index_calls++;
+        return { 1 => 101 };
+    };
+
+    cmp_deeply( $test->{info}->i_faststart_enabled(),
+        {}, q(No dot1dStpPortAdminEdgePort rows: empty) );
+    is( $bp_index_calls, 0, q(bp_index is not walked without edge rows) );
 }
 
 sub stp_has_protocol_absent : Tests(4) {
