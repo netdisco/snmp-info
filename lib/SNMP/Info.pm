@@ -1136,6 +1136,12 @@ Subclass for redlion routers.
 
 See documentation in L<SNMP::Info::Layer3::Redlion> for details.
 
+=item SNMP::Info::Layer3::RuckusController
+
+Subclass for Ruckus SmartZone and SmartCell Gateway controllers.
+
+See documentation in L<SNMP::Info::Layer3::RuckusController> for details.
+
 =item SNMP::Info::Layer3::SilverPeak
 
 Subclass for SilverPeak devices.
@@ -2248,6 +2254,10 @@ sub device_type {
 
     my $id = $info->id() || 'undef';
     my $soid = $id;
+
+    # Ruckus controller product branches are distinct from the AP branch.
+    return 'SNMP::Info::Layer3::RuckusController'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.25053\.3\.1\.(?:10|11)(?:\.|$)/;
 
     # Hash for generic fallback to a device class if unable to determine using
     # the sysDescr regex.

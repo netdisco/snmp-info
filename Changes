@@ -14,6 +14,8 @@ Version 3.982001
   * #637 Teltonika: detect current RutOS devices by product code, map model,
     serial and firmware across current product families, and retain legacy
     RUT9xx detection
+  * #640 Ruckus: detect SmartZone and SmartCell Gateway controllers by
+    product OID and report model and serial number
 
   [BUG FIXES]
 
