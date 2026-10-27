@@ -1134,6 +1134,41 @@ sub vrf_addresses__ipaddresstable_has_ipv4__ipadent_ignored : Tests(1) {
     q(ipAdEntTable is read only when ipAddressTable yields no IPv4 row));
 }
 
+sub vrf_addresses__vendor_rows__standard_row_wins : Tests(5) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::VendorRows',
+    \@NEIGHBOR_PARENTS,
+    _vrf_vendor_address_rows => sub {
+      return {
+        '3.10.40.0.1'  => {ifindex => 3, ip => '10.40.0.1',
+          prefix_len => 16, family => 'ipv4'},
+        '3.10.99.0.1'  => {ifindex => 3, ip => '10.99.0.1',
+          prefix_len => 24, family => 'ipv4'},
+        '2.10.98.0.1'  => {ifindex => 2, ip => '10.98.0.1',
+          prefix_len => 24, family => 'ipv4'},
+      };
+    });
+  $test->{info} = $info;
+  $test->_prime_vrf_table();
+  $test->_prime_members();
+  $test->_prime_addresses($info);
+
+  my $blue = $info->vrf_addresses('blue');
+  is($blue->{'3.10.40.0.1'}{prefix_len}, 24,
+    q(A standard row wins over a vendor row for the same port and address));
+  cmp_deeply($blue->{'3.10.99.0.1'},
+    {ifindex => 3, ip => '10.99.0.1', prefix_len => 24, family => 'ipv4'},
+    q(A vendor row for an address the standard rows lack is added));
+  ok(!exists $blue->{'2.10.98.0.1'},
+    q(A vendor row on another instance's port is not blue's));
+  cmp_deeply($info->vrf_addresses('red')->{'2.10.98.0.1'},
+    superhashof({ifindex => 2, ip => '10.98.0.1'}),
+    q(... it is red's));
+  is(scalar(grep { $_->{ip} eq '10.40.0.1' } values %$blue), 1,
+    q(The shared address is held once));
+}
+
 sub vrf_addresses__unknown_name__returns_nothing : Tests(1) {
   my $test = shift;
 

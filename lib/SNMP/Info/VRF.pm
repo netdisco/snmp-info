@@ -835,14 +835,16 @@ sub _vrf_route_subnet {
 }
 
 # ipAddressTable, with ipAdEntTable standing in for IPv4 when the first
-# serves no IPv4 row
+# serves no IPv4 row; a vendor row stands in for a (port, address) the
+# standard tables lack
 sub _vrf_address_rows {
     my $vrf  = shift;
     my $name = shift;
 
     my $rows = $vrf->_vrf_inet_address_rows($name);
-    return $rows if grep { $_->{family} eq 'ipv4' } values %$rows;
-    return { %$rows, %{ $vrf->_vrf_ipadent_rows($name) } };
+    $rows = { %$rows, %{ $vrf->_vrf_ipadent_rows($name) } }
+        if !grep { $_->{family} eq 'ipv4' } values %$rows;
+    return { %{ $vrf->_vrf_vendor_address_rows($name) }, %$rows };
 }
 
 # Index is type, length, address octets; types 3 and 4 end with four zone
@@ -1107,6 +1109,11 @@ sub _vrf_vendor_membership_methods {
 
     return $vrf->_vrf_vendor_listed() ? $vrf->_vrf_vendor_list_methods() : ();
 }
+
+# Address rows from a vendor MIB, keyed and shaped as _vrf_address_rows
+# keys them (ifIndex.address). Walk them with _vrf_column so they count
+# toward vrf_read_complete().
+sub _vrf_vendor_address_rows { return {}; }
 
 sub _vrf_subnets_from_routes { return 0; }
 
