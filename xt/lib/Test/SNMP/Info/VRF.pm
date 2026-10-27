@@ -309,7 +309,7 @@ sub vrf_instances_complete__unknown_count_and_unmapped_row__is_0 : Tests(2) {
     q(Unknown count, every row has a port));
   delete $test->{info}{store}{vrf_l3vpn_if}{$_}
     for qw/4.103.114.101.121.10/;
-  delete $test->{info}{_vrf_instances};
+  delete $test->{info}{$_} for qw/_vrf_instances _vrf_members/;
   is($test->{info}->vrf_instances_complete(), 0,
     q(Unknown count, a row with no port));
 }
@@ -324,10 +324,10 @@ sub vrf_instances_complete__known_count_portless_row__is_1 : Tests(1) {
     q(A VRF with no ports is allowed when others have them));
 }
 
-sub vrf_instances_complete__incomplete_walk__is_0 : Tests(2) {
+sub vrf_instances_complete__incomplete_walk__is_0 : Tests(3) {
   my $test = shift;
 
-  foreach my $method (qw/vrf_l3vpn_rd vrf_l3vpn_if/) {
+  foreach my $method (qw/vrf_l3vpn_rd vrf_l3vpn_if vrf_l3vpn_rt/) {
     $test->_prime_vrf_table();
     $test->_prime_members(configured => 4);
     delete $test->{info}{_vrf_instances};
@@ -504,12 +504,14 @@ sub vrf_owner_of : Tests(4) {
   my $test = shift;
 
   $test->_prime_members();
-  is($test->{info}->_vrf_owner_of(2), 'red', q(A member port maps to its VRF));
-  is($test->{info}->_vrf_owner_of(99), 'default',
+  my $members = $test->{info}->i_vrf();
+  is(SNMP::Info::VRF::_vrf_owner_of($members, 2), 'red',
+    q(A member port maps to its VRF));
+  is(SNMP::Info::VRF::_vrf_owner_of($members, 99), 'default',
     q(A port absent from i_vrf is in the default instance));
 
   $test->_enter_context($test->{info});
-  is($test->{info}->_vrf_owner_of(2), undef,
+  is(SNMP::Info::VRF::_vrf_owner_of(scalar $test->{info}->i_vrf(), 2), undef,
     q(Unknown when i_vrf is refused in a context));
   ok(defined &SNMP::Info::VRF::_vrf_owner_of, q(Owner lookup is defined));
 }
@@ -621,6 +623,102 @@ sub vrf_neighbors__unknown_name__returns_nothing : Tests(1) {
   my $info = $test->_neighbor_info();
   is(scalar $info->vrf_neighbors('purple'), undef,
     q(An instance the device does not list has no neighbors));
+}
+
+sub vrf_instances__caller_names_configured_zero__marked_caller : Tests(4) {
+  my $test = shift;
+
+  $test->{info}{$_} = 1 for qw/_vrf_l3vpn_rd _vrf_l3vpn_descr
+    _vrf_l3vpn_oper _vrf_l3vpn_rt _vrf_l3vpn_if/;
+  $test->{info}{store}{$_} = {} for
+    qw/vrf_l3vpn_rd vrf_l3vpn_descr vrf_l3vpn_oper vrf_l3vpn_rt vrf_l3vpn_if/;
+  $test->{info}{_vrf_configured} = 0;
+
+  my $instances = $test->{info}->vrf_instances(['vr-red']);
+  is($instances->{'vr-red'}{listed_by}, 'caller',
+    q(A caller name is used when the device counts zero and serves no row));
+  is($test->{info}->vrf_instances_complete(['vr-red']), 0,
+    q(... and a list holding a caller name is never complete));
+  is($test->{info}->vrf_instances_complete(), 1,
+    q(Without names the device still reads none configured));
+  ok(!exists $test->{info}->vrf_instances()->{'vr-red'},
+    q(... and the caller name is not memoized));
+}
+
+sub vrf_instances__empty_served_name__is_default : Tests(4) {
+  my $test = shift;
+
+  $test->_prime_vrf_table();
+  $test->_prime_members(configured => 4);
+  $test->{info}{store}{vrf_l3vpn_oper}{'0'} = 'up';
+  $test->{info}{store}{vrf_l3vpn_if}{'0.9'} = 'active';
+  my $instances = $test->{info}->vrf_instances();
+
+  ok(!exists $instances->{''}, q(An empty name is not an instance));
+  is($instances->{default}{kind}, 'default',
+    q(... it is the default instance));
+  ok(!exists $test->{info}->i_vrf()->{9},
+    q(A port of the empty name is a default port, absent from i_vrf));
+  is($test->{info}->vrf_instances_complete(), 1,
+    q(The empty-name row is not counted as a configured VRF));
+}
+
+sub vrf_instances__rd_and_rt__tagged_with_source : Tests(2) {
+  my $test = shift;
+
+  $test->_prime_vrf_table();
+  $test->_prime_members(configured => 4);
+  my $instances = $test->{info}->vrf_instances();
+  cmp_deeply(
+    $instances->{red}{sources},
+    {
+      list    => 'MPLS-L3VPN-STD-MIB',
+      members => 'MPLS-L3VPN-STD-MIB',
+      rd      => 'MPLS-L3VPN-STD-MIB',
+      rt      => 'MPLS-L3VPN-STD-MIB',
+    },
+    q(A served RD and route targets are tagged with their MIB)
+  );
+  cmp_deeply(
+    $instances->{blue}{sources},
+    {list => 'MPLS-L3VPN-STD-MIB', members => 'MPLS-L3VPN-STD-MIB'},
+    q(An empty RD and no targets add no tag)
+  );
+}
+
+our $IF_READS = 0;
+
+sub i_vrf__membership__decoded_once_until_cache_cleared : Tests(4) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::CountedMembers',
+    \@NEIGHBOR_PARENTS,
+    vrf_l3vpn_if => sub { $IF_READS++; $_[0]->orig_vrf_l3vpn_if() });
+  $test->{info} = $info;
+  $test->_prime_vrf_table();
+  $test->_prime_members(configured => 4);
+  $test->_prime_neighbors($info);
+
+  local $IF_READS = 0;
+  $info->vrf_instances_complete();
+  my $red = $info->vrf_neighbors('red');
+  $info->vrf_neighbors('blue');
+  is(scalar keys %$red, 4, q(red still holds its rows));
+  is($IF_READS, 1,
+    q(The membership table is read once across the list and two readers));
+  ok(exists $info->{_vrf_members}, q(Membership is memoized));
+  $info->clear_cache();
+  ok(!exists $info->{_vrf_members}, q(clear_cache drops the memo));
+}
+
+sub vrf_neighbors__unknown_name__sets_error : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_neighbor_info();
+  is(scalar $info->vrf_neighbors('purple'), undef, q(No rows));
+  like($info->error(),
+    qr/^\S+vrf_neighbors\(\) reads instance 'purple', which is not in vrf_instances\(\)/,
+    q(error() names the instance and says it is not listed));
 }
 
 sub vrf_neighbors__role_without_neighbor_methods__has_no_rows : Tests(1) {

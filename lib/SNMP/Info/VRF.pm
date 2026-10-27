@@ -71,7 +71,7 @@ my @ND_COLUMNS = qw/ip_n2p_phys_addr c_inet_phys_addr i6_n2p_phys_addr/;
 
 # Layer3's at_* subs fall back to atTable, then ipNetToPhysicalTable, and
 # its at_netaddr fallback reads the paddr columns to choose
-my @ARP_PADDR_COLUMNS   = qw/at_paddr old_at_paddr ip_n2p_phys_addr/;
+my @ARP_PADDR_COLUMNS = qw/at_paddr old_at_paddr ip_n2p_phys_addr/;
 my @ARP_NETADDR_COLUMNS
     = ( qw/at_netaddr old_at_netaddr/, @ARP_PADDR_COLUMNS );
 
@@ -111,14 +111,14 @@ sub _vrf_all_instances {
     return $instances;
 }
 
-# True when the device served a VRF row or a configured count, so caller
-# names have nothing to add
+# True when the device served a VRF row, so caller names have nothing to
+# add. A configured count alone does not list: an agent can count zero
+# MPLS-L3VPN VRFs on a device that has instances of another kind.
 sub _vrf_device_lists {
     my $vrf       = shift;
     my $instances = shift;
 
-    return 1 if grep { $_->{sources}{list} } values %$instances;
-    return defined $vrf->vrf_configured() ? 1 : 0;
+    return ( grep { $_->{sources}{list} } values %$instances ) ? 1 : 0;
 }
 
 # One record per row mplsL3VpnVrfTable serves, minus the internal ones
@@ -132,7 +132,7 @@ sub _vrf_served_instances {
 
     my %instances;
     foreach my $iid ( keys %iids ) {
-        my ($name) = $vrf->_vrf_decode_name($iid);
+        my ($name) = $vrf->_vrf_decode_instance($iid);
         next if !defined $name or $vrf->_vrf_internal_instance($name);
 
         my $record = _vrf_record( $name, 'vrf', 'device' );
@@ -140,6 +140,7 @@ sub _vrf_served_instances {
         $record->{oper}          = _vrf_text( $oper->{$iid} );
         $record->{rd}            = $vrf->_vrf_rd( $rd->{$iid} );
         $record->{sources}{list} = $LIST_SOURCE;
+        $record->{sources}{rd}   = $LIST_SOURCE if defined $record->{rd};
         $instances{$name}        = $record;
     }
 
@@ -161,15 +162,21 @@ sub _vrf_add_members {
 }
 
 # { ifIndex => name } for every active row of mplsL3VpnIfConfTable. The
-# index is the VRF name then the ifIndex.
+# index is the VRF name then the ifIndex. clear_cache drops the memo.
 sub _vrf_membership {
+    my $vrf = shift;
+
+    return $vrf->{_vrf_members} ||= $vrf->_vrf_decode_membership();
+}
+
+sub _vrf_decode_membership {
     my $vrf = shift;
 
     my $rows = $vrf->vrf_l3vpn_if() || {};
     my %ports;
     foreach my $iid ( keys %$rows ) {
         next unless $rows->{$iid} =~ /^(?:active|1)$/;
-        my ( $name, $ifindex, @extra ) = $vrf->_vrf_decode_name($iid);
+        my ( $name, $ifindex, @extra ) = $vrf->_vrf_decode_instance($iid);
         next if !defined $ifindex  or @extra;
         next if $name eq 'default' or $vrf->_vrf_internal_instance($name);
         $ports{$ifindex} = $name;
@@ -210,7 +217,7 @@ sub _vrf_add_route_targets {
     my $targets = $vrf->vrf_l3vpn_rt() || {};
     my ( %import, %export );
     foreach my $iid ( keys %$targets ) {
-        my ( $name, undef, $type_arc ) = $vrf->_vrf_decode_name($iid);
+        my ( $name, undef, $type_arc ) = $vrf->_vrf_decode_instance($iid);
         next unless defined $type_arc        and $instances->{$name};
         next unless defined $targets->{$iid} and length $targets->{$iid};
 
@@ -220,8 +227,12 @@ sub _vrf_add_route_targets {
     }
 
     foreach my $name ( keys %$instances ) {
-        $instances->{$name}{rt_import} = [ sort keys %{ $import{$name} } ];
-        $instances->{$name}{rt_export} = [ sort keys %{ $export{$name} } ];
+        my $record = $instances->{$name};
+        $record->{rt_import}   = [ sort keys %{ $import{$name} } ];
+        $record->{rt_export}   = [ sort keys %{ $export{$name} } ];
+        $record->{sources}{rt} = $LIST_SOURCE
+            if @{ $record->{rt_import} }
+            or @{ $record->{rt_export} };
     }
     return;
 }
@@ -239,6 +250,15 @@ sub _vrf_decode_name {
     return if grep { $_ > 255 } @octets;
 
     return ( join( q{}, map {chr} @octets ), @arcs );
+}
+
+# As _vrf_decode_name, with the empty name, the global table, as default
+sub _vrf_decode_instance {
+    my $vrf = shift;
+    my $iid = shift;
+
+    my ( $name, @arcs ) = $vrf->_vrf_decode_name($iid) or return;
+    return ( ( length $name ? $name : 'default' ), @arcs );
 }
 
 # Empty and 0:0 mean no distinguisher; printable text is kept as served and
@@ -265,15 +285,12 @@ sub vrf_instances_complete {
     my $vrf          = shift;
     my $caller_names = shift;
 
-    my $instances  = $vrf->vrf_instances($caller_names) or return;
+    my $instances = $vrf->vrf_instances($caller_names) or return;
+    return 0 if grep { $_->{listed_by} eq 'caller' } values %$instances;
+
     my @listed     = grep { $_->{sources}{list} } values %$instances;
     my $configured = $vrf->vrf_configured();
-
-    if ( !defined $configured and !@listed ) {
-        return ( ref $caller_names eq 'ARRAY' and @$caller_names )
-            ? 0
-            : undef;
-    }
+    return   if !defined $configured and !@listed;
     return 0 if $vrf->_vrf_walk_incomplete();
     my @rows = grep { $_->{name} ne 'default' } @listed;
     return 0 if defined $configured and $configured > @rows;
@@ -284,7 +301,7 @@ sub vrf_instances_complete {
 sub _vrf_walk_incomplete {
     my $vrf = shift;
 
-    foreach my $method (qw/vrf_l3vpn_rd vrf_l3vpn_if/) {
+    foreach my $method (qw/vrf_l3vpn_rd vrf_l3vpn_if vrf_l3vpn_rt/) {
         my $status = $vrf->walk_status($method) or next;
         return 1 unless $status->{complete};
     }
@@ -316,10 +333,9 @@ sub vrf_neighbors {
     my $context_mode = $vrf->_vrf_context_filters();
     return if !$context_mode and !$vrf->_vrf_is_listed($name);
 
-    my %rows = (
-        %{ $vrf->_vrf_arp_rows($name) },
-        %{ $vrf->_vrf_nd_rows($name) },
-    );
+    my %rows
+        = ( %{ $vrf->_vrf_arp_rows($name) }, %{ $vrf->_vrf_nd_rows($name) },
+        );
     return \%rows if $context_mode;
     return $vrf->_vrf_keep_owned( \%rows, $name );
 }
@@ -346,8 +362,9 @@ sub _vrf_keep_owned {
     my ( $vrf, $rows, $name ) = @_;
 
     $vrf->_vrf_record_walk( $name, 'vrf_l3vpn_if' );
+    my $members = $vrf->i_vrf();
     foreach my $key ( keys %$rows ) {
-        my $owner = $vrf->_vrf_owner_of( $rows->{$key}{ifindex} );
+        my $owner = _vrf_owner_of( $members, $rows->{$key}{ifindex} );
         delete $rows->{$key} if !defined $owner or $owner ne $name;
     }
     return $rows;
@@ -467,7 +484,7 @@ sub _vrf_attributed_route_subnets {
     my @subnets;
     foreach my $iid ( sort keys %$protos ) {
         next unless _vrf_connected_proto( $protos->{$iid} );
-        my ( $route_name, @arcs ) = $vrf->_vrf_decode_name($iid);
+        my ( $route_name, @arcs ) = $vrf->_vrf_decode_instance($iid);
         next if !defined $route_name or $route_name ne $name;
         my $subnet = _vrf_route_subnet(@arcs) or next;
         $subnet->{ifindex} = _vrf_route_ifindex( $ifs->{$iid} );
@@ -637,7 +654,15 @@ sub _vrf_is_listed {
     my $name = shift;
 
     my $instances = $vrf->vrf_instances() or return 0;
-    return exists $instances->{$name} ? 1 : 0;
+    return 1 if exists $instances->{$name};
+
+    my $method = ( caller(1) )[3];
+    $vrf->error_throw( "$method() reads instance '$name', which is not in"
+            . " vrf_instances() on this device. In attribution mode the"
+            . " readers take only names the device lists; a name passed to"
+            . " vrf_instances() is not one. Pass a key of vrf_instances().\n"
+    );
+    return 0;
 }
 
 # A method the class does not have contributes no rows. The read of $name
@@ -664,8 +689,7 @@ sub _vrf_arp_rows {
     my $name = shift;
 
     my $macs = $vrf->_vrf_column( 'at_paddr',   $name, @ARP_PADDR_COLUMNS );
-    my $ips
-        = $vrf->_vrf_column( 'at_netaddr', $name, @ARP_NETADDR_COLUMNS );
+    my $ips  = $vrf->_vrf_column( 'at_netaddr', $name, @ARP_NETADDR_COLUMNS );
     my %rows;
     foreach my $key ( keys %$macs ) {
         my ($ifindex) = $key =~ /^(\d+)\./ or next;
@@ -750,12 +774,12 @@ sub _vrf_in_reader_context {
     return 0;
 }
 
-# A port the membership table does not list belongs to the global table
+# A port the membership table does not list belongs to the global table;
+# with no membership hash the owner is unknown
 sub _vrf_owner_of {
-    my $vrf     = shift;
-    my $ifindex = shift;
+    my ( $members, $ifindex ) = @_;
 
-    my $members = $vrf->i_vrf() or return;
+    return unless $members;
     return exists $members->{$ifindex} ? $members->{$ifindex} : 'default';
 }
 
@@ -835,7 +859,9 @@ C<vrf_instances()> returns one record per instance, keyed by name:
         listed_by   => 'device',         # or 'caller'
         sources     => {                 # one key per fact served
             list    => 'MPLS-L3VPN-STD-MIB',
-            members => 'MPLS-L3VPN-STD-MIB',
+            members => 'MPLS-L3VPN-STD-MIB',   # when it has ports
+            rd      => 'MPLS-L3VPN-STD-MIB',   # when rd is defined
+            rt      => 'MPLS-L3VPN-STD-MIB',   # when it has a target
         },
         contexts    => [ { kind => 'none' } ],
     }
@@ -847,7 +873,9 @@ C<default> are absent.
 
 C<vrf_neighbors($name)> and C<vrf_addresses($name)> key their rows by
 ifIndex then address, so an address two instances share keeps one row in
-each:
+each. One instance can also hold the same address on several ports, as
+with link-local addresses, so key rows by ifIndex and address, never by
+address alone:
 
     # vrf_neighbors('red')
     '2.10.40.0.2' => { ifindex => 2, ip => '10.40.0.2',
@@ -918,15 +946,21 @@ C<default>.
 
 =item incomplete, 0
 
-The list may be short: it came from the caller, a walk ended early, the
-device configures more VRFs than it lists, or it lists VRFs but cannot say
-which ports they hold.
+The list may be short: it holds a name from the caller, a walk of the VRF,
+route target or membership table ended early, the device configures more
+VRFs than it lists, or it lists VRFs but cannot say which ports they hold.
 
 =item complete, 1
 
-The list holds every VRF the device has.
+The list is whole as far as F<MPLS-L3VPN-STD-MIB> lists instances.
 
 =back
+
+Completeness measures F<MPLS-L3VPN-STD-MIB> only. Some platforms hold
+layer 3 instances that MIB does not list, such as virtual routers. Those
+instances are absent from C<vrf_instances()>, their ports are absent from
+C<i_vrf()>, and their rows are read as the instance C<default>, even when
+C<vrf_instances_complete()> returns 1.
 
 C<vrf_read_complete($name)> says whether the readers saw the whole of the
 tables they walked for C<$name>.
@@ -968,9 +1002,12 @@ the whole list.
 Returns reference to hash of instance records, keyed by name, always
 including C<default>. See L</"Records">.
 
-The names in C<\@names> are used only when the device serves no VRF list
-and no configured count. Each is added with C<listed_by> C<caller> and no
-C<sources>. When the device lists instances, the names are ignored.
+The names in C<\@names> are used only when the device serves no VRF row,
+whatever count of configured VRFs it serves. Each is added with
+C<listed_by> C<caller> and no C<sources>, and C<vrf_instances_complete()>
+then returns 0. When the device lists instances, the names are ignored.
+The instance readers take caller names in context mode only; in
+attribution mode they return nothing for one, with C<error()> set.
 
 =item $vrf->vrf_instances_complete( [ \@names ] )
 
@@ -991,8 +1028,8 @@ are absent.
 
 Each reader takes an instance name and returns nothing for a name the
 device does not list (in attribution mode), or when the session is in the
-wrong context; see L</"Reading Instances">. A class with no source table
-for a reader contributes no rows to it.
+wrong context, with C<error()> set; see L</"Reading Instances">. A class
+with no source table for a reader contributes no rows to it.
 
 =over
 
