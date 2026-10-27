@@ -347,7 +347,8 @@ sub _vrf_context_i_vrf {
     return $vrf->_vrf_membership()
         if defined $name
         and $name eq 'default'
-        and $vrf->_vrf_default_context_leaks();
+        and ( $vrf->_vrf_default_context_leaks()
+        or $vrf->_vrf_default_context_members() );
     return $vrf->_vrf_context_ports($name) if defined $name;
 
     my $context = $vrf->_walk_context();
@@ -1104,6 +1105,10 @@ sub _vrf_context_filters { return 0; }
 # True where the default context also serves other instances' rows on their
 # ports, which only the default context's membership tables can name
 sub _vrf_default_context_leaks { return 0; }
+
+# True where the default context serves only the default instance's rows,
+# yet i_vrf() there maps every instance's ports from the membership table
+sub _vrf_default_context_members { return 0; }
 
 # True where host link-locals are only in IPV6-MIB ipv6NetToMediaTable
 sub _vrf_nd_from_ipv6_mib { return 0; }
