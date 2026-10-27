@@ -2087,9 +2087,10 @@ Call C<update()> with no arguments to return to the default context.
 A context whose C<v2c> or C<v3> is undef cannot be reached over that
 SNMP version.  NX-OS refuses community suffixes, so its VLAN and MST
 contexts need SNMPv3.  A site's community map (NX-OS
-C<snmp-server mib community-map>) reaches a VRF context over SNMPv2c, but
-SNMP::Info cannot derive its name.  Over such a community the readers see
-the default context; read VRF contexts over SNMPv3.
+C<snmp-server mib community-map>) reaches a VRF context over SNMPv2c: on
+NX-OS the VRF readers read the session's VRF from its SNMP-COMMUNITY-MIB
+row.  On other devices a community-mapped session reads as the default
+context; read VRF contexts over SNMPv3.
 
 The examples below switch with this helper.  C<kind> C<none> is the
 default context.

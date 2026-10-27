@@ -56,6 +56,7 @@ $VERSION = '3.983000';
     %SNMP::Info::Layer3::CiscoSwitch::MIBS,
     'CISCO-ENTITY-VENDORTYPE-OID-MIB'   => 'cevMIBObjects',
     'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
+    'SNMP-COMMUNITY-MIB'                => 'snmpCommunityName',
 );
 
 %GLOBALS = (
@@ -65,7 +66,9 @@ $VERSION = '3.983000';
 
 %FUNCS = (
     %SNMP::Info::Layer3::CiscoSwitch::FUNCS,
-    'vrf_name' => 'cContextMappingVrfName',
+    'vrf_name'         => 'cContextMappingVrfName',
+    'vrf_comm_name'    => 'snmpCommunityName',
+    'vrf_comm_context' => 'snmpCommunityContextName',
 );
 
 %MUNGE = ( %SNMP::Info::Layer3::CiscoSwitch::MUNGE, );
@@ -163,6 +166,29 @@ sub _vrf_snmp_context {
 		v2c  => undef,
 		v3   => defined $context ? $context : $name,
 	};
+}
+
+# The context the session's own SNMP-COMMUNITY-MIB row maps its community
+# to. NX-OS serves snmpCommunityName only on the row of the community the
+# session uses, and the context name on every row. '' is the default
+# context. Undef when the session is SNMPv3 (its Context decides), the
+# table is not served, or no row carries the session's community.
+sub _vrf_community_context {
+	my $nexus = shift;
+
+	my $session   = $nexus->session() || {};
+	my $community = $session->{Community};
+	my $version   = $session->{Version};
+	return if defined $version and $version eq '3';
+	return unless defined $community and length $community;
+
+	my $names = $nexus->vrf_comm_name() || {};
+	foreach my $index ( sort keys %$names ) {
+		next unless defined $names->{$index};
+		next unless $names->{$index} eq $community;
+		return ( $nexus->vrf_comm_context() || {} )->{$index};
+	}
+	return;
 }
 
 sub _get_snmpid_chassis {
@@ -393,6 +419,8 @@ after determining a more specific class using the method above.
 
 =item F<CISCO-CONTEXT-MAPPING-MIB>
 
+=item F<SNMP-COMMUNITY-MIB>
+
 =back
 
 =over
@@ -528,6 +556,24 @@ See documentation in L<SNMP::Info::Layer3::CiscoSwitch/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=head2 SNMP Community Table (C<snmpCommunityTable>)
+
+=over
+
+=item $nexus->vrf_comm_name()
+
+Returns reference to hash. (C<snmpCommunityName>) The community string of
+the row the session itself uses, and an empty string on every other row.
+Keyed by the C<snmpCommunityIndex> string, length-prefixed.
+
+=item $nexus->vrf_comm_context()
+
+Returns reference to hash. (C<snmpCommunityContextName>) The SNMP context
+each community row maps to: empty for the default community, a context name
+for one set by C<snmp-server mib community-map>.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3::CiscoSwitch
 

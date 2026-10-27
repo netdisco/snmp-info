@@ -452,6 +452,28 @@ sub vrf_private_defaults : Tests(8) {
     q(A context's instance comes from the list));
 }
 
+sub _vrf_session_context__walk_context_wins : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::CommunityHook',
+    ['SNMP::Info::VRF'],
+    _vrf_community_context => sub { 'blue' });
+  $test->_enter_context($info);
+  is($info->_vrf_session_context(), 'red',
+    q(The community suffix beats the device's mapping));
+}
+
+sub _vrf_session_context__hook_undef__empty : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::NoHook',
+    ['SNMP::Info::VRF'],
+    _vrf_community_context => sub { return });
+  is($info->_vrf_session_context(), q(), q(No answer is the default context));
+  is($test->{info}->_vrf_session_context(), q(),
+    q(The base role never maps a community));
+}
+
 my %BUILT_PACKAGE;
 
 # Builds an object of a test-local package on the same mock session the

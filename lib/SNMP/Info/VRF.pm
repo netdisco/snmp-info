@@ -363,7 +363,7 @@ sub _vrf_context_i_vrf {
         or $vrf->_vrf_default_context_members() );
     return $vrf->_vrf_context_ports($name) if defined $name;
 
-    my $context = $vrf->_walk_context();
+    my $context = $vrf->_vrf_session_context();
     $vrf->error_throw(
               "i_vrf() maps the ports of the instance whose context this"
             . " session is in, but no instance in vrf_instances() has the"
@@ -379,7 +379,7 @@ sub _vrf_context_i_vrf {
 sub _vrf_context_instance {
     my $vrf = shift;
 
-    my $context = $vrf->_walk_context();
+    my $context = $vrf->_vrf_session_context();
     return 'default' unless length $context;
     return $context if $vrf->_vrf_context_is_instance_name();
 
@@ -418,8 +418,8 @@ sub _vrf_route_ports {
     return \%ports;
 }
 
-# The contexts _walk_context() reports in $name's context: the v3 name,
-# and the context of a community the v2c template builds. Where the class
+# The contexts _vrf_session_context() reports in $name's context: the v3
+# name, and the context of a community the v2c template builds. Where the class
 # has no VRF context kind the instance's context is its name; where it has
 # one and gives this instance none, the instance has no context.
 sub _vrf_contexts_of {
@@ -690,7 +690,7 @@ sub _vrf_leak_unfiltered {
     my $name = shift;
 
     return 0 unless $name eq 'default' and $vrf->_vrf_default_context_leaks();
-    return 0 if length $vrf->_walk_context();
+    return 0 if length $vrf->_vrf_session_context();
     my $instances = $vrf->{_vrf_instances} ||= $vrf->_vrf_all_instances();
     return 1 if $vrf->_vrf_walk_incomplete();
     return ( grep { $_->{name} ne 'default' and _vrf_uncovered($_) }
@@ -1192,11 +1192,32 @@ sub _vrf_context_ports_from_routes { return 0; }
 
 sub _vrf_internal_instance { return 0; }
 
+# The VRF context this session reads: the SNMPv3 Context or community
+# suffix _walk_context() finds, else, over SNMPv1 or SNMPv2c only, the
+# context the device maps the session's community to. '' is the default
+# context, including when the device cannot say.
+sub _vrf_session_context {
+    my $vrf = shift;
+
+    my $context = $vrf->_walk_context();
+    return $context if length $context;
+    my $version = ( $vrf->session() || {} )->{Version};
+    return '' if defined $version and $version eq '3';
+
+    my $mapped = $vrf->_vrf_community_context();
+    return defined $mapped ? $mapped : '';
+}
+
+# The context the device maps the session's community to: a name, '' for
+# the default context, or undef when the class cannot tell. A class whose
+# device maps communities to contexts overrides this.
+sub _vrf_community_context { return; }
+
 # Only the default context serves the whole VRF list
 sub _vrf_default_context_ok {
     my $vrf = shift;
 
-    my $context = $vrf->_walk_context();
+    my $context = $vrf->_vrf_session_context();
     return 1 unless length $context;
 
     my $method = ( caller(1) )[3];
@@ -1215,7 +1236,7 @@ sub _vrf_in_reader_context {
     my $vrf  = shift;
     my $name = shift;
 
-    my $context = $vrf->_walk_context();
+    my $context = $vrf->_vrf_session_context();
     my $method  = ( caller(1) )[3];
     return $vrf->_vrf_in_own_context( $method, $name, $context )
         if $vrf->_vrf_context_filters();
@@ -1469,6 +1490,12 @@ A reader called in the wrong context for the mode returns nothing, with
 C<error()> set to a message saying how to switch. In context mode the
 session's context must be the instance's own, as C<snmp_context('vrf',
 $name)> names it, and for the instance C<default> the default context.
+
+The session's context is its SNMPv3 Context or community suffix. Where the
+class can read it from the device, an SNMPv2c session on a community the
+device maps to a context reads that context too
+(L<SNMP::Info::Layer3::Nexus>); elsewhere such a session reads as the
+default context, so use SNMPv3.
 
 =head2 Completeness
 

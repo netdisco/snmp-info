@@ -658,4 +658,156 @@ sub vrf_instances_complete__vlan_contexts_only__is_1 : Tests(4) {
     'Caller names add nothing');
 }
 
+# snmpCommunityTable as NX-OS serves it: the name only on the session's own
+# row, the context on every row. Indexes are length-prefixed decimal strings.
+my %NX_COMMUNITY_ROW = (
+  'public'       => ['9.45.49.50.51.52.53.54.55.56', q()],
+  'public-red'   => ['9.45.50.51.52.53.54.55.56.57', 'red'],
+  'public-blue'  => ['9.45.51.52.53.54.55.56.57.48', 'blue'],
+  'public-green' => ['9.45.52.53.54.55.56.57.48.49', 'green'],
+  'public-grey'  => ['9.45.53.54.55.56.57.48.49.50', 'grey'],
+);
+
+sub _nx_community_cache {
+  my ($community, $cache) = @_;
+  $cache ||= _vrf_list_cache();
+  my (%names, %contexts);
+  foreach my $own (keys %NX_COMMUNITY_ROW) {
+    my ($index, $context) = @{$NX_COMMUNITY_ROW{$own}};
+    $names{$index}    = $own eq $community ? $own : q();
+    $contexts{$index} = $context;
+  }
+  $cache->{store}{vrf_comm_name}    = \%names;
+  $cache->{store}{vrf_comm_context} = \%contexts;
+  $cache->{_vrf_comm_name}          = 1;
+  $cache->{_vrf_comm_context}       = 1;
+  return $cache;
+}
+
+sub _nx_enter_community {
+  my ($info, $community) = @_;
+  $info->{args}{Community}         = 'public';
+  $info->session()->{Version}      = 2;
+  $info->session()->{Community}    = $community;
+  return;
+}
+
+sub _vrf_community_context__mapped_community__returns_its_context : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_community_cache('public-red'));
+  _nx_enter_community($info, 'public-red');
+  is($info->_vrf_community_context(), 'red',
+    'The context of the row carrying the session community');
+}
+
+sub _vrf_community_context__default_community__returns_empty : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_community_cache('public'));
+  _nx_enter_community($info, 'public');
+  is($info->_vrf_community_context(), q(),
+    'The default community maps to the default context');
+}
+
+sub _vrf_community_context__no_matching_row__undef : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_community_cache('public-red'));
+  _nx_enter_community($info, 'public-other');
+  is($info->_vrf_community_context(), undef, 'No row equals the community');
+
+  $info->clear_cache();
+  $info->cache(_vrf_list_cache());
+  $info->{store}{vrf_comm_name} = undef;
+  _nx_enter_community($info, 'public-red');
+  is($info->_vrf_community_context(), undef, 'The table is not served');
+}
+
+sub _vrf_community_context__v3__undef_without_walking : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_vrf_list_cache());
+  _nx_enter_context($info, 'red');
+  my $walks = 0;
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Nexus::vrf_comm_name = sub { $walks++; return {} };
+  is($info->_vrf_community_context(), undef, 'No answer over SNMPv3');
+  is($walks, 0, 'The community table was not walked');
+}
+
+sub _vrf_session_context__mapped_community__follows_session : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_community_cache(q(public)));
+  _nx_enter_community($info, q(public));
+  is($info->_vrf_session_context(), q(), q(The default session));
+  $info->clear_cache();
+  $info->cache(_nx_community_cache('public-red'));
+  _nx_enter_community($info, 'public-red');
+  is($info->_vrf_session_context(), 'red', 'A red session');
+  $info->clear_cache();
+  $info->cache(_nx_community_cache('public'));
+  _nx_enter_community($info, 'public');
+  is($info->_vrf_session_context(), q(), 'The default session after update()');
+}
+
+sub vrf_neighbors__mapped_community_red__reads_red : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_community_cache('public-red', _nx_red_cache()));
+  _nx_enter_community($info, 'public-red');
+  my @rows = values %{$info->vrf_neighbors('red')};
+  is(scalar @rows, 8, 'Eight red neighbor rows');
+  cmp_deeply([sort map { $_->{ifindex} } @rows],
+    [($NX_PORT{red_a}) x 4, ($NX_PORT{red_b}) x 4], 'All on red ports');
+}
+
+sub vrf_neighbors__mapped_community_red__default_throws : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_community_cache('public-red', _nx_red_cache()));
+  _nx_enter_community($info, 'public-red');
+  is($info->vrf_neighbors('default'), undef, 'No default rows over red');
+  like($info->error(),
+    qr/reads instance 'default' from the default context.*in context 'red'/s,
+    'The error names the context');
+}
+
+sub vrf_instances__mapped_community__throws_not_default : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_community_cache('public-red'));
+  _nx_enter_community($info, 'public-red');
+  is($info->vrf_instances(), undef, 'The list is refused over red');
+  like($info->error(), qr/only the default context.*context 'red'/s,
+    'The error names the default context');
+}
+
+sub vrf_instances__default_community__lists : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_community_cache('public'));
+  _nx_enter_community($info, 'public');
+  ok($info->vrf_instances()->{red}, 'The default community lists the VRFs');
+}
+
 1;
