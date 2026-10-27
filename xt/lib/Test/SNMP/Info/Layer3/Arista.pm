@@ -247,8 +247,8 @@ sub _grey_cache {
 sub _default_cache {
   return _arista_cache(
     _vrf_list_store(),
-    _addresses([999000, '172.20.20.23', 24]),
-    _neighbors([999000, 9, '172.20.20.1']),
+    _addresses([999000, '192.0.2.23', 24]),
+    _neighbors([999000, 9, '192.0.2.1']),
     i_mac => {999000 => _mac(10)},
   );
 }
@@ -430,7 +430,7 @@ sub vrf_neighbors__default_context__management_only : Tests(1) {
 
   cmp_deeply([map { "$_->{ifindex} $_->{ip}" }
       values %{$info->vrf_neighbors('default')}],
-    ['999000 172.20.20.1'], 'Only the Management0 neighbor');
+    ['999000 192.0.2.1'], 'Only the Management0 neighbor');
 }
 
 sub vrf_addresses__blue_context__shared_subnet : Tests(2) {

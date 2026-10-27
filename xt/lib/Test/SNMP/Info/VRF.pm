@@ -596,7 +596,7 @@ sub _prime_neighbors {
 
   # The cache holds the raw octets; the munge turns them into text
   my %arp = map { $_->[0] => pack('C6', 2, 0, 0, 0, 0, $_->[1]) } (
-    ['1.172.20.20.1' => 1],
+    ['1.192.0.2.1' => 1],
     ['2.10.40.0.1'   => 2],
     ['2.10.40.0.2'   => 3],
     ['3.10.40.0.1'   => 4],
@@ -673,7 +673,7 @@ sub vrf_neighbors__unmapped_port__belongs_to_default : Tests(1) {
 
   my $info = $test->_neighbor_info();
   cmp_deeply([sort keys %{$info->vrf_neighbors('default')}],
-    ['1.172.20.20.1'], q(default holds the port i_vrf does not list));
+    ['1.192.0.2.1'], q(default holds the port i_vrf does not list));
 }
 
 sub vrf_neighbors__ipv6__attributed_by_ifindex : Tests(3) {
@@ -870,7 +870,7 @@ sub vrf_neighbors__context_mode__rows_on_context_address_ports : Tests(2) {
   $test->_enter_context($info);
   my $rows = $info->vrf_neighbors('red');
   cmp_deeply([sort keys %$rows],
-    [sort('1.172.20.20.1', '2.10.40.0.2', '3.10.40.0.2')],
+    [sort('1.192.0.2.1', '2.10.40.0.2', '3.10.40.0.2')],
     q(Rows on ports with an address in the context, whatever i_vrf says,)
       . q( less the addresses the context holds));
   is($rows->{'3.10.40.0.2'}{ifindex}, 3, q(... with its own ifIndex));
@@ -1003,7 +1003,7 @@ sub _prime_addresses {
   my %ifindex = (
     '1.4.10.40.0.1'      => 3,
     '1.4.10.41.0.1'      => 4,
-    '1.4.172.20.20.14'   => 1,
+    '1.4.192.0.2.14'   => 1,
     "4.20.$V6_ONE.30.0.0.1" => 2,
     "4.20.$V6_TWO.30.0.0.1" => 3,
     '1.4.10.42.0.255'    => 5,
@@ -1014,7 +1014,7 @@ sub _prime_addresses {
   my %prefix = (
     '1.4.10.40.0.1'      => "$PFX_OID.3.1.4.10.40.0.0.24",
     '1.4.10.41.0.1'      => "$PFX_OID.4.1.4.10.41.0.0.24",
-    '1.4.172.20.20.14'   => "$PFX_OID.1.1.4.172.20.20.0.24",
+    '1.4.192.0.2.14'   => "$PFX_OID.1.1.4.192.0.2.0.24",
     "4.20.$V6_ONE.30.0.0.1" => "$PFX_OID.2.2.16.$V6_ONE.64",
     "4.20.$V6_TWO.30.0.0.1" => '.0.0',
     '1.4.10.42.0.255'    => "$PFX_OID.5.1.4.10.42.0.0.24",
@@ -1067,7 +1067,7 @@ sub vrf_addresses__ipv4__attributed_by_ifindex : Tests(5) {
   ok(!exists $red->{'3.10.40.0.1'} && !grep({ $_->{ip} eq '10.40.0.1' } values %$red),
     q(red does not hold 10.40.0.1, which the device collapsed to blue));
   ok(!exists $blue->{'4.10.41.0.1'}, q(blue does not hold red's address));
-  cmp_deeply([sort keys %$default], ['1.172.20.20.14'],
+  cmp_deeply([sort keys %$default], ['1.192.0.2.14'],
     q(default holds the address on the unlisted port));
   ok(!(grep { $_->{ip} eq '10.42.0.255' } map { values %$_ } $red, $blue, $default),
     q(A broadcast row is not an address));
@@ -1170,13 +1170,13 @@ sub vrf_addresses__no_ipaddresstable__falls_back_to_ipadent : Tests(4) {
   $info->{store}{old_ip_index} = {
     '10.40.0.1'    => 3,
     '10.41.0.1'    => 4,
-    '172.20.20.14' => 1,
+    '192.0.2.14' => 1,
     '10.44.0.1'    => 2,
   };
   $info->{store}{old_ip_netmask} = {
     '10.40.0.1'    => '255.255.255.0',
     '10.41.0.1'    => '255.255.255.0',
-    '172.20.20.14' => '255.255.255.0',
+    '192.0.2.14' => '255.255.255.0',
     '10.44.0.1'    => '255.0.255.0',
   };
   cmp_deeply(
@@ -1192,7 +1192,7 @@ sub vrf_addresses__no_ipaddresstable__falls_back_to_ipadent : Tests(4) {
     q(red gets its address and mask length too));
   is($info->vrf_addresses('red')->{'2.10.44.0.1'}{prefix_len}, undef,
     q(A mask that is not contiguous gives an undef length));
-  cmp_deeply([keys %{$info->vrf_addresses('default')}], ['1.172.20.20.14'],
+  cmp_deeply([keys %{$info->vrf_addresses('default')}], ['1.192.0.2.14'],
     q(default holds the unlisted port's address));
 }
 
@@ -1268,7 +1268,7 @@ sub vrf_addresses__context_mode__rows_not_filtered_by_owner : Tests(1) {
   $test->_enter_context($info);
   my $rows = $info->vrf_addresses('red');
   cmp_deeply([sort grep { /^\d+\.10\./ || /^1\./ } keys %$rows],
-    ['1.172.20.20.14', '3.10.40.0.1', '4.10.41.0.1'],
+    ['1.192.0.2.14', '3.10.40.0.1', '4.10.41.0.1'],
     q(Every unicast row the context serves is kept, whatever i_vrf says));
 }
 
