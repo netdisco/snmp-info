@@ -163,4 +163,14 @@ sub stp_trees_default_off : Tests(3) {
         0, q(Trees may exist unread) );
 }
 
+sub i_faststart_enabled__cisco_class__resolves_to_cisco_stp_extensions :
+    Tests(2) {
+    my $test = shift;
+
+    my $cisco_sub = SNMP::Info::CiscoStpExtensions->can('i_faststart_enabled');
+    ok( $cisco_sub, q(CiscoStpExtensions defines i_faststart_enabled) );
+    is( $test->{info}->can('i_faststart_enabled'),
+        $cisco_sub, q(Cisco class keeps the CISCO-STP-EXTENSIONS method) );
+}
+
 1;

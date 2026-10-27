@@ -307,6 +307,26 @@ sub i_stp_state {
     return \%i_stp_state;
 }
 
+sub i_faststart_enabled {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    my $bp_index   = $bridge->bp_index($partial);
+    my $edge_admin = $bridge->is_edgeport_admin();
+
+    my %i_faststart_enabled;
+
+    foreach my $index ( keys %$edge_admin ) {
+        my $iid     = $bp_index->{$index};
+        my $enabled = _stp_enabled( $edge_admin->{$index} );
+        next unless defined $iid;
+        next unless defined $enabled;
+        $i_faststart_enabled{$iid} = $enabled;
+    }
+
+    return \%i_faststart_enabled;
+}
+
 sub i_stp_port {
     my $bridge  = shift;
     my $partial = shift;
@@ -1144,6 +1164,15 @@ the agent exposes in the polled context, not the port's state in every
 VLAN.  A class whose platform exposes a different tree says so in its
 own documentation.  See L</"Spanning Tree Trees"> for every tree the
 device runs.
+
+=item $bridge->i_faststart_enabled()
+
+Returns 1 or 0 for each port by whether it is configured as an edge port
+(the IEEE equivalent of PortFast).  Format is a hash reference with
+key = C<ifIndex>, value = [1|0].  A port with no administrative value is
+absent.
+
+(C<dot1dStpPortAdminEdgePort>)
 
 =item $bridge->i_stp_id()
 
