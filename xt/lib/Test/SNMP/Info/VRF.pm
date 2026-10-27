@@ -791,7 +791,7 @@ sub vrf_neighbors__role_without_neighbor_methods__has_no_rows : Tests(1) {
     q(A class with no at_* or ipv6_n2p_* methods contributes no rows));
 }
 
-sub vrf_neighbors__context_mode__rows_not_filtered_by_owner : Tests(2) {
+sub vrf_neighbors__context_mode__rows_on_context_address_ports : Tests(2) {
   my $test = shift;
 
   my $info = $test->_make_info('Test::SNMP::Info::VRF::NeighborContext',
@@ -799,13 +799,49 @@ sub vrf_neighbors__context_mode__rows_not_filtered_by_owner : Tests(2) {
   $test->{info} = $info;
   $test->_prime_members();
   $test->_prime_neighbors($info);
+  $test->_prime_addresses($info);
+  delete $info->{store}{new_ip_index}{'1.4.10.41.0.1'};
   $test->_enter_context($info);
   my $rows = $info->vrf_neighbors('red');
   cmp_deeply([sort keys %$rows],
     [sort('1.172.20.20.1', '2.10.40.0.1', '2.10.40.0.2', '3.10.40.0.1',
-      '3.10.40.0.2', '4.10.41.0.2', $RED_V6)],
-    q(Every row the context serves is kept, whatever i_vrf says));
+      '3.10.40.0.2', $RED_V6)],
+    q(Rows on ports with an address in the context, whatever i_vrf says));
   is($rows->{'3.10.40.0.1'}{ifindex}, 3, q(... with its own ifIndex));
+}
+
+sub i_vrf__context_mode__ports_with_context_addresses : Tests(3) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::NeighborContext',
+    \@NEIGHBOR_PARENTS, _vrf_context_filters => sub { 1 });
+  $test->{info} = $info;
+  $test->_prime_vrf_table();
+  $test->_prime_members();
+  $test->_prime_addresses($info);
+  cmp_deeply(scalar $info->i_vrf(), {map { $_ => 'default' } 1 .. 4},
+    q(In the default context, its address ports are default));
+
+  $test->_enter_context($info);
+  cmp_deeply(scalar $info->i_vrf(), {map { $_ => 'red' } 1 .. 4},
+    q(In red's context, its address ports are red, whatever members say));
+
+  $info->session()->{Community} = 'public@vlan-1';
+  is(scalar $info->i_vrf(), undef, q(Nothing in a context no VRF has));
+}
+
+sub vrf_neighbors__context_mode_other_context__throws : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::NeighborContext',
+    \@NEIGHBOR_PARENTS, _vrf_context_filters => sub { 1 });
+  $test->{info} = $info;
+  $test->_prime_neighbors($info);
+  $test->_enter_context($info);
+  is(scalar $info->vrf_neighbors('blue'), undef, q(Refused in red's context));
+  like($info->error(),
+    qr/^\S+vrf_neighbors\(\) reads instance 'blue' from its own context, but this session is in context 'red'\. Switch with snmp_context\('vrf', 'blue'\) first\./,
+    q(Error names both and the switch));
 }
 
 sub vrf_neighbors__attribution_in_vrf_context__throws : Tests(2) {

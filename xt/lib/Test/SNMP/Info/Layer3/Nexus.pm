@@ -223,36 +223,11 @@ sub vrf_instances : Tests(8) {
   is($instances->{red}{listed_by}, 'device', 'Listed by the device');
 }
 
-my $FILTERING = 'Test::SNMP::Info::Layer3::Nexus::Filtering';
-
-# A Nexus whose context mode is on, as it will be once readers filter
-sub _filtering_info {
-  my $test = shift;
-
-  no strict 'refs';
-  if (!@{"${FILTERING}::ISA"}) {
-    @{"${FILTERING}::ISA"} = ('SNMP::Info::Layer3::Nexus');
-    foreach my $hash (qw/MIBS GLOBALS FUNCS MUNGE/) {
-      %{"${FILTERING}::$hash"} = %{"SNMP::Info::Layer3::Nexus::$hash"};
-    }
-    *{"${FILTERING}::_vrf_context_filters"} = sub { 1 };
-  }
-  return $FILTERING->new(
-    'AutoSpecify' => 0,
-    'BulkWalk'    => 0,
-    'UseEnums'    => 1,
-    'RetryNoSuch' => 1,
-    'DestHost'    => '127.0.0.1',
-    'Community'   => 'public',
-    'Version'     => 2,
-    'Session'     => $test->mock_session,
-  );
-}
-
 sub vrf_instances_complete__context_map_walked__is_1 : Tests(1) {
   my $test = shift;
+  my $info = $test->{info};
 
-  my $info = $test->_filtering_info();
+  $info->clear_cache();
   $info->cache(_vrf_list_cache());
   is($info->vrf_instances_complete(), 1,
     'A complete context map walk lists every VRF');
@@ -260,8 +235,9 @@ sub vrf_instances_complete__context_map_walked__is_1 : Tests(1) {
 
 sub vrf_instances_complete__context_map_partial__is_0 : Tests(1) {
   my $test = shift;
+  my $info = $test->{info};
 
-  my $info = $test->_filtering_info();
+  $info->clear_cache();
   $info->cache(_vrf_list_cache());
   $info->{walk_status}{vrf_name} = {complete => 0, reason => 'timeout'};
   is($info->vrf_instances_complete(), 0, 'A partial context map walk');
@@ -296,6 +272,240 @@ sub vrf_name__unchanged : Tests(1) {
       _context_index('red')    => 'red',
     },
     'The raw context map, as served');
+}
+
+# nexus1 ports of the VRF interfaces: red holds two, as does blue
+my %NX_PORT = (
+  red_a  => 436207616,
+  blue_a => 436208128,
+  red_b  => 436208640,
+  blue_b => 436209152,
+  green  => 436209664,
+);
+my $NX_PFX = '.1.3.6.1.2.1.4.32.1.5';
+
+# The index arcs of an IPv6 address written as eight hex groups
+sub _v6_arcs {
+  my $ip = shift;
+  return join('.', unpack('C*', pack('n8', map { hex } split /:/, $ip)));
+}
+
+sub _nx_mac { return pack('C6', 2, 0, 0, 0, 0, shift) }
+
+# The neighbor rows nexus1 serves on one VRF port, in any context: a
+# global, an EUI-64 and a link-local IPv6 neighbor. $net is the third
+# group of the port's prefix.
+sub _nx_port_neighbors {
+  my ($port, $net, $mac) = @_;
+  my $eui = sprintf('%x', 0x200 + $mac);
+  return map { ("$port.2.16." . _v6_arcs($_) => _nx_mac($mac)) } (
+    "2001:db8:$net:0:0:0:0:2",
+    "2001:db8:$net:0:0:ff:fe00:$eui",
+    'fe80:0:0:0:0:0:0:2',
+  );
+}
+
+# Address tables of the context: ipAddressTable rows by type, length and
+# octets, with the RowPointer form nexus1 serves, and ipAdEntTable rows
+sub _nx_addresses {
+  my @rows = @_;
+  my (%index, %type, %prefix, %adent, %mask);
+  foreach my $row (@rows) {
+    my ($port, $ip, $len) = @$row;
+    my ($iid, $pointer);
+    if ($ip =~ /:/) {
+      my $arcs = _v6_arcs($ip);
+      ($iid, $pointer) = ("2.16.$arcs", "$NX_PFX.$port.2.$arcs.$len");
+    }
+    else {
+      (my $net = $ip) =~ s/\.\d+$/.0/;
+      ($iid, $pointer) = ("1.4.$ip", "$NX_PFX.$port.1.$net.$len");
+      $adent{$ip} = $port;
+      $mask{$ip}  = '255.255.255.0';
+    }
+    $index{$iid}  = $port;
+    $type{$iid}   = 'unicast';
+    $prefix{$iid} = $pointer;
+  }
+  return (
+    new_ip_index   => \%index,
+    new_ip_type    => \%type,
+    new_ip_prefix  => \%prefix,
+    old_ip_index   => \%adent,
+    old_ip_netmask => \%mask,
+  );
+}
+
+# The session's SNMPv3 context, as a caller switches it
+sub _nx_enter_context {
+  my ($info, $context) = @_;
+  $info->session()->{Version} = 3;
+  $info->session()->{Context} = $context;
+  return;
+}
+
+# nexus1-red: red's two ports hold 10.10.10.1/24, 10.11.0.1/24 and
+# 2001:db8:10::1/64, 2001:db8:11::1/64; two ARP and six IPv6 neighbors
+sub _nx_red_cache {
+  my ($red_a, $red_b) = @NX_PORT{qw/red_a red_b/};
+  my $cache = _vrf_list_cache();
+  my %store = (
+    _nx_addresses(
+      [$red_a, '10.10.10.1', 24], [$red_b, '10.11.0.1', 24],
+      [$red_a, '2001:db8:10:0:0:0:0:1', 64],
+      [$red_b, '2001:db8:11:0:0:0:0:1', 64],
+    ),
+    at_paddr   => {
+      "$red_a.10.10.10.2" => _nx_mac(1),
+      "$red_b.10.11.0.2"  => _nx_mac(3),
+    },
+    at_netaddr => {
+      "$red_a.10.10.10.2" => '10.10.10.2',
+      "$red_b.10.11.0.2"  => '10.11.0.2',
+    },
+    ip_n2p_phys_addr => {
+      "$red_a.1.4.10.10.10.2" => _nx_mac(1),
+      "$red_b.1.4.10.11.0.2"  => _nx_mac(3),
+      _nx_port_neighbors($red_a, 10, 1),
+      _nx_port_neighbors($red_b, 11, 3),
+    },
+  );
+  $cache->{store} = {%{$cache->{store}}, %store};
+  $cache->{"_$_"} = 1 for keys %store;
+  return $cache;
+}
+
+# nexus1-default: no address row, and the IPv6 neighbors of every VRF
+# port, which the default context serves although no port is its own
+sub _nx_default_cache {
+  my $cache = _vrf_list_cache();
+  my %store = (
+    _nx_addresses(),
+    at_paddr         => {},
+    at_netaddr       => {},
+    ip_n2p_phys_addr => {
+      _nx_port_neighbors($NX_PORT{red_a},  10, 1),
+      _nx_port_neighbors($NX_PORT{blue_a}, 10, 2),
+      _nx_port_neighbors($NX_PORT{red_b},  11, 3),
+      _nx_port_neighbors($NX_PORT{blue_b}, 12, 3),
+      _nx_port_neighbors($NX_PORT{green},  13, 4),
+      "$NX_PORT{blue_b}.2.16." . _v6_arcs('fe80:0:0:0:0:ff:fe00:203')
+        => _nx_mac(3),
+    },
+  );
+  $cache->{store} = {%{$cache->{store}}, %store};
+  $cache->{"_$_"} = 1 for keys %store;
+  return $cache;
+}
+
+sub i_vrf : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_red_cache());
+  _nx_enter_context($info, 'red');
+  cmp_deeply(scalar $info->i_vrf(),
+    {$NX_PORT{red_a} => 'red', $NX_PORT{red_b} => 'red'},
+    'The ports holding an address in the red context');
+}
+
+sub i_vrf__default_context__default_ports_only : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_default_cache());
+  cmp_deeply(scalar $info->i_vrf(), {},
+    'No port holds an address in the default context');
+}
+
+sub vrf_neighbors__default_context__drops_leaked_ipv6 : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_default_cache());
+  is(scalar keys %{$info->ipv6_n2p_mac()}, 16,
+    'The default context serves every VRF port\'s IPv6 neighbors');
+  cmp_deeply($info->vrf_neighbors('default'), {},
+    'None of them is on a port of the default instance');
+}
+
+sub vrf_neighbors__red_context__red_rows : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_red_cache());
+  _nx_enter_context($info, 'red');
+  my $rows = $info->vrf_neighbors('red');
+  my @rows = values %$rows;
+  is(scalar @rows, 8, 'Eight neighbor rows');
+  is(scalar(grep { $_->{family} eq 'ipv4' } @rows), 2, 'Two are IPv4');
+  is(scalar(grep { $_->{family} eq 'ipv6' } @rows), 6, 'Six are IPv6');
+  cmp_deeply([sort map { $_->{ifindex} } @rows],
+    [($NX_PORT{red_a}) x 4, ($NX_PORT{red_b}) x 4],
+    'All on red ports');
+}
+
+sub vrf_neighbors__wrong_context__error : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_red_cache());
+  _nx_enter_context($info, 'blue');
+  is($info->vrf_neighbors('red'), undef, 'No rows from blue\'s context');
+  like($info->error(),
+    qr/vrf_neighbors\(\) reads instance 'red' from its own context, but this session is in context 'blue'\. Switch with snmp_context\('vrf', 'red'\) first\./,
+    'The error names both contexts and the switch');
+}
+
+sub vrf_neighbors__default_name_in_vrf_context__error : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  $info->cache(_nx_red_cache());
+  _nx_enter_context($info, 'red');
+  is($info->vrf_neighbors('default'), undef,
+    'No rows of red\'s context under the name default');
+  like($info->error(),
+    qr/vrf_neighbors\(\) reads instance 'default' from the default context on this device\. This session is in context 'red'\. Call update\(\) back to the default context first\./,
+    'The error names the context and the way back');
+}
+
+# nexus1-green: one IPv6 address, and its connected and host routes
+sub vrf_subnets__green_context__ipv6_only : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  my $port   = $NX_PORT{green};
+  my ($net, $own, $peer)
+    = map { _v6_arcs("2001:db8:13:0:0:0:0:$_") } 0, 1, 2;
+  my %proto = (
+    "2.16.$net.64.2.0.0.2.16.$own"   => 'local',
+    "2.16.$own.128.2.0.0.2.16.$own"  => 'local',
+    "2.16.$peer.128.2.0.0.2.16.$peer" => 'other',
+  );
+  my $cache = _vrf_list_cache();
+  my %store = (
+    _nx_addresses([$port, '2001:db8:13:0:0:0:0:1', 64]),
+    vrf_cidr_proto => \%proto,
+    vrf_cidr_if    => {map { $_ => $port } keys %proto},
+  );
+  $cache->{store} = {%{$cache->{store}}, %store};
+  $cache->{"_$_"} = 1 for keys %store;
+
+  $info->clear_cache();
+  $info->cache($cache);
+  _nx_enter_context($info, 'green');
+  my $subnets = $info->vrf_subnets('green');
+  cmp_deeply([keys %$subnets],
+    ['2001:0db8:0013:0000:0000:0000:0000:0000/64'],
+    'The one IPv6 subnet, no host route');
+  is($subnets->{(keys %$subnets)[0]}{family}, 'ipv6', 'Family ipv6');
 }
 
 sub snmp_context__vlan_and_mst__unchanged : Tests(3) {

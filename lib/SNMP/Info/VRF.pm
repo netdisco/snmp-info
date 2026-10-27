@@ -308,8 +308,70 @@ sub _vrf_rd {
 sub i_vrf {
     my $vrf = shift;
 
+    return $vrf->_vrf_context_i_vrf() if $vrf->_vrf_context_filters();
     return unless $vrf->_vrf_default_context_ok();
     return $vrf->_vrf_membership();
+}
+
+# Context mode: the ports of the instance whose context the session is in
+sub _vrf_context_i_vrf {
+    my $vrf = shift;
+
+    my $name = $vrf->_vrf_context_instance();
+    return $vrf->_vrf_context_ports($name) if defined $name;
+
+    my $context = $vrf->_walk_context();
+    $vrf->error_throw(
+              "i_vrf() maps the ports of the instance whose context this"
+            . " session is in, but no instance in vrf_instances() has the"
+            . " context '$context'. Switch to the context snmp_context('vrf')"
+            . " gives for a name vrf_instances() lists.\n" );
+    return;
+}
+
+# default in the default context, else the listed instance whose context
+# is the session's. The list is read without the default context guard,
+# since the context map serves it in every context.
+sub _vrf_context_instance {
+    my $vrf = shift;
+
+    my $context = $vrf->_walk_context();
+    return 'default' unless length $context;
+
+    my $instances = $vrf->{_vrf_instances} ||= $vrf->_vrf_all_instances();
+    foreach my $name ( sort keys %$instances ) {
+        next if $name eq 'default';
+        return $name
+            if grep { $_ eq $context } $vrf->_vrf_contexts_of($name);
+    }
+    return;
+}
+
+# { ifIndex => $name } for each port holding an address in this context.
+# The address walks decide membership, so they count toward the read.
+sub _vrf_context_ports {
+    my $vrf  = shift;
+    my $name = shift;
+
+    my $rows = $vrf->_vrf_address_rows($name);
+    return { map { $_->{ifindex} => $name } values %$rows };
+}
+
+# The contexts _walk_context() reports in $name's context: the v3 name,
+# and the context of a community the v2c template builds. With no context
+# record the instance's context is its name.
+sub _vrf_contexts_of {
+    my $vrf  = shift;
+    my $name = shift;
+
+    my $context = $vrf->_vrf_context_for($name) or return $name;
+    my $v2c     = $context->{v2c};
+    my @v2c
+        = !defined $v2c        ? ()
+        : $v2c =~ /^%s\@(.+)$/ ? $1
+        : $v2c =~ /^(.+)\@%s$/ ? $1
+        :                        ();
+    return grep { defined and length } $context->{v3}, @v2c;
 }
 
 # 1 when the list is whole, 0 when it may be short, undef when the device
@@ -360,7 +422,9 @@ sub _vrf_split_agent {
 
 # ARP and IPv6 neighbor rows of one instance, keyed as the source tables
 # are: ifIndex, then the address arcs. Attribution mode keeps the rows whose
-# port belongs to the instance; context mode already reads one instance.
+# port belongs to the instance; context mode keeps the rows on the ports
+# holding an address in this context, which a context can serve for ports
+# of other instances.
 sub vrf_neighbors {
     my $vrf  = shift;
     my $name = shift;
@@ -372,13 +436,14 @@ sub vrf_neighbors {
     my %rows
         = ( %{ $vrf->_vrf_arp_rows($name) }, %{ $vrf->_vrf_nd_rows($name) },
         );
-    return \%rows if $context_mode;
+    return $vrf->_vrf_keep_context_ports( \%rows, $name ) if $context_mode;
     return $vrf->_vrf_keep_owned( \%rows, $name );
 }
 
 # Interface addresses of one instance, keyed ifIndex.address. The device
 # serves one address table per port, so an address two VRFs share survives
-# in each, and ownership comes from the port as for neighbors.
+# in each, and ownership comes from the port as for neighbors. In context
+# mode the addresses are what decides the ports, so all are kept.
 sub vrf_addresses {
     my $vrf  = shift;
     my $name = shift;
@@ -390,6 +455,18 @@ sub vrf_addresses {
     my $rows = $vrf->_vrf_address_rows($name);
     return $rows if $context_mode;
     return $vrf->_vrf_keep_owned( $rows, $name );
+}
+
+# Context mode: drops the rows on ports holding no address of $name here
+sub _vrf_keep_context_ports {
+    my ( $vrf, $rows, $name ) = @_;
+
+    my $ports = $vrf->_vrf_context_ports($name);
+    foreach my $key ( keys %$rows ) {
+        delete $rows->{$key}
+            unless exists $ports->{ $rows->{$key}{ifindex} };
+    }
+    return $rows;
 }
 
 # Drops the rows whose port is not in the instance. The membership walk
@@ -798,21 +875,41 @@ sub _vrf_in_reader_context {
 
     my $context = $vrf->_walk_context();
     my $method  = ( caller(1) )[3];
+    return $vrf->_vrf_in_own_context( $method, $name, $context )
+        if $vrf->_vrf_context_filters();
 
-    if ( !$vrf->_vrf_context_filters() ) {
-        return 1 unless length $context;
+    return 1 unless length $context;
+    $vrf->error_throw( "$method() reads instance '$name' from the default"
+            . " context, attributing rows by port, on this device."
+            . " This session is in context '$context'. Call update()"
+            . " back to the default context first.\n" );
+    return 0;
+}
+
+# Context mode: each instance reads only in its own context, which for
+# default is the default context
+sub _vrf_in_own_context {
+    my ( $vrf, $method, $name, $context ) = @_;
+
+    return 1 if $name eq 'default' and !length $context;
+    if ( $name eq 'default' ) {
+        $vrf->error_throw( "$method() reads instance 'default' from the"
+                . " default context on this device. This session is in"
+                . " context '$context'. Call update() back to the default"
+                . " context first.\n" );
+        return 0;
+    }
+    if ( !length $context ) {
         $vrf->error_throw(
-                  "$method() reads instance '$name' from the default"
-                . " context, attributing rows by port, on this device."
-                . " This session is in context '$context'. Call update()"
-                . " back to the default context first.\n" );
+                  "$method() reads instance '$name' from its own context on"
+                . " this device, but this session is in the default context."
+                . " Switch with snmp_context('vrf', '$name') first.\n" );
         return 0;
     }
 
-    return 1 if length $context or $name eq 'default';
-    $vrf->error_throw(
-              "$method() reads instance '$name' from its own context on"
-            . " this device, but this session is in the default context."
+    return 1 if grep { $_ eq $context } $vrf->_vrf_contexts_of($name);
+    $vrf->error_throw( "$method() reads instance '$name' from its own"
+            . " context, but this session is in context '$context'."
             . " Switch with snmp_context('vrf', '$name') first.\n" );
     return 0;
 }
@@ -956,12 +1053,26 @@ through C<i_vrf()>. The caller never switches contexts:
         my $whole     = $vrf->vrf_read_complete($name);
     }
 
-Context mode exists for later device classes whose agents serve each
-instance's rows only in that instance's own context. There the readers
-return every row of the current context, and the caller switches to the
-instance's context before calling them. The instance list and C<i_vrf()>
-are still read in the default context, and kept across the switches,
-since C<update()> clears the cache.
+In context mode, the device class's agent serves each instance's
+address rows only in that instance's own context, and the caller switches
+to the instance's context before calling the readers. A context can still
+serve other instances' rows, such as neighbors on their ports, so the
+readers keep only the rows on ports holding an address in the current
+context's C<ipAddressTable> or C<ipAdEntTable>. C<i_vrf()> maps those
+ports to the instance whose context the session is in, or to C<default>
+in the default context. The instance list is still read in the default
+context, and kept across the switches, since C<update()> clears the cache:
+
+    my $instances = $vrf->vrf_instances();
+    foreach my $name ( sort keys %$instances ) {
+        my $context = $instances->{$name}{contexts}[0];
+        # switch to $context->{v3} unless $name is default, then update()
+        my $neighbors = $vrf->vrf_neighbors($name);
+        my $whole     = $vrf->vrf_read_complete($name);
+    }
+
+A port with no address in its context, such as an unnumbered one, is in
+no instance in context mode, and its neighbors are dropped.
 
 A caller tells the modes apart from each instance's C<contexts>. It is
 C<< [ { kind => 'none' } ] >>, the default context, in attribution mode.
@@ -969,7 +1080,9 @@ In context mode it lists the instance's own contexts, each as
 L<SNMP::Info/"snmp_context"> describes it.
 
 A reader called in the wrong context for the mode returns nothing, with
-C<error()> set to a message saying how to switch.
+C<error()> set to a message saying how to switch. In context mode the
+session's context must be the instance's own, as C<snmp_context('vrf',
+$name)> names it, and for the instance C<default> the default context.
 
 =head2 Completeness
 
@@ -1036,7 +1149,8 @@ Returns the number of VRFs the device says it configures.
 
 These methods read the default context only. In any other context they
 return nothing, with C<error()> set, since only the default context serves
-the whole list.
+the whole list. C<i_vrf()> in context mode is the exception, as described
+below.
 
 =over
 
@@ -1063,7 +1177,14 @@ Returns reference to hash of instance name, keyed by ifIndex, from the
 active rows of C<mplsL3VpnIfConfTable>. Ports of the instance C<default>
 are absent.
 
-(C<mplsL3VpnIfConfRowStatus>)
+In context mode it works in any context. It maps each port holding an
+address in the current context's C<ipAddressTable> or C<ipAdEntTable> to
+the instance whose context the session is in, or to C<default> in the
+default context. It returns nothing, with C<error()> set, in a context no
+listed instance has.
+
+(C<mplsL3VpnIfConfRowStatus>; in context mode C<ipAddressIfIndex>,
+C<ipAdEntIfIndex>)
 
 =back
 
@@ -1117,7 +1238,8 @@ Returns 0 when a table a reader walked for C<$name> has an incomplete
 C<walk_status()> (see L<SNMP::Info/"Incomplete Walks">), otherwise 1. A
 table the device does not implement counts as complete. In attribution
 mode the membership table C<mplsL3VpnIfConfTable> counts too, since it
-decides which rows are the instance's.
+decides which rows are the instance's; in context mode the address tables
+do.
 
 Call it after the readers, in the same context. C<clear_cache()>, and so
 C<update()>, forgets which tables were walked, after which it returns 1

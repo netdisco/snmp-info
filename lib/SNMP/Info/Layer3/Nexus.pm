@@ -127,6 +127,10 @@ sub _vrf_vendor_instances {
 
 sub _vrf_vendor_list_methods { return ('vrf_name'); }
 
+# Each VRF context serves only its own address rows, but ifTable and the
+# IPv6 neighbors of other VRFs' ports too
+sub _vrf_context_filters { return 1; }
+
 # The context cContextMappingTable maps to the VRF: the one named like the
 # VRF, else the lowest sorted name; with none mapped, the VRF name. The
 # default VRF is the default context, and an unnamed one is not a VRF.
@@ -440,6 +444,12 @@ mapped to it, else the VRF name itself.  The default VRF and an empty name
 have no context, so nothing is returned.  A site's community map
 (C<snmp-server mib community-map>) reaches a VRF over SNMPv2c, but the
 class cannot derive its name, so C<v2c> is undef.
+
+VRF reads use context mode (see L<SNMP::Info::VRF/"Reading Instances">):
+each VRF context serves only that VRF's address rows, while C<ifTable> is
+not scoped and the default context serves the IPv6 neighbors of every
+VRF's ports.  The readers therefore keep only rows on ports holding an
+address in the current context.
 
 =back
 
