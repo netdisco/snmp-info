@@ -894,4 +894,182 @@ sub vrf_addresses__attribution_in_vrf_context__throws : Tests(2) {
     q(Error names the reader));
 }
 
+# mplsL3VpnVrfRteTable rows of an IOS-XE device. Red's 10.40.0.0/24 is
+# served here though the address tables keep 10.40.0.1 only on blue's port.
+# The index after the name is destType.destLen.dest.pfxLen.policyLen.policy
+# .nhType.nhLen.nh.
+my $RED_NAME     = $NAME_IID{red};
+my $BLUE_NAME    = $NAME_IID{blue};
+my $ZERO_V4_HOP  = '1.4.0.0.0.0';
+my $ZERO_V6_HOP  = '2.16.' . join(q(.), (0) x 16);
+my $NET_V6_BYTES = '32.1.13.184.0.64.0.0.0.0.0.0.0.0.0.0';
+
+sub _prime_routes {
+  my $test = shift;
+  my $info = shift;
+
+  my %rows = (
+    "$RED_NAME.1.4.10.40.0.0.24.2.0.0.$ZERO_V4_HOP"  => ['local',   2],
+    "$RED_NAME.1.4.10.40.0.1.32.2.0.0.$ZERO_V4_HOP"  => ['local',   2],
+    "$RED_NAME.1.4.10.40.9.0.24.2.0.0.$ZERO_V4_HOP"  => ['ospf',    2],
+    "$RED_NAME.2.16.$NET_V6_BYTES.64.2.0.0.$ZERO_V6_HOP" => ['local', 2],
+    "$BLUE_NAME.1.4.10.40.0.0.24.2.0.0.$ZERO_V4_HOP" => ['local',   3],
+  );
+  $info->{_vrf_l3vpn_rte_if}    = 1;
+  $info->{_vrf_l3vpn_rte_proto} = 1;
+  $info->{store}{vrf_l3vpn_rte_proto}
+    = {map { $_ => $rows{$_}[0] } keys %rows};
+  $info->{store}{vrf_l3vpn_rte_if} = {map { $_ => $rows{$_}[1] } keys %rows};
+  return;
+}
+
+sub _subnet_info {
+  my $test = shift;
+  my %opt  = @_;
+
+  my $info
+    = $opt{routes}
+    ? $test->_make_info('Test::SNMP::Info::VRF::SubnetRoutes',
+    \@NEIGHBOR_PARENTS, _vrf_subnets_from_routes => sub {1})
+    : $test->_make_info('Test::SNMP::Info::VRF::Addresses',
+    \@NEIGHBOR_PARENTS);
+  $test->{info} = $info;
+  $test->_prime_vrf_table();
+  $test->_prime_members();
+  $test->_prime_addresses($info);
+  $test->_prime_routes($info);
+  return $info;
+}
+
+sub vrf_subnets : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'vrf_subnets');
+  my $info = $test->_subnet_info();
+  cmp_deeply(
+    $info->vrf_subnets('blue')->{'10.40.0.0/24'},
+    {
+      prefix  => '10.40.0.0',
+      len     => 24,
+      family  => 'ipv4',
+      ifindex => 3,
+      sources => ['address']
+    },
+    q(A subnet record holds its prefix, length, port and sources)
+  );
+}
+
+sub vrf_subnets__from_addresses__network_and_length : Tests(4) {
+  my $test = shift;
+
+  my $info = $test->_subnet_info();
+  cmp_deeply(
+    $info->vrf_subnets('blue')->{'10.40.0.0/24'},
+    superhashof({sources => ['address']}),
+    q(Blue holds the network of its address, not the host address)
+  );
+  ok(!exists $info->vrf_subnets('blue')->{'10.40.0.1/24'},
+    q(The host address is not a prefix));
+  cmp_deeply(
+    $info->vrf_subnets('red')->{'2001:0db8:0040:0000:0000:0000:0000:0000/64'},
+    superhashof({family => 'ipv6', len => 64, ifindex => 2}),
+    q(An IPv6 address gives its masked network));
+  ok(!(grep { /^10\.42\./ } keys %{$info->vrf_subnets('blue')}),
+    q(A broadcast-typed address row gives no subnet));
+}
+
+sub vrf_subnets__no_prefix_length__no_subnet : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_subnet_info();
+  $info->{store}{new_ip_prefix}{'1.4.10.40.0.1'} = '.0.0';
+  cmp_deeply($info->vrf_subnets('blue'), {},
+    q(An address with no prefix length gives no subnet));
+}
+
+sub vrf_subnets__routes_off__collapsed_subnet_absent : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_subnet_info();
+  ok(!exists $info->vrf_subnets('red')->{'10.40.0.0/24'},
+    q(Red's collapsed subnet is not claimed without routes));
+  ok(exists $info->vrf_subnets('red')->{'10.41.0.0/24'},
+    q(... while its address-derived subnet stays));
+}
+
+sub vrf_subnets__routes_on__collapsed_subnet_from_route : Tests(8) {
+  my $test = shift;
+
+  my $info = $test->_subnet_info(routes => 1);
+  my $red  = $info->vrf_subnets('red');
+  cmp_deeply(
+    $red->{'10.40.0.0/24'},
+    {
+      prefix  => '10.40.0.0',
+      len     => 24,
+      family  => 'ipv4',
+      ifindex => 2,
+      sources => ['route']
+    },
+    q(Red's collapsed subnet comes back from its connected route)
+  );
+  ok(!exists $red->{'10.40.0.1/32'}, q(A host route is not a subnet));
+  ok(!grep({ $_->{len} == 32 } values %$red), q(No /32 is held));
+  ok(!exists $red->{'10.40.9.0/24'}, q(A route of another protocol is not));
+  cmp_deeply(
+    $red->{'2001:0db8:0040:0000:0000:0000:0000:0000/64'}{sources},
+    ['address', 'route'], q(An IPv6 prefix found both ways lists both));
+  cmp_deeply(
+    $info->vrf_subnets('blue')->{'10.40.0.0/24'},
+    superhashof({ifindex => 3, sources => ['address', 'route']}),
+    q(A prefix found both ways lists address first)
+  );
+  ok(!exists $info->vrf_subnets('blue')->{'10.40.9.0/24'},
+    q(Another instance's routes are not blue's));
+  is(scalar $info->vrf_subnets('purple'), undef,
+    q(An instance the device does not list has no subnets));
+}
+
+sub vrf_subnets__context_mode__connected_route_read : Tests(3) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::SubnetContext',
+    \@NEIGHBOR_PARENTS,
+    _vrf_context_filters     => sub {1},
+    _vrf_subnets_from_routes => sub {1});
+  $test->{info} = $info;
+  $test->_prime_members();
+  $info->{_vrf_cidr_if}    = 1;
+  $info->{_vrf_cidr_proto} = 1;
+  $info->{store}{vrf_cidr_proto} = {
+    "1.4.10.40.0.0.24.2.0.0.$ZERO_V4_HOP"  => 'local',
+    "1.4.10.40.0.1.32.2.0.0.$ZERO_V4_HOP"  => 'local',
+    "1.4.10.43.0.0.24.2.0.0.$ZERO_V4_HOP"  => 'ospf',
+  };
+  $info->{store}{vrf_cidr_if} = {
+    "1.4.10.40.0.0.24.2.0.0.$ZERO_V4_HOP" => 2,
+    "1.4.10.40.0.1.32.2.0.0.$ZERO_V4_HOP" => 2,
+    "1.4.10.43.0.0.24.2.0.0.$ZERO_V4_HOP" => 2,
+  };
+  $test->_enter_context($info);
+  my $subnets = $info->vrf_subnets('red');
+  cmp_deeply(
+    $subnets->{'10.40.0.0/24'},
+    superhashof({ifindex => 2, sources => ['route']}),
+    q(A context-mode route with no name in its index gives a subnet)
+  );
+  ok(!exists $subnets->{'10.40.0.1/32'}, q(A host route is not a subnet));
+  ok(!exists $subnets->{'10.43.0.0/24'}, q(A non-connected route is not));
+}
+
+sub vrf_subnets__attribution_in_vrf_context__throws : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_subnet_info();
+  $test->_enter_context($info);
+  is(scalar $info->vrf_subnets('red'), undef, q(Refused in a context));
+  like($info->error(), qr/^\S+vrf_subnets\(\) reads instance 'red'/,
+    q(Error names the reader));
+}
+
 1;

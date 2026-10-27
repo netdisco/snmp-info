@@ -338,6 +338,163 @@ sub vrf_addresses {
     return $rows;
 }
 
+# Subnets of one instance: the network of each address that has a prefix
+# length, plus the connected routes when the class enables them. A prefix
+# found both ways lists 'address' first.
+sub vrf_subnets {
+    my $vrf  = shift;
+    my $name = shift;
+
+    return unless defined $name and $vrf->_vrf_in_reader_context($name);
+    my $context_mode = $vrf->_vrf_context_filters();
+    return if !$context_mode and !$vrf->_vrf_is_listed($name);
+
+    my %subnets;
+    my $addresses = $vrf->vrf_addresses($name) || {};
+    foreach my $key ( sort keys %$addresses ) {
+        my $subnet = _vrf_address_subnet( $addresses->{$key} ) or next;
+        _vrf_add_subnet( \%subnets, $subnet, 'address' );
+    }
+    return \%subnets unless $vrf->_vrf_subnets_from_routes();
+
+    my $routes
+        = $context_mode
+        ? $vrf->_vrf_context_route_subnets()
+        : $vrf->_vrf_attributed_route_subnets($name);
+    _vrf_add_subnet( \%subnets, $_, 'route' ) for @$routes;
+    return \%subnets;
+}
+
+# Adds one source to the subnet; the first port seen keeps the record
+sub _vrf_add_subnet {
+    my ( $subnets, $subnet, $source ) = @_;
+
+    my $key    = "$subnet->{prefix}/$subnet->{len}";
+    my $record = $subnets->{$key} ||= {
+        prefix  => $subnet->{prefix},
+        len     => $subnet->{len},
+        family  => $subnet->{family},
+        ifindex => $subnet->{ifindex},
+        sources => [],
+    };
+    $record->{ifindex} //= $subnet->{ifindex};
+    push @{ $record->{sources} }, $source
+        unless grep { $_ eq $source } @{ $record->{sources} };
+    return;
+}
+
+sub _vrf_address_subnet {
+    my $address = shift;
+
+    return unless defined $address->{prefix_len};
+    my @octets = _vrf_ip_octets( $address->{family}, $address->{ip} )
+        or return;
+    my $prefix
+        = _vrf_network( $address->{family}, \@octets, $address->{prefix_len} )
+        or return;
+
+    return {
+        prefix  => $prefix,
+        len     => $address->{prefix_len},
+        family  => $address->{family},
+        ifindex => $address->{ifindex},
+    };
+}
+
+# The octets of an address in the form vrf_addresses gives it
+sub _vrf_ip_octets {
+    my ( $family, $ip ) = @_;
+
+    return split /\./, $ip if $family eq 'ipv4';
+    my @groups = split /:/, $ip;
+    return if @groups != 8;
+    return unpack 'C*', pack 'n8', map {hex} @groups;
+}
+
+# Zeroes the host bits and formats the result as vrf_addresses does
+sub _vrf_network {
+    my ( $family, $octets, $length ) = @_;
+
+    my $bits = unpack 'B*', pack 'C*', @$octets;
+    return if $length > length $bits;
+    my $masked
+        = substr( $bits, 0, $length ) . ( '0' x ( length($bits) - $length ) );
+    my @network = unpack 'C*', pack 'B*', $masked;
+
+    return join q{.}, @network if $family eq 'ipv4';
+    return join q{:}, unpack '(H4)*', pack 'C*', @network;
+}
+
+# Connected routes of mplsL3VpnVrfRteTable whose index starts with $name
+sub _vrf_attributed_route_subnets {
+    my $vrf  = shift;
+    my $name = shift;
+
+    my $protos = $vrf->_vrf_column('vrf_l3vpn_rte_proto');
+    my $ifs    = $vrf->_vrf_column('vrf_l3vpn_rte_if');
+    my @subnets;
+    foreach my $iid ( sort keys %$protos ) {
+        next unless _vrf_connected_proto( $protos->{$iid} );
+        my ( $route_name, @arcs ) = $vrf->_vrf_decode_name($iid);
+        next if !defined $route_name or $route_name ne $name;
+        my $subnet = _vrf_route_subnet(@arcs) or next;
+        $subnet->{ifindex} = $ifs->{$iid};
+        push @subnets, $subnet;
+    }
+    return \@subnets;
+}
+
+# Connected routes of inetCidrRouteTable, which has no name in its index
+sub _vrf_context_route_subnets {
+    my $vrf = shift;
+
+    my $protos = $vrf->_vrf_column('vrf_cidr_proto');
+    my $ifs    = $vrf->_vrf_column('vrf_cidr_if');
+    my @subnets;
+    foreach my $iid ( sort keys %$protos ) {
+        next unless _vrf_connected_proto( $protos->{$iid} );
+        my $subnet = _vrf_route_subnet( split /\./, $iid ) or next;
+        $subnet->{ifindex} = $ifs->{$iid};
+        push @subnets, $subnet;
+    }
+    return \@subnets;
+}
+
+sub _vrf_connected_proto {
+    my $proto = shift;
+
+    return ( defined $proto and $proto =~ /^(?:local|2)$/ ) ? 1 : 0;
+}
+
+# Parses destType.destLen.dest.pfxLen.policyLen.policy.nhType.nhLen.nh by
+# the length octets. Gives nothing for a malformed index or a host route.
+sub _vrf_route_subnet {
+    my @arcs = @_;
+
+    my ( $type, $dest_length ) = splice @arcs, 0, 2;
+    my $shape = $INET_TYPE{ $type // q{} } or return;
+    return if !defined $dest_length or $dest_length != $shape->{length};
+    return if @arcs < $dest_length + 2;
+
+    my @dest = splice @arcs, 0, $dest_length;
+    my ( $length, $policy_length ) = splice @arcs, 0, 2;
+    return if @arcs < $policy_length + 2;
+
+    splice @arcs, 0, $policy_length;
+    my ( undef, $hop_length ) = splice @arcs, 0, 2;
+    return if @arcs != $hop_length;
+    return if $length >= $shape->{bytes} * 8;
+
+    my @octets = @dest[ 0 .. $shape->{bytes} - 1 ];
+    my $prefix = _vrf_network( $shape->{family}, \@octets, $length )
+        or return;
+    return {
+        prefix => $prefix,
+        len    => $length + 0,
+        family => $shape->{family}
+    };
+}
+
 # ipAddressTable, with ipAdEntTable standing in for IPv4 when the first
 # serves no IPv4 row
 sub _vrf_address_rows {
@@ -487,6 +644,8 @@ sub _vrf_nd_rows {
 }
 
 sub _vrf_context_filters { return 0; }
+
+sub _vrf_subnets_from_routes { return 0; }
 
 sub _vrf_internal_instance { return 0; }
 
@@ -650,6 +809,15 @@ by ifIndex and address. Each row holds C<ifindex>, C<ip>, C<prefix_len>
 form C<ipv6_n2p_addr> returns, without any zone. Reads C<ipAddressTable>,
 and C<ipAdEntTable> for IPv4 when the first serves no IPv4 row. Returns
 nothing for a name the device does not list, or in the wrong context.
+
+=item $vrf->vrf_subnets($name)
+
+Returns a hashref of the subnets of instance C<$name>, keyed C<prefix/len>.
+Each holds C<prefix>, C<len>, C<family>, C<ifindex> and C<sources>, a list of
+C<address> (the network of an interface address that has a prefix length)
+and C<route> (a connected route). Routes are read only by classes that
+enable them. Returns nothing for a name the device does not list, or in the
+wrong context.
 
 =back
 
