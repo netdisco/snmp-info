@@ -61,6 +61,15 @@ $VERSION = '3.982000';
     'rc_base_mac'  => 'rc2kChassisBaseMacAddr',
     'rc_virt_ip'   => 'rcSysVirtualIpAddr',
     'rc_virt_mask' => 'rcSysVirtualNetMask',
+
+    # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB
+    'nn_mst_version'       => 'nnMstForceProtocolVersion',
+    'nn_mst_brg_address'   => 'nnMstBrgAddress',
+    'nn_mst_cist_root'     => 'nnMstCistRoot',
+    'nn_mst_cist_priority' => 'nnMstCistBridgePriority',
+
+    # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB
+    'nn_rst_version' => 'nnRstDot1dStpVersion',
 );
 
 %FUNCS = (
@@ -183,6 +192,37 @@ $VERSION = '3.982000';
     'rc_stp_p_root'     => 'rcStgPortDesignatedRoot',
     'rc_stp_p_bridge'   => 'rcStgPortDesignatedBridge',
     'rc_stp_p_port'     => 'rcStgPortDesignatedPort',
+    'rc_stp_p_enable'   => 'rcStgPortEnableStp',
+
+    # From RAPID-CITY::rcStgTable, indexed by STG id
+    'rc_stg_enable' => 'rcStgEnableStp',
+
+    # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB, indexed by instance
+    'nn_msti_priority' => 'nnMstBridgePriority',
+    'nn_msti_root'     => 'nnMstBridgeRegionalRoot',
+
+    # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB, indexed by bridge port
+    'nn_cist_p_state'  => 'nnMstCistPortState',
+    'nn_cist_p_role'   => 'nnMstCistCurrentPortRole',
+    'nn_cist_p_bridge' => 'nnMstCistPortDesignatedBridge',
+    'nn_cist_p_port'   => 'nnMstCistPortDesignatedPort',
+    'nn_cist_p_enable' => 'nnMstCistForcePortState',
+
+    # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB, indexed <port>.<instance>
+    'nn_msti_p_state'  => 'nnMstPortState',
+    'nn_msti_p_role'   => 'nnMstPortCurrentPortRole',
+    'nn_msti_p_bridge' => 'nnMstPortDesignatedBridge',
+    'nn_msti_p_port'   => 'nnMstPortDesignatedPort',
+    'nn_msti_p_enable' => 'nnMstPortForcePortState',
+
+    # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB, indexed by bridge port
+    'nn_rst_p_state' => 'nnRstDot1wPortStateTransSmState',
+    'nn_rst_p_role'  => 'nnRstDot1wPortRole',
+
+    # BRIDGE-MIB beside nnRst; stp_p_* prefer rcStgPortTable
+    'rc_dot1d_p_bridge' => 'dot1dStpPortDesignatedBridge',
+    'rc_dot1d_p_port'   => 'dot1dStpPortDesignatedPort',
+    'rc_dot1d_p_enable' => 'dot1dStpPortEnable',
 );
 
 %MUNGE = (
@@ -197,6 +237,18 @@ $VERSION = '3.982000';
     'rc_stp_p_root'      => \&SNMP::Info::munge_prio_mac,
     'rc_stp_p_bridge'    => \&SNMP::Info::munge_prio_mac,
     'rc_stp_p_port'      => \&SNMP::Info::munge_prio_port,
+    'nn_mst_brg_address'   => \&SNMP::Info::munge_mac,
+    'nn_mst_cist_root'     => \&SNMP::Info::munge_prio_mac,
+    'nn_msti_root'         => \&SNMP::Info::munge_prio_mac,
+    'nn_cist_p_bridge'     => \&SNMP::Info::munge_prio_mac,
+    'nn_msti_p_bridge'     => \&SNMP::Info::munge_prio_mac,
+    'rc_dot1d_p_bridge'    => \&SNMP::Info::munge_prio_mac,
+    'nn_cist_p_port'       => \&SNMP::Info::munge_prio_port,
+    'nn_msti_p_port'       => \&SNMP::Info::munge_prio_port,
+    'rc_dot1d_p_port'      => \&SNMP::Info::munge_prio_port,
+    'nn_cist_p_role'       => \&SNMP::Info::munge_dot1s_port_role,
+    'nn_msti_p_role'       => \&SNMP::Info::munge_dot1s_port_role,
+    'nn_rst_p_role'        => \&SNMP::Info::munge_dot1w_port_role,
 );
 
 # Need to override here since overridden in Layer2 and Layer3 classes
@@ -867,6 +919,312 @@ sub i_stp_state {
     return \%i_stp_state;
 }
 
+# Spanning tree protocol from nnMstForceProtocolVersion and
+# nnRstDot1dStpVersion, which mean the same across the family's generations
+# where rcStgProtocolSpecification does not.
+# rcSysSpanningTreeOperMode nortelStpg and pvst are not read: those modes
+# predate 802.1w and 802.1s, and few devices still run them.
+sub _rc_stp_protocol {
+    my $rapidcity = shift;
+
+    my $mst_version = $rapidcity->nn_mst_version();
+    return 'mstp' if defined $mst_version and $mst_version =~ /^(?:mstp|3)$/;
+
+    my $rst_version = $rapidcity->nn_rst_version();
+    return unless defined $rst_version;
+    return 'rstp' if $rst_version =~ /^(?:rstp|2)$/;
+    return 'stp'  if $rst_version =~ /^(?:stpCompatible|0)$/;
+    return;
+}
+
+sub _rc_stp_measured { return 0; }
+
+sub hasSTP {
+    my $rapidcity = shift;
+    return ( $rapidcity->_rc_stp_protocol() || '' ) eq 'stp' ? 1 : 0;
+}
+
+sub hasRSTP {
+    my $rapidcity = shift;
+    return ( $rapidcity->_rc_stp_protocol() || '' ) eq 'rstp' ? 1 : 0;
+}
+
+sub hasMSTP {
+    my $rapidcity = shift;
+    return ( $rapidcity->_rc_stp_protocol() || '' ) eq 'mstp' ? 1 : 0;
+}
+
+sub stp_protocols {
+    my $rapidcity = shift;
+
+    my $protocol = $rapidcity->_rc_stp_protocol();
+    return [$protocol] if defined $protocol;
+    return;
+}
+
+# An STG with STP disabled, such as the SPBM B-VLAN tree, is no tree
+sub _rc_stg_running {
+    my ( $rapidcity, $stg ) = @_;
+
+    my $enable = ( $rapidcity->rc_stg_enable() || {} )->{$stg};
+    return 1 unless defined $enable;
+    return $enable =~ /^(?:false|2)$/ ? 0 : 1;
+}
+
+sub stp_trees {
+    my $rapidcity = shift;
+
+    return unless $rapidcity->_stp_default_context_ok();
+    return $rapidcity->{_stp_trees} if $rapidcity->{_stp_trees};
+
+    my $protocol = $rapidcity->_rc_stp_protocol();
+    my $trees = {};
+    if ( defined $protocol ) {
+        $trees
+            = $protocol eq 'mstp'
+            ? $rapidcity->_rc_mstp_trees()
+            : $rapidcity->_rc_rstp_trees($protocol);
+    }
+    $rapidcity->{_stp_trees} = $trees if keys %$trees;
+    return $trees;
+}
+
+sub _rc_tree_key {
+    my $instance = shift;
+    return $instance ? "msti.$instance" : 'cist.0';
+}
+
+sub _rc_tree_record {
+    my ( $rapidcity, $protocol, $instance, $fields ) = @_;
+
+    return {
+        type     => $instance ? 'msti' : 'cist',
+        id       => $instance,
+        protocol => $protocol,
+        measured => $rapidcity->_rc_stp_measured($protocol),
+        contexts => [ { kind => 'none' } ],
+        %$fields,
+    };
+}
+
+# Instances with a port row at a bridge port that bp_index does not map
+sub _rc_unmapped_instances {
+    my $rapidcity = shift;
+
+    my $bp_index = $rapidcity->bp_index() || {};
+    my %unmapped;
+    foreach my $port ( keys %{ $rapidcity->nn_cist_p_state() || {} } ) {
+        $unmapped{0} = 1 unless defined $bp_index->{$port};
+    }
+    foreach my $row ( keys %{ $rapidcity->nn_msti_p_state() || {} } ) {
+        my ( $port, $instance ) = split /\./, $row, 2;
+        $unmapped{$instance} = 1 unless defined $bp_index->{$port};
+    }
+    return \%unmapped;
+}
+
+sub _rc_mstp_trees {
+    my $rapidcity = shift;
+
+    my $address    = $rapidcity->nn_mst_brg_address();
+    my $priorities = $rapidcity->nn_msti_priority() || {};
+    my $roots      = $rapidcity->nn_msti_root() || {};
+    my $unmapped   = $rapidcity->_rc_unmapped_instances();
+
+    my %instances = ( 0 => [
+        $rapidcity->nn_mst_cist_priority(), $rapidcity->nn_mst_cist_root()
+    ] );
+    foreach my $instance ( keys %$priorities ) {
+        next unless $rapidcity->_rc_stg_running( $instance + 1 );
+        $instances{$instance}
+            = [ $priorities->{$instance}, $roots->{$instance} ];
+    }
+
+    my %trees;
+    foreach my $instance ( keys %instances ) {
+        my ( $priority, $root ) = @{ $instances{$instance} };
+        my $bridge = SNMP::Info::Bridge::_stp_bridge_id_from( $priority,
+            $address );
+        my $root_id = SNMP::Info::Bridge::_stp_decode_bridge_id($root);
+        $trees{ _rc_tree_key($instance) } = $rapidcity->_rc_tree_record(
+            'mstp', $instance,
+            {   ports_complete => $unmapped->{$instance} ? 0 : 1,
+                bridge         => $bridge,
+                root           => $root_id,
+            }
+        );
+    }
+    return \%trees;
+}
+
+# VOSS serves no dot1dStp scalar under RSTP, so the bridge and root come from
+# the first STG's rcStg row
+sub _rc_rstp_trees {
+    my ( $rapidcity, $protocol ) = @_;
+
+    my $states   = $rapidcity->nn_rst_p_state() || {};
+    my $bp_index = $rapidcity->bp_index() || {};
+    my $complete = keys %$states ? 1 : 0;
+    $complete = 0 if grep { !defined $bp_index->{$_} } keys %$states;
+
+    my $priority = ( $rapidcity->rc_stp_i_priority() || {} )->{1};
+    my $mac      = ( $rapidcity->rc_stp_i_mac()      || {} )->{1};
+    my $root     = ( $rapidcity->rc_stp_i_root()     || {} )->{1};
+    my $bridge  = SNMP::Info::Bridge::_stp_bridge_id_from( $priority, $mac );
+    my $root_id = SNMP::Info::Bridge::_stp_decode_bridge_id($root);
+    return {
+        'cist.0' => $rapidcity->_rc_tree_record(
+            $protocol, 0,
+            {   ports_complete => $complete,
+                bridge         => $bridge,
+                root           => $root_id,
+            }
+        )
+    };
+}
+
+sub stp_tree_ports {
+    my ( $rapidcity, $tree_key ) = @_;
+
+    my $tree = $rapidcity->_stp_tree_for_key($tree_key) or return;
+    return $rapidcity->_rc_mstp_port_rows($tree)
+        if ( $tree->{protocol} || '' ) eq 'mstp';
+    return $rapidcity->_rc_rstp_port_rows($tree);
+}
+
+# Under MSTP the per-port enable is the nnMst ForcePortState of the tree, as
+# rcStgPortEnableStp is 1 on every port and dot1dStpPortEnable is inert there;
+# a port without a row is unknown, not a fallback to either.  The enum has
+# disabled(0), which _stp_enabled would read as unknown.
+sub _rc_mstp_port_enabled {
+    my ( $rapidcity, $port, $instance ) = @_;
+
+    my $value;
+    if ( $instance == 0 ) {
+        $value = ( $rapidcity->nn_cist_p_enable() || {} )->{$port};
+    }
+    else {
+        $value
+            = ( $rapidcity->nn_msti_p_enable() || {} )->{"$port.$instance"};
+    }
+    return unless defined $value;
+
+    return 0 if $value =~ /^(?:disabled|0)$/;
+    return scalar SNMP::Info::Bridge::_stp_enabled($value);
+}
+
+# Under RSTP and STP, rcStgPortEnableStp is indexed <ifIndex>.<STG id>, and
+# a tree's STG is its instance plus one; the BRIDGE-MIB enable, indexed by
+# bridge port, is the fallback
+sub _rc_port_enabled {
+    my ( $rapidcity, $tree, $port, $iid ) = @_;
+
+    return $rapidcity->_rc_mstp_port_enabled( $port, $tree->{id} )
+        if ( $tree->{protocol} || '' ) eq 'mstp';
+
+    my $stg_row    = $iid . '.' . ( $tree->{id} + 1 );
+    my $stg_enable = ( $rapidcity->rc_stp_p_enable() || {} )->{$stg_row};
+    $stg_enable = ( $rapidcity->rc_dot1d_p_enable() || {} )->{$port}
+        unless defined $stg_enable;
+    return scalar SNMP::Info::Bridge::_stp_enabled($stg_enable);
+}
+
+sub _rc_port_row {
+    my ( $rapidcity, $tree, $port, $iid, $served, $key ) = @_;
+
+    return {
+        tree_type => $tree->{type},
+        tree_id   => $tree->{id},
+        state     => $served->{state}{$key},
+        role      => $served->{role}{$key},
+        role_raw  => $served->{role_raw}{$key},
+        enabled =>
+            scalar $rapidcity->_rc_port_enabled( $tree, $port, $iid ),
+        designated_bridge =>
+            scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+            $served->{bridge}{$key} ),
+        designated_port => scalar SNMP::Info::Bridge::_stp_decode_port_id(
+            $served->{port}{$key} ),
+    };
+}
+
+sub _rc_mstp_port_rows {
+    my ( $rapidcity, $tree ) = @_;
+
+    my $cist   = $tree->{id} == 0;
+    my $prefix = $cist ? 'nn_cist_p_' : 'nn_msti_p_';
+    my %served;
+    foreach my $column (qw/state role role_raw bridge port/) {
+        my $method = $prefix . $column;
+        $served{$column} = $rapidcity->$method() || {};
+    }
+    my $bp_index = $rapidcity->bp_index() || {};
+
+    my %rows;
+    foreach my $key ( keys %{ $served{state} } ) {
+        my ( $port, $instance ) = split /\./, $key, 2;
+        next if !$cist and $instance != $tree->{id};
+
+        my $iid = $bp_index->{$port};
+        next unless defined $iid;
+        $rows{$iid}
+            = $rapidcity->_rc_port_row( $tree, $port, $iid, \%served, $key );
+    }
+    return \%rows;
+}
+
+# The BRIDGE-MIB and rcStg port states serve forwarding on a blocked port, so
+# the state is nnRstDot1wPortStateTransSmState only
+sub _rc_rstp_port_rows {
+    my ( $rapidcity, $tree ) = @_;
+
+    my %served = (
+        state    => $rapidcity->nn_rst_p_state()      || {},
+        role     => $rapidcity->nn_rst_p_role()       || {},
+        role_raw => $rapidcity->nn_rst_p_role_raw()   || {},
+        bridge   => $rapidcity->rc_dot1d_p_bridge()   || {},
+        port     => $rapidcity->rc_dot1d_p_port()     || {},
+    );
+    my $bp_index = $rapidcity->bp_index() || {};
+
+    my %rows;
+    foreach my $port ( keys %{ $served{state} } ) {
+        my $iid = $bp_index->{$port};
+        next unless defined $iid;
+        $rows{$iid}
+            = $rapidcity->_rc_port_row( $tree, $port, $iid, \%served, $port );
+    }
+    return \%rows;
+}
+
+sub stp_trees_complete {
+    my $rapidcity = shift;
+
+    return 0 unless defined $rapidcity->_rc_stp_protocol();
+    my $trees = $rapidcity->stp_trees() || {};
+    return keys %$trees ? 1 : 0;
+}
+
+sub stp_vlan_map {
+    my $rapidcity = shift;
+
+    return unless ( $rapidcity->_rc_stp_protocol() || '' ) eq 'mstp';
+
+    my $vlan_stg = $rapidcity->rc_vlan_stg() || {};
+    my %map;
+    foreach my $vlan ( keys %$vlan_stg ) {
+        my $stg = $vlan_stg->{$vlan};
+        next unless $rapidcity->_rc_stg_running($stg);
+        $map{$vlan} = _rc_tree_key( $stg - 1 );
+    }
+    return unless keys %map;
+    return \%map;
+}
+
+# Default tree is not the common tree: VOSS serves forwarding on a blocked
+# port under RSTP
+sub _stp_default_is_common { return 0; }
+
 1;
 
 __END__
@@ -970,6 +1328,40 @@ These are methods that return scalar values from SNMP
 
 (C<rcTftpResult>)
 
+=item $rapidcity->nn_mst_version()
+
+(C<nnMstForceProtocolVersion>)
+
+=item $rapidcity->nn_rst_version()
+
+(C<nnRstDot1dStpVersion>)
+
+=item $rapidcity->nn_mst_brg_address()
+
+(C<nnMstBrgAddress>)
+
+=item $rapidcity->nn_mst_cist_root()
+
+(C<nnMstCistRoot>)
+
+=item $rapidcity->nn_mst_cist_priority()
+
+(C<nnMstCistBridgePriority>)
+
+=item $rapidcity->hasSTP()
+
+Returns 1 when C<nnRstDot1dStpVersion> is C<stpCompatible(0)> and MSTP is not
+the forced version, else 0.
+
+=item $rapidcity->hasRSTP()
+
+Returns 1 when C<nnRstDot1dStpVersion> is C<rstp(2)> and MSTP is not the
+forced version, else 0.
+
+=item $rapidcity->hasMSTP()
+
+Returns 1 when C<nnMstForceProtocolVersion> is C<mstp(3)>, else 0.
+
 =back
 
 =head2 Overrides
@@ -1045,7 +1437,8 @@ Values are ifIndex of the corresponding master ports.
 =item $rapidcity->i_stp_state()
 
 Returns the mapping of (C<dot1dStpPortState>) to the interface
-index (iid).
+index (iid).  Under RSTP, VOSS serves forwarding for a port its CLI
+shows blocked.
 
 =item $rapidcity->mst_vlan2instance()
 
@@ -1510,6 +1903,153 @@ Designated Bridge for this port's segment."
 
 "The Port Identifier of the port on the Designated Bridge for this port's
 segment."
+
+=back
+
+=head2 Spanning Tree Trees
+
+These override L<SNMP::Info::Bridge/"Spanning Tree Trees">; records are as
+described there.  The protocol is C<mstp> when C<nnMstForceProtocolVersion> is
+C<mstp(3)>, else C<rstp> or C<stp> as C<nnRstDot1dStpVersion> says
+(C<rstp(2)>, C<stpCompatible(0)>).  Those two objects mean the same across
+the family's generations, where C<rcStgProtocolSpecification> does not.
+C<rcSysSpanningTreeOperMode> C<nortelStpg> and C<pvst> are not read: those
+modes predate 802.1w and 802.1s, and few devices still run them, so a
+device in one of them reports no trees.
+
+Under MSTP the CIST is C<cist.0>, from
+C<NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB>, and each row of
+C<nnMstBridgePriority> is a C<msti.N> whose STG (N + 1) runs spanning tree.
+The VOSS SPBM B-VLAN tree has C<rcStgEnableStp> false, so it is left out of
+the trees and its VLANs out of C<stp_vlan_map()>.  The MSTI
+bridge ID is the configured priority with the bridge address, as the device
+serves it.  Under RSTP and STP the one tree is C<cist.0>, with the bridge and
+root from the first C<rcStgTable> row, as VOSS serves no C<dot1dStp> scalar
+under RSTP.
+
+The port state under RSTP and STP is C<nnRstDot1wPortStateTransSmState>: the
+C<BRIDGE-MIB> and C<rcStgPortTable> states serve forwarding on a blocked port.
+Under RSTP and STP C<enabled> is C<rcStgPortEnableStp> for the port and the
+tree's STG, else C<dot1dStpPortEnable>.  Under MSTP it is
+C<nnMstCistForcePortState> for C<cist.0> and C<nnMstPortForcePortState> for
+each C<msti.N>, both indexed by bridge port, with C<disabled(0)> as 0 and
+C<enabled(1)> as 1; a port with no row has C<enabled> undef, as neither
+C<rcStgPortEnableStp> nor C<dot1dStpPortEnable> carries the MSTP setting.
+A port row with no C<bp_index> entry is left out and makes C<ports_complete>
+0. An RSTP or STP device that serves no C<nnRstDot1wPortStateTransSmState>
+rows also gives C<ports_complete> 0. C<measured> is 0. Only the default
+context is read.
+
+=over
+
+=item $rapidcity->stp_protocols()
+
+Returns reference to an array holding the protocol, or nothing when neither
+version object is served.
+
+=item $rapidcity->stp_trees()
+
+Returns reference to hash of tree records, or an empty hash when nothing is
+served.
+
+=item $rapidcity->stp_tree_ports($tree_key)
+
+Returns reference to hash of the tree's port records keyed by ifIndex.
+C<role> is the C<nnMstCistCurrentPortRole>, C<nnMstPortCurrentPortRole> or
+C<nnRstDot1wPortRole> value in the shared vocabulary, and C<role_raw> as
+served.
+
+=item $rapidcity->stp_trees_complete()
+
+Returns 1 when a protocol is identified and trees are listed, 0 otherwise.
+
+=item $rapidcity->stp_vlan_map()
+
+Under MSTP returns reference to hash mapping VLAN id to C<cist.0> or
+C<msti.N>, from C<rcVlanStgId>.  VLANs of an STG that does not run spanning
+tree are left out.  Otherwise nothing.
+
+=back
+
+=head2 Spanning Tree Trees Sources
+
+=over
+
+=item $rapidcity->rc_stg_enable()
+
+(C<rcStgEnableStp>)
+
+=item $rapidcity->rc_stp_p_enable()
+
+(C<rcStgPortEnableStp>)
+
+=item $rapidcity->nn_msti_priority()
+
+(C<nnMstBridgePriority>)
+
+=item $rapidcity->nn_msti_root()
+
+(C<nnMstBridgeRegionalRoot>)
+
+=item $rapidcity->nn_cist_p_state()
+
+(C<nnMstCistPortState>)
+
+=item $rapidcity->nn_cist_p_role()
+
+(C<nnMstCistCurrentPortRole>)
+
+=item $rapidcity->nn_cist_p_bridge()
+
+(C<nnMstCistPortDesignatedBridge>)
+
+=item $rapidcity->nn_cist_p_port()
+
+(C<nnMstCistPortDesignatedPort>)
+
+=item $rapidcity->nn_cist_p_enable()
+
+(C<nnMstCistForcePortState>)
+
+=item $rapidcity->nn_msti_p_state()
+
+(C<nnMstPortState>)
+
+=item $rapidcity->nn_msti_p_role()
+
+(C<nnMstPortCurrentPortRole>)
+
+=item $rapidcity->nn_msti_p_bridge()
+
+(C<nnMstPortDesignatedBridge>)
+
+=item $rapidcity->nn_msti_p_port()
+
+(C<nnMstPortDesignatedPort>)
+
+=item $rapidcity->nn_msti_p_enable()
+
+(C<nnMstPortForcePortState>)
+
+=item $rapidcity->nn_rst_p_state()
+
+(C<nnRstDot1wPortStateTransSmState>)
+
+=item $rapidcity->nn_rst_p_role()
+
+(C<nnRstDot1wPortRole>)
+
+=item $rapidcity->rc_dot1d_p_bridge()
+
+(C<dot1dStpPortDesignatedBridge>)
+
+=item $rapidcity->rc_dot1d_p_port()
+
+(C<dot1dStpPortDesignatedPort>)
+
+=item $rapidcity->rc_dot1d_p_enable()
+
+(C<dot1dStpPortEnable>)
 
 =back
 

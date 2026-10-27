@@ -144,4 +144,23 @@ sub eigrp_peers : Tests(3) {
     {}, q(No data data returns empty hash));
 }
 
+# A served common-tree shape with no stpxSpanningTreeType reports no trees:
+# the default tree is VLAN 1's under PVST, VLAN 1's ports under MST.
+sub stp_trees_default_off : Tests(3) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        {   '_b_mac'        => pack( 'H*', '02000000000c' ),
+            '_stp_priority' => 32768,
+            '_stp_root'     => pack( 'H*', '100002000000000a' ),
+            '_stp_p_id'     => 1,
+            'store'         => { 'stp_p_id' => { 1 => 1, 2 => 2 } },
+        }
+    );
+    cmp_deeply( $test->{info}->stp_trees(), {}, q(No common-tree default) );
+    is( $test->{info}->stp_protocols(), undef, q(No protocols reported) );
+    is( $test->{info}->stp_trees_complete(),
+        0, q(Trees may exist unread) );
+}
+
 1;

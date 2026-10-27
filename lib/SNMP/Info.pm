@@ -1871,7 +1871,8 @@ The partial fetch argument given to the method, if any.
 
 The SNMPv3 Context. On SNMPv1 and SNMPv2c, C<X> when the session community
 is the constructor's Community followed by C<@X>, such as a VLAN number or a
-VRF name. Otherwise an empty string.
+VRF name, or C<X> followed by C<@> and the Community (C<default::20@public>).
+Otherwise an empty string.
 
 =item complete
 
@@ -2040,6 +2041,100 @@ sub bulkwalk_recovery {
 }
 
 =back
+
+=head2 SNMP Contexts
+
+Some devices serve part of a feature only in non-default SNMP contexts.
+Cisco IOS serves each VLAN's forwarding table in that VLAN's context.
+SNMPv2c reaches a context by a community suffix (C<public@10>).  SNMPv3
+reaches it by a context name (C<vlan-10>).
+
+To read such a feature:
+
+=over
+
+=item 1.
+
+Call C<context_kinds($feature)>.  Nothing means the default context
+serves the whole feature: read it as usual.
+
+=item 2.
+
+In the default context, list what to visit: VLAN ids from C<v_index()>
+for C<fdb>, tree keys from C<stp_trees()> for C<stp>.  Keep the lists:
+C<update()> clears the cache on every switch.
+
+=item 3.
+
+For each one, take its context from C<snmp_context()> (a tree record's
+C<contexts> already holds them), switch with C<update()>, and read.
+
+=item 4.
+
+Call C<update()> with no arguments to return to the default context.
+
+=back
+
+A context whose C<v2c> or C<v3> is undef cannot be reached over that
+SNMP version.  NX-OS refuses community suffixes, so its VLAN and MST
+contexts need SNMPv3.
+
+Both examples below switch with this helper.  C<kind> C<none> is the
+default context.
+
+ # Switch to $context; false where this session's SNMP version cannot
+ # reach it
+ sub enter_context {
+     my ( $info, $context, $community ) = @_;
+
+     return $info->update() if $context->{kind} eq 'none';
+     if ( $info->snmp_ver() == 3 ) {
+         return unless defined $context->{v3};
+         return $info->update( Context => $context->{v3} );
+     }
+     return unless defined $context->{v2c};
+     return $info->update(
+         Community => sprintf( $context->{v2c}, $community ) );
+ }
+
+ my $community = $info->snmp_comm();    # before the first switch
+
+Forwarding table, per VLAN where the device needs it:
+
+ my %fw_mac;    # VLAN => { iid => MAC }, or 'all' => { ... }
+ if ( $info->context_kinds('fdb') ) {
+     my @vlans = sort { $a <=> $b } values %{ $info->v_index() || {} };
+     foreach my $vlan (@vlans) {
+         my $context = $info->snmp_context( 'vlan', $vlan ) or next;
+         enter_context( $info, $context, $community ) or next;
+         $fw_mac{$vlan} = { %{ $info->fw_mac() || {} } };
+     }
+     $info->update();
+ }
+ else {
+     $fw_mac{all} = { %{ $info->fw_mac() || {} } };
+ }
+
+MST instance ports.  NX-OS serves each instance in its own C<mst-N>
+context.  IOS serves it in the context of any VLAN the instance carries,
+so the rows of every listed context are merged:
+
+ my $trees = $info->stp_trees() || {};
+ my $switch = $info->context_kinds('stp');
+ my %msti_ports;    # tree key => { iid => port record }
+ my @mstis = grep { $trees->{$_}{type} eq 'msti' } sort keys %$trees;
+ foreach my $key (@mstis) {
+     unless ($switch) {
+         $msti_ports{$key} = { %{ $info->stp_tree_ports($key) || {} } };
+         next;
+     }
+     foreach my $context ( @{ $trees->{$key}{contexts} } ) {
+         enter_context( $info, $context, $community ) or next;
+         my $ports = $info->stp_tree_ports($key) || {};
+         $msti_ports{$key}{$_} = $ports->{$_} foreach keys %$ports;
+     }
+ }
+ $info->update() if $switch;
 
 =head2 Object Scalar Methods
 
@@ -3030,10 +3125,83 @@ snmp calls on certain Cisco devices.
 
 See L<ftp://ftp.cisco.com/pub/mibs/supportlists/wsc5000/wsc5000-communityIndexing.html>
 
+To ask the same of any feature, use C<context_kinds()>.
+
 =cut
 
 sub cisco_comm_indexing {
     return 0;
+}
+
+=item $info->context_kinds($feature)
+
+Returns a reference to an array of the kinds of SNMP context the device
+uses to serve C<$feature>, or nothing when the default context serves it
+all.  See L</"SNMP Contexts">.
+
+Features: C<fdb>, the forwarding table (C<fw_mac()>, C<fw_port()>);
+C<stp>, the spanning tree ports (C<stp_tree_ports()>).
+
+Kinds: C<vlan>, one context per VLAN; C<mst>, one context per MST
+instance.  The answer names kinds of context, not the trees or VLANs the
+device has now.  Where only one protocol uses contexts, a class answers
+while that protocol runs and returns nothing otherwise
+(L<SNMP::Info::Layer3::Juniper> for VSTP).
+
+ if (my $kinds = $info->context_kinds('fdb')) {
+     # Read the forwarding table once per VLAN
+ }
+
+=cut
+
+# A feature role sits behind SNMP::Info in every class's method
+# resolution, so classes answer through _context_kinds and _snmp_context.
+sub context_kinds {
+    my ( $self, $feature ) = @_;
+
+    return unless defined $feature;
+    return ['vlan'] if $feature eq 'fdb' and $self->cisco_comm_indexing();
+    return $self->_context_kinds($feature) if $self->can('_context_kinds');
+    return;
+}
+
+=item $info->snmp_context($kind, $id)
+
+Returns how to reach one SNMP context on this device, as a reference to
+hash, or nothing where the device has no such context.  C<$kind> is a
+kind from C<context_kinds()>; C<$id> is a VLAN id for C<vlan> and an MST
+instance for C<mst>.  See L</"SNMP Contexts">.
+
+ my $context = $info->snmp_context('vlan', 10);
+ # { kind => 'vlan', id => 10, v2c => '%s@10', v3 => 'vlan-10' }
+
+=over
+
+=item C<kind>, C<id>
+
+As passed.
+
+=item C<v2c>
+
+A C<sprintf> format for the SNMPv2c community: C<sprintf($context-E<gt>{v2c},
+'public')> gives C<public@10>.  Undef where SNMPv2c cannot reach the
+context.
+
+=item C<v3>
+
+The SNMPv3 context name.  Undef where SNMPv3 cannot reach the context.
+The device answers only for the names its SNMP configuration binds, so a
+site's own context naming wins over this one.
+
+=back
+
+=cut
+
+sub snmp_context {
+    my $self = shift;
+
+    return $self->_snmp_context(@_) if $self->can('_snmp_context');
+    return;
 }
 
 =back
@@ -4648,6 +4816,85 @@ sub munge_prio_mac {
     return;
 }
 
+=item munge_stpx_port_role()
+
+Changes the served C<stpxRSTPPortRoleValue> of CISCO-STP-EXTENSIONS-MIB to the
+shared port role vocabulary: C<disabled>, C<root>, C<designated>,
+C<alternate>, C<backup>, C<boundary> or C<master>.  Accepts the label or the
+number, C<disabled(1)> to C<master(7)>.  The label C<backUp> becomes
+C<backup>.  Returns undef for anything else.  The served value is returned by
+the same method with a C<_raw> suffix.
+
+=cut
+
+my %STPX_PORT_ROLE = (
+    1 => 'disabled', 2 => 'root',     3 => 'designated', 4 => 'alternate',
+    5 => 'backup',   6 => 'boundary', 7 => 'master',
+);
+
+sub munge_stpx_port_role {
+    return _munge_port_role( shift, \%STPX_PORT_ROLE );
+}
+
+=item munge_dot1s_port_role()
+
+Changes the served 802.1s port role of JUNIPER-MIMSTP-MIB and
+NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB to the shared port role vocabulary
+(see C<munge_stpx_port_role()>).  Accepts the label or the number:
+
+    0 disabled    1 alternate    2 backup
+    3 root        4 designated   5 master
+
+Returns undef for anything else.  The served value is returned by the same
+method with a C<_raw> suffix.
+
+=cut
+
+my %DOT1S_PORT_ROLE = (
+    0 => 'disabled', 1 => 'alternate',  2 => 'backup',
+    3 => 'root',     4 => 'designated', 5 => 'master',
+);
+
+sub munge_dot1s_port_role {
+    return _munge_port_role( shift, \%DOT1S_PORT_ROLE );
+}
+
+=item munge_dot1w_port_role()
+
+Changes the served port role of NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB to
+the shared port role vocabulary (see C<munge_stpx_port_role()>).  Accepts the
+label or the number, and drops the C<Port> suffix of the label:
+
+    0 disabledPort    1 alternatePort   2 backupPort
+    3 rootPort        4 designatedPort
+
+Returns undef for anything else.  The served value is returned by the same
+method with a C<_raw> suffix.
+
+=cut
+
+my %DOT1W_PORT_ROLE = (
+    0 => 'disabled', 1 => 'alternate',  2 => 'backup',
+    3 => 'root',     4 => 'designated',
+);
+
+sub munge_dot1w_port_role {
+    my $served = shift;
+    $served =~ s/Port\z// if defined $served;
+    return _munge_port_role( $served, \%DOT1W_PORT_ROLE );
+}
+
+# A label is only valid if it is a value of the table; backUp is the one label
+# whose spelling differs from the shared vocabulary
+sub _munge_port_role {
+    my ( $served, $by_number ) = @_;
+    return unless defined $served;
+    return $by_number->{$served} if exists $by_number->{$served};
+    return 'backup' if $served eq 'backUp';
+    my %valid = map { $_ => 1 } values %$by_number;
+    return $valid{$served} ? $served : undef;
+}
+
 =item munge_prio_port()
 
 Takes an 2-byte octet stream (HEX-STRING) and returns a colon separated ASCII
@@ -6161,8 +6408,10 @@ sub _walk_outcome {
 
 Returns the SNMPv3 Context of the session. On SNMPv1 and SNMPv2c, returns
 C<X> when the session community is the constructor's Community followed by
-C<@X>. Otherwise returns an empty string. Never returns any part of the
-community itself.
+C<@X>, or C<X> followed by C<@> and the Community (Junos puts the context
+first, C<default::20@public>). Otherwise, and always when the constructor's
+Community is empty or undefined, returns an empty string. Never returns any
+part of the community itself.
 
 =cut
 
@@ -6176,13 +6425,20 @@ sub _walk_context {
 
     my $base      = ( $self->{args} || {} )->{Community};
     my $community = $sess->{Community};
-    return '' unless defined $base and defined $community;
+    return '' unless defined $base
+        and length $base
+        and defined $community;
 
     my $prefix = $base . '@';
-    return ''
-        unless length $community > length $prefix
+    return substr( $community, length $prefix )
+        if length $community > length $prefix
         and substr( $community, 0, length $prefix ) eq $prefix;
-    return substr( $community, length $prefix );
+
+    my $suffix = '@' . $base;
+    return substr( $community, 0, length($community) - length $suffix )
+        if length $community > length $suffix
+        and substr( $community, -length $suffix ) eq $suffix;
+    return '';
 }
 
 =item $info->_show_attr()

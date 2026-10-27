@@ -1,16 +1,20 @@
-Version 3.982001
+Version 3.983000
 
   [NEW FEATURES]
 
+  * #642 SNMP contexts: context_kinds() says which features a device serves
+    only in non-default contexts, for example the forwarding table (fdb) or
+    spanning tree (stp). snmp_context() says how to address each context on
+    that device: the SNMPv2c community form (public@10 on Cisco,
+    default::10@public on Junos) and the SNMPv3 context name, or undef
+    where a version cannot reach it, as on NX-OS over SNMPv2c
+  * #642 Spanning tree: report each tree (CIST, MSTIs, and PVST and VSTP
+    VLANs) with its ports' state, role, enabled flag and designated bridge,
+    for Bridge, Cisco, Nexus, Extreme, H3C, Juniper and RapidCity. On
+    Comware 7 under PVST, i_stp_state now returns nothing, since the served
+    states match no tree
   * #595 ArubaInstant: add Instant 8.x SSIDs, associated clients, radio
     channels and transmit power using AI-AP-MIB (#536)
-
-  [ENHANCEMENTS]
-
-  * #643 RuckusAP: map active WLANs, channels, and client details to
-    standard wireless methods, including each client's SSID (#496)
-  * #644 Agent skills: check a class against a walk before review, and
-    find the skills from Codex as well
   * #636 Tachyon: add TNA device support for identity, wireless peers,
     Ethernet status, and logical VLAN interfaces
   * #637 Teltonika: detect current RutOS devices by product code, map model,
@@ -20,6 +24,13 @@ Version 3.982001
     product OID and report model and serial number
   * #635 LigoWave: identify DLB radios, report model and firmware, the
     SSID and channel on the radio interface, and logical VLAN interfaces
+
+  [ENHANCEMENTS]
+
+  * #643 RuckusAP: map active WLANs, channels, and client details to
+    standard wireless methods, including each client's SSID (#496)
+  * #644 Agent skills: check a class against a walk before review, and
+    find the skills from Codex as well
 
   [BUG FIXES]
 

@@ -82,6 +82,31 @@ sub os_ver {
 	return $descr;
 }
 
+sub _context_kinds {
+	my ( $nexus, $feature ) = @_;
+
+	return [ 'vlan', 'mst' ] if $feature eq 'stp';
+	return;
+}
+
+# NX-OS refuses a community map for VLAN and MST contexts: SNMPv3 only.
+# An MST context exists only under MST, so it is offered only where
+# cContextMappingTable lists it (index: the length-prefixed context name).
+sub _snmp_context {
+	my ( $nexus, $kind, $id ) = @_;
+
+	return unless defined $kind and defined $id;
+	return { kind => 'vlan', id => $id, v2c => undef, v3 => "vlan-$id" }
+		if $kind eq 'vlan';
+	return unless $kind eq 'mst';
+
+	my $name   = "mst-$id";
+	my $mapped = $nexus->vrf_name() || {};
+	my $index  = join( '.', length $name, map {ord} split //, $name );
+	return unless exists $mapped->{$index};
+	return { kind => 'mst', id => $id, v2c => undef, v3 => $name };
+}
+
 sub _get_snmpid_chassis {
 	my $self = shift;
 	my $funcname = (caller(0))[3]; # Name of this sub, including package, used for debug logging
@@ -348,6 +373,21 @@ Removes C<'cevChassis'> for readability.
 =item $nexus->mac()
 
 C<dot1dBaseBridgeAddress>
+
+=item $nexus->context_kinds($feature)
+
+See L<SNMP::Info/"context_kinds">.  Returns C<['vlan', 'mst']> for
+C<stp>, and C<['vlan']> for C<fdb>.
+
+=item $nexus->snmp_context($kind, $id)
+
+See L<SNMP::Info/"snmp_context">.  NX-OS serves
+VLAN and MST contexts over SNMPv3 only: C<vlan-N> for a VLAN, and
+C<mst-N> for an MST instance when (C<cContextMappingTable>) lists it,
+which it does only under MST.  C<mst-0> serves the CIST's
+C<dot1dStpPortTable>, which the default context does not; whether it also
+serves C<dot1dBasePortTable> was not measured, so C<cist.0> keeps
+C<ports_complete> 0.
 
 =back
 

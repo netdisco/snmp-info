@@ -664,6 +664,23 @@ sub cisco_comm_indexing : Tests(2) {
   is($test->{info}->cisco_comm_indexing(), 0, 'Cisco community indexing off');
 }
 
+sub snmp_context : Tests(3) {
+  my $test = shift;
+
+  can_ok $test->{info}, 'snmp_context';
+  is($test->{info}->snmp_context('vlan', 10), undef, 'No VLAN context form');
+  is($test->{info}->snmp_context('mst', 0), undef, 'No MST context form');
+}
+
+sub context_kinds : Tests(4) {
+  my $test = shift;
+
+  can_ok $test->{info}, 'context_kinds';
+  is($test->{info}->context_kinds('fdb'), undef, 'FDB: default context');
+  is($test->{info}->context_kinds('stp'), undef, 'STP: default context');
+  is($test->{info}->context_kinds(), undef, 'No feature named');
+}
+
 sub if_ignore : Tests(2) {
   my $test = shift;
 
@@ -979,6 +996,66 @@ sub munge_prio_mac : Tests(4) {
     undef, 'Too long of an octet string returns undef');
   is(SNMP::Info::munge_mac($short_test_mac),
     undef, 'Too short of an octet string returns undef');
+}
+
+sub munge_stpx_port_role : Tests(8) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_stpx_port_role');
+
+  my %by_label = (
+    disabled => 'disabled', root => 'root', designated => 'designated',
+    alternate => 'alternate', backUp => 'backup', boundary => 'boundary',
+    master => 'master',
+  );
+  my @numbers = qw/disabled root designated alternate backup boundary master/;
+  is_deeply(
+    {map { $_ => SNMP::Info::munge_stpx_port_role($_) } keys %by_label},
+    \%by_label, 'Every label maps to the shared vocabulary');
+  is_deeply([map { SNMP::Info::munge_stpx_port_role($_) } 1 .. 7],
+    \@numbers, 'Every number maps to the shared vocabulary');
+  is(SNMP::Info::munge_stpx_port_role('backUp'), 'backup',
+    'backUp label gives backup');
+  is(SNMP::Info::munge_stpx_port_role(5), 'backup', 'Number 5 gives backup');
+  is(SNMP::Info::munge_stpx_port_role('bogus'), undef,
+    'Unknown label gives undef');
+  is(SNMP::Info::munge_stpx_port_role(undef), undef, 'Undef gives undef');
+  is(SNMP::Info::munge_stpx_port_role(8), undef,
+    'Unknown number gives undef');
+}
+
+sub munge_dot1s_port_role : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_dot1s_port_role');
+
+  my @labels = qw/disabled alternate backup root designated master/;
+  is_deeply([map { SNMP::Info::munge_dot1s_port_role($_) } @labels],
+    \@labels, 'Every label maps to itself');
+  is_deeply([map { SNMP::Info::munge_dot1s_port_role($_) } 0 .. 5],
+    \@labels, 'Every number maps to its label');
+  is(SNMP::Info::munge_dot1s_port_role('bogus'), undef,
+    'Unknown label gives undef');
+  is(SNMP::Info::munge_dot1s_port_role(undef), undef, 'Undef gives undef');
+  is(SNMP::Info::munge_dot1s_port_role(6), undef,
+    'Unknown number gives undef');
+}
+
+sub munge_dot1w_port_role : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_dot1w_port_role');
+
+  my @labels = qw/disabled alternate backup root designated/;
+  is_deeply([map { SNMP::Info::munge_dot1w_port_role($_ . 'Port') } @labels],
+    \@labels, 'Every label loses the Port suffix');
+  is_deeply([map { SNMP::Info::munge_dot1w_port_role($_) } 0 .. 4],
+    \@labels, 'Every number maps to its label');
+  is(SNMP::Info::munge_dot1w_port_role('bogusPort'), undef,
+    'Unknown label gives undef');
+  is(SNMP::Info::munge_dot1w_port_role(undef), undef, 'Undef gives undef');
+  is(SNMP::Info::munge_dot1w_port_role(5), undef,
+    'Unknown number gives undef');
 }
 
 sub munge_prio_port : Tests(4) {
@@ -2826,6 +2903,28 @@ sub _fresh_community_info {
   $test->{info} = $test->class->new(%{$info->{args}},
     Community => $base, Session => $mock);
   return $test->{info};
+}
+
+sub _walk_context : Tests(5) {
+  my $test = shift;
+
+  is($test->_fresh_community_info('public', 'public@10')->_walk_context(),
+    '10', 'Base first: the instance');
+  is($test->_fresh_community_info('public', 'default::20@public')
+      ->_walk_context(), 'default::20', 'Instance first: the instance');
+  is($test->_fresh_community_info('public', 'public')->_walk_context(),
+    '', 'Base alone: default context');
+  is($test->_fresh_community_info('public', 'other@private')
+      ->_walk_context(), '', 'Unrelated community: default context');
+  is($test->_fresh_community_info('public', '@public')->_walk_context(),
+    '', 'Empty instance: default context');
+}
+
+sub walk_context__empty_base__returns_empty : Tests(1) {
+  my $test = shift;
+
+  is($test->_fresh_community_info('', 'x@')->_walk_context(), '',
+    'No base community: no part of the session community is a context');
 }
 
 sub incomplete_walk : Tests(7) {
