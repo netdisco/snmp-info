@@ -721,4 +721,43 @@ sub stp_voss_unread : Tests(4) {
     is( $test->{info}->os(), 'voss', q(Fixture is VOSS) );
 }
 
+# EXOS 33.6 shape: VRs configured, yet MPLS-L3VPN-STD-MIB counts zero and
+# lists no row
+sub _prime_vrf_none_counted {
+  my $test = shift;
+  $test->{info}{$_} = 1 for qw/_vrf_l3vpn_rd _vrf_l3vpn_descr
+    _vrf_l3vpn_oper _vrf_l3vpn_rt _vrf_l3vpn_if/;
+  $test->{info}{store}{$_} = {} for
+    qw/vrf_l3vpn_rd vrf_l3vpn_descr vrf_l3vpn_oper vrf_l3vpn_rt vrf_l3vpn_if/;
+  $test->{info}{_vrf_configured} = 0;
+  return;
+}
+
+sub vrf_instances_complete : Tests(2) {
+  my $test = shift;
+
+  $test->_prime_vrf_none_counted();
+  is($test->{info}->vrf_instances_complete(),
+    undef, q(EXOS zero configured count reads unsupported, not none));
+  cmp_deeply([keys %{$test->{info}->vrf_instances()}],
+    ['default'], q(Only default is listed));
+}
+
+sub vrf_instances_complete__exos_caller_names__is_0 : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_vrf_none_counted();
+  is($test->{info}->vrf_instances_complete(['vr-red']),
+    0, q(A caller name still reads incomplete));
+}
+
+sub vrf_instances_complete__not_exos__unchanged : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_vrf_none_counted();
+  $test->{info}{_description} = '5520-48SE-FabricEngine (8.10.1.0)';
+  is($test->{info}->vrf_instances_complete(),
+    1, q(VOSS keeps the standard reading of a zero count));
+}
+
 1;

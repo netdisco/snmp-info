@@ -1184,6 +1184,17 @@ sub stp_vlan_map {
     return \%map;
 }
 
+# EXOS serves mplsL3VpnConfiguredVrfs 0 and no VRF row while VRs and VRFs
+# are configured: they answer only as SNMPv3 contexts, so a zero from that
+# MIB is no evidence of none
+sub vrf_instances_complete {
+    my $extreme = shift;
+
+    my $complete = $extreme->SUPER::vrf_instances_complete(@_);
+    return $complete unless $complete and ( $extreme->os() || '' ) eq 'xos';
+    return;
+}
+
 1;
 
 __END__
@@ -1446,6 +1457,13 @@ identifier (iid)
 
 Returns (C<ifIndex>) for both key and value since we're using
 F<EXTREME-FDB-MIB> rather than F<BRIDGE-MIB>.
+
+=item $extreme->vrf_instances_complete( [ \@names ] )
+
+On ExtremeXOS returns undef where L<SNMP::Info::VRF> would return 1.  EXOS
+serves C<mplsL3VpnConfiguredVrfs> as 0 with virtual routers configured,
+which answer only as SNMPv3 contexts, so the list is never known to be
+whole.  A caller-supplied name still returns 0.
 
 =item $extreme->peth_port_power()
 
