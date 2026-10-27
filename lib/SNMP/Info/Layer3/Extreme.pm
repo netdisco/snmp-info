@@ -1871,8 +1871,7 @@ On VOSS the device lists its VRFs in C<rcVrfConfigTable>, which the default
 context serves whole.  vrfid 0, C<GlobalRouter>, is the instance
 C<default> (see L<SNMP::Info::VRF/"Completeness">), so a device with only
 C<GlobalRouter> and C<MgmtRouter> reports C<vrf_instances_complete()> 1
-with one VRF, C<MgmtRouter>.  Reading C<MgmtRouter> in its own context has
-not been checked against a device.  C<l3_isid> is the I-SID
+with one VRF, C<MgmtRouter>.  C<l3_isid> is the I-SID
 C<rcVrfIpVpnTable> gives the VRF's IP VPN, and undef where it serves none.
 Each VRF reads in its own context, which serves only that VRF's rows.  In
 the default context C<i_vrf()> maps each VRF VLAN's interface from

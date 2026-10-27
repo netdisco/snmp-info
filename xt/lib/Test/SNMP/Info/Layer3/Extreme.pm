@@ -1188,7 +1188,7 @@ my %VOSS_VRF_NAMES = (0 => 'GlobalRouter', 1 => 'red', 2 => 'blue',
   3 => 'green', 4 => 'grey', 512 => 'MgmtRouter');
 my %VOSS_CONTEXTS = (0 => q(), 1 => 'vrf1', 2 => 'vrf2', 3 => 'vrf3',
   4 => 'vrf4', 512 => 'vrf512');
-my %VOSS_ISIDS = (1 => 30001, 2 => 30002, 3 => 30003);
+my %VOSS_ISIDS = (1 => 30001, 2 => 30002, 3 => 30003, 4 => 30004);
 
 # rcVlanTable: VLAN => [rcVlanIfIndex, rcVlanVrfId]. 4051 is the fabric
 # VLAN whose ifIndex carries the routes learned over the fabric.
@@ -1425,7 +1425,7 @@ sub snmp_context__vrf__voss_v3_context_name : Tests(6) {
   is($info->snmp_context('vlan', 41), undef, 'Another kind has none');
 }
 
-sub vrf_instances__voss : Tests(8) {
+sub vrf_instances__voss : Tests(7) {
   my $test = shift;
   my $info = _use_cache($test, _voss_default_cache());
 
@@ -1442,11 +1442,11 @@ sub vrf_instances__voss : Tests(8) {
       contexts  => [{kind => 'vrf', id => 'red', v2c => undef,
         v3 => 'vrf1'}],
     }), 'red, its I-SID and its context');
-  cmp_deeply([map { $instances->{$_}{l3_isid} } qw/blue green/],
-    [30002, 30003], 'blue and green I-SIDs');
-  cmp_deeply($instances->{grey}{sources}, {list => 'RAPID-CITY'},
-    'grey: no I-SID served and no VLAN');
-  is($instances->{grey}{l3_isid}, undef, '... so no l3_isid');
+  cmp_deeply([map { $instances->{$_}{l3_isid} } qw/blue green grey/],
+    [30002, 30003, 30004], q(blue, green and grey I-SIDs));
+  cmp_deeply($instances->{grey}{sources},
+    {list => q(RAPID-CITY), l3_isid => q(RAPID-CITY)},
+    q(grey: an I-SID and no VLAN));
   cmp_deeply($instances->{MgmtRouter}, superhashof({kind => 'vrf',
       l3_isid => undef, sources => {list => 'RAPID-CITY'}}),
     'MgmtRouter is listed as a VRF');
