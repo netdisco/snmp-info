@@ -849,6 +849,23 @@ sub vrf_neighbors__zero_mac__dropped : Tests(4) {
     q(A dotted all-zero MAC is dropped));
 }
 
+# A context's ARP table can serve the subnet broadcast address at the
+# broadcast MAC, which names no neighbor
+sub vrf_neighbors__broadcast_mac__dropped : Tests(3) {
+  my $test = shift;
+
+  my $info      = $test->_neighbor_info();
+  my $broadcast = pack('C6', (0xff) x 6);
+  $info->{store}{at_paddr}{'2.10.40.0.255'}   = $broadcast;
+  $info->{store}{at_netaddr}{'2.10.40.0.255'} = '10.40.0.255';
+  $info->{store}{ip_n2p_phys_addr}{$RED_V6}   = $broadcast;
+  my $red = $info->vrf_neighbors('red');
+  ok(!exists $red->{'2.10.40.0.255'}, q(The broadcast row is dropped));
+  ok(!(grep { $_->{family} eq 'ipv6' } values %$red),
+    q(... in IPv6 too));
+  ok(exists $red->{'2.10.40.0.2'}, q(A host on the same port is kept));
+}
+
 sub vrf_neighbors__role_without_neighbor_methods__has_no_rows : Tests(1) {
   my $test = shift;
 

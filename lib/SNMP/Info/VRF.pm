@@ -1088,11 +1088,14 @@ sub _vrf_add_ipv6_mib_rows {
 }
 
 # An undef, empty or all-zero MAC is no hardware address: the device
-# serves its own addresses that way
+# serves its own addresses that way. The broadcast MAC names no neighbor
+# either: a VOSS VRF context serves the subnet broadcast address at it.
 sub _vrf_has_mac {
     my $mac = shift;
 
-    return ( defined $mac and $mac =~ /[^0:.\-]/ ) ? 1 : 0;
+    return 0 unless defined $mac and $mac =~ /[^0:.\-]/;
+    ( my $digits = lc $mac ) =~ s/[:.\-]//g;
+    return $digits eq 'ffffffffffff' ? 0 : 1;
 }
 
 sub _vrf_context_filters { return 0; }
@@ -1531,7 +1534,8 @@ Returns reference to hash of the ARP and IPv6 neighbor rows of instance
 C<$name>, keyed as C<at_paddr()> and C<ipv6_n2p_mac()> key them. Each row
 holds C<ifindex>, C<ip>, C<mac> and C<family> (C<ipv4> or C<ipv6>). A row
 whose MAC is undef, empty or all zeros is not returned: it names no
-hardware address, and devices serve their own addresses that way. Rows a
+hardware address, and devices serve their own addresses that way. Nor is a
+row at the broadcast MAC, such as a subnet broadcast address. Rows a
 class adds from C<ipv6NetToMediaTable> are keyed by ifIndex then the
 sixteen address octets, as that table indexes them.
 

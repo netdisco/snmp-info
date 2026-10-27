@@ -938,20 +938,18 @@ sub _use_cache {
   return $test->{info};
 }
 
-sub context_kinds__vrf__xos_only : Tests(4) {
+sub context_kinds__vrf__xos_not_extremeware : Tests(3) {
   my $test = shift;
   my $info = $test->{info};
 
   cmp_deeply($info->context_kinds('vrf'), ['vrf'],
     'EXOS: one context per VR');
   is($info->context_kinds('stp'), undef, 'EXOS: no other feature has one');
-  $info->{_description} = '5520-48SE-FabricEngine (8.10.1.0)';
-  is($info->context_kinds('vrf'), undef, 'VOSS: none');
   $info->{_description} = 'Summit48si - Version 7.8.4b4';
   is($info->context_kinds('vrf'), undef, 'ExtremeWare: none');
 }
 
-sub snmp_context__vrf__v3_only : Tests(5) {
+sub snmp_context__vrf__v3_only : Tests(4) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -961,8 +959,6 @@ sub snmp_context__vrf__v3_only : Tests(5) {
   is($info->snmp_context('vrf', 'default'), undef, 'default has none');
   is($info->snmp_context('vrf', q()), undef, 'An empty name has none');
   is($info->snmp_context('vlan', 10), undef, 'Another kind has none');
-  $info->{_description} = '5520-48SE-FabricEngine (8.10.1.0)';
-  is($info->snmp_context('vrf', 'red'), undef, 'VOSS: none');
 }
 
 sub vrf_instances__caller_names__listed_by_caller : Tests(7) {
@@ -1077,19 +1073,6 @@ sub vrf_subnets__blue_context__overlap_from_route : Tests(4) {
   ok(!exists $subnets->{'10.200.0.1/32'}, 'A host route is not a subnet');
 }
 
-sub vrf_context_hooks__voss__off : Tests(3) {
-  my $test = shift;
-  my $info = _use_cache($test, _exos_vrf_cache(_exos_address_store(),
-    _exos_route_store(grep { $_->[0] !~ /:/ } @RED_ROUTES)));
-
-  $info->{_description} = '5520-48SE-FabricEngine (8.10.1.0)';
-  is($info->_vrf_context_filters(), 0, 'VOSS: no context filtering');
-  is($info->_vrf_context_ports_from_routes(), 0, 'VOSS: no route ports');
-  cmp_deeply($info->_vrf_route_ports('red'),
-    {1000012 => 'red', 1000016 => 'red'},
-    'VOSS: a router interface does not add the interface it is named for');
-}
-
 sub _v6 {
   return join ':', unpack '(H4)*', pack 'C*', (_arcs(shift))[2 .. 17];
 }
@@ -1192,6 +1175,441 @@ sub vrf_neighbors__red_context__own_rows_dropped : Tests(3) {
     'The link-local on the port holding it is the device\'s own');
   ok((grep { $_ eq '1000015 ' . _v6($EXOS_LINK_LOCAL) } @$rows),
     '... on another port it is a neighbor');
+}
+
+
+# VOSS (Fabric Engine 9.4) with VRFs red (vrfid 1), blue (2), green (3,
+# IPv6 only), grey (4, a loopback only) and MgmtRouter (512); vrfid 0 is
+# GlobalRouter. Each VRF is reached by its rcVrfContextName. A VRF context
+# serves only its own rcVrfConfigTable row, its own VLANs and its own
+# rcIpAddrTable rows; rcVrfIpVpnTable is whole in every context. The
+# default context serves every VLAN, and rcIpAddrTable only for vrfid 0.
+my %VOSS_VRF_NAMES = (0 => 'GlobalRouter', 1 => 'red', 2 => 'blue',
+  3 => 'green', 4 => 'grey', 512 => 'MgmtRouter');
+my %VOSS_CONTEXTS = (0 => q(), 1 => 'vrf1', 2 => 'vrf2', 3 => 'vrf3',
+  4 => 'vrf4', 512 => 'vrf512');
+my %VOSS_ISIDS = (1 => 30001, 2 => 30002, 3 => 30003);
+
+# rcVlanTable: VLAN => [rcVlanIfIndex, rcVlanVrfId]. 4051 is the fabric
+# VLAN whose ifIndex carries the routes learned over the fabric.
+my %VOSS_VLANS = (1 => [2049, 0], 10 => [2058, 0], 41 => [2089, 1],
+  42 => [2090, 2], 43 => [2091, 1], 44 => [2092, 2], 45 => [2093, 3],
+  4048 => [6096, 0], 4051 => [6099, 0], 4052 => [6100, 0]);
+
+# rcIpAddrTable rcIpAdEntVrfId, indexed ifIndex then address, per context
+my %VOSS_IP_VRFS = (
+  0 => {'1344.10.255.0.13' => 0},
+  1 => {'2089.10.100.1.1' => 1, '2091.10.101.1.1' => 1},
+  2 => {'2090.10.100.1.1' => 2, '2092.10.102.1.1' => 2},
+  4 => {'1345.10.104.1.1' => 4},
+);
+
+# ifPhysAddress, the same in every context: each VLAN interface's MAC
+# octet, 9 for the fabric VLAN's
+my %VOSS_PORT_MAC = (2089 => 1, 2090 => 2, 2091 => 3, 2092 => 4,
+  2093 => 5, 6099 => 9);
+
+# inetCidrRouteTable rows as VOSS indexes them, with no length octet before
+# either address: [prefix, length, next hop, ifIndex, proto]
+sub _voss_route_store {
+  my (%if, %proto);
+  foreach my $row (@_) {
+    my ($prefix, $length, $hop, $port, $proto) = @$row;
+    my ($dest_type, undef, @dest) = _arcs($prefix);
+    my ($hop_type,  undef, @hop)  = _arcs($hop);
+    my $iid = join '.', $dest_type, @dest, $length, 0, $hop_type, @hop;
+    $if{$iid}    = $port;
+    $proto{$iid} = $proto // 'local';
+  }
+  return (vrf_cidr_if => \%if, vrf_cidr_proto => \%proto);
+}
+
+# ipNetToMediaTable rows [ifIndex, address, MAC] and IPV6-MIB
+# ipv6NetToMediaTable rows [ifIndex, IPv6 address, MAC]; a MAC is its last
+# octet, or the six octets
+sub _voss_mac {
+  my $mac = shift;
+  return ref $mac ? pack('C6', @$mac) : pack('C6', 2, 0, 0, 0, 0, $mac);
+}
+
+sub _voss_neighbor_store {
+  my %tables = @_;
+  my (%paddr, %netaddr, %nd);
+  foreach my $row (@{$tables{arp} || []}) {
+    my ($port, $ip, $mac) = @$row;
+    $paddr{"$port.$ip"}   = _voss_mac($mac);
+    $netaddr{"$port.$ip"} = $ip;
+  }
+  foreach my $row (@{$tables{nd} || []}) {
+    my ($port, $ip, $mac) = @$row;
+    my (undef, undef, @octets) = _arcs($ip);
+    $nd{join '.', $port, @octets} = _voss_mac($mac);
+  }
+  return (at_paddr => \%paddr, at_netaddr => \%netaddr,
+    i6_n2p_phys_addr => \%nd);
+}
+
+# IPV6-MIB ipv6AddrTable ipv6AddrPfxLength rows [ifIndex, address, length]
+sub _voss_v6_address_store {
+  my %length;
+  foreach my $row (@_) {
+    my ($port, $ip, $prefix_length) = @$row;
+    my (undef, undef, @octets) = _arcs($ip);
+    $length{join '.', $port, @octets} = $prefix_length;
+  }
+  return (i6_addr_pfxlen => \%length);
+}
+
+sub _voss_port_macs {
+  return (i_mac => {map { $_ => _voss_mac($VOSS_PORT_MAC{$_}) }
+      keys %VOSS_PORT_MAC});
+}
+
+# The context of the VRFs @$vrfids, the default context when they include
+# 0: their rcVrfConfigTable rows, VLANs and rcIpAddrTable rows, then the
+# rest of the store
+sub _voss_cache {
+  my ($vrfids, %rest) = @_;
+  my %in_context = map { $_ => 1 } @$vrfids;
+  my @vlans = grep { $in_context{$VOSS_VLANS{$_}[1]} } keys %VOSS_VLANS;
+  my @ip_rows = $in_context{0} ? (0) : @$vrfids;
+  my %store = (
+    vrf_rc_name    => {map { $_ => $VOSS_VRF_NAMES{$_} } @$vrfids},
+    vrf_rc_context => {map { $_ => $VOSS_CONTEXTS{$_} } @$vrfids},
+    vrf_rc_isid    => {%VOSS_ISIDS},
+    vrf_rc_vlan_if  => {map { $_ => $VOSS_VLANS{$_}[0] } @vlans},
+    vrf_rc_vlan_vrf => {map { $_ => $VOSS_VLANS{$_}[1] } @vlans},
+    vrf_rc_ip_vrf   => {map { %{$VOSS_IP_VRFS{$_} || {}} } @ip_rows},
+    %rest,
+  );
+  my $cache = {
+    '_layers'      => 6,
+    '_description' => '5520-24T-FabricEngine (9.4.0.0)',
+    '_id'          => '.1.3.6.1.4.1.1916.2.437',
+    'store'        => \%store,
+  };
+  $cache->{"_$_"} = 1 for keys %store;
+  return $cache;
+}
+
+sub _voss_default_cache {
+  return _voss_cache([keys %VOSS_VRF_NAMES],
+    _voss_route_store(
+      ['10.255.0.13', 32, '10.255.0.13', 1344],
+      ['10.20.0.0',   24, '127.1.0.10',  6099, 'isIs'],
+    ));
+}
+
+# red's connected routes on its VLANs, and one learned over the fabric
+my @VOSS_RED_ROUTES = (
+  ['10.100.1.0', 24, '10.100.1.1', 2089],
+  ['10.100.3.0', 24, '127.1.0.9',  6099, 'isIs'],
+  ['10.101.1.0', 24, '10.101.1.1', 2091],
+);
+
+# A VLAN's own address and the broadcast address are served at the VLAN
+# interface's MAC and the broadcast MAC; link-locals are the interface's
+my $VOSS_BROADCAST = [(0xff) x 6];
+my $VOSS_RED_LINK_LOCAL = 'fe80:0:0:0:0:ff:fe00:1';
+
+sub _voss_red_cache {
+  return _voss_cache([1], _voss_route_store(@VOSS_RED_ROUTES),
+    _voss_port_macs(),
+    _voss_neighbor_store(
+      arp => [[2089, '10.100.1.1', 1], [2089, '10.100.1.10', 0x0a],
+        [2089, '10.100.1.255', $VOSS_BROADCAST],
+        [2091, '10.101.1.1', 3], [2091, '10.101.1.10', 0x0c],
+        [2091, '10.101.1.255', $VOSS_BROADCAST]],
+      nd => [[2089, '2001:db8:1001:0:0:0:0:1', 1],
+        [2089, '2001:db8:1001:0:0:0:0:16', 0x0a],
+        [2089, $VOSS_RED_LINK_LOCAL, 1]],
+    ),
+    _voss_v6_address_store([2089, '2001:db8:1001:0:0:0:0:1', 64],
+      [2089, $VOSS_RED_LINK_LOCAL, 64]),
+  );
+}
+
+# blue holds red's 10.100.1.0/24 too, on its own VLAN
+sub _voss_blue_cache {
+  return _voss_cache([2],
+    _voss_route_store(['10.100.1.0', 24, '10.100.1.1', 2090],
+      ['10.100.3.0', 24, '127.1.0.9',  6099, 'isIs'],
+      ['10.102.1.0', 24, '10.102.1.1', 2092]),
+    _voss_port_macs(),
+    _voss_neighbor_store(
+      arp => [[2090, '10.100.1.1', 2], [2090, '10.100.1.10', 0x0b],
+        [2090, '10.100.1.255', $VOSS_BROADCAST],
+        [2092, '10.102.1.1', 4], [2092, '10.102.1.10', 0x0d],
+        [2092, '10.102.1.255', $VOSS_BROADCAST]],
+    ),
+  );
+}
+
+# grey's loopback has no VLAN; the loopback's own ARP row is served at the
+# loopback's MAC, 00:00:00:00:00:02
+sub _voss_grey_cache {
+  return _voss_cache([4],
+    _voss_route_store(['10.104.1.1', 32, '10.104.1.1', 1345],
+      ['10.104.3.1', 32, '127.1.0.9', 6099, 'isIs']),
+    _voss_port_macs(),
+    _voss_neighbor_store(arp => [[1345, '10.104.1.1', [0, 0, 0, 0, 0, 2]]]),
+  );
+}
+
+# green is IPv6 only and has no inetCidrRouteTable row
+sub _voss_green_cache {
+  my $link_local = 'fe80:0:0:0:0:ff:fe00:5';
+  return _voss_cache([3], _voss_port_macs(),
+    _voss_neighbor_store(
+      nd => [[2093, '2001:db8:1201:0:0:0:0:1', 5],
+        [2093, '2001:db8:1201:0:0:0:0:16', 0x0e],
+        [2093, $link_local, 5]],
+    ),
+    _voss_v6_address_store([2093, '2001:db8:1201:0:0:0:0:1', 64],
+      [2093, $link_local, 64]),
+  );
+}
+
+sub context_kinds__vrf__voss : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_default_cache());
+
+  cmp_deeply(scalar $info->context_kinds('vrf'), ['vrf'],
+    'One context per VRF');
+  is($info->context_kinds('stp'), undef, 'No other feature has one');
+}
+
+sub snmp_context__vrf__voss_v3_context_name : Tests(6) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_default_cache());
+
+  cmp_deeply(scalar $info->snmp_context('vrf', 'red'),
+    {kind => 'vrf', id => 'red', v2c => undef, v3 => 'vrf1'},
+    'The SNMPv3 context is rcVrfContextName; v2c is site configuration');
+  is(($info->snmp_context('vrf', 'MgmtRouter') || {})->{v3}, 'vrf512',
+    'MgmtRouter has one too');
+  is($info->snmp_context('vrf', 'default'), undef, 'default has none');
+  is($info->snmp_context('vrf', 'GlobalRouter'), undef,
+    'Nor GlobalRouter, which is default');
+  is($info->snmp_context('vrf', 'purple'), undef, 'Nor an unlisted name');
+  is($info->snmp_context('vlan', 41), undef, 'Another kind has none');
+}
+
+sub vrf_instances__voss : Tests(8) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_default_cache());
+
+  my $instances = $info->vrf_instances();
+  cmp_deeply([sort keys %$instances],
+    [qw/MgmtRouter blue default green grey red/],
+    'Every rcVrfConfigTable row, with GlobalRouter as default');
+  cmp_deeply($instances->{red}, superhashof({
+      kind      => 'vrf',
+      l3_isid   => 30001,
+      listed_by => 'device',
+      sources   => {list => 'RAPID-CITY', l3_isid => 'RAPID-CITY',
+        members => 'RAPID-CITY'},
+      contexts  => [{kind => 'vrf', id => 'red', v2c => undef,
+        v3 => 'vrf1'}],
+    }), 'red, its I-SID and its context');
+  cmp_deeply([map { $instances->{$_}{l3_isid} } qw/blue green/],
+    [30002, 30003], 'blue and green I-SIDs');
+  cmp_deeply($instances->{grey}{sources}, {list => 'RAPID-CITY'},
+    'grey: no I-SID served and no VLAN');
+  is($instances->{grey}{l3_isid}, undef, '... so no l3_isid');
+  cmp_deeply($instances->{MgmtRouter}, superhashof({kind => 'vrf',
+      l3_isid => undef, sources => {list => 'RAPID-CITY'}}),
+    'MgmtRouter is listed as a VRF');
+  is($instances->{default}{kind}, 'default', 'default is the global table');
+  ok(!exists $instances->{GlobalRouter}, 'No GlobalRouter row');
+}
+
+sub vrf_instances_complete__voss__is_1 : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_default_cache());
+
+  is($info->vrf_instances_complete(), 1, 'A whole list is complete');
+}
+
+sub vrf_instances_complete__voss_partial_walk__is_0 : Tests(2) {
+  my $test = shift;
+
+  foreach my $method (qw/vrf_rc_name vrf_rc_vlan_vrf/) {
+    my $info = _use_cache($test, _voss_default_cache());
+    $info->{walk_status}{$method} = {complete => 0, reason => 'timeout'};
+    is($info->vrf_instances_complete(), 0, "A partial $method walk is not");
+  }
+}
+
+sub i_vrf__voss_default_context : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_default_cache());
+
+  cmp_deeply(scalar $info->i_vrf(),
+    {2089 => 'red', 2090 => 'blue', 2091 => 'red', 2092 => 'blue',
+      2093 => 'green'},
+    'Every VRF VLAN; GlobalRouter VLANs and the CLIP are default');
+  is($info->error(), undef, 'No error');
+}
+
+sub i_vrf__voss_red_context : Tests(3) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_vr($info, 'vrf1');
+  cmp_deeply(scalar $info->i_vrf(), {2089 => 'red', 2091 => 'red'},
+    'red\'s VLANs; the fabric interface of a learned route is not red\'s');
+  is($info->error(), undef, 'No error');
+  is($info->{_vrf_walked}{red}{vrf_cidr_proto}, 1,
+    'The route protocol walk counts toward the read');
+}
+
+sub i_vrf__voss_grey_context__loopback : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_grey_cache());
+
+  _enter_vr($info, 'vrf4');
+  cmp_deeply(scalar $info->i_vrf(), {1345 => 'grey'},
+    'grey\'s loopback, which has no VLAN');
+
+  my $cache = _voss_grey_cache();
+  $cache->{store}{vrf_rc_ip_vrf} = {};
+  $info = _use_cache($test, $cache);
+  _enter_vr($info, 'vrf4');
+  cmp_deeply(scalar $info->i_vrf(), {1345 => 'grey'},
+    '... a member by its connected route alone');
+}
+
+sub i_vrf__voss_green_context__vlan_only : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_green_cache());
+
+  _enter_vr($info, 'vrf3');
+  cmp_deeply(scalar $info->i_vrf(), {2093 => 'green'},
+    'green\'s VLAN, with no IPv4 route');
+}
+
+sub vrf_context_hooks__xos_and_extremeware__unchanged : Tests(4) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_default_cache());
+
+  $info->{_description} = 'Summit48si - Version 7.8.4b4';
+  is($info->_vrf_context_filters(), 0, 'ExtremeWare: no context mode');
+  cmp_deeply($info->_vrf_vendor_instances(), {}, 'ExtremeWare: no list');
+  $info->{_description}
+    = 'ExtremeXOS (Stack) version 33.6.1.7 by release-manager';
+  cmp_deeply($info->_vrf_vendor_instances(), {}, 'EXOS: no list');
+  cmp_deeply($info->_vrf_vendor_membership(), {}, 'EXOS: no membership');
+}
+
+
+sub vrf_neighbors__voss_red_context : Tests(3) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_vr($info, 'vrf1');
+  my $rows = $info->vrf_neighbors('red');
+  cmp_deeply(_address_list($rows),
+    [sort '2089 10.100.1.10', '2091 10.101.1.10',
+      '2089 ' . _v6('2001:db8:1001:0:0:0:0:16')],
+    'The hosts only: not the own rows, nor the broadcast ones');
+  cmp_deeply($rows->{'2089.10.100.1.10'},
+    {ifindex => 2089, ip => '10.100.1.10', mac => '02:00:00:00:00:0a',
+      family => 'ipv4'}, 'A host row');
+  is(scalar(grep { $_->{family} eq 'ipv6' } values %$rows), 1,
+    'The IPv6 host, from IPV6-MIB');
+}
+
+sub vrf_addresses__voss_red_context : Tests(3) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_vr($info, 'vrf1');
+  my $rows = $info->vrf_addresses('red');
+  cmp_deeply(_address_list($rows),
+    [sort '2089 10.100.1.1', '2091 10.101.1.1',
+      '2089 ' . _v6('2001:db8:1001:0:0:0:0:1'),
+      '2089 ' . _v6($VOSS_RED_LINK_LOCAL)],
+    'IPv4 from the connected routes, IPv6 from ipv6AddrTable');
+  cmp_deeply($rows->{'2089.10.100.1.1'},
+    {ifindex => 2089, ip => '10.100.1.1', prefix_len => 24,
+      family => 'ipv4'}, 'The connected route\'s prefix length');
+  is($rows->{'2089.' . _v6('2001:db8:1001:0:0:0:0:1')}{prefix_len}, 64,
+    'The IPv6 prefix length');
+}
+
+sub vrf_addresses__voss_grey_context__loopback : Tests(3) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_grey_cache());
+
+  _enter_vr($info, 'vrf4');
+  cmp_deeply($info->vrf_addresses('grey'),
+    {'1345.10.104.1.1' => {ifindex => 1345, ip => '10.104.1.1',
+        prefix_len => 32, family => 'ipv4'}},
+    'The loopback address, from its connected host route');
+  cmp_deeply($info->vrf_neighbors('grey'), {},
+    'The loopback\'s own ARP row is not a neighbor');
+  cmp_deeply([keys %{$info->vrf_subnets('grey')}], ['10.104.1.1/32'],
+    'Its subnet is the address; a learned host route is not grey\'s');
+}
+
+sub vrf_neighbors__voss_green_context__ipv6_only : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_green_cache());
+
+  _enter_vr($info, 'vrf3');
+  cmp_deeply(_address_list($info->vrf_neighbors('green')),
+    ['2093 ' . _v6('2001:db8:1201:0:0:0:0:16')],
+    'The IPv6 host on green\'s VLAN, from IPV6-MIB');
+  cmp_deeply(_address_list($info->vrf_addresses('green')),
+    [sort map { '2093 ' . _v6($_) } '2001:db8:1201:0:0:0:0:1',
+      'fe80:0:0:0:0:ff:fe00:5'],
+    'Its IPv6 addresses');
+}
+
+sub vrf_subnets__voss_overlap__each_vrf_its_own : Tests(6) {
+  my $test = shift;
+
+  my $info = _use_cache($test, _voss_red_cache());
+  _enter_vr($info, 'vrf1');
+  my $red = $info->vrf_subnets('red');
+  cmp_deeply($red->{'10.100.1.0/24'},
+    superhashof({ifindex => 2089, sources => ['address', 'route']}),
+    'red\'s 10.100.1.0/24 is on red\'s VLAN');
+  ok(!exists $red->{'10.100.3.0/24'}, 'A route learned over the fabric'
+    . ' is not a subnet of red\'s');
+  ok(exists $red->{'2001:0db8:1001:0000:0000:0000:0000:0000/64'},
+    'red\'s IPv6 subnet, from its address');
+
+  $info = _use_cache($test, _voss_blue_cache());
+  _enter_vr($info, 'vrf2');
+  my $blue = $info->vrf_subnets('blue');
+  cmp_deeply($blue->{'10.100.1.0/24'},
+    superhashof({ifindex => 2090, sources => ['address', 'route']}),
+    'blue\'s 10.100.1.0/24 is on blue\'s VLAN');
+  ok(exists $info->vrf_addresses('blue')->{'2090.10.100.1.1'},
+    'blue holds the shared address on its own VLAN');
+  cmp_deeply(_address_list($info->vrf_neighbors('blue')),
+    ['2090 10.100.1.10', '2092 10.102.1.10'], 'blue\'s hosts');
+}
+
+
+# The default context's ipAddrTable lists every VRF's addresses, and
+# MgmtRouter's, with no VRF; only those on the ports of default are its
+sub vrf_addresses__voss_default_context__default_ports_only : Tests(1) {
+  my $test  = shift;
+  my $cache = _voss_default_cache();
+  my %ips = ('10.0.0.15' => 3, '10.100.1.1' => 2089, '10.104.1.1' => 1345,
+    '10.255.0.13' => 1344);
+  $cache->{store}{old_ip_index} = {%ips};
+  $cache->{store}{old_ip_netmask} = {map { $_ => '255.255.255.0' } keys %ips};
+  $cache->{store}{old_ip_netmask}{$_} = '255.255.255.255'
+    for qw/10.104.1.1 10.255.0.13/;
+  $cache->{"_$_"} = 1 for qw/old_ip_index old_ip_netmask/;
+  my $info = _use_cache($test, $cache);
+
+  cmp_deeply(_address_list($info->vrf_addresses('default')),
+    ['1344 10.255.0.13'], 'GlobalRouter\'s CLIP only');
 }
 
 1;
