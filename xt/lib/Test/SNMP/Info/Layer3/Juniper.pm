@@ -1735,6 +1735,127 @@ sub vrf_neighbors__session_red_at_labro__reads_red : Tests(4) {
   $info->session()->{Community} = 'public';
 }
 
+# Junos 26.2 vJunos-switch: mplsL3VpnVrfTable lists red and grey, and
+# vacmContextName lists those with blue, green and the internal names.
+sub _vrf_cache {
+  my %opt = @_;
+  my $iid = sub { join('.', length($_[0]), map { ord } split //, $_[0]) };
+  my @vacm = ('', qw/red blue grey green :gribi default mgmt_junos
+    __mpls-oam__ default-switch __master.anon__ __pfe_private__
+    __juniper_private2__ __juniper_private4__ __juniper_services__/,
+    @{$opt{vacm_extra} || []});
+  my %jnx = map { ("$_->[1].".$iid->($_->[0]) => $_->[0]) } @{$opt{jnx} || []};
+  $jnx{"2.".$iid->($_)} = $_ for qw/red grey/;
+  return {
+    _vrf_l3vpn_rd    => 1,
+    _vrf_l3vpn_descr => 1,
+    _vrf_l3vpn_oper  => 1,
+    _vrf_l3vpn_rt    => 1,
+    _vrf_l3vpn_if    => 1,
+    _vrf_vacm_context => 1,
+    _vrf_jnx_vpn_name => 1,
+    store => {
+      vrf_l3vpn_rd    => {$iid->('red') => '64512:30', $iid->('grey') => '64512:34'},
+      vrf_l3vpn_descr => {$iid->('red') => '', $iid->('grey') => ''},
+      vrf_l3vpn_oper  => {$iid->('red') => 'up', $iid->('grey') => 'up'},
+      vrf_l3vpn_rt    => {},
+      vrf_l3vpn_if    => {},
+      vrf_vacm_context => {map { $iid->($_) => $_ } @vacm},
+      vrf_jnx_vpn_name => \%jnx,
+    },
+  };
+}
+
+sub _prime_vrf {
+  my ($test, %opt) = @_;
+  my $info = $test->{info};
+  $info->clear_cache();
+  $info->clear_walk_status();
+  $info->cache(_vrf_cache(%opt));
+  return $info;
+}
+
+sub vrf_instances : Tests(14) {
+  my $test = shift;
+  my $info = $test->_prime_vrf();
+
+  my $instances = $info->vrf_instances();
+  cmp_deeply([sort keys %$instances], [qw/blue default green grey red/],
+    'MPLS rows, vacm virtual routers and default; no internal name');
+  foreach my $name (qw/blue green/) {
+    is($instances->{$name}{kind}, 'virtual-router', "$name is a virtual router");
+    is($instances->{$name}{sources}{list}, 'SNMP-VIEW-BASED-ACM-MIB',
+      "$name is listed by vacmContextName");
+    is($instances->{$name}{listed_by}, 'device', "$name listed by the device");
+  }
+  is($instances->{blue}{contexts}[0]{v2c}, 'blue@%s', 'Junos order');
+  is($instances->{red}{kind}, 'vrf', 'red is MPLS-listed');
+  is($instances->{red}{rd}, '64512:30', 'red keeps its route distinguisher');
+  is($instances->{red}{sources}{list}, 'MPLS-L3VPN-STD-MIB',
+    'red keeps its list source');
+  is($instances->{grey}{kind}, 'vrf', 'grey is MPLS-listed');
+  is($instances->{default}{kind}, 'default', 'default is the default record');
+}
+
+sub vrf_instances__vpls_in_jnx_vpn__excluded : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_vrf(
+    vacm_extra => ['vpls1'], jnx => [['vpls1', 4]]);
+
+  my $instances = $info->vrf_instances();
+  ok(!exists $instances->{vpls1}, 'A VPLS row in jnxVpnTable is no instance');
+  cmp_deeply([sort keys %$instances], [qw/blue default green grey red/],
+    'The rest is unchanged');
+}
+
+sub vrf_instances__bgp_ip_vpn_in_jnx_vpn__kept : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_vrf(
+    vacm_extra => ['cust'], jnx => [['cust', 2]]);
+
+  my $instances = $info->vrf_instances();
+  is($instances->{cust}{kind}, 'virtual-router', 'A bgpIpVpn row is kept');
+  is($instances->{cust}{sources}{list}, 'SNMP-VIEW-BASED-ACM-MIB',
+    'Listed by vacmContextName');
+}
+
+sub vrf_instances__vstp_context_name__not_an_instance : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_vrf(vacm_extra => ['default::10', 'red::20']);
+
+  cmp_deeply([sort keys %{$info->vrf_instances()}],
+    [qw/blue default green grey red/], 'VSTP contexts are not instances');
+}
+
+sub vrf_instances__internal_name_in_mpls__dropped : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_vrf();
+  my $iid = join('.', length('mgmt_junos'), map { ord } split //, 'mgmt_junos');
+  $info->{store}{vrf_l3vpn_rd}{$iid} = '';
+
+  ok(!exists $info->vrf_instances()->{mgmt_junos},
+    'An internal name is dropped from the MPLS list');
+  is($info->_vrf_internal_instance('__x__'), 1, 'Double underscores');
+}
+
+sub vrf_instances_complete__junos__is_1 : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_vrf();
+
+  is($info->vrf_instances_complete(), 1, 'Complete walks list every instance');
+}
+
+sub vrf_instances_complete__vacm_walk_partial__is_0 : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_vrf();
+
+  $info->{walk_status}{vrf_vacm_context} = {complete => 0, reason => 'timeout'};
+  is($info->vrf_instances_complete(), 0, 'A partial vacmContextName walk');
+  $info->{walk_status} = {};
+  $info->{walk_status}{vrf_jnx_vpn_name} = {complete => 0, reason => 'timeout'};
+  is($info->vrf_instances_complete(), 0, 'A partial jnxVpnName walk');
+}
+
 sub _context_kinds : Tests(4) {
   my $test = shift;
   my $info = $test->{info};
