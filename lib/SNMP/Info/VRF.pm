@@ -143,8 +143,29 @@ sub _vrf_device_lists {
     return ( grep { $_->{sources}{list} } values %$instances ) ? 1 : 0;
 }
 
-# One record per row mplsL3VpnVrfTable serves, minus the internal ones
 sub _vrf_served_instances {
+    my $vrf = shift;
+
+    my $instances = $vrf->_vrf_mpls_records();
+    $vrf->{_vrf_vendor_listed} = %$instances ? 0 : 1;
+    $instances = $vrf->_vrf_vendor_records() if !%$instances;
+    $vrf->_vrf_add_route_targets($instances);
+    $vrf->_vrf_add_members($instances);
+    return $instances;
+}
+
+# True when the list came from the vendor hook: MPLS-L3VPN-STD-MIB served
+# no instance row. Memoized because a second read of the MPLS table would
+# replace its walk status.
+sub _vrf_vendor_listed {
+    my $vrf = shift;
+
+    $vrf->{_vrf_vendor_listed} //= %{ $vrf->_vrf_mpls_records() } ? 0 : 1;
+    return $vrf->{_vrf_vendor_listed};
+}
+
+# One record per row mplsL3VpnVrfTable serves, minus the internal ones
+sub _vrf_mpls_records {
     my $vrf = shift;
 
     my $descr = $vrf->vrf_l3vpn_descr() || {};
@@ -166,10 +187,6 @@ sub _vrf_served_instances {
         $vrf->_vrf_set_contexts($record);
         $instances{$name} = $record;
     }
-
-    %instances = %{ $vrf->_vrf_vendor_records() } if !%instances;
-    $vrf->_vrf_add_route_targets( \%instances );
-    $vrf->_vrf_add_members( \%instances );
     return \%instances;
 }
 
@@ -206,7 +223,9 @@ sub _vrf_decode_membership {
     my $vrf = shift;
 
     my $rows = $vrf->vrf_l3vpn_if() || {};
-    my %ports;
+    my %ports = $vrf->_vrf_vendor_listed()
+        ? %{ $vrf->_vrf_vendor_membership() }
+        : ();
     foreach my $iid ( keys %$rows ) {
         next unless $rows->{$iid} =~ /^(?:active|1)$/;
         my ( $name, $ifindex, @extra ) = $vrf->_vrf_decode_instance($iid);
@@ -397,8 +416,9 @@ sub vrf_instances_complete {
 sub _vrf_walk_incomplete {
     my $vrf = shift;
 
-    my @walked = ( qw/vrf_l3vpn_rd vrf_l3vpn_if vrf_l3vpn_rt/,
-        $vrf->_vrf_vendor_list_methods() );
+    my @walked = qw/vrf_l3vpn_rd vrf_l3vpn_if vrf_l3vpn_rt/;
+    push @walked, $vrf->_vrf_vendor_list_methods()
+        if $vrf->_vrf_vendor_listed();
     foreach my $method (@walked) {
         my $status = $vrf->walk_status($method) or next;
         return 1 unless $status->{complete};
@@ -475,6 +495,7 @@ sub _vrf_keep_owned {
     my ( $vrf, $rows, $name ) = @_;
 
     $vrf->_vrf_record_walk( $name, 'vrf_l3vpn_if' );
+    $vrf->_vrf_record_walk( $name, $vrf->_vrf_vendor_membership_methods() );
     my $members = $vrf->i_vrf();
     foreach my $key ( keys %$rows ) {
         my $owner = _vrf_owner_of( $members, $rows->{$key}{ifindex} );
@@ -845,6 +866,16 @@ sub _vrf_vendor_instances { return {}; }
 
 # The table methods _vrf_vendor_instances walks, for walk completeness
 sub _vrf_vendor_list_methods { return (); }
+
+# { ifIndex => name } the vendor MIB holds, used only when the vendor list
+# was used; the tables it walks are named by _vrf_vendor_membership_methods
+sub _vrf_vendor_membership { return {}; }
+
+sub _vrf_vendor_membership_methods {
+    my $vrf = shift;
+
+    return $vrf->_vrf_vendor_listed() ? $vrf->_vrf_vendor_list_methods() : ();
+}
 
 sub _vrf_subnets_from_routes { return 0; }
 

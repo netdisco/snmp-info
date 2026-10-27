@@ -163,4 +163,147 @@ sub stp_trees_default_off : Tests(3) {
         0, q(Trees may exist unread) );
 }
 
+# iol1 shape: mplsL3VpnVrfTable and mplsL3VpnIfConfTable rows, with the
+# length-prefixed VRF name as the first index arcs.
+my %NAME_IID = (
+    red   => '3.114.101.100',
+    blue  => '4.98.108.117.101',
+    grey  => '4.103.114.101.121',
+    green => '5.103.114.101.101.110',
+);
+
+sub _prime_mpls_rows {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->{_vrf_l3vpn_descr} = 1;
+    $info->{_vrf_l3vpn_if}    = 1;
+    $info->{store}{vrf_l3vpn_descr} = { map { $_ => q() } values %NAME_IID };
+    $info->{store}{vrf_l3vpn_if}    = {
+        "$NAME_IID{red}.2"   => 'active',
+        "$NAME_IID{red}.4"   => 'active',
+        "$NAME_IID{blue}.3"  => 'active',
+        "$NAME_IID{blue}.5"  => 'active',
+        "$NAME_IID{green}.6" => 'active',
+        "$NAME_IID{grey}.10" => 'active',
+    };
+    return;
+}
+
+# CISCO-VRF-MIB as iol1 serves it: cvVrfName by cvVrfIndex, and
+# cvVrfInterfaceRowStatus by cvVrfIndex.ifIndex
+sub _prime_cisco_vrf_mib {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->{_vrf_cv_name} = 1;
+    $info->{_vrf_cv_if}   = 1;
+    $info->{store}{vrf_cv_name}
+        = { 1 => 'red', 2 => 'blue', 3 => 'green', 4 => 'grey' };
+    $info->{store}{vrf_cv_if} = {
+        '1.2' => 'active', '1.4'  => 'active', '2.3' => 'active',
+        '2.5' => 'active', '3.6'  => 'active', '4.10' => 'active',
+    };
+    return;
+}
+
+sub vrf_instances__cisco_vrf_mib__fallback : Tests(4) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_cisco_vrf_mib();
+    my $instances = $info->vrf_instances();
+    cmp_deeply( [ sort keys %$instances ],
+        [qw/blue default green grey red/],
+        q(Each CISCO-VRF-MIB name and default are listed) );
+    is( $instances->{red}{sources}{list},
+        'CISCO-VRF-MIB', q(The list source is the vendor MIB) );
+    cmp_deeply(
+        $info->i_vrf(),
+        {   2  => 'red',  4 => 'red',   3 => 'blue',
+            5  => 'blue', 6 => 'green', 10 => 'grey'
+        },
+        q(The vendor interface rows give i_vrf)
+    );
+    cmp_deeply(
+        [ grep { $instances->{$_}{sources}{members} } sort keys %$instances ],
+        [qw/blue green grey red/],
+        q(Each instance holding a port records the members source)
+    );
+}
+
+sub vrf_instances__mpls_rows__cisco_vrf_mib_unread : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_mpls_rows();
+    $test->_prime_cisco_vrf_mib();
+    $info->{store}{vrf_cv_name}{5} = 'amber';
+    my $instances = $info->vrf_instances();
+    is( $instances->{red}{sources}{list},
+        'MPLS-L3VPN-STD-MIB', q(MPLS-L3VPN-STD-MIB lists) );
+    ok( !exists $instances->{amber}, q(The vendor MIB adds no instance) );
+    $info->vrf_instances_complete();
+    ok( !( grep { /^vrf_cv_/ } keys %{ $info->walk_status() } ),
+        q(Neither CISCO-VRF-MIB table was walked) );
+}
+
+sub vrf_instances_complete__cisco_vrf_mib__is_1 : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_cisco_vrf_mib();
+    is( $info->vrf_instances_complete(), 1, q(A whole vendor list) );
+
+    $info->{walk_status}{vrf_cv_if} = { complete => 0, reason => 'timeout' };
+    is( $info->vrf_instances_complete(),
+        0, q(A partial vendor interface walk may hide ports) );
+}
+
+sub vrf_instances_complete__mpls_rows_cv_walk_partial__is_1 : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_mpls_rows();
+    $info->{walk_status}{vrf_cv_name} = { complete => 0, reason => 'timeout' };
+    $info->{walk_status}{vrf_cv_if}   = { complete => 0, reason => 'timeout' };
+    is( $info->vrf_instances_complete(),
+        1, q(A vendor walk not used for the list does not count) );
+}
+
+# iol1: the address tables hold 10.40.0.1/24 on blue's port 3 only, and the
+# routes of both VRFs hold 10.40.0.0/24.
+sub vrf_subnets__overlap__restored_from_routes : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_mpls_rows();
+    my $pfx = '.1.3.6.1.2.1.4.32.1.5';
+    $info->{_new_ip_index}  = 1;
+    $info->{_new_ip_type}   = 1;
+    $info->{_new_ip_prefix} = 1;
+    $info->{store}{new_ip_index}  = { '1.4.10.40.0.1' => 3 };
+    $info->{store}{new_ip_type}   = { '1.4.10.40.0.1' => 'unicast' };
+    $info->{store}{new_ip_prefix}
+        = { '1.4.10.40.0.1' => "$pfx.3.1.4.10.40.0.0.24" };
+
+    my $hop = '2.0.0.1.4.0.0.0.0';
+    my %route
+        = ( "$NAME_IID{red}.1.4.10.40.0.0.24.$hop"  => [ 'local', 2 ],
+            "$NAME_IID{blue}.1.4.10.40.0.0.24.$hop" => [ 'local', 3 ], );
+    $info->{_vrf_l3vpn_rte_if}    = 1;
+    $info->{_vrf_l3vpn_rte_proto} = 1;
+    $info->{store}{vrf_l3vpn_rte_proto}
+        = { map { $_ => $route{$_}[0] } keys %route };
+    $info->{store}{vrf_l3vpn_rte_if}
+        = { map { $_ => $route{$_}[1] } keys %route };
+
+    cmp_deeply( $info->vrf_subnets('red')->{'10.40.0.0/24'},
+        superhashof( { ifindex => 2, sources => ['route'] } ),
+        q(Red's subnet comes back from its connected route) );
+    cmp_deeply( $info->vrf_subnets('blue')->{'10.40.0.0/24'},
+        superhashof( { ifindex => 3, sources => [ 'address', 'route' ] } ),
+        q(Blue's subnet is found both ways) );
+}
+
 1;

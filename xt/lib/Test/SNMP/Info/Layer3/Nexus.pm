@@ -243,6 +243,28 @@ sub vrf_instances_complete__context_map_partial__is_0 : Tests(1) {
   is($info->vrf_instances_complete(), 0, 'A partial context map walk');
 }
 
+sub vrf_instances__cisco_vrf_mib_rows__context_map_still_listed : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->clear_cache();
+  my $cache = _vrf_list_cache();
+  $cache->{_vrf_cv_name} = 1;
+  $cache->{_vrf_cv_if}   = 1;
+  $cache->{store}{vrf_cv_name} = {1 => 'amber'};
+  $cache->{store}{vrf_cv_if}   = {'1.2' => 'active'};
+  $info->cache($cache);
+  my $instances = $info->vrf_instances();
+  cmp_deeply([sort keys %$instances], [qw/blue default green grey red/],
+    'The context map lists; CISCO-VRF-MIB adds nothing');
+  is($instances->{red}{sources}{list}, 'CISCO-CONTEXT-MAPPING-MIB',
+    'The context map is the source');
+  ok(!exists $instances->{red}{sources}{members},
+    'CISCO-VRF-MIB holds no membership here');
+  ok(!exists $info->walk_status()->{vrf_cv_if},
+    'CISCO-VRF-MIB interfaces are not walked');
+}
+
 sub vrf_instances__mpls_rows_present__ignore_context_map : Tests(3) {
   my $test = shift;
   my $info = $test->{info};

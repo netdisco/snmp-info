@@ -127,6 +127,10 @@ sub _vrf_vendor_instances {
 
 sub _vrf_vendor_list_methods { return ('vrf_name'); }
 
+# Layer3::Cisco reads CISCO-VRF-MIB membership; Nexus lists from the
+# context map, which holds no ports
+sub _vrf_vendor_membership { return {}; }
+
 # Each VRF context serves only its own address rows, but ifTable and the
 # IPv6 neighbors of other VRFs' ports too
 sub _vrf_context_filters { return 1; }
