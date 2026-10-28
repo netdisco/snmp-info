@@ -2054,8 +2054,9 @@ sub bulkwalk_recovery {
 
 Some devices serve part of a feature only in non-default SNMP contexts.
 Cisco IOS serves each VLAN's forwarding table in that VLAN's context.
-SNMPv2c reaches a context by a community suffix (C<public@10>).  SNMPv3
-reaches it by a context name (C<vlan-10>).
+SNMPv2c reaches a context by a community suffix (C<public@10>), or on
+Extreme VOSS by a vrfid suffix (C<public::1>).  SNMPv3 reaches it by a
+context name (C<vlan-10>).
 
 To read such a feature:
 

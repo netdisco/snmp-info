@@ -1194,19 +1194,27 @@ sub _vrf_internal_instance { return 0; }
 
 # The VRF context this session reads: the SNMPv3 Context or community
 # suffix _walk_context() finds, else, over SNMPv1 or SNMPv2c only, the
-# context the device maps the session's community to. '' is the default
+# context the device maps the session's community to. A class whose device
+# ignores a community suffix has the suffix skipped. '' is the default
 # context, including when the device cannot say.
 sub _vrf_session_context {
     my $vrf = shift;
 
-    my $context = $vrf->_walk_context();
-    return $context if length $context;
     my $version = ( $vrf->session() || {} )->{Version};
-    return '' if defined $version and $version eq '3';
+    my $is_v3   = defined $version && $version eq '3';
+    if ( $is_v3 or $vrf->_vrf_community_suffix_is_context() ) {
+        my $context = $vrf->_walk_context();
+        return $context if length $context;
+    }
+    return '' if $is_v3;
 
     my $mapped = $vrf->_vrf_community_context();
     return defined $mapped ? $mapped : '';
 }
+
+# True where the device serves a context for a community suffix (X@base).
+# A class whose device ignores the suffix returns 0.
+sub _vrf_community_suffix_is_context { return 1; }
 
 # The context the device maps the session's community to: a name, '' for
 # the default context, or undef when the class cannot tell. A class whose
@@ -1710,13 +1718,16 @@ The SNMPv3 Context.
 
 Over SNMPv1 or SNMPv2c, the part of the community beyond the
 constructor's C<Community> and an C<@>, on either side (C<public@red>,
-C<red@public>).
+C<red@public>). Not where the device ignores the suffix and serves the
+default context (L<SNMP::Info::Layer3::Extreme> on VOSS); there item 3
+decides.
 
 =item 3.
 
 Over SNMPv1 or SNMPv2c, the context the device maps the community to,
 where the class can read that mapping from the device
-(L<SNMP::Info::Layer3::Nexus>, L<SNMP::Info::Layer3::Extreme> on VOSS).
+(L<SNMP::Info::Layer3::Nexus>, L<SNMP::Info::Layer3::Extreme> on VOSS,
+where a C<community::vrfid> community such as C<public::1> reaches a VRF).
 
 =back
 
@@ -1926,6 +1937,14 @@ C<_vrf_community_context> returns the context the device maps an SNMPv1
 or SNMPv2c session's community to: a name, C<''> for the default
 context, or undef when the class cannot tell
 (L<SNMP::Info::Layer3::Nexus>).
+
+=item Community suffixes
+
+C<_vrf_community_suffix_is_context> returns false where the device
+ignores a community suffix such as C<public@vrf1> and serves the default
+context. The session's context then comes from
+C<_vrf_community_context> only (L<SNMP::Info::Layer3::Extreme>). The base
+returns true.
 
 =back
 

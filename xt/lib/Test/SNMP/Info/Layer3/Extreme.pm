@@ -1409,20 +1409,44 @@ sub context_kinds__vrf__voss : Tests(2) {
   is($info->context_kinds('stp'), undef, 'No other feature has one');
 }
 
-sub snmp_context__vrf__voss_v3_context_name : Tests(6) {
+sub snmp_context__voss_red__v2c_colon_vrfid : Tests(2) {
   my $test = shift;
   my $info = _use_cache($test, _voss_default_cache());
 
   cmp_deeply(scalar $info->snmp_context('vrf', 'red'),
-    {kind => 'vrf', id => 'red', v2c => undef, v3 => 'vrf1'},
-    'The SNMPv3 context is rcVrfContextName; v2c is site configuration');
-  is(($info->snmp_context('vrf', 'MgmtRouter') || {})->{v3}, 'vrf512',
-    'MgmtRouter has one too');
+    {kind => 'vrf', id => 'red', v2c => '%s::1', v3 => 'vrf1'},
+    'The v2c form is community::vrfid; v3 is rcVrfContextName');
+  is(sprintf($info->snmp_context('vrf', 'red')->{v2c}, 'public'),
+    'public::1', 'The form fills in the community');
+}
+
+sub snmp_context__voss_mgmt__v2c_colon_512 : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_default_cache());
+
+  my $context = $info->snmp_context('vrf', 'MgmtRouter') || {};
+  is($context->{v2c}, '%s::512', 'MgmtRouter is vrfid 512');
+  is($context->{v3}, 'vrf512', 'Its SNMPv3 context is vrf512');
+}
+
+sub snmp_context__voss_default__nothing : Tests(4) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_default_cache());
+
   is($info->snmp_context('vrf', 'default'), undef, 'default has none');
   is($info->snmp_context('vrf', 'GlobalRouter'), undef,
     'Nor GlobalRouter, which is default');
   is($info->snmp_context('vrf', 'purple'), undef, 'Nor an unlisted name');
   is($info->snmp_context('vlan', 41), undef, 'Another kind has none');
+}
+
+sub snmp_context__xos__unchanged : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  cmp_deeply($info->snmp_context('vrf', 'red'),
+    {kind => 'vrf', id => 'red', v2c => undef, v3 => 'red'},
+    'ExtremeXOS stays SNMPv3 only');
 }
 
 sub vrf_instances__voss : Tests(7) {
@@ -1439,7 +1463,7 @@ sub vrf_instances__voss : Tests(7) {
       listed_by => 'device',
       sources   => {list => 'RAPID-CITY', l3_isid => 'RAPID-CITY',
         members => 'RAPID-CITY'},
-      contexts  => [{kind => 'vrf', id => 'red', v2c => undef,
+      contexts  => [{kind => 'vrf', id => 'red', v2c => '%s::1',
         v3 => 'vrf1'}],
     }), 'red, its I-SID and its context');
   cmp_deeply([map { $instances->{$_}{l3_isid} } qw/blue green grey/],
@@ -1887,6 +1911,68 @@ sub vrf_neighbors__voss_mapped_community_red__default_refused : Tests(2) {
   is($info->vrf_neighbors(q(default)), undef, q(default is refused over red));
   like($info->error(), qr/default context.*context 'vrf1'/s,
     q(The error names the session's context));
+}
+
+sub _vrf_session_context__voss_colon_community__vrf1 : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_community($info, 'public::1');
+  is($info->_vrf_session_context(), 'vrf1',
+    'The one row the context serves names the context');
+}
+
+sub _vrf_session_context__voss_at_suffix__ignored : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_default_cache());
+
+  _enter_community($info, 'public@vrf1');
+  is($info->_walk_context(), 'vrf1', 'The suffix parses as a context');
+  is($info->_vrf_session_context(), q(),
+    'The default context rows win over the suffix');
+}
+
+sub vrf_neighbors__voss_colon_community_red__reads_red : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_community($info, 'public::1');
+  my $rows = $info->vrf_neighbors('red');
+  cmp_deeply(_address_list($rows),
+    [sort '2089 10.100.1.10', '2091 10.101.1.10',
+      '2089 ' . _v6('2001:db8:1001:0:0:0:0:16')],
+    'The same hosts as over the SNMPv3 context');
+  is($info->error(), undef, 'No error');
+}
+
+sub vrf_instances__voss_colon_community__refused : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_community($info, 'public::1');
+  is($info->vrf_instances(), undef, 'The list is refused over red');
+  like($info->error(), qr/only the default context.*context 'vrf1'/s,
+    'The error names the default context and the session\'s');
+}
+
+sub vrf_neighbors__voss_colon_community_red__default_refused : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_community($info, q(public::1));
+  is($info->vrf_neighbors(q(default)), undef, q(default is refused over red));
+  like($info->error(), qr/default context.*context 'vrf1'/s,
+    q(The error names the session's context));
+}
+
+sub i_vrf__voss_colon_community_red__red_ports : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _voss_red_cache());
+
+  _enter_community($info, q(public::1));
+  cmp_deeply(scalar $info->i_vrf(), {2089 => 'red', 2091 => 'red'},
+    q(red's VLANs, as over the SNMPv3 context));
+  is($info->error(), undef, q(No error));
 }
 
 1;

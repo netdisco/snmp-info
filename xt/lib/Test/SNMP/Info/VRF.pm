@@ -474,6 +474,21 @@ sub _vrf_session_context__hook_undef__empty : Tests(2) {
     q(The base role never maps a community));
 }
 
+sub _vrf_session_context__suffix_not_context__asks_class : Tests(3) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::NoSuffixHook',
+    ['SNMP::Info::VRF'],
+    _vrf_community_suffix_is_context => sub { 0 },
+    _vrf_community_context           => sub { 'blue' });
+  $test->_enter_context($info);
+  is($info->_walk_context(), 'red', q(The suffix names a context));
+  is($info->_vrf_session_context(), 'blue',
+    q(The class's mapping answers, not the suffix));
+  is($test->{info}->_vrf_community_suffix_is_context(), 1,
+    q(The base role trusts a suffix));
+}
+
 my %BUILT_PACKAGE;
 
 # Builds an object of a test-local package on the same mock session the

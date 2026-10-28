@@ -1240,8 +1240,8 @@ sub _snmp_context {
     return { kind => 'vrf', id => $id, v2c => undef, v3 => $id };
 }
 
-# VOSS binds a v2c community to a context by site configuration, so only
-# the v3 form is known. vrfid 0, GlobalRouter, is the default context.
+# VOSS reads a v2c community of the form community::vrfid in that VRF's
+# context. vrfid 0, GlobalRouter, is the default context.
 sub _voss_snmp_context {
     my ( $extreme, $id ) = @_;
 
@@ -1252,7 +1252,20 @@ sub _voss_snmp_context {
     return unless defined $vrfid;
     my $context = SNMP::Info::VRF::_vrf_text( $contexts->{$vrfid} );
     return unless defined $context;
-    return { kind => 'vrf', id => $id, v2c => undef, v3 => $context };
+    return {
+        kind => 'vrf',
+        id   => $id,
+        v2c  => "%s::$vrfid",
+        v3   => $context
+    };
+}
+
+# VOSS serves a community with an @ suffix from the default context, so the
+# suffix never names the session's context.
+sub _vrf_community_suffix_is_context {
+    my $extreme = shift;
+
+    return $extreme->_voss_vrf_context() ? 0 : 1;
 }
 
 # The context a VOSS VRF context's own rcVrfConfigTable row names. A VRF
@@ -1853,40 +1866,25 @@ default virtual router is the default context, so C<default> and an
 empty name get nothing.
 
 On VOSS, for a name C<vrf_instances()> lists returns C<< { kind =E<gt>
-'vrf', id =E<gt> $name, v2c =E<gt> undef, v3 =E<gt> $context } >>.
-C<$context> is the VRF's C<rcVrfContextName>, such as C<vrf1>. C<default>,
-which is C<GlobalRouter>, and a name the device does not list get
-nothing.
+'vrf', id =E<gt> $name, v2c =E<gt> '%s::$vrfid', v3 =E<gt> $context } >>.
+C<$vrfid> is the VRF's C<rcVrfConfigTable> index. For vrfid 1,
+C<public> becomes C<public::1>. C<$context> is the VRF's C<rcVrfContextName>, such as
+C<vrf1>. C<default>, which is C<GlobalRouter>, and a name the device does
+not list get nothing.
 
-C<v2c> is undef on both:
+On ExtremeXOS C<v2c> is undef. The ExtremeXOS user guide documents an
+SNMPv2c read community of the form C<vr_name@community_name> for a user
+virtual router. That form is unverified, so it is not offered as C<v2c>.
+If you can confirm it on a device, please open an issue with a walk.
+SNMPv3 with the virtual router name as the context is verified; use it.
 
-=over
-
-=item *
-
-VOSS binds an SNMPv2c community to a context by site configuration, so
-there is no v2c form to offer. Do not add a C<@name> suffix to the
-community. The VRF readers take C<name> as the session's context (see
-L<SNMP::Info::VRF/"The session's context">), so C<vrf_instances()>
-returns nothing, and the readers accept the session only for the VRF
-whose C<rcVrfContextName> is C<name>. The device answers such a
-community from the default context, so those rows would be read as that
-VRF's.
-
-=item *
-
-The ExtremeXOS user guide documents an SNMPv2c read community of the form
-C<vr_name@community_name> for a user virtual router. That form is
-unverified, so it is not offered as C<v2c>. If you can confirm it on a
-device, please open an issue with a walk. SNMPv3 with the virtual router
-name as the context is verified; use it.
-
-=back
-
-A VOSS SNMPv2c session on a site-mapped community reads as that VRF. A
-VRF context serves only its own C<rcVrfConfigTable> row, and the VRF
-readers take the context from that row. The default context serves every
-row, so a session there reads as the default context.
+A VOSS SNMPv2c community with an C<@> suffix (C<public@vrf1>) is served
+from the default context, so the VRF readers do not take the suffix as
+the session's context. A VOSS session on a C<community::vrfid> community
+reads as that VRF: a VRF context serves only its own C<rcVrfConfigTable>
+row, and the VRF readers take the context from that row. The default
+context serves every row, so a session there reads as the default
+context.
 
 =item $extreme->peth_port_power()
 
