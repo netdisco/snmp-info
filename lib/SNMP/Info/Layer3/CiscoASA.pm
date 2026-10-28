@@ -44,7 +44,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.974000';
+$VERSION = '3.983000';
 
 %MIBS = ( %SNMP::Info::Layer3::MIBS, %SNMP::Info::CiscoStats::MIBS, );
 
@@ -90,9 +90,8 @@ sub i_description {
     my $i_descr = $self->orig_i_description($partial) || {};
 
     foreach my $ifindex ( keys %$i_descr ) {
-        $i_descr->{$ifindex} =~ /'(.*)'/;
         $i_descr->{$ifindex} = $1
-            if defined $1;
+            if $i_descr->{$ifindex} =~ /'(.*)'/;
     }
 
     return $i_descr;
@@ -142,6 +141,10 @@ sub parse_inetaddress {
 
     return;
 }
+
+# IPV6-MIB rows are keyed with an octet count, which parse_inetaddress()
+# above would misread.
+sub _i6_addr_column { return }
 
 1;
 __END__
@@ -211,13 +214,17 @@ Overrides base mac function in L<SNMP::Info::Layer3>.
 
 Overrides base interface description function in L<SNMP::Info> to return the
 configured interface name instead of "Adaptive Security Appliance
-'$configured interface name' interface".
+'$configured interface name' interface". Descriptions without a quoted
+name are returned unchanged.
 
 =item $asa->parse_inetaddress()
 
 Overrides base IPv6 method L<SNMP::Info::IPv6/parse_inetaddress> because Cisco ASA
 doesn't conform to RFC4001 4.1 because it is missing the number of octets.
 Instead it is indexed like the CISCO-IETF-IP-MIB.
+
+For the same reason, the IPv6 address methods do not fall back to
+F<IPV6-MIB> on Cisco ASA.
 
 =back
 

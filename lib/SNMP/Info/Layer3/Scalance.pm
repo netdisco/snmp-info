@@ -53,7 +53,7 @@ use SNMP::Info::MAU;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %PORTSTAT, %MODEL_MAP, %MUNGE);
 
-$VERSION = '3.974000';
+$VERSION = '3.983000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -153,10 +153,12 @@ sub lldp_ip {
     my %result;
     my $remotes = $scalance->lldp_rem_sysname();
     foreach my $port ( keys %$remotes) {
-	my $ip = gethostbyname($remotes->{$port});
-	if ($ip) {
-	    $result{$port} = inet_ntoa($ip);
-	}
+        if (defined $remotes->{$port}) {
+            my $ip = gethostbyname($remotes->{$port});
+            if ($ip) {
+                $result{$port} = inet_ntoa($ip);
+            }
+        }
     }
     return \%result
 };

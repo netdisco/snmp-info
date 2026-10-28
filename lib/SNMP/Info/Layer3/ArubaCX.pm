@@ -46,18 +46,20 @@ use SNMP::Info::IEEE802_Bridge;
   agg_ports
 /;
 
-our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
+our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MODEL_MAP, %MUNGE);
 
-$VERSION = '3.974000';
+$VERSION = '3.983000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     %SNMP::Info::IEEE802_Bridge::MIBS,
+    'ARUBAWIRED-CIPT-MIB' => 'arubaWiredCiptClientIpAddress',
     'ARUBAWIRED-FAN-MIB' => 'arubaWiredFanName',
     'ARUBAWIRED-VSF-MIB' => 'arubaWiredVsfTrapEnable',
     'ARUBAWIRED-POE-MIB' => 'arubaWiredPoePethPsePortAveragePower',
     'ARUBAWIRED-POWERSUPPLY-MIB' => 'arubaWiredPSUName',
+    'ARUBAWIRED-PM-MIB' => 'arubaWiredPmXcvrDescription',
 );
 
 %GLOBALS = (
@@ -81,13 +83,26 @@ $VERSION = '3.974000';
     'psu_types' => 'arubaWiredPSUProductName',
     'psu_states' => 'arubaWiredPSUState',
     'vsf_prod_names' => 'arubaWiredVsfMemberProductName',
+    'cipt_addr_type' => 'arubaWiredCiptClientIpAddrType',
+    'cipt_addr' => 'arubaWiredCiptClientIpAddress',
+    'cipt_ifindex' => 'arubaWiredCiptClientPortIfIndex',
     'raw_ad_lag_ports' => 'dot3adAggPortListPorts',  # unmunged raw data
+    'pm_xcvr_port'    => 'arubaWiredPmXcvrPortDesc',
+    'pm_xcvr_descr'   => 'arubaWiredPmXcvrDescription',
+    'pm_xcvr_product' => 'arubaWiredPmXcvrProductNum',
+    'pm_xcvr_serial'  => 'arubaWiredPmXcvrSerialNum',
+    'pm_xcvr_type'    => 'arubaWiredPmXcvrType',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
     %SNMP::Info::IEEE802_Bridge::MUNGE,
+);
+
+# Product codes reported by ENTITY-MIB or the product OID.
+%MODEL_MAP = (
+    'JL719C' => '8360-48Y6C v2',
 );
 
 sub _at_pbb_one {
@@ -144,8 +159,138 @@ sub model {
     my $id = $cx->id();
     my $translated_id = &SNMP::translateObj($id) || $id;
     $translated_id =~ s/arubaWiredSwitch//i;
-    return $cx->stack_info() || $model->{1} || $translated_id;
+    my $name = $cx->stack_info() || $model->{1} || $translated_id;
+    return defined $MODEL_MAP{$name} ? $MODEL_MAP{$name} : $name;
 }
+
+# Keep client tracking rows separate from the standard neighbour-table indexes.
+# InetAddress is an OCTET STRING; check its length against the address type.
+sub _cipt_clients {
+    my ($cx, $family, $partial) = @_;
+    my $types = $cx->cipt_addr_type() || {};
+    my $addrs = $cx->cipt_addr() || {};
+    my $ports = $cx->cipt_ifindex() || {};
+    my %clients;
+    foreach my $idx (keys %$types) {
+        my $type = $types->{$idx};
+        next unless defined $type;
+        next unless ($family == 1 && ($type eq '1' || $type eq 'ipv4'))
+            || ($family == 2 && ($type eq '2' || $type eq 'ipv6'));
+        next unless $idx =~ /^6\.((?:\d+\.){5}\d+)\.(\d+)\.(\d+)$/;
+        my ($mac_index, $vlan, $ip_index) = ($1, $2, $3);
+        my @mac = split /\./, $mac_index;
+        next if grep { $_ > 255 } @mac;
+        next if ($mac[0] & 1) || !grep { $_ } @mac;
+        next unless $vlan >= 1 && $vlan <= 4094 && $ip_index > 0;
+        my $addr = $addrs->{$idx};
+        next unless defined $addr && length($addr) == ($family == 1 ? 4 : 16);
+        my $port = $ports->{$idx};
+        next unless defined $port && $port =~ /^\d+$/ && $port > 0;
+        my $row = "cipt.$idx";
+        next if defined $partial && $row !~ /^\Q$partial\E(?:\.|$)/;
+        $clients{$row} = {
+            mac => join(':', map { sprintf '%02x', $_ } @mac),
+            addr => SNMP::Info::munge_inetaddress($addr),
+            port => $port,
+        };
+    }
+    return \%clients;
+}
+
+sub _cipt_merge {
+    my ($cx, $base, $family, $field, $partial) = @_;
+    my %result = %{ $base || {} };
+    my $clients = $cx->_cipt_clients($family, $partial);
+    $result{$_} = $clients->{$_}{$field} for keys %$clients;
+    return \%result;
+}
+
+sub at_paddr {
+    my ($cx, $partial) = @_;
+    return $cx->_cipt_merge($cx->SUPER::at_paddr($partial), 1, 'mac', $partial);
+}
+
+sub at_netaddr {
+    my ($cx, $partial) = @_;
+    return $cx->_cipt_merge($cx->SUPER::at_netaddr($partial), 1, 'addr', $partial);
+}
+
+sub ipv6_n2p_mac {
+    my ($cx, $partial) = @_;
+    return $cx->_cipt_merge($cx->SUPER::ipv6_n2p_mac(), 2, 'mac', $partial);
+}
+
+sub ipv6_n2p_addr {
+    my ($cx, $partial) = @_;
+    return $cx->_cipt_merge($cx->SUPER::ipv6_n2p_addr(), 2, 'addr', $partial);
+}
+
+sub ipv6_n2p_if {
+    my ($cx, $partial) = @_;
+    return $cx->_cipt_merge($cx->SUPER::ipv6_n2p_if(), 2, 'port', $partial);
+}
+
+# Transceivers are absent from ENTITY-MIB; add one module row per
+# arubaWiredPmXcvrTable row, indexed above any real entPhysicalIndex.
+my $XCVR_BASE = 1_000_000_000;
+
+sub _xcvr_entities {
+    my $cx = shift;
+    my $descr = $cx->pm_xcvr_descr() || {};
+    return {} unless %$descr;
+    my $real = $cx->SUPER::e_index() || {};
+    my $class = $cx->SUPER::e_class() || {};
+    my $name = $cx->SUPER::e_name() || {};
+    my $port = $cx->pm_xcvr_port() || {};
+    my $product = $cx->pm_xcvr_product() || {};
+    my $serial = $cx->pm_xcvr_serial() || {};
+    my $type = $cx->pm_xcvr_type() || {};
+    my ($chassis) = sort { $a <=> $b }
+        grep { ($class->{$_} // '') eq 'chassis' } keys %$class;
+    my %port_entity = map { $name->{$_} => $_ }
+        grep { ($class->{$_} // '') eq 'port' && defined $name->{$_} }
+        keys %$class;
+    my %rows;
+    foreach my $ifindex (grep { /^\d+$/ } keys %$descr) {
+        my $idx = $XCVR_BASE + $ifindex;
+        next if exists $real->{$idx};
+        my $port_name = $port->{$ifindex} // $ifindex;
+        $rows{$idx} = {
+            e_index => $idx,
+            e_class => 'module',
+            e_descr => $descr->{$ifindex},
+            e_name => "Transceiver $port_name",
+            e_model => $product->{$ifindex},
+            e_serial => $serial->{$ifindex},
+            e_type => $type->{$ifindex},
+            e_fru => 'true',
+            e_parent => $port_entity{$port_name} // $chassis // 0,
+        };
+    }
+    return \%rows;
+}
+
+sub _xcvr_merge {
+    my ($cx, $method, $partial) = @_;
+    my $super = "SUPER::$method";
+    return $cx->$super($partial) if defined $partial;
+    my $rows = $cx->_xcvr_entities();
+    return $cx->$super() unless %$rows;
+    my $base = $cx->$super();
+    my %result = %{ $base || {} };
+    $result{$_} = $rows->{$_}{$method} for keys %$rows;
+    return \%result;
+}
+
+sub e_index  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_index', $p) }
+sub e_class  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_class', $p) }
+sub e_descr  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_descr', $p) }
+sub e_name   { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_name', $p) }
+sub e_model  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_model', $p) }
+sub e_serial { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_serial', $p) }
+sub e_type   { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_type', $p) }
+sub e_fru    { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_fru', $p) }
+sub e_parent { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_parent', $p) }
 
 sub os {
     return "arubaos-cx";
@@ -265,6 +410,8 @@ Subclass for devices running ArubaOS-CX
 
 =over
 
+=item F<ARUBAWIRED-CIPT-MIB>
+
 =item F<ARUBAWIRED-FAN-MIB>
 
 =item F<ARUBAWIRED-VSF-MIB>
@@ -272,6 +419,8 @@ Subclass for devices running ArubaOS-CX
 =item F<ARUBAWIRED-POE-MIB>
 
 =item F<ARUBAWIRED-POWERSUPPLY-MIB>
+
+=item F<ARUBAWIRED-PM-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -297,6 +446,8 @@ Example return value: '6300M (stack of 2)'. Will return undef when VSF is not
 supported or when the device is VSF standalone.
 
 =item $cx->model()
+
+Known product codes are translated to readable model names.
 
 Returns L<stack_info()> if defined, otherwise will fall back to returning the
 model from C<entPhysicalModelName.1>; if that's also not set, will use
@@ -334,6 +485,31 @@ See documentation in L<SNMP::Info::IEEE802_Bridge> for details.
 
 See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
 
+=head2 Client IP tracking
+
+=over
+
+=item $cx->at_paddr()
+
+=item $cx->at_netaddr()
+
+Add IPv4 client tracking MAC/IP pairs to the inherited ARP tables.
+
+=item $cx->ipv6_n2p_mac()
+
+=item $cx->ipv6_n2p_addr()
+
+=item $cx->ipv6_n2p_if()
+
+Add IPv6 client tracking MAC/IP/interface rows to the inherited neighbour tables.
+Client tracking must already be enabled on the switch. These methods only read
+its data; they do not enable tracking. Unsupported or empty tracking tables
+leave the inherited results intact. Tracking row keys use a C<cipt.> prefix
+followed by the MAC/VLAN/IP index, preserving multiple addresses for a client.
+Malformed rows and unsupported address types are omitted.
+
+=back
+
 =head1 TABLE ENTRIES
 
 These are methods that return tables of information in the form of a reference
@@ -348,9 +524,61 @@ Power supplied by PoE ports, in milliwatts.
 
 =back
 
+=head2 Transceivers
+
+Columns of C<ARUBAWIRED-PM-MIB::arubaWiredPmXcvrTable>, indexed by ifIndex.
+
+=over
+
+=item $cx->pm_xcvr_port()
+
+(C<arubaWiredPmXcvrPortDesc>)
+
+=item $cx->pm_xcvr_descr()
+
+(C<arubaWiredPmXcvrDescription>)
+
+=item $cx->pm_xcvr_product()
+
+(C<arubaWiredPmXcvrProductNum>)
+
+=item $cx->pm_xcvr_serial()
+
+(C<arubaWiredPmXcvrSerialNum>)
+
+=item $cx->pm_xcvr_type()
+
+(C<arubaWiredPmXcvrType>)
+
+=back
+
 =head2 Overrides
 
 =over
+
+=item $cx->e_index()
+
+=item $cx->e_class()
+
+=item $cx->e_descr()
+
+=item $cx->e_name()
+
+=item $cx->e_model()
+
+=item $cx->e_serial()
+
+=item $cx->e_type()
+
+=item $cx->e_fru()
+
+=item $cx->e_parent()
+
+Add one C<module> row per transceiver to the C<ENTITY-MIB> data, indexed
+1000000000 plus the port ifIndex. The parent is the C<port> entity whose
+name matches C<arubaWiredPmXcvrPortDesc>, else the first chassis, else 0.
+A row whose index is already a real C<entPhysicalIndex> is skipped. Partial
+fetches and devices without transceiver data return the inherited result.
 
 =item C<agg_ports>
 

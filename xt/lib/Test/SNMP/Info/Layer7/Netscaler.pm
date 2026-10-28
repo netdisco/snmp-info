@@ -57,4 +57,21 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
+sub os_ver : Tests(7) {
+  my $test = shift;
+
+  for my $case (
+      ['NetScaler NS14.1: Build 72.61.nc, Date: Sep 2026', '14.1-72.61', 'release and build'],
+      ['NetScaler NS9.3: Build 55.6.nc, Date: ', '9.3-55.6', 'older release and build'],
+      ['NetScaler ns14.1: build 72.61.nc', '14.1-72.61', 'case-insensitive build format'],
+      ['NetScaler NS14.1: Build 72.nc', '14.1-72', 'integer build'],
+      ['NetScaler NS14.1: Date: Sep 2026', '14.1', 'release-only fallback'],
+      ['Unrecognized version string', 'Unrecognized version string', 'unrecognized input unchanged'],
+      [undef, '', 'missing version returns empty string'],
+  ) {
+      $test->{info}->{'_build_ver'} = $case->[0];
+      is($test->{info}->os_ver(), $case->[1], $case->[2]);
+  }
+}
+
 1;

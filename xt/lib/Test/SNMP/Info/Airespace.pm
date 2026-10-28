@@ -223,4 +223,75 @@ sub i_up_admin : Tests(2) {
     $expected, q(Interface types have expected values));
 }
 
+sub _cache_mobile_stations {
+  my $test = shift;
+
+  # bsnMobileStationTable is indexed by client MAC; the management client
+  # reports VLAN 0 and one client has no interface name
+  $test->{info}->cache({
+    '_airespace_sta_vlan' => 1,
+    '_airespace_sta_if'   => 1,
+    'store'               => {
+      'airespace_sta_vlan' => {
+        '0.19.2.214.36.82' => 422,
+        '0.19.2.214.36.83' => 422,
+        '0.19.2.214.36.84' => 422,
+        '0.19.2.214.36.85' => 425,
+        '0.19.2.214.36.86' => 425,
+        '0.19.2.214.36.87' => 0,
+      },
+      'airespace_sta_if' => {
+        '0.19.2.214.36.82' => 'stv-dhcpa',
+        '0.19.2.214.36.83' => 'stv-dhcpa',
+        '0.19.2.214.36.84' => 'stv-other',
+        '0.19.2.214.36.85' => 'stv-guest',
+        '0.19.2.214.36.86' => ' ',
+        '0.19.2.214.36.87' => 'management',
+      },
+    },
+  });
+}
+
+sub qb_fw_vlan : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'qb_fw_vlan');
+  $test->_cache_mobile_stations;
+
+  my $expected = {
+    '0.19.2.214.36.82' => 422,
+    '0.19.2.214.36.83' => 422,
+    '0.19.2.214.36.84' => 422,
+    '0.19.2.214.36.85' => 425,
+    '0.19.2.214.36.86' => 425,
+  };
+
+  cmp_deeply($test->{info}->qb_fw_vlan(),
+    $expected, q(Client VLANs are keyed like fw_mac and omit VLAN 0));
+}
+
+sub airespace_vlan_names : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'airespace_vlan_names');
+  $test->_cache_mobile_stations;
+
+  cmp_deeply($test->{info}->airespace_vlan_names(),
+    {422 => 'stv-dhcpa', 425 => 'stv-guest'},
+    q(Most reported name wins, blank names and VLAN 0 are skipped));
+
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_airespace_sta_vlan' => 1,
+    '_airespace_sta_if'   => 1,
+    'store'               => {
+      'airespace_sta_vlan' => {'0.1.2.3.4.5' => 10, '0.1.2.3.4.6' => 10},
+      'airespace_sta_if'   =>
+        {'0.1.2.3.4.5' => 'zulu', '0.1.2.3.4.6' => 'alpha'},
+    },
+  });
+  cmp_deeply($test->{info}->airespace_vlan_names(),
+    {10 => 'alpha'}, q(A tie between names goes to the one sorting first));
+}
+
 1;

@@ -70,16 +70,50 @@ sub layers : Tests(3) {
   is($test->{info}->layers(), undef, q(No data returns undef layers));
 }
 
-sub interfaces : Tests(1) {
+sub interfaces : Tests(4) {
   my $test = shift;
+
+  $test->{info}{'_i_index'}       = 1;
+  $test->{info}{'_i_description'} = 1;
+  $test->{info}{store}{i_index}   = {1 => 1, 2 => 2, 3 => 3};
+  $test->{info}{store}{i_description} = {
+    1 => 'D-Link Test Switch Port 1',
+    2 => 'D-Link Test Switch Port 2',
+    3 => 'Loopback1',
+  };
 
   my $expected_data = {
     1 => 'One',
     2 => 'Two',
+    3 => 'Loopback1',
   };
 
   cmp_deeply($test->{info}->interfaces(),
-    $expected_data, 'Call to interfaces() returns ifName');
+    $expected_data, 'Call to interfaces() prefers ifName, else ifDescr');
+
+  $test->{info}{store}{i_name} = {1 => 'One', 2 => '', 3 => '  '};
+  $expected_data = {
+    1 => 'One',
+    2 => 'D-Link Test Switch Port 2',
+    3 => 'Loopback1',
+  };
+
+  cmp_deeply($test->{info}->interfaces(),
+    $expected_data, 'Blank ifName falls back to ifDescr');
+
+  delete $test->{info}{'_i_name'};
+  delete $test->{info}{store}{i_name};
+  $expected_data = {
+    1 => 'D-Link Test Switch Port 1',
+    2 => 'D-Link Test Switch Port 2',
+    3 => 'Loopback1',
+  };
+
+  cmp_deeply($test->{info}->interfaces(),
+    $expected_data, 'No ifName returns ifDescr for every port');
+
+  $test->{info}->clear_cache();
+  is($test->{info}->interfaces(), undef, 'No data returns undef interfaces');
 }
 
 1;

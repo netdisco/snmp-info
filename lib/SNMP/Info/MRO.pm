@@ -4,7 +4,7 @@ use warnings;
 use strict;
 
 our ($VERSION);
-$VERSION = '3.974000';
+$VERSION = '3.983000';
 
 use PPI;
 use Class::ISA;  ## no critic
@@ -375,7 +375,7 @@ sub print_superclasses {
 
 =head1 AUTHOR
 
-Oliver Gorwits <oliver@cpan.org>
+Oliver Gorwits <oliver@co-ding.org>
 
 =head1 COPYRIGHT AND LICENSE
 

@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.974000';
+$VERSION = '3.983000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -155,7 +155,7 @@ sub layers {
 sub os {
     my $aruba = shift;
     my %osmap = ( 'alcatel-lucent' => 'aos-w', );
-    return $osmap{ $aruba->vendor() } || 'airos';
+    return $osmap{ $aruba->vendor() } || 'arubaos';
 }
 
 sub vendor {
@@ -912,7 +912,7 @@ sub e_class {
 	if ( $iid eq 0 ) {
 	    $e_class{$iid} = 'chassis';
 	}
-	elsif ( $iid =~ /\d+/ ) {
+	elsif ( $iid =~ /^\d+$/ ) {
 	    $e_class{$iid} = 'module';
 	}
 
@@ -1464,7 +1464,7 @@ Returns 'aruba'
 
 =item $aruba->os()
 
-Returns 'airos'
+Returns 'arubaos' for Aruba devices and 'aos-w' for Alcatel-Lucent devices.
 
 =item $aruba->os_ver()
 

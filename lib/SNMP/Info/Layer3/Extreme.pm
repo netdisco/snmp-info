@@ -45,7 +45,7 @@ use SNMP::Info::EDP;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.974000';
+$VERSION = '3.983000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -101,13 +101,19 @@ $VERSION = '3.974000';
     'stp_i_root_port' => 'extremeStpDomainRootPortIfIndex',
     'stp_i_priority'  => 'extremeStpDomainBridgePriority',
     'ex_stp_i_mac'    => 'extremeStpDomainBridgeId',
+    'ex_stp_i_name'   => 'extremeStpDomainStpdName',
+    'ex_stp_i_tag'    => 'extremeStpDomainStpdTag',
     # EXTREME-STP-EXTENSIONS-MIB::extremeStpPortTable
     'stp_p_priority' => 'extremeStpPortPortPriority',
     'stp_p_state'    => 'extremeStpPortPortState',
+    'stp_p_enable'   => 'extremeStpPortStpEnabled',
     'stp_p_cost'     => 'extremeStpPortPathCost',
     'stp_p_root'     => 'extremeStpPortDesignatedRoot',
     'stp_p_bridge'   => 'extremeStpPortDesignatedBridge',
     'stp_p_port'     => 'extremeStpPortDesignatedPort',
+    'ex_stp_p_mode'  => 'extremeStpPortPortMode',
+    # EXTREME-STP-EXTENSIONS-MIB::extremeStpVlanPortTable
+    'ex_stp_vlan_mask' => 'extremeStpVlanPortPortMask',
 );
 
 %MUNGE = (
@@ -167,6 +173,8 @@ sub os {
         return 'xos';
     }
 
+    return 'voss' if defined _voss_version($desc);
+
     return 'extremeware';
 }
 
@@ -177,6 +185,18 @@ sub os_ver {
     return unless defined $descr;
 
     if ( $descr =~ m/Version\s+([^ ]+)/i ) {
+        return $1;
+    }
+
+    return _voss_version($descr);
+}
+
+# VOSS / Fabric Engine sysDescr is "<model> (<a.b.c.d>[_build])"
+sub _voss_version {
+    my $descr = shift;
+    return unless defined $descr;
+
+    if ( $descr =~ m/^\S+\s+\((\d+(?:\.\d+){3})/ ) {
         return $1;
     }
 
@@ -377,11 +397,17 @@ sub _if2tag {
 # the VLAN interface.
 sub v_name {
     my $extreme = shift;
-    return $extreme->ex_vlan_descr();
+
+    my $names = $extreme->ex_vlan_descr() || {};
+    return $names if scalar keys %$names;
+    return $extreme->qb_v_name() || {};
 }
 
 sub v_index {
     my $extreme = shift;
+
+    my $names = $extreme->ex_vlan_descr() || {};
+    return $extreme->SUPER::v_index() unless scalar keys %$names;
     return $extreme->ex_vlan_id || $extreme->_if2tag();
 }
 
@@ -631,15 +657,101 @@ sub _extremeware_i_vlan_membership_untagged {
 # VLAN management.
 # See extreme-vlan.mib for a detailed description of
 # Extreme's use of ifStackTable and EXTREME-VLAN-MIB.
+# EXOS no longer has those tables, so it is managed through Q-BRIDGE-MIB.
+
+sub _has_vlan_encaps {
+    my $extreme   = shift;
+    my $encap_tag = $extreme->ex_vlan_encap_tag() || {};
+    return scalar keys %$encap_tag;
+}
 
 sub set_i_vlan {
     my $extreme = shift;
+    return $extreme->_qb_set_i_vlan( 0, @_ )
+        unless $extreme->_has_vlan_encaps();
     return $extreme->_extreme_set_i_vlan( 0, @_ );
 }
 
 sub set_i_pvid {
     my $extreme = shift;
+    return $extreme->_qb_set_i_vlan( 1, @_ )
+        unless $extreme->_has_vlan_encaps();
     return $extreme->_extreme_set_i_vlan( 1, @_ );
+}
+
+sub _qb_bridge_port {
+    my ( $extreme, $ifindex ) = @_;
+    my $bp_index = $extreme->bp_index() || {};
+    my %if_bp    = reverse %$bp_index;
+
+    my $bp = $if_bp{$ifindex};
+    $extreme->error_throw(
+        "ifIndex $ifindex is not a bridge port, so its VLANs cannot be set")
+        unless defined $bp;
+    return $bp;
+}
+
+sub _qb_port_in_list {
+    my ( $extreme, $method, $vlan_id, $bp ) = @_;
+    my $lists = $extreme->$method() || {};
+    my $list  = $lists->{$vlan_id}  || [];
+    return $list->[ $bp - 1 ];
+}
+
+sub _qb_port_is_tagged {
+    my ( $extreme, $vlan_id, $bp ) = @_;
+    return
+        unless $extreme->_qb_port_in_list( 'qb_v_egress', $vlan_id, $bp );
+    return !$extreme->_qb_port_in_list( 'qb_v_untagged', $vlan_id, $bp );
+}
+
+sub _qb_set_egress {
+    my ( $extreme, $vlan_id, $bp, $member ) = @_;
+    my $egress = $extreme->qb_v_egress() || {};
+
+    unless ( defined $egress->{$vlan_id} ) {
+        $extreme->error_throw(
+            "VLAN $vlan_id does not exist in dot1qVlanStaticEgressPorts; create it on the device first"
+        );
+        return;
+    }
+    my $portlist = $extreme->modify_port_list( [ @{ $egress->{$vlan_id} } ],
+        $bp - 1, $member );
+    return $extreme->set_qb_v_egress( $portlist, $vlan_id );
+}
+
+# Writing dot1qPvid moves the port's untagged membership to the new VLAN.
+# A VLAN already tagged on the port would stay tagged, leaving the port
+# with no untagged VLAN, so set_i_vlan removes the tag first.
+sub _qb_set_i_vlan {
+    my ( $extreme, $is_pvid, $vlan_id, $ifindex ) = @_;
+    my $bp = $extreme->_qb_bridge_port($ifindex);
+    return unless defined $bp;
+
+    if ( $extreme->_qb_port_is_tagged( $vlan_id, $bp ) ) {
+        if ($is_pvid) {
+            $extreme->error_throw(
+                "VLAN $vlan_id is tagged on ifIndex $ifindex and cannot also be its PVID; use set_i_vlan to make it the untagged VLAN"
+            );
+            return;
+        }
+        return unless $extreme->_qb_set_egress( $vlan_id, $bp, '0' );
+    }
+    return $extreme->set_qb_i_vlan( $vlan_id, $bp );
+}
+
+sub _qb_set_i_vlan_tagged {
+    my ( $extreme, $member, $vlan_id, $ifindex ) = @_;
+    my $bp = $extreme->_qb_bridge_port($ifindex);
+    return unless defined $bp;
+
+    if ( $extreme->_qb_port_in_list( 'qb_v_untagged', $vlan_id, $bp ) ) {
+        $extreme->error_throw(
+            "VLAN $vlan_id is untagged on ifIndex $ifindex; use set_i_vlan to change the untagged VLAN"
+        );
+        return;
+    }
+    return $extreme->_qb_set_egress( $vlan_id, $bp, $member );
 }
 
 # set_i_vlan implicitly turns off any encapsulation
@@ -721,6 +833,9 @@ sub _extreme_set_i_vlan {
 
 sub set_remove_i_vlan_tagged {
     my $extreme = shift;
+    return $extreme->_qb_set_i_vlan_tagged( '0', @_ )
+        unless $extreme->_has_vlan_encaps();
+
     my ( $vlan_id, $ifindex ) = @_;
     my $encap_tag = $extreme->ex_vlan_encap_tag();
 
@@ -749,6 +864,9 @@ sub set_remove_i_vlan_tagged {
 
 sub set_add_i_vlan_tagged {
     my $extreme = shift;
+    return $extreme->_qb_set_i_vlan_tagged( '1', @_ )
+        unless $extreme->_has_vlan_encaps();
+
     my ( $vlan_id, $ifindex ) = @_;
     my $encap_tag = $extreme->ex_vlan_encap_tag();
 
@@ -866,6 +984,206 @@ sub stp_p_stg_id {
     return $stp_p_stg_id;
 }
 
+# stp_p_state here is extremeStpPortTable, keyed <instance>.<ifIndex>, which
+# matches no bp_index key, so read BRIDGE-MIB directly.
+sub i_stp_state {
+    my $extreme = shift;
+    my $partial = shift;
+
+    my $bp_index    = $extreme->bp_index($partial);
+    my $stp_p_state = $extreme->dot1dStpPortState($partial);
+
+    my %i_stp_state;
+
+    foreach my $index ( keys %$stp_p_state ) {
+        my $state = $stp_p_state->{$index};
+        my $iid   = $bp_index->{$index};
+        next unless defined $iid;
+        next unless defined $state;
+        $i_stp_state{$iid} = $state;
+    }
+
+    return \%i_stp_state;
+}
+
+# Keeps the base from reporting the default tree: on EXOS the domains are
+# the trees, and VOSS serves forwarding on a blocked port under RSTP
+sub _stp_default_is_common { return 0; }
+
+# dot1dStpVersion: RSTP-MIB names 0 and 2 only, so 3 (MSTP) comes back bare
+my %ex_stp_version = (
+    0               => 'stp',
+    'stpCompatible' => 'stp',
+    2               => 'rstp',
+    'rstp'          => 'rstp',
+    3               => 'mstp',
+);
+
+sub _ex_stp_version {
+    my $extreme = shift;
+
+    my $version = $extreme->dot1dStpVersion();
+    return unless defined $version;
+    return $ex_stp_version{$version};
+}
+
+sub _ex_stp_pvst_instances {
+    my $extreme = shift;
+
+    my $modes = $extreme->ex_stp_p_mode() || {};
+    my %pvst;
+    foreach my $idx ( keys %$modes ) {
+        next unless ( $modes->{$idx} || '' ) eq 'pvstp';
+        my ($inst) = _ex_stpport_index($idx);
+        $pvst{$inst} = 1;
+    }
+    return \%pvst;
+}
+
+sub hasMSTP {
+    my $extreme = shift;
+    return ( $extreme->_ex_stp_version() || '' ) eq 'mstp' ? 1 : 0;
+}
+
+sub hasRSTP {
+    my $extreme = shift;
+    return ( $extreme->_ex_stp_version() || '' ) eq 'rstp' ? 1 : 0;
+}
+
+sub hasPVST {
+    my $extreme = shift;
+    return keys %{ $extreme->_ex_stp_pvst_instances() } ? 1 : 0;
+}
+
+sub hasSTP {
+    my $extreme = shift;
+
+    return 0 unless ( $extreme->_ex_stp_version() || '' ) eq 'stp';
+    my $names = $extreme->ex_stp_i_name() || {};
+    my $pvst  = $extreme->_ex_stp_pvst_instances();
+    return ( grep { !$pvst->{$_} } keys %$names ) ? 1 : 0;
+}
+
+sub stp_protocols {
+    my $extreme = shift;
+
+    my @protocols = grep {
+        my $method = 'has' . uc $_;
+        $extreme->$method();
+    } qw/stp rstp mstp pvst/;
+    return unless @protocols;
+    return \@protocols;
+}
+
+sub stp_trees {
+    my $extreme = shift;
+
+    return unless $extreme->_stp_default_context_ok();
+    return $extreme->{_stp_trees} if $extreme->{_stp_trees};
+
+    my $names = $extreme->ex_stp_i_name() || {};
+    return {} unless keys %$names;
+
+    my $tags  = $extreme->ex_stp_i_tag()  || {};
+    my $bids  = $extreme->ex_stp_i_mac()  || {};
+    my $roots = $extreme->stp_i_root()    || {};
+    my $pvst  = $extreme->_ex_stp_pvst_instances();
+    my $version = $extreme->_ex_stp_version() || '';
+    my $device_protocol
+        = ( keys %$names == 1 and length $version ) ? $version : undef;
+    my $measured = ( $extreme->os() || '' ) eq 'xos' ? 1 : 0;
+
+    my %trees;
+    foreach my $inst ( keys %$names ) {
+        my $tree = {
+            type           => 'domain',
+            id             => $inst,
+            name           => $names->{$inst},
+            protocol       => $pvst->{$inst} ? 'pvst'
+                : $version eq 'stp' ? 'stp'
+                : $device_protocol,
+            measured       => $measured,
+            ports_complete => 1,
+            contexts       => [ { kind => 'none' } ],
+            bridge => scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $bids->{$inst} ),
+            root => scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $roots->{$inst} ),
+        };
+        $tree->{vlan} = $tags->{$inst} if $tags->{$inst};
+        $trees{"domain.$inst"} = $tree;
+    }
+    $extreme->{_stp_trees} = \%trees;
+    return $extreme->{_stp_trees};
+}
+
+sub stp_tree_ports {
+    my $extreme  = shift;
+    my $tree_key = shift;
+
+    my $trees = $extreme->stp_trees() || {};
+    my $tree  = defined $tree_key ? $trees->{$tree_key} : undef;
+    unless ($tree) {
+        my $key = defined $tree_key ? $tree_key : 'undef';
+        $extreme->error_throw(
+            "SNMP::Info::Layer3::Extreme::stp_tree_ports() has no tree"
+                . " '$key'. Pass a key from stp_trees(), read in the default"
+                . " context.\n" );
+        return;
+    }
+
+    my $states   = $extreme->stp_p_state()  || {};
+    my $enable   = $extreme->stp_p_enable() || {};
+    my $d_bridge = $extreme->stp_p_bridge() || {};
+    my $d_port   = $extreme->stp_p_port()   || {};
+
+    my %tree_ports;
+    foreach my $idx ( keys %$states ) {
+        my ( $inst, $ifindex ) = _ex_stpport_index($idx);
+        next unless $inst eq $tree->{id};
+        $tree_ports{$ifindex} = {
+            tree_type         => $tree->{type},
+            tree_id           => $tree->{id},
+            state             => $states->{$idx},
+            role              => undef,
+            role_raw          => undef,
+            enabled           =>
+                scalar SNMP::Info::Bridge::_stp_enabled( $enable->{$idx} ),
+            designated_bridge =>
+                scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $d_bridge->{$idx} ),
+            designated_port => scalar SNMP::Info::Bridge::_stp_decode_port_id(
+                $d_port->{$idx} ),
+        };
+    }
+    return \%tree_ports;
+}
+
+sub stp_trees_complete {
+    my $extreme = shift;
+
+    my $trees = $extreme->stp_trees() || {};
+    return keys %$trees ? 1 : 0;
+}
+
+# extremeStpVlanPortTable is indexed <vlan ifIndex>.<domain instance>
+sub stp_vlan_map {
+    my $extreme = shift;
+
+    my $rows     = $extreme->ex_stp_vlan_mask() || {};
+    my $vlan_ids = $extreme->ex_vlan_id()       || {};
+
+    my %map;
+    foreach my $idx ( keys %$rows ) {
+        my ( $vlan_if, $inst ) = split /\./, $idx;
+        my $vlan = $vlan_ids->{$vlan_if};
+        next unless defined $vlan;
+        $map{$vlan} = "domain.$inst";
+    }
+    return unless keys %map;
+    return \%map;
+}
+
 1;
 
 __END__
@@ -949,7 +1267,8 @@ Returns C<extreme>
 
 =item $extreme->os()
 
-Returns C<xos> or C<extremeware> depending on description()
+Returns C<xos>, C<voss> (VOSS / Fabric Engine) or C<extremeware>
+depending on description()
 
 =item $extreme->os_ver()
 
@@ -990,6 +1309,24 @@ Returns fan status
 Returns base mac
 
 (C<dot1dBaseBridgeAddress>)
+
+=item $extreme->hasMSTP()
+
+Returns 1 when the device runs MSTP: C<dot1dStpVersion> is 3.
+
+=item $extreme->hasRSTP()
+
+Returns 1 when the device runs 802.1W: C<dot1dStpVersion> is 2.
+
+=item $extreme->hasPVST()
+
+Returns 1 when any domain's ports run in PVST+ mode
+(C<extremeStpPortPortMode> C<pvstp>).
+
+=item $extreme->hasSTP()
+
+Returns 1 when C<dot1dStpVersion> is 0 and a domain runs 802.1D, with no
+port in PVST+ mode.
 
 =back
 
@@ -1054,6 +1391,17 @@ Ignores VLAN meta interfaces and loopback
 Returns the mapping to the SNMP Interface Table. Extreme LLDP uses the
 bridge index rather than ifIndex.
 
+=item $extreme->i_stp_state()
+
+Returns reference to hash.  Key: C<ifIndex>, Value: the port state in the
+device's default spanning tree, from C<dot1dStpPortState> mapped through
+C<bp_index>.  Returns an empty hash when the device serves no
+C<BRIDGE-MIB> STP port table, as VOSS does under MSTP; the vendor
+C<extremeStpPortTable> is not used, since it is keyed by STP domain.
+Under RSTP, VOSS serves forwarding for a port its CLI shows blocked.
+
+(C<dot1dStpPortState>)
+
 =item $extreme->i_vlan()
 
 Returns a mapping between C<ifIndex> and the VLAN.
@@ -1081,11 +1429,13 @@ the port.
 
 =item $extreme->v_index()
 
-Returns VLAN IDs
+Returns VLAN IDs from C<extremeVlanIfTable>, or from C<Q-BRIDGE-MIB> when
+that table is empty.
 
 =item $extreme->v_name()
 
-Returns VLAN names
+Returns VLAN names from C<extremeVlanIfDescr>, or C<dot1qVlanStaticName>
+when C<extremeVlanIfTable> is empty.
 
 (C<extremeVlanIfDescr>)
 
@@ -1185,6 +1535,10 @@ to the root bridge.
 
 (C<extremeStpPortPortState>)
 
+=item $extreme->stp_p_enable()
+
+(C<extremeStpPortStpEnabled>)
+
 =item $extreme->stp_p_cost()
 
 (C<extremeStpPortPathCost>)
@@ -1200,6 +1554,64 @@ to the root bridge.
 =item $extreme->stp_p_port()
 
 (C<extremeStpPortDesignatedPort>)
+
+=back
+
+=head2 Spanning Tree Domains
+
+EXOS runs one spanning tree per STP domain, served in the default
+context.  These override L<SNMP::Info::Bridge/"Spanning Tree Trees">;
+records are as described there, with C<type> C<domain>, C<id> the domain
+instance, C<name> the domain name and, under PVST+, C<vlan> the carrier
+VLAN.  A domain's C<protocol> is C<pvst> when its ports run in PVST+ mode;
+C<stp> when C<dot1dStpVersion> is 0 and they do not, since that version
+leaves only 802.1D; the device's protocol when the device has one domain;
+and undef otherwise, since C<dot1dStpVersion> is device-wide.
+C<measured> is 1 on EXOS.
+VOSS, also handled by this class, serves none of these tables.
+
+=over
+
+=item $extreme->stp_protocols()
+
+Returns reference to an array of the protocols C<hasSTP()>, C<hasRSTP()>,
+C<hasMSTP()> and C<hasPVST()> report, or nothing.
+
+=item $extreme->stp_trees()
+
+Returns reference to hash of domain records keyed
+C<domain.E<lt>instanceE<gt>>.
+
+=item $extreme->stp_tree_ports($tree_key)
+
+Returns reference to hash of the domain's port records keyed by ifIndex,
+from (C<extremeStpPortTable>).  C<role> and C<role_raw> are undef: the MIB
+serves none.
+
+=item $extreme->stp_trees_complete()
+
+Returns 1 when the domain table was read, 0 otherwise.
+
+=item $extreme->stp_vlan_map()
+
+Returns reference to hash mapping VLAN id to domain key, from the index of
+(C<extremeStpVlanPortTable>) and (C<extremeVlanIfVlanId>).
+
+=item $extreme->ex_stp_i_name()
+
+(C<extremeStpDomainStpdName>)
+
+=item $extreme->ex_stp_i_tag()
+
+(C<extremeStpDomainStpdTag>)
+
+=item $extreme->ex_stp_p_mode()
+
+(C<extremeStpPortPortMode>)
+
+=item $extreme->ex_stp_vlan_mask()
+
+(C<extremeStpVlanPortPortMask>)
 
 =back
 
@@ -1222,13 +1634,19 @@ or provide a simpler interface to complex set operations.  See
 L<SNMP::Info/"SETTING DATA VIA SNMP"> for general information on set
 operations.
 
+ExtremeWare is configured through C<ifStackTable> and
+C<extremeVlanEncapsIfTable>. ExtremeXOS has neither table, so when
+C<extremeVlanEncapsIfTable> is empty these methods use C<dot1qPvid> and
+C<dot1qVlanStaticEgressPorts> from C<Q-BRIDGE-MIB> instead.
+
 =over
 
 =item $extreme->set_i_vlan ( vlan, ifIndex )
 
 Changes an access (untagged) port VLAN, must be supplied with the numeric
 VLAN ID and port C<ifIndex>.  This method should only be used on end station
-(non-trunk) ports.
+(non-trunk) ports.  Through C<Q-BRIDGE-MIB>, a VLAN already tagged on the
+port is removed from its egress list first.
 
   Example:
   my %if_map = reverse %{$extreme->interfaces()};
@@ -1238,7 +1656,8 @@ VLAN ID and port C<ifIndex>.  This method should only be used on end station
 =item $extreme->set_i_pvid ( pvid, ifIndex )
 
 Sets port default VLAN, must be supplied with the numeric VLAN ID and
-port C<ifIndex>.  This method should only be used on trunk ports.
+port C<ifIndex>.  This method should only be used on trunk ports.  Through
+C<Q-BRIDGE-MIB>, a VLAN tagged on the port is refused; use C<set_i_vlan>.
 
   Example:
   my %if_map = reverse %{$extreme->interfaces()};

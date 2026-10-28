@@ -40,13 +40,12 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.974000';
+$VERSION = '3.983000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
 
-    # LLDP MIBs not loaded to prevent possible unqualified namespace conflict
-    # with IBM definitions
+    # Standard LLDP-MIB comes from Layer3; this table is the fallback
     'IBM-GbTOR-10G-L2L3-MIB' => 'lldpInfoRemoteDevicesLocalPort',
 );
 
@@ -78,28 +77,36 @@ $VERSION = '3.974000';
     'lldp_port_status' => 'lldpInfoPortAdminStatus',
 
     # IBM-GbTOR-10G-L2L3-MIB::lldpInfoRemoteDevicesTable
-    'lldp_rem_id_type'  => 'lldpInfoRemoteDevicesChassisSubtype',
-    'lldp_rem_id'       => 'lldpInfoRemoteDevicesSystemName',
-    'lldp_rem_pid_type' => 'lldpInfoRemoteDevicesPortSubtype',
-    'lldp_rem_pid'      => 'lldpInfoRemoteDevicesPortId',
-    'lldp_rem_desc'     => 'lldpInfoRemoteDevicesPortDescription',
-    'lldp_rem_sysname'  => 'lldpInfoRemoteDevicesSystemName',
-    'lldp_rem_sysdesc'  => 'lldpInfoRemoteDevicesSystemDescription',
-    'lldp_rem_sys_cap'  => 'lldpInfoRemoteDevicesSystemCapEnabled',
+    'ibm_lldp_rem_id_type'  => 'lldpInfoRemoteDevicesChassisSubtype',
+    'ibm_lldp_rem_id'       => 'lldpInfoRemoteDevicesSystemName',
+    'ibm_lldp_rem_pid_type' => 'lldpInfoRemoteDevicesPortSubtype',
+    'ibm_lldp_rem_pid'      => 'lldpInfoRemoteDevicesPortId',
+    'ibm_lldp_rem_desc'     => 'lldpInfoRemoteDevicesPortDescription',
+    'ibm_lldp_rem_sysname'  => 'lldpInfoRemoteDevicesSystemName',
+    'ibm_lldp_rem_sysdesc'  => 'lldpInfoRemoteDevicesSystemDescription',
+    'ibm_lldp_rem_sys_cap'  => 'lldpInfoRemoteDevicesSystemCapEnabled',
 
     # IBM-GbTOR-10G-L2L3-MIB::lldpInfoRemoteDevicesManAddrTable
-    'lldp_rman_type' => 'lldpInfoRemoteDevicesManAddrSubtype',
-    'lldp_rman_addr' => 'lldpInfoRemoteDevicesManAddr',
+    'lldp_rman_type'     => 'lldpInfoRemoteDevicesManAddrSubtype',
+    'ibm_lldp_rman_addr' => 'lldpInfoRemoteDevicesManAddr',
 );
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, %SNMP::Info::LLDP::MUNGE, );
+%MUNGE = (
+    %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::LLDP::MUNGE,
+    'ibm_lldp_rem_sysname' => \&SNMP::Info::munge_null,
+    'ibm_lldp_rem_sysdesc' => \&SNMP::Info::munge_null,
+    'ibm_lldp_rem_sys_cap' => \&SNMP::Info::munge_bits,
+);
 
 sub hasLLDP {
     my $ibm = shift;
 
+    return 1 if $ibm->SUPER::hasLLDP();
+
     # We may be have LLDP, but nothing in lldpRemoteSystemsData Tables
     # Look to see if LLDP Rx enabled on any port
-    my $lldp_cap = $ibm->lldp_port_status();
+    my $lldp_cap = $ibm->lldp_port_status() || {};
 
     foreach my $if ( keys %$lldp_cap ) {
         if ( $lldp_cap->{$if} =~ /enabledRx/i ) {
@@ -109,9 +116,74 @@ sub hasLLDP {
     return;
 }
 
+# Decided once per device so neighbor keys never mix. Only the G8124 serves
+# the IBM-GbTOR-10G-L2L3-MIB neighbor table, so LLDP-MIB rows take precedence.
+# Memoized because an empty walk is not cached; clear_cache resets it.
+sub _ibm_lldp_standard {
+    my $ibm = shift;
+
+    return $ibm->{_ibm_lldp_standard} if exists $ibm->{_ibm_lldp_standard};
+    my $rem_id = $ibm->SUPER::lldp_rem_id() || {};
+    return $ibm->{_ibm_lldp_standard} = scalar keys %$rem_id ? 1 : 0;
+}
+
+sub _ibm_lldp_column {
+    my ( $ibm, $column, $partial ) = @_;
+
+    my $method = $ibm->_ibm_lldp_standard ? "SUPER::$column" : "ibm_$column";
+    return $ibm->$method($partial);
+}
+
+sub lldp_rem_id_type {
+    my ( $ibm, $partial ) = @_;
+    return $ibm->_ibm_lldp_column( 'lldp_rem_id_type', $partial );
+}
+
+sub lldp_rem_id {
+    my ( $ibm, $partial ) = @_;
+    return $ibm->_ibm_lldp_column( 'lldp_rem_id', $partial );
+}
+
+sub lldp_rem_pid_type {
+    my ( $ibm, $partial ) = @_;
+    return $ibm->_ibm_lldp_column( 'lldp_rem_pid_type', $partial );
+}
+
+sub lldp_rem_pid {
+    my ( $ibm, $partial ) = @_;
+    return $ibm->_ibm_lldp_column( 'lldp_rem_pid', $partial );
+}
+
+sub lldp_rem_desc {
+    my ( $ibm, $partial ) = @_;
+    return $ibm->_ibm_lldp_column( 'lldp_rem_desc', $partial );
+}
+
+sub lldp_rem_sysname {
+    my ( $ibm, $partial ) = @_;
+    return $ibm->_ibm_lldp_column( 'lldp_rem_sysname', $partial );
+}
+
+sub lldp_rem_sysdesc {
+    my ( $ibm, $partial ) = @_;
+    return $ibm->_ibm_lldp_column( 'lldp_rem_sysdesc', $partial );
+}
+
+sub lldp_rem_sys_cap {
+    my ( $ibm, $partial ) = @_;
+    return $ibm->_ibm_lldp_column( 'lldp_rem_sys_cap', $partial );
+}
+
+sub lldp_rman_addr {
+    my ( $ibm, $partial ) = @_;
+    return $ibm->_ibm_lldp_column( 'lldp_rman_addr', $partial );
+}
+
 sub lldp_ip {
     my $ibm     = shift;
     my $partial = shift;
+
+    return $ibm->SUPER::lldp_ip($partial) if $ibm->_ibm_lldp_standard;
 
     my $rman_type = $ibm->lldp_rman_type($partial) || {};
     my $rman_addr = $ibm->lldp_rman_addr($partial) || {};
@@ -128,9 +200,28 @@ sub lldp_ip {
     return \%lldp_ip;
 }
 
+# The LLDP-MIB local port number is the bridge port, and lldpLocPortDesc
+# holds the port alias (XGE3), which matches neither ifDescr nor ifAlias.
+sub _ibm_lldp_std_if {
+    my ( $ibm, $partial ) = @_;
+
+    my $inherited = $ibm->SUPER::lldp_if($partial) || {};
+    my $bp_index  = $ibm->bp_index()               || {};
+
+    my %lldp_if = %$inherited;
+    foreach my $key ( keys %lldp_if ) {
+        my $local_port = ( split /\./, $key )[1];
+        $lldp_if{$key} = $bp_index->{$local_port}
+            if defined $local_port and exists $bp_index->{$local_port};
+    }
+    return \%lldp_if;
+}
+
 sub lldp_if {
     my $lldp    = shift;
     my $partial = shift;
+
+    return $lldp->_ibm_lldp_std_if($partial) if $lldp->_ibm_lldp_standard;
 
     my $lldp_desc = $lldp->lldpInfoRemoteDevicesLocalPort($partial) || {};
     my $i_descr   = $lldp->i_description()                          || {};
@@ -165,6 +256,7 @@ sub lldp_platform {
     my $ibm = shift;
     my $partial = shift;
 
+    return $ibm->SUPER::lldp_platform($partial) if $ibm->_ibm_lldp_standard;
     return $ibm->lldpInfoRemoteDevicesSystemDescription($partial);
 }
 
@@ -336,7 +428,8 @@ Is LLDP is active in this device?
 Note:  LLDP may be active, but nothing in C<lldpRemoteSystemsData> Tables so
 the device would not return any useful topology information.
 
-Checks to see if at least one interface is enabled to receive LLDP packets.
+Returns true when the standard F<LLDP-MIB> reports LLDP. Otherwise checks to
+see if at least one interface is enabled to receive LLDP packets.
 
 =back
 
@@ -373,11 +466,25 @@ Returns reference to hash of interface link duplex status.
 
 (C<portInfoMode>)
 
+=back
+
+=head2 LLDP Neighbor Tables
+
+Neighbors come from the standard F<LLDP-MIB> when C<lldpRemTable> has rows.
+Otherwise they come from C<lldpInfoRemoteDevicesTable> in
+F<IBM-GbTOR-10G-L2L3-MIB>, which only the G8124 serves. The choice is made
+once per device, so neighbor keys never mix.
+
+=over
+
 =item $ibm->lldp_if()
 
-Returns the mapping to the SNMP Interface Table. Tries to cross reference
-(C<lldpInfoRemoteDevicesLocalPort>) with (C<ifDescr>) and (C<ifAlias>)
-to get (C<ifIndex>).
+Returns the mapping to the SNMP Interface Table.
+
+From F<LLDP-MIB>, maps the local port number through C<dot1dBasePortIfIndex>,
+since C<lldpLocPortDesc> holds the port alias. Otherwise tries to cross
+reference (C<lldpInfoRemoteDevicesLocalPort>) with (C<ifDescr>) and
+(C<ifAlias>) to get (C<ifIndex>).
 
 =item $ibm->lldp_ip()
 
@@ -388,7 +495,93 @@ lldp_addr if you want any return address type.
 
 Returns remote device system description.
 
+(C<lldpRemSysDesc> or C<lldpInfoRemoteDevicesSystemDescription>)
+
+=item $ibm->lldp_rem_id_type()
+
+(C<lldpRemChassisIdSubtype> or C<lldpInfoRemoteDevicesChassisSubtype>)
+
+=item $ibm->lldp_rem_id()
+
+(C<lldpRemChassisId> or C<lldpInfoRemoteDevicesSystemName>)
+
+=item $ibm->lldp_rem_pid_type()
+
+(C<lldpRemPortIdSubtype> or C<lldpInfoRemoteDevicesPortSubtype>)
+
+=item $ibm->lldp_rem_pid()
+
+(C<lldpRemPortId> or C<lldpInfoRemoteDevicesPortId>)
+
+=item $ibm->lldp_rem_desc()
+
+(C<lldpRemPortDesc> or C<lldpInfoRemoteDevicesPortDescription>)
+
+=item $ibm->lldp_rem_sysname()
+
+(C<lldpRemSysName> or C<lldpInfoRemoteDevicesSystemName>)
+
+=item $ibm->lldp_rem_sysdesc()
+
+(C<lldpRemSysDesc> or C<lldpInfoRemoteDevicesSystemDescription>)
+
+=item $ibm->lldp_rem_sys_cap()
+
+(C<lldpRemSysCapEnabled> or C<lldpInfoRemoteDevicesSystemCapEnabled>)
+
+=item $ibm->lldp_rman_addr()
+
+(C<lldpRemManAddrIfSubtype> or C<lldpInfoRemoteDevicesManAddr>)
+
+=back
+
+=head2 IBM LLDP Table Methods
+
+=over
+
+=item $ibm->lldp_port_status()
+
+(C<lldpInfoPortAdminStatus>)
+
+=item $ibm->lldp_rman_type()
+
+(C<lldpInfoRemoteDevicesManAddrSubtype>)
+
+=item $ibm->ibm_lldp_rem_id_type()
+
+(C<lldpInfoRemoteDevicesChassisSubtype>)
+
+=item $ibm->ibm_lldp_rem_id()
+
+(C<lldpInfoRemoteDevicesSystemName>)
+
+=item $ibm->ibm_lldp_rem_pid_type()
+
+(C<lldpInfoRemoteDevicesPortSubtype>)
+
+=item $ibm->ibm_lldp_rem_pid()
+
+(C<lldpInfoRemoteDevicesPortId>)
+
+=item $ibm->ibm_lldp_rem_desc()
+
+(C<lldpInfoRemoteDevicesPortDescription>)
+
+=item $ibm->ibm_lldp_rem_sysname()
+
+(C<lldpInfoRemoteDevicesSystemName>)
+
+=item $ibm->ibm_lldp_rem_sysdesc()
+
 (C<lldpInfoRemoteDevicesSystemDescription>)
+
+=item $ibm->ibm_lldp_rem_sys_cap()
+
+(C<lldpInfoRemoteDevicesSystemCapEnabled>)
+
+=item $ibm->ibm_lldp_rman_addr()
+
+(C<lldpInfoRemoteDevicesManAddr>)
 
 =back
 

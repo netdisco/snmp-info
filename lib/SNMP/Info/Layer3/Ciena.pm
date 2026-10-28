@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.974000';
+$VERSION = '3.983000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -92,14 +92,23 @@ sub serial {
     return $ciena->ciena_serial();
 }
 
-# Override lldp_if function to translate the port with bp_index
+# The local LLDP port number is a bridge port, so translate it with bp_index.
+# Translate the raw port from the index, never the parent's result, which
+# may already be an ifIndex from the lldpLocPortDesc cross reference.
 sub lldp_if {
-    my $ciena = shift;
-    my $lldp = $ciena->SUPER::lldp_if;
-    my $bp_index = $ciena->bp_index;
-    foreach my $iface (keys %$lldp) {
-        my $orig_iface = $lldp->{$iface};
-        $lldp->{$iface} = $bp_index->{$orig_iface};
+    my $ciena   = shift;
+    my $partial = shift;
+
+    my $lldp = $ciena->SUPER::lldp_if($partial) || {};
+
+    # LLDP-V2-MIB rows are keyed by ifIndex, not by bridge port
+    return $lldp if ( $ciena->_lldp_source() || '' ) eq 'v2';
+
+    my $bp_index = $ciena->bp_index() || {};
+    foreach my $key ( keys %$lldp ) {
+        my $port = ( split /\./x, $key )[1];
+        next unless defined $port and defined $bp_index->{$port};
+        $lldp->{$key} = $bp_index->{$port};
     }
     return $lldp;
 }
@@ -297,7 +306,9 @@ to a hash.
 
 =item $ciena->lldp_if()
 
-Returns the mapping to the SNMP Interface Table. Overridden to translate to correct ethernet port with bp_index
+Returns the mapping to the SNMP Interface Table. Overridden to translate the
+local LLDP port number, a bridge port, to C<ifIndex> with C<bp_index>. A
+port missing from C<bp_index> keeps the inherited mapping.
 
 =item $ciena->i_vlan()
 
