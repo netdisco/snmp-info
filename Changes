@@ -1,3 +1,11 @@
+Version 3.983001
+
+  [NEW FEATURES]
+
+  * #648 VRF: report VRF instances, membership and per-VRF neighbors,
+    addresses and subnets on IOS-XE, IOS XR, NX-OS, Junos, EOS, Comware,
+    EXOS and VOSS
+
 Version 3.983000 (2026-10-26)
 
   [NEW FEATURES]
