@@ -744,7 +744,7 @@ sub _vrf_community_context__v3__undef_without_walking : Tests(2) {
   is($walks, 0, 'The community table was not walked');
 }
 
-sub _vrf_session_context__mapped_community__follows_session : Tests(4) {
+sub _vrf_session_context__mapped_community__follows_session : Tests(3) {
   my $test = shift;
   my $info = $test->{info};
 

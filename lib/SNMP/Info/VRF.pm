@@ -1,7 +1,6 @@
 # SNMP::Info::VRF
 #
-# Copyright (c) 2026 Eric Miller
-# All rights reserved.
+# Copyright (c) 2026 by SNMP::Info Developers.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -419,9 +418,9 @@ sub _vrf_route_ports {
 }
 
 # The contexts _vrf_session_context() reports in $name's context: the v3
-# name, and the context of a community the v2c template builds. Where the class
-# has no VRF context kind the instance's context is its name; where it has
-# one and gives this instance none, the instance has no context.
+# name, and the context of a community the v2c template builds. Where the
+# class has no VRF context kind the instance's context is its name; where
+# it has one and gives this instance none, the instance has no context.
 sub _vrf_contexts_of {
     my $vrf  = shift;
     my $name = shift;
@@ -1315,7 +1314,7 @@ instances
 
 =head1 AUTHOR
 
-Eric Miller
+SNMP::Info Developers
 
 =head1 SYNOPSIS
 

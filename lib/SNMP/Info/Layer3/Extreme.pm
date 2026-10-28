@@ -1272,8 +1272,9 @@ sub _vrf_community_suffix_is_context {
 # context serves only its own row; the default context serves every row,
 # vrfid 0 (GlobalRouter, context '') among them. '' is the default context.
 # Undef over SNMPv3 (its Context decides), on EXOS, which answers no v2c
-# session, when the table is not served, or when a VRF context's one row
-# names no context.
+# session, or when the table is not served. A VRF context whose one row
+# names no context reads as "vrfid N", a context no instance has, so the
+# readers refuse it instead of reading it as the default.
 sub _vrf_community_context {
     my $extreme = shift;
 
@@ -1286,8 +1287,8 @@ sub _vrf_community_context {
     my @vrfids = sort keys %$contexts;
     return q() if @vrfids > 1 or grep { $_ eq '0' } @vrfids;
     my $context = SNMP::Info::VRF::_vrf_text( $contexts->{ $vrfids[0] } );
-    return unless defined $context and length $context;
-    return $context;
+    return $context if defined $context and length $context;
+    return "vrfid $vrfids[0]";
 }
 
 # Each virtual router reads in its own context, named for it. EXOS serves
@@ -1868,9 +1869,9 @@ empty name get nothing.
 On VOSS, for a name C<vrf_instances()> lists returns C<< { kind =E<gt>
 'vrf', id =E<gt> $name, v2c =E<gt> '%s::$vrfid', v3 =E<gt> $context } >>.
 C<$vrfid> is the VRF's C<rcVrfConfigTable> index. For vrfid 1,
-C<public> becomes C<public::1>. C<$context> is the VRF's C<rcVrfContextName>, such as
-C<vrf1>. C<default>, which is C<GlobalRouter>, and a name the device does
-not list get nothing.
+C<public> becomes C<public::1>. C<$context> is the VRF's
+C<rcVrfContextName>, such as C<vrf1>. C<default>, which is
+C<GlobalRouter>, and a name the device does not list get nothing.
 
 On ExtremeXOS C<v2c> is undef. The ExtremeXOS user guide documents an
 SNMPv2c read community of the form C<vr_name@community_name> for a user

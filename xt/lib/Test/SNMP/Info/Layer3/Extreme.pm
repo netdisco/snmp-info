@@ -1893,14 +1893,17 @@ sub vrf_instances__voss_mapped_community__refused : Tests(2) {
     'The error names the default context and the session\'s');
 }
 
-sub _vrf_community_context__voss_row_without_context__undef : Tests(1) {
+sub _vrf_community_context__voss_row_without_context__vrfid_marker
+  : Tests(3) {
   my $test = shift;
   my $info = _use_cache($test, _voss_red_cache());
 
   $info->{store}{vrf_rc_context} = {1 => q()};
   _enter_community($info, q(public-red));
-  is($info->_vrf_community_context(), undef,
+  is($info->_vrf_community_context(), q(vrfid 1),
     q(A VRF row naming no context is not the default context));
+  is($info->vrf_neighbors(q(default)), undef, q(default is refused there));
+  is($info->vrf_instances(), undef, q(The list is refused there));
 }
 
 sub vrf_neighbors__voss_mapped_community_red__default_refused : Tests(2) {
