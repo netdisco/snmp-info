@@ -367,30 +367,69 @@ ifIndex of the corresponding master ports.
 
 =head2 VRF Instances
 
-See L<SNMP::Info::VRF/"VRF Instances"> for the readers. EOS has no
-C<MPLS-L3VPN-STD-MIB>, so F<ARISTA-VRF-MIB> lists the VRFs and the ports
-they hold; the source is C<ARISTA-VRF-MIB>. A route distinguisher of
-C<INVALID> is none. C<oper> is undef: EOS 4.36 serves C<aristaVrfState>
-C<inactive> for VRFs its CLI shows routing, so the state is not used as an
-operational status. A port C<aristaVrfIfTable> gives C<default> is a port
-of the default instance, absent from C<i_vrf()>.
+See L<SNMP::Info::VRF/"VRF Instances"> for the readers.
+
+=over
+
+=item *
+
+EOS has no C<MPLS-L3VPN-STD-MIB>, so F<ARISTA-VRF-MIB> lists the VRFs and
+the ports they hold. Each record's C<sources{list}> is C<ARISTA-VRF-MIB>.
+
+=item *
+
+A route distinguisher of C<INVALID> is none, so C<rd> is undef.
+
+=item *
+
+C<oper> is undef. EOS 4.36 serves C<aristaVrfState> C<inactive> for VRFs
+its CLI shows routing, so the state is not an operational status.
+
+=item *
+
+A port C<aristaVrfIfTable> gives C<default> is a port of the default
+instance, absent from C<i_vrf()>.
+
+=back
 
 C<aristaVrfTable> has no row for the default VRF, so a device with no VRF
-serves it no row at all. A complete walk of C<aristaVrfRouteDistinguisher>
-and C<aristaVrfState> lists C<default> with the source C<ARISTA-VRF-MIB>
-even then, and C<vrf_instances_complete()> reports 1, none configured (see
-L<SNMP::Info::VRF/"Completeness">).
-Where neither walk was recorded, such as on an object primed from a cache,
-or the poller could not resolve the MIB, the list reads as unsupported,
-undef. A device that does not implement the MIB answers the walk as one
-with no VRF does, so it reads none.
+serves no row at all. How the list reads then:
 
-Each VRF reads in its own context, which serves only that VRF's addresses
-and neighbors. The default context serves the default instance only, such
-as C<Management0>, yet C<i_vrf()> there maps every VRF port from
-C<aristaVrfIfTable>. A VRF context serves no F<ARISTA-VRF-MIB> row, so
-C<i_vrf()> there takes the instance from the context name, which is the
-VRF name.
+=over
+
+=item *
+
+Both C<aristaVrfRouteDistinguisher> and C<aristaVrfState> walked whole,
+with no reason in C<walk_status()>: the list holds C<default>, with the
+source C<ARISTA-VRF-MIB>, and C<vrf_instances_complete()> reports 1, none
+configured (see L<SNMP::Info::VRF/"Completeness">). A device that does
+not implement the MIB answers the walks this way, so it reads none.
+
+=item *
+
+Either walk missing from C<walk_status()>, as on an object primed from a
+cache, cut short, or recorded C<absent> because the poller could not
+resolve the MIB: the list reads as unsupported, undef.
+
+=back
+
+Each VRF reads in its own context (context mode), and that context
+serves only the VRF's addresses and neighbors.
+
+=over
+
+=item *
+
+The default context serves only the default instance's rows, such as
+C<Management0>'s. C<i_vrf()> there still maps every VRF port, from
+C<aristaVrfIfTable>.
+
+=item *
+
+A VRF context serves no F<ARISTA-VRF-MIB> row. C<i_vrf()> there takes
+the instance from the context name, which is the VRF name.
+
+=back
 
 =over
 

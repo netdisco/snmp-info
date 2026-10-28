@@ -1590,8 +1590,10 @@ For example, ge-0/0/1 registers as PowerEthernet interface '1.2'
 
 =item $juniper->vrf_jnx_vpn_status()
 
-The index names the VPN, since C<jnxVpnType> and C<jnxVpnName> are not
-accessible.
+Returns reference to hash of the row status of each VPN, keyed by
+C<jnxVpnType> then the length-prefixed C<jnxVpnName>. The index is what
+names the VPN, since both index leaves are not accessible. Type 2 is
+C<bgpIpVpn>.
 
 (C<jnxVpnRowStatus>)
 
@@ -1744,51 +1746,123 @@ was incomplete.
 
 =head2 Routing instances
 
-C<vrf_instances()> lists the instances C<MPLS-L3VPN-STD-MIB> serves as kind
-C<vrf>, with their route distinguishers and route targets, and adds one
-record for each other name in C<vacmContextName>
-(C<SNMP-VIEW-BASED-ACM-MIB>), with C<SNMP-VIEW-BASED-ACM-MIB> as its list
-source.  That record is kind C<vrf> when C<jnxVpnTable>
-(C<JUNIPER-VPN-MIB>) lists the name as C<bgpIpVpn>, and C<virtual-router>
-otherwise.  The management instance C<mgmt_junos> is a C<virtual-router>
-like any other, and reads in its own context.  Never listed: the empty
-name, C<default>, C<default-switch>, a name between double underscores
-such as C<__juniper_private2__>, a name starting with a colon such as
-C<:gribi>, an C<instance::N> VSTP context, and a name C<jnxVpnTable> lists
-with a type other than C<bgpIpVpn>, such as a VPLS instance.  The default
-instance is always the C<default> record, listed by C<MPLS-L3VPN-STD-MIB>
-when that serves a row and otherwise by C<SNMP-VIEW-BASED-ACM-MIB>
-whenever C<vacmContextName> serves a row, so a device that lists no other
-instance there reports C<vrf_instances_complete()> 1, none configured (see
-L<SNMP::Info::VRF/"Completeness">).
+C<vrf_instances()> lists:
 
-A layer 2 instance with no C<jnxVpnTable> row, such as a C<virtual-switch>,
-is listed as a C<virtual-router> and reads no address in its context, since
-the device holds none there.  C<vrf_instances_complete()> is 0 when the
-C<vacmContextName> or C<jnxVpnRowStatus> walk was incomplete.
+=over
 
-Each instance reads in its own context.  The default context also serves
-every instance's neighbors and addresses on the instances' ports, so the
-readers of C<default> drop the rows on the ports C<mplsL3VpnIfConfTable>
-gives a VRF, and C<i_vrf()> in the default context is that membership.  A
-virtual router, the management instance included, has no row there, so
-C<vrf_read_complete('default')> is 0 while one is listed, and its rows
-stay in C<default>.  Every device with C<mgmt_junos> therefore reads 0
-there.  To separate them, read each virtual router in its own context
-first, then drop from C<default>'s rows those on the ports C<i_vrf()>
-reported in that router's context; C<vrf_read_complete('default')> stays
-0, since the class cannot check the result.  An internal instance that no
-list source names, such as C<__juniper_private1__> on the internal links,
-keeps its rows in C<default> whatever is listed.
+=item *
+
+each instance C<MPLS-L3VPN-STD-MIB> serves, as kind C<vrf>, with its
+route distinguisher and route targets;
+
+=item *
+
+each other name C<vacmContextName> (C<SNMP-VIEW-BASED-ACM-MIB>) serves,
+with C<SNMP-VIEW-BASED-ACM-MIB> as its list source. It is kind C<vrf>
+when C<jnxVpnTable> (C<JUNIPER-VPN-MIB>) lists the name as C<bgpIpVpn>,
+and C<virtual-router> otherwise. The management instance C<mgmt_junos>
+is a C<virtual-router> like any other, and reads in its own context.
+
+=back
+
+These names are never listed:
+
+=over
+
+=item *
+
+the empty name, C<default> and C<default-switch>;
+
+=item *
+
+a name between double underscores, such as C<__juniper_private2__>;
+
+=item *
+
+a name starting with a colon, such as C<:gribi>;
+
+=item *
+
+an C<instance::N> VSTP context;
+
+=item *
+
+a name C<jnxVpnTable> lists with a type other than C<bgpIpVpn>, such as
+a VPLS instance.
+
+=back
+
+A layer 2 instance with no C<jnxVpnTable> row, such as a
+C<virtual-switch>, is listed as a C<virtual-router>. It reads no address
+in its context, since the device holds none there.
+
+The default instance is always the C<default> record. Its list source is
+C<MPLS-L3VPN-STD-MIB> when that serves a row, and otherwise
+C<SNMP-VIEW-BASED-ACM-MIB> when C<vacmContextName> serves a row. A device
+that lists no other instance there reports C<vrf_instances_complete()>
+1, none configured (see L<SNMP::Info::VRF/"Completeness">).
+C<vrf_instances_complete()> is 0 when the C<vacmContextName> or
+C<jnxVpnRowStatus> walk was incomplete.
+
+Each instance reads in its own context (context mode). The default
+context leaks: it also serves every instance's neighbors and addresses
+on the instances' ports.
+
+=over
+
+=item *
+
+The readers of C<default> drop the rows on the ports
+C<mplsL3VpnIfConfTable> gives a VRF. C<i_vrf()> in the default context
+is that membership.
+
+=item *
+
+An instance listed only by C<vacmContextName>, such as a virtual router
+or the management instance, is never covered by the membership table,
+even where C<mplsL3VpnIfConfTable> names it. Its rows stay in
+C<default>, except on ports that table names, and
+C<vrf_read_complete('default')> is 0 while it is listed. Every device
+with C<mgmt_junos> therefore reads 0 there.
+
+=item *
+
+To separate a virtual router's rows, read it in its own context first.
+Then drop from C<default>'s rows those on the ports C<i_vrf()> reported
+in that router's context. C<vrf_read_complete('default')> stays 0, since
+the class cannot check the result.
+
+=item *
+
+An internal instance that no list source names, such as
+C<__juniper_private1__> on the internal links, keeps its rows in
+C<default> whatever is listed.
+
+=back
+
+Neighbors:
+
+=over
+
+=item *
 
 Junos serves host link-local neighbors only in C<ipv6NetToMediaTable>
-(C<IPV6-MIB>), so C<vrf_neighbors()> adds them to the
-C<ipNetToPhysicalTable> rows, once per port and address.  Junos serves an
-instance's own addresses as neighbors too: at an all-zero or empty MAC, or
-at the port's MAC, static in IPv4 and local in IPv6.  C<vrf_neighbors()>
-drops them all.  Junos holds C<fe80::1> on every port of an instance but
-lists it in C<ipAddressTable> on one only; its rows on the other ports go
+(C<IPV6-MIB>). C<vrf_neighbors()> adds them to the
+C<ipNetToPhysicalTable> rows, once per port and address.
+
+=item *
+
+Junos serves an instance's own addresses as neighbors too: at an
+all-zero or empty MAC, or at the port's MAC, C<static> in IPv4 and
+C<local> in IPv6. C<vrf_neighbors()> drops them all.
+
+=item *
+
+Junos holds C<fe80::1> on every port of an instance, but lists it in
+C<ipAddressTable> on one only. Its rows on the other ports are dropped
 by the port's MAC.
+
+=back
 
 =over
 

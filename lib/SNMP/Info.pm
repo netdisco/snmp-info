@@ -2086,13 +2086,15 @@ Call C<update()> with no arguments to return to the default context.
 
 A context whose C<v2c> or C<v3> is undef cannot be reached over that
 SNMP version.  NX-OS refuses community suffixes, so its VLAN and MST
-contexts need SNMPv3.  A site's community map (NX-OS
-C<snmp-server mib community-map>) reaches a VRF context over SNMPv2c: on
-NX-OS the VRF readers read the session's VRF from its SNMP-COMMUNITY-MIB
-row, and on VOSS from the one C<rcVrfConfigTable> row its VRF context
-serves.  ExtremeXOS reaches no VR context over SNMPv2c.  On other devices
-a community-mapped session reads as the default context; read VRF
-contexts over SNMPv3.
+contexts need SNMPv3.
+
+A site can map a plain community to a VRF context in the device
+configuration (NX-OS C<snmp-server mib community-map>).  The VRF readers
+recognize such a session only where the class can read the mapping from
+the device: NX-OS (L<SNMP::Info::Layer3::Nexus>) and VOSS
+(L<SNMP::Info::Layer3::Extreme>).  Elsewhere a community-mapped session
+reads as the default context, so read VRF contexts over SNMPv3.  See
+L<SNMP::Info::VRF/"Reading Instances">.
 
 The examples below switch with this helper.  C<kind> C<none> is the
 default context.
@@ -2151,9 +2153,10 @@ so the rows of every listed context are merged:
  }
  $info->update() if $switch;
 
-Per-VRF neighbors, where the device filters them by context:
+Per-VRF neighbors.  Where the device reads each VRF in its own context,
+switch to it; otherwise read every VRF in the default context:
 
- # Where the device lists none, as EXOS, pass vrf_instances(\@names)
+ # Where the device lists no VRF, as EXOS, pass vrf_instances(\@names)
  my $instances = $info->vrf_instances() || {};
  my %vrf_neighbors;    # VRF name => { iid => neighbor record }
  foreach my $name ( sort keys %$instances ) {

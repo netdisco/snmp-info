@@ -477,23 +477,56 @@ C<ports_complete> 0.
 
 For C<vrf>, C<$id> is a name from C<vrf_instances()> and the answer is
 C<{ kind =E<gt> 'vrf', id =E<gt> $name, v2c =E<gt> undef,
-v3 =E<gt> $context }>.  C<$context> is the context
-C<cContextMappingTable> maps to the VRF: the one named like the VRF if it
-is mapped, else the lowest sorted name among those mapped to it, else the
-VRF name itself.  The default VRF and an empty name have no context, so
-nothing is returned, and neither does a VRF with no mapped context whose
-name is a context mapped to another VRF; its C<contexts> in
-C<vrf_instances()> is then empty.  A site's community map
-(C<snmp-server mib community-map>) reaches a VRF over SNMPv2c, but the
-class cannot derive its name, so C<v2c> is undef.  Over such a community
-the readers see the default context; read VRF contexts over SNMPv3.
+v3 =E<gt> $context }>.  C<$context> is a context C<cContextMappingTable>
+maps to the VRF, chosen in this order:
 
-VRF reads use context mode (see L<SNMP::Info::VRF/"Reading Instances">):
-each VRF context serves only that VRF's address rows, while C<ifTable> is
-not scoped and the default context serves the IPv6 neighbors of every
-VRF's ports.  The readers therefore keep only rows on ports holding an
-address in the current context.  C<cContextMappingTable> lists the VRFs;
-a device that maps only VLAN or MST contexts reports
+=over
+
+=item *
+
+the context named like the VRF, if it is mapped to the VRF;
+
+=item *
+
+else the lowest sorted name among the contexts mapped to the VRF;
+
+=item *
+
+else the VRF name itself.
+
+=back
+
+Nothing is returned for:
+
+=over
+
+=item *
+
+the default VRF and an empty name, which have no context;
+
+=item *
+
+a VRF with no mapped context whose name is a context mapped to another
+VRF.  Its C<contexts> in C<vrf_instances()> is then empty.
+
+=back
+
+C<v2c> is undef: NX-OS reaches a VRF over SNMPv2c only through a site's
+community map (C<snmp-server mib community-map>), whose community the
+class cannot derive.  A session on such a community reads as the context
+its own C<snmpCommunityTable> row names (see C<vrf_comm_name()>).  The
+readers accept it where that is the context C<snmp_context('vrf', $name)>
+gives.  Where the row is not served, the session reads as the default
+context; read VRF contexts over SNMPv3.
+
+VRF reads use context mode (see L<SNMP::Info::VRF/"Reading Instances">).
+Each VRF context serves only that VRF's address rows, but C<ifTable> is
+not scoped, and the default context serves the IPv6 neighbors of every
+VRF's ports.  The readers therefore keep only the rows on ports holding
+an address in the current context.
+
+C<cContextMappingTable> lists the VRFs.  Any row it serves lists
+C<default>, so a device that maps only VLAN or MST contexts reports
 C<vrf_instances_complete()> 1, none configured (see
 L<SNMP::Info::VRF/"Completeness">).
 
@@ -563,15 +596,20 @@ to a hash.
 
 =item $nexus->vrf_comm_name()
 
-Returns reference to hash. (C<snmpCommunityName>) The community string of
-the row the session itself uses, and an empty string on every other row.
-Keyed by the C<snmpCommunityIndex> string, length-prefixed.
+Returns reference to hash of community strings, keyed by the
+length-prefixed C<snmpCommunityIndex>.  NX-OS serves the community only
+on the row the session itself uses, and an empty string on every other
+row.
+
+(C<snmpCommunityName>)
 
 =item $nexus->vrf_comm_context()
 
-Returns reference to hash. (C<snmpCommunityContextName>) The SNMP context
-each community row maps to: empty for the default community, a context name
-for one set by C<snmp-server mib community-map>.
+Returns reference to hash of the SNMP context each community row maps
+to, keyed as C<vrf_comm_name()>: empty for the default context, a context
+name for a community set by C<snmp-server mib community-map>.
+
+(C<snmpCommunityContextName>)
 
 =back
 

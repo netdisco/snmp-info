@@ -402,21 +402,31 @@ Returns a mapping between C<ifIndex> and the PVID or default VLAN.
 
 =head2 VRF Instances
 
-See L<SNMP::Info::VRF/"VRF Instances"> for the readers. This class adds two
-VRF behaviors, both reached through them rather than called directly.
+See L<SNMP::Info::VRF/"VRF Instances"> for the readers. This class adds
+two VRF behaviors, both reached through them rather than called directly.
 
-Connected routes give subnets: C<vrf_subnets()> reads the connected routes
-as well as the interface addresses, from C<mplsL3VpnVrfRteTable> where the
-device attributes routes to VRFs and from C<inetCidrRouteTable> in a VRF's
-own context, so a subnet that two VRFs share, and that the address tables
-show on one VRF's port only, is listed for both.
+=over
 
-C<CISCO-VRF-MIB> lists the VRFs, and the ports they hold, when
-C<MPLS-L3VPN-STD-MIB> serves no VRF row. Its source is
-C<CISCO-VRF-MIB>. A device serving only its global row there reports
+=item Subnets from connected routes
+
+C<vrf_subnets()> reads the connected routes as well as the interface
+addresses (see L<SNMP::Info::VRF/"Collapsed Subnets">). A subnet two VRFs
+share, which the address tables show on one VRF's port only, is then
+listed for both. The routes come from C<mplsL3VpnVrfRteTable> in
+attribution mode, and from C<inetCidrRouteTable> in a VRF's own context
+in context mode (L<SNMP::Info::Layer3::Nexus>).
+
+=item VRF list from CISCO-VRF-MIB
+
+Where C<MPLS-L3VPN-STD-MIB> serves no row at all, the global row
+included, C<CISCO-VRF-MIB> lists the VRFs and the ports they hold,
+with the source C<CISCO-VRF-MIB>. Any row it serves lists C<default>,
+so a device serving only its global row there reports
 C<vrf_instances_complete()> 1, none configured (see
-L<SNMP::Info::VRF/"Completeness">). When C<MPLS-L3VPN-STD-MIB> serves
+L<SNMP::Info::VRF/"Completeness">). Where C<MPLS-L3VPN-STD-MIB> serves
 rows, the vendor MIB is not read.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::CiscoVTP
 

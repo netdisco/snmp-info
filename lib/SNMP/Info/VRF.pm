@@ -1328,18 +1328,92 @@ Eric Miller
 
 =head1 DESCRIPTION
 
-SNMP::Info::VRF is a role that reports the VRF instances a device serves
-in F<MPLS-L3VPN-STD-MIB>, which ports belong to each, and each instance's
-neighbors, interface addresses and subnets. The global routing table is
-always the instance C<default>, of kind C<default>; a served row named
-C<default> is that same instance, not a second one.
+SNMP::Info::VRF is a role that reports a device's routing instances: which
+instances exist, which ports belong to each, and each instance's
+neighbors, interface addresses and subnets. It lists them from
+F<MPLS-L3VPN-STD-MIB>, or from a vendor MIB a device class reads, and
+reads their rows from the standard address, neighbor and route tables.
 
-The role reports only what the device serves. It never infers an instance
-the device did not list, except names the caller passes to
-C<vrf_instances()>, which are marked as such. Data the device does not
-serve is undef or a missing key, never a guessed value.
+The global routing table is always the instance C<default>, of kind
+C<default>. A row the device returns named C<default> is that same
+instance, not a second one.
+
+The role reports only what the device returns. It never invents an
+instance. The one exception is names you pass to C<vrf_instances()>,
+which are marked as yours. Data the device does not return is undef or
+a missing key, never a guessed value.
 
 This class is inherited by L<SNMP::Info::Layer3>.
+
+=head2 Terms
+
+=over
+
+=item instance
+
+One routing table on the device: the global table (C<default>), a VRF, or
+a virtual router.
+
+=item context
+
+An SNMP context, as L<SNMP::Info/"SNMP Contexts"> describes. A session
+reads one context at a time.
+
+=item default context
+
+The context that serves the global routing table. SNMPv3 reaches it
+with an empty Context. SNMPv1 and SNMPv2c reach it with the
+constructor's C<Community>, unless the device maps that community to a
+VRF context.
+
+=item served
+
+Returned by the device in an SNMP response.
+
+=item list source
+
+The MIB that lists the instances: F<MPLS-L3VPN-STD-MIB>, or, where that
+serves no instance row, a vendor MIB the device class reads. Each record
+names it in C<sources{list}>.
+
+=item membership table
+
+The table that maps ports to instances: C<mplsL3VpnIfConfTable>, plus
+the class's vendor table where that vendor table is the list source
+(F<MPLS-L3VPN-STD-MIB> served no instance row). In attribution mode
+C<i_vrf()> returns it.
+
+=item attribution mode
+
+The default context serves every instance's rows. The readers keep the
+rows on the instance's ports, as the membership table gives them. This
+class uses attribution mode.
+
+=item context mode
+
+Each instance's rows are read in that instance's own context. The readers
+keep the rows on that context's ports. A device class selects this mode.
+
+=item leaking default context
+
+In context mode, a default context that also serves other instances' rows
+on their ports.
+
+=item caller names
+
+Instance names you pass to C<vrf_instances(\@names)>.
+
+=item reader
+
+C<vrf_neighbors()>, C<vrf_addresses()> and C<vrf_subnets()>, which take
+an instance name.
+
+=item internal instance
+
+A name the platform uses for itself, which the device class never
+lists.
+
+=back
 
 =head2 Inherited Classes
 
@@ -1355,44 +1429,132 @@ None.
 
 =back
 
-=head2 Records
+=head2 Instance Records
 
-C<vrf_instances()> returns one record per instance, keyed by name:
+C<vrf_instances()> returns a hash of records keyed by instance name.
+Every record has these keys:
+
+=over
+
+=item name
+
+The instance name, as the device names it.
+
+=item kind
+
+C<default> for the global routing table, C<vrf> for a VRF, and
+C<virtual-router> for a Junos virtual router or management instance
+(L<SNMP::Info::Layer3::Juniper>). A caller name is kind C<vrf>.
+
+=item description
+
+The description F<MPLS-L3VPN-STD-MIB> serves, or undef. An empty string
+is undef.
+
+=item oper
+
+The instance's operational state, C<up> or C<down>, where the device
+reports one (F<MPLS-L3VPN-STD-MIB> C<mplsL3VpnVrfOperStatus> only); undef
+otherwise.
+
+=item rd
+
+The route distinguisher, such as C<64512:30>. A printable value is kept
+as served; a binary one is shown as colon-separated hex octets. Undef
+when the device serves none, an empty string or C<0:0>.
+
+=item rt_import, rt_export
+
+Array references of route targets, sorted. A target of type C<both> is in
+each list. Empty when none are served.
+
+=item l3_vni
+
+Reserved; always undef.
+
+=item l3_isid
+
+On VOSS, the I-SID of the instance's IP VPN; undef elsewhere
+(L<SNMP::Info::Layer3::Extreme>).
+
+=item listed_by
+
+C<device> when the device listed the instance; C<caller> when it came
+from the names you passed to C<vrf_instances()>.
+
+=item sources
+
+Where each fact came from: a hash of fact to the MIB that served it. A
+fact the device did not serve has no key. A caller name has no keys.
+
+=over
+
+=item list
+
+The list source that listed the instance. The record C<default> has this
+key when a list source served any row, or, for some vendor sources,
+answered with none; see L</"Completeness">.
+
+=item members
+
+The membership table's MIB, when that table gives the instance at least
+one port.
+
+=item rd
+
+Present when C<rd> is defined.
+
+=item rt
+
+Present when the instance has a route target.
+
+=item l3_isid
+
+Present when C<l3_isid> is defined.
+
+=back
+
+=item contexts
+
+How to reach the instance's rows, as an array of contexts in the form
+L<SNMP::Info/"snmp_context"> returns. C<< { kind => 'none' } >> is the
+default context. See L</"Reading Instances">.
+
+=back
+
+An example record:
 
     red => {
         name        => 'red',
-        kind        => 'vrf',            # 'default' for the global table
-        description => undef,            # an empty served string is undef
-        oper        => 'up',             # mplsL3VpnVrfOperStatus, or undef
-        rd          => '64512:30',       # undef when empty or 0:0
-        rt_import   => [ '64512:30' ],   # [] when none is served
+        kind        => 'vrf',
+        description => undef,
+        oper        => 'up',
+        rd          => '64512:30',
+        rt_import   => [ '64512:30' ],
         rt_export   => [ '64512:30' ],
-        l3_vni      => undef,            # filled by vendor classes
+        l3_vni      => undef,
         l3_isid     => undef,
-        listed_by   => 'device',         # or 'caller'
-        sources     => {                 # one key per fact served
+        listed_by   => 'device',
+        sources     => {
             list    => 'MPLS-L3VPN-STD-MIB',
-            members => 'MPLS-L3VPN-STD-MIB',   # when it has ports
-            rd      => 'MPLS-L3VPN-STD-MIB',   # when rd is defined
-            rt      => 'MPLS-L3VPN-STD-MIB',   # when it has a target
-            l3_isid => 'RAPID-CITY',           # when l3_isid is defined
+            members => 'MPLS-L3VPN-STD-MIB',
+            rd      => 'MPLS-L3VPN-STD-MIB',
+            rt      => 'MPLS-L3VPN-STD-MIB',
         },
         contexts    => [ { kind => 'none' } ],
     }
 
-The record C<default> carries C<sources{list}> when a list source served
-any row; see L</"Completeness">.
+=head2 Row Shapes
 
-C<i_vrf()> maps ifIndex to instance name. Ports of the instance
-C<default> are absent.
+C<i_vrf()> maps ifIndex to instance name:
 
     { 2 => 'red', 3 => 'blue' }
 
 C<vrf_neighbors($name)> and C<vrf_addresses($name)> key their rows by
-ifIndex then address, so an address two instances share keeps one row in
-each. One instance can also hold the same address on several ports, as
-with link-local addresses, so key rows by ifIndex and address, never by
-address alone:
+ifIndex then address. An address two instances share has one row in
+each. One instance can hold the same address on several ports, as with
+link-local addresses. Key rows by ifIndex and address, never by address
+alone:
 
     # vrf_neighbors('red')
     '2.10.40.0.2' => { ifindex => 2, ip => '10.40.0.2',
@@ -1402,23 +1564,49 @@ address alone:
     '3.10.40.0.1' => { ifindex => 3, ip => '10.40.0.1',
                        prefix_len => 24, family => 'ipv4' }
 
-C<vrf_subnets($name)> keys its rows by prefix and length:
+C<vrf_subnets($name)> keys its rows by prefix and length. C<sources>
+holds C<address>, C<route>, or both:
 
     '10.40.0.0/24' => { prefix => '10.40.0.0', len => 24,
                         family => 'ipv4', ifindex => 3,
-                        sources => [ 'address' ] }   # and/or 'route'
+                        sources => [ 'address' ] }
 
-IPv6 addresses are in the form C<ipv6_n2p_addr()> in L<SNMP::Info::IPv6>
-returns, without any zone.
+An IPv6 address is eight groups of four hex digits, as
+C<ipv6_n2p_addr()> in L<SNMP::Info::IPv6> returns it, with no zone.
 
 =head2 Reading Instances
 
-The per-instance readers work in one of two modes, fixed by the device
-class.
+The per-instance readers work in one of two modes. The device class fixes
+the mode; see L</"Terms">. C<context_kinds('vrf')> tells them apart: it
+returns C<['vrf']> in context mode and nothing in attribution mode.
 
-In attribution mode, the mode of this class, the default context serves
-every instance's rows in one table, and the readers sort the rows by port
-through C<i_vrf()>. The caller never switches contexts:
+In both modes, read C<vrf_instances()> in the default context, and keep
+it. C<update()> clears the cache.
+
+=head3 Attribution mode
+
+=over
+
+=item *
+
+Every reader runs in the default context. You never switch contexts.
+
+=item *
+
+A reader keeps the rows on the ports C<i_vrf()> gives the instance. A
+port C<i_vrf()> does not list belongs to C<default>.
+
+=item *
+
+A reader takes only names the device lists. A caller name returns
+nothing, with C<error()> set.
+
+=item *
+
+Every record's C<contexts> is C<< [ { kind => 'none' } ] >>, the default
+context.
+
+=back
 
     my $instances = $vrf->vrf_instances();
     my $complete  = $vrf->vrf_instances_complete();
@@ -1430,18 +1618,53 @@ through C<i_vrf()>. The caller never switches contexts:
         my $whole     = $vrf->vrf_read_complete($name);
     }
 
-In context mode, the device class's agent serves each instance's
-address rows only in that instance's own context, and the caller switches
-to the instance's context before calling the readers. A context can still
-serve other instances' rows, such as neighbors on their ports, so the
-readers keep only the rows on ports holding an address in the current
-context's C<ipAddressTable> or C<ipAdEntTable>. C<i_vrf()> maps those
-ports to the instance whose context the session is in. In the default
-context it maps them to C<default>, unless the default context leaks or
-the class maps every instance's ports there from its membership table
-(L<SNMP::Info::Layer3::Arista>); then it is that membership. The
-instance list is still read in the default context, and kept across the
-switches, since C<update()> clears the cache:
+=head3 Context mode
+
+=over
+
+=item *
+
+Read the instance C<default> in the default context. Read every other
+instance in its own context: switch to it, read, then switch back.
+
+=item *
+
+The record C<default> has C<contexts> C<< [ { kind => 'none' } ] >>.
+Every other record holds the one context C<snmp_context('vrf', $name)>
+gives, or C<[]> when that gives none. A record with C<contexts> C<[]>
+has no context, and no context serves its rows.
+
+=item *
+
+A context can serve rows of other instances, such as neighbors on their
+ports. The readers keep only the rows on the context's ports. By default
+those are the ports holding an address in the context's
+C<ipAddressTable> or C<ipAdEntTable>, or in a vendor address table the
+class reads.
+
+=item *
+
+A port with no address in its context, such as an unnumbered one, is in
+no instance, and its neighbors are dropped.
+
+=item *
+
+Some devices serve the whole address table in every context. There the
+context's ports are the interfaces its C<inetCidrRouteTable> routes use
+(L<SNMP::Info::Layer3::Extreme>).
+
+=item *
+
+In a leaking default context, the readers of C<default> drop the rows on
+each port the membership table gives another instance
+(L<SNMP::Info::Layer3::Juniper>).
+
+=item *
+
+The readers accept a caller name, provided the session is in the context
+C<snmp_context('vrf', $name)> gives.
+
+=back
 
     my $instances = $vrf->vrf_instances();
     foreach my $name ( sort keys %$instances ) {
@@ -1452,109 +1675,259 @@ switches, since C<update()> clears the cache:
         my $whole     = $vrf->vrf_read_complete($name);
     }
 
-A port with no address in its context, such as an unnumbered one, is in
-no instance in context mode, and its neighbors are dropped.
+L<SNMP::Info/"SNMP Contexts"> has a complete example that switches
+contexts.
 
-Where a context serves the device's whole address table, as EXOS does, the
-ports of the context are the interfaces of its C<inetCidrRouteTable> rows
-instead, and the addresses and neighbors on any other port are dropped.
-A class can add the interface a route's interface stands for, as
-L<SNMP::Info::Layer3::Extreme> does for an EXOS router interface.
+=head3 Wrong context
 
-On some platforms the default context leaks: it serves every instance's
-neighbors and addresses on the instances' ports, alongside the default
-instance's own. A class for such a platform has the readers of
-C<default>, in the default context, drop the rows on each port that the
-default context's membership table, C<mplsL3VpnIfConfTable>, gives
-another instance, and C<i_vrf()> there returns that membership. An
-instance the table does not cover, one listed by another source such as
-a virtual router, cannot be told apart there, so its rows stay in
-C<default> and C<vrf_read_complete('default')> returns 0. A VRF the
-table lists with no port has no rows to leak. L<SNMP::Info::Layer3::Juniper>
-is such a class.
+A reader called in the wrong context returns nothing, with C<error()> set
+to a message saying how to switch. The right context is:
 
-Some platforms serve host link-local neighbors only in the F<IPV6-MIB>
-C<ipv6NetToMediaTable>, not in C<ipNetToPhysicalTable>. A class for such a
-platform adds those rows to C<vrf_neighbors()>, one per port and address,
-keeping the C<ipNetToPhysicalTable> row where both tables list one.
+=over
 
-A caller tells the modes apart with C<context_kinds('vrf')>, which
-answers in context mode only. In attribution mode each instance's
-C<contexts> is C<< [ { kind => 'none' } ] >>, the default context. In
-context mode the instance C<default> has that value too, and every other
-instance lists its own contexts, each as L<SNMP::Info/"snmp_context">
-describes it, or is empty, C<[]>, where the device gives it no context;
-no context serves such an instance's rows.
+=item *
 
-A reader called in the wrong context for the mode returns nothing, with
-C<error()> set to a message saying how to switch. In context mode the
-session's context must be the instance's own, as C<snmp_context('vrf',
-$name)> names it, and for the instance C<default> the default context.
+In attribution mode, the default context, for every instance.
 
-The session's context is its SNMPv3 Context or community suffix. Where the
-class can read it from the device, an SNMPv2c session on a community the
-device maps to a context reads that context too
-(L<SNMP::Info::Layer3::Nexus>, from its community table;
-L<SNMP::Info::Layer3::Extreme> on VOSS, from the one C<rcVrfConfigTable>
-row its VRF context serves); elsewhere such a session reads as the default
+=item *
+
+In context mode, the default context for C<default>, and for any other
+instance the context C<snmp_context('vrf', $name)> names.
+
+=back
+
+=head3 The session's context
+
+The readers take the session's context from, in order:
+
+=over
+
+=item 1.
+
+The SNMPv3 Context.
+
+=item 2.
+
+Over SNMPv1 or SNMPv2c, the part of the community beyond the
+constructor's C<Community> and an C<@>, on either side (C<public@red>,
+C<red@public>).
+
+=item 3.
+
+Over SNMPv1 or SNMPv2c, the context the device maps the community to,
+where the class can read that mapping from the device
+(L<SNMP::Info::Layer3::Nexus>, L<SNMP::Info::Layer3::Extreme> on VOSS).
+
+=back
+
+Otherwise the session is in the default context. Where the class cannot
+read a community mapping, a mapped community reads as the default
 context, so use SNMPv3.
 
 =head2 Completeness
 
-C<vrf_instances_complete()> separates four states:
+C<vrf_instances_complete()> returns one of four states:
 
 =over
 
 =item unsupported, undef
 
-No list source served a row, the device serves no configured VRF count, and
-the caller named no instance. C<vrf_instances()> lists only C<default>.
+No list source served a row, the device serves no configured VRF count,
+and you passed no caller names. C<vrf_instances()> lists only
+C<default>.
 
 =item none, 1
 
-The device reports zero configured VRFs, or a list source served rows
-that hold no VRF: only the global or an internal instance's. One rule
-covers every list source, F<MPLS-L3VPN-STD-MIB> and each class's vendor
-table alike: a source that served any row lists C<default> too, as its
-C<sources{list}>, and caller names add nothing. C<vrf_instances()> lists
-only C<default>. A class whose table never holds a global row may count
-a complete walk with no row as served (L<SNMP::Info::Layer3::Arista>).
+The device has no VRF. Either:
 
-=item incomplete, 0
+=over
 
-The list may be short: it holds a name from the caller, a walk of the VRF,
-route target or membership table, or of a class's vendor list tables,
-ended early, the device configures more VRFs than it lists, or it lists
-VRFs but cannot say which ports they hold.
+=item *
 
-=item complete, 1
+The device reports zero configured VRFs and no list source served a row.
 
-The list is whole as far as the list source lists instances.
+=item *
+
+A list source served rows, but none is a VRF: only the global row or an
+internal instance's. The device serves no configured VRF count, or a
+count of zero. The record C<default> then names that list source in
+C<sources{list}>, and caller names are ignored.
 
 =back
 
-Completeness measures the list source only: F<MPLS-L3VPN-STD-MIB>, or
-where that serves no VRF row, the vendor table a class reads, such as
-F<CISCO-VRF-MIB>. Some platforms hold layer 3 instances that source does
-not list, such as virtual routers. Unless the class lists them from
-another source, those instances are absent from C<vrf_instances()>, their
-ports are absent from C<i_vrf()>, and their rows are read as the instance
-C<default>, even when C<vrf_instances_complete()> returns 1. A class
-whose default context leaks, as L</"Reading Instances"> describes,
-reports that through C<vrf_read_complete('default')>.
+If you pass caller names in the first case, they are used, and the state
+is incomplete, 0.
 
-C<vrf_read_complete($name)> says whether the readers saw the whole of the
-tables they walked for C<$name>, and is undef before any reader has.
+In both cases C<vrf_instances()> lists only C<default>. Some list sources
+never serve a global row; see the class, such as
+L<SNMP::Info::Layer3::Arista>.
+
+=item incomplete, 0
+
+The list may be short. Any one of these:
+
+=over
+
+=item *
+
+The list holds a caller name.
+
+=item *
+
+A walk of the list source's tables ended early: the VRF, route target or
+membership table of F<MPLS-L3VPN-STD-MIB>, or the vendor tables a class
+reads.
+
+=item *
+
+The device's configured VRF count is greater than the number of VRFs it
+lists.
+
+=item *
+
+In attribution mode, a listed VRF holds no port in C<i_vrf()>, and the
+device either serves no configured VRF count or maps no port to any VRF.
+
+=back
+
+=item complete, 1
+
+None of the above: the list is whole, as far as the list source lists
+instances.
+
+=back
+
+Completeness measures the list source only. Some platforms hold
+instances it does not list, such as virtual routers. Unless the class
+lists them from another source, even when C<vrf_instances_complete()>
+returns 1:
+
+=over
+
+=item *
+
+They are absent from C<vrf_instances()>.
+
+=item *
+
+Their ports are absent from C<i_vrf()>.
+
+=item *
+
+Their rows are read as the instance C<default>.
+
+=item *
+
+C<vrf_read_complete('default')> does not detect those rows, since it
+checks only listed instances.
+
+=back
 
 =head2 Collapsed Subnets
 
-Some devices keep an address that two instances share on only one of the
+Some devices list an address that two instances share on only one of the
 ports in C<ipAddressTable> and C<ipAdEntTable>. The other instance then
-has no such address, and C<vrf_subnets()> omits its subnet, unless the
-class reads routes. A class that reads routes takes each instance's
-connected routes from C<mplsL3VpnVrfRteTable> in attribution mode, or
-C<inetCidrRouteTable> in context mode, and lists them with the source
-C<route>, which restores the subnet. This class does not read routes.
+has no such address, and C<vrf_subnets()> omits its subnet.
+
+A class that reads routes restores the subnet. It adds each instance's
+connected routes with the source C<route>: from C<mplsL3VpnVrfRteTable>
+in attribution mode, or from C<inetCidrRouteTable> in context mode. This
+class does not read routes.
+
+=head2 For Class Authors
+
+A device class shapes the readers by overriding private hooks of this
+role. Each item names the hook and a class that uses it.
+
+=over
+
+=item Context mode
+
+C<_vrf_context_filters> returns true. Answer C<context_kinds('vrf')>
+with C<['vrf']> and C<snmp_context('vrf', $name)> with each instance's
+context, through C<_context_kinds> and C<_snmp_context>
+(L<SNMP::Info::Layer3::Arista>).
+
+=item Leaking default context
+
+C<_vrf_default_context_leaks> returns true. The readers of C<default>
+then drop the rows on ports the membership table gives another instance,
+and C<i_vrf()> in the default context returns the membership table. An
+instance the membership table does not cover, such as a virtual router,
+cannot be told apart there: its rows stay in C<default>, and
+C<vrf_read_complete('default')> returns 0 while it is listed. A VRF
+F<MPLS-L3VPN-STD-MIB> lists with no port has no rows to leak
+(L<SNMP::Info::Layer3::Juniper>).
+
+=item Membership in the default context
+
+C<_vrf_default_context_members> returns true where the default context
+serves only the default instance's rows but holds the membership table.
+C<i_vrf()> there returns the membership table
+(L<SNMP::Info::Layer3::Arista>).
+
+=item Context named for its instance
+
+C<_vrf_context_is_instance_name> returns true where a context's name is
+its instance's name and the context serves no instance list. C<i_vrf()>
+then takes the instance from the context name without reading the list
+(L<SNMP::Info::Layer3::Arista>).
+
+=item Ports from routes
+
+C<_vrf_context_ports_from_routes> returns true where every context serves
+the whole address table. The context's ports are then the interfaces of
+its C<inetCidrRouteTable> routes. Override C<_vrf_route_ports> to add
+ports a route's interface stands for (L<SNMP::Info::Layer3::Extreme>,
+for an EXOS router interface).
+
+=item Subnets from routes
+
+C<_vrf_subnets_from_routes> returns true to add connected routes to
+C<vrf_subnets()>; see L</"Collapsed Subnets">
+(L<SNMP::Info::Layer3::Cisco>).
+
+=item Link-local neighbors from IPV6-MIB
+
+C<_vrf_nd_from_ipv6_mib> returns true where host link-local neighbors
+are only in F<IPV6-MIB> C<ipv6NetToMediaTable>. C<vrf_neighbors()> then
+adds those rows, one per port and address, keeping the
+C<ipNetToPhysicalTable> row where both tables list one
+(L<SNMP::Info::Layer3::H3C>).
+
+=item Vendor instance list
+
+C<_vrf_vendor_instances> returns records built with C<_vrf_record>, each
+with C<sources{list}> set. It is called only when
+F<MPLS-L3VPN-STD-MIB> serves no instance row. Call C<_vrf_list_default>
+when the vendor table served any row, so a device with no VRF reads none,
+not unsupported. C<_vrf_vendor_list_methods> names the table methods it
+walks, which count toward C<vrf_instances_complete()>.
+C<_vrf_vendor_membership> returns the vendor table's
+C<< { ifIndex => name } >>, used only when that vendor list is the list
+source (L<SNMP::Info::Layer3::Cisco>).
+
+=item Vendor addresses
+
+C<_vrf_vendor_address_rows($name)> returns address rows keyed and shaped
+as C<vrf_addresses()> rows. They fill in a port and address the standard
+tables lack. Walk them with C<_vrf_column> so they count toward
+C<vrf_read_complete()> (L<SNMP::Info::Layer3::H3C>).
+
+=item Internal instances
+
+C<_vrf_internal_instance($name)> returns true for an instance name the
+platform uses internally, which is never listed
+(L<SNMP::Info::Layer3::Juniper>).
+
+=item Community-mapped contexts
+
+C<_vrf_community_context> returns the context the device maps an SNMPv1
+or SNMPv2c session's community to: a name, C<''> for the default
+context, or undef when the class cannot tell
+(L<SNMP::Info::Layer3::Nexus>).
+
+=back
 
 =head1 GLOBALS
 
@@ -1572,66 +1945,106 @@ Returns the number of VRFs the device says it configures.
 
 =head2 VRF Instances
 
-These methods read the default context only. In any other context they
-return nothing, with C<error()> set, since only the default context serves
-the whole list. C<i_vrf()> in context mode is the exception, as described
-below.
+C<vrf_instances()> and C<vrf_instances_complete()> read the default
+context only, since only the default context serves the whole list. In
+any other context they return nothing, with C<error()> set. C<i_vrf()>
+follows the same rule in attribution mode; in context mode it works in
+any context.
 
 =over
 
 =item $vrf->vrf_instances( [ \@names ] )
 
-Returns reference to hash of instance records, keyed by name, always
-including C<default>. See L</"Records">.
+Returns a hash of instance records keyed by name, always including
+C<default>. See L</"Instance Records">.
 
-The names in C<\@names> are used only when no list source served a row,
-whatever count of configured VRFs the device serves. Each is added with
-C<listed_by> C<caller> and no C<sources>, and C<vrf_instances_complete()>
-then returns 0. When the device lists instances, the names are ignored.
-The instance readers take caller names in context mode only; in
-attribution mode they return nothing for one, with C<error()> set.
+Some devices do not list their VRFs over SNMP (ExtremeXOS). For those,
+pass the names you know in C<\@names>. They are used only when the
+device lists no instance at all, and each is returned with C<listed_by>
+set to C<caller>, so you can tell your names from the device's. When the
+device lists instances, C<\@names> is ignored.
+
+A list source that served only a global or internal row still lists
+C<default>, so C<\@names> is ignored there too; see L</"Completeness">.
+In attribution mode the readers return nothing for a caller name; see
+L</"Reading Instances">.
+
+(C<mplsL3VpnVrfDescription>, C<mplsL3VpnVrfRD>, C<mplsL3VpnVrfOperStatus>,
+C<mplsL3VpnVrfRT>, C<mplsL3VpnIfConfRowStatus>, or a class's vendor
+tables where F<MPLS-L3VPN-STD-MIB> serves no instance row)
 
 =item $vrf->vrf_instances_complete( [ \@names ] )
 
 Returns 1, 0 or undef, as L</"Completeness"> describes. Pass the same
-names given to C<vrf_instances()>.
+names you gave C<vrf_instances()>.
+
+(C<mplsL3VpnConfiguredVrfs> and the C<walk_status()> of the list
+source's tables)
 
 =item $vrf->i_vrf()
 
-Returns reference to hash of instance name, keyed by ifIndex, from the
-active rows of C<mplsL3VpnIfConfTable>. Ports of the instance C<default>
-are absent.
+Returns reference to hash of instance name, keyed by ifIndex.
 
-In context mode it works in any context. It maps each port holding an
-address in the current context's C<ipAddressTable> or C<ipAdEntTable> to
-the instance whose context the session is in, or to C<default> in the
-default context. In the default context of a class whose default context
-leaks, or that maps every instance's ports there from its membership
-table, it is that membership instead. The instance is the one in
-C<vrf_instances()> whose context the session is in, and C<i_vrf()>
-returns nothing, with C<error()> set, in a context no listed instance
-has. A class whose contexts are named for their instances and serve no
-list takes the instance from the context name instead, without reading
-the list (L<SNMP::Info::Layer3::Arista>). A class whose context serves
-the device's whole address table maps the interfaces of the context's
-C<inetCidrRouteTable> rows instead, with the interfaces the class adds to
-them, as the EXOS and VOSS paragraphs of L<SNMP::Info::Layer3::Extreme>
-describe.
+In attribution mode, it returns the membership table: the active rows of
+C<mplsL3VpnIfConfTable>, plus the class's vendor table where that vendor
+table is the list source (F<MPLS-L3VPN-STD-MIB> served no instance row).
+F<MPLS-L3VPN-STD-MIB> wins for a port both name. Ports of C<default> are
+absent.
 
-(C<mplsL3VpnIfConfRowStatus>, or a class's vendor table when
-C<MPLS-L3VPN-STD-MIB> lists no instance, such as
-L<SNMP::Info::Layer3::Cisco>'s C<cvVrfInterfaceRowStatus>; in context mode
-C<ipAddressIfIndex>, C<ipAdEntIfIndex>, or C<inetCidrRouteIfIndex> and
-C<inetCidrRouteProto> with the class's tables)
+In context mode, it maps the ports of the instance whose context the
+session is in:
+
+=over
+
+=item *
+
+In the default context, it maps the context's ports to C<default>. Where
+the class's default context leaks, or maps every instance's ports from
+the membership table, it returns that table instead.
+
+=item *
+
+In another context, it maps the context's ports to the instance the
+device lists with this context. Caller names are not consulted. In a
+context no device-listed instance has, it returns nothing, with
+C<error()> set.
+
+=item *
+
+Where the class names each context for its instance, it maps the ports
+to the context name instead, without reading the list.
+
+=back
+
+The context's ports are those L</"Reading Instances"> describes for
+context mode.
+
+(C<mplsL3VpnIfConfRowStatus>, with a class's vendor table where
+F<MPLS-L3VPN-STD-MIB> lists no instance (see L</"For Class Authors">);
+in context mode C<ipAddressIfIndex>, C<ipAddressType>,
+C<ipAddressPrefix>, C<ipAdEntIfIndex> and C<ipAdEntNetMask>, or
+C<inetCidrRouteIfIndex> with the class's tables)
 
 =back
 
 =head2 Instance Readers
 
-Each reader takes an instance name and returns nothing for a name the
-device does not list (in attribution mode), or when the session is in the
-wrong context, with C<error()> set; see L</"Reading Instances">. A class
-with no source table for a reader contributes no rows to it.
+Each reader takes an instance name. It returns nothing, with C<error()>
+set:
+
+=over
+
+=item *
+
+in the wrong context; see L</"Reading Instances">;
+
+=item *
+
+in attribution mode, for a name C<vrf_instances()> does not list.
+
+=back
+
+A class with no source table for a reader contributes no rows to it.
 
 =over
 
@@ -1639,22 +2052,61 @@ with no source table for a reader contributes no rows to it.
 
 Returns reference to hash of the ARP and IPv6 neighbor rows of instance
 C<$name>, keyed as C<at_paddr()> and C<ipv6_n2p_mac()> key them. Each row
-holds C<ifindex>, C<ip>, C<mac> and C<family> (C<ipv4> or C<ipv6>). A row
-whose MAC is undef, empty or all zeros is not returned: it names no
-hardware address, and devices serve their own addresses that way. Nor is a
-row at the broadcast MAC, such as a subnet broadcast address. Rows a
+holds C<ifindex>, C<ip>, C<mac> and C<family> (C<ipv4> or C<ipv6>). Rows a
 class adds from C<ipv6NetToMediaTable> are keyed by ifIndex then the
 sixteen address octets, as that table indexes them.
 
-Rows that are the instance's own addresses are not returned either: a
-global address that C<vrf_addresses($name)> holds on any port, a
-link-local address it holds on the row's port, and a row whose MAC is the
-C<ifPhysAddress> of the row's port. The neighbor type is not used: some
-devices type a host's link-local local, and others type their own
-addresses static. The MAC match drops the device's own row on a port
-whose address table does not list the address, such as the other
-instance's copy of an address two instances share (see
+These rows are not returned:
+
+=over
+
+=item *
+
+A row whose MAC is undef, empty or all zeros. It names no hardware
+address; devices serve their own addresses that way.
+
+=item *
+
+A row at the broadcast MAC, such as a subnet broadcast address.
+
+=item *
+
+A row for an address other than a link-local one that
+C<vrf_addresses($name)> holds on any port.
+
+=item *
+
+A row for a link-local address C<vrf_addresses($name)> holds on the
+row's port.
+
+=item *
+
+A row whose MAC is the C<ifPhysAddress> of the row's port. This drops
+the device's own row on a port whose address table does not list the
+address, such as the other instance's copy of a shared address (see
 L</"Collapsed Subnets">).
+
+=back
+
+The neighbor type is not used: some devices type a host's link-local
+C<local>, and others type their own addresses C<static>.
+
+Which rows belong to C<$name>:
+
+=over
+
+=item *
+
+In attribution mode, the rows on the ports C<i_vrf()> gives the instance.
+
+=item *
+
+In context mode, the rows on the context's ports (see
+L</"Reading Instances">). For C<default> in a leaking default context,
+the rows on ports the membership table gives another instance are
+dropped.
+
+=back
 
 (C<at_paddr()> and C<at_netaddr()>, with the fallbacks to C<atTable> and
 C<ipNetToPhysicalTable> of L<SNMP::Info::Layer3>, the C<ipv6_n2p_*>
@@ -1665,15 +2117,53 @@ class reads it, C<vrf_addresses()> and C<i_mac()>)
 
 Returns reference to hash of the interface addresses of instance
 C<$name>, keyed by ifIndex and address. Each row holds C<ifindex>, C<ip>,
-C<prefix_len> (undef when the device gives none) and C<family>. Two rows
-on one port that differ only by zone are one address: the row first in
-sorted index order is kept. Rows typed C<unicast> or C<anycast> are kept:
-an anycast address is still the device's own, and some devices type their
-IPv6 interface addresses so. A class that reads F<IPV6-MIB>
-C<ipv6AddrTable> keeps its anycast rows as well. C<ipAdEntTable> is read
-for IPv4 only when
-C<ipAddressTable> serves no IPv4 row. The unspecified address, IPv4
-C<0.0.0.0> or IPv6 C<::>, is no interface address and is dropped.
+C<prefix_len> (undef when the device gives none) and C<family>.
+
+The rows come from C<ipAddressTable>. C<ipAdEntTable> is read for IPv4
+only when C<ipAddressTable> serves no IPv4 row. A class may add vendor
+rows for a port and address the standard tables lack.
+
+=over
+
+=item *
+
+Rows typed C<unicast> or C<anycast> are kept. An anycast address is
+still the device's own, and some devices type their IPv6 interface
+addresses so. A class that reads F<IPV6-MIB> C<ipv6AddrTable> keeps its
+anycast rows as well.
+
+=item *
+
+Two rows on one port that differ only by zone are one address. The row
+first in sorted index order is kept.
+
+=item *
+
+The unspecified address, IPv4 C<0.0.0.0> or IPv6 C<::>, is no interface
+address and is dropped.
+
+=back
+
+Which rows belong to C<$name>:
+
+=over
+
+=item *
+
+In attribution mode, the rows on the ports C<i_vrf()> gives the instance.
+
+=item *
+
+In context mode, every row the context serves. For C<default> in a
+leaking default context, the rows on ports the membership table gives
+another instance are dropped.
+
+=item *
+
+In context mode where routes decide a context's ports, only the rows on
+the context's ports.
+
+=back
 
 (C<ipAddressIfIndex>, C<ipAddressType>, C<ipAddressPrefix>,
 C<ipAdEntIfIndex>, C<ipAdEntNetMask>)
@@ -1682,13 +2172,45 @@ C<ipAdEntIfIndex>, C<ipAdEntNetMask>)
 
 Returns reference to hash of the subnets of instance C<$name>, keyed
 C<prefix/len>. Each holds C<prefix>, C<len>, C<family>, C<ifindex> and
-C<sources>: C<address> for the network of an interface address that has a
-prefix length, C<route> for a connected route, C<address> first when both
-apply. Host routes are not subnets, and neither is a route-only prefix in
-special-purpose space: IPv4 C<0.0.0.0/8>, C<127.0.0.0/8>, C<224.0.0.0/4>
-and C<255.255.255.255/32>, IPv6 C<::/127>, C<fe80::/10> and C<ff00::/8>.
-An interface address in that space is kept. C<ifindex> is undef for a route
-with no interface. See L</"Collapsed Subnets">.
+C<sources>. C<sources> lists:
+
+=over
+
+=item *
+
+C<address>, for the network of an interface address that has a prefix
+length;
+
+=item *
+
+C<route>, for a connected route, where the class reads routes (see
+L</"Collapsed Subnets">).
+
+=back
+
+C<address> comes first when both apply. C<ifindex> is undef for a route
+with no interface. These are not subnets:
+
+=over
+
+=item *
+
+an IPv6 link-local network (C<fe80::/10>), from an address or a route;
+
+=item *
+
+a host route;
+
+=item *
+
+a route-only prefix in special-purpose space: IPv4 C<0.0.0.0/8>,
+C<127.0.0.0/8>, C<224.0.0.0/4> and C<255.255.255.255/32>, IPv6
+C<::/127> and C<ff00::/8>.
+
+=back
+
+An interface address in IPv4 or IPv6 special-purpose space other than
+link-local still gives a subnet.
 
 (C<vrf_addresses()>, C<mplsL3VpnVrfRteInetCidrProto>,
 C<mplsL3VpnVrfRteInetCidrIfIndex>, C<inetCidrRouteProto>,
@@ -1696,24 +2218,53 @@ C<inetCidrRouteIfIndex>)
 
 =item $vrf->vrf_read_complete($name)
 
-Returns 0 when a table a reader walked for C<$name> has an incomplete
-C<walk_status()> (see L<SNMP::Info/"Incomplete Walks">), otherwise 1. A
-table the device does not implement counts as complete. In attribution
-mode the membership table C<mplsL3VpnIfConfTable> counts too, since it
-decides which rows are the instance's; in context mode the address tables
-do, or, where routes decide a context's ports, C<inetCidrRouteIfIndex>,
-C<inetCidrRouteProto> and the class's tables, and for C<default> in a
-leaking default context the membership table as well. C<ifPhysAddress>
-counts wherever C<vrf_neighbors()> reads it to drop the instance's own
-rows. In a leaking default context it also returns 0 while a listed
-instance is one the membership table does not cover, since its rows
-cannot be told from C<default>'s, and while a walk of the instance list
-was incomplete, since it may hide such an instance.
+Says whether the readers saw the whole of every table they walked for
+C<$name>. Call it after the readers, in the same context:
+C<clear_cache()>, and so C<update()>, forgets which tables were walked.
 
-Returns undef when no reader has walked a table for C<$name> since the
-cache was last cleared. C<clear_cache()>, and so C<update()>, forgets
-which tables were walked, so call it after the readers, in the same
+=over
+
+=item whole, 1
+
+Every table walked for C<$name> was read whole. A table the device does
+not implement counts as whole.
+
+=item partial, 0
+
+A table walked for C<$name> was cut short (see
+L<SNMP::Info/"Incomplete Walks">).
+
+In the default context of a class whose default context leaks,
+C<vrf_read_complete('default')> is also 0 when:
+
+=over
+
+=item *
+
+a listed instance, not listed by F<MPLS-L3VPN-STD-MIB>, holds no port in
+the membership table;
+
+=item *
+
+a walk of the instance list ended early.
+
+=back
+
+=item unknown, undef
+
+No table has been recorded as walked for C<$name> since the cache was
+last cleared. The readers record their walks. In context mode, so does
+C<i_vrf()>, except where it returns the membership table in the default
 context.
+
+=back
+
+(C<walk_status()> of the tables walked for C<$name>: the readers' source
+tables, C<ifPhysAddress>, and the tables that decide membership:
+C<mplsL3VpnIfConfRowStatus> and the class's vendor tables in attribution
+mode; in context mode the address tables, or where routes decide a
+context's ports, C<inetCidrRouteIfIndex> and the class's tables, and for
+C<default> in a leaking default context C<mplsL3VpnIfConfRowStatus>)
 
 =back
 

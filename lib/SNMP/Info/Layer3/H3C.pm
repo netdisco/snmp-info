@@ -682,15 +682,39 @@ ifIndex of the corresponding master ports.
 
 =item $h3c->vrf_h3c_addr_mask()
 
-The IPv4 address masks of every routing instance, indexed by ifIndex,
-address type, length and address. Comware 7 serves no C<ipAddressTable>
-and an C<ipAddrTable> holding the default instance only.
-L<SNMP::Info::VRF/"vrf_addresses"> reads this table, and IPV6-MIB
-C<ipv6AddrTable> for IPv6, anycast addresses included, so each instance
-lists its own addresses, and host link-locals come from IPV6-MIB
-C<ipv6NetToMediaTable>.
+Returns reference to hash of the IPv4 address masks of every routing
+instance, indexed by ifIndex, address type, length and address.
+C<vrf_addresses()> reads it; see L</"VRF Instances">.
 
 (C<hh3cIpAddrSetMask>)
+
+=back
+
+=head2 VRF Instances
+
+See L<SNMP::Info::VRF/"VRF Instances"> for the readers. Comware 7 serves
+no C<ipAddressTable>, and an C<ipAddrTable> holding the default instance
+only. This class fills the gaps:
+
+=over
+
+=item *
+
+C<vrf_addresses()> reads every instance's IPv4 addresses from
+C<hh3cIpAddrSetTable>, and its IPv6 addresses, anycast ones included,
+from F<IPV6-MIB> C<ipv6AddrTable>. Each instance then lists its own
+addresses.
+
+=item *
+
+C<vrf_neighbors()> adds host link-local neighbors from F<IPV6-MIB>
+C<ipv6NetToMediaTable>. Comware serves them in F<IP-MIB> only with a
+zone, which C<ipv6_n2p_addr()> does not return.
+
+=item *
+
+C<vrf_subnets()> adds connected routes (see
+L<SNMP::Info::VRF/"Collapsed Subnets">).
 
 =back
 
