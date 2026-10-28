@@ -1,10 +1,13 @@
+Version
+
+  [BUG FIXES]
+
+  * #650 Foundry: use FastIron VLAN and IP tables when standard MIB tables
+    are empty (netdisco/netdisco#856, netdisco/netdisco#1138)
+
 Version 3.983000 (2026-10-26)
 
   [NEW FEATURES]
-
-  * #650 Foundry: read ICX VLAN membership and IPv4 interface details from
-    FastIron tables when standard bridge and IP-MIB tables are empty
-    (netdisco/netdisco#856, netdisco/netdisco#1138)
 
   * #642 SNMP contexts: context_kinds() says which features a device serves
     only in non-default contexts, for example the forwarding table (fdb) or
