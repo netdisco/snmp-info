@@ -463,4 +463,28 @@ sub i_edgeport_admin__nnrst_only__maps_through_bp_index : Tests(1) {
         q(nnRstDot1dStpPortAdminEdgePort keyed by ifIndex) );
 }
 
+
+sub i_edgeport_oper__passport_class__resolves_to_rapidcity : Tests(1) {
+    my $test = shift;
+
+    is( B::svref_2object( $test->{info}->can('i_edgeport_oper') )
+            ->STASH->NAME,
+        'SNMP::Info::RapidCity',
+        q(Passport resolves i_edgeport_oper to RapidCity) );
+}
+
+sub i_edgeport_oper__nnrst_only__maps_through_bp_index : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_stp_cache('rstp');
+    $info->{store}{nn_cist_p_edge_oper} = {};
+    $info->{store}{nn_rst_p_edge_oper}  = { 192 => 'false', 193 => 'true' };
+    $info->{"_$_"} = 1 for qw/nn_cist_p_edge_oper nn_rst_p_edge_oper/;
+
+    cmp_deeply( $info->i_edgeport_oper(),
+        { 192 => 0, 193 => 1 },
+        q(nnRstDot1dStpPortOperEdgePort keyed by ifIndex) );
+}
+
 1;

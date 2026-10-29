@@ -315,6 +315,14 @@ sub i_edgeport_admin {
     return _stp_edge_by_ifindex( $bridge, $edge_admin, $partial );
 }
 
+sub i_edgeport_oper {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    my $edge_oper = $bridge->is_edgeport_oper();
+    return _stp_edge_by_ifindex( $bridge, $edge_oper, $partial );
+}
+
 # Edge values keyed by bridge port, mapped to ifIndex through bp_index
 # (or $port_index, when the caller knows the keys are not bridge ports) and
 # read as 1 or 0 by $decode (default _stp_enabled); a port missing from the
@@ -1184,6 +1192,14 @@ key = C<ifIndex>, value = [1|0].  A port with no administrative value is
 absent.
 
 (C<dot1dStpPortAdminEdgePort>)
+
+=item $bridge->i_edgeport_oper()
+
+Returns 1 or 0 for each port by whether it currently operates as an edge
+port.  Format is a hash reference with key = C<ifIndex>, value = [1|0].  A
+port with no operational value is absent.
+
+(C<dot1dStpPortOperEdgePort>)
 
 =item $bridge->i_stp_id()
 

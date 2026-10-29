@@ -529,4 +529,45 @@ sub stp_has_protocol_absent : Tests(4) {
     }
 }
 
+
+sub i_edgeport_oper__oper_edge__maps_bridge_port_to_ifindex : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        _edgeport_cache(
+            is_edgeport_oper => { 1 => 'true', 2 => 'false' },
+            bp_index         => { 1 => 101,    2 => 102 },
+        )
+    );
+    cmp_deeply( $test->{info}->i_edgeport_oper(),
+        { 101 => 1, 102 => 0 },
+        q(Operational edge values map to ifIndex as 1 or 0) );
+}
+
+sub i_edgeport_oper__admin_only__ignored : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        _edgeport_cache(
+            is_edgeport_admin => { 1 => 'true', 2 => 'false' },
+            bp_index          => { 1 => 101,    2 => 102 },
+        )
+    );
+    cmp_deeply( $test->{info}->i_edgeport_oper(),
+        {}, q(Administrative edge state is not reported) );
+}
+
+sub i_edgeport_oper__port_absent_from_bp_index__skipped : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        _edgeport_cache(
+            is_edgeport_oper => { 1 => 'true', 4 => 'true' },
+            bp_index         => { 1 => 101 },
+        )
+    );
+    cmp_deeply( $test->{info}->i_edgeport_oper(),
+        { 101 => 1 }, q(Bridge port without a bp_index row is skipped) );
+}
+
 1;

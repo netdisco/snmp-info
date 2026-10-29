@@ -211,6 +211,9 @@ $VERSION = '3.983000';
     # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB admin edge, by bridge port
     'nn_cist_p_edge_admin' => 'nnMstCistPortAdminEdgeStatus',
 
+    # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB oper edge, by bridge port
+    'nn_cist_p_edge_oper' => 'nnMstCistPortOperEdgeStatus',
+
     # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB, indexed <port>.<instance>
     'nn_msti_p_state'  => 'nnMstPortState',
     'nn_msti_p_role'   => 'nnMstPortCurrentPortRole',
@@ -224,6 +227,9 @@ $VERSION = '3.983000';
 
     # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB admin edge, by bridge port
     'nn_rst_p_edge_admin' => 'nnRstDot1dStpPortAdminEdgePort',
+
+    # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB oper edge, by bridge port
+    'nn_rst_p_edge_oper' => 'nnRstDot1dStpPortOperEdgePort',
 
     # BRIDGE-MIB beside nnRst; stp_p_* prefer rcStgPortTable
     'rc_dot1d_p_bridge' => 'dot1dStpPortDesignatedBridge',
@@ -910,27 +916,39 @@ sub i_edgeport_admin {
     my $partial   = shift;
 
     # The role's @ISA is SNMP::Info, so SUPER:: would not reach Bridge
-    my $edge_admin = $rapidcity->_rc_edge_admin();
+    my $edge_admin = $rapidcity->_rc_edge('admin');
     return SNMP::Info::Bridge::i_edgeport_admin( $rapidcity, $partial )
         unless $edge_admin;
     return SNMP::Info::Bridge::_stp_edge_by_ifindex( $rapidcity,
         $edge_admin, $partial );
 }
 
-# Admin edge by bridge port from the running protocol's table: nnMst CIST
-# under MSTP, nnRst under RSTP.  Under MSTP the nnMst rows are the per-port
-# truth even where nnRst lists more ports.
-sub _rc_edge_admin {
+sub i_edgeport_oper {
     my $rapidcity = shift;
+    my $partial   = shift;
+
+    my $edge_oper = $rapidcity->_rc_edge('oper');
+    return SNMP::Info::Bridge::i_edgeport_oper( $rapidcity, $partial )
+        unless $edge_oper;
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $rapidcity,
+        $edge_oper, $partial );
+}
+
+# Admin or oper ($kind) edge by bridge port from the running protocol's
+# table: nnMst CIST under MSTP, nnRst under RSTP.  Under MSTP the nnMst rows
+# are the per-port truth even where nnRst lists more ports.
+sub _rc_edge {
+    my $rapidcity = shift;
+    my $kind      = shift;
 
     my %table_for = (
-        mstp => 'nn_cist_p_edge_admin',
-        rstp => 'nn_rst_p_edge_admin',
+        mstp => "nn_cist_p_edge_$kind",
+        rstp => "nn_rst_p_edge_$kind",
     );
     my $method = $table_for{ $rapidcity->_rc_stp_protocol() || '' }
         or return;
-    my $edge_admin = $rapidcity->$method() || {};
-    return keys %$edge_admin ? $edge_admin : undef;
+    my $edge = $rapidcity->$method() || {};
+    return keys %$edge ? $edge : undef;
 }
 
 sub i_stp_state {
@@ -1496,6 +1514,14 @@ C<nnMstCistPortAdminEdgeStatus> under MSTP or
 C<nnRstDot1dStpPortAdminEdgePort> under RSTP; otherwise, or when that table
 has no rows, C<dot1dStpPortAdminEdgePort> through L<SNMP::Info::Bridge>.
 
+=item $rapidcity->i_edgeport_oper()
+
+Returns 1 or 0 for each port by whether it currently operates as an edge
+port.  Format is a hash reference with key = C<ifIndex>, value = [1|0].
+Reads C<nnMstCistPortOperEdgeStatus> under MSTP or
+C<nnRstDot1dStpPortOperEdgePort> under RSTP; otherwise, or when that table
+has no rows, C<dot1dStpPortOperEdgePort> through L<SNMP::Info::Bridge>.
+
 =back
 
 =head2 RAPID-CITY Port Table (C<rcPortTable>)
@@ -2057,6 +2083,10 @@ tree are left out.  Otherwise nothing.
 
 (C<nnMstCistPortAdminEdgeStatus>)
 
+=item $rapidcity->nn_cist_p_edge_oper()
+
+(C<nnMstCistPortOperEdgeStatus>)
+
 =item $rapidcity->nn_msti_p_state()
 
 (C<nnMstPortState>)
@@ -2088,6 +2118,10 @@ tree are left out.  Otherwise nothing.
 =item $rapidcity->nn_rst_p_edge_admin()
 
 (C<nnRstDot1dStpPortAdminEdgePort>)
+
+=item $rapidcity->nn_rst_p_edge_oper()
+
+(C<nnRstDot1dStpPortOperEdgePort>)
 
 =item $rapidcity->rc_dot1d_p_bridge()
 

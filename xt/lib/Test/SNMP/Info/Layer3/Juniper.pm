@@ -2014,4 +2014,72 @@ sub i_edgeport_admin__juniper_class__resolves_to_juniper : Tests(1) {
   );
 }
 
+
+sub i_edgeport_oper : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_oper => {4 => 'false', 491 => 'true', 492 => 'true'},
+    is_edgeport_oper     => {4 => 'true'},
+    bp_index             => {4 => 662, 491 => 509, 492 => 510},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {662 => 0, 509 => 1, 510 => 1},
+    q(jnxMIMstCistPortOperEdgeStatus maps bridge port to ifIndex)
+  );
+}
+
+sub i_edgeport_oper__cist_numeric__maps_1_and_2 : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_oper => {4 => 2, 491 => 1},
+    bp_index             => {4 => 662, 491 => 509},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {662 => 0, 509 => 1},
+    q(TruthValue true(1) and false(2) read as 1 and 0)
+  );
+}
+
+sub i_edgeport_oper__cist_empty__falls_back_to_rstp_mib : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_oper => {},
+    is_edgeport_oper     => {1 => 'false', 2 => 'true'},
+    bp_index             => {1 => 521, 2 => 522},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {521 => 0, 522 => 1},
+    q(dot1dStpPortOperEdgePort when the CIST table has no rows)
+  );
+}
+
+sub i_edgeport_oper__admin_rows_only__not_reported : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_admin => {4 => 'true'},
+    is_edgeport_admin     => {4 => 'true'},
+    bp_index              => {4 => 662},
+  );
+  cmp_deeply($test->{info}->i_edgeport_oper(),
+    {}, q(Administrative rows never stand in for operational ones));
+}
+
+sub i_edgeport_oper__juniper_class__resolves_to_juniper : Tests(1) {
+  my $test = shift;
+
+  is(
+    B::svref_2object($test->{info}->can('i_edgeport_oper'))
+      ->STASH->NAME,
+    'SNMP::Info::Layer3::Juniper',
+    q(Juniper resolves i_edgeport_oper to its own override)
+  );
+}
+
 1;

@@ -400,4 +400,138 @@ sub i_edgeport_admin__port_absent_from_bp_index__skipped : Tests(1) {
     {1001 => 1}, q(Bridge port without a bp_index row is skipped));
 }
 
+
+sub i_edgeport_oper__baystack_class__resolves_to_rapidcity : Tests(1) {
+  my $test = shift;
+
+  is(
+    B::svref_2object($test->{info}->can('i_edgeport_oper'))
+      ->STASH->NAME,
+    'SNMP::Info::RapidCity',
+    q(Baystack resolves i_edgeport_oper to RapidCity)
+  );
+}
+
+sub i_edgeport_oper__mstp__reads_nnmst_by_ifindex : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('mstp',
+    nn_cist_p_edge_oper => {1 => 'true', 2 => 'false', 434 => 'true'},
+    nn_rst_p_edge_oper  => {1 => 'false', 2 => 'true', 9 => 'true'},
+    is_edgeport_oper    => {1 => 'false'},
+    bp_index            => {1 => 1001, 2 => 1002, 434 => 1434, 9 => 1009},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {1001 => 1, 1002 => 0, 1434 => 1},
+    q(MSTP: nnMstCistPortOperEdgeStatus only, mapped to ifIndex)
+  );
+}
+
+sub i_edgeport_oper__nnmst_numeric__maps_1_and_2 : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('mstp',
+    nn_cist_p_edge_oper => {1 => 1, 2 => 2},
+    bp_index            => {1 => 1001, 2 => 1002},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {1001 => 1, 1002 => 0},
+    q(TruthValue true(1) and false(2) read as 1 and 0)
+  );
+}
+
+sub i_edgeport_oper__rstp__reads_nnrst : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('rstp',
+    nn_cist_p_edge_oper => {},
+    nn_rst_p_edge_oper  => {1 => 'false', 2 => 'true'},
+    is_edgeport_oper    => {1 => 'true'},
+    bp_index            => {1 => 1001, 2 => 1002},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {1001 => 0, 1002 => 1},
+    q(RSTP: nnRstDot1dStpPortOperEdgePort)
+  );
+}
+
+sub i_edgeport_oper__rstp_with_nnmst_rows__ignores_nnmst : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('rstp',
+    nn_cist_p_edge_oper => {1 => 'true', 2 => 'true', 3 => 'true'},
+    nn_rst_p_edge_oper  => {1 => 'false', 2 => 'true'},
+    bp_index            => {1 => 1001, 2 => 1002, 3 => 1003},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {1001 => 0, 1002 => 1},
+    q(RSTP: nnMst rows are not read)
+  );
+}
+
+sub i_edgeport_oper__mstp_with_only_nnrst__falls_back_to_rstp_mib :
+  Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('mstp',
+    nn_cist_p_edge_oper => {},
+    nn_rst_p_edge_oper  => {1 => 'true', 2 => 'true'},
+    is_edgeport_oper    => {1 => 'false', 2 => 'true'},
+    bp_index            => {1 => 1001, 2 => 1002},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {1001 => 0, 1002 => 1},
+    q(MSTP with no nnMst rows: dot1dStpPortOperEdgePort, not nnRst)
+  );
+}
+
+sub i_edgeport_oper__rstp_nortel_tables_empty__falls_back_to_rstp_mib :
+  Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('rstp',
+    nn_cist_p_edge_oper => {},
+    nn_rst_p_edge_oper  => {},
+    is_edgeport_oper    => {1 => 'true', 2 => 'false'},
+    bp_index            => {1 => 1001, 2 => 1002},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {1001 => 1, 1002 => 0},
+    q(dot1dStpPortOperEdgePort when neither Nortel table has rows)
+  );
+}
+
+sub i_edgeport_oper__no_mstp_or_rstp__falls_back_to_rstp_mib : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(undef,
+    nn_cist_p_edge_oper => {1 => 'true'},
+    nn_rst_p_edge_oper  => {1 => 'true'},
+    is_edgeport_oper    => {1 => 'false', 2 => 'true'},
+    bp_index            => {1 => 1001, 2 => 1002},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {1001 => 0, 1002 => 1},
+    q(No protocol detected: dot1dStpPortOperEdgePort)
+  );
+}
+
+sub i_edgeport_oper__admin_rows_only__not_reported : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('mstp',
+    nn_cist_p_edge_admin => {1 => 'true'},
+    bp_index             => {1 => 1001},
+  );
+  cmp_deeply($test->{info}->i_edgeport_oper(),
+    {}, q(Administrative rows never stand in for operational ones));
+}
+
 1;

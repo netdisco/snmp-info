@@ -120,6 +120,9 @@ $VERSION = '3.983000';
     # JUNIPER-MIMSTP-MIB admin edge, indexed by bridge port
     'jnx_cist_p_edge_admin' => 'jnxMIMstCistPortAdminEdgeStatus',
 
+    # JUNIPER-MIMSTP-MIB oper edge, indexed by bridge port
+    'jnx_cist_p_edge_oper' => 'jnxMIMstCistPortOperEdgeStatus',
+
     # JUNIPER-MIMSTP-MIB, indexed <bridge port>.<MSTI>
     'jnx_msti_p_state'  => 'jnxMIMstMstiPortState',
     'jnx_msti_p_role'   => 'jnxMIMstMstiCurrentPortRole',
@@ -829,6 +832,17 @@ sub i_edgeport_admin {
         $partial );
 }
 
+sub i_edgeport_oper {
+    my $juniper = shift;
+    my $partial = shift;
+
+    my $edge_oper = $juniper->jnx_cist_p_edge_oper() || {};
+    return $juniper->SUPER::i_edgeport_oper($partial)
+        unless keys %$edge_oper;
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $juniper, $edge_oper,
+        $partial );
+}
+
 # The protocols the default context reports: 'mstp' when MST is started at
 # context 0, else the BRIDGE-MIB protocol dot1dStpVersion names, then 'vstp'
 # when VSTP runs, beside that protocol or alone. Empty in any other context.
@@ -1489,6 +1503,13 @@ Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads
 C<jnxMIMstCistPortAdminEdgeStatus>, else C<dot1dStpPortAdminEdgePort>
 through L<SNMP::Info::Bridge>.
 
+=item $juniper->i_edgeport_oper()
+
+Returns 1 or 0 for each port by whether it currently operates as an edge
+port.  Format is a hash reference with key = C<ifIndex>, value = [1|0].
+Reads C<jnxMIMstCistPortOperEdgeStatus>, else C<dot1dStpPortOperEdgePort>
+through L<SNMP::Info::Bridge>.
+
 =item $juniper->jnx_vacm_context_name()
 
 (C<vacmContextName>)
@@ -1556,6 +1577,10 @@ through L<SNMP::Info::Bridge>.
 =item $juniper->jnx_cist_p_edge_admin()
 
 (C<jnxMIMstCistPortAdminEdgeStatus>)
+
+=item $juniper->jnx_cist_p_edge_oper()
+
+(C<jnxMIMstCistPortOperEdgeStatus>)
 
 =item $juniper->jnx_msti_p_state()
 
