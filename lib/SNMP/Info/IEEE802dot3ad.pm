@@ -55,11 +55,28 @@ $VERSION = '3.983000';
 
 %FUNCS = (
   'ad_lag_ports'    => 'dot3adAggPortListPorts',
+
+  # IEEE8023-LAG-MIB::dot3adAggTable
+  'lag_actor_system'   => 'dot3adAggActorSystemID',
+  'lag_actor_key'      => 'dot3adAggActorOperKey',
+  'lag_partner_system' => 'dot3adAggPartnerSystemID',
+  'lag_partner_key'    => 'dot3adAggPartnerOperKey',
+
+  # IEEE8023-LAG-MIB::dot3adAggPortTable
+  'lag_port_attached'       => 'dot3adAggPortAttachedAggID',
+  'lag_port_partner_system' => 'dot3adAggPortPartnerOperSystemID',
+  'lag_port_partner_key'    => 'dot3adAggPortPartnerOperKey',
  );
 
 %MUNGE = (
-  'ad_lag_ports' => \&SNMP::Info::munge_port_list,
+  'ad_lag_ports'            => \&SNMP::Info::munge_port_list,
+  'lag_actor_system'        => \&SNMP::Info::munge_mac,
+  'lag_partner_system'      => \&SNMP::Info::munge_mac,
+  'lag_port_partner_system' => \&SNMP::Info::munge_mac,
  );
+
+my $LAG_MIB = 'IEEE8023-LAG-MIB::';
+my $NO_PARTNER_SYSTEM = '00:00:00:00:00:00';
 
 sub agg_ports_lag {
   my $dev = shift;
@@ -90,6 +107,189 @@ sub agg_ports_lag {
   }
 
   return $ret;
+}
+
+sub lag_groups {
+  my $self = shift;
+
+  my $groups = {};
+  my $map    = $self->_lag_aggregator_map() || {};
+  my $rows   = $self->_lag_identity_rows($map);
+  foreach my $key ( keys %$rows ) {
+    $groups->{$key} = $self->_lag_identity_record( $rows->{$key} );
+  }
+  $self->_lag_add_members( $groups, $map );
+  $self->_lag_vendor_groups($groups);
+
+  return $groups;
+}
+
+sub mlag_domains {
+  my $self = shift;
+
+  return $self->_lag_vendor_domains() || {};
+}
+
+sub lag_groups_complete {
+  my $self = shift;
+
+  my $rows = $self->lag_actor_system() || {};
+  return unless scalar keys %$rows or scalar keys %{ $self->mlag_domains() };
+
+  foreach my $method ( $self->_lag_walked_methods() ) {
+    my $status = $self->walk_status($method) or next;
+    return 0 unless $status->{complete};
+  }
+  return 1;
+}
+
+# Private hooks: vendor classes override these.
+sub _lag_vendor_domains { return {} }
+
+sub _lag_vendor_groups { return }
+
+sub _lag_vendor_walked { return }
+
+# Aggregator row index => key of the record that row describes
+sub _lag_aggregator_map {
+  my $self = shift;
+
+  my $rows = $self->lag_actor_system() || {};
+  return { map { $_ => $_ } keys %$rows };
+}
+
+sub _lag_walked_methods {
+  my $self = shift;
+
+  return (
+    qw/lag_actor_system lag_actor_key lag_partner_system lag_partner_key
+      lag_port_attached lag_port_partner_system lag_port_partner_key/,
+    $self->_lag_vendor_walked()
+  );
+}
+
+# Hashref: record key => the lowest aggregator row index that maps onto it
+sub _lag_identity_rows {
+  my ( $self, $map ) = @_;
+
+  my $rows = $self->lag_actor_system() || {};
+  my %lowest_row;
+  foreach my $row ( sort { $a <=> $b } keys %$rows ) {
+    my $key = defined $map->{$row} ? $map->{$row} : $row;
+    $lowest_row{$key} = $row unless exists $lowest_row{$key};
+  }
+  return \%lowest_row;
+}
+
+sub _lag_partner_or_undef {
+  my $system = shift;
+
+  return if !defined $system or $system eq $NO_PARTNER_SYSTEM;
+  return $system;
+}
+
+sub _lag_identity_record {
+  my ( $self, $row ) = @_;
+
+  my $record  = _lag_new_record();
+  my %columns = (
+    actor_system   => [ lag_actor_system   => 'dot3adAggActorSystemID' ],
+    actor_key      => [ lag_actor_key      => 'dot3adAggActorOperKey' ],
+    partner_system => [ lag_partner_system => 'dot3adAggPartnerSystemID' ],
+    partner_key    => [ lag_partner_key    => 'dot3adAggPartnerOperKey' ],
+  );
+  foreach my $field ( keys %columns ) {
+    my ( $method, $leaf ) = @{ $columns{$field} };
+    my $value = ( $self->$method() || {} )->{$row};
+    $record->{$field} = $value;
+    $record->{sources}{$field} = $LAG_MIB . $leaf if defined $value;
+  }
+  $self->_lag_settle_partner($record);
+  return $record;
+}
+
+# An all-zero partner system means LACP found no partner
+sub _lag_settle_partner {
+  my ( $self, $record ) = @_;
+
+  $record->{partner_system}
+    = _lag_partner_or_undef( $record->{partner_system} );
+  if ( defined $record->{partner_system} ) {
+    $record->{lacp} = 1;
+    return;
+  }
+  $record->{partner_key} = undef;
+  delete $record->{sources}{partner_system};
+  delete $record->{sources}{partner_key};
+  return;
+}
+
+sub _lag_new_record {
+  return {
+    members        => {},
+    actor_system   => undef,
+    actor_key      => undef,
+    partner_system => undef,
+    partner_key    => undef,
+    lacp           => 0,
+    sources        => {},
+  };
+}
+
+sub _lag_agg_ports {
+  my $self = shift;
+
+  return {} unless $self->can('agg_ports');
+  my $ports = $self->agg_ports();
+  return ref {} eq ref $ports ? $ports : {};
+}
+
+# Members from agg_ports; an aggregate agg_ports names no member of falls
+# back to the ports that report themselves attached to it
+sub _lag_add_members {
+  my ( $self, $groups, $map ) = @_;
+
+  my %from_agg_ports;
+  my $agg_ports = $self->_lag_agg_ports();
+  foreach my $port ( keys %$agg_ports ) {
+    $from_agg_ports{ $agg_ports->{$port} }{$port} = 1;
+  }
+  my %from_attached;
+  my $attached = $self->lag_port_attached() || {};
+  foreach my $port ( keys %$attached ) {
+    next unless $attached->{$port};
+    my $key = defined $map->{ $attached->{$port} }
+      ? $map->{ $attached->{$port} }
+      : $attached->{$port};
+    $from_attached{$key}{$port} = 1;
+  }
+
+  foreach my $key ( keys %from_agg_ports ) {
+    $self->_lag_place_members( $groups, $key, $from_agg_ports{$key},
+      'agg_ports' );
+  }
+  foreach my $key ( grep { !$from_agg_ports{$_} } keys %from_attached ) {
+    $self->_lag_place_members( $groups, $key, $from_attached{$key},
+      $LAG_MIB . 'dot3adAggPortAttachedAggID' );
+  }
+  return;
+}
+
+sub _lag_place_members {
+  my ( $self, $groups, $key, $ports, $source ) = @_;
+
+  my $record = $groups->{$key} ||= _lag_new_record();
+  my $systems = $self->lag_port_partner_system() || {};
+  my $keys    = $self->lag_port_partner_key()    || {};
+  foreach my $port ( keys %$ports ) {
+    my $system = _lag_partner_or_undef( $systems->{$port} );
+    $record->{members}{$port} = {
+      partner_system => $system,
+      partner_key    => defined $system ? $keys->{$port} : undef,
+    };
+  }
+  $record->{sources}{members} = $source;
+  return;
 }
 
 1;
@@ -140,6 +340,9 @@ L<SNMP::Info::Aggregate>
 
 =head1 METHODS
 
+The role reports only what the device returns: it never infers a group from
+another device, and a field the device does not serve is undef or absent.
+
 =over 4
 
 =item C<agg_ports_lag>
@@ -147,6 +350,105 @@ L<SNMP::Info::Aggregate>
 Returns a HASH reference mapping from slave to master port for each member of
 a port bundle on the device. Keys are ifIndex of the slave ports, Values are
 ifIndex of the corresponding master ports.
+
+=item C<lag_groups>
+
+Returns a HASH reference with one record per aggregate, keyed by the
+aggregate's ifIndex. Each record has these fields:
+
+=over 4
+
+=item C<members>
+
+HASH reference keyed by member ifIndex. Each value is a HASH reference with
+C<partner_system> and C<partner_key>, the partner the member port reports
+(undef when it reports none).
+
+=item C<actor_system>, C<actor_key>
+
+The local LACP system ID and operational key, or undef for an aggregate with
+no F<IEEE8023-LAG-MIB> row (a static aggregate).
+
+=item C<partner_system>, C<partner_key>
+
+The remote LACP system ID and operational key. Both are undef when the device
+reports no partner, including a partner system ID of all zeros.
+
+=item C<lacp>
+
+1 when a partner system is reported, 0 otherwise.
+
+=item C<mc>, C<peer_link>
+
+Present only when a class that reads a vendor multi-chassis source reports
+them. C<mc> is a HASH reference with C<kind>, C<group>, C<domain> and
+C<state>; C<peer_link> is 1 for the channel carrying the peer link.
+
+=item C<sources>
+
+HASH reference naming where each reported field was read, such as
+C<IEEE8023-LAG-MIB::dot3adAggActorSystemID>. The C<members> source is
+C<agg_ports> when the class's C<agg_ports()> lists members of the aggregate,
+otherwise C<IEEE8023-LAG-MIB::dot3adAggPortAttachedAggID>.
+
+=back
+
+A class that defines C<agg_ports()> supplies the members; an aggregate it
+lists but the device does not describe in C<IEEE8023-LAG-MIB> gets a record
+with C<lacp> 0.
+
+=item C<mlag_domains>
+
+Returns a HASH reference keyed by the device's own multi-chassis domain or
+peer identifier. Empty in this role; classes that read a vendor source
+supply the records.
+
+=item C<lag_groups_complete>
+
+Returns undef when the device serves no aggregator rows and no multi-chassis
+domains. Returns 0 when a walk the records depend on was incomplete (see
+L<SNMP::Info/"Incomplete Walks">), otherwise 1.
+
+=back
+
+=head1 TABLE METHODS
+
+These are methods that return tables of information in the form of a reference
+to a hash.
+
+=over 4
+
+=item C<ad_lag_ports>
+
+(C<dot3adAggPortListPorts>)
+
+=item C<lag_actor_system>
+
+(C<dot3adAggActorSystemID>)
+
+=item C<lag_actor_key>
+
+(C<dot3adAggActorOperKey>)
+
+=item C<lag_partner_system>
+
+(C<dot3adAggPartnerSystemID>)
+
+=item C<lag_partner_key>
+
+(C<dot3adAggPartnerOperKey>)
+
+=item C<lag_port_attached>
+
+(C<dot3adAggPortAttachedAggID>)
+
+=item C<lag_port_partner_system>
+
+(C<dot3adAggPortPartnerOperSystemID>)
+
+=item C<lag_port_partner_key>
+
+(C<dot3adAggPortPartnerOperKey>)
 
 =back
 
