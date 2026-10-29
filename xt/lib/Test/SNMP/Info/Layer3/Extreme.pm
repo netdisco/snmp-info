@@ -835,6 +835,32 @@ sub lag_groups__mlag_port_alone__gets_own_record : Tests(7) {
         q(A load sharing member does not get a record) );
 }
 
+sub lag_groups__lone_master_without_attached_row__members_has_source
+    : Tests(2) {
+    my $test = shift;
+
+    $test->_prime_lag(
+        lag_actor_system => { 1005 => pack( 'H*', '001122334455' ) },
+        ex_loadshare     => { '1005.1005' => 'active' },
+    );
+    my $record = $test->{info}->lag_groups()->{1005};
+    cmp_deeply( [ keys %{ $record->{members} } ],
+        [1005], q(Lone master is its own member) );
+    is( $record->{sources}{members},
+        'EXTREME-PORT-MIB::extremePortLoadshare2Status',
+        q(... and the member names the loadshare table) );
+}
+
+sub lag_groups_complete__vendor_walk_incomplete__returns_0 : Tests(2) {
+    my $test = shift;
+
+    $test->_prime_exos_mlag();
+    is( $test->{info}->lag_groups_complete(), 1, q(Complete walks give 1) );
+    $test->{info}{walk_status}{ex_mlag_port_state} = { complete => 0 };
+    is( $test->{info}->lag_groups_complete(),
+        0, q(Incomplete EXOS MLAG walk gives 0) );
+}
+
 sub mlag_domains : Tests(2) {
     my $test = shift;
 

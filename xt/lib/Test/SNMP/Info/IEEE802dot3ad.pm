@@ -222,7 +222,7 @@ sub lag_groups__static_lag_no_ieee_row__record_from_agg_ports : Tests(3) {
   cmp_deeply([keys %{$record->{members}}], [5], q(Member from agg_ports));
 }
 
-sub lag_groups__no_agg_ports__treated_as_empty : Tests(1) {
+sub lag_groups__role_alone__has_no_agg_ports : Tests(1) {
   my $test = shift;
 
   $test->{info}->cache(lag_cache());
@@ -309,6 +309,15 @@ sub lag_groups_complete__walk_incomplete__returns_0 : Tests(1) {
   $test->{info}->cache(lag_cache());
   $test->{info}->{walk_status}{lag_actor_system} = {complete => 0};
   is($test->{info}->lag_groups_complete(), 0, q(Incomplete walk gives 0));
+}
+
+sub lag_groups_complete__walk_failed_before_first_row__returns_0 : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache({'_lag_actor_system' => 1, 'store' => {}});
+  $test->{info}->{walk_status}{lag_actor_system} = {complete => 0};
+  is($test->{info}->lag_groups_complete(), 0,
+    q(Walk that failed with no rows gives 0, not undef));
 }
 
 sub lag__role_names__collide_with_no_existing_method : Tests(1) {

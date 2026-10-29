@@ -134,14 +134,14 @@ sub mlag_domains {
 sub lag_groups_complete {
   my $self = shift;
 
-  return
-    unless scalar keys %{ $self->lag_groups() }
-    or scalar keys %{ $self->mlag_domains() };
-
   foreach my $method ( $self->_lag_walked_methods() ) {
     my $status = $self->walk_status($method) or next;
     return 0 unless $status->{complete};
   }
+  return
+    unless scalar keys %{ $self->lag_groups() }
+    or scalar keys %{ $self->mlag_domains() };
+
   return 1;
 }
 
@@ -435,10 +435,11 @@ supply the records.
 
 =item C<lag_groups_complete>
 
-Returns undef when C<lag_groups> and C<mlag_domains> are both empty, so a
-caller can tell a device with no aggregates from one that could not be read.
 Returns 0 when a walk the records depend on was incomplete (see
-L<SNMP::Info/"Incomplete Walks">), otherwise 1.
+L<SNMP::Info/"Incomplete Walks">), including a walk that failed before
+returning any row. Otherwise returns undef when C<lag_groups> and
+C<mlag_domains> are both empty, and 1 when there are records. A caller can
+tell a device with no aggregates (undef) from one that could not be read (0).
 
 =back
 

@@ -1983,6 +1983,20 @@ sub agg_ports__no_ieee_rows__returns_empty : Tests(1) {
   cmp_deeply($test->{info}->agg_ports(), {}, 'No rows gives an empty hash');
 }
 
+sub lag_groups_complete__if_stack_walk_incomplete__returns_0 : Tests(2) {
+  my $test = shift;
+
+  $test->_prime_unit_attached(516);
+  $test->{info}->cache({%{$test->{info}->cache()},
+    _lag_actor_system => 1,
+    store => {%{$test->{info}{store}},
+      lag_actor_system => {516 => pack('H*', '88a25e1c0806')}}});
+  is($test->{info}->lag_groups_complete(), 1, 'Complete walks give 1');
+  $test->{info}{walk_status}{ifStackStatus} = {complete => 0};
+  is($test->{info}->lag_groups_complete(), 0,
+    'Incomplete ifStackStatus walk gives 0');
+}
+
 sub lag_groups__juniper_unit_aggregator__keyed_on_physical_ae : Tests(5) {
   my $test = shift;
 

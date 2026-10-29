@@ -832,6 +832,8 @@ sub agg_ports {
     return \%members;
 }
 
+sub _lag_vendor_walked { return qw/ifStackStatus/ }
+
 # Each aggregator row maps to the physical aggregate its member units attach to
 sub _lag_aggregator_map {
     my $juniper = shift;

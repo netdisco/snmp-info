@@ -247,7 +247,8 @@ sub _ex_loadshare_masters {
         next if !defined $member or $member ne $master;
         my $record = $groups->{$master} or next;
         $extreme->_lag_place_members( $groups, $master, { $master => 1 },
-            $record->{sources}{members} );
+            $record->{sources}{members}
+                || 'EXTREME-PORT-MIB::extremePortLoadshare2Status' );
     }
     return;
 }
@@ -1834,8 +1835,9 @@ by the load sharing master when there is one, else by the port.
 =item $extreme->mlag_domains()
 
 Returns a reference to a hash keyed by MLAG peer name
-(C<extremeMlagPeerTable>) with C<kind> C<mlag>, C<system_mac> (the operational LACP MAC), C<peer> (the
-peer address; text addresses are accepted), C<status> (the checkpoint status) and C<sources>.
+(C<extremeMlagPeerTable>) with C<kind> C<mlag>, C<system_mac> (the
+operational LACP MAC), C<peer> (the peer address; text addresses are
+accepted), C<status> (the checkpoint status) and C<sources>.
 
 =back
 

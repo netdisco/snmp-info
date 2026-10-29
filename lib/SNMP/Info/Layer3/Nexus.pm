@@ -121,9 +121,11 @@ sub _lag_vendor_domains {
 		my $domain = { kind => 'vpc', sources => {} };
 		foreach my $field ( keys %columns ) {
 			my ( $method, $leaf ) = @{ $columns{$field} };
-			$domain->{$field} = ( $nexus->$method() || {} )->{$domain_id};
-			$domain->{sources}{$field} = 'CISCO-VPC-MIB::' . $leaf
-				if defined $domain->{$field};
+			my $value = ( $nexus->$method() || {} )->{$domain_id};
+			next if !defined $value or $value eq '';
+			next if $field eq 'peer_link' and !$value;
+			$domain->{$field} = $value;
+			$domain->{sources}{$field} = 'CISCO-VPC-MIB::' . $leaf;
 		}
 		$domains->{$domain_id} = $domain;
 	}

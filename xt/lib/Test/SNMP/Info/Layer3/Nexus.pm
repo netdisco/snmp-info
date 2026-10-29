@@ -221,6 +221,24 @@ sub mlag_domains : Tests(2) {
   );
 }
 
+sub mlag_domains__empty_keepalive_peer__peer_not_served : Tests(2) {
+  my $test = shift;
+
+  $test->_prime_vpc(vpc_keepalive_peer => {1 => ''});
+  my $domain = $test->{info}->mlag_domains()->{1};
+  ok(!defined $domain->{peer}, 'Empty peer address is not served');
+  ok(!exists $domain->{sources}{peer}, '... and has no source');
+}
+
+sub mlag_domains__peer_link_ifindex_zero__peer_link_not_served : Tests(2) {
+  my $test = shift;
+
+  $test->_prime_vpc(vpc_peer_link => {1 => 0});
+  my $domain = $test->{info}->mlag_domains()->{1};
+  ok(!defined $domain->{peer_link}, 'Peer link ifIndex 0 is not served');
+  ok(!exists $domain->{sources}{peer_link}, '... and has no source');
+}
+
 sub lag_groups__vpc_host_link__adds_mc : Tests(3) {
   my $test = shift;
 
