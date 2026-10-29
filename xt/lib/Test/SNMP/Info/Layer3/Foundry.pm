@@ -60,6 +60,270 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
+sub _prime_vlan_data {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->{__vlan_cfg_id} = 1;
+  $info->{__vlan_cfg_name} = 1;
+  $info->{__vlan_member_vlan_id} = 1;
+  $info->{__vlan_member_port_id} = 1;
+  $info->{__vlan_member_status} = 1;
+  $info->{__vlan_member_tag_mode} = 1;
+  $info->{store}{_vlan_cfg_id} = {
+    1 => 1, 2 => 2, 11 => 11, 13 => 13, 161 => 161,
+  };
+  $info->{store}{_vlan_cfg_name} = {
+    1 => 'DEFAULT-VLAN', 2 => '', 11 => 'ACCESS', 13 => 'MANAGEMENT', 161 => '',
+  };
+
+  # Representative rows observed on an ICX7150 running FastIron 09.0.00T213.
+  # Table row indexes are vlan.ifIndex; tag mode is tagged(1)/untagged(2).
+  $info->{store}{_vlan_member_vlan_id} = {
+    '1.65' => 1, '1.66' => 1, '2.1' => 2, '11.1' => 11,
+    '11.2' => 11, '11.12' => 11, '13.1' => 13, '99.2' => 99,
+  };
+  $info->{store}{_vlan_member_port_id} = {
+    '1.65' => 65, '1.66' => 66, '2.1' => 1, '11.1' => 1,
+    '11.2' => 2, '11.12' => 12, '13.1' => 1, '99.2' => 2,
+  };
+  $info->{store}{_vlan_member_status} = {
+    '1.65' => 'valid', '1.66' => 2, '2.1' => 2, '11.1' => 2,
+    '11.2' => 2, '11.12' => 2, '13.1' => 2, '99.2' => 1,
+  };
+  $info->{store}{_vlan_member_tag_mode} = {
+    '1.65' => 2, '1.66' => 'untagged', '2.1' => 1, '11.1' => 'tagged',
+    '11.2' => 2, '11.12' => 2, '13.1' => 2, '99.2' => 2,
+  };
+}
+
+sub _prime_ip_data {
+  my $test = shift;
+  my $info = $test->{info};
+  my $idx = '16777219.172.16.17.8';
+
+  $info->{__ip_if_index} = 1;
+  $info->{__ip_if_address} = 1;
+  $info->{__ip_if_netmask} = 1;
+  $info->{__ip_if_status} = 1;
+  $info->{store}{_ip_if_index} = {$idx => 16777219};
+  $info->{store}{_ip_if_address} = {$idx => '172.16.17.8'};
+  $info->{store}{_ip_if_netmask} = {$idx => '255.255.255.224'};
+  $info->{store}{_ip_if_status} = {$idx => 'valid'};
+}
+
+sub _prime_ip_mib_data {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->{_old_ip_index} = 1;
+  $info->{_old_ip_table} = 1;
+  $info->{_old_ip_netmask} = 1;
+  $info->{store}{old_ip_index} = {'192.0.2.10' => 4};
+  $info->{store}{old_ip_table} = {'192.0.2.10' => '192.0.2.10'};
+  $info->{store}{old_ip_netmask} = {'192.0.2.10' => '255.255.255.0'};
+  delete $info->{_foundry_ip_source};
+}
+
+sub v_name : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'v_name');
+  $test->_prime_vlan_data();
+
+  cmp_deeply(
+    $test->{info}->v_name(),
+    {
+      1 => 'DEFAULT-VLAN', 2 => '', 11 => 'ACCESS',
+      13 => 'MANAGEMENT', 161 => '',
+    },
+    q(Foundry VLAN names include configured VLANs without names)
+  );
+  cmp_deeply(
+    $test->{info}->v_index(),
+    {1 => 1, 2 => 2, 11 => 11, 13 => 13, 161 => 161},
+    q(Foundry VLAN index includes VLANs without member ports)
+  );
+
+  $test->{info}{_v_name} = 1;
+  $test->{info}{store}{v_name} = {11 => 'Q-BRIDGE ACCESS'};
+  delete $test->{info}{_foundry_vlan_source};
+  cmp_deeply(
+    $test->{info}->v_name(),
+    {11 => 'Q-BRIDGE ACCESS'},
+    q(Q-BRIDGE VLAN names take priority when both sources have data)
+  );
+
+  $test->{info}{store}{_vlan_cfg_name} = {};
+  $test->{info}{store}{_vlan_cfg_id} = {};
+  $test->{info}{store}{_vlan_member_vlan_id} = {};
+  cmp_deeply(
+    $test->{info}->v_name(),
+    {11 => 'Q-BRIDGE ACCESS'},
+    q(Foundry VLAN names fall back to Q-BRIDGE when its VLAN tables are absent)
+  );
+}
+
+sub i_vlan : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_vlan');
+  $test->_prime_vlan_data();
+
+  cmp_deeply(
+    $test->{info}->i_vlan(),
+    {1 => 13, 2 => 11, 12 => 11, 65 => 1, 66 => 1},
+    q(Foundry i_vlan returns each port's untagged VLAN)
+  );
+  cmp_deeply(
+    $test->{info}->i_vlan(2),
+    {2 => 11},
+    q(Foundry i_vlan supports an ifIndex partial)
+  );
+
+  $test->{info}{_bp_index} = 1;
+  $test->{info}{store}{bp_index} = {1 => 101};
+  $test->{info}{_qb_i_vlan} = 1;
+  $test->{info}{store}{qb_i_vlan} = {1 => 10};
+  delete $test->{info}{_foundry_vlan_source};
+  cmp_deeply($test->{info}->i_vlan(), {101 => 10},
+    q(Q-BRIDGE port VLAN data takes priority when both sources have data));
+
+  $test->{info}{store}{_vlan_member_vlan_id} = {};
+  $test->{info}{store}{_vlan_member_port_id} = {};
+  $test->{info}{store}{_vlan_member_status} = {};
+  $test->{info}{store}{_vlan_member_tag_mode} = {};
+  $test->{info}{store}{_vlan_cfg_id} = {};
+  cmp_deeply($test->{info}->i_vlan(), {101 => 10},
+    q(Foundry falls back to Q-BRIDGE data when its VLAN tables are absent));
+}
+
+sub i_untagged : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_untagged');
+  $test->_prime_vlan_data();
+  cmp_deeply($test->{info}->i_untagged(), $test->{info}->i_vlan(),
+    q(Foundry i_untagged aliases the untagged VLAN mapping));
+}
+
+sub i_vlan_membership : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_vlan_membership');
+  $test->_prime_vlan_data();
+
+  cmp_deeply(
+    $test->{info}->i_vlan_membership(),
+    {1 => bag(2, 11, 13), 2 => [11], 12 => [11], 65 => [1], 66 => [1]},
+    q(Foundry membership includes tagged and untagged VLANs but skips invalid rows)
+  );
+  cmp_deeply(
+    $test->{info}->i_vlan_membership(2),
+    {2 => [11]},
+    q(Foundry membership supports an ifIndex partial)
+  );
+
+  $test->{info}{_bp_index} = 1;
+  $test->{info}{store}{bp_index} = {1 => 101};
+  $test->{info}{_qb_v_egress} = 1;
+  $test->{info}{_qb_cv_egress} = 1;
+  $test->{info}{store}{qb_cv_egress} = undef;
+  $test->{info}{store}{qb_v_egress} = {10 => pack('B*', '1')};
+  delete $test->{info}{_foundry_vlan_source};
+  cmp_deeply($test->{info}->i_vlan_membership(), {101 => [10]},
+    q(Q-BRIDGE membership takes priority when both sources have data));
+
+  $test->{info}{store}{_vlan_member_vlan_id} = {};
+  $test->{info}{store}{_vlan_member_port_id} = {};
+  $test->{info}{store}{_vlan_member_status} = {};
+  $test->{info}{store}{_vlan_member_tag_mode} = {};
+  $test->{info}{store}{_vlan_cfg_id} = {};
+  cmp_deeply($test->{info}->i_vlan_membership(), {101 => [10]},
+    q(Foundry falls back to Q-BRIDGE membership when its VLAN tables are absent));
+}
+
+sub i_vlan_membership_untagged : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_vlan_membership_untagged');
+  $test->_prime_vlan_data();
+  cmp_deeply(
+    $test->{info}->i_vlan_membership_untagged(),
+    {1 => [13], 2 => [11], 12 => [11], 65 => [1], 66 => [1]},
+    q(Foundry untagged membership includes only untagged rows)
+  );
+
+  $test->{info}{_bp_index} = 1;
+  $test->{info}{store}{bp_index} = {1 => 101};
+  $test->{info}{_qb_v_untagged} = 1;
+  $test->{info}{_qb_cv_untagged} = 1;
+  $test->{info}{store}{qb_cv_untagged} = undef;
+  $test->{info}{store}{qb_v_untagged} = {10 => pack('B*', '1')};
+  delete $test->{info}{_foundry_vlan_source};
+  cmp_deeply($test->{info}->i_vlan_membership_untagged(), {101 => [10]},
+    q(Q-BRIDGE untagged membership takes priority when both sources have data));
+
+  $test->{info}{store}{_vlan_member_vlan_id} = {};
+  $test->{info}{store}{_vlan_member_port_id} = {};
+  $test->{info}{store}{_vlan_member_status} = {};
+  $test->{info}{store}{_vlan_member_tag_mode} = {};
+  $test->{info}{store}{_vlan_cfg_id} = {};
+  cmp_deeply($test->{info}->i_vlan_membership_untagged(), {101 => [10]},
+    q(Foundry falls back to Q-BRIDGE untagged membership when its VLAN tables are absent));
+}
+
+sub ip_index : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ip_index');
+  $test->_prime_ip_data();
+  cmp_deeply($test->{info}->ip_index(), {'172.16.17.8' => 16777219},
+    q(Foundry maps interface addresses to ifIndex));
+
+  $test->_prime_ip_mib_data();
+  cmp_deeply($test->{info}->ip_index(), {'192.0.2.10' => 4},
+    q(Standard IP-MIB data takes priority when both sources have data));
+
+  $test->{info}{store}{_ip_if_address} = {};
+  cmp_deeply($test->{info}->ip_index(), {'192.0.2.10' => 4},
+    q(Foundry falls back to the standard IP-MIB address table));
+}
+
+sub ip_table : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ip_table');
+  $test->_prime_ip_data();
+  cmp_deeply($test->{info}->ip_table(), {'172.16.17.8' => '172.16.17.8'},
+    q(Foundry returns IP address table keyed by address));
+
+  $test->_prime_ip_mib_data();
+  cmp_deeply($test->{info}->ip_table(), {'192.0.2.10' => '192.0.2.10'},
+    q(Standard IP-MIB data takes priority when both sources have data));
+
+  $test->{info}{store}{_ip_if_address} = {};
+  cmp_deeply($test->{info}->ip_table(), {'192.0.2.10' => '192.0.2.10'},
+    q(Foundry falls back to the standard IP-MIB address table));
+}
+
+sub ip_netmask : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ip_netmask');
+  $test->_prime_ip_data();
+  cmp_deeply($test->{info}->ip_netmask(), {'172.16.17.8' => '255.255.255.224'},
+    q(Foundry returns the interface subnet mask));
+
+  $test->_prime_ip_mib_data();
+  cmp_deeply($test->{info}->ip_netmask(), {'192.0.2.10' => '255.255.255.0'},
+    q(Standard IP-MIB data takes priority when both sources have data));
+
+  $test->{info}{store}{_ip_if_address} = {};
+  cmp_deeply($test->{info}->ip_netmask(), {'192.0.2.10' => '255.255.255.0'},
+    q(Foundry falls back to the standard IP-MIB address table));
+}
+
 # A served common-tree shape still reports no trees, since the default tree is
 # not the common tree: per-VLAN STP.
 sub stp_trees_default_off : Tests(3) {
