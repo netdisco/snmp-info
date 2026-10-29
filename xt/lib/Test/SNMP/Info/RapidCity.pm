@@ -76,4 +76,45 @@ sub _lag_vendor_domains__peer_unset__no_domain : Tests(1) {
     'An unset peer address is not a domain');
 }
 
+# rcMltPortMembers sets one bit per member ifIndex
+sub _prime_mlt_members {
+  my ($test, %members_of) = @_;
+
+  my %ports;
+  foreach my $id (keys %members_of) {
+    my %member = map { $_ => 1 } @{$members_of{$id}};
+    $ports{$id} = pack('B*', join('', map { $member{$_} ? 1 : 0 } 0 .. 199));
+  }
+  $test->{info}->cache({
+    _rc_mlt_ports => 1, _rc_mlt_index => 1,
+    store => {
+      rc_mlt_ports => \%ports,
+      rc_mlt_index => {map { $_ => 6143 + $_ } keys %members_of},
+    },
+  });
+  return;
+}
+
+sub agg_ports : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'agg_ports');
+  $test->_prime_mlt_members(1 => [192, 193], 2 => [194]);
+  cmp_deeply($test->{info}->agg_ports(),
+    {192 => 6144, 193 => 6144, 194 => 6145}, 'Members map to the MLT');
+}
+
+# Each read builds new hashes, so an answer that follows hash order varies
+sub agg_ports__port_in_two_mlts__lowest_mlt_wins : Tests(1) {
+  my $test = shift;
+
+  my %answers;
+  foreach my $read (1 .. 20) {
+    $test->_prime_mlt_members(map { $_ => [192] } 1 .. 8);
+    $answers{ $test->{info}->agg_ports()->{192} } = 1;
+    $test->{info}->clear_cache();
+  }
+  cmp_deeply([keys %answers], [6144], 'MLT 1 on every read');
+}
+
 1;

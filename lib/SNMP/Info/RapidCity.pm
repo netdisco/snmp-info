@@ -766,13 +766,14 @@ sub agg_ports {
             and scalar keys %$ports;
 
     my $ret = {};
-    foreach my $m ( keys %$trunks ) {
+    foreach my $m ( sort { $a <=> $b } keys %$trunks ) {
         my $idx = $trunks->{$m};
         next unless $idx;
         $idx = $dps->{$m} ? $dps->{$m} : $idx;
         my $portlist = $ports->{$m};
         next unless $portlist;
         for ( my $i = 0; $i <= scalar(@$portlist); $i++ ) {
+            next if exists $ret->{$i};
             $ret->{$i} = $idx if ( @$portlist[$i] );
         }
     }
@@ -1636,7 +1637,8 @@ Returns VLAN IDs
 
 Returns a HASH reference mapping from slave to master port for each member of
 a port bundle (MLT) on the device. Keys are ifIndex of the slave ports,
-Values are ifIndex of the corresponding master ports.
+Values are ifIndex of the corresponding master ports.  A port listed in
+more than one MLT maps to the MLT with the lowest C<rcMltId>.
 
 =item $rapidcity->rc_mlt_type()
 
