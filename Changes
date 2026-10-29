@@ -1,7 +1,21 @@
-Version
+Version 3.983001
+
+  [NEW FEATURES]
+
+  * #648 VRF: report VRF instances, membership and per-VRF neighbors,
+    addresses and subnets on IOS-XE, IOS XR, NX-OS, Junos, EOS, Comware,
+    EXOS and VOSS
+  * #649 Spanning tree: report RSTP edge port (PortFast) configured and
+    operational state from RSTP-MIB and vendor tables; Cisco's
+    i_faststart_enabled unchanged (#254)
+  * #651 LAG: add LAG, MLAG and ESI-LAG standard and vendor MIB support; add
+    aggregate port support for EXOS and Juniper
 
   [BUG FIXES]
 
+  * #652 Spanning tree: report incomplete tree lists as incomplete on Cisco,
+    Extreme, RapidCity and H3C, and in a non-default context; document
+    trees, ports and completeness with field lists and usage examples
   * #650 Foundry: use FastIron VLAN and IP tables when standard MIB tables
     are empty (netdisco/netdisco#856, netdisco/netdisco#1138)
 

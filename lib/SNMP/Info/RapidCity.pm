@@ -33,6 +33,7 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info;
+use SNMP::Info::IEEE802dot3ad ();
 
 @SNMP::Info::RapidCity::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::RapidCity::EXPORT_OK = qw//;
@@ -70,6 +71,19 @@ $VERSION = '3.983000';
 
     # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB
     'nn_rst_version' => 'nnRstDot1dStpVersion',
+
+    # From RAPID-CITY::rcMlt (IST)
+    'rc_ist_status' => 'rcMltIstSessionStatus',
+    'rc_ist_peer'   => 'rcMltIstPeerIp',
+    'rc_ist_vlan'   => 'rcMltIstVlanId',
+
+    # From RAPID-CITY::rcVirtualIst
+    'rc_vist_status' => 'rcVirtualIstSessionStatus',
+    'rc_vist_peer'   => 'rcVirtualIstPeerIp',
+    'rc_vist_vlan'   => 'rcVirtualIstVlanId',
+
+    # From RAPID-CITY::rcLacpGlobal
+    'rc_smlt_sys_id' => 'rcLacpGlobalSmltSysId',
 );
 
 %FUNCS = (
@@ -168,6 +182,8 @@ $VERSION = '3.983000';
     'rc_mlt_ports'    => 'rcMltPortMembers',
     'rc_mlt_index'    => 'rcMltIfIndex',
     'rc_mlt_dp'       => 'rcMltDesignatedPort',
+    'rc_mlt_type'     => 'rcMltMltType',
+    'rc_mlt_run_type' => 'rcMltRunningType',
 
     # From RAPID-CITY::rcBridgeSpbmMacTable
     'rc_spbm_fw_port'   => 'rcBridgeSpbmMacCPort',
@@ -208,6 +224,12 @@ $VERSION = '3.983000';
     'nn_cist_p_port'   => 'nnMstCistPortDesignatedPort',
     'nn_cist_p_enable' => 'nnMstCistForcePortState',
 
+    # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB admin edge, by bridge port
+    'nn_cist_p_edge_admin' => 'nnMstCistPortAdminEdgeStatus',
+
+    # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB oper edge, by bridge port
+    'nn_cist_p_edge_oper' => 'nnMstCistPortOperEdgeStatus',
+
     # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB, indexed <port>.<instance>
     'nn_msti_p_state'  => 'nnMstPortState',
     'nn_msti_p_role'   => 'nnMstPortCurrentPortRole',
@@ -218,6 +240,12 @@ $VERSION = '3.983000';
     # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB, indexed by bridge port
     'nn_rst_p_state' => 'nnRstDot1wPortStateTransSmState',
     'nn_rst_p_role'  => 'nnRstDot1wPortRole',
+
+    # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB admin edge, by bridge port
+    'nn_rst_p_edge_admin' => 'nnRstDot1dStpPortAdminEdgePort',
+
+    # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB oper edge, by bridge port
+    'nn_rst_p_edge_oper' => 'nnRstDot1dStpPortOperEdgePort',
 
     # BRIDGE-MIB beside nnRst; stp_p_* prefer rcStgPortTable
     'rc_dot1d_p_bridge' => 'dot1dStpPortDesignatedBridge',
@@ -232,6 +260,7 @@ $VERSION = '3.983000';
     'rc_vlan_members' => \&SNMP::Info::munge_port_list,
     'rc_vlan_no_join' => \&SNMP::Info::munge_port_list,
     'rc_mlt_ports'    => \&SNMP::Info::munge_port_list,
+    'rc_smlt_sys_id'  => \&SNMP::Info::munge_mac,
     'rc_stp_i_mac'       => \&SNMP::Info::munge_mac,
     'rc_stp_i_root'      => \&SNMP::Info::munge_prio_mac,
     'rc_stp_p_root'      => \&SNMP::Info::munge_prio_mac,
@@ -751,6 +780,111 @@ sub agg_ports {
     return $ret;
 }
 
+sub _lag_vendor_walked {
+    return qw/rc_mlt_index rc_mlt_dp rc_mlt_type rc_mlt_run_type/;
+}
+
+# The standard table holds a row on the MLT's rcMltIfIndex and, on VOSS, a
+# row on each member port; agg_ports keys the MLT by its designated port
+sub _lag_aggregator_map {
+    my $rapidcity = shift;
+
+    my $map = SNMP::Info::IEEE802dot3ad::_lag_aggregator_map($rapidcity);
+    my $channels = $rapidcity->rc_mlt_index() || {};
+    my $dps      = $rapidcity->rc_mlt_dp()    || {};
+    foreach my $mlt_id ( keys %$channels ) {
+        my $ifindex = $channels->{$mlt_id} or next;
+        $map->{$ifindex} = $dps->{$mlt_id} if $dps->{$mlt_id};
+    }
+    return $map;
+}
+
+# A domain is served when its peer address is set; the scalars exist, with
+# a 0.0.0.0 peer, on a device that does not use the feature
+sub _lag_vendor_domains {
+    my $rapidcity = shift;
+
+    my %flavors = (
+        vist => [ 'rc_vist', 'rcVirtualIst' ],
+        ist  => [ 'rc_ist',  'rcMltIst' ],
+    );
+    my $system_mac = $rapidcity->rc_smlt_sys_id();
+    my $domains    = {};
+    foreach my $kind ( keys %flavors ) {
+        my ( $prefix, $leaf_prefix ) = @{ $flavors{$kind} };
+        my $peer = $rapidcity->${\"${prefix}_peer"}();
+        next unless defined $peer and $peer ne '0.0.0.0';
+        my $domain = { kind => $kind, peer => $peer, sources => {} };
+        $domain->{sources}{peer} = "RAPID-CITY::${leaf_prefix}PeerIp";
+        foreach my $field (qw/vlan status/) {
+            my $value = $rapidcity->${\"${prefix}_$field"}();
+            next unless defined $value;
+            $domain->{$field} = $value;
+            $domain->{sources}{$field}
+                = "RAPID-CITY::${leaf_prefix}"
+                . ( $field eq 'vlan' ? 'VlanId' : 'SessionStatus' );
+        }
+        if ( defined $system_mac ) {
+            $domain->{system_mac} = $system_mac;
+            $domain->{sources}{system_mac}
+                = 'RAPID-CITY::rcLacpGlobalSmltSysId';
+        }
+        $domains->{$kind} = $domain;
+    }
+    return $domains;
+}
+
+sub _lag_vendor_groups {
+    my ( $rapidcity, $groups ) = @_;
+
+    my $channels = $rapidcity->rc_mlt_index()    || {};
+    my $types    = $rapidcity->rc_mlt_type()     || {};
+    my $running  = $rapidcity->rc_mlt_run_type() || {};
+    my $dps      = $rapidcity->rc_mlt_dp()       || {};
+    my $domain   = $rapidcity->_smlt_domain_key();
+    foreach my $mlt_id ( keys %$channels ) {
+        my $ifindex = $channels->{$mlt_id} or next;
+        my $type = $types->{$mlt_id} or next;
+
+        # agg_ports keys the channel by its designated port when it has one
+        $ifindex = $dps->{$mlt_id} if $dps->{$mlt_id};
+        if ( $type eq 'splitMLT' and defined $domain ) {
+            my $record = _mlt_group_record( $groups, $ifindex );
+            $record->{mc} = {
+                kind   => 'smlt',
+                group  => $mlt_id,
+                domain => $domain,
+                state  => $running->{$mlt_id},
+            };
+            $record->{sources}{mc} = 'RAPID-CITY::rcMltMltType';
+        }
+        elsif ( $type eq 'istMLT' or $type eq 'virtualIstMLT' ) {
+            my $record = _mlt_group_record( $groups, $ifindex );
+            $record->{peer_link} = 1;
+            $record->{sources}{peer_link} = 'RAPID-CITY::rcMltMltType';
+        }
+    }
+    return;
+}
+
+# Split MLTs pair across the virtual IST when it is served, else the IST
+sub _smlt_domain_key {
+    my $rapidcity = shift;
+
+    my $domains = $rapidcity->_lag_vendor_domains();
+    return 'vist' if $domains->{vist};
+    return 'ist'  if $domains->{ist};
+    return;
+}
+
+# A channel the standard does not list still gets a record
+sub _mlt_group_record {
+    my ( $groups, $ifindex ) = @_;
+
+    return $groups->{$ifindex}
+        ||= SNMP::Info::IEEE802dot3ad::_lag_new_record();
+}
+
 # break up the rcBridgeSpbmMacEntry INDEX into ISID and MAC Address.
 sub _spbm_fdbtable_index {
     my $idx    = shift;
@@ -897,6 +1031,46 @@ sub i_bpduguard_enabled {
     my $partial = shift;
 
     return $rapidcity->rcPortBpduFilteringOperEnabled();
+}
+
+sub i_edgeport_admin {
+    my $rapidcity = shift;
+    my $partial   = shift;
+
+    # The role's @ISA is SNMP::Info, so SUPER:: would not reach Bridge
+    my $edge_admin = $rapidcity->_rc_edge('admin');
+    return SNMP::Info::Bridge::i_edgeport_admin( $rapidcity, $partial )
+        unless $edge_admin;
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $rapidcity,
+        $edge_admin, $partial );
+}
+
+sub i_edgeport_oper {
+    my $rapidcity = shift;
+    my $partial   = shift;
+
+    my $edge_oper = $rapidcity->_rc_edge('oper');
+    return SNMP::Info::Bridge::i_edgeport_oper( $rapidcity, $partial )
+        unless $edge_oper;
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $rapidcity,
+        $edge_oper, $partial );
+}
+
+# Admin or oper ($kind) edge by bridge port from the running protocol's
+# table: nnMst CIST under MSTP, nnRst under RSTP.  Under MSTP the nnMst rows
+# are the per-port truth even where nnRst lists more ports.
+sub _rc_edge {
+    my $rapidcity = shift;
+    my $kind      = shift;
+
+    my %table_for = (
+        mstp => "nn_cist_p_edge_$kind",
+        rstp => "nn_rst_p_edge_$kind",
+    );
+    my $method = $table_for{ $rapidcity->_rc_stp_protocol() || '' }
+        or return;
+    my $edge = $rapidcity->$method() || {};
+    return keys %$edge ? $edge : undef;
 }
 
 sub i_stp_state {
@@ -1066,6 +1240,7 @@ sub _rc_rstp_trees {
     my $bp_index = $rapidcity->bp_index() || {};
     my $complete = keys %$states ? 1 : 0;
     $complete = 0 if grep { !defined $bp_index->{$_} } keys %$states;
+    $complete = 0 if $rapidcity->_stp_walk_incomplete('nn_rst_p_state');
 
     my $priority = ( $rapidcity->rc_stp_i_priority() || {} )->{1};
     my $mac      = ( $rapidcity->rc_stp_i_mac()      || {} )->{1};
@@ -1202,6 +1377,7 @@ sub stp_trees_complete {
 
     return 0 unless defined $rapidcity->_rc_stp_protocol();
     my $trees = $rapidcity->stp_trees() || {};
+    return 0 if $rapidcity->_stp_walk_incomplete('nn_msti_priority');
     return keys %$trees ? 1 : 0;
 }
 
@@ -1353,6 +1529,34 @@ These are methods that return scalar values from SNMP
 Returns 1 when C<nnRstDot1dStpVersion> is C<stpCompatible(0)> and MSTP is not
 the forced version, else 0.
 
+=item $rapidcity->rc_ist_status()
+
+(C<rcMltIstSessionStatus>)
+
+=item $rapidcity->rc_ist_peer()
+
+(C<rcMltIstPeerIp>)
+
+=item $rapidcity->rc_ist_vlan()
+
+(C<rcMltIstVlanId>)
+
+=item $rapidcity->rc_vist_status()
+
+(C<rcVirtualIstSessionStatus>)
+
+=item $rapidcity->rc_vist_peer()
+
+(C<rcVirtualIstPeerIp>)
+
+=item $rapidcity->rc_vist_vlan()
+
+(C<rcVirtualIstVlanId>)
+
+=item $rapidcity->rc_smlt_sys_id()
+
+(C<rcLacpGlobalSmltSysId>)
+
 =item $rapidcity->hasRSTP()
 
 Returns 1 when C<nnRstDot1dStpVersion> is C<rstp(2)> and MSTP is not the
@@ -1434,6 +1638,14 @@ Returns a HASH reference mapping from slave to master port for each member of
 a port bundle (MLT) on the device. Keys are ifIndex of the slave ports,
 Values are ifIndex of the corresponding master ports.
 
+=item $rapidcity->rc_mlt_type()
+
+(C<rcMltMltType>)
+
+=item $rapidcity->rc_mlt_run_type()
+
+(C<rcMltRunningType>)
+
 =item $rapidcity->i_stp_state()
 
 Returns the mapping of (C<dot1dStpPortState>) to the interface
@@ -1453,6 +1665,88 @@ Returns true or false depending on whether C<BpduGuard> is enabled on a given
 port.  Format is a hash reference with key = C<ifIndex>, value = [true|false]
 
 (C<rcPortBpduFilteringOperEnabled>)
+
+=item $rapidcity->i_edgeport_admin()
+
+Returns 1 or 0 for each port by whether it is configured as an edge port.
+Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads
+C<nnMstCistPortAdminEdgeStatus> under MSTP or
+C<nnRstDot1dStpPortAdminEdgePort> under RSTP; otherwise, or when that table
+has no rows, C<dot1dStpPortAdminEdgePort> through L<SNMP::Info::Bridge>.
+
+=item $rapidcity->i_edgeport_oper()
+
+Returns 1 or 0 for each port by whether it currently operates as an edge
+port.  Format is a hash reference with key = C<ifIndex>, value = [1|0].
+Reads C<nnMstCistPortOperEdgeStatus> under MSTP or
+C<nnRstDot1dStpPortOperEdgePort> under RSTP; otherwise, or when that table
+has no rows, C<dot1dStpPortOperEdgePort> through L<SNMP::Info::Bridge>.
+
+=back
+
+=head2 Link Aggregation
+
+Passport and Baystack devices report multi-chassis evidence through
+C<lag_groups()> and C<mlag_domains()>.  Nothing is reported for a feature
+the device does not serve.
+
+=over
+
+=item $rapidcity->mlag_domains()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by C<vist>
+(virtual IST) or C<ist>, the same as C<kind>.  A domain is reported when
+its peer address is set and not C<0.0.0.0>.  Its fields:
+
+=over
+
+=item *
+
+C<peer>: C<rcVirtualIstPeerIp> or C<rcMltIstPeerIp>.
+
+=item *
+
+C<vlan>: C<rcVirtualIstVlanId> or C<rcMltIstVlanId>.
+
+=item *
+
+C<status>: the session status, C<rcVirtualIstSessionStatus> or
+C<rcMltIstSessionStatus>.
+
+=item *
+
+C<system_mac>: C<rcLacpGlobalSmltSysId>, the same in both domains.
+
+=back
+
+=item $rapidcity->lag_groups()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with:
+
+=over
+
+=item *
+
+An MLT is keyed as C<agg_ports()> keys it: by C<rcMltDesignatedPort> when
+set, else by C<rcMltIfIndex>.
+
+=item *
+
+An MLT whose C<rcMltMltType> is C<splitMLT> gets C<mc> when a domain is
+served: C<kind> C<smlt>, C<group> the MLT id, C<domain> C<vist> when that
+domain is served, else C<ist>, and C<state> the running type
+(C<rcMltRunningType>).
+
+=item *
+
+An MLT of type C<istMLT> or C<virtualIstMLT> gets C<peer_link>.
+
+=item *
+
+In SPBM mode the virtual IST channel is a normal MLT, so the session is
+reported in C<mlag_domains()> only and no record has C<peer_link>.
+
+=back
 
 =back
 
@@ -1908,37 +2202,105 @@ segment."
 
 =head2 Spanning Tree Trees
 
-These override L<SNMP::Info::Bridge/"Spanning Tree Trees">; records are as
-described there.  The protocol is C<mstp> when C<nnMstForceProtocolVersion> is
-C<mstp(3)>, else C<rstp> or C<stp> as C<nnRstDot1dStpVersion> says
-(C<rstp(2)>, C<stpCompatible(0)>).  Those two objects mean the same across
-the family's generations, where C<rcStgProtocolSpecification> does not.
-C<rcSysSpanningTreeOperMode> C<nortelStpg> and C<pvst> are not read: those
-modes predate 802.1w and 802.1s, and few devices still run them, so a
-device in one of them reports no trees.
+These override L<SNMP::Info::Bridge/"Spanning Tree Trees">, where the
+records are described.  Only the default context is read.
 
-Under MSTP the CIST is C<cist.0>, from
-C<NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB>, and each row of
-C<nnMstBridgePriority> is a C<msti.N> whose STG (N + 1) runs spanning tree.
-The VOSS SPBM B-VLAN tree has C<rcStgEnableStp> false, so it is left out of
-the trees and its VLANs out of C<stp_vlan_map()>.  The MSTI
-bridge ID is the configured priority with the bridge address, as the device
-serves it.  Under RSTP and STP the one tree is C<cist.0>, with the bridge and
-root from the first C<rcStgTable> row, as VOSS serves no C<dot1dStp> scalar
-under RSTP.
+The protocol:
 
-The port state under RSTP and STP is C<nnRstDot1wPortStateTransSmState>: the
-C<BRIDGE-MIB> and C<rcStgPortTable> states serve forwarding on a blocked port.
-Under RSTP and STP C<enabled> is C<rcStgPortEnableStp> for the port and the
-tree's STG, else C<dot1dStpPortEnable>.  Under MSTP it is
-C<nnMstCistForcePortState> for C<cist.0> and C<nnMstPortForcePortState> for
-each C<msti.N>, both indexed by bridge port, with C<disabled(0)> as 0 and
-C<enabled(1)> as 1; a port with no row has C<enabled> undef, as neither
-C<rcStgPortEnableStp> nor C<dot1dStpPortEnable> carries the MSTP setting.
-A port row with no C<bp_index> entry is left out and makes C<ports_complete>
-0. An RSTP or STP device that serves no C<nnRstDot1wPortStateTransSmState>
-rows also gives C<ports_complete> 0. C<measured> is 0. Only the default
-context is read.
+=over
+
+=item *
+
+C<mstp> when C<nnMstForceProtocolVersion> is C<mstp(3)>.
+
+=item *
+
+Else C<rstp> or C<stp>, as C<nnRstDot1dStpVersion> says (C<rstp(2)>,
+C<stpCompatible(0)>).
+
+=item *
+
+Else unknown: C<stp_protocols()> returns nothing, C<stp_trees()> an
+empty hash and C<stp_trees_complete()> 0.  C<rcSysSpanningTreeOperMode>
+is not read, so a device in C<nortelStpg> or C<pvst> mode gets this
+result only if it serves neither C<nnMstForceProtocolVersion> nor
+C<nnRstDot1dStpVersion> as above (not verified on such a device).
+
+=back
+
+The tree records:
+
+=over
+
+=item Keys
+
+C<cist.0> and C<msti.N> under MSTP: one C<msti.N> for each row of
+C<nnMstBridgePriority> whose STG, N + 1, runs spanning tree.  An STG with
+spanning tree disabled, such as the SPBM B-VLAN tree, is not a tree.
+C<cist.0> under RSTP and STP.
+
+=item C<protocol>
+
+As above.
+
+=item C<measured>
+
+0.
+
+=item C<ports_complete>
+
+0 when a port row of the tree has no C<bp_index()> entry.  Under RSTP
+and STP also 0 when the device serves no
+C<nnRstDot1wPortStateTransSmState> rows, or their walk was incomplete.
+
+=item C<contexts>
+
+The default context.
+
+=item C<bridge>
+
+Under MSTP, the instance's C<nnMstCistBridgePriority> or
+C<nnMstBridgePriority> as served, with C<nnMstBrgAddress>.  Under RSTP
+and STP, C<rcStgPriority> and C<rcStgBridgeAddress> of STG 1, since VOSS
+serves no C<dot1dStp> scalar under RSTP.
+
+=item C<root>
+
+Under MSTP, C<nnMstCistRoot> or C<nnMstBridgeRegionalRoot>.  Under RSTP
+and STP, C<rcStgDesignatedRoot> of STG 1.
+
+=back
+
+The port records:
+
+=over
+
+=item C<state>
+
+Under MSTP, C<nnMstCistPortState> or C<nnMstPortState>.  Under RSTP and
+STP, C<nnRstDot1wPortStateTransSmState>: the F<BRIDGE-MIB> and
+C<rcStgPortTable> states serve forwarding on a blocked port.
+
+=item C<role>, C<role_raw>
+
+C<nnMstCistCurrentPortRole>, C<nnMstPortCurrentPortRole> or
+C<nnRstDot1wPortRole>, normalized by C<munge_dot1s_port_role()> or
+C<munge_dot1w_port_role()>.
+
+=item C<designated_bridge>, C<designated_port>
+
+Under MSTP, from the CIST or MSTI port table.  Under RSTP and STP, from
+F<BRIDGE-MIB>.
+
+=item C<enabled>
+
+Under MSTP, C<nnMstCistForcePortState> for C<cist.0> and
+C<nnMstPortForcePortState> for each C<msti.N>: 0 for C<disabled(0)>, 1
+for C<enabled(1)>, undef for a port with no row.  Under RSTP and STP,
+C<rcStgPortEnableStp> for the port and the tree's STG, else
+C<dot1dStpPortEnable>.
+
+=back
 
 =over
 
@@ -1955,13 +2317,12 @@ served.
 =item $rapidcity->stp_tree_ports($tree_key)
 
 Returns reference to hash of the tree's port records keyed by ifIndex.
-C<role> is the C<nnMstCistCurrentPortRole>, C<nnMstPortCurrentPortRole> or
-C<nnRstDot1wPortRole> value in the shared vocabulary, and C<role_raw> as
-served.
 
 =item $rapidcity->stp_trees_complete()
 
-Returns 1 when a protocol is identified and trees are listed, 0 otherwise.
+Returns 1 or 0, as L<SNMP::Info::Bridge/"Spanning Tree Trees">
+describes.  0 when the protocol is unknown, when no tree is listed, and
+under MSTP when the C<nnMstBridgePriority> walk was incomplete.
 
 =item $rapidcity->stp_vlan_map()
 
@@ -2011,6 +2372,14 @@ tree are left out.  Otherwise nothing.
 
 (C<nnMstCistForcePortState>)
 
+=item $rapidcity->nn_cist_p_edge_admin()
+
+(C<nnMstCistPortAdminEdgeStatus>)
+
+=item $rapidcity->nn_cist_p_edge_oper()
+
+(C<nnMstCistPortOperEdgeStatus>)
+
 =item $rapidcity->nn_msti_p_state()
 
 (C<nnMstPortState>)
@@ -2038,6 +2407,14 @@ tree are left out.  Otherwise nothing.
 =item $rapidcity->nn_rst_p_role()
 
 (C<nnRstDot1wPortRole>)
+
+=item $rapidcity->nn_rst_p_edge_admin()
+
+(C<nnRstDot1dStpPortAdminEdgePort>)
+
+=item $rapidcity->nn_rst_p_edge_oper()
+
+(C<nnRstDot1dStpPortOperEdgePort>)
 
 =item $rapidcity->rc_dot1d_p_bridge()
 

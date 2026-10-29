@@ -1192,6 +1192,11 @@ Provides abstraction to information obtainable from Ruckus ICX switches (Brocade
 / Foundry Networks) devices through SNMP.
 See inherited classes' documentation for inherited methods.
 
+Reports no spanning tree: these devices run per-VLAN STP, which
+F<BRIDGE-MIB> does not describe.  C<stp_trees()> is empty,
+C<stp_protocols()> returns nothing, and C<stp_trees_complete()> returns 0
+(see L<SNMP::Info::Bridge/"Spanning Tree Trees">).
+
 =head2 Inherited Classes
 
 =over

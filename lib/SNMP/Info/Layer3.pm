@@ -43,13 +43,15 @@ use SNMP::Info::IPv6;
 use SNMP::Info::AdslLine;
 use SNMP::Info::LLDP;
 use SNMP::Info::DocsisHE;
+use SNMP::Info::VRF;
+use SNMP::Info::IEEE802dot3ad;
 
 @SNMP::Info::Layer3::ISA = qw/
     SNMP::Info::PowerEthernet SNMP::Info::IPv6
     SNMP::Info::Entity SNMP::Info::EtherLike
     SNMP::Info::Bridge SNMP::Info::AdslLine
     SNMP::Info::LLDP SNMP::Info::DocsisHE
-    SNMP::Info Exporter/;
+    SNMP::Info::VRF SNMP::Info SNMP::Info::IEEE802dot3ad Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
@@ -58,6 +60,7 @@ $VERSION = '3.983000';
 
 %MIBS = (
     %SNMP::Info::MIBS,
+    %SNMP::Info::VRF::MIBS,
     %SNMP::Info::AdslLine::MIBS,
     %SNMP::Info::Bridge::MIBS,
     %SNMP::Info::DocsisHE::MIBS,
@@ -66,6 +69,7 @@ $VERSION = '3.983000';
     %SNMP::Info::PowerEthernet::MIBS,
     %SNMP::Info::IPv6::MIBS,
     %SNMP::Info::LLDP::MIBS,
+    %SNMP::Info::IEEE802dot3ad::MIBS,
     'IP-MIB'   => 'ipNetToMediaIfIndex',
     'OSPF-MIB' => 'ospfRouterId',
     'ISIS-MIB' => 'isisSysID',
@@ -76,6 +80,7 @@ $VERSION = '3.983000';
 
     # Inherit the super class ones
     %SNMP::Info::GLOBALS,
+    %SNMP::Info::VRF::GLOBALS,
     %SNMP::Info::AdslLine::GLOBALS,
     %SNMP::Info::Bridge::GLOBALS,
     %SNMP::Info::DocsisHE::GLOBALS,
@@ -84,6 +89,7 @@ $VERSION = '3.983000';
     %SNMP::Info::PowerEthernet::GLOBALS,
     %SNMP::Info::IPv6::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
+    %SNMP::Info::IEEE802dot3ad::GLOBALS,
     'mac' => 'ifPhysAddress.1',
     'serial1' =>
         '.1.3.6.1.4.1.9.3.6.3.0',    # OLD-CISCO-CHASSIS-MIB::chassisId.0
@@ -94,6 +100,7 @@ $VERSION = '3.983000';
 
 %FUNCS = (
     %SNMP::Info::FUNCS,
+    %SNMP::Info::VRF::FUNCS,
     %SNMP::Info::AdslLine::FUNCS,
     %SNMP::Info::Bridge::FUNCS,
     %SNMP::Info::DocsisHE::FUNCS,
@@ -102,6 +109,7 @@ $VERSION = '3.983000';
     %SNMP::Info::PowerEthernet::FUNCS,
     %SNMP::Info::IPv6::FUNCS,
     %SNMP::Info::LLDP::FUNCS,
+    %SNMP::Info::IEEE802dot3ad::FUNCS,
 
     # Obsolete Address Translation Table (ARP Cache)
     'old_at_index'   => 'atIfIndex',
@@ -168,6 +176,7 @@ $VERSION = '3.983000';
 
     # Inherit all the built in munging
     %SNMP::Info::MUNGE,
+    %SNMP::Info::VRF::MUNGE,
     %SNMP::Info::AdslLine::MUNGE,
     %SNMP::Info::Bridge::MUNGE,
     %SNMP::Info::EtherLike::MUNGE,
@@ -176,6 +185,7 @@ $VERSION = '3.983000';
     %SNMP::Info::PowerEthernet::MUNGE,
     %SNMP::Info::IPv6::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
+    %SNMP::Info::IEEE802dot3ad::MUNGE,
     'old_at_paddr' => \&SNMP::Info::munge_mac,
     'at_paddr'     => \&SNMP::Info::munge_mac,
     'n2p_paddr'    => \&SNMP::Info::munge_mac,
@@ -535,6 +545,10 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::AdslLine
 
+=item SNMP::Info::VRF
+
+=item SNMP::Info::IEEE802dot3ad
+
 =back
 
 =head2 Required MIBs
@@ -570,6 +584,10 @@ See L<SNMP::Info::LLDP/"Required MIBs"> for its MIB requirements.
 See L<SNMP::Info::DocsisHE/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::AdslLine/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::VRF/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::IEEE802dot3ad/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -643,7 +661,7 @@ See L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 
 See L<SNMP::Info::Entity/"GLOBALS"> for details.
 
-=head2 Global Methods imported from SNMP::Info:PowerEthernet
+=head2 Global Methods imported from SNMP::Info::PowerEthernet
 
 See L<SNMP::Info::PowerEthernet/"GLOBALS"> for details.
 
@@ -662,6 +680,10 @@ See L<SNMP::Info::DocsisHE/"GLOBALS"> for details.
 =head2 Global Methods imported from SNMP::Info::AdslLine
 
 See L<SNMP::Info::AdslLine/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::VRF
+
+See L<SNMP::Info::VRF/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -1041,5 +1063,14 @@ See L<SNMP::Info::DocsisHE/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::AdslLine
 
 See L<SNMP::Info::AdslLine/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::VRF
+
+See L<SNMP::Info::VRF/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
+
+See documentation in L<SNMP::Info::IEEE802dot3ad/"METHODS"> and
+L<SNMP::Info::IEEE802dot3ad/"TABLE METHODS"> for details.
 
 =cut

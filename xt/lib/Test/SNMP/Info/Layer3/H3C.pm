@@ -342,6 +342,17 @@ sub stp_tree_ports : Tests(12) {
     is( $rows->{2}{enabled}, 0, 'RSTP: enabled from dot1dStpPortEnable' );
 }
 
+sub stp_trees_complete__mstp_instance_list_incomplete__returns_0 : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_stp_cache( 'mstp', $COMWARE7 );
+    is( $info->stp_trees_complete(), 1, 'MSTP: instance list complete' );
+    delete $info->{_stp_trees};
+    $test->incomplete_on_read( $info, 'h3c_stp_i_id' );
+    is( $info->stp_trees_complete(), 0, 'MSTP: instance list incomplete' );
+}
+
 sub stp_trees_complete : Tests(5) {
     my $test = shift;
     my $info = $test->{info};
@@ -514,6 +525,286 @@ sub i_stp_state_pvst : Tests(3) {
     $test->_stp_cache( 'rstp', $COMWARE7 );
     cmp_deeply( [ sort keys %{ $info->i_stp_state() } ], [ 2, 3, 4 ],
         'RSTP on Comware 7: values kept' );
+}
+
+# Comware 7 as it serves a PE: ipAddrTable holds the management address
+# only, hh3cIpAddrSetTable every instance's IPv4 addresses, ipv6AddrTable
+# the IPv6 ones, and host link-locals are IPv6z rows in IP-MIB.
+my %VRF_IID = (
+    red   => '3.114.101.100',
+    blue  => '4.98.108.117.101',
+    grey  => '4.103.114.101.121',
+    green => '5.103.114.101.101.110',
+);
+my %VRF_PORTS = (
+    red => [ 1413, 1415 ], blue => [ 1414, 1416 ],
+    green => [1417], grey => [1418],
+);
+
+sub _h3c_v6_arcs {
+    my @groups = map { hex } split /:/, shift;
+    return join q(.), map { ( $_ >> 8, $_ & 0xff ) } @groups;
+}
+
+sub _h3c_mac { return pack 'C6', 2, 0, 0, 0, 0, shift }
+
+sub _prime_h3c_vrf {
+    my $test  = shift;
+    my $info  = $test->{info};
+    my $iid_of = sub { join q(.), length $_[0], map { ord } split //, $_[0] };
+    my %v6 = (
+        1413 => [ '2001:db8:80:0:0:0:0:1', 'fe80:0:0:0:0:0:0:1' ],
+        1414 => [ '2001:db8:80:0:0:0:0:1', 'fe80:0:0:0:0:0:0:1' ],
+        1415 => ['fe80:0:0:0:0:0:0:1'],
+    );
+    my %store = (
+        vrf_l3vpn_rd    => { map { $_ => q() } values %VRF_IID },
+        vrf_l3vpn_descr => { map { $_ => q() } values %VRF_IID },
+        vrf_l3vpn_oper  => { map { $_ => 'up' } values %VRF_IID },
+        vrf_l3vpn_rt    => {},
+        vrf_l3vpn_if    => {
+            map {
+                my $name = $_;
+                map { ( "$VRF_IID{$name}.$_" => 'active' ) }
+                    @{ $VRF_PORTS{$name} }
+            } keys %VRF_PORTS
+        },
+        old_ip_index   => { '10.0.0.15' => 1412 },
+        old_ip_netmask => { '10.0.0.15' => '255.255.255.0' },
+        vrf_h3c_addr_mask => {
+            '1412.1.4.10.0.0.15' => '255.255.255.0',
+            '1413.1.4.10.80.0.1' => '255.255.255.0',
+            '1414.1.4.10.80.0.1' => '255.255.255.0',
+            '1415.1.4.10.81.0.1' => '255.255.255.0',
+            '1416.1.4.10.82.0.1' => '255.255.255.0',
+            '1418.1.4.10.84.0.1' => '255.255.255.255',
+        },
+        i6_addr_pfxlen => {
+            map {
+                my $port = $_;
+                map { ( "$port." . _h3c_v6_arcs($_) => /^fe80/ ? 10 : 64 ) }
+                    @{ $v6{$port} }
+            } keys %v6
+        },
+        i6_n2p_phys_addr => {
+            '1413.' . _h3c_v6_arcs('fe80:0:0:0:0:0:0:2') => _h3c_mac(1),
+            '1413.' . _h3c_v6_arcs('fe80:0:0:0:0:ff:fe00:1') => _h3c_mac(1),
+            '1414.' . _h3c_v6_arcs('fe80:0:0:0:0:0:0:2') => _h3c_mac(2),
+            '1415.' . _h3c_v6_arcs('fe80:0:0:0:0:0:0:2') => _h3c_mac(3),
+        },
+        i6_n2p_phys_type => {
+            '1413.' . _h3c_v6_arcs('fe80:0:0:0:0:0:0:2') => 'dynamic',
+            '1413.' . _h3c_v6_arcs('fe80:0:0:0:0:ff:fe00:1') => 'dynamic',
+            '1414.' . _h3c_v6_arcs('fe80:0:0:0:0:0:0:2') => 'dynamic',
+            '1415.' . _h3c_v6_arcs('fe80:0:0:0:0:0:0:2') => 'dynamic',
+        },
+        # IP-MIB serves the same link-local as ipv6z(4) with a zone
+        ip_n2p_phys_addr => {
+            '1413.4.20.' . _h3c_v6_arcs('fe80:0:0:0:0:0:0:2') . '.0.0.5.133'
+                => _h3c_mac(1),
+        },
+        ip_n2p_phys_type => {
+            '1413.4.20.' . _h3c_v6_arcs('fe80:0:0:0:0:0:0:2') . '.0.0.5.133'
+                => 'dynamic',
+        },
+        vrf_l3vpn_rte_proto => {
+            "$VRF_IID{red}.1.4.10.80.0.0.24.2.268435472.0.1.4.10.80.0.1"
+                => 'local',
+            "$VRF_IID{grey}.1.4.10.84.0.1.32.2.268435470.0.1.4.127.0.0.1"
+                => 'local',
+        },
+        vrf_l3vpn_rte_if => {
+            "$VRF_IID{red}.1.4.10.80.0.0.24.2.268435472.0.1.4.10.80.0.1"
+                => 1413,
+            "$VRF_IID{grey}.1.4.10.84.0.1.32.2.268435470.0.1.4.127.0.0.1"
+                => 1410,
+        },
+    );
+    foreach my $method (
+        qw/at_paddr at_netaddr old_at_paddr old_at_netaddr c_inet_phys_addr
+        c_inet_phys_type new_ip_index new_ip_type new_ip_prefix/
+        )
+    {
+        $store{$method} = {};
+    }
+    foreach my $method ( keys %store ) {
+        $info->{"_$method"}       = 1;
+        $info->{store}{$method} = $store{$method};
+    }
+    $info->clear_walk_status();
+    return $info;
+}
+
+sub vrf_addresses : Tests(7) {
+    my $test = shift;
+    my $info = $test->_prime_h3c_vrf();
+
+    my $red  = $info->vrf_addresses('red');
+    my $blue = $info->vrf_addresses('blue');
+    cmp_deeply(
+        $red->{'1413.10.80.0.1'},
+        {   ifindex    => 1413,
+            ip         => '10.80.0.1',
+            prefix_len => 24,
+            family     => 'ipv4'
+        },
+        q(red holds 10.80.0.1/24 on its first port)
+    );
+    cmp_deeply(
+        $red->{'1415.10.81.0.1'},
+        superhashof( { ifindex => 1415, prefix_len => 24 } ),
+        q(red holds 10.81.0.1/24 on its second port)
+    );
+    cmp_deeply(
+        $red->{'1413.2001:0db8:0080:0000:0000:0000:0000:0001'},
+        {   ifindex    => 1413,
+            ip         => '2001:0db8:0080:0000:0000:0000:0000:0001',
+            prefix_len => 64,
+            family     => 'ipv6'
+        },
+        q(red holds the global IPv6 address from ipv6AddrTable)
+    );
+    cmp_deeply(
+        $red->{'1413.fe80:0000:0000:0000:0000:0000:0000:0001'},
+        superhashof( { prefix_len => 10, family => 'ipv6' } ),
+        q(red holds the port's link-local)
+    );
+    cmp_deeply(
+        $blue->{'1414.10.80.0.1'},
+        superhashof( { ifindex => 1414, ip => '10.80.0.1' } ),
+        q(blue holds its own copy of the overlapping address)
+    );
+    ok( !exists $red->{'1414.10.80.0.1'} && !exists $blue->{'1413.10.80.0.1'},
+        q(Each instance holds only its own port's row) );
+    is( scalar( grep { $_->{ip} eq '10.80.0.1' } values %$red ),
+        1, q(The overlapping address is held once per instance) );
+}
+
+sub vrf_addresses__management__default_only : Tests(3) {
+    my $test = shift;
+    my $info = $test->_prime_h3c_vrf();
+
+    cmp_deeply(
+        $info->vrf_addresses('default')->{'1412.10.0.0.15'},
+        superhashof( { ifindex => 1412, prefix_len => 24 } ),
+        q(The management address is default's)
+    );
+    ok( !( grep { $_->{ip} eq '10.0.0.15' }
+                map { values %{ $info->vrf_addresses($_) } } qw/red blue/ ),
+        q(... and no instance holds it)
+    );
+    cmp_deeply(
+        $info->vrf_addresses('grey')->{'1418.10.84.0.1'},
+        superhashof( { ifindex => 1418, prefix_len => 32 } ),
+        q(grey holds its loopback with prefix length 32)
+    );
+}
+
+sub vrf_subnets__grey_loopback__host_prefix : Tests(3) {
+    my $test = shift;
+    my $info = $test->_prime_h3c_vrf();
+
+    cmp_deeply(
+        $info->vrf_subnets('grey')->{'10.84.0.1/32'},
+        {   prefix  => '10.84.0.1',
+            len     => 32,
+            family  => 'ipv4',
+            ifindex => 1418,
+            sources => ['address']
+        },
+        q(A 255.255.255.255 mask gives a /32 address subnet)
+    );
+    cmp_deeply(
+        $info->vrf_subnets('red')->{'10.80.0.0/24'},
+        superhashof(
+            { ifindex => 1413, sources => [ 'address', 'route' ] }
+        ),
+        q(A subnet found by address and connected route lists both)
+    );
+    ok( !exists $info->vrf_subnets('blue')->{'10.81.0.0/24'},
+        q(Another instance's subnet is not blue's) );
+}
+
+sub vrf_subnets__link_local_address__dropped : Tests(3) {
+    my $test = shift;
+    my $info = $test->_prime_h3c_vrf();
+
+    foreach my $name (qw/red blue/) {
+        cmp_deeply(
+            [ grep {/^fe80/} keys %{ $info->vrf_subnets($name) } ],
+            [], qq($name holds no fe80::/10 subnet from fe80::1/10)
+        );
+    }
+    ok( exists $info->vrf_subnets('red')
+            ->{'2001:0db8:0080:0000:0000:0000:0000:0000/64'},
+        q(... and the global IPv6 subnet is kept)
+    );
+}
+
+sub vrf_neighbors__link_locals_from_ipv6_mib : Tests(4) {
+    my $test = shift;
+    my $info = $test->_prime_h3c_vrf();
+
+    my $rows = $info->vrf_neighbors('red');
+    my %seen;
+    $seen{"$_->{ifindex} $_->{ip}"}++ for values %$rows;
+    cmp_deeply(
+        [ sort keys %seen ],
+        [   '1413 fe80:0000:0000:0000:0000:0000:0000:0002',
+            '1413 fe80:0000:0000:0000:0000:00ff:fe00:0001',
+            '1415 fe80:0000:0000:0000:0000:0000:0000:0002',
+        ],
+        q(red's host link-locals come from IPV6-MIB)
+    );
+    cmp_deeply( [ grep { $seen{$_} > 1 } keys %seen ],
+        [], q(Each is held once) );
+    cmp_deeply(
+        [ map { $_->{ifindex} } values %{ $info->vrf_neighbors('blue') } ],
+        [1414], q(blue holds only its own port's link-local) );
+    is( $info->{_vrf_walked}{red}{i6_n2p_phys_addr},
+        1, q(The IPV6-MIB walk is recorded for red) );
+}
+
+sub vrf_read_complete__vendor_walk_partial__is_0 : Tests(4) {
+    my $test = shift;
+    my $info = $test->_prime_h3c_vrf();
+
+    $info->vrf_addresses('red');
+    is( $info->vrf_read_complete('red'), 1, q(Complete walks: complete) );
+    foreach my $method (qw/vrf_h3c_addr_mask i6_addr_pfxlen/) {
+        $info->{walk_status}
+            = { $method => { complete => 0, reason => 'timeout' } };
+        is( $info->vrf_read_complete('red'),
+            0, qq(A partial walk of $method makes the read incomplete) );
+    }
+    $info->{walk_status}
+        = { vrf_h3c_addr_mask => { complete => 0, reason => 'timeout' } };
+    is( $info->vrf_read_complete('blue'), undef,
+        q(An instance no reader walked is unknown) );
+}
+
+sub ip_index__unchanged : Tests(2) {
+    my $test = shift;
+    my $info = $test->_prime_h3c_vrf();
+
+    cmp_deeply( $info->ip_index(), { '10.0.0.15' => 1412 },
+        q(ip_index is the ipAddrTable as served) );
+    cmp_deeply( $info->ip_netmask(), { '10.0.0.15' => '255.255.255.0' },
+        q(ip_netmask is the ipAddrTable as served) );
+}
+
+sub vrf_addresses__anycast_flag__kept : Tests(1) {
+    my $test = shift;
+    my $info = $test->_prime_h3c_vrf();
+
+    my $global = '1413.' . _h3c_v6_arcs('2001:db8:80:0:0:0:0:1');
+    $info->{store}{i6_addr_anycast}{$global} = 'true';
+    cmp_deeply(
+        $info->vrf_addresses('red')
+            ->{'1413.2001:0db8:0080:0000:0000:0000:0000:0001'},
+        superhashof( { ifindex => 1413, prefix_len => 64 } ),
+        q(An anycast address is still the device's own, as in VRF.pm)
+    );
 }
 
 1;
