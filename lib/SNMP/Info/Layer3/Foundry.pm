@@ -241,7 +241,8 @@ sub _foundry_ip_rows {
         my $address = $addresses->{$idx};
         my $netmask = $netmasks->{$idx};
         my $status  = $statuses->{$idx};
-        next unless defined $ifindex and defined $address and defined $netmask;
+        next
+            unless defined $ifindex and defined $address and defined $netmask;
         next unless defined $status and $status =~ /^(?:valid|2)(?:\(2\))?$/i;
 
         push @rows, {
@@ -1219,6 +1220,8 @@ C<stp_protocols()> returns nothing, and C<stp_trees_complete()> returns 0
 
 =item F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
+=item F<FOUNDRY-SN-IP-MIB>
+
 =item F<FOUNDRY-SN-STACKING-MIB>
 
 =item F<FDRY-POE-MIB>
@@ -1587,10 +1590,10 @@ deliver.
 
 =head2 VLAN methods
 
-FastIron ICX devices may not implement or populate the Q-BRIDGE-MIB tables used
-by the base bridge class. These methods prefer non-empty standard bridge data
-and use the Foundry port VLAN configuration and membership tables when the
-standard methods return no data.
+FastIron ICX devices may not implement or populate the Q-BRIDGE-MIB tables
+used by the base bridge class. These methods prefer non-empty standard bridge
+data and use the Foundry port VLAN configuration and membership tables when
+the standard methods return no data.
 
 =over
 
@@ -1619,10 +1622,10 @@ Returns untagged VLAN memberships keyed by interface index.
 
 =head2 IP address methods
 
-When standard IP-MIB methods return data, C<ip_index()>, C<ip_table()>, and
-C<ip_netmask()> preserve those results. If the standard methods return no data,
-the Foundry IP interface table supplies the address, interface index, and
-subnet mask.
+When standard IP-MIB methods return data, C<ip_index()>, C<ip_table()>,
+and C<ip_netmask()> preserve those results. If the standard methods return
+no data, the Foundry IP interface table supplies the address, interface
+index, and subnet mask.
 
 =over
 
