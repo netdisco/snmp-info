@@ -332,25 +332,144 @@ SNMP::Info Developers
 
 =head1 SYNOPSIS
 
- # Let SNMP::Info determine the correct subclass for you.
- my $info = new SNMP::Info(
-                          AutoSpecify => 1,
-                          Debug       => 1,
-                          DestHost    => 'myrouter',
-                          Community   => 'public',
-                          Version     => 2
-                        )
-    or die "Can't connect to DestHost.\n";
+    # Let SNMP::Info determine the correct subclass for you.
+    my $info = new SNMP::Info(
+        AutoSpecify => 1,
+        Debug       => 1,
+        DestHost    => 'myswitch',
+        Community   => 'public',
+        Version     => 2
+    ) or die "Can't connect to DestHost.\n";
 
- my $class = $info->class();
- print "SNMP::Info determined this device to fall under subclass : $class\n";
+List one device's aggregates, its multi-chassis domains, and whether the
+tables were read in full:
+
+    my $interfaces = $info->interfaces();
+    my $groups     = $info->lag_groups();
+
+    foreach my $agg ( sort { $a <=> $b } keys %$groups ) {
+        my $group = $groups->{$agg};
+        printf "%s: lacp %s, actor %s, partner %s\n",
+            $interfaces->{$agg}, $group->{lacp},
+            $group->{actor_system}   // 'none',
+            $group->{partner_system} // 'none';
+
+        foreach my $port ( sort { $a <=> $b } keys %{ $group->{members} } ) {
+            print "  member $interfaces->{$port}\n";
+        }
+        if ( my $mc = $group->{mc} ) {
+            printf "  %s group %s in domain %s\n", $mc->{kind},
+                $mc->{group}, $mc->{domain} // 'none';
+        }
+        print "  peer link\n" if $group->{peer_link};
+    }
+
+    my $domains = $info->mlag_domains();
+    foreach my $id ( sort keys %$domains ) {
+        my $domain = $domains->{$id};
+        printf "%s %s: peer %s, system %s\n", $domain->{kind}, $id,
+            $domain->{peer} // 'none', $domain->{system_mac} // 'none';
+    }
+
+    my $complete = $info->lag_groups_complete();
+    warn "LAG tables were not fully read\n"
+        if defined $complete and !$complete;
+
+SNMP::Info reports each device on its own; grouping aggregates across
+devices is the caller's work. This example takes one object per polled
+device. It finds the actor systems that several devices present, as the
+two switches of an MLAG pair or the members of an ESI-LAG set do, and the
+aggregates on other devices whose partner is such a system:
+
+    # %devices: host name => SNMP::Info object
+    my %presented_by;    # actor system => { host => [ aggregate ifIndex ] }
+    foreach my $host ( sort keys %devices ) {
+        my $groups = $devices{$host}->lag_groups();
+        foreach my $agg ( sort { $a <=> $b } keys %$groups ) {
+            my $system = $groups->{$agg}{actor_system} // next;
+            push @{ $presented_by{$system}{$host} }, $agg;
+        }
+    }
+
+    foreach my $host ( sort keys %devices ) {
+        my $groups = $devices{$host}->lag_groups();
+        foreach my $agg ( sort { $a <=> $b } keys %$groups ) {
+            my $partner = $groups->{$agg}{partner_system} // next;
+            my $peers   = $presented_by{$partner} or next;
+            next unless keys %$peers > 1;
+            printf "%s aggregate %s faces %s as one LACP system %s\n",
+                $host, $agg, join( ' and ', sort keys %$peers ), $partner;
+        }
+    }
 
 =head1 DESCRIPTION
 
-This class provides access to Aggregated Links configuration on devices
-implementing C<IEEE8023-LAG-MIB>.
+SNMP::Info::IEEE802dot3ad reports a device's link aggregates from
+F<IEEE8023-LAG-MIB>: each aggregate's members, its LACP actor and partner,
+and, where the device class reads a vendor source, its multi-chassis
+group and the device's multi-chassis domains.
 
-Use or create in a subclass of SNMP::Info.  Do not use directly.
+Every class that inherits L<SNMP::Info::Layer2> or L<SNMP::Info::Layer3>
+has these methods.
+
+These methods report only what the device returns. They never infer an
+aggregate, a partner or a domain from another device. A field the device
+does not serve is undef or absent.
+
+L<SNMP::Info::Layer3::Nexus>, L<SNMP::Info::Layer3::Extreme> and
+L<SNMP::Info::RapidCity> fill C<mc> and C<mlag_domains()>; Nexus and
+RapidCity also fill C<peer_link>. Members come from each class's
+C<agg_ports()>, for example in L<SNMP::Info::Layer3::Juniper> and
+L<SNMP::Info::Layer3::Extreme>.
+
+=head2 Terms
+
+=over
+
+=item aggregate
+
+Ports the device bundles into one logical link: a port-channel, LAG, MLT,
+trunk or C<ae> interface.
+
+=item aggregator row
+
+A row of the F<IEEE8023-LAG-MIB> C<dot3adAggTable>, indexed by ifIndex,
+holding the LACP actor and partner of one aggregator. Some devices also
+serve a row for each member port.
+
+=item actor
+
+This device's end of an LACP aggregate: its LACP system ID and
+operational key.
+
+=item partner
+
+The far end of an LACP aggregate, as this device reports it.
+
+=item static aggregate
+
+An aggregate that does not run LACP. It has no partner.
+
+=item multi-chassis group
+
+An aggregate whose members are split across two devices that present it
+to the far end as one aggregate: a Cisco vPC, an Extreme MLAG port, or an
+SMLT.
+
+=item multi-chassis domain
+
+The pairing of two devices that serve multi-chassis groups together: a
+vPC domain, an MLAG peer, or an IST or virtual IST session.
+
+=item peer link
+
+The aggregate that joins the two devices of a multi-chassis domain, such
+as a vPC peer link or an IST.
+
+=back
+
+ESI-LAG has no field of its own. It shows only as one actor system that
+several devices present, as the second SYNOPSIS example finds.
 
 =head2 Inherited Classes
 
@@ -364,10 +483,72 @@ L<SNMP::Info::Aggregate>
 
 =back
 
-=head1 METHODS
+=head2 For Class Authors
 
-The role reports only what the device returns: it never infers a group from
-another device, and a field the device does not serve is undef or absent.
+A device class adapts these methods by overriding four private hooks.
+Each has a default here.
+
+=over 4
+
+=item C<_lag_aggregator_map()>
+
+Returns a HASH reference mapping each aggregator row's ifIndex to the key
+of the record that row describes. The default maps each row to itself.
+Override it when C<agg_ports()> keys an aggregate by a different ifIndex,
+so the row and the members land on one record: L<SNMP::Info::RapidCity>
+maps an MLT's row to its designated port, L<SNMP::Info::Layer3::Juniper>
+maps a logical unit's row to its physical C<ae> interface.
+
+=item C<_lag_vendor_groups($groups)>
+
+Receives the records after the identity and members are placed, and adds
+or changes records in place, such as C<mc> and C<peer_link>. A new record
+starts from C<SNMP::Info::IEEE802dot3ad::_lag_new_record()>. The return
+value is ignored. The default does nothing.
+
+=item C<_lag_vendor_domains()>
+
+Returns the C<mlag_domains()> HASH reference. The default returns an
+empty one.
+
+=item C<_lag_vendor_walked()>
+
+Returns the names of the table methods the class's hooks read, so that
+C<lag_groups_complete()> checks their walks too. The default returns an
+empty list.
+
+=back
+
+The record rules:
+
+=over 4
+
+=item Members
+
+Members come from C<agg_ports()> when the class defines it; each value
+becomes a record key, so it should equal the key C<_lag_aggregator_map()>
+gives the aggregate's own row, or the row and its members land on two
+records. An aggregate C<agg_ports()> names no member of takes
+as members the ports whose C<dot3adAggPortAttachedAggID> names it, through
+C<_lag_aggregator_map()>.
+
+=item Identity
+
+When several aggregator rows map to one key, the actor and partner come
+from the lowest-numbered row that is not a port attached to a different
+aggregator. When every row is such a port, they come from the lowest
+row.
+
+=item Dropped rows
+
+After C<_lag_vendor_groups()>, a record is removed when it has no
+members, no C<mc> and no C<peer_link>, and its key is a port attached to
+a different aggregate. That row is the member port's own idle aggregator,
+not an aggregate.
+
+=back
+
+=head1 METHODS
 
 =over 4
 
@@ -379,68 +560,227 @@ ifIndex of the corresponding master ports.
 
 =item C<lag_groups>
 
-Returns a HASH reference with one record per aggregate, keyed by the
-aggregate's ifIndex. When several F<IEEE8023-LAG-MIB> rows describe one
-aggregate, the identity comes from the lowest row that is not a port
-attached to a different aggregator. Each record has these fields:
+Returns a HASH reference with one record per aggregate. The key is the
+ifIndex C<agg_ports()> uses for the aggregate, else the ifIndex of its
+aggregator row. On most devices this is the aggregate interface. The
+exceptions:
+
+=over 4
+
+=item *
+
+Passport and Baystack devices key an MLT by its designated port when it
+has one (L<SNMP::Info::RapidCity>).
+
+=item *
+
+Junos devices key an aggregate by the physical C<ae> interface, not its
+logical unit (L<SNMP::Info::Layer3::Juniper>).
+
+=item *
+
+Extreme devices key an aggregate by its load sharing master port, and
+an MLAG port with no load sharing row by the port
+(L<SNMP::Info::Layer3::Extreme>).
+
+=back
+
+Each record has these fields:
 
 =over 4
 
 =item C<members>
 
-HASH reference keyed by member ifIndex. Each value is a HASH reference with
-C<partner_system> and C<partner_key>, the partner the member port reports
-(undef when it reports none).
+HASH reference keyed by member ifIndex. Each value is a HASH reference
+with C<partner_system> and C<partner_key>, the partner that member port
+reports (C<dot3adAggPortPartnerOperSystemID>,
+C<dot3adAggPortPartnerOperKey>). Both are undef when the port reports no
+partner, including a partner system ID of all zeros. C<members> is empty
+when the device names no member.
 
 =item C<actor_system>, C<actor_key>
 
-The local LACP system ID and operational key, or undef for an aggregate with
-no F<IEEE8023-LAG-MIB> row (a static aggregate).
+The actor's LACP system ID and operational key, from the aggregator row.
+Undef when the device serves no aggregator row for the aggregate, as for a
+static aggregate on some devices.
 
 =item C<partner_system>, C<partner_key>
 
-The remote LACP system ID and operational key. Both are undef when the device
-reports no partner, including a partner system ID of all zeros.
+The partner's LACP system ID and operational key, from the aggregator row.
+Both are undef when the device reports no partner, including a partner
+system ID of all zeros.
 
 =item C<lacp>
 
-1 when a partner system is reported, 0 otherwise.
+1 when C<partner_system> is defined, 0 otherwise. It is 0 for a static
+aggregate and for an LACP aggregate that has not found its partner.
 
-=item C<mc>, C<peer_link>
+=item C<mc>
 
-Present only when a class that reads a vendor multi-chassis source reports
-them. C<mc> is a HASH reference with C<kind>, C<group>, C<domain> and
-C<state>; C<peer_link> is 1 for the channel carrying the peer link.
+Present only on a multi-chassis group. A HASH reference with these keys:
 
-=item C<sources>
+=over 4
 
-HASH reference naming where each reported field was read, such as
-C<IEEE8023-LAG-MIB::dot3adAggActorSystemID>. The C<members> source is
-C<agg_ports> when the class's C<agg_ports()> lists members of the aggregate,
-otherwise C<IEEE8023-LAG-MIB::dot3adAggPortAttachedAggID>.
+=item C<kind>
+
+C<vpc> (Cisco NX-OS), C<mlag> (Extreme EXOS) or C<smlt> (Passport and
+Baystack).
+
+=item C<group>
+
+The device's identifier for the group: the vPC id, the MLAG port id
+(C<extremeMlagPortId>) or the MLT id.
+
+=item C<domain>
+
+The key in C<mlag_domains()> of the domain the group belongs to. Undef
+when the device serves none for the group.
+
+=item C<state>
+
+The group's state, as the device serves it: the vPC host link status,
+the MLAG local link status or the MLT running type. Undef when the device
+serves none.
 
 =back
 
-A class that defines C<agg_ports()> supplies the members; an aggregate it
-lists but the device does not describe in C<IEEE8023-LAG-MIB> gets a record
-with C<lacp> 0.
+=item C<peer_link>
 
-An F<IEEE8023-LAG-MIB> row for a member port that is attached to a different
-aggregate, and that nothing else describes, is not reported as an aggregate.
+Present, with the value 1, only on the aggregate that is a multi-chassis
+domain's peer link.
+
+=item C<sources>
+
+HASH reference naming the MIB object each field with a value was read
+from, such as C<IEEE8023-LAG-MIB::dot3adAggActorSystemID>. The
+C<members> source is C<agg_ports> when C<agg_ports()> lists the members,
+else C<IEEE8023-LAG-MIB::dot3adAggPortAttachedAggID>, or a vendor object
+the device class names.
+
+=back
+
+An example record, a vPC running LACP:
+
+    369098761 => {
+        members => {
+            436207616 => {
+                partner_system => '02:00:00:00:00:20',
+                partner_key    => 1,
+            },
+        },
+        actor_system   => '02:00:00:00:00:01',
+        actor_key      => 32778,
+        partner_system => '02:00:00:00:00:20',
+        partner_key    => 1,
+        lacp           => 1,
+        mc             => {
+            kind   => 'vpc',
+            group  => 10,
+            domain => 1,
+            state  => 'up',
+        },
+        sources => {
+            members        => 'agg_ports',
+            actor_system   => 'IEEE8023-LAG-MIB::dot3adAggActorSystemID',
+            actor_key      => 'IEEE8023-LAG-MIB::dot3adAggActorOperKey',
+            partner_system => 'IEEE8023-LAG-MIB::dot3adAggPartnerSystemID',
+            partner_key    => 'IEEE8023-LAG-MIB::dot3adAggPartnerOperKey',
+            mc             => 'CISCO-VPC-MIB::cVpcStatusHostLinkIfIndex',
+        },
+    }
 
 =item C<mlag_domains>
 
-Returns a HASH reference keyed by the device's own multi-chassis domain or
-peer identifier. Empty in this role; classes that read a vendor source
-supply the records.
+Returns a HASH reference with one record per multi-chassis domain, keyed
+by the domain's identifier on the device: the vPC domain id, the MLAG
+peer name, or C<vist> or C<ist>. Empty when the device class reads no
+multi-chassis source or the device serves no domain. Each record has
+C<kind> and C<sources>. The other fields are filled only for some
+vendors; a field the device does not serve is undef or absent:
+
+=over 4
+
+=item C<kind>
+
+C<vpc> (Cisco NX-OS), C<mlag> (Extreme EXOS), or C<vist> or C<ist> (a
+virtual IST or an IST, on Passport and Baystack).
+
+=item C<system_mac>
+
+The LACP system ID the domain presents for its multi-chassis groups.
+
+=item C<role>
+
+The device's role in the domain. Cisco NX-OS only.
+
+=item C<peer>
+
+The address of the other device of the domain.
+
+=item C<peer_link>
+
+The ifIndex of the peer link aggregate, a key of C<lag_groups()>. Cisco
+NX-OS only.
+
+=item C<status>
+
+The state of the session with the other device, as the device serves it.
+
+=item C<vlan>
+
+The VLAN the IST or virtual IST runs on. Passport and Baystack only.
+
+=item C<sources>
+
+HASH reference naming the MIB object each field with a value was read
+from, as in C<lag_groups()>.
+
+=back
+
+An example record, a vPC domain:
+
+    1 => {
+        kind       => 'vpc',
+        system_mac => '02:00:00:00:00:01',
+        role       => 'primary',
+        peer       => '192.0.2.2',
+        peer_link  => 369098752,
+        status     => 'alive',
+        sources    => {
+            system_mac => 'CISCO-VPC-MIB::cVpcSystemOperMacAddress',
+            role       => 'CISCO-VPC-MIB::cVpcRoleStatus',
+            peer       => 'CISCO-VPC-MIB::cVpcPeerKeepAliveDestAddr',
+            peer_link  => 'CISCO-VPC-MIB::cVpcStatusPeerLinkIfIndex',
+            status     => 'CISCO-VPC-MIB::cVpcPeerKeepAliveStatus',
+        },
+    }
 
 =item C<lag_groups_complete>
 
-Returns 0 when a walk the records depend on was incomplete (see
+Returns whether the F<IEEE8023-LAG-MIB> and vendor multi-chassis tables
+behind C<lag_groups()> and C<mlag_domains()> were read in full. A walk
+that only a class's C<agg_ports()> makes counts only where that class
+lists it (Extreme and Juniper do). It performs the walks itself. It
+returns:
+
+=over 4
+
+=item C<0>
+
+A walk of one of those tables was incomplete (see
 L<SNMP::Info/"Incomplete Walks">), including a walk that failed before
-returning any row. Otherwise returns undef when C<lag_groups> and
-C<mlag_domains> are both empty, and 1 when there are records. A caller can
-tell a device with no aggregates (undef) from one that could not be read (0).
+returning any row. The records may be missing data.
+
+=item C<undef>
+
+Every walk completed, and both methods returned no record. The device
+has no aggregate and no domain.
+
+=item C<1>
+
+Every walk completed, and at least one method returned a record.
+
+=back
 
 =back
 

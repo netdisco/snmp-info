@@ -1616,8 +1616,7 @@ port.  Format is a hash reference with key = C<ifIndex>, value = [true|false]
 
 =head2 Link Aggregation
 
-Classes that inherit this class and include
-L<SNMP::Info::IEEE802dot3ad> report multi-chassis evidence through
+Passport and Baystack devices report multi-chassis evidence through
 C<lag_groups()> and C<mlag_domains()>.  Nothing is reported for a feature
 the device does not serve.
 
@@ -1625,23 +1624,59 @@ the device does not serve.
 
 =item $rapidcity->mlag_domains()
 
-Returns a reference to a hash keyed by C<vist> (virtual IST) or C<ist>.
-A domain is reported when its peer address (C<rcVirtualIstPeerIp> or
-C<rcMltIstPeerIp>) is set.  Each record has C<kind>, C<peer>, C<vlan>,
-C<status> (the session status), C<system_mac> (C<rcLacpGlobalSmltSysId>,
-when the device serves it) and C<sources>.
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by C<vist>
+(virtual IST) or C<ist>, the same as C<kind>.  A domain is reported when
+its peer address is set and not C<0.0.0.0>.  Its fields:
+
+=over
+
+=item *
+
+C<peer>: C<rcVirtualIstPeerIp> or C<rcMltIstPeerIp>.
+
+=item *
+
+C<vlan>: C<rcVirtualIstVlanId> or C<rcMltIstVlanId>.
+
+=item *
+
+C<status>: the session status, C<rcVirtualIstSessionStatus> or
+C<rcMltIstSessionStatus>.
+
+=item *
+
+C<system_mac>: C<rcLacpGlobalSmltSysId>, the same in both domains.
+
+=back
 
 =item $rapidcity->lag_groups()
 
-As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">.  A channel whose
-C<rcMltMltType> is C<splitMLT> gets C<mc> with C<kind> C<smlt>, C<group>
-the MLT id, C<domain> the served domain (C<vist> when served, else C<ist>)
-and C<state> (C<rcMltRunningType>).  A channel of type C<istMLT> or
-C<virtualIstMLT> gets C<peer_link> 1.  The channel is keyed as
-C<agg_ports()> keys it: by C<rcMltDesignatedPort> when set, else by
-C<rcMltIfIndex>.  The standard aggregator row of an MLT is reported on that
-same key.  In SPBM mode the virtual IST channel is a normal MLT, so the
-session is reported in C<mlag_domains()> only and no record has C<peer_link>.
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with:
+
+=over
+
+=item *
+
+An MLT is keyed as C<agg_ports()> keys it: by C<rcMltDesignatedPort> when
+set, else by C<rcMltIfIndex>.
+
+=item *
+
+An MLT whose C<rcMltMltType> is C<splitMLT> gets C<mc> when a domain is
+served: C<kind> C<smlt>, C<group> the MLT id, C<domain> C<vist> when that
+domain is served, else C<ist>, and C<state> the running type
+(C<rcMltRunningType>).
+
+=item *
+
+An MLT of type C<istMLT> or C<virtualIstMLT> gets C<peer_link>.
+
+=item *
+
+In SPBM mode the virtual IST channel is a normal MLT, so the session is
+reported in C<mlag_domains()> only and no record has C<peer_link>.
+
+=back
 
 =back
 

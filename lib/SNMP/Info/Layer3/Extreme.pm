@@ -1824,20 +1824,57 @@ Returns an empty hash when the device serves no load sharing rows.
 
 =item $extreme->lag_groups()
 
-As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">.  The master port is
-a member of its own aggregate.  An aggregate whose master or member is an
-MLAG port (C<extremeMlagPortTable>) gets C<mc> with C<kind> C<mlag>,
-C<group> the MLAG port id, C<domain> the peer name and C<state> the local
-link status.  An MLAG port whose load sharing group has only its master, or
-that has no load sharing row, is reported as an aggregate of its own, keyed
-by the load sharing master when there is one, else by the port.
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by the load
+sharing master port, with:
+
+=over
+
+=item *
+
+The master port is a member of its own aggregate.
+
+=item *
+
+An aggregate whose master or member is an MLAG port
+(C<extremeMlagPortTable>) gets C<mc>: C<kind> C<mlag>, C<group> the MLAG
+port id (C<extremeMlagPortId>), C<domain> the peer name
+(C<extremeMlagPortPeer>), and C<state> the local link status
+(C<extremeMlagPortLocalLinkStatus>).
+
+=item *
+
+An MLAG port whose load sharing group has only its master is an
+aggregate of its own, keyed by that master, with the port as its member.
+
+=item *
+
+An MLAG port with no load sharing row is an aggregate of its own, keyed
+by the port, with the port as its member.
+
+=back
 
 =item $extreme->mlag_domains()
 
-Returns a reference to a hash keyed by MLAG peer name
-(C<extremeMlagPeerTable>) with C<kind> C<mlag>, C<system_mac> (the
-operational LACP MAC), C<peer> (the peer address; text addresses are
-accepted), C<status> (the checkpoint status) and C<sources>.
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by MLAG
+peer name (C<extremeMlagPeerTable>), with C<kind> C<mlag> and these
+fields:
+
+=over
+
+=item *
+
+C<system_mac>: the operational LACP MAC, C<extremeMlagPeerOperLacpMac>.
+
+=item *
+
+C<peer>: the peer address, C<extremeMlagPeerIP>, served as an address or
+as text.
+
+=item *
+
+C<status>: the checkpoint status, C<extremeMlagPeerCheckPointStatus>.
+
+=back
 
 =back
 

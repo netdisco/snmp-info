@@ -360,6 +360,7 @@ See documentation in L<SNMP::Info::PortAccessEntity/"TABLE METHODS"> for details
 
 =head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
 
-See documentation in L<SNMP::Info::IEEE802dot3ad/"TABLE METHODS"> for details.
+See documentation in L<SNMP::Info::IEEE802dot3ad/"METHODS"> and
+L<SNMP::Info::IEEE802dot3ad/"TABLE METHODS"> for details.
 
 =cut

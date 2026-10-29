@@ -500,20 +500,56 @@ C<ports_complete> 0.
 
 =item $nexus->lag_groups()
 
-As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">.  The channel named
-by each vPC host link (C<cVpcStatusHostLinkTable>) gets C<mc> with C<kind>
-C<vpc>, C<group> the vPC id, C<domain> the vPC domain id and C<state> the
-host link status.  The channel named by C<cVpcStatusPeerLinkIfIndex> gets
-C<peer_link> 1.  A static channel has no F<IEEE8023-LAG-MIB> row: C<lacp>
-is 0 and the partner fields are undef.
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with:
+
+=over
+
+=item *
+
+C<mc> on the channel named by each vPC host link
+(C<cVpcStatusHostLinkIfIndex>): C<kind> C<vpc>, C<group> the vPC id,
+C<domain> the vPC domain id, and C<state> the host link status
+(C<cVpcStatusHostLinkStatus>).
+
+=item *
+
+C<peer_link> on the channel named by C<cVpcStatusPeerLinkIfIndex>.
+
+=item *
+
+A static channel has no F<IEEE8023-LAG-MIB> row: C<lacp> is 0 and the
+actor and partner fields are undef.
+
+=back
 
 =item $nexus->mlag_domains()
 
-Returns a reference to a hash keyed by vPC domain id
-(C<cVpcRoleTable>) with C<kind> C<vpc>, C<system_mac>
-(C<cVpcSystemOperMacAddress>), C<role> (C<cVpcRoleStatus>), C<peer> (the
-peer keepalive destination address), C<peer_link> (the peer link ifIndex),
-C<status> (the peer keepalive status) and C<sources>.
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by vPC
+domain id (C<cVpcRoleTable>), with C<kind> C<vpc> and these fields:
+
+=over
+
+=item *
+
+C<system_mac>: C<cVpcSystemOperMacAddress>.
+
+=item *
+
+C<role>: C<cVpcRoleStatus>.
+
+=item *
+
+C<peer>: the peer keepalive destination, C<cVpcPeerKeepAliveDestAddr>.
+
+=item *
+
+C<peer_link>: C<cVpcStatusPeerLinkIfIndex>.
+
+=item *
+
+C<status>: the peer keepalive status, C<cVpcPeerKeepAliveStatus>.
+
+=back
 
 =back
 
