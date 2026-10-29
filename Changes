@@ -2,9 +2,9 @@ Version 3.983001
 
   [NEW FEATURES]
 
-  * #649 Edge ports: add i_edgeport_admin and i_edgeport_oper from RSTP-MIB
-    and vendor spanning-tree tables; Cisco's i_faststart_enabled kept as the
-    legacy name (#254)
+  * #649 Spanning tree: report RSTP edge port (PortFast) configured and
+    operational state from RSTP-MIB and vendor tables; Cisco's
+    i_faststart_enabled unchanged (#254)
 
 Version 3.983000 (2026-10-26)
 
