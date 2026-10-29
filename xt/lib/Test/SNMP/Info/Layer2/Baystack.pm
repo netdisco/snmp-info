@@ -238,4 +238,18 @@ sub stp_tree_ports_rstp_enable_index : Tests(2) {
     q(RSTP: no rcStgPort row, dot1dStpPortEnable at the bridge port));
 }
 
+sub lag_groups__baystack_class__resolves_to_rapidcity_hooks : Tests(3) {
+  my $test = shift;
+
+  foreach my $hook (qw/_lag_vendor_domains _lag_vendor_groups
+    _lag_vendor_walked/) {
+    no strict 'refs';
+    my $name = 'SNMP::Info::RapidCity::' . $hook;
+    ok(
+      defined &{$name} && $test->{info}->can($hook) == \&{$name},
+      "$hook resolves to RapidCity, not the IEEE802dot3ad default"
+    );
+  }
+}
+
 1;

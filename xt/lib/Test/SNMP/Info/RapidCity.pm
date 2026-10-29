@@ -52,4 +52,28 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
+sub _lag_vendor_domains__ist_and_vist_served__reports_both : Tests(2) {
+  my $test = shift;
+
+  $test->{info}->cache({
+    _rc_ist_status  => 'up', _rc_ist_peer  => '10.1.1.2',
+    _rc_ist_vlan    => 100,
+    _rc_vist_status => 'up', _rc_vist_peer => '10.255.0.2',
+    _rc_vist_vlan   => 4000,
+  });
+  my $domains = $test->{info}->_lag_vendor_domains();
+  cmp_deeply([sort keys %$domains], [qw/ist vist/], 'Both domains served');
+  is($domains->{vist}{peer}, '10.255.0.2', 'vIST peer read');
+}
+
+sub _lag_vendor_domains__peer_unset__no_domain : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache({
+    _rc_ist_status => 'down', _rc_ist_peer => '0.0.0.0', _rc_ist_vlan => 0,
+  });
+  cmp_deeply($test->{info}->_lag_vendor_domains(), {},
+    'An unset peer address is not a domain');
+}
+
 1;
