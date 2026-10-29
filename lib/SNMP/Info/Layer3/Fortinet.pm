@@ -130,6 +130,8 @@ sub serial {
 
 sub agg_ports { return agg_ports_ifstack(@_) }
 
+sub _agg_ports_walked { return qw/ifStackStatus ifType/ }
+
 1;
 __END__
 

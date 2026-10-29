@@ -867,6 +867,8 @@ sub agg_ports {
     return \%members;
 }
 
+sub _agg_ports_walked { return qw/ifStackStatus lag_port_attached/ }
+
 sub _lag_vendor_walked { return qw/ifStackStatus/ }
 
 # Each aggregator row maps to the physical aggregate its member units attach to

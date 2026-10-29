@@ -163,6 +163,8 @@ sub i_ignore {
 
 sub agg_ports { return agg_ports_lag(@_) }
 
+sub _agg_ports_walked { return qw/ad_lag_ports bp_index/ }
+
 1;
 __END__
 

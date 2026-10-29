@@ -340,22 +340,9 @@ sub lag__role_names__collide_with_no_existing_method : Tests(1) {
   my @names = (qw/lag_groups mlag_domains lag_groups_complete/,
     grep { /^lag_/ } keys %SNMP::Info::IEEE802dot3ad::FUNCS);
 
-  my @packages;
-  find(
-    sub {
-      return unless /\.pm$/;
-      my $path = $File::Find::name;
-      $path =~ s{^.*?lib/}{};
-      require $path;
-      $path =~ s{\.pm$}{};
-      $path =~ s{/}{::}g;
-      push @packages, $path;
-    },
-    'lib/SNMP/Info'
-  );
-
   my @collisions;
-  foreach my $package (grep { $_ ne 'SNMP::Info::IEEE802dot3ad' } @packages) {
+  foreach my $package (grep { $_ ne 'SNMP::Info::IEEE802dot3ad' }
+    _info_packages()) {
     no strict 'refs';
     foreach my $name (@names) {
       my $code = *{"${package}::$name"}{CODE};
@@ -371,6 +358,45 @@ sub lag__role_names__collide_with_no_existing_method : Tests(1) {
     }
   }
   cmp_deeply(\@collisions, [], q(No other class defines a role name));
+}
+
+# lag_groups_complete checks the walks _agg_ports_walked names, so a class
+# whose agg_ports and hook come from different packages checks the wrong ones
+sub agg_ports_walked__every_class__resolves_with_agg_ports : Tests(1) {
+  my @mismatches;
+  foreach my $package (_info_packages()) {
+    my $agg_ports = UNIVERSAL::can($package, 'agg_ports') or next;
+    my $walked    = UNIVERSAL::can($package, '_agg_ports_walked');
+    my $from      = _defined_in($agg_ports);
+    my $listed    = $walked ? _defined_in($walked) : 'nowhere';
+    push @mismatches, "$package: agg_ports from $from, walks from $listed"
+      if $from ne $listed;
+  }
+  cmp_deeply(\@mismatches, [],
+    q(agg_ports and its walk list resolve together));
+}
+
+sub _defined_in {
+  my $code = shift;
+  return B::svref_2object($code)->GV->STASH->NAME;
+}
+
+# Every package under lib/SNMP/Info, loaded
+sub _info_packages {
+  my @packages;
+  find(
+    sub {
+      return unless /\.pm$/;
+      my $path = $File::Find::name;
+      $path =~ s{^.*?lib/}{};
+      require $path;
+      $path =~ s{\.pm$}{};
+      $path =~ s{/}{::}g;
+      push @packages, $path;
+    },
+    'lib/SNMP/Info'
+  );
+  return @packages;
 }
 
 1;

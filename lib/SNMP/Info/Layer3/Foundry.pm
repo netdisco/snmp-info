@@ -1124,17 +1124,18 @@ sub agg_ports {
   foreach my $m (keys %$trunks) {
       next unless $m and exists $ports->{$m} and defined $ports->{$m};
 
-      my $skip = 0;
-      while (my $s = unpack("x${skip}n2", $trunks->{$m})) {
+      foreach my $s (unpack('n*', $trunks->{$m})) {
+          next if $s == $m;
           next unless $s and exists $ports->{$s} and defined $ports->{$s};
 
           $ret->{ $ports->{$s} } = $ports->{$m};
-          $skip += 2;
       }
   }
 
   return $ret;
 }
+
+sub _agg_ports_walked { return qw/snMSTrunkPortList snSwPortIfIndex/ }
 
 sub i_stp_state {
     my $foundry  = shift;
@@ -1366,7 +1367,8 @@ index (iid).
 
 Returns a HASH reference mapping from slave to master port for each member of
 a port bundle on the device. Keys are ifIndex of the slave ports, Values are
-ifIndex of the corresponding master ports.
+ifIndex of the corresponding master ports.  The master port is not listed
+as a member of its own bundle.
 
 =back
 

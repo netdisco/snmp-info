@@ -182,6 +182,11 @@ sub agg_ports {
   return $ret;
 }
 
+sub _agg_ports_walked {
+  return qw/ifStackStatus ifType pagpEthcOperationMode pagpGroupIfIndex
+    dot3adAggPortSelectedAggID lag_members/;
+}
+
 1;
 
 __END__

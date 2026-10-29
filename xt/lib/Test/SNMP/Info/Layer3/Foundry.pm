@@ -343,4 +343,67 @@ sub stp_trees_default_off : Tests(3) {
         0, q(Trees may exist unread) );
 }
 
+# snMSTrunkPortList lists the trunk's ports, its master among them, as
+# 16-bit switch port indexes
+sub _prime_trunk {
+    my ( $test, @ports ) = @_;
+
+    $test->{info}->cache(
+        {   '_snMSTrunkPortList' => 1,
+            '_snSwPortIfIndex'   => 1,
+            'store'              => {
+                'snMSTrunkPortList' => { 1 => pack( 'n*', @ports ) },
+                'snSwPortIfIndex' => { 1 => 101, 2 => 102, 3 => 103 },
+            },
+        }
+    );
+    return;
+}
+
+# Runs $code, dying instead of hanging when it loops
+sub _within_seconds {
+    my ( $seconds, $code ) = @_;
+
+    local $SIG{ALRM} = sub { die "timed out\n" };
+    alarm $seconds;
+    my $result = eval { $code->() };
+    my $error  = $@;
+    alarm 0;
+    die $error if $error;
+    return $result;
+}
+
+sub agg_ports : Tests(2) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'agg_ports' );
+    $test->_prime_trunk( 1, 2, 3 );
+    cmp_deeply(
+        _within_seconds( 5, sub { $test->{info}->agg_ports() } ),
+        { 102 => 101, 103 => 101 },
+        q(Members map to the master; the master is not its own member)
+    );
+}
+
+sub agg_ports__member_without_ifindex__skipped_without_looping : Tests(1) {
+    my $test = shift;
+
+    $test->_prime_trunk( 1, 2, 9, 3 );
+    cmp_deeply(
+        _within_seconds( 5, sub { $test->{info}->agg_ports() } ),
+        { 102 => 101, 103 => 101 },
+        q(Port 9 has no ifIndex; the ports after it are still read)
+    );
+}
+
+sub lag_groups_complete__trunk_walk_incomplete__returns_0 : Tests(2) {
+    my $test = shift;
+
+    $test->_prime_trunk( 1, 2, 3 );
+    is( $test->{info}->lag_groups_complete(), 1, q(Trunk read in full) );
+    $test->{info}{walk_status}{snMSTrunkPortList} = { complete => 0 };
+    is( $test->{info}->lag_groups_complete(),
+        0, q(Incomplete trunk walk gives 0) );
+}
+
 1;

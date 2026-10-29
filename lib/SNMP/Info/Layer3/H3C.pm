@@ -190,6 +190,10 @@ sub agg_ports {
     return agg_ports_lag($h3c, @_);
 }
 
+sub _agg_ports_walked {
+    return qw/ad_port_attached_agg ad_lag_ports bp_index/;
+}
+
 sub i_stp_state {
     my ($h3c, $partial) = @_;
 
