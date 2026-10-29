@@ -565,18 +565,29 @@ C<dot1dBaseBridgeAddress>
 
 =item $nexus->context_kinds($feature)
 
-See L<SNMP::Info/"context_kinds">.  Returns C<['vlan', 'mst']> for
+See C<context_kinds()> in L<SNMP::Info>.  Returns C<['vlan', 'mst']> for
 C<stp>, and C<['vlan']> for C<fdb>, and C<['vrf']> for C<vrf>.
 
 =item $nexus->snmp_context($kind, $id)
 
-See L<SNMP::Info/"snmp_context">.  NX-OS serves
-VLAN and MST contexts over SNMPv3 only: C<vlan-N> for a VLAN, and
-C<mst-N> for an MST instance when (C<cContextMappingTable>) lists it,
-which it does only under MST.  C<mst-0> serves the CIST's
-C<dot1dStpPortTable>, which the default context does not; whether it also
-serves C<dot1dBasePortTable> was not measured, so C<cist.0> keeps
-C<ports_complete> 0.
+See C<snmp_context()> in L<SNMP::Info>.  NX-OS serves VLAN and MST
+contexts over SNMPv3 only, so C<v2c> is undef for both kinds:
+
+=over
+
+=item C<vlan>
+
+The context C<vlan-N> for VLAN N.
+
+=item C<mst>
+
+The context C<mst-N> for MST instance N, only where
+C<cContextMappingTable> lists it, which it does only under MST.
+C<mst-0> serves the CIST's C<dot1dStpPortTable>, which the default
+context does not.  C<cist.0> still has C<ports_complete> 0
+(L<SNMP::Info::CiscoStpExtensions/"Spanning Tree Trees">).
+
+=back
 
 For C<vrf>, C<$id> is a name from C<vrf_instances()> and the answer is
 C<{ kind =E<gt> 'vrf', id =E<gt> $name, v2c =E<gt> undef,
@@ -632,99 +643,6 @@ C<cContextMappingTable> lists the VRFs.  Any row it serves lists
 C<default>, so a device that maps only VLAN or MST contexts reports
 C<vrf_instances_complete()> 1, none configured (see
 L<SNMP::Info::VRF/"Completeness">).
-
-=back
-
-=head2 Link Aggregation
-
-=over
-
-=item $nexus->lag_groups()
-
-As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with:
-
-=over
-
-=item *
-
-C<mc> on the channel named by each vPC host link
-(C<cVpcStatusHostLinkIfIndex>): C<kind> C<vpc>, C<group> the vPC id,
-C<domain> the vPC domain id, and C<state> the host link status
-(C<cVpcStatusHostLinkStatus>).
-
-=item *
-
-C<peer_link> on the channel named by C<cVpcStatusPeerLinkIfIndex>.
-
-=item *
-
-A static channel has no F<IEEE8023-LAG-MIB> row: C<lacp> is 0 and the
-actor and partner fields are undef.
-
-=back
-
-=item $nexus->mlag_domains()
-
-As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by vPC
-domain id (C<cVpcRoleTable>), with C<kind> C<vpc> and these fields:
-
-=over
-
-=item *
-
-C<system_mac>: C<cVpcSystemOperMacAddress>.
-
-=item *
-
-C<role>: C<cVpcRoleStatus>.
-
-=item *
-
-C<peer>: the peer keepalive destination, C<cVpcPeerKeepAliveDestAddr>.
-
-=item *
-
-C<peer_link>: C<cVpcStatusPeerLinkIfIndex>.
-
-=item *
-
-C<status>: the peer keepalive status, C<cVpcPeerKeepAliveStatus>.
-
-=back
-
-=back
-
-=head2 Table Methods
-
-=over
-
-=item $nexus->vpc_role()
-
-(C<cVpcRoleStatus>)
-
-=item $nexus->vpc_system_mac()
-
-(C<cVpcSystemOperMacAddress>)
-
-=item $nexus->vpc_keepalive_peer()
-
-(C<cVpcPeerKeepAliveDestAddr>)
-
-=item $nexus->vpc_keepalive_stat()
-
-(C<cVpcPeerKeepAliveStatus>)
-
-=item $nexus->vpc_peer_link()
-
-(C<cVpcStatusPeerLinkIfIndex>)
-
-=item $nexus->vpc_host_link_if()
-
-(C<cVpcStatusHostLinkIfIndex>)
-
-=item $nexus->vpc_host_link_stat()
-
-(C<cVpcStatusHostLinkStatus>)
 
 =back
 
@@ -806,6 +724,99 @@ to, keyed as C<vrf_comm_name()>: empty for the default context, a context
 name for a community set by C<snmp-server mib community-map>.
 
 (C<snmpCommunityContextName>)
+
+=back
+
+=head2 Link Aggregation
+
+=over
+
+=item $nexus->lag_groups()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with:
+
+=over
+
+=item *
+
+C<mc> on the channel named by each vPC host link
+(C<cVpcStatusHostLinkIfIndex>): C<kind> C<vpc>, C<group> the vPC id,
+C<domain> the vPC domain id, and C<state> the host link status
+(C<cVpcStatusHostLinkStatus>).
+
+=item *
+
+C<peer_link> on the channel named by C<cVpcStatusPeerLinkIfIndex>.
+
+=item *
+
+A static channel has no F<IEEE8023-LAG-MIB> row: C<lacp> is 0 and the
+actor and partner fields are undef.
+
+=back
+
+=item $nexus->mlag_domains()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by vPC
+domain id (C<cVpcRoleTable>), with C<kind> C<vpc> and these fields:
+
+=over
+
+=item *
+
+C<system_mac>: C<cVpcSystemOperMacAddress>.
+
+=item *
+
+C<role>: C<cVpcRoleStatus>.
+
+=item *
+
+C<peer>: the peer keepalive destination, C<cVpcPeerKeepAliveDestAddr>.
+
+=item *
+
+C<peer_link>: C<cVpcStatusPeerLinkIfIndex>.
+
+=item *
+
+C<status>: the peer keepalive status, C<cVpcPeerKeepAliveStatus>.
+
+=back
+
+=back
+
+=head2 vPC Tables (F<CISCO-VPC-MIB>)
+
+=over
+
+=item $nexus->vpc_role()
+
+(C<cVpcRoleStatus>)
+
+=item $nexus->vpc_system_mac()
+
+(C<cVpcSystemOperMacAddress>)
+
+=item $nexus->vpc_keepalive_peer()
+
+(C<cVpcPeerKeepAliveDestAddr>)
+
+=item $nexus->vpc_keepalive_stat()
+
+(C<cVpcPeerKeepAliveStatus>)
+
+=item $nexus->vpc_peer_link()
+
+(C<cVpcStatusPeerLinkIfIndex>)
+
+=item $nexus->vpc_host_link_if()
+
+(C<cVpcStatusHostLinkIfIndex>)
+
+=item $nexus->vpc_host_link_stat()
+
+(C<cVpcStatusHostLinkStatus>)
 
 =back
 

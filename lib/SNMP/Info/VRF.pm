@@ -1524,8 +1524,8 @@ Present when C<l3_isid> is defined.
 =item contexts
 
 How to reach the instance's rows, as an array of contexts in the form
-L<SNMP::Info/"snmp_context"> returns. C<< { kind => 'none' } >> is the
-default context. See L</"Reading Instances">.
+C<snmp_context()> in L<SNMP::Info> returns. C<< { kind => 'none' } >> is
+the default context. See L</"Reading Instances">.
 
 =back
 

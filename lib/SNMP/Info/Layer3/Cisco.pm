@@ -265,6 +265,8 @@ for other device specific L3 Cisco classes.
 
 =over
 
+=item SNMP::Info::CiscoBGP
+
 =item SNMP::Info::CiscoVTP
 
 =item SNMP::Info::CDP

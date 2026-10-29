@@ -545,7 +545,8 @@ Subclass for H3C & HP A-series devices
 
 =item Inherited Classes' MIBs
 
-See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
+See L<SNMP::Info::IEEE802dot3ad/"Required MIBs"> for its own MIB
+requirements.
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
 
@@ -589,7 +590,9 @@ Returns 1 when C<hh3cdot1sStpForceVersion> is C<stp(0)>, else 0.
 
 =item $h3c->hasRSTP()
 
-Returns 1 when C<hh3cdot1sStpForceVersion> is C<rstp(2)>, else 0.
+Returns 1 when C<hh3cdot1sStpForceVersion> is C<rstp(2)> and the tables
+do not show PVST, else 0.  Also 0 when a walk of those tables was
+incomplete (see L</"Spanning Tree Trees">).
 
 =item $h3c->hasPVST()
 
@@ -604,10 +607,6 @@ Returns 1 when C<hh3cdot1sStpForceVersion> is C<mstp(3)>, else 0.
 =head2 Globals imported from SNMP::Info::Layer3
 
 See documentation in L<SNMP::Info::Layer3> for details.
-
-=head2 Globals imported from SNMP::Info::IEEE802dot3ad
-
-See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
 
 =head1 TABLE ENTRIES
 
@@ -723,23 +722,96 @@ L<SNMP::Info::VRF/"Collapsed Subnets">).
 
 =head2 Spanning Tree Trees
 
-These override L<SNMP::Info::Bridge/"Spanning Tree Trees">; records are as
-described there.  The protocol is the one C<hh3cdot1sStpForceVersion> names.
-Under MSTP the CIST and each MSTI come from the C<HH3C-LswMSTP-MIB>
-instance and port tables, keyed C<cist.0> and C<msti.E<lt>instanceE<gt>>;
-their bridge IDs carry the instance number in the low 12 bits.  Under RSTP
-and STP the one tree comes from C<BRIDGE-MIB>, whose values the instance
-tables only copy.  The MIBs serve no port role, so C<role> and C<role_raw>
-are undef.  Physical members of a Bridge-Aggregation interface are omitted,
-as in C<i_stp_state()>.  C<measured> is 1 on Comware 7 under MSTP, RSTP
-and PVST.  Under PVST, which C<hh3cdot1sStpForceVersion> does not name, the
-protocol is C<pvst> when the force version is C<rstp>, the instance table
-lists instances and neither C<hh3cdot1sMstiBridgeID> nor
-C<hh3cdot1sMstiState> has rows.  Each VLAN in the instance table (not 0)
-becomes a C<vlan.N> tree with no context, no bridge or root, and
-C<ports_complete> 0, since no port data is served for it.  When one of
-those three walks was incomplete the protocol is unknown and no trees are
-reported.
+These override L<SNMP::Info::Bridge/"Spanning Tree Trees">, where the
+records are described.  Only the default context is read.
+
+The protocol comes from C<hh3cdot1sStpForceVersion>, the protocol the
+device is set to run:
+
+=over
+
+=item *
+
+C<stp> for C<stp(0)>, C<mstp> for C<mstp(3)>.
+
+=item *
+
+For C<rstp(2)>, C<pvst> when the C<HH3C-LswMSTP-MIB> instance and port
+tables show PVST, else C<rstp>.  The object has no PVST value.
+
+=item *
+
+Unknown otherwise: when the object is not served, holds another value,
+or a walk of those tables was incomplete.  No tree is then reported,
+not even the F<BRIDGE-MIB> one, since its states are wrong under PVST.
+
+=back
+
+The tree records:
+
+=over
+
+=item Keys
+
+C<cist.0> and C<msti.N> under MSTP.  C<cist.0> under RSTP and STP.
+C<vlan.N> for each VLAN under PVST.
+
+=item C<vlan>
+
+The VLAN id, on PVST trees.
+
+=item C<protocol>
+
+As above.
+
+=item C<measured>
+
+1 on Comware 7 under MSTP, RSTP and PVST.  0 otherwise.
+
+=item C<ports_complete>
+
+0 on every PVST tree, since no port data is served for one.  Under MSTP,
+0 when a port row of the instance has no C<bp_index()> entry.  Under
+RSTP and STP, as in L<SNMP::Info::Bridge>.
+
+=item C<contexts>
+
+The default context.  Empty on PVST trees.
+
+=item C<bridge>, C<root>
+
+Under MSTP, C<hh3cdot1sMstiBridgeID> and C<hh3cdot1sMstiDesignedRoot>,
+whose bridge IDs carry the instance number in the low 12 bits.  Under
+RSTP and STP, from F<BRIDGE-MIB>, whose values the instance tables only
+copy.  Undef on PVST trees.
+
+=back
+
+The port records:
+
+=over
+
+=item Under MSTP
+
+C<state>, C<designated_bridge> and C<designated_port> from the
+C<HH3C-LswMSTP-MIB> port table.  C<enabled> from
+C<dot1dStpPortEnable>.
+
+=item Under RSTP and STP
+
+From F<BRIDGE-MIB>.
+
+=item Under PVST
+
+None.
+
+=item Any protocol
+
+C<role> and C<role_raw> are undef: the MIBs serve no port role.
+Physical members of a Bridge-Aggregation interface are omitted, as in
+C<i_stp_state()>.
+
+=back
 
 =over
 
@@ -749,19 +821,21 @@ Returns reference to an array holding the protocol, or nothing.
 
 =item $h3c->stp_trees()
 
-Returns reference to hash of tree records, or an empty hash when no force
-version is served.  Without the force-version object PVST cannot be told from
-RSTP or MSTP, and C<BRIDGE-MIB> states are wrong under PVST, so no
-C<dot1dStp> tree is reported.
+Returns reference to hash of tree records. The hash is empty when the
+protocol is unknown, or under C<rstp> or C<stp> when F<BRIDGE-MIB>
+serves no tree.
 
 =item $h3c->stp_tree_ports($tree_key)
 
 Returns reference to hash of the tree's port records keyed by ifIndex.
+For a PVST tree it returns an empty hash.
 
 =item $h3c->stp_trees_complete()
 
-Returns 1 when trees were read, 0 otherwise.  Under PVST every VLAN tree is
-listed, so it is 1.
+Returns 1 or 0, as L<SNMP::Info::Bridge/"Spanning Tree Trees">
+describes.  Under PVST every VLAN tree is listed.  0 when no tree is
+listed, and under MSTP when the C<hh3cdot1sInstanceID> walk was
+incomplete.
 
 =item $h3c->stp_vlan_map()
 
@@ -777,6 +851,7 @@ See documentation in L<SNMP::Info::Layer3> for details.
 
 =head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
 
-See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
+See documentation in L<SNMP::Info::IEEE802dot3ad/"METHODS"> and
+L<SNMP::Info::IEEE802dot3ad/"TABLE METHODS"> for details.
 
 =cut

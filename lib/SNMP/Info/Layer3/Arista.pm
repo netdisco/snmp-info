@@ -435,7 +435,7 @@ the instance from the context name, which is the VRF name.
 
 =item $arista->context_kinds($feature)
 
-See L<SNMP::Info/"context_kinds">. Returns C<['vrf']> for C<vrf>.
+See C<context_kinds()> in L<SNMP::Info>. Returns C<['vrf']> for C<vrf>.
 
 =item $arista->snmp_context($kind, $id)
 

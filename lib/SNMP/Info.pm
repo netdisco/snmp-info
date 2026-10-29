@@ -2059,6 +2059,25 @@ SNMPv2c reaches a context by a community suffix (C<public@10>), or on
 Extreme VOSS by a vrfid suffix (C<public::1>).  SNMPv3 reaches it by a
 context name (C<vlan-10>).
 
+=over
+
+=item context
+
+A view of the device's MIB data that the agent serves under one name.
+A session reads one context at a time.
+
+=item default context
+
+The context a session reaches with the constructor's C<Community>, or
+with an empty SNMPv3 Context.  It serves most data.
+
+=item context kind
+
+What a device's contexts stand for: C<vlan>, one context per VLAN;
+C<mst>, one per MST instance; C<vrf>, one per VRF.
+
+=back
+
 To read such a feature:
 
 =over
@@ -2077,8 +2096,11 @@ C<update()> clears the cache on every switch.
 
 =item 3.
 
-For each one, take its context from C<snmp_context()> (a tree record's
-C<contexts> already holds them), switch with C<update()>, and read.
+For each one, find its contexts.  For C<fdb>, call
+C<snmp_context('vlan', $vlan)>.  For C<stp> and C<vrf>, use the
+record's C<contexts>, which can name a context C<snmp_context()> does
+not, as on Junos (L<SNMP::Info::Layer3::Juniper>).  Switch with
+C<update()>, and read.
 
 =item 4.
 
@@ -2088,7 +2110,7 @@ Call C<update()> with no arguments to return to the default context.
 
 A context whose C<v2c> or C<v3> is undef cannot be reached over that
 SNMP version.  NX-OS refuses community suffixes, so its VLAN and MST
-contexts need SNMPv3.
+contexts need SNMPv3 (L<SNMP::Info::Layer3::Nexus>).
 
 A site can map a plain community to a VRF context in the device
 configuration (NX-OS C<snmp-server mib community-map>).  The VRF readers
@@ -2101,77 +2123,103 @@ L<SNMP::Info::VRF/"Reading Instances">.
 The examples below switch with this helper.  C<kind> C<none> is the
 default context.
 
- # Switch to $context; false where this session's SNMP version cannot
- # reach it
- sub enter_context {
-     my ( $info, $context, $community ) = @_;
+    # Switch to $context; false where this session's SNMP version cannot
+    # reach it
+    sub enter_context {
+        my ( $info, $context, $community ) = @_;
 
-     return $info->update() if $context->{kind} eq 'none';
-     if ( $info->snmp_ver() == 3 ) {
-         return unless defined $context->{v3};
-         return $info->update( Context => $context->{v3} );
-     }
-     return unless defined $context->{v2c};
-     return $info->update(
-         Community => sprintf( $context->{v2c}, $community ) );
- }
+        return $info->update() if $context->{kind} eq 'none';
+        if ( $info->snmp_ver() == 3 ) {
+            return unless defined $context->{v3};
+            return $info->update( Context => $context->{v3} );
+        }
+        return unless defined $context->{v2c};
+        return $info->update(
+            Community => sprintf( $context->{v2c}, $community ) );
+    }
 
- my $community = $info->snmp_comm();    # before the first switch
+    my $community = $info->snmp_comm();    # before the first switch
 
 Forwarding table, per VLAN where the device needs it:
 
- my %fw_mac;    # VLAN => { iid => MAC }, or 'all' => { ... }
- if ( $info->context_kinds('fdb') ) {
-     my @vlans = sort { $a <=> $b } values %{ $info->v_index() || {} };
-     foreach my $vlan (@vlans) {
-         my $context = $info->snmp_context( 'vlan', $vlan ) or next;
-         enter_context( $info, $context, $community ) or next;
-         $fw_mac{$vlan} = { %{ $info->fw_mac() || {} } };
-     }
-     $info->update();
- }
- else {
-     $fw_mac{all} = { %{ $info->fw_mac() || {} } };
- }
+    my %fw_mac;    # VLAN => { iid => MAC }, or 'all' => { ... }
+    if ( $info->context_kinds('fdb') ) {
+        my @vlans = sort { $a <=> $b } values %{ $info->v_index() || {} };
+        foreach my $vlan (@vlans) {
+            my $context = $info->snmp_context( 'vlan', $vlan ) or next;
+            enter_context( $info, $context, $community ) or next;
+            $fw_mac{$vlan} = { %{ $info->fw_mac() || {} } };
+        }
+        $info->update();
+    }
+    else {
+        $fw_mac{all} = { %{ $info->fw_mac() || {} } };
+    }
 
 MST instance ports.  NX-OS serves each instance in its own C<mst-N>
-context.  IOS serves it in the context of any VLAN the instance carries,
-so the rows of every listed context are merged:
+context.  IOS serves it in the context of each VLAN the instance carries,
+and VLAN 1 in the default context, so the rows of every listed context
+are merged (L<SNMP::Info::CiscoStpExtensions>).  The SYNOPSIS of
+L<SNMP::Info::Bridge> reads every tree the same way:
 
- my $trees = $info->stp_trees() || {};
- my $switch = $info->context_kinds('stp');
- my %msti_ports;    # tree key => { iid => port record }
- my @mstis = grep { $trees->{$_}{type} eq 'msti' } sort keys %$trees;
- foreach my $key (@mstis) {
-     unless ($switch) {
-         $msti_ports{$key} = { %{ $info->stp_tree_ports($key) || {} } };
-         next;
-     }
-     foreach my $context ( @{ $trees->{$key}{contexts} } ) {
-         enter_context( $info, $context, $community ) or next;
-         my $ports = $info->stp_tree_ports($key) || {};
-         $msti_ports{$key}{$_} = $ports->{$_} foreach keys %$ports;
-     }
- }
- $info->update() if $switch;
+    my $trees = $info->stp_trees() || {};
+    my $switch = $info->context_kinds('stp');
+    my %msti_ports;    # tree key => { iid => port record }
+    my @mstis = grep { $trees->{$_}{type} eq 'msti' } sort keys %$trees;
+    foreach my $key (@mstis) {
+        unless ($switch) {
+            $msti_ports{$key} = { %{ $info->stp_tree_ports($key) || {} } };
+            next;
+        }
+        foreach my $context ( @{ $trees->{$key}{contexts} } ) {
+            enter_context( $info, $context, $community ) or next;
+            my $ports = $info->stp_tree_ports($key) || {};
+            $msti_ports{$key}{$_} = $ports->{$_} foreach keys %$ports;
+        }
+    }
+    $info->update() if $switch;
 
 Per-VRF neighbors.  Where the device reads each VRF in its own context,
 switch to it; otherwise read every VRF in the default context:
 
- # Where the device lists no VRF, as EXOS, pass vrf_instances(\@names)
- my $instances = $info->vrf_instances() || {};
- my %vrf_neighbors;    # VRF name => { iid => neighbor record }
- foreach my $name ( sort keys %$instances ) {
-     if ( $info->context_kinds('vrf') and $name ne 'default' ) {
-         # No context: the device gives this instance none to read in
-         my $context = $instances->{$name}{contexts}[0] or next;
-         enter_context( $info, $context, $community ) or next;
-         $vrf_neighbors{$name} = { %{ $info->vrf_neighbors($name) || {} } };
-         $info->update();
-         next;
-     }
-     $vrf_neighbors{$name} = { %{ $info->vrf_neighbors($name) || {} } };
- }
+    # Where the device lists no VRF, as EXOS, pass vrf_instances(\@names)
+    my $instances = $info->vrf_instances() || {};
+    my %vrf_neighbors;    # VRF name => { iid => neighbor record }
+    foreach my $name ( sort keys %$instances ) {
+        if ( $info->context_kinds('vrf') and $name ne 'default' ) {
+            # No context: the device gives this instance none to read in
+            my $context = $instances->{$name}{contexts}[0] or next;
+            enter_context( $info, $context, $community ) or next;
+            $vrf_neighbors{$name}
+                = { %{ $info->vrf_neighbors($name) || {} } };
+            $info->update();
+            next;
+        }
+        $vrf_neighbors{$name} = { %{ $info->vrf_neighbors($name) || {} } };
+    }
+
+=head3 For Class Authors
+
+A device class answers C<context_kinds()> and C<snmp_context()> through
+two private hooks, since a role such as L<SNMP::Info::Bridge> sits behind
+SNMP::Info in every class's method resolution and cannot override them:
+
+=over
+
+=item C<_context_kinds($feature)>
+
+Returns the C<context_kinds()> answer for C<$feature>: a reference to an
+array of kinds, or nothing.  C<context_kinds('fdb')> returns C<['vlan']>
+without calling it where C<cisco_comm_indexing()> is true
+(L<SNMP::Info::Layer3::CiscoSwitch>).  See L<SNMP::Info::Layer3::Nexus>
+for a class that answers several features.
+
+=item C<_snmp_context($kind, $id)>
+
+Returns the C<snmp_context()> record, or nothing where the device has no
+such context (L<SNMP::Info::Layer3::Juniper>).
+
+=back
 
 =head2 Object Scalar Methods
 
@@ -3182,13 +3230,13 @@ per-instance readers of L<SNMP::Info::VRF>.
 
 Kinds: C<vlan>, one context per VLAN; C<mst>, one context per MST
 instance; C<vrf>, one context per VRF.  The answer names kinds of context,
-not the trees or VLANs the device has now.  Where only one protocol uses
-contexts, a class answers while that protocol runs and returns nothing
-otherwise (L<SNMP::Info::Layer3::Juniper> for VSTP).
+not the trees or VLANs the device has now.  It can change when the device
+changes protocol: L<SNMP::Info::Layer3::Juniper> answers for C<stp> only
+while VSTP runs.
 
- if (my $kinds = $info->context_kinds('fdb')) {
-     # Read the forwarding table once per VLAN
- }
+    if (my $kinds = $info->context_kinds('fdb')) {
+        # Read the forwarding table once per VLAN
+    }
 
 =cut
 
@@ -3211,8 +3259,8 @@ kind from C<context_kinds()>; C<$id> is a VLAN id for C<vlan>, an MST
 instance for C<mst> and a VRF name from C<vrf_instances()> for C<vrf>.
 See L</"SNMP Contexts">.
 
- my $context = $info->snmp_context('vlan', 10);
- # { kind => 'vlan', id => 10, v2c => '%s@10', v3 => 'vlan-10' }
+    my $context = $info->snmp_context('vlan', 10);
+    # { kind => 'vlan', id => 10, v2c => '%s@10', v3 => 'vlan-10' }
 
 =over
 
@@ -3229,8 +3277,9 @@ context.
 =item C<v3>
 
 The SNMPv3 context name.  Undef where SNMPv3 cannot reach the context.
-The device answers only for the names its SNMP configuration binds, so a
-site's own context naming wins over this one.
+The device answers only for the names its configuration binds.  Where a
+site binds other names, pass those to C<update(Context =E<gt> ...)>
+instead.
 
 =back
 

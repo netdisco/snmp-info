@@ -2202,37 +2202,105 @@ segment."
 
 =head2 Spanning Tree Trees
 
-These override L<SNMP::Info::Bridge/"Spanning Tree Trees">; records are as
-described there.  The protocol is C<mstp> when C<nnMstForceProtocolVersion> is
-C<mstp(3)>, else C<rstp> or C<stp> as C<nnRstDot1dStpVersion> says
-(C<rstp(2)>, C<stpCompatible(0)>).  Those two objects mean the same across
-the family's generations, where C<rcStgProtocolSpecification> does not.
-C<rcSysSpanningTreeOperMode> C<nortelStpg> and C<pvst> are not read: those
-modes predate 802.1w and 802.1s, and few devices still run them, so a
-device in one of them reports no trees.
+These override L<SNMP::Info::Bridge/"Spanning Tree Trees">, where the
+records are described.  Only the default context is read.
 
-Under MSTP the CIST is C<cist.0>, from
-C<NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB>, and each row of
-C<nnMstBridgePriority> is a C<msti.N> whose STG (N + 1) runs spanning tree.
-The VOSS SPBM B-VLAN tree has C<rcStgEnableStp> false, so it is left out of
-the trees and its VLANs out of C<stp_vlan_map()>.  The MSTI
-bridge ID is the configured priority with the bridge address, as the device
-serves it.  Under RSTP and STP the one tree is C<cist.0>, with the bridge and
-root from the first C<rcStgTable> row, as VOSS serves no C<dot1dStp> scalar
-under RSTP.
+The protocol:
 
-The port state under RSTP and STP is C<nnRstDot1wPortStateTransSmState>: the
-C<BRIDGE-MIB> and C<rcStgPortTable> states serve forwarding on a blocked port.
-Under RSTP and STP C<enabled> is C<rcStgPortEnableStp> for the port and the
-tree's STG, else C<dot1dStpPortEnable>.  Under MSTP it is
-C<nnMstCistForcePortState> for C<cist.0> and C<nnMstPortForcePortState> for
-each C<msti.N>, both indexed by bridge port, with C<disabled(0)> as 0 and
-C<enabled(1)> as 1; a port with no row has C<enabled> undef, as neither
-C<rcStgPortEnableStp> nor C<dot1dStpPortEnable> carries the MSTP setting.
-A port row with no C<bp_index> entry is left out and makes C<ports_complete>
-0. An RSTP or STP device that serves no C<nnRstDot1wPortStateTransSmState>
-rows also gives C<ports_complete> 0. C<measured> is 0. Only the default
-context is read.
+=over
+
+=item *
+
+C<mstp> when C<nnMstForceProtocolVersion> is C<mstp(3)>.
+
+=item *
+
+Else C<rstp> or C<stp>, as C<nnRstDot1dStpVersion> says (C<rstp(2)>,
+C<stpCompatible(0)>).
+
+=item *
+
+Else unknown: C<stp_protocols()> returns nothing, C<stp_trees()> an
+empty hash and C<stp_trees_complete()> 0.  C<rcSysSpanningTreeOperMode>
+is not read, so a device in C<nortelStpg> or C<pvst> mode gets this
+result only if it serves neither C<nnMstForceProtocolVersion> nor
+C<nnRstDot1dStpVersion> as above (not verified on such a device).
+
+=back
+
+The tree records:
+
+=over
+
+=item Keys
+
+C<cist.0> and C<msti.N> under MSTP: one C<msti.N> for each row of
+C<nnMstBridgePriority> whose STG, N + 1, runs spanning tree.  An STG with
+spanning tree disabled, such as the SPBM B-VLAN tree, is not a tree.
+C<cist.0> under RSTP and STP.
+
+=item C<protocol>
+
+As above.
+
+=item C<measured>
+
+0.
+
+=item C<ports_complete>
+
+0 when a port row of the tree has no C<bp_index()> entry.  Under RSTP
+and STP also 0 when the device serves no
+C<nnRstDot1wPortStateTransSmState> rows, or their walk was incomplete.
+
+=item C<contexts>
+
+The default context.
+
+=item C<bridge>
+
+Under MSTP, the instance's C<nnMstCistBridgePriority> or
+C<nnMstBridgePriority> as served, with C<nnMstBrgAddress>.  Under RSTP
+and STP, C<rcStgPriority> and C<rcStgBridgeAddress> of STG 1, since VOSS
+serves no C<dot1dStp> scalar under RSTP.
+
+=item C<root>
+
+Under MSTP, C<nnMstCistRoot> or C<nnMstBridgeRegionalRoot>.  Under RSTP
+and STP, C<rcStgDesignatedRoot> of STG 1.
+
+=back
+
+The port records:
+
+=over
+
+=item C<state>
+
+Under MSTP, C<nnMstCistPortState> or C<nnMstPortState>.  Under RSTP and
+STP, C<nnRstDot1wPortStateTransSmState>: the F<BRIDGE-MIB> and
+C<rcStgPortTable> states serve forwarding on a blocked port.
+
+=item C<role>, C<role_raw>
+
+C<nnMstCistCurrentPortRole>, C<nnMstPortCurrentPortRole> or
+C<nnRstDot1wPortRole>, normalized by C<munge_dot1s_port_role()> or
+C<munge_dot1w_port_role()>.
+
+=item C<designated_bridge>, C<designated_port>
+
+Under MSTP, from the CIST or MSTI port table.  Under RSTP and STP, from
+F<BRIDGE-MIB>.
+
+=item C<enabled>
+
+Under MSTP, C<nnMstCistForcePortState> for C<cist.0> and
+C<nnMstPortForcePortState> for each C<msti.N>: 0 for C<disabled(0)>, 1
+for C<enabled(1)>, undef for a port with no row.  Under RSTP and STP,
+C<rcStgPortEnableStp> for the port and the tree's STG, else
+C<dot1dStpPortEnable>.
+
+=back
 
 =over
 
@@ -2249,13 +2317,12 @@ served.
 =item $rapidcity->stp_tree_ports($tree_key)
 
 Returns reference to hash of the tree's port records keyed by ifIndex.
-C<role> is the C<nnMstCistCurrentPortRole>, C<nnMstPortCurrentPortRole> or
-C<nnRstDot1wPortRole> value in the shared vocabulary, and C<role_raw> as
-served.
 
 =item $rapidcity->stp_trees_complete()
 
-Returns 1 when a protocol is identified and trees are listed, 0 otherwise.
+Returns 1 or 0, as L<SNMP::Info::Bridge/"Spanning Tree Trees">
+describes.  0 when the protocol is unknown, when no tree is listed, and
+under MSTP when the C<nnMstBridgePriority> walk was incomplete.
 
 =item $rapidcity->stp_vlan_map()
 

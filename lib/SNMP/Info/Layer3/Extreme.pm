@@ -1889,8 +1889,9 @@ Returns 1 when any domain's ports run in PVST+ mode
 
 =item $extreme->hasSTP()
 
-Returns 1 when C<dot1dStpVersion> is 0 and a domain runs 802.1D, with no
-port in PVST+ mode.
+Returns 1 when C<dot1dStpVersion> is 0 and a domain has no port in PVST+
+mode.  A device with one such domain and one PVST+ domain answers 1 to
+both C<hasSTP()> and C<hasPVST()>.
 
 =back
 
@@ -2023,12 +2024,12 @@ never known to be whole. A caller name still returns 0.
 Returns C<['vrf']> for C<vrf> on ExtremeXOS, where each virtual router
 answers in its own SNMPv3 context, and on VOSS, where each VRF does.
 Returns nothing otherwise, and nothing on ExtremeWare. See
-L<SNMP::Info/"context_kinds">.
+C<context_kinds()> in L<SNMP::Info>.
 
 =item $extreme->snmp_context($kind, $id)
 
 Returns nothing for kinds other than C<vrf>. See
-L<SNMP::Info/"snmp_context">.
+C<snmp_context()> in L<SNMP::Info>.
 
 On ExtremeXOS, for a virtual router name returns C<< { kind =E<gt>
 'vrf', id =E<gt> $name, v2c =E<gt> undef, v3 =E<gt> $name } >>. The
@@ -2355,18 +2356,78 @@ to the root bridge.
 
 =back
 
-=head2 Spanning Tree Domains
+=head2 Spanning Tree Trees
 
 EXOS runs one spanning tree per STP domain, served in the default
-context.  These override L<SNMP::Info::Bridge/"Spanning Tree Trees">;
-records are as described there, with C<type> C<domain>, C<id> the domain
-instance, C<name> the domain name and, under PVST+, C<vlan> the carrier
-VLAN.  A domain's C<protocol> is C<pvst> when its ports run in PVST+ mode;
-C<stp> when C<dot1dStpVersion> is 0 and they do not, since that version
-leaves only 802.1D; the device's protocol when the device has one domain;
-and undef otherwise, since C<dot1dStpVersion> is device-wide.
-C<measured> is 1 on EXOS.
-VOSS, also handled by this class, serves none of these tables.
+context.  These override L<SNMP::Info::Bridge/"Spanning Tree Trees">,
+where the records are described.  VOSS, also handled by this class,
+serves none of these tables.
+
+The tree records:
+
+=over
+
+=item Keys
+
+C<domain.N> for each domain, N its C<extremeStpDomainStpdInstance>.
+
+=item C<name>
+
+The domain name, C<extremeStpDomainStpdName>.
+
+=item C<vlan>
+
+The domain's carrier VLAN, C<extremeStpDomainStpdTag>, when it is not
+0.
+
+=item C<protocol>
+
+C<dot1dStpVersion> is device-wide, so a domain's protocol is:
+
+=over
+
+=item *
+
+C<pvst> when a port of the domain runs in PVST+ mode
+(C<extremeStpPortPortMode> C<pvstp>);
+
+=item *
+
+else C<stp> when C<dot1dStpVersion> is 0;
+
+=item *
+
+else the protocol C<dot1dStpVersion> names, when the device has one
+domain;
+
+=item *
+
+else undef.
+
+=back
+
+=item C<measured>
+
+1 on EXOS, 0 otherwise.
+
+=item C<ports_complete>
+
+1.
+
+=item C<contexts>
+
+The default context.
+
+=item C<bridge>, C<root>
+
+C<extremeStpDomainBridgeId> and C<extremeStpDomainDesignatedRoot>.
+
+=back
+
+The port records come from C<extremeStpPortTable>: C<state>
+(C<extremeStpPortPortState>), C<enabled> (C<extremeStpPortStpEnabled>),
+C<designated_bridge> and C<designated_port>.  C<role> and C<role_raw>
+are undef: the MIB serves none.
 
 =over
 
@@ -2383,12 +2444,13 @@ C<domain.E<lt>instanceE<gt>>.
 =item $extreme->stp_tree_ports($tree_key)
 
 Returns reference to hash of the domain's port records keyed by ifIndex,
-from (C<extremeStpPortTable>).  C<role> and C<role_raw> are undef: the MIB
-serves none.
+from (C<extremeStpPortTable>).
 
 =item $extreme->stp_trees_complete()
 
-Returns 1 when the domain table was read, 0 otherwise.
+Returns 1 or 0, as L<SNMP::Info::Bridge/"Spanning Tree Trees">
+describes.  0 when the device serves no domain, or the
+C<extremeStpDomainStpdName> walk was incomplete.
 
 =item $extreme->stp_vlan_map()
 
@@ -2410,34 +2472,6 @@ Returns reference to hash mapping VLAN id to domain key, from the index of
 =item $extreme->ex_stp_vlan_mask()
 
 (C<extremeStpVlanPortPortMask>)
-
-=item $extreme->ex_loadshare()
-
-(C<extremePortLoadshare2Status>)
-
-=item $extreme->ex_mlag_peer_ip()
-
-(C<extremeMlagPeerIP>)
-
-=item $extreme->ex_mlag_peer_status()
-
-(C<extremeMlagPeerCheckPointStatus>)
-
-=item $extreme->ex_mlag_peer_lacp_mac()
-
-(C<extremeMlagPeerOperLacpMac>)
-
-=item $extreme->ex_mlag_port_id()
-
-(C<extremeMlagPortId>)
-
-=item $extreme->ex_mlag_port_peer()
-
-(C<extremeMlagPortPeer>)
-
-=item $extreme->ex_mlag_port_state()
-
-(C<extremeMlagPortLocalLinkStatus>)
 
 =back
 
@@ -2505,6 +2539,34 @@ as text.
 C<status>: the checkpoint status, C<extremeMlagPeerCheckPointStatus>.
 
 =back
+
+=item $extreme->ex_loadshare()
+
+(C<extremePortLoadshare2Status>)
+
+=item $extreme->ex_mlag_peer_ip()
+
+(C<extremeMlagPeerIP>)
+
+=item $extreme->ex_mlag_peer_status()
+
+(C<extremeMlagPeerCheckPointStatus>)
+
+=item $extreme->ex_mlag_peer_lacp_mac()
+
+(C<extremeMlagPeerOperLacpMac>)
+
+=item $extreme->ex_mlag_port_id()
+
+(C<extremeMlagPortId>)
+
+=item $extreme->ex_mlag_port_peer()
+
+(C<extremeMlagPortPeer>)
+
+=item $extreme->ex_mlag_port_state()
+
+(C<extremeMlagPortLocalLinkStatus>)
 
 =back
 

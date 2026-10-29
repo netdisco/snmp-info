@@ -1525,6 +1525,8 @@ Subclass for Juniper Devices running JUNOS
 
 =item F<JUNIPER-VPN-MIB>
 
+=item F<JUNIPER-IF-MIB>
+
 =back
 
 =head2 Inherited Classes' MIBs
@@ -1607,13 +1609,26 @@ Returns 1 when C<jnxMIMstSystemControl> for context 0 is C<start(1)>, else 0.
 
 =item $juniper->hasVSTP()
 
-Returns 1 when C<jnxMIMstSystemControl> does not start MSTP at context 0,
-its walk completed with rows at contexts other than 0 that all read
-C<shutdown(2)>, and C<jnxMIMstMstiBridgePriority> has none, else 0.  The
-device sets no flag for VSTP.  The row at context 0 belongs to the default
-context, so C<shutdown(2)> there, or a C<dot1dStpVersion>, does not rule VSTP
-out: RSTP or STP can run beside it.  A row reading C<start(1)> at a context
-other than 0 is MSTP inside a routing instance, which is not VSTP.
+Returns 1 when all of these hold, else 0:
+
+=over
+
+=item *
+
+C<jnxMIMstSystemControl> does not start MSTP at context 0;
+
+=item *
+
+its walk completed, with rows at contexts other than 0 that all read
+C<shutdown(2)>;
+
+=item *
+
+C<jnxMIMstMstiBridgePriority> has no row, and its walk completed.
+
+=back
+
+See L</"Spanning Tree Trees">.
 
 =back
 
@@ -1801,68 +1816,239 @@ C<bgpIpVpn>.
 
 =head2 Spanning Tree Trees
 
-These override L<SNMP::Info::Bridge/"Spanning Tree Trees">; records are as
-described there.  The default context's protocol is C<mstp> when
-C<jnxMIMstSystemControl> for context 0 is C<start(1)>, else C<rstp> or
-C<stp> as C<dot1dStpVersion> says (C<rstp(2)>, C<stpCompatible(0)>).  VSTP
-(C<vstp>) runs alone or beside RSTP or STP.  Junos refuses MSTP and VSTP in
-one routing instance, but VSTP in a virtual switch can run beside MSTP in
-the default instance; that tree is not listed.  Under MSTP the CIST is
-C<cist.0> and each row of C<jnxMIMstMstiBridgePriority> is a C<msti.N>, from
-C<JUNIPER-MIMSTP-MIB>; the MSTI bridge ID is the configured priority plus the
-MSTI number, with the bridge address.  Under RSTP and STP the default
-context's tree is the C<BRIDGE-MIB> tree C<cist.0>, and any VSTP trees are
-listed beside it.  When no indicator is served but C<BRIDGE-MIB> serves
-the tree, C<cist.0> is reported with an undefined protocol,
-C<stp_protocols()> is C<['dot1d']> and C<stp_trees_complete()> is 0.
-C<measured> is 1 under STP, RSTP, MSTP and VSTP.  Under MSTP C<enabled> is
-the tree's C<jnxMIMstCistForcePortState> or C<jnxMIMstMstiForcePortState>:
-0 for C<disabled(0)>, 1 for C<enabled(1)>, undef for a port with no row.  A
-port row with no C<bp_index> entry is left out and makes C<ports_complete>
-0.  Only the default context is read, except for VSTP below.
+These override L<SNMP::Info::Bridge/"Spanning Tree Trees">, where the
+records are described.  Only the default context is read, except for
+VSTP trees.
 
-Under VSTP each VLAN's tree (protocol C<vstp>) is served whole as
-C<BRIDGE-MIB> in its own context, named C<instance::N> for VLAN N in routing
-instance C<instance>.  The instance is C<default> unless VSTP runs in a
-virtual switch.  The tree key is C<vlan.N> in the C<default> instance and
-C<vlan.N@instance> in any other, and the record adds C<instance>.  Its one
-context is C<< { kind => 'vlan', id => N, instance => instance, v2c =>
-'instance::N@%s', v3 => 'instance::N' } >>.  SNMPv2c reaches it with the
-community C<instance::N@community>, the instance first; C<community@N> (the
-Cisco order) does not work on Junos.  SNMPv3 uses the context C<instance::N>,
-which needs an exact VACM C<context-prefix instance::N> on the device.
-L<SNMP::Info/"snmp_context"> answers for the C<default> instance only; use
-the tree record's context for the others.  A tree record's contexts carry
-C<instance>, C<default> included, so they are not deep-equal to
-C<snmp_context('vlan', N)>, which has no C<instance> key.  A
-C<vlan.N@default> key is not a tree: C<default> trees are keyed C<vlan.N>.
-Under VSTP alone the default context serves no C<dot1dStp> object.
+The default context's protocol:
 
-The VLANs and instances come from C<vacmContextName>, keeping the names of
-the form C<instance::N> with N from 1 to 4094.  The MST control rows and the
-VLAN table are not used for the list: the first carry context ids, and the
-second lists VLANs that do not run VSTP.  When the agent's view excludes
-C<SNMP-VIEW-BASED-ACM-MIB> (1.3.6.1.6.3.16), the VLAN list is unknown:
-C<stp_trees()> holds no VSTP tree and C<stp_trees_complete()> is 0.  Grant
-the community or user read access to 1.3.6.1.6.3.16.  Other VLAN contexts get
-no reply at all, not an error, so ask only the listed ones.  A VSTP record
-has an undefined C<bridge> and C<root>, which only its own context serves.
+=over
 
-Each VSTP tree has one C<jnxMIMstSystemControl> row at a context other than
-0, and the agent lists one C<instance::N> name for it.  A listed name can
-have no tree behind it, since a VACM C<context-prefix> entry lists its name
-without VSTP; C<stp_tree_ports()> in such a context returns no rows.  A tree
-can also go unlisted when the agent's view hides its name.  So unless MSTP
-is started, C<stp_trees_complete()> is 0 if the number of C<instance::N>
-names differs from the number of control rows at contexts other than 0.
-Every control row at a context other than 0 counts, whatever it reads, so
+=item *
+
+C<mstp> when C<jnxMIMstSystemControl> for context 0 is C<start(1)>.
+
+=item *
+
+Else C<rstp> or C<stp>, as C<dot1dStpVersion> says (C<rstp(2)>,
+C<stpCompatible(0)>).
+
+=item *
+
+Else unknown.  Where F<BRIDGE-MIB> serves the tree, C<cist.0> is
+reported with C<protocol> undef, and C<stp_protocols()> is
+C<['dot1d']>.
+
+=back
+
+VSTP (C<vstp>) runs alone or beside RSTP or STP.  The device sets no
+flag for it; C<hasVSTP()> lists the signs this class reads.  The
+C<jnxMIMstSystemControl> row at context 0 belongs to the default
+context, so C<shutdown(2)> there, or a C<dot1dStpVersion>, does not rule
+VSTP out.  A row reading C<start(1)> at another context is MSTP inside a
+routing instance, not VSTP.  Junos refuses MSTP and VSTP in one routing
+instance, but VSTP in a virtual switch can run beside MSTP in the
+default instance; that VSTP tree is not listed.
+
+The tree records:
+
+=over
+
+=item Keys
+
+C<cist.0> and C<msti.N> under MSTP; C<cist.0> under RSTP and STP.  Each
+VSTP tree is C<vlan.N> in the C<default> instance, and C<vlan.N@instance>
+in routing instance C<instance>; they are listed beside any C<cist.0>.
+Under VSTP alone the default context serves no C<dot1dStp> object, so
+there is no C<cist.0>.  A C<vlan.N@default> key is not a tree.
+
+=item C<vlan>, C<instance>
+
+On VSTP trees only: the VLAN id, and the routing instance, C<default>
+included.
+
+=item C<protocol>
+
+The default context's protocol, as above; C<vstp> on VSTP trees.
+
+=item C<measured>
+
+1 under STP, RSTP, MSTP and VSTP.  0 when the protocol is unknown.
+
+=item C<ports_complete>
+
+0 when a port row of the tree has no C<bp_index()> entry, under MSTP,
+RSTP and STP.  1 otherwise, and on every VSTP tree.
+
+=item C<contexts>
+
+The default context, except on a VSTP tree.  A VSTP tree has one
+context:
+
+    { kind => 'vlan', id => N, instance => 'instance',
+      v2c => 'instance::N@%s', v3 => 'instance::N' }
+
+Its C<instance> key makes it differ from C<snmp_context('vlan', N)>,
+which answers for the C<default> instance only; use the tree's own
+context.
+
+=item C<bridge>
+
+Under MSTP, from C<jnxMIMstCistBridgePriority> or
+C<jnxMIMstMstiBridgePriority> as served, with C<jnxMIMstBrgAddress>.
+Under RSTP and STP, from F<BRIDGE-MIB>.  Undef on VSTP trees.
+
+=item C<root>
+
+Under MSTP, C<jnxMIMstCistRoot> or C<jnxMIMstMstiBridgeRegionalRoot>.
+Under RSTP and STP, C<dot1dStpDesignatedRoot>.  Undef on VSTP trees,
+since only the tree's own context serves it.
+
+=back
+
+The port records:
+
+=over
+
+=item Under MSTP
+
+C<state>, C<role>, C<designated_bridge> and C<designated_port> from the
+C<JUNIPER-MIMSTP-MIB> CIST or MSTI port table, C<role> normalized by
+C<munge_dot1s_port_role()>.  C<enabled> is the tree's
+C<jnxMIMstCistForcePortState> or C<jnxMIMstMstiForcePortState>: 0 for
+C<disabled(0)>, 1 for C<enabled(1)>, undef for a port with no row.
+
+=item Under RSTP, STP and VSTP
+
+From F<BRIDGE-MIB>, in the tree's own context for a VSTP tree.
+C<role> and C<role_raw> are undef.
+
+=back
+
+Each VSTP tree is served whole, as F<BRIDGE-MIB>, in its own context
+C<instance::N>.  The tree list takes the VLANs and instances from the
+C<instance::N> names in C<vacmContextName>, with N from 1 to 4094.
+Other VLAN contexts get no reply at all, not an error, so ask only the
+listed ones.  To reach a context:
+
+=over
+
+=item *
+
+SNMPv2c: the community C<instance::N@community>, the instance first.
+C<community@N>, the Cisco order, does not work on Junos.
+
+=item *
+
+SNMPv3: the context C<instance::N>.
+
+=back
+
+Device requirements for VSTP:
+
+=over
+
+=item *
+
+The community's or user's view includes C<SNMP-VIEW-BASED-ACM-MIB>
+(1.3.6.1.6.3.16).  Without it the VSTP VLAN list is unknown:
+C<stp_trees()> holds no VSTP tree and C<stp_trees_complete()> is 0.
+
+=item *
+
+For SNMPv3, an exact VACM C<context-prefix instance::N> for each VLAN.
+
+=back
+
+=over
+
+=item $juniper->stp_protocols()
+
+Returns reference to an array holding the default context's protocol, then
+C<vstp> when VSTP runs (C<['rstp', 'vstp']> beside RSTP, C<['vstp']> alone),
+C<['dot1d']> when only C<BRIDGE-MIB> is served, or nothing.  Protocol
+methods answer only in the default context: C<stp_protocols()> reports an
+error in any other, and C<hasSTP()> to C<hasVSTP()> return 0.
+
+=item $juniper->stp_trees()
+
+Returns reference to hash of tree records, or an empty hash when nothing is
+served.
+
+=item $juniper->stp_tree_ports($tree_key)
+
+Returns reference to hash of the tree's port records keyed by ifIndex.
+
+=over
+
+=item *
+
+A C<vlan.N> key is read in the context C<default::N>, and a
+C<vlan.N@instance> key in C<instance::N>.  In any other context it
+returns nothing, with C<error()> naming the context to use.
+
+=item *
+
+Other keys are read only in the default context.
+
+=back
+
+A listed C<instance::N> name can have no tree behind it (see
+C<stp_trees_complete()>); in such a context it returns no rows.
+
+=item $juniper->stp_trees_complete()
+
+Returns 1 or 0, as L<SNMP::Info::Bridge/"Spanning Tree Trees">
+describes.  It returns 0 when:
+
+=over
+
+=item *
+
+no protocol is identified, including when only C<BRIDGE-MIB> is
+served;
+
+=item *
+
+the C<jnxMIMstSystemControl> walk was incomplete;
+
+=item *
+
+VSTP runs, and C<vacmContextName> was not served or its walk was
+incomplete;
+
+=item *
+
+unless MSTP runs, the number of C<instance::N> names in
+C<vacmContextName> differs from the number of C<jnxMIMstSystemControl>
+rows at contexts other than 0;
+
+=item *
+
+under MSTP, C<vacmContextName> lists any C<instance::N> name: VSTP in
+another routing instance, whose tree is not listed;
+
+=item *
+
+no tree is listed.
+
+=back
+
+The count catches a VACM C<context-prefix> that lists a name with no
+VSTP behind it, and a tree whose name the agent's view hides.  When
+one of each occurs, they cancel out and neither is detected.  Every
+control row at a context other than 0 counts, whatever it reads, so
 MSTP started inside a routing instance beside RSTP or STP in the default
-context also makes it 0.  A name with no tree and a tree with a hidden name
-cancel out in the count, and then neither is detected.
-Under MSTP it is 0 when any C<instance::N> name is listed, since that is VSTP
-in another routing instance, which is not listed as a tree.
-C<stp_trees_complete()> is also 0 whenever the C<jnxMIMstSystemControl> walk
-was incomplete.
+context also gives 0.
+
+=item $juniper->stp_vlan_map()
+
+Under MSTP returns reference to hash mapping VLAN id to C<msti.N>, from the
+four C<jnxMIMstInstanceVlanMapped> bitmaps (VLANs 1 to 4094).  Only VLANs
+mapped to an MSTI appear: the device serves no row for the CIST.  Otherwise
+nothing.
+
+=back
 
 =head2 Routing instances
 
@@ -1991,7 +2177,7 @@ by the port's MAC.
 C<['vlan']> for C<stp> while VSTP runs, since each VSTP tree is served in
 its own VLAN context; C<['vrf']> for C<vrf>, since each routing instance is
 served in its own context; nothing otherwise, and nothing for other
-features.  See L<SNMP::Info/"context_kinds">.
+features.  See C<context_kinds()> in L<SNMP::Info>.
 
 =item $juniper->snmp_context($kind, $id)
 
@@ -2004,49 +2190,7 @@ and an instance name returns C<< { kind => 'vrf', id => $name, v2c =>
 the instance name.  The C<default> instance, an empty name and no name get
 nothing, since the default context serves the default instance.  Kinds
 other than C<vlan> and C<vrf> get nothing.  See
-L<SNMP::Info/"snmp_context">.
-
-=item $juniper->stp_protocols()
-
-Returns reference to an array holding the default context's protocol, then
-C<vstp> when VSTP runs (C<['rstp', 'vstp']> beside RSTP, C<['vstp']> alone),
-C<['dot1d']> when only C<BRIDGE-MIB> is served, or nothing.  Protocol
-methods answer only in the default context: C<stp_protocols()> reports an
-error in any other, and C<hasSTP()> to C<hasVSTP()> return 0.
-
-=item $juniper->stp_trees()
-
-Returns reference to hash of tree records, or an empty hash when nothing is
-served.
-
-=item $juniper->stp_tree_ports($tree_key)
-
-Returns reference to hash of the tree's port records keyed by ifIndex.  A
-C<vlan.N> key is read in the session's own context C<default::N>, and a
-C<vlan.N@instance> key in C<instance::N>; in any other context it returns
-nothing, with C<error()> naming the context to use.
-Under MSTP C<role> is the C<jnxMIMstCistCurrentPortRole> or
-C<jnxMIMstMstiCurrentPortRole> value in the shared vocabulary, and C<role_raw>
-as served.
-
-=item $juniper->stp_trees_complete()
-
-Returns 1 when a protocol is identified and trees are listed, 0 otherwise,
-including when only C<BRIDGE-MIB> is served.  When VSTP runs, also 0 unless
-C<vacmContextName> was served and its walk completed.  Always 0 when the
-C<jnxMIMstSystemControl> walk was incomplete.  Unless MSTP is started, also 0
-when the number of C<instance::N> names in C<vacmContextName> differs from
-the number of C<jnxMIMstSystemControl> rows at contexts other than 0: a name
-with no tree behind it, or a tree whose name is hidden or missing.  Under
-MSTP, 0 when C<vacmContextName> lists any C<instance::N> name: VSTP in
-another routing instance, whose tree is not listed.
-
-=item $juniper->stp_vlan_map()
-
-Under MSTP returns reference to hash mapping VLAN id to C<msti.N>, from the
-four C<jnxMIMstInstanceVlanMapped> bitmaps (VLANs 1 to 4094).  Only VLANs
-mapped to an MSTI appear: the device serves no row for the CIST.  Otherwise
-nothing.
+C<snmp_context()> in L<SNMP::Info>.
 
 =back
 

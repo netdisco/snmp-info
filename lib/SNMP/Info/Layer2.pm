@@ -308,6 +308,10 @@ See documentation in L<SNMP::Info/"USAGE"> for details.
 
 See documentation in L<SNMP::Info::Bridge/"GLOBALS"> for details.
 
+=head2 Globals imported from SNMP::Info::DocsisHE
+
+See documentation in L<SNMP::Info::DocsisHE/"GLOBALS"> for details.
+
 =head2 Globals imported from SNMP::Info::Entity
 
 See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
@@ -315,6 +319,10 @@ See documentation in L<SNMP::Info::Entity/"GLOBALS"> for details.
 =head2 Globals imported from SNMP::Info::LLDP
 
 See documentation in L<SNMP::Info::LLDP/"GLOBALS"> for details.
+
+=head2 Globals imported from SNMP::Info::PowerEthernet
+
+See documentation in L<SNMP::Info::PowerEthernet/"GLOBALS"> for details.
 
 =head2 Globals imported from SNMP::Info::PortAccessEntity
 
@@ -346,6 +354,10 @@ See documentation in L<SNMP::Info/"USAGE"> for details.
 
 See documentation in L<SNMP::Info::Bridge/"TABLE METHODS"> for details.
 
+=head2 Table Methods imported from SNMP::Info::DocsisHE
+
+See documentation in L<SNMP::Info::DocsisHE/"TABLE METHODS"> for details.
+
 =head2 Table Methods imported from SNMP::Info::Entity
 
 See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
@@ -353,6 +365,10 @@ See documentation in L<SNMP::Info::Entity/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::LLDP
 
 See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::PowerEthernet
+
+See documentation in L<SNMP::Info::PowerEthernet/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::PortAccessEntity
 
