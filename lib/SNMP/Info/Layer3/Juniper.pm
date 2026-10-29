@@ -815,6 +815,64 @@ sub peth_port_ifindex {
     return $peth_port_ifindex;
 }
 
+# Junos reports logical units (ge-0/0/1.0, ae0.0) in the LAG tables where the
+# aggregate and its members are the physical interfaces beneath them
+sub agg_ports {
+    my $juniper = shift;
+
+    my $lower    = $juniper->_jnx_stack_lower();
+    my $attached = $juniper->lag_port_attached() || {};
+    my %members;
+    foreach my $port ( keys %$attached ) {
+        next unless $attached->{$port};
+        my $member    = _jnx_physical( $lower, $port );
+        my $aggregate = _jnx_physical( $lower, $attached->{$port} );
+        $members{$member} = $aggregate unless $member == $aggregate;
+    }
+    return \%members;
+}
+
+# Each aggregator row maps to the physical aggregate its member units attach to
+sub _lag_aggregator_map {
+    my $juniper = shift;
+
+    my $rows     = $juniper->lag_actor_system() || {};
+    my $lower    = $juniper->_jnx_stack_lower();
+    my $attached = $juniper->lag_port_attached() || {};
+    my %map;
+    foreach my $row ( keys %$rows ) {
+        my ($member) = grep { $attached->{$_} }
+            sort { $a <=> $b } keys %{ $lower->{$row} || {} };
+        $map{$row} = defined $member
+            ? _jnx_physical( $lower, $attached->{$member} )
+            : $row;
+    }
+    return \%map;
+}
+
+# Hashref: higher ifIndex => { lower ifIndex => 1 } from ifStackStatus
+sub _jnx_stack_lower {
+    my $juniper = shift;
+
+    my $stack = $juniper->ifStackStatus() || {};
+    my %lower;
+    foreach my $index ( keys %$stack ) {
+        my ( $higher, $below ) = split /\./, $index;
+        next unless $higher and $below;
+        $lower{$higher}{$below} = 1;
+    }
+    return \%lower;
+}
+
+# The interface directly below a logical unit that has no interface of its
+# own below it (the unit's parent); an ifIndex without one is already physical
+sub _jnx_physical {
+    my ( $lower, $ifindex ) = @_;
+
+    my @parents = grep { !$lower->{$_} } keys %{ $lower->{$ifindex} || {} };
+    return scalar @parents == 1 ? $parents[0] : $ifindex;
+}
+
 # The protocols the default context reports: 'mstp' when MST is started at
 # context 0, else the BRIDGE-MIB protocol dot1dStpVersion names, then 'vstp'
 # when VSTP runs, beside that protocol or alone. Empty in any other context.
@@ -1467,6 +1525,13 @@ Returns reference to a hash: key= PowerEthernet MIB interface number,
 value = C<ifIndex>. As Juniper does not provide a mapping function,
 this does it manually.
 For example, ge-0/0/1 registers as PowerEthernet interface '1.2'
+
+=item $juniper->agg_ports()
+
+Returns a HASH reference mapping from member to aggregate for each port
+bundle, from C<dot3adAggPortAttachedAggID>. Junos reports logical units
+(C<ge-0/0/1.0>, C<ae0.0>) in that table; both sides are mapped to the physical
+interface beneath the unit (C<ge-0/0/1>, C<ae0>), as C<ifStackStatus> shows.
 
 =item $juniper->jnx_vacm_context_name()
 

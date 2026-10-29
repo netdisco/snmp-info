@@ -1938,4 +1938,75 @@ sub stp_vlan_map : Tests(6) {
   is(scalar $info->stp_vlan_map(), undef, 'Nothing served: nothing');
 }
 
+sub _prime_lag {
+  my ($test, %store) = @_;
+
+  $test->{info}->clear_cache();
+  $test->{info}->cache({(map { ('_' . $_) => 1 } keys %store), store => \%store});
+  return;
+}
+
+# vJunos ESI-LAG / QFX5100 shape: unit 517 (ge-0/0/1.0) over 510 (ge-0/0/1),
+# attached to unit 516 (ae0.0) over 501 (ae0)
+sub _prime_unit_attached {
+  my ($test, $attached) = @_;
+
+  $test->_prime_lag(
+    ifStackStatus => {'517.510' => 'active', '516.501' => 'active',
+      '516.517' => 'active', '0.510' => 'active', '501.0' => 'active'},
+    lag_port_attached => {517 => $attached},
+  );
+  return;
+}
+
+sub agg_ports : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'agg_ports');
+  $test->_prime_unit_attached(516);
+  cmp_deeply($test->{info}->agg_ports(), {510 => 501},
+    'Member and aggregate units map to their physical interfaces');
+}
+
+sub agg_ports__attached_to_physical_aggregate__kept : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_unit_attached(501);
+  cmp_deeply($test->{info}->agg_ports(), {510 => 501},
+    'An AttachedAggID that is already physical is kept');
+}
+
+sub agg_ports__no_ieee_rows__returns_empty : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_lag(ifStackStatus => {}, lag_port_attached => {});
+  cmp_deeply($test->{info}->agg_ports(), {}, 'No rows gives an empty hash');
+}
+
+sub lag_groups__juniper_unit_aggregator__keyed_on_physical_ae : Tests(5) {
+  my $test = shift;
+
+  my $actor = '88:a2:5e:1c:08:06';
+  my $raw   = pack('H*', '88a25e1c0806');
+  $test->_prime_lag(
+    lag_actor_system => {507 => $raw, 508 => $raw},
+    lag_actor_key    => {507 => 6,    508 => 6},
+    ifStackStatus    => {
+      '507.509' => 'active', '507.511' => 'active',
+      '508.510' => 'active', '508.512' => 'active',
+      '509.635' => 'active', '511.647' => 'active',
+      '0.698'   => 'active', '698.0'   => 'active',
+    },
+    lag_port_attached => {509 => 698, 510 => 698, 511 => 698, 512 => 698},
+  );
+  my $groups = $test->{info}->lag_groups();
+  cmp_deeply([sort keys %$groups], [698], 'One record, keyed on the physical ae');
+  is($groups->{698}{actor_system}, $actor, 'Identity comes from the unit rows');
+  is($groups->{698}{actor_key}, 6, '... including the key');
+  cmp_deeply([sort { $a <=> $b } keys %{$groups->{698}{members}}],
+    [510, 512, 635, 647], 'Members are the physical ports');
+  cmp_deeply($test->{info}->_lag_aggregator_map(), {507 => 698, 508 => 698},
+    'Both unit rows map to the physical ae');
+}
+
 1;
