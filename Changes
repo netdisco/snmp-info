@@ -2,8 +2,9 @@ Version 3.983001
 
   [NEW FEATURES]
 
-  * #649 Edge ports: report i_faststart_enabled from RSTP-MIB and vendor
-    spanning-tree tables on Bridge, RapidCity, Juniper and Huawei (#254)
+  * #649 Edge ports: add i_edgeport_admin and i_edgeport_oper from RSTP-MIB
+    and vendor spanning-tree tables; Cisco's i_faststart_enabled kept as the
+    legacy name (#254)
 
 Version 3.983000 (2026-10-26)
 
