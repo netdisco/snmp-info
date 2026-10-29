@@ -16,6 +16,8 @@ Version 3.983001
   * #652 Spanning tree: report incomplete tree lists as incomplete on Cisco,
     Extreme, RapidCity and H3C, and in a non-default context; document
     trees, ports and completeness with field lists and usage examples
+  * #653 LAG: Foundry and RapidCity agg_ports fixes; lag_groups_complete
+    checks the tables agg_ports reads
 
 Version 3.983000 (2026-10-26)
 
