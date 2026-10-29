@@ -120,6 +120,7 @@ sub lag_groups {
   }
   $self->_lag_add_members( $groups, $map );
   $self->_lag_vendor_groups($groups);
+  $self->_lag_drop_port_rows( $groups, $map );
 
   return $groups;
 }
@@ -133,8 +134,9 @@ sub mlag_domains {
 sub lag_groups_complete {
   my $self = shift;
 
-  my $rows = $self->lag_actor_system() || {};
-  return unless scalar keys %$rows or scalar keys %{ $self->mlag_domains() };
+  return
+    unless scalar keys %{ $self->lag_groups() }
+    or scalar keys %{ $self->mlag_domains() };
 
   foreach my $method ( $self->_lag_walked_methods() ) {
     my $status = $self->walk_status($method) or next;
@@ -179,6 +181,23 @@ sub _lag_identity_rows {
     $lowest_row{$key} = $row unless exists $lowest_row{$key};
   }
   return \%lowest_row;
+}
+
+# A member port's own row, when the port is attached to another aggregate
+# and nothing else describes it, is not an aggregate
+sub _lag_drop_port_rows {
+  my ( $self, $groups, $map ) = @_;
+
+  my $attached = $self->lag_port_attached() || {};
+  foreach my $key ( keys %$groups ) {
+    my $record = $groups->{$key};
+    next if scalar keys %{ $record->{members} };
+    next if $record->{mc} or $record->{peer_link};
+    my $target = $attached->{$key} or next;
+    $target = $map->{$target} if defined $map->{$target};
+    delete $groups->{$key} if $target != $key;
+  }
+  return;
 }
 
 sub _lag_partner_or_undef {
@@ -397,6 +416,9 @@ A class that defines C<agg_ports()> supplies the members; an aggregate it
 lists but the device does not describe in C<IEEE8023-LAG-MIB> gets a record
 with C<lacp> 0.
 
+An F<IEEE8023-LAG-MIB> row for a member port that is attached to a different
+aggregate, and that nothing else describes, is not reported as an aggregate.
+
 =item C<mlag_domains>
 
 Returns a HASH reference keyed by the device's own multi-chassis domain or
@@ -405,8 +427,9 @@ supply the records.
 
 =item C<lag_groups_complete>
 
-Returns undef when the device serves no aggregator rows and no multi-chassis
-domains. Returns 0 when a walk the records depend on was incomplete (see
+Returns undef when C<lag_groups> and C<mlag_domains> are both empty, so a
+caller can tell a device with no aggregates from one that could not be read.
+Returns 0 when a walk the records depend on was incomplete (see
 L<SNMP::Info/"Incomplete Walks">), otherwise 1.
 
 =back

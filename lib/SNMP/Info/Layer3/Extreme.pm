@@ -182,6 +182,17 @@ sub _ex_mlag_peer_name {
     return join '', map { chr } @codes;
 }
 
+# EXOS 33.6 serves extremeMlagPeerIP as text ("192.0.2.2"), which the
+# binary InetAddress munge reads as nothing
+sub _ex_text_address {
+    my $raw = shift;
+
+    return unless defined $raw;
+    return $raw if $raw =~ /^\d{1,3}(?:\.\d{1,3}){3}$/;
+    return $raw if $raw =~ /^[0-9a-fA-F:.]*:[0-9a-fA-F:.]*:[0-9a-fA-F:.]*$/;
+    return;
+}
+
 sub _lag_vendor_walked {
     return qw/ex_loadshare ex_mlag_peer_ip ex_mlag_peer_status
         ex_mlag_peer_lacp_mac ex_mlag_port_id ex_mlag_port_peer
@@ -201,12 +212,15 @@ sub _lag_vendor_domains {
         ],
     );
     my $peers = $extreme->ex_mlag_peer_ip() || {};
+    my $text_peers = $extreme->ex_mlag_peer_ip_raw() || {};
     my $domains = {};
     foreach my $iid ( keys %$peers ) {
         my $domain = { kind => 'mlag', sources => {} };
         foreach my $field ( keys %columns ) {
             my ( $method, $leaf ) = @{ $columns{$field} };
             $domain->{$field} = ( $extreme->$method() || {} )->{$iid};
+            $domain->{$field} = _ex_text_address( $text_peers->{$iid} )
+                if $field eq 'peer' and !$domain->{$field};
             $domain->{sources}{$field} = 'EXTREME-MLAG-MIB::' . $leaf
                 if defined $domain->{$field};
         }
@@ -245,7 +259,11 @@ sub _ex_mlag_ports {
     my $peers  = $extreme->ex_mlag_port_peer()  || {};
     my $states = $extreme->ex_mlag_port_state() || {};
     foreach my $port ( keys %$ids ) {
-        my $aggregate = _ex_aggregate_of( $groups, $port ) or next;
+        my $aggregate = _ex_aggregate_of( $groups, $port );
+        my $members = $aggregate ? $groups->{$aggregate}{members} : {};
+        $aggregate
+            = $extreme->_ex_lone_mlag_port( $groups, $aggregate, $port )
+            unless scalar keys %$members;
         $groups->{$aggregate}{mc} = {
             kind   => 'mlag',
             group  => $ids->{$port},
@@ -256,6 +274,25 @@ sub _ex_mlag_ports {
             = 'EXTREME-MLAG-MIB::extremeMlagPortId';
     }
     return;
+}
+
+# An MLAG port on a load sharing group of one, or on no load sharing group,
+# is its own aggregate; it is keyed by the load sharing master when it has one
+sub _ex_lone_mlag_port {
+    my ( $extreme, $groups, $aggregate, $port ) = @_;
+
+    my $loadshare = $extreme->ex_loadshare() || {};
+    my $key = $aggregate;
+    foreach my $iid ( keys %$loadshare ) {
+        my ( $master, $member ) = split /\./, $iid;
+        $key = $master if defined $member and $member eq $port;
+    }
+    $key = $port unless defined $key;
+    my $source = $key eq $port && !grep { /^\Q$key\E\./ } keys %$loadshare
+        ? 'EXTREME-MLAG-MIB::extremeMlagPortLocalPortIfIndex'
+        : 'EXTREME-PORT-MIB::extremePortLoadshare2Status';
+    $extreme->_lag_place_members( $groups, $key, { $port => 1 }, $source );
+    return $key;
 }
 
 # The MLAG port is the aggregate's master or a single member of it
@@ -1790,13 +1827,15 @@ As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">.  The master port is
 a member of its own aggregate.  An aggregate whose master or member is an
 MLAG port (C<extremeMlagPortTable>) gets C<mc> with C<kind> C<mlag>,
 C<group> the MLAG port id, C<domain> the peer name and C<state> the local
-link status.
+link status.  An MLAG port whose load sharing group has only its master, or
+that has no load sharing row, is reported as an aggregate of its own, keyed
+by the load sharing master when there is one, else by the port.
 
 =item $extreme->mlag_domains()
 
 Returns a reference to a hash keyed by MLAG peer name
 (C<extremeMlagPeerTable>) with C<kind> C<mlag>, C<system_mac> (the operational LACP MAC), C<peer> (the
-peer address), C<status> (the checkpoint status) and C<sources>.
+peer address; text addresses are accepted), C<status> (the checkpoint status) and C<sources>.
 
 =back
 

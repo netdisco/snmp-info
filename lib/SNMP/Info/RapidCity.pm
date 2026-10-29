@@ -772,6 +772,21 @@ sub _lag_vendor_walked {
     return qw/rc_mlt_index rc_mlt_dp rc_mlt_type rc_mlt_run_type/;
 }
 
+# The standard table holds a row on the MLT's rcMltIfIndex and, on VOSS, a
+# row on each member port; agg_ports keys the MLT by its designated port
+sub _lag_aggregator_map {
+    my $rapidcity = shift;
+
+    my $map = SNMP::Info::IEEE802dot3ad::_lag_aggregator_map($rapidcity);
+    my $channels = $rapidcity->rc_mlt_index() || {};
+    my $dps      = $rapidcity->rc_mlt_dp()    || {};
+    foreach my $mlt_id ( keys %$channels ) {
+        my $ifindex = $channels->{$mlt_id} or next;
+        $map->{$ifindex} = $dps->{$mlt_id} if $dps->{$mlt_id};
+    }
+    return $map;
+}
+
 # A domain is served when its peer address is set; the scalars exist, with
 # a 0.0.0.0 peer, on a device that does not use the feature
 sub _lag_vendor_domains {
@@ -1624,7 +1639,9 @@ the MLT id, C<domain> the served domain (C<vist> when served, else C<ist>)
 and C<state> (C<rcMltRunningType>).  A channel of type C<istMLT> or
 C<virtualIstMLT> gets C<peer_link> 1.  The channel is keyed as
 C<agg_ports()> keys it: by C<rcMltDesignatedPort> when set, else by
-C<rcMltIfIndex>.
+C<rcMltIfIndex>.  The standard aggregator row of an MLT is reported on that
+same key.  In SPBM mode the virtual IST channel is a normal MLT, so the
+session is reported in C<mlag_domains()> only and no record has C<peer_link>.
 
 =back
 

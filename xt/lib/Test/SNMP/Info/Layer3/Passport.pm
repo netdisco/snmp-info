@@ -615,11 +615,55 @@ sub lag_groups__designated_port__mc_and_peer_link_on_agg_ports_key : Tests(5) {
     'An MLT without a designated port keeps rcMltIfIndex');
 }
 
-sub lag_groups__passport_class__resolves_to_rapidcity_hooks : Tests(3) {
+# VOSS 8.8 in SPBM mode: the standard table has a row on each member port
+# and on each MLT's ifIndex; rcMltDesignatedPort names the member port.
+sub lag_groups__voss_designated_port__identity_meets_agg_ports_key
+  : Tests(8) {
+  my $test = shift;
+
+  $test->_prime_mlt('vist');
+  my $info  = $test->{info};
+  my $actor = pack('H*', '0200cb120350');
+  my $zeros = pack('H*', '000000000000');
+  my %ports = (1 => [192, 193], 10 => [194], 20 => [195]);
+  my %store = %{$info->{store}};
+  $store{rc_mlt_index} = {1 => 6144, 10 => 6153, 20 => 6163};
+  $store{rc_mlt_dp}    = {1 => 192, 10 => 194, 20 => 195};
+  $store{rc_mlt_type}  = {1 => 'normalMLT', 10 => 'splitMLT',
+    20 => 'splitMLT'};
+  foreach my $id (keys %ports) {
+    my %member = map { $_ => 1 } @{$ports{$id}};
+    $store{rc_mlt_ports}{$id}
+      = pack('B*', join('', map { $member{$_} ? 1 : 0 } 0 .. 199));
+  }
+  $store{lag_actor_system}
+    = {map { $_ => $actor } 194, 195, 6153, 6163};
+  $store{lag_partner_system}
+    = {map { $_ => $zeros } 194, 195, 6153, 6163};
+  $store{lag_port_attached} = {194 => 6153, 195 => 6163};
+  $info->cache({store => \%store, _rc_mlt_dp => 1, _rc_mlt_type => 1,
+    _lag_actor_system => 1, _lag_partner_system => 1,
+    _lag_port_attached => 1});
+  my $groups = $info->lag_groups();
+
+  cmp_deeply([sort { $a <=> $b } keys %$groups], [192, 194, 195],
+    'One record per aggregate, none on the MLT ifIndex or its member rows');
+  cmp_deeply([sort keys %{$groups->{192}{members}}], [192, 193],
+    'MLT 1 has both members');
+  is($groups->{192}{lacp}, 0, '... lacp 0');
+  ok(!exists $groups->{192}{mc}, '... and no mc');
+  is($groups->{194}{actor_system}, '02:00:cb:12:03:50',
+    'SMLT 10 carries the identity of its standard rows');
+  cmp_deeply([keys %{$groups->{194}{members}}], [194], '... and its member');
+  is($groups->{194}{mc}{group}, 10, '... and mc');
+  is($groups->{195}{mc}{group}, 20, 'SMLT 20 has mc on its own key');
+}
+
+sub lag_groups__passport_class__resolves_to_rapidcity_hooks : Tests(4) {
   my $test = shift;
 
   foreach my $hook (qw/_lag_vendor_domains _lag_vendor_groups
-    _lag_vendor_walked/) {
+    _lag_vendor_walked _lag_aggregator_map/) {
     no strict 'refs';
     my $name = 'SNMP::Info::RapidCity::' . $hook;
     ok(

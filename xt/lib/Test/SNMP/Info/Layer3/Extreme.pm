@@ -799,6 +799,42 @@ sub lag_groups__mlag_port_is_member__mc_on_aggregate : Tests(1) {
         10, q(MLAG port that is a member marks its aggregate) );
 }
 
+sub mlag_domains__peer_ip_served_as_text__text_accepted : Tests(3) {
+    my $test = shift;
+
+    $test->_prime_exos_mlag();
+    foreach my $text ( '192.0.2.2', '2001:db8::2' ) {
+        $test->{info}{store}{ex_mlag_peer_ip} = { 'peer1' => $text };
+        is( $test->{info}->mlag_domains()->{peer1}{peer},
+            $text, qq(Text address $text is reported) );
+    }
+    $test->{info}{store}{ex_mlag_peer_ip} = { 'peer1' => 'not an address' };
+    is( $test->{info}->mlag_domains()->{peer1}{peer},
+        undef, q(Text that is no address is not reported) );
+}
+
+sub lag_groups__mlag_port_alone__gets_own_record : Tests(7) {
+    my $test = shift;
+
+    $test->_prime_exos_mlag();
+    my $store = $test->{info}{store};
+    $store->{ex_loadshare}{'1005.1005'} = 'active';
+    $store->{ex_mlag_port_id}{$_}      = 20 for 1005, 1010;
+    $store->{ex_mlag_port_peer}{$_}    = 'peer1' for 1005, 1010;
+    $store->{ex_mlag_port_state}{$_}   = 'active' for 1005, 1010;
+    my $groups = $test->{info}->lag_groups();
+
+    foreach my $port ( 1005, 1010 ) {
+        cmp_deeply( [ keys %{ $groups->{$port}{members} } ],
+            [$port], qq(Port $port is the member of its own record) );
+        is( $groups->{$port}{mc}{group}, 20, q(... which keeps mc) );
+    }
+    is( $groups->{1010}{lacp}, 0, q(No IEEE identity: lacp 0) );
+    is( $groups->{1001}{mc}{group}, 10, q(Other records unchanged) );
+    ok( !exists $groups->{1002},
+        q(A load sharing member does not get a record) );
+}
+
 sub mlag_domains : Tests(2) {
     my $test = shift;
 

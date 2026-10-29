@@ -1532,6 +1532,8 @@ Returns a HASH reference mapping from member to aggregate for each port
 bundle, from C<dot3adAggPortAttachedAggID>. Junos reports logical units
 (C<ge-0/0/1.0>, C<ae0.0>) in that table; both sides are mapped to the physical
 interface beneath the unit (C<ge-0/0/1>, C<ae0>), as C<ifStackStatus> shows.
+In C<lag_groups()> the per-member partner fields can be undef, because Junos
+keys the port rows on logical units rather than on the physical member.
 
 =item $juniper->jnx_vacm_context_name()
 

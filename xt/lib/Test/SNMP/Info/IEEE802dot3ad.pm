@@ -220,6 +220,58 @@ sub lag_groups_complete__no_rows__undef : Tests(1) {
   is($test->{info}->lag_groups_complete(), undef, q(No rows gives undef));
 }
 
+sub lag_groups__attached_value_moved_by_map__member_lands_on_mapped_key
+  : Tests(3) {
+  my $test = shift;
+
+  $test->{info}->cache({
+    '_lag_actor_system'  => 1,
+    '_lag_port_attached' => 1,
+    'store'              => {
+      'lag_actor_system'  => {6153 => $ACTOR},
+      'lag_port_attached' => {194  => 6153},
+    },
+  });
+  no warnings 'redefine';
+  local *SNMP::Info::IEEE802dot3ad::_lag_aggregator_map
+    = sub { {6153 => 194} };
+  my $groups = $test->{info}->lag_groups();
+
+  cmp_deeply([keys %{$groups->{194}{members}}], [194],
+    q(Member 194 lands on the mapped record 194));
+  ok(!exists $groups->{6153}, q(No record keyed on the moved row));
+  is($groups->{194}{actor_system}, '44:38:39:ff:00:01',
+    q(Identity of the moved row kept));
+}
+
+sub lag_groups__port_row_attached_elsewhere__dropped : Tests(3) {
+  my $test = shift;
+
+  $test->{info}->cache({
+    '_lag_actor_system'  => 1,
+    '_lag_port_attached' => 1,
+    'store'              => {
+      'lag_actor_system'  => {194 => $ACTOR, 6153 => $ACTOR_2, 195 => $ACTOR},
+      'lag_port_attached' => {194 => 6153, 195 => 0},
+    },
+  });
+  my $groups = $test->{info}->lag_groups();
+
+  ok(!exists $groups->{194}, q(Port row attached to another aggregate dropped));
+  cmp_deeply([keys %{$groups->{6153}{members}}], [194],
+    q(The port is a member of the aggregate it is attached to));
+  ok(exists $groups->{195}, q(Memberless row attached to nothing stays));
+}
+
+sub lag_groups_complete__static_lag_no_rows__returns_1 : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache({'_lag_actor_system' => 1, 'store' => {}});
+  my $complete = $test->with_agg_ports({5 => 1000005},
+    sub { $test->{info}->lag_groups_complete() });
+  is($complete, 1, q(Static aggregate without IEEE rows is complete));
+}
+
 sub lag_groups_complete__walk_incomplete__returns_0 : Tests(1) {
   my $test = shift;
 
