@@ -777,8 +777,11 @@ Legacy; see C<i_edgeport_admin()>.
 
 Returns 1 or 0 depending on whether the port is configured as an edge port
 (FastStart, aka PortFast).  A port in C<network> mode returns 0, and a port
-with no configured value is absent.  Format is a hash reference with
-key = C<ifIndex>, value = [1|0]
+with no configured value is absent.  Cisco can only report ports that
+appear in the bridge table (C<bp_index()>) of the context being polled.
+On IOS under PVST+ the default context lists only VLAN 1 ports and
+trunks; ports in other VLANs need the per-VLAN context.  Format is a hash
+reference with key = C<ifIndex>, value = [1|0]
 
 (C<stpxFastStartPortEnable> and C<stpxFastStartPortMode>)
 
@@ -790,7 +793,11 @@ from the tree of the port's native VLAN (the access VLAN on an access port,
 from C<i_vlan()>); a trunk whose native VLAN has no row, or a port with no
 C<i_vlan()> entry, is absent.  Under MST the value is read from instance 0.
 A port in C<network> mode returns 0.  Under any other protocol the result is
-empty.  Format is a hash reference with key = C<ifIndex>, value = [1|0]
+empty.  Cisco can only report ports that appear in the bridge table
+(C<bp_index()>) of the context being polled.  On IOS under PVST+ the
+default context lists only VLAN 1 ports and trunks; ports in other VLANs
+need the per-VLAN context.  Format is a hash reference with
+key = C<ifIndex>, value = [1|0]
 
 (C<stpxFastStartOperMode>)
 
