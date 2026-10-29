@@ -57,6 +57,8 @@ $VERSION = '3.983000';
     'EXTREME-VLAN-MIB'           => 'extremeVlan',
     'EXTREME-POE-MIB'            => 'extremePethSystemAdminEnable',
     'EXTREME-STP-EXTENSIONS-MIB' => 'extremeStpDomainBridgeId',
+    'EXTREME-PORT-MIB'           => 'extremePortLoadshare2Status',
+    'EXTREME-MLAG-MIB'           => 'extremeMlagPeerIP',
 );
 
 %GLOBALS = (
@@ -114,6 +116,16 @@ $VERSION = '3.983000';
     'ex_stp_p_mode'  => 'extremeStpPortPortMode',
     # EXTREME-STP-EXTENSIONS-MIB::extremeStpVlanPortTable
     'ex_stp_vlan_mask' => 'extremeStpVlanPortPortMask',
+    # EXTREME-PORT-MIB::extremePortLoadshare2Table
+    'ex_loadshare' => 'extremePortLoadshare2Status',
+    # EXTREME-MLAG-MIB::extremeMlagPeerTable
+    'ex_mlag_peer_ip'       => 'extremeMlagPeerIP',
+    'ex_mlag_peer_status'   => 'extremeMlagPeerCheckPointStatus',
+    'ex_mlag_peer_lacp_mac' => 'extremeMlagPeerOperLacpMac',
+    # EXTREME-MLAG-MIB::extremeMlagPortTable
+    'ex_mlag_port_id'    => 'extremeMlagPortId',
+    'ex_mlag_port_peer'  => 'extremeMlagPortPeer',
+    'ex_mlag_port_state' => 'extremeMlagPortLocalLinkStatus',
 );
 
 %MUNGE = (
@@ -123,6 +135,8 @@ $VERSION = '3.983000';
     %SNMP::Info::MAU::MUNGE,
     %SNMP::Info::EDP::MUNGE,
     'ex_fw_mac'        => \&SNMP::Info::munge_mac,
+    'ex_mlag_peer_ip'       => \&SNMP::Info::munge_inetaddress,
+    'ex_mlag_peer_lacp_mac' => \&SNMP::Info::munge_mac,
     'ps1_status_old'   => \&munge_true_ok,
     'ps1_status_new'   => \&munge_power_stat,
     'ps2_status_old'   => \&munge_power_stat,
@@ -142,6 +156,118 @@ $VERSION = '3.983000';
 *SNMP::Info::Layer3::Extreme::i_duplex = \&SNMP::Info::MAU::mau_i_duplex;
 *SNMP::Info::Layer3::Extreme::i_duplex_admin
     = \&SNMP::Info::MAU::mau_i_duplex_admin;
+
+# extremePortLoadshare2Table is indexed master.member; the master lists
+# itself as a member, which agg_ports leaves out
+sub agg_ports {
+    my $extreme = shift;
+
+    my $loadshare = $extreme->ex_loadshare() || {};
+    my %member_of;
+    foreach my $iid ( keys %$loadshare ) {
+        my ( $master, $member ) = split /\./, $iid;
+        next if !defined $member or $member eq $master;
+        $member_of{$member} = $master;
+    }
+    return \%member_of;
+}
+
+# The peer table is indexed by the peer name, a string
+sub _ex_mlag_peer_name {
+    my $iid = shift;
+
+    return $iid unless $iid =~ /^\d+(?:\.\d+)+$/;
+    my ( $length, @codes ) = split /\./, $iid;
+    return $iid unless $length == scalar @codes;
+    return join '', map { chr } @codes;
+}
+
+sub _lag_vendor_walked {
+    return qw/ex_loadshare ex_mlag_peer_ip ex_mlag_peer_status
+        ex_mlag_peer_lacp_mac ex_mlag_port_id ex_mlag_port_peer
+        ex_mlag_port_state/;
+}
+
+sub _lag_vendor_domains {
+    my $extreme = shift;
+
+    my %columns = (
+        peer   => [ ex_mlag_peer_ip     => 'extremeMlagPeerIP' ],
+        status => [
+            ex_mlag_peer_status => 'extremeMlagPeerCheckPointStatus'
+        ],
+        system_mac => [
+            ex_mlag_peer_lacp_mac => 'extremeMlagPeerOperLacpMac'
+        ],
+    );
+    my $peers = $extreme->ex_mlag_peer_ip() || {};
+    my $domains = {};
+    foreach my $iid ( keys %$peers ) {
+        my $domain = { kind => 'mlag', sources => {} };
+        foreach my $field ( keys %columns ) {
+            my ( $method, $leaf ) = @{ $columns{$field} };
+            $domain->{$field} = ( $extreme->$method() || {} )->{$iid};
+            $domain->{sources}{$field} = 'EXTREME-MLAG-MIB::' . $leaf
+                if defined $domain->{$field};
+        }
+        $domains->{ _ex_mlag_peer_name($iid) } = $domain;
+    }
+    return $domains;
+}
+
+sub _lag_vendor_groups {
+    my ( $extreme, $groups ) = @_;
+
+    $extreme->_ex_loadshare_masters($groups);
+    $extreme->_ex_mlag_ports($groups);
+    return;
+}
+
+# The master is a member of its own aggregate in lag_groups
+sub _ex_loadshare_masters {
+    my ( $extreme, $groups ) = @_;
+
+    my $loadshare = $extreme->ex_loadshare() || {};
+    foreach my $iid ( keys %$loadshare ) {
+        my ( $master, $member ) = split /\./, $iid;
+        next if !defined $member or $member ne $master;
+        my $record = $groups->{$master} or next;
+        $extreme->_lag_place_members( $groups, $master, { $master => 1 },
+            $record->{sources}{members} );
+    }
+    return;
+}
+
+sub _ex_mlag_ports {
+    my ( $extreme, $groups ) = @_;
+
+    my $ids    = $extreme->ex_mlag_port_id()    || {};
+    my $peers  = $extreme->ex_mlag_port_peer()  || {};
+    my $states = $extreme->ex_mlag_port_state() || {};
+    foreach my $port ( keys %$ids ) {
+        my $aggregate = _ex_aggregate_of( $groups, $port ) or next;
+        $groups->{$aggregate}{mc} = {
+            kind   => 'mlag',
+            group  => $ids->{$port},
+            domain => $peers->{$port},
+            state  => $states->{$port},
+        };
+        $groups->{$aggregate}{sources}{mc}
+            = 'EXTREME-MLAG-MIB::extremeMlagPortId';
+    }
+    return;
+}
+
+# The MLAG port is the aggregate's master or a single member of it
+sub _ex_aggregate_of {
+    my ( $groups, $port ) = @_;
+
+    return $port if $groups->{$port};
+    foreach my $aggregate ( keys %$groups ) {
+        return $aggregate if $groups->{$aggregate}{members}{$port};
+    }
+    return;
+}
 
 sub model {
     my $extreme = shift;
@@ -1245,6 +1371,10 @@ Extreme device through SNMP.
 
 =item F<EXTREME-STP-EXTENSIONS-MIB>
 
+=item F<EXTREME-PORT-MIB>
+
+=item F<EXTREME-MLAG-MIB>
+
 =item Inherited Classes' MIBs
 
 See classes listed above for their required MIBs.
@@ -1612,6 +1742,61 @@ Returns reference to hash mapping VLAN id to domain key, from the index of
 =item $extreme->ex_stp_vlan_mask()
 
 (C<extremeStpVlanPortPortMask>)
+
+=item $extreme->ex_loadshare()
+
+(C<extremePortLoadshare2Status>)
+
+=item $extreme->ex_mlag_peer_ip()
+
+(C<extremeMlagPeerIP>)
+
+=item $extreme->ex_mlag_peer_status()
+
+(C<extremeMlagPeerCheckPointStatus>)
+
+=item $extreme->ex_mlag_peer_lacp_mac()
+
+(C<extremeMlagPeerOperLacpMac>)
+
+=item $extreme->ex_mlag_port_id()
+
+(C<extremeMlagPortId>)
+
+=item $extreme->ex_mlag_port_peer()
+
+(C<extremeMlagPortPeer>)
+
+=item $extreme->ex_mlag_port_state()
+
+(C<extremeMlagPortLocalLinkStatus>)
+
+=back
+
+=head2 Link Aggregation
+
+=over
+
+=item $extreme->agg_ports()
+
+Returns a reference to a hash mapping each member port ifIndex to the
+ifIndex of its load sharing master, from C<extremePortLoadshare2Table>.
+The table lists the master as a member of itself; that row is left out.
+Returns an empty hash when the device serves no load sharing rows.
+
+=item $extreme->lag_groups()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">.  The master port is
+a member of its own aggregate.  An aggregate whose master or member is an
+MLAG port (C<extremeMlagPortTable>) gets C<mc> with C<kind> C<mlag>,
+C<group> the MLAG port id, C<domain> the peer name and C<state> the local
+link status.
+
+=item $extreme->mlag_domains()
+
+Returns a reference to a hash keyed by MLAG peer name
+(C<extremeMlagPeerTable>) with C<kind> C<mlag>, C<system_mac> (the operational LACP MAC), C<peer> (the
+peer address), C<status> (the checkpoint status) and C<sources>.
 
 =back
 
