@@ -438,18 +438,18 @@ sub i_stp_state_rstp : Tests(1) {
         q(i_stp_state keeps the BRIDGE-MIB values) );
 }
 
-sub i_faststart_enabled__passport_class__resolves_to_rapidcity : Tests(1) {
+sub i_edgeport_admin__passport_class__resolves_to_rapidcity : Tests(1) {
     my $test = shift;
 
-    is( B::svref_2object( $test->{info}->can('i_faststart_enabled') )
+    is( B::svref_2object( $test->{info}->can('i_edgeport_admin') )
             ->STASH->NAME,
         'SNMP::Info::RapidCity',
-        q(Passport resolves i_faststart_enabled to RapidCity) );
+        q(Passport resolves i_edgeport_admin to RapidCity) );
 }
 
 # VSP-shaped: nnRst rows at bridge ports that Passport maps to the ifIndex of
 # the same number
-sub i_faststart_enabled__nnrst_only__maps_through_bp_index : Tests(1) {
+sub i_edgeport_admin__nnrst_only__maps_through_bp_index : Tests(1) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -458,7 +458,7 @@ sub i_faststart_enabled__nnrst_only__maps_through_bp_index : Tests(1) {
     $info->{store}{nn_rst_p_edge_admin}  = { 192 => 'false', 193 => 'true' };
     $info->{"_$_"} = 1 for qw/nn_cist_p_edge_admin nn_rst_p_edge_admin/;
 
-    cmp_deeply( $info->i_faststart_enabled(),
+    cmp_deeply( $info->i_edgeport_admin(),
         { 192 => 0, 193 => 1 },
         q(nnRstDot1dStpPortAdminEdgePort keyed by ifIndex) );
 }

@@ -307,7 +307,7 @@ sub i_stp_state {
     return \%i_stp_state;
 }
 
-sub i_faststart_enabled {
+sub i_edgeport_admin {
     my $bridge  = shift;
     my $partial = shift;
 
@@ -315,27 +315,27 @@ sub i_faststart_enabled {
     return _stp_edge_by_ifindex( $bridge, $edge_admin, $partial );
 }
 
-# Admin edge values keyed by bridge port, mapped to ifIndex through bp_index
+# Edge values keyed by bridge port, mapped to ifIndex through bp_index
 # (or $port_index, when the caller knows the keys are not bridge ports) and
 # read as 1 or 0 by $decode (default _stp_enabled); a port missing from the
 # map, or a value $decode does not know, is absent.  Called as a function by
 # classes outside Bridge's inheritance (RapidCity).
 sub _stp_edge_by_ifindex {
-    my ( $bridge, $edge_admin, $partial, $decode, $port_index ) = @_;
+    my ( $bridge, $edge, $partial, $decode, $port_index ) = @_;
     $decode ||= \&_stp_enabled;
-    return {} unless keys %{ $edge_admin || {} };
+    return {} unless keys %{ $edge || {} };
 
     my $bp_index = $port_index || $bridge->bp_index($partial) || {};
 
-    my %i_faststart_enabled;
-    foreach my $port ( keys %{ $edge_admin || {} } ) {
+    my %i_edgeport;
+    foreach my $port ( keys %{ $edge || {} } ) {
         my $iid     = $bp_index->{$port};
-        my $enabled = $decode->( $edge_admin->{$port} );
+        my $enabled = $decode->( $edge->{$port} );
         next unless defined $iid;
         next unless defined $enabled;
-        $i_faststart_enabled{$iid} = $enabled;
+        $i_edgeport{$iid} = $enabled;
     }
-    return \%i_faststart_enabled;
+    return \%i_edgeport;
 }
 
 sub i_stp_port {
@@ -1176,7 +1176,7 @@ VLAN.  A class whose platform exposes a different tree says so in its
 own documentation.  See L</"Spanning Tree Trees"> for every tree the
 device runs.
 
-=item $bridge->i_faststart_enabled()
+=item $bridge->i_edgeport_admin()
 
 Returns 1 or 0 for each port by whether it is configured as an edge port
 (the IEEE equivalent of PortFast).  Format is a hash reference with

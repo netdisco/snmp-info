@@ -905,13 +905,13 @@ sub i_bpduguard_enabled {
     return $rapidcity->rcPortBpduFilteringOperEnabled();
 }
 
-sub i_faststart_enabled {
+sub i_edgeport_admin {
     my $rapidcity = shift;
     my $partial   = shift;
 
     # The role's @ISA is SNMP::Info, so SUPER:: would not reach Bridge
     my $edge_admin = $rapidcity->_rc_edge_admin();
-    return SNMP::Info::Bridge::i_faststart_enabled( $rapidcity, $partial )
+    return SNMP::Info::Bridge::i_edgeport_admin( $rapidcity, $partial )
         unless $edge_admin;
     return SNMP::Info::Bridge::_stp_edge_by_ifindex( $rapidcity,
         $edge_admin, $partial );
@@ -1488,7 +1488,7 @@ port.  Format is a hash reference with key = C<ifIndex>, value = [true|false]
 
 (C<rcPortBpduFilteringOperEnabled>)
 
-=item $rapidcity->i_faststart_enabled()
+=item $rapidcity->i_edgeport_admin()
 
 Returns 1 or 0 for each port by whether it is configured as an edge port.
 Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads

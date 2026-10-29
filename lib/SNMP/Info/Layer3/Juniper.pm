@@ -818,12 +818,12 @@ sub peth_port_ifindex {
     return $peth_port_ifindex;
 }
 
-sub i_faststart_enabled {
+sub i_edgeport_admin {
     my $juniper = shift;
     my $partial = shift;
 
     my $edge_admin = $juniper->jnx_cist_p_edge_admin() || {};
-    return $juniper->SUPER::i_faststart_enabled($partial)
+    return $juniper->SUPER::i_edgeport_admin($partial)
         unless keys %$edge_admin;
     return SNMP::Info::Bridge::_stp_edge_by_ifindex( $juniper, $edge_admin,
         $partial );
@@ -1482,7 +1482,7 @@ value = C<ifIndex>. As Juniper does not provide a mapping function,
 this does it manually.
 For example, ge-0/0/1 registers as PowerEthernet interface '1.2'
 
-=item $juniper->i_faststart_enabled()
+=item $juniper->i_edgeport_admin()
 
 Returns 1 or 0 for each port by whether it is configured as an edge port.
 Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads

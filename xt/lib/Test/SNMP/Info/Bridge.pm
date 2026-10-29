@@ -404,83 +404,88 @@ sub stp_default_context_ok : Tests(2) {
     );
 }
 
-sub _faststart_cache {
+sub _edgeport_cache {
     my %store = @_;
     return { ( map { ( "_$_" => 1 ) } keys %store ), store => \%store };
 }
 
-sub i_faststart_enabled__admin_edge__maps_bridge_port_to_ifindex : Tests(1) {
+sub i_edgeport_admin__bridge__defines_no_i_faststart_enabled : Tests(1) {
+    ok( !defined &SNMP::Info::Bridge::i_faststart_enabled,
+        q(Only CiscoStpExtensions defines i_faststart_enabled, as on master) );
+}
+
+sub i_edgeport_admin__admin_edge__maps_bridge_port_to_ifindex : Tests(1) {
     my $test = shift;
 
     $test->{info}->cache(
-        _faststart_cache(
+        _edgeport_cache(
             is_edgeport_admin => { 1 => 'true', 2 => 'false', 3 => 'true' },
             bp_index          => { 1 => 101,    2 => 102,     3 => 103 },
         )
     );
-    cmp_deeply( $test->{info}->i_faststart_enabled(),
+    cmp_deeply( $test->{info}->i_edgeport_admin(),
         { 101 => 1, 102 => 0, 103 => 1 },
         q(Admin edge values map to ifIndex as 1 or 0) );
 }
 
-sub i_faststart_enabled__port_absent_from_bp_index__skipped : Tests(1) {
+sub i_edgeport_admin__port_absent_from_bp_index__skipped : Tests(1) {
     my $test = shift;
 
     $test->{info}->cache(
-        _faststart_cache(
+        _edgeport_cache(
             is_edgeport_admin => { 1 => 'true', 4 => 'true' },
             bp_index          => { 1 => 101 },
         )
     );
-    cmp_deeply( $test->{info}->i_faststart_enabled(),
+    cmp_deeply( $test->{info}->i_edgeport_admin(),
         { 101 => 1 }, q(Bridge port without a bp_index row is skipped) );
 }
 
-sub i_faststart_enabled__no_rstp_mib__returns_empty : Tests(1) {
+sub i_edgeport_admin__no_rstp_mib__returns_empty : Tests(1) {
     my $test = shift;
 
     $test->{info}->cache(
-        _faststart_cache(
+        _edgeport_cache(
             is_edgeport_admin => {},
             bp_index          => { 1 => 101 },
         )
     );
-    cmp_deeply( $test->{info}->i_faststart_enabled(),
+    cmp_deeply( $test->{info}->i_edgeport_admin(),
         {}, q(No admin edge values gives an empty hash) );
 }
 
-sub i_faststart_enabled__mixed_value_forms__keeps_known_only : Tests(1) {
+sub i_edgeport_admin__mixed_value_forms__keeps_known_only : Tests(1) {
     my $test = shift;
 
     $test->{info}->cache(
-        _faststart_cache(
+        _edgeport_cache(
             is_edgeport_admin => { 1 => 'bogus', 2 => 'disabled', 3 => 2 },
             bp_index          => { 1 => 101,     2 => 102,        3 => 103 },
         )
     );
-    cmp_deeply( $test->{info}->i_faststart_enabled(),
+    cmp_deeply( $test->{info}->i_edgeport_admin(),
         { 102 => 0, 103 => 0 },
         q(Unknown value skipped; disabled and 2 both read as 0) );
 }
 
-sub i_faststart_enabled__oper_only__ignored : Tests(1) {
+sub i_edgeport_admin__oper_only__ignored : Tests(1) {
     my $test = shift;
 
     $test->{info}->cache(
-        _faststart_cache(
+        _edgeport_cache(
             is_edgeport_oper => { 1 => 'true', 2 => 'false' },
             bp_index         => { 1 => 101,    2 => 102 },
         )
     );
-    cmp_deeply( $test->{info}->i_faststart_enabled(),
+    cmp_deeply( $test->{info}->i_edgeport_admin(),
         {}, q(Operational edge state is not reported) );
 }
 
-sub i_faststart_enabled__partial__passed_to_bp_index : Tests(1) {
+sub i_edgeport_admin__partial__passed_to_bp_index : Tests(1) {
     my $test = shift;
 
     $test->{info}->cache(
-        _faststart_cache(
+        _edgeport_cache(
             is_edgeport_admin => { 1 => 'true', 2 => 'false' },
             bp_index          => { 1 => 101,    2 => 102 },
         )
@@ -494,14 +499,14 @@ sub i_faststart_enabled__partial__passed_to_bp_index : Tests(1) {
         return { 1 => 101 };
     };
 
-    $test->{info}->i_faststart_enabled(101);
+    $test->{info}->i_edgeport_admin(101);
     cmp_deeply( \@partials, [101], q(Partial is passed to bp_index) );
 }
 
-sub i_faststart_enabled__no_edge_rows__skips_bp_index : Tests(2) {
+sub i_edgeport_admin__no_edge_rows__skips_bp_index : Tests(2) {
     my $test = shift;
 
-    $test->{info}->cache( _faststart_cache( is_edgeport_admin => {} ) );
+    $test->{info}->cache( _edgeport_cache( is_edgeport_admin => {} ) );
 
     my $bp_index_calls = 0;
     no warnings 'redefine';
@@ -510,7 +515,7 @@ sub i_faststart_enabled__no_edge_rows__skips_bp_index : Tests(2) {
         return { 1 => 101 };
     };
 
-    cmp_deeply( $test->{info}->i_faststart_enabled(),
+    cmp_deeply( $test->{info}->i_edgeport_admin(),
         {}, q(No dot1dStpPortAdminEdgePort rows: empty) );
     is( $bp_index_calls, 0, q(bp_index is not walked without edge rows) );
 }

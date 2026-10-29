@@ -545,7 +545,7 @@ sub i_mtu {
     return $mtus;
 }
 
-sub i_faststart_enabled {
+sub i_edgeport_admin {
     my $huawei  = shift;
     my $partial = shift;
 
@@ -555,7 +555,7 @@ sub i_faststart_enabled {
         my ( $instance, $port ) = split /\./, $row, 2;
         $cist_edge{$port} = $edge->{$row} if $instance eq '0';
     }
-    return $huawei->SUPER::i_faststart_enabled($partial)
+    return $huawei->SUPER::i_edgeport_admin($partial)
         unless keys %cist_edge;
 
     my $port_index = $huawei->_hw_mstp_port_index($partial);
@@ -839,7 +839,7 @@ first and then C<dot3adAggPortListPorts> if that is unavailable.
 Interface MTU value. Overridden with corresponding frame size entry from
 C<hwEthernetJumboframeMaxLength> if one exists.
 
-=item $huawei->i_faststart_enabled()
+=item $huawei->i_edgeport_admin()
 
 Returns 1 or 0 for each port by whether it is configured as an edge port.
 Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads the
