@@ -57,6 +57,7 @@ $VERSION = '3.983000';
     'EXTREME-VLAN-MIB'           => 'extremeVlan',
     'EXTREME-POE-MIB'            => 'extremePethSystemAdminEnable',
     'EXTREME-STP-EXTENSIONS-MIB' => 'extremeStpDomainBridgeId',
+    'RAPID-CITY'                 => 'rcVrfName',
     'EXTREME-PORT-MIB'           => 'extremePortLoadshare2Status',
     'EXTREME-MLAG-MIB'           => 'extremeMlagPeerIP',
 );
@@ -116,6 +117,20 @@ $VERSION = '3.983000';
     'ex_stp_p_mode'  => 'extremeStpPortPortMode',
     # EXTREME-STP-EXTENSIONS-MIB::extremeStpVlanPortTable
     'ex_stp_vlan_mask' => 'extremeStpVlanPortPortMask',
+    # RAPID-CITY::rcVrfConfigTable (VOSS)
+    'vrf_rc_name'    => 'rcVrfName',
+    'vrf_rc_context' => 'rcVrfContextName',
+    # RAPID-CITY::rcVrfIpVpnTable (VOSS)
+    'vrf_rc_isid' => 'rcVrfIpVpnIsidNumber',
+    # RAPID-CITY::rcVlanTable (VOSS). RapidCity.pm reads rcVlanIfIndex and
+    # rcIpAdEntAddr too, as rc_vlan_if and rc_ip_addr, but it is not a
+    # parent of this class.
+    'vrf_rc_vlan_if'  => 'rcVlanIfIndex',
+    'vrf_rc_vlan_vrf' => 'rcVlanVrfId',
+    # RAPID-CITY::rcIpAddrTable (VOSS)
+    'vrf_rc_ip_vrf'  => 'rcIpAdEntVrfId',
+    'vrf_rc_ip_addr' => 'rcIpAdEntAddr',
+    'vrf_rc_ip_mask' => 'rcIpAdEntNetMask',
     # EXTREME-PORT-MIB::extremePortLoadshare2Table
     'ex_loadshare' => 'extremePortLoadshare2Status',
     # EXTREME-MLAG-MIB::extremeMlagPeerTable
@@ -1348,6 +1363,384 @@ sub stp_vlan_map {
     return \%map;
 }
 
+# EXOS serves mplsL3VpnConfiguredVrfs 0 and no VRF row while VRs and VRFs
+# are configured: they answer only as SNMPv3 contexts, so a zero from that
+# MIB is no evidence of none
+sub vrf_instances_complete {
+    my $extreme = shift;
+
+    my $complete = $extreme->SUPER::vrf_instances_complete(@_);
+    return $complete unless $complete and ( $extreme->os() || '' ) eq 'xos';
+    return;
+}
+
+sub _exos_vrf_context { return ( $_[0]->os() || '' ) eq 'xos' ? 1 : 0; }
+sub _voss_vrf_context { return ( $_[0]->os() || '' ) eq 'voss' ? 1 : 0; }
+
+sub _vrf_context_os {
+    my $extreme = shift;
+
+    return ( $extreme->_exos_vrf_context() or $extreme->_voss_vrf_context() )
+        ? 1
+        : 0;
+}
+
+# Each EXOS virtual router is an SNMPv3 context named like it; there is no
+# v2c form. Each VOSS VRF is the context its rcVrfContextName names.
+sub _context_kinds {
+    my ( $extreme, $feature ) = @_;
+
+    return
+        unless ( $feature // '' ) eq 'vrf' and $extreme->_vrf_context_os();
+    return ['vrf'];
+}
+
+sub _snmp_context {
+    my ( $extreme, $kind, $id ) = @_;
+
+    return unless ( $kind // '' ) eq 'vrf' and $extreme->_vrf_context_os();
+    return if !defined $id or $id eq q() or $id eq 'default';
+    return $extreme->_voss_snmp_context($id) if $extreme->_voss_vrf_context();
+    return { kind => 'vrf', id => $id, v2c => undef, v3 => $id };
+}
+
+# VOSS reads a v2c community of the form community::vrfid in that VRF's
+# context. vrfid 0, GlobalRouter, is the default context.
+sub _voss_snmp_context {
+    my ( $extreme, $id ) = @_;
+
+    my $names    = $extreme->vrf_rc_name()    || {};
+    my $contexts = $extreme->vrf_rc_context() || {};
+    my ($vrfid)  = grep { $_ ne '0' and ( $names->{$_} // q() ) eq $id }
+        sort keys %$names;
+    return unless defined $vrfid;
+    my $context = SNMP::Info::VRF::_vrf_text( $contexts->{$vrfid} );
+    return unless defined $context;
+    return {
+        kind => 'vrf',
+        id   => $id,
+        v2c  => "%s::$vrfid",
+        v3   => $context
+    };
+}
+
+# VOSS serves a community with an @ suffix from the default context, so the
+# suffix never names the session's context.
+sub _vrf_community_suffix_is_context {
+    my $extreme = shift;
+
+    return $extreme->_voss_vrf_context() ? 0 : 1;
+}
+
+# The context a VOSS VRF context's own rcVrfConfigTable row names. A VRF
+# context serves only its own row; the default context serves every row,
+# vrfid 0 (GlobalRouter, context '') among them. '' is the default context.
+# Undef over SNMPv3 (its Context decides), on EXOS, which answers no v2c
+# session, or when the table is not served. A VRF context whose one row
+# names no context reads as "vrfid N", a context no instance has, so the
+# readers refuse it instead of reading it as the default.
+sub _vrf_community_context {
+    my $extreme = shift;
+
+    return unless $extreme->_voss_vrf_context();
+    my $version = ( $extreme->session() || {} )->{Version};
+    return if defined $version and $version eq '3';
+
+    my $contexts = $extreme->vrf_rc_context();
+    return unless $contexts and %$contexts;
+    my @vrfids = sort keys %$contexts;
+    return q() if @vrfids > 1 or grep { $_ eq '0' } @vrfids;
+    my $context = SNMP::Info::VRF::_vrf_text( $contexts->{ $vrfids[0] } );
+    return $context if defined $context and length $context;
+    return "vrfid $vrfids[0]";
+}
+
+# Each virtual router reads in its own context, named for it. EXOS serves
+# the same address table in every context and scopes only routes and
+# neighbors, so the ports of a context are those its routes use. Each VOSS
+# VRF context serves only its own VLANs, addresses, routes and neighbors;
+# the default context maps every VRF's VLANs.
+sub _vrf_context_filters           { return $_[0]->_vrf_context_os(); }
+sub _vrf_context_is_instance_name  { return $_[0]->_exos_vrf_context(); }
+sub _vrf_context_ports_from_routes { return $_[0]->_vrf_context_os(); }
+sub _vrf_subnets_from_routes       { return $_[0]->_vrf_context_os(); }
+sub _vrf_default_context_members   { return $_[0]->_voss_vrf_context(); }
+
+# rcVrfConfigTable is indexed by vrfid. vrfid 0, GlobalRouter, is the
+# instance default, which any row lists; the I-SID of an IP VPN is its
+# layer 3 I-SID.
+sub _vrf_vendor_instances {
+    my $extreme = shift;
+
+    return {} unless $extreme->_voss_vrf_context();
+    my $names = $extreme->vrf_rc_name() || {};
+    my $isids = $extreme->vrf_rc_isid() || {};
+    my %instances;
+    foreach my $vrfid ( keys %$names ) {
+        my $name = SNMP::Info::VRF::_vrf_text( $names->{$vrfid} );
+        next if !defined $name or $vrfid eq '0' or $name eq 'default';
+
+        my $record = SNMP::Info::VRF::_vrf_record( $name, 'vrf', 'device' );
+        my $isid   = $isids->{$vrfid};
+        $record->{l3_isid}       = $isid + 0 if defined $isid and $isid > 0;
+        $record->{sources}{list} = 'RAPID-CITY';
+        $record->{sources}{l3_isid} = 'RAPID-CITY'
+            if defined $record->{l3_isid};
+        $instances{$name} = $record;
+    }
+    $extreme->_vrf_list_default( \%instances, 'RAPID-CITY' ) if %$names;
+    return \%instances;
+}
+
+sub _vrf_vendor_list_methods {
+    my $extreme = shift;
+
+    return unless $extreme->_voss_vrf_context();
+    return qw/vrf_rc_name vrf_rc_context vrf_rc_isid vrf_rc_vlan_if
+        vrf_rc_vlan_vrf vrf_rc_ip_vrf/;
+}
+
+# { ifIndex => name } of the VRFs other than default
+sub _vrf_vendor_membership {
+    my $extreme = shift;
+
+    return {} unless $extreme->_voss_vrf_context();
+    my $ports = $extreme->_voss_ports();
+    return {
+        map  { $_ => $ports->{$_} }
+        grep { $ports->{$_} ne 'default' } keys %$ports
+    };
+}
+
+# { ifIndex => name } from rcVlanTable, each VLAN's interface in the VRF
+# rcVlanVrfId gives it, and from rcIpAddrTable, indexed ifIndex then
+# address, for an interface with no VLAN. vrfid 0 is default. A read of
+# $name records the walks.
+sub _voss_ports {
+    my ( $extreme, $name ) = @_;
+
+    my $names    = $extreme->_voss_column( 'vrf_rc_name',     $name );
+    my $vlan_ifs = $extreme->_voss_column( 'vrf_rc_vlan_if',  $name );
+    my $vlan_ids = $extreme->_voss_column( 'vrf_rc_vlan_vrf', $name );
+    my $ip_ids   = $extreme->_voss_column( 'vrf_rc_ip_vrf',   $name );
+
+    my %ports;
+    foreach my $iid ( keys %$ip_ids ) {
+        my ($ifindex) = $iid =~ /^(\d+)\./ or next;
+        my $vrf = _voss_vrf_name( $names, $ip_ids->{$iid} );
+        $ports{$ifindex} = $vrf if defined $vrf;
+    }
+    foreach my $vlan ( keys %$vlan_ids ) {
+        my $vrf = _voss_vrf_name( $names, $vlan_ids->{$vlan} );
+        $ports{ $vlan_ifs->{$vlan} } = $vrf
+            if defined $vrf and defined $vlan_ifs->{$vlan};
+    }
+    return \%ports;
+}
+
+# A walk that counts toward the read of $name, or a plain one without
+sub _voss_column {
+    my ( $extreme, $method, $name ) = @_;
+
+    return $extreme->_vrf_column( $method, $name ) if defined $name;
+    return $extreme->$method() || {};
+}
+
+sub _voss_vrf_name {
+    my ( $names, $vrfid ) = @_;
+
+    return unless defined $vrfid;
+    return 'default' if $vrfid eq '0';
+    return SNMP::Info::VRF::_vrf_text( $names->{$vrfid} );
+}
+
+# VOSS: the ports this context's rcVlanTable and rcIpAddrTable give the VRF,
+# the interfaces of its connected routes, and those of the ipAddrTable
+# addresses a connected route names as its next hop. A route learned over
+# the fabric sits on the fabric VLAN's interface, which is no port of the
+# VRF.
+sub _voss_route_ports {
+    my ( $extreme, $name ) = @_;
+
+    my $mapped = $extreme->_voss_ports($name);
+    my %ports  = map { $_ => $name } grep { $mapped->{$_} eq $name }
+        keys %$mapped;
+    my $ifs    = $extreme->_vrf_column( 'vrf_cidr_if',    $name );
+    my $protos = $extreme->_vrf_column( 'vrf_cidr_proto', $name );
+    foreach my $iid ( keys %$protos ) {
+        next unless SNMP::Info::VRF::_vrf_connected_proto( $protos->{$iid} );
+        my $ifindex = SNMP::Info::VRF::_vrf_route_ifindex( $ifs->{$iid} );
+        $ports{$ifindex} = $name if defined $ifindex;
+    }
+    $ports{$_} = $name for $extreme->_voss_next_hop_ports($name);
+    return \%ports;
+}
+
+# The default context's ipAddrTable places the management CLIP's address
+# on the CLIP's ifIndex, while its local host route sits on the management
+# VLAN's interface: the route's next hop is the address, so the CLIP is a
+# port of the context. Other VRFs' addresses there have no such route.
+sub _voss_next_hop_ports {
+    my ( $extreme, $name ) = @_;
+
+    my %hops = map { join( q{.}, @{ $_->{hop} } ) => 1 }
+        grep { $_->{family} eq 'ipv4' }
+        @{ $extreme->_voss_connected_routes($name) };
+    my $rows = $extreme->_vrf_ipadent_rows($name);
+    return map { $_->{ifindex} }
+        grep { !SNMP::Info::VRF::_vrf_unspecified( $_->{ip} ) }
+        grep { $hops{ $_->{ip} } } values %$rows;
+}
+
+# VOSS indexes inetCidrRouteTable with no length octet before either
+# address: type, destination, prefix length, policy 0, next hop type, next
+# hop. Gives { family, dest, len, hop }, the addresses as octet lists, or
+# nothing for another shape.
+my %VOSS_INET = ( 1 => [ ipv4 => 4 ], 2 => [ ipv6 => 16 ] );
+
+sub _voss_route_index {
+    my $iid = shift;
+
+    return unless defined $iid and $iid =~ /^\d+(?:\.\d+)*$/;
+    my ( $type, @arcs ) = split /\./, $iid;
+    my ( $family, $bytes ) = @{ $VOSS_INET{$type} || [] } or return;
+    return if @arcs < $bytes + 3;
+    my @dest = splice @arcs, 0, $bytes;
+    my ( $length, $policy, $hop_type ) = splice @arcs, 0, 3;
+    my ( undef, $hop_bytes ) = @{ $VOSS_INET{$hop_type} || [] } or return;
+    return if $policy ne '0' or @arcs != $hop_bytes or $length > $bytes * 8;
+    return if grep { $_ > 255 } @dest, @arcs;
+    return {
+        family => $family,
+        dest   => \@dest,
+        len    => $length + 0,
+        hop    => \@arcs
+    };
+}
+
+# The connected routes of this context, each with its interface
+sub _voss_connected_routes {
+    my ( $extreme, $name ) = @_;
+
+    my $protos = $extreme->_vrf_column( 'vrf_cidr_proto', $name );
+    my $ifs    = $extreme->_vrf_column( 'vrf_cidr_if',    $name );
+    my @routes;
+    foreach my $iid ( sort keys %$protos ) {
+        next unless SNMP::Info::VRF::_vrf_connected_proto( $protos->{$iid} );
+        my $route = _voss_route_index($iid) or next;
+        $route->{ifindex}
+            = SNMP::Info::VRF::_vrf_route_ifindex( $ifs->{$iid} );
+        push @routes, $route;
+    }
+    return \@routes;
+}
+
+# VOSS: the connected routes, parsed from the index VOSS serves; a host
+# route is no subnet
+sub _vrf_context_route_subnets {
+    my ( $extreme, $name ) = @_;
+
+    return $extreme->SUPER::_vrf_context_route_subnets($name)
+        unless $extreme->_voss_vrf_context();
+    my @subnets;
+    foreach my $route ( @{ $extreme->_voss_connected_routes($name) } ) {
+        next if $route->{len} >= 8 * @{ $route->{dest} };
+        my $prefix = SNMP::Info::VRF::_vrf_network( $route->{family},
+            $route->{dest}, $route->{len} )
+            or next;
+        push @subnets, {
+            prefix  => $prefix,
+            len     => $route->{len},
+            family  => $route->{family},
+            ifindex => $route->{ifindex},
+        };
+    }
+    push @subnets, @{ $extreme->_voss_standard_route_subnets($name) };
+    return \@subnets;
+}
+
+# Connected routes in the standard index shape, which the VOSS parser
+# rejects, read by the standard parser
+sub _voss_standard_route_subnets {
+    my ( $extreme, $name ) = @_;
+
+    my $protos = $extreme->_vrf_column( 'vrf_cidr_proto', $name );
+    my $ifs    = $extreme->_vrf_column( 'vrf_cidr_if',    $name );
+    my @subnets;
+    foreach my $iid ( sort keys %$protos ) {
+        next unless SNMP::Info::VRF::_vrf_connected_proto( $protos->{$iid} );
+        next if _voss_route_index($iid) or $iid !~ /^\d+(?:\.\d+)*$/;
+        my $subnet = SNMP::Info::VRF::_vrf_route_subnet( split /\./, $iid )
+            or next;
+        $subnet->{ifindex}
+            = SNMP::Info::VRF::_vrf_route_ifindex( $ifs->{$iid} );
+        push @subnets, $subnet;
+    }
+    return \@subnets;
+}
+
+# VOSS: a VRF context serves no IP-MIB address table. Its IPv4 addresses
+# are the rcIpAddrTable rows whose rcIpAdEntVrfId is the VRF's; in the
+# default context those of vrfid 0 add to ipAddrTable. IPv6 addresses are
+# in IPV6-MIB ipv6AddrTable.
+sub _vrf_vendor_address_rows {
+    my ( $extreme, $name ) = @_;
+
+    return {} unless $extreme->_voss_vrf_context();
+    return {
+        %{ $extreme->_voss_rc_ip_addresses($name) },
+        %{ $extreme->_vrf_ipv6_mib_address_rows($name) },
+    };
+}
+
+# rcIpAddrTable is indexed by ifIndex then address, so an address two VRFs
+# share on their own VLANs is two rows
+sub _voss_rc_ip_addresses {
+    my ( $extreme, $name ) = @_;
+
+    my $names = $extreme->_vrf_column( 'vrf_rc_name',    $name );
+    my $vrfs  = $extreme->_vrf_column( 'vrf_rc_ip_vrf',  $name );
+    my $ips   = $extreme->_vrf_column( 'vrf_rc_ip_addr', $name );
+    my $masks = $extreme->_vrf_column( 'vrf_rc_ip_mask', $name );
+    my %rows;
+    foreach my $iid ( keys %$ips ) {
+        my ($ifindex) = $iid =~ /^(\d+)\./ or next;
+        my $vrf = _voss_vrf_name( $names, $vrfs->{$iid} );
+        next unless defined $vrf and $vrf eq $name;
+        $rows{"$ifindex.$ips->{$iid}"} = {
+            ifindex    => $ifindex,
+            ip         => $ips->{$iid},
+            prefix_len =>
+                scalar SNMP::Info::VRF::_vrf_mask_length( $masks->{$iid} ),
+            family => 'ipv4',
+        };
+    }
+    return \%rows;
+}
+
+# EXOS puts a VLAN's IPv4 routes on its router interface, ifName
+# "<vlan> rtif(<address>)", and the VLAN's addresses on the interface named
+# "<vlan>", so a router interface adds its VLAN's. EXOS forbids two VLANs of
+# one name. ifName decides membership, so it counts toward the read.
+sub _vrf_route_ports {
+    my ( $extreme, $name ) = @_;
+
+    return $extreme->_voss_route_ports($name)
+        if $extreme->_voss_vrf_context();
+    my $ports = $extreme->SUPER::_vrf_route_ports($name);
+    return $ports unless $extreme->_exos_vrf_context();
+
+    my $if_names = $extreme->_vrf_column( 'orig_i_name', $name, 'i_name' );
+    my %port_named
+        = map { $if_names->{$_} => $_ } sort { $a <=> $b } keys %$if_names;
+    foreach my $port ( keys %$ports ) {
+        my ($vlan) = ( $if_names->{$port} // q{} ) =~ /^(.+) rtif\(/
+            or next;
+        $ports->{ $port_named{$vlan} } = $name if exists $port_named{$vlan};
+    }
+    return $ports;
+}
+
 1;
 
 __END__
@@ -1408,6 +1801,8 @@ Extreme device through SNMP.
 =item F<EXTREME-POE-MIB>
 
 =item F<EXTREME-STP-EXTENSIONS-MIB>
+
+=item F<RAPID-CITY>
 
 =item F<EXTREME-PORT-MIB>
 
@@ -1615,6 +2010,51 @@ identifier (iid)
 Returns (C<ifIndex>) for both key and value since we're using
 F<EXTREME-FDB-MIB> rather than F<BRIDGE-MIB>.
 
+=item $extreme->vrf_instances_complete( [ \@names ] )
+
+On ExtremeXOS, returns undef where L<SNMP::Info::VRF> would return 1.
+EXOS serves C<mplsL3VpnConfiguredVrfs> as 0 even with virtual routers
+configured, since they answer only as SNMPv3 contexts. So the list is
+never known to be whole. A caller name still returns 0.
+
+=item $extreme->context_kinds($feature)
+
+Returns C<['vrf']> for C<vrf> on ExtremeXOS, where each virtual router
+answers in its own SNMPv3 context, and on VOSS, where each VRF does.
+Returns nothing otherwise, and nothing on ExtremeWare. See
+L<SNMP::Info/"context_kinds">.
+
+=item $extreme->snmp_context($kind, $id)
+
+Returns nothing for kinds other than C<vrf>. See
+L<SNMP::Info/"snmp_context">.
+
+On ExtremeXOS, for a virtual router name returns C<< { kind =E<gt>
+'vrf', id =E<gt> $name, v2c =E<gt> undef, v3 =E<gt> $name } >>. The
+default virtual router is the default context, so C<default> and an
+empty name get nothing.
+
+On VOSS, for a name C<vrf_instances()> lists returns C<< { kind =E<gt>
+'vrf', id =E<gt> $name, v2c =E<gt> '%s::$vrfid', v3 =E<gt> $context } >>.
+C<$vrfid> is the VRF's C<rcVrfConfigTable> index. For vrfid 1,
+C<public> becomes C<public::1>. C<$context> is the VRF's
+C<rcVrfContextName>, such as C<vrf1>. C<default>, which is
+C<GlobalRouter>, and a name the device does not list get nothing.
+
+On ExtremeXOS C<v2c> is undef. The ExtremeXOS user guide documents an
+SNMPv2c read community of the form C<vr_name@community_name> for a user
+virtual router. That form is unverified, so it is not offered as C<v2c>.
+If you can confirm it on a device, please open an issue with a walk.
+SNMPv3 with the virtual router name as the context is verified; use it.
+
+A VOSS SNMPv2c community with an C<@> suffix (C<public@vrf1>) is served
+from the default context, so the VRF readers do not take the suffix as
+the session's context. A VOSS session on a C<community::vrfid> community
+reads as that VRF: a VRF context serves only its own C<rcVrfConfigTable>
+row, and the VRF readers take the context from that row. The default
+context serves every row, so a session there reads as the default
+context.
+
 =item $extreme->peth_port_power()
 
 Power supplied by PoE ports, in milliwatts
@@ -1626,6 +2066,195 @@ Power supplied by PoE ports, in milliwatts
 The configured maximum amount of in-line power available to the slot.
 
 (C<extremePethSlotPowerLimit>)
+
+=back
+
+=head2 VRF Instances
+
+See L<SNMP::Info::VRF/"VRF Instances"> for the readers. Both ExtremeXOS
+and VOSS use context mode.
+
+=head3 ExtremeXOS
+
+=over
+
+=item *
+
+On ExtremeXOS 33.6 the virtual routers answer only as SNMPv3 contexts,
+and the device serves no list of them: C<mplsL3VpnConfiguredVrfs> is 0
+and C<MPLS-L3VPN-STD-MIB> has no row. Pass the names with
+C<vrf_instances(\@names)>. Each reads in the context of its name.
+
+=item *
+
+The address table is the same in every context. So the ports of a
+context are the interfaces of its C<inetCidrRouteTable> routes, and its
+addresses, neighbors and subnets are those on them.
+
+=item *
+
+EXOS puts a VLAN's IPv4 routes on its router interface, whose C<ifName>
+is C<< <vlan> rtif(<address>) >>, and the VLAN's addresses on the
+interface named C<< <vlan> >>. A router interface therefore also makes
+its VLAN's interface a port of the context.
+
+=item *
+
+The default context works the same way, for the default virtual router.
+
+=item *
+
+A subnet two virtual routers share is read from each one's connected
+route.
+
+=item *
+
+A name the device lacks has no route, so it reads no port, address or
+neighbor.
+
+=back
+
+=head3 VOSS: instances and ports
+
+=over
+
+=item *
+
+The device lists its VRFs in C<rcVrfConfigTable>, which the default
+context serves whole. vrfid 0, C<GlobalRouter>, is the instance
+C<default> (see L<SNMP::Info::VRF/"Completeness">). A device with only
+C<GlobalRouter> and C<MgmtRouter> reports C<vrf_instances_complete()> 1
+with one VRF, C<MgmtRouter>.
+
+=item *
+
+C<l3_isid> is the I-SID C<rcVrfIpVpnTable> gives the VRF's IP VPN, and
+undef where it serves none.
+
+=item *
+
+Each VRF reads in its own context, which serves only that VRF's rows.
+
+=item *
+
+In the default context, C<i_vrf()> maps each VRF VLAN's interface from
+C<rcVlanTable>, and each interface C<rcIpAddrTable> gives a VRF. That
+context serves C<rcIpAddrTable> only for C<GlobalRouter>, so a VRF
+interface with no VLAN, such as a loopback, is mapped only in its own
+context.
+
+=item *
+
+In a VRF context, the ports are those its C<rcVlanTable> and
+C<rcIpAddrTable> give the VRF, and the interfaces of its connected
+routes. A route learned over the fabric sits on the fabric VLAN's
+interface, which is not a port of the VRF.
+
+=back
+
+=head3 VOSS: addresses, routes and neighbors
+
+=over
+
+=item *
+
+A VRF context serves no F<IP-MIB> address table. A VRF's IPv4 addresses
+are the C<rcIpAddrTable> rows whose C<rcIpAdEntVrfId> is the VRF's, each
+with the prefix length of C<rcIpAdEntNetMask>. No route is an address
+source.
+
+=item *
+
+In the default context, the addresses are those C<ipAddrTable> serves,
+with the C<rcIpAddrTable> rows of vrfid 0. There C<ipAddrTable> lists
+every VRF's addresses, and only those on the ports of C<GlobalRouter> are
+kept.
+
+=item *
+
+Those ports include the interface of each C<ipAddrTable> address that a
+connected route names as its next hop. The management CLIP is one: its
+host route sits on the management VLAN's interface.
+
+=item *
+
+A VRF's IPv6 addresses are those F<IPV6-MIB> C<ipv6AddrTable> serves,
+and its IPv6 neighbors those of C<ipv6NetToMediaTable>.
+
+=item *
+
+VOSS indexes C<inetCidrRouteTable> with no length octet before either
+address. The subnets of the connected routes are read from that index; a
+row in the standard index shape is read as the standard one.
+
+=item *
+
+A context's ARP table holds the VRF's own addresses at the VLAN
+interface's MAC, and each subnet broadcast address at the broadcast MAC.
+Neither is a neighbor.
+
+=item *
+
+A subnet two VRFs share is read in each one's own context, on its own
+VLAN.
+
+=back
+
+=head2 VOSS VRF Tables (F<RAPID-CITY>)
+
+=over
+
+=item $extreme->vrf_rc_name()
+
+Returns reference to hash of VRF names, keyed by vrfid.
+
+(C<rcVrfName>)
+
+=item $extreme->vrf_rc_context()
+
+Returns reference to hash of the SNMP context name of each VRF, keyed
+by vrfid.
+
+(C<rcVrfContextName>)
+
+=item $extreme->vrf_rc_isid()
+
+Returns reference to hash of the I-SID of each VRF's IP VPN, keyed by
+vrfid.
+
+(C<rcVrfIpVpnIsidNumber>)
+
+=item $extreme->vrf_rc_vlan_if()
+
+Returns reference to hash of the ifIndex of each VLAN, keyed by VLAN id.
+
+(C<rcVlanIfIndex>)
+
+=item $extreme->vrf_rc_vlan_vrf()
+
+Returns reference to hash of the vrfid of each VLAN, keyed by VLAN id.
+
+(C<rcVlanVrfId>)
+
+=item $extreme->vrf_rc_ip_vrf()
+
+Returns reference to hash of the vrfid of each address, keyed by
+ifIndex then address.
+
+(C<rcIpAdEntVrfId>)
+
+=item $extreme->vrf_rc_ip_addr()
+
+Returns reference to hash of addresses, keyed by ifIndex then address.
+
+(C<rcIpAdEntAddr>)
+
+=item $extreme->vrf_rc_ip_mask()
+
+Returns reference to hash of address masks, keyed by ifIndex then
+address.
+
+(C<rcIpAdEntNetMask>)
 
 =back
 

@@ -72,9 +72,9 @@ list any missing functionality (such as neighbor discovery tables).
                             # Version   => 3
                             # SecLevel  => 'authPriv', # authPriv|authNoPriv|noAuthNoPriv
                             # SecName   => 'myuser',
-                            # AuthProto => 'MD5',      # MD5|SHA
+                            # AuthProto => 'MD5',      # MD5|SHA|SHA512|SHA384|SHA256|SHA224
                             # AuthPass  => 'authp4ss',
-                            # PrivProto => 'DES',      # DES|AES
+                            # PrivProto => 'DES',      # DES|AES|AES128|AES192|AES256
                             # PrivPass  => 'pr1vp4ss',
 
                             # Rarer options - see https://metacpan.org/pod/SNMP for full list
@@ -172,9 +172,10 @@ from the net-snmp source tree.
 The Perl module C<SNMP> is found inside the net-snmp distribution.  Go to the
 F<perl/> directory of the distribution to install it, or run
 C<./configure --with-perl-modules> from the top directory of the net-snmp
-distribution.
+distribution. The net-snmp version and configuration will also determine
+which authentication and privacy protocols are available when using snmpv3.
 
-Net-SNMP can be found at http://net-snmp.sourceforge.net
+Net-SNMP can be found at L<http://net-snmp.sourceforge.net>.
 
 No minimum Net-SNMP version is enforced. The walk code SNMP::Info uses has
 been stable since Net-SNMP 5.7.3.
@@ -484,6 +485,14 @@ F<S5-ETH-MULTISEG-TOPOLOGY-MIB>.  Inherited by
 Avaya/Nortel/Bay/Synoptics switches and hubs.
 
 See documentation in L<SNMP::Info::SONMP> for details.
+
+=item SNMP::Info::VRF
+
+VRF instances, their ports, neighbors, interface addresses and subnets,
+from F<MPLS-L3VPN-STD-MIB> and F<IP-FORWARD-MIB>.  Inherited by
+SNMP::Info::Layer3.
+
+See documentation in L<SNMP::Info::VRF> for details.
 
 =back
 
@@ -804,10 +813,6 @@ See documentation in L<SNMP::Info::Layer3::AlteonAD> for details.
 
 See documentation in L<SNMP::Info::Layer3::Altiga> for details.
 
-=item SNMP::Info::Layer3::Meraki
-
-See documentation in L<SNMP::Info::Layer3::Meraki> for details.
-
 =item SNMP::Info::Layer3::Arista
 
 See documentation in L<SNMP::Info::Layer3::Arista> for details.
@@ -996,7 +1001,7 @@ See documentation in L<SNMP::Info::Layer3::Fortinet> for details.
 
 =item SNMP::Info::Layer3::Foundry
 
-Subclass for Brocade (Foundry) Network devices.
+Subclass for Ruckus / Brocade / Foundry switches.
 
 See documentation in L<SNMP::Info::Layer3::Foundry> for details.
 
@@ -1057,6 +1062,10 @@ Subclass for Lenovo switches running CNOS.
 
 See documentation in L<SNMP::Info::Layer3::Lenovo> for details.
 
+=item SNMP::Info::Layer3::Meraki
+
+See documentation in L<SNMP::Info::Layer3::Meraki> for details.
+
 =item SNMP::Info::Layer3::Microsoft
 
 Subclass for Generic Microsoft Routers running Microsoft Windows OS.
@@ -1081,17 +1090,17 @@ Subclass for Netonix switches.
 
 See documentation in L<SNMP::Info::Layer3::Netonix> for details.
 
-=item SNMP::Info::Layer3::NetSNMP
-
-Subclass for host systems running Net-SNMP.
-
-See documentation in L<SNMP::Info::Layer3::NetSNMP> for details.
-
 =item SNMP::Info::Layer3::Netscreen
 
 Subclass for Juniper NetScreen.
 
 See documentation in L<SNMP::Info::Layer3::Netscreen> for details.
+
+=item SNMP::Info::Layer3::NetSNMP
+
+Subclass for host systems running Net-SNMP.
+
+See documentation in L<SNMP::Info::Layer3::NetSNMP> for details.
 
 =item SNMP::Info::Layer3::Nexus
 
@@ -1148,12 +1157,6 @@ Subclass for Ruckus SmartZone and SmartCell Gateway controllers.
 
 See documentation in L<SNMP::Info::Layer3::RuckusController> for details.
 
-=item SNMP::Info::Layer3::SilverPeak
-
-Subclass for SilverPeak devices.
-
-See documentation in L<SNMP::Info::Layer3::SilverPeak> for details.
-
 =item SNMP::Info::Layer3::Scalance
 
 Subclass for Siemens Scalance devices.
@@ -1165,6 +1168,12 @@ See documentation in L<SNMP::Info::Layer3::Scalance> for details.
 Subclass for Siemens SIMATIC, SINAMICS, and soft starter devices.
 
 See documentation in L<SNMP::Info::Layer3::Siemens> for details.
+
+=item SNMP::Info::Layer3::SilverPeak
+
+Subclass for SilverPeak devices.
+
+See documentation in L<SNMP::Info::Layer3::SilverPeak> for details.
 
 =item SNMP::Info::Layer3::SonicWALL
 
@@ -1233,17 +1242,17 @@ Alcatel-Lucent SR Class.
 
 See documentation in L<SNMP::Info::Layer3::Timetra> for details.
 
-=item SNMP::Info::Layer3::VyOS
-
-Subclass for VyOS routers.
-
-See documentation in L<SNMP::Info::Layer3::VyOS> for details.
-
 =item SNMP::Info::Layer3::VMware
 
 Subclass for VMware ESXi hosts.
 
 See documentation in L<SNMP::Info::Layer3::VMware> for details.
+
+=item SNMP::Info::Layer3::VyOS
+
+Subclass for VyOS routers.
+
+See documentation in L<SNMP::Info::Layer3::VyOS> for details.
 
 =item SNMP::Info::Layer3::Whiterabbit
 
@@ -1303,7 +1312,7 @@ See documentation in L<SNMP::Info::Layer7::Liebert> for details.
 
 =item SNMP::Info::Layer7::Neoteris
 
-Subclass for Pulse Secure / Juniper SSL VPN appliances.
+Subclass for Ivanti / Pulse Secure / Juniper SSL VPN appliances.
 
 See documentation in L<SNMP::Info::Layer7::Neoteris> for details.
 
@@ -2046,8 +2055,9 @@ sub bulkwalk_recovery {
 
 Some devices serve part of a feature only in non-default SNMP contexts.
 Cisco IOS serves each VLAN's forwarding table in that VLAN's context.
-SNMPv2c reaches a context by a community suffix (C<public@10>).  SNMPv3
-reaches it by a context name (C<vlan-10>).
+SNMPv2c reaches a context by a community suffix (C<public@10>), or on
+Extreme VOSS by a vrfid suffix (C<public::1>).  SNMPv3 reaches it by a
+context name (C<vlan-10>).
 
 To read such a feature:
 
@@ -2061,7 +2071,8 @@ serves the whole feature: read it as usual.
 =item 2.
 
 In the default context, list what to visit: VLAN ids from C<v_index()>
-for C<fdb>, tree keys from C<stp_trees()> for C<stp>.  Keep the lists:
+for C<fdb>, tree keys from C<stp_trees()> for C<stp>, instance names from
+C<vrf_instances()> for C<vrf>.  Keep the lists:
 C<update()> clears the cache on every switch.
 
 =item 3.
@@ -2079,7 +2090,15 @@ A context whose C<v2c> or C<v3> is undef cannot be reached over that
 SNMP version.  NX-OS refuses community suffixes, so its VLAN and MST
 contexts need SNMPv3.
 
-Both examples below switch with this helper.  C<kind> C<none> is the
+A site can map a plain community to a VRF context in the device
+configuration (NX-OS C<snmp-server mib community-map>).  The VRF readers
+recognize such a session only where the class can read the mapping from
+the device: NX-OS (L<SNMP::Info::Layer3::Nexus>) and VOSS
+(L<SNMP::Info::Layer3::Extreme>).  Elsewhere a community-mapped session
+reads as the default context, so read VRF contexts over SNMPv3.  See
+L<SNMP::Info::VRF/"Reading Instances">.
+
+The examples below switch with this helper.  C<kind> C<none> is the
 default context.
 
  # Switch to $context; false where this session's SNMP version cannot
@@ -2135,6 +2154,24 @@ so the rows of every listed context are merged:
      }
  }
  $info->update() if $switch;
+
+Per-VRF neighbors.  Where the device reads each VRF in its own context,
+switch to it; otherwise read every VRF in the default context:
+
+ # Where the device lists no VRF, as EXOS, pass vrf_instances(\@names)
+ my $instances = $info->vrf_instances() || {};
+ my %vrf_neighbors;    # VRF name => { iid => neighbor record }
+ foreach my $name ( sort keys %$instances ) {
+     if ( $info->context_kinds('vrf') and $name ne 'default' ) {
+         # No context: the device gives this instance none to read in
+         my $context = $instances->{$name}{contexts}[0] or next;
+         enter_context( $info, $context, $community ) or next;
+         $vrf_neighbors{$name} = { %{ $info->vrf_neighbors($name) || {} } };
+         $info->update();
+         next;
+     }
+     $vrf_neighbors{$name} = { %{ $info->vrf_neighbors($name) || {} } };
+ }
 
 =head2 Object Scalar Methods
 
@@ -3140,13 +3177,14 @@ uses to serve C<$feature>, or nothing when the default context serves it
 all.  See L</"SNMP Contexts">.
 
 Features: C<fdb>, the forwarding table (C<fw_mac()>, C<fw_port()>);
-C<stp>, the spanning tree ports (C<stp_tree_ports()>).
+C<stp>, the spanning tree ports (C<stp_tree_ports()>); C<vrf>, the
+per-instance readers of L<SNMP::Info::VRF>.
 
 Kinds: C<vlan>, one context per VLAN; C<mst>, one context per MST
-instance.  The answer names kinds of context, not the trees or VLANs the
-device has now.  Where only one protocol uses contexts, a class answers
-while that protocol runs and returns nothing otherwise
-(L<SNMP::Info::Layer3::Juniper> for VSTP).
+instance; C<vrf>, one context per VRF.  The answer names kinds of context,
+not the trees or VLANs the device has now.  Where only one protocol uses
+contexts, a class answers while that protocol runs and returns nothing
+otherwise (L<SNMP::Info::Layer3::Juniper> for VSTP).
 
  if (my $kinds = $info->context_kinds('fdb')) {
      # Read the forwarding table once per VLAN
@@ -3169,8 +3207,9 @@ sub context_kinds {
 
 Returns how to reach one SNMP context on this device, as a reference to
 hash, or nothing where the device has no such context.  C<$kind> is a
-kind from C<context_kinds()>; C<$id> is a VLAN id for C<vlan> and an MST
-instance for C<mst>.  See L</"SNMP Contexts">.
+kind from C<context_kinds()>; C<$id> is a VLAN id for C<vlan>, an MST
+instance for C<mst> and a VRF name from C<vrf_instances()> for C<vrf>.
+See L</"SNMP Contexts">.
 
  my $context = $info->snmp_context('vlan', 10);
  # { kind => 'vlan', id => 10, v2c => '%s@10', v3 => 'vlan-10' }

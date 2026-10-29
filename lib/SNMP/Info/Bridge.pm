@@ -307,6 +307,45 @@ sub i_stp_state {
     return \%i_stp_state;
 }
 
+sub i_edgeport_admin {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    my $edge_admin = $bridge->is_edgeport_admin();
+    return _stp_edge_by_ifindex( $bridge, $edge_admin, $partial );
+}
+
+sub i_edgeport_oper {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    my $edge_oper = $bridge->is_edgeport_oper();
+    return _stp_edge_by_ifindex( $bridge, $edge_oper, $partial );
+}
+
+# Edge values keyed by bridge port, mapped to ifIndex through bp_index
+# (or $port_index, when the caller knows the keys are not bridge ports) and
+# read as 1 or 0 by $decode (default _stp_enabled); a port missing from the
+# map, or a value $decode does not know, is absent.  Called as a function by
+# classes outside Bridge's inheritance (RapidCity).
+sub _stp_edge_by_ifindex {
+    my ( $bridge, $edge, $partial, $decode, $port_index ) = @_;
+    $decode ||= \&_stp_enabled;
+    return {} unless keys %{ $edge || {} };
+
+    my $bp_index = $port_index || $bridge->bp_index($partial) || {};
+
+    my %i_edgeport;
+    foreach my $port ( keys %{ $edge || {} } ) {
+        my $iid     = $bp_index->{$port};
+        my $enabled = $decode->( $edge->{$port} );
+        next unless defined $iid;
+        next unless defined $enabled;
+        $i_edgeport{$iid} = $enabled;
+    }
+    return \%i_edgeport;
+}
+
 sub i_stp_port {
     my $bridge  = shift;
     my $partial = shift;
@@ -1144,6 +1183,23 @@ the agent exposes in the polled context, not the port's state in every
 VLAN.  A class whose platform exposes a different tree says so in its
 own documentation.  See L</"Spanning Tree Trees"> for every tree the
 device runs.
+
+=item $bridge->i_edgeport_admin()
+
+Returns 1 or 0 for each port by whether it is configured as an edge port
+(the IEEE equivalent of PortFast).  Format is a hash reference with
+key = C<ifIndex>, value = [1|0].  A port with no administrative value is
+absent.
+
+(C<dot1dStpPortAdminEdgePort>)
+
+=item $bridge->i_edgeport_oper()
+
+Returns 1 or 0 for each port by whether it currently operates as an edge
+port.  Format is a hash reference with key = C<ifIndex>, value = [1|0].  A
+port with no operational value is absent.
+
+(C<dot1dStpPortOperEdgePort>)
 
 =item $bridge->i_stp_id()
 

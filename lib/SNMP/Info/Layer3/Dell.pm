@@ -408,6 +408,10 @@ my $dell = new SNMP::Info::Layer3::Dell(...);
 
 =item F<RADLAN-rlInterfaces>
 
+=item F<DELLEMC-OS10-CHASSIS-MIB>
+
+=item F<DELLEMC-OS10-PRODUCTS-MIB>
+
 =item Inherited Classes' MIBs
 
 See classes listed above for their required MIBs.

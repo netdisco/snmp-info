@@ -56,6 +56,7 @@ $VERSION = '3.983000';
     %SNMP::Info::Layer3::CiscoSwitch::MIBS,
     'CISCO-ENTITY-VENDORTYPE-OID-MIB'   => 'cevMIBObjects',
     'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
+    'SNMP-COMMUNITY-MIB'                => 'snmpCommunityName',
     'CISCO-VPC-MIB'                     => 'cVpcRoleStatus',
 );
 
@@ -66,7 +67,9 @@ $VERSION = '3.983000';
 
 %FUNCS = (
     %SNMP::Info::Layer3::CiscoSwitch::FUNCS,
-    'vrf_name' => 'cContextMappingVrfName',
+    'vrf_name'         => 'cContextMappingVrfName',
+    'vrf_comm_name'    => 'snmpCommunityName',
+    'vrf_comm_context' => 'snmpCommunityContextName',
 
     # CISCO-VPC-MIB::cVpcRoleTable
     'vpc_role'       => 'cVpcRoleStatus',
@@ -187,6 +190,7 @@ sub _context_kinds {
 	my ( $nexus, $feature ) = @_;
 
 	return [ 'vlan', 'mst' ] if $feature eq 'stp';
+	return ['vrf'] if $feature eq 'vrf';
 	return;
 }
 
@@ -199,6 +203,7 @@ sub _snmp_context {
 	return unless defined $kind and defined $id;
 	return { kind => 'vlan', id => $id, v2c => undef, v3 => "vlan-$id" }
 		if $kind eq 'vlan';
+	return $nexus->_vrf_snmp_context($id) if $kind eq 'vrf';
 	return unless $kind eq 'mst';
 
 	my $name   = "mst-$id";
@@ -206,6 +211,85 @@ sub _snmp_context {
 	my $index  = join( '.', length $name, map {ord} split //, $name );
 	return unless exists $mapped->{$index};
 	return { kind => 'mst', id => $id, v2c => undef, v3 => $name };
+}
+
+# Each distinct non-empty VRF name cContextMappingTable maps. An empty
+# value is a VLAN or MST context, never a VRF; any row lists default.
+sub _vrf_vendor_instances {
+	my $nexus = shift;
+
+	my $mapped = $nexus->vrf_name() || {};
+	my %instances;
+	foreach my $name ( grep { defined && length } values %$mapped ) {
+		next if $name eq 'default';
+		my $record = SNMP::Info::VRF::_vrf_record( $name, 'vrf', 'device' );
+		$record->{sources}{list} = 'CISCO-CONTEXT-MAPPING-MIB';
+		$instances{$name} = $record;
+	}
+	$nexus->_vrf_list_default( \%instances, 'CISCO-CONTEXT-MAPPING-MIB' )
+		if %$mapped;
+	return \%instances;
+}
+
+sub _vrf_vendor_list_methods { return ('vrf_name'); }
+
+# Layer3::Cisco reads CISCO-VRF-MIB membership; Nexus lists from the
+# context map, which holds no ports
+sub _vrf_vendor_membership { return {}; }
+
+# Each VRF context serves only its own address rows, but ifTable and the
+# IPv6 neighbors of other VRFs' ports too
+sub _vrf_context_filters { return 1; }
+
+# The context cContextMappingTable maps to the VRF: the one named like the
+# VRF, else the lowest sorted name; with none mapped, the VRF name, unless
+# that name is a context mapped to another VRF. The default VRF is the
+# default context, and an unnamed one is not a VRF.
+sub _vrf_snmp_context {
+	my ( $nexus, $name ) = @_;
+
+	return if !defined $name or $name eq q() or $name eq 'default';
+	my $mapped = $nexus->vrf_name() || {};
+	my ( %contexts, %of_other_vrf );
+	foreach my $index ( keys %$mapped ) {
+		next unless defined $mapped->{$index} and length $mapped->{$index};
+		my ( $length, @octets ) = split /\./, $index;
+		next unless $length == @octets;
+		my $context = join q(), map {chr} @octets;
+		my $owner = $mapped->{$index} eq $name ? \%contexts : \%of_other_vrf;
+		$owner->{$context} = 1;
+	}
+	return if !%contexts and $of_other_vrf{$name};
+	my ($context) = exists $contexts{$name} ? $name : sort keys %contexts;
+	return {
+		kind => 'vrf',
+		id   => $name,
+		v2c  => undef,
+		v3   => defined $context ? $context : $name,
+	};
+}
+
+# The context the session's own SNMP-COMMUNITY-MIB row maps its community
+# to. NX-OS serves snmpCommunityName only on the row of the community the
+# session uses, and the context name on every row. '' is the default
+# context. Undef when the session is SNMPv3 (its Context decides), the
+# table is not served, or no row carries the session's community.
+sub _vrf_community_context {
+	my $nexus = shift;
+
+	my $session   = $nexus->session() || {};
+	my $community = $session->{Community};
+	my $version   = $session->{Version};
+	return if defined $version and $version eq '3';
+	return unless defined $community and length $community;
+
+	my $names = $nexus->vrf_comm_name() || {};
+	foreach my $index ( sort keys %$names ) {
+		next unless defined $names->{$index};
+		next unless $names->{$index} eq $community;
+		return ( $nexus->vrf_comm_context() || {} )->{$index};
+	}
+	return;
 }
 
 sub _get_snmpid_chassis {
@@ -436,6 +520,8 @@ after determining a more specific class using the method above.
 
 =item F<CISCO-CONTEXT-MAPPING-MIB>
 
+=item F<SNMP-COMMUNITY-MIB>
+
 =item F<CISCO-VPC-MIB>
 
 =back
@@ -480,7 +566,7 @@ C<dot1dBaseBridgeAddress>
 =item $nexus->context_kinds($feature)
 
 See L<SNMP::Info/"context_kinds">.  Returns C<['vlan', 'mst']> for
-C<stp>, and C<['vlan']> for C<fdb>.
+C<stp>, and C<['vlan']> for C<fdb>, and C<['vrf']> for C<vrf>.
 
 =item $nexus->snmp_context($kind, $id)
 
@@ -491,6 +577,61 @@ which it does only under MST.  C<mst-0> serves the CIST's
 C<dot1dStpPortTable>, which the default context does not; whether it also
 serves C<dot1dBasePortTable> was not measured, so C<cist.0> keeps
 C<ports_complete> 0.
+
+For C<vrf>, C<$id> is a name from C<vrf_instances()> and the answer is
+C<{ kind =E<gt> 'vrf', id =E<gt> $name, v2c =E<gt> undef,
+v3 =E<gt> $context }>.  C<$context> is a context C<cContextMappingTable>
+maps to the VRF, chosen in this order:
+
+=over
+
+=item *
+
+the context named like the VRF, if it is mapped to the VRF;
+
+=item *
+
+else the lowest sorted name among the contexts mapped to the VRF;
+
+=item *
+
+else the VRF name itself.
+
+=back
+
+Nothing is returned for:
+
+=over
+
+=item *
+
+the default VRF and an empty name, which have no context;
+
+=item *
+
+a VRF with no mapped context whose name is a context mapped to another
+VRF.  Its C<contexts> in C<vrf_instances()> is then empty.
+
+=back
+
+C<v2c> is undef: NX-OS reaches a VRF over SNMPv2c only through a site's
+community map (C<snmp-server mib community-map>), whose community the
+class cannot derive.  A session on such a community reads as the context
+its own C<snmpCommunityTable> row names (see C<vrf_comm_name()>).  The
+readers accept it where that is the context C<snmp_context('vrf', $name)>
+gives.  Where the row is not served, the session reads as the default
+context; read VRF contexts over SNMPv3.
+
+VRF reads use context mode (see L<SNMP::Info::VRF/"Reading Instances">).
+Each VRF context serves only that VRF's address rows, but C<ifTable> is
+not scoped, and the default context serves the IPv6 neighbors of every
+VRF's ports.  The readers therefore keep only the rows on ports holding
+an address in the current context.
+
+C<cContextMappingTable> lists the VRFs.  Any row it serves lists
+C<default>, so a device that maps only VLAN or MST contexts reports
+C<vrf_instances_complete()> 1, none configured (see
+L<SNMP::Info::VRF/"Completeness">).
 
 =back
 
@@ -644,6 +785,29 @@ See documentation in L<SNMP::Info::Layer3::CiscoSwitch/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a reference
 to a hash.
+
+=head2 SNMP Community Table (C<snmpCommunityTable>)
+
+=over
+
+=item $nexus->vrf_comm_name()
+
+Returns reference to hash of community strings, keyed by the
+length-prefixed C<snmpCommunityIndex>.  NX-OS serves the community only
+on the row the session itself uses, and an empty string on every other
+row.
+
+(C<snmpCommunityName>)
+
+=item $nexus->vrf_comm_context()
+
+Returns reference to hash of the SNMP context each community row maps
+to, keyed as C<vrf_comm_name()>: empty for the default context, a context
+name for a community set by C<snmp-server mib community-map>.
+
+(C<snmpCommunityContextName>)
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer3::CiscoSwitch
 
