@@ -57,6 +57,7 @@ $VERSION = '3.983000';
     'CISCO-ENTITY-VENDORTYPE-OID-MIB'   => 'cevMIBObjects',
     'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
     'SNMP-COMMUNITY-MIB'                => 'snmpCommunityName',
+    'CISCO-VPC-MIB'                     => 'cVpcRoleStatus',
 );
 
 %GLOBALS = (
@@ -69,9 +70,26 @@ $VERSION = '3.983000';
     'vrf_name'         => 'cContextMappingVrfName',
     'vrf_comm_name'    => 'snmpCommunityName',
     'vrf_comm_context' => 'snmpCommunityContextName',
+
+    # CISCO-VPC-MIB::cVpcRoleTable
+    'vpc_role'       => 'cVpcRoleStatus',
+    'vpc_system_mac' => 'cVpcSystemOperMacAddress',
+    # CISCO-VPC-MIB::cVpcPeerKeepAliveConfigTable
+    'vpc_keepalive_peer' => 'cVpcPeerKeepAliveDestAddr',
+    # CISCO-VPC-MIB::cVpcPeerKeepAliveTable
+    'vpc_keepalive_stat' => 'cVpcPeerKeepAliveStatus',
+    # CISCO-VPC-MIB::cVpcStatusPeerLinkTable
+    'vpc_peer_link' => 'cVpcStatusPeerLinkIfIndex',
+    # CISCO-VPC-MIB::cVpcStatusHostLinkTable
+    'vpc_host_link_if'   => 'cVpcStatusHostLinkIfIndex',
+    'vpc_host_link_stat' => 'cVpcStatusHostLinkStatus',
 );
 
-%MUNGE = ( %SNMP::Info::Layer3::CiscoSwitch::MUNGE, );
+%MUNGE = (
+    %SNMP::Info::Layer3::CiscoSwitch::MUNGE,
+    'vpc_system_mac'     => \&SNMP::Info::munge_mac,
+    'vpc_keepalive_peer' => \&SNMP::Info::munge_inetaddress,
+);
 
 sub os {
 	return 'nx-os';
@@ -83,6 +101,89 @@ sub os_ver {
 
 	return $1 if ( $descr =~ /\),\s+Version\s+(.+?),/ );
 	return $descr;
+}
+
+sub _lag_vendor_walked {
+	return qw/vpc_role vpc_system_mac vpc_keepalive_peer vpc_keepalive_stat
+		vpc_peer_link vpc_host_link_if vpc_host_link_stat/;
+}
+
+# Every vPC domain has a cVpcRoleTable row, indexed by the domain id
+sub _lag_vendor_domains {
+	my $nexus = shift;
+
+	my %columns = (
+		role       => [ vpc_role           => 'cVpcRoleStatus' ],
+		system_mac => [ vpc_system_mac     => 'cVpcSystemOperMacAddress' ],
+		peer       => [ vpc_keepalive_peer => 'cVpcPeerKeepAliveDestAddr' ],
+		status     => [ vpc_keepalive_stat => 'cVpcPeerKeepAliveStatus' ],
+		peer_link  => [ vpc_peer_link      => 'cVpcStatusPeerLinkIfIndex' ],
+	);
+	my $domains = {};
+	foreach my $domain_id ( keys %{ $nexus->vpc_role() || {} } ) {
+		my $domain = { kind => 'vpc', sources => {} };
+		foreach my $field ( keys %columns ) {
+			my ( $method, $leaf ) = @{ $columns{$field} };
+			my $value = ( $nexus->$method() || {} )->{$domain_id};
+			next if !defined $value or $value eq '';
+			next if $field eq 'peer_link' and !$value;
+			$domain->{$field} = $value;
+			$domain->{sources}{$field} = 'CISCO-VPC-MIB::' . $leaf;
+		}
+		$domains->{$domain_id} = $domain;
+	}
+	return $domains;
+}
+
+sub _lag_vendor_groups {
+	my ( $nexus, $groups ) = @_;
+
+	$nexus->_vpc_mark_peer_links($groups);
+	$nexus->_vpc_add_host_links($groups);
+	return;
+}
+
+# A channel the device reports only through the vPC tables still gets a record
+sub _vpc_group_record {
+	my ( $groups, $ifindex ) = @_;
+
+	return $groups->{$ifindex}
+		||= SNMP::Info::IEEE802dot3ad::_lag_new_record();
+}
+
+sub _vpc_mark_peer_links {
+	my ( $nexus, $groups ) = @_;
+
+	my $peer_links = $nexus->vpc_peer_link() || {};
+	foreach my $ifindex ( values %$peer_links ) {
+		next unless $ifindex;
+		my $record = _vpc_group_record( $groups, $ifindex );
+		$record->{peer_link} = 1;
+		$record->{sources}{peer_link}
+			= 'CISCO-VPC-MIB::cVpcStatusPeerLinkIfIndex';
+	}
+	return;
+}
+
+# The host link table is indexed domain.vpcId
+sub _vpc_add_host_links {
+	my ( $nexus, $groups ) = @_;
+
+	my $channels = $nexus->vpc_host_link_if()   || {};
+	my $states   = $nexus->vpc_host_link_stat() || {};
+	foreach my $iid ( keys %$channels ) {
+		next unless $channels->{$iid};
+		my ( $domain_id, $vpc_id ) = split /\./, $iid;
+		my $record = _vpc_group_record( $groups, $channels->{$iid} );
+		$record->{mc} = {
+			kind   => 'vpc',
+			group  => $vpc_id,
+			domain => $domain_id,
+			state  => $states->{$iid},
+		};
+		$record->{sources}{mc} = 'CISCO-VPC-MIB::cVpcStatusHostLinkIfIndex';
+	}
+	return;
 }
 
 sub _context_kinds {
@@ -421,6 +522,8 @@ after determining a more specific class using the method above.
 
 =item F<SNMP-COMMUNITY-MIB>
 
+=item F<CISCO-VPC-MIB>
+
 =back
 
 =over
@@ -529,6 +632,99 @@ C<cContextMappingTable> lists the VRFs.  Any row it serves lists
 C<default>, so a device that maps only VLAN or MST contexts reports
 C<vrf_instances_complete()> 1, none configured (see
 L<SNMP::Info::VRF/"Completeness">).
+
+=back
+
+=head2 Link Aggregation
+
+=over
+
+=item $nexus->lag_groups()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with:
+
+=over
+
+=item *
+
+C<mc> on the channel named by each vPC host link
+(C<cVpcStatusHostLinkIfIndex>): C<kind> C<vpc>, C<group> the vPC id,
+C<domain> the vPC domain id, and C<state> the host link status
+(C<cVpcStatusHostLinkStatus>).
+
+=item *
+
+C<peer_link> on the channel named by C<cVpcStatusPeerLinkIfIndex>.
+
+=item *
+
+A static channel has no F<IEEE8023-LAG-MIB> row: C<lacp> is 0 and the
+actor and partner fields are undef.
+
+=back
+
+=item $nexus->mlag_domains()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by vPC
+domain id (C<cVpcRoleTable>), with C<kind> C<vpc> and these fields:
+
+=over
+
+=item *
+
+C<system_mac>: C<cVpcSystemOperMacAddress>.
+
+=item *
+
+C<role>: C<cVpcRoleStatus>.
+
+=item *
+
+C<peer>: the peer keepalive destination, C<cVpcPeerKeepAliveDestAddr>.
+
+=item *
+
+C<peer_link>: C<cVpcStatusPeerLinkIfIndex>.
+
+=item *
+
+C<status>: the peer keepalive status, C<cVpcPeerKeepAliveStatus>.
+
+=back
+
+=back
+
+=head2 Table Methods
+
+=over
+
+=item $nexus->vpc_role()
+
+(C<cVpcRoleStatus>)
+
+=item $nexus->vpc_system_mac()
+
+(C<cVpcSystemOperMacAddress>)
+
+=item $nexus->vpc_keepalive_peer()
+
+(C<cVpcPeerKeepAliveDestAddr>)
+
+=item $nexus->vpc_keepalive_stat()
+
+(C<cVpcPeerKeepAliveStatus>)
+
+=item $nexus->vpc_peer_link()
+
+(C<cVpcStatusPeerLinkIfIndex>)
+
+=item $nexus->vpc_host_link_if()
+
+(C<cVpcStatusHostLinkIfIndex>)
+
+=item $nexus->vpc_host_link_stat()
+
+(C<cVpcStatusHostLinkStatus>)
 
 =back
 

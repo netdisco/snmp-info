@@ -41,6 +41,7 @@ use SNMP::Info::PortAccessEntity;
 use SNMP::Info::PowerEthernet;
 use SNMP::Info::LLDP;
 use SNMP::Info::DocsisHE;
+use SNMP::Info::IEEE802dot3ad;
 
 @SNMP::Info::Layer2::ISA = qw/
         SNMP::Info SNMP::Info::Bridge
@@ -49,6 +50,7 @@ use SNMP::Info::DocsisHE;
         SNMP::Info::LLDP
         SNMP::Info::DocsisHE
         SNMP::Info::PortAccessEntity
+        SNMP::Info::IEEE802dot3ad
         Exporter
 /;
 
@@ -62,7 +64,8 @@ $VERSION = '3.983000';
     %SNMP::Info::MIBS,         %SNMP::Info::Bridge::MIBS,
     %SNMP::Info::Entity::MIBS, %SNMP::Info::PowerEthernet::MIBS,
     %SNMP::Info::LLDP::MIBS,   %SNMP::Info::DocsisHE::MIBS,
-    %SNMP::Info::PortAccessEntity::MIBS
+    %SNMP::Info::PortAccessEntity::MIBS,
+    %SNMP::Info::IEEE802dot3ad::MIBS
 );
 
 %GLOBALS = (
@@ -73,6 +76,7 @@ $VERSION = '3.983000';
     %SNMP::Info::PowerEthernet::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::PortAccessEntity::GLOBALS,
+    %SNMP::Info::IEEE802dot3ad::GLOBALS,
     'serial1' =>
         '.1.3.6.1.4.1.9.3.6.3.0',    # OLD-CISCO-CHASSIS-MIB::chassisId.0
 );
@@ -81,7 +85,8 @@ $VERSION = '3.983000';
     %SNMP::Info::FUNCS,         %SNMP::Info::Bridge::FUNCS,
     %SNMP::Info::Entity::FUNCS, %SNMP::Info::PowerEthernet::FUNCS,
     %SNMP::Info::LLDP::FUNCS,   %SNMP::Info::DocsisHE::FUNCS,
-    %SNMP::Info::PortAccessEntity::FUNCS
+    %SNMP::Info::PortAccessEntity::FUNCS,
+    %SNMP::Info::IEEE802dot3ad::FUNCS
 );
 
 %MUNGE = (
@@ -94,6 +99,7 @@ $VERSION = '3.983000';
     %SNMP::Info::PowerEthernet::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::PortAccessEntity::MUNGE,
+    %SNMP::Info::IEEE802dot3ad::MUNGE,
 );
 
 # Method OverRides
@@ -245,6 +251,8 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::Entity
 
+=item SNMP::Info::IEEE802dot3ad
+
 =item SNMP::Info::LLDP
 
 =item SNMP::Info::PowerEthernet
@@ -349,5 +357,10 @@ See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::PortAccessEntity
 
 See documentation in L<SNMP::Info::PortAccessEntity/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
+
+See documentation in L<SNMP::Info::IEEE802dot3ad/"METHODS"> and
+L<SNMP::Info::IEEE802dot3ad/"TABLE METHODS"> for details.
 
 =cut

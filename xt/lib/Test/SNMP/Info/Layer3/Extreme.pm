@@ -1978,4 +1978,177 @@ sub i_vrf__voss_colon_community_red__red_ports : Tests(2) {
   is($info->error(), undef, q(No error));
 }
 
+sub _prime_lag {
+    my ( $test, %store ) = @_;
+
+    $test->{info}->clear_cache();
+    $test->{info}->cache(
+        {   ( map { ( '_' . $_ ) => 1 } keys %store ),
+            store => \%store,
+        }
+    );
+    return;
+}
+
+sub _prime_exos_mlag {
+    my $test = shift;
+
+    $test->_prime_lag(
+        ex_loadshare          => { '1001.1001' => 'active', '1001.1002' => 'active' },
+        ex_mlag_port_id       => { 1001 => 10 },
+        ex_mlag_port_peer     => { 1001 => 'peer1' },
+        ex_mlag_port_state    => { 1001 => 'active' },
+        ex_mlag_peer_ip       => { 'peer1' => pack( 'C4', 10, 0, 0, 2 ) },
+        ex_mlag_peer_status   => { 'peer1' => 'up' },
+        ex_mlag_peer_lacp_mac => { 'peer1' => pack( 'H*', '000496000001' ) },
+    );
+    return;
+}
+
+sub agg_ports : Tests(2) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'agg_ports' );
+    $test->_prime_exos_mlag();
+    cmp_deeply( $test->{info}->agg_ports(),
+        { 1002 => 1001 }, q(Loadshare member maps to master, master left out) );
+}
+
+sub agg_ports__voss_on_extreme__returns_empty : Tests(1) {
+    my $test = shift;
+
+    $test->_prime_lag( ex_loadshare => {} );
+    cmp_deeply( $test->{info}->agg_ports(),
+        {}, q(No loadshare rows gives an empty hash) );
+}
+
+sub lag_groups__exos_mlag_port__adds_mc : Tests(5) {
+    my $test = shift;
+
+    $test->_prime_exos_mlag();
+    my $record = $test->{info}->lag_groups()->{1001};
+    cmp_deeply( [ sort keys %{ $record->{members} } ],
+        [ 1001, 1002 ], q(Master and member are members of the aggregate) );
+    cmp_deeply(
+        $record->{mc},
+        {   kind   => 'mlag',
+            group  => 10,
+            domain => 'peer1',
+            state  => 'active',
+        },
+        q(MLAG port gives mc)
+    );
+    is( $record->{sources}{mc},
+        'EXTREME-MLAG-MIB::extremeMlagPortId', q(... and names its source) );
+    is( $record->{sources}{members},
+        'agg_ports', q(Members still come from agg_ports) );
+    is( $record->{lacp}, 0, q(No IEEE row: lacp 0) );
+}
+
+sub lag_groups__mlag_port_is_member__mc_on_aggregate : Tests(1) {
+    my $test = shift;
+
+    $test->_prime_exos_mlag();
+    $test->{info}{store}{ex_mlag_port_id} = { 1002 => 10 };
+    $test->{info}{store}{ex_mlag_port_peer} = { 1002 => 'peer1' };
+    $test->{info}{store}{ex_mlag_port_state} = { 1002 => 'active' };
+    is( $test->{info}->lag_groups()->{1001}{mc}{group},
+        10, q(MLAG port that is a member marks its aggregate) );
+}
+
+sub mlag_domains__peer_ip_served_as_text__text_accepted : Tests(3) {
+    my $test = shift;
+
+    $test->_prime_exos_mlag();
+    foreach my $text ( '192.0.2.2', '2001:db8::2' ) {
+        $test->{info}{store}{ex_mlag_peer_ip} = { 'peer1' => $text };
+        is( $test->{info}->mlag_domains()->{peer1}{peer},
+            $text, qq(Text address $text is reported) );
+    }
+    $test->{info}{store}{ex_mlag_peer_ip} = { 'peer1' => 'not an address' };
+    is( $test->{info}->mlag_domains()->{peer1}{peer},
+        undef, q(Text that is no address is not reported) );
+}
+
+sub lag_groups__mlag_port_alone__gets_own_record : Tests(7) {
+    my $test = shift;
+
+    $test->_prime_exos_mlag();
+    my $store = $test->{info}{store};
+    $store->{ex_loadshare}{'1005.1005'} = 'active';
+    $store->{ex_mlag_port_id}{$_}      = 20 for 1005, 1010;
+    $store->{ex_mlag_port_peer}{$_}    = 'peer1' for 1005, 1010;
+    $store->{ex_mlag_port_state}{$_}   = 'active' for 1005, 1010;
+    my $groups = $test->{info}->lag_groups();
+
+    foreach my $port ( 1005, 1010 ) {
+        cmp_deeply( [ keys %{ $groups->{$port}{members} } ],
+            [$port], qq(Port $port is the member of its own record) );
+        is( $groups->{$port}{mc}{group}, 20, q(... which keeps mc) );
+    }
+    is( $groups->{1010}{lacp}, 0, q(No IEEE identity: lacp 0) );
+    is( $groups->{1001}{mc}{group}, 10, q(Other records unchanged) );
+    ok( !exists $groups->{1002},
+        q(A load sharing member does not get a record) );
+}
+
+sub lag_groups__lone_master_without_attached_row__members_has_source
+    : Tests(2) {
+    my $test = shift;
+
+    $test->_prime_lag(
+        lag_actor_system => { 1005 => pack( 'H*', '001122334455' ) },
+        ex_loadshare     => { '1005.1005' => 'active' },
+    );
+    my $record = $test->{info}->lag_groups()->{1005};
+    cmp_deeply( [ keys %{ $record->{members} } ],
+        [1005], q(Lone master is its own member) );
+    is( $record->{sources}{members},
+        'EXTREME-PORT-MIB::extremePortLoadshare2Status',
+        q(... and the member names the loadshare table) );
+}
+
+sub lag_groups_complete__vendor_walk_incomplete__returns_0 : Tests(2) {
+    my $test = shift;
+
+    $test->_prime_exos_mlag();
+    is( $test->{info}->lag_groups_complete(), 1, q(Complete walks give 1) );
+    $test->{info}{walk_status}{ex_mlag_port_state} = { complete => 0 };
+    is( $test->{info}->lag_groups_complete(),
+        0, q(Incomplete EXOS MLAG walk gives 0) );
+}
+
+sub mlag_domains : Tests(2) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'mlag_domains' );
+    $test->_prime_exos_mlag();
+    cmp_deeply(
+        $test->{info}->mlag_domains(),
+        {   peer1 => {
+                kind       => 'mlag',
+                system_mac => '00:04:96:00:00:01',
+                peer       => '10.0.0.2',
+                status     => 'up',
+                sources    => {
+                    system_mac => 'EXTREME-MLAG-MIB::extremeMlagPeerOperLacpMac',
+                    peer       => 'EXTREME-MLAG-MIB::extremeMlagPeerIP',
+                    status =>
+                        'EXTREME-MLAG-MIB::extremeMlagPeerCheckPointStatus',
+                },
+            }
+        },
+        q(Peer table gives an mlag domain keyed by peer name)
+    );
+}
+
+sub mlag_domains__string_index__decodes_peer_name : Tests(1) {
+    my $test = shift;
+
+    $test->_prime_lag(
+        ex_mlag_peer_ip => { '5.112.101.101.114.49' => pack( 'C4', 10, 0, 0, 2 ) } );
+    cmp_deeply( [ keys %{ $test->{info}->mlag_domains() } ],
+        ['peer1'], q(Length-prefixed string index decodes to the name) );
+}
+
 1;

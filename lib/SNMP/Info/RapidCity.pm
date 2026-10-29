@@ -33,6 +33,7 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info;
+use SNMP::Info::IEEE802dot3ad ();
 
 @SNMP::Info::RapidCity::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::RapidCity::EXPORT_OK = qw//;
@@ -70,6 +71,19 @@ $VERSION = '3.983000';
 
     # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB
     'nn_rst_version' => 'nnRstDot1dStpVersion',
+
+    # From RAPID-CITY::rcMlt (IST)
+    'rc_ist_status' => 'rcMltIstSessionStatus',
+    'rc_ist_peer'   => 'rcMltIstPeerIp',
+    'rc_ist_vlan'   => 'rcMltIstVlanId',
+
+    # From RAPID-CITY::rcVirtualIst
+    'rc_vist_status' => 'rcVirtualIstSessionStatus',
+    'rc_vist_peer'   => 'rcVirtualIstPeerIp',
+    'rc_vist_vlan'   => 'rcVirtualIstVlanId',
+
+    # From RAPID-CITY::rcLacpGlobal
+    'rc_smlt_sys_id' => 'rcLacpGlobalSmltSysId',
 );
 
 %FUNCS = (
@@ -168,6 +182,8 @@ $VERSION = '3.983000';
     'rc_mlt_ports'    => 'rcMltPortMembers',
     'rc_mlt_index'    => 'rcMltIfIndex',
     'rc_mlt_dp'       => 'rcMltDesignatedPort',
+    'rc_mlt_type'     => 'rcMltMltType',
+    'rc_mlt_run_type' => 'rcMltRunningType',
 
     # From RAPID-CITY::rcBridgeSpbmMacTable
     'rc_spbm_fw_port'   => 'rcBridgeSpbmMacCPort',
@@ -244,6 +260,7 @@ $VERSION = '3.983000';
     'rc_vlan_members' => \&SNMP::Info::munge_port_list,
     'rc_vlan_no_join' => \&SNMP::Info::munge_port_list,
     'rc_mlt_ports'    => \&SNMP::Info::munge_port_list,
+    'rc_smlt_sys_id'  => \&SNMP::Info::munge_mac,
     'rc_stp_i_mac'       => \&SNMP::Info::munge_mac,
     'rc_stp_i_root'      => \&SNMP::Info::munge_prio_mac,
     'rc_stp_p_root'      => \&SNMP::Info::munge_prio_mac,
@@ -761,6 +778,111 @@ sub agg_ports {
     }
 
     return $ret;
+}
+
+sub _lag_vendor_walked {
+    return qw/rc_mlt_index rc_mlt_dp rc_mlt_type rc_mlt_run_type/;
+}
+
+# The standard table holds a row on the MLT's rcMltIfIndex and, on VOSS, a
+# row on each member port; agg_ports keys the MLT by its designated port
+sub _lag_aggregator_map {
+    my $rapidcity = shift;
+
+    my $map = SNMP::Info::IEEE802dot3ad::_lag_aggregator_map($rapidcity);
+    my $channels = $rapidcity->rc_mlt_index() || {};
+    my $dps      = $rapidcity->rc_mlt_dp()    || {};
+    foreach my $mlt_id ( keys %$channels ) {
+        my $ifindex = $channels->{$mlt_id} or next;
+        $map->{$ifindex} = $dps->{$mlt_id} if $dps->{$mlt_id};
+    }
+    return $map;
+}
+
+# A domain is served when its peer address is set; the scalars exist, with
+# a 0.0.0.0 peer, on a device that does not use the feature
+sub _lag_vendor_domains {
+    my $rapidcity = shift;
+
+    my %flavors = (
+        vist => [ 'rc_vist', 'rcVirtualIst' ],
+        ist  => [ 'rc_ist',  'rcMltIst' ],
+    );
+    my $system_mac = $rapidcity->rc_smlt_sys_id();
+    my $domains    = {};
+    foreach my $kind ( keys %flavors ) {
+        my ( $prefix, $leaf_prefix ) = @{ $flavors{$kind} };
+        my $peer = $rapidcity->${\"${prefix}_peer"}();
+        next unless defined $peer and $peer ne '0.0.0.0';
+        my $domain = { kind => $kind, peer => $peer, sources => {} };
+        $domain->{sources}{peer} = "RAPID-CITY::${leaf_prefix}PeerIp";
+        foreach my $field (qw/vlan status/) {
+            my $value = $rapidcity->${\"${prefix}_$field"}();
+            next unless defined $value;
+            $domain->{$field} = $value;
+            $domain->{sources}{$field}
+                = "RAPID-CITY::${leaf_prefix}"
+                . ( $field eq 'vlan' ? 'VlanId' : 'SessionStatus' );
+        }
+        if ( defined $system_mac ) {
+            $domain->{system_mac} = $system_mac;
+            $domain->{sources}{system_mac}
+                = 'RAPID-CITY::rcLacpGlobalSmltSysId';
+        }
+        $domains->{$kind} = $domain;
+    }
+    return $domains;
+}
+
+sub _lag_vendor_groups {
+    my ( $rapidcity, $groups ) = @_;
+
+    my $channels = $rapidcity->rc_mlt_index()    || {};
+    my $types    = $rapidcity->rc_mlt_type()     || {};
+    my $running  = $rapidcity->rc_mlt_run_type() || {};
+    my $dps      = $rapidcity->rc_mlt_dp()       || {};
+    my $domain   = $rapidcity->_smlt_domain_key();
+    foreach my $mlt_id ( keys %$channels ) {
+        my $ifindex = $channels->{$mlt_id} or next;
+        my $type = $types->{$mlt_id} or next;
+
+        # agg_ports keys the channel by its designated port when it has one
+        $ifindex = $dps->{$mlt_id} if $dps->{$mlt_id};
+        if ( $type eq 'splitMLT' and defined $domain ) {
+            my $record = _mlt_group_record( $groups, $ifindex );
+            $record->{mc} = {
+                kind   => 'smlt',
+                group  => $mlt_id,
+                domain => $domain,
+                state  => $running->{$mlt_id},
+            };
+            $record->{sources}{mc} = 'RAPID-CITY::rcMltMltType';
+        }
+        elsif ( $type eq 'istMLT' or $type eq 'virtualIstMLT' ) {
+            my $record = _mlt_group_record( $groups, $ifindex );
+            $record->{peer_link} = 1;
+            $record->{sources}{peer_link} = 'RAPID-CITY::rcMltMltType';
+        }
+    }
+    return;
+}
+
+# Split MLTs pair across the virtual IST when it is served, else the IST
+sub _smlt_domain_key {
+    my $rapidcity = shift;
+
+    my $domains = $rapidcity->_lag_vendor_domains();
+    return 'vist' if $domains->{vist};
+    return 'ist'  if $domains->{ist};
+    return;
+}
+
+# A channel the standard does not list still gets a record
+sub _mlt_group_record {
+    my ( $groups, $ifindex ) = @_;
+
+    return $groups->{$ifindex}
+        ||= SNMP::Info::IEEE802dot3ad::_lag_new_record();
 }
 
 # break up the rcBridgeSpbmMacEntry INDEX into ISID and MAC Address.
@@ -1405,6 +1527,34 @@ These are methods that return scalar values from SNMP
 Returns 1 when C<nnRstDot1dStpVersion> is C<stpCompatible(0)> and MSTP is not
 the forced version, else 0.
 
+=item $rapidcity->rc_ist_status()
+
+(C<rcMltIstSessionStatus>)
+
+=item $rapidcity->rc_ist_peer()
+
+(C<rcMltIstPeerIp>)
+
+=item $rapidcity->rc_ist_vlan()
+
+(C<rcMltIstVlanId>)
+
+=item $rapidcity->rc_vist_status()
+
+(C<rcVirtualIstSessionStatus>)
+
+=item $rapidcity->rc_vist_peer()
+
+(C<rcVirtualIstPeerIp>)
+
+=item $rapidcity->rc_vist_vlan()
+
+(C<rcVirtualIstVlanId>)
+
+=item $rapidcity->rc_smlt_sys_id()
+
+(C<rcLacpGlobalSmltSysId>)
+
 =item $rapidcity->hasRSTP()
 
 Returns 1 when C<nnRstDot1dStpVersion> is C<rstp(2)> and MSTP is not the
@@ -1486,6 +1636,14 @@ Returns a HASH reference mapping from slave to master port for each member of
 a port bundle (MLT) on the device. Keys are ifIndex of the slave ports,
 Values are ifIndex of the corresponding master ports.
 
+=item $rapidcity->rc_mlt_type()
+
+(C<rcMltMltType>)
+
+=item $rapidcity->rc_mlt_run_type()
+
+(C<rcMltRunningType>)
+
 =item $rapidcity->i_stp_state()
 
 Returns the mapping of (C<dot1dStpPortState>) to the interface
@@ -1521,6 +1679,72 @@ port.  Format is a hash reference with key = C<ifIndex>, value = [1|0].
 Reads C<nnMstCistPortOperEdgeStatus> under MSTP or
 C<nnRstDot1dStpPortOperEdgePort> under RSTP; otherwise, or when that table
 has no rows, C<dot1dStpPortOperEdgePort> through L<SNMP::Info::Bridge>.
+
+=back
+
+=head2 Link Aggregation
+
+Passport and Baystack devices report multi-chassis evidence through
+C<lag_groups()> and C<mlag_domains()>.  Nothing is reported for a feature
+the device does not serve.
+
+=over
+
+=item $rapidcity->mlag_domains()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by C<vist>
+(virtual IST) or C<ist>, the same as C<kind>.  A domain is reported when
+its peer address is set and not C<0.0.0.0>.  Its fields:
+
+=over
+
+=item *
+
+C<peer>: C<rcVirtualIstPeerIp> or C<rcMltIstPeerIp>.
+
+=item *
+
+C<vlan>: C<rcVirtualIstVlanId> or C<rcMltIstVlanId>.
+
+=item *
+
+C<status>: the session status, C<rcVirtualIstSessionStatus> or
+C<rcMltIstSessionStatus>.
+
+=item *
+
+C<system_mac>: C<rcLacpGlobalSmltSysId>, the same in both domains.
+
+=back
+
+=item $rapidcity->lag_groups()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with:
+
+=over
+
+=item *
+
+An MLT is keyed as C<agg_ports()> keys it: by C<rcMltDesignatedPort> when
+set, else by C<rcMltIfIndex>.
+
+=item *
+
+An MLT whose C<rcMltMltType> is C<splitMLT> gets C<mc> when a domain is
+served: C<kind> C<smlt>, C<group> the MLT id, C<domain> C<vist> when that
+domain is served, else C<ist>, and C<state> the running type
+(C<rcMltRunningType>).
+
+=item *
+
+An MLT of type C<istMLT> or C<virtualIstMLT> gets C<peer_link>.
+
+=item *
+
+In SPBM mode the virtual IST channel is a normal MLT, so the session is
+reported in C<mlag_domains()> only and no record has C<peer_link>.
+
+=back
 
 =back
 
