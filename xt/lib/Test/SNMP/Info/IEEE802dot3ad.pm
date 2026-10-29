@@ -311,6 +311,20 @@ sub lag_groups_complete__walk_incomplete__returns_0 : Tests(1) {
   is($test->{info}->lag_groups_complete(), 0, q(Incomplete walk gives 0));
 }
 
+sub lag_groups_complete__called_first__judges_walks_it_triggers : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache({'_lag_actor_system' => 1, 'store' => {}});
+  my $info = $test->{info};
+  no warnings 'redefine';
+  local *SNMP::Info::IEEE802dot3ad::lag_actor_system = sub {
+    $info->{walk_status}{lag_actor_system} = {complete => 0};
+    return {};
+  };
+  is($info->lag_groups_complete(), 0,
+    q(Walk made by lag_groups and found incomplete gives 0));
+}
+
 sub lag_groups_complete__walk_failed_before_first_row__returns_0 : Tests(1) {
   my $test = shift;
 

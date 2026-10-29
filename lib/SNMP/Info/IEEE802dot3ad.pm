@@ -134,13 +134,14 @@ sub mlag_domains {
 sub lag_groups_complete {
   my $self = shift;
 
+  my $groups  = $self->lag_groups();
+  my $domains = $self->mlag_domains();
+
   foreach my $method ( $self->_lag_walked_methods() ) {
     my $status = $self->walk_status($method) or next;
     return 0 unless $status->{complete};
   }
-  return
-    unless scalar keys %{ $self->lag_groups() }
-    or scalar keys %{ $self->mlag_domains() };
+  return unless scalar keys %$groups or scalar keys %$domains;
 
   return 1;
 }
