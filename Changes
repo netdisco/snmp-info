@@ -1,3 +1,10 @@
+Version 3.983001
+
+  [NEW FEATURES]
+
+  * #651 LAG: add LAG, MLAG and ESI-LAG standard and vendor MIB support; add
+    aggregate port support for EXOS and Juniper
+
 Version 3.983000 (2026-10-26)
 
   [NEW FEATURES]
