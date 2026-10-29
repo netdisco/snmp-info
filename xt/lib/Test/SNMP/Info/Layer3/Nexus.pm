@@ -169,4 +169,106 @@ sub stp_trees : Tests(7) {
     'Without mst-0 the CIST falls back to the default context');
 }
 
+# Shaped like the lab NX-OS recording: vPC domain 1, Po10 static
+sub _prime_vpc {
+  my ($test, %extra) = @_;
+
+  $test->{info}->clear_cache();
+  my %store = (
+    vpc_role           => {1 => 'primary'},
+    vpc_system_mac     => {1 => pack('H*', '002304eebe01')},
+    vpc_keepalive_peer => {1 => pack('C4', 10, 0, 0, 2)},
+    vpc_keepalive_stat => {1 => 'alive'},
+    vpc_peer_link      => {1 => 369098752},
+    vpc_host_link_if   => {'1.10' => 369098761, '1.20' => 369098771},
+    vpc_host_link_stat => {'1.10' => 'up',      '1.20' => 'downStar'},
+    pagpGroupIfIndex   => {369098500 => 369098761, 369098501 => 369098761},
+    %extra,
+  );
+  $test->{info}->cache({
+    (map { ('_' . $_) => 1 } keys %store),
+    '_layers' => 70,
+    store     => \%store,
+  });
+  return;
+}
+
+sub mlag_domains : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mlag_domains');
+  $test->_prime_vpc();
+  cmp_deeply(
+    $test->{info}->mlag_domains(),
+    {
+      1 => {
+        kind       => 'vpc',
+        system_mac => '00:23:04:ee:be:01',
+        role       => 'primary',
+        peer       => '10.0.0.2',
+        peer_link  => 369098752,
+        status     => 'alive',
+        sources    => {
+          system_mac => 'CISCO-VPC-MIB::cVpcSystemOperMacAddress',
+          role       => 'CISCO-VPC-MIB::cVpcRoleStatus',
+          peer       => 'CISCO-VPC-MIB::cVpcPeerKeepAliveDestAddr',
+          peer_link  => 'CISCO-VPC-MIB::cVpcStatusPeerLinkIfIndex',
+          status     => 'CISCO-VPC-MIB::cVpcPeerKeepAliveStatus',
+        },
+      }
+    },
+    'vPC domain 1 record'
+  );
+}
+
+sub lag_groups__vpc_host_link__adds_mc : Tests(3) {
+  my $test = shift;
+
+  $test->_prime_vpc();
+  my $groups = $test->{info}->lag_groups();
+  cmp_deeply(
+    $groups->{369098761}{mc},
+    {kind => 'vpc', group => 10, domain => 1, state => 'up'},
+    'Host link 10 gives mc'
+  );
+  is($groups->{369098761}{sources}{mc},
+    'CISCO-VPC-MIB::cVpcStatusHostLinkIfIndex', '... and names its source');
+  is($groups->{369098771}{mc}{state}, 'downStar',
+    'A host link with no members still gets a record');
+}
+
+sub lag_groups__vpc_peer_link__marked : Tests(2) {
+  my $test = shift;
+
+  $test->_prime_vpc();
+  my $groups = $test->{info}->lag_groups();
+  is($groups->{369098752}{peer_link}, 1, 'Peer link channel marked');
+  ok(!exists $groups->{369098761}{peer_link},
+    'A host link is not marked as the peer link');
+}
+
+sub lag_groups__static_vpc__record_without_lacp : Tests(3) {
+  my $test = shift;
+
+  $test->_prime_vpc();
+  my $record = $test->{info}->lag_groups()->{369098761};
+  is($record->{lacp}, 0, 'Static vPC channel: lacp 0');
+  is($record->{partner_system}, undef, '... with no partner');
+  is($record->{mc}{group}, 10, '... and mc set');
+}
+
+sub agg_ports__nexus__unchanged : Tests(2) {
+  my $test = shift;
+
+  $test->_prime_vpc();
+  my $expected = SNMP::Info::CiscoAgg::agg_ports($test->{info});
+  cmp_deeply($test->{info}->agg_ports(), $expected,
+    'agg_ports equals CiscoAgg agg_ports');
+  cmp_deeply(
+    $expected,
+    {369098500 => 369098761, 369098501 => 369098761},
+    '... and lists the static channel members'
+  );
+}
+
 1;
