@@ -272,6 +272,17 @@ sub stp_trees_complete : Tests(3) {
     is( $test->{info}->stp_trees_complete(), undef, q(No trees gives undef) );
 }
 
+sub stp_trees_complete__non_default_context__returns_0 : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _stp_rstp_cache() );
+    $test->{info}->session()->{Context} = 'vlan-10';
+    is( $test->{info}->stp_trees_complete(),
+        0, q(Trees cannot be judged from a context) );
+    $test->{info}->session()->{Context} = undef;
+    is( $test->{info}->stp_trees_complete(), 0, q(Default context: as before) );
+}
+
 sub stp_tree_ports : Tests(2) {
     my $test = shift;
 

@@ -342,6 +342,17 @@ sub stp_tree_ports : Tests(12) {
     is( $rows->{2}{enabled}, 0, 'RSTP: enabled from dot1dStpPortEnable' );
 }
 
+sub stp_trees_complete__mstp_instance_list_incomplete__returns_0 : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_stp_cache( 'mstp', $COMWARE7 );
+    is( $info->stp_trees_complete(), 1, 'MSTP: instance list complete' );
+    delete $info->{_stp_trees};
+    $test->incomplete_on_read( $info, 'h3c_stp_i_id' );
+    is( $info->stp_trees_complete(), 0, 'MSTP: instance list incomplete' );
+}
+
 sub stp_trees_complete : Tests(5) {
     my $test = shift;
     my $info = $test->{info};

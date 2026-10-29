@@ -587,6 +587,8 @@ See L<SNMP::Info::AdslLine/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::VRF/"Required MIBs"> for its MIB requirements.
 
+See L<SNMP::Info::IEEE802dot3ad/"Required MIBs"> for its MIB requirements.
+
 =head1 GLOBALS
 
 These are methods that return scalar value from SNMP
@@ -659,7 +661,7 @@ See L<SNMP::Info::EtherLike/"GLOBALS"> for details.
 
 See L<SNMP::Info::Entity/"GLOBALS"> for details.
 
-=head2 Global Methods imported from SNMP::Info:PowerEthernet
+=head2 Global Methods imported from SNMP::Info::PowerEthernet
 
 See L<SNMP::Info::PowerEthernet/"GLOBALS"> for details.
 

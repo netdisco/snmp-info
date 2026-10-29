@@ -1341,6 +1341,17 @@ sub stp_trees_complete__virtual_switch : Tests(1) {
   is($test->{info}->stp_trees_complete(), 1, 'Three names, three rows');
 }
 
+sub _jnx_vstp_served__walk_incomplete_when_read__returns_0 : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_stp_cache('vstp');
+  is($info->_jnx_vstp_served(), 1, 'Names walked complete: served');
+  $test->_stp_cache('vstp');
+  $test->incomplete_on_read($info, 'jnx_vacm_context_name');
+  is($info->_jnx_vstp_served(), 0, 'Names walk incomplete when read: 0');
+}
+
 sub stp_trees_complete__phantom_context : Tests(2) {
   my $test = shift;
   my $info = $test->{info};

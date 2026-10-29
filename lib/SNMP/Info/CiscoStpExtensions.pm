@@ -522,6 +522,10 @@ sub stp_trees_complete {
     my $stpx = shift;
 
     my $trees = $stpx->stp_trees() || {};
+    my @listing = ( $stpx->_stpx_protocol() || '' ) eq 'mstp'
+        ? qw/stpx_smst_vlans_mapped_1k2k stpx_smst_vlans_mapped_3k4k/
+        : qw/stpx_faststart_oper stpx_rstp_port_role stpx_pvst_vlan_enable/;
+    return 0 if $stpx->_stp_walk_incomplete(@listing);
     return keys %$trees ? 1 : 0;
 }
 
@@ -695,12 +699,12 @@ instances are served under every mode, so they are not the test.
 
 =item $stpx->context_kinds($feature)
 
-See L<SNMP::Info/"context_kinds">.  Returns C<['vlan']> for C<stp>: each
-VLAN's tree is served in that VLAN's context.
+See C<context_kinds()> in L<SNMP::Info>.  Returns C<['vlan']> for
+C<stp>: each VLAN's tree is served in that VLAN's context.
 
 =item $stpx->snmp_context($kind, $id)
 
-See L<SNMP::Info/"snmp_context">.  A C<vlan> context is reached as
+See C<snmp_context()> in L<SNMP::Info>.  A C<vlan> context is reached as
 the community suffix C<@N> under SNMPv2c and the context C<vlan-N> under
 SNMPv3.  No C<mst> context is served.
 
@@ -805,21 +809,92 @@ key = C<ifIndex>, value = [1|0]
 
 =head2 Spanning Tree Trees
 
-These override L<SNMP::Info::Bridge/"Spanning Tree Trees">; records are as
-described there.  The tree list, protocol, port roles and MST VLAN map are
-served in the default context; each tree's port states and designated
-bridge and port are served in BRIDGE-MIB in the tree's own context.  To
-switch contexts, see L<SNMP::Info/"SNMP Contexts">.
+These override L<SNMP::Info::Bridge/"Spanning Tree Trees">, where the
+records are described.  The tree list, the protocol, the port roles and
+the MST VLAN map are served in the default context.  Each tree's port
+states and designated bridges and ports are served in F<BRIDGE-MIB> in
+the tree's own context; to switch, see L<SNMP::Info/"SNMP Contexts">.
 
-Trees are keyed C<vlan.N> (one per VLAN under PVST+ and Rapid-PVST+, with
-C<vlan> the VLAN id), C<cist.0> and C<msti.N> under MST.  Each record's
-C<contexts> lists where to read its ports: VLAN 1's tree is the default
-context's; an MSTI is read through the context of any VLAN mapped to it,
-and every such VLAN is listed.  C<bridge> is undef: IOS serves a placeholder
-C<dot1dBaseBridgeAddress>, not the bridge address.  C<root> is set only
-where the default context serves it (C<vlan.1>, C<cist.0>); read
-C<stp_root()> in a tree's context for the others.  On IOS the CIST's trunk
-ports are served in no context, so C<cist.0> has C<ports_complete> 0.
+The tree records:
+
+=over
+
+=item Keys
+
+C<vlan.N> for each VLAN under PVST+ and Rapid-PVST+.  C<cist.0> and
+C<msti.N> under MST.
+
+=item C<vlan>
+
+The VLAN id, on C<vlan.N> trees.
+
+=item C<protocol>
+
+C<pvst>, C<rapid-pvst> or C<mstp>, from C<stpxSpanningTreeType>.
+
+=item C<measured>
+
+1 on IOS and IOS XE, and on NX-OS except under PVST+.  0 otherwise.
+
+=item C<ports_complete>
+
+0 for C<cist.0>, on every platform: IOS serves the CIST's trunk ports
+in no context.  1 for every other tree.
+
+=item C<contexts>
+
+=over
+
+=item *
+
+C<vlan.1>: the default context.
+
+=item *
+
+Another C<vlan.N>: VLAN N's context.
+
+=item *
+
+C<msti.N>: first the instance's own C<mst> context, where
+C<snmp_context('mst', N)> gives one (L<SNMP::Info::Layer3::Nexus>).
+Then the context of each VLAN mapped to the instance, VLAN 1 as the
+default context.  Where C<v_index()> lists VLANs, only those are used.
+
+=item *
+
+C<cist.0>: the instance's own C<mst> context where there is one, else
+the default context.
+
+=back
+
+=item C<bridge>
+
+Undef: IOS serves a placeholder C<dot1dBaseBridgeAddress>, not the bridge
+address.
+
+=item C<root>
+
+Only on C<vlan.1> and C<cist.0>, from C<dot1dStpDesignatedRoot> in the
+default context.  Undef on other trees: read C<stp_root()> in the tree's
+context.
+
+=back
+
+The port records:
+
+=over
+
+=item C<state>, C<enabled>, C<designated_bridge>, C<designated_port>
+
+From F<BRIDGE-MIB> in the context being read.
+
+=item C<role>, C<role_raw>
+
+From C<stpxRSTPPortRoleValue> where the context serves it, normalized by
+C<munge_stpx_port_role()>.  PVST+ serves no role, and some IOS images
+serve none in a VLAN context.
+
+=back
 
 =over
 
@@ -830,16 +905,20 @@ from C<stpxSpanningTreeType>, or nothing (including under MISTP).
 
 =item $stpx->stp_trees()
 
-Returns reference to hash of tree records.  Under PVST+ and Rapid-PVST+ the
-VLANs come from the index of (C<stpxFastStartOperModeTable>) and
-(C<stpxRSTPPortRoleTable>), or, where neither serves a row, from
-(C<stpxPVSTVlanEnable>), keeping only VLANs whose C<vtpVlanType> is
-C<ethernet> where VTP is served.  Under MST the instances come from
-(C<stpxSMSTInstanceTable>).
+Returns reference to hash of tree records: one per VLAN that runs
+spanning tree under PVST+ and Rapid-PVST+, one per MST instance under
+MST.
+
+(C<stpxFastStartOperModeTable>, C<stpxRSTPPortRoleTable> and, where
+neither serves a row, C<stpxPVSTVlanEnable> with C<vtpVlanType>;
+C<stpxSMSTInstanceTable> under MST)
 
 =item $stpx->stp_trees_complete()
 
-Returns 1 when trees were read, 0 otherwise.
+Returns 1 or 0, as L<SNMP::Info::Bridge/"Spanning Tree Trees">
+describes.  0 when no tree is listed, as when the device names no
+protocol this class reads, and when a walk of the tables that list the
+trees was incomplete.
 
 =item $stpx->stp_vlan_map()
 
@@ -851,20 +930,24 @@ Rapid-PVST+, where each VLAN is its own tree.
 =item $stpx->stp_tree_ports($tree_key)
 
 Returns reference to hash of port records keyed by ifIndex, read in the
-session's current context: states and designated bridge and port from
-BRIDGE-MIB, and C<role> (C<stpxRSTPPortRoleValue> normalized by
-C<munge_stpx_port_role()>, undef for a label it does not know) and
-C<role_raw> (as served) from
-(C<stpxRSTPPortRoleTable>) where the context serves it.  IOL-L2 serves no
-role in a VLAN context, and PVST+ serves no role anywhere.  Rows are
-labeled from C<$tree_key>, never from the context string.
+session's current context.  Rows are labeled from C<$tree_key>, never
+from the context.
 
-Call it in the default context for a tree whose C<contexts> include
-C<kind> C<none>, or in one of the tree's own contexts.  In the default
-context it refuses, with C<error()> naming the contexts, a tree that is
-read elsewhere; in another context it cannot check the key against the
-list, and rows read in a context the tree does not list describe another
-tree.
+=over
+
+=item *
+
+In the default context, pass a tree whose C<contexts> include the
+default context.  For any other tree it returns nothing, with
+C<error()> naming the tree's contexts.
+
+=item *
+
+In another context, it cannot check the key against the tree list.
+Pass a tree whose C<contexts> list this context: rows read in any other
+context describe another tree.
+
+=back
 
 =item $stpx->stpx_pvst_vlan_enable()
 

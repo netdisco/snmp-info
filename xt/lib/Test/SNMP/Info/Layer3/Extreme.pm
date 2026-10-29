@@ -566,6 +566,18 @@ sub stp_trees_complete : Tests(2) {
     is( $test->{info}->stp_trees_complete(), 0, q(No domain table read) );
 }
 
+sub stp_trees_complete__list_walk_incomplete__returns_0 : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->cache( _exos_mstp_cache() );
+    is( $info->stp_trees_complete(), 1, q(Domain list complete) );
+
+    delete $info->{_stp_trees};
+    $test->incomplete_on_read( $info, 'ex_stp_i_name' );
+    is( $info->stp_trees_complete(), 0, q(Domain list walk incomplete) );
+}
+
 sub stp_tree_ports : Tests(5) {
     my $test = shift;
 

@@ -411,6 +411,25 @@ sub stp_trees_complete : Tests(4) {
     $info->session()->{Context} = '';
 }
 
+sub stp_trees_complete__mstp_list_incomplete__returns_0 : Tests(1) {
+    my $test = shift;
+
+    $test->_stp_cache('mstp');
+    $test->incomplete_on_read( $test->{info}, 'nn_msti_priority' );
+    is( $test->{info}->stp_trees_complete(), 0, q(MSTI list walk incomplete) );
+}
+
+sub stp_trees_complete__rstp_port_walk_incomplete__ports_not_complete : Tests(2) {
+    my $test = shift;
+
+    $test->_stp_cache('rstp');
+    $test->incomplete_on_read( $test->{info}, 'nn_rst_p_state' );
+    is( $test->{info}->stp_trees_complete(),
+        1, q(RSTP: port walk does not list trees) );
+    is( $test->{info}->stp_trees()->{'cist.0'}{ports_complete},
+        0, q(RSTP port walk incomplete: ports not complete) );
+}
+
 sub stp_vlan_map : Tests(4) {
     my $test = shift;
     my $info = $test->{info};

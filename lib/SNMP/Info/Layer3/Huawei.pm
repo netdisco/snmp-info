@@ -711,7 +711,8 @@ Subclass for Huawei switches
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
 
-See L<SNMP::Info::IEEE802dot3ad> for its own MIB requirements.
+See L<SNMP::Info::IEEE802dot3ad/"Required MIBs"> for its own MIB
+requirements.
 
 =back
 
@@ -917,7 +918,8 @@ See documentation in L<SNMP::Info::Layer3> for details.
 
 =head2 Table Methods imported from SNMP::Info::IEEE802dot3ad
 
-See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
+See documentation in L<SNMP::Info::IEEE802dot3ad/"METHODS"> and
+L<SNMP::Info::IEEE802dot3ad/"TABLE METHODS"> for details.
 
 =head1 Data Munging Callback Subroutines
 
