@@ -278,6 +278,42 @@ sub i_edgeport_admin {
     return \%res;
 }
 
+sub i_edgeport_oper {
+    my $self    = shift;
+    my $partial = shift;
+
+    my $instance_of = $self->_stpx_edge_instance($partial) or return {};
+    my $bp_index    = $self->bp_index() || {};
+    my $oper        = $self->stpx_faststart_oper() || {};
+
+    my %res;
+    foreach my $bridge_port ( keys %$bp_index ) {
+        my $iid = $bp_index->{$bridge_port};
+        next unless defined $instance_of->{$iid};
+        my $mode = $oper->{ $instance_of->{$iid} . ".$bridge_port" };
+        next unless defined $mode;
+        $res{$iid} = 1 if $mode eq 'enabled' or $mode eq '1';
+        $res{$iid} = 0 if $mode eq 'disabled' or $mode eq 'network'
+            or $mode eq '2' or $mode eq '3';
+    }
+    return \%res;
+}
+
+# ifIndex => tree instance whose FastStart oper rows describe that port
+sub _stpx_edge_instance {
+    my $self    = shift;
+    my $partial = shift;
+
+    my $protocol = $self->_stpx_protocol() || '';
+    if ( $protocol eq 'pvst' or $protocol eq 'rapid-pvst' ) {
+        return $self->i_vlan($partial);
+    }
+    return unless $protocol eq 'mstp';
+
+    my $bp_index = $self->bp_index() || {};
+    return { map { $_ => 0 } values %$bp_index };
+}
+
 sub oct2str {
     my ($v) = @_;
     return sprintf('%s', unpack('H*', $v));
@@ -745,6 +781,18 @@ with no configured value is absent.  Format is a hash reference with
 key = C<ifIndex>, value = [1|0]
 
 (C<stpxFastStartPortEnable> and C<stpxFastStartPortMode>)
+
+=item $stpx->i_edgeport_oper()
+
+Returns 1 or 0 depending on whether the port is operating as an edge port
+(FastStart, aka PortFast).  Under PVST+ and Rapid-PVST+ the value is read
+from the tree of the port's native VLAN (the access VLAN on an access port,
+from C<i_vlan()>); a trunk whose native VLAN has no row, or a port with no
+C<i_vlan()> entry, is absent.  Under MST the value is read from instance 0.
+A port in C<network> mode returns 0.  Under any other protocol the result is
+empty.  Format is a hash reference with key = C<ifIndex>, value = [1|0]
+
+(C<stpxFastStartOperMode>)
 
 =back
 

@@ -557,6 +557,92 @@ sub i_edgeport_admin : Tests(1) {
     );
 }
 
+# wsc6503 shape: bridge port 1 is a trunk (VLANs 1, 10, 981), 129 an access
+# port in VLAN 10
+sub _edge_oper_cache {
+    my %arg = @_;
+    return {
+        '_stpx_stp_type'      => $arg{type} // 'pvstPlus',
+        '_bp_index'           => 1,
+        '_qb_i_vlan'          => 1,
+        '_stpx_faststart_oper' => 1,
+        'store'               => {
+            'bp_index'   => { 1 => 1001, 129 => 1129 },
+            'qb_i_vlan'  => $arg{pvid} // { 1 => 1, 129 => 10 },
+            'stpx_faststart_oper' => $arg{rows} // {
+                '1.1'    => 'disabled',
+                '10.1'   => 'disabled',
+                '981.1'  => 'disabled',
+                '10.129' => 'enabled',
+            },
+        },
+    };
+}
+
+sub i_edgeport_oper : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _edge_oper_cache() );
+    cmp_deeply( $test->{info}->i_edgeport_oper(),
+        { 1001 => 0, 1129 => 1 },
+        q(Trunk reads its native VLAN's tree, access port its VLAN's) );
+}
+
+sub i_edgeport_oper__native_vlan_has_no_row__absent : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        _edge_oper_cache( pvid => { 1 => 20, 129 => 10 } ) );
+    cmp_deeply( $test->{info}->i_edgeport_oper(), { 1129 => 1 },
+        q(No row in the native VLAN's tree: absent, not 0) );
+}
+
+sub i_edgeport_oper__numeric_tree_type__same_as_label : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _edge_oper_cache( type => 1 ) );
+    cmp_deeply( $test->{info}->i_edgeport_oper(),
+        { 1001 => 0, 1129 => 1 }, q(stpxSpanningTreeType 1 is pvstPlus) );
+}
+
+sub i_edgeport_oper__port_without_i_vlan__absent : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _edge_oper_cache( pvid => { 129 => 10 } ) );
+    cmp_deeply( $test->{info}->i_edgeport_oper(), { 1129 => 1 },
+        q(A port with no i_vlan entry is absent) );
+}
+
+sub i_edgeport_oper__mst__reads_instance_0 : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        _edge_oper_cache(
+            type => 'mst',
+            rows => { '0.129' => 'enabled', '10.129' => 'disabled' },
+        )
+    );
+    cmp_deeply( $test->{info}->i_edgeport_oper(), { 1129 => 1 },
+        q(MST reads instance 0 whatever the VLAN) );
+}
+
+sub i_edgeport_oper__network__returns_0 : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        _edge_oper_cache( rows => { '10.129' => 'network' } ) );
+    cmp_deeply( $test->{info}->i_edgeport_oper(), { 1129 => 0 },
+        q(network gives 0) );
+}
+
+sub i_edgeport_oper__mistp__returns_empty : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _edge_oper_cache( type => 'mistp' ) );
+    cmp_deeply( $test->{info}->i_edgeport_oper(), {},
+        q(MISTP: empty) );
+}
+
 sub i_faststart_enabled__network_mode__unchanged : Tests(1) {
     my $test = shift;
 
