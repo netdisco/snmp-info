@@ -124,6 +124,12 @@ $VERSION = '3.983000';
     'jnx_cist_p_port'   => 'jnxMIMstCistPortDesignatedPort',
     'jnx_cist_p_enable' => 'jnxMIMstCistForcePortState',
 
+    # JUNIPER-MIMSTP-MIB admin edge, indexed by bridge port
+    'jnx_cist_p_edge_admin' => 'jnxMIMstCistPortAdminEdgeStatus',
+
+    # JUNIPER-MIMSTP-MIB oper edge, indexed by bridge port
+    'jnx_cist_p_edge_oper' => 'jnxMIMstCistPortOperEdgeStatus',
+
     # JUNIPER-MIMSTP-MIB, indexed <bridge port>.<MSTI>
     'jnx_msti_p_state'  => 'jnxMIMstMstiPortState',
     'jnx_msti_p_role'   => 'jnxMIMstMstiCurrentPortRole',
@@ -820,6 +826,28 @@ sub peth_port_ifindex {
         }
     }
     return $peth_port_ifindex;
+}
+
+sub i_edgeport_admin {
+    my $juniper = shift;
+    my $partial = shift;
+
+    my $edge_admin = $juniper->jnx_cist_p_edge_admin() || {};
+    return $juniper->SUPER::i_edgeport_admin($partial)
+        unless keys %$edge_admin;
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $juniper, $edge_admin,
+        $partial );
+}
+
+sub i_edgeport_oper {
+    my $juniper = shift;
+    my $partial = shift;
+
+    my $edge_oper = $juniper->jnx_cist_p_edge_oper() || {};
+    return $juniper->SUPER::i_edgeport_oper($partial)
+        unless keys %$edge_oper;
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $juniper, $edge_oper,
+        $partial );
 }
 
 # The protocols the default context reports: 'mstp' when MST is started at
@@ -1584,6 +1612,20 @@ value = C<ifIndex>. As Juniper does not provide a mapping function,
 this does it manually.
 For example, ge-0/0/1 registers as PowerEthernet interface '1.2'
 
+=item $juniper->i_edgeport_admin()
+
+Returns 1 or 0 for each port by whether it is configured as an edge port.
+Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads
+C<jnxMIMstCistPortAdminEdgeStatus>, else C<dot1dStpPortAdminEdgePort>
+through L<SNMP::Info::Bridge>.
+
+=item $juniper->i_edgeport_oper()
+
+Returns 1 or 0 for each port by whether it currently operates as an edge
+port.  Format is a hash reference with key = C<ifIndex>, value = [1|0].
+Reads C<jnxMIMstCistPortOperEdgeStatus>, else C<dot1dStpPortOperEdgePort>
+through L<SNMP::Info::Bridge>.
+
 =item $juniper->jnx_vacm_context_name()
 
 (C<vacmContextName>)
@@ -1656,6 +1698,14 @@ C<bgpIpVpn>.
 =item $juniper->jnx_cist_p_enable()
 
 (C<jnxMIMstCistForcePortState>)
+
+=item $juniper->jnx_cist_p_edge_admin()
+
+(C<jnxMIMstCistPortAdminEdgeStatus>)
+
+=item $juniper->jnx_cist_p_edge_oper()
+
+(C<jnxMIMstCistPortOperEdgeStatus>)
 
 =item $juniper->jnx_msti_p_state()
 

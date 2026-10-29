@@ -30,6 +30,7 @@
 package Test::SNMP::Info::Layer3::Juniper;
 
 use Test::Class::Most parent => 'My::Test::Class';
+use B ();
 
 use SNMP::Info::Layer3::Juniper;
 
@@ -2599,6 +2600,149 @@ sub vrf_instances__mpls_rows__default_listed_by_mpls : Tests(1) {
 
   is($info->vrf_instances()->{default}{sources}{list}, 'MPLS-L3VPN-STD-MIB',
     'MPLS-L3VPN-STD-MIB served rows, so it lists default before vacm');
+}
+
+sub _edgeport_cache {
+  my ($test, %store) = @_;
+  $test->{info}->clear_cache();
+  $test->{info}
+    ->cache({(map { ("_$_" => 1) } keys %store), store => \%store});
+  return;
+}
+
+# ex4300-shaped: CIST rows at bridge ports 4, 491 and 492
+sub i_edgeport_admin : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_admin => {4 => 'false', 491 => 'true', 492 => 'true'},
+    is_edgeport_admin     => {4 => 'true'},
+    bp_index              => {4 => 662, 491 => 509, 492 => 510},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_admin(),
+    {662 => 0, 509 => 1, 510 => 1},
+    q(jnxMIMstCistPortAdminEdgeStatus maps bridge port to ifIndex)
+  );
+}
+
+sub i_edgeport_admin__cist_numeric__maps_1_and_2 : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_admin => {4 => 2, 491 => 1},
+    bp_index              => {4 => 662, 491 => 509},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_admin(),
+    {662 => 0, 509 => 1},
+    q(TruthValue true(1) and false(2) read as 1 and 0)
+  );
+}
+
+sub i_edgeport_admin__cist_empty__falls_back_to_rstp_mib : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_admin => {},
+    is_edgeport_admin     => {1 => 'false', 2 => 'true'},
+    bp_index              => {1 => 521, 2 => 522},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_admin(),
+    {521 => 0, 522 => 1},
+    q(dot1dStpPortAdminEdgePort when the CIST table has no rows)
+  );
+}
+
+sub i_edgeport_admin__port_absent_from_bp_index__skipped : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_admin => {4 => 'true', 9 => 'true'},
+    bp_index              => {4 => 662},
+  );
+  cmp_deeply($test->{info}->i_edgeport_admin(),
+    {662 => 1}, q(Bridge port without a bp_index row is skipped));
+}
+
+sub i_edgeport_admin__juniper_class__resolves_to_juniper : Tests(1) {
+  my $test = shift;
+
+  is(
+    B::svref_2object($test->{info}->can('i_edgeport_admin'))
+      ->STASH->NAME,
+    'SNMP::Info::Layer3::Juniper',
+    q(Juniper resolves i_edgeport_admin to its own override)
+  );
+}
+
+
+sub i_edgeport_oper : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_oper => {4 => 'false', 491 => 'true', 492 => 'true'},
+    is_edgeport_oper     => {4 => 'true'},
+    bp_index             => {4 => 662, 491 => 509, 492 => 510},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {662 => 0, 509 => 1, 510 => 1},
+    q(jnxMIMstCistPortOperEdgeStatus maps bridge port to ifIndex)
+  );
+}
+
+sub i_edgeport_oper__cist_numeric__maps_1_and_2 : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_oper => {4 => 2, 491 => 1},
+    bp_index             => {4 => 662, 491 => 509},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {662 => 0, 509 => 1},
+    q(TruthValue true(1) and false(2) read as 1 and 0)
+  );
+}
+
+sub i_edgeport_oper__cist_empty__falls_back_to_rstp_mib : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_oper => {},
+    is_edgeport_oper     => {1 => 'false', 2 => 'true'},
+    bp_index             => {1 => 521, 2 => 522},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_oper(),
+    {521 => 0, 522 => 1},
+    q(dot1dStpPortOperEdgePort when the CIST table has no rows)
+  );
+}
+
+sub i_edgeport_oper__admin_rows_only__not_reported : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(
+    jnx_cist_p_edge_admin => {4 => 'true'},
+    is_edgeport_admin     => {4 => 'true'},
+    bp_index              => {4 => 662},
+  );
+  cmp_deeply($test->{info}->i_edgeport_oper(),
+    {}, q(Administrative rows never stand in for operational ones));
+}
+
+sub i_edgeport_oper__juniper_class__resolves_to_juniper : Tests(1) {
+  my $test = shift;
+
+  is(
+    B::svref_2object($test->{info}->can('i_edgeport_oper'))
+      ->STASH->NAME,
+    'SNMP::Info::Layer3::Juniper',
+    q(Juniper resolves i_edgeport_oper to its own override)
+  );
 }
 
 1;

@@ -30,6 +30,7 @@
 package Test::SNMP::Info::Layer3::Huawei;
 
 use Test::Class::Most parent => 'My::Test::Class';
+use B ();
 
 use SNMP::Info::Layer3::Huawei;
 
@@ -628,6 +629,238 @@ sub munge_hw_peth_status : Tests(6) {
 
   is(SNMP::Info::Layer3::Huawei::munge_hw_peth_status('huh'),
     'huh', q(... anything else not munged));
+}
+
+my $VRP5_DESCR = "Huawei Versatile Routing Platform Software\r\n"
+  . " VRP (R) software,Version 5.170 (S5700 V200R010C00SPC600)";
+my $VRP8_DESCR = "Huawei Versatile Routing Platform Software\r\n"
+  . "VRP (R) software, Version 8.160 (CE6810EI V200R003C00SPC810)";
+
+# Rows are <instance>.<port>.  The description is VRP 5 unless given, where
+# hwL2IfPortIfIndex maps bridge ports 26, 27 and 28 to ifIndex 30, 31, 32
+sub _edgeport_cache {
+  my ($test, $default, %store) = @_;
+  $test->{info}->clear_cache();
+  my $descr = exists $store{description} ? delete $store{description}
+    : $VRP5_DESCR;
+  my $id = exists $store{id} ? delete $store{id}
+    : '.1.3.6.1.4.1.2011.2.239.12';
+  $store{hw_l2if_port_idx} ||= {26 => 30, 27 => 31, 28 => 32};
+  my %cache = ((map { ("_$_" => 1) } keys %store), store => \%store);
+  $cache{_description}          = $descr   if defined $descr;
+  $cache{_id}                   = $id      if defined $id;
+  $cache{_hw_mstp_edge_default} = $default if defined $default;
+  $test->{info}->cache(\%cache);
+  return;
+}
+
+sub i_edgeport_admin : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('disabled',
+    hw_mstp_p_edge    => {'0.26' => 'enable', '0.27' => 'disable'},
+    is_edgeport_admin => {26 => 'false'},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_admin(),
+    {30 => 1, 31 => 0},
+    q(hwMstpiStpPortEdgeport enable and disable map to 1 and 0)
+  );
+}
+
+sub i_edgeport_admin__numeric_values__read_as_the_enum : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(2,
+    hw_mstp_p_edge => {'0.26' => 2, '0.27' => 1, '0.28' => 3},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_admin(),
+    {30 => 1, 31 => 0, 32 => 0},
+    q(enable(2), disable(1), and undo(3) with default disabled(2))
+  );
+}
+
+sub i_edgeport_admin__undo_with_default_disabled__returns_0 : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('disabled',
+    hw_mstp_p_edge => {'0.26' => 'undo', '0.27' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_edgeport_admin(),
+    {30 => 0, 31 => 1}, q(undo follows hwMstpEdgedPortDefault disabled));
+}
+
+sub i_edgeport_admin__undo_with_default_enabled__returns_1 : Tests(2) {
+  my $test = shift;
+
+  $test->_edgeport_cache('enabled',
+    hw_mstp_p_edge => {'0.26' => 'undo', '0.27' => 'disable'},
+  );
+  cmp_deeply($test->{info}->i_edgeport_admin(),
+    {30 => 1, 31 => 0}, q(undo follows hwMstpEdgedPortDefault enabled));
+
+  $test->_edgeport_cache(1, hw_mstp_p_edge => {'0.26' => 3});
+  cmp_deeply($test->{info}->i_edgeport_admin(),
+    {30 => 1}, q(undo(3) follows hwMstpEdgedPortDefault enabled(1)));
+}
+
+sub i_edgeport_admin__undo_without_default__absent : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache(undef,
+    hw_mstp_p_edge => {'0.26' => 'undo', '0.27' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_edgeport_admin(),
+    {31 => 1}, q(undo with no default served is absent));
+}
+
+sub i_edgeport_admin__instance_1_row__ignored : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('disabled',
+    hw_mstp_p_edge =>
+      {'0.26' => 'disable', '1.26' => 'enable', '1.27' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_edgeport_admin(),
+    {30 => 0}, q(Only instance 0, the CIST, is read));
+}
+
+sub i_edgeport_admin__port_absent_from_bp_index__skipped : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('disabled',
+    hw_mstp_p_edge => {'0.26' => 'enable', '0.99' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_edgeport_admin(),
+    {30 => 1}, q(Bridge port without a bp_index row is skipped));
+}
+
+sub i_edgeport_admin__no_mstp_rows__falls_back_to_rstp_mib : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('disabled',
+    hw_mstp_p_edge    => {},
+    is_edgeport_admin => {26 => 'true', 27 => 'false'},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_admin(),
+    {30 => 1, 31 => 0},
+    q(dot1dStpPortAdminEdgePort when HUAWEI-MSTP-MIB has no rows)
+  );
+}
+
+sub i_edgeport_admin__only_nonzero_instances__falls_back_to_rstp_mib :
+  Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('disabled',
+    hw_mstp_p_edge    => {'1.26' => 'enable', '2.27' => 'enable'},
+    is_edgeport_admin => {26 => 'false', 27 => 'true'},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_admin(),
+    {30 => 0, 31 => 1},
+    q(No instance 0 rows: dot1dStpPortAdminEdgePort)
+  );
+}
+
+sub i_edgeport_admin__vrp8__keys_read_as_ifindex : Tests(1) {
+  my $test = shift;
+
+  # CloudEngine shape: ifIndex 5 and 6 are bridge ports 1 and 2, and
+  # bridge port 5 is ifIndex 9, so a bridge port reading would misplace 5
+  $test->_edgeport_cache('disabled',
+    description      => $VRP8_DESCR,
+    i_index          => {5 => 5, 6 => 6, 9 => 9, 176 => 176},
+    hw_l2if_port_idx => {1 => 5, 2 => 6, 5 => 9},
+    hw_mstp_p_edge =>
+      {'0.5' => 'enable', '0.6' => 'disable', '0.176' => 'enable'},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_admin(),
+    {5 => 1, 6 => 0, 176 => 1},
+    q(VRP 8 hwMstpiPortIndex is an ifIndex, Eth-Trunk included)
+  );
+}
+
+sub i_edgeport_admin__vrp8_key_not_an_interface__skipped : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('disabled',
+    description    => $VRP8_DESCR,
+    i_index        => {5 => 5},
+    hw_mstp_p_edge => {'0.5' => 'enable', '0.99' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_edgeport_admin(),
+    {5 => 1}, q(VRP 8 key with no interface table row is skipped));
+}
+
+sub i_edgeport_admin__vrp8_not_cloudengine__returns_empty : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('disabled',
+    description    => $VRP8_DESCR,
+    id             => '.1.3.6.1.4.1.2011.2.23.1',
+    i_index        => {5 => 5},
+    hw_mstp_p_edge => {'0.5' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_edgeport_admin(),
+    {}, q(VRP 8 outside CloudEngine has no known index form));
+}
+
+sub i_edgeport_admin__vrp5__keys_mapped_through_bp_index : Tests(1) {
+  my $test = shift;
+
+  # S5700 shape: bridge ports 1 and 2 are ifIndex 6 and 7, and 1 is also
+  # an ifIndex, so an ifIndex reading would misplace it
+  $test->_edgeport_cache('disabled',
+    i_index          => {1 => 1, 6 => 6, 7 => 7},
+    hw_l2if_port_idx => {1 => 6, 2 => 7},
+    hw_mstp_p_edge   => {'0.1' => 'enable', '0.2' => 'disable'},
+  );
+  cmp_deeply(
+    $test->{info}->i_edgeport_admin(),
+    {6 => 1, 7 => 0},
+    q(VRP 5 hwMstpiPortIndex is a bridge port)
+  );
+}
+
+sub i_edgeport_admin__vrp_version_unknown__returns_empty : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('disabled',
+    description       => 'Huawei Versatile Routing Platform Software',
+    i_index           => {30 => 30},
+    hw_mstp_p_edge    => {'0.26' => 'enable'},
+    is_edgeport_admin => {26 => 'true'},
+  );
+  cmp_deeply($test->{info}->i_edgeport_admin(),
+    {}, q(No VRP version: index form unknown, no RSTP-MIB fallback));
+}
+
+sub i_edgeport_admin__yunshan_os__returns_empty : Tests(1) {
+  my $test = shift;
+
+  $test->_edgeport_cache('disabled',
+    description =>
+      "Huawei YunShan OS\nVersion 1.23.1.1 (S5700 V600R023C10SPC500)\n",
+    i_index        => {26 => 26, 30 => 30},
+    hw_mstp_p_edge => {'0.26' => 'enable'},
+  );
+  cmp_deeply($test->{info}->i_edgeport_admin(),
+    {}, q(YunShan OS Version 1 is not a VRP version: absent));
+}
+
+sub i_edgeport_admin__huawei_class__resolves_to_huawei : Tests(1) {
+  my $test = shift;
+
+  is(
+    B::svref_2object($test->{info}->can('i_edgeport_admin'))
+      ->STASH->NAME,
+    'SNMP::Info::Layer3::Huawei',
+    q(Huawei resolves i_edgeport_admin to its own override)
+  );
 }
 
 1;
