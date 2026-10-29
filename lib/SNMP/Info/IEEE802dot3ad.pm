@@ -170,17 +170,23 @@ sub _lag_walked_methods {
   );
 }
 
-# Hashref: record key => the lowest aggregator row index that maps onto it
+# Hashref: record key => the aggregator row that supplies its identity.
+# A row indexed by a port attached to a different aggregator is that port's
+# idle aggregator, so it loses to any other row mapped onto the same key.
 sub _lag_identity_rows {
   my ( $self, $map ) = @_;
 
-  my $rows = $self->lag_actor_system() || {};
-  my %lowest_row;
+  my $rows     = $self->lag_actor_system() || {};
+  my $attached = $self->lag_port_attached() || {};
+  my ( %preferred_row, %lowest_row );
   foreach my $row ( sort { $a <=> $b } keys %$rows ) {
     my $key = defined $map->{$row} ? $map->{$row} : $row;
     $lowest_row{$key} = $row unless exists $lowest_row{$key};
+    my $target = $attached->{$row};
+    next if $target and $target != $row;
+    $preferred_row{$key} = $row unless exists $preferred_row{$key};
   }
-  return \%lowest_row;
+  return { %lowest_row, %preferred_row };
 }
 
 # A member port's own row, when the port is attached to another aggregate
@@ -373,7 +379,9 @@ ifIndex of the corresponding master ports.
 =item C<lag_groups>
 
 Returns a HASH reference with one record per aggregate, keyed by the
-aggregate's ifIndex. Each record has these fields:
+aggregate's ifIndex. When several F<IEEE8023-LAG-MIB> rows describe one
+aggregate, the identity comes from the lowest row that is not a port
+attached to a different aggregator. Each record has these fields:
 
 =over 4
 

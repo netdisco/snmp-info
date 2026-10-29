@@ -618,13 +618,14 @@ sub lag_groups__designated_port__mc_and_peer_link_on_agg_ports_key : Tests(5) {
 # VOSS 8.8 in SPBM mode: the standard table has a row on each member port
 # and on each MLT's ifIndex; rcMltDesignatedPort names the member port.
 sub lag_groups__voss_designated_port__identity_meets_agg_ports_key
-  : Tests(8) {
+  : Tests(12) {
   my $test = shift;
 
   $test->_prime_mlt('vist');
   my $info  = $test->{info};
   my $actor = pack('H*', '0200cb120350');
   my $zeros = pack('H*', '000000000000');
+  my $partner = pack('H*', '005100acc000');
   my %ports = (1 => [192, 193], 10 => [194], 20 => [195]);
   my %store = %{$info->{store}};
   $store{rc_mlt_index} = {1 => 6144, 10 => 6153, 20 => 6163};
@@ -639,10 +640,11 @@ sub lag_groups__voss_designated_port__identity_meets_agg_ports_key
   $store{lag_actor_system}
     = {map { $_ => $actor } 194, 195, 6153, 6163};
   $store{lag_partner_system}
-    = {map { $_ => $zeros } 194, 195, 6153, 6163};
+    = {194 => $zeros, 195 => $zeros, 6153 => $partner, 6163 => $partner};
+  $store{lag_partner_key} = {194 => 0, 195 => 0, 6153 => 10, 6163 => 20};
   $store{lag_port_attached} = {194 => 6153, 195 => 6163};
   $info->cache({store => \%store, _rc_mlt_dp => 1, _rc_mlt_type => 1,
-    _lag_actor_system => 1, _lag_partner_system => 1,
+    _lag_actor_system => 1, _lag_partner_system => 1, _lag_partner_key => 1,
     _lag_port_attached => 1});
   my $groups = $info->lag_groups();
 
@@ -656,6 +658,11 @@ sub lag_groups__voss_designated_port__identity_meets_agg_ports_key
     'SMLT 10 carries the identity of its standard rows');
   cmp_deeply([keys %{$groups->{194}{members}}], [194], '... and its member');
   is($groups->{194}{mc}{group}, 10, '... and mc');
+  is($groups->{194}{partner_system}, '00:51:00:ac:c0:00',
+    '... and the partner of the MLT aggregator row');
+  is($groups->{194}{lacp}, 1, '... lacp 1');
+  is($groups->{195}{partner_key}, 20, 'SMLT 20 carries its partner key');
+  is($groups->{195}{lacp}, 1, '... lacp 1');
   is($groups->{195}{mc}{group}, 20, 'SMLT 20 has mc on its own key');
 }
 

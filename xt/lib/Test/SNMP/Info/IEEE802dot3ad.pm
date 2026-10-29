@@ -178,6 +178,37 @@ sub lag_groups__aggregator_map__rows_merge_onto_mapped_key : Tests(4) {
     q(Attached ports follow the map));
 }
 
+sub lag_groups__merged_rows__identity_from_aggregator_not_idle_port_row
+  : Tests(4) {
+  my $test = shift;
+
+  my $zeros = pack('H*', '000000000000');
+  my $real  = pack('H*', '005100acc000');
+  $test->{info}->cache({
+    '_lag_actor_system'    => 1,
+    '_lag_partner_system'  => 1,
+    '_lag_partner_key'     => 1,
+    '_lag_port_attached'   => 1,
+    'store'                => {
+      'lag_actor_system'   => {194 => $ACTOR, 6153 => $ACTOR_2},
+      'lag_partner_system' => {194 => $zeros, 6153 => $real},
+      'lag_partner_key'    => {194 => 0,      6153 => 10},
+      'lag_port_attached'  => {194 => 6153},
+    },
+  });
+  no warnings 'redefine';
+  local *SNMP::Info::IEEE802dot3ad::_lag_aggregator_map
+    = sub { {194 => 194, 6153 => 194} };
+  my $record = $test->{info}->lag_groups()->{194};
+
+  is($record->{partner_system}, '00:51:00:ac:c0:00',
+    q(Partner comes from the aggregator row, not the idle port row));
+  is($record->{partner_key}, 10, q(Partner key from the same row));
+  is($record->{lacp}, 1, q(lacp 1));
+  is($record->{actor_system}, '44:38:39:ff:00:02',
+    q(Actor identity from the same row));
+}
+
 sub lag_groups__static_lag_no_ieee_row__record_from_agg_ports : Tests(3) {
   my $test = shift;
 
