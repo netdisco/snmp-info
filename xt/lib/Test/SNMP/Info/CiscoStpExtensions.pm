@@ -275,6 +275,51 @@ sub stp_trees_complete : Tests(2) {
     is( $test->{info}->stp_trees_complete(), 0, q(No indicator: unread) );
 }
 
+sub stp_trees_complete__pvst_list_incomplete__returns_0 : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->cache( _iol_pvst_cache('rapidPvstPlus') );
+    $test->incomplete_on_read( $info, 'stpx_rstp_port_role' );
+    is( $info->stp_trees_complete(), 0, q(PVST VLAN list walk incomplete) );
+}
+
+sub stp_trees_complete__mst_list_incomplete__returns_0 : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->cache( _iol_mst_cache() );
+    $test->incomplete_on_read( $info, 'stpx_smst_vlans_mapped_3k4k' );
+    is( $info->stp_trees_complete(), 0, q(MST instance list incomplete) );
+
+    delete $info->{walk_status};
+    $info->{walk_status}{stpx_smst_vlans_mapped_3k4k}
+        = { complete => 1, reason => 'absent' };
+    is( $info->stp_trees_complete(), 1, q(Absent list walk is complete) );
+}
+
+sub stp_trees_complete__mst_port_walk_incomplete__returns_1 : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->cache( _iol_mst_cache() );
+    $test->incomplete_on_read( $info, 'stpx_faststart_oper',
+        'stpx_rstp_port_role' );
+    $info->stpx_faststart_oper();
+    $info->stpx_rstp_port_role();
+    is( $info->stp_trees_complete(),
+        1, q(MST: per-port walks do not list trees) );
+    is( $info->walk_status('stpx_faststart_oper')->{complete},
+        0, q(Port walk recorded incomplete) );
+}
+
+sub stp_trees_complete__mst_list_complete__returns_1 : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _iol_mst_cache() );
+    is( $test->{info}->stp_trees_complete(), 1, q(MST: list walks complete) );
+}
+
 sub stp_protocols : Tests(4) {
     my $test = shift;
     my $info = $test->{info};

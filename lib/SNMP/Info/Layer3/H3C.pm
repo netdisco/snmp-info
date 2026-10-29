@@ -425,6 +425,9 @@ sub stp_trees_complete {
     my $h3c = shift;
 
     my $trees = $h3c->stp_trees() || {};
+    return 0
+        if ( $h3c->_h3c_stp_protocol() || '' ) eq 'mstp'
+        and $h3c->_stp_walk_incomplete('h3c_stp_i_id');
     return keys %$trees ? 1 : 0;
 }
 

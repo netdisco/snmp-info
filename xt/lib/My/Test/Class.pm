@@ -59,6 +59,27 @@ sub startup : Tests( startup => 1 ) {
   return;
 }
 
+# Walk statuses are written by the walk, so a primed cache never sets them.
+# This rebless $info into a subclass whose named columns record an incomplete
+# walk when read, as a real timeout would, and return the cached rows.
+my $incomplete_on_read_count = 0;
+
+sub incomplete_on_read {
+  my ($test, $info, @methods) = @_;
+
+  my $subclass = ref($info) . '::IncompleteOnRead' . $incomplete_on_read_count++;
+  no strict 'refs';
+  @{"${subclass}::ISA"} = (ref $info);
+  foreach my $method (@methods) {
+    *{"${subclass}::$method"} = sub {
+      my $self = shift;
+      $self->{walk_status}{$method} = {complete => 0, reason => 'timeout'};
+      return $self->{store}{$method};
+    };
+  }
+  return bless $info, $subclass;
+}
+
 sub shutdown : Tests(shutdown) { }
 
 sub setup : Tests(setup) {

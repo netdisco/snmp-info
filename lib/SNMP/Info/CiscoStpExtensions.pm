@@ -522,6 +522,10 @@ sub stp_trees_complete {
     my $stpx = shift;
 
     my $trees = $stpx->stp_trees() || {};
+    my @listing = ( $stpx->_stpx_protocol() || '' ) eq 'mstp'
+        ? qw/stpx_smst_vlans_mapped_1k2k stpx_smst_vlans_mapped_3k4k/
+        : qw/stpx_faststart_oper stpx_rstp_port_role stpx_pvst_vlan_enable/;
+    return 0 if $stpx->_stp_walk_incomplete(@listing);
     return keys %$trees ? 1 : 0;
 }
 

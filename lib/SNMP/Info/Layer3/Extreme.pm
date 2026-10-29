@@ -1342,6 +1342,7 @@ sub stp_trees_complete {
     my $extreme = shift;
 
     my $trees = $extreme->stp_trees() || {};
+    return 0 if $extreme->_stp_walk_incomplete('ex_stp_i_name');
     return keys %$trees ? 1 : 0;
 }
 

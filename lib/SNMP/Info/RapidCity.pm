@@ -1240,6 +1240,7 @@ sub _rc_rstp_trees {
     my $bp_index = $rapidcity->bp_index() || {};
     my $complete = keys %$states ? 1 : 0;
     $complete = 0 if grep { !defined $bp_index->{$_} } keys %$states;
+    $complete = 0 if $rapidcity->_stp_walk_incomplete('nn_rst_p_state');
 
     my $priority = ( $rapidcity->rc_stp_i_priority() || {} )->{1};
     my $mac      = ( $rapidcity->rc_stp_i_mac()      || {} )->{1};
@@ -1376,6 +1377,7 @@ sub stp_trees_complete {
 
     return 0 unless defined $rapidcity->_rc_stp_protocol();
     my $trees = $rapidcity->stp_trees() || {};
+    return 0 if $rapidcity->_stp_walk_incomplete('nn_msti_priority');
     return keys %$trees ? 1 : 0;
 }
 

@@ -529,11 +529,23 @@ sub stp_trees_complete {
     return 0 unless $bridge->_stp_default_is_common();
 
     my $trees = $bridge->stp_trees() || {};
+    return 0 if length $bridge->_walk_context();
     return unless keys %$trees;
     return 0;
 }
 
 sub _stp_default_is_common { return 1; }
+
+# walk_status is set by the walk, so call this after reading the columns
+sub _stp_walk_incomplete {
+    my ( $bridge, @methods ) = @_;
+
+    foreach my $method (@methods) {
+        my $status = $bridge->walk_status($method);
+        return 1 if $status and !$status->{complete};
+    }
+    return 0;
+}
 
 sub _stp_own_bridge_id {
     my $bridge = shift;

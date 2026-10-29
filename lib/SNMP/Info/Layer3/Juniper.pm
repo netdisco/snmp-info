@@ -1156,8 +1156,9 @@ sub _jnx_vstp_contexts {
 sub _jnx_vstp_served {
     my $juniper = shift;
 
+    my $names = $juniper->jnx_vacm_context_name() || {};
     return 0 if $juniper->_jnx_walk_incomplete('jnx_vacm_context_name');
-    return keys %{ $juniper->jnx_vacm_context_name() || {} } ? 1 : 0;
+    return keys %$names ? 1 : 0;
 }
 
 sub _jnx_vstp_trees {
