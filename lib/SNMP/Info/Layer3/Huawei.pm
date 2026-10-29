@@ -56,9 +56,15 @@ $VERSION = '3.983000';
     'HUAWEI-POE-MIB'           => 'hwPoePower',
     'HUAWEI-SYS-MAN-MIB'       => 'hwPatchVersion',
     'HUAWEI-ENTITY-EXTENT-MIB' => 'hwEntityFanState',
+    'HUAWEI-MSTP-MIB'          => 'hwMstpiStpPortEdgeport',
 );
 
-%GLOBALS = ( %SNMP::Info::Layer3::GLOBALS, );
+%GLOBALS = (
+    %SNMP::Info::Layer3::GLOBALS,
+
+    # HUAWEI-MSTP-MIB
+    'hw_mstp_edge_default' => 'hwMstpEdgedPortDefault',
+);
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
@@ -101,6 +107,10 @@ $VERSION = '3.983000';
 
     # HUAWEI-SYS-MAN-MIB::hwPatchFileTable
     'hw_patch_version' => 'hwPatchVersion',
+
+    # HUAWEI-MSTP-MIB::hwMstpPortTable, indexed <instance>.<port>: a bridge
+    # port on VRP 5, an ifIndex on VRP 8
+    'hw_mstp_p_edge' => 'hwMstpiStpPortEdgeport',
 );
 
 %MUNGE = (
@@ -535,6 +545,72 @@ sub i_mtu {
     return $mtus;
 }
 
+sub i_edgeport_admin {
+    my $huawei  = shift;
+    my $partial = shift;
+
+    my $edge = $huawei->hw_mstp_p_edge() || {};
+    my %cist_edge;
+    foreach my $row ( keys %$edge ) {
+        my ( $instance, $port ) = split /\./, $row, 2;
+        $cist_edge{$port} = $edge->{$row} if $instance eq '0';
+    }
+    return $huawei->SUPER::i_edgeport_admin($partial)
+        unless keys %cist_edge;
+
+    my $port_index = $huawei->_hw_mstp_port_index($partial);
+    return {} unless $port_index;
+
+    my $default
+        = SNMP::Info::Bridge::_stp_enabled( $huawei->hw_mstp_edge_default() );
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $huawei, \%cist_edge,
+        $partial, sub { _hw_edge_enabled( shift, $default ) }, $port_index );
+}
+
+# hwMstpiPortIndex is a bridge port on VRP 5 but an ifIndex on VRP 8
+# CloudEngine, though the MIB says bridge port.  Only CloudEngine has shown
+# the VRP 8 form, so other VRP 8 families and an unknown VRP version stay
+# empty: a guessed form puts values on the wrong ports.
+sub _hw_mstp_port_index {
+    my ( $huawei, $partial ) = @_;
+
+    my $vrp = $huawei->_vrp_major();
+    return unless defined $vrp;
+    return $huawei->bp_index($partial) if $vrp < 8;
+
+    my $id = $huawei->id() || '';
+    return unless $id =~ /^\.?1\.3\.6\.1\.4\.1\.2011\.2\.239\./;
+
+    my $i_index = $huawei->i_index($partial) || {};
+    return { map { $_ => $_ } keys %$i_index };
+}
+
+# The sysDescr "Version N." that _os_ver_legacy reads; the V200R010-style
+# string os_ver prefers is the same on VRP 5 and VRP 8.  YunShan OS
+# numbers its own versions, so it has no VRP major.
+sub _vrp_major {
+    my $huawei = shift;
+
+    my $os    = $huawei->os();
+    my $descr = $huawei->description();
+    return unless defined $os and $os eq 'VRP';
+    return unless defined $descr and $descr =~ /Version\s(\d+)\./i;
+    return $1;
+}
+
+# hwMstpiStpPortEdgeport is disable(1), enable(2), undo(3), the reverse of
+# EnabledStatus, so _stp_enabled would misread it; undo takes the device
+# default from hwMstpEdgedPortDefault
+sub _hw_edge_enabled {
+    my ( $value, $default ) = @_;
+    return unless defined $value;
+
+    return 1        if $value =~ /^(?:enable|2)$/;
+    return 0        if $value =~ /^(?:disable|1)$/;
+    return $default if $value =~ /^(?:undo|3)$/;
+    return;
+}
+
 sub munge_hw_peth_admin {
     my $admin = shift;
 
@@ -626,6 +702,8 @@ Subclass for Huawei switches
 =item F<HUAWEI-POE-MIB>
 
 =item F<HUAWEI-ENTITY-EXTENT-MIB>
+
+=item F<HUAWEI-MSTP-MIB>
 
 =item F<HUAWEI-SYS-MAN-MIB>
 
@@ -763,6 +841,33 @@ first and then C<dot3adAggPortListPorts> if that is unavailable.
 
 Interface MTU value. Overridden with corresponding frame size entry from
 C<hwEthernetJumboframeMaxLength> if one exists.
+
+=item $huawei->i_edgeport_admin()
+
+Returns 1 or 0 for each port by whether it is configured as an edge port.
+Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads the
+instance 0 rows of C<hwMstpiStpPortEdgeport>; C<undo> takes the default in
+C<hwMstpEdgedPortDefault>.  The row index is a bridge port on VRP 5, mapped
+to C<ifIndex> through C<bp_index()>, and an C<ifIndex> on VRP 8
+CloudEngine (C<sysObjectID> under C<.1.3.6.1.4.1.2011.2.239>), kept when the
+interface table has it.  The VRP version comes from the C<Version N.> in
+C<sysDescr>.  Without one, or on VRP 8 outside CloudEngine, the result is
+empty.  With no instance 0 rows,
+falls back to C<dot1dStpPortAdminEdgePort> through L<SNMP::Info::Bridge>.
+
+=back
+
+=head2 Spanning Tree Edge Port Sources
+
+=over
+
+=item $huawei->hw_mstp_edge_default()
+
+(C<hwMstpEdgedPortDefault>)
+
+=item $huawei->hw_mstp_p_edge()
+
+(C<hwMstpiStpPortEdgeport>)
 
 =back
 
