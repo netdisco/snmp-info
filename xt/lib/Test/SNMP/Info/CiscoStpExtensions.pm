@@ -529,4 +529,40 @@ sub stp_tree_ports : Tests(16) {
     $info->{args}{Community} = $info->session()->{Community} = 'public';
 }
 
+sub _faststart_cache {
+    return {
+        '_stpx_faststart_default'     => 'enable',
+        '_bp_index'                   => 1,
+        '_stpx_faststart_operational' => 1,
+        'store'                       => {
+            'bp_index' => { map { $_ => 10 * $_ } 1 .. 4 },
+            'stpx_faststart_operational' => {
+                1 => 'enable',
+                2 => 'disable',
+                3 => 'network',
+                4 => 'default',
+            },
+        },
+    };
+}
+
+sub i_edgeport_admin : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _faststart_cache() );
+    cmp_deeply(
+        $test->{info}->i_edgeport_admin(),
+        { 10 => 1, 20 => 0, 30 => 0, 40 => 1 },
+        q(enable and default give 1, disable and network give 0)
+    );
+}
+
+sub i_faststart_enabled__network_mode__unchanged : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _faststart_cache() );
+    is( $test->{info}->i_faststart_enabled()->{30},
+        'network', q(Legacy method still returns the network string) );
+}
+
 1;

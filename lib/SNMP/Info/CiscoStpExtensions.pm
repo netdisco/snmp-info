@@ -262,6 +262,21 @@ sub i_faststart_enabled {
     return \%res;
 }
 
+sub i_edgeport_admin {
+    my $self    = shift;
+    my $partial = shift;
+
+    my $faststart = $self->i_faststart_enabled($partial);
+
+    my %res;
+    foreach my $iid ( keys %$faststart ){
+        my $mode = $faststart->{$iid};
+        next unless defined $mode;
+        $res{$iid} = 1 if $mode eq '1';
+        $res{$iid} = 0 if $mode eq '0' or $mode eq 'network';
+    }
+    return \%res;
+}
 
 sub oct2str {
     my ($v) = @_;
@@ -717,6 +732,17 @@ Format is a hash reference with key = C<ifIndex>, value = [1|0]
 
 Returns 1 or 0 depending on whether FastStart (aka PortFast) is enabled on a
 given port.  Format is a hash reference with key = C<ifIndex>, value = [1|0]
+
+(C<stpxFastStartPortEnable> and C<stpxFastStartPortMode>)
+
+Legacy; see C<i_edgeport_admin()>.
+
+=item $stpx->i_edgeport_admin()
+
+Returns 1 or 0 depending on whether the port is configured as an edge port
+(FastStart, aka PortFast).  A port in C<network> mode returns 0, and a port
+with no configured value is absent.  Format is a hash reference with
+key = C<ifIndex>, value = [1|0]
 
 (C<stpxFastStartPortEnable> and C<stpxFastStartPortMode>)
 
