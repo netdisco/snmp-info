@@ -502,4 +502,22 @@ sub i_vrf__membership_default__absent : Tests(1) {
     'A port aristaVrfIfTable gives default is absent');
 }
 
+# agg_ports reads Port-Channel membership from the interface stack
+sub lag_groups_complete__stack_walk_incomplete__returns_0 : Tests(2) {
+  my $test = shift;
+
+  $test->{info}->cache({
+    _ifStackStatus => 1, _ifType => 1,
+    store => {
+      ifStackStatus => {'1000001.1' => 'active', '1000001.2' => 'active'},
+      ifType => {1 => 'ethernetCsmacd', 2 => 'ethernetCsmacd',
+        1000001 => 'ieee8023adLag'},
+    },
+  });
+  is($test->{info}->lag_groups_complete(), 1, q(Stack read in full));
+  $test->{info}{walk_status}{ifStackStatus} = {complete => 0};
+  is($test->{info}->lag_groups_complete(), 0,
+    q(Incomplete stack walk gives 0));
+}
+
 1;

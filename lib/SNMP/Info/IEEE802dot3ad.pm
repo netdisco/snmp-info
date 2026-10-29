@@ -153,6 +153,8 @@ sub _lag_vendor_groups { return }
 
 sub _lag_vendor_walked { return }
 
+sub _agg_ports_walked { return }
+
 # Aggregator row index => key of the record that row describes
 sub _lag_aggregator_map {
   my $self = shift;
@@ -167,7 +169,8 @@ sub _lag_walked_methods {
   return (
     qw/lag_actor_system lag_actor_key lag_partner_system lag_partner_key
       lag_port_attached lag_port_partner_system lag_port_partner_key/,
-    $self->_lag_vendor_walked()
+    $self->_lag_vendor_walked(),
+    $self->_agg_ports_walked()
   );
 }
 
@@ -485,7 +488,7 @@ L<SNMP::Info::Aggregate>
 
 =head2 For Class Authors
 
-A device class adapts these methods by overriding four private hooks.
+A device class adapts these methods by overriding five private hooks.
 Each has a default here.
 
 =over 4
@@ -516,6 +519,13 @@ empty one.
 Returns the names of the table methods the class's hooks read, so that
 C<lag_groups_complete()> checks their walks too. The default returns an
 empty list.
+
+=item C<_agg_ports_walked()>
+
+Returns the names of the tables C<agg_ports()> walks, as it calls them,
+so that C<lag_groups_complete()> checks their walks too. Define it in the
+package that defines C<agg_ports()>; a test checks that every class
+resolves both to the same package. The default returns an empty list.
 
 =back
 
@@ -758,10 +768,9 @@ An example record, a vPC domain:
 =item C<lag_groups_complete>
 
 Returns whether the F<IEEE8023-LAG-MIB> and vendor multi-chassis tables
-behind C<lag_groups()> and C<mlag_domains()> were read in full. A walk
-that only a class's C<agg_ports()> makes counts only where that class
-lists it (Extreme and Juniper do). It performs the walks itself. It
-returns:
+behind C<lag_groups()> and C<mlag_domains()> were read in full,
+including the tables the class's C<agg_ports()> reads. It performs the
+walks itself. It returns:
 
 =over 4
 

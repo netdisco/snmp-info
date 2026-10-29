@@ -88,6 +88,8 @@ sub agg_ports {
    return agg_ports_lag(@_);
 }
 
+sub _agg_ports_walked { return qw/ad_lag_ports bp_index/ }
+
 #sub layers {
 #    return '01001010';
 #}

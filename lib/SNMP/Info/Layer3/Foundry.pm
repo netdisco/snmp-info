@@ -891,6 +891,8 @@ sub agg_ports {
   return $ret;
 }
 
+sub _agg_ports_walked { return qw/snMSTrunkPortList snSwPortIfIndex/ }
+
 sub i_stp_state {
     my $foundry  = shift;
     my $partial = shift;

@@ -187,6 +187,8 @@ sub agg_ports {
     return \%member_of;
 }
 
+sub _agg_ports_walked { return qw/ex_loadshare/ }
+
 # The peer table is indexed by the peer name, a string
 sub _ex_mlag_peer_name {
     my $iid = shift;

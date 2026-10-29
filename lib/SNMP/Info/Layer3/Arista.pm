@@ -141,6 +141,8 @@ sub set_i_vlan {
 
 sub agg_ports { return agg_ports_ifstack(@_) }
 
+sub _agg_ports_walked { return qw/ifStackStatus ifType/ }
+
 sub _context_kinds {
     my ( $arista, $feature ) = @_;
 

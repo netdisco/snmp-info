@@ -334,6 +334,8 @@ sub agg_ports {
     return $ret;    
 }
 
+sub _agg_ports_walked { return qw/raw_ad_lag_ports/ }
+
 # Overrides for VLAN & forwarding table methods
 sub v_name {
     my $cx = shift;

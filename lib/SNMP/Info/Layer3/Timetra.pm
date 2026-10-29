@@ -278,6 +278,8 @@ sub agg_ports {
     return $alu->agg_ports_ifstack();
 }
 
+sub _agg_ports_walked { return qw/ifStackStatus ifType/ }
+
 sub fan {
     my $alu = shift;
 

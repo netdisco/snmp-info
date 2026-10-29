@@ -132,4 +132,14 @@ sub agg_ports__member_without_ifindex__skipped_without_looping : Tests(1) {
     );
 }
 
+sub lag_groups_complete__trunk_walk_incomplete__returns_0 : Tests(2) {
+    my $test = shift;
+
+    $test->_prime_trunk( 1, 2, 3 );
+    is( $test->{info}->lag_groups_complete(), 1, q(Trunk read in full) );
+    $test->{info}{walk_status}{snMSTrunkPortList} = { complete => 0 };
+    is( $test->{info}->lag_groups_complete(),
+        0, q(Incomplete trunk walk gives 0) );
+}
+
 1;

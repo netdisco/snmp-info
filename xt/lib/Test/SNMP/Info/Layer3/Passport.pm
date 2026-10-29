@@ -749,4 +749,14 @@ sub lag_groups__passport_class__resolves_to_rapidcity_hooks : Tests(4) {
   }
 }
 
+sub lag_groups_complete__member_walk_incomplete__returns_0 : Tests(2) {
+  my $test = shift;
+
+  $test->_prime_mlt('vist');
+  is($test->{info}->lag_groups_complete(), 1, 'MLT members read in full');
+  $test->{info}{walk_status}{rc_mlt_ports} = {complete => 0};
+  is($test->{info}->lag_groups_complete(), 0,
+    'Incomplete member walk gives 0');
+}
+
 1;

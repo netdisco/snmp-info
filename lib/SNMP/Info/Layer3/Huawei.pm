@@ -334,6 +334,11 @@ sub agg_ports {
     return $huawei->agg_ports_lag();
 }
 
+sub _agg_ports_walked {
+    return qw/hw_trunk_if_idx hw_trunk_entry ad_lag_ports hw_l2if_port_idx
+        bp_index/;
+}
+
 # The standard IEEE 802.af POWER-ETHERNET-MIB has an index of module.port
 # The HUAWEI-POE-MIB only indexes by ifIndex, we need to match the standard
 # for so method calls across classes work the same

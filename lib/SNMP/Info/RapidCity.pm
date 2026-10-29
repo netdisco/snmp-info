@@ -781,6 +781,8 @@ sub agg_ports {
     return $ret;
 }
 
+sub _agg_ports_walked { return qw/rc_mlt_ports rc_mlt_index rc_mlt_dp/ }
+
 sub _lag_vendor_walked {
     return qw/rc_mlt_index rc_mlt_dp rc_mlt_type rc_mlt_run_type/;
 }
