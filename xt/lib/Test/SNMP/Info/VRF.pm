@@ -328,6 +328,37 @@ sub vrf_instances_complete__no_mib__is_undef : Tests(2) {
     q(Only default is listed));
 }
 
+sub vrf_instances_complete__list_walk_failed_no_rows__returns_0 : Tests(2) {
+  my $test = shift;
+
+  $test->{info}{$_} = 1 for qw/_vrf_l3vpn_rd _vrf_l3vpn_descr
+    _vrf_l3vpn_oper _vrf_l3vpn_rt _vrf_l3vpn_if/;
+  $test->{info}{store}{$_} = {} for
+    qw/vrf_l3vpn_rd vrf_l3vpn_descr vrf_l3vpn_oper vrf_l3vpn_rt vrf_l3vpn_if/;
+  $test->{info}{walk_status}{vrf_l3vpn_descr}
+    = {complete => 0, reason => 'timeout'};
+  is($test->{info}->vrf_instances_complete(), 0,
+    q(A failed list walk with no rows could not be read));
+  $test->{info}{walk_status} = {};
+  delete $test->{info}{_vrf_instances};
+  is($test->{info}->vrf_instances_complete(), undef,
+    q(Walks complete and no rows is still unsupported));
+}
+
+sub vrf_instances_complete__vendor_list_walk_failed_no_rows__returns_0
+  : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_make_info('Test::SNMP::Info::VRF::VendorFailed',
+    ['SNMP::Info::VRF'],
+    _vrf_vendor_list_methods => sub { return ('vrf_l3vpn_descr') });
+  $info->vrf_instances();
+  $info->{walk_status}{vrf_l3vpn_descr}
+    = {complete => 0, reason => 'timeout'};
+  is($info->vrf_instances_complete(), 0,
+    q(A failed vendor list walk with no rows could not be read));
+}
+
 sub vrf_instances_complete__configured_zero__is_1 : Tests(2) {
   my $test = shift;
 

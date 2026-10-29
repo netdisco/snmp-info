@@ -436,8 +436,8 @@ sub _vrf_contexts_of {
     return grep { defined and length } $context->{v3}, @v2c;
 }
 
-# 1 when the list is whole, 0 when it may be short, undef when the device
-# serves no VRF list and the caller named none
+# 1 when the list is whole, 0 when it may be short or a list walk failed,
+# undef when the device serves no VRF list and the caller named none
 sub vrf_instances_complete {
     my $vrf          = shift;
     my $caller_names = shift;
@@ -447,8 +447,8 @@ sub vrf_instances_complete {
 
     my @listed     = grep { $_->{sources}{list} } values %$instances;
     my $configured = $vrf->vrf_configured();
-    return   if !defined $configured and !@listed;
     return 0 if $vrf->_vrf_walk_incomplete();
+    return   if !defined $configured and !@listed;
     my @rows = grep { $_->{name} ne 'default' } @listed;
     return 0 if defined $configured and $configured > @rows;
     return 1 if $vrf->_vrf_context_filters();
@@ -1743,8 +1743,8 @@ C<vrf_instances_complete()> returns one of four states:
 =item unsupported, undef
 
 No list source served a row, the device serves no configured VRF count,
-and you passed no caller names. C<vrf_instances()> lists only
-C<default>.
+you passed no caller names, and every walk of a list source's tables
+finished. C<vrf_instances()> lists only C<default>.
 
 =item none, 1
 
@@ -1786,7 +1786,9 @@ The list holds a caller name.
 
 A walk of the list source's tables ended early: the VRF, route target or
 membership table of F<MPLS-L3VPN-STD-MIB>, or the vendor tables a class
-reads.
+reads. This holds even when the walk failed before returning a row, so
+no instance is listed: the device is not unsupported, it could not be
+read.
 
 =item *
 
@@ -1994,7 +1996,9 @@ tables where F<MPLS-L3VPN-STD-MIB> serves no instance row)
 =item $vrf->vrf_instances_complete( [ \@names ] )
 
 Returns 1, 0 or undef, as L</"Completeness"> describes. Pass the same
-names you gave C<vrf_instances()>.
+names you gave C<vrf_instances()>. 0 includes a list walk that failed
+before returning a row; undef means the walks finished and nothing was
+listed.
 
 (C<mplsL3VpnConfiguredVrfs> and the C<walk_status()> of the list
 source's tables)
