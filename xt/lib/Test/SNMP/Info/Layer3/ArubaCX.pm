@@ -64,6 +64,25 @@ sub setup : Tests(setup) {
   });
 }
 
+sub mac : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+  $info->{_b_mac} = pack('H*', '8C85C162C740');
+  $info->{_mac}   = pack('H*', '8C85C162C77F');
+
+  can_ok($info, 'mac');
+  is($info->mac(), '8c:85:c1:62:c7:40',
+    q(mac__bridge_address_present__returns_bridge_mac));
+
+  $info->{_b_mac} = pack('H*', '000000000000');
+  is($info->mac(), '8c:85:c1:62:c7:7f',
+    q(mac__bridge_address_zero__returns_first_interface_mac));
+
+  delete $info->{_b_mac};
+  is($info->mac(), '8c:85:c1:62:c7:7f',
+    q(mac__bridge_address_missing__returns_first_interface_mac));
+}
+
 sub model : Tests(7) {
   my $test = shift;
   my $info = $test->{info};
