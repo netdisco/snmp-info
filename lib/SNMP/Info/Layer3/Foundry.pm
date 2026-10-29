@@ -55,6 +55,7 @@ $VERSION = '3.983000';
     'FOUNDRY-SN-ROOT-MIB'         => 'foundry',
     'FOUNDRY-SN-AGENT-MIB'        => 'snChasPwrSupplyDescription',
     'FOUNDRY-SN-SWITCH-GROUP-MIB' => 'snSwGroupOperMode',
+    'FOUNDRY-SN-IP-MIB'           => 'snRtIpPortIfAddress',
     'FOUNDRY-SN-STACKING-MIB'     => 'snStackingOperUnitRole',
     'FDRY-POE-MIB'                => 'snAgentPoeGblPowerCapacityTotal',
     'BROCADE-PRODUCTS-MIB'        => 'brocadeProducts',
@@ -106,6 +107,21 @@ $VERSION = '3.983000';
     'stp_i_root_port' => 'snVLanByPortStpRootPort',
     'stp_i_priority'  => 'snVLanByPortStpPriority',
 
+    # FOUNDRY-SN-SWITCH-GROUP-MIB VLAN configuration and membership tables.
+    # Use these tables when the standard bridge methods return no data.
+    '_vlan_cfg_id'          => 'snVLanByPortCfgVLanId',
+    '_vlan_cfg_name'        => 'snVLanByPortCfgVLanName',
+    '_vlan_member_vlan_id'  => 'snVLanByPortMemberVLanId',
+    '_vlan_member_port_id'  => 'snVLanByPortMemberPortId',
+    '_vlan_member_status'   => 'snVLanByPortMemberRowStatus',
+    '_vlan_member_tag_mode' => 'snVLanByPortMemberTagMode',
+
+    # FOUNDRY-SN-IP-MIB::snRtIpPortIfAddrTable
+    '_ip_if_index'   => 'snRtIpPortIfAddrInterfaceIndex',
+    '_ip_if_address' => 'snRtIpPortIfAddress',
+    '_ip_if_netmask' => 'snRtIpPortIfSubnetMask',
+    '_ip_if_status'  => 'snRtIpPortIfRowStatus',
+
     # FOUNDRY-SN-AGENT-MIB::snPortStpTable
     'stp_p_id'       => 'snPortStpPortNum',
     'stp_p_stg_id'   => 'snPortStpVLanId',
@@ -129,6 +145,234 @@ $VERSION = '3.983000';
     'stp_p_bridge' => \&SNMP::Info::munge_prio_mac,
     'stp_p_port'   => \&SNMP::Info::munge_prio_port,
 );
+
+sub v_name {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::v_name($partial)
+        unless $foundry->_foundry_vlan_source() eq 'foundry';
+
+    my $vlan_ids = $foundry->_vlan_cfg_id($partial) || {};
+    my $vlan_names = $foundry->_vlan_cfg_name($partial) || {};
+
+    my %v_name;
+    foreach my $idx ( keys %$vlan_ids ) {
+        my $vlan = $vlan_ids->{$idx};
+        next unless defined $vlan;
+        my $name = $vlan_names->{$idx};
+        $v_name{$vlan} = defined $name ? $name : '';
+    }
+
+    return \%v_name;
+}
+
+sub _foundry_vlan_source {
+    my $foundry = shift;
+
+    return $foundry->{_foundry_vlan_source}
+        if defined $foundry->{_foundry_vlan_source};
+
+    my @bridge_data = (
+        $foundry->SUPER::v_name(),
+        $foundry->SUPER::i_vlan(),
+        $foundry->SUPER::i_vlan_membership(),
+        $foundry->SUPER::i_vlan_membership_untagged(),
+    );
+
+    foreach my $data (@bridge_data) {
+        next unless ref $data eq 'HASH';
+        return $foundry->{_foundry_vlan_source} = 'bridge'
+            if keys %$data;
+    }
+
+    my $cfg_ids = $foundry->_vlan_cfg_id() || {};
+    my $member_ids = $foundry->_vlan_member_vlan_id() || {};
+    return $foundry->{_foundry_vlan_source} = 'foundry'
+        if keys %$cfg_ids or keys %$member_ids;
+
+    return $foundry->{_foundry_vlan_source} = 'bridge';
+}
+
+sub _vlan_member_rows {
+    my $foundry = shift;
+
+    my $vlan_ids = $foundry->_vlan_member_vlan_id()  || {};
+    my $port_ids = $foundry->_vlan_member_port_id()  || {};
+    my $statuses = $foundry->_vlan_member_status()   || {};
+    my $tag_modes = $foundry->_vlan_member_tag_mode() || {};
+
+    my @rows;
+    foreach my $idx ( keys %$vlan_ids ) {
+        my ($vlan_idx, $port_idx) = $idx =~ /^(\d+)\.(\d+)$/;
+        next unless defined $vlan_idx and defined $port_idx;
+
+        my $vlan = $vlan_ids->{$idx};
+        my $port = $port_ids->{$idx};
+        next unless defined $vlan and defined $port and $vlan and $port;
+
+        my $status = $statuses->{$idx};
+        next unless defined $status and $status =~ /^(?:valid|2)(?:\(2\))?$/i;
+
+        push @rows, {
+            vlan     => $vlan,
+            ifindex  => $port,
+            tag_mode => $tag_modes->{$idx},
+        };
+    }
+
+    return \@rows;
+}
+
+sub _foundry_ip_rows {
+    my $foundry = shift;
+
+    my $addresses = $foundry->_ip_if_address() || {};
+    my $ifindexes = $foundry->_ip_if_index() || {};
+    my $netmasks  = $foundry->_ip_if_netmask() || {};
+    my $statuses  = $foundry->_ip_if_status() || {};
+
+    my @rows;
+    foreach my $idx ( keys %$addresses ) {
+        my ($index_if, $index_ip) = $idx =~ /^(\d+)\.(\d+\.\d+\.\d+\.\d+)$/;
+        next unless defined $index_if and defined $index_ip;
+
+        my $ifindex = $ifindexes->{$idx};
+        my $address = $addresses->{$idx};
+        my $netmask = $netmasks->{$idx};
+        my $status  = $statuses->{$idx};
+        next
+            unless defined $ifindex and defined $address and defined $netmask;
+        next unless defined $status and $status =~ /^(?:valid|2)(?:\(2\))?$/i;
+
+        push @rows, {
+            ifindex => $ifindex,
+            address => $address,
+            netmask => $netmask,
+        };
+    }
+
+    return \@rows;
+}
+
+sub _foundry_ip_source {
+    my $foundry = shift;
+
+    return $foundry->{_foundry_ip_source}
+        if defined $foundry->{_foundry_ip_source};
+
+    my $ip_index = $foundry->SUPER::ip_index() || {};
+    return $foundry->{_foundry_ip_source} = 'ip_mib'
+        if keys %$ip_index;
+
+    my $addresses = $foundry->_ip_if_address() || {};
+    return $foundry->{_foundry_ip_source} = 'foundry'
+        if keys %$addresses;
+
+    return $foundry->{_foundry_ip_source} = 'ip_mib';
+}
+
+sub ip_index {
+    my $foundry = shift;
+
+    return $foundry->SUPER::ip_index()
+        unless $foundry->_foundry_ip_source() eq 'foundry';
+
+    my %ip_index;
+    foreach my $row ( @{ $foundry->_foundry_ip_rows() } ) {
+        $ip_index{ $row->{address} } = $row->{ifindex};
+    }
+
+    return \%ip_index;
+}
+
+sub ip_table {
+    my $foundry = shift;
+
+    return $foundry->SUPER::ip_table()
+        unless $foundry->_foundry_ip_source() eq 'foundry';
+
+    my %ip_table;
+    foreach my $row ( @{ $foundry->_foundry_ip_rows() } ) {
+        $ip_table{ $row->{address} } = $row->{address};
+    }
+
+    return \%ip_table;
+}
+
+sub ip_netmask {
+    my $foundry = shift;
+
+    return $foundry->SUPER::ip_netmask()
+        unless $foundry->_foundry_ip_source() eq 'foundry';
+
+    my %ip_netmask;
+    foreach my $row ( @{ $foundry->_foundry_ip_rows() } ) {
+        $ip_netmask{ $row->{address} } = $row->{netmask};
+    }
+
+    return \%ip_netmask;
+}
+
+sub i_vlan {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::i_vlan($partial)
+        unless $foundry->_foundry_vlan_source() eq 'foundry';
+
+    my $rows = $foundry->_vlan_member_rows();
+
+    my %i_vlan;
+    foreach my $row ( @$rows ) {
+        next unless defined $row->{tag_mode};
+        next unless $row->{tag_mode} =~ /^(?:untagged|2)(?:\(2\))?$/i;
+        next if defined $partial and $row->{ifindex} ne $partial;
+        $i_vlan{ $row->{ifindex} } = $row->{vlan};
+    }
+
+    return \%i_vlan;
+}
+
+sub i_untagged { goto &i_vlan }
+
+sub i_vlan_membership {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::i_vlan_membership($partial)
+        unless $foundry->_foundry_vlan_source() eq 'foundry';
+
+    my $rows = $foundry->_vlan_member_rows();
+
+    my %membership;
+    foreach my $row ( @$rows ) {
+        next if defined $partial and $row->{ifindex} ne $partial;
+        push @{ $membership{ $row->{ifindex} } }, $row->{vlan};
+    }
+
+    return \%membership;
+}
+
+sub i_vlan_membership_untagged {
+    my $foundry = shift;
+    my $partial = shift;
+
+    return $foundry->SUPER::i_vlan_membership_untagged($partial)
+        unless $foundry->_foundry_vlan_source() eq 'foundry';
+
+    my $rows = $foundry->_vlan_member_rows();
+
+    my %membership;
+    foreach my $row ( @$rows ) {
+        next unless defined $row->{tag_mode};
+        next unless $row->{tag_mode} =~ /^(?:untagged|2)(?:\(2\))?$/i;
+        next if defined $partial and $row->{ifindex} ne $partial;
+        push @{ $membership{ $row->{ifindex} } }, $row->{vlan};
+    }
+
+    return \%membership;
+}
 
 sub i_ignore {
     my $foundry = shift;
@@ -977,6 +1221,8 @@ C<stp_protocols()> returns nothing, and C<stp_trees_complete()> returns 0
 
 =item F<FOUNDRY-SN-SWITCH-GROUP-MIB>
 
+=item F<FOUNDRY-SN-IP-MIB>
+
 =item F<FOUNDRY-SN-STACKING-MIB>
 
 =item F<FDRY-POE-MIB>
@@ -1341,6 +1587,61 @@ The power supply's operational status.
 
 How much power, in watts, this power supply has been committed to
 deliver.
+
+=back
+
+=head2 VLAN methods
+
+FastIron ICX devices may not implement or populate the Q-BRIDGE-MIB tables
+used by the base bridge class. These methods prefer non-empty standard bridge
+data and use the Foundry port VLAN configuration and membership tables when
+the standard methods return no data.
+
+=over
+
+=item $foundry->v_name()
+
+Returns VLAN names keyed by VLAN ID, including configured VLANs with no
+member ports.
+
+=item $foundry->i_vlan()
+
+Returns the untagged VLAN for each interface index.
+
+=item $foundry->i_untagged()
+
+Alias for C<i_vlan()>.
+
+=item $foundry->i_vlan_membership()
+
+Returns all VLAN memberships keyed by interface index.
+
+=item $foundry->i_vlan_membership_untagged()
+
+Returns untagged VLAN memberships keyed by interface index.
+
+=back
+
+=head2 IP address methods
+
+When standard IP-MIB methods return data, C<ip_index()>, C<ip_table()>,
+and C<ip_netmask()> preserve those results. If the standard methods return
+no data, the Foundry IP interface table supplies the address, interface
+index, and subnet mask.
+
+=over
+
+=item $foundry->ip_index()
+
+Maps IPv4 addresses to interface indexes.
+
+=item $foundry->ip_table()
+
+Returns the IPv4 address table keyed by address.
+
+=item $foundry->ip_netmask()
+
+Maps IPv4 addresses to their subnet masks.
 
 =back
 
