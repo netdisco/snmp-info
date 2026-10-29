@@ -57,6 +57,7 @@ $VERSION = '3.983000';
     'HH3C-PRODUCT-ID-MIB'  => 'hh3c-s5500-28C-EI',
     'HH3C-ENTITY-VENDORTYPE-OID-MIB' => 'hh3cevtOther',
     'HH3C-LswMSTP-MIB'     => 'hh3cdot1sStpForceVersion',
+    'HH3C-IP-ADDRESS-MIB'  => 'hh3cIpAddrSetMask',
 );
 
 %GLOBALS = (
@@ -87,6 +88,10 @@ $VERSION = '3.983000';
 
     # HH3C-LswMSTP-MIB::hh3cdot1sMstiVlanTable, indexed by VLAN id
     'h3c_stp_vlan_mst' => 'hh3cdot1sOperMstID',
+
+    # HH3C-IP-ADDRESS-MIB::hh3cIpAddrSetTable, indexed
+    # ifIndex.addrType.length.address
+    'vrf_h3c_addr_mask' => 'hh3cIpAddrSetMask',
 );
 
 %MUNGE = (
@@ -434,6 +439,45 @@ sub stp_vlan_map {
     };
 }
 
+# Comware 7 serves ipAddrTable for the default instance only, and no
+# ipAddressTable. hh3cIpAddrSetTable lists every instance's IPv4 addresses
+# by port, and IPV6-MIB ipv6AddrTable the IPv6 ones, link-locals included.
+sub _vrf_vendor_address_rows {
+    my ( $h3c, $name ) = @_;
+
+    return {
+        %{ $h3c->_vrf_ipv6_mib_address_rows($name) },
+        %{ $h3c->_h3c_ipv4_address_rows($name) },
+    };
+}
+
+sub _h3c_ipv4_address_rows {
+    my ( $h3c, $name ) = @_;
+
+    my $masks = $h3c->_vrf_column( 'vrf_h3c_addr_mask', $name );
+    my %rows;
+    foreach my $iid ( keys %$masks ) {
+        my ( $ifindex, $type, $length, @octets ) = split /\./, $iid;
+        next unless ( $type // q() ) eq '1' and $length == 4;
+        next unless @octets == 4;
+        my $ip = join q(.), @octets;
+        $rows{"$ifindex.$ip"} = {
+            ifindex    => $ifindex,
+            ip         => $ip,
+            prefix_len =>
+                scalar SNMP::Info::VRF::_vrf_mask_length( $masks->{$iid} ),
+            family => 'ipv4',
+        };
+    }
+    return \%rows;
+}
+
+# Host link-locals are served as IPv6z in IP-MIB, which ipv6_n2p_addr
+# does not return; IPV6-MIB ipv6NetToMediaTable has them unzoned
+sub _vrf_nd_from_ipv6_mib { return 1; }
+
+sub _vrf_subnets_from_routes { return 1; }
+
 # Default tree is not the common tree: dot1dStp matches no VLAN's tree under
 # PVST
 sub _stp_default_is_common { return 0; }
@@ -493,6 +537,8 @@ Subclass for H3C & HP A-series devices
 =item F<HH3C-ENTITY-VENDORTYPE-OID-MIB>
 
 =item F<HH3C-LswMSTP-MIB>
+
+=item F<HH3C-IP-ADDRESS-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -633,6 +679,42 @@ ifIndex of the corresponding master ports.
 =item $h3c->h3c_stp_vlan_mst()
 
 (C<hh3cdot1sOperMstID>)
+
+=item $h3c->vrf_h3c_addr_mask()
+
+Returns reference to hash of the IPv4 address masks of every routing
+instance, indexed by ifIndex, address type, length and address.
+C<vrf_addresses()> reads it; see L</"VRF Instances">.
+
+(C<hh3cIpAddrSetMask>)
+
+=back
+
+=head2 VRF Instances
+
+See L<SNMP::Info::VRF/"VRF Instances"> for the readers. Comware 7 serves
+no C<ipAddressTable>, and an C<ipAddrTable> holding the default instance
+only. This class fills the gaps:
+
+=over
+
+=item *
+
+C<vrf_addresses()> reads every instance's IPv4 addresses from
+C<hh3cIpAddrSetTable>, and its IPv6 addresses, anycast ones included,
+from F<IPV6-MIB> C<ipv6AddrTable>. Each instance then lists its own
+addresses.
+
+=item *
+
+C<vrf_neighbors()> adds host link-local neighbors from F<IPV6-MIB>
+C<ipv6NetToMediaTable>. Comware serves them in F<IP-MIB> only with a
+zone, which C<ipv6_n2p_addr()> does not return.
+
+=item *
+
+C<vrf_subnets()> adds connected routes (see
+L<SNMP::Info::VRF/"Collapsed Subnets">).
 
 =back
 

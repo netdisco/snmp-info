@@ -53,6 +53,7 @@ $VERSION = '3.983000';
     %SNMP::Info::MAU::MIBS,
     %SNMP::Info::Aggregate::MIBS,
     'ARISTA-PRODUCTS-MIB' => 'aristaDCS7124S',
+    'ARISTA-VRF-MIB'      => 'aristaVrfState',
 );
 
 %GLOBALS = (
@@ -63,6 +64,11 @@ $VERSION = '3.983000';
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
     %SNMP::Info::MAU::FUNCS,
+
+    # ARISTA-VRF-MIB::aristaVrfTable and aristaVrfIfTable
+    'vrf_arista_rd'    => 'aristaVrfRouteDistinguisher',
+    'vrf_arista_state' => 'aristaVrfState',
+    'vrf_arista_if'    => 'aristaVrfIfMembership',
 );
 
 %MUNGE = (
@@ -135,6 +141,88 @@ sub set_i_vlan {
 
 sub agg_ports { return agg_ports_ifstack(@_) }
 
+sub _context_kinds {
+    my ( $arista, $feature ) = @_;
+
+    return ['vrf'] if ( $feature // '' ) eq 'vrf';
+    return;
+}
+
+# A VRF is a context named like it; the v2c community is community@VRF
+sub _snmp_context {
+    my ( $arista, $kind, $id ) = @_;
+
+    return unless ( $kind // '' ) eq 'vrf';
+    return if !defined $id or $id eq q() or $id eq 'default';
+    return { kind => 'vrf', id => $id, v2c => "%s\@$id", v3 => $id };
+}
+
+# Each VRF reads in its own context. The default context serves only the
+# default instance's rows, but its aristaVrfIfTable names every VRF port.
+sub _vrf_context_filters { return 1; }
+
+sub _vrf_default_context_members { return 1; }
+
+# A VRF context, named for its VRF, serves no aristaVrfTable row
+sub _vrf_context_is_instance_name { return 1; }
+
+# aristaVrfTable is indexed by the length-prefixed VRF name. INVALID is no
+# route distinguisher. aristaVrfState is not read into oper: see the POD.
+# The table has no row for the default VRF, so a whole walk of it lists
+# default even with no row.
+sub _vrf_vendor_instances {
+    my $arista = shift;
+
+    my $rd    = $arista->vrf_arista_rd()    || {};
+    my $state = $arista->vrf_arista_state() || {};
+    my %iids  = map { $_ => 1 } keys %$rd, keys %$state;
+
+    my %instances;
+    foreach my $iid ( keys %iids ) {
+        my ($name) = $arista->_vrf_decode_name($iid);
+        next if !defined $name or !length $name or $name eq 'default';
+
+        my $record = SNMP::Info::VRF::_vrf_record( $name, 'vrf', 'device' );
+        my $served = $rd->{$iid};
+        $record->{rd} = $arista->_vrf_rd($served)
+            if defined $served and $served ne 'INVALID';
+        $record->{sources}{list} = 'ARISTA-VRF-MIB';
+        $record->{sources}{rd}   = 'ARISTA-VRF-MIB' if defined $record->{rd};
+        $instances{$name} = $record;
+    }
+    $arista->_vrf_list_default( \%instances, 'ARISTA-VRF-MIB' )
+        if %iids or $arista->_arista_vrf_table_answered();
+    return \%instances;
+}
+
+# True when both aristaVrfTable walks were recorded complete. An absent
+# outcome is a poller MIB problem, not an answer from the device.
+sub _arista_vrf_table_answered {
+    my $arista = shift;
+
+    foreach my $method (qw/vrf_arista_rd vrf_arista_state/) {
+        my $status = $arista->walk_status($method) or return 0;
+        return 0 if !$status->{complete} or defined $status->{reason};
+    }
+    return 1;
+}
+
+sub _vrf_vendor_list_methods {
+    return qw/vrf_arista_rd vrf_arista_state vrf_arista_if/;
+}
+
+# aristaVrfIfMembership is indexed by ifIndex and holds the VRF name
+sub _vrf_vendor_membership {
+    my $arista = shift;
+
+    my $rows = $arista->vrf_arista_if() || {};
+    return {
+        map  { $_ => $rows->{$_} }
+        grep { length( $rows->{$_} // q() ) and $rows->{$_} ne 'default' }
+            keys %$rows
+    };
+}
+
 1;
 __END__
 
@@ -183,6 +271,8 @@ Subclass for Arista Networks EOS-based devices
 =over
 
 =item F<ARISTA-PRODUCTS-MIB>
+
+=item F<ARISTA-VRF-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -247,11 +337,112 @@ Returns info from F<MAU-MIB>
 
 Returns the mapping to the SNMP Interface Table.
 
+=item $arista->vrf_arista_rd()
+
+Returns the route distinguisher of each VRF, keyed by the length-prefixed
+VRF name. EOS serves C<INVALID> for a VRF with none.
+
+(C<aristaVrfRouteDistinguisher>)
+
+=item $arista->vrf_arista_state()
+
+Returns the state of each VRF, C<active> or C<inactive>, keyed by the
+length-prefixed VRF name.
+
+(C<aristaVrfState>)
+
+=item $arista->vrf_arista_if()
+
+Returns the name of the VRF each routed interface is in, keyed by ifIndex.
+
+(C<aristaVrfIfMembership>)
+
 =item C<agg_ports>
 
 Returns a HASH reference mapping from slave to master port for each member of
 a port bundle on the device. Keys are ifIndex of the slave ports, Values are
 ifIndex of the corresponding master ports.
+
+=back
+
+=head2 VRF Instances
+
+See L<SNMP::Info::VRF/"VRF Instances"> for the readers.
+
+=over
+
+=item *
+
+EOS has no C<MPLS-L3VPN-STD-MIB>, so F<ARISTA-VRF-MIB> lists the VRFs and
+the ports they hold. Each record's C<sources{list}> is C<ARISTA-VRF-MIB>.
+
+=item *
+
+A route distinguisher of C<INVALID> is none, so C<rd> is undef.
+
+=item *
+
+C<oper> is undef. EOS 4.36 serves C<aristaVrfState> C<inactive> for VRFs
+its CLI shows routing, so the state is not an operational status.
+
+=item *
+
+A port C<aristaVrfIfTable> gives C<default> is a port of the default
+instance, absent from C<i_vrf()>.
+
+=back
+
+C<aristaVrfTable> has no row for the default VRF, so a device with no VRF
+serves no row at all. How the list reads then:
+
+=over
+
+=item *
+
+Both C<aristaVrfRouteDistinguisher> and C<aristaVrfState> walked whole,
+with no reason in C<walk_status()>: the list holds C<default>, with the
+source C<ARISTA-VRF-MIB>, and C<vrf_instances_complete()> reports 1, none
+configured (see L<SNMP::Info::VRF/"Completeness">). A device that does
+not implement the MIB answers the walks this way, so it reads none.
+
+=item *
+
+Either walk missing from C<walk_status()>, as on an object primed from a
+cache, cut short, or recorded C<absent> because the poller could not
+resolve the MIB: the list reads as unsupported, undef.
+
+=back
+
+Each VRF reads in its own context (context mode), and that context
+serves only the VRF's addresses and neighbors.
+
+=over
+
+=item *
+
+The default context serves only the default instance's rows, such as
+C<Management0>'s. C<i_vrf()> there still maps every VRF port, from
+C<aristaVrfIfTable>.
+
+=item *
+
+A VRF context serves no F<ARISTA-VRF-MIB> row. C<i_vrf()> there takes
+the instance from the context name, which is the VRF name.
+
+=back
+
+=over
+
+=item $arista->context_kinds($feature)
+
+See L<SNMP::Info/"context_kinds">. Returns C<['vrf']> for C<vrf>.
+
+=item $arista->snmp_context($kind, $id)
+
+For C<vrf>, the answer is C<{ kind =E<gt> 'vrf', id =E<gt> $name,
+v2c =E<gt> '%s@$name', v3 =E<gt> $name }>: the community, C<@>, then the VRF
+name. The default VRF and an empty name have no context, so nothing is
+returned.
 
 =back
 

@@ -51,6 +51,7 @@ $VERSION = '3.983000';
     'JUNIPER-L2ALD-MIB'           => 'jnxL2aldVlanFdbId',
     'JUNIPER-MIMSTP-MIB'          => 'jnxMIMstSystemControl',
     'SNMP-VIEW-BASED-ACM-MIB'     => 'vacmContextName',
+    'JUNIPER-VPN-MIB'             => 'jnxVpnName',
 );
 
 %GLOBALS = (
@@ -94,7 +95,13 @@ $VERSION = '3.983000';
     'i_logical_unit' => 'ifChassisLogicalUnit',
 
     # SNMP-VIEW-BASED-ACM-MIB::vacmContextTable, names the VSTP contexts
+    # and the routing instances; the index is the length-prefixed name
     'jnx_vacm_context_name' => 'vacmContextName',
+
+    # JUNIPER-VPN-MIB::jnxVpnTable lists each VPN by its index, jnxVpnType
+    # then the length-prefixed jnxVpnName; type 2 is bgpIpVpn. Both index
+    # leaves are not-accessible, so walk the first readable column.
+    'vrf_jnx_vpn_status' => 'jnxVpnRowStatus',
 
     # JUNIPER-MIMSTP-MIB, indexed by context
     'jnx_mst_control'       => 'jnxMIMstSystemControl',
@@ -930,16 +937,19 @@ sub hasVSTP {
 sub _context_kinds {
     my ( $juniper, $feature ) = @_;
 
+    return ['vrf'] if ( $feature // '' ) eq 'vrf';
     return unless ( $feature // '' ) eq 'stp';
     return unless $juniper->_jnx_runs('vstp');
     return ['vlan'];
 }
 
-# Junos puts the VLAN context first in the v2c community, the reverse of
-# Cisco's community@VLAN
+# Junos puts the context first in the v2c community, the reverse of Cisco's
+# community@VLAN: red@public for routing instance red
 sub _snmp_context {
     my ( $juniper, $kind, $id ) = @_;
 
+    return $juniper->_jnx_vrf_context($id)
+        if ( $kind // '' ) eq 'vrf';
     return unless ( $kind // '' ) eq 'vlan' and defined $id;
     return {
         kind => 'vlan',
@@ -947,6 +957,110 @@ sub _snmp_context {
         v2c  => "default::$id\@%s",
         v3   => "default::$id",
     };
+}
+
+# A Junos v3 context name is the routing instance name; the default
+# instance is the default context
+sub _jnx_vrf_context {
+    my ( $juniper, $name ) = @_;
+
+    return if !defined $name or $name eq q() or $name eq 'default';
+    return {
+        kind => 'vrf',
+        id   => $name,
+        v2c  => "$name\@%s",
+        v3   => $name,
+    };
+}
+
+# Each routing instance reads in its own context
+sub _vrf_context_filters { return 1; }
+
+# The default context also serves every instance's neighbors and addresses
+# on the instances' ports
+sub _vrf_default_context_leaks { return 1; }
+
+# Host link-locals are only in IPV6-MIB ipv6NetToMediaTable
+sub _vrf_nd_from_ipv6_mib { return 1; }
+
+# Platform-internal instances: the global table, the layer 2 default,
+# double-underscore names and the gRIBI context. mgmt_junos is listed: it
+# holds ports and reads in its own context.
+sub _vrf_internal_instance {
+    my ( $juniper, $name ) = @_;
+
+    return 1 if !defined $name;
+    return 1 if grep { $name eq $_ } q(), 'default', 'default-switch';
+    return $name =~ /^__.*__$/ || $name =~ /^:/ ? 1 : 0;
+}
+
+# MPLS-L3VPN-STD-MIB lists the VRFs; vacmContextName adds the instances it
+# does not list, as VRFs where jnxVpnTable types them bgpIpVpn. A served
+# vacm list lists default too (_vrf_list_default in VRF.pm), so a device
+# listing no instance reads none.
+sub _vrf_served_instances {
+    my $juniper = shift;
+
+    my $instances = $juniper->SUPER::_vrf_served_instances();
+    my $vpn_types = $juniper->_jnx_vpn_types();
+    foreach my $name ( $juniper->_jnx_vacm_names() ) {
+        my $type = $vpn_types->{$name} // 2;
+        next if $instances->{$name} or $type != 2;
+        my $kind   = exists $vpn_types->{$name} ? 'vrf' : 'virtual-router';
+        my $record = SNMP::Info::VRF::_vrf_record( $name, $kind, 'device' );
+        $record->{sources}{list} = 'SNMP-VIEW-BASED-ACM-MIB';
+        $juniper->_vrf_set_contexts($record);
+        $instances->{$name} = $record;
+    }
+    $juniper->_vrf_list_default( $instances, 'SNMP-VIEW-BASED-ACM-MIB' )
+        if %{ $juniper->jnx_vacm_context_name() || {} };
+    return $instances;
+}
+
+# The names vacmContextName serves, minus the internal ones and the
+# instance::N contexts VSTP serves
+sub _jnx_vacm_names {
+    my $juniper = shift;
+
+    my $rows = $juniper->jnx_vacm_context_name() || {};
+    my %names;
+    foreach my $iid ( keys %$rows ) {
+        my ($name) = $juniper->_vrf_decode_name($iid);
+        next if !defined $name or $juniper->_vrf_internal_instance($name);
+        next if $name =~ /^[^:]+::\d+$/;
+        $names{$name} = 1;
+    }
+    my @names = sort keys %names;
+    return @names;
+}
+
+# { name => jnxVpnType } for each VPN jnxVpnTable lists: bgpIpVpn(2) is a
+# VRF, any other type a VPLS or other layer 2 instance
+sub _jnx_vpn_types {
+    my $juniper = shift;
+
+    my $rows = $juniper->vrf_jnx_vpn_status() || {};
+    my %types;
+    foreach my $iid ( keys %$rows ) {
+        my ( $type, $rest ) = split /\./, $iid, 2;
+        next if !defined $rest;
+        my ($name) = $juniper->_vrf_decode_name($rest);
+        $types{$name} = $type if defined $name;
+    }
+    return \%types;
+}
+
+# The vacm and jnxVpn walks list the instances, so a partial one is a
+# short list
+sub _vrf_walk_incomplete {
+    my $juniper = shift;
+
+    return 1 if $juniper->SUPER::_vrf_walk_incomplete();
+    foreach my $method (qw/jnx_vacm_context_name vrf_jnx_vpn_status/) {
+        my $status = $juniper->walk_status($method) or next;
+        return 1 unless $status->{complete};
+    }
+    return 0;
 }
 
 sub _jnx_vlan_context {
@@ -1348,6 +1462,8 @@ Subclass for Juniper Devices running JUNOS
 
 =item F<SNMP-VIEW-BASED-ACM-MIB>
 
+=item F<JUNIPER-VPN-MIB>
+
 =back
 
 =head2 Inherited Classes' MIBs
@@ -1514,6 +1630,15 @@ through L<SNMP::Info::Bridge>.
 
 (C<vacmContextName>)
 
+=item $juniper->vrf_jnx_vpn_status()
+
+Returns reference to hash of the row status of each VPN, keyed by
+C<jnxVpnType> then the length-prefixed C<jnxVpnName>. The index is what
+names the VPN, since both index leaves are not accessible. Type 2 is
+C<bgpIpVpn>.
+
+(C<jnxVpnRowStatus>)
+
 =item $juniper->jnx_mst_control()
 
 (C<jnxMIMstSystemControl>)
@@ -1669,20 +1794,147 @@ in another routing instance, which is not listed as a tree.
 C<stp_trees_complete()> is also 0 whenever the C<jnxMIMstSystemControl> walk
 was incomplete.
 
+=head2 Routing instances
+
+C<vrf_instances()> lists:
+
+=over
+
+=item *
+
+each instance C<MPLS-L3VPN-STD-MIB> serves, as kind C<vrf>, with its
+route distinguisher and route targets;
+
+=item *
+
+each other name C<vacmContextName> (C<SNMP-VIEW-BASED-ACM-MIB>) serves,
+with C<SNMP-VIEW-BASED-ACM-MIB> as its list source. It is kind C<vrf>
+when C<jnxVpnTable> (C<JUNIPER-VPN-MIB>) lists the name as C<bgpIpVpn>,
+and C<virtual-router> otherwise. The management instance C<mgmt_junos>
+is a C<virtual-router> like any other, and reads in its own context.
+
+=back
+
+These names are never listed:
+
+=over
+
+=item *
+
+the empty name, C<default> and C<default-switch>;
+
+=item *
+
+a name between double underscores, such as C<__juniper_private2__>;
+
+=item *
+
+a name starting with a colon, such as C<:gribi>;
+
+=item *
+
+an C<instance::N> VSTP context;
+
+=item *
+
+a name C<jnxVpnTable> lists with a type other than C<bgpIpVpn>, such as
+a VPLS instance.
+
+=back
+
+A layer 2 instance with no C<jnxVpnTable> row, such as a
+C<virtual-switch>, is listed as a C<virtual-router>. It reads no address
+in its context, since the device holds none there.
+
+The default instance is always the C<default> record. Its list source is
+C<MPLS-L3VPN-STD-MIB> when that serves a row, and otherwise
+C<SNMP-VIEW-BASED-ACM-MIB> when C<vacmContextName> serves a row. A device
+that lists no other instance there reports C<vrf_instances_complete()>
+1, none configured (see L<SNMP::Info::VRF/"Completeness">).
+C<vrf_instances_complete()> is 0 when the C<vacmContextName> or
+C<jnxVpnRowStatus> walk was incomplete.
+
+Each instance reads in its own context (context mode). The default
+context leaks: it also serves every instance's neighbors and addresses
+on the instances' ports.
+
+=over
+
+=item *
+
+The readers of C<default> drop the rows on the ports
+C<mplsL3VpnIfConfTable> gives a VRF. C<i_vrf()> in the default context
+is that membership.
+
+=item *
+
+An instance listed only by C<vacmContextName>, such as a virtual router
+or the management instance, is never covered by the membership table,
+even where C<mplsL3VpnIfConfTable> names it. Its rows stay in
+C<default>, except on ports that table names, and
+C<vrf_read_complete('default')> is 0 while it is listed. Every device
+with C<mgmt_junos> therefore reads 0 there.
+
+=item *
+
+To separate a virtual router's rows, read it in its own context first.
+Then drop from C<default>'s rows those on the ports C<i_vrf()> reported
+in that router's context. C<vrf_read_complete('default')> stays 0, since
+the class cannot check the result.
+
+=item *
+
+An internal instance that no list source names, such as
+C<__juniper_private1__> on the internal links, keeps its rows in
+C<default> whatever is listed.
+
+=back
+
+Neighbors:
+
+=over
+
+=item *
+
+Junos serves host link-local neighbors only in C<ipv6NetToMediaTable>
+(C<IPV6-MIB>). C<vrf_neighbors()> adds them to the
+C<ipNetToPhysicalTable> rows, once per port and address.
+
+=item *
+
+Junos serves an instance's own addresses as neighbors too: at an
+all-zero or empty MAC, or at the port's MAC, C<static> in IPv4 and
+C<local> in IPv6. C<vrf_neighbors()> drops them all.
+
+=item *
+
+Junos holds C<fe80::1> on every port of an instance, but lists it in
+C<ipAddressTable> on one only. Its rows on the other ports are dropped
+by the port's MAC.
+
+=back
+
 =over
 
 =item $juniper->context_kinds($feature)
 
 C<['vlan']> for C<stp> while VSTP runs, since each VSTP tree is served in
-its own VLAN context; nothing otherwise, and nothing for other features.
-See L<SNMP::Info/"context_kinds">.
+its own VLAN context; C<['vrf']> for C<vrf>, since each routing instance is
+served in its own context; nothing otherwise, and nothing for other
+features.  See L<SNMP::Info/"context_kinds">.
 
 =item $juniper->snmp_context($kind, $id)
 
 For C<vlan> returns C<< { kind => 'vlan', id => N, v2c =>
 'default::N@%s', v3 => 'default::N' } >>, the context of VLAN N in the
-C<default> instance, with the context before the community; nothing for
-other kinds.  See L<SNMP::Info/"snmp_context">.
+C<default> instance, with the context before the community.  For C<vrf>
+and an instance name returns C<< { kind => 'vrf', id => $name, v2c =>
+'$name@%s', v3 => $name } >>, with the instance before the community
+(C<red@community>, never C<community@red>); a Junos SNMPv3 context name is
+the instance name.  The C<default> instance, an empty name and no name get
+nothing, since the default context serves the default instance.  Kinds
+other than C<vlan> and C<vrf> get nothing.  See
+L<SNMP::Info/"snmp_context">.
 
 =item $juniper->stp_protocols()
 
