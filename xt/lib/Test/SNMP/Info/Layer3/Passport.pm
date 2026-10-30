@@ -759,4 +759,80 @@ sub lag_groups_complete__member_walk_incomplete__returns_0 : Tests(2) {
     'Incomplete member walk gives 0');
 }
 
+sub _port_list {
+  my %member = map { $_ => 1 } @_;
+  return pack('B*', join('', map { $member{$_} ? 1 : 0 } 0 .. 199));
+}
+
+# Partial reads by set methods go to the session, not the cache
+sub _prime_session_port {
+  my ($test, %port) = @_;
+
+  my $sess = $test->{info}{sess};
+  $sess->{Data} = {
+    'IF-MIB::ifIndex'                  => {5 => 5},
+    'RAPID-CITY::rcVlanId'             => {map { $_ => $_ } 315, 316, 331},
+    'RAPID-CITY::rcVlanPortType'       => {5 => $port{type}},
+    'RAPID-CITY::rcVlanPortPerformTagging' => {5 => $port{tagging}},
+    'RAPID-CITY::rcVlanPortDefaultVlanId'  => {5 => $port{pvid}},
+    'RAPID-CITY::rcVlanPortMembers'    => {
+      map { $_ => _port_list($port{members}{$_} ? 5 : ()) }
+        315, 316, 331
+    },
+    'RAPID-CITY::rcVlanNotAllowToJoin' => {map { $_ => _port_list() }
+      315, 316, 331},
+  };
+  $sess->{_sets} = [];
+  # set_multi() passes a list of varbinds, a single setter one OID string
+  $sess->mock('set', sub {
+    my ($self, $vars) = @_;
+    my @binds = ref $vars ? @$vars : ([$vars]);
+    foreach my $bind (@binds) {
+      my ($oid, $iid) = @$bind;
+      ($oid, $iid) = $oid =~ /^(.+)\.(\d+)$/ unless defined $iid;
+      my $name = $oid =~ /^[.]?\d/ ? SNMP::translateObj($oid) : $oid;
+      $name =~ s/^.*:://;
+      push @{$self->{_sets}}, "$name.$iid";
+    }
+    return 1;
+  });
+  return $sess;
+}
+
+sub set_i_vlan : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'set_i_vlan');
+  my $sess = $test->_prime_session_port(type => 'trunk',
+    tagging => 'untagPvidOnly', pvid => 315,
+    members => {315 => 1, 331 => 1});
+  ok($test->{info}->set_i_vlan(316, 5),
+    'set_i_vlan__untag_pvid_only_port_typed_trunk__changes_vlan');
+  cmp_deeply($sess->{_sets}, [
+      'rcVlanPortMembers.316', 'rcVlanPortMembers.315',
+      'rcVlanPortDefaultVlanId.5'],
+    'Adds the new VLAN, removes the old one, then sets the PVID');
+
+  $sess = $test->_prime_session_port(type => 'trunk', tagging => 'true',
+    pvid => 315, members => {315 => 1, 331 => 1});
+  ok(!$test->{info}->set_i_vlan(316, 5),
+    'set_i_vlan__tagged_pvid__refuses');
+}
+
+sub set_i_pvid : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'set_i_pvid');
+  my $sess = $test->_prime_session_port(type => 'access', tagging => 'false',
+    pvid => 315, members => {315 => 1});
+  ok(!$test->{info}->set_i_pvid(316, 5),
+    'set_i_pvid__vlan_not_a_member__refuses');
+  cmp_deeply($sess->{_sets}, [], 'No set is sent');
+
+  $sess = $test->_prime_session_port(type => 'trunk', tagging => 'true',
+    pvid => 315, members => {315 => 1, 331 => 1});
+  ok($test->{info}->set_i_pvid(331, 5),
+    'set_i_pvid__vlan_is_a_member__sets_pvid');
+}
+
 1;

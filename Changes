@@ -22,6 +22,8 @@ Version 3.983001
     checks the tables agg_ports reads
   * #654 ArubaCX: report the bridge MAC as the system MAC instead of port
     1/1/1 (#567)
+  * #655 RapidCity: allow VLAN changes on phone (untagPvidOnly) ports and
+    report their untagged VLANs from the port tagging setting (#538)
 
 Version 3.983000 (2026-10-26)
 
