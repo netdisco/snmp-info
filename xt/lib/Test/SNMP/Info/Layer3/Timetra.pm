@@ -215,6 +215,21 @@ sub lldp_addr : Tests(3) {
     $expected, q(Remote LLDP IPv6 has expected value));
 }
 
+sub lldp_addr__index_without_address__skipped_without_warning : Tests(2) {
+  my $test = shift;
+
+  my @warnings;
+  local $SIG{__WARN__} = sub { push @warnings, @_ };
+  $test->{info}{store}{lldp_rman_addr} = {
+    '230425271.40108032.1.2'             => 'unknown',
+    '230425271.40108032.1.2.1.4.1.2.3.4' => 'unknown',
+  };
+  cmp_deeply($test->{info}->lldp_ip(),
+    {'230425271.40108032.1.2' => '1.2.3.4'},
+    q(Valid row kept, row without an address skipped));
+  cmp_deeply(\@warnings, [], q(No warnings));
+}
+
 # Example from LLDP documentation
 # Used as verification that we can map essential L2 topo information
 sub topo_example_test : Tests(1) {

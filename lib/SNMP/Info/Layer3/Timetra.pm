@@ -196,6 +196,8 @@ sub _lldp_addr_index {
     my $proto = shift(@oids);
     shift(@oids) if scalar @oids > 4;    # $length
 
+    return unless defined $proto and @oids;
+
     # IPv4
     if ( $proto == 1 ) {
         return ( $index, $proto, join( '.', @oids ) );
