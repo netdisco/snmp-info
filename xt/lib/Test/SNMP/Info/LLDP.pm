@@ -426,6 +426,25 @@ sub lldp_addr : Tests(4) {
     q(LLDP-V2-MIB addresses keep the four-part index));
 }
 
+# Rows as served by a Fabric Interconnect: a one-number index with no
+# address type or address after the neighbor key
+sub lldp_addr__index_without_address__skipped_without_warning : Tests(3) {
+  my $test = shift;
+
+  my @warnings;
+  local $SIG{__WARN__} = sub { push @warnings, @_ };
+  $test->{info}{store}{lldp_rman_addr} = {
+    '83886080' => 0, '83890176' => 'ifIndex', '83894272' => 'ifIndex',
+  };
+  cmp_deeply($test->{info}->lldp_addr(), {}, q(Malformed rows are skipped));
+
+  $test->{info}{store}{lldp_rman_addr}{'0.6.1.1.4.1.2.3.4'} = 'unknown';
+  $test->{info}{store}{lldp_rman_addr}{'0.6.1'} = 'unknown';
+  cmp_deeply($test->{info}->lldp_ip(), {'0.6.1' => '1.2.3.4'},
+    q(Valid rows beside malformed ones are kept));
+  cmp_deeply(\@warnings, [], q(No warnings));
+}
+
 sub lldp_port : Tests(11) {
   my $test = shift;
 
