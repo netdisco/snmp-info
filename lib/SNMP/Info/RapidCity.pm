@@ -40,7 +40,7 @@ use SNMP::Info::IEEE802dot3ad ();
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.983000';
+$VERSION = '3.984000';
 
 %MIBS = (
     'RAPID-CITY' => 'rapidCity',
