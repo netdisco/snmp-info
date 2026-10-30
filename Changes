@@ -20,6 +20,8 @@ Version 3.983001
     are empty (netdisco/netdisco#856, netdisco/netdisco#1138)
   * #653 LAG: Foundry and RapidCity agg_ports fixes; lag_groups_complete
     checks the tables agg_ports reads
+  * #654 ArubaCX: report the bridge MAC as the system MAC instead of port
+    1/1/1 (#567)
 
 Version 3.983000 (2026-10-26)
 
