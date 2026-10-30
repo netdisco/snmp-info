@@ -520,6 +520,23 @@ sub set_i_pvid {
 
     return unless ( $rapidcity->_validate_vlan_param( $vlan_id, $ifindex ) );
 
+    # Without auto-PVID a PVID outside the port's VLANs is accepted and
+    # leaves the PVID and untagged membership out of step
+    my $members = $rapidcity->rc_vlan_members($vlan_id) || {};
+    unless ( $members->{$vlan_id} and $members->{$vlan_id}[$ifindex] ) {
+        $rapidcity->error_throw(
+            "IfIndex: $ifindex is not a member of VLAN: $vlan_id, so setting"
+                . " only its PVID would leave the PVID outside its VLANs."
+                . " Use set_i_vlan() to move the port to VLAN: $vlan_id" );
+        return;
+    }
+    return $rapidcity->_set_rc_i_vlan_pvid( $vlan_id, $ifindex );
+}
+
+sub _set_rc_i_vlan_pvid {
+    my $rapidcity = shift;
+    my ( $vlan_id, $ifindex ) = @_;
+
     unless ( $rapidcity->set_rc_i_vlan_pvid( $vlan_id, $ifindex ) ) {
         $rapidcity->error_throw(
             "Unable to change PVID to $vlan_id on IfIndex: $ifindex");
@@ -535,9 +552,13 @@ sub set_i_vlan {
     return
         unless ( $rapidcity->_validate_vlan_param( $new_vlan_id, $ifindex ) );
 
-    my $vlan_p_type = $rapidcity->rc_i_vlan_type($ifindex);
-    unless ( $vlan_p_type->{$ifindex} =~ /access/ ) {
-        $rapidcity->error_throw("Not an access port");
+    my $tagging
+        = $rapidcity->_rc_i_vlan_tagging($ifindex)->{$ifindex} || 'unknown';
+    unless ( $tagging eq 'untagAll' or $tagging eq 'untagPvidOnly' ) {
+        $rapidcity->error_throw(
+            "IfIndex: $ifindex sends its PVID tagged ($tagging), so it has"
+                . " no untagged VLAN to change. Use set_i_pvid() to change"
+                . " the PVID of a tagged port" );
         return;
     }
 
@@ -599,7 +620,8 @@ sub set_i_vlan {
     my $cur_i_pvid = $i_pvid->{$ifindex};
     print "Current PVID: $cur_i_pvid\n" if $rapidcity->debug();
     unless ( $cur_i_pvid eq $new_vlan_id ) {
-        return unless ( $rapidcity->set_i_pvid( $new_vlan_id, $ifindex ) );
+        return
+            unless $rapidcity->_set_rc_i_vlan_pvid( $new_vlan_id, $ifindex );
     }
 
     print
@@ -2476,8 +2498,10 @@ choices are 'auto', 'half', 'full'.
 
 Changes an access (untagged) port VLAN, must be supplied with the numeric
 VLAN ID and port C<ifIndex>.  This method will modify the port's VLAN
-membership and PVID (default VLAN).  This method should only be used on end
-station (non-trunk) ports.
+membership and PVID (default VLAN).  This method should only be used on ports
+that send their PVID untagged: end station ports, and ports that untag only
+the PVID (C<untagPvidOnly>), such as a phone port with a tagged voice VLAN.
+Other tagged VLANs on the port are left as they are.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
@@ -2488,7 +2512,8 @@ station (non-trunk) ports.
 
 Sets port PVID or default VLAN, must be supplied with the numeric VLAN ID and
 port C<ifIndex>.  This method only changes the PVID, to modify an access
-(untagged) port use set_i_vlan() instead.
+(untagged) port use set_i_vlan() instead.  The port must already be a member
+of the VLAN, so the PVID is never left outside the port's VLANs.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
