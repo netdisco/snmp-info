@@ -24,6 +24,8 @@ Version 3.983001
     1/1/1 (#567)
   * #655 RapidCity: allow VLAN changes on phone (untagPvidOnly) ports and
     report their untagged VLANs from the port tagging setting (#538)
+  * #656 LLDP: skip management address rows whose index has no address,
+    which logged warnings on Cisco Fabric Interconnects (#520)
 
 Version 3.983000 (2026-10-26)
 

@@ -534,6 +534,10 @@ sub _lldp_addr_index {
     my $proto = shift(@oids);
     shift(@oids) if scalar @oids > 4;    # $length
 
+    # Some agents serve rows whose index stops before the address type or
+    # the address, as a single number on some Cisco Fabric Interconnects
+    return unless defined $proto and @oids;
+
     # IPv4
     if ( $proto == 1 ) {
         return ( $index, $proto, join( '.', @oids ) );
