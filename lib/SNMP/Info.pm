@@ -2569,7 +2569,6 @@ sub device_type {
         21091 => 'SNMP::Info::Layer2::Exinda',
         26543 => 'SNMP::Info::Layer3::IBMGbTor',
         26928 => 'SNMP::Info::Layer2::Aerohive',
-        33049 => 'SNMP::Info::Layer2::Mellanox',
         46242 => 'SNMP::Info::Layer3::Netonix',
         47196 => 'SNMP::Info::Layer3::ArubaCX',
         48690 => 'SNMP::Info::Layer3::Teltonika',
@@ -3077,6 +3076,11 @@ sub device_type {
             }
         }
     }
+
+    # Mellanox / NVIDIA Onyx switches. Only the switch branch: the enterprise
+    # also holds other product lines, such as InfiniBand gateways
+    $objtype = 'SNMP::Info::Layer2::Mellanox'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.33049\.1\.1\.1\./;
 
     # Instant APs use AI-AP-MIB, not the mobility controller WLAN tables.
     # Restrict this initial support to the 8.x evidence in issue #536.

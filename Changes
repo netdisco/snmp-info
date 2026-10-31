@@ -1,5 +1,10 @@
 Version 3.984001
 
+  [NEW FEATURES]
+
+  * #571 Mellanox: new Layer2::Mellanox class for Mellanox / NVIDIA Onyx
+    switches (#396)
+
   [BUG FIXES]
 
   * #657 Layer3: read the IPv4 ARP cache from ipNetToPhysicalTable when the

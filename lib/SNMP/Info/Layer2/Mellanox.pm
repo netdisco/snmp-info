@@ -42,7 +42,7 @@ use SNMP::Info::Layer2;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = ( %SNMP::Info::Layer2::MIBS, );
 
@@ -58,13 +58,19 @@ $VERSION = '3.975000';
     'mac' => \&SNMP::Info::munge_mac,
 );
 
-sub bulkwalk_no { return 1; }
+# Onyx serves sysServices 72 (layers 4 and 7) although it bridges, so add
+# layer 2 or the calling application skips the forwarding table
+sub layers {
+    my $dev = shift;
 
-sub layers { return '01001010'; }
+    my $layers = $dev->SUPER::layers() || '00000000';
+    substr( $layers, 6, 1, '1' );
+    return $layers;
+}
 
-sub vendor { return 'Mellanox'; }
+sub vendor { return 'mellanox'; }
 
-sub os { return 'Onyx'; }
+sub os { return 'onyx'; }
 
 sub os_ver {
     my $dev   = shift;
@@ -79,47 +85,6 @@ sub model {
     my $descr = $dev->description();
     return $1 if defined $descr && $descr =~ /^Onyx,\s*([^,]+),/;
     return $dev->SUPER::model();
-}
-
-sub interfaces {
-    my $dev     = shift;
-    my $partial = shift;
-
-    my $i_name = $dev->i_name($partial) || {};
-
-    my %if;
-    foreach my $iid ( keys %$i_name ) {
-        my $name = $i_name->{$iid};
-        next unless defined $name and $name !~ /^\s*$/;
-        $if{$iid} = $name;
-    }
-    return \%if;
-}
-
-sub i_description {
-    my $dev     = shift;
-    my $partial = shift;
-
-    my $i_name  = $dev->i_name($partial)  || {};
-    my $i_alias = $dev->i_alias($partial) || {};
-
-    my %descr;
-
-    # start with ifName as fallback
-    foreach my $iid ( keys %$i_name ) {
-        my $name = $i_name->{$iid};
-        next unless defined $name and $name !~ /^\s*$/;
-        $descr{$iid} = $name;
-    }
-
-    # override with ifAlias where operator has set a description
-    foreach my $iid ( keys %$i_alias ) {
-        my $alias = $i_alias->{$iid};
-        next unless defined $alias and $alias !~ /^\s*$/;
-        $descr{$iid} = $alias;
-    }
-
-    return \%descr;
 }
 
 sub lldp_id {
@@ -166,27 +131,35 @@ sub lldp_id {
     return \%id;
 }
 
+# lldpRemLocalPortNum is a bridge port number. A port with no bridge port
+# row (a LAG member) is found by its lldpLocPortId, which Onyx sets to the
+# ifName; a neighbor matching neither is left out rather than guessed
 sub lldp_if {
     my $dev     = shift;
     my $partial = shift;
 
     my $id_type  = $dev->lldp_rem_id_type($partial) || {};
     my $bp_index = $dev->bp_index()                 || {};
+    my $lport_id = $dev->lldp_lport_id()            || {};
+    my %by_name  = reverse %{ $dev->i_name() || {} };
 
     my %if;
     foreach my $key ( keys %$id_type ) {
         my ( $time, $lport, $remote ) = split /\./, $key;
         next unless defined $lport;
 
-        my $ifindex = exists $bp_index->{$lport}
-                    ? $bp_index->{$lport}
-                    : $lport;
+        my $name    = $lport_id->{$lport};
+        my $ifindex = $bp_index->{$lport}
+            // ( defined $name ? $by_name{$name} : undef );
+        next unless defined $ifindex;
 
         $if{$key} = $ifindex;
     }
     return \%if;
 }
 
+# A neighbor with no management address gets 0.0.0.0, which the calling
+# application looks up by c_id; an entry with no c_ip is dropped
 sub c_ip {
     my $dev     = shift;
     my $partial = shift;
@@ -236,28 +209,8 @@ Hannes Eberhardt
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a
-Mellanox/NVIDIA switch running Onyx via SNMP.
-
-The main Onyx-specific quirks this module works around are:
-
-=over
-
-=item * sysServices reports 72 (Linux net-snmp default) rather than
-advertising Layer 2 capability, so layers() is hardcoded.
-
-=item * Chassis IDs in lldpRemChassisId are sent as ASCII MAC strings
-encoded as bytes rather than raw binary bytes.
-
-=item * LLDP local port numbers are bridge port numbers that must be
-translated via dot1dBasePortIfIndex (bp_index) to get ifIndex.
-
-=item * Neighbors with no LLDP management address need a 0.0.0.0
-sentinel in c_ip() so Netdisco falls through to MAC-based resolution.
-
-=item * Real port names are in ifName, not ifDescr. Operator
-descriptions are in ifAlias.
-
-=back
+Mellanox / NVIDIA switch running Onyx via SNMP. It is chosen for
+C<sysObjectID>s under the Onyx switch branch, C<.1.3.6.1.4.1.33049.1.1.1>.
 
 =head2 Inherited Classes
 
@@ -269,70 +222,90 @@ descriptions are in ifAlias.
 
 =head2 Required MIBs
 
-All MIBs required by L<SNMP::Info::Layer2> and its inherited classes.
+None beyond those of the inherited class.
+
+=head2 Inherited MIBs
+
+See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
+
+These are methods that return scalar value from SNMP.
+
+=over
+
+=item $dev->vendor()
+
+Returns 'mellanox'.
+
+=item $dev->os()
+
+Returns 'onyx'.
+
+=item $dev->os_ver()
+
+Returns the OS version from C<sysDescr>, such as "3.10.4100" from
+"Onyx,MSN2410,SWv3.10.4100".
+
+=item $dev->model()
+
+Returns the model from C<sysDescr>, such as "MSN2410", or the inherited
+model when C<sysDescr> does not name one.
+
+=item $dev->mac()
+
+Returns the bridge MAC address.
+
+(C<dot1dBaseBridgeAddress>)
+
+=back
+
+=head2 Overrides
 
 =over
 
 =item $dev->layers()
 
-Returns '01001010'. Hardcoded because Onyx reports the Linux net-snmp
-default (72 / 01001000) which does not advertise Layer 2 capability.
-
-=item $dev->vendor()
-
-Returns 'Mellanox'.
-
-=item $dev->os()
-
-Returns 'Onyx'.
-
-=item $dev->os_ver()
-
-Parses the OS version from C<sysDescr>, e.g. "3.10.4100" from
-"Onyx,MSN2410,SWv3.10.4100".
-
-=item $dev->model()
-
-Parses the model from C<sysDescr>, e.g. "MSN2410".
-
-=item $dev->mac()
-
-Returns the base bridge MAC address from C<dot1dBaseBridgeAddress>.
+Returns the inherited layers with layer 2 added. Onyx serves
+C<sysServices> 72 (layers 4 and 7), which does not include layer 2.
 
 =back
+
+=head2 Global Methods imported from SNMP::Info::Layer2
+
+See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
+=head2 Overrides
+
 =over
-
-=item $dev->interfaces()
-
-Returns ifIndex -> ifName mapping. Uses ifName as the stable port
-identifier (key in Netdisco's device_port table).
-
-=item $dev->i_description()
-
-Returns ifIndex -> description mapping. Prefers ifAlias (operator-set
-description) over ifName so Netdisco displays meaningful port labels.
 
 =item $dev->lldp_id()
 
-Overrides the default to handle Onyx's chassis ID encoding: MAC
-addresses are sent as ASCII strings in the byte field rather than as
-raw 6-byte binary values.
+Returns reference to hash. Key: iid, Value: remote chassis ID. Onyx sends
+a MAC address chassis ID as its ASCII text rather than six octets; both
+forms are returned as a colon-separated MAC address.
+
+(C<lldpRemChassisId>)
 
 =item $dev->lldp_if()
 
-Translates LLDP local port numbers (bridge port numbers embedded in
-the LLDP table key) to ifIndex via C<bp_index()>.
+Returns reference to hash. Key: iid, Value: local ifIndex. Onyx's
+C<lldpRemLocalPortNum> is a bridge port number, mapped through
+C<bp_index()>. A port with no bridge port row is matched by its
+C<lldpLocPortId> to C<ifName>; a neighbor matching neither is left out.
 
 =item $dev->c_ip()
 
-Delegates to C<lldp_ip()> and inserts 0.0.0.0 for entries with no
-management IP so Netdisco falls through to MAC-based resolution.
+Returns reference to hash. Key: iid, Value: remote IPv4 address from
+C<lldp_ip()>, or 0.0.0.0 for a neighbor that advertises no management
+address, so it can still be found by its C<c_id()>.
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::Layer2
+
+See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
 
 =cut
