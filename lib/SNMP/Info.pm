@@ -1255,6 +1255,13 @@ Subclass for VMware ESXi hosts.
 
 See documentation in L<SNMP::Info::Layer3::VMware> for details.
 
+=item SNMP::Info::Layer3::VOSS
+
+Subclass for Extreme VOSS / Fabric Engine switches that report the Extreme
+enterprise.
+
+See documentation in L<SNMP::Info::Layer3::VOSS> for details.
+
 =item SNMP::Info::Layer3::VyOS
 
 Subclass for VyOS routers.
@@ -2752,6 +2759,12 @@ sub device_type {
         # Extreme WiNG APs (formerly Motorola)
         $objtype = 'SNMP::Info::Layer3::ExtremeWing'
             if ( $soid =~ /^\.?1\.3\.6\.1\.4\.1\.388\.50/ );
+
+        # Extreme VOSS / Fabric Engine, which report "<model> (a.b.c.d)".
+        # VOSS reporting the Avaya enterprise stays with Passport
+        $objtype = 'SNMP::Info::Layer3::VOSS'
+            if ( $soid =~ /^\.?1\.3\.6\.1\.4\.1\.1916\./
+            and $desc =~ /^\S+\s+\(\d+(?:\.\d+){3}/ );
 
         # Avaya Secure Router
         $objtype = 'SNMP::Info::Layer3::Tasman'
