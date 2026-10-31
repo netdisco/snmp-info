@@ -169,4 +169,59 @@ sub at_index : Tests(3) {
   is($test->{info}->at_index(), undef, q(No data returns undef));
 }
 
+# Some routers, an Extreme VDX among them, list only their own 127.x
+# entries in ipNetToMediaTable and the ARP cache in ipNetToPhysicalTable
+sub _prime_loopback_media {
+  my ($test, %extra) = @_;
+
+  my %paddr = ('3.127.1.0.1' => pack('H*', '0027f8000001'), %extra);
+  $test->{info}{'_at_index'}   = 1;
+  $test->{info}{'_at_paddr'}   = 1;
+  $test->{info}{'_at_netaddr'} = 1;
+  $test->{info}{store}{at_index}   = {map { $_ => 3 } keys %paddr};
+  $test->{info}{store}{at_paddr}   = \%paddr;
+  $test->{info}{store}{at_netaddr}
+    = {map { my ($a) = /^\d+\.(.+)$/; ($_ => $a) } keys %paddr};
+  return;
+}
+
+sub at_paddr__media_table_loopback_only__reads_n2p_table : Tests(3) {
+  my $test = shift;
+
+  $test->_prime_loopback_media();
+  $test->_prime_n2p();
+  my $expected = {
+    '8.192.168.140.253' => '38:90:a5:fe:21:bf',
+    '5.10.0.0.33'       => '00:09:0f:09:00:00',
+  };
+  cmp_deeply($test->{info}->at_paddr(), $expected,
+    q(MAC addresses come from ipNetToPhysicalTable));
+  cmp_deeply($test->{info}->at_netaddr(),
+    {'8.192.168.140.253' => '192.168.140.253', '5.10.0.0.33' => '10.0.0.33'},
+    q(IPv4 addresses come from ipNetToPhysicalTable));
+  cmp_deeply($test->{info}->at_index(),
+    {'8.192.168.140.253' => 8, '5.10.0.0.33' => 5},
+    q(ifIndexes come from ipNetToPhysicalTable));
+}
+
+sub at_paddr__media_table_with_one_real_row__kept : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_loopback_media('3.10.1.1.1' => pack('H*', '001122334455'));
+  $test->_prime_n2p();
+  cmp_deeply($test->{info}->at_paddr(),
+    {'3.127.1.0.1' => '00:27:f8:00:00:01',
+     '3.10.1.1.1'  => '00:11:22:33:44:55'},
+    q(ipNetToMediaTable with any other address is kept as it is));
+}
+
+sub at_paddr__media_table_loopback_only_no_n2p__kept : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_loopback_media();
+  cmp_deeply($test->{info}->at_paddr(),
+    {'3.127.1.0.1' => '00:27:f8:00:00:01'},
+    q(Loopback rows are returned when ipNetToPhysicalTable has none));
+}
+
 1;

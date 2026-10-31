@@ -410,7 +410,8 @@ sub at_index {
     my $l3      = shift;
     my $partial = shift;
 
-    return scalar( $l3->orig_at_index($partial)
+    return scalar( $l3->_n2p_over_loopback( 'index', $partial )
+            || $l3->orig_at_index($partial)
             || $l3->old_at_index($partial)
             || $l3->_n2p_ipv4_column( 'index', $partial ) );
 }
@@ -419,7 +420,8 @@ sub at_paddr {
     my $l3      = shift;
     my $partial = shift;
 
-    return scalar( $l3->orig_at_paddr($partial)
+    return scalar( $l3->_n2p_over_loopback( 'paddr', $partial )
+            || $l3->orig_at_paddr($partial)
             || $l3->old_at_paddr($partial)
             || $l3->_n2p_ipv4_column( 'paddr', $partial ) );
 }
@@ -428,9 +430,28 @@ sub at_netaddr {
     my $l3      = shift;
     my $partial = shift;
 
-    return scalar( $l3->orig_at_netaddr($partial)
+    return scalar( $l3->_n2p_over_loopback( 'netaddr', $partial )
+            || $l3->orig_at_netaddr($partial)
             || $l3->old_at_netaddr($partial)
             || $l3->_n2p_ipv4_column( 'netaddr', $partial ) );
+}
+
+# Some routers, an Extreme VDX among them, list only their own 127.x entries
+# in ipNetToMediaTable and keep the ARP cache in ipNetToPhysicalTable. All
+# three columns then come from ipNetToPhysicalTable, when it has IPv4 rows.
+sub _n2p_over_loopback {
+    my ( $l3, $column, $partial ) = @_;
+
+    return unless $l3->_at_loopback_only();
+    my $rows = $l3->_n2p_ipv4_column( $column, $partial ) or return;
+    return %$rows ? $rows : undef;
+}
+
+sub _at_loopback_only {
+    my $l3    = shift;
+    my $older = $l3->orig_at_paddr() || $l3->old_at_paddr();
+    return unless $older and %$older;
+    return !grep { !/(?:^|\.)127\.\d+\.\d+\.\d+$/ } keys %$older;
 }
 
 # ipNetToPhysicalTable is indexed by ifIndex, InetAddressType and an
@@ -440,13 +461,15 @@ sub at_netaddr {
 # at_* methods call it in scalar context because subclasses such as ArubaCX
 # pass their result as an argument, where an empty list would shift the rest.
 # Its keys match ipNetToMediaTable keys, so it is read only when neither older
-# table has MAC addresses; otherwise a missing column would be filled from a
-# different table. It reads the IPv6 neighbor methods' leaf, so arpnip walks
-# ipNetToPhysicalTable once.
+# table has MAC addresses outside 127.0.0.0/8; otherwise a missing column
+# would be filled from a different table. It reads the IPv6 neighbor methods'
+# leaf, so arpnip walks ipNetToPhysicalTable once.
 sub _n2p_ipv4_column {
     my ( $l3, $column, $partial ) = @_;
 
-    return if $l3->orig_at_paddr() or $l3->old_at_paddr();
+    return
+        if ( $l3->orig_at_paddr() or $l3->old_at_paddr() )
+        and !$l3->_at_loopback_only();
     my $paddrs = $l3->ip_n2p_phys_addr() or return;
 
     my $return = {};
