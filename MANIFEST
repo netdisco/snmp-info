@@ -67,6 +67,7 @@ lib/SNMP/Info/Layer2/HP4000.pm
 lib/SNMP/Info/Layer2/HPVC.pm
 lib/SNMP/Info/Layer2/Kentrox.pm
 lib/SNMP/Info/Layer2/LigoWave.pm
+lib/SNMP/Info/Layer2/Mellanox.pm
 lib/SNMP/Info/Layer2/Microsens.pm
 lib/SNMP/Info/Layer2/N2270.pm
 lib/SNMP/Info/Layer2/NAP222x.pm
@@ -252,6 +253,7 @@ xt/lib/Test/SNMP/Info/Layer2/HP4000.pm
 xt/lib/Test/SNMP/Info/Layer2/HPVC.pm
 xt/lib/Test/SNMP/Info/Layer2/Kentrox.pm
 xt/lib/Test/SNMP/Info/Layer2/LigoWave.pm
+xt/lib/Test/SNMP/Info/Layer2/Mellanox.pm
 xt/lib/Test/SNMP/Info/Layer2/Microsens.pm
 xt/lib/Test/SNMP/Info/Layer2/N2270.pm
 xt/lib/Test/SNMP/Info/Layer2/NAP222x.pm
