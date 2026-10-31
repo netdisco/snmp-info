@@ -109,6 +109,59 @@ sub mau_i_duplex_admin : Tests(3) {
     {}, q(No duplex admin data returns empty hash));
 }
 
+# No ifMauDefaultType, as on the HP 4000: duplex comes from the deprecated
+# ifMauAutoNegCapAdvertised, a sum of 2**capability (MAU-MIB)
+sub _cache_no_default_type {
+  my $test = shift;
+
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_mau_index'    => 1,
+    '_mau_autostat' => 1,
+    '_mau_autosent' => 1,
+    'store'         => {
+      'mau_index'    => {1.1 => 1, 2.1 => 2, 3.1 => 3, 4.1 => 4, 5.1 => 5},
+      'mau_autostat' => {
+        1.1 => 'enabled',
+        2.1 => 'disabled',
+        3.1 => 'disabled',
+        4.1 => 'disabled',
+        5.1 => 'disabled'
+      },
+
+      # 101376: 10 and 100 half and full; 1024: 10BASE-T half (2**10);
+      # 65536: 100BASE-TX full (2**16); 262144: 2**18, which HP sets for
+      # 100BASE-FX full
+      'mau_autosent' => {
+        1.1 => 101376,
+        2.1 => 1024,
+        3.1 => 65536,
+        4.1 => 262144,
+        5.1 => 0
+      },
+    },
+  });
+}
+
+sub mau_i_duplex_admin_old : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mau_i_duplex_admin_old');
+
+  $test->_cache_no_default_type();
+  my $expected
+    = {1 => 'auto', 2 => 'half', 3 => 'full', 4 => 'full', 5 => 'none'};
+
+  cmp_deeply($test->{info}->mau_i_duplex_admin_old(), $expected,
+    'mau_i_duplex_admin_old__no_arguments__reads_its_own_tables');
+  cmp_deeply($test->{info}->mau_i_duplex_admin(), $expected,
+    'mau_i_duplex_admin__no_default_type__falls_back_to_advertised');
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->mau_i_duplex_admin_old(), {},
+    'mau_i_duplex_admin_old__no_data__returns_empty_hash');
+}
+
 sub mau_i_speed_admin : Tests(3) {
   my $test = shift;
 
