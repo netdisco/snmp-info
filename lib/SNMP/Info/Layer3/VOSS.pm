@@ -32,11 +32,13 @@ package SNMP::Info::Layer3::VOSS;
 use strict;
 use warnings;
 use Exporter;
+use SNMP::Info::RapidCityVRF;
 use SNMP::Info::RapidCity;
 use SNMP::Info::Layer3;
 
 @SNMP::Info::Layer3::VOSS::ISA
-    = qw/SNMP::Info::RapidCity SNMP::Info::Layer3 Exporter/;
+    = qw/SNMP::Info::RapidCityVRF SNMP::Info::RapidCity
+    SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::VOSS::EXPORT_OK = qw//;
 
 our ( $VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE );
@@ -44,19 +46,30 @@ our ( $VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE );
 $VERSION = '3.984000';
 
 %MIBS = (
-    %SNMP::Info::Layer3::MIBS, %SNMP::Info::RapidCity::MIBS,
+    %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::RapidCity::MIBS,
+    %SNMP::Info::RapidCityVRF::MIBS,
     'EXTREME-BASE-MIB' => 'extremeAgent',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::RapidCity::GLOBALS,
+    %SNMP::Info::RapidCityVRF::GLOBALS,
     'mac' => 'dot1dBaseBridgeAddress',
 );
 
-%FUNCS = ( %SNMP::Info::Layer3::FUNCS, %SNMP::Info::RapidCity::FUNCS, );
+%FUNCS = (
+    %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::RapidCity::FUNCS,
+    %SNMP::Info::RapidCityVRF::FUNCS,
+);
 
-%MUNGE = ( %SNMP::Info::Layer3::MUNGE, %SNMP::Info::RapidCity::MUNGE, );
+%MUNGE = (
+    %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::RapidCity::MUNGE,
+    %SNMP::Info::RapidCityVRF::MUNGE,
+);
 
 sub vendor {
     return 'extreme';
@@ -226,6 +239,8 @@ existed, so a stored port history keeps matching.
 
 =over
 
+=item SNMP::Info::RapidCityVRF
+
 =item SNMP::Info::RapidCity
 
 =item SNMP::Info::Layer3
@@ -241,6 +256,8 @@ existed, so a stored port history keeps matching.
 =back
 
 =head2 Inherited MIBs
+
+See L<SNMP::Info::RapidCityVRF/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::RapidCity/"Required MIBs"> for its MIB requirements.
 
@@ -289,6 +306,10 @@ C<rc_serial()>.
 
 =back
 
+=head2 Global Methods imported from SNMP::Info::RapidCityVRF
+
+See L<SNMP::Info::RapidCityVRF/"GLOBALS"> for details.
+
 =head2 Global Methods imported from SNMP::Info::RapidCity
 
 See L<SNMP::Info::RapidCity/"GLOBALS"> for details.
@@ -336,6 +357,10 @@ IDs the port sends untagged, from Q-BRIDGE, else from RAPID-CITY. A port with
 none has no row. Undef when no port has any.
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::RapidCityVRF
+
+See L<SNMP::Info::RapidCityVRF/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::RapidCity
 

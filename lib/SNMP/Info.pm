@@ -485,6 +485,14 @@ by Avaya switches ahead of L<SNMP::Info::RapidCity>.
 
 See documentation in L<SNMP::Info::RapidCityLegacy> for details.
 
+=item SNMP::Info::RapidCityVRF
+
+F<RAPID-CITY>.  The VRFs of VOSS and Fabric Engine switches, read as
+contexts.  Inherited by L<SNMP::Info::Layer3::VOSS> ahead of
+L<SNMP::Info::RapidCity>.
+
+See documentation in L<SNMP::Info::RapidCityVRF> for details.
+
 =item SNMP::Info::SONMP
 
 SynOptics Network Management Protocol (SONMP) F<SYNOPTICS-ROOT-MIB>,
@@ -2130,7 +2138,7 @@ A site can map a plain community to a VRF context in the device
 configuration (NX-OS C<snmp-server mib community-map>).  The VRF readers
 recognize such a session only where the class can read the mapping from
 the device: NX-OS (L<SNMP::Info::Layer3::Nexus>) and VOSS
-(L<SNMP::Info::Layer3::Extreme>).  Elsewhere a community-mapped session
+(L<SNMP::Info::Layer3::VOSS>).  Elsewhere a community-mapped session
 reads as the default context, so read VRF contexts over SNMPv3.  See
 L<SNMP::Info::VRF/"Reading Instances">.
 
