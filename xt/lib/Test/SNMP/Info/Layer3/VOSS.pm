@@ -129,20 +129,30 @@ sub model : Tests(2) {
     'Known sysObjectID returns the MIB name');
 }
 
-sub serial : Tests(3) {
+sub serial : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'serial');
 
-  # rcChasSerialNumber is not read
   $test->{info}->cache({
     '_rc_serial' => 'SN0123456789',
     'store' => {e_parent => {}, e_class => {}},
   });
-  is($test->{info}->serial(), undef, 'Chassis serial alone is not the serial');
+  is($test->{info}->serial(), 'SN0123456789',
+    'serial__no_entity_or_serial1__returns_chassis_serial');
 
-  $test->{info}->cache({'_serial1' => 'SN0123456789'});
-  is($test->{info}->serial(), 'SN0123456789', 'serial1 fallback is the serial');
+  $test->{info}->clear_cache();
+  $test->{info}->cache({'_serial1' => 'SN9876543210'});
+  is($test->{info}->serial(), 'SN9876543210',
+    'serial__serial1_only__returns_serial1');
+
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_serial1'   => 'SN9876543210',
+    '_rc_serial' => 'SN0123456789',
+  });
+  is($test->{info}->serial(), 'SN9876543210',
+    'serial__serial1_and_chassis_serial__prefers_serial1');
 }
 
 sub interfaces__fabric_engine_ports__ifname : Tests(3) {

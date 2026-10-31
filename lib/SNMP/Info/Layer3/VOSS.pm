@@ -104,14 +104,15 @@ sub model {
     return defined $model ? $model : $id;
 }
 
-# Not rcChasSerialNumber, which RapidCity::serial reads: the entity table,
-# then Layer3's serial1 (OLD-CISCO-CHASSIS-MIB chassisId). Layer3::Extreme
-# read extremeSystemID (EXTREME-SYSTEM-MIB, an EXOS object) as serial1
-# instead, which this class does not
+# Layer3's serial first (the entity table, then serial1, OLD-CISCO-CHASSIS-MIB
+# chassisId), as Layer3::Extreme reported it; rcChasSerialNumber only when
+# that is empty, so a serial Netdisco already stores does not change
 sub serial {
     my $voss = shift;
 
-    return $voss->SNMP::Info::Layer3::serial(@_);
+    my $serial = $voss->SNMP::Info::Layer3::serial(@_);
+    return $serial if defined $serial and length $serial;
+    return $voss->rc_serial();
 }
 
 # ifName is a nice concise port name on Fabric Engine, but a router
@@ -231,9 +232,10 @@ Extreme enterprise (1916). VOSS releases that report enterprise 2272 stay in
 L<SNMP::Info::Layer3::Passport>, which names ports C<slot.port> for SONMP
 matching. This class has no SONMP role.
 
-Interface names, the model, the serial and the OS identity are the ones
+Interface names, the model and the OS identity are the ones
 L<SNMP::Info::Layer3::Extreme> reported for these devices before this class
-existed, so a stored port history keeps matching.
+existed, so a stored port history keeps matching. The serial is too, except
+that this class falls back to C<rcChasSerialNumber> where Extreme found none.
 
 =head2 Inherited Classes
 
@@ -301,8 +303,9 @@ Returns the bridge MAC address.
 =item $voss->serial()
 
 Returns the serial from the entity table or C<serial1>, as
-L<SNMP::Info::Layer3> does. C<rcChasSerialNumber> is available as
-C<rc_serial()>.
+L<SNMP::Info::Layer3> does, or C<rc_serial()> when neither has one.
+
+(C<rcChasSerialNumber>)
 
 =back
 
