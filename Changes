@@ -20,6 +20,8 @@ Version 3.984001
     older ARP tables hold only 127.x entries, as on Extreme VDX (#291)
   * #659 MAU: report admin duplex on devices without ifMauDefaultType,
     such as the HP 4000
+  * #660 NortelStack: report software and firmware versions from the
+    preferred storage area
 
 Version 3.984000 (2026-10-29)
 
