@@ -91,4 +91,433 @@ sub os_ver : Tests(3) {
     q(No description returns undef OS version));
 }
 
+# EOS 4.36 cEOSLab with VRFs red, blue, green and grey. The default
+# context lists them in aristaVrfTable and aristaVrfIfTable; each VRF
+# context serves only its own addresses and neighbors, and no
+# ARISTA-VRF-MIB or ifTable row. red (ports 1 and 3) and blue (ports 2
+# and 4) share 10.100.0.1/24 and 2001:db8:100::1/64. Host link-locals are
+# typed local(5) at the host's MAC; every other neighbor row is dynamic.
+my @VRF_ROWS = (
+  [red => 1], [blue => 2], [red => 3], [blue => 4], [green => 5],
+  [grey => 5000001],
+);
+
+sub _name_index {
+  my $name = shift;
+  return join('.', length $name, map { ord } split //, $name);
+}
+
+sub _v6_arcs {
+  my $ip = shift;
+  return join('.', unpack('C*', pack('n8', map { hex } split /:/, $ip)));
+}
+
+sub _mac { return pack('C6', 2, 0, 0, 0, 0, shift) }
+
+sub _vrf_list_store {
+  my %names = map { $_->[0] => 1 } @VRF_ROWS;
+  return (
+    vrf_arista_rd    => {map { _name_index($_) => 'INVALID' } keys %names},
+    vrf_arista_state => {map { _name_index($_) => 'inactive' } keys %names},
+    vrf_arista_if    => {map { $_->[1] => $_->[0] } @VRF_ROWS},
+  );
+}
+
+sub _arista_cache {
+  my %store = @_;
+  my $d_string = 'Arista Networks EOS version 4.36.0F running on an ';
+  $d_string .= 'Arista Networks cEOSLab';
+  my $cache = {
+    '_layers'      => 4,
+    '_description' => $d_string,
+
+    # ARISTA-PRODUCTS-MIB::aristaDCS7048TA
+    '_id'   => '.1.3.6.1.4.1.30065.1.3011.7048.427.3648',
+    'store' => \%store,
+  };
+  $cache->{"_$_"} = 1 for keys %{$cache->{store}};
+  return $cache;
+}
+
+sub _netmask {
+  my $len = shift;
+  my $bits = (0xffffffff << (32 - $len)) & 0xffffffff;
+  return join('.', unpack('C4', pack('N', $bits)));
+}
+
+# ipAddressTable and ipAdEntTable rows: [ifIndex, address, prefix length]
+sub _addresses {
+  my (%index, %type, %prefix, %adent, %mask);
+  foreach my $row (@_) {
+    my ($port, $ip, $len) = @$row;
+    my ($iid, $pointer);
+    if ($ip =~ /:/) {
+      my $arcs = _v6_arcs($ip);
+      ($iid, $pointer) = ("2.16.$arcs", ".1.3.6.1.2.1.4.32.1.5.$port.2.16.$arcs.$len");
+    }
+    else {
+      ($iid, $pointer) = ("1.4.$ip", ".1.3.6.1.2.1.4.32.1.5.$port.1.4.$ip.$len");
+      $adent{$ip} = $port;
+      $mask{$ip}  = _netmask($len);
+    }
+    $index{$iid}  = $port;
+    $type{$iid}   = 'unicast';
+    $prefix{$iid} = $pointer;
+  }
+  return (
+    new_ip_index   => \%index,
+    new_ip_type    => \%type,
+    new_ip_prefix  => \%prefix,
+    old_ip_index   => \%adent,
+    old_ip_netmask => \%mask,
+  );
+}
+
+# A host's neighbor rows on one port: [ifIndex, MAC, addresses]. IPv4 is
+# in ipNetToMediaTable and ipNetToPhysicalTable, IPv6 in the latter only.
+sub _neighbors {
+  my (%paddr, %netaddr, %n2p, %type);
+  foreach my $host (@_) {
+    my ($port, $mac, @ips) = @$host;
+    foreach my $ip (@ips) {
+      my $iid = $ip =~ /:/ ? "$port.2.16." . _v6_arcs($ip) : "$port.1.4.$ip";
+      $n2p{$iid}  = _mac($mac);
+      $type{$iid} = $ip =~ /^fe80:/ ? 'local' : 'dynamic';
+      next if $ip =~ /:/;
+      $paddr{"$port.$ip"}   = _mac($mac);
+      $netaddr{"$port.$ip"} = $ip;
+    }
+  }
+  return (at_paddr => \%paddr, at_netaddr => \%netaddr,
+    ip_n2p_phys_addr => \%n2p, ip_n2p_phys_type => \%type);
+}
+
+# A host at 2001:db8:$net::2 and its EUI-64 address, and their link-locals
+sub _v6_host {
+  my ($net, $host) = @_;
+  return ("2001:db8:$net:0:0:0:0:2", "2001:db8:$net:0:0:ff:fe00:$host",
+    'fe80:0:0:0:0:0:0:2', "fe80:0:0:0:0:ff:fe00:$host");
+}
+
+sub _red_cache {
+  return _arista_cache(
+    _addresses(
+      [1, '10.100.0.1', 24], [3, '10.101.0.1', 24],
+      [1, '2001:db8:100:0:0:0:0:1', 64], [3, '2001:db8:101:0:0:0:0:1', 64],
+    ),
+    _neighbors(
+      [1, 1, '10.100.0.2', _v6_host(100, 101)],
+      [3, 3, '10.101.0.2', _v6_host(101, 103)],
+    ),
+  );
+}
+
+sub _blue_cache {
+  return _arista_cache(
+    _addresses(
+      [2, '10.100.0.1', 24], [4, '10.102.0.1', 24],
+      [2, '2001:db8:100:0:0:0:0:1', 64], [4, '2001:db8:102:0:0:0:0:1', 64],
+    ),
+    _neighbors(
+      [2, 2, '10.100.0.2', _v6_host(100, 102)],
+      [4, 3, '10.102.0.2', _v6_host(102, 103)],
+    ),
+  );
+}
+
+# green serves IPv6 only, on port 5
+sub _green_cache {
+  return _arista_cache(
+    _addresses([5, '2001:db8:103:0:0:0:0:1', 64]),
+    _neighbors([5, 4, _v6_host(103, 104)]),
+  );
+}
+
+sub _grey_cache {
+  return _arista_cache(
+    _addresses(
+      [5000001, '10.104.0.1', 32], [5000001, '2001:db8:104:0:0:0:0:1', 128],
+    ),
+  );
+}
+
+# Management0 (ifIndex 999000) is the only port the default context serves
+# addresses and neighbors for, and only the default context serves the
+# list and ifTable
+sub _default_cache {
+  return _arista_cache(
+    _vrf_list_store(),
+    _addresses([999000, '192.0.2.23', 24]),
+    _neighbors([999000, 9, '192.0.2.1']),
+    i_mac => {999000 => _mac(10)},
+  );
+}
+
+sub _enter_context {
+  my ($info, $context) = @_;
+  $info->session()->{Version} = 3;
+  $info->session()->{Context} = $context;
+  return;
+}
+
+sub _use_cache {
+  my ($test, $cache) = @_;
+  $test->{info}->clear_cache();
+  $test->{info}->cache($cache);
+  return $test->{info};
+}
+
+sub context_kinds__vrf__is_vrf : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  cmp_deeply($info->context_kinds('vrf'), ['vrf'], 'One context per VRF');
+  is($info->context_kinds('stp'), undef, 'Other features have none');
+}
+
+sub snmp_context__vrf__cisco_order : Tests(1) {
+  my $test = shift;
+
+  cmp_deeply($test->{info}->snmp_context('vrf', 'red'),
+    {kind => 'vrf', id => 'red', v2c => '%s@red', v3 => 'red'},
+    'Community then @ then the VRF name');
+}
+
+sub snmp_context__vrf_default__nothing : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  is($info->snmp_context('vrf', 'default'), undef, 'default has none');
+  is($info->snmp_context('vrf', q()), undef, 'An empty name has none');
+}
+
+sub vrf_instances : Tests(10) {
+  my $test = shift;
+  my $info = _use_cache($test, _default_cache());
+
+  my $instances = $info->vrf_instances();
+  cmp_deeply([sort keys %$instances], [qw/blue default green grey red/],
+    'Each aristaVrfTable row, and default');
+  foreach my $name (qw/red blue green grey/) {
+    is($instances->{$name}{sources}{list}, 'ARISTA-VRF-MIB',
+      "$name is listed by ARISTA-VRF-MIB");
+  }
+  is($instances->{red}{sources}{members}, 'ARISTA-VRF-MIB',
+    'Membership is from aristaVrfIfTable');
+  is($instances->{red}{oper}, undef, 'aristaVrfState is not an oper status');
+  is($instances->{red}{rd}, undef, 'An INVALID route distinguisher is none');
+  ok(!exists $instances->{red}{sources}{rd}, 'And has no rd source');
+  is($instances->{red}{contexts}[0]{v2c}, '%s@red', 'Cisco-order community');
+}
+
+sub vrf_instances__route_distinguisher_set__rd_kept : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _default_cache());
+
+  $info->{store}{vrf_arista_rd}{_name_index('red')} = '65000:1';
+  my $red = $info->vrf_instances()->{red};
+  is($red->{rd}, '65000:1', 'A real distinguisher is kept');
+  is($red->{sources}{rd}, 'ARISTA-VRF-MIB', 'From ARISTA-VRF-MIB');
+}
+
+sub i_vrf : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _default_cache());
+
+  cmp_deeply(scalar $info->i_vrf(),
+    {1 => 'red', 3 => 'red', 2 => 'blue', 4 => 'blue', 5 => 'green',
+      5000001 => 'grey'},
+    'aristaVrfIfTable gives every VRF port in the default context');
+}
+
+# EOS serves no ARISTA-VRF-MIB row in a VRF context, and update() clears
+# the list, so the instance comes from the context name
+sub i_vrf__red_context__own_ports : Tests(3) {
+  my $test = shift;
+  my $info = _use_cache($test, _red_cache());
+
+  _enter_context($info, 'red');
+  cmp_deeply(scalar $info->i_vrf(), {1 => 'red', 3 => 'red'},
+    'The ports holding an address in the red context');
+  is($info->error(), undef, 'No error');
+  ok(!exists $info->{_vrf_instances}, 'No list is read in the context');
+}
+
+sub i_vrf__green_and_grey_contexts__own_ports : Tests(2) {
+  my $test = shift;
+
+  my $info = _use_cache($test, _green_cache());
+  _enter_context($info, 'green');
+  cmp_deeply(scalar $info->i_vrf(), {5 => 'green'},
+    'green\'s IPv6-only port');
+
+  $info = _use_cache($test, _grey_cache());
+  _enter_context($info, 'grey');
+  cmp_deeply(scalar $info->i_vrf(), {5000001 => 'grey'}, 'grey\'s loopback');
+}
+
+sub vrf_instances_complete : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _default_cache());
+
+  is($info->vrf_instances_complete(), 1, 'A whole list is complete');
+
+  $info->{walk_status}{vrf_arista_state}
+    = {complete => 0, reason => 'timeout'};
+  is($info->vrf_instances_complete(), 0, 'A partial state walk is not');
+}
+
+sub vrf_instances_complete__partial_membership_or_rd__is_0 : Tests(2) {
+  my $test = shift;
+
+  foreach my $method (qw/vrf_arista_if vrf_arista_rd/) {
+    my $info = _use_cache($test, _default_cache());
+    $info->{walk_status}{$method} = {complete => 0, reason => 'timeout'};
+    is($info->vrf_instances_complete(), 0, "A partial $method walk is not");
+  }
+}
+
+sub vrf_neighbors__red_context__own_rows : Tests(4) {
+  my $test = shift;
+  my $info = _use_cache($test, _red_cache());
+
+  _enter_context($info, 'red');
+  my @rows = values %{$info->vrf_neighbors('red')};
+  my @expected;
+  foreach my $host ([1, 100, '0101'], [3, 101, '0103']) {
+    my ($port, $net, $eui) = @$host;
+    push @expected, "$port 10.$net.0.2",
+      map { "$port $_" } "2001:0db8:0$net:0000:0000:0000:0000:0002",
+      "2001:0db8:0$net:0000:0000:00ff:fe00:$eui",
+      'fe80:0000:0000:0000:0000:0000:0000:0002',
+      "fe80:0000:0000:0000:0000:00ff:fe00:$eui";
+  }
+  cmp_deeply([sort map { "$_->{ifindex} $_->{ip}" } @rows], [sort @expected],
+    'The hosts on ports 1 and 3: IPv4, global and link-local IPv6');
+  is(scalar(grep { $_->{ip} =~ /^10\.10[01]\.0\.1$/ } @rows), 0,
+    'No row of the router itself');
+  is(scalar(grep { $_->{ifindex} == 999000 } @rows), 0,
+    'None on Management0');
+  is(scalar @rows, 10, 'Ten rows, as the device CLI lists');
+}
+
+sub vrf_neighbors__red_context__host_link_locals_typed_local__kept
+  : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _red_cache());
+
+  _enter_context($info, 'red');
+  my $key  = '1.2.16.' . _v6_arcs('fe80:0:0:0:0:0:0:2');
+  is($info->{store}{ip_n2p_phys_type}{$key}, 'local',
+    'EOS types the host link-local local(5)');
+  is($info->vrf_neighbors('red')->{$key}{mac}, '02:00:00:00:00:01',
+    '... and the row is kept, at the host MAC');
+}
+
+sub vrf_neighbors__green_context__ipv6_hosts : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _green_cache());
+
+  _enter_context($info, 'green');
+  my @rows = values %{$info->vrf_neighbors('green')};
+  is(scalar @rows, 4, 'The global, EUI-64 and two link-local rows');
+  is($info->vrf_read_complete('green'), 1, 'The read is complete');
+}
+
+sub vrf_neighbors__default_context__management_only : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _default_cache());
+
+  cmp_deeply([map { "$_->{ifindex} $_->{ip}" }
+      values %{$info->vrf_neighbors('default')}],
+    ['999000 192.0.2.1'], 'Only the Management0 neighbor');
+}
+
+sub vrf_addresses__blue_context__shared_subnet : Tests(2) {
+  my $test = shift;
+  my $info = _use_cache($test, _blue_cache());
+
+  _enter_context($info, 'blue');
+  my @shared = grep { $_->{ip} eq '10.100.0.1' }
+    values %{$info->vrf_addresses('blue')};
+  cmp_deeply([map { $_->{ifindex} } @shared], [2],
+    'blue holds the shared address on port 2');
+  ok(exists $info->vrf_subnets('blue')->{'10.100.0.0/24'},
+    'And the shared subnet');
+}
+
+sub vrf_addresses__grey_context__loopback_no_neighbor : Tests(3) {
+  my $test = shift;
+  my $info = _use_cache($test, _grey_cache());
+
+  _enter_context($info, 'grey');
+  my $addresses = $info->vrf_addresses('grey');
+  cmp_deeply([sort map { "$_->{ifindex} $_->{ip}" } values %$addresses],
+    ['5000001 10.104.0.1',
+      '5000001 2001:0db8:0104:0000:0000:0000:0000:0001'],
+    'The loopback addresses are in grey\'s context');
+  cmp_deeply([sort keys %{$info->vrf_subnets('grey')}],
+    ['10.104.0.1/32', '2001:0db8:0104:0000:0000:0000:0000:0001/128'],
+    '... with their host subnets');
+  cmp_deeply($info->vrf_neighbors('grey'), {}, 'It has no neighbor');
+}
+
+# EOS serves no aristaVrfTable row for the default VRF, so an EOS with no
+# VRFs answers the walk with no row
+sub vrf_instances_complete__no_vrfs_walked__is_1 : Tests(5) {
+  my $test = shift;
+  my %empty = map { $_ => {} } qw/vrf_arista_rd vrf_arista_state
+    vrf_arista_if/;
+
+  $test->{info}->clear_walk_status();
+  my $info = _use_cache($test, _arista_cache(%empty));
+  is($info->vrf_instances_complete(), undef,
+    'No walk recorded: unsupported');
+
+  $info = _use_cache($test, _arista_cache(%empty));
+  $info->{walk_status}{$_} = {complete => 1, reason => undef, rows => 0}
+    for qw/vrf_arista_rd vrf_arista_state/;
+  is($info->vrf_instances_complete(), 1, 'Walked with no row: none');
+  is($info->vrf_instances()->{default}{sources}{list}, 'ARISTA-VRF-MIB',
+    'ARISTA-VRF-MIB lists default');
+  ok(!exists $info->vrf_instances(['red'])->{red},
+    'Caller names add nothing');
+
+  $info = _use_cache($test, _arista_cache(%empty));
+  $info->{walk_status}{$_} = {complete => 1, reason => 'absent', rows => 0}
+    for qw/vrf_arista_rd vrf_arista_state/;
+  is($info->vrf_instances_complete(), undef,
+    'An absent MIB is not an answer');
+  $info->clear_walk_status();
+}
+
+sub i_vrf__membership_default__absent : Tests(1) {
+  my $test = shift;
+  my $info = _use_cache($test, _default_cache());
+
+  $info->{store}{vrf_arista_if}{999000} = 'default';
+  cmp_deeply(scalar $info->i_vrf(),
+    {1 => 'red', 3 => 'red', 2 => 'blue', 4 => 'blue', 5 => 'green',
+      5000001 => 'grey'},
+    'A port aristaVrfIfTable gives default is absent');
+}
+
+# agg_ports reads Port-Channel membership from the interface stack
+sub lag_groups_complete__stack_walk_incomplete__returns_0 : Tests(2) {
+  my $test = shift;
+
+  $test->{info}->cache({
+    _ifStackStatus => 1, _ifType => 1,
+    store => {
+      ifStackStatus => {'1000001.1' => 'active', '1000001.2' => 'active'},
+      ifType => {1 => 'ethernetCsmacd', 2 => 'ethernetCsmacd',
+        1000001 => 'ieee8023adLag'},
+    },
+  });
+  is($test->{info}->lag_groups_complete(), 1, q(Stack read in full));
+  $test->{info}{walk_status}{ifStackStatus} = {complete => 0};
+  is($test->{info}->lag_groups_complete(), 0,
+    q(Incomplete stack walk gives 0));
+}
+
 1;

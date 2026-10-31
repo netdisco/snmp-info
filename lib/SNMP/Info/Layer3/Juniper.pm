@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, $DEBUG, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -49,6 +49,9 @@ $VERSION = '3.975000';
     'JUNIPER-VIRTUALCHASSIS-MIB'  => 'jnxVirtualChassisMemberTable',
     'JUNIPER-VLAN-MIB'            => 'jnxVlanMIBObjects',
     'JUNIPER-L2ALD-MIB'           => 'jnxL2aldVlanFdbId',
+    'JUNIPER-MIMSTP-MIB'          => 'jnxMIMstSystemControl',
+    'SNMP-VIEW-BASED-ACM-MIB'     => 'vacmContextName',
+    'JUNIPER-VPN-MIB'             => 'jnxVpnName',
 );
 
 %GLOBALS = (
@@ -58,6 +61,9 @@ $VERSION = '3.975000';
     'box_descr' => 'jnxBoxDescr',
     'version'   => 'jnxVirtualChassisMemberSWVersion',
     'vc_model'  => 'jnxVirtualChassisMemberModel',
+
+    # RSTP-MIB, which names only stpCompatible(0) and rstp(2)
+    'jnx_stp_version' => 'dot1dStpVersion',
 );
 
 %FUNCS = (
@@ -87,12 +93,64 @@ $VERSION = '3.975000';
 
     # JUNIPER-IF-MIB::ifChassisTable
     'i_logical_unit' => 'ifChassisLogicalUnit',
+
+    # SNMP-VIEW-BASED-ACM-MIB::vacmContextTable, names the VSTP contexts
+    # and the routing instances; the index is the length-prefixed name
+    'jnx_vacm_context_name' => 'vacmContextName',
+
+    # JUNIPER-VPN-MIB::jnxVpnTable lists each VPN by its index, jnxVpnType
+    # then the length-prefixed jnxVpnName; type 2 is bgpIpVpn. Both index
+    # leaves are not-accessible, so walk the first readable column.
+    'vrf_jnx_vpn_status' => 'jnxVpnRowStatus',
+
+    # JUNIPER-MIMSTP-MIB, indexed by context
+    'jnx_mst_control'       => 'jnxMIMstSystemControl',
+    'jnx_mst_brg_address'   => 'jnxMIMstBrgAddress',
+    'jnx_mst_cist_root'     => 'jnxMIMstCistRoot',
+    'jnx_mst_cist_priority' => 'jnxMIMstCistBridgePriority',
+
+    # JUNIPER-MIMSTP-MIB, indexed <context>.<MSTI>
+    'jnx_msti_priority' => 'jnxMIMstMstiBridgePriority',
+    'jnx_msti_root'     => 'jnxMIMstMstiBridgeRegionalRoot',
+    'jnx_msti_vlans_1k' => 'jnxMIMstInstanceVlanMapped',
+    'jnx_msti_vlans_2k' => 'jnxMIMstInstanceVlanMapped2k',
+    'jnx_msti_vlans_3k' => 'jnxMIMstInstanceVlanMapped3k',
+    'jnx_msti_vlans_4k' => 'jnxMIMstInstanceVlanMapped4k',
+
+    # JUNIPER-MIMSTP-MIB, indexed by bridge port
+    'jnx_cist_p_state'  => 'jnxMIMstCistPortState',
+    'jnx_cist_p_role'   => 'jnxMIMstCistCurrentPortRole',
+    'jnx_cist_p_bridge' => 'jnxMIMstCistPortDesignatedBridge',
+    'jnx_cist_p_port'   => 'jnxMIMstCistPortDesignatedPort',
+    'jnx_cist_p_enable' => 'jnxMIMstCistForcePortState',
+
+    # JUNIPER-MIMSTP-MIB admin edge, indexed by bridge port
+    'jnx_cist_p_edge_admin' => 'jnxMIMstCistPortAdminEdgeStatus',
+
+    # JUNIPER-MIMSTP-MIB oper edge, indexed by bridge port
+    'jnx_cist_p_edge_oper' => 'jnxMIMstCistPortOperEdgeStatus',
+
+    # JUNIPER-MIMSTP-MIB, indexed <bridge port>.<MSTI>
+    'jnx_msti_p_state'  => 'jnxMIMstMstiPortState',
+    'jnx_msti_p_role'   => 'jnxMIMstMstiCurrentPortRole',
+    'jnx_msti_p_bridge' => 'jnxMIMstMstiPortDesignatedBridge',
+    'jnx_msti_p_port'   => 'jnxMIMstMstiPortDesignatedPort',
+    'jnx_msti_p_enable' => 'jnxMIMstMstiForcePortState',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
     'e_containers_type' => \&SNMP::Info::munge_e_type,
     'e_contents_type'   => \&SNMP::Info::munge_e_type,
+    'jnx_mst_brg_address' => \&SNMP::Info::munge_mac,
+    'jnx_mst_cist_root'   => \&SNMP::Info::munge_prio_mac,
+    'jnx_msti_root'       => \&SNMP::Info::munge_prio_mac,
+    'jnx_cist_p_bridge'   => \&SNMP::Info::munge_prio_mac,
+    'jnx_msti_p_bridge'   => \&SNMP::Info::munge_prio_mac,
+    'jnx_cist_p_port'     => \&SNMP::Info::munge_prio_port,
+    'jnx_msti_p_port'     => \&SNMP::Info::munge_prio_port,
+    'jnx_cist_p_role'     => \&SNMP::Info::munge_dot1s_port_role,
+    'jnx_msti_p_role'     => \&SNMP::Info::munge_dot1s_port_role,
 );
 
 sub vendor {
@@ -243,27 +301,28 @@ sub i_vlan {
     my $types = $juniper->i_type() || {};
 
     # If given a partial it will be an ifIndex, we need to use dot1dBasePort
+    my $if_partial = $partial;
     if ($partial) {
         my %r_index = reverse %$index;
         $partial = $r_index{$partial};
     }
 
-    my $v_index = $juniper->v_index() || {};
-    my $i_pvid  = $juniper->qb_i_vlan($partial) || {};
-    my $i_vlan  = $juniper->SUPER::i_vlan() || {};
+    my $old_index = $juniper->jnx_v_index() || {};
+    my $untagged  = scalar keys %$old_index
+        ? $juniper->i_vlan_membership_untagged($if_partial) || {}
+        : {};
+    my $i_pvid = $juniper->qb_i_vlan($partial) || {};
+    my $i_vlan = $juniper->SUPER::i_vlan() || {};
 
     foreach my $bport ( keys %$i_pvid ) {
-        my $q_vlan  = $i_pvid->{$bport};
-        my $vlan    = $q_vlan;
-        # Use defined as check since VLAN can be zero
-        $vlan = $v_index->{$q_vlan} if defined $v_index->{$q_vlan};
         my $ifindex = $index->{$bport};
         unless ( defined $ifindex ) {
             print "  Port $bport has no bp_index mapping. Skipping.\n"
                 if $DEBUG;
             next;
         }
-        $i_vlan->{$ifindex} = $vlan;
+        $i_vlan->{$ifindex} = $juniper->_pvid_vlan( $i_pvid->{$bport},
+            $old_index, $untagged->{$ifindex} );
     }
 
     # add in i_logical_unit
@@ -277,6 +336,20 @@ sub i_vlan {
     }
 
     return $i_vlan;
+}
+
+# ELS returns the VLAN ID in dot1qPvid. Pre-ELS releases differ: 10.4
+# returns the jnxExVlanTable index, 12.3 the VLAN ID. Prefer the reading the
+# port's untagged membership confirms, else keep the index translation.
+sub _pvid_vlan {
+    my ( $juniper, $pvid, $old_index, $untagged ) = @_;
+
+    my $translated = $old_index->{$pvid};
+    return $pvid unless defined $translated;
+
+    my %member = map { $_ => 1 } grep {defined} @{ $untagged || [] };
+    return $pvid if $member{$pvid} and !$member{$translated};
+    return $translated;
 }
 
 sub v_name {
@@ -447,6 +520,21 @@ sub _e_virtual_index {
     return \%v_index;
 }
 
+# Member frames are the K.N.0.0 rows built by _e_virtual_index() under the
+# chassis frame container K, for virtual chassis member id N-1
+sub _e_vc_member {
+    my $juniper = shift;
+    my $iid     = shift;
+
+    return unless $iid =~ /^(\d+)\.(\d+)\.0\.0$/;
+    my ( $container, $slot ) = ( $1, $2 );
+
+    my $containers = $juniper->jnxContainersDescr() || {};
+    my $descr      = $containers->{$container} || '';
+    return unless $descr =~ /chassis/i;
+    return $slot - 1;
+}
+
 sub e_index {
     my $juniper = shift;
 
@@ -505,8 +593,9 @@ sub e_class {
         elsif (($container =~ /chassis/i) and ($is_virtual)) {
             $e_class{$iid} = 'stack';
 	}
-	# Were calling the second level chassis a container in the case
-	# of a virtual chassis but not sure that it really matters
+        elsif ( $is_virtual and defined $juniper->_e_vc_member($iid) ) {
+            $e_class{$iid} = 'chassis';
+        }
         else {
             $e_class{$iid} = 'container';
         }
@@ -556,15 +645,24 @@ sub e_serial {
     my $e_class    = $juniper->e_class() || {};
     my $is_virtual = $juniper->_e_is_virtual();
     my $box_serial = $juniper->serial();
+    my $vc_serials
+        = $is_virtual ? $juniper->jnxVirtualChassisMemberSerialnumber() : {};
+    $vc_serials ||= {};
 
     my %e_serial;
     foreach my $iid ( keys %$e_index ) {
 	my $serial = $serials->{$iid} || '';
 	my $class  = $e_class->{$iid} || '';
+	my $member = $juniper->_e_vc_member($iid);
 	# Chassis serial number is seperate on true chassis
-	# Virtual chassis (stack) report master switch serial
+	# Virtual chassis members report their own serial
 	if (!$is_virtual and ($class =~ /chassis/i)){
 	    $e_serial{$iid} = $box_serial;
+	}
+	elsif ( $class eq 'chassis' and defined $member
+	    and $vc_serials->{$member} )
+	{
+	    $e_serial{$iid} = $vc_serials->{$member};
 	}
 	elsif (($serial !~ /^\w/) or ($serial =~ /builtin/i)) {
 	    next;
@@ -574,6 +672,25 @@ sub e_serial {
 	}
     }
     return  \%e_serial;
+}
+
+sub e_model {
+    my $juniper = shift;
+
+    my $e_model = $juniper->orig_e_model() || {};
+    return $e_model unless $juniper->_e_is_virtual();
+
+    my $e_class   = $juniper->e_class() || {};
+    my $vc_models = $juniper->jnxVirtualChassisMemberModel() || {};
+
+    my %e_model = %$e_model;
+    foreach my $iid ( keys %$e_class ) {
+        next unless $e_class->{$iid} eq 'chassis';
+        my $member = $juniper->_e_vc_member($iid);
+        next unless defined $member and $vc_models->{$member};
+        $e_model{$iid} = uc $vc_models->{$member};
+    }
+    return \%e_model;
 }
 
 sub e_fru {
@@ -711,6 +828,647 @@ sub peth_port_ifindex {
     return $peth_port_ifindex;
 }
 
+sub i_edgeport_admin {
+    my $juniper = shift;
+    my $partial = shift;
+
+    my $edge_admin = $juniper->jnx_cist_p_edge_admin() || {};
+    return $juniper->SUPER::i_edgeport_admin($partial)
+        unless keys %$edge_admin;
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $juniper, $edge_admin,
+        $partial );
+}
+
+sub i_edgeport_oper {
+    my $juniper = shift;
+    my $partial = shift;
+
+    my $edge_oper = $juniper->jnx_cist_p_edge_oper() || {};
+    return $juniper->SUPER::i_edgeport_oper($partial)
+        unless keys %$edge_oper;
+    return SNMP::Info::Bridge::_stp_edge_by_ifindex( $juniper, $edge_oper,
+        $partial );
+}
+
+# Junos reports logical units (ge-0/0/1.0, ae0.0) in the LAG tables where the
+# aggregate and its members are the physical interfaces beneath them
+sub agg_ports {
+    my $juniper = shift;
+
+    my $lower    = $juniper->_jnx_stack_lower();
+    my $attached = $juniper->lag_port_attached() || {};
+    my %members;
+    foreach my $port ( keys %$attached ) {
+        next unless $attached->{$port};
+        my $member    = _jnx_physical( $lower, $port );
+        my $aggregate = _jnx_physical( $lower, $attached->{$port} );
+        $members{$member} = $aggregate unless $member == $aggregate;
+    }
+    return \%members;
+}
+
+sub _agg_ports_walked { return qw/ifStackStatus lag_port_attached/ }
+
+sub _lag_vendor_walked { return qw/ifStackStatus/ }
+
+# Each aggregator row maps to the physical aggregate its member units attach to
+sub _lag_aggregator_map {
+    my $juniper = shift;
+
+    my $rows     = $juniper->lag_actor_system() || {};
+    my $lower    = $juniper->_jnx_stack_lower();
+    my $attached = $juniper->lag_port_attached() || {};
+    my %map;
+    foreach my $row ( keys %$rows ) {
+        my ($member) = grep { $attached->{$_} }
+            sort { $a <=> $b } keys %{ $lower->{$row} || {} };
+        $map{$row} = defined $member
+            ? _jnx_physical( $lower, $attached->{$member} )
+            : $row;
+    }
+    return \%map;
+}
+
+# Hashref: higher ifIndex => { lower ifIndex => 1 } from ifStackStatus
+sub _jnx_stack_lower {
+    my $juniper = shift;
+
+    my $stack = $juniper->ifStackStatus() || {};
+    my %lower;
+    foreach my $index ( keys %$stack ) {
+        my ( $higher, $below ) = split /\./, $index;
+        next unless $higher and $below;
+        $lower{$higher}{$below} = 1;
+    }
+    return \%lower;
+}
+
+# The interface directly below a logical unit that has no interface of its
+# own below it (the unit's parent); an ifIndex without one is already physical
+sub _jnx_physical {
+    my ( $lower, $ifindex ) = @_;
+
+    my @parents = grep { !$lower->{$_} } keys %{ $lower->{$ifindex} || {} };
+    return scalar @parents == 1 ? $parents[0] : $ifindex;
+}
+
+# The protocols the default context reports: 'mstp' when MST is started at
+# context 0, else the BRIDGE-MIB protocol dot1dStpVersion names, then 'vstp'
+# when VSTP runs, beside that protocol or alone. Empty in any other context.
+sub _jnx_stp_protocols {
+    my $juniper = shift;
+
+    # A VSTP VLAN's own context serves that VLAN's tree as RSTP
+    return [] if length $juniper->_walk_context();
+    return $juniper->{_jnx_stp_protocols}
+        if $juniper->{_jnx_stp_protocols};
+
+    my $control   = $juniper->jnx_mst_control() || {};
+    my $default   = $juniper->_jnx_default_protocol($control);
+    my @protocols = grep {defined} $default;
+    push @protocols, 'vstp'
+        if ( $default // '' ) ne 'mstp' and $juniper->_jnx_is_vstp($control);
+    $juniper->{_jnx_stp_protocols} = \@protocols;
+    return \@protocols;
+}
+
+sub _jnx_default_protocol {
+    my ( $juniper, $control ) = @_;
+
+    my $started = $control->{0};
+    return 'mstp' if defined $started and $started =~ /^(?:start|1)$/;
+
+    my $version = $juniper->jnx_stp_version();
+    return unless defined $version;
+    return 'rstp' if $version =~ /^(?:rstp|2)$/;
+    return 'stp'  if $version =~ /^(?:stpCompatible|0)$/;
+    return;
+}
+
+# VSTP has no flag of its own: each VLAN's control row sits at a context
+# other than 0 and reads shutdown, and no MSTI exists. A started row there is
+# MSTP inside a routing instance. The row at context 0 is the default
+# context's own and says nothing about VSTP.
+sub _jnx_is_vstp {
+    my ( $juniper, $control ) = @_;
+
+    my @contexts = grep { $_ ne '0' } keys %$control;
+    return 0 unless @contexts;
+    return 0
+        if grep { ( $control->{$_} // '' ) !~ /^(?:shutdown|2)$/ } @contexts;
+    return 0 if $juniper->_jnx_walk_incomplete('jnx_mst_control');
+    return 0 if keys %{ $juniper->jnx_msti_priority() || {} };
+    return 0 if $juniper->_jnx_walk_incomplete('jnx_msti_priority');
+    return 1;
+}
+
+sub _jnx_walk_incomplete {
+    my ( $juniper, $method ) = @_;
+
+    my $status = $juniper->walk_status($method);
+    return $status && !$status->{complete} ? 1 : 0;
+}
+
+sub _jnx_runs {
+    my ( $juniper, $protocol ) = @_;
+
+    my $protocols = $juniper->_jnx_stp_protocols();
+    return ( grep { $_ eq $protocol } @$protocols ) ? 1 : 0;
+}
+
+sub hasSTP {
+    my $juniper = shift;
+    return $juniper->_jnx_runs('stp');
+}
+
+sub hasRSTP {
+    my $juniper = shift;
+    return $juniper->_jnx_runs('rstp');
+}
+
+sub hasMSTP {
+    my $juniper = shift;
+    return $juniper->_jnx_runs('mstp');
+}
+
+sub hasVSTP {
+    my $juniper = shift;
+    return $juniper->_jnx_runs('vstp');
+}
+
+sub _context_kinds {
+    my ( $juniper, $feature ) = @_;
+
+    return ['vrf'] if ( $feature // '' ) eq 'vrf';
+    return unless ( $feature // '' ) eq 'stp';
+    return unless $juniper->_jnx_runs('vstp');
+    return ['vlan'];
+}
+
+# Junos puts the context first in the v2c community, the reverse of Cisco's
+# community@VLAN: red@public for routing instance red
+sub _snmp_context {
+    my ( $juniper, $kind, $id ) = @_;
+
+    return $juniper->_jnx_vrf_context($id)
+        if ( $kind // '' ) eq 'vrf';
+    return unless ( $kind // '' ) eq 'vlan' and defined $id;
+    return {
+        kind => 'vlan',
+        id   => $id,
+        v2c  => "default::$id\@%s",
+        v3   => "default::$id",
+    };
+}
+
+# A Junos v3 context name is the routing instance name; the default
+# instance is the default context
+sub _jnx_vrf_context {
+    my ( $juniper, $name ) = @_;
+
+    return if !defined $name or $name eq q() or $name eq 'default';
+    return {
+        kind => 'vrf',
+        id   => $name,
+        v2c  => "$name\@%s",
+        v3   => $name,
+    };
+}
+
+# Each routing instance reads in its own context
+sub _vrf_context_filters { return 1; }
+
+# The default context also serves every instance's neighbors and addresses
+# on the instances' ports
+sub _vrf_default_context_leaks { return 1; }
+
+# Host link-locals are only in IPV6-MIB ipv6NetToMediaTable
+sub _vrf_nd_from_ipv6_mib { return 1; }
+
+# Platform-internal instances: the global table, the layer 2 default,
+# double-underscore names and the gRIBI context. mgmt_junos is listed: it
+# holds ports and reads in its own context.
+sub _vrf_internal_instance {
+    my ( $juniper, $name ) = @_;
+
+    return 1 if !defined $name;
+    return 1 if grep { $name eq $_ } q(), 'default', 'default-switch';
+    return $name =~ /^__.*__$/ || $name =~ /^:/ ? 1 : 0;
+}
+
+# MPLS-L3VPN-STD-MIB lists the VRFs; vacmContextName adds the instances it
+# does not list, as VRFs where jnxVpnTable types them bgpIpVpn. A served
+# vacm list lists default too (_vrf_list_default in VRF.pm), so a device
+# listing no instance reads none.
+sub _vrf_served_instances {
+    my $juniper = shift;
+
+    my $instances = $juniper->SUPER::_vrf_served_instances();
+    my $vpn_types = $juniper->_jnx_vpn_types();
+    foreach my $name ( $juniper->_jnx_vacm_names() ) {
+        my $type = $vpn_types->{$name} // 2;
+        next if $instances->{$name} or $type != 2;
+        my $kind   = exists $vpn_types->{$name} ? 'vrf' : 'virtual-router';
+        my $record = SNMP::Info::VRF::_vrf_record( $name, $kind, 'device' );
+        $record->{sources}{list} = 'SNMP-VIEW-BASED-ACM-MIB';
+        $juniper->_vrf_set_contexts($record);
+        $instances->{$name} = $record;
+    }
+    $juniper->_vrf_list_default( $instances, 'SNMP-VIEW-BASED-ACM-MIB' )
+        if %{ $juniper->jnx_vacm_context_name() || {} };
+    return $instances;
+}
+
+# The names vacmContextName serves, minus the internal ones and the
+# instance::N contexts VSTP serves
+sub _jnx_vacm_names {
+    my $juniper = shift;
+
+    my $rows = $juniper->jnx_vacm_context_name() || {};
+    my %names;
+    foreach my $iid ( keys %$rows ) {
+        my ($name) = $juniper->_vrf_decode_name($iid);
+        next if !defined $name or $juniper->_vrf_internal_instance($name);
+        next if $name =~ /^[^:]+::\d+$/;
+        $names{$name} = 1;
+    }
+    my @names = sort keys %names;
+    return @names;
+}
+
+# { name => jnxVpnType } for each VPN jnxVpnTable lists: bgpIpVpn(2) is a
+# VRF, any other type a VPLS or other layer 2 instance
+sub _jnx_vpn_types {
+    my $juniper = shift;
+
+    my $rows = $juniper->vrf_jnx_vpn_status() || {};
+    my %types;
+    foreach my $iid ( keys %$rows ) {
+        my ( $type, $rest ) = split /\./, $iid, 2;
+        next if !defined $rest;
+        my ($name) = $juniper->_vrf_decode_name($rest);
+        $types{$name} = $type if defined $name;
+    }
+    return \%types;
+}
+
+# The vacm and jnxVpn walks list the instances, so a partial one is a
+# short list
+sub _vrf_walk_incomplete {
+    my $juniper = shift;
+
+    return 1 if $juniper->SUPER::_vrf_walk_incomplete();
+    foreach my $method (qw/jnx_vacm_context_name vrf_jnx_vpn_status/) {
+        my $status = $juniper->walk_status($method) or next;
+        return 1 unless $status->{complete};
+    }
+    return 0;
+}
+
+sub _jnx_vlan_context {
+    my ( $instance, $vlan ) = @_;
+
+    my $name = "${instance}::$vlan";
+    return {
+        kind     => 'vlan',
+        id       => $vlan,
+        instance => $instance,
+        v2c      => "$name\@%s",
+        v3       => $name,
+    };
+}
+
+# The VSTP trees as [instance, VLAN] pairs, from the context names the agent
+# binds, <instance>::<vlan>. Nothing else names them: the MST control rows
+# carry context ids, and the VLAN table lists VLANs that do not run VSTP.
+sub _jnx_vstp_contexts {
+    my $juniper = shift;
+
+    my $names = $juniper->jnx_vacm_context_name() || {};
+    my %pairs;
+    foreach my $name ( values %$names ) {
+        next unless defined $name and $name =~ /^([^:]+)::([1-9]\d{0,3})$/;
+        my ( $instance, $vlan ) = ( $1, $2 + 0 );
+        $pairs{$name} = [ $instance, $vlan ] if $vlan <= 4094;
+    }
+    return [ sort { $a->[0] cmp $b->[0] or $a->[1] <=> $b->[1] }
+            values %pairs ];
+}
+
+sub _jnx_vstp_served {
+    my $juniper = shift;
+
+    my $names = $juniper->jnx_vacm_context_name() || {};
+    return 0 if $juniper->_jnx_walk_incomplete('jnx_vacm_context_name');
+    return keys %$names ? 1 : 0;
+}
+
+sub _jnx_vstp_trees {
+    my $juniper = shift;
+
+    my $measured = $juniper->_jnx_measured('vstp');
+    my %trees;
+    foreach my $pair ( @{ $juniper->_jnx_vstp_contexts() } ) {
+        my ( $instance, $vlan ) = @$pair;
+        my $default = $instance eq 'default';
+        my $key     = $default ? "vlan.$vlan" : "vlan.$vlan\@$instance";
+
+        $trees{$key} = {
+            type           => 'vlan',
+            id             => $vlan,
+            vlan           => $vlan,
+            instance       => $instance,
+            protocol       => 'vstp',
+            measured       => $measured,
+            ports_complete => 1,
+            contexts       => [ _jnx_vlan_context( $instance, $vlan ) ],
+            bridge         => undef,
+            root           => undef,
+        };
+    }
+    return \%trees;
+}
+
+sub stp_protocols {
+    my $juniper = shift;
+
+    return unless $juniper->_stp_default_context_ok();
+    my $protocols = $juniper->_jnx_stp_protocols();
+    return [@$protocols] if @$protocols;
+    return unless $juniper->_stp_dot1d_tree();
+    return ['dot1d'];
+}
+
+sub stp_trees {
+    my $juniper = shift;
+
+    return unless $juniper->_stp_default_context_ok();
+    return $juniper->{_stp_trees} if $juniper->{_stp_trees};
+
+    my $vstp = $juniper->_jnx_runs('vstp');
+    my ($default) = grep { $_ ne 'vstp' } @{ $juniper->_jnx_stp_protocols() };
+    my %trees
+        = ( $default // '' ) eq 'mstp' ? %{ $juniper->_jnx_mstp_trees() }
+        : ( $default or !$vstp ) ? %{ $juniper->_jnx_dot1d_trees($default) }
+        :                          ();
+    %trees = ( %trees, %{ $juniper->_jnx_vstp_trees() } ) if $vstp;
+
+    $juniper->{_stp_trees} = \%trees if keys %trees;
+    return \%trees;
+}
+
+sub _jnx_measured {
+    my ( $juniper, $protocol ) = @_;
+
+    return 0 unless defined $protocol;
+    return 0 unless $protocol =~ /^(?:stp|rstp|mstp|vstp)$/;
+    return $juniper->os() eq 'junos' ? 1 : 0;
+}
+
+sub _jnx_dot1d_trees {
+    my ( $juniper, $protocol ) = @_;
+
+    my $record = $juniper->_stp_dot1d_tree() or return {};
+    return {
+        'cist.0' => {
+            %$record,
+            protocol => $protocol,
+            measured => $juniper->_jnx_measured($protocol),
+        }
+    };
+}
+
+sub _jnx_tree_key {
+    my $instance = shift;
+    return $instance ? "msti.$instance" : 'cist.0';
+}
+
+# Instances with a port row at a bridge port that bp_index does not map
+sub _jnx_unmapped_instances {
+    my $juniper = shift;
+
+    my $bp_index = $juniper->bp_index() || {};
+    my %unmapped;
+    foreach my $port ( keys %{ $juniper->jnx_cist_p_state() || {} } ) {
+        $unmapped{0} = 1 unless defined $bp_index->{$port};
+    }
+    foreach my $row ( keys %{ $juniper->jnx_msti_p_state() || {} } ) {
+        my ( $port, $instance ) = split /\./, $row, 2;
+        $unmapped{$instance} = 1 unless defined $bp_index->{$port};
+    }
+    return \%unmapped;
+}
+
+sub _jnx_mstp_trees {
+    my $juniper = shift;
+
+    my $address    = ( $juniper->jnx_mst_brg_address() || {} )->{0};
+    my $priorities = $juniper->jnx_msti_priority() || {};
+    my $roots      = $juniper->jnx_msti_root() || {};
+    my $cist_prio  = ( $juniper->jnx_mst_cist_priority() || {} )->{0};
+    my $cist_root  = ( $juniper->jnx_mst_cist_root() || {} )->{0};
+    my $unmapped   = $juniper->_jnx_unmapped_instances();
+    my $measured   = $juniper->_jnx_measured('mstp');
+
+    my %instances = ( 0 => [ $cist_prio, $cist_root ] );
+    foreach my $row ( keys %$priorities ) {
+        my ( $context, $instance ) = split /\./, $row, 2;
+        next unless $context == 0;
+        $instances{$instance} = [ $priorities->{$row}, $roots->{$row} ];
+    }
+
+    my %trees;
+    foreach my $instance ( keys %instances ) {
+        my ( $priority, $root ) = @{ $instances{$instance} };
+        $trees{ _jnx_tree_key($instance) } = {
+            type           => $instance ? 'msti' : 'cist',
+            id             => $instance,
+            protocol       => 'mstp',
+            measured       => $measured,
+            ports_complete => $unmapped->{$instance} ? 0 : 1,
+            contexts       => [ { kind => 'none' } ],
+            bridge         =>
+                scalar SNMP::Info::Bridge::_stp_bridge_id_from( $priority,
+                $address ),
+            root => scalar SNMP::Info::Bridge::_stp_decode_bridge_id($root),
+        };
+    }
+    return \%trees;
+}
+
+sub stp_tree_ports {
+    my ( $juniper, $tree_key ) = @_;
+
+    my ( $vlan, $instance )
+        = ( $tree_key // '' ) =~ /^vlan\.(\d+)(?:\@(?!default$)([^:\@]+))?$/;
+    my $wanted
+        = defined $vlan ? ( $instance // 'default' ) . "::$vlan" : undef;
+    return $juniper->_jnx_vstp_tree_ports( $tree_key, $wanted )
+        if defined $wanted and length $juniper->_walk_context();
+
+    # Looked up here so that its error names this method
+    my $tree = $juniper->_stp_tree_for_key($tree_key) or return;
+    return $juniper->_jnx_vstp_elsewhere( $tree_key, $wanted )
+        if defined $wanted;
+    return $juniper->_stp_dot1d_port_rows($tree)
+        unless ( $tree->{protocol} || '' ) eq 'mstp';
+    return $juniper->_jnx_mstp_port_rows($tree);
+}
+
+# A VSTP tree is read only inside its own context, which serves BRIDGE-MIB
+# for that VLAN alone, so the key itself labels the rows there
+sub _jnx_vstp_tree_ports {
+    my ( $juniper, $tree_key, $wanted ) = @_;
+
+    my $context = $juniper->_walk_context();
+    return $juniper->_jnx_vstp_wrong_context( $tree_key, $wanted, $context )
+        unless $context eq $wanted;
+    my ($vlan) = $wanted =~ /::(\d+)$/;
+    return $juniper->_stp_dot1d_port_rows(
+        { type => 'vlan', id => $vlan + 0 } );
+}
+
+sub _jnx_vstp_elsewhere {
+    my ( $juniper, $tree_key, $wanted ) = @_;
+
+    $juniper->error_throw(
+        "SNMP::Info::Layer3::Juniper::stp_tree_ports(): tree '$tree_key' is"
+            . " served in its own context (v2c '$wanted\@<community>',"
+            . " v3 '$wanted'): switch to one with update() and call"
+            . " stp_tree_ports('$tree_key') there.\n" );
+    return;
+}
+
+sub _jnx_vstp_wrong_context {
+    my ( $juniper, $tree_key, $wanted, $context ) = @_;
+
+    $juniper->error_throw(
+        "SNMP::Info::Layer3::Juniper::stp_tree_ports(): tree '$tree_key' is"
+            . " served in context '$wanted', but this session is in context"
+            . " '$context': switch to '$wanted' with update() and call"
+            . " stp_tree_ports('$tree_key') there.\n" );
+    return;
+}
+
+sub _jnx_mstp_port_rows {
+    my ( $juniper, $tree ) = @_;
+
+    my $cist   = $tree->{id} == 0;
+    my $prefix = $cist ? 'jnx_cist_p_' : 'jnx_msti_p_';
+    my %served;
+    foreach my $column (qw/state role role_raw bridge port enable/) {
+        my $method = $prefix . $column;
+        $served{$column} = $juniper->$method() || {};
+    }
+    my $bp_index = $juniper->bp_index() || {};
+
+    my %rows;
+    foreach my $row ( keys %{ $served{state} } ) {
+        my ( $port, $instance ) = split /\./, $row, 2;
+        next if !$cist and $instance != $tree->{id};
+
+        my $iid = $bp_index->{$port};
+        next unless defined $iid;
+        $rows{$iid} = {
+            tree_type         => $tree->{type},
+            tree_id           => $tree->{id},
+            state             => $served{state}{$row},
+            role              => $served{role}{$row},
+            role_raw          => $served{role_raw}{$row},
+            enabled           =>
+                scalar _jnx_port_enabled( $served{enable}{$row} ),
+            designated_bridge =>
+                scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $served{bridge}{$row} ),
+            designated_port =>
+                scalar SNMP::Info::Bridge::_stp_decode_port_id(
+                $served{port}{$row} ),
+        };
+    }
+    return \%rows;
+}
+
+# MSTP's per-port enable is the tree's ForcePortState, whose disabled(0)
+# _stp_enabled would read as unknown; dot1dStpPortEnable is not served there
+sub _jnx_port_enabled {
+    my $value = shift;
+    return unless defined $value;
+
+    return 0 if $value =~ /^(?:disabled|0)$/;
+    return scalar SNMP::Info::Bridge::_stp_enabled($value);
+}
+
+sub stp_trees_complete {
+    my $juniper = shift;
+
+    return 0 unless @{ $juniper->_jnx_stp_protocols() };
+    return 0 if $juniper->_jnx_walk_incomplete('jnx_mst_control');
+    my $trees = $juniper->stp_trees() || {};
+    return 0
+        if $juniper->_jnx_runs('vstp')
+        and !$juniper->_jnx_vstp_served();
+    return 0 if $juniper->_jnx_vlan_contexts_unlisted();
+    return keys %$trees ? 1 : 0;
+}
+
+# Each VSTP tree has one control row at a context other than 0 and one
+# <instance>::<vlan> name. Counts that differ mean a name with no tree behind
+# it, or a tree whose name the agent's view hides. Under MSTP any such name
+# is VSTP in another routing instance, whose tree is not listed.
+sub _jnx_vlan_contexts_unlisted {
+    my $juniper = shift;
+
+    my $names = @{ $juniper->_jnx_vstp_contexts() };
+    return $names ? 1 : 0 if $juniper->_jnx_runs('mstp');
+
+    my $control = $juniper->jnx_mst_control() || {};
+    my $rows    = grep { $_ ne '0' } keys %$control;
+    return $rows == $names ? 0 : 1;
+}
+
+# Each bitmap holds 1024 VLANs, most significant bit first; a short bitmap
+# stands for zero-padding
+sub stp_vlan_map {
+    my $juniper = shift;
+
+    return unless $juniper->_jnx_runs('mstp');
+
+    my %first_vlan = (
+        jnx_msti_vlans_1k => 1,
+        jnx_msti_vlans_2k => 1025,
+        jnx_msti_vlans_3k => 2049,
+        jnx_msti_vlans_4k => 3073,
+    );
+    my %map;
+    foreach my $method ( keys %first_vlan ) {
+        my $bitmaps = $juniper->$method() || {};
+        foreach my $row ( keys %$bitmaps ) {
+            my ( $context, $instance ) = split /\./, $row, 2;
+            next unless $context == 0;
+            $map{$_} = _jnx_tree_key($instance) for _jnx_mapped_vlans(
+                $bitmaps->{$row}, $first_vlan{$method} );
+        }
+    }
+    return unless keys %map;
+    return \%map;
+}
+
+sub _jnx_mapped_vlans {
+    my ( $bitmap, $first_vlan ) = @_;
+
+    my @vlans;
+    my $bit = 0;
+    foreach my $set ( split //, unpack( 'B*', $bitmap // '' ) ) {
+        my $vlan = $first_vlan + $bit++;
+        push @vlans, $vlan if $set and $vlan <= 4094;
+    }
+    return @vlans;
+}
+
+# Default tree is not the common tree: the BRIDGE-MIB tree is only the
+# default context's under RSTP and STP
+sub _stp_default_is_common { return 0; }
+
 1;
 __END__
 
@@ -762,6 +1520,14 @@ Subclass for Juniper Devices running JUNOS
 =item F<JUNIPER-VIRTUALCHASSIS-MIB>
 
 =item F<JUNIPER-L2ALD-MIB>
+
+=item F<JUNIPER-MIMSTP-MIB>
+
+=item F<SNMP-VIEW-BASED-ACM-MIB>
+
+=item F<JUNIPER-VPN-MIB>
+
+=item F<JUNIPER-IF-MIB>
 
 =back
 
@@ -825,6 +1591,47 @@ The name, model, or detailed description of the device.
 
 (C<jnxVirtualChassisMemberModel>)
 
+=item $juniper->jnx_stp_version()
+
+(C<dot1dStpVersion>)
+
+=item $juniper->hasSTP()
+
+Returns 1 when C<dot1dStpVersion> is C<stpCompatible(0)> and MSTP is not
+started, else 0.  VSTP can run beside it.
+
+=item $juniper->hasRSTP()
+
+Returns 1 when C<dot1dStpVersion> is C<rstp(2)> and MSTP is not started,
+else 0.  VSTP can run beside it.
+
+=item $juniper->hasMSTP()
+
+Returns 1 when C<jnxMIMstSystemControl> for context 0 is C<start(1)>, else 0.
+
+=item $juniper->hasVSTP()
+
+Returns 1 when all of these hold, else 0:
+
+=over
+
+=item *
+
+C<jnxMIMstSystemControl> does not start MSTP at context 0;
+
+=item *
+
+its walk completed, with rows at contexts other than 0 that all read
+C<shutdown(2)>;
+
+=item *
+
+C<jnxMIMstMstiBridgePriority> has no row, and its walk completed.
+
+=back
+
+See L</"Spanning Tree Trees">.
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -883,6 +1690,510 @@ value = C<ifIndex>. As Juniper does not provide a mapping function,
 this does it manually.
 For example, ge-0/0/1 registers as PowerEthernet interface '1.2'
 
+=item $juniper->i_edgeport_admin()
+
+Returns 1 or 0 for each port by whether it is configured as an edge port.
+Format is a hash reference with key = C<ifIndex>, value = [1|0].  Reads
+C<jnxMIMstCistPortAdminEdgeStatus>, else C<dot1dStpPortAdminEdgePort>
+through L<SNMP::Info::Bridge>.
+
+=item $juniper->i_edgeport_oper()
+
+Returns 1 or 0 for each port by whether it currently operates as an edge
+port.  Format is a hash reference with key = C<ifIndex>, value = [1|0].
+Reads C<jnxMIMstCistPortOperEdgeStatus>, else C<dot1dStpPortOperEdgePort>
+through L<SNMP::Info::Bridge>.
+
+=item $juniper->agg_ports()
+
+Returns a HASH reference mapping from member to aggregate for each port
+bundle, from C<dot3adAggPortAttachedAggID>. Junos reports logical units
+(C<ge-0/0/1.0>, C<ae0.0>) in that table; both sides are mapped to the physical
+interface beneath the unit (C<ge-0/0/1>, C<ae0>), as C<ifStackStatus> shows.
+In C<lag_groups()> the per-member partner fields can be undef, because Junos
+keys the port rows on logical units rather than on the physical member.
+
+=item $juniper->jnx_vacm_context_name()
+
+(C<vacmContextName>)
+
+=item $juniper->vrf_jnx_vpn_status()
+
+Returns reference to hash of the row status of each VPN, keyed by
+C<jnxVpnType> then the length-prefixed C<jnxVpnName>. The index is what
+names the VPN, since both index leaves are not accessible. Type 2 is
+C<bgpIpVpn>.
+
+(C<jnxVpnRowStatus>)
+
+=item $juniper->jnx_mst_control()
+
+(C<jnxMIMstSystemControl>)
+
+=item $juniper->jnx_mst_brg_address()
+
+(C<jnxMIMstBrgAddress>)
+
+=item $juniper->jnx_mst_cist_root()
+
+(C<jnxMIMstCistRoot>)
+
+=item $juniper->jnx_mst_cist_priority()
+
+(C<jnxMIMstCistBridgePriority>)
+
+=item $juniper->jnx_msti_priority()
+
+(C<jnxMIMstMstiBridgePriority>)
+
+=item $juniper->jnx_msti_root()
+
+(C<jnxMIMstMstiBridgeRegionalRoot>)
+
+=item $juniper->jnx_msti_vlans_1k()
+
+(C<jnxMIMstInstanceVlanMapped>)
+
+=item $juniper->jnx_msti_vlans_2k()
+
+(C<jnxMIMstInstanceVlanMapped2k>)
+
+=item $juniper->jnx_msti_vlans_3k()
+
+(C<jnxMIMstInstanceVlanMapped3k>)
+
+=item $juniper->jnx_msti_vlans_4k()
+
+(C<jnxMIMstInstanceVlanMapped4k>)
+
+=item $juniper->jnx_cist_p_state()
+
+(C<jnxMIMstCistPortState>)
+
+=item $juniper->jnx_cist_p_role()
+
+(C<jnxMIMstCistCurrentPortRole>)
+
+=item $juniper->jnx_cist_p_bridge()
+
+(C<jnxMIMstCistPortDesignatedBridge>)
+
+=item $juniper->jnx_cist_p_port()
+
+(C<jnxMIMstCistPortDesignatedPort>)
+
+=item $juniper->jnx_cist_p_enable()
+
+(C<jnxMIMstCistForcePortState>)
+
+=item $juniper->jnx_cist_p_edge_admin()
+
+(C<jnxMIMstCistPortAdminEdgeStatus>)
+
+=item $juniper->jnx_cist_p_edge_oper()
+
+(C<jnxMIMstCistPortOperEdgeStatus>)
+
+=item $juniper->jnx_msti_p_state()
+
+(C<jnxMIMstMstiPortState>)
+
+=item $juniper->jnx_msti_p_role()
+
+(C<jnxMIMstMstiCurrentPortRole>)
+
+=item $juniper->jnx_msti_p_bridge()
+
+(C<jnxMIMstMstiPortDesignatedBridge>)
+
+=item $juniper->jnx_msti_p_port()
+
+(C<jnxMIMstMstiPortDesignatedPort>)
+
+=item $juniper->jnx_msti_p_enable()
+
+(C<jnxMIMstMstiForcePortState>)
+
+=back
+
+=head2 Spanning Tree Trees
+
+These override L<SNMP::Info::Bridge/"Spanning Tree Trees">, where the
+records are described.  Only the default context is read, except for
+VSTP trees.
+
+The default context's protocol:
+
+=over
+
+=item *
+
+C<mstp> when C<jnxMIMstSystemControl> for context 0 is C<start(1)>.
+
+=item *
+
+Else C<rstp> or C<stp>, as C<dot1dStpVersion> says (C<rstp(2)>,
+C<stpCompatible(0)>).
+
+=item *
+
+Else unknown.  Where F<BRIDGE-MIB> serves the tree, C<cist.0> is
+reported with C<protocol> undef, and C<stp_protocols()> is
+C<['dot1d']>.
+
+=back
+
+VSTP (C<vstp>) runs alone or beside RSTP or STP.  The device sets no
+flag for it; C<hasVSTP()> lists the signs this class reads.  The
+C<jnxMIMstSystemControl> row at context 0 belongs to the default
+context, so C<shutdown(2)> there, or a C<dot1dStpVersion>, does not rule
+VSTP out.  A row reading C<start(1)> at another context is MSTP inside a
+routing instance, not VSTP.  Junos refuses MSTP and VSTP in one routing
+instance, but VSTP in a virtual switch can run beside MSTP in the
+default instance; that VSTP tree is not listed.
+
+The tree records:
+
+=over
+
+=item Keys
+
+C<cist.0> and C<msti.N> under MSTP; C<cist.0> under RSTP and STP.  Each
+VSTP tree is C<vlan.N> in the C<default> instance, and C<vlan.N@instance>
+in routing instance C<instance>; they are listed beside any C<cist.0>.
+Under VSTP alone the default context serves no C<dot1dStp> object, so
+there is no C<cist.0>.  A C<vlan.N@default> key is not a tree.
+
+=item C<vlan>, C<instance>
+
+On VSTP trees only: the VLAN id, and the routing instance, C<default>
+included.
+
+=item C<protocol>
+
+The default context's protocol, as above; C<vstp> on VSTP trees.
+
+=item C<measured>
+
+1 under STP, RSTP, MSTP and VSTP.  0 when the protocol is unknown.
+
+=item C<ports_complete>
+
+0 when a port row of the tree has no C<bp_index()> entry, under MSTP,
+RSTP and STP.  1 otherwise, and on every VSTP tree.
+
+=item C<contexts>
+
+The default context, except on a VSTP tree.  A VSTP tree has one
+context:
+
+    { kind => 'vlan', id => N, instance => 'instance',
+      v2c => 'instance::N@%s', v3 => 'instance::N' }
+
+Its C<instance> key makes it differ from C<snmp_context('vlan', N)>,
+which answers for the C<default> instance only; use the tree's own
+context.
+
+=item C<bridge>
+
+Under MSTP, from C<jnxMIMstCistBridgePriority> or
+C<jnxMIMstMstiBridgePriority> as served, with C<jnxMIMstBrgAddress>.
+Under RSTP and STP, from F<BRIDGE-MIB>.  Undef on VSTP trees.
+
+=item C<root>
+
+Under MSTP, C<jnxMIMstCistRoot> or C<jnxMIMstMstiBridgeRegionalRoot>.
+Under RSTP and STP, C<dot1dStpDesignatedRoot>.  Undef on VSTP trees,
+since only the tree's own context serves it.
+
+=back
+
+The port records:
+
+=over
+
+=item Under MSTP
+
+C<state>, C<role>, C<designated_bridge> and C<designated_port> from the
+C<JUNIPER-MIMSTP-MIB> CIST or MSTI port table, C<role> normalized by
+C<munge_dot1s_port_role()>.  C<enabled> is the tree's
+C<jnxMIMstCistForcePortState> or C<jnxMIMstMstiForcePortState>: 0 for
+C<disabled(0)>, 1 for C<enabled(1)>, undef for a port with no row.
+
+=item Under RSTP, STP and VSTP
+
+From F<BRIDGE-MIB>, in the tree's own context for a VSTP tree.
+C<role> and C<role_raw> are undef.
+
+=back
+
+Each VSTP tree is served whole, as F<BRIDGE-MIB>, in its own context
+C<instance::N>.  The tree list takes the VLANs and instances from the
+C<instance::N> names in C<vacmContextName>, with N from 1 to 4094.
+Other VLAN contexts get no reply at all, not an error, so ask only the
+listed ones.  To reach a context:
+
+=over
+
+=item *
+
+SNMPv2c: the community C<instance::N@community>, the instance first.
+C<community@N>, the Cisco order, does not work on Junos.
+
+=item *
+
+SNMPv3: the context C<instance::N>.
+
+=back
+
+Device requirements for VSTP:
+
+=over
+
+=item *
+
+The community's or user's view includes C<SNMP-VIEW-BASED-ACM-MIB>
+(1.3.6.1.6.3.16).  Without it the VSTP VLAN list is unknown:
+C<stp_trees()> holds no VSTP tree and C<stp_trees_complete()> is 0.
+
+=item *
+
+For SNMPv3, an exact VACM C<context-prefix instance::N> for each VLAN.
+
+=back
+
+=over
+
+=item $juniper->stp_protocols()
+
+Returns reference to an array holding the default context's protocol, then
+C<vstp> when VSTP runs (C<['rstp', 'vstp']> beside RSTP, C<['vstp']> alone),
+C<['dot1d']> when only C<BRIDGE-MIB> is served, or nothing.  Protocol
+methods answer only in the default context: C<stp_protocols()> reports an
+error in any other, and C<hasSTP()> to C<hasVSTP()> return 0.
+
+=item $juniper->stp_trees()
+
+Returns reference to hash of tree records, or an empty hash when nothing is
+served.
+
+=item $juniper->stp_tree_ports($tree_key)
+
+Returns reference to hash of the tree's port records keyed by ifIndex.
+
+=over
+
+=item *
+
+A C<vlan.N> key is read in the context C<default::N>, and a
+C<vlan.N@instance> key in C<instance::N>.  In any other context it
+returns nothing, with C<error()> naming the context to use.
+
+=item *
+
+Other keys are read only in the default context.
+
+=back
+
+A listed C<instance::N> name can have no tree behind it (see
+C<stp_trees_complete()>); in such a context it returns no rows.
+
+=item $juniper->stp_trees_complete()
+
+Returns 1 or 0, as L<SNMP::Info::Bridge/"Spanning Tree Trees">
+describes.  It returns 0 when:
+
+=over
+
+=item *
+
+no protocol is identified, including when only C<BRIDGE-MIB> is
+served;
+
+=item *
+
+the C<jnxMIMstSystemControl> walk was incomplete;
+
+=item *
+
+VSTP runs, and C<vacmContextName> was not served or its walk was
+incomplete;
+
+=item *
+
+unless MSTP runs, the number of C<instance::N> names in
+C<vacmContextName> differs from the number of C<jnxMIMstSystemControl>
+rows at contexts other than 0;
+
+=item *
+
+under MSTP, C<vacmContextName> lists any C<instance::N> name: VSTP in
+another routing instance, whose tree is not listed;
+
+=item *
+
+no tree is listed.
+
+=back
+
+The count catches a VACM C<context-prefix> that lists a name with no
+VSTP behind it, and a tree whose name the agent's view hides.  When
+one of each occurs, they cancel out and neither is detected.  Every
+control row at a context other than 0 counts, whatever it reads, so
+MSTP started inside a routing instance beside RSTP or STP in the default
+context also gives 0.
+
+=item $juniper->stp_vlan_map()
+
+Under MSTP returns reference to hash mapping VLAN id to C<msti.N>, from the
+four C<jnxMIMstInstanceVlanMapped> bitmaps (VLANs 1 to 4094).  Only VLANs
+mapped to an MSTI appear: the device serves no row for the CIST.  Otherwise
+nothing.
+
+=back
+
+=head2 Routing instances
+
+C<vrf_instances()> lists:
+
+=over
+
+=item *
+
+each instance C<MPLS-L3VPN-STD-MIB> serves, as kind C<vrf>, with its
+route distinguisher and route targets;
+
+=item *
+
+each other name C<vacmContextName> (C<SNMP-VIEW-BASED-ACM-MIB>) serves,
+with C<SNMP-VIEW-BASED-ACM-MIB> as its list source. It is kind C<vrf>
+when C<jnxVpnTable> (C<JUNIPER-VPN-MIB>) lists the name as C<bgpIpVpn>,
+and C<virtual-router> otherwise. The management instance C<mgmt_junos>
+is a C<virtual-router> like any other, and reads in its own context.
+
+=back
+
+These names are never listed:
+
+=over
+
+=item *
+
+the empty name, C<default> and C<default-switch>;
+
+=item *
+
+a name between double underscores, such as C<__juniper_private2__>;
+
+=item *
+
+a name starting with a colon, such as C<:gribi>;
+
+=item *
+
+an C<instance::N> VSTP context;
+
+=item *
+
+a name C<jnxVpnTable> lists with a type other than C<bgpIpVpn>, such as
+a VPLS instance.
+
+=back
+
+A layer 2 instance with no C<jnxVpnTable> row, such as a
+C<virtual-switch>, is listed as a C<virtual-router>. It reads no address
+in its context, since the device holds none there.
+
+The default instance is always the C<default> record. Its list source is
+C<MPLS-L3VPN-STD-MIB> when that serves a row, and otherwise
+C<SNMP-VIEW-BASED-ACM-MIB> when C<vacmContextName> serves a row. A device
+that lists no other instance there reports C<vrf_instances_complete()>
+1, none configured (see L<SNMP::Info::VRF/"Completeness">).
+C<vrf_instances_complete()> is 0 when the C<vacmContextName> or
+C<jnxVpnRowStatus> walk was incomplete.
+
+Each instance reads in its own context (context mode). The default
+context leaks: it also serves every instance's neighbors and addresses
+on the instances' ports.
+
+=over
+
+=item *
+
+The readers of C<default> drop the rows on the ports
+C<mplsL3VpnIfConfTable> gives a VRF. C<i_vrf()> in the default context
+is that membership.
+
+=item *
+
+An instance listed only by C<vacmContextName>, such as a virtual router
+or the management instance, is never covered by the membership table,
+even where C<mplsL3VpnIfConfTable> names it. Its rows stay in
+C<default>, except on ports that table names, and
+C<vrf_read_complete('default')> is 0 while it is listed. Every device
+with C<mgmt_junos> therefore reads 0 there.
+
+=item *
+
+To separate a virtual router's rows, read it in its own context first.
+Then drop from C<default>'s rows those on the ports C<i_vrf()> reported
+in that router's context. C<vrf_read_complete('default')> stays 0, since
+the class cannot check the result.
+
+=item *
+
+An internal instance that no list source names, such as
+C<__juniper_private1__> on the internal links, keeps its rows in
+C<default> whatever is listed.
+
+=back
+
+Neighbors:
+
+=over
+
+=item *
+
+Junos serves host link-local neighbors only in C<ipv6NetToMediaTable>
+(C<IPV6-MIB>). C<vrf_neighbors()> adds them to the
+C<ipNetToPhysicalTable> rows, once per port and address.
+
+=item *
+
+Junos serves an instance's own addresses as neighbors too: at an
+all-zero or empty MAC, or at the port's MAC, C<static> in IPv4 and
+C<local> in IPv6. C<vrf_neighbors()> drops them all.
+
+=item *
+
+Junos holds C<fe80::1> on every port of an instance, but lists it in
+C<ipAddressTable> on one only. Its rows on the other ports are dropped
+by the port's MAC.
+
+=back
+
+=over
+
+=item $juniper->context_kinds($feature)
+
+C<['vlan']> for C<stp> while VSTP runs, since each VSTP tree is served in
+its own VLAN context; C<['vrf']> for C<vrf>, since each routing instance is
+served in its own context; nothing otherwise, and nothing for other
+features.  See C<context_kinds()> in L<SNMP::Info>.
+
+=item $juniper->snmp_context($kind, $id)
+
+For C<vlan> returns C<< { kind => 'vlan', id => N, v2c =>
+'default::N@%s', v3 => 'default::N' } >>, the context of VLAN N in the
+C<default> instance, with the context before the community.  For C<vrf>
+and an instance name returns C<< { kind => 'vrf', id => $name, v2c =>
+'$name@%s', v3 => $name } >>, with the instance before the community
+(C<red@community>, never C<community@red>); a Junos SNMPv3 context name is
+the instance name.  The C<default> instance, an empty name and no name get
+nothing, since the default context serves the default instance.  Kinds
+other than C<vlan> and C<vrf> get nothing.  See
+C<snmp_context()> in L<SNMP::Info>.
+
 =back
 
 =head2 Pseudo F<ENTITY-MIB> information
@@ -900,7 +2211,8 @@ if required.
 
 =item $juniper->e_class()
 
-Returns reference to hash.  Key: IID, Value: General hardware type.
+Returns reference to hash.  Key: IID, Value: General hardware type.  A
+virtual chassis is a C<stack> with one C<chassis> per member.
 
 =item $juniper->e_descr()
 
@@ -916,7 +2228,16 @@ Returns reference to hash.  Key: IID, Value: juniper
 
 =item $juniper->e_serial()
 
-Returns reference to hash.  Key: IID, Value: Serial number
+Returns reference to hash.  Key: IID, Value: Serial number.  In a virtual
+chassis each member frame reports its own serial
+(C<jnxVirtualChassisMemberSerialnumber>).
+
+=item $juniper->e_model()
+
+Returns reference to hash.  Key: IID, Value: Model name.  In a virtual
+chassis each member frame reports its own model
+(C<jnxVirtualChassisMemberModel>); other entries are from
+F<ENTITY-MIB> (C<entPhysicalModelName>).
 
 =item $juniper->e_pos()
 

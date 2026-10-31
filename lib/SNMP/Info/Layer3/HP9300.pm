@@ -41,7 +41,7 @@ use SNMP::Info::FDP;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -192,6 +192,10 @@ sub interfaces {
     return $i_descr;
 }
 
+# Default tree is not the common tree: Foundry OEM, per-VLAN STP
+# (snPortStp*)
+sub _stp_default_is_common { return 0; }
+
 1;
 __END__
 
@@ -223,6 +227,11 @@ Eric Miller
 
 Abstraction subclass for HP network devices which Foundry Networks was the
 Original Equipment Manufacturer (OEM) such as the HP ProCurve 9300 series.
+
+Reports no spanning tree: these devices run per-VLAN STP, which
+F<BRIDGE-MIB> does not describe.  C<stp_trees()> is empty,
+C<stp_protocols()> returns nothing, and C<stp_trees_complete()> returns 0
+(see L<SNMP::Info::Bridge/"Spanning Tree Trees">).
 
 =head2 Inherited Classes
 

@@ -39,7 +39,7 @@ use SNMP::Info::CDP;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE, $AUTOLOAD);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,
@@ -196,7 +196,7 @@ Returns 'hirschmann'
 
 =item $device->os_ver()
 
-Return os version
+Returns os version extracted from hmSysVersion.0 with a fallback to id().
 
 =item $device->mac()
 

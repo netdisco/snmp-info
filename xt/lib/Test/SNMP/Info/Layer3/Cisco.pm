@@ -144,4 +144,244 @@ sub eigrp_peers : Tests(3) {
     {}, q(No data data returns empty hash));
 }
 
+# A served common-tree shape with no stpxSpanningTreeType reports no trees:
+# the default tree is VLAN 1's under PVST, VLAN 1's ports under MST.
+sub stp_trees_default_off : Tests(3) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        {   '_b_mac'        => pack( 'H*', '02000000000c' ),
+            '_stp_priority' => 32768,
+            '_stp_root'     => pack( 'H*', '100002000000000a' ),
+            '_stp_p_id'     => 1,
+            'store'         => { 'stp_p_id' => { 1 => 1, 2 => 2 } },
+        }
+    );
+    cmp_deeply( $test->{info}->stp_trees(), {}, q(No common-tree default) );
+    is( $test->{info}->stp_protocols(), undef, q(No protocols reported) );
+    is( $test->{info}->stp_trees_complete(),
+        0, q(Trees may exist unread) );
+}
+
+# IOS-XE (IOL) PE shape: mplsL3VpnVrfTable and mplsL3VpnIfConfTable rows, with the
+# length-prefixed VRF name as the first index arcs.
+my %NAME_IID = (
+    red   => '3.114.101.100',
+    blue  => '4.98.108.117.101',
+    grey  => '4.103.114.101.121',
+    green => '5.103.114.101.101.110',
+);
+
+sub _prime_mpls_rows {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->{_vrf_l3vpn_descr} = 1;
+    $info->{_vrf_l3vpn_if}    = 1;
+    $info->{store}{vrf_l3vpn_descr} = { map { $_ => q() } values %NAME_IID };
+    $info->{store}{vrf_l3vpn_if}    = {
+        "$NAME_IID{red}.2"   => 'active',
+        "$NAME_IID{red}.4"   => 'active',
+        "$NAME_IID{blue}.3"  => 'active',
+        "$NAME_IID{blue}.5"  => 'active',
+        "$NAME_IID{green}.6" => 'active',
+        "$NAME_IID{grey}.10" => 'active',
+    };
+    return;
+}
+
+# CISCO-VRF-MIB as an IOS-XE PE serves it: cvVrfName by cvVrfIndex, and
+# cvVrfInterfaceRowStatus by cvVrfIndex.ifIndex
+sub _prime_cisco_vrf_mib {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->{_vrf_cv_name} = 1;
+    $info->{_vrf_cv_if}   = 1;
+    $info->{store}{vrf_cv_name}
+        = { 1 => 'red', 2 => 'blue', 3 => 'green', 4 => 'grey' };
+    $info->{store}{vrf_cv_if} = {
+        '1.2' => 'active', '1.4'  => 'active', '2.3' => 'active',
+        '2.5' => 'active', '3.6'  => 'active', '4.10' => 'active',
+    };
+    return;
+}
+
+sub vrf_instances__cisco_vrf_mib__fallback : Tests(5) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_cisco_vrf_mib();
+    my $instances = $info->vrf_instances();
+    cmp_deeply( [ sort keys %$instances ],
+        [qw/blue default green grey red/],
+        q(Each CISCO-VRF-MIB name and default are listed) );
+    is( $instances->{red}{sources}{list},
+        'CISCO-VRF-MIB', q(The list source is the vendor MIB) );
+    cmp_deeply(
+        $info->i_vrf(),
+        {   2  => 'red',  4 => 'red',   3 => 'blue',
+            5  => 'blue', 6 => 'green', 10 => 'grey'
+        },
+        q(The vendor interface rows give i_vrf)
+    );
+    cmp_deeply(
+        [ grep { $instances->{$_}{sources}{members} } sort keys %$instances ],
+        [qw/blue green grey red/],
+        q(Each instance holding a port records the members source)
+    );
+    is( $instances->{red}{sources}{members},
+        'CISCO-VRF-MIB', q(The members source is the vendor MIB) );
+}
+
+sub vrf_instances__mpls_list_vendor_members__members_source_is_mpls
+    : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_mpls_rows();
+    my $instances = $info->vrf_instances();
+    is( $instances->{red}{sources}{members},
+        'MPLS-L3VPN-STD-MIB', q(MPLS-L3VPN-STD-MIB rows name their MIB) );
+}
+
+sub vrf_instances__vendor_list__contexts_set_once : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_cisco_vrf_mib();
+    my %calls;
+    no warnings qw/once redefine/;
+    local *SNMP::Info::Layer3::Cisco::_vrf_set_contexts
+        = sub { $calls{ $_[1]{name} }++; return };
+    $info->vrf_instances();
+    cmp_deeply( \%calls,
+        { map { $_ => 1 } qw/red blue green grey default/ },
+        q(Each vendor-listed record gets its contexts once) );
+}
+
+sub i_vrf__cisco_vrf_mib_rows_skipped__only_active_valid_named : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_cisco_vrf_mib();
+    $info->{store}{vrf_cv_name}{5} = 'default';
+    $info->{store}{vrf_cv_name}{6} = q();
+    $info->{store}{vrf_cv_name}{7} = 'mgmt';
+    $info->{store}{vrf_cv_if} = {
+        '1.2'   => 'active',
+        '1.4'   => 'notInService',
+        '2.3.9' => 'active',
+        '2'     => 'active',
+        '5.7'   => 'active',
+        '6.8'   => 'active',
+        '9.11'  => 'active',
+        '7.12'  => 'active',
+    };
+    no warnings qw/once redefine/;
+    local *SNMP::Info::Layer3::Cisco::_vrf_internal_instance
+        = sub { return $_[1] eq 'mgmt' ? 1 : 0 };
+    cmp_deeply( $info->i_vrf(), { 2 => 'red' },
+        q(Inactive, malformed, default, internal, unnamed and unknown rows skip)
+    );
+}
+
+sub vrf_instances__mpls_rows__cisco_vrf_mib_unread : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_mpls_rows();
+    $test->_prime_cisco_vrf_mib();
+    $info->{store}{vrf_cv_name}{5} = 'amber';
+    my $instances = $info->vrf_instances();
+    is( $instances->{red}{sources}{list},
+        'MPLS-L3VPN-STD-MIB', q(MPLS-L3VPN-STD-MIB lists) );
+    ok( !exists $instances->{amber}, q(The vendor MIB adds no instance) );
+    $info->vrf_instances_complete();
+    ok( !( grep { /^vrf_cv_/ } keys %{ $info->walk_status() } ),
+        q(Neither CISCO-VRF-MIB table was walked) );
+}
+
+sub vrf_instances_complete__cisco_vrf_mib__is_1 : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_cisco_vrf_mib();
+    is( $info->vrf_instances_complete(), 1, q(A whole vendor list) );
+
+    $info->{walk_status}{vrf_cv_if} = { complete => 0, reason => 'timeout' };
+    is( $info->vrf_instances_complete(),
+        0, q(A partial vendor interface walk may hide ports) );
+}
+
+sub vrf_instances_complete__mpls_rows_cv_walk_partial__is_1 : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_mpls_rows();
+    $info->{walk_status}{vrf_cv_name} = { complete => 0, reason => 'timeout' };
+    $info->{walk_status}{vrf_cv_if}   = { complete => 0, reason => 'timeout' };
+    is( $info->vrf_instances_complete(),
+        1, q(A vendor walk not used for the list does not count) );
+}
+
+# IOS-XE PE: the address tables hold 10.40.0.1/24 on blue's port 3 only, and the
+# routes of both VRFs hold 10.40.0.0/24.
+sub vrf_subnets__overlap__restored_from_routes : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_mpls_rows();
+    my $pfx = '.1.3.6.1.2.1.4.32.1.5';
+    $info->{_new_ip_index}  = 1;
+    $info->{_new_ip_type}   = 1;
+    $info->{_new_ip_prefix} = 1;
+    $info->{store}{new_ip_index}  = { '1.4.10.40.0.1' => 3 };
+    $info->{store}{new_ip_type}   = { '1.4.10.40.0.1' => 'unicast' };
+    $info->{store}{new_ip_prefix}
+        = { '1.4.10.40.0.1' => "$pfx.3.1.4.10.40.0.0.24" };
+
+    my $hop = '2.0.0.1.4.0.0.0.0';
+    my %route
+        = ( "$NAME_IID{red}.1.4.10.40.0.0.24.$hop"  => [ 'local', 2 ],
+            "$NAME_IID{blue}.1.4.10.40.0.0.24.$hop" => [ 'local', 3 ], );
+    $info->{_vrf_l3vpn_rte_if}    = 1;
+    $info->{_vrf_l3vpn_rte_proto} = 1;
+    $info->{store}{vrf_l3vpn_rte_proto}
+        = { map { $_ => $route{$_}[0] } keys %route };
+    $info->{store}{vrf_l3vpn_rte_if}
+        = { map { $_ => $route{$_}[1] } keys %route };
+
+    cmp_deeply( $info->vrf_subnets('red')->{'10.40.0.0/24'},
+        superhashof( { ifindex => 2, sources => ['route'] } ),
+        q(Red's subnet comes back from its connected route) );
+    cmp_deeply( $info->vrf_subnets('blue')->{'10.40.0.0/24'},
+        superhashof( { ifindex => 3, sources => [ 'address', 'route' ] } ),
+        q(Blue's subnet is found both ways) );
+}
+
+sub vrf_instances_complete__cisco_vrf_mib_default_row_only__is_1 : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_cisco_vrf_mib();
+    $info->{store}{vrf_cv_name} = { 1 => 'default' };
+    $info->{store}{vrf_cv_if}   = {};
+    cmp_deeply( [ keys %{ $info->vrf_instances() } ],
+        ['default'], q(The global row is no VRF) );
+    is( $info->vrf_instances_complete(), 1, q(None configured) );
+    ok( !exists $info->vrf_instances( ['amber'] )->{amber},
+        q(Caller names add nothing) );
+}
+
+sub i_edgeport_admin__cisco_class__resolves_to_cisco_stp_extensions :
+    Tests(2) {
+    my $test = shift;
+
+    my $cisco_sub = SNMP::Info::CiscoStpExtensions->can('i_edgeport_admin');
+    ok( $cisco_sub, q(CiscoStpExtensions defines i_edgeport_admin) );
+    is( $test->{info}->can('i_edgeport_admin'),
+        $cisco_sub, q(Cisco class keeps the CISCO-STP-EXTENSIONS method) );
+}
+
 1;

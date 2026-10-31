@@ -52,4 +52,648 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
+# swC of a three-switch IOL-L2 triangle (Rapid-PVST+, PVST+ and MST):
+# trunks are bridge ports 2 and 3, VLAN 1's only port is 4. MSTI 1 carries
+# VLAN 10, MSTI 2 VLAN 20. MACs are synthetic: swA 0a.
+sub _mst_bitmaps {
+    my %arg = @_;
+    return (
+        '_stpx_smst_vlans_mapped_1k2k' => 1,
+        '_stpx_smst_vlans_mapped_3k4k' => 1,
+        'stpx_smst_vlans_mapped_1k2k'  => $arg{low},
+        'stpx_smst_vlans_mapped_3k4k'  => $arg{high},
+    );
+}
+
+sub _all_vlans_bitmaps {
+    return _mst_bitmaps(
+        low  => { 0 => pack( 'H*', 'ff' x 256 ) },
+        high => { 0 => pack( 'H*', 'ff' x 256 ) },
+    );
+}
+
+sub _captured_mst_bitmaps {
+    my $msti1 = shift || '0020';
+    return _mst_bitmaps(
+        low => {
+            0 => pack( 'H*', 'ffdff7' . ( 'ff' x 253 ) ),
+            1 => pack( 'H*', $msti1 ),
+            2 => pack( 'H*', '000008' ),
+        },
+        high => {
+            0 => pack( 'H*', 'ff' x 256 ),
+            1 => '',
+            2 => '',
+        },
+    );
+}
+
+sub _pvst_vlan_enable {
+    return map { $_ => 'enabled' } qw/1 10 20 1002 1003 1004 1005/;
+}
+
+sub _iol_pvst_cache {
+    my $type = shift;
+    my %store = (
+        'stpx_pvst_vlan_enable' => { _pvst_vlan_enable() },
+        'stpx_faststart_oper'   => {
+            map { $_ => 'disabled' } qw/1.4 10.2 10.3 20.2 20.3/
+        },
+        _all_vlans_bitmaps(),
+    );
+    if ( $type eq 'rapidPvstPlus' ) {
+        $store{stpx_rstp_port_role} = {
+            '1.4'  => 'designated',
+            '10.2' => 'root',
+            '10.3' => 'alternate',
+            '20.2' => 'alternate',
+            '20.3' => 'root',
+        };
+    }
+    my %flags = map { ( "_$_" => 1 ) } grep { !/^_/ } keys %store;
+    my %scalars = map { ( $_ => delete $store{$_} ) } grep {/^_/} keys %store;
+    return {
+        '_stpx_stp_type' => $type,
+        '_stp_root'      => pack( 'H*', '800102000000000c' ),
+        %flags, %scalars,
+        'store' => \%store,
+    };
+}
+
+sub _iol_mst_cache {
+    my $msti1 = shift;
+    my %bitmaps = _captured_mst_bitmaps($msti1);
+    my %store = (
+        'stpx_pvst_vlan_enable' => { _pvst_vlan_enable() },
+        'stpx_rstp_port_role'   => {
+            '0.2' => 'root',
+            '0.3' => 'alternate',
+            '0.4' => 'designated',
+            '1.2' => 'root',
+            '1.3' => 'alternate',
+            '2.2' => 'alternate',
+            '2.3' => 'root',
+        },
+        map { $_ => $bitmaps{$_} } grep { !/^_/ } keys %bitmaps,
+    );
+    return {
+        '_stpx_stp_type' => 'mst',
+        '_stp_root'      => pack( 'H*', '800002000000000a' ),
+        ( map { ( "_$_" => 1 ) } keys %store ),
+        'store' => \%store,
+    };
+}
+
+sub _vlan_tree {
+    my ( $vlan, $protocol ) = @_;
+    return {
+        type           => 'vlan',
+        id             => $vlan,
+        vlan           => $vlan,
+        protocol       => $protocol,
+        measured       => 0,
+        ports_complete => 1,
+        contexts       => [
+            {   kind => 'vlan',
+                id   => $vlan,
+                v2c  => "%s\@$vlan",
+                v3   => "vlan-$vlan"
+            }
+        ],
+        bridge => undef,
+        root   => undef,
+    };
+}
+
+sub _bid {
+    my ( $prio, $sw ) = @_;
+    return {
+        priority   => hex($prio) & 0xf000,
+        sys_id_ext => hex($prio) & 0x0fff,
+        mac        => '02:00:00:00:00:' . $sw,
+        raw        =>
+            join( ':', unpack( '(A2)*', $prio . '0200000000' . $sw ) ),
+    };
+}
+
+sub stp_trees : Tests(17) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    can_ok( $info, 'stp_trees' );
+    $info->cache( _iol_pvst_cache('rapidPvstPlus') );
+    my $trees = $info->stp_trees();
+    cmp_deeply( [ sort keys %$trees ], [qw/vlan.1 vlan.10 vlan.20/],
+        q(Rapid-PVST+: running trees only, no 1002-1005, no MST region) );
+    cmp_deeply( $trees->{'vlan.10'}, _vlan_tree( 10, 'rapid-pvst' ),
+        q(VLAN 10 record) );
+    cmp_deeply( $trees->{'vlan.1'}{contexts}, [ { kind => 'none' } ],
+        q(VLAN 1 is the default context) );
+    cmp_deeply( $trees->{'vlan.1'}{root}, _bid( '8001', '0c' ),
+        q(VLAN 1 root from the default context) );
+
+    $info->clear_cache();
+    $info->cache( _iol_pvst_cache('pvstPlus') );
+    $trees = $info->stp_trees();
+    cmp_deeply( [ sort keys %$trees ], [qw/vlan.1 vlan.10 vlan.20/],
+        q(PVST+: trees from the fast-start table alone) );
+    is( $trees->{'vlan.20'}{protocol}, 'pvst', q(PVST+ protocol) );
+
+    $info->clear_cache();
+    $info->cache( _iol_mst_cache() );
+    $trees = $info->stp_trees();
+    cmp_deeply( [ sort keys %$trees ], [qw/cist.0 msti.1 msti.2/],
+        q(MST: the CIST and each MSTI) );
+    cmp_deeply(
+        $trees->{'cist.0'},
+        {   type           => 'cist',
+            id             => 0,
+            protocol       => 'mstp',
+            measured       => 0,
+            ports_complete => 0,
+            contexts       => [ { kind => 'none' } ],
+            bridge         => undef,
+            root           => _bid( '8000', '0a' ),
+        },
+        q(CIST record)
+    );
+    cmp_deeply(
+        $trees->{'msti.1'},
+        {   type           => 'msti',
+            id             => 1,
+            protocol       => 'mstp',
+            measured       => 0,
+            ports_complete => 1,
+            contexts       => _vlan_tree( 10, 'mstp' )->{contexts},
+            bridge         => undef,
+            root           => undef,
+        },
+        q(MSTI 1 record, read through VLAN 10)
+    );
+
+    $info->clear_cache();
+    $info->cache( _iol_mst_cache('0030') );
+    cmp_deeply(
+        [ map { $_->{id} } @{ $info->stp_trees()->{'msti.1'}{contexts} } ],
+        [ 10, 11 ], q(Two VLANs on one MSTI: both contexts, in VLAN order) );
+
+    $info->clear_cache();
+    my $cache = _iol_pvst_cache('rapidPvstPlus');
+    delete $cache->{_stpx_stp_type};
+    $info->cache($cache);
+    cmp_deeply( $info->stp_trees(), {},
+        q(No stpxSpanningTreeType: no trees) );
+
+    $info->clear_cache();
+    $cache->{_stpx_stp_type} = 'mistp';
+    $info->cache($cache);
+    cmp_deeply( $info->stp_trees(), {}, q(MISTP: no trees) );
+
+    $info->clear_cache();
+    $cache->{_stpx_stp_type} = 5;
+    $info->cache($cache);
+    cmp_deeply( [ sort keys %{ $info->stp_trees() } ],
+        [qw/vlan.1 vlan.10 vlan.20/], q(Numeric type 5 is Rapid-PVST+) );
+
+    $info->clear_cache();
+    $info->cache( _iol_pvst_cache('rapidPvstPlus') );
+    $info->session()->{Context} = 'vlan-10';
+    is( $info->stp_trees(), undef, q(Refused in a context) );
+    like( $info->error(), qr/default context/,
+        q(Error names the default context) );
+    $info->session()->{Context} = undef;
+    ok( 1, q(Context reset) );
+}
+
+sub stp_trees_complete : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _iol_pvst_cache('rapidPvstPlus') );
+    is( $test->{info}->stp_trees_complete(), 1, q(Rapid-PVST+ trees read) );
+
+    $test->{info}->clear_cache();
+    is( $test->{info}->stp_trees_complete(), 0, q(No indicator: unread) );
+}
+
+sub stp_trees_complete__pvst_list_incomplete__returns_0 : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->cache( _iol_pvst_cache('rapidPvstPlus') );
+    $test->incomplete_on_read( $info, 'stpx_rstp_port_role' );
+    is( $info->stp_trees_complete(), 0, q(PVST VLAN list walk incomplete) );
+}
+
+sub stp_trees_complete__mst_list_incomplete__returns_0 : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->cache( _iol_mst_cache() );
+    $test->incomplete_on_read( $info, 'stpx_smst_vlans_mapped_3k4k' );
+    is( $info->stp_trees_complete(), 0, q(MST instance list incomplete) );
+
+    delete $info->{walk_status};
+    $info->{walk_status}{stpx_smst_vlans_mapped_3k4k}
+        = { complete => 1, reason => 'absent' };
+    is( $info->stp_trees_complete(), 1, q(Absent list walk is complete) );
+}
+
+sub stp_trees_complete__mst_port_walk_incomplete__returns_1 : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->cache( _iol_mst_cache() );
+    $test->incomplete_on_read( $info, 'stpx_faststart_oper',
+        'stpx_rstp_port_role' );
+    $info->stpx_faststart_oper();
+    $info->stpx_rstp_port_role();
+    is( $info->stp_trees_complete(),
+        1, q(MST: per-port walks do not list trees) );
+    is( $info->walk_status('stpx_faststart_oper')->{complete},
+        0, q(Port walk recorded incomplete) );
+}
+
+sub stp_trees_complete__mst_list_complete__returns_1 : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _iol_mst_cache() );
+    is( $test->{info}->stp_trees_complete(), 1, q(MST: list walks complete) );
+}
+
+sub stp_protocols : Tests(4) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    my %expect = (
+        rapidPvstPlus => ['rapid-pvst'],
+        pvstPlus      => ['pvst'],
+    );
+    foreach my $type ( sort keys %expect ) {
+        $info->clear_cache();
+        $info->cache( _iol_pvst_cache($type) );
+        cmp_deeply( $info->stp_protocols(), $expect{$type}, $type );
+    }
+    $info->clear_cache();
+    $info->cache( _iol_mst_cache() );
+    cmp_deeply( $info->stp_protocols(), ['mstp'], q(mst) );
+
+    $info->clear_cache();
+    is( $info->stp_protocols(), undef, q(No indicator: no protocols) );
+}
+
+sub hasPVST : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _iol_pvst_cache('pvstPlus') );
+    is( $test->{info}->hasPVST(), 1, q(pvstPlus) );
+    $test->{info}->clear_cache();
+    $test->{info}->cache( _iol_pvst_cache('rapidPvstPlus') );
+    is( $test->{info}->hasPVST(), 0, q(Not under Rapid-PVST+) );
+}
+
+sub hasRapidPVST : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _iol_pvst_cache('rapidPvstPlus') );
+    is( $test->{info}->hasRapidPVST(), 1, q(rapidPvstPlus) );
+    $test->{info}->clear_cache();
+    $test->{info}->cache( _iol_mst_cache() );
+    is( $test->{info}->hasRapidPVST(), 0, q(Not under MST) );
+}
+
+sub hasMSTP : Tests(2) {
+    my $test = shift;
+
+    $test->{info}->cache( _iol_mst_cache() );
+    is( $test->{info}->hasMSTP(), 1, q(mst) );
+    $test->{info}->clear_cache();
+    $test->{info}->cache( _iol_pvst_cache('rapidPvstPlus') );
+    is( $test->{info}->hasMSTP(), 0, q(MST region served outside MST) );
+}
+
+sub stp_vlan_map : Tests(7) {
+    my $test = shift;
+
+    $test->{info}->cache( _iol_mst_cache() );
+    my $map = $test->{info}->stp_vlan_map();
+    is( scalar keys %$map, 4094, q(Every VLAN 1 to 4094 mapped) );
+    ok( !exists $map->{0}, q(No VLAN 0) );
+    is( $map->{1},    'cist.0', q(VLAN 1 on the CIST) );
+    is( $map->{10},   'msti.1', q(VLAN 10 on MSTI 1) );
+    is( $map->{20},   'msti.2', q(VLAN 20 on MSTI 2) );
+
+    $test->{info}->clear_cache();
+    $test->{info}->cache( _iol_pvst_cache('rapidPvstPlus') );
+    is( $test->{info}->stp_vlan_map(), undef, q(No map under PVST) );
+
+    # A short 1k2k bitmap must not shift the 3k4k VLANs: missing octets are 0
+    $test->{info}->clear_cache();
+    $test->{info}->cache(
+        {   '_stpx_stp_type'               => 'mst',
+            '_stpx_smst_vlans_mapped_1k2k' => 1,
+            '_stpx_smst_vlans_mapped_3k4k' => 1,
+            'store'                        => {
+                'stpx_smst_vlans_mapped_1k2k' =>
+                    { 1 => pack( 'H*', '0020' ) },
+                'stpx_smst_vlans_mapped_3k4k' =>
+                    { 1 => pack( 'H*', ( '00' x 119 ) . '80' ) },
+            },
+        }
+    );
+    cmp_deeply( $test->{info}->stp_vlan_map(),
+        { 10 => 'msti.1', 3000 => 'msti.1' },
+        q(VLAN 3000 stays 3000 behind a two-octet 1k2k) );
+}
+
+sub snmp_context : Tests(2) {
+    my $test = shift;
+
+    cmp_deeply(
+        $test->{info}->snmp_context( 'vlan', 10 ),
+        { kind => 'vlan', id => 10, v2c => '%s@10', v3 => 'vlan-10' },
+        q(VLAN context names)
+    );
+    is( $test->{info}->snmp_context( 'mst', 1 ), undef,
+        q(No MST context on IOS) );
+}
+
+sub context_kinds : Tests(3) {
+    my $test = shift;
+
+    cmp_deeply( $test->{info}->context_kinds('stp'),
+        ['vlan'], q(STP trees in VLAN contexts) );
+    is( $test->{info}->context_kinds('fdb'), undef,
+        q(FDB follows cisco_comm_indexing) );
+    is( $test->{info}->context_kinds('vrf'), undef, q(No VRF contexts) );
+}
+
+# BRIDGE-MIB rows as one context serves them: { <port> => [state, prio, sw] }
+sub _dot1d_rows {
+    my %ports = @_;
+    my %store = (
+        stp_p_id     => { map { $_ => $_ } keys %ports },
+        bp_index     => { map { $_ => $_ } keys %ports },
+        stp_p_state  => { map { $_ => $ports{$_}[0] } keys %ports },
+        stp_p_enable => { map { $_ => 'enabled' } keys %ports },
+        stp_p_bridge => {
+            map {
+                $_ => pack( 'H*',
+                    $ports{$_}[1] . '0200000000' . $ports{$_}[2] )
+            } keys %ports
+        },
+        stp_p_port =>
+            { map { $_ => pack( 'H*', $ports{$_}[3] ) } keys %ports },
+    );
+    return ( ( map { ( "_$_" => 1 ) } keys %store ), store => \%store );
+}
+
+sub _in_context {
+    my ( $info, $cache, $vlan ) = @_;
+    $info->clear_cache();
+    $info->cache($cache);
+    $info->{args}{Community}     = 'public';
+    $info->session()->{Community} = "public\@$vlan";
+}
+
+sub _port {
+    my ( $type, $id, $state, $role, $bid, $port, $role_raw, $enabled ) = @_;
+    return {
+        enabled           => $enabled // 1,
+        tree_type         => $type,
+        tree_id           => $id,
+        state             => $state,
+        role              => $role,
+        role_raw          => $role_raw // $role,
+        designated_bridge => $bid ? _bid(@$bid) : undef,
+        designated_port   => $port,
+    };
+}
+
+sub stp_tree_ports : Tests(16) {
+    my $test = shift;
+    my $info = $test->{info};
+    my $p4   = { priority => 128, port => 4, raw => '80:04' };
+    my $p3   = { priority => 128, port => 3, raw => '80:03' };
+
+    can_ok( $info, 'stp_tree_ports' );
+
+    my $default = _iol_pvst_cache('rapidPvstPlus');
+    my %rows = _dot1d_rows( 4 => [ 'forwarding', '8001', '0c', '8004' ] );
+    $default->{$_} = $rows{$_} foreach grep { $_ ne 'store' } keys %rows;
+    $default->{store} = { %{ $default->{store} }, %{ $rows{store} } };
+    $info->cache($default);
+    cmp_deeply(
+        $info->stp_tree_ports('vlan.1'),
+        {   4 => _port(
+                'vlan', 1, 'forwarding', 'designated', [ '8001', '0c' ], $p4
+            )
+        },
+        q(Default context: VLAN 1's port with its role)
+    );
+    is( $info->stp_tree_ports('vlan.10'), undef,
+        q(Default context refuses a context tree) );
+    like( $info->error(), qr/vlan\.10.*\@10.*vlan-10/s,
+        q(Error names the tree's contexts) );
+
+    my %ctx10 = _dot1d_rows(
+        2 => [ 'forwarding', '100a', '0a', '8003' ],
+        3 => [ 'blocking',   '800a', '0b', '8003' ],
+    );
+    _in_context( $info, {%ctx10}, 10 );
+    cmp_deeply(
+        $info->stp_tree_ports('vlan.10'),
+        {   2 => _port(
+                'vlan', 10, 'forwarding', undef, [ '100a', '0a' ], $p3
+            ),
+            3 => _port(
+                'vlan', 10, 'blocking', undef, [ '800a', '0b' ], $p3
+            ),
+        },
+        q(IOL-L2 VLAN context: states, no role served there)
+    );
+
+    my %ios10 = %ctx10;
+    $ios10{_stpx_rstp_port_role} = 1;
+    $ios10{store} = { %{ $ctx10{store} },
+        stpx_rstp_port_role => { '10.2' => 'root', '10.3' => 'alternate' } };
+    _in_context( $info, \%ios10, 10 );
+    is( $info->stp_tree_ports('vlan.10')->{3}{role}, 'alternate',
+        q(IOSvL2 VLAN context serves the role too) );
+    is( $info->stp_tree_ports('vlan.10')->{3}{role_raw}, 'alternate',
+        q(The served role is kept as role_raw) );
+
+    $ios10{store}{stpx_rstp_port_role}{'10.5'} = 'root';
+    $ios10{store}{bp_index}{5} = 5;
+    _in_context( $info, \%ios10, 10 );
+    my $role_only = $info->stp_tree_ports('vlan.10');
+    is( $role_only->{5}{enabled}, undef,
+        q(A role-only row has no enabled value) );
+    is( $role_only->{3}{enabled}, 1,
+        q(A BRIDGE-MIB row takes enabled from stp_p_enable) );
+    delete $ios10{store}{stpx_rstp_port_role}{'10.5'};
+
+    $ios10{store}{stpx_rstp_port_role}{'10.2'} = 'backUp';
+    $ios10{store}{stpx_rstp_port_role}{'10.3'} = 'bogus';
+    _in_context( $info, \%ios10, 10 );
+    my $odd = $info->stp_tree_ports('vlan.10');
+    cmp_deeply(
+        [ @{ $odd->{2} }{qw/role role_raw/} ],
+        [ 'backup', 'backUp' ],
+        q(backUp is normalized to backup, served value kept)
+    );
+    cmp_deeply(
+        [ @{ $odd->{3} }{qw/role role_raw/} ],
+        [ undef, 'bogus' ],
+        q(Unknown label gives undef role, served value kept)
+    );
+
+    $info->{args}{Community} = $info->session()->{Community} = 'public';
+    $info->clear_cache();
+    my $mst = _iol_mst_cache();
+    %rows = _dot1d_rows( 4 => [ 'forwarding', '8000', '0c', '8004' ] );
+    $mst->{$_} = $rows{$_} foreach grep { $_ ne 'store' } keys %rows;
+    $mst->{store} = { %{ $mst->{store} }, %{ $rows{store} } };
+    $info->cache($mst);
+    cmp_deeply(
+        $info->stp_tree_ports('cist.0'),
+        {   4 => _port(
+                'cist', 0, 'forwarding', 'designated', [ '8000', '0c' ], $p4
+            )
+        },
+        q(CIST: port 4 only; the trunks' roles have no ifIndex here)
+    );
+
+    _in_context( $info, {%ctx10}, 10 );
+    my $msti = $info->stp_tree_ports('msti.1');
+    cmp_deeply( [ map { "$_->{tree_type}.$_->{tree_id}" } values %$msti ],
+        [ 'msti.1', 'msti.1' ], q(Rows read through VLAN 10 are MSTI 1's) );
+
+    is( $info->stp_tree_ports('pvst.10'), undef, q(Bad key refused) );
+    like( $info->error(), qr/vlan\.N.*cist\.0.*msti\.N/s,
+        q(Error names the key forms) );
+    $info->{args}{Community} = $info->session()->{Community} = 'public';
+}
+
+sub _faststart_cache {
+    return {
+        '_stpx_faststart_default'     => 'enable',
+        '_bp_index'                   => 1,
+        '_stpx_faststart_operational' => 1,
+        'store'                       => {
+            'bp_index' => { map { $_ => 10 * $_ } 1 .. 4 },
+            'stpx_faststart_operational' => {
+                1 => 'enable',
+                2 => 'disable',
+                3 => 'network',
+                4 => 'default',
+            },
+        },
+    };
+}
+
+sub i_edgeport_admin : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _faststart_cache() );
+    cmp_deeply(
+        $test->{info}->i_edgeport_admin(),
+        { 10 => 1, 20 => 0, 30 => 0, 40 => 1 },
+        q(enable and default give 1, disable and network give 0)
+    );
+}
+
+# wsc6503 shape: bridge port 1 is a trunk (VLANs 1, 10, 981), 129 an access
+# port in VLAN 10
+sub _edge_oper_cache {
+    my %arg = @_;
+    return {
+        '_stpx_stp_type'      => $arg{type} // 'pvstPlus',
+        '_bp_index'           => 1,
+        '_qb_i_vlan'          => 1,
+        '_stpx_faststart_oper' => 1,
+        'store'               => {
+            'bp_index'   => { 1 => 1001, 129 => 1129 },
+            'qb_i_vlan'  => $arg{pvid} // { 1 => 1, 129 => 10 },
+            'stpx_faststart_oper' => $arg{rows} // {
+                '1.1'    => 'disabled',
+                '10.1'   => 'disabled',
+                '981.1'  => 'disabled',
+                '10.129' => 'enabled',
+            },
+        },
+    };
+}
+
+sub i_edgeport_oper : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _edge_oper_cache() );
+    cmp_deeply( $test->{info}->i_edgeport_oper(),
+        { 1001 => 0, 1129 => 1 },
+        q(Trunk reads its native VLAN's tree, access port its VLAN's) );
+}
+
+sub i_edgeport_oper__native_vlan_has_no_row__absent : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        _edge_oper_cache( pvid => { 1 => 20, 129 => 10 } ) );
+    cmp_deeply( $test->{info}->i_edgeport_oper(), { 1129 => 1 },
+        q(No row in the native VLAN's tree: absent, not 0) );
+}
+
+sub i_edgeport_oper__numeric_tree_type__same_as_label : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _edge_oper_cache( type => 1 ) );
+    cmp_deeply( $test->{info}->i_edgeport_oper(),
+        { 1001 => 0, 1129 => 1 }, q(stpxSpanningTreeType 1 is pvstPlus) );
+}
+
+sub i_edgeport_oper__port_without_i_vlan__absent : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _edge_oper_cache( pvid => { 129 => 10 } ) );
+    cmp_deeply( $test->{info}->i_edgeport_oper(), { 1129 => 1 },
+        q(A port with no i_vlan entry is absent) );
+}
+
+sub i_edgeport_oper__mst__reads_instance_0 : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        _edge_oper_cache(
+            type => 'mst',
+            rows => { '0.129' => 'enabled', '10.129' => 'disabled' },
+        )
+    );
+    cmp_deeply( $test->{info}->i_edgeport_oper(), { 1129 => 1 },
+        q(MST reads instance 0 whatever the VLAN) );
+}
+
+sub i_edgeport_oper__network__returns_0 : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache(
+        _edge_oper_cache( rows => { '10.129' => 'network' } ) );
+    cmp_deeply( $test->{info}->i_edgeport_oper(), { 1129 => 0 },
+        q(network gives 0) );
+}
+
+sub i_edgeport_oper__mistp__returns_empty : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _edge_oper_cache( type => 'mistp' ) );
+    cmp_deeply( $test->{info}->i_edgeport_oper(), {},
+        q(MISTP: empty) );
+}
+
+sub i_faststart_enabled__network_mode__unchanged : Tests(1) {
+    my $test = shift;
+
+    $test->{info}->cache( _faststart_cache() );
+    is( $test->{info}->i_faststart_enabled()->{30},
+        'network', q(Legacy method still returns the network string) );
+}
+
 1;

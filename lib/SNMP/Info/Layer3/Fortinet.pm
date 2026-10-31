@@ -44,7 +44,7 @@ use SNMP::Info::Aggregate 'agg_ports_ifstack';
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -129,6 +129,8 @@ sub serial {
 }
 
 sub agg_ports { return agg_ports_ifstack(@_) }
+
+sub _agg_ports_walked { return qw/ifStackStatus ifType/ }
 
 1;
 __END__

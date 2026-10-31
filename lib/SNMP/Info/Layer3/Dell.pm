@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -407,6 +407,10 @@ my $dell = new SNMP::Info::Layer3::Dell(...);
 =item F<RADLAN-Physicaldescription-MIB>
 
 =item F<RADLAN-rlInterfaces>
+
+=item F<DELLEMC-OS10-CHASSIS-MIB>
+
+=item F<DELLEMC-OS10-PRODUCTS-MIB>
 
 =item Inherited Classes' MIBs
 

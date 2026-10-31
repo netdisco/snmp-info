@@ -43,7 +43,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, $DEBUG, %GLOBALS, %FUNCS, $INIT, %MIBS, %MUNGE);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS, %SNMP::Info::CDP::MIBS,
@@ -160,14 +160,7 @@ sub qb_fdb_index {
 
     my $qb_fdb_ids = $bridge->dot1qVlanFdbId(0) || {};
 
-    # Strip the TimeFilter
-    my $vl_fdb_index = {};
-    for my $fdb_entry (keys(%$qb_fdb_ids)) {
-        (my $vlan = $fdb_entry) =~ s/^\d+\.//;
-        $vl_fdb_index->{$qb_fdb_ids->{$fdb_entry}} = $vlan;
-    }
-
-    return $vl_fdb_index;
+    return $bridge->_qb_fdb_vlan_map($qb_fdb_ids);
 }
 
 sub i_vlan_membership {

@@ -56,7 +56,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -70,6 +70,7 @@ $VERSION = '3.975000';
     %SNMP::Info::CDP::MIBS,
     %SNMP::Info::CiscoVTP::MIBS,
     'CISCO-EIGRP-MIB' => 'cEigrpAsRouterId',
+    'CISCO-VRF-MIB'   => 'cvVrfName',
 );
 
 %GLOBALS = (
@@ -101,6 +102,10 @@ $VERSION = '3.975000';
     # CISCO-EIGRP-MIB::cEigrpPeerTable
     'c_eigrp_peer_types' => 'cEigrpPeerAddrType',
     'c_eigrp_peers'      => 'cEigrpPeerAddr',
+
+    # CISCO-VRF-MIB::cvVrfTable and cvVrfInterfaceTable
+    'vrf_cv_name' => 'cvVrfName',
+    'vrf_cv_if'   => 'cvVrfInterfaceRowStatus',
 );
 
 %MUNGE = (
@@ -180,6 +185,47 @@ sub eigrp_peers {
     return \%eigrp_peers;
 }
 
+sub _vrf_subnets_from_routes { return 1; }
+
+# CISCO-VRF-MIB lists the VRFs where MPLS-L3VPN-STD-MIB serves none. The
+# index of cvVrfName is cvVrfIndex. Any row it serves lists default.
+sub _vrf_vendor_instances {
+    my $cisco = shift;
+
+    my $names = $cisco->vrf_cv_name() || {};
+    my %instances;
+    foreach my $name ( grep { defined && length } values %$names ) {
+        next if $name eq 'default';
+        next if $cisco->_vrf_internal_instance($name);
+        my $record = SNMP::Info::VRF::_vrf_record( $name, 'vrf', 'device' );
+        $record->{sources}{list} = 'CISCO-VRF-MIB';
+        $instances{$name} = $record;
+    }
+    $cisco->_vrf_list_default( \%instances, 'CISCO-VRF-MIB' ) if %$names;
+    return \%instances;
+}
+
+sub _vrf_vendor_list_methods { return ( 'vrf_cv_name', 'vrf_cv_if' ); }
+
+# The index of cvVrfInterfaceRowStatus is cvVrfIndex.ifIndex
+sub _vrf_vendor_membership {
+    my $cisco = shift;
+
+    my $names = $cisco->vrf_cv_name() || {};
+    my $rows  = $cisco->vrf_cv_if()   || {};
+    my %ports;
+    foreach my $iid ( keys %$rows ) {
+        next unless $rows->{$iid} =~ /^(?:active|1)$/;
+        my ( $vrf_index, $ifindex, @extra ) = split /\./, $iid;
+        next if !defined $ifindex or @extra;
+        my $name = $names->{$vrf_index};
+        next if !defined $name or !length $name or $name eq 'default';
+        next if $cisco->_vrf_internal_instance($name);
+        $ports{$ifindex} = $name;
+    }
+    return \%ports;
+}
+
 1;
 __END__
 
@@ -219,6 +265,8 @@ for other device specific L3 Cisco classes.
 
 =over
 
+=item SNMP::Info::CiscoBGP
+
 =item SNMP::Info::CiscoVTP
 
 =item SNMP::Info::CDP
@@ -244,6 +292,8 @@ for other device specific L3 Cisco classes.
 =over
 
 =item F<CISCO-EIGRP-MIB>
+
+=item F<CISCO-VRF-MIB>
 
 =item Inherited Classes' MIBs
 
@@ -333,9 +383,50 @@ Returns EIGRP peer IP addresses
 
 (C<cEigrpPeerAddr>)
 
+=item $cisco->vrf_cv_name()
+
+Returns the name of each VRF, keyed by C<cvVrfIndex>.
+
+(C<cvVrfName>)
+
+=item $cisco->vrf_cv_if()
+
+Returns the row status of each interface a VRF holds, keyed by
+C<cvVrfIndex.ifIndex>. An active row (C<1>) puts the port in the VRF.
+
+(C<cvVrfInterfaceRowStatus>)
+
 =item $cisco->i_vlan()
 
 Returns a mapping between C<ifIndex> and the PVID or default VLAN.
+
+=back
+
+=head2 VRF Instances
+
+See L<SNMP::Info::VRF/"VRF Instances"> for the readers. This class adds
+two VRF behaviors, both reached through them rather than called directly.
+
+=over
+
+=item Subnets from connected routes
+
+C<vrf_subnets()> reads the connected routes as well as the interface
+addresses (see L<SNMP::Info::VRF/"Collapsed Subnets">). A subnet two VRFs
+share, which the address tables show on one VRF's port only, is then
+listed for both. The routes come from C<mplsL3VpnVrfRteTable> in
+attribution mode, and from C<inetCidrRouteTable> in a VRF's own context
+in context mode (L<SNMP::Info::Layer3::Nexus>).
+
+=item VRF list from CISCO-VRF-MIB
+
+Where C<MPLS-L3VPN-STD-MIB> serves no row at all, the global row
+included, C<CISCO-VRF-MIB> lists the VRFs and the ports they hold,
+with the source C<CISCO-VRF-MIB>. Any row it serves lists C<default>,
+so a device serving only its global row there reports
+C<vrf_instances_complete()> 1, none configured (see
+L<SNMP::Info::VRF/"Completeness">). Where C<MPLS-L3VPN-STD-MIB> serves
+rows, the vendor MIB is not read.
 
 =back
 

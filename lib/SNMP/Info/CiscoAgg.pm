@@ -49,7 +49,7 @@ use SNMP::Info::Aggregate 'agg_ports_ifstack';
 
 our ($DEBUG, $VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
   %SNMP::Info::IEEE802dot3ad::MIBS,
@@ -180,6 +180,11 @@ sub agg_ports {
       %{agg_ports_cisco(@_)},
   };
   return $ret;
+}
+
+sub _agg_ports_walked {
+  return qw/ifStackStatus ifType pagpEthcOperationMode pagpGroupIfIndex
+    dot3adAggPortSelectedAggID lag_members/;
 }
 
 1;

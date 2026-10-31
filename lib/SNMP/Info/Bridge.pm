@@ -42,7 +42,7 @@ use SNMP::Info;
 
 our ($VERSION, $DEBUG, %MIBS, %FUNCS, %GLOBALS, %MUNGE, $INIT);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
     'BRIDGE-MIB'   => 'dot1dBaseBridgeAddress',
@@ -100,6 +100,7 @@ $VERSION = '3.975000';
     'stp_p_id'       => 'dot1dStpPort',
     'stp_p_priority' => 'dot1dStpPortPriority',
     'stp_p_state'    => 'dot1dStpPortState',
+    'stp_p_enable'   => 'dot1dStpPortEnable',
     'stp_p_cost'     => 'dot1dStpPortPathCost',
     'stp_p_root'     => 'dot1dStpPortDesignatedRoot',
     'stp_p_bridge'   => 'dot1dStpPortDesignatedBridge',
@@ -191,8 +192,9 @@ sub qb_fw_vlan {
         # Many devices do not populate the dot1qVlanCurrentTable, so default
         # to FDB ID = VID, but if we have a mapping use it.
         my $vlan = $fdb_id;
-        # defined as test since some devices have a vlan 0
-        if (defined $qb_fdb_ids->{$fdb_id}) {
+        # exists as test since some devices have a vlan 0, and a shared
+        # FDB ID maps to undef because its entries name no single VLAN
+        if (exists $qb_fdb_ids->{$fdb_id}) {
             $vlan = $qb_fdb_ids->{$fdb_id};
         }
         $qb_fw_vlan->{$idx} = $vlan;
@@ -227,13 +229,26 @@ sub qb_fdb_index {
     # see Enterasys for example.
     my $qb_fdb_ids = $bridge->dot1qVlanFdbId() || {};
 
-    # Strip the TimeFilter
-    my $vl_fdb_index = {};
-    for my $fdb_entry (keys(%$qb_fdb_ids)) {
-        (my $vlan = $fdb_entry) =~ s/^\d+\.//;
-        $vl_fdb_index->{$qb_fdb_ids->{$fdb_entry}} = $vlan;
+    return $bridge->_qb_fdb_vlan_map($qb_fdb_ids);
+}
+
+# Strip the TimeFilter from dot1qVlanFdbId and invert it. With shared VLAN
+# learning several VLANs report one FDB ID; it maps to undef rather than to
+# whichever of those VLANs hash order happened to visit last.
+sub _qb_fdb_vlan_map {
+    my ( $bridge, $qb_fdb_ids ) = @_;
+
+    my %vlans_of;
+    foreach my $fdb_entry ( keys %$qb_fdb_ids ) {
+        ( my $vlan = $fdb_entry ) =~ s/^\d+\.//;
+        $vlans_of{ $qb_fdb_ids->{$fdb_entry} }{$vlan} = 1;
     }
 
+    my $vl_fdb_index = {};
+    foreach my $fdb_id ( keys %vlans_of ) {
+        my @vlans = keys %{ $vlans_of{$fdb_id} };
+        $vl_fdb_index->{$fdb_id} = scalar @vlans == 1 ? $vlans[0] : undef;
+    }
     return $vl_fdb_index;
 }
 
@@ -292,6 +307,45 @@ sub i_stp_state {
     return \%i_stp_state;
 }
 
+sub i_edgeport_admin {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    my $edge_admin = $bridge->is_edgeport_admin();
+    return _stp_edge_by_ifindex( $bridge, $edge_admin, $partial );
+}
+
+sub i_edgeport_oper {
+    my $bridge  = shift;
+    my $partial = shift;
+
+    my $edge_oper = $bridge->is_edgeport_oper();
+    return _stp_edge_by_ifindex( $bridge, $edge_oper, $partial );
+}
+
+# Edge values keyed by bridge port, mapped to ifIndex through bp_index
+# (or $port_index, when the caller knows the keys are not bridge ports) and
+# read as 1 or 0 by $decode (default _stp_enabled); a port missing from the
+# map, or a value $decode does not know, is absent.  Called as a function by
+# classes outside Bridge's inheritance (RapidCity).
+sub _stp_edge_by_ifindex {
+    my ( $bridge, $edge, $partial, $decode, $port_index ) = @_;
+    $decode ||= \&_stp_enabled;
+    return {} unless keys %{ $edge || {} };
+
+    my $bp_index = $port_index || $bridge->bp_index($partial) || {};
+
+    my %i_edgeport;
+    foreach my $port ( keys %{ $edge || {} } ) {
+        my $iid     = $bp_index->{$port};
+        my $enabled = $decode->( $edge->{$port} );
+        next unless defined $iid;
+        next unless defined $enabled;
+        $i_edgeport{$iid} = $enabled;
+    }
+    return \%i_edgeport;
+}
+
 sub i_stp_port {
     my $bridge  = shift;
     my $partial = shift;
@@ -347,6 +401,208 @@ sub i_stp_bridge {
         $i_stp_bridge{$iid} = $bport;
     }
     return \%i_stp_bridge;
+}
+
+sub stp_protocols {
+    my $bridge = shift;
+
+    my $trees = $bridge->stp_trees() || {};
+    return unless keys %$trees;
+    return ['dot1d'];
+}
+
+sub stp_trees {
+    my $bridge = shift;
+
+    return unless $bridge->_stp_default_context_ok();
+    return $bridge->{_stp_trees} if $bridge->{_stp_trees};
+    return {} unless $bridge->_stp_default_is_common();
+
+    my $record = $bridge->_stp_dot1d_tree() or return {};
+    $bridge->{_stp_trees} = { 'cist.0' => $record };
+    return $bridge->{_stp_trees};
+}
+
+# The BRIDGE-MIB common tree whatever _stp_default_is_common() says, so a
+# class that keeps the default off can still build it. Callers set
+# protocol and measured on a copy.
+sub _stp_dot1d_tree {
+    my $bridge = shift;
+
+    my $ports = $bridge->stp_p_id() || {};
+    my $root  = $bridge->stp_root();
+    return unless keys %$ports or defined $root;
+
+    my $bp_index = $bridge->bp_index() || {};
+    my $unmapped = grep { !defined $bp_index->{$_} } values %$ports;
+
+    return {
+        type           => 'cist',
+        id             => 0,
+        protocol       => undef,
+        measured       => 0,
+        ports_complete => $unmapped ? 0 : 1,
+        contexts       => [ { kind => 'none' } ],
+        bridge         => scalar $bridge->_stp_own_bridge_id(),
+        root           => scalar _stp_decode_bridge_id($root),
+    };
+}
+
+sub stp_vlan_map { return; }
+
+# Only the default context serves the whole tree list
+sub _stp_default_context_ok {
+    my $bridge = shift;
+
+    my $context = $bridge->_walk_context();
+    return 1 unless length $context;
+
+    my $method = ( caller(1) )[3];
+    $bridge->error_throw(
+        "$method() reads the tree list, which only the default context"
+            . " serves whole. This session is in context '$context'. Call"
+            . " update() back to the default context, read the list, and"
+            . " keep it while you switch contexts.\n" );
+    return 0;
+}
+
+sub stp_tree_ports {
+    my $bridge   = shift;
+    my $tree_key = shift;
+
+    my $tree = $bridge->_stp_tree_for_key($tree_key) or return;
+    return $bridge->_stp_dot1d_port_rows($tree);
+}
+
+# Error names the method that called stp_tree_ports, not this helper
+sub _stp_tree_for_key {
+    my $bridge   = shift;
+    my $tree_key = shift;
+
+    my $trees = $bridge->stp_trees() || {};
+    my $tree  = defined $tree_key ? $trees->{$tree_key} : undef;
+    return $tree if $tree;
+
+    my $key    = defined $tree_key ? $tree_key : 'undef';
+    my $method = ( caller(1) )[3] // 'stp_tree_ports';
+    $bridge->error_throw( "$method() has no tree '$key'. Pass a key from"
+            . " stp_trees(), read in the default context.\n" );
+    return;
+}
+
+# BRIDGE-MIB port rows in the session's current context, labeled with $tree
+sub _stp_dot1d_port_rows {
+    my $bridge = shift;
+    my $tree   = shift;
+
+    my $ports    = $bridge->stp_p_id()     || {};
+    my $states   = $bridge->stp_p_state()  || {};
+    my $enable   = $bridge->stp_p_enable() || {};
+    my $d_bridge = $bridge->stp_p_bridge() || {};
+    my $d_port   = $bridge->stp_p_port()   || {};
+    my $bp_index = $bridge->bp_index()     || {};
+
+    my %tree_ports;
+    foreach my $index ( keys %$ports ) {
+        my $iid = $bp_index->{ $ports->{$index} };
+        next unless defined $iid;
+        $tree_ports{$iid} = {
+            tree_type         => $tree->{type},
+            tree_id           => $tree->{id},
+            state             => $states->{$index},
+            role              => undef,
+            role_raw          => undef,
+            enabled           => scalar _stp_enabled( $enable->{$index} ),
+            designated_bridge =>
+                scalar _stp_decode_bridge_id( $d_bridge->{$index} ),
+            designated_port =>
+                scalar _stp_decode_port_id( $d_port->{$index} ),
+        };
+    }
+    return \%tree_ports;
+}
+
+sub stp_trees_complete {
+    my $bridge = shift;
+
+    # A class that keeps the default off has trees this class does not read
+    return 0 unless $bridge->_stp_default_is_common();
+
+    my $trees = $bridge->stp_trees() || {};
+    return 0 if length $bridge->_walk_context();
+    return unless keys %$trees;
+    return 0;
+}
+
+sub _stp_default_is_common { return 1; }
+
+# walk_status is set by the walk, so call this after reading the columns
+sub _stp_walk_incomplete {
+    my ( $bridge, @methods ) = @_;
+
+    foreach my $method (@methods) {
+        my $status = $bridge->walk_status($method);
+        return 1 if $status and !$status->{complete};
+    }
+    return 0;
+}
+
+sub _stp_own_bridge_id {
+    my $bridge = shift;
+
+    return _stp_bridge_id_from( $bridge->stp_priority(), $bridge->b_mac() );
+}
+
+# EnabledStatus and TruthValue both use 1 and 2
+sub _stp_enabled {
+    my $value = shift;
+    return unless defined $value;
+
+    return 1 if $value =~ /^(?:enabled|true|1)$/;
+    return 0 if $value =~ /^(?:disabled|false|2)$/;
+    return;
+}
+
+sub _stp_bridge_id_from {
+    my ( $priority, $mac ) = @_;
+    return unless defined $priority and defined $mac;
+
+    my $prio_hex = sprintf( '%04x', $priority );
+    my $prio_octets = join( ':', unpack( '(A2)2', $prio_hex ) );
+    return _stp_decode_bridge_id( join( ':', $prio_octets, $mac ) );
+}
+
+# 802.1t fixed format: top 4 bits priority, low 12 bits system ID extension
+sub _stp_decode_bridge_id {
+    my $id = shift;
+    return unless defined $id;
+
+    my @octets = split /:/, $id;
+    return unless @octets == 8;
+
+    my $prio = hex( $octets[0] . $octets[1] );
+    return {
+        priority   => ( $prio >> 12 ) * 4096,
+        sys_id_ext => $prio & 0x0fff,
+        mac        => join( ':', @octets[ 2 .. 7 ] ),
+        raw        => $id,
+    };
+}
+
+# 802.1t fixed format: top 4 bits priority, low 12 bits port number
+sub _stp_decode_port_id {
+    my $id = shift;
+    return unless defined $id;
+
+    my @octets = split /:/, $id;
+    return unless @octets == 2;
+
+    my $value = hex( $octets[0] . $octets[1] );
+    return {
+        priority => ( $value >> 12 ) * 16,
+        port     => $value & 0x0fff,
+        raw      => $id,
+    };
 }
 
 # Non-accessible, but needed for consistency with other classes
@@ -561,31 +817,100 @@ Max Baker
 
 =head1 SYNOPSIS
 
- my $bridge = new SNMP::Info (
-                             AutoSpecify => 1,
-                             Debug       => 1,
-                             DestHost    => 'switch',
-                             Community   => 'public',
-                             Version     => 2
-                             );
+    my $bridge = new SNMP::Info (
+                                AutoSpecify => 1,
+                                Debug       => 1,
+                                DestHost    => 'switch',
+                                Community   => 'public',
+                                Version     => 2
+                                );
 
- my $class = $bridge->class();
- print " Using device sub class : $class\n";
+    my $class = $bridge->class();
+    print " Using device sub class : $class\n";
 
- # Grab Forwarding Tables
- my $interfaces = $bridge->interfaces();
- my $fw_mac     = $bridge->fw_mac();
- my $fw_port    = $bridge->fw_port();
- my $bp_index   = $bridge->bp_index();
+    # Grab Forwarding Tables
+    my $interfaces = $bridge->interfaces();
+    my $fw_mac     = $bridge->fw_mac();
+    my $fw_port    = $bridge->fw_port();
+    my $bp_index   = $bridge->bp_index();
 
- foreach my $fw_index (keys %$fw_mac){
-    my $mac   = $fw_mac->{$fw_index};
-    my $bp_id = $fw_port->{$fw_index};
-    my $iid   = $bp_index->{$bp_id};
-    my $port  = $interfaces->{$iid};
+    foreach my $fw_index (keys %$fw_mac){
+       my $mac   = $fw_mac->{$fw_index};
+       my $bp_id = $fw_port->{$fw_index};
+       my $iid   = $bp_index->{$bp_id};
+       my $port  = $interfaces->{$iid};
 
-    print "Port:$port forwarding to $mac\n";
- }
+       print "Port:$port forwarding to $mac\n";
+    }
+
+List the spanning trees, then read each tree's ports with their state,
+role and designated bridge. Some devices serve a tree's ports only in an
+SNMP context of its own; this helper switches to one, as
+L<SNMP::Info/"SNMP Contexts"> describes:
+
+    # Switch to $context; false where this session's SNMP version cannot
+    # reach it
+    sub enter_context {
+        my ( $info, $context, $community ) = @_;
+
+        return $info->update() if $context->{kind} eq 'none';
+        if ( $info->snmp_ver() == 3 ) {
+            return unless defined $context->{v3};
+            return $info->update( Context => $context->{v3} );
+        }
+        return unless defined $context->{v2c};
+        return $info->update(
+            Community => sprintf( $context->{v2c}, $community ) );
+    }
+
+    # Read the list in the default context and keep it: update() clears
+    # the cache on every switch
+    my $community = $bridge->snmp_comm();    # before the first switch
+    my $trees     = $bridge->stp_trees() || {};
+    my $complete  = $bridge->stp_trees_complete();
+    if ( !defined $complete ) {
+        print "The device serves no spanning tree\n";
+    }
+    elsif ( !$complete ) {
+        print "The tree list may be missing trees\n";
+    }
+
+    # Read the ports in place where no tree needs a context; otherwise in
+    # every context a tree lists, merging the rows
+    my $switch = $bridge->context_kinds('stp');
+    my %tree_ports;    # tree key => { iid => port record }
+    foreach my $key ( sort keys %$trees ) {
+        unless ($switch) {
+            $tree_ports{$key} = { %{ $bridge->stp_tree_ports($key) || {} } };
+            next;
+        }
+        foreach my $context ( @{ $trees->{$key}{contexts} } ) {
+            # A context that cannot be entered is skipped silently, and
+            # its tree is then listed with no ports
+            enter_context( $bridge, $context, $community ) or next;
+            my $ports = $bridge->stp_tree_ports($key) || {};
+            $tree_ports{$key}{$_} = $ports->{$_} foreach keys %$ports;
+        }
+    }
+    $bridge->update() if $switch;
+
+    foreach my $key ( sort keys %$trees ) {
+        my $tree = $trees->{$key};
+        printf "%s, %s: root %s\n", $key, $tree->{protocol} // 'unknown',
+            $tree->{root} ? $tree->{root}{mac} : 'not served';
+        print "  Some ports were not read\n" unless $tree->{ports_complete};
+
+        my $ports = $tree_ports{$key} || {};
+        foreach my $iid ( sort { $a <=> $b } keys %$ports ) {
+            my $port = $ports->{$iid};
+            my $designated = $port->{designated_bridge};
+            printf "  %s: %s, %s, designated bridge %s\n",
+                $interfaces->{$iid} // $iid,
+                $port->{state} // 'no state',
+                $port->{role}  // 'no role',
+                $designated ? $designated->{mac} : 'not served';
+        }
+    }
 
 =head1 DESCRIPTION
 
@@ -603,6 +928,97 @@ For debugging you can call new() directly as you would in SNMP::Info
 
  my $bridge = new SNMP::Info::Bridge(...);
 
+=head2 Terms
+
+These terms are used by L</"Spanning Tree Trees"> and the classes that
+override it.
+
+=over
+
+=item spanning tree, tree
+
+One loop-free topology the device computes. A device can run several:
+one per MST instance, one per VLAN, or one per STP domain.
+
+=item protocol
+
+The spanning tree flavor the device runs, as C<stp_protocols()> names
+it: 802.1D STP, 802.1w RSTP, 802.1s MSTP, or a vendor protocol with one
+tree per VLAN.
+
+=item CIST
+
+The common and internal spanning tree. Under MSTP it is instance 0,
+which every port belongs to; under STP and RSTP it is the device's one
+tree. Its key is C<cist.0>.
+
+=item MSTI
+
+A multiple spanning tree instance: an MSTP tree, numbered from 1, that
+carries the VLANs mapped to it. Its key is C<msti.N>.
+
+=item PVST+, Rapid-PVST+
+
+Per-VLAN spanning tree, based on 802.1D and on 802.1w: one tree per VLAN.
+Cisco and H3C devices key each tree C<vlan.N>. Extreme devices run it in
+an STP domain.
+
+=item VSTP
+
+Juniper's VLAN Spanning Tree Protocol: one tree per VLAN, each served in
+its own context. Its key is C<vlan.N>, or C<vlan.N@instance> in a
+routing instance other than C<default>.
+
+=item STP domain
+
+An Extreme spanning tree domain, which is one tree. Its key is
+C<domain.N>.
+
+=item tree key
+
+The key of a tree in C<stp_trees()>, in one of the forms above. Pass it
+to C<stp_tree_ports()>.
+
+=item bridge ID
+
+The priority and MAC address that identify a bridge in a tree.
+
+=item root
+
+The bridge with the lowest bridge ID in a tree. Every other bridge
+forwards toward it.
+
+=item designated bridge, designated port
+
+The bridge, and its port, that forwards toward the root for one LAN
+segment. A port whose designated bridge is another bridge connects to
+that bridge's designated port.
+
+=item port role
+
+A port's part in the tree under RSTP, MSTP and Rapid-PVST+: C<root>,
+C<designated>, C<alternate>, C<backup> or C<disabled>. MSTP adds
+C<master>, and Cisco devices also report C<boundary>.
+
+=item context
+
+An SNMP context, as L<SNMP::Info/"SNMP Contexts"> describes. Some
+devices serve a tree's ports only in a context other than the default
+context.
+
+=item default context
+
+The context a session reaches with the constructor's C<Community>, or
+with an empty SNMPv3 Context. The tree list is read there.
+
+=item edge port
+
+A port to end stations rather than to other bridges, which goes straight
+to forwarding: the IEEE form of Cisco PortFast. C<i_edgeport_admin()>
+and C<i_edgeport_oper()> report it.
+
+=back
+
 =head2 Inherited Classes
 
 None.
@@ -616,6 +1032,95 @@ None.
 =item F<Q-BRIDGE-MIB>
 
 =item F<RSTP-MIB>
+
+=back
+
+=head2 For Class Authors
+
+A device class that reads a vendor's spanning tree overrides the
+public methods of L</"Spanning Tree Trees"> with subs, and uses these
+private hooks and functions of this class.
+
+=over
+
+=item C<_stp_default_is_common()>
+
+Returns 1 here: the F<BRIDGE-MIB> tree is the device's common tree.
+Return 0 where it is not, such as where a tree runs per VLAN. This
+class then reports no tree, and C<stp_trees_complete()> returns 0
+(L<SNMP::Info::CiscoStpExtensions>, L<SNMP::Info::Layer3::Foundry>).
+
+=item C<_stp_default_context_ok()>
+
+Returns 1 in the default context. In any other it sets C<error()>,
+naming the calling method, and returns 0. Call it first in an override
+of C<stp_trees()>, and of C<stp_protocols()> where it reads the tree
+list.
+
+=item C<_stp_dot1d_tree()>
+
+Returns the F<BRIDGE-MIB> common tree record, whatever
+C<_stp_default_is_common()> says, or nothing when no tree is served.
+Set C<protocol> and C<measured> on a copy (L<SNMP::Info::Layer3::H3C>).
+
+=item C<_stp_dot1d_port_rows($tree)>
+
+Returns the F<BRIDGE-MIB> port records of the session's current context,
+with C<tree_type> and C<tree_id> taken from C<$tree>
+(L<SNMP::Info::Layer3::Juniper>, for a VSTP tree).
+
+=item C<_stp_tree_for_key($tree_key)>
+
+Returns the record of C<$tree_key> from C<stp_trees()>. For a key not
+listed it sets C<error()>, naming the calling method, and returns
+nothing.
+
+=item C<_stp_walk_incomplete(@methods)>
+
+Returns 1 when the last walk of any named table method was incomplete,
+else 0. A method not yet walked counts as complete, so call it after
+reading the columns. Name the columns that list the trees, so that
+C<stp_trees_complete()> returns 0 when the list may be short.
+
+=item C<_stp_own_bridge_id()>
+
+Returns the device's bridge ID in the F<BRIDGE-MIB> tree, from
+C<dot1dStpPriority> and C<dot1dBaseBridgeAddress>.
+
+=item C<_stp_edge_by_ifindex($self, $edge, $partial, $decode, $port_index)>
+
+Maps edge port values keyed by bridge port to C<ifIndex> through
+C<bp_index()>, or through C<$port_index> when given, read as 1 or 0 by
+C<$decode> (default C<_stp_enabled>). A class outside this class's
+inheritance calls it as a function, passing the object as C<$self>
+(L<SNMP::Info::RapidCity>).
+
+=item Functions
+
+C<SNMP::Info::Bridge::_stp_decode_bridge_id($id)> and
+C<_stp_decode_port_id($id)> turn a served bridge ID or port ID into the
+hashes C<stp_trees()> and C<stp_tree_ports()> return.
+C<_stp_bridge_id_from($priority, $mac)> builds a bridge ID from its two
+parts. C<_stp_enabled($value)> reads C<enabled(1)>, C<true(1)> and their
+labels as 1, C<disabled(2)> and C<false(2)> as 0, else undef. Call them
+by full name.
+
+=item The tree cache
+
+Keep the tree list in C<< $self->{_stp_trees} >>, and only when it is not
+empty. C<clear_cache()>, and so C<update()>, then resets it.
+
+=item Protocol tests
+
+Define C<hasSTP()>, C<hasRSTP()>, C<hasMSTP()>, C<hasPVST()>,
+C<hasRapidPVST()> or C<hasVSTP()> only for the protocols the class can
+read, each returning 1 or 0.
+
+=item Contexts
+
+Where a tree's ports are served in other contexts, answer
+C<context_kinds('stp')> and C<snmp_context()> through the hooks
+L<SNMP::Info/"SNMP Contexts"> names.
 
 =back
 
@@ -728,6 +1233,8 @@ tagged ports or the VLAN ID.
 
 Returns reference to hash: key = FDB ID, value = VLAN ID.
 
+An FDB ID shared by several VLANs (shared VLAN learning) maps to C<undef>.
+
 =item $bridge->v_index()
 
 Returns VLAN IDs
@@ -735,6 +1242,9 @@ Returns VLAN IDs
 =back
 
 =head2 Forwarding Table (C<dot1dTpFdbEntry>)
+
+Some devices serve this table once per VLAN, each in its own SNMP
+context.  Check with C<context_kinds()> in L<SNMP::Info>.
 
 =over
 
@@ -844,6 +1354,12 @@ of the Port ID is given by the value of C<dot1dStpPort>."
 
 (C<dot1dStpPortPriority>)
 
+=item $bridge->stp_p_enable()
+
+"The enabled/disabled status of the port."
+
+(C<dot1dStpPortEnable>)
+
 =item $bridge->stp_p_state()
 
 "The port's current state as defined by application of the Spanning Tree
@@ -900,7 +1416,32 @@ index (iid).
 =item $bridge->i_stp_state()
 
 Returns the mapping of (C<dot1dStpPortState>) to the interface
-index (iid).
+index (iid): the port state in the device's default spanning tree.
+
+C<BRIDGE-MIB> indexes spanning tree ports by port number alone, with no
+instance or VLAN.  On a device running more than one tree (MSTP
+instances, a tree per VLAN, or vendor STP domains) this is the one tree
+the agent exposes in the polled context, not the port's state in every
+VLAN.  Where a device class reports another tree here, its own
+documentation says which.  See L</"Spanning Tree Trees"> for every tree
+the device runs.
+
+=item $bridge->i_edgeport_admin()
+
+Returns 1 or 0 for each port by whether it is configured as an edge port
+(the IEEE equivalent of PortFast).  Format is a hash reference with
+key = C<ifIndex>, value = [1|0].  A port with no administrative value is
+absent.
+
+(C<dot1dStpPortAdminEdgePort>)
+
+=item $bridge->i_edgeport_oper()
+
+Returns 1 or 0 for each port by whether it currently operates as an edge
+port.  Format is a hash reference with key = C<ifIndex>, value = [1|0].  A
+port with no operational value is absent.
+
+(C<dot1dStpPortOperEdgePort>)
 
 =item $bridge->i_stp_id()
 
@@ -910,6 +1451,373 @@ Returns the mapping of (C<dot1dStpPort>) to the interface index (iid).
 
 Returns the mapping of (C<dot1dStpPortDesignatedBridge>) to the interface
 index (iid).
+
+=back
+
+=head2 Spanning Tree Trees
+
+These methods report each spanning tree the device runs, and each tree's
+ports with their state, role, designated bridge and designated port. The
+SYNOPSIS shows them in use, and L</"Terms"> defines the terms.
+
+=over
+
+=item *
+
+Read the tree list in the default context, and keep it: C<update()>
+clears the cache on every context switch.
+
+=item *
+
+Read a tree's ports in the contexts its record lists. Where
+C<context_kinds('stp')> returns nothing, every tree's ports are read in
+the default context. See L<SNMP::Info/"SNMP Contexts">.
+
+=item *
+
+Every port record names its tree, so a row read in another context
+still says which tree it describes.
+
+=back
+
+This class reports the F<BRIDGE-MIB> tree as the one tree C<cist.0>,
+with its protocol unknown. These classes read the vendor's trees
+instead, and their documentation says what they fill and from where:
+L<SNMP::Info::CiscoStpExtensions>, L<SNMP::Info::Layer3::Extreme>,
+L<SNMP::Info::Layer3::H3C>, L<SNMP::Info::Layer3::Juniper> and
+L<SNMP::Info::RapidCity>. L<SNMP::Info::Layer3::Foundry> and
+L<SNMP::Info::Layer3::HP9300> report no tree.
+
+Some classes also define C<hasSTP()>, C<hasRSTP()>, C<hasMSTP()>,
+C<hasPVST()>, C<hasRapidPVST()> or C<hasVSTP()>, each 1 when the device
+runs that protocol and 0 otherwise. Where the device names its protocol
+the test reads that object; elsewhere the class infers it, as its
+documentation says. As with C<has_topo()> in L<SNMP::Info>, test
+C<can()> before calling one.
+
+=over
+
+=item $bridge->stp_protocols()
+
+Returns a reference to an array of the spanning tree protocols the
+device reports, or nothing when none is known. A device class can report
+a protocol while C<stp_trees()> is empty. The values:
+
+=over
+
+=item C<stp>
+
+802.1D STP.
+
+=item C<rstp>
+
+802.1w RSTP.
+
+=item C<mstp>
+
+802.1s MSTP.
+
+=item C<pvst>
+
+PVST+, one 802.1D tree per VLAN.
+
+=item C<rapid-pvst>
+
+Rapid-PVST+, one 802.1w tree per VLAN.
+
+=item C<vstp>
+
+Juniper VSTP, one tree per VLAN (L<SNMP::Info::Layer3::Juniper>).
+
+=item C<dot1d>
+
+A F<BRIDGE-MIB> tree is served, but no object says which protocol it
+runs.
+
+=back
+
+This class returns C<['dot1d']> when C<stp_trees()> holds the
+F<BRIDGE-MIB> tree, and nothing otherwise. Nothing does not mean the
+device runs no spanning tree: check C<stp_trees_complete()>.
+
+=item $bridge->stp_trees()
+
+Returns a reference to a hash of tree records, keyed by tree key.
+Returns nothing, with C<error()> set, when the session is in a context
+other than the default context, since only the default context serves
+the whole list. The tree keys:
+
+=over
+
+=item C<cist.0>
+
+The CIST: the one tree under STP and RSTP, instance 0 under MSTP.
+
+=item C<msti.N>
+
+MST instance N.
+
+=item C<vlan.N>
+
+The tree of VLAN N, under PVST+, Rapid-PVST+ or VSTP.
+
+=item C<vlan.N@instance>
+
+The VSTP tree of VLAN N in the Juniper routing instance C<instance>.
+
+=item C<domain.N>
+
+Extreme STP domain N.
+
+=back
+
+Each record has these fields:
+
+=over
+
+=item C<type>
+
+C<cist>, C<msti>, C<vlan> or C<domain>, as in the key.
+
+=item C<id>
+
+The number in the key: 0 for C<cist>, the MST instance for C<msti>, the
+VLAN id for C<vlan>, the domain instance for C<domain>.
+
+=item C<protocol>
+
+The protocol this tree runs, as C<stp_protocols()> names it, except
+C<dot1d>. Undef when the device does not say.
+
+=item C<measured>
+
+1 when this class's reading of that platform and protocol is known to
+match what the device reports, 0 when it is not verified. Always 0 in
+this class.
+
+=item C<ports_complete>
+
+Whether C<stp_tree_ports()>, read in every context in C<contexts>,
+returns every port of the tree. Never undef.
+
+=over
+
+=item C<1>
+
+Every port of the tree is returned.
+
+=item C<0>
+
+Some ports may be missing: for example a port row has no
+C<ifIndex> in C<bp_index()>, the device serves no port rows for the
+tree, or a walk ended early. Each class lists its cases.
+
+=back
+
+=item C<contexts>
+
+A reference to an array of the contexts that serve the tree's ports, in
+the order to read them. Read C<stp_tree_ports()> in each, and merge the
+rows: each context can serve only some of the ports. Each entry is
+either:
+
+=over
+
+=item *
+
+C<< { kind => 'none' } >>: the default context.
+
+=item *
+
+A context as C<snmp_context()> in L<SNMP::Info> describes it, with
+C<kind>, C<id>, C<v2c> and C<v3>. A class can add a key, such as
+L<SNMP::Info::Layer3::Juniper>'s C<instance>.
+
+=back
+
+The array is empty when no context serves the tree's ports.
+
+=item C<bridge>
+
+This device's bridge ID in the tree. Undef where the class cannot read
+it.
+
+=item C<root>
+
+The bridge ID of the tree's root. Undef where the default context does
+not serve it.
+
+=item C<vlan>
+
+The VLAN the tree runs for. Present only where the class fills it:
+Cisco PVST+ and Rapid-PVST+, H3C PVST, Juniper VSTP, and an Extreme
+domain with a carrier VLAN.
+
+=item C<name>
+
+The domain name. Extreme only.
+
+=item C<instance>
+
+The routing instance. Juniper VSTP only.
+
+=back
+
+A bridge ID is a reference to a hash:
+
+=over
+
+=item C<priority>
+
+The bridge priority, a multiple of 4096.
+
+=item C<sys_id_ext>
+
+The system ID extension: the low 12 bits of the served priority, which
+most devices set to the VLAN or MST instance.
+
+=item C<mac>
+
+The bridge MAC address.
+
+=item C<raw>
+
+The bridge ID as served, eight octets in hex, colon separated.
+
+=back
+
+An example record, the Rapid-PVST+ tree of VLAN 10 on a Cisco IOS
+switch:
+
+    'vlan.10' => {
+        type           => 'vlan',
+        id             => 10,
+        vlan           => 10,
+        protocol       => 'rapid-pvst',
+        measured       => 1,
+        ports_complete => 1,
+        contexts       => [
+            {
+                kind => 'vlan',
+                id   => 10,
+                v2c  => '%s@10',
+                v3   => 'vlan-10',
+            },
+        ],
+        bridge => undef,
+        root   => undef,
+    }
+
+=item $bridge->stp_trees_complete()
+
+Returns whether C<stp_trees()> lists every tree the device runs:
+
+=over
+
+=item C<1>
+
+The list is whole. A tree that is not listed does not run.
+
+=item C<0>
+
+The list may be missing trees: the class does not read them, a walk
+that lists them was incomplete (see L<SNMP::Info/"Incomplete Walks">),
+or the session is in a context other than the default context. Treat
+the list as partial.
+
+=item C<undef>
+
+The device serves no tree that this class reads.
+
+=back
+
+This class never returns 1, since F<BRIDGE-MIB> cannot show whether
+other trees run. It returns 0 when it reports the F<BRIDGE-MIB> tree,
+and undef when that is not served. A device class that reads its trees
+returns 1 or 0, never undef.
+
+=item $bridge->stp_vlan_map()
+
+Returns reference to hash mapping each VLAN id to the key of the tree
+that carries it, as the device serves the map, or nothing where it serves
+none.  This class serves none: one C<BRIDGE-MIB> tree carries every VLAN.
+
+=item $bridge->stp_tree_ports($tree_key)
+
+Returns a reference to a hash of port records for the tree
+C<$tree_key>, keyed by C<ifIndex>, read in the session's current
+context. Returns nothing, with C<error()> set, for a key that is not in
+C<stp_trees()>.
+
+This class reads F<BRIDGE-MIB> directly, but looks the key up in
+C<stp_trees()>, which answers only in the default context, so it
+answers only there. A device class whose trees are served in
+other contexts reads them there, as its documentation says.
+
+Each record has these fields:
+
+=over
+
+=item C<tree_type>, C<tree_id>
+
+The tree's C<type> and C<id>.
+
+=item C<state>
+
+The port's state in the tree, as the device serves it. It is not
+normalized: F<BRIDGE-MIB> serves C<disabled>, C<blocking>, C<listening>,
+C<learning>, C<forwarding> or C<broken>, and vendor MIBs can serve other
+labels, such as C<discarding>. Undef when not served.
+
+=item C<role>
+
+The port role: C<disabled>, C<root>, C<designated>, C<alternate>,
+C<backup>, C<boundary> or C<master>. Undef when the device serves no
+role, or a value the class does not know.
+
+=item C<role_raw>
+
+The role as served. Undef when not served.
+
+=item C<enabled>
+
+1 when the device runs spanning tree on the port, 0 when it does not,
+undef when not served.
+
+=item C<designated_bridge>
+
+The bridge ID of the port's designated bridge, as in C<stp_trees()>.
+Undef when not served.
+
+=item C<designated_port>
+
+The port ID of the designated port, a reference to a hash: C<priority>,
+the port priority; C<port>, the port number on the designated bridge;
+and C<raw>, the port ID as served. Undef when not served.
+
+=back
+
+An example record, a port read in VLAN 10's context on the switch above:
+
+    3 => {
+        tree_type         => 'vlan',
+        tree_id           => 10,
+        state             => 'blocking',
+        role              => 'alternate',
+        role_raw          => 'alternate',
+        enabled           => 1,
+        designated_bridge => {
+            priority   => 32768,
+            sys_id_ext => 10,
+            mac        => '02:00:00:00:00:0b',
+            raw        => '80:0a:02:00:00:00:00:0b',
+        },
+        designated_port => {
+            priority => 128,
+            port     => 3,
+            raw      => '80:03',
+        },
+    }
 
 =back
 
@@ -1024,6 +1932,9 @@ identifier (iid)
 =item $bridge->qb_fw_vlan()
 
 Returns reference to hash of forwarding table entries VLAN ID
+
+Entries whose FDB ID is shared by several VLANs have an C<undef> VLAN ID.
+Entries whose FDB ID has no mapping use the FDB ID as the VLAN ID.
 
 =item $bridge->qb_fw_status()
 

@@ -44,7 +44,7 @@ use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -162,6 +162,8 @@ sub i_ignore {
 }
 
 sub agg_ports { return agg_ports_lag(@_) }
+
+sub _agg_ports_walked { return qw/ad_lag_ports bp_index/ }
 
 1;
 __END__

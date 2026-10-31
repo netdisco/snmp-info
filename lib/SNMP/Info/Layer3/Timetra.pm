@@ -41,7 +41,7 @@ use SNMP::Info::Aggregate;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -196,6 +196,8 @@ sub _lldp_addr_index {
     my $proto = shift(@oids);
     shift(@oids) if scalar @oids > 4;    # $length
 
+    return unless defined $proto and @oids;
+
     # IPv4
     if ( $proto == 1 ) {
         return ( $index, $proto, join( '.', @oids ) );
@@ -278,6 +280,8 @@ sub agg_ports {
     return $alu->agg_ports_ifstack();
 }
 
+sub _agg_ports_walked { return qw/ifStackStatus ifType/ }
+
 sub fan {
     my $alu = shift;
 
@@ -353,8 +357,12 @@ sub e_index {
 
     my %e_index;
 
+    # The iid is tmnxChassisIndex.tmnxHwIndex; tmnxHwContainedIn (e_parent)
+    # holds the bare tmnxHwIndex
     foreach my $iid ( keys %$e_descr ) {
-        $e_index{$iid} = $iid;
+        my ( undef, $hw_index ) = split /\./, $iid;
+        next unless defined $hw_index;
+        $e_index{$iid} = $hw_index;
     }
     return \%e_index;
 }
@@ -574,6 +582,9 @@ from the (C<tmnxLldpRemEntry >) index.
 =over
 
 =item $alu->e_index()
+
+Returns reference to hash.  Key: C<tmnxChassisIndex.tmnxHwIndex>,
+Value: C<tmnxHwIndex>, the index e_parent() refers to.
 
 (C<tmnxHwIndex>)
 

@@ -39,13 +39,14 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.975000';
+$VERSION = '3.984000';
 
 %MIBS = (
     'LLDP-MIB'          => 'lldpLocSysCapEnabled',
     'LLDP-EXT-MED-MIB'  => 'lldpXMedMIB',
     'LLDP-EXT-DOT1-MIB' => 'lldpXdot1MIB',
     'LLDP-EXT-DOT3-MIB' => 'lldpXdot3MIB',
+    'LLDP-V2-MIB'       => 'lldpV2LocSysCapEnabled',
 );
 
 %GLOBALS = (
@@ -54,6 +55,7 @@ $VERSION = '3.975000';
     'lldp_sys_cap' => 'lldpLocSysCapEnabled',
     'lldp_loc_id_type'  => 'lldpLocChassisIdSubtype',
     'lldp_loc_id_os'    => 'lldpLocChassisId',
+    'lldp_v2_sys_cap'   => 'lldpV2LocSysCapEnabled',
 );
 
 %FUNCS = (
@@ -89,6 +91,23 @@ $VERSION = '3.975000';
 
     # LLDP-MIB::lldpRemManAddrTable
     'lldp_rman_addr' => 'lldpRemManAddrIfSubtype',
+
+    # LLDP-V2-MIB::lldpV2RemTable
+    'lldp_v2_rem_id_type'  => 'lldpV2RemChassisIdSubtype',
+    'lldp_v2_rem_id'       => 'lldpV2RemChassisId',
+    'lldp_v2_rem_pid_type' => 'lldpV2RemPortIdSubtype',
+    'lldp_v2_rem_pid'      => 'lldpV2RemPortId',
+    'lldp_v2_rem_desc'     => 'lldpV2RemPortDesc',
+    'lldp_v2_rem_sysname'  => 'lldpV2RemSysName',
+    'lldp_v2_rem_sysdesc'  => 'lldpV2RemSysDesc',
+    'lldp_v2_rem_sys_cap'  => 'lldpV2RemSysCapEnabled',
+    'lldp_v2_rem_cap_spt'  => 'lldpV2RemSysCapSupported',
+
+    # LLDP-V2-MIB::lldpV2RemManAddrTable
+    'lldp_v2_rman_addr' => 'lldpV2RemManAddrIfSubtype',
+
+    # LLDP-V2-MIB::lldpV2DestAddressTable
+    'lldp_v2_dest_mac' => 'lldpV2DestMacAddress',
 );
 
 %MUNGE = (
@@ -113,6 +132,13 @@ $VERSION = '3.975000';
 
     'lldp_rem_media_cap'     => \&SNMP::Info::munge_bits,
     'lldp_rem_media_cap_spt' => \&SNMP::Info::munge_bits,
+
+    'lldp_v2_sys_cap'     => \&SNMP::Info::munge_bits,
+    'lldp_v2_rem_sysname' => \&SNMP::Info::munge_null,
+    'lldp_v2_rem_sysdesc' => \&SNMP::Info::munge_null,
+    'lldp_v2_rem_sys_cap' => \&SNMP::Info::munge_bits,
+    'lldp_v2_rem_cap_spt' => \&SNMP::Info::munge_bits,
+    'lldp_v2_dest_mac'    => \&SNMP::Info::munge_mac,
 );
 
 sub hasLLDP {
@@ -122,20 +148,76 @@ sub hasLLDP {
     # so we could be running LLDP but not return any useful information
     my $lldp_cap = $lldp->lldp_sys_cap();
     return 1 if defined $lldp_cap;
+    return 1 if defined $lldp->lldp_v2_sys_cap();
 
     # If the device doesn't return local system capabilities, fallback
     # by checking if it would report neighbors
-    my $lldp_rem = $lldp->lldp_rem_id() || {};
-    return 1 if scalar keys %$lldp_rem;
+    return 1 if defined $lldp->_lldp_source();
 
     return;
+}
+
+# Neighbors come from one MIB per device: devices serving both report each
+# neighbor in both. LLDP-MIB local data may sit beside LLDP-V2-MIB neighbors,
+# so the remote tables decide. No neighbors is remembered as '' so empty
+# walks are not repeated on every call; clear_cache resets it.
+sub _lldp_source {
+    my $lldp = shift;
+
+    return $lldp->{_lldp_source} || undef if exists $lldp->{_lldp_source};
+
+    my $source;
+    if ( scalar keys %{ $lldp->lldp_rem_id() || {} } ) {
+        $source = 'v1';
+    }
+    elsif ( scalar keys %{ $lldp->lldp_v2_rem_id() || {} } ) {
+        $source = 'v2';
+    }
+    $lldp->{_lldp_source} = $source // '';
+    return $source;
+}
+
+# Index of the nearest-bridge agent in lldpV2DestAddressTable
+sub _lldp_v2_agent {
+    my $lldp = shift;
+
+    return $lldp->{_lldp_v2_agent} || undef if exists $lldp->{_lldp_v2_agent};
+
+    my $agent;
+    my $dest = $lldp->lldp_v2_dest_mac() || {};
+    foreach my $idx ( keys %$dest ) {
+        my $mac = $dest->{$idx} || '';
+        $agent = $idx if lc $mac eq '01:80:c2:00:00:0e';
+    }
+    $lldp->{_lldp_v2_agent} = $agent // '';
+    return $agent;
+}
+
+# Remote column from the chosen MIB, named by its LLDP-MIB method. LLDP-V2-MIB
+# rows may repeat a neighbor once per agent, so keep the nearest-bridge agent.
+sub _lldp_rem {
+    my ( $lldp, $method, $partial ) = @_;
+
+    my $source = $lldp->_lldp_source() || '';
+    return $lldp->$method($partial) || {} unless $source eq 'v2';
+
+    ( my $v2_method = $method ) =~ s/^lldp_/lldp_v2_/;
+    my $rows  = $lldp->$v2_method($partial) || {};
+    my $agent = $lldp->_lldp_v2_agent();
+    return $rows unless defined $agent;
+
+    return { map { $_ => $rows->{$_} }
+            grep { ( ( split /\./, $_ )[2] // '' ) eq $agent } keys %$rows };
 }
 
 sub lldp_if {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $addr    = $lldp->lldp_rem_pid($partial) || {};
+    my $addr = $lldp->_lldp_rem( 'lldp_rem_pid', $partial );
+    return { map { $_ => ( split /\./, $_ )[1] } keys %$addr }
+        if ( $lldp->_lldp_source() || '' ) eq 'v2';
+
     my $i_descr = $lldp->i_description()        || {};
     my $i_alias = $lldp->i_alias()              || {};
     my %r_i_descr = reverse %$i_descr;
@@ -178,7 +260,7 @@ sub lldp_ip {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
+    my $rman_addr = $lldp->_lldp_rem( 'lldp_rman_addr', $partial );
 
     my %lldp_ip;
     foreach my $key ( keys %$rman_addr ) {
@@ -194,7 +276,7 @@ sub lldp_ipv6 {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
+    my $rman_addr = $lldp->_lldp_rem( 'lldp_rman_addr', $partial );
 
     my %lldp_ipv6;
     foreach my $key ( keys %$rman_addr ) {
@@ -210,7 +292,7 @@ sub lldp_mac {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
+    my $rman_addr = $lldp->_lldp_rem( 'lldp_rman_addr', $partial );
 
     my %lldp_ipv6;
     foreach my $key ( keys %$rman_addr ) {
@@ -226,7 +308,7 @@ sub lldp_addr {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $rman_addr = $lldp->lldp_rman_addr($partial) || {};
+    my $rman_addr = $lldp->_lldp_rem( 'lldp_rman_addr', $partial );
 
     my %lldp_ip;
     foreach my $key ( keys %$rman_addr ) {
@@ -241,10 +323,10 @@ sub lldp_port {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $pdesc = $lldp->lldp_rem_desc($partial)     || {};
-    my $pid   = $lldp->lldp_rem_pid($partial)      || {};
-    my $ptype = $lldp->lldp_rem_pid_type($partial) || {};
-    my $desc  = $lldp->lldp_rem_sysdesc($partial)  || {};
+    my $pdesc = $lldp->_lldp_rem( 'lldp_rem_desc',     $partial );
+    my $pid   = $lldp->_lldp_rem( 'lldp_rem_pid',      $partial );
+    my $ptype = $lldp->_lldp_rem( 'lldp_rem_pid_type', $partial );
+    my $desc  = $lldp->_lldp_rem( 'lldp_rem_sysdesc',  $partial );
 
     my %lldp_port;
     foreach my $key ( sort keys %$pid ) {
@@ -312,8 +394,8 @@ sub lldp_id {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $ch_type = $lldp->lldp_rem_id_type($partial) || {};
-    my $ch      = $lldp->lldp_rem_id($partial)      || {};
+    my $ch_type = $lldp->_lldp_rem( 'lldp_rem_id_type', $partial );
+    my $ch      = $lldp->_lldp_rem( 'lldp_rem_id',      $partial );
 
     my %lldp_id;
     foreach my $key ( keys %$ch ) {
@@ -339,9 +421,9 @@ sub lldp_platform {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $rid  = $lldp->lldp_rem_id($partial)      || {};
-    my $desc = $lldp->lldp_rem_sysdesc($partial) || {};
-    my $name = $lldp->lldp_rem_sysname($partial) || {};
+    my $rid  = $lldp->_lldp_rem( 'lldp_rem_id',      $partial );
+    my $desc = $lldp->_lldp_rem( 'lldp_rem_sysdesc', $partial );
+    my $name = $lldp->_lldp_rem( 'lldp_rem_sysname', $partial );
 
     my %lldp_platform;
     foreach my $key ( keys %$rid ) {
@@ -354,13 +436,16 @@ sub lldp_cap {
     my $lldp    = shift;
     my $partial = shift;
 
-    my $lldp_caps = $lldp->lldp_rem_cap_spt($partial) || {};
+    my $lldp_caps = $lldp->_lldp_rem( 'lldp_rem_cap_spt', $partial );
 
     # Encoded as BITS which Perl Net-SNMP implementation doesn't seem to
     # be able to enumerate for us, so we have to get it from the MIB
     # and enumerate ourselves
-    my $oid
-        = SNMP::translateObj( 'LLDP-MIB::lldpRemSysCapEnabled', 0, 1 ) || '';
+    my $cap_leaf
+        = ( $lldp->_lldp_source() || '' ) eq 'v2'
+        ? 'LLDP-V2-MIB::lldpV2RemSysCapEnabled'
+        : 'LLDP-MIB::lldpRemSysCapEnabled';
+    my $oid = SNMP::translateObj( $cap_leaf, 0, 1 ) || '';
     my $enums = (
         ( ref {} eq ref $SNMP::MIB{$oid}{'enums'} )
         ? $SNMP::MIB{$oid}{'enums'}
@@ -441,10 +526,17 @@ sub _lldp_addr_index {
     my $lldp = shift;
     my $idx  = shift;
 
+    # LLDP-V2-MIB adds the destination address index
+    my $fields = ( $lldp->_lldp_source() || '' ) eq 'v2' ? 4 : 3;
+
     my @oids = split( /\./, $idx );
-    my $index = join( '.', splice( @oids, 0, 3 ) );
+    my $index = join( '.', splice( @oids, 0, $fields ) );
     my $proto = shift(@oids);
     shift(@oids) if scalar @oids > 4;    # $length
+
+    # Some agents serve rows whose index stops before the address type or
+    # the address, as a single number on some Cisco Fabric Interconnects
+    return unless defined $proto and @oids;
 
     # IPv4
     if ( $proto == 1 ) {
@@ -537,6 +629,8 @@ None.
 
 =item F<LLDP-EXT-DOT3-MIB>
 
+=item F<LLDP-V2-MIB>
+
 =back
 
 =head1 GLOBALS
@@ -551,6 +645,8 @@ Is LLDP is active in this device?
 
 Note:  LLDP may be active, but nothing in C<lldpRemoteSystemsData> Tables so
 the device would not return any useful topology information.
+
+Also true when the device reports LLDP only through F<LLDP-V2-MIB>.
 
 =item $lldp->lldp_sysname()
 
@@ -620,6 +716,15 @@ This is used by the above method to decode the octet string in C<lldpLocChassisI
 
 (C<lldpLocChassisIdSubtype>)
 
+=item $lldp->lldp_v2_sys_cap()
+
+Returns which system capabilities are enabled on the local system, from
+F<LLDP-V2-MIB>. Munged into an ascii binary string, LSB, as
+C<lldp_sys_cap()>, with three more bits: 'cVLANComponent(8)',
+'sVLANComponent(9)' and 'twoPortMACRelay(10)'.
+
+(C<lldpV2LocSysCapEnabled>)
+
 =back
 
 =head1 TABLE METHODS
@@ -632,7 +737,7 @@ to a hash.
 =item $lldp->lldp_id()
 
 Returns the string value used to identify the chassis component associated
-with the remote system.
+with the remote system. Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 
 (C<lldpRemChassisId>)
 
@@ -640,22 +745,29 @@ with the remote system.
 
 Returns the mapping to the SNMP Interface Table. Tries to cross reference
 (C<lldpLocPortDesc>) with (C<ifDescr>) and (C<ifAlias>) to get (C<ifIndex>),
-if unable defaults to (C<lldpRemLocalPortNum>).
+if unable defaults to (C<lldpRemLocalPortNum>). Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
+F<LLDP-V2-MIB> rows carry the (C<ifIndex>) in their index.
 
 =item  $lldp->lldp_ip()
 
 Returns remote IPv4 address.  Returns for all other address types, use
 lldp_addr if you want any return address type.
 
+Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
+
 =item  $lldp->lldp_ipv6()
 
 Returns remote IPv6 address, if known.  Returns for all other address types,
 use lldp_addr if you don't care about return address type.
 
+Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
+
 =item  $lldp->lldp_mac()
 
 Returns remote (management) MAC address, if known.  Returns for all other
 address types, use lldp_addr if you don't care about return address type.
+
+Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 
 =item  $lldp->lldp_addr()
 
@@ -666,20 +778,22 @@ is returned is decided by chance, phase of the moon and Perl hash ordering.
 
 Use lldp_mac, lldp_ip or lldp_ipv6 if you want a specific address type.
 
+Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
+
 =item $lldp->lldp_port()
 
-Returns remote port ID
+Returns remote port ID. Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 
 =item $lldp->lldp_platform()
 
 Tries to return something useful from C<lldp_rem_sysdesc()> or
-C<lldp_rem_sysname()>.
+C<lldp_rem_sysname()>. Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 
 =item  $lldp->lldp_cap()
 
 Returns hash of arrays with each array containing the system capabilities
 supported by the remote system.  Possible elements in the array are
-enumerated from C<LldpSystemCapabilitiesMap>.
+enumerated from C<LldpSystemCapabilitiesMap>. Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 
 =item  $lldp->lldp_media_cap()
 
@@ -838,6 +952,105 @@ capability and nothing else."
 =back
 
 (C<lldpRemSysCapEnabled>)
+
+=back
+
+=head2 LLDP-V2 Remote Table (C<lldpV2RemTable>)
+
+The F<LLDP-V2-MIB> (IEEE 802.1AB-2009) equivalents of the C<lldpRemTable>
+methods above. Indexed by time mark, local C<ifIndex>, destination address
+index and remote index.
+
+=over
+
+=item $lldp->lldp_v2_rem_id_type()
+
+Returns the type of encoding used to identify the chassis associated with
+the remote system.
+
+(C<lldpV2RemChassisIdSubtype>)
+
+=item $lldp->lldp_v2_rem_id()
+
+Returns the string value used to identify the chassis component associated
+with the remote system.
+
+(C<lldpV2RemChassisId>)
+
+=item $lldp->lldp_v2_rem_pid_type()
+
+Returns the type of port identifier encoding used in the associated
+C<lldpV2RemPortId> object.
+
+(C<lldpV2RemPortIdSubtype>)
+
+=item $lldp->lldp_v2_rem_pid()
+
+Returns the string value used to identify the port component associated with
+the remote system.
+
+(C<lldpV2RemPortId>)
+
+=item $lldp->lldp_v2_rem_desc()
+
+Returns the string value used to identify the description of the given port
+associated with the remote system.
+
+(C<lldpV2RemPortDesc>)
+
+=item $lldp->lldp_v2_rem_sysname()
+
+Returns the string value used to identify the system name of the remote
+system. Nulls are removed before the value is returned.
+
+(C<lldpV2RemSysName>)
+
+=item $lldp->lldp_v2_rem_sysdesc()
+
+Returns the string value used to identify the system description of the
+remote system. Nulls are removed before the value is returned.
+
+(C<lldpV2RemSysDesc>)
+
+=item $lldp->lldp_v2_rem_sys_cap()
+
+Returns which system capabilities are enabled on the remote system. Munged
+as C<lldp_v2_sys_cap()>.
+
+(C<lldpV2RemSysCapEnabled>)
+
+=item $lldp->lldp_v2_rem_cap_spt()
+
+Returns which system capabilities are supported on the remote system. Munged
+as C<lldp_v2_sys_cap()>.
+
+(C<lldpV2RemSysCapSupported>)
+
+=back
+
+=head2 LLDP-V2 Remote Management Address Table (C<lldpV2RemManAddrTable>)
+
+=over
+
+=item $lldp->lldp_v2_rman_addr()
+
+Returns the interface numbering subtype of each remote management address.
+The address itself is in the index.
+
+(C<lldpV2RemManAddrIfSubtype>)
+
+=back
+
+=head2 LLDP-V2 Destination Address Table (C<lldpV2DestAddressTable>)
+
+=over
+
+=item $lldp->lldp_v2_dest_mac()
+
+Returns the destination MAC address of each LLDP agent, keyed by the
+destination address index used in C<lldpV2RemTable>.
+
+(C<lldpV2DestMacAddress>)
 
 =back
 
