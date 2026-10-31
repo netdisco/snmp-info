@@ -1,5 +1,17 @@
 Version 3.984001
 
+  [NEW FEATURES]
+
+  * #658 VOSS: new Layer3::VOSS class for VOSS / Fabric Engine on the
+    Extreme enterprise, built on RapidCity; RapidCity's Passport 8600 and
+    ERS-era tables move into RapidCityLegacy and the VOSS VRF support into
+    RapidCityVRF (#647)
+
+  [ENHANCEMENTS]
+
+  * #658 RapidCity: set_i_speed_admin accepts 10G to 100G, and the speed
+    and duplex setters turn auto-negotiation off when it is on
+
   [BUG FIXES]
 
   * #657 Layer3: read the IPv4 ARP cache from ipNetToPhysicalTable when the

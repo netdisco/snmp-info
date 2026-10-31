@@ -35,11 +35,12 @@ use Exporter;
 use SNMP::Info::SONMP;
 use SNMP::Info::NortelStack;
 use SNMP::Info::RapidCity;
+use SNMP::Info::RapidCityLegacy;
 use SNMP::Info::Layer3;
 
 @SNMP::Info::Layer2::Baystack::ISA
     = qw/SNMP::Info::SONMP SNMP::Info::NortelStack
-    SNMP::Info::RapidCity
+    SNMP::Info::RapidCityLegacy SNMP::Info::RapidCity
     SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer2::Baystack::EXPORT_OK = qw//;
 
@@ -49,20 +50,23 @@ $VERSION = '3.984000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
-    %SNMP::Info::RapidCity::MIBS, %SNMP::Info::NortelStack::MIBS,
+    %SNMP::Info::RapidCity::MIBS, %SNMP::Info::RapidCityLegacy::MIBS,
+    %SNMP::Info::NortelStack::MIBS,
     %SNMP::Info::SONMP::MIBS,
     'BAY-STACK-PETH-EXT-MIB' => 'bspePethPsePortExtMeasuredPower',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
-    %SNMP::Info::RapidCity::GLOBALS, %SNMP::Info::NortelStack::GLOBALS,
+    %SNMP::Info::RapidCity::GLOBALS, %SNMP::Info::RapidCityLegacy::GLOBALS,
+    %SNMP::Info::NortelStack::GLOBALS,
     %SNMP::Info::SONMP::GLOBALS,
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
-    %SNMP::Info::RapidCity::FUNCS, %SNMP::Info::NortelStack::FUNCS,
+    %SNMP::Info::RapidCity::FUNCS, %SNMP::Info::RapidCityLegacy::FUNCS,
+    %SNMP::Info::NortelStack::FUNCS,
     %SNMP::Info::SONMP::FUNCS,
     'peth_port_power' => 'bspePethPsePortExtMeasuredPower',
 );
@@ -74,7 +78,8 @@ $SNMP::Info::SPEED_MAP{2_000_000_000} = '1.0 Gbps';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
-    %SNMP::Info::RapidCity::MUNGE, %SNMP::Info::NortelStack::MUNGE,
+    %SNMP::Info::RapidCity::MUNGE, %SNMP::Info::RapidCityLegacy::MUNGE,
+    %SNMP::Info::NortelStack::MUNGE,
     %SNMP::Info::SONMP::MUNGE,
 );
 
@@ -440,6 +445,8 @@ through SNMP.
 
 =item SNMP::Info::NortelStack
 
+=item SNMP::Info::RapidCityLegacy
+
 =item SNMP::Info::RapidCity
 
 =item SNMP::Info::Layer3
@@ -459,6 +466,8 @@ through SNMP.
 See L<SNMP::Info::SONMP/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::NortelStack/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::RapidCityLegacy/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::RapidCity/"Required MIBs"> for its MIB requirements.
 
@@ -526,6 +535,10 @@ See L<SNMP::Info::SONMP/"GLOBALS"> for details.
 =head2 Globals imported from SNMP::Info::NortelStack
 
 See L<SNMP::Info::NortelStack/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::RapidCityLegacy
+
+See L<SNMP::Info::RapidCityLegacy/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::RapidCity
 
@@ -681,6 +694,10 @@ See L<SNMP::Info::SONMP/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::NortelStack
 
 See L<SNMP::Info::NortelStack/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::RapidCityLegacy
+
+See L<SNMP::Info::RapidCityLegacy/"TABLE METHODS"> for details.
 
 =head2 Table Methods imported from SNMP::Info::RapidCity
 

@@ -1482,7 +1482,7 @@ Reserved; always undef.
 =item l3_isid
 
 On VOSS, the I-SID of the instance's IP VPN; undef elsewhere
-(L<SNMP::Info::Layer3::Extreme>).
+(L<SNMP::Info::RapidCityVRF>).
 
 =item listed_by
 
@@ -1658,7 +1658,7 @@ no instance, and its neighbors are dropped.
 
 Some devices serve the whole address table in every context. There the
 context's ports are the interfaces its C<inetCidrRouteTable> routes use
-(L<SNMP::Info::Layer3::Extreme>).
+(L<SNMP::Info::Layer3::Extreme> on EXOS, L<SNMP::Info::RapidCityVRF>).
 
 =item *
 
@@ -1718,14 +1718,14 @@ The SNMPv3 Context.
 Over SNMPv1 or SNMPv2c, the part of the community beyond the
 constructor's C<Community> and an C<@>, on either side (C<public@red>,
 C<red@public>). Not where the device ignores the suffix and serves the
-default context (L<SNMP::Info::Layer3::Extreme> on VOSS); there item 3
+default context (L<SNMP::Info::RapidCityVRF>); there item 3
 decides.
 
 =item 3.
 
 Over SNMPv1 or SNMPv2c, the context the device maps the community to,
 where the class can read that mapping from the device
-(L<SNMP::Info::Layer3::Nexus>, L<SNMP::Info::Layer3::Extreme> on VOSS,
+(L<SNMP::Info::Layer3::Nexus>, L<SNMP::Info::RapidCityVRF> on VOSS,
 where a C<community::vrfid> community such as C<public::1> reaches a VRF).
 
 =back
@@ -1891,7 +1891,7 @@ C<_vrf_context_ports_from_routes> returns true where every context serves
 the whole address table. The context's ports are then the interfaces of
 its C<inetCidrRouteTable> routes. Override C<_vrf_route_ports> to add
 ports a route's interface stands for (L<SNMP::Info::Layer3::Extreme>,
-for an EXOS router interface).
+for an EXOS router interface, and L<SNMP::Info::RapidCityVRF>).
 
 =item Subnets from routes
 
@@ -1944,7 +1944,7 @@ context, or undef when the class cannot tell
 C<_vrf_community_suffix_is_context> returns false where the device
 ignores a community suffix such as C<public@vrf1> and serves the default
 context. The session's context then comes from
-C<_vrf_community_context> only (L<SNMP::Info::Layer3::Extreme>). The base
+C<_vrf_community_context> only (L<SNMP::Info::RapidCityVRF>). The base
 returns true.
 
 =back

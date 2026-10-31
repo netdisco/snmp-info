@@ -474,9 +474,27 @@ See documentation in L<SNMP::Info::PowerEthernet> for details.
 
 =item SNMP::Info::RapidCity
 
-F<RAPID-CITY>.  Inherited by Avaya switches for duplex and VLAN information.
+F<RAPID-CITY>.  Inherited by Avaya switches and, through
+L<SNMP::Info::Layer3::VOSS>, VOSS and Fabric Engine switches, for duplex and
+VLAN information.
 
 See documentation in L<SNMP::Info::RapidCity> for details.
+
+=item SNMP::Info::RapidCityLegacy
+
+F<RAPID-CITY>.  The tables used by the Passport 8600 era, ERS and
+BayStack families.  Inherited by Avaya switches ahead of
+L<SNMP::Info::RapidCity>.
+
+See documentation in L<SNMP::Info::RapidCityLegacy> for details.
+
+=item SNMP::Info::RapidCityVRF
+
+F<RAPID-CITY>.  The VRFs of VOSS and Fabric Engine switches, read as
+contexts.  Inherited by L<SNMP::Info::Layer3::VOSS> ahead of
+L<SNMP::Info::RapidCity>.
+
+See documentation in L<SNMP::Info::RapidCityVRF> for details.
 
 =item SNMP::Info::SONMP
 
@@ -1247,6 +1265,13 @@ See documentation in L<SNMP::Info::Layer3::Timetra> for details.
 Subclass for VMware ESXi hosts.
 
 See documentation in L<SNMP::Info::Layer3::VMware> for details.
+
+=item SNMP::Info::Layer3::VOSS
+
+Subclass for Extreme VOSS / Fabric Engine switches that report the Extreme
+enterprise.
+
+See documentation in L<SNMP::Info::Layer3::VOSS> for details.
 
 =item SNMP::Info::Layer3::VyOS
 
@@ -2116,7 +2141,7 @@ A site can map a plain community to a VRF context in the device
 configuration (NX-OS C<snmp-server mib community-map>).  The VRF readers
 recognize such a session only where the class can read the mapping from
 the device: NX-OS (L<SNMP::Info::Layer3::Nexus>) and VOSS
-(L<SNMP::Info::Layer3::Extreme>).  Elsewhere a community-mapped session
+(L<SNMP::Info::Layer3::VOSS>).  Elsewhere a community-mapped session
 reads as the default context, so read VRF contexts over SNMPv3.  See
 L<SNMP::Info::VRF/"Reading Instances">.
 
@@ -3070,6 +3095,14 @@ sub device_type {
             }
         }
     }
+
+    # Extreme VOSS / Fabric Engine report "<model> (a.b.c.d)" under the
+    # Extreme enterprise. Layer 2 only devices reach here too, so this sits
+    # after the layer branches. VOSS reporting the Avaya enterprise stays
+    # with Passport
+    $objtype = 'SNMP::Info::Layer3::VOSS'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.1916\./
+        && $desc =~ /^\S+\s+\(\d+(?:\.\d+){3}/;
 
     # Instant APs use AI-AP-MIB, not the mobility controller WLAN tables.
     # Restrict this initial support to the 8.x evidence in issue #536.

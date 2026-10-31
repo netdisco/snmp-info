@@ -52,25 +52,44 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
-sub _lag_vendor_domains__ist_and_vist_served__reports_both : Tests(2) {
+sub _lag_vendor_domains__ist_served_only__no_domain : Tests(1) {
   my $test = shift;
 
   $test->{info}->cache({
-    _rc_ist_status  => 'up', _rc_ist_peer  => '10.1.1.2',
-    _rc_ist_vlan    => 100,
+    _rc_ist_status => 'up', _rc_ist_peer => '10.1.1.2', _rc_ist_vlan => 100,
+  });
+  cmp_deeply($test->{info}->_lag_vendor_domains(), {},
+    'The IST is not read without the legacy mixin');
+}
+
+sub _lag_vendor_domains__vist_served__reports_vist : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache({
     _rc_vist_status => 'up', _rc_vist_peer => '10.255.0.2',
     _rc_vist_vlan   => 4000,
   });
-  my $domains = $test->{info}->_lag_vendor_domains();
-  cmp_deeply([sort keys %$domains], [qw/ist vist/], 'Both domains served');
-  is($domains->{vist}{peer}, '10.255.0.2', 'vIST peer read');
+  cmp_deeply([keys %{$test->{info}->_lag_vendor_domains()}], ['vist'],
+    'The virtual IST is reported');
+}
+
+sub i_duplex__cpu_rows_cached__ignores_them : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache({
+    _rc_duplex => 1, _rc_cpu_duplex => 1,
+    store => {rc_duplex => {65 => 'full'}, rc_cpu_duplex => {1 => 'half'}},
+  });
+  cmp_deeply($test->{info}->i_duplex(), {65 => 'full'},
+    'Only the rcPortTable rows are reported');
 }
 
 sub _lag_vendor_domains__peer_unset__no_domain : Tests(1) {
   my $test = shift;
 
   $test->{info}->cache({
-    _rc_ist_status => 'down', _rc_ist_peer => '0.0.0.0', _rc_ist_vlan => 0,
+    _rc_vist_status => 'down', _rc_vist_peer => '0.0.0.0',
+    _rc_vist_vlan   => 0,
   });
   cmp_deeply($test->{info}->_lag_vendor_domains(), {},
     'An unset peer address is not a domain');
@@ -187,6 +206,70 @@ sub i_vlan_membership_untagged : Tests(8) {
     'i_vlan_membership_untagged__tagging_true_on_access_type__returns_none');
   ok(!exists $untagged->{6},
     'i_vlan_membership_untagged__pvid_not_a_member__returns_none');
+}
+
+sub _prime_setter_session {
+  my ($test, $auto) = @_;
+
+  my $sess = $test->{info}{sess};
+  $sess->{Data} = {'RAPID-CITY::rcPortAutoNegotiate' => {5 => $auto}};
+  $sess->{_sets} = [];
+  $sess->mock('set', sub {
+    my ($self, $oid, $value) = @_;
+    my $iid;
+    ($oid, $iid) = $oid =~ /^(.+)\.(\d+)$/;
+    my $name = $oid =~ /^[.]?\d/ ? SNMP::translateObj($oid) : $oid;
+    $name =~ s/^.*:://;
+    push @{$self->{_sets}}, "$name.$iid=$value";
+    return 1;
+  });
+  return $sess;
+}
+
+sub set_i_speed_admin : Tests(7) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'set_i_speed_admin');
+  my $sess = $test->_prime_setter_session('false');
+  ok($test->{info}->set_i_speed_admin(10000, 5), 'set_i_speed_admin__10000__true');
+  cmp_deeply($sess->{_sets}, ['rcPortAdminSpeed.5=4'],
+    'set_i_speed_admin__10000__sets_mbps10000');
+
+  $sess = $test->_prime_setter_session('false');
+  $test->{info}->set_i_speed_admin(25000, 5);
+  cmp_deeply($sess->{_sets}, ['rcPortAdminSpeed.5=7'],
+    'set_i_speed_admin__25000__sets_mbps25000');
+
+  $sess = $test->_prime_setter_session('false');
+  ok(!$test->{info}->set_i_speed_admin(2500, 5),
+    'set_i_speed_admin__2500__refuses');
+  cmp_deeply($sess->{_sets}, [], 'set_i_speed_admin__2500__sets_nothing');
+
+  $sess = $test->_prime_setter_session('true');
+  $test->{info}->set_i_speed_admin('auto', 5);
+  cmp_deeply($sess->{_sets}, ['rcPortAutoNegotiate.5=1'],
+    'set_i_speed_admin__auto__sets_autonegotiate');
+}
+
+sub set_i_speed_admin__autoneg_on__disables_then_sets : Tests(1) {
+  my $test = shift;
+
+  my $sess = $test->_prime_setter_session('true');
+  $test->{info}->set_i_speed_admin(1000, 5);
+  cmp_deeply($sess->{_sets},
+    ['rcPortAutoNegotiate.5=2', 'rcPortAdminSpeed.5=3'],
+    'set_i_speed_admin__autoneg_on__disables_then_sets');
+}
+
+sub set_i_duplex_admin : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'set_i_duplex_admin');
+  my $sess = $test->_prime_setter_session('true');
+  $test->{info}->set_i_duplex_admin('full', 5);
+  cmp_deeply($sess->{_sets},
+    ['rcPortAutoNegotiate.5=2', 'rcPortAdminDuplex.5=2'],
+    'set_i_duplex_admin__autoneg_on__disables_then_sets');
 }
 
 1;
