@@ -207,4 +207,68 @@ sub i_vlan_membership_untagged : Tests(8) {
     'i_vlan_membership_untagged__pvid_not_a_member__returns_none');
 }
 
+sub _prime_setter_session {
+  my ($test, $auto) = @_;
+
+  my $sess = $test->{info}{sess};
+  $sess->{Data} = {'RAPID-CITY::rcPortAutoNegotiate' => {5 => $auto}};
+  $sess->{_sets} = [];
+  $sess->mock('set', sub {
+    my ($self, $oid, $value) = @_;
+    my $iid;
+    ($oid, $iid) = $oid =~ /^(.+)\.(\d+)$/;
+    my $name = $oid =~ /^[.]?\d/ ? SNMP::translateObj($oid) : $oid;
+    $name =~ s/^.*:://;
+    push @{$self->{_sets}}, "$name.$iid=$value";
+    return 1;
+  });
+  return $sess;
+}
+
+sub set_i_speed_admin : Tests(7) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'set_i_speed_admin');
+  my $sess = $test->_prime_setter_session('false');
+  ok($test->{info}->set_i_speed_admin(10000, 5), 'set_i_speed_admin__10000__true');
+  cmp_deeply($sess->{_sets}, ['rcPortAdminSpeed.5=4'],
+    'set_i_speed_admin__10000__sets_mbps10000');
+
+  $sess = $test->_prime_setter_session('false');
+  $test->{info}->set_i_speed_admin(25000, 5);
+  cmp_deeply($sess->{_sets}, ['rcPortAdminSpeed.5=7'],
+    'set_i_speed_admin__25000__sets_mbps25000');
+
+  $sess = $test->_prime_setter_session('false');
+  ok(!$test->{info}->set_i_speed_admin(2500, 5),
+    'set_i_speed_admin__2500__refuses');
+  cmp_deeply($sess->{_sets}, [], 'set_i_speed_admin__2500__sets_nothing');
+
+  $sess = $test->_prime_setter_session('true');
+  $test->{info}->set_i_speed_admin('auto', 5);
+  cmp_deeply($sess->{_sets}, ['rcPortAutoNegotiate.5=1'],
+    'set_i_speed_admin__auto__sets_autonegotiate');
+}
+
+sub set_i_speed_admin__autoneg_on__disables_then_sets : Tests(1) {
+  my $test = shift;
+
+  my $sess = $test->_prime_setter_session('true');
+  $test->{info}->set_i_speed_admin(1000, 5);
+  cmp_deeply($sess->{_sets},
+    ['rcPortAutoNegotiate.5=2', 'rcPortAdminSpeed.5=3'],
+    'set_i_speed_admin__autoneg_on__disables_then_sets');
+}
+
+sub set_i_duplex_admin : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'set_i_duplex_admin');
+  my $sess = $test->_prime_setter_session('true');
+  $test->{info}->set_i_duplex_admin('full', 5);
+  cmp_deeply($sess->{_sets},
+    ['rcPortAutoNegotiate.5=2', 'rcPortAdminDuplex.5=2'],
+    'set_i_duplex_admin__autoneg_on__disables_then_sets');
+}
+
 1;

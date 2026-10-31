@@ -289,44 +289,48 @@ sub set_i_duplex_admin {
     my ( $duplex, $iid ) = @_;
 
     $duplex = lc($duplex);
-    return unless ( $duplex =~ /(half|full|auto)/ and $iid =~ /\d+/ );
-
-    # map a textual duplex to an integer one the switch understands
-    my %duplexes = qw/full 2 half 1/;
-    my $i_auto   = $rapidcity->rc_auto($iid);
+    return unless ( $duplex =~ /^(half|full|auto)$/ and $iid =~ /\d+/ );
 
     if ( $duplex eq "auto" ) {
         return $rapidcity->set_rc_auto( '1', $iid );
     }
-    elsif ( ( $duplex ne "auto" ) and ( $i_auto->{$iid} eq "1" ) ) {
-        return unless ( $rapidcity->set_rc_auto( '2', $iid ) );
-        return $rapidcity->set_rc_duplex_admin( $duplexes{$duplex}, $iid );
-    }
-    else {
-        return $rapidcity->set_rc_duplex_admin( $duplexes{$duplex}, $iid );
-    }
+
+    # map a textual duplex to an integer one the switch understands
+    my %duplexes = qw/full 2 half 1/;
+
+    return unless ( $rapidcity->_disable_auto_negotiation($iid) );
+    return $rapidcity->set_rc_duplex_admin( $duplexes{$duplex}, $iid );
 }
 
 sub set_i_speed_admin {
     my $rapidcity = shift;
     my ( $speed, $iid ) = @_;
 
-    return unless ( $speed =~ /(10|100|1000|auto)/i and $iid =~ /\d+/ );
+    $speed = lc($speed);
 
-    # map a textual duplex to an integer one the switch understands
-    my %speeds = qw/10 1 100 2 1000 3/;
-    my $i_auto = $rapidcity->rc_auto($iid);
+    # map a speed in Mbps to the rcPortAdminSpeed value the switch understands
+    my %speeds = qw/10 1 100 2 1000 3 10000 4 40000 5 100000 6 25000 7/;
+    return unless ( ( $speed eq "auto" or exists $speeds{$speed} )
+        and $iid =~ /\d+/ );
 
     if ( $speed eq "auto" ) {
         return $rapidcity->set_rc_auto( '1', $iid );
     }
-    elsif ( ( $speed ne "auto" ) and ( $i_auto->{$iid} eq "1" ) ) {
-        return unless ( $rapidcity->set_rc_auto( '2', $iid ) );
-        return $rapidcity->set_rc_speed_admin( $speeds{$speed}, $iid );
-    }
-    else {
-        return $rapidcity->set_rc_speed_admin( $speeds{$speed}, $iid );
-    }
+
+    return unless ( $rapidcity->_disable_auto_negotiation($iid) );
+    return $rapidcity->set_rc_speed_admin( $speeds{$speed}, $iid );
+}
+
+# rcPortAutoNegotiate is a TruthValue, which UseEnums reads as true/false
+sub _disable_auto_negotiation {
+    my $rapidcity = shift;
+    my $iid       = shift;
+
+    my $i_auto = $rapidcity->rc_auto($iid) || {};
+    my $state  = $i_auto->{$iid};
+    return 1 unless ( defined $state and $state =~ /^(?:true|1)$/i );
+
+    return $rapidcity->set_rc_auto( '2', $iid );
 }
 
 sub v_index {
@@ -2183,7 +2187,9 @@ operations.
 =item $rapidcity->set_i_speed_admin(speed, ifIndex)
 
 Sets port speed, must be supplied with speed and port C<ifIndex>.  Speed
-choices are 'auto', '10', '100', '1000'.
+choices are 'auto', '10', '100', '1000', '10000', '25000', '40000' and
+'100000' (Mbps).  Any other speed returns undef without changing the port.
+A fixed speed turns off auto-negotiation on the port first.
 
  Example:
  my %if_map = reverse %{$rapidcity->interfaces()};
@@ -2192,8 +2198,9 @@ choices are 'auto', '10', '100', '1000'.
 
 =item $rapidcity->set_i_duplex_admin(duplex, ifIndex)
 
-Sets port duplex, must be supplied with duplex and port C<ifIndex>.  Speed
-choices are 'auto', 'half', 'full'.
+Sets port duplex, must be supplied with duplex and port C<ifIndex>.  Duplex
+choices are 'auto', 'half', 'full'.  A fixed duplex turns off
+auto-negotiation on the port first.
 
   Example:
   my %if_map = reverse %{$rapidcity->interfaces()};
