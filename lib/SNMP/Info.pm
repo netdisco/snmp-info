@@ -482,8 +482,9 @@ See documentation in L<SNMP::Info::RapidCity> for details.
 
 =item SNMP::Info::RapidCityLegacy
 
-F<RAPID-CITY>.  The tables used by the Passport 8600 era, ERS and BayStack families.  Inherited
-by Avaya switches ahead of L<SNMP::Info::RapidCity>.
+F<RAPID-CITY>.  The tables used by the Passport 8600 era, ERS and
+BayStack families.  Inherited by Avaya switches ahead of
+L<SNMP::Info::RapidCity>.
 
 See documentation in L<SNMP::Info::RapidCityLegacy> for details.
 

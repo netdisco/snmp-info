@@ -1615,8 +1615,8 @@ the device does not serve.
 =item $rapidcity->mlag_domains()
 
 As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by C<vist>
-(virtual IST), the same as C<kind>.  A domain is reported when its peer address is set and not
-C<0.0.0.0>.  Its fields:
+(virtual IST), the same as C<kind>.  A domain is reported when its peer
+address is set and not C<0.0.0.0>.  Its fields:
 
 =over
 
