@@ -73,7 +73,7 @@ sub _lag_vendor_domains__vist_served__reports_vist : Tests(1) {
     'The virtual IST is reported');
 }
 
-sub i_duplex__port_rows_only : Tests(1) {
+sub i_duplex__cpu_rows_cached__ignores_them : Tests(1) {
   my $test = shift;
 
   $test->{info}->cache({
@@ -88,7 +88,8 @@ sub _lag_vendor_domains__peer_unset__no_domain : Tests(1) {
   my $test = shift;
 
   $test->{info}->cache({
-    _rc_ist_status => 'down', _rc_ist_peer => '0.0.0.0', _rc_ist_vlan => 0,
+    _rc_vist_status => 'down', _rc_vist_peer => '0.0.0.0',
+    _rc_vist_vlan   => 0,
   });
   cmp_deeply($test->{info}->_lag_vendor_domains(), {},
     'An unset peer address is not a domain');

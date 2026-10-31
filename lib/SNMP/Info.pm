@@ -474,13 +474,15 @@ See documentation in L<SNMP::Info::PowerEthernet> for details.
 
 =item SNMP::Info::RapidCity
 
-F<RAPID-CITY>.  Inherited by Avaya switches for duplex and VLAN information.
+F<RAPID-CITY>.  Inherited by Avaya switches and, through
+L<SNMP::Info::Layer3::VOSS>, VOSS and Fabric Engine switches, for duplex and
+VLAN information.
 
 See documentation in L<SNMP::Info::RapidCity> for details.
 
 =item SNMP::Info::RapidCityLegacy
 
-F<RAPID-CITY>.  The tables only the 8600 and ERS families serve.  Inherited
+F<RAPID-CITY>.  The tables used by the Passport 8600 era, ERS and BayStack families.  Inherited
 by Avaya switches ahead of L<SNMP::Info::RapidCity>.
 
 See documentation in L<SNMP::Info::RapidCityLegacy> for details.
@@ -2768,12 +2770,6 @@ sub device_type {
         $objtype = 'SNMP::Info::Layer3::ExtremeWing'
             if ( $soid =~ /^\.?1\.3\.6\.1\.4\.1\.388\.50/ );
 
-        # Extreme VOSS / Fabric Engine, which report "<model> (a.b.c.d)".
-        # VOSS reporting the Avaya enterprise stays with Passport
-        $objtype = 'SNMP::Info::Layer3::VOSS'
-            if ( $soid =~ /^\.?1\.3\.6\.1\.4\.1\.1916\./
-            and $desc =~ /^\S+\s+\(\d+(?:\.\d+){3}/ );
-
         # Avaya Secure Router
         $objtype = 'SNMP::Info::Layer3::Tasman'
             if ( $desc =~ /^(avaya|nortel)\s+(SR|secure\srouter)\s+\d{4}/i );
@@ -3098,6 +3094,14 @@ sub device_type {
             }
         }
     }
+
+    # Extreme VOSS / Fabric Engine report "<model> (a.b.c.d)" under the
+    # Extreme enterprise. Layer 2 only devices reach here too, so this sits
+    # after the layer branches. VOSS reporting the Avaya enterprise stays
+    # with Passport
+    $objtype = 'SNMP::Info::Layer3::VOSS'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.1916\./
+        && $desc =~ /^\S+\s+\(\d+(?:\.\d+){3}/;
 
     # Instant APs use AI-AP-MIB, not the mobility controller WLAN tables.
     # Restrict this initial support to the 8.x evidence in issue #536.

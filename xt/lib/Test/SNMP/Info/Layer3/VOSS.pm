@@ -61,7 +61,7 @@ sub _detect {
   return $test->{info}->device_type();
 }
 
-sub device_type : Tests(8) {
+sub device_type : Tests(10) {
   my $test = shift;
 
   is($test->_detect(6, '5520-24T-FabricEngine (9.4.0.0)',
@@ -86,6 +86,12 @@ sub device_type : Tests(8) {
   is($test->_detect(78, 'Summit48 - Version 4.1.19 (Build 2) by Release_Master',
       '.1.3.6.1.4.1.1916.2.3'),
     'SNMP::Info::Layer3::Extreme', 'ExtremeWare with a build number stays Extreme');
+  is($test->_detect(2, 'VSP-4900-48P (8.4.0.0)', '.1.3.6.1.4.1.1916.2.330'),
+    'SNMP::Info::Layer3::VOSS', 'Layer 2 only VOSS selects VOSS');
+  is($test->_detect(2,
+      'ExtremeXOS (X440G2-48p-10G4) version 31.7.1.4 31.7.1.4 by release-manager',
+      '.1.3.6.1.4.1.1916.2.335'),
+    'SNMP::Info::Layer3::Extreme', 'Layer 2 only ExtremeXOS stays Extreme');
 }
 
 sub vendor : Tests(2) {
@@ -130,13 +136,13 @@ sub serial : Tests(3) {
 
   # rcChasSerialNumber is not read
   $test->{info}->cache({
-    '_rc_serial' => 'SIM12F9-AC00',
+    '_rc_serial' => 'SN0123456789',
     'store' => {e_parent => {}, e_class => {}},
   });
   is($test->{info}->serial(), undef, 'Chassis serial alone is not the serial');
 
-  $test->{info}->cache({'_serial1' => 'SIM12F9-AC00'});
-  is($test->{info}->serial(), 'SIM12F9-AC00', 'serial1 fallback is the serial');
+  $test->{info}->cache({'_serial1' => 'SN0123456789'});
+  is($test->{info}->serial(), 'SN0123456789', 'serial1 fallback is the serial');
 }
 
 sub interfaces__fabric_engine_ports__ifname : Tests(3) {
@@ -168,8 +174,8 @@ sub mac : Tests(2) {
   my $test = shift;
 
   can_ok($test->{info}, 'mac');
-  $test->{info}->cache({'_mac' => pack('H*', '0c0012f9ac00')});
-  is($test->{info}->mac(), '0c:00:12:f9:ac:00', 'Bridge MAC is the MAC');
+  $test->{info}->cache({'_mac' => pack('H*', '020000000001')});
+  is($test->{info}->mac(), '02:00:00:00:00:01', 'Bridge MAC is the MAC');
 }
 
 sub bp_index : Tests(3) {

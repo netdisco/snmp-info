@@ -1891,7 +1891,7 @@ C<_vrf_context_ports_from_routes> returns true where every context serves
 the whole address table. The context's ports are then the interfaces of
 its C<inetCidrRouteTable> routes. Override C<_vrf_route_ports> to add
 ports a route's interface stands for (L<SNMP::Info::Layer3::Extreme>,
-for an EXOS router interface).
+for an EXOS router interface, and L<SNMP::Info::RapidCityVRF>).
 
 =item Subnets from routes
 

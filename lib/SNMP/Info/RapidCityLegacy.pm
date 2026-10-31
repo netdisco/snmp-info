@@ -225,10 +225,9 @@ Eric Miller
 =head1 DESCRIPTION
 
 SNMP::Info::RapidCityLegacy is a subclass of SNMP::Info that provides the
-C<RAPID-CITY> MIB entries which only the Passport 8600 and Ethernet Routing
-Switch families serve, and no VOSS device does: the CPU Ethernet port, card
-and MDA tables, the IST, the virtual IP address and the SPBM forwarding
-table.
+C<RAPID-CITY> MIB entries used by the Passport 8600 era and the Ethernet
+Routing Switch and BayStack families: the CPU Ethernet port, card and MDA
+tables, the IST, the virtual IP address and the SPBM forwarding table.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.  List it
 ahead of L<SNMP::Info::RapidCity> in C<@ISA>, so its C<i_duplex()> and
@@ -281,6 +280,14 @@ These are methods that return tables of information in the form of a reference
 to a hash.
 
 =over
+
+=item $rapidcity->mlag_domains()
+
+Adds the C<ist> domain kind to the core's C<mlag_domains()>, from
+C<rcMltIstPeerIp> (C<peer>), C<rcMltIstVlanId> (C<vlan>) and
+C<rcMltIstSessionStatus> (C<status>), with the same C<system_mac> as the
+virtual IST.  A split MLT pairs with C<ist> in C<lag_groups()> when no virtual
+IST is served.
 
 =item $rapidcity->i_duplex()
 
@@ -346,7 +353,6 @@ L<SNMP::Info::RapidCity/"i_duplex_admin()">.
 
 =back
 
-
 =head2 RAPID-CITY VLAN Port Table (C<rcVlanPortTable>)
 
 =over
@@ -378,7 +384,6 @@ L<SNMP::Info::RapidCity/"i_duplex_admin()">.
 (C<rcCardPartNumber>)
 
 =back
-
 
 =head2 RAPID-CITY 2k Card Table (C<rc2kCardTable>)
 

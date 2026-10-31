@@ -106,8 +106,8 @@ sub model {
 
 # Not rcChasSerialNumber, which RapidCity::serial reads: the entity table,
 # then Layer3's serial1 (OLD-CISCO-CHASSIS-MIB chassisId). Layer3::Extreme
-# read extremeSystemID as serial1 instead; both are empty on every VOSS walk
-# checked, so the answers match there
+# read extremeSystemID (EXTREME-SYSTEM-MIB, an EXOS object) as serial1
+# instead, which this class does not
 sub serial {
     my $voss = shift;
 

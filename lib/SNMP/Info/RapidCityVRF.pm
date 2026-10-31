@@ -33,6 +33,7 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info;
+use SNMP::Info::VRF;
 
 @SNMP::Info::RapidCityVRF::ISA       = qw/SNMP::Info Exporter/;
 @SNMP::Info::RapidCityVRF::EXPORT_OK = qw//;
@@ -52,7 +53,8 @@ $VERSION = '3.984000';
     # RAPID-CITY::rcVrfIpVpnTable
     'vrf_rc_isid' => 'rcVrfIpVpnIsidNumber',
     # RAPID-CITY::rcVlanTable. RapidCity.pm reads rcVlanIfIndex and
-    # rcIpAdEntAddr too, as rc_vlan_if and rc_ip_addr.
+    # rcIpAdEntAddr too, as rc_vlan_if and rc_ip_addr; this mixin keeps its
+    # own names so it stands alone without RapidCity in @ISA.
     'vrf_rc_vlan_if'  => 'rcVlanIfIndex',
     'vrf_rc_vlan_vrf' => 'rcVlanVrfId',
     # RAPID-CITY::rcIpAddrTable

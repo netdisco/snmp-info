@@ -1364,11 +1364,12 @@ Eric Miller
 SNMP::Info::RapidCity is a subclass of SNMP::Info that provides an interface
 to the C<RAPID-CITY> MIB.  This MIB is used across the Avaya/Nortel Ethernet
 Routing Switch and Ethernet Switch product lines (Formerly known as Passport,
-BayStack, and Accelar), as well as, the VSP 9000 and 7000 series.
+BayStack, and Accelar), as well as, the VSP 9000 and 7000 series and, through
+L<SNMP::Info::Layer3::VOSS>, VOSS and Fabric Engine.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
-The tables only the 8600 and ERS families serve are in
+The tables used by the Passport 8600 era, ERS and BayStack families are in
 L<SNMP::Info::RapidCityLegacy>, which a class for those devices lists ahead
 of this one.
 
@@ -1614,28 +1615,26 @@ the device does not serve.
 =item $rapidcity->mlag_domains()
 
 As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by C<vist>
-(virtual IST), the same as C<kind>.  L<SNMP::Info::RapidCityLegacy> adds
-C<ist>.  A domain is reported when its peer address is set and not
+(virtual IST), the same as C<kind>.  A domain is reported when its peer address is set and not
 C<0.0.0.0>.  Its fields:
 
 =over
 
 =item *
 
-C<peer>: C<rcVirtualIstPeerIp> or C<rcMltIstPeerIp>.
+C<peer>: C<rcVirtualIstPeerIp>.
 
 =item *
 
-C<vlan>: C<rcVirtualIstVlanId> or C<rcMltIstVlanId>.
+C<vlan>: C<rcVirtualIstVlanId>.
 
 =item *
 
-C<status>: the session status, C<rcVirtualIstSessionStatus> or
-C<rcMltIstSessionStatus>.
+C<status>: the session status, C<rcVirtualIstSessionStatus>.
 
 =item *
 
-C<system_mac>: C<rcLacpGlobalSmltSysId>, the same in both domains.
+C<system_mac>: C<rcLacpGlobalSmltSysId>.
 
 =back
 
@@ -1654,7 +1653,7 @@ set, else by C<rcMltIfIndex>.
 
 An MLT whose C<rcMltMltType> is C<splitMLT> gets C<mc> when a domain is
 served: C<kind> C<smlt>, C<group> the MLT id, C<domain> C<vist> when that
-domain is served, else C<ist>, and C<state> the running type
+domain is served, and C<state> the running type
 (C<rcMltRunningType>).
 
 =item *
