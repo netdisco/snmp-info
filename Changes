@@ -1,3 +1,10 @@
+Version 3.984001
+
+  [BUG FIXES]
+
+  * #657 Layer3: read the IPv4 ARP cache from ipNetToPhysicalTable when the
+    older ARP tables hold only 127.x entries, as on Extreme VDX (#291)
+
 Version 3.984000 (2026-10-29)
 
   [NEW FEATURES]
