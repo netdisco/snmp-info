@@ -34,10 +34,11 @@ use strict;
 use Exporter;
 use SNMP::Info::SONMP;
 use SNMP::Info::RapidCity;
+use SNMP::Info::RapidCityLegacy;
 use SNMP::Info::Layer3;
 
 @SNMP::Info::Layer3::Passport::ISA
-    = qw/SNMP::Info::SONMP SNMP::Info::RapidCity
+    = qw/SNMP::Info::SONMP SNMP::Info::RapidCityLegacy SNMP::Info::RapidCity
     SNMP::Info::Layer3 Exporter/;
 @SNMP::Info::Layer3::Passport::EXPORT_OK = qw//;
 
@@ -47,22 +48,22 @@ $VERSION = '3.984000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS, %SNMP::Info::RapidCity::MIBS,
-    %SNMP::Info::SONMP::MIBS,
+    %SNMP::Info::RapidCityLegacy::MIBS, %SNMP::Info::SONMP::MIBS,
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS, %SNMP::Info::RapidCity::GLOBALS,
-    %SNMP::Info::SONMP::GLOBALS,
+    %SNMP::Info::RapidCityLegacy::GLOBALS, %SNMP::Info::SONMP::GLOBALS,
 );
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS, %SNMP::Info::RapidCity::FUNCS,
-    %SNMP::Info::SONMP::FUNCS,
+    %SNMP::Info::RapidCityLegacy::FUNCS, %SNMP::Info::SONMP::FUNCS,
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE, %SNMP::Info::RapidCity::MUNGE,
-    %SNMP::Info::SONMP::MUNGE,
+    %SNMP::Info::RapidCityLegacy::MUNGE, %SNMP::Info::SONMP::MUNGE,
 );
 
 sub model {
@@ -1212,6 +1213,8 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::SONMP
 
+=item SNMP::Info::RapidCityLegacy
+
 =item SNMP::Info::RapidCity
 
 =item SNMP::Info::Layer3
@@ -1225,6 +1228,9 @@ after determining a more specific class using the method above.
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::SONMP/"Required MIBs"> for its own MIB requirements.
+
+See L<SNMP::Info::RapidCityLegacy/"Required MIBs"> for its own MIB
+requirements.
 
 See L<SNMP::Info::RapidCity/"Required MIBs"> for its own MIB requirements.
 
@@ -1288,6 +1294,10 @@ Required by SNMP::Info::SONMP.  Returns 0.
 =head2 Global Methods imported from SNMP::Info::SONMP
 
 See documentation in L<SNMP::Info::SONMP/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::RapidCityLegacy
+
+See documentation in L<SNMP::Info::RapidCityLegacy/"GLOBALS"> for details.
 
 =head2 Global Methods imported from SNMP::Info::RapidCity
 
@@ -1452,6 +1462,11 @@ is not contained in any other entity.
 =head2 Table Methods imported from SNMP::Info::SONMP
 
 See documentation in L<SNMP::Info::SONMP/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::RapidCityLegacy
+
+See documentation in L<SNMP::Info::RapidCityLegacy/"TABLE METHODS"> for
+details.
 
 =head2 Table Methods imported from SNMP::Info::RapidCity
 

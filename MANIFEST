@@ -158,6 +158,7 @@ lib/SNMP/Info/Layer3/Teltonika.pm
 lib/SNMP/Info/Layer3/TeltonikaRutOS.pm
 lib/SNMP/Info/Layer3/Timetra.pm
 lib/SNMP/Info/Layer3/VMware.pm
+lib/SNMP/Info/Layer3/VOSS.pm
 lib/SNMP/Info/Layer3/VyOS.pm
 lib/SNMP/Info/Layer3/Whiterabbit.pm
 lib/SNMP/Info/Layer7.pm
@@ -180,6 +181,8 @@ lib/SNMP/Info/NortelStack.pm
 lib/SNMP/Info/PortAccessEntity.pm
 lib/SNMP/Info/PowerEthernet.pm
 lib/SNMP/Info/RapidCity.pm
+lib/SNMP/Info/RapidCityLegacy.pm
+lib/SNMP/Info/RapidCityVRF.pm
 lib/SNMP/Info/SONMP.pm
 lib/SNMP/Info/VRF.pm
 LICENSE
@@ -336,6 +339,7 @@ xt/lib/Test/SNMP/Info/Layer3/Teltonika.pm
 xt/lib/Test/SNMP/Info/Layer3/TeltonikaRutOS.pm
 xt/lib/Test/SNMP/Info/Layer3/Timetra.pm
 xt/lib/Test/SNMP/Info/Layer3/VMware.pm
+xt/lib/Test/SNMP/Info/Layer3/VOSS.pm
 xt/lib/Test/SNMP/Info/Layer3/VyOS.pm
 xt/lib/Test/SNMP/Info/Layer7.pm
 xt/lib/Test/SNMP/Info/Layer7/APC.pm
@@ -354,6 +358,8 @@ xt/lib/Test/SNMP/Info/MAU.pm
 xt/lib/Test/SNMP/Info/NortelStack.pm
 xt/lib/Test/SNMP/Info/PowerEthernet.pm
 xt/lib/Test/SNMP/Info/RapidCity.pm
+xt/lib/Test/SNMP/Info/RapidCityLegacy.pm
+xt/lib/Test/SNMP/Info/RapidCityVRF.pm
 xt/lib/Test/SNMP/Info/SONMP.pm
 xt/lib/Test/SNMP/Info/VRF.pm
 xt/fixtures/arubacx-cipt.json

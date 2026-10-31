@@ -4,6 +4,15 @@ Version 3.984001
 
   * #571 Mellanox: new Layer2::Mellanox class for Mellanox / NVIDIA Onyx
     switches (#396)
+  * #658 VOSS: new Layer3::VOSS class for VOSS / Fabric Engine on the
+    Extreme enterprise, built on RapidCity; RapidCity's Passport 8600 and
+    ERS-era tables move into RapidCityLegacy and the VOSS VRF support into
+    RapidCityVRF (#647)
+
+  [ENHANCEMENTS]
+
+  * #658 RapidCity: set_i_speed_admin accepts 10G to 100G, and the speed
+    and duplex setters turn auto-negotiation off when it is on
 
   [BUG FIXES]
 
