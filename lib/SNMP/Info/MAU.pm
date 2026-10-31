@@ -81,6 +81,7 @@ sub munge_int2bin {
     return unpack( "B32", pack( "N", $int ) );
 }
 
+# munge_int2bin gives 32 bits, most significant first, so 2**N is at 31 - N
 sub _isfullduplex {
     my $mau     = shift;
     my $mautype = shift;
