@@ -6,10 +6,7 @@ use warnings;
 use lib 'xt/lib';
 use Module::Find;
 
-my @BAD_MODULES = qw(
-  Test::SNMP::Info::MAU
-  Test::SNMP::Info::Layer3::C4000
-);
+my @BAD_MODULES = qw();
 
 my @found = findallmod 'Test::SNMP::Info';
 unshift @found, 'Test::SNMP::Info';

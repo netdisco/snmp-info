@@ -81,13 +81,14 @@ sub munge_int2bin {
     return unpack( "B32", pack( "N", $int ) );
 }
 
+# munge_int2bin gives 32 bits, most significant first, so 2**N is at 31 - N
 sub _isfullduplex {
     my $mau     = shift;
     my $mautype = shift;
 
     my @full_types = qw/11 13 16 18 20/;
     foreach my $type (@full_types) {
-        return 1 if ( substr( $mautype, 32 - $type, 1 ) eq '1' );
+        return 1 if ( substr( $mautype, 31 - $type, 1 ) eq '1' );
     }
     return 0;
 }
@@ -98,7 +99,7 @@ sub _ishalfduplex {
 
     my @half_types = qw/10 12 15 17 19/;
     foreach my $type (@half_types) {
-        return 1 if ( substr( $mautype, 32 - $type, 1 ) eq '1' );
+        return 1 if ( substr( $mautype, 31 - $type, 1 ) eq '1' );
     }
     return 0;
 }
@@ -182,13 +183,10 @@ sub mau_i_duplex_admin {
 
     # Older HP4000's don't implement ifMauDefaultType, but we can
     # figure out from ifMauAutoNegCapAdvertised what we'd like.
-    if ( !defined($mau_type_admin) ) {
-        if ( defined($mau_index) ) {
-            return mau_i_duplex_admin_old( $mau, $mau_index, $mau_autostat );
-        }
-        else {
-            return;
-        }
+    if ( !%$mau_type_admin ) {
+        return {} unless %$mau_index;
+        return mau_i_duplex_admin_old( $mau, $mau_index, $mau_autostat,
+            $partial );
     }
 
     my %i_duplex_admin;
@@ -225,18 +223,16 @@ sub mau_i_duplex_admin {
 
 sub mau_i_duplex_admin_old {
     my $mau          = shift;
-    my $mau_index    = shift;
-    my $mau_autostat = shift;
+    my $mau_index    = shift || $mau->mau_index()    || {};
+    my $mau_autostat = shift || $mau->mau_autostat() || {};
+    my $partial      = shift;
 
-    my $interfaces   = $mau->interfaces();
-    my $mau_autosent = $mau->mau_autosent();
-
-    my %mau_reverse = reverse %$mau_index;
+    my $mau_autosent = $mau->mau_autosent($partial) || {};
 
     my %i_duplex_admin;
-    foreach my $iid ( keys %$interfaces ) {
-        my $mau_idx = $mau_reverse{$iid};
-        next unless defined $mau_idx;
+    foreach my $mau_idx ( keys %$mau_index ) {
+        my $iid = $mau_index->{$mau_idx};
+        next unless defined $iid;
 
         my $autostat = $mau_autostat->{$mau_idx};
 
