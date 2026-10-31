@@ -52,18 +52,36 @@ sub setup : Tests(setup) {
   $test->{info}->cache($cache_data);
 }
 
-sub _lag_vendor_domains__ist_and_vist_served__reports_both : Tests(2) {
+sub _lag_vendor_domains__ist_served_only__no_domain : Tests(1) {
   my $test = shift;
 
   $test->{info}->cache({
-    _rc_ist_status  => 'up', _rc_ist_peer  => '10.1.1.2',
-    _rc_ist_vlan    => 100,
+    _rc_ist_status => 'up', _rc_ist_peer => '10.1.1.2', _rc_ist_vlan => 100,
+  });
+  cmp_deeply($test->{info}->_lag_vendor_domains(), {},
+    'The IST is not read without the legacy mixin');
+}
+
+sub _lag_vendor_domains__vist_served__reports_vist : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache({
     _rc_vist_status => 'up', _rc_vist_peer => '10.255.0.2',
     _rc_vist_vlan   => 4000,
   });
-  my $domains = $test->{info}->_lag_vendor_domains();
-  cmp_deeply([sort keys %$domains], [qw/ist vist/], 'Both domains served');
-  is($domains->{vist}{peer}, '10.255.0.2', 'vIST peer read');
+  cmp_deeply([keys %{$test->{info}->_lag_vendor_domains()}], ['vist'],
+    'The virtual IST is reported');
+}
+
+sub i_duplex__port_rows_only : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache({
+    _rc_duplex => 1, _rc_cpu_duplex => 1,
+    store => {rc_duplex => {65 => 'full'}, rc_cpu_duplex => {1 => 'half'}},
+  });
+  cmp_deeply($test->{info}->i_duplex(), {65 => 'full'},
+    'Only the rcPortTable rows are reported');
 }
 
 sub _lag_vendor_domains__peer_unset__no_domain : Tests(1) {

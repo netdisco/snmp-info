@@ -60,8 +60,6 @@ $VERSION = '3.984000';
     'tftp_result'  => 'rcTftpResult',
     'rc_ch_rev'    => 'rcChasHardwareRevision',
     'rc_base_mac'  => 'rc2kChassisBaseMacAddr',
-    'rc_virt_ip'   => 'rcSysVirtualIpAddr',
-    'rc_virt_mask' => 'rcSysVirtualNetMask',
 
     # NORTEL-NETWORKS-MULTIPLE-SPANNING-TREE-MIB
     'nn_mst_version'       => 'nnMstForceProtocolVersion',
@@ -71,11 +69,6 @@ $VERSION = '3.984000';
 
     # NORTEL-NETWORKS-RAPID-SPANNING-TREE-MIB
     'nn_rst_version' => 'nnRstDot1dStpVersion',
-
-    # From RAPID-CITY::rcMlt (IST)
-    'rc_ist_status' => 'rcMltIstSessionStatus',
-    'rc_ist_peer'   => 'rcMltIstPeerIp',
-    'rc_ist_vlan'   => 'rcMltIstVlanId',
 
     # From RAPID-CITY::rcVirtualIst
     'rc_vist_status' => 'rcVirtualIstSessionStatus',
@@ -96,23 +89,9 @@ $VERSION = '3.984000';
     'rc_auto'         => 'rcPortAutoNegotiate',
     'rc_alias'        => 'rcPortName',
 
-    # From RAPID-CITY::rc2kCpuEthernetPortTable
-    'rc_cpu_ifindex'      => 'rc2kCpuEthernetPortIfIndex',
-    'rc_cpu_admin'        => 'rc2kCpuEthernetPortAdminStatus',
-    'rc_cpu_oper'         => 'rc2kCpuEthernetPortOperStatus',
-    'rc_cpu_ip'           => 'rc2kCpuEthernetPortAddr',
-    'rc_cpu_mask'         => 'rc2kCpuEthernetPortMask',
-    'rc_cpu_auto'         => 'rc2kCpuEthernetPortAutoNegotiate',
-    'rc_cpu_duplex_admin' => 'rc2kCpuEthernetPortAdminDuplex',
-    'rc_cpu_duplex'       => 'rc2kCpuEthernetPortOperDuplex',
-    'rc_cpu_speed_admin'  => 'rc2kCpuEthernetPortAdminSpeed',
-    'rc_cpu_speed_oper'   => 'rc2kCpuEthernetPortOperSpeed',
-    'rc_cpu_mac'          => 'rc2kCpuEthernetPortMgmtMacAddr',
-
     # From RAPID-CITY::rcVlanPortTable
     'rc_i_vlan_if'   => 'rcVlanPortIndex',
     'rc_i_vlan_num'  => 'rcVlanPortNumVlanIds',
-    'rc_i_vlan'      => 'rcVlanPortVlanIds',
     'rc_i_vlan_type' => 'rcVlanPortType',
     'rc_i_vlan_pvid' => 'rcVlanPortDefaultVlanId',
     'rc_i_vlan_tag'  => 'rcVlanPortPerformTagging',
@@ -147,12 +126,6 @@ $VERSION = '3.984000';
     'rc_ps_part'   => 'rcChasPowerSupplyDetailPartNumber',
     'rc_ps_detail' => 'rcChasPowerSupplyDetailDescription',
 
-    # From RAPID-CITY::rcCardTable
-    'rc_c_type'   => 'rcCardType',
-    'rc_c_serial' => 'rcCardSerialNumber',
-    'rc_c_rev'    => 'rcCardHardwareRevision',
-    'rc_c_part'   => 'rcCardPartNumber',
-
     # From RAPID-CITY::rc2kCardTable
     'rc2k_c_ftype'   => 'rc2kCardFrontType',
     'rc2k_c_fdesc'   => 'rc2kCardFrontDescription',
@@ -161,22 +134,6 @@ $VERSION = '3.984000';
     'rc2k_c_fpart'   => 'rc2kCardFrontPartNumber',
     'rc2k_c_fdate'   => 'rc2kCardFrontDateCode',
     'rc2k_c_fdev'    => 'rc2kCardFrontDeviations',
-    'rc2k_c_btype'   => 'rc2kCardBackType',
-    'rc2k_c_bdesc'   => 'rc2kCardBackDescription',
-    'rc2k_c_bserial' => 'rc2kCardBackSerialNum',
-    'rc2k_c_brev'    => 'rc2kCardBackHwVersion',
-    'rc2k_c_bpart'   => 'rc2kCardBackPartNumber',
-    'rc2k_c_bdate'   => 'rc2kCardBackDateCode',
-    'rc2k_c_bdev'    => 'rc2kCardBackDeviations',
-
-    # From RAPID-CITY::rc2kMdaCardTable
-    'rc2k_mda_type'   => 'rc2kMdaCardType',
-    'rc2k_mda_desc'   => 'rc2kMdaCardDescription',
-    'rc2k_mda_serial' => 'rc2kMdaCardSerialNum',
-    'rc2k_mda_rev'    => 'rc2kMdaCardHwVersion',
-    'rc2k_mda_part'   => 'rc2kMdaCardPartNumber',
-    'rc2k_mda_date'   => 'rc2kMdaCardDateCode',
-    'rc2k_mda_dev'    => 'rc2kMdaCardDeviations',
 
     # From RAPID-CITY::rcMltTable
     'rc_mlt_ports'    => 'rcMltPortMembers',
@@ -184,11 +141,6 @@ $VERSION = '3.984000';
     'rc_mlt_dp'       => 'rcMltDesignatedPort',
     'rc_mlt_type'     => 'rcMltMltType',
     'rc_mlt_run_type' => 'rcMltRunningType',
-
-    # From RAPID-CITY::rcBridgeSpbmMacTable
-    'rc_spbm_fw_port'   => 'rcBridgeSpbmMacCPort',
-    'rc_spbm_fw_status' => 'rcBridgeSpbmMacStatus',
-    'rc_spbm_fw_vlan'   => 'rcBridgeSpbmMacCVlanId',
 
     # From RAPID-CITY::rcStgTable
     'stp_i_id'           => 'rcStgId',
@@ -256,7 +208,6 @@ $VERSION = '3.984000';
 %MUNGE = (
     'rc_base_mac'     => \&SNMP::Info::munge_mac,
     'rc_vlan_mac'     => \&SNMP::Info::munge_mac,
-    'rc_cpu_mac'      => \&SNMP::Info::munge_mac,
     'rc_vlan_members' => \&SNMP::Info::munge_port_list,
     'rc_vlan_no_join' => \&SNMP::Info::munge_port_list,
     'rc_mlt_ports'    => \&SNMP::Info::munge_port_list,
@@ -294,8 +245,7 @@ sub i_duplex {
     my $rapidcity = shift;
     my $partial   = shift;
 
-    my $rc_duplex     = $rapidcity->rc_duplex($partial)     || {};
-    my $rc_cpu_duplex = $rapidcity->rc_cpu_duplex($partial) || {};
+    my $rc_duplex = $rapidcity->rc_duplex($partial) || {};
 
     my %i_duplex;
     foreach my $if ( keys %$rc_duplex ) {
@@ -307,14 +257,6 @@ sub i_duplex {
         $i_duplex{$if} = $duplex;
     }
 
-    # Get CPU Ethernet Interfaces for 8600 Series
-    foreach my $iid ( keys %$rc_cpu_duplex ) {
-        my $c_duplex = $rc_cpu_duplex->{$iid};
-        next unless defined $c_duplex;
-
-        $i_duplex{$iid} = $c_duplex;
-    }
-
     return \%i_duplex;
 }
 
@@ -322,10 +264,8 @@ sub i_duplex_admin {
     my $rapidcity = shift;
     my $partial   = shift;
 
-    my $rc_duplex_admin     = $rapidcity->rc_duplex_admin()             || {};
-    my $rc_auto             = $rapidcity->rc_auto($partial)             || {};
-    my $rc_cpu_auto         = $rapidcity->rc_cpu_auto($partial)         || {};
-    my $rc_cpu_duplex_admin = $rapidcity->rc_cpu_duplex_admin($partial) || {};
+    my $rc_duplex_admin = $rapidcity->rc_duplex_admin() || {};
+    my $rc_auto         = $rapidcity->rc_auto($partial) || {};
 
     my %i_duplex_admin;
     foreach my $if ( keys %$rc_duplex_admin ) {
@@ -339,20 +279,6 @@ sub i_duplex_admin {
         $string = 'auto' if $auto =~ /true/i;
 
         $i_duplex_admin{$if} = $string;
-    }
-
-    # Get CPU Ethernet Interfaces for 8600 Series
-    foreach my $iid ( keys %$rc_cpu_duplex_admin ) {
-        my $c_duplex = $rc_cpu_duplex_admin->{$iid};
-        next unless defined $c_duplex;
-        my $c_auto = $rc_cpu_auto->{$iid};
-
-        my $string = 'other';
-        $string = 'half' if ( $c_duplex =~ /half/i and $c_auto =~ /false/i );
-        $string = 'full' if ( $c_duplex =~ /full/i and $c_auto =~ /false/i );
-        $string = 'auto' if $c_auto =~ /true/i;
-
-        $i_duplex_admin{$iid} = $string;
     }
 
     return \%i_duplex_admin;
@@ -831,15 +757,17 @@ sub _lag_aggregator_map {
     return $map;
 }
 
+# The legacy mixin adds the IST of the 8600 and ERS families
+sub _rc_peer_link_flavors {
+    return ( vist => [ 'rc_vist', 'rcVirtualIst' ] );
+}
+
 # A domain is served when its peer address is set; the scalars exist, with
 # a 0.0.0.0 peer, on a device that does not use the feature
 sub _lag_vendor_domains {
     my $rapidcity = shift;
 
-    my %flavors = (
-        vist => [ 'rc_vist', 'rcVirtualIst' ],
-        ist  => [ 'rc_ist',  'rcMltIst' ],
-    );
+    my %flavors    = $rapidcity->_rc_peer_link_flavors();
     my $system_mac = $rapidcity->rc_smlt_sys_id();
     my $domains    = {};
     foreach my $kind ( keys %flavors ) {
@@ -915,40 +843,6 @@ sub _mlt_group_record {
 
     return $groups->{$ifindex}
         ||= SNMP::Info::IEEE802dot3ad::_lag_new_record();
-}
-
-# break up the rcBridgeSpbmMacEntry INDEX into ISID and MAC Address.
-sub _spbm_fdbtable_index {
-    my $idx    = shift;
-    my @values = split( /\./, $idx );
-    my $isid = shift(@values);
-    return ( $isid, join( ':', map { sprintf "%02x", $_ } @values ) );
-}
-
-sub rc_spbm_fw_mac {
-    my $rapidcity  = shift;
-    my $partial = shift;
-
-    my $spbm_fw_ports = $rapidcity->rc_spbm_fw_port($partial);
-    my $spbm_fw_mac  = {};
-    foreach my $idx ( keys %$spbm_fw_ports ) {
-        my ( $isid, $mac ) = _spbm_fdbtable_index($idx);
-        $spbm_fw_mac->{$idx} = $mac;
-    }
-    return $spbm_fw_mac;
-}
-
-sub rc_spbm_fw_isid {
-    my $rapidcity  = shift;
-    my $partial = shift;
-
-    my $spbm_fw_ports = $rapidcity->rc_spbm_fw_port($partial);
-    my $spbm_fw_isid  = {};
-    foreach my $idx ( keys %$spbm_fw_ports ) {
-        my ( $isid, $mac ) = _spbm_fdbtable_index($idx);
-        $spbm_fw_isid->{$idx} = $isid;
-    }
-    return $spbm_fw_isid;
 }
 
 sub stp_ver {
@@ -1470,6 +1364,10 @@ BayStack, and Accelar), as well as, the VSP 9000 and 7000 series.
 
 Use or create in a subclass of SNMP::Info.  Do not use directly.
 
+The tables only the 8600 and ERS families serve are in
+L<SNMP::Info::RapidCityLegacy>, which a class for those devices lists ahead
+of this one.
+
 =head2 Inherited Classes
 
 None.
@@ -1512,14 +1410,6 @@ These are methods that return scalar values from SNMP
 
 (C<rcChasNumSlots>)
 
-=item  $rapidcity->rc_virt_ip()
-
-(C<rcSysVirtualIpAddr>)
-
-=item  $rapidcity->rc_virt_mask()
-
-(C<rcSysVirtualNetMask>)
-
 =item  $rapidcity->tftp_host()
 
 (C<rcTftpHost>)
@@ -1560,18 +1450,6 @@ These are methods that return scalar values from SNMP
 
 Returns 1 when C<nnRstDot1dStpVersion> is C<stpCompatible(0)> and MSTP is not
 the forced version, else 0.
-
-=item $rapidcity->rc_ist_status()
-
-(C<rcMltIstSessionStatus>)
-
-=item $rapidcity->rc_ist_peer()
-
-(C<rcMltIstPeerIp>)
-
-=item $rapidcity->rc_ist_vlan()
-
-(C<rcMltIstVlanId>)
 
 =item $rapidcity->rc_vist_status()
 
@@ -1627,11 +1505,13 @@ to a hash.
 
 =item $rapidcity->i_duplex()
 
-Returns reference to map of IIDs to current link duplex.
+Returns reference to map of IIDs to current link duplex from
+C<rcPortTable>.  L<SNMP::Info::RapidCityLegacy> adds the CPU Ethernet ports.
 
 =item $rapidcity->i_duplex_admin()
 
-Returns reference to hash of IIDs to admin duplex setting.
+Returns reference to hash of IIDs to admin duplex setting from
+C<rcPortTable>.  L<SNMP::Info::RapidCityLegacy> adds the CPU Ethernet ports.
 
 =item $rapidcity->i_vlan()
 
@@ -1730,8 +1610,9 @@ the device does not serve.
 =item $rapidcity->mlag_domains()
 
 As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, keyed by C<vist>
-(virtual IST) or C<ist>, the same as C<kind>.  A domain is reported when
-its peer address is set and not C<0.0.0.0>.  Its fields:
+(virtual IST), the same as C<kind>.  L<SNMP::Info::RapidCityLegacy> adds
+C<ist>.  A domain is reported when its peer address is set and not
+C<0.0.0.0>.  Its fields:
 
 =over
 
@@ -1815,56 +1696,6 @@ reported in C<mlag_domains()> only and no record has C<peer_link>.
 
 =back
 
-=head2 RAPID-CITY CPU Ethernet Port Table (C<rc2kCpuEthernetPortTable>)
-
-=over
-
-=item $rapidcity->rc_cpu_ifindex()
-
-(C<rc2kCpuEthernetPortIfIndex>)
-
-=item $rapidcity->rc_cpu_admin()
-
-(C<rc2kCpuEthernetPortAdminStatus>)
-
-=item $rapidcity->rc_cpu_oper()
-
-(C<rc2kCpuEthernetPortOperStatus>)
-
-=item $rapidcity->rc_cpu_ip()
-
-(C<rc2kCpuEthernetPortAddr>)
-
-=item $rapidcity->rc_cpu_mask()
-
-(C<rc2kCpuEthernetPortMask>)
-
-=item $rapidcity->rc_cpu_auto()
-
-(C<rc2kCpuEthernetPortAutoNegotiate>)
-
-=item $rapidcity->rc_cpu_duplex_admin()
-
-(C<rc2kCpuEthernetPortAdminDuplex>)
-
-=item $rapidcity->rc_cpu_duplex()
-
-(C<rc2kCpuEthernetPortOperDuplex>)
-
-=item $rapidcity->rc_cpu_speed_admin()
-
-(C<rc2kCpuEthernetPortAdminSpeed>)
-
-=item $rapidcity->rc_cpu_speed_oper()
-
-(C<rc2kCpuEthernetPortOperSpeed>)
-
-=item $rapidcity->rc_cpu_mac()
-
-(C<rc2kCpuEthernetPortMgmtMacAddr>)
-
-=back
-
 =head2 RAPID-CITY VLAN Port Table (C<rcVlanPortTable>)
 
 =over
@@ -1876,10 +1707,6 @@ reported in C<mlag_domains()> only and no record has C<peer_link>.
 =item $rapidcity->rc_i_vlan_num()
 
 (C<rcVlanPortNumVlanIds>)
-
-=item $rapidcity->rc_i_vlan()
-
-(C<rcVlanPortVlanIds>)
 
 =item $rapidcity->rc_i_vlan_type()
 
@@ -1997,28 +1824,6 @@ reported in C<mlag_domains()> only and no record has C<peer_link>.
 
 =back
 
-=head2 RAPID-CITY Card Table (C<rcCardTable>)
-
-=over
-
-=item $rapidcity->rc_c_type()
-
-(C<rcCardType>)
-
-=item $rapidcity->rc_c_serial()
-
-(C<rcCardSerialNumber>)
-
-=item $rapidcity->rc_c_rev()
-
-(C<rcCardHardwareRevision>)
-
-=item $rapidcity->rc_c_part()
-
-(C<rcCardPartNumber>)
-
-=back
-
 =head2 RAPID-CITY 2k Card Table (C<rc2kCardTable>)
 
 =over
@@ -2050,105 +1855,6 @@ reported in C<mlag_domains()> only and no record has C<peer_link>.
 =item $rapidcity->rc2k_c_fdev()
 
 (C<rc2kCardFrontDeviations>)
-
-=item $rapidcity->rc2k_c_btype()
-
-(C<rc2kCardBackType>)
-
-=item $rapidcity->rc2k_c_bdesc()
-
-(C<rc2kCardBackDescription>)
-
-=item $rapidcity->rc2k_c_bserial()
-
-(C<rc2kCardBackSerialNum>)
-
-=item $rapidcity->rc2k_c_brev()
-
-(C<rc2kCardBackHwVersion>)
-
-=item $rapidcity->rc2k_c_bpart()
-
-(C<rc2kCardBackPartNumber>)
-
-=item $rapidcity->rc2k_c_bdate()
-
-(C<rc2kCardBackDateCode>)
-
-=item $rapidcity->rc2k_c_bdev()
-
-(C<rc2kCardBackDeviations>)
-
-=back
-
-=head2 RAPID-CITY MDA Card Table (C<rc2kMdaCardTable>)
-
-=over
-
-=item $rapidcity->rc2k_mda_type()
-
-(C<rc2kMdaCardType>)
-
-=item $rapidcity->rc2k_mda_desc()
-
-(C<rc2kMdaCardDescription>)
-
-=item $rapidcity->rc2k_mda_serial()
-
-(C<rc2kMdaCardSerialNum>)
-
-=item $rapidcity->rc2k_mda_rev()
-
-(C<rc2kMdaCardHwVersion>)
-
-=item $rapidcity->rc2k_mda_part()
-
-(C<rc2kMdaCardPartNumber>)
-
-=item $rapidcity->rc2k_mda_date()
-
-(C<rc2kMdaCardDateCode>)
-
-=item $rapidcity->rc2k_mda_dev()
-
-(C<rc2kMdaCardDeviations>)
-
-=back
-
-=head2 RAPID-CITY Bridge SPBM MAC Table (C<rcBridgeSpbmMacTable>)
-
-=over
-
-=item $rapidcity->rc_spbm_fw_mac()
-
-Returns reference to hash of forwarding table MAC Addresses
-
-(C<rcBridgeSpbmMacAddr>)
-
-=item $rapidcity->rc_spbm_fw_port()
-
-Returns reference to hash of forwarding table entries port interface
-identifier (iid)
-
-(C<rcBridgeSpbmMacCPort>)
-
-=item $rapidcity->rc_spbm_fw_status()
-
-Returns reference to hash of forwarding table entries status
-
-(C<rcBridgeSpbmMacStatus>)
-
-=item $rapidcity->rc_spbm_fw_vlan()
-
-Returns reference to hash of forwarding table entries Customer VLAN ID
-
-(C<rcBridgeSpbmMacCVlanId>)
-
-=item $rapidcity->rc_spbm_fw_isid()
-
-Returns reference to hash of forwarding table entries ISID
-
-(C<rcBridgeSpbmMacIsid>)
 
 =back
 

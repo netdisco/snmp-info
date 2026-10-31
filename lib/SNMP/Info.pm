@@ -478,6 +478,13 @@ F<RAPID-CITY>.  Inherited by Avaya switches for duplex and VLAN information.
 
 See documentation in L<SNMP::Info::RapidCity> for details.
 
+=item SNMP::Info::RapidCityLegacy
+
+F<RAPID-CITY>.  The tables only the 8600 and ERS families serve.  Inherited
+by Avaya switches ahead of L<SNMP::Info::RapidCity>.
+
+See documentation in L<SNMP::Info::RapidCityLegacy> for details.
+
 =item SNMP::Info::SONMP
 
 SynOptics Network Management Protocol (SONMP) F<SYNOPTICS-ROOT-MIB>,

@@ -179,6 +179,7 @@ lib/SNMP/Info/NortelStack.pm
 lib/SNMP/Info/PortAccessEntity.pm
 lib/SNMP/Info/PowerEthernet.pm
 lib/SNMP/Info/RapidCity.pm
+lib/SNMP/Info/RapidCityLegacy.pm
 lib/SNMP/Info/SONMP.pm
 lib/SNMP/Info/VRF.pm
 LICENSE
@@ -352,6 +353,7 @@ xt/lib/Test/SNMP/Info/MAU.pm
 xt/lib/Test/SNMP/Info/NortelStack.pm
 xt/lib/Test/SNMP/Info/PowerEthernet.pm
 xt/lib/Test/SNMP/Info/RapidCity.pm
+xt/lib/Test/SNMP/Info/RapidCityLegacy.pm
 xt/lib/Test/SNMP/Info/SONMP.pm
 xt/lib/Test/SNMP/Info/VRF.pm
 xt/fixtures/arubacx-cipt.json
