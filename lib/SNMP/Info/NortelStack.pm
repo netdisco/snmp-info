@@ -405,64 +405,62 @@ sub ns_e_pos {
     return \%ns_e_pos;
 }
 
-sub ns_e_fwver {
-    my $stack   = shift;
-    my $partial = shift;
+# Storage area types, most preferred first. A unit has several matching
+# areas (S5-REG-MIB), so take the best ranked rather than the last walked.
+# OperSW is the running software; Flash, the image it boots, can carry
+# trailing padding. PoLFlash is the PoE controller's image, not the switch
+# software
+my @_ns_sw_stores
+    = ( qr/StoreOperSW$/, qr/StoreFlash$/, qr/StoreSecondaryFlash$/,
+    qr/(?<!PoL)flash/i );
+my @_ns_fw_stores = ( qr/StoreBootFW$/, qr/StoreInstalledFW$/,
+    qr/StoreBootLoader$/, qr/(rom|boot|fw)/i );
 
-    my $ns_e_idx   = $stack->ns_e_index($partial)            || {};
+sub _ns_e_store_ver {
+    my ( $stack, $partial, @ranked ) = @_;
+
     my $ns_e_ver   = $stack->ns_store_ver($partial)          || {};
     my $ns_e_type  = $stack->ns_store_type($partial)         || {};
     my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
     my $is_virt    = $stack->_ns_e_is_virtual();
 
-    my %ns_e_fwver;
+    my ( %store_ver, %store_rank );
     foreach my $iid ( keys %$ns_e_type ) {
         my $type = $ns_e_type->{$iid};
-        next unless defined $type;
-        next unless $type =~ /(rom|boot|fw)/i;
-        my $ver = $ns_e_ver->{$iid};
-        next unless defined $ver;
-        $iid =~ s/\.\d+$//;
+        my $ver  = $ns_e_ver->{$iid};
+        next unless defined $type and defined $ver and length $ver;
+        my ($rank) = grep { $type =~ $ranked[$_] } 0 .. $#ranked;
+        next unless defined $rank;
 
+        my ( $unit, $area ) = $iid =~ /^(.+)\.(\d+)$/;
         if ($is_virt) {
-            my ( $grp, $idx, $pos ) = split( /\./, $iid );
+            my ( $grp, $idx, $pos ) = split( /\./, $unit );
             my $enc = $ns_grp_enc->{$grp};
-            $idx = $idx * $enc;
-            $iid = "3.$idx.$pos";
+            $idx  = $idx * $enc;
+            $unit = "3.$idx.$pos";
         }
-        $ns_e_fwver{$iid} = $ver;
+        my $best = $store_rank{$unit};
+        next if $best and ( $best->[0] < $rank
+            or ( $best->[0] == $rank and $best->[1] < $area ) );
+
+        $store_rank{$unit} = [ $rank, $area ];
+        $store_ver{$unit}  = $ver;
     }
-    return \%ns_e_fwver;
+    return \%store_ver;
+}
+
+sub ns_e_fwver {
+    my $stack   = shift;
+    my $partial = shift;
+
+    return $stack->_ns_e_store_ver( $partial, @_ns_fw_stores );
 }
 
 sub ns_e_swver {
     my $stack   = shift;
     my $partial = shift;
 
-    my $ns_e_idx   = $stack->ns_e_index($partial)            || {};
-    my $ns_e_ver   = $stack->ns_store_ver($partial)          || {};
-    my $ns_e_type  = $stack->ns_store_type($partial)         || {};
-    my $ns_grp_enc = $stack->s5ChasGrpEncodeFactor($partial) || {};
-    my $is_virt    = $stack->_ns_e_is_virtual();
-
-    my %ns_e_swver;
-    foreach my $iid ( keys %$ns_e_type ) {
-        my $type = $ns_e_type->{$iid};
-        next unless defined $type;
-        next unless $type =~ /(flash)/i;
-        my $ver = $ns_e_ver->{$iid};
-        next unless defined $ver;
-        $iid =~ s/\.\d+$//;
-
-        if ($is_virt) {
-            my ( $grp, $idx, $pos ) = split( /\./, $iid );
-            my $enc = $ns_grp_enc->{$grp};
-            $idx = $idx * $enc;
-            $iid = "3.$idx.$pos";
-        }
-        $ns_e_swver{$iid} = $ver;
-    }
-    return \%ns_e_swver;
+    return $stack->_ns_e_store_ver( $partial, @_ns_sw_stores );
 }
 
 sub ns_e_parent {
