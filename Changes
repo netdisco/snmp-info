@@ -22,6 +22,8 @@ Version 3.984001
     such as the HP 4000
   * #660 NortelStack: report software and firmware versions from the
     preferred storage area
+  * #661 Scalance: use the LLDP management address neighbors advertise
+    before resolving their names in DNS (#406)
 
 Version 3.984000 (2026-10-29)
 
