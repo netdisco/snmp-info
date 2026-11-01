@@ -114,6 +114,83 @@ sub model : Tests(6) {
   is($test->{info}->model(), undef, q(No id returns undef model));
 }
 
+sub _index_factor_cache {
+  my ($test, $id, $description, $agent_ver) = @_;
+
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_layers'      => 2,
+    '_id'          => $id,
+    '_description' => $description,
+    '_ns_ag_ver'   => $agent_ver,
+  });
+  return $test->{info}->index_factor();
+}
+
+sub index_factor : Tests(6) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'index_factor');
+  is($test->{info}->index_factor(), 64, q(ERS 4800 on 5.6 uses 64));
+
+  # SYNOPTICS-ROOT-MIB::sreg-ERS5928GTS-PWR-PLUS
+  is(
+    $test->_index_factor_cache(
+      '.1.3.6.1.4.1.45.3.81.2',
+      'Ethernet Routing Switch 5928GTS-PWR+  HW:01 FW:7.0.0.4  SW:v7.1.0.012',
+      '7.1.0.012'
+    ),
+    128, q(ERS 5928 uses 128));
+
+  # SYNOPTICS-ROOT-MIB::sreg-ERS5952GTS
+  is(
+    $test->_index_factor_cache(
+      '.1.3.6.1.4.1.45.3.81.3',
+      'Ethernet Routing Switch 5952GTS  HW:01 FW:7.0.0.4  SW:v7.1.0.012',
+      '7.1.0.012'
+    ),
+    128, q(ERS 5952 uses 128));
+
+  # SYNOPTICS-ROOT-MIB::sreg-ERS59100GTS
+  is(
+    $test->_index_factor_cache(
+      '.1.3.6.1.4.1.45.3.81.6',
+      'Ethernet Routing Switch 59100GTS  HW:01 FW:7.0.0.4  SW:v7.1.0.012',
+      '7.1.0.012'
+    ),
+    128, q(ERS 59100 uses 128));
+
+  # SYNOPTICS-ROOT-MIB::sreg-ERS-5650-TD
+  is(
+    $test->_index_factor_cache(
+      '.1.3.6.1.4.1.45.3.74.4',
+      'Ethernet Routing Switch 5650TD  HW:04 FW:6.0.0.13  SW:v6.2.2.023',
+      '6.2.2.023'
+    ),
+    128, q(ERS 5650 on 6.2 uses 128));
+}
+
+sub interfaces : Tests(1) {
+  my $test = shift;
+
+  # A three-unit ERS 5928 stack numbers each unit from a multiple of 128
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_layers'      => 2,
+    '_id'          => '.1.3.6.1.4.1.45.3.81.2',
+    '_description' =>
+      'Ethernet Routing Switch 5928GTS-PWR+  HW:01 FW:7.0.0.4  SW:v7.1.0.012',
+    '_ns_ag_ver'  => '7.1.0.012',
+    '_i_index'    => 1,
+    'store'    => {'i_index' => {1 => 1, 129 => 129, 257 => 257, 286 => 286}},
+  });
+
+  cmp_deeply(
+    $test->{info}->interfaces(),
+    {1 => '1.1', 129 => '2.1', 257 => '3.1', 286 => '3.30'},
+    q(Stack unit numbers follow the 128 index factor));
+}
+
 # An ERS 4950-shaped cache: MSTP CIST rows only, indexed by bridge port, with
 # dot1dStpPortEnable disabled and no rcStgPortTable. Bridge port 434 shows a
 # port number above 64. MACs are synthetic.
