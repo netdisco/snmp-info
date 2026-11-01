@@ -1,4 +1,4 @@
-# SNMP::Info::Layer2::Mellanox
+# SNMP::Info::Layer3::Onyx
 #
 # Copyright (c) 2026 Hannes Eberhardt
 # All rights reserved.
@@ -27,44 +27,54 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package SNMP::Info::Layer2::Mellanox;
+package SNMP::Info::Layer3::Onyx;
 
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info::Layer2;
+use SNMP::Info::Layer3;
+use SNMP::Info::PortAccessEntity;
 
-@SNMP::Info::Layer2::Mellanox::ISA = qw/
-    SNMP::Info::Layer2
+@SNMP::Info::Layer3::Onyx::ISA = qw/
+    SNMP::Info::Layer3
+    SNMP::Info::PortAccessEntity
     Exporter
 /;
-@SNMP::Info::Layer2::Mellanox::EXPORT_OK = qw//;
+@SNMP::Info::Layer3::Onyx::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '3.984000';
 
-%MIBS = ( %SNMP::Info::Layer2::MIBS, );
+%MIBS = (
+    %SNMP::Info::PortAccessEntity::MIBS,
+    %SNMP::Info::Layer3::MIBS,
+);
 
 %GLOBALS = (
-    %SNMP::Info::Layer2::GLOBALS,
+    %SNMP::Info::PortAccessEntity::GLOBALS,
+    %SNMP::Info::Layer3::GLOBALS,
     'mac' => 'dot1dBaseBridgeAddress',
 );
 
-%FUNCS = ( %SNMP::Info::Layer2::FUNCS, );
+%FUNCS = (
+    %SNMP::Info::PortAccessEntity::FUNCS,
+    %SNMP::Info::Layer3::FUNCS,
+);
 
 %MUNGE = (
-    %SNMP::Info::Layer2::MUNGE,
+    %SNMP::Info::PortAccessEntity::MUNGE,
+    %SNMP::Info::Layer3::MUNGE,
     'mac' => \&SNMP::Info::munge_mac,
 );
 
-# Onyx serves sysServices 72 (layers 4 and 7) although it bridges, so add
-# layer 2 or the calling application skips the forwarding table
+# Onyx serves sysServices 72 (layers 4 and 7) despite its bridge and IP
+# tables. Include layers 2 and 3 so callers collect forwarding and ARP data.
 sub layers {
     my $dev = shift;
 
     my $layers = $dev->SUPER::layers() || '00000000';
-    substr( $layers, 6, 1, '1' );
+    substr( $layers, 5, 2, '11' );
     return $layers;
 }
 
@@ -87,48 +97,15 @@ sub model {
     return $dev->SUPER::model();
 }
 
-sub lldp_id {
-    my $dev     = shift;
-    my $partial = shift;
+# Onyx returns MAC chassis IDs as text rather than the six octets LLDP-MIB
+# defines. Keep the common decoder for binary MACs and other ID types.
+sub _lldp_id_string {
+    my ( $dev, $id, $type ) = @_;
 
-    my $id_type = $dev->lldp_rem_id_type($partial) || {};
-    my $id_raw  = $dev->lldp_rem_id($partial)      || {};
-
-    my %id;
-    foreach my $key ( keys %$id_raw ) {
-        my $type = $id_type->{$key};
-        my $raw  = $id_raw->{$key};
-        next unless defined $raw;
-
-        if ( defined $type and $type eq 'macAddress' ) {
-            # Onyx encodes the MAC as an ASCII string in the bytes,
-            # e.g. hex 31633a33343a... decodes to ASCII "1c:34:da:39:f9:80"
-            my $ascii = pack( 'H*', unpack( 'H*', $raw ) );
-            if ( $ascii =~ /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i ) {
-                $id{$key} = lc $ascii;
-            }
-            else {
-                # genuine 6-byte binary MAC
-                $id{$key} = join ':', map { sprintf "%02x", $_ }
-                                      unpack( 'C*', $raw );
-            }
-        }
-        elsif ( defined $type and $type eq 'networkAddress' ) {
-            # first byte is address family (1 = IPv4), skip it
-            my @bytes = unpack( 'C*', $raw );
-            if ( $bytes[0] == 1 and scalar @bytes == 5 ) {
-                $id{$key} = join '.', @bytes[1..4];
-            }
-            else {
-                $id{$key} = unpack 'H*', $raw;
-            }
-        }
-        else {
-            # ifName, local string etc -- decode ASCII bytes
-            $id{$key} = pack( 'H*', unpack( 'H*', $raw ) );
-        }
-    }
-    return \%id;
+    return lc $id
+        if defined $id and defined $type and $type eq 'macAddress'
+        and $id =~ /^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$/i;
+    return $dev->SUPER::_lldp_id_string( $id, $type );
 }
 
 # lldpRemLocalPortNum is a bridge port number. A port with no bridge port
@@ -138,10 +115,13 @@ sub lldp_if {
     my $dev     = shift;
     my $partial = shift;
 
-    my $id_type  = $dev->lldp_rem_id_type($partial) || {};
+    return $dev->SUPER::lldp_if($partial)
+        if ( $dev->_lldp_source() || '' ) eq 'v2';
+
+    my $id_type  = $dev->_lldp_rem( 'lldp_rem_id_type', $partial );
     my $bp_index = $dev->bp_index()                 || {};
     my $lport_id = $dev->lldp_lport_id()            || {};
-    my %by_name  = reverse %{ $dev->i_name() || {} };
+    my %by_name  = reverse %{ $dev->orig_i_name() || {} };
 
     my %if;
     foreach my $key ( keys %$id_type ) {
@@ -161,21 +141,19 @@ sub lldp_if {
 # A neighbor with no management address gets 0.0.0.0, which the calling
 # application looks up by c_id; an entry with no c_ip is dropped
 sub c_ip {
-    my $dev     = shift;
-    my $partial = shift;
+    my ( $dev, $partial, $topo_cap ) = @_;
 
-    my $lldp_ip = $dev->lldp_ip($partial)         || {};
-    my $id_type = $dev->lldp_rem_id_type($partial) || {};
+    $topo_cap ||= $dev->has_topo() || [];
+    my $c_ip = $dev->SUPER::c_ip( $partial, $topo_cap ) || {};
+    return $c_ip unless grep { $_ eq 'lldp' } @$topo_cap;
 
-    my %c_ip = %$lldp_ip;
+    my $id_type = $dev->_lldp_rem( 'lldp_rem_id_type', $partial );
 
     foreach my $key ( keys %$id_type ) {
-        if ( !exists $c_ip{$key} or !defined $c_ip{$key} ) {
-            $c_ip{$key} = '0.0.0.0';
-        }
+        $c_ip->{$key} = '0.0.0.0' unless defined $c_ip->{$key};
     }
 
-    return \%c_ip;
+    return $c_ip;
 }
 
 1;
@@ -184,7 +162,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Mellanox - SNMP Interface to Mellanox/NVIDIA Switches
+SNMP::Info::Layer3::Onyx - SNMP Interface to Mellanox/NVIDIA Switches
 running Onyx
 
 =head1 AUTHOR
@@ -209,28 +187,36 @@ Hannes Eberhardt
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a
-Mellanox / NVIDIA switch running Onyx via SNMP. It is chosen for
-C<sysObjectID>s under the Onyx switch branch, C<.1.3.6.1.4.1.33049.1.1.1>.
+Mellanox / NVIDIA switch running Onyx via SNMP. It is chosen for devices
+whose C<sysDescr> starts with C<Onyx,> and whose C<sysObjectID> is under
+C<.1.3.6.1.4.1.33049.1.1.1>.
+
+Onyx returns MAC chassis IDs as ASCII text. The inherited LLDP methods
+accept these as well as binary MAC addresses and select LLDP-MIB or
+LLDP-V2-MIB as provided by the device.
 
 =head2 Inherited Classes
 
 =over
 
-=item SNMP::Info::Layer2
+=item SNMP::Info::Layer3
+
+=item SNMP::Info::PortAccessEntity
 
 =back
 
 =head2 Required MIBs
 
-None beyond those of the inherited class.
+None beyond those of the inherited classes.
 
 =head2 Inherited MIBs
 
-See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
+See L<SNMP::Info::Layer3/"Required MIBs"> and
+L<SNMP::Info::PortAccessEntity/"Required MIBs"> for their MIB requirements.
 
 =head1 GLOBALS
 
-These are methods that return scalar value from SNMP.
+These methods return scalar values from SNMP.
 
 =over
 
@@ -266,14 +252,21 @@ Returns the bridge MAC address.
 
 =item $dev->layers()
 
-Returns the inherited layers with layer 2 added. Onyx serves
-C<sysServices> 72 (layers 4 and 7), which does not include layer 2.
+Returns the inherited layers with layers 2 and 3 added, or C<00000110>
+when C<sysServices> is unavailable. Onyx serves C<sysServices> 72 (layers
+4 and 7), which omits its bridge and IP capabilities. The layer 3 bit
+allows callers to collect ARP and IPv6 neighbor data even when IP
+forwarding is disabled.
 
 =back
 
-=head2 Global Methods imported from SNMP::Info::Layer2
+=head2 Global Methods imported from SNMP::Info::Layer3
 
-See L<SNMP::Info::Layer2/"GLOBALS"> for details.
+See L<SNMP::Info::Layer3/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::PortAccessEntity
+
+See L<SNMP::Info::PortAccessEntity/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -281,31 +274,31 @@ See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =over
 
-=item $dev->lldp_id()
-
-Returns reference to hash. Key: iid, Value: remote chassis ID. Onyx sends
-a MAC address chassis ID as its ASCII text rather than six octets; both
-forms are returned as a colon-separated MAC address.
-
-(C<lldpRemChassisId>)
-
 =item $dev->lldp_if()
 
 Returns reference to hash. Key: iid, Value: local ifIndex. Onyx's
 C<lldpRemLocalPortNum> is a bridge port number, mapped through
 C<bp_index()>. A port with no bridge port row is matched by its
 C<lldpLocPortId> to C<ifName>; a neighbor matching neither is left out.
+For LLDP-V2-MIB, uses the inherited mapping, whose local port number is
+already an ifIndex.
 
 =item $dev->c_ip()
 
 Returns reference to hash. Key: iid, Value: remote IPv4 address from
 C<lldp_ip()>, or 0.0.0.0 for a neighbor that advertises no management
-address, so it can still be found by its C<c_id()>.
+address, so it can still be found by its C<c_id()>. Honors the optional
+topology protocol list; the placeholder is added only when LLDP is selected.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info::Layer2
+=head2 Table Methods imported from SNMP::Info::Layer3
 
-See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
+See L<SNMP::Info::Layer3/"TABLE METHODS"> for details, including the
+standard ARP and IPv6 neighbor tables.
+
+=head2 Table Methods imported from SNMP::Info::PortAccessEntity
+
+See L<SNMP::Info::PortAccessEntity/"TABLE METHODS"> for details.
 
 =cut

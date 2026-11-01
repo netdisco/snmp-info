@@ -717,12 +717,6 @@ SNMP interface to LigoWave DLB radios.
 
 See documentation in L<SNMP::Info::Layer2::LigoWave> for details.
 
-=item SNMP::Info::Layer2::Mellanox
-
-Subclass for Mellanox/NVIDIA Onyx switches.
-
-See documentation in L<SNMP::Info::Layer2::Mellanox> for details.
-
 =item SNMP::Info::Layer2::Microsens
 
 Subclass for MICROSENS managed switches, including G6 and G6+.
@@ -1137,6 +1131,12 @@ See documentation in L<SNMP::Info::Layer3::Nexus> for details.
 Subclass for OneAccess routers.
 
 See documentation in L<SNMP::Info::Layer3::OneAccess> for details.
+
+=item SNMP::Info::Layer3::Onyx
+
+Subclass for Mellanox/NVIDIA Onyx switches.
+
+See documentation in L<SNMP::Info::Layer3::Onyx> for details.
 
 =item SNMP::Info::Layer3::PacketFront
 
@@ -3107,10 +3107,10 @@ sub device_type {
         }
     }
 
-    # Mellanox / NVIDIA Onyx switches. Only the switch branch: the enterprise
-    # also holds other product lines, such as InfiniBand gateways
-    $objtype = 'SNMP::Info::Layer2::Mellanox'
-        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.33049\.1\.1\.1\./;
+    # switchXFamily also contains InfiniBand switches and gateways.
+    $objtype = 'SNMP::Info::Layer3::Onyx'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.33049\.1\.1\.1\./
+        && $desc =~ /^Onyx,/i;
 
     # Extreme VOSS / Fabric Engine report "<model> (a.b.c.d)" under the
     # Extreme enterprise. Layer 2 only devices reach here too, so this sits
