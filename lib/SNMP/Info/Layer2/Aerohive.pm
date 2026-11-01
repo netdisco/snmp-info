@@ -497,12 +497,18 @@ to a hash.
 
 =item $aerohive->i_ssidlist()
 
-Returns reference to hash. SSID's recognized by the radio interface.
+Returns reference to hash. SSIDs served by each radio, keyed
+C<radio ifIndex.WLAN ifIndex>. A WLAN interface belongs to the radio named
+before its dot (C<wifi1.2> to C<wifi1>) when that radio has an
+C<ahRadioAttributeTable> row; otherwise the WLAN interface is its own port.
+
+C<ahSSIDName>
 
 =item $aerohive->i_ssidmac()
 
 With the same keys as i_ssidlist, returns the Basic service set
-identification (BSSID), MAC address, the AP is using for the SSID.
+identification (BSSID), MAC address, the AP is using for the SSID: the
+WLAN interface's C<ifPhysAddress>.
 
 =item $aerohive->i_80211channel()
 
@@ -518,9 +524,17 @@ radio interface.
 
 C<ahRadioTxPower>
 
+=item $aerohive->cd11_txrate()
+
+Returns reference to hash. The rate of the last frame sent to each client,
+in Mbps, as a single-element array reference.
+
+C<ahClientLastTxRate>, which reports kbps.
+
 =item $aerohive->cd11_port()
 
-Returns radio interfaces.
+Returns reference to hash. The radio interface each client is associated
+with.
 
 =item $aerohive->cd11_mac()
 
@@ -535,12 +549,14 @@ Returns client radio interface MAC addresses.
 =item $aerohive->interfaces()
 
 Only return interfaces which have an entry in ahIfName as well. This halts
-the creation of ghost interfaces.
+the creation of ghost interfaces. WLAN interfaces that belong to a radio
+are not returned; their SSIDs and clients are on the radio's port.
 
 =item $aerohive->bp_index()
 
 Simulates bridge MIB by returning reference to a hash mapping i_index() to
-the interface iid.
+the interface iid. A WLAN interface that belongs to a radio maps to the
+radio, so its clients are placed on the radio's port.
 
 =item $aerohive->qb_fw_port()
 
