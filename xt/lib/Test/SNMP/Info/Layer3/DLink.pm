@@ -143,4 +143,45 @@ sub interfaces : Tests(4) {
   is($test->{info}->interfaces(), undef, 'No data returns undef interfaces');
 }
 
+sub _dgs_f_cache {
+  my $test = shift;
+
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_description' => $dgs_f_descr,
+    '_id'          => '.1.3.6.1.4.1.4294967295.3.2.16',
+  });
+}
+
+sub model : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'model');
+  is($test->{info}->model(), 'DGS-3620-28SC Gigabit Ethernet Switch',
+    q(Other models keep the existing source));
+
+  $test->_dgs_f_cache();
+  is($test->{info}->model(), 'DGS-F3008P-4S', q(DGS-F model from sysDescr));
+}
+
+sub os_ver : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'os_ver');
+  is($test->{info}->os_ver(), undef, q(Other sysDescr has no os_ver));
+
+  $test->_dgs_f_cache();
+  is($test->{info}->os_ver(), '5.2.10.1-ged9dba8ff',
+    q(DGS-F firmware from sysDescr));
+}
+
+sub serial : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'serial');
+
+  $test->_dgs_f_cache();
+  is($test->{info}->serial(), 'H3008P0000001', q(DGS-F serial from sysDescr));
+}
+
 1;

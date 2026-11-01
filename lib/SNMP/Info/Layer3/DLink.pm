@@ -85,8 +85,25 @@ sub layers {
     return $layers;
 }
 
+# The DGS-F3008P reports a sysObjectID outside D-Link's enterprise and names
+# its model, firmware and serial only in sysDescr:
+#   "D-LINK DGS-F3008P-4S HW V1 Firmware V5.2.10.1-g7578559a6 SerialNo
+#   H3008P200400127, L2 Ethernet PoE Switch"
+sub _dlink_descr_fields {
+    my $dlink = shift;
+    my $descr = $dlink->description();
+
+    return {} unless defined $descr;
+    return {} unless $descr =~ m/^D-Link\s+(\S+)\s+HW\s+\S+\s+
+        Firmware\s+V?(\S+)\s+SerialNo\s+([^\s,]+)/ix;
+    return { model => $1, os_ver => $2, serial => $3 };
+}
+
 sub model {
     my $dlink=shift;
+    my $descr_model = $dlink->_dlink_descr_fields()->{model};
+    return $descr_model if defined $descr_model;
+
     my $id = $dlink->id();
     my $model = &SNMP::translateObj($id);
     return $id unless defined $model;
@@ -121,8 +138,16 @@ sub vendor {
     return 'dlink';
 }
 
+sub os_ver {
+    my $dlink = shift;
+    return $dlink->_dlink_descr_fields()->{os_ver};
+}
+
 sub serial {
     my $dlink = shift;
+    my $descr_serial = $dlink->_dlink_descr_fields()->{serial};
+    return $descr_serial if defined $descr_serial;
+
     my $model = $dlink->model();
     my $id = $dlink->id();
     my $serial;
@@ -254,11 +279,18 @@ These are methods that return scalar value from SNMP
 
 =item $dlink->layers()
 
-Makes sure to always report layer 2 and 3.
+Makes sure to always report layer 2 and 3, also when C<sysServices> is not
+served.
 
 =item $dlink->model()
 
-Returns the ID or else description.
+Returns the model from a DGS-F style C<sysDescr>
+(C<D-LINK E<lt>modelE<gt> HW ... Firmware ... SerialNo ...>), else the ID or
+else description.
+
+=item $dlink->os_ver()
+
+Returns the firmware version from a DGS-F style C<sysDescr>, else undef.
 
 =item $dlink->vendor()
 
@@ -266,7 +298,8 @@ Returns 'dlink'.
 
 =item $dlink->serial()
 
-Returns serial number.
+Returns the serial number from a DGS-F style C<sysDescr>, else from the
+D-Link enterprise tables.
 
 =item $dlink->fwver()
 
