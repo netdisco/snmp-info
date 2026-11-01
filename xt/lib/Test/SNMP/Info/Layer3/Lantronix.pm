@@ -67,11 +67,20 @@ sub _set_description {
   $test->{info}->cache({'_description' => $description});
 }
 
-sub os : Tests(4) {
+sub os : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'os');
-  is($test->{info}->os(), 'LantronixOS', q(Other sysDescr is LantronixOS));
+  is($test->{info}->os(), 'EvolutionOS',
+    q(Renamed EDS is EvolutionOS by sysObjectID));
+
+  # LANTRONIX-MIB::slc
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_description' => 'SLC 8.4.0.0R1',
+    '_id'          => '.1.3.6.1.4.1.244.1.1',
+  });
+  is($test->{info}->os(), 'LantronixOS', q(SLC is LantronixOS));
 
   $test->_set_description($eds_descr);
   is($test->{info}->os(), 'EvolutionOS', q(EDS is EvolutionOS));
@@ -81,10 +90,12 @@ sub os : Tests(4) {
     q(EDS5000 without a V before the version is EvolutionOS));
 }
 
-sub os_ver : Tests(4) {
+sub os_ver : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'os_ver');
+  is($test->{info}->os_ver(), '5.2.0.0R24',
+    q(Renamed EDS version from the end of sysDescr));
 
   $test->_set_description($eds_descr);
   is($test->{info}->os_ver(), '6.0.0.0R5', q(EDS version after V));
@@ -98,12 +109,17 @@ sub os_ver : Tests(4) {
     '_slc_os_ver'  => '8.4.0.0R1',
   });
   is($test->{info}->os_ver(), '8.4.0.0R1', q(SLC firmware is preferred));
+
+  $test->_set_description('Lantronix EDS16PR');
+  is($test->{info}->os_ver(), undef, q(No version in sysDescr returns undef));
 }
 
-sub serial : Tests(3) {
+sub serial : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'serial');
+  is($test->{info}->serial(), '01234567A8BC',
+    q(Renamed EDS serial from the end of sysDescr));
 
   $test->_set_description($eds_descr);
   is($test->{info}->serial(), '0519086817IR5G', q(EDS serial));
@@ -113,10 +129,12 @@ sub serial : Tests(3) {
     q(EDS5000 serial without V before the version));
 }
 
-sub model : Tests(3) {
+sub model : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'model');
+  is($test->{info}->model(), undef,
+    q(Renamed EDS sysDescr carries no model));
 
   $test->_set_description($eds_descr);
   is($test->{info}->model(), 'EDS16PR', q(EDS model));

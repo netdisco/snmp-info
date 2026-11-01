@@ -74,46 +74,51 @@ sub vendor {
 sub os {
     my $device = shift;
     my $descr = $device->description() || '';
+    my $id    = $device->id() || '';
 
     # On EDS, it is called the "Evolution OS"
     # Not sure what, if any, name it has a name on other products
-    if ( $descr =~ m/Lantronix EDS\w+ V?([\d\.R]+)/ ) {
+    if (   $id =~ m/^\.?1\.3\.6\.1\.4\.1\.244\.1\.13(?:\.|$)/
+        or $descr =~ m/Lantronix EDS\w+ V?([\d\.R]+)/ ) {
       return 'EvolutionOS';
     } else {
       return 'LantronixOS';
     }
 }
 
+# EDS sysDescr ends "<version> (<serial>)", with or without a V before the
+# version. Match the end: a configured device name can replace the leading
+# "Lantronix <model>".
+#   EDS:      "Lantronix EDS16PR V4.0.0.0R15 (1307.....X)"
+#   EDS5000:  "Lantronix EDS5016 2.1.0.0R3 (00C0F2.....)"
+#   Renamed:  "My Name V5.2.0.0R24 (0310.....D)"
+sub _eds_descr_fields {
+    my $device = shift;
+    my $descr  = $device->description();
+
+    return unless defined $descr;
+    return ( $1, $2 )
+        if $descr =~ m/\sV?(\d+(?:\.\d+)+(?:R\d+)?)\s+\((\w+)\)\s*$/;
+    return;
+}
+
 sub os_ver {
     my $device = shift;
-    my $descr = $device->description() || '';
     my $slc_os_ver = $device->slc_os_ver;
-    my $os_ver;
 
     return $slc_os_ver if defined $slc_os_ver;
 
-    return unless defined $descr;
-
-    # EDS: "Lantronix EDS16PR V4.0.0.0R15 (1307.....X)"
-    # EDS5000: "Lantronix EDS5016 2.1.0.0R3 (00C0F2.....)"
-    $os_ver = $1 if ( $descr =~ m/Lantronix EDS\w+ V?([\d\.R]+)/ );
-
+    my ($os_ver) = $device->_eds_descr_fields();
     return $os_ver;
 }
 
 sub serial {
     my $device = shift;
-    my $descr = $device->description() || '';
     my $slc_serial = $device->slc_serial;
-    my $serial;
 
     return $slc_serial if defined $slc_serial;
 
-    return unless defined $descr;
-
-    # EDS: "Lantronix EDS16PR V4.0.0.0R15 (1307.....X)"
-    $serial = $1 if ( $descr =~ m/Lantronix EDS\w+ V?[\d\.R]+ \((\w+)\)/ );
-
+    my ( undef, $serial ) = $device->_eds_descr_fields();
     return $serial;
 }
 
@@ -215,11 +220,14 @@ Returns 'lantronix'.
 
 =item $device->os()
 
-Returns 'EvolutionOS' for EDS devices, else returns 'LantronixOS'.
+Returns 'EvolutionOS' for EDS devices (C<sysObjectID> under
+C<LANTRONIX-MIB::evo>, or an EDS C<sysDescr>), else returns 'LantronixOS'.
 
 =item $device->os_ver()
 
-Returns the software version.
+Returns the software version. On EDS it is read from the end of
+C<sysDescr>, so it is found when a configured device name replaces the
+leading "Lantronix <model>".
 
 =item $device->model()
 
@@ -227,7 +235,8 @@ Returns the model.
 
 =item $device->serial()
 
-Returns the serial number.
+Returns the serial number. On EDS it is read from the end of C<sysDescr>,
+as for C<os_ver()>.
 
 =item $device->ps1_status()
 
