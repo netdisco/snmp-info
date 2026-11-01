@@ -321,4 +321,75 @@ sub qb_fdb_index : Tests(2) {
 
 }
 
+# A PowerConnect 8164F advertises its dot1dBaseBridgeAddress as its LLDP
+# chassis ID, while ifPhysAddress.1 is a different MAC
+sub mac : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'mac');
+
+  $test->{info}{_b_mac} = pack('H*', 'D067E5950A4F');
+  $test->{info}{_mac}   = pack('H*', 'D067E5950A51');
+  is($test->{info}->mac(), 'd0:67:e5:95:0a:4f',
+    q(Bridge address is preferred, as it matches the LLDP chassis ID));
+
+  $test->{info}{_b_mac} = pack('H*', '000000000000');
+  is($test->{info}->mac(), 'd0:67:e5:95:0a:51',
+    q(A zero bridge address falls back to ifPhysAddress.1));
+
+  delete $test->{info}{_b_mac};
+  is($test->{info}->mac(), 'd0:67:e5:95:0a:51',
+    q(No bridge address falls back to ifPhysAddress.1));
+}
+
+sub _lldp_cache {
+  my ($test, %store) = @_;
+
+  $test->{info}->clear_cache();
+  $test->{info}{"_$_"} = 1
+    for qw/lldp_rman_addr lldp_rem_id_type lldp_rem_id/;
+  $test->{info}{store}{$_} = $store{$_}
+    for qw/lldp_rman_addr lldp_rem_id_type lldp_rem_id/;
+}
+
+sub lldp_ip : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'lldp_ip');
+
+  # Shaped from a PowerConnect 8164F: Dell neighbors send a MAC chassis ID
+  # and no management address
+  $test->_lldp_cache(
+    lldp_rman_addr   => {'139.5.9.1.4.192.0.2.10' => 'ifIndex'},
+    lldp_rem_id_type => {
+      '139.5.9' => 'macAddress',
+      '109.4.1' => 'macAddress',
+      '110.3.5' => 'local',
+    },
+    lldp_rem_id => {
+      '139.5.9' => 'd0:67:e5:95:10:1e',
+      '109.4.1' => 'd0:67:e5:9c:ab:ae',
+      '110.3.5' => 'switch-a',
+    },
+  );
+  cmp_deeply($test->{info}->lldp_ip(),
+    {'139.5.9' => '192.0.2.10', '109.4.1' => '0.0.0.0'},
+    q(MAC chassis without an address returns 0.0.0.0, others unchanged));
+
+  $test->_lldp_cache(
+    lldp_rman_addr   => {},
+    lldp_rem_id_type => {},
+    lldp_rem_id      => {},
+  );
+  cmp_deeply($test->{info}->lldp_ip(), {}, q(No neighbors returns empty hash));
+
+  $test->_lldp_cache(
+    lldp_rman_addr   => {'109.4.1.1.4.192.0.2.20' => 'ifIndex'},
+    lldp_rem_id_type => {'109.4.1' => 'macAddress'},
+    lldp_rem_id      => {'109.4.1' => 'd0:67:e5:9c:ab:ae'},
+  );
+  cmp_deeply($test->{info}->lldp_ip(), {'109.4.1' => '192.0.2.20'},
+    q(An advertised address wins over 0.0.0.0));
+}
+
 1;
