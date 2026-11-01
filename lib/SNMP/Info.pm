@@ -3075,6 +3075,11 @@ sub device_type {
             if (
             $desc =~ /\bTeltonika.*RUT9\d{2}\b/);
 
+        # D-Link DGS switches without sysServices, such as the DGS-F3008P,
+        # which also reports a sysObjectID outside D-Link's enterprise
+        $objtype = 'SNMP::Info::Layer3::DLink'
+            if ( $desc =~ /^D-Link\s+DGS-/i );
+
         # DSM uses a generic Linux sysDescr and commonly uses Net-SNMP's
         # generic Linux sysObjectID.  Probe one DSM-specific scalar only for
         # those devices or Synology's own enterprise.

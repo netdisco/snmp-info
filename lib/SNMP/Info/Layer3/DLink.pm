@@ -77,11 +77,10 @@ $VERSION = '3.984000';
 sub layers {
     my $dlink = shift;
 
-    my $layers = $dlink->SUPER::layers();
-    if ($layers) {
-        substr $layers, 5, 1, "1";
-        substr $layers, 6, 1, "1";
-    }
+    # Force at least L2 and L3, also when sysServices is not served
+    my $layers = $dlink->SUPER::layers() || '00000000';
+    substr $layers, 5, 1, "1";
+    substr $layers, 6, 1, "1";
 
     return $layers;
 }
