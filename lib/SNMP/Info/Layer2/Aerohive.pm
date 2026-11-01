@@ -279,13 +279,14 @@ sub bp_index {
     # netdisco can't find bp_index mappings & will not registerer
     # any clients. netdisco/netdisco#496
     my $i_index = $aerohive->load_i_index($partial) || {};
+    my $wlans   = $aerohive->_wlan_radios();
 
     my %bp_index;
     foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        $bp_index{$index} = $iid;
+        $bp_index{$index} = $wlans->{$iid} // $iid;
     }
 
     return \%bp_index;

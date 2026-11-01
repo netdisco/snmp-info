@@ -307,16 +307,16 @@ sub bp_index : Tests(3) {
   # mock up the needed snmp data.
   my $data
     = {'IF-MIB::ifIndex' =>
-        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20},
+        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 34 => 34, 15 => 15, 16 => 16, 20 => 20},
        'RFC1213-MIB::ifIndex' =>
-        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20},
+        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 34 => 34, 15 => 15, 16 => 16, 20 => 20},
     };
   $test->{info}{sess}{Data} = $data;
 
-  my $expected = {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20};
+  my $expected = {10 => 10, 6 => 6, 7 => 7, 33 => 33, 34 => 34, 15 => 6, 16 => 6, 20 => 7};
 
   cmp_deeply($test->{info}->bp_index(),
-    $expected, q(Bridge interface mapping has expected values));
+    $expected, q(bp_index__wlan_bridge_port__maps_to_radio));
 
   # and now delete the data so we can test for empty returns
   delete $test->{info}{_i_index};
