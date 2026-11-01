@@ -677,6 +677,12 @@ Subclass for Exinda / GFI Network Orchestrator traffic shapers.
 
 See documentation in L<SNMP::Info::Layer2::Exinda> for details.
 
+=item SNMP::Info::Layer2::FortiAP
+
+Subclass for Fortinet FortiAP access points.
+
+See documentation in L<SNMP::Info::Layer2::FortiAP> for details.
+
 =item SNMP::Info::Layer2::Hirschmann
 
 Subclass for Hirschmann switches
@@ -2637,6 +2643,11 @@ sub device_type {
     # model, where a ZoneDirector's names "ZD" and four digits.
     return 'SNMP::Info::Layer2::RuckusAP'
         if $desc =~ /^Ruckus Wireless [A-Z]\d{3}/;
+
+    # FortiAPs register under 12356.120 and serve no sysServices; the rest
+    # of the enterprise keeps Layer3::Fortinet.
+    return 'SNMP::Info::Layer2::FortiAP'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.12356\.120(?:\.|$)/;
 
     # Tachyon TNA radios register under 57344.1 and may not implement
     # sysServices; the TNS switches under 57344.2 keep the generic classes.
