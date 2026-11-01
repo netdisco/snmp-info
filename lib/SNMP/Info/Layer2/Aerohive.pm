@@ -71,7 +71,7 @@ $VERSION = '3.984000';
     'ah_i_name'     => 'ahIfName',
 
     # AH-INTERFACE-MIB::ahAssociationTable
-    'cd11_txrate'      => 'ahClientLastTxRate',
+    'ah_c_txrate'      => 'ahClientLastTxRate',
     'cd11_uptime'      => 'ahClientLinkUptime',
     'cd11_sigstrength' => 'ahClientRSSI',
     'cd11_rxpkt'       => 'ahClientRxDataFrames',
@@ -240,6 +240,21 @@ sub _ah_association_index {
     my $ifindex = shift(@values);
     my $length  = shift(@values);
     return ( $ifindex, join( ':', map { sprintf "%02x", $_ } @values ) );
+}
+
+sub cd11_txrate {
+    my $aerohive = shift;
+    my $partial  = shift;
+
+    my $rates = $aerohive->ah_c_txrate($partial) || {};
+
+    my %cd11_txrate;
+    foreach my $idx ( keys %$rates ) {
+        my $kbps = $rates->{$idx};
+        next unless defined $kbps and $kbps =~ /^\d+$/;
+        $cd11_txrate{$idx} = [ $kbps / 1000 ];
+    }
+    return \%cd11_txrate;
 }
 
 sub cd11_port {

@@ -57,7 +57,7 @@ sub setup : Tests(setup) {
     '_i_mac'         => 1,
     '_ah_i_ssidlist' => 1,
     '_ah_i_name'     => 1,
-    '_cd11_txrate'   => 1,
+    '_ah_c_txrate'   => 1,
     '_ah_c_vlan'     => 1,
     '_ah_c_ip'       => 1,
     '_i_80211channel' => 1,
@@ -85,7 +85,7 @@ sub setup : Tests(setup) {
         {10 => 'N/A', 6 => 'N/A', 7 => 'N/A', 33 => 'N/A', 34 => 'MyMgmt', 15 => 'MyGuest', 16 => 'MyPrivate', 20 => 'MyGuest'},
       'ah_i_name' =>
         {10 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 33 => 'mgt0', 34 => 'mgt0.1', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
-      'cd11_txrate' => {
+      'ah_c_txrate' => {
         '15.6.128.150.177.92.153.130' => 6000,
         '20.6.40.106.186.61.150.231'  => 58500,
         '20.6.96.190.181.42.99.151'   => 72200
@@ -278,6 +278,33 @@ sub cd11_port : Tests(3) {
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->cd11_port(), {}, q(No data returns empty hash));
+}
+
+sub cd11_txrate : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'cd11_txrate');
+
+  # AH-INTERFACE-MIB::ahClientLastTxRate is in kbps
+  $test->{info}{'_ah_c_txrate'} = 1;
+  $test->{info}{store}{ah_c_txrate} = {
+    '15.6.128.150.177.92.153.130' => 6000,
+    '20.6.40.106.186.61.150.231'  => 58500,
+    '20.6.96.190.181.42.99.151'   => 72200,
+    '15.6.2.0.0.0.0.1'            => undef,
+  };
+
+  my $expected = {
+    '15.6.128.150.177.92.153.130' => [6],
+    '20.6.40.106.186.61.150.231'  => [58.5],
+    '20.6.96.190.181.42.99.151'   => [72.2]
+  };
+
+  cmp_deeply($test->{info}->cd11_txrate(),
+    $expected, q(cd11_txrate__kbps__returns_mbps_arrayref));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->cd11_txrate(), {}, q(No data returns empty hash));
 }
 
 sub cd11_mac : Tests(3) {
