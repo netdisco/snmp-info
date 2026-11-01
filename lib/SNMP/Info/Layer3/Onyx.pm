@@ -1,4 +1,4 @@
-# SNMP::Info::Layer2::Mellanox
+# SNMP::Info::Layer3::Onyx
 #
 # Copyright (c) 2026 Hannes Eberhardt
 # All rights reserved.
@@ -27,44 +27,54 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-package SNMP::Info::Layer2::Mellanox;
+package SNMP::Info::Layer3::Onyx;
 
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info::Layer2;
+use SNMP::Info::Layer3;
+use SNMP::Info::PortAccessEntity;
 
-@SNMP::Info::Layer2::Mellanox::ISA = qw/
-    SNMP::Info::Layer2
+@SNMP::Info::Layer3::Onyx::ISA = qw/
+    SNMP::Info::Layer3
+    SNMP::Info::PortAccessEntity
     Exporter
 /;
-@SNMP::Info::Layer2::Mellanox::EXPORT_OK = qw//;
+@SNMP::Info::Layer3::Onyx::EXPORT_OK = qw//;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
 $VERSION = '3.984000';
 
-%MIBS = ( %SNMP::Info::Layer2::MIBS, );
+%MIBS = (
+    %SNMP::Info::PortAccessEntity::MIBS,
+    %SNMP::Info::Layer3::MIBS,
+);
 
 %GLOBALS = (
-    %SNMP::Info::Layer2::GLOBALS,
+    %SNMP::Info::PortAccessEntity::GLOBALS,
+    %SNMP::Info::Layer3::GLOBALS,
     'mac' => 'dot1dBaseBridgeAddress',
 );
 
-%FUNCS = ( %SNMP::Info::Layer2::FUNCS, );
+%FUNCS = (
+    %SNMP::Info::PortAccessEntity::FUNCS,
+    %SNMP::Info::Layer3::FUNCS,
+);
 
 %MUNGE = (
-    %SNMP::Info::Layer2::MUNGE,
+    %SNMP::Info::PortAccessEntity::MUNGE,
+    %SNMP::Info::Layer3::MUNGE,
     'mac' => \&SNMP::Info::munge_mac,
 );
 
-# Onyx serves sysServices 72 (layers 4 and 7) although it bridges, so add
-# layer 2 or the calling application skips the forwarding table
+# Onyx serves sysServices 72 (layers 4 and 7) despite its bridge and IP
+# tables. Include layers 2 and 3 so callers collect forwarding and ARP data.
 sub layers {
     my $dev = shift;
 
     my $layers = $dev->SUPER::layers() || '00000000';
-    substr( $layers, 6, 1, '1' );
+    substr( $layers, 5, 2, '11' );
     return $layers;
 }
 
@@ -111,7 +121,7 @@ sub lldp_if {
     my $id_type  = $dev->_lldp_rem( 'lldp_rem_id_type', $partial );
     my $bp_index = $dev->bp_index()                 || {};
     my $lport_id = $dev->lldp_lport_id()            || {};
-    my %by_name  = reverse %{ $dev->i_name() || {} };
+    my %by_name  = reverse %{ $dev->orig_i_name() || {} };
 
     my %if;
     foreach my $key ( keys %$id_type ) {
@@ -152,7 +162,7 @@ __END__
 
 =head1 NAME
 
-SNMP::Info::Layer2::Mellanox - SNMP Interface to Mellanox/NVIDIA Switches
+SNMP::Info::Layer3::Onyx - SNMP Interface to Mellanox/NVIDIA Switches
 running Onyx
 
 =head1 AUTHOR
@@ -189,21 +199,24 @@ LLDP-V2-MIB as provided by the device.
 
 =over
 
-=item SNMP::Info::Layer2
+=item SNMP::Info::Layer3
+
+=item SNMP::Info::PortAccessEntity
 
 =back
 
 =head2 Required MIBs
 
-None beyond those of the inherited class.
+None beyond those of the inherited classes.
 
 =head2 Inherited MIBs
 
-See L<SNMP::Info::Layer2/"Required MIBs"> for its MIB requirements.
+See L<SNMP::Info::Layer3/"Required MIBs"> and
+L<SNMP::Info::PortAccessEntity/"Required MIBs"> for their MIB requirements.
 
 =head1 GLOBALS
 
-These are methods that return scalar value from SNMP.
+These methods return scalar values from SNMP.
 
 =over
 
@@ -239,14 +252,21 @@ Returns the bridge MAC address.
 
 =item $dev->layers()
 
-Returns the inherited layers with layer 2 added. Onyx serves
-C<sysServices> 72 (layers 4 and 7), which does not include layer 2.
+Returns the inherited layers with layers 2 and 3 added, or C<00000110>
+when C<sysServices> is unavailable. Onyx serves C<sysServices> 72 (layers
+4 and 7), which omits its bridge and IP capabilities. The layer 3 bit
+allows callers to collect ARP and IPv6 neighbor data even when IP
+forwarding is disabled.
 
 =back
 
-=head2 Global Methods imported from SNMP::Info::Layer2
+=head2 Global Methods imported from SNMP::Info::Layer3
 
-See L<SNMP::Info::Layer2/"GLOBALS"> for details.
+See L<SNMP::Info::Layer3/"GLOBALS"> for details.
+
+=head2 Global Methods imported from SNMP::Info::PortAccessEntity
+
+See L<SNMP::Info::PortAccessEntity/"GLOBALS"> for details.
 
 =head1 TABLE METHODS
 
@@ -272,8 +292,13 @@ topology protocol list; the placeholder is added only when LLDP is selected.
 
 =back
 
-=head2 Table Methods imported from SNMP::Info::Layer2
+=head2 Table Methods imported from SNMP::Info::Layer3
 
-See L<SNMP::Info::Layer2/"TABLE METHODS"> for details.
+See L<SNMP::Info::Layer3/"TABLE METHODS"> for details, including the
+standard ARP and IPv6 neighbor tables.
+
+=head2 Table Methods imported from SNMP::Info::PortAccessEntity
+
+See L<SNMP::Info::PortAccessEntity/"TABLE METHODS"> for details.
 
 =cut
