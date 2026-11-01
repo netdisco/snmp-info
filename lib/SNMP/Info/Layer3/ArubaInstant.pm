@@ -95,7 +95,8 @@ sub _radios {
     my $channels = $self->instant_radio_channel() || {};
     my $macs = $self->instant_radio_mac() || {};
     my %radios;
-    foreach my $iid (keys %$channels) {
+    # A radio missing from one column (a failed walk) keeps its port.
+    foreach my $iid (keys %{ {%$channels, %$macs} }) {
         next unless $iid =~ /^(\d+(?:\.\d+){5})\.(\d+)$/;
         my ($ap, $number) = ($1, $2);
         my $mac = $macs->{$iid};

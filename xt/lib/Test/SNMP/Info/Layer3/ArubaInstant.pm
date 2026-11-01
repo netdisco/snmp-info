@@ -82,6 +82,7 @@ sub missing_and_invalid_data : Tests(1) {
         is(scalar keys %{$info->i_ssidmac()}, 8, 'invalid WLAN entries omitted');
         $info->{store}{instant_wlan_mac} = {};
         $info->{store}{instant_radio_channel} = {};
+        $info->{store}{instant_radio_mac} = {};
         is_deeply($info->interfaces(), {1 => 'Ethernet1'}, 'missing Instant tables retain wired ports');
         is_deeply($info->i_ssidlist(), {}, 'no SSIDs without BSSIDs');
         is_deeply($info->i_ssidmac(), {}, 'no BSSIDs');
@@ -235,15 +236,26 @@ sub bp_index : Tests(3) {
     ok(!exists $bridge->{50} && !exists $bridge->{0}, 'bp_index__qbridge_ports__no_identity_rows');
 }
 
-sub fw_mac : Tests(3) {
+sub fw_mac : Tests(5) {
     my $info = shift->{info};
     is($info->fw_mac()->{'instant.2.0.0.0.0.10'}, '02:00:00:00:00:0a', 'associated client MAC');
+
+    $info->{store}{instant_wlan_mac}{'2.0.0.0.0.1.2'} = _mac('02:00:00:00:01:00');
+    $info->{store}{instant_client_bssid}{'2.0.0.0.0.11'} = _mac('02:00:00:00:01:00');
+    ok(!exists $info->fw_mac()->{'instant.2.0.0.0.0.11'}
+        && !exists $info->bp_index()->{'02:00:00:00:01:00'},
+        'fw_mac__client_on_wlan_no_radio_fits__client_omitted');
 
     $info->{store}{instant_radio_channel}{'2.0.0.0.0.1.0'} = '';
     my $iid = $info->bp_index()->{$info->fw_port()->{'instant.2.0.0.0.0.10'}};
     ok(($info->interfaces()->{$iid // ''} // '') eq '02:00:00:00:00:01.radio0'
         && !exists $info->i_80211channel()->{'2.0.0.0.0.1.0.0'},
         'fw_mac__radio_without_channel__client_still_on_radio_port');
+
+    delete $info->{store}{instant_radio_channel}{'2.0.0.0.0.1.0'};
+    $iid = $info->bp_index()->{$info->fw_port()->{'instant.2.0.0.0.0.10'}};
+    is($info->interfaces()->{$iid // ''}, '02:00:00:00:00:01.radio0',
+        'fw_mac__radio_missing_from_channel_table__client_still_on_radio_port');
 
     $info->{store}{instant_client_bssid}{'2.0.0.0.0.10'} = _mac('02:00:00:00:02:00');
     ok(!exists $info->fw_mac()->{'instant.2.0.0.0.0.10'}, 'fw_mac__unmapped_bssid__client_omitted');
