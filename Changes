@@ -30,6 +30,8 @@ Version 3.984001
     renamed EDS sysDescr strings (#560)
   * #664 H3C: take VLAN names from hh3cdot1qVlanName, as the V1910 and 1920
     leave defaults in Q-BRIDGE (#267, #307)
+  * #665 DLink: detect the DGS-F3008P, which serves no sysServices, and read
+    its model, firmware and serial from sysDescr (#510, #478, #558)
 
 Version 3.984000 (2026-10-29)
 
