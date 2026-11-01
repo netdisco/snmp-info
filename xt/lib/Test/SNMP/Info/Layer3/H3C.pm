@@ -807,4 +807,50 @@ sub vrf_addresses__anycast_flag__kept : Tests(1) {
     );
 }
 
+# A V1910 on Comware 5 leaves the default name in dot1qVlanStaticName and
+# keeps the configured one in hh3cdot1qVlanName
+sub _vlan_cache {
+  my ($test, $q_names, $h3c_names) = @_;
+
+  $test->{info}->clear_cache();
+  $test->{info}{_v_name}     = 1;
+  $test->{info}{_h3c_v_name} = 1;
+  $test->{info}{store}{v_name}     = $q_names;
+  $test->{info}{store}{h3c_v_name} = $h3c_names;
+}
+
+sub v_name : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'v_name');
+
+  $test->_vlan_cache({1 => 'VLAN 0001', 2 => 'VLAN 0002'},
+    {1 => 'VLAN 0001', 2 => 'wlan'});
+  cmp_deeply($test->{info}->v_name(), {1 => 'VLAN 0001', 2 => 'wlan'},
+    q(Vendor name replaces the Q-BRIDGE default));
+
+  # Comware 7 names VLANs in Q-BRIDGE and serves no hh3cdot1qVlanName
+  $test->_vlan_cache({1 => 'VLAN 0001', 10 => 'users-ten'}, {});
+  cmp_deeply($test->{info}->v_name(), {1 => 'VLAN 0001', 10 => 'users-ten'},
+    q(Without vendor rows the Q-BRIDGE names are kept));
+
+  $test->_vlan_cache({1 => 'VLAN 0001', 4 => 'VLAN 0004'},
+    {1 => '', 4 => 'name1', 4100 => 'local'});
+  cmp_deeply($test->{info}->v_name(), {1 => 'VLAN 0001', 4 => 'name1'},
+    q(Empty vendor names and VLANs absent from Q-BRIDGE are skipped));
+
+  $test->_vlan_cache({}, {2 => 'wlan'});
+  cmp_deeply($test->{info}->v_name(), {},
+    q(No Q-BRIDGE VLANs returns none from the vendor table));
+}
+
+sub v_index : Tests(1) {
+  my $test = shift;
+
+  $test->_vlan_cache({1 => 'VLAN 0001', 2 => 'VLAN 0002'},
+    {1 => 'VLAN 0001', 2 => 'wlan', 4100 => 'local'});
+  cmp_deeply($test->{info}->v_index(), {1 => 1, 2 => 2},
+    q(v_index keys stay those of Q-BRIDGE));
+}
+
 1;
