@@ -39,6 +39,8 @@ Version 3.984001
   * #666 Dell: report the bridge address as mac, and return 0.0.0.0 from
     lldp_ip for neighbors that advertise only a MAC chassis ID (#340)
   * #668 Airespace: count VxWorks 5 GHz BSSIDs up from the base radio MAC
+  * #671 Aerohive: put SSIDs and clients on radio ports, so wireless client
+    reports work, and report client transmit rate in Mbps (#325)
 
 Version 3.984000 (2026-10-29)
 
