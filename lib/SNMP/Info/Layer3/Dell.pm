@@ -155,6 +155,31 @@ sub vendor {
     return $dell->_vendor();
 }
 
+# The LLDP chassis ID is the bridge address, not ifPhysAddress.1
+sub mac {
+    my $dell  = shift;
+    my $b_mac = $dell->b_mac();
+
+    return $b_mac if defined $b_mac and $b_mac !~ /^[0:]+$/;
+    return $dell->orig_mac();
+}
+
+# Neighbors often advertise only a MAC chassis ID. Return 0.0.0.0 for them,
+# which Netdisco resolves by looking up c_id among known devices.
+sub lldp_ip {
+    my $dell    = shift;
+    my $partial = shift;
+
+    my $lldp_ip  = $dell->SUPER::lldp_ip($partial)  || {};
+    my $id_types = $dell->lldp_rem_id_type($partial) || {};
+
+    foreach my $key ( keys %$id_types ) {
+        next if defined $lldp_ip->{$key};
+        $lldp_ip->{$key} = '0.0.0.0' if $id_types->{$key} eq 'macAddress';
+    }
+    return $lldp_ip;
+}
+
 sub os {
     my $dell = shift;
 
@@ -479,6 +504,12 @@ Return the status of the second power supply from the F<Dell-Vendor-MIB>
 Returns serial number. Returns (C<rlPhdUnitGenParamSerialNum>) if available,
 otherwise uses the Layer3 serial method.
 
+=item $dell->mac()
+
+Returns the bridge address (C<dot1dBaseBridgeAddress>), which is what the
+switch advertises as its LLDP chassis ID. Falls back to C<ifPhysAddress.1>
+when the bridge address is missing or zero.
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -550,6 +581,13 @@ setting.
 =item $dell->qb_fdb_index()
 
 Returns nothing to work around incorrect indexing of C<dot1qTpFdbTable>
+
+=item $dell->lldp_ip()
+
+Returns reference to hash. Key: LLDP remote index, value: neighbor IPv4
+address from C<lldpRemManAddrTable>. A neighbor with a MAC chassis ID that
+advertises no management address returns C<0.0.0.0>, which callers can
+resolve by looking up C<c_id()>.
 
 =back
 

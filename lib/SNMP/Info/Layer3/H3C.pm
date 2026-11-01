@@ -58,6 +58,7 @@ $VERSION = '3.984000';
     'HH3C-ENTITY-VENDORTYPE-OID-MIB' => 'hh3cevtOther',
     'HH3C-LswMSTP-MIB'     => 'hh3cdot1sStpForceVersion',
     'HH3C-IP-ADDRESS-MIB'  => 'hh3cIpAddrSetMask',
+    'HH3C-LswVLAN-MIB'     => 'hh3cdot1qVlanName',
 );
 
 %GLOBALS = (
@@ -92,6 +93,9 @@ $VERSION = '3.984000';
     # HH3C-IP-ADDRESS-MIB::hh3cIpAddrSetTable, indexed
     # ifIndex.addrType.length.address
     'vrf_h3c_addr_mask' => 'hh3cIpAddrSetMask',
+
+    # HH3C-LswVLAN-MIB::hh3cdot1qVlanMIBTable, indexed by VLAN id
+    'h3c_v_name' => 'hh3cdot1qVlanName',
 );
 
 %MUNGE = (
@@ -146,6 +150,26 @@ sub os_ver {
     $os_ver = "$1" if ( $descr =~ /Product Version ([0-9.]+)/i );
 
     return $ver_release->{2} || $os_ver;
+}
+
+# Comware 5 on the V1910 and 1920 keeps the default "VLAN 0002" in
+# dot1qVlanStaticName and the configured name only in hh3cdot1qVlanName.
+# Replace names only, so v_index keeps the Q-BRIDGE keys.
+sub v_name {
+    my $h3c     = shift;
+    my $partial = shift;
+
+    my $v_name = $h3c->SUPER::v_name($partial);
+    return $v_name unless ref $v_name eq 'HASH' and %$v_name;
+
+    my $h3c_names = $h3c->h3c_v_name($partial) || {};
+    my %names     = %$v_name;
+    foreach my $vlan ( keys %names ) {
+        my $h3c_name = $h3c_names->{$vlan};
+        next unless defined $h3c_name and length $h3c_name;
+        $names{$vlan} = $h3c_name;
+    }
+    return \%names;
 }
 
 sub i_ignore {
@@ -547,6 +571,8 @@ Subclass for H3C & HP A-series devices
 
 =item F<HH3C-IP-ADDRESS-MIB>
 
+=item F<HH3C-LswVLAN-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::IEEE802dot3ad/"Required MIBs"> for its own MIB
@@ -652,11 +678,23 @@ Returns a HASH reference mapping from slave to master port for each member of
 a port bundle on the device. Keys are ifIndex of the slave ports, Values are
 ifIndex of the corresponding master ports.
 
+=item $h3c->v_name()
+
+Returns the Q-BRIDGE VLAN names (C<dot1qVlanStaticName>), each replaced by
+C<hh3cdot1qVlanName> when that is not empty. Comware 5 on the V1910 and 1920
+leaves the default C<VLAN 0002> in Q-BRIDGE and keeps the configured name
+only in the vendor table. VLANs absent from Q-BRIDGE are not added, so the
+keys match C<v_index()>.
+
 =back
 
 =head2 Table Methods
 
 =over
+
+=item $h3c->h3c_v_name()
+
+(C<hh3cdot1qVlanName>)
 
 =item $h3c->h3c_stp_i_id()
 

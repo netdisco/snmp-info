@@ -237,7 +237,7 @@ sub index_factor {
         if ( ( $model =~ /(470)/ )
         or ( $os =~ m/(boss|bes)/ ) and ( $op_mode eq 'pure' ) );
     $index_factor = 128
-        if ( ( $model =~ /(5[56]\d\d)|VSP|4950|59100/ )
+        if ( ( $model =~ /(5[569]\d\d)|VSP|4950/ )
         and ( $os_ver >= 6 ) );
 
     return $index_factor;
@@ -521,10 +521,11 @@ Required by SNMP::Info::SONMP.  Number representing the number of ports
 reserved per slot within the device MIB.
 
 Index factor on the Baystack switches are determined by the formula: Index
-Factor = 64 if (model = 470 or (os eq 'boss' and operating in pure mode))
-or else Index factor = 32.
+Factor = 128 if model is 55xx, 56xx, 59xx, VSP or 4950 running software 6
+or later; else 64 if (model = 470 or (os eq 'boss' and operating in pure
+mode)); or else Index factor = 32.
 
-Returns either 32 or 64 based upon the formula.
+Returns 32, 64 or 128 based upon the formula.
 
 =back
 

@@ -148,20 +148,28 @@ sub i_description {
     return \%result;
 }
 
+# Earlier firmware advertises no management address, so resolve the
+# neighbor's system name instead. Failing that, a MAC chassis ID gets
+# 0.0.0.0, which Netdisco resolves by looking up c_id among known devices.
 sub lldp_ip {
     my $scalance = shift;
-    my %result;
-    my $remotes = $scalance->lldp_rem_sysname();
-    foreach my $port ( keys %$remotes) {
-        if (defined $remotes->{$port}) {
-            my $ip = gethostbyname($remotes->{$port});
-            if ($ip) {
-                $result{$port} = inet_ntoa($ip);
-            }
-        }
+    my $partial  = shift;
+
+    my $lldp_ip  = $scalance->SUPER::lldp_ip($partial)   || {};
+    my $sysnames = $scalance->lldp_rem_sysname($partial) || {};
+    my $id_types = $scalance->lldp_rem_id_type($partial) || {};
+
+    foreach my $key ( keys %$sysnames ) {
+        next if defined $lldp_ip->{$key} or !defined $sysnames->{$key};
+        my $packed = gethostbyname( $sysnames->{$key} );
+        $lldp_ip->{$key} = inet_ntoa($packed) if $packed;
     }
-    return \%result
-};
+    foreach my $key ( keys %$id_types ) {
+        next if defined $lldp_ip->{$key};
+        $lldp_ip->{$key} = '0.0.0.0' if $id_types->{$key} eq 'macAddress';
+    }
+    return $lldp_ip;
+}
 
 
 1;
@@ -266,12 +274,6 @@ siemens returns a description including firmware, switch serial, etc
 clean it up. Try to use anything past VLAN or Port. And if this fails 
 past the last comma
 
-=item $scalance->lldp_ip()
-
-simatic does not implement lldpRemManAddrIfSubtype
-but remote system names are available
-try to resolve them via DNS and use that
-
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -293,11 +295,14 @@ to a hash.
 
 =item $scalance->lldp_ip()
 
-Returns reference to hash of ports to remote ips.
+Returns reference to hash. Key: LLDP remote index, value: neighbor IPv4
+address.
 
-simatic does not implement lldpRemManAddrIfSubtype
-but remote system names are available
-try to resolve them via DNS and use that.
+Uses the management address the neighbor advertises
+(C<lldpRemManAddrTable>). Earlier firmware advertises none, so the
+neighbor's system name (C<lldpRemSysName>) is resolved through DNS
+instead. A neighbor with a MAC chassis ID that neither gives an address
+returns C<0.0.0.0>, which callers can resolve by looking up C<c_id()>.
 
 =back
 
