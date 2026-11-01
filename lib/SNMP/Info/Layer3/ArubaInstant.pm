@@ -71,8 +71,8 @@ $VERSION = '3.984000';
     'instant_ssid'         => \&SNMP::Info::munge_null,
 );
 
-# Use one logical port per AP/WLAN, preserving all physical interfaces.
-# Only advertise entries with a BSSID, so both discovery and macsuck can join.
+# WLANs with a usable BSSID. They are not ports: each is mapped to the radio
+# that serves it (_wlan_radios).
 sub _wlans {
     my ($self, $partial) = @_;
     my $macs = $self->instant_wlan_mac($partial) || {};
@@ -88,8 +88,8 @@ sub _wlans {
     return \%wlans;
 }
 
-# Radio indexes overlap WLAN indexes. Append a component for a separate
-# synthetic interface namespace; do not infer a WLAN-to-radio relationship.
+# One port per radio. The trailing .0 keeps the keys radio ports had when
+# WLANs were ports too, and leaves room for the WLAN number in i_ssidlist.
 sub _radios {
     my ($self, $partial) = @_;
     my $channels = $self->instant_radio_channel() || {};
@@ -109,34 +109,67 @@ sub _radios {
     return \%radios;
 }
 
+# BSSIDs count up from their radio's MAC, up to 16 per radio, so a WLAN
+# belongs to the radio of the same AP with the highest MAC not above its
+# BSSID and within 16 of it. A WLAN no radio fits is left out, not guessed.
+sub _wlan_radios {
+    my $self   = shift;
+    my $wlans  = $self->_wlans();
+    my $radios = $self->_radios();
+    my %by_ap;
+    foreach my $iid (keys %$radios) {
+        my $radio = $radios->{$iid};
+        next unless defined $radio->{mac};
+        push @{ $by_ap{ $radio->{ap} } }, [_mac_number($radio->{mac}), $iid];
+    }
+    my %radio_of;
+    foreach my $iid (keys %$wlans) {
+        my $bssid = _mac_number($wlans->{$iid}{mac});
+        my ($best) = sort { $b->[0] <=> $a->[0] }
+            grep { $_->[0] <= $bssid && $bssid - $_->[0] < 16 }
+            @{ $by_ap{ $wlans->{$iid}{ap} } || [] };
+        $radio_of{$iid} = $best->[1] if $best;
+    }
+    return \%radio_of;
+}
+
+sub _mac_number {
+    (my $mac = shift) =~ s/://g;
+    no warnings 'portable';
+    return hex $mac;
+}
+
+sub _in_partial {
+    my ($key, $partial) = @_;
+    return 1 unless defined $partial && length $partial;
+    return $key eq $partial || index($key, "$partial.") == 0;
+}
+
 sub _augment {
     my ($self, $physical, $field, $partial) = @_;
     my %result = %{ $physical || {} };
-    my $wlans = {%{$self->_wlans($partial)}, %{$self->_radios($partial)}};
+    my $radios = $self->_radios($partial);
     my $radio_status = $self->instant_radio_status() || {};
     my $channels = $self->instant_radio_channel() || {};
     my $names = $self->instant_ap_name() || {};
-    my $ssids = $self->instant_wlan_ssid($partial) || {};
-    my $status = $self->instant_ap_status() || {};
-    foreach my $iid (keys %$wlans) {
-        my $wlan = $wlans->{$iid};
-        my $ap_mac = join ':', map {sprintf '%02x', $_} split /\./, $wlan->{ap};
-        my $radio = ($wlan->{kind} || '') eq 'radio';
-        my $name = $ap_mac . ($radio ? '.radio' : '.wlan') . $wlan->{number};
+    foreach my $iid (keys %$radios) {
+        my $radio = $radios->{$iid};
+        my $ap_mac = join ':', map {sprintf '%02x', $_} split /\./, $radio->{ap};
+        my $name = "$ap_mac.radio$radio->{number}";
         if ($field eq 'index') { $result{$iid} = $name }
         elsif ($field eq 'name') { $result{$iid} = $name }
         elsif ($field eq 'description') {
-            $result{$iid} = join ': ', $names->{$wlan->{ap}} || $ap_mac,
-                ($radio ? "Radio $wlan->{number} (channel " . ($channels->{$wlan->{source}} // '') . ')'
-                    : $ssids->{$iid} // "WLAN $wlan->{number}");
+            $result{$iid} = join ': ', $names->{$radio->{ap}} || $ap_mac,
+                "Radio $radio->{number} (channel "
+                . ($channels->{$radio->{source}} // '') . ')';
         }
         elsif ($field eq 'type') { $result{$iid} = 'ieee80211' }
         elsif ($field eq 'mac') {
-            if (defined $wlan->{mac}) { $result{$iid} = $wlan->{mac} }
+            if (defined $radio->{mac}) { $result{$iid} = $radio->{mac} }
             else { delete $result{$iid} }
         }
         elsif ($field eq 'up') {
-            my $value = $radio ? $radio_status->{$wlan->{source}} : $status->{$wlan->{ap}};
+            my $value = $radio_status->{$radio->{source}};
             $result{$iid} = ($value eq '1' ? 'up' : $value eq '2' ? 'down' : $value)
                 if defined $value;
         }
@@ -184,18 +217,33 @@ sub i_up_admin {
     return $self->_augment($self->SUPER::i_up_admin($partial), 'up', $partial);
 }
 
+# Keyed radio port, then WLAN number: callers drop the last component to
+# find the port, so every SSID a radio serves lands on that radio.
+sub _ssid_rows {
+    my ($self, $partial) = @_;
+    my $wlans    = $self->_wlans();
+    my $radio_of = $self->_wlan_radios();
+    my %rows;
+    foreach my $iid (keys %$radio_of) {
+        my $key = "$radio_of->{$iid}.$wlans->{$iid}{number}";
+        $rows{$key} = $iid if _in_partial($key, $partial);
+    }
+    return \%rows;
+}
+
 sub i_ssidlist {
     my ($self, $partial) = @_;
-    my $ssids = $self->instant_wlan_ssid($partial) || {};
-    my $wlans = $self->_wlans($partial);
-    return {map { ("$_.0" => $ssids->{$_}) }
-        grep {defined $ssids->{$_}} keys %$wlans};
+    my $ssids = $self->instant_wlan_ssid() || {};
+    my $rows  = $self->_ssid_rows($partial);
+    return {map { ($_ => $ssids->{ $rows->{$_} }) }
+        grep {defined $ssids->{ $rows->{$_} }} keys %$rows};
 }
 
 sub i_ssidmac {
     my ($self, $partial) = @_;
-    my $wlans = $self->_wlans($partial);
-    return {map { ("$_.0" => $wlans->{$_}{mac}) } keys %$wlans};
+    my $wlans = $self->_wlans();
+    my $rows  = $self->_ssid_rows($partial);
+    return {map { ($_ => $wlans->{ $rows->{$_} }{mac}) } keys %$rows};
 }
 
 sub i_ssidbcast {
@@ -244,9 +292,10 @@ sub dot11_cur_tx_pwr_mw {
 sub bp_index {
     my ($self, $partial) = @_;
     my %index = %{ $self->SUPER::bp_index($partial) || {} };
-    my $wlans = $self->_wlans();
-    foreach my $iid (keys %$wlans) {
-        $index{ $wlans->{$iid}{mac} } = $iid;
+    my $wlans    = $self->_wlans();
+    my $radio_of = $self->_wlan_radios();
+    foreach my $iid (keys %$radio_of) {
+        $index{ $wlans->{$iid}{mac} } = $radio_of->{$iid};
     }
     return \%index;
 }
@@ -256,7 +305,7 @@ sub _clients {
     my $macs = $self->instant_client_mac($partial) || {};
     my $bssids = $self->instant_client_bssid($partial) || {};
     my $wlans = $self->_wlans();
-    my %known = map {$_->{mac} => 1} values %$wlans;
+    my %known = map { ($wlans->{$_}{mac} => 1) } keys %{ $self->_wlan_radios() };
     my %clients;
     foreach my $iid (keys %$macs) {
         my $mac = $macs->{$iid};
@@ -310,13 +359,17 @@ L<SNMP::Info::Layer3::Aruba>. ArubaOS 10 is not validated by this class.
 =head2 Interfaces and wireless networks
 
 C<i_index>, C<interfaces>, C<i_name>, C<i_description>, C<i_type>, C<i_mac>,
-C<i_up> and C<i_up_admin> preserve physical interfaces and add a logical
-wireless interface per AP and WLAN index, plus separate radio interfaces.
-Synthetic radio indexes have an extra component to avoid colliding with WLAN
-indexes. WLAN status reflects AP status; radio status comes from the radio table.
+C<i_up> and C<i_up_admin> preserve physical interfaces and add one port per
+AP radio, named after the AP MAC address and radio number. A radio port's
+index is the AP and radio index with a trailing C<.0>. Radio status comes
+from the radio table.
 
 C<i_ssidlist>, C<i_ssidmac> and C<i_ssidbcast> expose each WLAN's name,
-BSSID and broadcast flag. Missing data does not create wireless interfaces.
+BSSID and broadcast flag on the radio that serves it, keyed by the radio
+port index and the WLAN number. A WLAN's BSSID counts up from its radio's
+MAC address, so a WLAN belongs to the radio of the same AP with the highest
+MAC address not above its BSSID and within 16 of it. A WLAN no radio fits
+is omitted.
 
 =head2 Radio channel and power
 
@@ -325,13 +378,13 @@ interface. Channel suffixes such as C<+>, C<E> and C<S> remain in the radio
 interface description. C<dot11_cur_tx_pwr_mw> converts radio power from dBm
 to integer milliwatts, rounding to the nearest milliwatt. The dBm interpretation
 follows the L<LibreNMS Aruba Instant implementation|https://github.com/librenms/librenms/blob/master/LibreNMS/OS/ArubaInstant.php>.
-No WLAN-to-radio relationship is inferred.
 
 =head2 Wireless clients
 
-C<fw_mac>, C<fw_port> and C<bp_index> map associated clients onto their WLAN
-interfaces by BSSID, preserving wired forwarding entries. Clients with an
-unknown BSSID are omitted. No client VLAN or physical radio is inferred.
+C<fw_mac>, C<fw_port> and C<bp_index> map associated clients onto the radio
+port that serves their BSSID, preserving wired forwarding entries. Clients
+whose BSSID belongs to no radio are omitted. Q-BRIDGE ports, which this
+agent numbers by ifIndex without a C<dot1dBasePortTable>, are not mapped.
 
 =head2 Interface methods
 
@@ -339,42 +392,40 @@ unknown BSSID are omitted. No client VLAN or physical radio is inferred.
 
 =item i_index
 
-Returns physical indexes and synthetic WLAN and radio identifiers.
+Returns physical indexes and synthetic radio identifiers.
 
 =item interfaces
 
-Returns physical port names and stable WLAN and radio names.
+Returns physical port names and stable radio names.
 
 =item i_name
 
-Returns the same stable WLAN and radio names alongside physical interface names.
+Returns the same stable radio names alongside physical interface names.
 
 =item i_description
 
-Returns the AP name and SSID for each WLAN, or radio number and raw channel
-for each radio.
+Returns the AP name, radio number and raw channel for each radio.
 
 =item i_type
 
-Returns C<ieee80211> for WLAN and radio interfaces.
+Returns C<ieee80211> for radio interfaces.
 
 =item i_mac
 
-Returns the BSSID for each WLAN and radio MAC when available for each radio.
+Returns the radio MAC address, when available, for each radio.
 
 =item i_up
 
-Returns AP operational status for WLANs and radio status for radio interfaces.
+Returns radio status for radio interfaces.
 
 =item i_up_admin
 
-Returns AP status for logical WLANs; separate WLAN administrative status
-is not available from these tables. Radio interfaces similarly use radio
-operational status.
+Returns radio operational status for radio interfaces; separate
+administrative status is not available from these tables.
 
 =item i_ssidlist
 
-Returns SSID names indexed by logical interface and SSID index.
+Returns SSID names indexed by radio port and WLAN number.
 
 =item i_ssidmac
 
@@ -394,7 +445,7 @@ Returns radio transmit power converted from dBm to integer milliwatts.
 
 =item bp_index
 
-Adds BSSID to logical interface mappings to physical bridge mappings.
+Adds BSSID to radio port mappings to physical bridge mappings.
 
 =item fw_mac
 
@@ -402,7 +453,7 @@ Adds associated wireless client MAC addresses to wired forwarding entries.
 
 =item fw_port
 
-Maps associated clients to BSSIDs for joining through C<bp_index>.
+Maps associated clients to BSSIDs, which C<bp_index> maps to radio ports.
 
 =back
 
