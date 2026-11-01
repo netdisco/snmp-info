@@ -77,7 +77,7 @@ sub os {
 
     # On EDS, it is called the "Evolution OS"
     # Not sure what, if any, name it has a name on other products
-    if ( $descr =~ m/Lantronix EDS\w+ V([\d\.R]+)/ ) {
+    if ( $descr =~ m/Lantronix EDS\w+ V?([\d\.R]+)/ ) {
       return 'EvolutionOS';
     } else {
       return 'LantronixOS';
@@ -95,7 +95,8 @@ sub os_ver {
     return unless defined $descr;
 
     # EDS: "Lantronix EDS16PR V4.0.0.0R15 (1307.....X)"
-    $os_ver = $1 if ( $descr =~ m/Lantronix EDS\w+ V([\d\.R]+)/ );
+    # EDS5000: "Lantronix EDS5016 2.1.0.0R3 (00C0F2.....)"
+    $os_ver = $1 if ( $descr =~ m/Lantronix EDS\w+ V?([\d\.R]+)/ );
 
     return $os_ver;
 }
@@ -111,7 +112,7 @@ sub serial {
     return unless defined $descr;
 
     # EDS: "Lantronix EDS16PR V4.0.0.0R15 (1307.....X)"
-    $serial = $1 if ( $descr =~ m/Lantronix EDS\w+ V[\d\.R]+ \((\w+)\)/ );
+    $serial = $1 if ( $descr =~ m/Lantronix EDS\w+ V?[\d\.R]+ \((\w+)\)/ );
 
     return $serial;
 }
