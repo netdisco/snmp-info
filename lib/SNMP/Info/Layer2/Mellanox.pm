@@ -87,48 +87,15 @@ sub model {
     return $dev->SUPER::model();
 }
 
-sub lldp_id {
-    my $dev     = shift;
-    my $partial = shift;
+# Onyx returns MAC chassis IDs as text rather than the six octets LLDP-MIB
+# defines. Keep the common decoder for binary MACs and other ID types.
+sub _lldp_id_string {
+    my ( $dev, $id, $type ) = @_;
 
-    my $id_type = $dev->lldp_rem_id_type($partial) || {};
-    my $id_raw  = $dev->lldp_rem_id($partial)      || {};
-
-    my %id;
-    foreach my $key ( keys %$id_raw ) {
-        my $type = $id_type->{$key};
-        my $raw  = $id_raw->{$key};
-        next unless defined $raw;
-
-        if ( defined $type and $type eq 'macAddress' ) {
-            # Onyx encodes the MAC as an ASCII string in the bytes,
-            # e.g. hex 31633a33343a... decodes to ASCII "1c:34:da:39:f9:80"
-            my $ascii = pack( 'H*', unpack( 'H*', $raw ) );
-            if ( $ascii =~ /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i ) {
-                $id{$key} = lc $ascii;
-            }
-            else {
-                # genuine 6-byte binary MAC
-                $id{$key} = join ':', map { sprintf "%02x", $_ }
-                                      unpack( 'C*', $raw );
-            }
-        }
-        elsif ( defined $type and $type eq 'networkAddress' ) {
-            # first byte is address family (1 = IPv4), skip it
-            my @bytes = unpack( 'C*', $raw );
-            if ( $bytes[0] == 1 and scalar @bytes == 5 ) {
-                $id{$key} = join '.', @bytes[1..4];
-            }
-            else {
-                $id{$key} = unpack 'H*', $raw;
-            }
-        }
-        else {
-            # ifName, local string etc -- decode ASCII bytes
-            $id{$key} = pack( 'H*', unpack( 'H*', $raw ) );
-        }
-    }
-    return \%id;
+    return lc $id
+        if defined $id and defined $type and $type eq 'macAddress'
+        and $id =~ /^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$/i;
+    return $dev->SUPER::_lldp_id_string( $id, $type );
 }
 
 # lldpRemLocalPortNum is a bridge port number. A port with no bridge port
@@ -138,7 +105,10 @@ sub lldp_if {
     my $dev     = shift;
     my $partial = shift;
 
-    my $id_type  = $dev->lldp_rem_id_type($partial) || {};
+    return $dev->SUPER::lldp_if($partial)
+        if ( $dev->_lldp_source() || '' ) eq 'v2';
+
+    my $id_type  = $dev->_lldp_rem( 'lldp_rem_id_type', $partial );
     my $bp_index = $dev->bp_index()                 || {};
     my $lport_id = $dev->lldp_lport_id()            || {};
     my %by_name  = reverse %{ $dev->i_name() || {} };
@@ -167,7 +137,7 @@ sub c_ip {
     my $c_ip = $dev->SUPER::c_ip( $partial, $topo_cap ) || {};
     return $c_ip unless grep { $_ eq 'lldp' } @$topo_cap;
 
-    my $id_type = $dev->lldp_rem_id_type($partial) || {};
+    my $id_type = $dev->_lldp_rem( 'lldp_rem_id_type', $partial );
 
     foreach my $key ( keys %$id_type ) {
         $c_ip->{$key} = '0.0.0.0' unless defined $c_ip->{$key};
@@ -210,6 +180,10 @@ Provides abstraction to the configuration information obtainable from a
 Mellanox / NVIDIA switch running Onyx via SNMP. It is chosen for devices
 whose C<sysDescr> starts with C<Onyx,> and whose C<sysObjectID> is under
 C<.1.3.6.1.4.1.33049.1.1.1>.
+
+Onyx returns MAC chassis IDs as ASCII text. The inherited LLDP methods
+accept these as well as binary MAC addresses and select LLDP-MIB or
+LLDP-V2-MIB as provided by the device.
 
 =head2 Inherited Classes
 
@@ -280,20 +254,14 @@ See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 =over
 
-=item $dev->lldp_id()
-
-Returns reference to hash. Key: iid, Value: remote chassis ID. Onyx sends
-a MAC address chassis ID as its ASCII text rather than six octets; both
-forms are returned as a colon-separated MAC address.
-
-(C<lldpRemChassisId>)
-
 =item $dev->lldp_if()
 
 Returns reference to hash. Key: iid, Value: local ifIndex. Onyx's
 C<lldpRemLocalPortNum> is a bridge port number, mapped through
 C<bp_index()>. A port with no bridge port row is matched by its
 C<lldpLocPortId> to C<ifName>; a neighbor matching neither is left out.
+For LLDP-V2-MIB, uses the inherited mapping, whose local port number is
+already an ifIndex.
 
 =item $dev->c_ip()
 

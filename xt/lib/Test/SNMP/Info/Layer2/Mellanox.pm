@@ -138,7 +138,7 @@ sub model : Tests(3) {
     'model__no_onyx_sysdescr__falls_back_to_parent');
 }
 
-sub lldp_id : Tests(4) {
+sub lldp_id : Tests(12) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_id');
@@ -149,9 +149,43 @@ sub lldp_id : Tests(4) {
     'lldp_id__binary_mac__decoded');
   is($id->{'1000.33.13'}, '192.0.2.13',
     'lldp_id__network_address__decoded');
+  is($id->{'1000.37.14'}, 'swp14', q(String chassis ID is preserved));
+
+  my $info = $test->{info};
+  $info->{store}{lldp_rem_id_type}{$_} = 'macAddress'
+    for qw/1000.41.15 1000.45.16 1000.49.17/;
+  $info->{store}{lldp_rem_id}{'1000.41.15'} = pack('H*', '0200000001');
+  $info->{store}{lldp_rem_id}{'1000.45.16'} = pack('H*', '02000000000001');
+  $info->{store}{lldp_rem_id}{'1000.49.17'} = '';
+  $id = $info->lldp_id();
+  is($id->{'1000.41.15'}, undef, q(Five-byte MAC is rejected));
+  is($id->{'1000.45.16'}, undef, q(Seven-byte MAC is rejected));
+  ok(!exists $id->{'1000.49.17'}, q(Empty chassis ID is omitted));
+
+  $info->{store}{lldp_rem_id}{'1000.97.10'} = '02:AA:BB:CC:DD:10';
+  is($info->lldp_id()->{'1000.97.10'}, '02:aa:bb:cc:dd:10',
+    q(ASCII MAC is returned in lowercase));
+  $info->cache({
+    '_lldp_loc_id_type' => 'macAddress',
+    '_lldp_loc_id_os' => '02:AA:BB:CC:DD:01',
+  });
+  is($info->lldp_loc_id(), '02:aa:bb:cc:dd:01',
+    q(The local chassis ID uses the same decoder));
+
+  $test->_prime_v2();
+  cmp_deeply($info->lldp_id(), {
+    '1000.17.1.1' => '02:00:00:00:00:17',
+    '1000.18.1.2' => '02:00:00:00:00:18',
+  }, q(V2 chassis IDs use the nearest-bridge agent));
+
+  $test->_prime_v2();
+  $info->{store}{lldp_rem_id} = {'1000.97.10' => '02:00:00:00:00:10'};
+  $info->{store}{lldp_rem_id_type} = {'1000.97.10' => 'macAddress'};
+  cmp_deeply($info->lldp_id(), {'1000.97.10' => '02:00:00:00:00:10'},
+    q(A neighbor present in both MIBs is read from LLDP-MIB once));
 }
 
-sub lldp_if : Tests(5) {
+sub lldp_if : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_if');
@@ -174,9 +208,14 @@ sub lldp_if : Tests(5) {
   });
   cmp_deeply($test->{info}->lldp_if(), {},
     'lldp_if__no_bridge_port_or_name_match__omits_neighbor');
+
+  $test->_prime_v2();
+  cmp_deeply($test->{info}->lldp_if(), {
+    '1000.17.1.1' => 17, '1000.18.1.2' => 18,
+  }, q(V2 local port numbers are ifIndex values, not bridge ports));
 }
 
-sub c_ip : Tests(7) {
+sub c_ip : Tests(9) {
   my $test = shift;
 
   can_ok($test->{info}, 'c_ip');
@@ -193,6 +232,57 @@ sub c_ip : Tests(7) {
     q(The address and interface tables honor the same protocol list));
   cmp_deeply($test->{info}->c_ip(undef, ['cdp']), {},
     q(Selecting another protocol does not add LLDP neighbors));
+
+  $test->_prime_v2();
+  cmp_deeply($test->{info}->c_ip(), {
+    '1000.17.1.1' => '192.0.2.17', '1000.18.1.2' => '0.0.0.0',
+  }, q(V2 addresses and placeholders use the same neighbor source));
+  $test->{info}{store}{lldp_v2_rman_addr} = {};
+  cmp_deeply($test->{info}->c_ip(), {
+    '1000.17.1.1' => '0.0.0.0', '1000.18.1.2' => '0.0.0.0',
+  }, q(V2 neighbors without management addresses retain placeholders));
+}
+
+# The common LLDP role's V2 index is timemark.ifIndex.agent.index.
+sub _prime_v2 {
+  my $test = shift;
+  $test->{info}->clear_cache();
+  $test->{info}->cache({
+    '_lldp_rem_id'          => 1,
+    '_lldp_rem_id_type'     => 1,
+    '_lldp_v2_rem_id'       => 1,
+    '_lldp_v2_rem_id_type'  => 1,
+    '_lldp_v2_rem_pid'      => 1,
+    '_lldp_v2_dest_mac'     => 1,
+    '_lldp_v2_rman_addr'    => 1,
+    '_bp_index'            => 1,
+    'store' => {
+      'lldp_rem_id'      => {},
+      'lldp_rem_id_type' => {},
+      'lldp_v2_rem_id' => {
+        '1000.17.1.1' => '02:00:00:00:00:17',
+        '1000.18.1.2' => pack('H*', '020000000018'),
+        '1000.17.2.1' => '02:00:00:00:00:99',
+      },
+      'lldp_v2_rem_id_type' => {
+        map { $_ => 'macAddress' } qw/1000.17.1.1 1000.18.1.2 1000.17.2.1/
+      },
+      'lldp_v2_rem_pid' => {
+        '1000.17.1.1' => 'swp17', '1000.18.1.2' => 'swp18',
+        '1000.17.2.1' => 'swp99',
+      },
+      'lldp_v2_dest_mac' => {
+        1 => pack('H*', '0180c200000e'),
+        2 => pack('H*', '0180c2000003'),
+      },
+      'lldp_v2_rman_addr' => {
+        '1000.17.1.1.1.4.192.0.2.17' => 'ifIndex',
+        '1000.17.2.1.1.4.192.0.2.99' => 'ifIndex',
+      },
+      'bp_index' => {17 => 101, 18 => 102},
+    },
+  });
+  return;
 }
 
 sub device_type : Tests(9) {
