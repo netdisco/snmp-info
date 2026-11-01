@@ -11,16 +11,13 @@ Version 3.984001
 
   [ENHANCEMENTS]
 
-  * Mellanox: report layer 3 capabilities and collect standard ARP and
-    IPv6 neighbor tables while retaining port access and LLDP support
+  * #667 Onyx: add Layer3 support, improve detection and LLDP handling, and
+    rename the class to Layer3::Onyx (#396)
   * #658 RapidCity: set_i_speed_admin accepts 10G to 100G, and the speed
     and duplex setters turn auto-negotiation off when it is on
 
   [BUG FIXES]
 
-  * Mellanox: restrict the Onyx class to Onyx Ethernet switches, honor the
-    topology protocol list in c_ip, and retain the shared LLDP decoding
-    and MIB selection
   * #657 Layer3: read the IPv4 ARP cache from ipNetToPhysicalTable when the
     older ARP tables hold only 127.x entries, as on Extreme VDX (#291)
   * #659 MAU: report admin duplex on devices without ifMauDefaultType,
