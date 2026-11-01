@@ -54,6 +54,13 @@ $VERSION = '3.984000';
     'instant_ssid_hide'   => 'aiSSIDHide',
     'instant_client_mac'  => 'aiClientMACAddress',
     'instant_client_bssid'=> 'aiClientWlanMACAddress',
+    'instant_client_snr'      => 'aiClientSNR',
+    'instant_client_txrate'   => 'aiClientTxRate',
+    'instant_client_uptime'   => 'aiClientUptime',
+    'instant_client_txbytes'  => 'aiClientTxDataBytes',
+    'instant_client_rxbytes'  => 'aiClientRxDataBytes',
+    'instant_client_txframes' => 'aiClientTxDataFrames',
+    'instant_client_rxframes' => 'aiClientRxDataFrames',
 );
 %MUNGE = (%SNMP::Info::Layer3::Aruba::MUNGE,
     'instant_radio_mac' => \&SNMP::Info::munge_mac,

@@ -22,7 +22,7 @@ sub setup : Tests(setup) {
     $store->{qb_fw_mac} = {'1.2.0.0.0.255.2' => '02:00:00:00:ff:02'};
     $store->{qb_fw_port} = {'1.2.0.0.0.255.2' => 1};
     # SNMP::Info caches octet strings before applying MAC munges.
-    foreach my $method (qw/instant_wlan_mac instant_client_mac instant_client_bssid i_mac qb_fw_mac/) {
+    foreach my $method (qw/instant_wlan_mac instant_radio_mac instant_client_mac instant_client_bssid i_mac qb_fw_mac/) {
         $store->{$method}{$_} = pack('C6', map {hex $_} split /:/, $store->{$method}{$_})
             foreach keys %{$store->{$method}};
     }
@@ -45,7 +45,7 @@ sub interfaces : Tests(1) {
         my $macs = $info->fw_mac();
         my $fw_ports = $info->fw_port();
         my $bridge = $info->bp_index();
-        is(scalar keys %$ports, 9, 'eight WLANs and the wired uplink');
+        is(scalar keys %$ports, 11, q(eight WLANs, two radios and the wired uplink));
         is($ports->{1}, 'Ethernet1', 'wired interface preserved');
         is(scalar keys %$ssids, 8, 'all eight SSID entries exposed');
         is(scalar keys %$macs, 10, 'nine clients and wired forwarding entry');
@@ -79,6 +79,7 @@ sub missing_and_invalid_data : Tests(1) {
         $info->{store}{instant_wlan_mac}{'2.0.0.0.0.1.99'} = pack('C6', (0) x 6);
         is(scalar keys %{$info->i_ssidmac()}, 8, 'invalid WLAN entries omitted');
         $info->{store}{instant_wlan_mac} = {};
+        $info->{store}{instant_radio_channel} = {};
         is_deeply($info->interfaces(), {1 => 'Ethernet1'}, 'missing Instant tables retain wired ports');
         is_deeply($info->i_ssidlist(), {}, 'no SSIDs without BSSIDs');
         is_deeply($info->i_ssidmac(), {}, 'no BSSIDs');
@@ -146,7 +147,7 @@ sub i_type : Tests(2) {
 sub i_mac : Tests(2) {
     my $info = shift->{info};
     is($info->i_mac()->{1}, '02:00:00:00:ff:01', 'wired MAC retained');
-    is($info->i_mac()->{'2.0.0.0.0.1.0'}, '02:00:00:00:00:02', 'logical port uses BSSID');
+    is($info->i_mac()->{'2.0.0.0.0.1.0'}, '02:00:00:00:01:f0', 'logical port uses BSSID');
 }
 
 sub i_up : Tests(2) {
@@ -170,7 +171,7 @@ sub i_ssidlist : Tests(1) {
 
 sub i_ssidmac : Tests(1) {
     my $info = shift->{info};
-    is($info->i_ssidmac()->{'2.0.0.0.0.1.0.0'}, '02:00:00:00:00:02', 'SSID and BSSID share index');
+    is($info->i_ssidmac()->{'2.0.0.0.0.1.0.0'}, '02:00:00:00:01:f0', 'SSID and BSSID share index');
 }
 
 sub i_ssidbcast : Tests(5) {
@@ -185,7 +186,7 @@ sub i_ssidbcast : Tests(5) {
 
 sub bp_index : Tests(1) {
     my $info = shift->{info};
-    is($info->bp_index()->{'02:00:00:00:00:02'}, '2.0.0.0.0.1.0', 'BSSID maps to logical interface');
+    is($info->bp_index()->{'02:00:00:00:01:f0'}, '2.0.0.0.0.1.0', 'BSSID maps to logical interface');
 }
 
 sub fw_mac : Tests(1) {
@@ -195,7 +196,7 @@ sub fw_mac : Tests(1) {
 
 sub fw_port : Tests(1) {
     my $info = shift->{info};
-    is($info->fw_port()->{'instant.2.0.0.0.0.10'}, '02:00:00:00:00:02', 'associated client BSSID');
+    is($info->fw_port()->{'instant.2.0.0.0.0.10'}, '02:00:00:00:01:f0', 'associated client BSSID');
 }
 
 # AP-225 / 8.4.0.0 radio rows from LibreNMS tests/snmpsim/aruba-instant.snmprec.
@@ -222,7 +223,7 @@ sub radio_interfaces : Tests(1) {
         my $ports = $info->interfaces();
         is(scalar keys %$ports, 17, 'wired port, eight WLANs and eight radios');
         is($ports->{'2.0.0.0.0.1.0'}, '02:00:00:00:00:01.wlan0', 'WLAN identity retained');
-        is($ports->{'2.0.0.0.0.1.0.0'}, '02:00:00:00:00:01.radio0', 'radio index does not collide');
+        is($ports->{'2.0.0.0.0.4.0.0'}, '02:00:00:00:00:04.radio0', 'radio index does not collide');
         foreach my $iid (keys %{$info->i_80211channel()}) {
             ok(exists $ports->{$iid}, 'channel joins a known radio port');
             like($ports->{$iid}, qr/\.radio\d+$/, 'channel is assigned to a radio');
@@ -233,7 +234,7 @@ sub radio_interfaces : Tests(1) {
             ok(!exists $info->i_mac()->{$iid}, 'missing radio MAC stays unknown')
                 unless exists $info->{store}{instant_radio_mac}{$source};
         }
-        ok(!exists $info->i_80211channel()->{'2.0.0.0.0.1.0'}, 'no inferred WLAN channel');
+        ok(!exists $info->i_80211channel()->{'2.0.0.0.0.4.0'}, 'no inferred WLAN channel');
         is(scalar keys %{$info->i_ssidlist()}, 8, 'radio interfaces do not invent SSIDs');
         is(scalar keys %{$info->fw_mac()}, 10, 'client and wired entries retained');
         done_testing();
@@ -253,14 +254,14 @@ sub i_80211channel : Tests(1) {
                 qr/\Q$fixture->{instant_radio_channel}{$iid}\E\)/, 'raw channel retained in description');
         }
         is_deeply($info->i_80211channel(), \%expected, 'all eight public fixture channels parsed');
-        is_deeply($info->i_80211channel('2.0.0.0.0.1.0.0'),
-            {'2.0.0.0.0.1.0.0' => $expected{'2.0.0.0.0.1.0.0'}}, 'partial read uses synthetic radio index');
+        is_deeply($info->i_80211channel('2.0.0.0.0.4.0.0'),
+            {'2.0.0.0.0.4.0.0' => $expected{'2.0.0.0.0.4.0.0'}}, 'partial read uses synthetic radio index');
         foreach my $case (['132+', 132], ['36-', 36], ['11', 11], ['116E', 116], ['69S', 69]) {
-            $info->{store}{instant_radio_channel}{'2.0.0.0.0.1.0'} = $case->[0];
-            is($info->i_80211channel()->{'2.0.0.0.0.1.0.0'}, $case->[1], "$case->[0] channel parsed");
+            $info->{store}{instant_radio_channel}{'2.0.0.0.0.4.0'} = $case->[0];
+            is($info->i_80211channel()->{'2.0.0.0.0.4.0.0'}, $case->[1], "$case->[0] channel parsed");
         }
-        $info->{store}{instant_radio_channel}{'2.0.0.0.0.1.0'} = 'unknown';
-        ok(!exists $info->i_80211channel()->{'2.0.0.0.0.1.0.0'}, 'unknown channel omitted');
+        $info->{store}{instant_radio_channel}{'2.0.0.0.0.4.0'} = 'unknown';
+        ok(!exists $info->i_80211channel()->{'2.0.0.0.0.4.0.0'}, 'unknown channel omitted');
         $info->{store}{instant_radio_channel} = {};
         is_deeply($info->i_80211channel(), {}, 'missing radio table returns empty channel map');
         done_testing();
@@ -273,13 +274,13 @@ sub dot11_cur_tx_pwr_mw : Tests(1) {
     subtest 'dBm to integer milliwatts' => sub {
         my $info = $test->{info};
         is(scalar keys %{$info->dot11_cur_tx_pwr_mw()}, 8, 'all public fixture powers exposed');
-        is(scalar keys %{$info->dot11_cur_tx_pwr_mw('2.0.0.0.0.1.0.0')}, 1, 'partial power read is limited to selected radio');
+        is(scalar keys %{$info->dot11_cur_tx_pwr_mw('2.0.0.0.0.4.0.0')}, 1, 'partial power read is limited to selected radio');
         foreach my $case ([18, 63], [9, 8], [15, 32], [16, 40], [21, 126], [25, 316], [26, 398], [0, 1], [-3, 1]) {
-            $info->{store}{instant_radio_power}{'2.0.0.0.0.1.0'} = $case->[0];
-            is($info->dot11_cur_tx_pwr_mw()->{'2.0.0.0.0.1.0.0'}, $case->[1], "$case->[0] dBm converted");
+            $info->{store}{instant_radio_power}{'2.0.0.0.0.4.0'} = $case->[0];
+            is($info->dot11_cur_tx_pwr_mw()->{'2.0.0.0.0.4.0.0'}, $case->[1], "$case->[0] dBm converted");
         }
-        $info->{store}{instant_radio_power}{'2.0.0.0.0.1.0'} = 'unknown';
-        ok(!exists $info->dot11_cur_tx_pwr_mw()->{'2.0.0.0.0.1.0.0'}, 'invalid power omitted');
+        $info->{store}{instant_radio_power}{'2.0.0.0.0.4.0'} = 'unknown';
+        ok(!exists $info->dot11_cur_tx_pwr_mw()->{'2.0.0.0.0.4.0.0'}, 'invalid power omitted');
         $info->{store}{instant_radio_power} = {};
         is_deeply($info->dot11_cur_tx_pwr_mw(), {}, 'missing power stays unknown');
         done_testing();
