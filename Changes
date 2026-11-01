@@ -15,6 +15,8 @@ Version 3.984001
     rename the class to Layer3::Onyx (#396)
   * #658 RapidCity: set_i_speed_admin accepts 10G to 100G, and the speed
     and duplex setters turn auto-negotiation off when it is on
+  * #670 Agent skills: describe the wireless port model and reading data
+    from indexes
 
   [BUG FIXES]
 

@@ -13,10 +13,11 @@ holds the build, test and pull request checklist.
 ## Start from an existing class
 
 - Find the class with the nearest table shape and copy its approach:
-  `Layer2/Aerohive.pm` (wireless, fixed `layers`), `Layer2/Baystack.pm`
+  `Layer2/Aerohive.pm` (fixed `layers`), `Layer2/Baystack.pm`
   (standard first, vendor fallback), `Layer3/Foundry.pm` and
   `Layer3/Aruba.pm` (vendor PoE and port tables), `Airespace.pm`
-  (merged controller tables).
+  (merged controller tables). For a wireless device, copy `Airespace.pm`
+  or `Layer3/Aruba.pm`, which follow "Wireless devices" below.
 - Inherit from the class the device resolved to before your change, so its
   behavior stays. A Net-SNMP based device that used to land on
   `Layer3::NetSNMP` keeps its `lo` handling and `hrSystemUptime` only if the
@@ -67,6 +68,31 @@ holds the build, test and pull request checklist.
 - Do not build `ip_index`/`ip_table` from the address SNMP::Info was asked
   to contact. It may be a NAT or proxy address, and the caller already
   knows it.
+- **Read the index, not only the values.** An object may be
+  `not-accessible`, so it exists only as part of each row's index: the
+  address in `lldpRemManAddrTable` (`LLDP.pm`), the client MAC in Aruba's
+  user table (`Layer3/Aruba.pm`), and on Arista the VNIs of each VXLAN
+  tunnel, served only as the index of the counters table
+  `aristaVxlanVtiVniCountersTable`, which also identifies the tunnel's
+  ifIndex where `ifType` cannot. Before concluding a device does not
+  report something, read the `INDEX` clause of every table that could
+  hold it, statistics and counters tables included, and decode the index
+  as a walk shows it.
+- **Take index values from the index, even when the index column is
+  readable.** Each column is a separate walk, so also reading an index
+  column repeats the table's round trips for data every row's key already
+  carries. Walk one column you need anyway, chosen so the agent fills it
+  on every row, and decode the rest from its index as the MIB types it: a
+  `MacAddress` is six sub-identifiers, and a variable-length string is
+  prefixed by its length unless the `INDEX` is `IMPLIED`.
+- **Derive from the address plan only as a last resort.** Vendors
+  allocate MAC addresses from a base address in fixed patterns: a virtual
+  management MAC at an offset from the chassis base (`Layer3/Passport.pm`),
+  BSSIDs counted up from a radio's MAC (`Airespace.pm` `i_ssidmac`). Use
+  such a pattern only when no object or index gives the relationship, the
+  vendor documents it (cite the document in a comment), every walk
+  available follows it, the test data keeps the relationship, and anything
+  the pattern cannot place is left out rather than guessed.
 
 ## Identity methods
 
@@ -175,11 +201,65 @@ stored. Its discover, macsuck and arpnip workers
 - **Wireless**: `i_ssidlist`, `i_ssidmac`, `i_ssidbcast`, `i_80211channel`,
   `dot11_cur_tx_pwr_mw`, keyed by `interfaces()` key. A vendor table keyed
   otherwise, even where its MIB says `INDEX { ifIndex }`, is mapped to
-  ifIndex first; an unmatched key is dropped. Clients from `cd11_*`.
+  ifIndex first; an unmatched key is dropped. Clients from `cd11_*`. See
+  "Wireless devices" below for how the ports and keys fit together.
 - **802.1X**: `dot1x`, `pae_*`.
 
 Vendor-named methods (`vendor_wifi_essid`) are not read. Emulate the
 standard method from the vendor table instead.
+
+## Wireless devices
+
+These rules apply to classes for access points and wireless controllers.
+
+A radio is to an access point what a physical port is to a switch: the
+medium, and properties such as channel and transmit power belong to it,
+as speed and duplex belong to a port. SSIDs are carried on the radio the
+way VLANs are carried on a trunk: one radio serves several, and the
+calling application stores them per port, one row per BSSID. A client is
+a node on the radio's port and carries two separate tags, its VLAN
+(`qb_fw_vlan`) and its SSID (`cd11_ssid`); one SSID can place clients in
+different VLANs, and several SSIDs can share one.
+
+The calling application's wireless reports join these on the port: a
+client counts only on a port that has a channel.
+
+- **One port per radio.** Return one `interfaces()` entry per AP radio,
+  and key `i_80211channel` and `dot11_cur_tx_pwr_mw` by it.
+- **SSIDs on the radio's port.** Key `i_ssidlist`, `i_ssidmac` and
+  `i_ssidbcast` as `<radio key>.<n>`. The caller removes the last
+  component to find the port, and stores one row per BSSID, so a radio
+  carries every SSID it serves.
+- **Do not make a WLAN or SSID a port, or a subinterface of its radio.**
+  Clients on a WLAN port never meet the radio's channel, because Netdisco
+  moves nodes to a parent port only for link aggregation. Copying the
+  channel onto every WLAN port instead counts each radio once per SSID.
+- **Map each WLAN to its radio from the device's data.** Prefer a column
+  or an index that names the radio, as `Airespace.pm` and
+  `Layer3/Aruba.pm` have. Where none exists, derive it from the address
+  plan, under the conditions in "Choosing a data source".
+- **Check what a controller parent reads.** A vendor's standalone access
+  points may serve none of its controller's tables, so a subclass can
+  inherit `i_ssidlist`, `cd11_*` and `fw_*` methods that return nothing.
+  Override them from the tables the device serves.
+
+### Wireless clients
+
+These rules apply to the clients associated with an access point or
+controller.
+
+- **Place each client on its radio's port.** `fw_mac` and `fw_port` give
+  the client and its BSSID or radio, and `bp_index` maps that value to the
+  radio's `interfaces()` key. Keep the inherited bridge map for wired
+  ports.
+- **Tag each client with its SSID through `cd11_ssid`.** The calling
+  application stores the SSID per client, as it stores a VLAN per node.
+  Emulate the `cd11_*` methods from the vendor's client table: `cd11_mac`,
+  `cd11_ssid`, `cd11_txrate` (a reference to an array of rates in Mbps,
+  of which the last is used), and the signal and traffic counters the
+  table has.
+- **Key every `cd11_*` method like `cd11_txrate`.** The caller pairs them
+  by key, and reads no client data when `cd11_txrate` is empty.
 
 ## Check it against a walk
 
@@ -191,6 +271,8 @@ against it. Reading the code is not evidence.
   reads: `i_*` and wireless keys appear in `interfaces()`, and every
   `fw_port` value appears in `bp_index`.
 - Check `layers`: it includes layer 2 when `fw_mac` should be collected.
+- For a wireless device, check that every client's port also has an
+  `i_80211channel` row, and that each radio's channel is on one port only.
 - Count the GETs `device_type()` sends to a neighboring device of the same
   enterprise, before and after the change.
 - With no walk of the product, ask for one (`AGENTS.md`, "Device data")
@@ -205,6 +287,11 @@ against it. Reading the code is not evidence.
   from its MIB's `INDEX`. Data shaped from the MIB passes where the device
   fails. Prime `_layers`, `_description` and `_id` with the walk's values;
   `_layers` is the raw `sysServices` integer.
+- Keep the relationships between values when you anonymize them, not only
+  their consistency: a BSSID counted up from its radio's MAC, addresses
+  that share a prefix, an index that embeds another table's value.
+  Sequential placeholders that drop such a relationship cannot test the
+  code that depends on it.
 - Every fallback path is exercised by a test, using data shaped like the
   walk that needs it.
 - Add a `device_type` test method to the class's test class
