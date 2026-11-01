@@ -36,6 +36,7 @@ Version 3.984001
     its model, firmware and serial from sysDescr (#510, #478, #558)
   * #666 Dell: report the bridge address as mac, and return 0.0.0.0 from
     lldp_ip for neighbors that advertise only a MAC chassis ID (#340)
+  * #668 Airespace: count VxWorks 5 GHz BSSIDs up from the base radio MAC
 
 Version 3.984000 (2026-10-29)
 
