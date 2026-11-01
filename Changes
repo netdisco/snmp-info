@@ -36,6 +36,9 @@ Version 3.984001
     its model, firmware and serial from sysDescr (#510, #478, #558)
   * #666 Dell: report the bridge address as mac, and return 0.0.0.0 from
     lldp_ip for neighbors that advertise only a MAC chassis ID (#340)
+  * #669 ArubaInstant: put SSIDs and clients on radio ports and report each
+    client's SSID, so wireless client reports work; the per-WLAN ports are
+    removed (#536)
 
 Version 3.984000 (2026-10-29)
 
