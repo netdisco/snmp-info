@@ -32,6 +32,8 @@ Version 3.984001
     leave defaults in Q-BRIDGE (#267, #307)
   * #665 DLink: detect the DGS-F3008P, which serves no sysServices, and read
     its model, firmware and serial from sysDescr (#510, #478, #558)
+  * #666 Dell: report the bridge address as mac, and return 0.0.0.0 from
+    lldp_ip for neighbors that advertise only a MAC chassis ID (#340)
 
 Version 3.984000 (2026-10-29)
 
