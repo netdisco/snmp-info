@@ -157,13 +157,38 @@ sub model {
     return;
 }
 
+# A WLAN interface is named <radio name>.<n>, and ahRadioAttributeTable has
+# a row for each radio. No column or ifStackTable gives the parent.
+sub _wlan_radios {
+    my $aerohive = shift;
+
+    my $names    = $aerohive->ah_i_name()      || {};
+    my $channels = $aerohive->i_80211channel() || {};
+
+    my %radio_by_name;
+    foreach my $iid ( keys %$channels ) {
+        my $name = $names->{$iid};
+        $radio_by_name{$name} = $iid if defined $name;
+    }
+
+    my %wlan_radios;
+    foreach my $iid ( keys %$names ) {
+        next unless $names->{$iid} =~ /^(.+)\.\d+$/;
+        my $radio = $radio_by_name{$1};
+        $wlan_radios{$iid} = $radio if defined $radio;
+    }
+    return \%wlan_radios;
+}
+
 sub interfaces {
     my $aerohive   = shift;
     my $interfaces = $aerohive->i_index();
     my $i_descr    = $aerohive->ah_i_name();
+    my $wlans      = $aerohive->_wlan_radios();
 
     my %if;
     foreach my $iid ( keys %$interfaces ) {
+        next if exists $wlans->{$iid};
         my $descr = $i_descr->{$iid};
         next unless defined $descr;
         $if{$iid} = $descr if ( defined $descr and length $descr );
@@ -177,13 +202,15 @@ sub i_ssidlist {
     my $partial  = shift;
 
     my $ssids = $aerohive->ah_i_ssidlist($partial) || {};
+    my $wlans = $aerohive->_wlan_radios();
 
     my %i_ssidlist;
     foreach my $iid ( keys %$ssids ) {
         my $ssid = $ssids->{$iid};
         next if $ssid =~ /N\/A/i;
 
-        $i_ssidlist{$iid} = $ssid;
+        my $port = $wlans->{$iid} // $iid;
+        $i_ssidlist{"$port.$iid"} = $ssid;
     }
     return \%i_ssidlist;
 }
@@ -196,11 +223,12 @@ sub i_ssidmac {
     my $macs  = $aerohive->i_mac($partial)      || {};
 
     my %i_ssidmac;
-    foreach my $iid ( keys %$ssids ) {
-        my $mac = $macs->{$iid};
+    foreach my $key ( keys %$ssids ) {
+        my ($wlan) = $key =~ /(\d+)$/;
+        my $mac = $macs->{$wlan};
         next unless $mac;
 
-        $i_ssidmac{$iid} = $mac;
+        $i_ssidmac{$key} = $mac;
     }
     return \%i_ssidmac;
 }
@@ -219,11 +247,12 @@ sub cd11_port {
 
     my $cd11_txrate = $aerohive->cd11_txrate();
     my $interfaces  = $aerohive->interfaces();
+    my $wlans       = $aerohive->_wlan_radios();
 
     my %ret;
     foreach ( keys %$cd11_txrate ) {
         my ( $ifindex, $mac ) = _ah_association_index($_);
-        $ret{$_} = $interfaces->{$ifindex};
+        $ret{$_} = $interfaces->{ $wlans->{$ifindex} // $ifindex };
     }
     return \%ret;
 }
