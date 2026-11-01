@@ -161,21 +161,19 @@ sub lldp_if {
 # A neighbor with no management address gets 0.0.0.0, which the calling
 # application looks up by c_id; an entry with no c_ip is dropped
 sub c_ip {
-    my $dev     = shift;
-    my $partial = shift;
+    my ( $dev, $partial, $topo_cap ) = @_;
 
-    my $lldp_ip = $dev->lldp_ip($partial)         || {};
+    $topo_cap ||= $dev->has_topo() || [];
+    my $c_ip = $dev->SUPER::c_ip( $partial, $topo_cap ) || {};
+    return $c_ip unless grep { $_ eq 'lldp' } @$topo_cap;
+
     my $id_type = $dev->lldp_rem_id_type($partial) || {};
 
-    my %c_ip = %$lldp_ip;
-
     foreach my $key ( keys %$id_type ) {
-        if ( !exists $c_ip{$key} or !defined $c_ip{$key} ) {
-            $c_ip{$key} = '0.0.0.0';
-        }
+        $c_ip->{$key} = '0.0.0.0' unless defined $c_ip->{$key};
     }
 
-    return \%c_ip;
+    return $c_ip;
 }
 
 1;
@@ -301,7 +299,8 @@ C<lldpLocPortId> to C<ifName>; a neighbor matching neither is left out.
 
 Returns reference to hash. Key: iid, Value: remote IPv4 address from
 C<lldp_ip()>, or 0.0.0.0 for a neighbor that advertises no management
-address, so it can still be found by its C<c_id()>.
+address, so it can still be found by its C<c_id()>. Honors the optional
+topology protocol list; the placeholder is added only when LLDP is selected.
 
 =back
 

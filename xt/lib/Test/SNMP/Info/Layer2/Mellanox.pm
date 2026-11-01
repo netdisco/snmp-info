@@ -176,7 +176,7 @@ sub lldp_if : Tests(5) {
     'lldp_if__no_bridge_port_or_name_match__omits_neighbor');
 }
 
-sub c_ip : Tests(3) {
+sub c_ip : Tests(7) {
   my $test = shift;
 
   can_ok($test->{info}, 'c_ip');
@@ -184,6 +184,15 @@ sub c_ip : Tests(3) {
   is($ip->{'1000.97.10'}, '192.0.2.10', 'c_ip__management_address__kept');
   is($ip->{'1000.61.12'}, '0.0.0.0',
     'c_ip__no_management_address__zero_for_id_lookup');
+
+  cmp_deeply($test->{info}->c_ip(undef, ['lldp']), $ip,
+    q(Explicit LLDP selection preserves advertised and missing addresses));
+  cmp_deeply($test->{info}->c_ip(undef, []), {},
+    q(An empty protocol list excludes LLDP addresses and placeholders));
+  cmp_deeply($test->{info}->c_if(undef, []), {},
+    q(The address and interface tables honor the same protocol list));
+  cmp_deeply($test->{info}->c_ip(undef, ['cdp']), {},
+    q(Selecting another protocol does not add LLDP neighbors));
 }
 
 sub device_type : Tests(9) {
