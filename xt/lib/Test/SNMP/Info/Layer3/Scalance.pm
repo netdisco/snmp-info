@@ -96,6 +96,61 @@ sub i_description : Tests(3) {
     $expected, q(i_description have expected values));
 }
 
+sub lldp_ip : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'lldp_ip');
+
+  # Shaped from an SC646 (FW V02.01.03), which advertises a management
+  # address per neighbor and sends chassis ID subtype local (7)
+  $test->{info}{"_$_"} = 1
+    for qw/lldp_rman_addr lldp_rem_id_type lldp_rem_id lldp_rem_sysname/;
+  $test->{info}{store}{lldp_rem_id}
+    = {'2000.2.4' => 'nwc10-xm408', '2000.3.3' => 'nwc10-ups1600'};
+  $test->{info}{store}{lldp_rem_id_type}
+    = {'2000.2.4' => 'local', '2000.3.3' => 'local'};
+  $test->{info}{store}{lldp_rem_sysname}
+    = {'2000.2.4' => 'NWC10', '2000.3.3' => undef};
+  $test->{info}{store}{lldp_rman_addr} = {
+    '2000.2.4.1.4.192.0.2.130' => 'ifIndex',
+    '2000.3.3.1.4.192.0.2.30'  => 'ifIndex',
+  };
+
+  cmp_deeply($test->{info}->lldp_ip(),
+    {'2000.2.4' => '192.0.2.130', '2000.3.3' => '192.0.2.30'},
+    q(Advertised management addresses are used));
+
+  # Earlier firmware sends no management address
+  $test->{info}->clear_cache();
+  $test->{info}{"_$_"} = 1
+    for qw/lldp_rman_addr lldp_rem_id_type lldp_rem_id lldp_rem_sysname/;
+  $test->{info}{store}{lldp_rman_addr} = {};
+  $test->{info}{store}{lldp_rem_id} = {'2000.2.4' => 'localhost'};
+  $test->{info}{store}{lldp_rem_id_type} = {'2000.2.4' => 'local'};
+  $test->{info}{store}{lldp_rem_sysname} = {'2000.2.4' => 'localhost'};
+
+  cmp_deeply($test->{info}->lldp_ip(), {'2000.2.4' => '127.0.0.1'},
+    q(Without an advertised address, the system name is resolved));
+
+  # A Catalyst neighbor with a MAC chassis ID and a name DNS cannot resolve
+  $test->{info}->clear_cache();
+  $test->{info}{"_$_"} = 1
+    for qw/lldp_rman_addr lldp_rem_id_type lldp_rem_id lldp_rem_sysname/;
+  $test->{info}{store}{lldp_rman_addr} = {};
+  $test->{info}{store}{lldp_rem_id}
+    = {'4100.8.1' => '3C:41:0E:E8:4B:80', '2000.3.3' => 'nwc10-ups1600'};
+  $test->{info}{store}{lldp_rem_id_type}
+    = {'4100.8.1' => 'macAddress', '2000.3.3' => 'local'};
+  $test->{info}{store}{lldp_rem_sysname}
+    = {'4100.8.1' => 'c3560.invalid', '2000.3.3' => 'ups1600.invalid'};
+
+  cmp_deeply($test->{info}->lldp_ip(), {'4100.8.1' => '0.0.0.0'},
+    q(Unresolved MAC chassis ID returns 0.0.0.0, other unresolved omitted));
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->lldp_ip(), {}, q(No neighbors returns empty hash));
+}
+
 1;
 
 # vim: filetype=perl ts=4 sw=4 sta et sts=4 ai
