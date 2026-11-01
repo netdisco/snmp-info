@@ -172,7 +172,7 @@ sub _mac {
     return pack('C6', map {hex $_} split /:/, shift);
 }
 
-sub i_ssidlist : Tests(7) {
+sub i_ssidlist : Tests(10) {
     my $test = shift;
     my $info = $test->{info};
     my $ssids = $info->i_ssidlist();
@@ -191,6 +191,20 @@ sub i_ssidlist : Tests(7) {
     $ssids = $info->i_ssidlist();
     ok(exists $ssids->{'2.0.0.0.0.1.0.0.2'} && !exists $ssids->{'2.0.0.0.0.2.0.0.2'},
         'i_ssidlist__closer_radio_on_other_ap__not_chosen');
+
+    # AP 3: radios 32 addresses apart, wider than the 16 Aruba documents.
+    $info->{store}{instant_radio_channel}{'2.0.0.0.0.3.0'} = '36';
+    $info->{store}{instant_radio_channel}{'2.0.0.0.0.3.1'} = '1';
+    $info->{store}{instant_radio_mac}{'2.0.0.0.0.3.0'} = _mac('02:00:00:00:05:00');
+    $info->{store}{instant_radio_mac}{'2.0.0.0.0.3.1'} = _mac('02:00:00:00:05:20');
+    $info->{store}{instant_wlan_ssid}{"2.0.0.0.0.3.$_"} = 'Wide WLAN' foreach 0 .. 2;
+    $info->{store}{instant_wlan_mac}{'2.0.0.0.0.3.0'} = _mac('02:00:00:00:05:18');
+    $info->{store}{instant_wlan_mac}{'2.0.0.0.0.3.1'} = _mac('02:00:00:00:05:38');
+    $info->{store}{instant_wlan_mac}{'2.0.0.0.0.3.2'} = _mac('02:00:00:00:05:40');
+    $ssids = $info->i_ssidlist();
+    is($ssids->{'2.0.0.0.0.3.0.0.0'}, 'Wide WLAN', 'i_ssidlist__bssid_24_above_radio_below_next__on_that_radio');
+    is($ssids->{'2.0.0.0.0.3.1.0.1'}, 'Wide WLAN', 'i_ssidlist__highest_radio__range_as_wide_as_gap_below');
+    ok(!grep({/^2\.0\.0\.0\.0\.3\..*\.2$/} keys %$ssids), 'i_ssidlist__bssid_a_full_gap_above_highest_radio__omitted');
 
     $test->_load_radios();
     $info->{store}{instant_radio_mac}{'2.0.0.0.0.5.0'} = _mac('02:00:00:00:03:f0');

@@ -110,9 +110,11 @@ sub _radios {
     return \%radios;
 }
 
-# BSSIDs count up from their radio's MAC, up to 16 per radio, so a WLAN
-# belongs to the radio of the same AP with the highest MAC not above its
-# BSSID and within 16 of it. A WLAN no radio fits is left out, not guessed.
+# BSSIDs count up from their radio's MAC (16 per radio on current APs, 8
+# on older ones), so each radio owns the addresses from its MAC up to the
+# next radio's MAC on the same AP. The highest radio owns a range as wide
+# as the gap below it, or 16 on a single-radio AP. A WLAN no range holds is
+# left out, not guessed.
 sub _wlan_radios {
     my $self   = shift;
     my $wlans  = $self->_wlans();
@@ -123,13 +125,24 @@ sub _wlan_radios {
         next unless defined $radio->{mac};
         push @{ $by_ap{ $radio->{ap} } }, [_mac_number($radio->{mac}), $iid];
     }
+    my %ranges;
+    foreach my $ap (keys %by_ap) {
+        my @sorted = sort { $a->[0] <=> $b->[0] || $a->[1] cmp $b->[1] }
+            @{ $by_ap{$ap} };
+        foreach my $i (0 .. $#sorted) {
+            my ($start, $iid) = @{ $sorted[$i] };
+            my $gap = $i > 0 ? $start - $sorted[$i - 1][0] : 0;
+            my $end = $i < $#sorted ? $sorted[$i + 1][0]
+                : $start + ($gap > 0 ? $gap : 16);
+            push @{ $ranges{$ap} }, [$start, $end, $iid];
+        }
+    }
     my %radio_of;
     foreach my $iid (keys %$wlans) {
         my $bssid = _mac_number($wlans->{$iid}{mac});
-        my ($best) = sort { $b->[0] <=> $a->[0] }
-            grep { $_->[0] <= $bssid && $bssid - $_->[0] < 16 }
-            @{ $by_ap{ $wlans->{$iid}{ap} } || [] };
-        $radio_of{$iid} = $best->[1] if $best;
+        my ($range) = grep { $_->[0] <= $bssid && $bssid < $_->[1] }
+            @{ $ranges{ $wlans->{$iid}{ap} } || [] };
+        $radio_of{$iid} = $range->[2] if $range;
     }
     return \%radio_of;
 }
@@ -411,9 +424,10 @@ from the radio table.
 C<i_ssidlist>, C<i_ssidmac> and C<i_ssidbcast> expose each WLAN's name,
 BSSID and broadcast flag on the radio that serves it, keyed by the radio
 port index and the WLAN number. A WLAN's BSSID counts up from its radio's
-MAC address, so a WLAN belongs to the radio of the same AP with the highest
-MAC address not above its BSSID and within 16 of it. A WLAN no radio fits
-is omitted.
+MAC address, so each radio owns the addresses from its MAC address up to
+the next radio's MAC address on the same AP. The highest radio owns a range
+as wide as the gap below it, or 16 addresses on a single-radio AP. A WLAN
+no range holds is omitted.
 
 =head2 Radio channel and power
 
@@ -429,6 +443,128 @@ C<fw_mac>, C<fw_port> and C<bp_index> map associated clients onto the radio
 port that serves their BSSID, preserving wired forwarding entries. Clients
 whose BSSID belongs to no radio are omitted. Q-BRIDGE ports, which this
 agent numbers by ifIndex without a C<dot1dBasePortTable>, are not mapped.
+
+=head2 Aruba Instant Tables (F<AI-AP-MIB>)
+
+These methods return the C<AI-AP-MIB> columns the class reads.
+
+=over
+
+=item instant_radio_channel
+
+Returns reference to hash. Key: AP MAC and radio index, Value: channel, with any C<+>, C<->, C<E> or C<S> suffix.
+
+(C<aiRadioChannel>)
+
+=item instant_radio_power
+
+Returns reference to hash. Key: AP MAC and radio index, Value: transmit power.
+
+(C<aiRadioTransmitPower>)
+
+=item instant_radio_mac
+
+Returns reference to hash. Key: AP MAC and radio index, Value: radio MAC address.
+
+(C<aiRadioMACAddress>)
+
+=item instant_radio_status
+
+Returns reference to hash. Key: AP MAC and radio index, Value: radio state.
+
+(C<aiRadioStatus>)
+
+=item instant_wlan_ssid
+
+Returns reference to hash. Key: AP MAC and WLAN index, Value: ESSID.
+
+(C<aiWlanESSID>)
+
+=item instant_wlan_mac
+
+Returns reference to hash. Key: AP MAC and WLAN index, Value: BSSID.
+
+(C<aiWlanMACAddress>)
+
+=item instant_ap_name
+
+Returns reference to hash. Key: AP MAC, Value: AP name.
+
+(C<aiAPName>)
+
+=item instant_ap_status
+
+Returns reference to hash. Key: AP MAC, Value: AP status.
+
+(C<aiAPStatus>)
+
+=item instant_ssid
+
+Returns reference to hash. Key: SSID index, Value: SSID.
+
+(C<aiSSID>)
+
+=item instant_ssid_hide
+
+Returns reference to hash. Key: SSID index, Value: whether the SSID is hidden.
+
+(C<aiSSIDHide>)
+
+=item instant_client_mac
+
+Returns reference to hash. Key: client MAC, Value: client MAC address.
+
+(C<aiClientMACAddress>)
+
+=item instant_client_bssid
+
+Returns reference to hash. Key: client MAC, Value: BSSID the client is associated with.
+
+(C<aiClientWlanMACAddress>)
+
+=item instant_client_snr
+
+Returns reference to hash. Key: client MAC, Value: signal to noise ratio.
+
+(C<aiClientSNR>)
+
+=item instant_client_txrate
+
+Returns reference to hash. Key: client MAC, Value: transmit rate in Mbps.
+
+(C<aiClientTxRate>)
+
+=item instant_client_uptime
+
+Returns reference to hash. Key: client MAC, Value: uptime since the last mobility event.
+
+(C<aiClientUptime>)
+
+=item instant_client_txbytes
+
+Returns reference to hash. Key: client MAC, Value: bytes transmitted.
+
+(C<aiClientTxDataBytes>)
+
+=item instant_client_rxbytes
+
+Returns reference to hash. Key: client MAC, Value: bytes received.
+
+(C<aiClientRxDataBytes>)
+
+=item instant_client_txframes
+
+Returns reference to hash. Key: client MAC, Value: frames transmitted.
+
+(C<aiClientTxDataFrames>)
+
+=item instant_client_rxframes
+
+Returns reference to hash. Key: client MAC, Value: frames received.
+
+(C<aiClientRxDataFrames>)
+
+=back
 
 =head2 Interface methods
 
