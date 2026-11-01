@@ -248,11 +248,13 @@ sub cd11_txrate {
 
     my $rates = $aerohive->ah_c_txrate($partial) || {};
 
+    # Every row is kept, even with no usable rate: the client, forwarding
+    # and ARP methods take their keys from this one.
     my %cd11_txrate;
     foreach my $idx ( keys %$rates ) {
         my $kbps = $rates->{$idx};
-        next unless defined $kbps and $kbps =~ /^\d+$/;
-        $cd11_txrate{$idx} = [ $kbps / 1000 ];
+        $cd11_txrate{$idx}
+            = ( defined $kbps and $kbps =~ /^\d+$/ ) ? [ $kbps / 1000 ] : [];
     }
     return \%cd11_txrate;
 }
@@ -527,7 +529,8 @@ C<ahRadioTxPower>
 =item $aerohive->cd11_txrate()
 
 Returns reference to hash. The rate of the last frame sent to each client,
-in Mbps, as a single-element array reference.
+in Mbps, as a single-element array reference. A client with no usable rate
+gets an empty array reference, so it is still reported.
 
 C<ahClientLastTxRate>, which reports kbps.
 

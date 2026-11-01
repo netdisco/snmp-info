@@ -280,7 +280,7 @@ sub cd11_port : Tests(3) {
   cmp_deeply($test->{info}->cd11_port(), {}, q(No data returns empty hash));
 }
 
-sub cd11_txrate : Tests(3) {
+sub cd11_txrate : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'cd11_txrate');
@@ -292,16 +292,25 @@ sub cd11_txrate : Tests(3) {
     '20.6.40.106.186.61.150.231'  => 58500,
     '20.6.96.190.181.42.99.151'   => 72200,
     '15.6.2.0.0.0.0.1'            => undef,
+    '15.6.2.0.0.0.0.2'            => -1,
   };
 
   my $expected = {
     '15.6.128.150.177.92.153.130' => [6],
     '20.6.40.106.186.61.150.231'  => [58.5],
-    '20.6.96.190.181.42.99.151'   => [72.2]
+    '20.6.96.190.181.42.99.151'   => [72.2],
+    '15.6.2.0.0.0.0.1'            => [],
+    '15.6.2.0.0.0.0.2'            => []
   };
 
   cmp_deeply($test->{info}->cd11_txrate(),
     $expected, q(cd11_txrate__kbps__returns_mbps_arrayref));
+
+  cmp_deeply(
+    $test->{info}->qb_fw_mac()->{'15.6.2.0.0.0.0.1'},
+    '02:00:00:00:00:01',
+    q(cd11_txrate__unusable_rate__keeps_client_in_forwarding_table)
+  );
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->cd11_txrate(), {}, q(No data returns empty hash));
