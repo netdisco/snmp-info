@@ -24,6 +24,8 @@ Version 3.984001
     preferred storage area
   * #661 Scalance: use the LLDP management address neighbors advertise
     before resolving their names in DNS (#406)
+  * #662 Baystack: number ERS 5928 and 5952 stack ports with the 128
+    index factor the ERS 5900 family uses (#393)
 
 Version 3.984000 (2026-10-29)
 
