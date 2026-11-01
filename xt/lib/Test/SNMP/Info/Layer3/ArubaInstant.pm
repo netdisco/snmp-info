@@ -281,9 +281,20 @@ sub fw_port : Tests(1) {
 }
 
 # aiClientTable rows, keyed by client MAC, for clients on a mapped BSSID.
-sub cd11_mac : Tests(1) {
+sub cd11_mac : Tests(4) {
     my $info = shift->{info};
-    is($info->cd11_mac()->{'2.0.0.0.0.10'}, '02:00:00:00:00:0a', 'cd11_mac__client__aiClientMACAddress');
+    is($info->cd11_mac()->{'2.0.0.0.0.10'}, '02:00:00:00:00:0a', 'cd11_mac__client__mac_from_index');
+
+    # The client MAC is the table's index, so the class reads no column for it.
+    delete $info->{store}{instant_client_mac};
+    delete $info->{'_instant_client_mac'};
+    is($info->cd11_mac()->{'2.0.0.0.0.18'}, '02:00:00:00:00:12',
+        'cd11_mac__aiClientMACAddress_not_walked__mac_from_bssid_index');
+    is($info->fw_mac()->{'instant.2.0.0.0.0.18'}, '02:00:00:00:00:12',
+        'fw_mac__aiClientMACAddress_not_walked__client_still_reported');
+
+    $info->{store}{instant_client_bssid}{'2.0.0.0.300.1'} = _mac('02:00:00:00:01:f0');
+    ok(!exists $info->cd11_mac()->{'2.0.0.0.300.1'}, 'cd11_mac__index_not_a_mac__client_omitted');
 }
 
 sub cd11_ssid : Tests(2) {

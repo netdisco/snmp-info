@@ -314,19 +314,21 @@ sub bp_index {
     return \%index;
 }
 
+# aiClientTable is indexed by the client MAC, so the MAC comes from the
+# index of the BSSID column rather than a second walk of aiClientMACAddress.
 sub _clients {
     my ($self, $partial) = @_;
-    my $macs = $self->instant_client_mac($partial) || {};
     my $bssids = $self->instant_client_bssid($partial) || {};
     my $wlans = $self->_wlans();
     my %known = map { ($wlans->{$_}{mac} => 1) } keys %{ $self->_wlan_radios() };
     my %clients;
-    foreach my $iid (keys %$macs) {
-        my $mac = $macs->{$iid};
+    foreach my $iid (keys %$bssids) {
+        my @octets = split /\./, $iid;
+        next unless @octets == 6 && !grep { !/^\d+$/ || $_ > 255 } @octets;
         my $bssid = $bssids->{$iid};
-        next unless defined $mac && $mac =~ /^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$/i;
         next unless defined $bssid && $known{lc $bssid};
-        $clients{$iid} = {mac => lc $mac, bssid => lc $bssid};
+        $clients{$iid} = {mac => join(':', map { sprintf '%02x', $_ } @octets),
+            bssid => lc $bssid};
     }
     return \%clients;
 }
@@ -648,9 +650,8 @@ returned.
 
 =item cd11_mac
 
-Returns the client MAC address.
-
-(C<aiClientMACAddress>)
+Returns the client MAC address, decoded from the client table's index, so
+C<aiClientMACAddress> is not walked.
 
 =item cd11_ssid
 
