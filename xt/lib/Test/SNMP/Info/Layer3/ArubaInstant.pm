@@ -254,6 +254,66 @@ sub fw_port : Tests(1) {
     is($info->fw_port()->{'instant.2.0.0.0.0.10'}, '02:00:00:00:01:f0', 'associated client BSSID');
 }
 
+# aiClientTable rows, keyed by client MAC, for clients on a mapped BSSID.
+sub cd11_mac : Tests(1) {
+    my $info = shift->{info};
+    is($info->cd11_mac()->{'2.0.0.0.0.10'}, '02:00:00:00:00:0a', 'cd11_mac__client__aiClientMACAddress');
+}
+
+sub cd11_ssid : Tests(2) {
+    my $info = shift->{info};
+    is($info->cd11_ssid()->{'2.0.0.0.0.10'}, 'Test WLAN 1', 'cd11_ssid__client_on_bssid_f0__ssid_of_that_wlan');
+    $info->{store}{instant_client_bssid}{'2.0.0.0.0.11'} = _mac('02:00:00:00:01:e2');
+    is($info->cd11_ssid()->{'2.0.0.0.0.11'}, 'Test WLAN 3', 'cd11_ssid__client_on_bssid_e2__ssid_of_that_wlan');
+}
+
+sub cd11_txrate : Tests(3) {
+    my $info = shift->{info};
+    my $rates = $info->cd11_txrate();
+    is_deeply($rates->{'2.0.0.0.0.10'}, [433], 'cd11_txrate__client__mbps_in_arrayref');
+    my @keys = sort keys %$rates;
+    is_deeply([map { [sort keys %{$info->$_()}] } qw/cd11_mac cd11_ssid cd11_sigqual
+        cd11_uptime cd11_txbyte cd11_rxbyte cd11_txpkt cd11_rxpkt/],
+        [map { \@keys } 1 .. 8], 'cd11_txrate__every_cd11_method__same_keys');
+    $info->{store}{instant_client_bssid}{'2.0.0.0.0.10'} = _mac('02:00:00:00:02:00');
+    ok(!exists $info->cd11_txrate()->{'2.0.0.0.0.10'}, 'cd11_txrate__unmapped_bssid_client__omitted');
+}
+
+sub cd11_sigqual : Tests(1) {
+    my $info = shift->{info};
+    is($info->cd11_sigqual()->{'2.0.0.0.0.10'}, 40, 'cd11_sigqual__client__aiClientSNR');
+}
+
+sub cd11_sigstrength : Tests(1) {
+    my $info = shift->{info};
+    is_deeply($info->cd11_sigstrength(), {}, 'cd11_sigstrength__no_rssi_in_ai_ap_mib__empty');
+}
+
+sub cd11_uptime : Tests(1) {
+    my $info = shift->{info};
+    is($info->cd11_uptime()->{'2.0.0.0.0.10'}, 1202700, 'cd11_uptime__client__aiClientUptime');
+}
+
+sub cd11_txbyte : Tests(1) {
+    my $info = shift->{info};
+    is($info->cd11_txbyte()->{'2.0.0.0.0.10'}, 865753936, 'cd11_txbyte__client__aiClientTxDataBytes');
+}
+
+sub cd11_rxbyte : Tests(1) {
+    my $info = shift->{info};
+    is($info->cd11_rxbyte()->{'2.0.0.0.0.10'}, 558334355, 'cd11_rxbyte__client__aiClientRxDataBytes');
+}
+
+sub cd11_txpkt : Tests(1) {
+    my $info = shift->{info};
+    is($info->cd11_txpkt()->{'2.0.0.0.0.10'}, 978033, 'cd11_txpkt__client__aiClientTxDataFrames');
+}
+
+sub cd11_rxpkt : Tests(1) {
+    my $info = shift->{info};
+    is($info->cd11_rxpkt()->{'2.0.0.0.0.10'}, 11704, 'cd11_rxpkt__client__aiClientRxDataFrames');
+}
+
 # AP-225 / 8.4.0.0 radio rows from LibreNMS tests/snmpsim/aruba-instant.snmprec.
 # MAC addresses anonymised; channels, powers, statuses and indexes retained.
 sub _load_radios {

@@ -333,6 +333,49 @@ sub fw_port {
     return \%ports;
 }
 
+# One aiClientTable column for the clients _clients places on a radio.
+sub _client_column {
+    my ($self, $method) = @_;
+    my $clients = $self->_clients();
+    my $values  = $self->$method() || {};
+    return {map { ($_ => $values->{$_}) }
+        grep {defined $values->{$_}} keys %$clients};
+}
+
+sub cd11_mac {
+    my $self    = shift;
+    my $clients = $self->_clients();
+    return {map { ($_ => $clients->{$_}{mac}) } keys %$clients};
+}
+
+sub cd11_ssid {
+    my $self    = shift;
+    my $clients = $self->_clients();
+    my $wlans   = $self->_wlans();
+    my $ssids   = $self->instant_wlan_ssid() || {};
+    my %ssid_of = map { ($wlans->{$_}{mac} => $ssids->{$_}) }
+        grep {defined $ssids->{$_}} keys %{ $self->_wlan_radios() };
+    return {map { ($_ => $ssid_of{ $clients->{$_}{bssid} }) }
+        grep {defined $ssid_of{ $clients->{$_}{bssid} }} keys %$clients};
+}
+
+sub cd11_txrate {
+    my $self  = shift;
+    my $rates = $self->_client_column('instant_client_txrate');
+    return {map { ($_ => [$rates->{$_}]) } keys %$rates};
+}
+
+sub cd11_sigqual { return shift->_client_column('instant_client_snr') }
+
+# AI-AP-MIB reports no RSSI; the inherited leaf is a controller table.
+sub cd11_sigstrength { return {} }
+
+sub cd11_uptime { return shift->_client_column('instant_client_uptime') }
+sub cd11_txbyte { return shift->_client_column('instant_client_txbytes') }
+sub cd11_rxbyte { return shift->_client_column('instant_client_rxbytes') }
+sub cd11_txpkt  { return shift->_client_column('instant_client_txframes') }
+sub cd11_rxpkt  { return shift->_client_column('instant_client_rxframes') }
+
 1;
 __END__
 
@@ -454,6 +497,75 @@ Adds associated wireless client MAC addresses to wired forwarding entries.
 =item fw_port
 
 Maps associated clients to BSSIDs, which C<bp_index> maps to radio ports.
+
+=back
+
+=head2 Wireless Client Table Emulation
+
+These methods emulate the F<CISCO-DOT11-ASSOCIATION-MIB> C<cd11_*> methods
+using the F<AI-AP-MIB> C<aiClientTable>. Keys are the client table index,
+the client MAC address. Only clients whose BSSID belongs to a radio are
+returned.
+
+=over
+
+=item cd11_mac
+
+Returns the client MAC address.
+
+(C<aiClientMACAddress>)
+
+=item cd11_ssid
+
+Returns the SSID of the WLAN whose BSSID the client is associated with.
+
+(C<aiClientWlanMACAddress>, C<aiWlanESSID>)
+
+=item cd11_txrate
+
+Returns reference to an array holding the client transmit rate in Mbps.
+
+(C<aiClientTxRate>)
+
+=item cd11_sigqual
+
+Returns the client signal to noise ratio.
+
+(C<aiClientSNR>)
+
+=item cd11_sigstrength
+
+Returns an empty hash: F<AI-AP-MIB> reports no client RSSI.
+
+=item cd11_uptime
+
+Returns the client uptime, reset on each mobility event.
+
+(C<aiClientUptime>)
+
+=item cd11_txbyte
+
+Returns bytes transmitted by the client.
+
+(C<aiClientTxDataBytes>)
+
+=item cd11_rxbyte
+
+Returns bytes received by the client.
+
+(C<aiClientRxDataBytes>)
+
+=item cd11_txpkt
+
+Returns frames transmitted by the client.
+
+(C<aiClientTxDataFrames>)
+
+=item cd11_rxpkt
+
+Returns frames received by the client.
+
+(C<aiClientRxDataFrames>)
 
 =back
 
