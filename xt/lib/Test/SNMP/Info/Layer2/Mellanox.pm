@@ -186,7 +186,7 @@ sub c_ip : Tests(3) {
     'c_ip__no_management_address__zero_for_id_lookup');
 }
 
-sub device_type : Tests(3) {
+sub device_type : Tests(9) {
   my $test = shift;
 
   # device_type runs on the base class, whose layers() has no Onyx override
@@ -196,6 +196,18 @@ sub device_type : Tests(3) {
       ['.1.3.6.1.4.1.33049.1.1.1.2410', 'SNMP::Info::Layer2::Mellanox'],
     'Onyx,MSN2700,SWv3.8.1000' =>
       ['.1.3.6.1.4.1.33049.1.1.1.2700', 'SNMP::Info::Layer2::Mellanox'],
+    'Onyx,MSN2010,SWv3.10.4606' =>
+      ['.1.3.6.1.4.1.33049.1.1.1.2010', 'SNMP::Info::Layer2::Mellanox'],
+    'Onyx,SN2700M,SWv3.10.4606' =>
+      ['.1.3.6.1.4.1.33049.1.1.1.270015', 'SNMP::Info::Layer2::Mellanox'],
+    'Mellanox SB7780' =>
+      ['.1.3.6.1.4.1.33049.1.1.1.7780', 'SNMP::Info::Layer7'],
+    'Mellanox SX6018G' =>
+      ['.1.3.6.1.4.1.33049.1.1.1.60181', 'SNMP::Info::Layer7'],
+    'Linux Onyx,MSN2700,SWv3.8.1000' =>
+      ['.1.3.6.1.4.1.33049.1.1.1.2700', 'SNMP::Info::Layer7'],
+    'Onyx,MSN2410,SWv3.10.4100' =>
+      ['.1.3.6.1.4.1.33049.1.1.10.2410', 'SNMP::Info::Layer7'],
     'Linux Mellanox 2.6.27-MELLANOXuni-m460ex EFM_PPC_M460EX' =>
       ['.1.3.6.1.4.1.33049.2.3.2.1', 'SNMP::Info::Layer7'],
   );

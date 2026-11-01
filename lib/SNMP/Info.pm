@@ -3102,10 +3102,10 @@ sub device_type {
         }
     }
 
-    # Mellanox / NVIDIA Onyx switches. Only the switch branch: the enterprise
-    # also holds other product lines, such as InfiniBand gateways
+    # switchXFamily also contains InfiniBand switches and gateways.
     $objtype = 'SNMP::Info::Layer2::Mellanox'
-        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.33049\.1\.1\.1\./;
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.33049\.1\.1\.1\./
+        && $desc =~ /^Onyx,/i;
 
     # Extreme VOSS / Fabric Engine report "<model> (a.b.c.d)" under the
     # Extreme enterprise. Layer 2 only devices reach here too, so this sits

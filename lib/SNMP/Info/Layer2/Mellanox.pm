@@ -209,8 +209,9 @@ Hannes Eberhardt
 =head1 DESCRIPTION
 
 Provides abstraction to the configuration information obtainable from a
-Mellanox / NVIDIA switch running Onyx via SNMP. It is chosen for
-C<sysObjectID>s under the Onyx switch branch, C<.1.3.6.1.4.1.33049.1.1.1>.
+Mellanox / NVIDIA switch running Onyx via SNMP. It is chosen for devices
+whose C<sysDescr> starts with C<Onyx,> and whose C<sysObjectID> is under
+C<.1.3.6.1.4.1.33049.1.1.1>.
 
 =head2 Inherited Classes
 

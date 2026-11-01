@@ -16,6 +16,7 @@ Version 3.984001
 
   [BUG FIXES]
 
+  * Mellanox: restrict the Onyx class to Onyx Ethernet switches
   * #657 Layer3: read the IPv4 ARP cache from ipNetToPhysicalTable when the
     older ARP tables hold only 127.x entries, as on Extreme VDX (#291)
   * #659 MAU: report admin duplex on devices without ifMauDefaultType,
