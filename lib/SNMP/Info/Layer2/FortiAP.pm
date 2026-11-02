@@ -37,7 +37,7 @@ use SNMP::Info::Layer2;
 @SNMP::Info::Layer2::FortiAP::ISA = qw/
     SNMP::Info::Layer2
     Exporter
-/;
+    /;
 @SNMP::Info::Layer2::FortiAP::EXPORT_OK = qw//;
 
 our ( $VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE );
@@ -65,6 +65,10 @@ $VERSION = '3.984000';
 
     # fapVapSSID; indexed by radio.wlan
     'fap_vap_ssid' => '.1.3.6.1.4.1.12356.120.7.1.1.4',
+
+    # fapStaVlanId, fapStaSSID; indexed by radio.wlan.<station MAC>
+    'fap_sta_vlan' => '.1.3.6.1.4.1.12356.120.8.1.1.5',
+    'fap_sta_ssid' => '.1.3.6.1.4.1.12356.120.8.1.1.7',
 );
 
 %MUNGE = ( %SNMP::Info::Layer2::MUNGE, );
@@ -114,8 +118,8 @@ sub serial {
 sub _fap_radios {
     my $fap = shift;
 
-    my $channels = $fap->fap_radio_channel() || {};
-    my $i_descr  = $fap->i_description()     || {};
+    my $channels        = $fap->fap_radio_channel() || {};
+    my $i_descr         = $fap->i_description()     || {};
     my %ifindex_by_name = reverse %$i_descr;
 
     my %radios;
@@ -181,7 +185,10 @@ sub dot11_cur_tx_pwr_mw {
     my %tx_pwr_mw;
     foreach my $radio ( keys %$radios ) {
         my $dbm = $power->{$radio};
-        next unless $channels->{$radio} and defined $dbm and $dbm =~ /^-?\d+$/;
+        next
+            unless $channels->{$radio}
+            and defined $dbm
+            and $dbm =~ /^-?\d+$/;
         $tx_pwr_mw{ $radios->{$radio} } = int( 10**( $dbm / 10 ) + 0.5 );
     }
     return \%tx_pwr_mw;
@@ -206,10 +213,10 @@ sub i_ssidlist {
 sub i_ssidmac {
     my $fap = shift;
 
-    my $radios  = $fap->_fap_radios();
-    my $ssids   = $fap->fap_vap_ssid()  || {};
-    my $i_descr = $fap->i_description() || {};
-    my $i_mac   = $fap->i_mac()         || {};
+    my $radios          = $fap->_fap_radios();
+    my $ssids           = $fap->fap_vap_ssid()  || {};
+    my $i_descr         = $fap->i_description() || {};
+    my $i_mac           = $fap->i_mac()         || {};
     my %ifindex_by_name = reverse %$i_descr;
 
     my %i_ssidmac;
@@ -221,6 +228,106 @@ sub i_ssidmac {
         $i_ssidmac{"$radios->{$radio}.$wlan"} = $i_mac->{$vap_port};
     }
     return \%i_ssidmac;
+}
+
+# fapStaMacAddr is a PhysAddress index, so normally length prefixed;
+# accept the bare six octets too
+sub _fap_sta_index {
+    my $iid = shift;
+
+    my ( $radio, $wlan, @octets ) = split /\./, $iid;
+    shift @octets if @octets == 7 and $octets[0] == 6;
+    return unless defined $wlan   and @octets == 6;
+    return ( $radio, $wlan, join ':', map { sprintf '%02x', $_ } @octets );
+}
+
+# Stations on a radio with a port: { iid => [ radio ifIndex, mac ] }
+sub _fap_stations {
+    my $fap     = shift;
+    my $partial = shift;
+
+    my $radios = $fap->_fap_radios();
+    my $ssids  = $fap->fap_sta_ssid($partial) || {};
+
+    my %stations;
+    foreach my $iid ( keys %$ssids ) {
+        my ( $radio, $wlan, $mac ) = _fap_sta_index($iid);
+        next unless defined $mac and exists $radios->{$radio};
+        $stations{$iid} = [ $radios->{$radio}, $mac ];
+    }
+    return \%stations;
+}
+
+sub qb_fw_mac {
+    my $fap      = shift;
+    my $stations = $fap->_fap_stations(shift);
+
+    return { map { $_ => $stations->{$_}[1] } keys %$stations };
+}
+
+sub qb_fw_port {
+    my $fap      = shift;
+    my $stations = $fap->_fap_stations(shift);
+
+    return { map { $_ => $stations->{$_}[0] } keys %$stations };
+}
+
+sub qb_fw_vlan {
+    my $fap      = shift;
+    my $partial  = shift;
+    my $stations = $fap->_fap_stations($partial);
+    my $vlans    = $fap->fap_sta_vlan($partial) || {};
+
+    return {
+        map  { $_ => $vlans->{$_} }
+        grep { defined $vlans->{$_} } keys %$stations
+    };
+}
+
+# Stations are reported on radio ifIndexes, which serve no bridge port
+sub bp_index {
+    my $fap     = shift;
+    my $partial = shift;
+
+    my $bp_index = $fap->SUPER::bp_index($partial) || {};
+    my $radios   = $fap->_fap_radios();
+
+    $bp_index->{$_} = $_ for values %$radios;
+    return $bp_index;
+}
+
+# fapStationTable has no rate column; an empty rate keeps the client
+sub cd11_txrate {
+    my $fap      = shift;
+    my $stations = $fap->_fap_stations(shift);
+
+    return { map { $_ => [] } keys %$stations };
+}
+
+sub cd11_mac {
+    my $fap = shift;
+
+    return $fap->qb_fw_mac(shift);
+}
+
+sub cd11_ssid {
+    my $fap      = shift;
+    my $partial  = shift;
+    my $stations = $fap->_fap_stations($partial);
+    my $ssids    = $fap->fap_sta_ssid($partial) || {};
+
+    return { map { $_ => $ssids->{$_} } keys %$stations };
+}
+
+sub cd11_port {
+    my $fap        = shift;
+    my $stations   = $fap->_fap_stations(shift);
+    my $interfaces = $fap->interfaces();
+
+    return {
+        map { $_ => $interfaces->{ $stations->{$_}[0] } }
+            keys %$stations
+    };
 }
 
 # Loopback and Linux pseudo devices that carry no traffic
@@ -401,6 +508,23 @@ Indexed by radio number and WLAN number, I<R>.I<W>.
 
 =back
 
+=head2 FortiAP Station Table (C<fapStationTable>)
+
+Indexed by radio number, WLAN number and station MAC address. The MAC
+address is read from the index.
+
+=over
+
+=item $fap->fap_sta_vlan()
+
+(C<fapStaVlanId>)
+
+=item $fap->fap_sta_ssid()
+
+(C<fapStaSSID>)
+
+=back
+
 =head2 802.11 Interface Table
 
 These methods emulate the F<IEEE802dot11-MIB> interface methods using the
@@ -434,6 +558,65 @@ I<radio ifIndex>.I<W>.
 
 Returns reference to hash. BSSID of each VAP, the MAC address of its
 C<wlan>I<RW> interface, keyed as C<i_ssidlist()>.
+
+=back
+
+=head2 Forwarding Table
+
+These methods emulate the F<Q-BRIDGE-MIB> forwarding table methods using
+the F<FORTINET-FORTIAP-MIB> C<fapStationTable>, so each client is a node
+on its radio's port. Keys are the station table index. Stations on a
+radio with no port are left out.
+
+=over
+
+=item $fap->qb_fw_mac()
+
+Returns reference to hash. Station MAC address, from the index.
+
+=item $fap->qb_fw_port()
+
+Returns reference to hash. The ifIndex of the station's radio port.
+
+=item $fap->qb_fw_vlan()
+
+Returns reference to hash. The station's VLAN.
+
+(C<fapStaVlanId>)
+
+=item $fap->bp_index()
+
+Returns reference to hash. The inherited bridge port map, with each radio
+port's ifIndex mapped to itself.
+
+=back
+
+=head2 Client Table
+
+These methods emulate the F<CISCO-DOT11-ASSOCIATION-MIB> client methods
+using the F<FORTINET-FORTIAP-MIB> C<fapStationTable>, keyed as the
+forwarding table.
+
+=over
+
+=item $fap->cd11_txrate()
+
+Returns reference to hash of empty array references. The station table
+has no rate column; an entry per station keeps each client.
+
+=item $fap->cd11_mac()
+
+Returns reference to hash. Station MAC address, from the index.
+
+=item $fap->cd11_ssid()
+
+Returns reference to hash. The station's SSID.
+
+(C<fapStaSSID>)
+
+=item $fap->cd11_port()
+
+Returns reference to hash. The name of the station's radio port.
 
 =back
 

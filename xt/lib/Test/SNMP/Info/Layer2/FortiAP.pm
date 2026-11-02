@@ -59,7 +59,24 @@ sub setup : Tests(setup) {
     '_fap_radio_channel' => 1,
     '_fap_radio_tx_pwr'  => 1,
     '_fap_vap_ssid'      => 1,
+
+    # fapStationTable, indexed radio.wlan.<length>.<mac>; one row without
+    # the length octet, one on radio 2
+    '_fap_sta_ssid' => 1,
+    '_fap_sta_vlan' => 1,
     'store'          => {
+      'fap_sta_ssid' => {
+        '0.1.6.128.150.177.92.153.130' => 'GUEST',
+        '1.0.6.40.106.186.61.150.231'  => 'CORP',
+        '0.2.96.190.181.42.99.151'     => 'IOT',
+        '2.0.6.2.0.0.0.0.1'            => 'CORP',
+      },
+      'fap_sta_vlan' => {
+        '0.1.6.128.150.177.92.153.130' => 4,
+        '1.0.6.40.106.186.61.150.231'  => 41,
+        '0.2.96.190.181.42.99.151'     => 4,
+        '2.0.6.2.0.0.0.0.1'            => 4,
+      },
       'fap_radio_channel' => {0 => 1,  1 => 136, 2 => 0},
       'fap_radio_tx_pwr'  => {0 => 13, 1 => 15,  2 => 50},
       'fap_vap_ssid'      =>
@@ -245,6 +262,113 @@ sub i_ssidmac : Tests(3) {
   $test->_drop_interface(31);
   ok(!exists $test->{info}->i_ssidmac()->{'17.2'},
     q(i_ssidmac__vap_port_missing__omits_bssid));
+}
+
+my %sta = (
+  guest => '0.1.6.128.150.177.92.153.130',
+  corp  => '1.0.6.40.106.186.61.150.231',
+  iot   => '0.2.96.190.181.42.99.151',
+  mon   => '2.0.6.2.0.0.0.0.1',
+);
+
+sub _by_station {
+  my %by_name = @_;
+  return {map { $sta{$_} => $by_name{$_} } keys %by_name};
+}
+
+my %sta_mac = (
+  guest => '80:96:b1:5c:99:82',
+  corp  => '28:6a:ba:3d:96:e7',
+  iot   => '60:be:b5:2a:63:97',
+  mon   => '02:00:00:00:00:01',
+);
+
+sub qb_fw_mac : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'qb_fw_mac');
+  cmp_deeply($test->{info}->qb_fw_mac(), _by_station(%sta_mac),
+    q(qb_fw_mac__unprefixed_index__decodes_mac));
+
+  $test->_drop_interface(16);
+  ok(!exists $test->{info}->qb_fw_mac()->{$sta{corp}},
+    q(qb_fw_mac__radio_without_port__drops_station));
+}
+
+sub qb_fw_port : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'qb_fw_port');
+  cmp_deeply($test->{info}->qb_fw_port(),
+    _by_station(guest => 17, corp => 16, iot => 17, mon => 19),
+    q(qb_fw_port__station__returns_radio_ifindex));
+
+  $test->_drop_interface(16);
+  ok(!exists $test->{info}->qb_fw_port()->{$sta{corp}},
+    q(qb_fw_port__radio_without_port__drops_station));
+}
+
+sub qb_fw_vlan : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'qb_fw_vlan');
+  cmp_deeply($test->{info}->qb_fw_vlan(),
+    _by_station(guest => 4, corp => 41, iot => 4, mon => 4),
+    q(qb_fw_vlan__station__returns_fapStaVlanId));
+}
+
+sub bp_index : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'bp_index');
+  my $bp_index = $test->{info}->bp_index();
+  cmp_deeply([map { $bp_index->{$_} } 16, 17, 19], [16, 17, 19],
+    q(bp_index__radio_port__maps_to_itself));
+}
+
+sub fw_port : Tests(1) {
+  my $test = shift;
+
+  my $bp_index = $test->{info}->bp_index();
+  my @unmapped = grep { !exists $bp_index->{$_} }
+    values %{$test->{info}->fw_port()};
+  is(scalar @unmapped, 0, q(fw_port__every_station_port__is_in_bp_index));
+}
+
+sub cd11_txrate : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'cd11_txrate');
+  cmp_deeply($test->{info}->cd11_txrate(),
+    _by_station(map { $_ => [] } keys %sta),
+    q(cd11_txrate__no_rate_column__returns_empty_rate_per_station));
+}
+
+sub cd11_mac : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'cd11_mac');
+  cmp_deeply($test->{info}->cd11_mac(), _by_station(%sta_mac),
+    q(cd11_mac__station__decodes_index_mac));
+}
+
+sub cd11_ssid : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'cd11_ssid');
+  cmp_deeply($test->{info}->cd11_ssid(),
+    _by_station(guest => 'GUEST', corp => 'CORP', iot => 'IOT', mon => 'CORP'),
+    q(cd11_ssid__station__returns_fapStaSSID));
+}
+
+sub cd11_port : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'cd11_port');
+  cmp_deeply($test->{info}->cd11_port(),
+    _by_station(guest => 'wifi0', corp => 'wifi1', iot => 'wifi0',
+      mon => 'wifi2'),
+    q(cd11_port__station__returns_radio_port));
 }
 
 sub serial : Tests(3) {
