@@ -8,6 +8,8 @@ Version 3.984001
     Extreme enterprise, built on RapidCity; RapidCity's Passport 8600 and
     ERS-era tables move into RapidCityLegacy and the VOSS VRF support into
     RapidCityVRF (#647)
+  * #673 FortiAP: new Layer2::FortiAP class for FortiAP access points, with
+    radio ports, SSIDs and clients (#501, #472)
 
   [ENHANCEMENTS]
 
