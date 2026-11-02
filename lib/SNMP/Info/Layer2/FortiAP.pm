@@ -383,6 +383,10 @@ Provides abstraction to the configuration information obtainable from a
 Fortinet FortiAP access point via SNMP. It is chosen for C<sysObjectID>s
 under the FortiAP branch, C<.1.3.6.1.4.1.12356.120>.
 
+Each radio is a port, C<wifi>I<R>, carrying its channel, transmit power
+and SSIDs. Clients from the station table are nodes on their radio's port,
+tagged with their VLAN and SSID.
+
 =head2 Inherited Classes
 
 =over
