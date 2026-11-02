@@ -45,6 +45,8 @@ Version 3.984001
     as the port name (#434, #503)
   * #675 Foundry: take ICX VLAN memberships from the FastIron table, and hide
     the single spanning tree VLAN (#339)
+  * #676 Fortinet: report FortiSwitch model, OS version and serial, and LLDP
+    neighbors whose management addresses do not match (#383, #495, #569)
 
 Version 3.984000 (2026-10-29)
 
