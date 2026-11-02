@@ -131,20 +131,28 @@ sub _fap_radios {
 }
 
 # Per-VAP interfaces of a mapped radio: wlan<R><W>, w<R><W>.<vlan>,
-# tv<R><W>, wlbgs<R>
+# tv<R><W>, wlbgs<R>; and per-SSID interfaces br.ssid.<W>, tc<W> of a WLAN
+# served on a mapped radio
 sub _fap_vap_ports {
     my $fap = shift;
 
     my $radios  = $fap->_fap_radios();
     my $i_descr = $fap->i_description() || {};
+    my %wlans   = map { ( split /\./ )[1] => 1 }
+        grep { exists $radios->{ ( split /\./ )[0] } }
+        keys %{ $fap->fap_vap_ssid() || {} };
 
     my %vap_ports;
     foreach my $iid ( keys %$i_descr ) {
-        next
-            unless $i_descr->{$iid}
-            =~ /^(?:wlan(\d)\d+|w(\d)\d+\.\d+|tv(\d)\d+|wlbgs(\d))$/;
-        my $radio = $1 // $2 // $3 // $4;
-        $vap_ports{$iid} = $radio if exists $radios->{$radio};
+        my $name = $i_descr->{$iid};
+        if ( $name =~ /^(?:wlan(\d)\d+|w(\d)\d+\.\d+|tv(\d)\d+|wlbgs(\d))$/ )
+        {
+            my $radio = $1 // $2 // $3 // $4;
+            $vap_ports{$iid} = 1 if exists $radios->{$radio};
+        }
+        elsif ( $name =~ /^(?:br\.ssid\.|tc)(\d+)$/ ) {
+            $vap_ports{$iid} = 1 if $wlans{$1};
+        }
     }
     return \%vap_ports;
 }
@@ -474,8 +482,9 @@ reference to a hash.
 
 Returns reference to hash of interface names. Each radio is one port,
 C<wifi>I<R>. The per-SSID interfaces of a radio (C<wlan>I<RW>,
-C<w>I<RW>C<.>I<vlan>, C<tv>I<RW>, C<wlbgs>I<R>) are not ports; their SSIDs
-and clients are reported on the radio's port.
+C<w>I<RW>C<.>I<vlan>, C<tv>I<RW>, C<wlbgs>I<R>), and the per-SSID
+C<br.ssid.>I<W> and C<tc>I<W> of a WLAN a radio serves, are not ports;
+their SSIDs and clients are reported on the radio's port.
 
 =item $fap->i_ignore()
 

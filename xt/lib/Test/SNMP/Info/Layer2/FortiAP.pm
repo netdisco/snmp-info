@@ -82,12 +82,15 @@ sub setup : Tests(setup) {
       'fap_vap_ssid'      =>
         {'0.0' => 'CORP', '0.1' => 'GUEST', '0.2' => 'IOT', '1.0' => 'CORP'},
       'i_index' => {map { $_ => $_ }
-          (1, 2, 5, 9, 15, 16, 17, 18, 19, 21, 25, 26, 28, 30, 31, 34, 44, 45)},
+          (1, 2, 5, 9, 13, 15, 16, 17, 18, 19, 21, 25, 26, 28, 30, 31, 32,
+           33, 34, 44, 45)},
       'i_description' => {
         1  => 'lo',     2  => 'gre0',   5  => 'eth0',   9  => 'ifb0',
+        13 => 'wldvlan',
         15 => 'teql0',  16 => 'wifi1',  17 => 'wifi0',  18 => 'soc0',
         19 => 'wifi2',  21 => 'br0',    25 => 'wlan00', 26 => 'wlan10',
-        28 => 'wlbgs0', 30 => 'wlan20', 31 => 'wlan02', 34 => 'tv02',
+        28 => 'wlbgs0', 30 => 'wlan20', 31 => 'wlan02', 32 => 'tc0',
+        33 => 'br.ssid.0', 34 => 'tv02',
         44 => 'w00.4',  45 => 'wlan01',
       },
       'i_type' => {
@@ -195,19 +198,23 @@ sub _drop_interface {
   delete $store->{$_}{$iid} for qw(i_index i_description i_type i_mac);
 }
 
-sub interfaces : Tests(4) {
+sub interfaces : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'interfaces');
   my $interfaces = $test->{info}->interfaces();
   cmp_deeply([sort { $a <=> $b } keys %$interfaces],
-    [1, 2, 5, 9, 15, 16, 17, 18, 19, 21],
-    q(interfaces__vap_port__is_not_a_port));
+    [1, 2, 5, 9, 13, 15, 16, 17, 18, 19, 21],
+    q(interfaces__vap_and_ssid_ports__are_not_ports));
   is($interfaces->{17}, 'wifi0', q(interfaces__radio__keeps_its_name));
 
   $test->_drop_interface(16);
   ok(exists $test->{info}->interfaces()->{26},
     q(interfaces__radio_without_port__keeps_vap_ports));
+
+  $test->{info}{store}{fap_vap_ssid} = {};
+  ok(exists $test->{info}->interfaces()->{32},
+    q(interfaces__no_vap_rows__keeps_ssid_ports));
 }
 
 sub i_80211channel : Tests(2) {
