@@ -215,8 +215,10 @@ sub _foundry_member_source {
     return $foundry->{_foundry_member_source}
         if defined $foundry->{_foundry_member_source};
 
-    my $tagged = grep { defined $_->{tag_mode} }
-        @{ $foundry->_vlan_member_rows() };
+    # Devices without a tag mode column skip the other membership walks
+    my $tag_modes = $foundry->_vlan_member_tag_mode() || {};
+    my $tagged = keys %$tag_modes
+        && grep { defined $_->{tag_mode} } @{ $foundry->_vlan_member_rows() };
     return $foundry->{_foundry_member_source}
         = $tagged ? 'foundry' : $foundry->_foundry_vlan_source();
 }
