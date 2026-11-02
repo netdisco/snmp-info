@@ -326,6 +326,19 @@ sub bp_index : Tests(2) {
     q(bp_index__radio_port__maps_to_itself));
 }
 
+sub bp_index_bridge : Tests(2) {
+  my $test = shift;
+
+  # A BRIDGE-MIB map whose bridge port 16 is a wired port, not radio wifi1
+  $test->{info}{'_bp_index'} = 1;
+  $test->{info}{store}{bp_index} = {1 => 5, 16 => 21};
+
+  my $bp_index = $test->{info}->bp_index();
+  is($bp_index->{16}, 21, q(bp_index__bridge_port_collides__keeps_bridge_map));
+  cmp_deeply($test->{info}{store}{bp_index}, {1 => 5, 16 => 21},
+    q(bp_index__radio_ports_added__leaves_cache_unchanged));
+}
+
 sub fw_port : Tests(1) {
   my $test = shift;
 

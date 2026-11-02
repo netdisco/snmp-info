@@ -289,11 +289,14 @@ sub bp_index {
     my $fap     = shift;
     my $partial = shift;
 
-    my $bp_index = $fap->SUPER::bp_index($partial) || {};
+    # Copied: SUPER returns the cached table by reference
+    my %bp_index = %{ $fap->SUPER::bp_index($partial) || {} };
     my $radios   = $fap->_fap_radios();
 
-    $bp_index->{$_} = $_ for values %$radios;
-    return $bp_index;
+    foreach my $ifindex ( values %$radios ) {
+        $bp_index{$ifindex} = $ifindex unless exists $bp_index{$ifindex};
+    }
+    return \%bp_index;
 }
 
 # fapStationTable has no rate column; an empty rate keeps the client
