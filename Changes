@@ -22,8 +22,6 @@ Version 3.984001
 
   [BUG FIXES]
 
-  * #674 CiscoSB, Netgear: report the configured port description (ifAlias)
-    as the port name (#434, #503)
   * #657 Layer3: read the IPv4 ARP cache from ipNetToPhysicalTable when the
     older ARP tables hold only 127.x entries, as on Extreme VDX (#291)
   * #659 MAU: report admin duplex on devices without ifMauDefaultType,
@@ -43,6 +41,8 @@ Version 3.984001
   * #666 Dell: report the bridge address as mac, and return 0.0.0.0 from
     lldp_ip for neighbors that advertise only a MAC chassis ID (#340)
   * #668 Airespace: count VxWorks 5 GHz BSSIDs up from the base radio MAC
+  * #674 CiscoSB, Netgear: report the configured port description (ifAlias)
+    as the port name (#434, #503)
 
 Version 3.984000 (2026-10-29)
 
