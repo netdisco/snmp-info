@@ -53,7 +53,17 @@ sub setup : Tests(setup) {
     '_i_description' => 1,
     '_i_type'        => 1,
     '_i_mac'         => 1,
+
+    # fapRadioTable keyed by radio, fapVapTable by radio.wlan; radio 2
+    # is a monitor radio on channel 0
+    '_fap_radio_channel' => 1,
+    '_fap_radio_tx_pwr'  => 1,
+    '_fap_vap_ssid'      => 1,
     'store'          => {
+      'fap_radio_channel' => {0 => 1,  1 => 136, 2 => 0},
+      'fap_radio_tx_pwr'  => {0 => 13, 1 => 15,  2 => 50},
+      'fap_vap_ssid'      =>
+        {'0.0' => 'CORP', '0.1' => 'GUEST', '0.2' => 'IOT', '1.0' => 'CORP'},
       'i_index' => {map { $_ => $_ }
           (1, 2, 5, 9, 15, 16, 17, 18, 19, 21, 25, 26, 28, 30, 31, 34, 44, 45)},
       'i_description' => {
@@ -160,6 +170,81 @@ sub i_ignore : Tests(2) {
   can_ok($test->{info}, 'i_ignore');
   cmp_deeply([sort { $a <=> $b } keys %{$test->{info}->i_ignore()}],
     [1, 2, 9, 15, 18], q(i_ignore__linux_pseudo_devices__are_ignored));
+}
+
+sub _drop_interface {
+  my ($test, $iid) = @_;
+  my $store = $test->{info}{store};
+  delete $store->{$_}{$iid} for qw(i_index i_description i_type i_mac);
+}
+
+sub interfaces : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'interfaces');
+  my $interfaces = $test->{info}->interfaces();
+  cmp_deeply([sort { $a <=> $b } keys %$interfaces],
+    [1, 2, 5, 9, 15, 16, 17, 18, 19, 21],
+    q(interfaces__vap_port__is_not_a_port));
+  is($interfaces->{17}, 'wifi0', q(interfaces__radio__keeps_its_name));
+
+  $test->_drop_interface(16);
+  ok(exists $test->{info}->interfaces()->{26},
+    q(interfaces__radio_without_port__keeps_vap_ports));
+}
+
+sub i_80211channel : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_80211channel');
+  cmp_deeply($test->{info}->i_80211channel(), {17 => 1, 16 => 136},
+    q(i_80211channel__monitor_radio__is_omitted));
+}
+
+sub dot11_cur_tx_pwr_mw : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'dot11_cur_tx_pwr_mw');
+  cmp_deeply($test->{info}->dot11_cur_tx_pwr_mw(), {17 => 20, 16 => 32},
+    q(dot11_cur_tx_pwr_mw__dbm__returns_mw));
+}
+
+sub i_ssidlist : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_ssidlist');
+  cmp_deeply(
+    $test->{info}->i_ssidlist(),
+    {'17.0' => 'CORP', '17.1' => 'GUEST', '17.2' => 'IOT', '16.0' => 'CORP'},
+    q(i_ssidlist__vap__keys_to_radio)
+  );
+
+  $test->_drop_interface(16);
+  cmp_deeply(
+    $test->{info}->i_ssidlist(),
+    {'17.0' => 'CORP', '17.1' => 'GUEST', '17.2' => 'IOT'},
+    q(i_ssidlist__radio_without_port__is_omitted)
+  );
+}
+
+sub i_ssidmac : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_ssidmac');
+  cmp_deeply(
+    $test->{info}->i_ssidmac(),
+    {
+      '17.0' => '04:01:a1:c4:e1:b8',
+      '17.1' => '04:01:a1:c4:e1:b9',
+      '17.2' => '04:01:a1:c4:e1:ba',
+      '16.0' => '04:01:a1:c4:e1:c0'
+    },
+    q(i_ssidmac__vap_port__returns_its_mac)
+  );
+
+  $test->_drop_interface(31);
+  ok(!exists $test->{info}->i_ssidmac()->{'17.2'},
+    q(i_ssidmac__vap_port_missing__omits_bssid));
 }
 
 sub serial : Tests(3) {

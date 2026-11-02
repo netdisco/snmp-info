@@ -56,7 +56,16 @@ $VERSION = '3.984000';
     'fap_serial'  => '.1.3.6.1.4.1.12356.120.1.2.0',
 );
 
-%FUNCS = ( %SNMP::Info::Layer2::FUNCS, );
+%FUNCS = (
+    %SNMP::Info::Layer2::FUNCS,
+
+    # fapRadioTxPowerOper (dBm), fapRadioChannelOper; indexed by radio
+    'fap_radio_tx_pwr'  => '.1.3.6.1.4.1.12356.120.4.1.1.10',
+    'fap_radio_channel' => '.1.3.6.1.4.1.12356.120.4.1.1.14',
+
+    # fapVapSSID; indexed by radio.wlan
+    'fap_vap_ssid' => '.1.3.6.1.4.1.12356.120.7.1.1.4',
+);
 
 %MUNGE = ( %SNMP::Info::Layer2::MUNGE, );
 
@@ -98,6 +107,120 @@ sub serial {
     my $fap = shift;
 
     return $fap->fap_serial();
+}
+
+# fapRadioTable row R is the interface named wifi<R>; no column links
+# the two
+sub _fap_radios {
+    my $fap = shift;
+
+    my $channels = $fap->fap_radio_channel() || {};
+    my $i_descr  = $fap->i_description()     || {};
+    my %ifindex_by_name = reverse %$i_descr;
+
+    my %radios;
+    foreach my $radio ( keys %$channels ) {
+        my $ifindex = $ifindex_by_name{"wifi$radio"};
+        $radios{$radio} = $ifindex if defined $ifindex;
+    }
+    return \%radios;
+}
+
+# Per-VAP interfaces of a mapped radio: wlan<R><W>, w<R><W>.<vlan>,
+# tv<R><W>, wlbgs<R>
+sub _fap_vap_ports {
+    my $fap = shift;
+
+    my $radios  = $fap->_fap_radios();
+    my $i_descr = $fap->i_description() || {};
+
+    my %vap_ports;
+    foreach my $iid ( keys %$i_descr ) {
+        next
+            unless $i_descr->{$iid}
+            =~ /^(?:wlan(\d)\d+|w(\d)\d+\.\d+|tv(\d)\d+|wlbgs(\d))$/;
+        my $radio = $1 // $2 // $3 // $4;
+        $vap_ports{$iid} = $radio if exists $radios->{$radio};
+    }
+    return \%vap_ports;
+}
+
+sub interfaces {
+    my $fap     = shift;
+    my $partial = shift;
+
+    my $interfaces = $fap->SUPER::interfaces($partial) || {};
+    my $vap_ports  = $fap->_fap_vap_ports();
+
+    delete @{$interfaces}{ keys %$vap_ports };
+    return $interfaces;
+}
+
+sub i_80211channel {
+    my $fap = shift;
+
+    my $radios   = $fap->_fap_radios();
+    my $channels = $fap->fap_radio_channel() || {};
+
+    my %i_80211channel;
+    foreach my $radio ( keys %$radios ) {
+        my $channel = $channels->{$radio};
+        next unless $channel;
+        $i_80211channel{ $radios->{$radio} } = $channel;
+    }
+    return \%i_80211channel;
+}
+
+sub dot11_cur_tx_pwr_mw {
+    my $fap = shift;
+
+    my $radios   = $fap->_fap_radios();
+    my $channels = $fap->fap_radio_channel() || {};
+    my $power    = $fap->fap_radio_tx_pwr()  || {};
+
+    my %tx_pwr_mw;
+    foreach my $radio ( keys %$radios ) {
+        my $dbm = $power->{$radio};
+        next unless $channels->{$radio} and defined $dbm and $dbm =~ /^-?\d+$/;
+        $tx_pwr_mw{ $radios->{$radio} } = int( 10**( $dbm / 10 ) + 0.5 );
+    }
+    return \%tx_pwr_mw;
+}
+
+sub i_ssidlist {
+    my $fap = shift;
+
+    my $radios = $fap->_fap_radios();
+    my $ssids  = $fap->fap_vap_ssid() || {};
+
+    my %i_ssidlist;
+    foreach my $vap ( keys %$ssids ) {
+        my ( $radio, $wlan ) = split /\./, $vap;
+        next unless defined $wlan and exists $radios->{$radio};
+        $i_ssidlist{"$radios->{$radio}.$wlan"} = $ssids->{$vap};
+    }
+    return \%i_ssidlist;
+}
+
+# The BSSID is the MAC of the VAP's wlan<R><W> interface
+sub i_ssidmac {
+    my $fap = shift;
+
+    my $radios  = $fap->_fap_radios();
+    my $ssids   = $fap->fap_vap_ssid()  || {};
+    my $i_descr = $fap->i_description() || {};
+    my $i_mac   = $fap->i_mac()         || {};
+    my %ifindex_by_name = reverse %$i_descr;
+
+    my %i_ssidmac;
+    foreach my $vap ( keys %$ssids ) {
+        my ( $radio, $wlan ) = split /\./, $vap;
+        next unless defined $wlan and exists $radios->{$radio};
+        my $vap_port = $ifindex_by_name{"wlan$radio$wlan"};
+        next unless defined $vap_port and $i_mac->{$vap_port};
+        $i_ssidmac{"$radios->{$radio}.$wlan"} = $i_mac->{$vap_port};
+    }
+    return \%i_ssidmac;
 }
 
 # Loopback and Linux pseudo devices that carry no traffic
@@ -233,11 +356,84 @@ reference to a hash.
 
 =over
 
+=item $fap->interfaces()
+
+Returns reference to hash of interface names. Each radio is one port,
+C<wifi>I<R>. The per-SSID interfaces of a radio (C<wlan>I<RW>,
+C<w>I<RW>C<.>I<vlan>, C<tv>I<RW>, C<wlbgs>I<R>) are not ports; their SSIDs
+and clients are reported on the radio's port.
+
 =item $fap->i_ignore()
 
 Returns reference to hash. Adds the loopback and the Linux pseudo
 devices that carry no traffic (C<gre>, C<sit>, C<ifb>, C<teql> and
 similar) to the inherited list.
+
+=back
+
+=head2 FortiAP Radio Table (C<fapRadioTable>)
+
+Indexed by radio number I<R>, which is the interface C<wifi>I<R>.
+
+=over
+
+=item $fap->fap_radio_channel()
+
+(C<fapRadioChannelOper>)
+
+=item $fap->fap_radio_tx_pwr()
+
+Operating transmit power in dBm.
+
+(C<fapRadioTxPowerOper>)
+
+=back
+
+=head2 FortiAP VAP Table (C<fapVapTable>)
+
+Indexed by radio number and WLAN number, I<R>.I<W>.
+
+=over
+
+=item $fap->fap_vap_ssid()
+
+(C<fapVapSSID>)
+
+=back
+
+=head2 802.11 Interface Table
+
+These methods emulate the F<IEEE802dot11-MIB> interface methods using the
+F<FORTINET-FORTIAP-MIB> C<fapRadioTable> and C<fapVapTable>. Keys are the
+radio's ifIndex; SSID keys add the WLAN number.
+
+=over
+
+=item $fap->i_80211channel()
+
+Returns reference to hash. Operating channel of each radio port. A radio
+on channel 0, as a monitor radio is, is left out.
+
+(C<fapRadioChannelOper>)
+
+=item $fap->dot11_cur_tx_pwr_mw()
+
+Returns reference to hash. Operating transmit power of each radio port
+with a channel, converted from dBm to milliwatts.
+
+(C<fapRadioTxPowerOper>)
+
+=item $fap->i_ssidlist()
+
+Returns reference to hash. SSID of each VAP, keyed
+I<radio ifIndex>.I<W>.
+
+(C<fapVapSSID>)
+
+=item $fap->i_ssidmac()
+
+Returns reference to hash. BSSID of each VAP, the MAC address of its
+C<wlan>I<RW> interface, keyed as C<i_ssidlist()>.
 
 =back
 
