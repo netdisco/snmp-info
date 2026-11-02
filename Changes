@@ -43,6 +43,8 @@ Version 3.984001
   * #668 Airespace: count VxWorks 5 GHz BSSIDs up from the base radio MAC
   * #674 CiscoSB, Netgear: report the configured port description (ifAlias)
     as the port name (#434, #503)
+  * #675 Foundry: take ICX VLAN memberships from the FastIron table, and hide
+    the single spanning tree VLAN (#339)
 
 Version 3.984000 (2026-10-29)
 
