@@ -1641,6 +1641,14 @@ used by the base bridge class. These methods prefer non-empty standard bridge
 data and use the Foundry port VLAN configuration and membership tables when
 the standard methods return no data.
 
+VLAN memberships are the exception: when the Foundry membership table
+reports each port's tag mode, as on ICX switches, it is used even where
+Q-BRIDGE has data, because some ICX firmware (FastIron 08.0.80) serves
+Q-BRIDGE port lists that are not port bitmaps.
+
+The single spanning tree VLAN (C<Single-spanning-tree-vlan>), which holds
+every port, is left out of every VLAN method.
+
 =over
 
 =item $foundry->v_name()
