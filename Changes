@@ -47,6 +47,8 @@ Version 3.984001
     the single spanning tree VLAN (#339)
   * #676 Fortinet: report FortiSwitch model, OS version and serial, and LLDP
     neighbors whose management addresses do not match (#383, #495, #569)
+  * #677 RuckusAP: put SSIDs and clients on radio ports by WLAN number, and
+    report WLAN VLANs on radio ports and clients (#672)
 
 Version 3.984000 (2026-10-29)
 
