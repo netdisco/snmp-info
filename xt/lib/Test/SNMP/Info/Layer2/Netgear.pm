@@ -56,7 +56,23 @@ sub setup : Tests(setup) {
     '_ng_fsosver' => '',
     '_ng_gsmserial' => '',
     '_ng_gsmosver' => '',
-    'store'                 => {},
+
+    # Shaped from a GS110TP: ifName gN, and an ifAlias column that is
+    # empty until a description is configured
+    '_i_index'       => 1,
+    '_i_description' => 1,
+    '_i_name'        => 1,
+    '_i_alias'       => 1,
+    'store'                 => {
+      'i_index'       => {1 => 1, 2 => 2, 13 => 13},
+      'i_description' => {
+        1  => 'Slot: 0 Port: 1 Gigabit - Level',
+        2  => 'Slot: 0 Port: 2 Gigabit - Level',
+        13 => ' CPU Interface for Slot: 5 Port: 1'
+      },
+      'i_name'  => {1 => 'g1',        2 => 'g2', 13 => 'CPU Interface:  5/1'},
+      'i_alias' => {1 => 'Uplink A',  2 => '',   13 => ''},
+    },
   };
   $test->{info}->cache($cache_data);
 }
@@ -73,6 +89,29 @@ sub vendor : Tests(2) {
 
   can_ok($test->{info}, 'vendor');
   is($test->{info}->vendor(), 'netgear', q(Vendor returns 'netgear'));
+}
+
+sub i_name : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_name');
+  cmp_deeply($test->{info}->i_name(),
+    {1 => 'Uplink A', 2 => 'g2', 13 => 'CPU Interface:  5/1'},
+    q(i_name__ifalias_set__returns_ifalias));
+
+  delete $test->{info}{store}{i_alias};
+  cmp_deeply($test->{info}->i_name(),
+    {1 => 'g1', 2 => 'g2', 13 => 'CPU Interface:  5/1'},
+    q(i_name__no_ifalias__returns_ifname));
+}
+
+sub interfaces : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'interfaces');
+  cmp_deeply($test->{info}->interfaces(),
+    {1 => 'g1', 2 => 'g2', 13 => 'CPU Interface:  5/1'},
+    q(interfaces__ifalias_set__keeps_ifname));
 }
 
 1;
