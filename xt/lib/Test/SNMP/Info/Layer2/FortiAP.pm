@@ -46,7 +46,50 @@ sub setup : Tests(setup) {
     '_id'          => '.1.3.6.1.4.1.12356.120.10.23113',
     '_fap_version' => 'FP231G-v7.4-build0771',
     '_fap_serial'  => 'FP231GTF00000001',
-    'store'        => {},
+
+    # IF-MIB rows of the FAP-231G: radios wifiN, one wlan<R><W> port per
+    # VAP whose MAC counts up from its radio's, and Linux pseudo devices
+    '_i_index'       => 1,
+    '_i_description' => 1,
+    '_i_type'        => 1,
+    '_i_mac'         => 1,
+    'store'          => {
+      'i_index' => {map { $_ => $_ }
+          (1, 2, 5, 9, 15, 16, 17, 18, 19, 21, 25, 26, 28, 30, 31, 34, 44, 45)},
+      'i_description' => {
+        1  => 'lo',     2  => 'gre0',   5  => 'eth0',   9  => 'ifb0',
+        15 => 'teql0',  16 => 'wifi1',  17 => 'wifi0',  18 => 'soc0',
+        19 => 'wifi2',  21 => 'br0',    25 => 'wlan00', 26 => 'wlan10',
+        28 => 'wlbgs0', 30 => 'wlan20', 31 => 'wlan02', 34 => 'tv02',
+        44 => 'w00.4',  45 => 'wlan01',
+      },
+      'i_type' => {
+        1  => 'softwareLoopback', 2  => 'tunnel', 5  => 'ethernetCsmacd',
+        9  => 'ethernetCsmacd',   15 => 'other',  16 => 'other',
+        17 => 'other',            18 => 'other',  19 => 'other',
+        21 => 'ethernetCsmacd',   25 => 'ethernetCsmacd',
+        26 => 'ethernetCsmacd',   28 => 'ethernetCsmacd',
+        30 => 'ethernetCsmacd',   31 => 'ethernetCsmacd',
+        34 => 'ethernetCsmacd',   44 => 'ethernetCsmacd',
+        45 => 'ethernetCsmacd',
+      },
+      'i_mac' => {
+        5  => pack('H*', '0401a1c4e1b0'),
+        9  => pack('H*', '92153b05ec32'),
+        16 => pack('H*', '0401a1c4e1c0'),
+        17 => pack('H*', '0401a1c4e1b8'),
+        19 => pack('H*', '0401a1c4e1c8'),
+        21 => pack('H*', '0401a1c4e1b0'),
+        25 => pack('H*', '0401a1c4e1b8'),
+        26 => pack('H*', '0401a1c4e1c0'),
+        28 => pack('H*', '0601a1c4e1b8'),
+        30 => pack('H*', '0401a1c4e1c8'),
+        31 => pack('H*', '0401a1c4e1ba'),
+        34 => pack('H*', '0401a1c4e1ba'),
+        44 => pack('H*', '0401a1c4e1b0'),
+        45 => pack('H*', '0401a1c4e1b9'),
+      },
+    },
   };
   $test->{info}->cache($cache_data);
 }
@@ -93,6 +136,30 @@ sub os_ver : Tests(5) {
 
   $test->{info}->clear_cache();
   is($test->{info}->os_ver(), undef, q(No fapVersion returns undef));
+}
+
+sub model : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'model');
+  is($test->{info}->model(), 'FP231G',
+    q(model__fap_version__returns_image_name));
+
+  $test->{info}{_fap_version} = 'PU231F-v7.0-build0084';
+  is($test->{info}->model(), 'PU231F', q(model__u_series__returns_image_name));
+
+  $test->{info}{_fap_version} = '7.0-build0084';
+  my $fallback = $test->{info}->model();
+  ok(defined $fallback && $fallback ne '7.0-build0084',
+    q(model__no_image_name__falls_back_to_sysobjectid));
+}
+
+sub i_ignore : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_ignore');
+  cmp_deeply([sort { $a <=> $b } keys %{$test->{info}->i_ignore()}],
+    [1, 2, 9, 15, 18], q(i_ignore__linux_pseudo_devices__are_ignored));
 }
 
 sub serial : Tests(3) {

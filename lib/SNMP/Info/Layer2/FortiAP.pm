@@ -49,8 +49,9 @@ $VERSION = '3.984000';
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
 
-    # FORTINET-FORTIAP-MIB::fapVersion and fapSerialNum, read by OID until
-    # the MIB is in a netdisco-mibs release
+    # FORTINET-FORTIAP-MIB objects are read by OID until the MIB is in a
+    # netdisco-mibs release, netdisco/netdisco-mibs#312
+    # fapVersion, fapSerialNum
     'fap_version' => '.1.3.6.1.4.1.12356.120.1.1.0',
     'fap_serial'  => '.1.3.6.1.4.1.12356.120.1.2.0',
 );
@@ -84,10 +85,39 @@ sub os_ver {
     return $version;
 }
 
+# The image name before "-v" names the model: FP231G, PU231F
+sub model {
+    my $fap     = shift;
+    my $version = $fap->fap_version() // '';
+
+    return $1 if $version =~ /^(\S+?)-v/;
+    return $fap->SUPER::model();
+}
+
 sub serial {
     my $fap = shift;
 
     return $fap->fap_serial();
+}
+
+# Loopback and Linux pseudo devices that carry no traffic
+sub i_ignore {
+    my $fap     = shift;
+    my $partial = shift;
+
+    my $ignore  = $fap->SUPER::i_ignore($partial) || {};
+    my $i_descr = $fap->i_description($partial)   || {};
+    my $i_type  = $fap->i_type($partial)          || {};
+
+    foreach my $iid ( keys %$i_descr ) {
+        my $name = $i_descr->{$iid};
+        my $type = $i_type->{$iid} // '';
+        $ignore->{$iid}++
+            if $type eq 'softwareLoopback'
+            or $name =~ /^(?:gre|gretap|ip6tnl|sit|ip6gre|ifb|teql|soc)\d*$/
+            or $name =~ /^(?:ipsecdummy|miireg)$/;
+    }
+    return $ignore;
 }
 
 1;
@@ -159,6 +189,11 @@ Returns 'fortiap'.
 Returns the firmware version from C<fapVersion>, without the image name
 before C<-v> (C<7.0-build0033> from C<FP221E-v7.0-build0033>).
 
+=item $fap->model()
+
+Returns the image name before C<-v> in C<fapVersion> (C<FP231G> from
+C<FP231G-v7.4-build0771>), or the inherited model when it has none.
+
 =item $fap->serial()
 
 Returns the serial number.
@@ -193,6 +228,18 @@ See L<SNMP::Info::Layer2/"GLOBALS"> for details.
 
 These are methods that return tables of information in the form of a
 reference to a hash.
+
+=head2 Overrides
+
+=over
+
+=item $fap->i_ignore()
+
+Returns reference to hash. Adds the loopback and the Linux pseudo
+devices that carry no traffic (C<gre>, C<sit>, C<ifb>, C<teql> and
+similar) to the inherited list.
+
+=back
 
 =head2 Table Methods imported from SNMP::Info::Layer2
 
