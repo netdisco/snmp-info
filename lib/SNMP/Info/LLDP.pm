@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.984000';
+$VERSION = '3.985000';
 
 %MIBS = (
     'LLDP-MIB'          => 'lldpLocSysCapEnabled',
@@ -224,6 +224,7 @@ sub lldp_if {
     my %r_i_alias = reverse %$i_alias;
 
     my %lldp_if;
+    my %port_id_lookup;
     foreach my $key ( keys %$addr ) {
         my @aOID = split( '\.', $key );
         my $port = $aOID[1];
@@ -250,10 +251,30 @@ sub lldp_if {
         elsif ( $desc && exists $r_i_alias{$desc} ) {
             $port = $r_i_alias{$desc};
         }
+        else {
+            $port = $lldp->_lldp_lport_id_if( $port, \%r_i_descr,
+                \%port_id_lookup ) // $port;
+        }
 
         $lldp_if{$key} = $port;
     }
     return \%lldp_if;
+}
+
+# Some agents (Dell OS10) serve no lldpLocPortDesc, only lldpLocPortId
+# holding the interface name, and number ports neither by ifIndex nor by
+# bridge port. ifName is read by its MIB name because Layer3 i_name returns
+# ifAlias. Both columns are walked whole, once, and only when a port needs
+# them: one bulk walk costs fewer requests than a fetch per neighbor.
+sub _lldp_lport_id_if {
+    my ( $lldp, $port, $r_i_descr, $lookup ) = @_;
+
+    $lookup->{port_id} //= $lldp->lldp_lport_id() || {};
+    my $id = $lookup->{port_id}{$port};
+    return unless defined $id and length $id;
+
+    $lookup->{if_name} //= { reverse %{ $lldp->ifName() || {} } };
+    return $lookup->{if_name}{$id} // $r_i_descr->{$id};
 }
 
 sub lldp_ip {
@@ -744,8 +765,9 @@ with the remote system. Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no
 =item $lldp->lldp_if()
 
 Returns the mapping to the SNMP Interface Table. Tries to cross reference
-(C<lldpLocPortDesc>) with (C<ifDescr>) and (C<ifAlias>) to get (C<ifIndex>),
-if unable defaults to (C<lldpRemLocalPortNum>). Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
+(C<lldpLocPortDesc>) with (C<ifDescr>) and (C<ifAlias>) to get (C<ifIndex>).
+When neither matches, cross references (C<lldpLocPortId>) with (C<ifName>),
+then (C<ifDescr>). If unable defaults to (C<lldpRemLocalPortNum>). Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 F<LLDP-V2-MIB> rows carry the (C<ifIndex>) in their index.
 
 =item  $lldp->lldp_ip()

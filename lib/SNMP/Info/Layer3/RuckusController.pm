@@ -38,7 +38,7 @@ use SNMP::Info::Layer3;
 @SNMP::Info::Layer3::RuckusController::EXPORT_OK = qw//;
 
 our ( $VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE );
-$VERSION = '3.984000';
+$VERSION = '3.985000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,

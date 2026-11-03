@@ -294,4 +294,63 @@ sub airespace_vlan_names : Tests(3) {
     {10 => 'alpha'}, q(A tie between names goes to the one sorting first));
 }
 
+# Three WLANs on both radios of AP 00:0b:85:14:59:30, slot 0 802.11a and
+# slot 1 802.11b. Expected BSSIDs follow the Cisco knowledge base article
+# "A different MAC address is shown than the actual MAC address of the AP"
+# (community.cisco.com ta-p/3131579, formerly DOC-2935).
+sub _cache_wlans {
+  my ($test, $ios_version) = @_;
+
+  $test->{info}->cache({
+    '_airespace_apif_oride'    => 1,
+    '_airespace_apif_type'     => 1,
+    '_airespace_ess_ssid'      => 1,
+    '_airespace_ess_status'    => 1,
+    '_airespace_ess_radio_pol' => 1,
+    '_airespace_oride_ssid'    => 1,
+    '_bsnAPIOSVersion'         => 1,
+    'store'                    => {
+      'airespace_apif_oride' => {
+        '0.11.133.20.89.48.0' => 'disable',
+        '0.11.133.20.89.48.1' => 'disable',
+      },
+      'airespace_apif_type' =>
+        {'0.11.133.20.89.48.0' => 'dot11a', '0.11.133.20.89.48.1' => 'dot11b',},
+      'airespace_ess_ssid'   => {1 => 'Data', 2 => 'guest', 3 => 'voice'},
+      'airespace_ess_status' => {1 => 'enable', 2 => 'enable', 3 => 'enable'},
+      'airespace_ess_radio_pol' => {1 => 'all', 2 => 'all', 3 => 'all'},
+      'airespace_oride_ssid'    => {},
+      'bsnAPIOSVersion'         => {'0.11.133.20.89.48' => $ios_version},
+    },
+  });
+}
+
+sub i_ssidmac : Tests(5) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_ssidmac');
+
+  $test->_cache_wlans('');
+  my $bssids = $test->{info}->i_ssidmac();
+  cmp_deeply(
+    [map { $bssids->{"0.11.133.20.89.48.1.$_"} } 1 .. 3],
+    ['00:0b:85:14:59:3f', '00:0b:85:14:59:3e', '00:0b:85:14:59:3d'],
+    'i_ssidmac__vxworks_2_4ghz__counts_down_from_base_plus_15');
+  cmp_deeply(
+    [map { $bssids->{"0.11.133.20.89.48.0.$_"} } 1 .. 3],
+    ['00:0b:85:14:59:30', '00:0b:85:14:59:31', '00:0b:85:14:59:32'],
+    'i_ssidmac__vxworks_5ghz__counts_up_from_base');
+
+  $test->_cache_wlans('15.3.3-JF15');
+  $bssids = $test->{info}->i_ssidmac();
+  cmp_deeply(
+    [map { $bssids->{"0.11.133.20.89.48.1.$_"} } 1 .. 3],
+    ['00:0b:85:14:59:30', '00:0b:85:14:59:31', '00:0b:85:14:59:32'],
+    'i_ssidmac__ios_2_4ghz__counts_up_from_base');
+  cmp_deeply(
+    [map { $bssids->{"0.11.133.20.89.48.0.$_"} } 1 .. 3],
+    ['00:0b:85:14:59:3f', '00:0b:85:14:59:3e', '00:0b:85:14:59:3d'],
+    'i_ssidmac__ios_5ghz__counts_down_from_base_plus_15');
+}
+
 1;

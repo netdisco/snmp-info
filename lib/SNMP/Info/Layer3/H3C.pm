@@ -46,7 +46,7 @@ use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.984000';
+$VERSION = '3.985000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -513,6 +513,37 @@ sub _vrf_subnets_from_routes { return 1; }
 # PVST
 sub _stp_default_is_common { return 0; }
 
+# Comware 7 indexes dot1qPvid by ifIndex instead of dot1dBasePort. A key
+# that is an ifIndex but not a bridge port can only mean that. Comware 5
+# numbers bridge ports as ifIndexes, so it never trips this.
+sub i_vlan {
+    my $h3c     = shift;
+    my $partial = shift;
+
+    my $i_pvid = $h3c->qb_i_vlan() || {};
+    return $h3c->SUPER::i_vlan($partial)
+        unless _pvid_by_ifindex(
+        $i_pvid,
+        $h3c->bp_index()   || {},
+        $h3c->interfaces() || {}
+        );
+
+    return {
+        map  { $_ => $i_pvid->{$_} }
+        grep { !defined $partial or $_ eq $partial } keys %$i_pvid
+    };
+}
+
+sub i_untagged { goto &i_vlan }
+
+sub _pvid_by_ifindex {
+    my ( $i_pvid, $bp_index, $interfaces ) = @_;
+
+    my @keys = keys %$i_pvid;
+    return 0 if !@keys or grep { !exists $interfaces->{$_} } @keys;
+    return scalar grep { !exists $bp_index->{$_} } @keys;
+}
+
 1;
 __END__
 
@@ -685,6 +716,16 @@ C<hh3cdot1qVlanName> when that is not empty. Comware 5 on the V1910 and 1920
 leaves the default C<VLAN 0002> in Q-BRIDGE and keeps the configured name
 only in the vendor table. VLANs absent from Q-BRIDGE are not added, so the
 keys match C<v_index()>.
+
+=item $h3c->i_vlan()
+
+Returns a mapping between C<ifIndex> and the PVID or default VLAN.
+Comware 7 indexes C<dot1qPvid> by C<ifIndex> rather than
+C<dot1dBasePort>; this is detected and the keys used as is.
+
+=item $h3c->i_untagged()
+
+Alias of C<i_vlan()>.
 
 =back
 

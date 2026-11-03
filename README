@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.984000
+    SNMP::Info - Version 3.985000
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -390,10 +390,25 @@ SUBCLASSES
         See documentation in SNMP::Info::PowerEthernet for details.
 
     SNMP::Info::RapidCity
-        RAPID-CITY. Inherited by Avaya switches for duplex and VLAN
-        information.
+        RAPID-CITY. Inherited by Avaya switches and, through
+        SNMP::Info::Layer3::VOSS, VOSS and Fabric Engine switches, for
+        duplex and VLAN information.
 
         See documentation in SNMP::Info::RapidCity for details.
+
+    SNMP::Info::RapidCityLegacy
+        RAPID-CITY. The tables used by the Passport 8600 era, ERS and
+        BayStack families. Inherited by Avaya switches ahead of
+        SNMP::Info::RapidCity.
+
+        See documentation in SNMP::Info::RapidCityLegacy for details.
+
+    SNMP::Info::RapidCityVRF
+        RAPID-CITY. The VRFs of VOSS and Fabric Engine switches, read as
+        contexts. Inherited by SNMP::Info::Layer3::VOSS ahead of
+        SNMP::Info::RapidCity.
+
+        See documentation in SNMP::Info::RapidCityVRF for details.
 
     SNMP::Info::SONMP
         SynOptics Network Management Protocol (SONMP) SYNOPTICS-ROOT-MIB,
@@ -546,6 +561,11 @@ SUBCLASSES
             Subclass for Exinda / GFI Network Orchestrator traffic shapers.
 
             See documentation in SNMP::Info::Layer2::Exinda for details.
+
+        SNMP::Info::Layer2::FortiAP
+            Subclass for Fortinet FortiAP access points.
+
+            See documentation in SNMP::Info::Layer2::FortiAP for details.
 
         SNMP::Info::Layer2::Hirschmann
             Subclass for Hirschmann switches
@@ -931,6 +951,11 @@ SUBCLASSES
 
             See documentation in SNMP::Info::Layer3::OneAccess for details.
 
+        SNMP::Info::Layer3::Onyx
+            Subclass for Mellanox/NVIDIA Onyx switches.
+
+            See documentation in SNMP::Info::Layer3::Onyx for details.
+
         SNMP::Info::Layer3::PacketFront
             Subclass for PacketFront DRG series CPE.
 
@@ -1048,6 +1073,12 @@ SUBCLASSES
             Subclass for VMware ESXi hosts.
 
             See documentation in SNMP::Info::Layer3::VMware for details.
+
+        SNMP::Info::Layer3::VOSS
+            Subclass for Extreme VOSS / Fabric Engine switches that report
+            the Extreme enterprise.
+
+            See documentation in SNMP::Info::Layer3::VOSS for details.
 
         SNMP::Info::Layer3::VyOS
             Subclass for VyOS routers.
@@ -1570,9 +1601,9 @@ USAGE
     configuration (NX-OS "snmp-server mib community-map"). The VRF readers
     recognize such a session only where the class can read the mapping from
     the device: NX-OS (SNMP::Info::Layer3::Nexus) and VOSS
-    (SNMP::Info::Layer3::Extreme). Elsewhere a community-mapped session
-    reads as the default context, so read VRF contexts over SNMPv3. See
-    "Reading Instances" in SNMP::Info::VRF.
+    (SNMP::Info::Layer3::VOSS). Elsewhere a community-mapped session reads
+    as the default context, so read VRF contexts over SNMPv3. See "Reading
+    Instances" in SNMP::Info::VRF.
 
     The examples below switch with this helper. "kind" "none" is the default
     context.

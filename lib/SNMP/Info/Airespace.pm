@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.984000';
+$VERSION = '3.985000';
 
 %MIBS = (
     %SNMP::Info::MIBS,
@@ -742,6 +742,7 @@ sub i_ssidbcast {
 # Secret decoder ring for BSSID: https://supportforums.cisco.com/docs/DOC-2935
 # We need radio base MAC, SSID index, radio band, and whether AP is
 # VxWorks or IOS based then we can do the arithmetic
+# DOC-2935 now lives at https://community.cisco.com/t5/wireless-mobility-knowledge-base/a-different-mac-address-is-shown-than-the-actual-mac-address-of/ta-p/3131579
 
 sub i_ssidmac {
     my $airespace = shift;
@@ -785,7 +786,7 @@ sub i_ssidmac {
             }
 
             # VxWorks and 5Ghz - count up, starts at zero
-            elsif ( $ios and $ap_type =~ /a$/ ) {
+            elsif ( !$ios and $ap_type =~ /a$/ ) {
                 $last = $last + ( $ssid_idx - 1 );
             }
 

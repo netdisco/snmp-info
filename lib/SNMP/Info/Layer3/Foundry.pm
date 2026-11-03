@@ -46,7 +46,7 @@ use SNMP::Info::FDP;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.984000';
+$VERSION = '3.985000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -146,12 +146,23 @@ $VERSION = '3.984000';
     'stp_p_port'   => \&SNMP::Info::munge_prio_port,
 );
 
+# FastIron's single spanning tree VLAN holds every port; it is not
+# configured by the operator, so it is not reported
+my $SINGLE_STP_VLAN_NAME = 'Single-spanning-tree-vlan';
+
 sub v_name {
     my $foundry = shift;
     my $partial = shift;
 
-    return $foundry->SUPER::v_name($partial)
-        unless $foundry->_foundry_vlan_source() eq 'foundry';
+    unless ( $foundry->_foundry_vlan_source() eq 'foundry' ) {
+        my $names = $foundry->SUPER::v_name($partial);
+        return $names unless ref $names eq 'HASH';
+        return {
+            map { $_ => $names->{$_} }
+            grep { ( $names->{$_} // '' ) ne $SINGLE_STP_VLAN_NAME }
+                keys %$names
+        };
+    }
 
     my $vlan_ids = $foundry->_vlan_cfg_id($partial) || {};
     my $vlan_names = $foundry->_vlan_cfg_name($partial) || {};
@@ -161,6 +172,7 @@ sub v_name {
         my $vlan = $vlan_ids->{$idx};
         next unless defined $vlan;
         my $name = $vlan_names->{$idx};
+        next if defined $name and $name eq $SINGLE_STP_VLAN_NAME;
         $v_name{$vlan} = defined $name ? $name : '';
     }
 
@@ -194,6 +206,38 @@ sub _foundry_vlan_source {
     return $foundry->{_foundry_vlan_source} = 'bridge';
 }
 
+# Q-BRIDGE port lists are unreliable on some ICX firmware (08.0.80 serves
+# lists that are not port bitmaps), and the FastIron table matches them
+# where they are correct, so prefer it when it carries the tag mode
+sub _foundry_member_source {
+    my $foundry = shift;
+
+    return $foundry->{_foundry_member_source}
+        if defined $foundry->{_foundry_member_source};
+
+    # Devices without a tag mode column skip the other membership walks
+    my $tag_modes = $foundry->_vlan_member_tag_mode() || {};
+    my $tagged = keys %$tag_modes
+        && grep { defined $_->{tag_mode} } @{ $foundry->_vlan_member_rows() };
+    return $foundry->{_foundry_member_source}
+        = $tagged ? 'foundry' : $foundry->_foundry_vlan_source();
+}
+
+sub _single_stp_vlans {
+    my $foundry = shift;
+
+    my $vlan_ids   = $foundry->_vlan_cfg_id()   || {};
+    my $vlan_names = $foundry->_vlan_cfg_name() || {};
+
+    return {
+        map { $vlan_ids->{$_} => 1 }
+        grep {
+            defined $vlan_ids->{$_}
+                and ( $vlan_names->{$_} // '' ) eq $SINGLE_STP_VLAN_NAME
+        } keys %$vlan_ids
+    };
+}
+
 sub _vlan_member_rows {
     my $foundry = shift;
 
@@ -201,6 +245,7 @@ sub _vlan_member_rows {
     my $port_ids = $foundry->_vlan_member_port_id()  || {};
     my $statuses = $foundry->_vlan_member_status()   || {};
     my $tag_modes = $foundry->_vlan_member_tag_mode() || {};
+    my $stp_vlans = $foundry->_single_stp_vlans();
 
     my @rows;
     foreach my $idx ( keys %$vlan_ids ) {
@@ -210,6 +255,7 @@ sub _vlan_member_rows {
         my $vlan = $vlan_ids->{$idx};
         my $port = $port_ids->{$idx};
         next unless defined $vlan and defined $port and $vlan and $port;
+        next if $stp_vlans->{$vlan};
 
         my $status = $statuses->{$idx};
         next unless defined $status and $status =~ /^(?:valid|2)(?:\(2\))?$/i;
@@ -341,7 +387,7 @@ sub i_vlan_membership {
     my $partial = shift;
 
     return $foundry->SUPER::i_vlan_membership($partial)
-        unless $foundry->_foundry_vlan_source() eq 'foundry';
+        unless $foundry->_foundry_member_source() eq 'foundry';
 
     my $rows = $foundry->_vlan_member_rows();
 
@@ -359,7 +405,7 @@ sub i_vlan_membership_untagged {
     my $partial = shift;
 
     return $foundry->SUPER::i_vlan_membership_untagged($partial)
-        unless $foundry->_foundry_vlan_source() eq 'foundry';
+        unless $foundry->_foundry_member_source() eq 'foundry';
 
     my $rows = $foundry->_vlan_member_rows();
 
@@ -1596,6 +1642,14 @@ FastIron ICX devices may not implement or populate the Q-BRIDGE-MIB tables
 used by the base bridge class. These methods prefer non-empty standard bridge
 data and use the Foundry port VLAN configuration and membership tables when
 the standard methods return no data.
+
+VLAN memberships are the exception: when the Foundry membership table
+reports each port's tag mode, as on ICX switches, it is used even where
+Q-BRIDGE has data, because some ICX firmware (FastIron 08.0.80) serves
+Q-BRIDGE port lists that are not port bitmaps.
+
+The single spanning tree VLAN (C<Single-spanning-tree-vlan>), which holds
+every port, is left out of every VLAN method.
 
 =over
 

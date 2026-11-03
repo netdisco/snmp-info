@@ -51,7 +51,21 @@ sub setup : Tests(setup) {
     '_description' =>
       'Cisco SB',
     '_id'   => '.1.3.6.1.4.1.9.6.1',
-    'store' => {},
+
+    # Shaped from an SG350-10: ifDescr GigabitEthernetN, ifName giN, and
+    # the configured description in ifAlias, empty where none is set
+    '_i_index'       => 1,
+    '_i_description' => 1,
+    '_i_name'        => 1,
+    '_i_alias'       => 1,
+    'store' => {
+      'i_index'       => {1 => 1, 2 => 2, 9 => 9},
+      'i_description' => {
+        1 => 'GigabitEthernet1', 2 => 'GigabitEthernet2', 9 => 'GigabitEthernet9'
+      },
+      'i_name'  => {1 => 'gi1',      2 => 'gi2', 9 => 'gi9'},
+      'i_alias' => {1 => 'Device A', 2 => ' ',   9 => ''},
+    },
   };
   $test->{info}->cache($cache_data);
 }
@@ -68,6 +82,26 @@ sub vendor : Tests(2) {
 
   can_ok($test->{info}, 'vendor');
   is($test->{info}->vendor(), 'cisco', q(Vendor returns 'cisco'));
+}
+
+sub i_name : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'i_name');
+  cmp_deeply($test->{info}->i_name(), {1 => 'Device A', 2 => 'gi2', 9 => 'gi9'},
+    q(i_name__ifalias_set__returns_ifalias));
+
+  delete $test->{info}{store}{i_alias};
+  cmp_deeply($test->{info}->i_name(), {1 => 'gi1', 2 => 'gi2', 9 => 'gi9'},
+    q(i_name__no_ifalias__returns_ifname));
+}
+
+sub interfaces : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'interfaces');
+  cmp_deeply($test->{info}->interfaces(), {1 => 'gi1', 2 => 'gi2', 9 => 'gi9'},
+    q(interfaces__ifalias_set__keeps_ifname));
 }
 
 1;

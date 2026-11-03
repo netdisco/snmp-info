@@ -97,6 +97,41 @@ sub _prime_vlan_data {
   };
 }
 
+# FastIron's single spanning tree VLAN: every port is an untagged member,
+# as on an ICX7150 stack running 08.0.80
+sub _prime_single_stp_vlan {
+  my $test = shift;
+  my $store = $test->{info}{store};
+
+  $store->{_vlan_cfg_id}{4094}   = 4094;
+  $store->{_vlan_cfg_name}{4094} = 'Single-spanning-tree-vlan';
+  foreach my $port (1, 2, 12) {
+    $store->{_vlan_member_vlan_id}{"4094.$port"}  = 4094;
+    $store->{_vlan_member_port_id}{"4094.$port"}  = $port;
+    $store->{_vlan_member_status}{"4094.$port"}   = 2;
+    $store->{_vlan_member_tag_mode}{"4094.$port"} = 2;
+  }
+}
+
+# Q-BRIDGE data alongside the FastIron tables, port 1 in VLAN 10
+sub _prime_qbridge_membership {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->{_bp_index} = 1;
+  $info->{store}{bp_index} = {1 => 101};
+  $info->{_qb_v_egress} = 1;
+  $info->{_qb_cv_egress} = 1;
+  $info->{store}{qb_cv_egress} = undef;
+  $info->{store}{qb_v_egress} = {10 => pack('B*', '1')};
+  $info->{_qb_v_untagged} = 1;
+  $info->{_qb_cv_untagged} = 1;
+  $info->{store}{qb_cv_untagged} = undef;
+  $info->{store}{qb_v_untagged} = {10 => pack('B*', '1')};
+  delete $info->{_foundry_member_source};
+  delete $info->{_foundry_vlan_source};
+}
+
 sub _prime_ip_data {
   my $test = shift;
   my $info = $test->{info};
@@ -164,6 +199,22 @@ sub v_name : Tests(5) {
   );
 }
 
+sub v_name_single_stp : Tests(2) {
+  my $test = shift;
+
+  $test->_prime_vlan_data();
+  $test->_prime_single_stp_vlan();
+  ok(!exists $test->{info}->v_name()->{4094},
+    q(v_name__single_spanning_tree_vlan__is_hidden));
+
+  $test->{info}{_v_name} = 1;
+  $test->{info}{store}{v_name}
+    = {11 => 'ACCESS', 4094 => 'Single-spanning-tree-vlan'};
+  delete $test->{info}{_foundry_vlan_source};
+  cmp_deeply($test->{info}->v_name(), {11 => 'ACCESS'},
+    q(v_name__single_spanning_tree_vlan_in_qbridge__is_hidden));
+}
+
 sub i_vlan : Tests(5) {
   my $test = shift;
 
@@ -193,9 +244,32 @@ sub i_vlan : Tests(5) {
   $test->{info}{store}{_vlan_member_port_id} = {};
   $test->{info}{store}{_vlan_member_status} = {};
   $test->{info}{store}{_vlan_member_tag_mode} = {};
+  delete $test->{info}{_foundry_member_source};
   $test->{info}{store}{_vlan_cfg_id} = {};
   cmp_deeply($test->{info}->i_vlan(), {101 => 10},
     q(Foundry falls back to Q-BRIDGE data when its VLAN tables are absent));
+}
+
+sub i_vlan_single_stp : Tests(3) {
+  my $test = shift;
+
+  $test->_prime_vlan_data();
+  $test->_prime_single_stp_vlan();
+  cmp_deeply(
+    $test->{info}->i_vlan(),
+    {1 => 13, 2 => 11, 12 => 11, 65 => 1, 66 => 1},
+    q(i_vlan__single_spanning_tree_vlan__is_not_the_port_vlan)
+  );
+  cmp_deeply(
+    $test->{info}->i_vlan_membership(),
+    {1 => bag(2, 11, 13), 2 => [11], 12 => [11], 65 => [1], 66 => [1]},
+    q(i_vlan_membership__single_spanning_tree_vlan__is_hidden)
+  );
+  cmp_deeply(
+    $test->{info}->i_vlan_membership_untagged(),
+    {1 => [13], 2 => [11], 12 => [11], 65 => [1], 66 => [1]},
+    q(i_vlan_membership_untagged__single_spanning_tree_vlan__is_hidden)
+  );
 }
 
 sub i_untagged : Tests(2) {
@@ -207,7 +281,7 @@ sub i_untagged : Tests(2) {
     q(Foundry i_untagged aliases the untagged VLAN mapping));
 }
 
-sub i_vlan_membership : Tests(5) {
+sub i_vlan_membership : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'i_vlan_membership');
@@ -224,26 +298,30 @@ sub i_vlan_membership : Tests(5) {
     q(Foundry membership supports an ifIndex partial)
   );
 
-  $test->{info}{_bp_index} = 1;
-  $test->{info}{store}{bp_index} = {1 => 101};
-  $test->{info}{_qb_v_egress} = 1;
-  $test->{info}{_qb_cv_egress} = 1;
-  $test->{info}{store}{qb_cv_egress} = undef;
-  $test->{info}{store}{qb_v_egress} = {10 => pack('B*', '1')};
-  delete $test->{info}{_foundry_vlan_source};
+  $test->_prime_qbridge_membership();
+  cmp_deeply(
+    $test->{info}->i_vlan_membership(),
+    {1 => bag(2, 11, 13), 2 => [11], 12 => [11], 65 => [1], 66 => [1]},
+    q(i_vlan_membership__fastiron_tag_mode_present__prefers_fastiron)
+  );
+
+  $test->{info}{store}{_vlan_member_tag_mode} = {};
+
+  delete $test->{info}{_foundry_member_source};
   cmp_deeply($test->{info}->i_vlan_membership(), {101 => [10]},
-    q(Q-BRIDGE membership takes priority when both sources have data));
+    q(i_vlan_membership__no_fastiron_tag_mode__uses_qbridge));
 
   $test->{info}{store}{_vlan_member_vlan_id} = {};
   $test->{info}{store}{_vlan_member_port_id} = {};
   $test->{info}{store}{_vlan_member_status} = {};
   $test->{info}{store}{_vlan_member_tag_mode} = {};
+  delete $test->{info}{_foundry_member_source};
   $test->{info}{store}{_vlan_cfg_id} = {};
   cmp_deeply($test->{info}->i_vlan_membership(), {101 => [10]},
     q(Foundry falls back to Q-BRIDGE membership when its VLAN tables are absent));
 }
 
-sub i_vlan_membership_untagged : Tests(4) {
+sub i_vlan_membership_untagged : Tests(5) {
   my $test = shift;
 
   can_ok($test->{info}, 'i_vlan_membership_untagged');
@@ -254,20 +332,24 @@ sub i_vlan_membership_untagged : Tests(4) {
     q(Foundry untagged membership includes only untagged rows)
   );
 
-  $test->{info}{_bp_index} = 1;
-  $test->{info}{store}{bp_index} = {1 => 101};
-  $test->{info}{_qb_v_untagged} = 1;
-  $test->{info}{_qb_cv_untagged} = 1;
-  $test->{info}{store}{qb_cv_untagged} = undef;
-  $test->{info}{store}{qb_v_untagged} = {10 => pack('B*', '1')};
-  delete $test->{info}{_foundry_vlan_source};
+  $test->_prime_qbridge_membership();
+  cmp_deeply(
+    $test->{info}->i_vlan_membership_untagged(),
+    {1 => [13], 2 => [11], 12 => [11], 65 => [1], 66 => [1]},
+    q(i_vlan_membership_untagged__fastiron_tag_mode_present__prefers_fastiron)
+  );
+
+  $test->{info}{store}{_vlan_member_tag_mode} = {};
+
+  delete $test->{info}{_foundry_member_source};
   cmp_deeply($test->{info}->i_vlan_membership_untagged(), {101 => [10]},
-    q(Q-BRIDGE untagged membership takes priority when both sources have data));
+    q(i_vlan_membership_untagged__no_fastiron_tag_mode__uses_qbridge));
 
   $test->{info}{store}{_vlan_member_vlan_id} = {};
   $test->{info}{store}{_vlan_member_port_id} = {};
   $test->{info}{store}{_vlan_member_status} = {};
   $test->{info}{store}{_vlan_member_tag_mode} = {};
+  delete $test->{info}{_foundry_member_source};
   $test->{info}{store}{_vlan_cfg_id} = {};
   cmp_deeply($test->{info}->i_vlan_membership_untagged(), {101 => [10]},
     q(Foundry falls back to Q-BRIDGE untagged membership when its VLAN tables are absent));

@@ -49,7 +49,7 @@ use SNMP::Info::CDP;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.984000';
+$VERSION = '3.985000';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
@@ -162,9 +162,28 @@ sub interfaces {
     my $ciscosb = shift;
     my $partial = shift;
 
-    my $interfaces = $ciscosb->i_name($partial);
+    my $interfaces = $ciscosb->orig_i_name($partial);
 
     return $interfaces;
+}
+
+# Port descriptions are configured in ifAlias; fall back to ifName
+sub i_name {
+    my $ciscosb = shift;
+    my $partial = shift;
+
+    my $names   = $ciscosb->orig_i_name($partial) || {};
+    my $aliases = $ciscosb->i_alias($partial)     || {};
+
+    my %i_name;
+    foreach my $iid ( keys %$names ) {
+        my $alias = $aliases->{$iid};
+        $i_name{$iid}
+            = ( defined $alias and $alias !~ /^\s*$/ )
+            ? $alias
+            : $names->{$iid};
+    }
+    return \%i_name;
 }
 
 1;
@@ -296,7 +315,12 @@ Return duplex based upon the result of EtherLike->el_duplex().
 
 =item $ciscosb->interfaces()
 
-Uses the i_name() field.
+Uses C<ifName>, so port names stay fixed when a description is set.
+
+=item $ciscosb->i_name()
+
+Returns reference to hash. The port description configured on the switch
+(C<ifAlias>), or C<ifName> where none is set.
 
 =back
 

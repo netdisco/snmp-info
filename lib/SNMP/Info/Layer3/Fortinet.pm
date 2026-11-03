@@ -44,7 +44,7 @@ use SNMP::Info::Aggregate 'agg_ports_ifstack';
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.984000';
+$VERSION = '3.985000';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -53,10 +53,14 @@ $VERSION = '3.984000';
     'FORTINET-FORTIGATE-MIB' => 'fgVdMaxVdoms',
     'FORTINET-FORTIMANAGER-FORTIANALYZER-MIB' => 'fmSysVersion',
     'FORTINET-FORTIAUTHENTICATOR-MIB' => 'facSysVersion',
+    'FORTINET-FORTISWITCH-MIB'        => 'fsSysVersion',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
+
+    # FORTINET-FORTISWITCH-MIB
+    'fs_version' => 'fsSysVersion',
 );
 
 %FUNCS = (
@@ -94,8 +98,32 @@ sub interfaces {
     return \%interfaces;
 }
 
+# FortiSwitches register under 12356.106.1, not under the MIB's fsModel
+# branch (12356.106.5), so their sysObjectID does not translate to a model
+sub _is_fortiswitch {
+    my $fortinet = shift;
+    my $id       = $fortinet->id() // '';
+
+    return $id =~ /^\.?1\.3\.6\.1\.4\.1\.12356\.106(?:\.|$)/;
+}
+
+# fsSysVersion is "FortiSwitch-<model> v<version>,build...":
+# "FortiSwitch-148F-FPOE v7.6.0,build1015,240812 (GA)"
+sub _fs_version_parts {
+    my $fortinet = shift;
+    my $version  = $fortinet->fs_version() // '';
+
+    return $version =~ /^FortiSwitch-(\S+)\s+v(\d+(?:\.\d+)+)/;
+}
+
 sub model {
     my $fortinet = shift;
+
+    if ( $fortinet->_is_fortiswitch() ) {
+        my ($model) = $fortinet->_fs_version_parts();
+        return "FS-$model" if defined $model;
+    }
+
     my $id = $fortinet->id() || '';
 
     my $model = &SNMP::translateObj($id);
@@ -113,6 +141,11 @@ sub os {
 sub os_ver {
     my $fortinet = shift;
 
+    if ( $fortinet->_is_fortiswitch() ) {
+        my ( undef, $version ) = $fortinet->_fs_version_parts();
+        return $version if defined $version;
+    }
+
     my $ver = $fortinet->fgSysVersion() || $fortinet->fmSysVersion() || $fortinet->facSysVersion() || '';
 
     if ( $ver =~ /(\d+[\.\d]+)/ ) {
@@ -125,7 +158,44 @@ sub os_ver {
 sub serial {
     my $fortinet = shift;
 
-    return $fortinet->fnSysSerial();
+    # FortiSwitches serve no fnSysSerial; their serial is the base entity's
+    return $fortinet->fnSysSerial() || $fortinet->SUPER::serial();
+}
+
+# FortiSwitch management address rows name other local ports and remote
+# indexes than the neighbor rows they belong to, so none can be trusted.
+# A chassis ID that is an address is taken from the neighbor row itself;
+# every other neighbor gets 0.0.0.0, which Netdisco resolves by looking up
+# its chassis ID among known devices.
+sub lldp_ip {
+    my $fortinet = shift;
+    my $partial  = shift;
+
+    return $fortinet->SUPER::lldp_ip($partial)
+        unless $fortinet->_is_fortiswitch();
+
+    my $id_types = $fortinet->lldp_rem_id_type($partial) || {};
+    my $ids      = $fortinet->lldp_id($partial)          || {};
+
+    my %lldp_ip;
+    foreach my $key ( keys %$id_types ) {
+        my $id = $ids->{$key} // '';
+        $lldp_ip{$key}
+            = (     $id_types->{$key} eq 'networkAddress'
+                and $id =~ /^\d{1,3}(?:\.\d{1,3}){3}$/ )
+            ? $id
+            : '0.0.0.0';
+    }
+    return \%lldp_ip;
+}
+
+sub lldp_ipv6 {
+    my $fortinet = shift;
+    my $partial  = shift;
+
+    return $fortinet->SUPER::lldp_ipv6($partial)
+        unless $fortinet->_is_fortiswitch();
+    return {};
 }
 
 sub agg_ports { return agg_ports_ifstack(@_) }
@@ -184,6 +254,8 @@ Abstraction subclass for Fortinet network devices.
 
 =item F<FORTINET-FORTIGATE-MIB>
 
+=item F<FORTINET-FORTISWITCH-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
@@ -204,7 +276,9 @@ Returns 'fortinet'
 
 =item $fortinet->model()
 
-Returns the chassis model.
+Returns the chassis model. For a FortiSwitch, the model named in
+C<fsSysVersion> with an C<FS-> prefix (C<FS-148F-FPOE>); its
+C<sysObjectID> does not translate to a model name.
 
 =item $fortinet->os()
 
@@ -218,11 +292,19 @@ Returns the software version extracted from the Fortinet MIB in this order:
 (C<fmSysVersion>)
 (C<facSysVersion>)
 
+For a FortiSwitch, the version in C<fsSysVersion> (C<7.6.0> from
+C<FortiSwitch-148F-FPOE v7.6.0,build1015,240812 (GA)>).
+
 =item $fortinet->serial()
 
-Returns the chassis serial number.
+Returns the chassis serial number, from C<fnSysSerial> or, on devices
+that do not serve it such as FortiSwitches, the ENTITY-MIB chassis entry.
 
 (C<fnSysSerial>)
+
+=item $fortinet->fs_version()
+
+(C<fsSysVersion>)
 
 =back
 
@@ -246,6 +328,20 @@ Returns the map between SNMP Interface Identifier (iid) and C<ifName>.
 Returns a HASH reference mapping from slave to master port for each member of
 a port bundle on the device. Keys are ifIndex of the slave ports, Values are
 ifIndex of the corresponding master ports.
+
+=item $fortinet->lldp_ip()
+
+Returns reference to hash. On a FortiSwitch, management address rows name
+other local ports and remote indexes than the neighbor rows, so none is
+used. A neighbor whose chassis ID is an IPv4 address returns that address;
+every other neighbor returns C<0.0.0.0>, and the calling application then
+identifies it by its chassis ID. Other devices return the inherited
+C<lldp_ip()>.
+
+=item $fortinet->lldp_ipv6()
+
+Returns reference to hash. Empty on a FortiSwitch, for the same reason;
+the inherited C<lldp_ipv6()> otherwise.
 
 =back
 

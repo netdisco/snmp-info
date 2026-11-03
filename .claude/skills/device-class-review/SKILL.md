@@ -45,6 +45,13 @@ netdisco-mibs release.
   check that the keys join: `i_*` and wireless keys appear in
   `interfaces()`, every `fw_port` value appears in `bp_index`, and
   `layers` includes layer 2 where `fw_mac` should be collected.
+- **Wireless devices.** For an access point or wireless controller, check
+  the class against "Wireless devices" in the authoring skill. On a walk,
+  every client's port has an `i_80211channel` row, every `i_ssidlist` key
+  without its last component is a port, each radio's channel is on one
+  port only, and `cd11_ssid` has a row for each client `cd11_txrate`
+  returns. A class that makes WLANs ports passes the key-join checks above
+  and still leaves the calling application's client reports empty.
 - **Test data.** Compare the tests' index shapes and value forms with a
   walk. A test built from the MIB's `INDEX` passes where an agent that
   departs from it fails.
