@@ -540,6 +540,11 @@ sub model {
     my $id      = $foundry->id();
     my $model   = &SNMP::translateObj($id);
 
+    # A standalone ICX names its model as the CLI does:
+    # "Ruckus Wireless, Inc. ICX7150-C12-POE, IronWare Version ..."
+    my $descr = $foundry->description() || '';
+    return $1 if $descr =~ /^[^,]+, Inc\. (ICX[\w-]+), /;
+
     # EdgeIron
     if ( $id =~ /\.1991\.1\.[45]\./ ) {
 
@@ -1397,9 +1402,10 @@ These are methods that return scalar value from SNMP
 
 =item $foundry->model()
 
-Returns model type.  Checks $foundry->id() against the F<FOUNDRY-SN-ROOT-MIB>
-and removes 'C<sn>' and 'C<Switch>'.  EdgeIron models determined
-through F<ENTITY-MIB>.
+Returns model type.  A standalone ICX returns the model its C<sysDescr>
+names, such as C<ICX7150-C12-POE>.  Otherwise checks $foundry->id()
+against the F<FOUNDRY-SN-ROOT-MIB> and removes 'C<sn>' and 'C<Switch>'.
+EdgeIron models determined through F<ENTITY-MIB>.
 
 =item $foundry->vendor()
 

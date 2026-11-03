@@ -637,6 +637,44 @@ sub peth_port_power : Tests(2) {
     );
 }
 
+sub model : Tests(5) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'model' );
+    is( $test->{info}->model(),
+        'FastIronStackICX6610', q(A stack keeps the sysObjectID name) );
+
+    my %cases = (
+        'Ruckus Wireless, Inc. ICX7150-C12-POE, IronWare Version '
+            . '10.0.10g_cd11T213 Compiled on Sep  1 2026 at 00:52:40 '
+            . 'labeled as SPR10010g_cd11' => [
+            '.1.3.6.1.4.1.1991.1.3.64.3.1.1.2',
+            'ICX7150-C12-POE',
+            q(FastIron 10 standalone model from sysDescr)
+            ],
+        'Brocade Communications Systems, Inc. ICX6450-24-HPOE, IronWare '
+            . 'Version 08.0.30tT311 Compiled on Jun 28 2021 at 23:03:01 '
+            . 'labeled as ICX64S08030t' => [
+            '.1.3.6.1.4.1.1991.1.3.58.1.2.1.1',
+            'ICX6450-24-HPOE',
+            q(FastIron 08 standalone model from sysDescr)
+            ],
+        'Foundry Networks, Inc. FESX424, IronWare Version 03.1.00b36T3e1 '
+            . 'Compiled on Feb 27 2006 at 14:37:58 labeled as SXR03100b36' =>
+            [
+            '.1.3.6.1.4.1.1991.1.3.34.1.1.1.2', 'FESX424Router',
+            q(Non-ICX model from sysObjectID)
+            ],
+    );
+    foreach my $descr ( sort keys %cases ) {
+        my ( $id, $model, $name ) = @{ $cases{$descr} };
+        $test->{info}->clear_cache();
+        $test->{info}->cache(
+            { '_description' => $descr, '_id' => $id, 'store' => {} } );
+        is( $test->{info}->model(), $model, $name );
+    }
+}
+
 # Shaped from an ICX7150-C12-POE on FastIron 10.0.10, which keys
 # ifMauAutoNegTable by ifIndex alone. Port 129 is fixed at 1 Gbps.
 sub _prime_port_config {
