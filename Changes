@@ -48,6 +48,8 @@ Version 3.984001
     neighbors whose management addresses do not match (#383, #495, #569)
   * #677 RuckusAP: put SSIDs and clients on radio ports by WLAN number, and
     report WLAN VLANs on radio ports and clients (#672)
+  * #678 H3C: read Comware 7 dot1qPvid by ifIndex, so ports whose bridge
+    port number differs get their native VLAN (netdisco/netdisco#1352)
 
 Version 3.984000 (2026-10-29)
 
