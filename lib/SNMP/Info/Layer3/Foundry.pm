@@ -59,6 +59,7 @@ $VERSION = '3.985000';
     'FOUNDRY-SN-STACKING-MIB'     => 'snStackingOperUnitRole',
     'FDRY-POE-MIB'                => 'snAgentPoeGblPowerCapacityTotal',
     'BROCADE-PRODUCTS-MIB'        => 'brocadeProducts',
+    'MAU-MIB'                     => 'ifMauAutoNegAdminStatus',
 );
 
 %GLOBALS = (
@@ -89,8 +90,13 @@ $VERSION = '3.985000';
     'sw_type'   => 'snSwPortInfoMediaType',
     'sw_speed'  => 'snSwPortInfoSpeed',
 
-    # FOUNDRY-SN-SWITCH-GROUP-MIB
-    #
+    # FOUNDRY-SN-SWITCH-GROUP-MIB::snSwIfInfoTable, read only for ports
+    # that do not auto-negotiate (see i_speed_admin)
+    '_sw_if_speed'  => 'snSwIfInfoSpeed',
+    '_sw_if_duplex' => 'snSwIfInfoChnMode',
+
+    # MAU-MIB::ifMauAutoNegTable
+    '_mau_autoneg_admin' => 'ifMauAutoNegAdminStatus',
 
     # FOUNDRY-SN-AGENT-MIB::snAgentConfigModule2Table
     'ag_mod2_type' => 'snAgentConfigModule2Type',
@@ -455,6 +461,78 @@ sub i_duplex {
         $i_duplex{$iid} = 'full' if $duplex =~ /full/i;
     }
     return \%i_duplex;
+}
+
+# FastIron 10 serves snSwIfInfoSpeed and snSwIfInfoChnMode as the port's
+# configuration, while FastIron 08 serves the running link there (none
+# on a port that is down). They agree for a port that does not
+# auto-negotiate, so they are read only for those. FastIron 10 keys
+# ifMauAutoNegTable by ifIndex alone, rather than ifIndex.ifMauIndex.
+sub _foundry_autoneg_by_ifindex {
+    my $foundry = shift;
+
+    my $autoneg = $foundry->_mau_autoneg_admin() || {};
+
+    my %by_ifindex;
+    foreach my $key ( keys %$autoneg ) {
+        my ($ifindex) = split /\./, $key;
+        $by_ifindex{$ifindex} = $autoneg->{$key};
+    }
+    return \%by_ifindex;
+}
+
+my %_sw_if_speed_admin = (
+    's10M'   => '10 Mbps',
+    's100M'  => '100 Mbps',
+    's1G'    => '1.0 Gbps',
+    's1GM'   => '1.0 Gbps',
+    's2500M' => '2.5 Gbps',
+    's5000M' => '5.0 Gbps',
+    's10G'   => '10 Gbps',
+    's25G'   => '25 Gbps',
+    's40G'   => '40 Gbps',
+    's100G'  => '100 Gbps',
+);
+
+sub i_speed_admin {
+    my $foundry = shift;
+
+    my $autoneg = $foundry->_foundry_autoneg_by_ifindex();
+    return {} unless %$autoneg;
+    my $speeds = $foundry->_sw_if_speed() || {};
+
+    my %i_speed_admin;
+    foreach my $ifindex ( keys %$autoneg ) {
+        my $speed
+            = $autoneg->{$ifindex} eq 'enabled'
+            ? 'auto'
+            : $_sw_if_speed_admin{ $speeds->{$ifindex} // '' };
+        $i_speed_admin{$ifindex} = $speed if defined $speed;
+    }
+    return \%i_speed_admin;
+}
+
+my %_sw_if_duplex_admin = (
+    'halfDuplex' => 'half',
+    'fullDuplex' => 'full',
+);
+
+sub i_duplex_admin {
+    my $foundry = shift;
+
+    my $autoneg = $foundry->_foundry_autoneg_by_ifindex();
+    return {} unless %$autoneg;
+    my $duplexes = $foundry->_sw_if_duplex() || {};
+
+    my %i_duplex_admin;
+    foreach my $ifindex ( keys %$autoneg ) {
+        my $duplex
+            = $autoneg->{$ifindex} eq 'enabled'
+            ? 'auto'
+            : $_sw_if_duplex_admin{ $duplexes->{$ifindex} // '' };
+        $i_duplex_admin{$ifindex} = $duplex if defined $duplex;
+    }
+    return \%i_duplex_admin;
 }
 
 sub model {
@@ -1301,6 +1379,8 @@ C<stp_protocols()> returns nothing, and C<stp_trees_complete()> returns 0
 
 =item F<FDRY-POE-MIB>
 
+=item F<MAU-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
@@ -1431,6 +1511,22 @@ Ignores interfaces with descriptions of  tunnel,loopback,null
 Returns reference to hash of interface link duplex status.
 
 Crosses $foundry->sw_duplex() with $foundry->sw_index()
+
+=item $foundry->i_speed_admin()
+
+Returns reference to hash of configured interface speeds, keyed by
+C<ifIndex>: C<auto> where auto-negotiation is enabled
+(C<ifMauAutoNegAdminStatus>), otherwise the speed from
+C<snSwIfInfoSpeed>.  Empty when the device serves no
+C<ifMauAutoNegTable>.
+
+=item $foundry->i_duplex_admin()
+
+Returns reference to hash of configured interface duplex, keyed by
+C<ifIndex>: C<auto> where auto-negotiation is enabled
+(C<ifMauAutoNegAdminStatus>), otherwise C<full> or C<half> from
+C<snSwIfInfoChnMode>.  Empty when the device serves no
+C<ifMauAutoNegTable>.
 
 =item $foundry->i_stp_state()
 

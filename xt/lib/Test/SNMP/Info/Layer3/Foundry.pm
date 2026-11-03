@@ -637,6 +637,64 @@ sub peth_port_power : Tests(2) {
     );
 }
 
+# Shaped from an ICX7150-C12-POE on FastIron 10.0.10, which keys
+# ifMauAutoNegTable by ifIndex alone. Port 129 is fixed at 1 Gbps.
+sub _prime_port_config {
+    my ( $test, $autoneg_keys ) = @_;
+
+    my %store = (
+        '_mau_autoneg_admin' => {
+            $autoneg_keys->[0] => 'enabled',
+            $autoneg_keys->[1] => 'disabled',
+        },
+        '_sw_if_speed'  => { 1 => 'sAutoSense', 129 => 's1G' },
+        '_sw_if_duplex' => { 1 => 'fullDuplex', 129 => 'fullDuplex' },
+    );
+    $test->{info}->cache(
+        { ( map { ( "_$_" => 1 ) } keys %store ), 'store' => \%store } );
+    return;
+}
+
+sub i_speed_admin : Tests(4) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'i_speed_admin' );
+    $test->_prime_port_config( [ 1, 129 ] );
+    cmp_deeply(
+        $test->{info}->i_speed_admin(),
+        { 1 => 'auto', 129 => '1.0 Gbps' },
+        q(Auto-negotiating port is auto, a fixed port its configured speed)
+    );
+
+    $test->{info}->clear_cache();
+    $test->_prime_port_config( [ '1.1', '129.1' ] );
+    cmp_deeply(
+        $test->{info}->i_speed_admin(),
+        { 1 => 'auto', 129 => '1.0 Gbps' },
+        q(ifMauAutoNegTable keyed by ifIndex and MAU index)
+    );
+
+    $test->{info}->clear_cache();
+    cmp_deeply( $test->{info}->i_speed_admin(),
+        {}, q(No MAU-MIB, as on FastIron 08.0, gives nothing) );
+}
+
+sub i_duplex_admin : Tests(3) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'i_duplex_admin' );
+    $test->_prime_port_config( [ 1, 129 ] );
+    cmp_deeply(
+        $test->{info}->i_duplex_admin(),
+        { 1 => 'auto', 129 => 'full' },
+        q(Auto-negotiating port is auto, a fixed port its configured duplex)
+    );
+
+    $test->{info}->clear_cache();
+    cmp_deeply( $test->{info}->i_duplex_admin(),
+        {}, q(No MAU-MIB, as on FastIron 08.0, gives nothing) );
+}
+
 sub lag_groups_complete__trunk_walk_incomplete__returns_0 : Tests(2) {
     my $test = shift;
 
