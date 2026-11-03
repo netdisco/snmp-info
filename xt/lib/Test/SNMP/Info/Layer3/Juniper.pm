@@ -2323,6 +2323,64 @@ sub vrf_read_complete__red__is_1 : Tests(2) {
     'A partial ipv6NetToMediaTable walk makes the read incomplete');
 }
 
+sub vrf_read_leaked__default_with_virtual_routers__names_them : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  $info->vrf_neighbors('default');
+  cmp_deeply($info->vrf_read_leaked('default'), [qw/blue green mgmt_junos/],
+    'The virtual routers no membership row covers');
+}
+
+sub vrf_read_leaked__default_walk_partial__undef : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  $info->vrf_neighbors('default');
+  $info->{walk_status}{at_paddr} = {complete => 0, reason => 'timeout'};
+  is($info->vrf_read_leaked('default'), undef,
+    'A cut-short default walk is partial, not leaked');
+}
+
+sub vrf_read_leaked__list_walk_partial__undef : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  $info->vrf_neighbors('default');
+  delete $info->{_vrf_instances};
+  $info->{walk_status}{jnx_vacm_context_name}
+    = {complete => 0, reason => 'timeout'};
+  is($info->vrf_read_leaked('default'), undef,
+    'A partial instance list may hide another instance');
+}
+
+sub vrf_read_leaked__portless_mpls_vrf__undef : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_default_mpls_only();
+  my $grey = join('.', length('grey'), map { ord } split //, 'grey');
+
+  delete $info->{store}{vrf_l3vpn_if}{"$grey.514"};
+  $info->vrf_neighbors('default');
+  is($info->vrf_read_leaked('default'), undef, 'Nothing leaks');
+  is($info->vrf_read_complete('default'), 1, 'The read is whole');
+}
+
+sub vrf_read_leaked__red__undef : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('red');
+
+  $info->vrf_neighbors('red');
+  is($info->vrf_read_leaked('red'), undef, 'Only default leaks');
+}
+
+sub vrf_read_leaked__no_reader__undef : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  is($info->vrf_read_leaked('default'), undef,
+    'No reader walked for default');
+}
+
 sub i_vrf__blue_context__blue_ports : Tests(1) {
   my $test = shift;
   my $info = $test->_prime_jnx_context('blue');

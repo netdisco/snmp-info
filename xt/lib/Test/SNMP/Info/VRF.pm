@@ -1735,6 +1735,21 @@ sub _read_red {
   return $info;
 }
 
+sub vrf_read_leaked : Tests(1) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'vrf_read_leaked');
+}
+
+sub vrf_read_leaked__class_not_leaking__undef : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_read_red();
+  $info->vrf_neighbors('default');
+  is($info->vrf_read_leaked('default'), undef,
+    q(A class whose default context does not leak names nothing));
+}
+
 sub vrf_read_complete : Tests(1) {
   my $test = shift;
 

@@ -669,14 +669,40 @@ sub vrf_read_complete {
     my $vrf  = shift;
     my $name = shift;
 
+    my $whole = $vrf->_vrf_walks_whole($name);
+    return $whole unless $whole;
+    return 0 if $vrf->_vrf_leak_unfiltered($name);
+    return 1;
+}
+
+# vrf_read_complete() without the leak: undef, 0 or 1
+sub _vrf_walks_whole {
+    my $vrf  = shift;
+    my $name = shift;
+
     my $walked = defined $name ? $vrf->{_vrf_walked}{$name} : undef;
     return unless $walked;
     foreach my $method ( keys %$walked ) {
         my $status = $vrf->walk_status($method) or next;
         return 0 unless $status->{complete};
     }
-    return 0 if $vrf->_vrf_leak_unfiltered($name);
     return 1;
+}
+
+# The instances that alone make a whole default read partial
+sub vrf_read_leaked {
+    my $vrf  = shift;
+    my $name = shift;
+
+    return unless defined $name and $name eq 'default';
+    return unless $vrf->_vrf_default_context_leaks();
+    return if length $vrf->_vrf_session_context();
+    return unless $vrf->_vrf_walks_whole($name);
+    $vrf->{_vrf_instances} ||= $vrf->_vrf_all_instances();
+    return if $vrf->_vrf_walk_incomplete();
+    my @names = sort $vrf->_vrf_unfiltered_names();
+    return unless @names;
+    return \@names;
 }
 
 # True in the default context of a class whose default context leaks while
@@ -690,10 +716,19 @@ sub _vrf_leak_unfiltered {
 
     return 0 unless $name eq 'default' and $vrf->_vrf_default_context_leaks();
     return 0 if length $vrf->_vrf_session_context();
-    my $instances = $vrf->{_vrf_instances} ||= $vrf->_vrf_all_instances();
+    $vrf->{_vrf_instances} ||= $vrf->_vrf_all_instances();
     return 1 if $vrf->_vrf_walk_incomplete();
-    return ( grep { $_->{name} ne 'default' and _vrf_uncovered($_) }
-            values %$instances ) ? 1 : 0;
+    return $vrf->_vrf_unfiltered_names() ? 1 : 0;
+}
+
+# Listed instances other than default that no membership row covers
+sub _vrf_unfiltered_names {
+    my $vrf = shift;
+
+    my $instances = $vrf->{_vrf_instances} ||= $vrf->_vrf_all_instances();
+    return map { $_->{name} }
+        grep { $_->{name} ne 'default' and _vrf_uncovered($_) }
+        values %$instances;
 }
 
 sub _vrf_uncovered {
@@ -2272,6 +2307,8 @@ a walk of the instance list ended early.
 
 =back
 
+C<vrf_read_leaked()> names the instances in the first case.
+
 =item unknown, undef
 
 No table has been recorded as walked for C<$name> since the cache was
@@ -2287,6 +2324,20 @@ C<mplsL3VpnIfConfRowStatus> and the class's vendor tables in attribution
 mode; in context mode the address tables, or where routes decide a
 context's ports, C<inetCidrRouteIfIndex> and the class's tables, and for
 C<default> in a leaking default context C<mplsL3VpnIfConfRowStatus>)
+
+=item $vrf->vrf_read_leaked($name)
+
+Returns reference to array of the instance names that alone make
+C<vrf_read_complete('default')> 0, sorted: the listed instances, not
+listed by F<MPLS-L3VPN-STD-MIB>, that hold no port in the membership
+table, such as a virtual router. The default context serves their rows
+too, and nothing tells them from the default instance's.
+
+Returns undef unless C<$name> is C<default>, the class's default context
+leaks, the session is in the default context, every table walked for
+C<default> was read whole, and the instance list was read whole. Same
+cache rule as C<vrf_read_complete()>: call it after the readers, in the
+same context.
 
 =back
 
