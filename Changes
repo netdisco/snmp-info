@@ -1,5 +1,10 @@
 Version 3.985001
 
+  [ENHANCEMENTS]
+
+  * #682 VRF: vrf_read_leaked and vrf_exclude_ports let a caller complete a
+    Juniper default instance read that includes virtual routers
+
 Version 3.985000 (2026-11-02)
 
   [NEW FEATURES]
