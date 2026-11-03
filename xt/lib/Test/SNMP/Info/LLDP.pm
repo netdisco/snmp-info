@@ -328,8 +328,8 @@ sub lldp_if : Tests(10) {
     q(lldpLocPortId match ignores the local port number));
 
   # lldpLocPortId that names ifDescr but no ifName
-  delete $test->{info}{_ifName};
-  delete $test->{info}{store}{ifName};
+  delete $test->{info}{$_} for qw/_ifName _lldp_lport_id/;
+  delete $test->{info}{store}{$_} for qw/ifName lldp_lport_id/;
   $test->{info}{store}{lldp_rem_pid} = {'0.9.1' => 'Gi0/1'};
   $test->{info}{store}{i_description} = {'21' => 'Port 9'};
   $test->{info}{sess}{Data} = {

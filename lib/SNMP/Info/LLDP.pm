@@ -224,7 +224,7 @@ sub lldp_if {
     my %r_i_alias = reverse %$i_alias;
 
     my %lldp_if;
-    my $r_if_name;
+    my %port_id_lookup;
     foreach my $key ( keys %$addr ) {
         my @aOID = split( '\.', $key );
         my $port = $aOID[1];
@@ -253,7 +253,7 @@ sub lldp_if {
         }
         else {
             $port = $lldp->_lldp_lport_id_if( $port, \%r_i_descr,
-                \$r_if_name ) // $port;
+                \%port_id_lookup ) // $port;
         }
 
         $lldp_if{$key} = $port;
@@ -264,15 +264,17 @@ sub lldp_if {
 # Some agents (Dell OS10) serve no lldpLocPortDesc, only lldpLocPortId
 # holding the interface name, and number ports neither by ifIndex nor by
 # bridge port. ifName is read by its MIB name because Layer3 i_name returns
-# ifAlias, and only when a port needs it.
+# ifAlias. Both columns are walked whole, once, and only when a port needs
+# them: one bulk walk costs fewer requests than a fetch per neighbor.
 sub _lldp_lport_id_if {
-    my ( $lldp, $port, $r_i_descr, $r_if_name ) = @_;
+    my ( $lldp, $port, $r_i_descr, $lookup ) = @_;
 
-    my $id = ( $lldp->lldp_lport_id($port) || {} )->{$port};
+    $lookup->{port_id} //= $lldp->lldp_lport_id() || {};
+    my $id = $lookup->{port_id}{$port};
     return unless defined $id and length $id;
 
-    $$r_if_name ||= { reverse %{ $lldp->ifName() || {} } };
-    return $$r_if_name->{$id} // $r_i_descr->{$id};
+    $lookup->{if_name} //= { reverse %{ $lldp->ifName() || {} } };
+    return $lookup->{if_name}{$id} // $r_i_descr->{$id};
 }
 
 sub lldp_ip {
