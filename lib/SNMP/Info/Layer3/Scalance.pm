@@ -149,24 +149,20 @@ sub i_description {
 }
 
 # Earlier firmware advertises no management address, so resolve the
-# neighbor's system name instead. Failing that, a MAC chassis ID gets
-# 0.0.0.0, which Netdisco resolves by looking up c_id among known devices.
+# neighbor's system name instead. The inherited 0.0.0.0 for a MAC chassis
+# ID counts as no address, so a name that resolves replaces it.
 sub lldp_ip {
     my $scalance = shift;
     my $partial  = shift;
 
     my $lldp_ip  = $scalance->SUPER::lldp_ip($partial)   || {};
     my $sysnames = $scalance->lldp_rem_sysname($partial) || {};
-    my $id_types = $scalance->lldp_rem_id_type($partial) || {};
 
     foreach my $key ( keys %$sysnames ) {
-        next if defined $lldp_ip->{$key} or !defined $sysnames->{$key};
+        next unless defined $sysnames->{$key};
+        next if ( $lldp_ip->{$key} // '0.0.0.0' ) ne '0.0.0.0';
         my $packed = gethostbyname( $sysnames->{$key} );
         $lldp_ip->{$key} = inet_ntoa($packed) if $packed;
-    }
-    foreach my $key ( keys %$id_types ) {
-        next if defined $lldp_ip->{$key};
-        $lldp_ip->{$key} = '0.0.0.0' if $id_types->{$key} eq 'macAddress';
     }
     return $lldp_ip;
 }

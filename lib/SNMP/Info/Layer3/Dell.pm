@@ -164,22 +164,6 @@ sub mac {
     return $dell->orig_mac();
 }
 
-# Neighbors often advertise only a MAC chassis ID. Return 0.0.0.0 for them,
-# which Netdisco resolves by looking up c_id among known devices.
-sub lldp_ip {
-    my $dell    = shift;
-    my $partial = shift;
-
-    my $lldp_ip  = $dell->SUPER::lldp_ip($partial)  || {};
-    my $id_types = $dell->lldp_rem_id_type($partial) || {};
-
-    foreach my $key ( keys %$id_types ) {
-        next if defined $lldp_ip->{$key};
-        $lldp_ip->{$key} = '0.0.0.0' if $id_types->{$key} eq 'macAddress';
-    }
-    return $lldp_ip;
-}
-
 sub os {
     my $dell = shift;
 
@@ -581,13 +565,6 @@ setting.
 =item $dell->qb_fdb_index()
 
 Returns nothing to work around incorrect indexing of C<dot1qTpFdbTable>
-
-=item $dell->lldp_ip()
-
-Returns reference to hash. Key: LLDP remote index, value: neighbor IPv4
-address from C<lldpRemManAddrTable>. A neighbor with a MAC chassis ID that
-advertises no management address returns C<0.0.0.0>, which callers can
-resolve by looking up C<c_id()>.
 
 =back
 
