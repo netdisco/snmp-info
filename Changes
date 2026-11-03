@@ -50,6 +50,9 @@ Version 3.985000
     report WLAN VLANs on radio ports and clients (#672)
   * #678 H3C: read Comware 7 dot1qPvid by ifIndex, so ports whose bridge
     port number differs get their native VLAN (netdisco/netdisco#1352)
+  * #679 LLDP: map local ports by lldpLocPortId when lldpLocPortDesc does
+    not match, so Dell OS10 neighbors land on their ports
+    (netdisco/netdisco#1447)
 
 Version 3.984000 (2026-10-29)
 
