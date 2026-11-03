@@ -224,6 +224,7 @@ sub lldp_if {
     my %r_i_alias = reverse %$i_alias;
 
     my %lldp_if;
+    my $r_if_name;
     foreach my $key ( keys %$addr ) {
         my @aOID = split( '\.', $key );
         my $port = $aOID[1];
@@ -250,10 +251,28 @@ sub lldp_if {
         elsif ( $desc && exists $r_i_alias{$desc} ) {
             $port = $r_i_alias{$desc};
         }
+        else {
+            $port = $lldp->_lldp_lport_id_if( $port, \%r_i_descr,
+                \$r_if_name ) // $port;
+        }
 
         $lldp_if{$key} = $port;
     }
     return \%lldp_if;
+}
+
+# Some agents (Dell OS10) serve no lldpLocPortDesc, only lldpLocPortId
+# holding the interface name, and number ports neither by ifIndex nor by
+# bridge port. ifName is read by its MIB name because Layer3 i_name returns
+# ifAlias, and only when a port needs it.
+sub _lldp_lport_id_if {
+    my ( $lldp, $port, $r_i_descr, $r_if_name ) = @_;
+
+    my $id = ( $lldp->lldp_lport_id($port) || {} )->{$port};
+    return unless defined $id and length $id;
+
+    $$r_if_name ||= { reverse %{ $lldp->ifName() || {} } };
+    return $$r_if_name->{$id} // $r_i_descr->{$id};
 }
 
 sub lldp_ip {
@@ -744,8 +763,9 @@ with the remote system. Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no
 =item $lldp->lldp_if()
 
 Returns the mapping to the SNMP Interface Table. Tries to cross reference
-(C<lldpLocPortDesc>) with (C<ifDescr>) and (C<ifAlias>) to get (C<ifIndex>),
-if unable defaults to (C<lldpRemLocalPortNum>). Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
+(C<lldpLocPortDesc>) with (C<ifDescr>) and (C<ifAlias>) to get (C<ifIndex>).
+When neither matches, cross references (C<lldpLocPortId>) with (C<ifName>),
+then (C<ifDescr>). If unable defaults to (C<lldpRemLocalPortNum>). Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 F<LLDP-V2-MIB> rows carry the (C<ifIndex>) in their index.
 
 =item  $lldp->lldp_ip()
