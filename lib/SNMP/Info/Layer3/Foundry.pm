@@ -986,13 +986,17 @@ sub brcd_e_parent {
 sub peth_port_ifindex {
     my $foundry = shift;
 
-    my $indexes = $foundry->snAgentPoePortNumber();
-    my $descrs  = $foundry->i_description();
+    my $indexes  = $foundry->snAgentPoePortNumber()  || {};
+    my $controls = $foundry->snAgentPoePortControl() || {};
+    my $descrs   = $foundry->i_description()         || {};
 
     my $peth_port_ifindex = {};
     foreach my $i ( keys %$indexes ) {
         my $descr = $descrs->{$i};
         next unless $descr;
+
+        # other(1): the port has no inline power hardware
+        next if ( $controls->{$i} // '' ) eq 'other';
 
         my $new_idx = "1.$i";
 
@@ -1025,29 +1029,49 @@ sub peth_port_admin {
     return $peth_port_admin;
 }
 
+my %_poe_class_max_mw = (
+    '0' => 12950,
+    '1' => 3840,
+    '2' => 6490,
+    '3' => 12950,
+    '4' => 25500
+);
+
 sub peth_port_neg_power {
     my $foundry = shift;
 
-    my $p_index         = $foundry->peth_port_ifindex()   || {};
-    my $peth_port_class = $foundry->snAgentPoePortClass() || {};
-
-    my $poemax = {
-        '0' => 12950,
-        '1' => 3840,
-        '2' => 6490,
-        '3' => 12950,
-        '4' => 25500
-    };
+    my $p_index  = $foundry->peth_port_ifindex()      || {};
+    my $consumed = $foundry->snAgentPoePortConsumed() || {};
+    my $wattage  = $foundry->snAgentPoePortWattage()  || {};
+    my $classes  = $foundry->_foundry_poe_pd_class();
 
     my $peth_port_neg_power = {};
     foreach my $i ( keys %$p_index ) {
-        my ( $module, $port ) = split( /\./, $i );
-        my $power = $poemax->{ $peth_port_class->{$port} };
-        next unless $power;
+        my $port = $p_index->{$i};
+        next unless $consumed->{$port};
 
+        my $power = $wattage->{$port}
+            || $_poe_class_max_mw{ $classes->{$port} // 0 };
         $peth_port_neg_power->{$i} = $power;
     }
     return $peth_port_neg_power;
+}
+
+# snAgentPoePortClass is the class the user configured, 0 when none.
+# FastIron 10 reports the class the powered device signalled in
+# snAgentPoePortPDClass; FastIron 08 has no such column and reports it in
+# snAgentPoePortClass.
+sub _foundry_poe_pd_class {
+    my $foundry = shift;
+
+    my $configured = $foundry->snAgentPoePortClass()   || {};
+    my $signalled  = $foundry->snAgentPoePortPDClass() || {};
+
+    my %pd_class;
+    foreach my $port ( keys %$configured ) {
+        $pd_class{$port} = $signalled->{$port} || $configured->{$port};
+    }
+    return \%pd_class;
 }
 
 sub peth_port_power {
@@ -1070,36 +1094,40 @@ sub peth_port_power {
 sub peth_port_class {
     my $foundry = shift;
 
-    my $p_index    = $foundry->peth_port_ifindex()   || {};
-    my $port_class = $foundry->snAgentPoePortClass() || {};
+    my $p_index = $foundry->peth_port_ifindex() || {};
+    my $classes = $foundry->_foundry_poe_pd_class();
 
     my $peth_port_class = {};
     foreach my $i ( keys %$p_index ) {
-        my ( $module, $port ) = split( /\./, $i );
-        my $power = $port_class->{$port};
-        next unless $power;
+        my $class = $classes->{ $p_index->{$i} };
+        next unless $class;
 
-        $peth_port_class->{$i} = "class$power";
+        $peth_port_class->{$i} = "class$class";
     }
     return $peth_port_class;
 }
 
+# The table has no detection status: a port consuming power is delivering
+# it, an enabled port that is not is searching.
 sub peth_port_status {
     my $foundry = shift;
 
-    my $p_index      = $foundry->peth_port_ifindex()     || {};
-    my $admin_states = $foundry->snAgentPoePortControl() || {};
+    my $p_index      = $foundry->peth_port_ifindex()      || {};
+    my $admin_states = $foundry->snAgentPoePortControl()  || {};
+    my $consumed     = $foundry->snAgentPoePortConsumed() || {};
 
     my $peth_port_status = {};
     foreach my $i ( keys %$p_index ) {
-        my ( $module, $port ) = split( /\./, $i );
-        my $state = $admin_states->{$port};
+        my $port = $p_index->{$i};
 
-        if ( $state =~ /enable/ ) {
+        if ( ( $admin_states->{$port} // '' ) !~ /enable/ ) {
+            $peth_port_status->{$i} = 'disabled';
+        }
+        elsif ( $consumed->{$port} ) {
             $peth_port_status->{$i} = 'deliveringPower';
         }
         else {
-            $peth_port_status->{$i} = 'disabled';
+            $peth_port_status->{$i} = 'searching';
         }
     }
     return $peth_port_status;
@@ -1584,7 +1612,8 @@ over Ethernet Port Table C<snAgentPoePortTable>.
 
 Creates an index of module.port to align with the indexing of the
 C<pethPsePortTable> with a value of C<ifIndex>.  The module defaults 1
-if otherwise unknown.
+if otherwise unknown.  Ports whose C<snAgentPoePortControl> is C<other>
+have no inline power hardware and are left out.
 
 =item $foundry->peth_port_admin()
 
@@ -1594,18 +1623,21 @@ C<pethPsePortAdminEnable>
 
 =item $foundry->peth_port_status()
 
-Current status: is this port delivering power.
+Current status: C<disabled> when inline power is off, C<deliveringPower>
+when the port consumes power (C<snAgentPoePortConsumed>), otherwise
+C<searching>.
 
 =item $foundry->peth_port_class()
 
-Device class: if status is delivering power, this represents the 802.3af
-class of the device being powered.
+Device class: the class the powered device signalled
+(C<snAgentPoePortPDClass>), or C<snAgentPoePortClass> where that column
+is absent.
 
 =item $foundry->peth_port_neg_power()
 
-The power, in milliwatts, that has been committed to this port.
-This value is derived from the 802.3af class of the device being
-powered.
+The power, in milliwatts, allocated to a port delivering power
+(C<snAgentPoePortWattage>), or the maximum for the device's class when
+no allocation is reported.
 
 =item $foundry->peth_port_power()
 
