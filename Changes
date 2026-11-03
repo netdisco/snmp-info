@@ -1,3 +1,11 @@
+Version 3.985001
+
+  [BUG FIXES]
+
+  * #680 LLDP: return 0.0.0.0 for neighbors that advertise only a MAC
+    chassis ID, so callers can identify them by c_id; Dell's own override
+    moves into LLDP
+
 Version 3.985000 (2026-11-02)
 
   [NEW FEATURES]
