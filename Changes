@@ -1,5 +1,11 @@
 Version 3.985001
 
+  [BUG FIXES]
+
+  * #681 Foundry: report ICX PoE status, class and power from the powered
+    device; add configured speed and duplex and the standalone ICX model
+    (#518)
+
 Version 3.985000 (2026-11-02)
 
   [NEW FEATURES]
