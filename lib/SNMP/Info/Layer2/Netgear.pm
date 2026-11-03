@@ -39,7 +39,7 @@ use SNMP::Info::Layer2;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.984000';
+$VERSION = '3.985000';
 
 # This will be filled in with the device's index into the EntPhysicalEntry
 # table by the serial() function.
@@ -115,7 +115,7 @@ sub interfaces {
 
     my $interfaces = $netgear->i_index($partial)       || {};
     my $i_descr    = $netgear->i_description($partial) || {};
-    my $i_name     = $netgear->i_name($partial);
+    my $i_name     = $netgear->orig_i_name($partial);
     my $i_isset    = ();
     # Replace the description with the ifName field, if set
     foreach my $iid ( keys %$i_name ) {
@@ -149,6 +149,25 @@ sub os_ver {
     }
     return $netgear->ng_gsmosver() if defined  $netgear->model and $netgear->model =~ m/[FG]SM\d/i;
     return $netgear->ng_fsosver() if defined  $netgear->model and $netgear->model =~ m/FS\d/i;
+}
+
+# Port descriptions are configured in ifAlias; fall back to ifName
+sub i_name {
+    my $netgear = shift;
+    my $partial = shift;
+
+    my $names   = $netgear->orig_i_name($partial) || {};
+    my $aliases = $netgear->i_alias($partial)     || {};
+
+    my %i_name;
+    foreach my $iid ( keys %$names ) {
+        my $alias = $aliases->{$iid};
+        $i_name{$iid}
+            = ( defined $alias and $alias !~ /^\s*$/ )
+            ? $alias
+            : $names->{$iid};
+    }
+    return \%i_name;
 }
 
 1;
@@ -252,7 +271,13 @@ a reference to a hash.
 
 =item $netgear->interfaces()
 
-Uses the i_name() field.
+Uses C<ifName>, so port names stay fixed when a description is set;
+falls back to C<ifDescr> and the ifIndex.
+
+=item $netgear->i_name()
+
+Returns reference to hash. The port description configured on the switch
+(C<ifAlias>), or C<ifName> where none is set.
 
 =back
 

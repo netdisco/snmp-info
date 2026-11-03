@@ -36,7 +36,7 @@ use Exporter;
 use SNMP::Info::Layer2;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
-$VERSION = '3.984000';
+$VERSION = '3.985000';
 @SNMP::Info::Layer2::RuckusAP::ISA = qw(SNMP::Info::Layer2 Exporter);
 @SNMP::Info::Layer2::RuckusAP::EXPORT_OK = qw//;
 
@@ -63,6 +63,8 @@ $VERSION = '3.984000';
     'ruckus_wlan_admin_status'   => 'ruckusWLANAdminStatus',
     'ruckus_wlan_bcast_disabled' => 'ruckusWLANSSIDBcastDisable',
     'ruckus_wlan_ifindex'        => 'ruckusWLANIfIndex',
+    'ruckus_wlan_name'           => 'ruckusWLANName',
+    'ruckus_wlan_vlan'           => 'ruckusWLANVlanID',
     'ruckus_station_mac'         => 'ruckusWLANStaAddr',
     'ruckus_station_rates'       => 'ruckusWLANStaRates',
     'ruckus_station_stats_mac'   => 'ruckusWLANStaStatsMacAddr',
@@ -86,49 +88,48 @@ sub layers {
     return '00000010';
 }
 
-# Ruckus' WLAN table may expose spare/default rows that are not real
-# interfaces. Keep only active rows whose mapped IF-MIB index exists.
-sub _ruckus_active_wlan_rows {
+# The WLAN table is indexed by WLAN number, and ruckusWLANIfIndex repeats
+# it rather than giving an IF-MIB ifIndex. No column names a WLAN's radio:
+# the AP numbers WLANs 0-31 on wifi0 and 32-63 on wifi1, as every walk
+# shows and Ruckus community posts describe (snmp-info#672). A WLAN with
+# no such radio stays on its own interface, matched by name. Returns, per
+# active row, its port and its own WLAN interface.
+sub _ruckus_wlan_rows {
     my $self = shift;
-    my $status = $self->ruckus_wlan_admin_status() || {};
-    my $ifindex = $self->ruckus_wlan_ifindex() || {};
-    my $interfaces = $self->i_index() || {};
-    my %active;
+    my $status  = $self->ruckus_wlan_admin_status() || {};
+    my $names   = $self->ruckus_wlan_name()         || {};
+    my $i_descr = $self->i_description()            || {};
 
+    my ( %radio, %ifindexes_named );
+    foreach my $iid ( keys %$i_descr ) {
+        my $descr = $i_descr->{$iid};
+        next unless defined $descr;
+        $radio{$1} = $iid if $descr =~ /^wifi(\d+)$/;
+        push @{ $ifindexes_named{$descr} }, $iid;
+    }
+
+    my %rows;
     foreach my $row ( keys %$status ) {
         my $state = $status->{$row};
-        next
-            unless defined $state
-            and ( $state eq '1' or lc($state) eq 'up' );
-        my $port = $ifindex->{$row};
-        next unless defined $port and $port =~ /^\d+$/;
-        next unless exists $interfaces->{$port};
-        $active{$row} = $port;
+        next unless defined $state;
+        next unless $state eq q{1} or lc($state) eq q{up};
+        next unless $row =~ /^\d+$/;
+        my $named = $ifindexes_named{ $names->{$row} // '' } || [];
+        my $wlan_if = @$named == 1 ? $named->[0] : undef;
+        my $port = $radio{ int( $row / 32 ) } // $wlan_if;
+        $rows{$row} = [ $port, $wlan_if ] if defined $port;
     }
-
-    return \%active;
+    return \%rows;
 }
 
-# Station tables start their index with an ifIndex (ruckusWLANStaIndex is an
-# InterfaceIndex), so look stations up by interface, not by WLAN row.
-sub _ruckus_active_wlan_ports {
-    my $self = shift;
-    my $rows = _ruckus_active_wlan_rows($self);
-    my %ports;
-    foreach my $row ( sort { $a <=> $b } keys %$rows ) {
-        $ports{ $rows->{$row} } = $row unless exists $ports{ $rows->{$row} };
-    }
-    return \%ports;
-}
-
-sub _ruckus_wlan_values_by_interface {
+sub _ruckus_wlan_values_by_port {
     my ( $self, $method, $partial ) = @_;
     my $values = $self->$method() || {};
-    my $rows = _ruckus_active_wlan_rows($self);
+    my $rows   = _ruckus_wlan_rows($self);
     my %result;
 
     foreach my $row ( keys %$rows ) {
-        my $port = $rows->{$row};
+        my $port = $rows->{$row}[0];
         next if defined $partial and $partial ne $port;
         next unless defined $values->{$row};
         $result{"$port.$row"} = $values->{$row};
@@ -137,26 +138,45 @@ sub _ruckus_wlan_values_by_interface {
     return \%result;
 }
 
+# Station tables are indexed <WLAN number>.6.<client MAC>.
+sub _ruckus_station_ports {
+    my $self = shift;
+    my $macs = $self->ruckus_station_mac() || {};
+    my $rows = _ruckus_wlan_rows($self);
+    my %ports;
+
+    foreach my $idx ( keys %$macs ) {
+        next unless $idx =~ /^(\d+)\.6\.\d+(?:\.\d+){5}$/;
+        next unless exists $rows->{$1};
+        $ports{$idx} = [ $rows->{$1}[0], $1, $macs->{$idx} ];
+    }
+    return \%ports;
+}
+
+sub interfaces {
+    my ( $self, $partial ) = @_;
+    my $interfaces = $self->SUPER::interfaces($partial) || {};
+    my $rows       = _ruckus_wlan_rows($self);
+
+    foreach my $row ( values %$rows ) {
+        my ( $port, $wlan_if ) = @$row;
+        delete $interfaces->{$wlan_if}
+            if defined $wlan_if and $wlan_if ne $port;
+    }
+    return $interfaces;
+}
+
 sub i_ssidlist {
     my ( $self, $partial ) = @_;
-    my $ssids = $self->ruckus_wlan_ssid() || {};
-    my $rows = _ruckus_active_wlan_rows($self);
-    my %result;
-
-    foreach my $row ( keys %$rows ) {
-        my $port = $rows->{$row};
-        next if defined $partial and $partial ne $port;
-        my $ssid = $ssids->{$row};
-        next unless defined $ssid and $ssid =~ /\S/;
-        $result{"$port.$row"} = $ssid;
-    }
-
-    return \%result;
+    my $ssids = _ruckus_wlan_values_by_port( $self, 'ruckus_wlan_ssid',
+        $partial );
+    return { map { $_ => $ssids->{$_} } grep { $ssids->{$_} =~ /\S/ }
+            keys %$ssids };
 }
 
 sub i_ssidmac {
     my ( $self, $partial ) = @_;
-    my $values = _ruckus_wlan_values_by_interface(
+    my $values = _ruckus_wlan_values_by_port(
         $self, 'ruckus_wlan_bssid', $partial
     );
     foreach my $key ( keys %$values ) {
@@ -167,7 +187,7 @@ sub i_ssidmac {
 
 sub i_ssidbcast {
     my ( $self, $partial ) = @_;
-    my $disabled = _ruckus_wlan_values_by_interface(
+    my $disabled = _ruckus_wlan_values_by_port(
         $self, 'ruckus_wlan_bcast_disabled', $partial
     );
     my %broadcast;
@@ -181,13 +201,12 @@ sub i_ssidbcast {
 sub i_80211channel {
     my ( $self, $partial ) = @_;
     my $channels = $self->ruckus_wlan_channel() || {};
-    my $rows = _ruckus_active_wlan_rows($self);
+    my $rows     = _ruckus_wlan_rows($self);
     my %result;
 
-    # Each active WLAN row repeats the radio channel. Return one channel per
-    # mapped IF-MIB interface, the key the standard method uses.
+    # Every WLAN on a radio repeats its channel; ruckusRadioChannel reads 0.
     foreach my $row ( sort { $a <=> $b } keys %$rows ) {
-        my $port = $rows->{$row};
+        my $port = $rows->{$row}[0];
         next if defined $partial and $partial ne $port;
         next unless defined $channels->{$row};
         $result{$port} = $channels->{$row} unless exists $result{$port};
@@ -196,53 +215,70 @@ sub i_80211channel {
     return \%result;
 }
 
+sub i_vlan_membership {
+    my ( $self, $partial ) = @_;
+    my $vlans = _ruckus_wlan_values_by_port( $self, 'ruckus_wlan_vlan',
+        $partial );
+    my %members;
+
+    foreach my $key ( keys %$vlans ) {
+        my $vlan = $vlans->{$key};
+        next unless $vlan;
+        ( my $port = $key ) =~ s/\.\d+$//;
+        $members{$port}{$vlan} = 1;
+    }
+    return { map { $_ => [ sort { $a <=> $b } keys %{ $members{$_} } ] }
+            keys %members };
+}
+
 sub fw_mac {
     my $self = shift;
     my $standard = $self->SUPER::fw_mac() || {};
-    my $macs = $self->ruckus_station_mac() || {};
-    my $ports = _ruckus_active_wlan_ports($self);
+    my $stations = _ruckus_station_ports($self);
     my %result = %$standard;
 
-    foreach my $idx ( keys %$macs ) {
-        next unless $idx =~ /^(\d+)\.6\.\d+(?:\.\d+){5}$/;
-        next unless exists $ports->{$1};
-        $result{$idx} = SNMP::Info::munge_mac( $macs->{$idx} );
+    foreach my $idx ( keys %$stations ) {
+        $result{$idx} = SNMP::Info::munge_mac( $stations->{$idx}[2] );
     }
-
     return \%result;
 }
 
 sub fw_port {
     my $self = shift;
     my $standard = $self->SUPER::fw_port() || {};
-    my $macs = $self->ruckus_station_mac() || {};
-    my $ports = _ruckus_active_wlan_ports($self);
+    my $stations = _ruckus_station_ports($self);
     my %result = %$standard;
 
-    foreach my $idx ( keys %$macs ) {
-        next unless $idx =~ /^(\d+)\.6\.\d+(?:\.\d+){5}$/;
-        next unless exists $ports->{$1};
-        $result{$idx} = $1;
-    }
-
+    $result{$_} = $stations->{$_}[0] foreach keys %$stations;
     return \%result;
 }
 
 sub fw_ssid {
     my $self = shift;
-    my $macs = $self->ruckus_station_mac() || {};
-    my $ssids = $self->ruckus_wlan_ssid() || {};
-    my $ports = _ruckus_active_wlan_ports($self);
+    my $ssids    = $self->ruckus_wlan_ssid() || {};
+    my $stations = _ruckus_station_ports($self);
     my %result;
 
-    foreach my $idx ( keys %$macs ) {
-        next unless $idx =~ /^(\d+)\.6\.\d+(?:\.\d+){5}$/;
-        next unless exists $ports->{$1};
-        my $row = $ports->{$1};
-        next unless defined $ssids->{$row} and $ssids->{$row} =~ /\S/;
-        $result{$idx} = $ssids->{$row};
+    foreach my $idx ( keys %$stations ) {
+        my $ssid = $ssids->{ $stations->{$idx}[1] };
+        $result{$idx} = $ssid if defined $ssid and $ssid =~ /\S/;
     }
+    return \%result;
+}
 
+# No station table has a VLAN column, so a client takes the VLAN its WLAN
+# is configured with. A VLAN assigned per client (dynamic VLAN) is not seen.
+sub qb_fw_vlan {
+    my $self = shift;
+    my $standard = $self->SUPER::qb_fw_vlan() || {};
+    my $vlans    = $self->ruckus_wlan_vlan()  || {};
+    my $stations = _ruckus_station_ports($self);
+    my %result = %$standard;
+
+    foreach my $idx ( keys %$stations ) {
+        my $vlan = $vlans->{ $stations->{$idx}[1] };
+        $result{$idx} = $vlan if $vlan;
+    }
     return \%result;
 }
 
@@ -319,7 +355,7 @@ sub cd11_txbyte {
     return $self->ruckus_station_stats_txbyte() || {};
 }
 
-# No Ruckus AP seen serves BRIDGE-MIB, and the station tables are keyed by
+# No Ruckus AP seen serves BRIDGE-MIB, and fw_port returns the radio's
 # ifIndex, so each interface is its own bridge port.
 sub bp_index {
     my $self = shift;
@@ -398,7 +434,7 @@ Provides model, serial number, and software version information for Ruckus
 access points registered below the Ruckus wireless product OID branches, and
 for Unleashed access points identified by C<sysDescr>. It also maps active
 WLANs, radio channels, and associated station data to the standard SNMP::Info
-wireless methods.
+wireless methods, with one port per radio.
 
 =head2 Inherited Classes
 
@@ -493,26 +529,48 @@ to a hash.
 
 =over
 
+=item $ruckus->interfaces()
+
+Returns reference to hash. As the inherited method, without the WLAN
+interfaces that belong to a radio: their SSIDs and stations are on the
+radio's port.
+
 =item $ruckus->bp_index()
 
 Returns reference to hash. Key: IF-MIB index, Value: the same index. No
-Ruckus access point seen serves F<BRIDGE-MIB>, and the station tables are
-keyed by interface, so each interface is its own bridge port.
+Ruckus access point seen serves F<BRIDGE-MIB>, and C<fw_port()> returns
+the radio's IF-MIB index, so each interface is its own bridge port.
 
 =item $ruckus->fw_mac()
 
 Returns reference to hash of forwarding table MAC addresses. Inherited
-entries are kept, and each station on an active WLAN interface is added.
+entries are kept, and each station on an active WLAN with a port is added.
 
 (C<ruckusWLANStaAddr>)
 
 =item $ruckus->fw_port()
 
 Returns reference to hash of forwarding table entries' interface, with the
-same keys as C<fw_mac()>. A station's interface is the first part of its
-index.
+same keys as C<fw_mac()>. The first part of a station's index is its WLAN
+number, and the station is placed on that WLAN's port: its radio, as
+described under C<i_ssidlist()>.
 
 (C<ruckusWLANStaAddr>)
+
+=item $ruckus->i_vlan_membership()
+
+Returns reference to hash. Key: port index, Value: reference to a sorted
+array of the VLANs of the port's active WLANs. A VLAN of 0 is skipped.
+
+(C<ruckusWLANVlanID>)
+
+=item $ruckus->qb_fw_vlan()
+
+Returns reference to hash, with the same keys as C<fw_mac()>. Inherited
+entries are kept; each station takes its WLAN's VLAN. No station table
+has a VLAN column, so a VLAN assigned per client is not reported.
+
+(C<ruckusWLANVlanID>)
 
 =back
 
@@ -572,10 +630,24 @@ flag.
 
 =item $ruckus->ruckus_wlan_ifindex()
 
-Returns reference to hash. Key: WLAN row, Value: IF-MIB index. The MIB
-indexes the table by this value, so the row and the index normally match.
+Returns reference to hash. Key: WLAN row, Value: the table's index. The MIB
+calls it an interface index, but access points return the WLAN number
+(C<wlan5> is row 5), not an IF-MIB index.
 
 (C<ruckusWLANIfIndex>)
+
+=item $ruckus->ruckus_wlan_name()
+
+Returns reference to hash. Key: WLAN row, Value: WLAN interface name, as
+the IF-MIB C<ifDescr> of that WLAN's interface.
+
+(C<ruckusWLANName>)
+
+=item $ruckus->ruckus_wlan_vlan()
+
+Returns reference to hash. Key: WLAN row, Value: the WLAN's VLAN ID.
+
+(C<ruckusWLANVlanID>)
 
 =back
 
@@ -585,7 +657,7 @@ indexes the table by this value, so the row and the index normally match.
 
 =item $ruckus->ruckus_station_mac()
 
-Returns reference to hash. Key: IF-MIB index, address length and station
+Returns reference to hash. Key: WLAN number, address length and station
 address, Value: station MAC address.
 
 (C<ruckusWLANStaAddr>)
@@ -605,7 +677,7 @@ supported rates.
 
 =item $ruckus->ruckus_station_stats_mac()
 
-Returns reference to hash. Key: IF-MIB index, address length and station
+Returns reference to hash. Key: WLAN number, address length and station
 address, Value: station MAC address.
 
 (C<ruckusWLANStaStatsMacAddr>)
@@ -660,7 +732,7 @@ received signal strength indicator, as the agent reports it.
 
 =item $ruckus->ruckus_station_rks_txrate()
 
-Returns reference to hash. Key: IF-MIB index and station address, without
+Returns reference to hash. Key: WLAN number and station address, without
 the address length, Value: current transmit PHY rate in Kbps.
 
 (C<ruckusWLANStaRksTxRate>)
@@ -670,14 +742,21 @@ the address length, Value: current transmit PHY rate in Kbps.
 =head2 802.11 SSID and Channel Table Emulation
 
 These methods emulate the F<IEEE802dot11-MIB> SSID and channel methods
-using the F<RUCKUS-WLAN-MIB> C<ruckusWLANTable>. Only WLAN rows whose admin
-status is up and whose IF-MIB index exists are returned.
+using the F<RUCKUS-WLAN-MIB> C<ruckusWLANTable>, on one port per radio.
+Only WLAN rows whose admin status is up are returned.
+
+No column names a WLAN's radio. The access point numbers WLANs 0 to 31 on
+radio C<wifi0> and 32 to 63 on C<wifi1>, so a WLAN's port is the IF-MIB
+interface named C<wifi> followed by its WLAN number divided by 32. A WLAN
+with no such radio interface stays on its own interface, the one whose
+C<ifDescr> equals its C<ruckusWLANName>.
 
 =over
 
 =item $ruckus->i_ssidlist()
 
-Returns reference to hash. Key: IF-MIB index and WLAN row, Value: SSID.
+Returns reference to hash. Key: port IF-MIB index and WLAN row, Value:
+SSID.
 
 (C<ruckusWLANSSID>)
 
@@ -696,15 +775,16 @@ is broadcast, otherwise 0.
 
 =item $ruckus->i_80211channel()
 
-Returns reference to hash. Key: IF-MIB index, Value: channel. Each WLAN on
-a radio repeats its channel, so the lowest WLAN row is used.
+Returns reference to hash. Key: port IF-MIB index, Value: channel. Each
+WLAN on a radio repeats its channel, so the lowest WLAN row is used.
+C<ruckusRadioChannel> is not used: access points return 0.
 
 (C<ruckusWLANChannel>)
 
 =item $ruckus->fw_ssid()
 
 Returns reference to hash. Key: as C<fw_mac()>, Value: the SSID of the
-station's WLAN interface.
+station's WLAN.
 
 (C<ruckusWLANSSID>)
 
@@ -714,8 +794,9 @@ station's WLAN interface.
 
 These methods emulate the F<CISCO-DOT11-ASSOCIATION-MIB> C<cd11_*> methods
 using the F<RUCKUS-WLAN-MIB> station tables. Keys are the station
-statistics index: IF-MIB index, address length and station address. The MIB
-exposes no signal quality or noise, so C<cd11_sigqual()> is not provided.
+statistics index: WLAN number, address length and station address. The
+MIB exposes no signal quality or noise, so C<cd11_sigqual()> is not
+provided.
 
 =over
 

@@ -1,18 +1,26 @@
-Version 3.984001
+Version 3.985001
+
+  [BUG FIXES]
+
+  * #671 Aerohive: put SSIDs and clients on radio ports, so wireless client
+    reports work, and report client transmit rate in Mbps (#325)
+
+Version 3.985000 (2026-11-02)
 
   [NEW FEATURES]
 
-  * #571 Mellanox: new Layer3::Onyx class for Mellanox / NVIDIA Onyx
+  * #571 Onyx: new Layer3::Onyx class for Mellanox / NVIDIA Onyx
     switches (#396)
   * #658 VOSS: new Layer3::VOSS class for VOSS / Fabric Engine on the
     Extreme enterprise, built on RapidCity; RapidCity's Passport 8600 and
     ERS-era tables move into RapidCityLegacy and the VOSS VRF support into
     RapidCityVRF (#647)
+  * #673 FortiAP: new Layer2::FortiAP class for FortiAP access points, with
+    radio ports, SSIDs and clients (#501, #472)
 
   [ENHANCEMENTS]
 
-  * #667 Onyx: add Layer3 support, improve detection and LLDP handling, and
-    rename the class to Layer3::Onyx (#396)
+  * #667 Onyx: add Layer3 support, improve detection and LLDP handling (#396)
   * #658 RapidCity: set_i_speed_admin accepts 10G to 100G, and the speed
     and duplex setters turn auto-negotiation off when it is on
   * #670 Agent skills: describe the wireless port model and reading data
@@ -39,8 +47,19 @@ Version 3.984001
   * #666 Dell: report the bridge address as mac, and return 0.0.0.0 from
     lldp_ip for neighbors that advertise only a MAC chassis ID (#340)
   * #668 Airespace: count VxWorks 5 GHz BSSIDs up from the base radio MAC
-  * #671 Aerohive: put SSIDs and clients on radio ports, so wireless client
-    reports work, and report client transmit rate in Mbps (#325)
+  * #674 CiscoSB, Netgear: report the configured port description (ifAlias)
+    as the port name (#434, #503)
+  * #675 Foundry: take ICX VLAN memberships from the FastIron table, and hide
+    the single spanning tree VLAN (#339)
+  * #676 Fortinet: report FortiSwitch model, OS version and serial, and LLDP
+    neighbors whose management addresses do not match (#383, #495, #569)
+  * #677 RuckusAP: put SSIDs and clients on radio ports by WLAN number, and
+    report WLAN VLANs on radio ports and clients (#672)
+  * #678 H3C: read Comware 7 dot1qPvid by ifIndex, so ports whose bridge
+    port number differs get their native VLAN (netdisco/netdisco#1352)
+  * #679 LLDP: map local ports by lldpLocPortId when lldpLocPortDesc does
+    not match, so Dell OS10 neighbors land on their ports
+    (netdisco/netdisco#1447)
 
 Version 3.984000 (2026-10-29)
 

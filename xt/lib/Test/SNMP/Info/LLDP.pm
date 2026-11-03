@@ -261,7 +261,7 @@ sub _lldp_v2_agent : Tests(3) {
   is($info->_lldp_v2_agent(), 1, q(Nearest-bridge agent index));
 }
 
-sub lldp_if : Tests(6) {
+sub lldp_if : Tests(10) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_if');
@@ -307,6 +307,46 @@ sub lldp_if : Tests(6) {
 
   cmp_deeply($test->{info}->lldp_if(),
     $expected, q(Mapping of LLDP interface using 'ifIndex' has expected value));
+
+  # Dell OS10 numbers LLDP ports 4, 612, 616 (not ifIndex, not bridge port)
+  # and serves only lldpLocPortId, holding the interface name
+  $test->{info}{funcs}{ifName} = 'ifName';
+  $test->{info}{store}{lldp_rem_pid} = {'5700.612.2' => 'ethernet1/1/25'};
+  $test->{info}{store}{i_description}
+    = {'10' => 'mgmt1/1/1', '15' => 'ethernet1/1/3', '37' => 'ethernet1/1/25'};
+  $test->{info}{sess}{Data} = {
+    'LLDP-MIB::lldpLocPortId' => {612 => 'ethernet1/1/25', 4 => 'mgmt1/1/1'},
+    'IF-MIB::ifName'          =>
+      {10 => 'mgmt1/1/1', 15 => 'ethernet1/1/3', 37 => 'ethernet1/1/25'},
+  };
+  cmp_deeply($test->{info}->lldp_if(), {'5700.612.2' => '37'},
+    q(lldpLocPortId matched to ifName when lldpLocPortDesc is absent));
+
+  # Port 4 is also bridge port 4 (ifIndex 15) on OS10; the name decides
+  $test->{info}{store}{lldp_rem_pid} = {'4500.4.1' => 'Gi1/0/6'};
+  cmp_deeply($test->{info}->lldp_if(), {'4500.4.1' => '10'},
+    q(lldpLocPortId match ignores the local port number));
+
+  # lldpLocPortId that names ifDescr but no ifName
+  delete $test->{info}{$_} for qw/_ifName _lldp_lport_id/;
+  delete $test->{info}{store}{$_} for qw/ifName lldp_lport_id/;
+  $test->{info}{store}{lldp_rem_pid} = {'0.9.1' => 'Gi0/1'};
+  $test->{info}{store}{i_description} = {'21' => 'Port 9'};
+  $test->{info}{sess}{Data} = {
+    'LLDP-MIB::lldpLocPortId' => {9 => 'Port 9'},
+    'IF-MIB::ifName'          => {21 => 'gi9'},
+  };
+  cmp_deeply($test->{info}->lldp_if(), {'0.9.1' => '21'},
+    q(lldpLocPortId matched to ifDescr when no ifName matches));
+
+  # lldpLocPortDesc still wins when it matches a different port
+  $test->{info}{store}{i_description} = {'21' => 'Port 9', '22' => 'Uplink'};
+  $test->{info}{sess}{Data} = {
+    'LLDP-MIB::lldpLocPortDesc' => {9 => 'Uplink'},
+    'LLDP-MIB::lldpLocPortId'   => {9 => 'Port 9'},
+  };
+  cmp_deeply($test->{info}->lldp_if(), {'0.9.1' => '22'},
+    q(lldpLocPortDesc match is preferred over lldpLocPortId));
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_if(), {}, q(No data returns empty hash));
