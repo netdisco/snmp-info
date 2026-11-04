@@ -786,7 +786,8 @@ lldp_addr if you want any return address type.
 
 A neighbor with a MAC chassis ID (C<lldpRemChassisIdSubtype>) that
 advertises no IPv4 management address returns C<0.0.0.0>, which callers can
-resolve by looking up C<c_id()>.
+resolve by looking up C<c_id()>. C<0.0.0.0> marks a missing address: it is
+not an address to store or contact.
 
 Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 
