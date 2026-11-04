@@ -478,6 +478,261 @@ sub agg_ports__member_without_ifindex__skipped_without_looping : Tests(1) {
     );
 }
 
+# Shaped from an ICX7150-C12-POE on FastIron 10.0.10: a powered device on
+# port 2, nothing on port 1, no PoE hardware on the uplinks. Port 3 is
+# disabled for coverage.
+sub _prime_poe_fastiron10 {
+    my $test = shift;
+
+    my %store = (
+        'i_description' => {
+            1   => 'GigabitEthernet1/1/1',
+            2   => 'GigabitEthernet1/1/2',
+            3   => 'GigabitEthernet1/1/3',
+            65  => 'GigabitEthernet1/2/1',
+            129 => '10GigabitEthernet1/3/1',
+        },
+        'snAgentPoePortNumber' =>
+            { 1 => 1, 2 => 2, 3 => 3, 65 => 65, 129 => 129 },
+        'snAgentPoePortControl' => {
+            1   => 'enable',
+            2   => 'enable',
+            3   => 'disable',
+            65  => 'other',
+            129 => 'other'
+        },
+        'snAgentPoePortWattage' =>
+            { 1 => 0, 2 => 30000, 3 => 0, 65 => 0, 129 => 0 },
+        'snAgentPoePortClass' =>
+            { 1 => 0, 2 => 0, 3 => 0, 65 => 0, 129 => 0 },
+        'snAgentPoePortConsumed' =>
+            { 1 => 0, 2 => 6900, 3 => 0, 65 => 0, 129 => 0 },
+        'snAgentPoePortPDClass' =>
+            { 1 => 0, 2 => 4, 3 => 0, 65 => 0, 129 => 0 },
+    );
+    $test->{info}->cache(
+        { ( map { ( "_$_" => 1 ) } keys %store ), 'store' => \%store } );
+    return;
+}
+
+# Shaped from an ICX6450-24-HPOE on FastIron 08.0: no
+# snAgentPoePortPDClass, and the class is reported in snAgentPoePortClass.
+sub _prime_poe_fastiron8 {
+    my $test = shift;
+
+    my %store = (
+        'i_description' => {
+            1  => 'GigabitEthernet1/1/1',
+            2  => 'GigabitEthernet1/1/2',
+            65 => 'GigabitEthernet1/2/1',
+        },
+        'snAgentPoePortNumber'  => { 1 => 1, 2 => 2, 65 => 65 },
+        'snAgentPoePortControl' =>
+            { 1 => 'enable', 2 => 'enable', 65 => 'other' },
+        'snAgentPoePortWattage'  => { 1 => 15400, 2 => 30000, 65 => 0 },
+        'snAgentPoePortClass'    => { 1 => 3,     2 => 0,     65 => 0 },
+        'snAgentPoePortConsumed' => { 1 => 6948,  2 => 0,     65 => 0 },
+    );
+    $test->{info}->cache(
+        { ( map { ( "_$_" => 1 ) } keys %store ), 'store' => \%store } );
+    return;
+}
+
+sub peth_port_ifindex : Tests(2) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'peth_port_ifindex' );
+    $test->_prime_poe_fastiron10();
+    cmp_deeply(
+        $test->{info}->peth_port_ifindex(),
+        { '1.1' => 1, '1.2' => 2, '1.3' => 3 },
+        q(Ports without inline power capability are not PoE ports)
+    );
+}
+
+sub peth_port_admin : Tests(2) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'peth_port_admin' );
+    $test->_prime_poe_fastiron10();
+    cmp_deeply(
+        $test->{info}->peth_port_admin(),
+        { '1.1' => 'true', '1.2' => 'true', '1.3' => 'false' },
+        q(Admin state from snAgentPoePortControl)
+    );
+}
+
+sub peth_port_status : Tests(3) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'peth_port_status' );
+    $test->_prime_poe_fastiron10();
+    cmp_deeply(
+        $test->{info}->peth_port_status(),
+        {   '1.1' => 'searching',
+            '1.2' => 'deliveringPower',
+            '1.3' => 'disabled'
+        },
+        q(Only a port consuming power is delivering it)
+    );
+
+    $test->{info}->clear_cache();
+    $test->_prime_poe_fastiron8();
+    cmp_deeply(
+        $test->{info}->peth_port_status(),
+        { '1.1' => 'deliveringPower', '1.2' => 'searching' },
+        q(FastIron 08.0 status from consumed power)
+    );
+}
+
+sub peth_port_class : Tests(3) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'peth_port_class' );
+    $test->_prime_poe_fastiron10();
+    cmp_deeply(
+        $test->{info}->peth_port_class(),
+        { '1.2' => 'class4' },
+        q(Class the powered device signalled, not the configured class)
+    );
+
+    $test->{info}->clear_cache();
+    $test->_prime_poe_fastiron8();
+    cmp_deeply(
+        $test->{info}->peth_port_class(),
+        { '1.1' => 'class3' },
+        q(Without snAgentPoePortPDClass the class is snAgentPoePortClass)
+    );
+}
+
+sub peth_port_neg_power : Tests(3) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'peth_port_neg_power' );
+    $test->_prime_poe_fastiron10();
+    cmp_deeply(
+        $test->{info}->peth_port_neg_power(),
+        { '1.2' => 30000 },
+        q(Allocated power of the port delivering power)
+    );
+
+    $test->{info}->clear_cache();
+    $test->_prime_poe_fastiron8();
+    cmp_deeply(
+        $test->{info}->peth_port_neg_power(),
+        { '1.1' => 15400 },
+        q(No allocation reported for a port without a powered device)
+    );
+}
+
+sub peth_port_power : Tests(2) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'peth_port_power' );
+    $test->_prime_poe_fastiron10();
+    cmp_deeply(
+        $test->{info}->peth_port_power(),
+        { '1.2' => 6900 },
+        q(Consumed power of ports drawing power)
+    );
+}
+
+sub model : Tests(5) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'model' );
+    is( $test->{info}->model(),
+        'FastIronStackICX6610', q(A stack keeps the sysObjectID name) );
+
+    my %cases = (
+        'Ruckus Wireless, Inc. ICX7150-C12-POE, IronWare Version '
+            . '10.0.10g_cd11T213 Compiled on Sep  1 2026 at 00:52:40 '
+            . 'labeled as SPR10010g_cd11' => [
+            '.1.3.6.1.4.1.1991.1.3.64.3.1.1.2',
+            'ICX7150-C12-POE',
+            q(FastIron 10 standalone model from sysDescr)
+            ],
+        'Brocade Communications Systems, Inc. ICX6450-24-HPOE, IronWare '
+            . 'Version 08.0.30tT311 Compiled on Jun 28 2021 at 23:03:01 '
+            . 'labeled as ICX64S08030t' => [
+            '.1.3.6.1.4.1.1991.1.3.58.1.2.1.1',
+            'ICX6450-24-HPOE',
+            q(FastIron 08 standalone model from sysDescr)
+            ],
+        'Foundry Networks, Inc. FESX424, IronWare Version 03.1.00b36T3e1 '
+            . 'Compiled on Feb 27 2006 at 14:37:58 labeled as SXR03100b36' =>
+            [
+            '.1.3.6.1.4.1.1991.1.3.34.1.1.1.2', 'FESX424Router',
+            q(Non-ICX model from sysObjectID)
+            ],
+    );
+    foreach my $descr ( sort keys %cases ) {
+        my ( $id, $model, $name ) = @{ $cases{$descr} };
+        $test->{info}->clear_cache();
+        $test->{info}->cache(
+            { '_description' => $descr, '_id' => $id, 'store' => {} } );
+        is( $test->{info}->model(), $model, $name );
+    }
+}
+
+# Shaped from an ICX7150-C12-POE on FastIron 10.0.10, which keys
+# ifMauAutoNegTable by ifIndex alone. Port 129 is fixed at 1 Gbps.
+sub _prime_port_config {
+    my ( $test, $autoneg_keys ) = @_;
+
+    my %store = (
+        '_mau_autoneg_admin' => {
+            $autoneg_keys->[0] => 'enabled',
+            $autoneg_keys->[1] => 'disabled',
+        },
+        '_sw_if_speed'  => { 1 => 'sAutoSense', 129 => 's1G' },
+        '_sw_if_duplex' => { 1 => 'fullDuplex', 129 => 'fullDuplex' },
+    );
+    $test->{info}->cache(
+        { ( map { ( "_$_" => 1 ) } keys %store ), 'store' => \%store } );
+    return;
+}
+
+sub i_speed_admin : Tests(4) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'i_speed_admin' );
+    $test->_prime_port_config( [ 1, 129 ] );
+    cmp_deeply(
+        $test->{info}->i_speed_admin(),
+        { 1 => 'auto', 129 => '1.0 Gbps' },
+        q(Auto-negotiating port is auto, a fixed port its configured speed)
+    );
+
+    $test->{info}->clear_cache();
+    $test->_prime_port_config( [ '1.1', '129.1' ] );
+    cmp_deeply(
+        $test->{info}->i_speed_admin(),
+        { 1 => 'auto', 129 => '1.0 Gbps' },
+        q(ifMauAutoNegTable keyed by ifIndex and MAU index)
+    );
+
+    $test->{info}->clear_cache();
+    cmp_deeply( $test->{info}->i_speed_admin(),
+        {}, q(No MAU-MIB, as on FastIron 08.0, gives nothing) );
+}
+
+sub i_duplex_admin : Tests(3) {
+    my $test = shift;
+
+    can_ok( $test->{info}, 'i_duplex_admin' );
+    $test->_prime_port_config( [ 1, 129 ] );
+    cmp_deeply(
+        $test->{info}->i_duplex_admin(),
+        { 1 => 'auto', 129 => 'full' },
+        q(Auto-negotiating port is auto, a fixed port its configured duplex)
+    );
+
+    $test->{info}->clear_cache();
+    cmp_deeply( $test->{info}->i_duplex_admin(),
+        {}, q(No MAU-MIB, as on FastIron 08.0, gives nothing) );
+}
+
 sub lag_groups_complete__trunk_walk_incomplete__returns_0 : Tests(2) {
     my $test = shift;
 
