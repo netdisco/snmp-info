@@ -4,6 +4,8 @@ Version 3.985001
 
   * #682 VRF: vrf_read_leaked and vrf_exclude_ports let a caller complete a
     Juniper default instance read that includes virtual routers
+  * #683 TeltonikaRutOS: report TSW switch port VLANs from the Teltonika
+    VLAN table (#634)
 
   [BUG FIXES]
 
