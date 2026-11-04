@@ -164,6 +164,8 @@ sub lldp_ip : Tests(3) {
     q(lldp_ip__fortiswitch__uses_chassis_address_or_0.0.0.0)
   );
 
+  # FortiGate management addresses match their rows; neighbors with a MAC
+  # chassis ID and no address of their own get the LLDP 0.0.0.0
   $test->{info}{_id} = '.1.3.6.1.4.1.12356.101.1.5005';
   cmp_deeply(
     $test->{info}->lldp_ip(),
@@ -171,6 +173,8 @@ sub lldp_ip : Tests(3) {
       '998707741.23.1' => '172.22.92.147',
       '998707741.55.5' => '172.24.92.1',
       '998707741.55.6' => '172.24.92.21',
+      '998707741.17.2' => '0.0.0.0',
+      '998707741.55.7' => '0.0.0.0',
     },
     q(lldp_ip__fortigate__keeps_management_addresses)
   );
