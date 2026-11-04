@@ -96,7 +96,7 @@ sub i_description : Tests(3) {
     $expected, q(i_description have expected values));
 }
 
-sub lldp_ip : Tests(5) {
+sub lldp_ip : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_ip');
@@ -146,6 +146,12 @@ sub lldp_ip : Tests(5) {
 
   cmp_deeply($test->{info}->lldp_ip(), {'4100.8.1' => '0.0.0.0'},
     q(Unresolved MAC chassis ID returns 0.0.0.0, other unresolved omitted));
+
+  # A MAC chassis ID whose system name resolves still takes the DNS address
+  $test->{info}{store}{lldp_rem_sysname}{'4100.8.1'} = 'localhost';
+  cmp_deeply($test->{info}->lldp_ip(),
+    {'4100.8.1' => '127.0.0.1'},
+    q(Resolved system name is preferred over 0.0.0.0 for a MAC chassis ID));
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_ip(), {}, q(No neighbors returns empty hash));

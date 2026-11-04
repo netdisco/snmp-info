@@ -2323,6 +2323,197 @@ sub vrf_read_complete__red__is_1 : Tests(2) {
     'A partial ipv6NetToMediaTable walk makes the read incomplete');
 }
 
+sub vrf_read_leaked__default_with_virtual_routers__names_them : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  $info->vrf_neighbors('default');
+  cmp_deeply($info->vrf_read_leaked('default'), [qw/blue green mgmt_junos/],
+    'The virtual routers no membership row covers');
+}
+
+sub vrf_read_leaked__default_walk_partial__undef : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  $info->vrf_neighbors('default');
+  $info->{walk_status}{at_paddr} = {complete => 0, reason => 'timeout'};
+  is($info->vrf_read_leaked('default'), undef,
+    'A cut-short default walk is partial, not leaked');
+}
+
+sub vrf_read_leaked__list_walk_partial__undef : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  $info->vrf_neighbors('default');
+  delete $info->{_vrf_instances};
+  $info->{walk_status}{jnx_vacm_context_name}
+    = {complete => 0, reason => 'timeout'};
+  is($info->vrf_read_leaked('default'), undef,
+    'A partial instance list may hide another instance');
+}
+
+sub vrf_read_leaked__portless_mpls_vrf__undef : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_default_mpls_only();
+  my $grey = join('.', length('grey'), map { ord } split //, 'grey');
+
+  delete $info->{store}{vrf_l3vpn_if}{"$grey.514"};
+  $info->vrf_neighbors('default');
+  is($info->vrf_read_leaked('default'), undef, 'Nothing leaks');
+  is($info->vrf_read_complete('default'), 1, 'The read is whole');
+}
+
+sub vrf_read_leaked__red__undef : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('red');
+
+  $info->vrf_neighbors('red');
+  is($info->vrf_read_leaked('red'), undef, 'Only default leaks');
+}
+
+sub vrf_read_leaked__no_reader__undef : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  is($info->vrf_read_leaked('default'), undef,
+    'No reader walked for default');
+}
+
+# The default context with the ports of the named virtual routers excluded,
+# as their reads in their own contexts gave them
+my %JNX_UNCOVERED_PORTS
+  = (blue => [540, 549], green => [555], mgmt_junos => [13]);
+
+sub _prime_jnx_excluded {
+  my ($test, @names) = @_;
+  my $info = $test->_prime_jnx_context('default');
+  $info->vrf_exclude_ports($_, $JNX_UNCOVERED_PORTS{$_}) for @names;
+  return $info;
+}
+
+sub vrf_exclude_ports__all_uncovered__read_complete_1 : Tests(3) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  is($info->vrf_exclude_ports('blue', [540, 549]), 1, 'Recorded');
+  $info->vrf_exclude_ports($_, $JNX_UNCOVERED_PORTS{$_})
+    for qw/green mgmt_junos/;
+  $info->vrf_neighbors('default');
+  is($info->vrf_read_complete('default'), 1,
+    'Every virtual router excluded, the default read is whole');
+  is($info->vrf_read_leaked('default'), undef, 'Nothing left unfiltered');
+}
+
+sub vrf_exclude_ports__one_left__names_it : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_excluded(qw/blue green/);
+
+  $info->vrf_neighbors('default');
+  cmp_deeply($info->vrf_read_leaked('default'), ['mgmt_junos'],
+    'The instance not excluded is still named');
+  is($info->vrf_read_complete('default'), 0, 'The read stays partial');
+}
+
+sub vrf_exclude_ports__addresses__drops_ports : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_excluded(qw/blue green mgmt_junos/);
+
+  cmp_deeply([sort keys %{$info->vrf_addresses('default')}],
+    [sort('21.127.0.0.1', '508.128.0.0.127')],
+    'Only the default instance\'s own addresses are left');
+}
+
+sub vrf_exclude_ports__neighbors__drops_rows_not_in_named_read : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_excluded(qw/blue green mgmt_junos/);
+
+  my $rows = $info->vrf_neighbors('default');
+  cmp_deeply([grep { /^(?:13|540|549|555)$/ } map { $_->{ifindex} }
+      values %$rows], [], 'No row on an excluded port');
+  ok(!exists $rows->{'549.10.32.0.2'},
+    'A neighbor on an excluded port goes, though it is no address of blue');
+}
+
+sub vrf_exclude_ports__shared_prefix__default_subnet_kept : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  _jnx_address_store($info->{store},
+    {addr => [[560, '10.32.0.9', '10.32.0.0', 24]]});
+  is($info->vrf_subnets('default')->{'10.32.0.0/24'}{ifindex}, 549,
+    'Unexcluded, the shared prefix carries blue\'s port');
+  $info->vrf_exclude_ports('blue', [540, 549]);
+  is($info->vrf_subnets('default')->{'10.32.0.0/24'}{ifindex}, 560,
+    'Excluded before subnets are derived, it carries the default port');
+}
+
+sub vrf_exclude_ports__named_context__throws : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('red');
+
+  is($info->vrf_exclude_ports('blue', [540, 549]), undef, 'Refused');
+  like($info->error(1),
+    qr/this session is in context 'red'\. Call update\(\) back to the default context/,
+    'The error names the switch back to default');
+}
+
+sub vrf_exclude_ports__unlisted_name__throws : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  is($info->vrf_exclude_ports('purple', [600]), undef, 'Refused');
+  like($info->error(1), qr/given 'purple', which is not an instance vrf_instances\(\) lists/,
+    'The error names the list to take names from');
+}
+
+sub vrf_exclude_ports__default__throws : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  is($info->vrf_exclude_ports('default', [21]), undef, 'Refused');
+  like($info->error(1), qr/cannot exclude the default instance/,
+    'The error says default is what the exclusion serves');
+}
+
+sub vrf_exclude_ports__not_array__throws : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  is($info->vrf_exclude_ports('blue', 540), undef, 'Refused');
+  like($info->error(1), qr/array reference of ifIndexes/,
+    'The error names the argument form');
+}
+
+sub vrf_exclude_ports__subnets_from_routes__returns_0 : Tests(2) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_context('default');
+
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Juniper::_vrf_subnets_from_routes = sub {1};
+  is($info->vrf_exclude_ports('blue', [540, 549]), 0,
+    'A route subnet may carry no port, so nothing is recorded');
+  ok(!exists $info->{_vrf_excluded}, 'No exclusion kept');
+}
+
+sub vrf_exclude_ports__i_vrf__unchanged : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_excluded(qw/blue green mgmt_junos/);
+
+  $info->vrf_addresses('default');
+  cmp_deeply($info->i_vrf(), {536 => 'red', 545 => 'red', 514 => 'grey'},
+    'The membership MPLS-L3VPN-STD-MIB serves, without excluded ports');
+}
+
+sub vrf_exclude_ports__clear_cache__forgotten : Tests(1) {
+  my $test = shift;
+  my $info = $test->_prime_jnx_excluded(qw/blue green mgmt_junos/);
+
+  $info->clear_cache();
+  ok(!exists $info->{_vrf_excluded}, 'clear_cache drops the exclusion');
+}
+
 sub i_vrf__blue_context__blue_ports : Tests(1) {
   my $test = shift;
   my $info = $test->_prime_jnx_context('blue');

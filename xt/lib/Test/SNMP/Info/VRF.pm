@@ -1735,6 +1735,36 @@ sub _read_red {
   return $info;
 }
 
+sub vrf_read_leaked : Tests(1) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'vrf_read_leaked');
+}
+
+sub vrf_read_leaked__class_not_leaking__undef : Tests(1) {
+  my $test = shift;
+
+  my $info = $test->_read_red();
+  $info->vrf_neighbors('default');
+  is($info->vrf_read_leaked('default'), undef,
+    q(A class whose default context does not leak names nothing));
+}
+
+sub vrf_exclude_ports : Tests(1) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'vrf_exclude_ports');
+}
+
+sub vrf_exclude_ports__class_not_leaking__returns_0 : Tests(2) {
+  my $test = shift;
+
+  my $info = $test->_read_red();
+  is($info->vrf_exclude_ports('red', [5]), 0,
+    q(A class whose default context does not leak needs no exclusion));
+  ok(!exists $info->{_vrf_excluded}, q(Nothing recorded));
+}
+
 sub vrf_read_complete : Tests(1) {
   my $test = shift;
 

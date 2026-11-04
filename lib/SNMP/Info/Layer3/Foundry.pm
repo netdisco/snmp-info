@@ -59,6 +59,7 @@ $VERSION = '3.985000';
     'FOUNDRY-SN-STACKING-MIB'     => 'snStackingOperUnitRole',
     'FDRY-POE-MIB'                => 'snAgentPoeGblPowerCapacityTotal',
     'BROCADE-PRODUCTS-MIB'        => 'brocadeProducts',
+    'MAU-MIB'                     => 'ifMauAutoNegAdminStatus',
 );
 
 %GLOBALS = (
@@ -89,8 +90,13 @@ $VERSION = '3.985000';
     'sw_type'   => 'snSwPortInfoMediaType',
     'sw_speed'  => 'snSwPortInfoSpeed',
 
-    # FOUNDRY-SN-SWITCH-GROUP-MIB
-    #
+    # FOUNDRY-SN-SWITCH-GROUP-MIB::snSwIfInfoTable, read only for ports
+    # that do not auto-negotiate (see i_speed_admin)
+    '_sw_if_speed'  => 'snSwIfInfoSpeed',
+    '_sw_if_duplex' => 'snSwIfInfoChnMode',
+
+    # MAU-MIB::ifMauAutoNegTable
+    '_mau_autoneg_admin' => 'ifMauAutoNegAdminStatus',
 
     # FOUNDRY-SN-AGENT-MIB::snAgentConfigModule2Table
     'ag_mod2_type' => 'snAgentConfigModule2Type',
@@ -457,10 +463,87 @@ sub i_duplex {
     return \%i_duplex;
 }
 
+# FastIron 10 serves snSwIfInfoSpeed and snSwIfInfoChnMode as the port's
+# configuration, while FastIron 08 serves the running link there (none
+# on a port that is down). They agree for a port that does not
+# auto-negotiate, so they are read only for those. FastIron 10 keys
+# ifMauAutoNegTable by ifIndex alone, rather than ifIndex.ifMauIndex.
+sub _foundry_autoneg_by_ifindex {
+    my $foundry = shift;
+
+    my $autoneg = $foundry->_mau_autoneg_admin() || {};
+
+    my %by_ifindex;
+    foreach my $key ( keys %$autoneg ) {
+        my ($ifindex) = split /\./, $key;
+        $by_ifindex{$ifindex} = $autoneg->{$key};
+    }
+    return \%by_ifindex;
+}
+
+my %_sw_if_speed_admin = (
+    's10M'   => '10 Mbps',
+    's100M'  => '100 Mbps',
+    's1G'    => '1.0 Gbps',
+    's1GM'   => '1.0 Gbps',
+    's2500M' => '2.5 Gbps',
+    's5000M' => '5.0 Gbps',
+    's10G'   => '10 Gbps',
+    's25G'   => '25 Gbps',
+    's40G'   => '40 Gbps',
+    's100G'  => '100 Gbps',
+);
+
+sub i_speed_admin {
+    my $foundry = shift;
+
+    my $autoneg = $foundry->_foundry_autoneg_by_ifindex();
+    return {} unless %$autoneg;
+    my $speeds = $foundry->_sw_if_speed() || {};
+
+    my %i_speed_admin;
+    foreach my $ifindex ( keys %$autoneg ) {
+        my $speed
+            = $autoneg->{$ifindex} eq 'enabled'
+            ? 'auto'
+            : $_sw_if_speed_admin{ $speeds->{$ifindex} // '' };
+        $i_speed_admin{$ifindex} = $speed if defined $speed;
+    }
+    return \%i_speed_admin;
+}
+
+my %_sw_if_duplex_admin = (
+    'halfDuplex' => 'half',
+    'fullDuplex' => 'full',
+);
+
+sub i_duplex_admin {
+    my $foundry = shift;
+
+    my $autoneg = $foundry->_foundry_autoneg_by_ifindex();
+    return {} unless %$autoneg;
+    my $duplexes = $foundry->_sw_if_duplex() || {};
+
+    my %i_duplex_admin;
+    foreach my $ifindex ( keys %$autoneg ) {
+        my $duplex
+            = $autoneg->{$ifindex} eq 'enabled'
+            ? 'auto'
+            : $_sw_if_duplex_admin{ $duplexes->{$ifindex} // '' };
+        $i_duplex_admin{$ifindex} = $duplex if defined $duplex;
+    }
+    return \%i_duplex_admin;
+}
+
 sub model {
     my $foundry = shift;
     my $id      = $foundry->id();
     my $model   = &SNMP::translateObj($id);
+
+    # A standalone ICX names its model as the CLI does:
+    # "Ruckus Wireless, Inc. ICX7150-C12-POE, IronWare Version ..."
+    my $descr = $foundry->description() || '';
+    return $1 if $descr =~ /^[^,]+, Inc\. (ICX[\w-]+), /;
 
     # EdgeIron
     if ( $id =~ /\.1991\.1\.[45]\./ ) {
@@ -986,13 +1069,17 @@ sub brcd_e_parent {
 sub peth_port_ifindex {
     my $foundry = shift;
 
-    my $indexes = $foundry->snAgentPoePortNumber();
-    my $descrs  = $foundry->i_description();
+    my $indexes  = $foundry->snAgentPoePortNumber()  || {};
+    my $controls = $foundry->snAgentPoePortControl() || {};
+    my $descrs   = $foundry->i_description()         || {};
 
     my $peth_port_ifindex = {};
     foreach my $i ( keys %$indexes ) {
         my $descr = $descrs->{$i};
         next unless $descr;
+
+        # other(1): the port has no inline power hardware
+        next if ( $controls->{$i} // '' ) eq 'other';
 
         my $new_idx = "1.$i";
 
@@ -1025,29 +1112,49 @@ sub peth_port_admin {
     return $peth_port_admin;
 }
 
+my %_poe_class_max_mw = (
+    '0' => 12950,
+    '1' => 3840,
+    '2' => 6490,
+    '3' => 12950,
+    '4' => 25500
+);
+
 sub peth_port_neg_power {
     my $foundry = shift;
 
-    my $p_index         = $foundry->peth_port_ifindex()   || {};
-    my $peth_port_class = $foundry->snAgentPoePortClass() || {};
-
-    my $poemax = {
-        '0' => 12950,
-        '1' => 3840,
-        '2' => 6490,
-        '3' => 12950,
-        '4' => 25500
-    };
+    my $p_index  = $foundry->peth_port_ifindex()      || {};
+    my $consumed = $foundry->snAgentPoePortConsumed() || {};
+    my $wattage  = $foundry->snAgentPoePortWattage()  || {};
+    my $classes  = $foundry->_foundry_poe_pd_class();
 
     my $peth_port_neg_power = {};
     foreach my $i ( keys %$p_index ) {
-        my ( $module, $port ) = split( /\./, $i );
-        my $power = $poemax->{ $peth_port_class->{$port} };
-        next unless $power;
+        my $port = $p_index->{$i};
+        next unless $consumed->{$port};
 
+        my $power = $wattage->{$port}
+            || $_poe_class_max_mw{ $classes->{$port} // 0 };
         $peth_port_neg_power->{$i} = $power;
     }
     return $peth_port_neg_power;
+}
+
+# snAgentPoePortClass is the class the user configured, 0 when none.
+# FastIron 10 reports the class the powered device signalled in
+# snAgentPoePortPDClass; FastIron 08 has no such column and reports it in
+# snAgentPoePortClass.
+sub _foundry_poe_pd_class {
+    my $foundry = shift;
+
+    my $configured = $foundry->snAgentPoePortClass()   || {};
+    my $signalled  = $foundry->snAgentPoePortPDClass() || {};
+
+    my %pd_class;
+    foreach my $port ( keys %$configured ) {
+        $pd_class{$port} = $signalled->{$port} || $configured->{$port};
+    }
+    return \%pd_class;
 }
 
 sub peth_port_power {
@@ -1070,36 +1177,40 @@ sub peth_port_power {
 sub peth_port_class {
     my $foundry = shift;
 
-    my $p_index    = $foundry->peth_port_ifindex()   || {};
-    my $port_class = $foundry->snAgentPoePortClass() || {};
+    my $p_index = $foundry->peth_port_ifindex() || {};
+    my $classes = $foundry->_foundry_poe_pd_class();
 
     my $peth_port_class = {};
     foreach my $i ( keys %$p_index ) {
-        my ( $module, $port ) = split( /\./, $i );
-        my $power = $port_class->{$port};
-        next unless $power;
+        my $class = $classes->{ $p_index->{$i} };
+        next unless $class;
 
-        $peth_port_class->{$i} = "class$power";
+        $peth_port_class->{$i} = "class$class";
     }
     return $peth_port_class;
 }
 
+# The table has no detection status: a port consuming power is delivering
+# it, an enabled port that is not is searching.
 sub peth_port_status {
     my $foundry = shift;
 
-    my $p_index      = $foundry->peth_port_ifindex()     || {};
-    my $admin_states = $foundry->snAgentPoePortControl() || {};
+    my $p_index      = $foundry->peth_port_ifindex()      || {};
+    my $admin_states = $foundry->snAgentPoePortControl()  || {};
+    my $consumed     = $foundry->snAgentPoePortConsumed() || {};
 
     my $peth_port_status = {};
     foreach my $i ( keys %$p_index ) {
-        my ( $module, $port ) = split( /\./, $i );
-        my $state = $admin_states->{$port};
+        my $port = $p_index->{$i};
 
-        if ( $state =~ /enable/ ) {
+        if ( ( $admin_states->{$port} // '' ) !~ /enable/ ) {
+            $peth_port_status->{$i} = 'disabled';
+        }
+        elsif ( $consumed->{$port} ) {
             $peth_port_status->{$i} = 'deliveringPower';
         }
         else {
-            $peth_port_status->{$i} = 'disabled';
+            $peth_port_status->{$i} = 'searching';
         }
     }
     return $peth_port_status;
@@ -1273,6 +1384,8 @@ C<stp_protocols()> returns nothing, and C<stp_trees_complete()> returns 0
 
 =item F<FDRY-POE-MIB>
 
+=item F<MAU-MIB>
+
 =item Inherited Classes' MIBs
 
 See L<SNMP::Info::Layer3/"Required MIBs"> for its own MIB requirements.
@@ -1289,9 +1402,10 @@ These are methods that return scalar value from SNMP
 
 =item $foundry->model()
 
-Returns model type.  Checks $foundry->id() against the F<FOUNDRY-SN-ROOT-MIB>
-and removes 'C<sn>' and 'C<Switch>'.  EdgeIron models determined
-through F<ENTITY-MIB>.
+Returns model type.  A standalone ICX returns the model its C<sysDescr>
+names, such as C<ICX7150-C12-POE>.  Otherwise checks $foundry->id()
+against the F<FOUNDRY-SN-ROOT-MIB> and removes 'C<sn>' and 'C<Switch>'.
+EdgeIron models determined through F<ENTITY-MIB>.
 
 =item $foundry->vendor()
 
@@ -1403,6 +1517,22 @@ Ignores interfaces with descriptions of  tunnel,loopback,null
 Returns reference to hash of interface link duplex status.
 
 Crosses $foundry->sw_duplex() with $foundry->sw_index()
+
+=item $foundry->i_speed_admin()
+
+Returns reference to hash of configured interface speeds, keyed by
+C<ifIndex>: C<auto> where auto-negotiation is enabled
+(C<ifMauAutoNegAdminStatus>), otherwise the speed from
+C<snSwIfInfoSpeed>.  Empty when the device serves no
+C<ifMauAutoNegTable>.
+
+=item $foundry->i_duplex_admin()
+
+Returns reference to hash of configured interface duplex, keyed by
+C<ifIndex>: C<auto> where auto-negotiation is enabled
+(C<ifMauAutoNegAdminStatus>), otherwise C<full> or C<half> from
+C<snSwIfInfoChnMode>.  Empty when the device serves no
+C<ifMauAutoNegTable>.
 
 =item $foundry->i_stp_state()
 
@@ -1584,7 +1714,8 @@ over Ethernet Port Table C<snAgentPoePortTable>.
 
 Creates an index of module.port to align with the indexing of the
 C<pethPsePortTable> with a value of C<ifIndex>.  The module defaults 1
-if otherwise unknown.
+if otherwise unknown.  Ports whose C<snAgentPoePortControl> is C<other>
+have no inline power hardware and are left out.
 
 =item $foundry->peth_port_admin()
 
@@ -1594,18 +1725,21 @@ C<pethPsePortAdminEnable>
 
 =item $foundry->peth_port_status()
 
-Current status: is this port delivering power.
+Current status: C<disabled> when inline power is off, C<deliveringPower>
+when the port consumes power (C<snAgentPoePortConsumed>), otherwise
+C<searching>.
 
 =item $foundry->peth_port_class()
 
-Device class: if status is delivering power, this represents the 802.3af
-class of the device being powered.
+Device class: the class the powered device signalled
+(C<snAgentPoePortPDClass>), or C<snAgentPoePortClass> where that column
+is absent.
 
 =item $foundry->peth_port_neg_power()
 
-The power, in milliwatts, that has been committed to this port.
-This value is derived from the 802.3af class of the device being
-powered.
+The power, in milliwatts, allocated to a port delivering power
+(C<snAgentPoePortWattage>), or the maximum for the device's class when
+no allocation is reported.
 
 =item $foundry->peth_port_power()
 

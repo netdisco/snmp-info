@@ -356,7 +356,7 @@ sub lldp_if : Tests(10) {
     q(LLDP-V2-MIB takes the ifIndex from the index));
 }
 
-sub lldp_ip : Tests(5) {
+sub lldp_ip : Tests(7) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_ip');
@@ -370,15 +370,32 @@ sub lldp_ip : Tests(5) {
   $test->{info}{store}{lldp_rman_addr}
     = {'0.6.1.2.16.0.0.0.0.0.0.0.0.0.0.255.255.1.2.3.4' => 'unknown'};
 
+  cmp_deeply($test->{info}->lldp_ip(), {'0.6.1' => '0.0.0.0'},
+    q(MAC chassis ID with no IPv4 address returns 0.0.0.0));
+
+  # Shaped from a Huawei CE6810: MAC chassis IDs, some with no address
+  $test->{info}{store}{lldp_rman_addr}
+    = {'356859085.12.1.1.4.192.0.2.21' => 'ifIndex'};
+  $test->{info}{store}{lldp_rem_id_type} = {
+    '356859085.12.1' => 'macAddress',
+    '356859085.13.1' => 'macAddress',
+    '356859085.40.1' => 'local',
+  };
   cmp_deeply($test->{info}->lldp_ip(),
-    {}, q(Address format other than IPv4 returns empty hash));
+    {'356859085.12.1' => '192.0.2.21', '356859085.13.1' => '0.0.0.0'},
+    q(Address kept, MAC chassis without one is 0.0.0.0, others omitted));
+
+  $test->{info}{store}{lldp_rem_id_type} = {'356859085.12.1' => 'local'};
+  cmp_deeply($test->{info}->lldp_ip(), {'356859085.12.1' => '192.0.2.21'},
+    q(Chassis ID other than a MAC adds nothing));
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_ip(), {}, q(No data returns empty hash));
 
   $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10', '22612.2.1.1.2.16.32.1.13.184.0.0.0.0.0.0.0.0.0.0.0.10', '22612.2.1.1.6.6.98.189.31.193.10.19');
-  cmp_deeply($test->{info}->lldp_ip(), {'22612.2.1.1' => '192.0.2.10'},
-    q(LLDP-V2-MIB IPv4 keyed like lldp_if));
+  cmp_deeply($test->{info}->lldp_ip(),
+    {'22612.2.1.1' => '192.0.2.10', '0.17.1.1' => '0.0.0.0'},
+    q(LLDP-V2-MIB IPv4 and MAC chassis keyed like lldp_if));
 }
 
 sub lldp_ipv6 : Tests(5) {
