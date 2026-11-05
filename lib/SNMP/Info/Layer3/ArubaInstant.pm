@@ -114,14 +114,17 @@ sub _radios {
 # on older ones), so each radio owns the addresses from its MAC up to the
 # next radio's MAC on the same AP. The highest radio owns a range as wide
 # as the gap below it, or 16 on a single-radio AP. A WLAN no range holds is
-# left out, not guessed.
+# left out, not guessed. A radio with no MAC may sit inside any other
+# radio's range, so on its AP each radio keeps only the 8 addresses no
+# other radio can start within.
 sub _wlan_radios {
     my $self   = shift;
     my $wlans  = $self->_wlans();
     my $radios = $self->_radios();
-    my %by_ap;
+    my (%by_ap, %unbounded);
     foreach my $iid (keys %$radios) {
         my $radio = $radios->{$iid};
+        $unbounded{ $radio->{ap} } = 1 unless defined $radio->{mac};
         next unless defined $radio->{mac};
         push @{ $by_ap{ $radio->{ap} } }, [_mac_number($radio->{mac}), $iid];
     }
@@ -134,6 +137,7 @@ sub _wlan_radios {
             my $gap = $i > 0 ? $start - $sorted[$i - 1][0] : 0;
             my $end = $i < $#sorted ? $sorted[$i + 1][0]
                 : $start + ($gap > 0 ? $gap : 16);
+            $end = $start + 8 if $unbounded{$ap} && $end > $start + 8;
             push @{ $ranges{$ap} }, [$start, $end, $iid];
         }
     }
@@ -429,7 +433,10 @@ port index and the WLAN number. A WLAN's BSSID counts up from its radio's
 MAC address, so each radio owns the addresses from its MAC address up to
 the next radio's MAC address on the same AP. The highest radio owns a range
 as wide as the gap below it, or 16 addresses on a single-radio AP. A WLAN
-no range holds is omitted.
+no range holds is omitted. When a radio on the AP reports no MAC address,
+its addresses could lie in any other radio's range, so each radio on that
+AP keeps only the 8 addresses from its own MAC address, the fewest Aruba
+assigns a radio.
 
 =head2 Radio channel and power
 

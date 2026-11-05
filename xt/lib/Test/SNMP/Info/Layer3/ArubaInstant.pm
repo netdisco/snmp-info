@@ -222,6 +222,42 @@ sub i_ssidlist : Tests(10) {
         'i_ssidlist__every_key_minus_wlan__is_a_port');
 }
 
+# Radio 5.0's MAC sits between 5.1's and 5.2's. Without it, 5.1's range
+# would run up to 5.2's MAC and take 5.0's WLAN and clients.
+sub wlan_radios__middle_radio_mac_missing__only_its_wlans_omitted : Tests(8) {
+    my $test = shift;
+    my $info = $test->{info};
+    $test->_load_radios();
+    $info->{store}{instant_radio_mac}{'2.0.0.0.0.5.1'} = _mac('02:00:00:00:03:e0');
+    $info->{store}{instant_radio_mac}{'2.0.0.0.0.5.2'} = _mac('02:00:00:00:04:00');
+    delete $info->{store}{instant_radio_mac}{'2.0.0.0.0.5.0'};
+    $info->{store}{instant_wlan_mac}{'2.0.0.0.0.5.0'} = _mac('02:00:00:00:03:f1');
+    $info->{store}{instant_wlan_mac}{'2.0.0.0.0.5.1'} = _mac('02:00:00:00:03:e1');
+    $info->{store}{instant_wlan_mac}{'2.0.0.0.0.5.2'} = _mac('02:00:00:00:04:01');
+    $info->{store}{instant_wlan_ssid}{"2.0.0.0.0.5.$_"} = 'Tri WLAN' foreach 0 .. 2;
+    $info->{store}{instant_client_bssid}{'2.0.0.0.0.11'} = _mac('02:00:00:00:03:f1');
+    $info->{store}{instant_client_bssid}{'2.0.0.0.0.12'} = _mac('02:00:00:00:03:e1');
+
+    my $ssids = $info->i_ssidlist();
+    ok(!exists $ssids->{'2.0.0.0.0.5.1.0.0'},
+        'wlan_radios__middle_radio_mac_missing__its_wlan_not_on_radio_below');
+    ok(!grep({/^2\.0\.0\.0\.0\.5\.\d\.0\.0$/} keys %$ssids),
+        'wlan_radios__middle_radio_mac_missing__its_wlan_on_no_radio');
+    ok(!exists $info->bp_index()->{'02:00:00:00:03:f1'},
+        'wlan_radios__middle_radio_mac_missing__its_bssid_not_bridged');
+    ok(!exists $info->fw_mac()->{'instant.2.0.0.0.0.11'},
+        'wlan_radios__middle_radio_mac_missing__its_client_omitted');
+    is($ssids->{'2.0.0.0.0.5.1.0.1'}, 'Tri WLAN',
+        'wlan_radios__middle_radio_mac_missing__radio_below_keeps_own_wlan');
+    is($ssids->{'2.0.0.0.0.5.2.0.2'}, 'Tri WLAN',
+        'wlan_radios__middle_radio_mac_missing__radio_above_keeps_own_wlan');
+    is($info->bp_index()->{ $info->fw_port()->{'instant.2.0.0.0.0.12'} },
+        '2.0.0.0.0.5.1.0',
+        'wlan_radios__middle_radio_mac_missing__radio_below_keeps_client');
+    is($ssids->{'2.0.0.0.0.1.0.0.0'}, 'Test WLAN 1',
+        'wlan_radios__radio_mac_missing__other_aps_still_mapped');
+}
+
 sub i_ssidmac : Tests(2) {
     my $info = shift->{info};
     is($info->i_ssidmac()->{'2.0.0.0.0.1.0.0.0'}, '02:00:00:00:01:f0', 'SSID and BSSID share index on radio0');
