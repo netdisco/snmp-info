@@ -463,6 +463,145 @@ sub decode_name__length_prefixed__returns_name_and_rest : Tests(4) {
     [], q(An empty index returns nothing));
 }
 
+# MPLS-L3VPN-STD-MIB as FRR bgpd serves it: the VRF name has no length arc,
+# and each integer index after it is four arcs, one per byte, big-endian.
+# red is on ifIndex 30296 (0.0.118.88), blue on 30293 (0.0.118.85).
+my %FRR_NAME_IID = (
+  red  => '114.101.100',
+  blue => '98.108.117.101',
+);
+
+sub _prime_frr_tables {
+  my $test = shift;
+  my %opt  = @_;
+
+  my %names = (%FRR_NAME_IID, %{ $opt{names} || {} });
+  my @iids  = values %names;
+  my %rd    = map { $_ => q{} } @iids;
+  $rd{ $FRR_NAME_IID{red} }  = '65090:1';
+  $rd{ $FRR_NAME_IID{blue} } = '65090:2';
+
+  $test->{info}{_vrf_configured} = $opt{configured} if exists $opt{configured};
+  $test->{info}{"_$_"} = 1
+    for qw/vrf_l3vpn_rd vrf_l3vpn_descr vrf_l3vpn_oper vrf_l3vpn_rt
+    vrf_l3vpn_if/;
+  $test->{info}{store}{vrf_l3vpn_rd}    = \%rd;
+  $test->{info}{store}{vrf_l3vpn_descr} = { reverse %names };
+  $test->{info}{store}{vrf_l3vpn_oper}  = { map { $_ => 'up' } @iids };
+  $test->{info}{store}{vrf_l3vpn_rt}    = {
+    "$FRR_NAME_IID{blue}.0.0.0.1.1" => '65090:2',
+    "$FRR_NAME_IID{blue}.0.0.0.2.2" => '65090:20',
+    "$FRR_NAME_IID{red}.0.0.0.2.3"  => '65090:1',
+    %{ $opt{rt} || {} },
+  };
+  $test->{info}{store}{vrf_l3vpn_if} = {
+    "$FRR_NAME_IID{red}.0.0.118.88"  => 'active',
+    "$FRR_NAME_IID{blue}.0.0.118.85" => 'active',
+    %{ $opt{if} || {} },
+  };
+  return;
+}
+
+sub decode_instance__unprefixed_name__matched_and_integers_unpacked
+  : Tests(5) {
+  my $test = shift;
+
+  $test->_prime_frr_tables();
+  my $info = $test->{info};
+  cmp_deeply([$info->_vrf_decode_instance('114.101.100.0.0.118.88', 1, 0)],
+    ['red', 30296], q(Name then the ifIndex rebuilt from four arcs));
+  cmp_deeply([$info->_vrf_decode_instance('98.108.117.101.0.0.0.2.2', 1, 1)],
+    ['blue', 2, 2], q(Name, the rtIndex, then the type arc));
+  cmp_deeply([$info->_vrf_decode_instance('114.101.100', 0, 0)],
+    ['red'], q(The whole index of a VRF table row is the name));
+  cmp_deeply([$info->_vrf_decode_instance('103.114.101.121.0.0.0.1', 1, 0)],
+    [], q(A name the VRF table does not serve returns nothing));
+  cmp_deeply([$info->_vrf_decode_instance('3.114.101.100.7', 1, 0)],
+    ['red', 7], q(A length-prefixed index decodes as before));
+}
+
+sub vrf_instances__frr_unprefixed_index__lists_each_vrf : Tests(3) {
+  my $test = shift;
+
+  $test->_prime_frr_tables();
+  my $instances = $test->{info}->vrf_instances();
+
+  cmp_deeply([sort keys %$instances], [qw/blue default red/],
+    q(Keys are the served names plus default));
+  cmp_deeply(
+    $instances->{red},
+    superhashof({
+      name        => 'red',
+      description => 'red',
+      rd          => '65090:1',
+      listed_by   => 'device',
+    }),
+    q(red keeps its description and RD)
+  );
+  is($instances->{blue}{rd}, '65090:2', q(blue keeps its RD));
+}
+
+sub vrf_instances__frr_route_targets__split_by_type : Tests(4) {
+  my $test = shift;
+
+  $test->_prime_frr_tables();
+  my $instances = $test->{info}->vrf_instances();
+
+  cmp_deeply($instances->{red}{rt_import}, ['65090:1'],
+    q(A target typed both is an import target));
+  cmp_deeply($instances->{red}{rt_export}, ['65090:1'],
+    q(... and an export target));
+  cmp_deeply($instances->{blue}{rt_import}, ['65090:2'],
+    q(An import target is only imported));
+  cmp_deeply($instances->{blue}{rt_export}, ['65090:20'],
+    q(An export target is only exported));
+}
+
+sub i_vrf__frr_unprefixed_index__maps_ifindex_to_name : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_frr_tables();
+  cmp_deeply($test->{info}->i_vrf(), {30296 => 'red', 30293 => 'blue'},
+    q(ifIndex rebuilt from four arcs maps to the VRF name));
+}
+
+sub vrf_instances_complete__frr_served_and_mapped__is_1 : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_frr_tables(configured => 2);
+  is($test->{info}->vrf_instances_complete(), 1,
+    q(Both configured VRFs are listed with their ports));
+}
+
+# red2 starts with red's arcs, and an integer whose top byte is printable
+# continues red's arcs as if they spelled red2
+sub vrf_instances__frr_name_prefix_of_another__rows_split_by_shape
+  : Tests(4) {
+  my $test = shift;
+
+  $test->_prime_frr_tables(
+    names => { red2 => '114.101.100.50' },
+    rt    => {
+      '114.101.100.50.0.0.0.1.1' => '65090:5',
+      '114.101.100.50.0.0.1.2'   => '65090:6',
+    },
+    if => {
+      '114.101.100.50.0.0.0.7' => 'active',
+      '114.101.100.50.0.0.1'   => 'active',
+    },
+  );
+  my $instances = $test->{info}->vrf_instances();
+  my $members   = $test->{info}->i_vrf();
+
+  cmp_deeply($instances->{red2}{rt_import}, ['65090:5'],
+    q(red2's row of five arcs after its name is red2's));
+  cmp_deeply($instances->{red}{rt_export}, ['65090:1', '65090:6'],
+    q(red's row with a printable top byte stays red's));
+  is($members->{7}, 'red2', q(red2's port is red2's));
+  is($members->{838860801}, 'red',
+    q(red's port with a printable top byte stays red's));
+}
+
 sub vrf_private_defaults : Tests(8) {
   my $test = shift;
 
