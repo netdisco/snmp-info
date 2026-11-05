@@ -127,7 +127,7 @@ sub _index_factor_cache {
   return $test->{info}->index_factor();
 }
 
-sub index_factor : Tests(6) {
+sub index_factor : Tests(8) {
   my $test = shift;
 
   can_ok($test->{info}, 'index_factor');
@@ -168,6 +168,15 @@ sub index_factor : Tests(6) {
       '6.2.2.023'
     ),
     128, q(ERS 5650 on 6.2 uses 128));
+
+  # No software version in sysDescr and no s5AgInfoVer
+  my $index_factor;
+  warnings_are {
+    $index_factor = $test->_index_factor_cache(
+      '.1.3.6.1.4.1.45.3.81.2',
+      'Ethernet Routing Switch 5928GTS-PWR+  HW:01 FW:7.0.0.4', undef);
+  } [], q(No software version raises no warning);
+  is($index_factor, 64, q(ERS 5928 without a version is taken as before 6));
 }
 
 sub interfaces : Tests(1) {
