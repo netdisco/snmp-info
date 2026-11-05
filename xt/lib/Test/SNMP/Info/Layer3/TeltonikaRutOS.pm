@@ -51,11 +51,12 @@ sub setup : Tests(setup) {
 }
 
 sub _set_device {
-    my ($test, $id) = @_;
+    my ($test, $id, $description) = @_;
     $test->{info}->clear_cache;
     $test->{info}->cache({
         '_layers'      => 4,
-        '_description' => 'Linux test-router 5.10.0 #1 SMP x86_64',
+        '_description' => $description
+            // 'Linux test-router 5.10.0 #1 SMP x86_64',
         '_id'          => $id,
         'store'        => {},
     });
@@ -75,7 +76,7 @@ sub _set_oid_values {
     );
 }
 
-sub device_type : Tests(+16) {
+sub device_type : Tests(+19) {
     my $test = shift;
 
     my @modern_products = qw(
@@ -122,6 +123,22 @@ sub device_type : Tests(+16) {
         'Neighboring Net-SNMP product keeps its generic class');
     is_deeply($test->mock_session->{teltonika_get_calls}, [],
         'Neighboring Net-SNMP product receives no Teltonika probes');
+
+    # TSW212 on TSW2_R_00.01.02.2 reports the PROFINET enterprise
+    # (PROFIBUS Nutzerorganisation) as its sysObjectID.
+    my $tsw212_descr = 'TSW212 V1.0               TSW21200XXXX         '
+        . '6001244780           1 V  1  0  0';
+    _set_device($test, '.1.3.6.1.4.1.24686', $tsw212_descr);
+    _set_oid_values($test, { $PRODUCT_OID => 'TSW21200XXXX' });
+    is($test->{info}->device_type(), 'SNMP::Info::Layer3::TeltonikaRutOS',
+        'TSW212 with the PROFINET sysObjectID is detected by product code');
+
+    _set_device($test, '.1.3.6.1.4.1.24686', 'PROFINET IO device V2.1');
+    _set_oid_values($test, {});
+    isnt($test->{info}->device_type(), 'SNMP::Info::Layer3::TeltonikaRutOS',
+        'Other PROFINET device is not taken for a Teltonika switch');
+    is_deeply($test->mock_session->{teltonika_get_calls}, [],
+        'Other PROFINET device receives no Teltonika probes');
 }
 
 sub vendor : Tests(1) {

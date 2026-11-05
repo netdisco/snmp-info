@@ -2657,10 +2657,14 @@ sub device_type {
     # Teltonika devices commonly report Net-SNMP's generic sysObjectID, so
     # identify current RutOS devices by the product code in Teltonika's
     # enterprise tree. Legacy RUT9xx detection remains in the enterprise maps
-    # and sysDescr checks below.
+    # and sysDescr checks below. TSW212 switches report the PROFINET
+    # enterprise (24686, PROFIBUS Nutzerorganisation) instead; other PROFINET
+    # devices share it, so probe only when sysDescr names a TSW switch.
     if (
         defined($id)
-        && ( $soid eq '.1.3.6.1.4.1.8072.3.2.10' || $id eq '48690' )
+        && (   $soid eq '.1.3.6.1.4.1.8072.3.2.10'
+            || $id eq '48690'
+            || ( $soid eq '.1.3.6.1.4.1.24686' && $desc =~ /^TSW\d/ ) )
         )
     {
         my $product_code
