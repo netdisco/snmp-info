@@ -39,7 +39,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.985000';
+$VERSION = '3.985001';
 
 # This will be filled in with the device's index into the EntPhysicalEntry
 # table by the serial() function.

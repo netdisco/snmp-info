@@ -38,7 +38,7 @@ use SNMP::Info;
 
 our ( $VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE );
 
-$VERSION = '3.985000';
+$VERSION = '3.985001';
 
 %MIBS = (
     'MPLS-L3VPN-STD-MIB' => 'mplsL3VpnConfiguredVrfs',
