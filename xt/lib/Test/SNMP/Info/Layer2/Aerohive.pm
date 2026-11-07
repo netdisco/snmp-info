@@ -243,6 +243,33 @@ sub i_ssidlist : Tests(4) {
   cmp_deeply($test->{info}->i_ssidlist(), {}, q(No data returns empty hash));
 }
 
+# A radio missing from ahRadioAttributeTable leaves its WLANs as their own
+# ports; no other radio takes them.
+sub wlan_radios__one_radio_missing__keeps_other_radio : Tests(3) {
+  my $test = shift;
+
+  $test->{info}{store}{i_80211channel} = {7 => 36};
+
+  cmp_deeply(
+    $test->{info}->interfaces(),
+    { 6 => 'wifi0', 7 => 'wifi1', 10 => 'eth0', 15 => 'wifi0.1',
+      16 => 'wifi0.2', 33 => 'mgt0', 34 => 'mgt0.1' },
+    q(WLANs of the missing radio stay ports; wifi1.1 joins wifi1)
+  );
+  cmp_deeply(
+    [sort keys %{$test->{info}->i_ssidlist()}],
+    ['15.15', '16.16', '34.34', '7.20'],
+    q(Only wifi1's SSID is keyed to a radio)
+  );
+  cmp_deeply(
+    $test->{info}->cd11_port(),
+    { '15.6.128.150.177.92.153.130' => 'wifi0.1',
+      '20.6.40.106.186.61.150.231'  => 'wifi1',
+      '20.6.96.190.181.42.99.151'   => 'wifi1' },
+    q(Clients of the missing radio stay on their WLAN port)
+  );
+}
+
 sub i_ssidmac : Tests(3) {
   my $test = shift;
 
