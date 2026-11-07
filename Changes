@@ -1,5 +1,9 @@
 Version 3.985002
 
+  [ENHANCEMENTS]
+
+  * #687 SONiC: new class for community and Enterprise SONiC switches (#541)
+
   [BUG FIXES]
 
   * #685 VRF: list FRR's VRFs, which MPLS-L3VPN-STD-MIB indexes without a
