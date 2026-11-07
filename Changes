@@ -14,6 +14,8 @@ Version 3.985002
   * #688 Fortinet: read FortiSwitch LLDP neighbors whose columns carry
     different time marks, and report the chassis MAC; LLDP reads MAC chassis
     IDs served as text (#569)
+  * #689 Huawei: report node VLANs from hwdbDynFdbTable, which Huawei
+    switches serve in place of dot1qTpFdbTable (#686)
 
 Version 3.985001 (2026-11-04)
 
