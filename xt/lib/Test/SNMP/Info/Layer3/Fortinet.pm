@@ -131,6 +131,141 @@ sub _prime_fortiswitch_lldp {
   };
 }
 
+# Neighbor rows of a FortiLink-managed FortiSwitch, whose chassis ID column
+# came back under a later time mark than the other neighbor columns
+my $TIME_MARK         = '1805327064';
+my $LATER_TIME_MARK   = '1805354436';
+my %FORTILINK_CHASSIS = (
+  '79.13' => '020000a10001',
+  '79.14' => '020000a10001',
+  '80.11' => '020000b20001',
+  '80.12' => '020000b20101',
+);
+
+sub _prime_fortilink_lldp {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->{"_$_"} = 1 for qw/lldp_rem_id_type lldp_rem_id lldp_rem_pid/;
+  $info->{store}{lldp_rem_id_type}
+    = {map { ("$TIME_MARK.$_" => 'macAddress') } keys %FORTILINK_CHASSIS};
+  $info->{store}{lldp_rem_pid} = {
+    "$TIME_MARK.79.13" => 'port55',
+    "$TIME_MARK.79.14" => 'port56',
+    "$TIME_MARK.80.11" => 'port24',
+    "$TIME_MARK.80.12" => 'port24',
+  };
+  $info->{store}{lldp_rem_id} = {
+    map { ("$LATER_TIME_MARK.$_" => pack('H*', $FORTILINK_CHASSIS{$_})) }
+      keys %FORTILINK_CHASSIS
+  };
+  return;
+}
+
+sub lldp_rem__fortiswitch_columns_under_different_time_marks__share_keys
+  : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_prime_fortiswitch();
+  $test->_prime_fortilink_lldp();
+  my @keys = map {"0.$_"} sort keys %FORTILINK_CHASSIS;
+
+  cmp_deeply(
+    $info->lldp_id(),
+    {
+      '0.79.13' => '02:00:00:a1:00:01',
+      '0.79.14' => '02:00:00:a1:00:01',
+      '0.80.11' => '02:00:00:b2:00:01',
+      '0.80.12' => '02:00:00:b2:01:01',
+    },
+    q(lldp_id__fortiswitch_columns_under_different_time_marks__joins)
+  );
+  cmp_deeply([sort keys %{$info->lldp_ip()}], \@keys,
+    q(lldp_ip__fortiswitch__keys_match_lldp_id));
+  cmp_deeply([sort keys %{$info->_lldp_rem('lldp_rem_pid')}], \@keys,
+    q(lldp_rem__fortiswitch__every_column_drops_the_time_mark));
+}
+
+sub lldp_rem__fortiswitch_one_neighbor_under_two_time_marks__later_wins
+  : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_prime_fortiswitch();
+  $test->_prime_fortilink_lldp();
+  $info->{store}{lldp_rem_pid}{"$LATER_TIME_MARK.79.13"} = 'port57';
+  is($info->_lldp_rem('lldp_rem_pid')->{'0.79.13'}, 'port57',
+    q(lldp_rem__one_neighbor_under_two_time_marks__later_row_kept));
+}
+
+# FortiSwitch 7.4.6 serves the chassis IDs as text, every column under one
+# time mark
+sub lldp_id__fortiswitch_text_chassis_ids__read : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_prime_fortiswitch();
+  $test->_prime_fortilink_lldp();
+  $info->{store}{lldp_rem_id} = {
+    map {
+      my $hex = $FORTILINK_CHASSIS{$_};
+      ("$TIME_MARK.$_" => join(':', $hex =~ /(..)/g))
+    } keys %FORTILINK_CHASSIS
+  };
+  cmp_deeply(
+    $info->lldp_id(),
+    {
+      '0.79.13' => '02:00:00:a1:00:01',
+      '0.79.14' => '02:00:00:a1:00:01',
+      '0.80.11' => '02:00:00:b2:00:01',
+      '0.80.12' => '02:00:00:b2:01:01',
+    },
+    q(lldp_id__fortiswitch_text_chassis_ids__read)
+  );
+
+  $info->{_mac}              = pack('H*', '020000a10002');
+  $info->{_lldp_loc_id_type} = 'macAddress';
+  $info->{_lldp_loc_id_os}   = '02:00:00:a1:00:01';
+  is($info->mac(), '02:00:00:a1:00:01',
+    q(mac__fortiswitch_text_chassis_id__returns_it));
+}
+
+sub lldp_rem__fortigate__keeps_the_time_mark : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_prime_fortilink_lldp();
+  cmp_deeply(
+    [sort keys %{$info->_lldp_rem('lldp_rem_pid')}],
+    [map {"$TIME_MARK.$_"} sort keys %FORTILINK_CHASSIS],
+    q(lldp_rem__fortigate__keys_unchanged)
+  );
+}
+
+sub mac : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'mac');
+
+  $info->{_mac} = pack('H*', '020000a10002');
+  is($info->mac(), '02:00:00:a1:00:02',
+    q(mac__fortigate__returns_interface_address));
+
+  $test->_prime_fortiswitch();
+  $info->{_mac}              = pack('H*', '020000a10002');
+  $info->{_lldp_loc_id_type} = 'macAddress';
+  $info->{_lldp_loc_id_os}   = pack('H*', '020000a10001');
+  is($info->mac(), '02:00:00:a1:00:01',
+    q(mac__fortiswitch__returns_lldp_chassis_id));
+
+  $info->{_lldp_loc_id_type} = 'local';
+  $info->{_lldp_loc_id_os}   = 'S148FFTF00000001';
+  is($info->mac(), '02:00:00:a1:00:02',
+    q(mac__fortiswitch_chassis_id_not_a_mac__returns_interface_address));
+}
+
 sub fortiswitch_identity : Tests(4) {
   my $test = shift;
 
@@ -157,9 +292,8 @@ sub lldp_ip : Tests(3) {
   cmp_deeply(
     $test->{info}->lldp_ip(),
     {
-      (map { $_ => '0.0.0.0' }
-          qw/998707741.10.1 998707741.17.2 998707741.55.6 998707741.55.7/),
-      '998707741.22.3' => '10.10.20.38',
+      (map { $_ => '0.0.0.0' } qw/0.10.1 0.17.2 0.55.6 0.55.7/),
+      '0.22.3' => '10.10.20.38',
     },
     q(lldp_ip__fortiswitch__uses_chassis_address_or_0.0.0.0)
   );
