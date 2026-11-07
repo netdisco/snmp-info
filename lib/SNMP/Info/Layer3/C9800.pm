@@ -28,7 +28,7 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 @SNMP::Info::Layer3::C9800::EXPORT_OK = qw//;
 
-$VERSION = '3.985001';
+$VERSION = '3.985002';
 
 %MIBS = (
     %SNMP::Info::Layer2::Airespace::MIBS,

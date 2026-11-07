@@ -40,7 +40,7 @@ use SNMP::Info::VRF;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.985001';
+$VERSION = '3.985002';
 
 %MIBS = ( 'RAPID-CITY' => 'rapidCity' );
 
