@@ -71,7 +71,7 @@ $VERSION = '3.985002';
     'ah_i_name'     => 'ahIfName',
 
     # AH-INTERFACE-MIB::ahAssociationTable
-    'cd11_txrate'      => 'ahClientLastTxRate',
+    'ah_c_txrate'      => 'ahClientLastTxRate',
     'cd11_uptime'      => 'ahClientLinkUptime',
     'cd11_sigstrength' => 'ahClientRSSI',
     'cd11_rxpkt'       => 'ahClientRxDataFrames',
@@ -157,13 +157,38 @@ sub model {
     return;
 }
 
+# A WLAN interface is named <radio name>.<n>, and ahRadioAttributeTable has
+# a row for each radio. No column or ifStackTable gives the parent.
+sub _wlan_radios {
+    my $aerohive = shift;
+
+    my $names    = $aerohive->ah_i_name()      || {};
+    my $channels = $aerohive->i_80211channel() || {};
+
+    my %radio_by_name;
+    foreach my $iid ( keys %$channels ) {
+        my $name = $names->{$iid};
+        $radio_by_name{$name} = $iid if defined $name;
+    }
+
+    my %wlan_radios;
+    foreach my $iid ( keys %$names ) {
+        next unless $names->{$iid} =~ /^(.+)\.\d+$/;
+        my $radio = $radio_by_name{$1};
+        $wlan_radios{$iid} = $radio if defined $radio;
+    }
+    return \%wlan_radios;
+}
+
 sub interfaces {
     my $aerohive   = shift;
     my $interfaces = $aerohive->i_index();
     my $i_descr    = $aerohive->ah_i_name();
+    my $wlans      = $aerohive->_wlan_radios();
 
     my %if;
     foreach my $iid ( keys %$interfaces ) {
+        next if exists $wlans->{$iid};
         my $descr = $i_descr->{$iid};
         next unless defined $descr;
         $if{$iid} = $descr if ( defined $descr and length $descr );
@@ -177,13 +202,15 @@ sub i_ssidlist {
     my $partial  = shift;
 
     my $ssids = $aerohive->ah_i_ssidlist($partial) || {};
+    my $wlans = $aerohive->_wlan_radios();
 
     my %i_ssidlist;
     foreach my $iid ( keys %$ssids ) {
         my $ssid = $ssids->{$iid};
         next if $ssid =~ /N\/A/i;
 
-        $i_ssidlist{$iid} = $ssid;
+        my $port = $wlans->{$iid} // $iid;
+        $i_ssidlist{"$port.$iid"} = $ssid;
     }
     return \%i_ssidlist;
 }
@@ -196,11 +223,12 @@ sub i_ssidmac {
     my $macs  = $aerohive->i_mac($partial)      || {};
 
     my %i_ssidmac;
-    foreach my $iid ( keys %$ssids ) {
-        my $mac = $macs->{$iid};
+    foreach my $key ( keys %$ssids ) {
+        my ($wlan) = $key =~ /(\d+)$/;
+        my $mac = $macs->{$wlan};
         next unless $mac;
 
-        $i_ssidmac{$iid} = $mac;
+        $i_ssidmac{$key} = $mac;
     }
     return \%i_ssidmac;
 }
@@ -214,16 +242,34 @@ sub _ah_association_index {
     return ( $ifindex, join( ':', map { sprintf "%02x", $_ } @values ) );
 }
 
+sub cd11_txrate {
+    my $aerohive = shift;
+    my $partial  = shift;
+
+    my $rates = $aerohive->ah_c_txrate($partial) || {};
+
+    # Every row is kept, even with no usable rate: the client, forwarding
+    # and ARP methods take their keys from this one.
+    my %cd11_txrate;
+    foreach my $idx ( keys %$rates ) {
+        my $kbps = $rates->{$idx};
+        $cd11_txrate{$idx}
+            = ( defined $kbps and $kbps =~ /^\d+$/ ) ? [ $kbps / 1000 ] : [];
+    }
+    return \%cd11_txrate;
+}
+
 sub cd11_port {
     my $aerohive = shift;
 
     my $cd11_txrate = $aerohive->cd11_txrate();
     my $interfaces  = $aerohive->interfaces();
+    my $wlans       = $aerohive->_wlan_radios();
 
     my %ret;
     foreach ( keys %$cd11_txrate ) {
         my ( $ifindex, $mac ) = _ah_association_index($_);
-        $ret{$_} = $interfaces->{$ifindex};
+        $ret{$_} = $interfaces->{ $wlans->{$ifindex} // $ifindex };
     }
     return \%ret;
 }
@@ -250,13 +296,14 @@ sub bp_index {
     # netdisco can't find bp_index mappings & will not registerer
     # any clients. netdisco/netdisco#496
     my $i_index = $aerohive->load_i_index($partial) || {};
+    my $wlans   = $aerohive->_wlan_radios();
 
     my %bp_index;
     foreach my $iid ( keys %$i_index ) {
         my $index = $i_index->{$iid};
         next unless defined $index;
 
-        $bp_index{$index} = $iid;
+        $bp_index{$index} = $wlans->{$iid} // $iid;
     }
 
     return \%bp_index;
@@ -452,12 +499,18 @@ to a hash.
 
 =item $aerohive->i_ssidlist()
 
-Returns reference to hash. SSID's recognized by the radio interface.
+Returns reference to hash. SSIDs served by each radio, keyed
+C<radio ifIndex.WLAN ifIndex>. A WLAN interface belongs to the radio named
+before its dot (C<wifi1.2> to C<wifi1>) when that radio has an
+C<ahRadioAttributeTable> row; otherwise the WLAN interface is its own port.
+
+C<ahSSIDName>
 
 =item $aerohive->i_ssidmac()
 
 With the same keys as i_ssidlist, returns the Basic service set
-identification (BSSID), MAC address, the AP is using for the SSID.
+identification (BSSID), MAC address, the AP is using for the SSID: the
+WLAN interface's C<ifPhysAddress>.
 
 =item $aerohive->i_80211channel()
 
@@ -473,9 +526,18 @@ radio interface.
 
 C<ahRadioTxPower>
 
+=item $aerohive->cd11_txrate()
+
+Returns reference to hash. The rate of the last frame sent to each client,
+in Mbps, as a single-element array reference. A client with no usable rate
+gets an empty array reference, so it is still reported.
+
+C<ahClientLastTxRate>, which reports kbps.
+
 =item $aerohive->cd11_port()
 
-Returns radio interfaces.
+Returns reference to hash. The radio interface each client is associated
+with.
 
 =item $aerohive->cd11_mac()
 
@@ -490,12 +552,14 @@ Returns client radio interface MAC addresses.
 =item $aerohive->interfaces()
 
 Only return interfaces which have an entry in ahIfName as well. This halts
-the creation of ghost interfaces.
+the creation of ghost interfaces. WLAN interfaces that belong to a radio
+are not returned; their SSIDs and clients are on the radio's port.
 
 =item $aerohive->bp_index()
 
 Simulates bridge MIB by returning reference to a hash mapping i_index() to
-the interface iid.
+the interface iid. A WLAN interface that belongs to a radio maps to the
+radio, so its clients are placed on the radio's port.
 
 =item $aerohive->qb_fw_port()
 
