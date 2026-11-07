@@ -51,11 +51,12 @@ sub setup : Tests(setup) {
 }
 
 sub _set_device {
-    my ($test, $id) = @_;
+    my ($test, $id, $description) = @_;
     $test->{info}->clear_cache;
     $test->{info}->cache({
         '_layers'      => 4,
-        '_description' => 'Linux test-router 5.10.0 #1 SMP x86_64',
+        '_description' => $description
+            // 'Linux test-router 5.10.0 #1 SMP x86_64',
         '_id'          => $id,
         'store'        => {},
     });
@@ -75,7 +76,7 @@ sub _set_oid_values {
     );
 }
 
-sub device_type : Tests(+16) {
+sub device_type : Tests(+19) {
     my $test = shift;
 
     my @modern_products = qw(
@@ -122,6 +123,22 @@ sub device_type : Tests(+16) {
         'Neighboring Net-SNMP product keeps its generic class');
     is_deeply($test->mock_session->{teltonika_get_calls}, [],
         'Neighboring Net-SNMP product receives no Teltonika probes');
+
+    # TSW212 on TSW2_R_00.01.02.2 reports the PROFINET enterprise
+    # (PROFIBUS Nutzerorganisation) as its sysObjectID.
+    my $tsw212_descr = 'TSW212 V1.0               TSW21200XXXX         '
+        . '6001244780           1 V  1  0  0';
+    _set_device($test, '.1.3.6.1.4.1.24686', $tsw212_descr);
+    _set_oid_values($test, { $PRODUCT_OID => 'TSW21200XXXX' });
+    is($test->{info}->device_type(), 'SNMP::Info::Layer3::TeltonikaRutOS',
+        'TSW212 with the PROFINET sysObjectID is detected by product code');
+
+    _set_device($test, '.1.3.6.1.4.1.24686', 'PROFINET IO device V2.1');
+    _set_oid_values($test, {});
+    isnt($test->{info}->device_type(), 'SNMP::Info::Layer3::TeltonikaRutOS',
+        'Other PROFINET device is not taken for a Teltonika switch');
+    is_deeply($test->mock_session->{teltonika_get_calls}, [],
+        'Other PROFINET device receives no Teltonika probes');
 }
 
 sub vendor : Tests(1) {
@@ -182,6 +199,29 @@ sub uptime : Tests(1) {
 }
 
 
+# The pVlanTable of a TSW202 on TSW2_R_00.01.06.3 and 00.01.10.4: the
+# access ports untagged in VLAN 1400, the SFP uplinks untagged in VLAN 1
+# and tagged in 1400. A VLAN with no ports of a kind reads "None".
+my %TSW_VLAN_STORE = (
+    'teltonika_vlan_name' => { 1 => 'vlan1', 2 => 'vlan2' },
+    'teltonika_vlan_id'   => { 1 => 1,       2 => 1400 },
+    'teltonika_vlan_untagged' => {
+        1 => 'sfp1:u sfp2:u',
+        2 => join( ' ', map {"port$_:u"} 1 .. 8 ),
+    },
+    'teltonika_vlan_tagged' => { 1 => 'None', 2 => 'sfp1:t sfp2:t' },
+);
+
+my %TSW_NO_VLAN_TABLE = (
+    'teltonika_vlan_name'     => {},
+    'teltonika_vlan_id'       => {},
+    'teltonika_vlan_untagged' => {},
+    'teltonika_vlan_tagged'   => {},
+);
+
+# ifIndex 3 to 10 are port1 to port8, 11 and 12 the SFP ports.
+my @TSW_ACCESS_IFINDEX = ( 3 .. 10 );
+
 # Shaped as a TSW202: ifDescr numbers port1 to sfp2 from ifIndex 3, and
 # the Teltonika port table numbers the same ports from 1, as the bridge does.
 sub _tsw_cache {
@@ -193,16 +233,29 @@ sub _tsw_cache {
         13 => 'br0', 14 => 'br0.1', 15 => 'br0.1400',
     );
     $info->cache({
-        '_i_index'             => 1,
-        '_i_description'       => 1,
-        '_teltonika_port_name' => 1,
+        '_i_index'                 => 1,
+        '_i_description'           => 1,
+        '_teltonika_port_name'     => 1,
+        '_teltonika_vlan_name'     => 1,
+        '_teltonika_vlan_id'       => 1,
+        '_teltonika_vlan_untagged' => 1,
+        '_teltonika_vlan_tagged'   => 1,
         'store' => {
             'i_index'       => { map { $_ => $_ } keys %i_description },
             'i_description' => \%i_description,
             'teltonika_port_name' =>
                 { map { ( $_ + 1 ) => $ports[$_] } 0 .. $#ports },
+            %TSW_VLAN_STORE,
             %store,
         },
+    });
+}
+
+sub _prime_qbridge {
+    my ( $info, %store ) = @_;
+    $info->cache({
+        ( map { ( "_$_" => 1 ) } keys %store ),
+        'store' => \%store,
     });
 }
 
@@ -233,6 +286,129 @@ sub bp_index : Tests(4) {
     });
     is_deeply( $info->bp_index(), { 1 => 7, 2 => 8 },
         'BRIDGE-MIB dot1dBasePortIfIndex is used whenever it is served' );
+}
+
+# The RUTX pVlanTable as Teltonika documents it, at the TSW column OIDs:
+# pVlanNum where TSW has pVlanName, pVlanPorts where TSW has pVlanVID, and
+# pVlanVID where TSW has pVlanPortsUntag. No RUTX walk was available.
+my %RUTX_VLAN_STORE = (
+    'teltonika_vlan_name'     => { 1 => 1,      2 => 2 },
+    'teltonika_vlan_id'       => { 1 => 'LAN1', 2 => 'LAN2 LAN3' },
+    'teltonika_vlan_untagged' => { 1 => 1,      2 => 20 },
+    'teltonika_vlan_tagged'   => {},
+);
+
+sub v_index : Tests(3) {
+    my $info = shift->{info};
+
+    _tsw_cache($info);
+    is_deeply( $info->v_index(), { 1 => 1, 2 => 1400 },
+        'Each pVlanTable row gives its VLAN ID' );
+
+    _tsw_cache( $info, %RUTX_VLAN_STORE );
+    _prime_qbridge( $info, 'v_name' => { 10 => 'users' } );
+    is_deeply( $info->v_index(), { 10 => 10 },
+        'A RUTX pVlanTable, port lists in place of VLAN IDs, is not read' );
+
+    _tsw_cache( $info, %TSW_NO_VLAN_TABLE );
+    _prime_qbridge( $info, 'v_name' => { 10 => 'users' } );
+    is_deeply( $info->v_index(), { 10 => 10 },
+        'Without pVlanTable rows, Q-BRIDGE VLANs are used' );
+}
+
+sub v_name : Tests(2) {
+    my $info = shift->{info};
+
+    _tsw_cache($info);
+    is_deeply( $info->v_name(), { 1 => 'vlan1', 2 => 'vlan2' },
+        'Each pVlanTable row gives its VLAN name' );
+
+    _tsw_cache( $info, %TSW_NO_VLAN_TABLE );
+    _prime_qbridge( $info, 'v_name' => { 10 => 'users' } );
+    is_deeply( $info->v_name(), { 10 => 'users' },
+        'Without pVlanTable rows, dot1qVlanStaticName is used' );
+}
+
+sub i_vlan : Tests(3) {
+    my $info = shift->{info};
+
+    _tsw_cache($info);
+    is_deeply(
+        $info->i_vlan(),
+        { ( map { $_ => 1400 } @TSW_ACCESS_IFINDEX ), 11 => 1, 12 => 1 },
+        'Each port takes the VLAN it is untagged in as its native VLAN'
+    );
+
+    _tsw_cache( $info,
+        'teltonika_vlan_untagged' =>
+            { 1 => 'port1:u', 2 => 'port1:u port2:u' },
+        'teltonika_vlan_tagged' => { 1 => 'None', 2 => 'None' } );
+    is_deeply( $info->i_vlan(), { 4 => 1400 },
+        'A port untagged in two VLANs has no single native VLAN' );
+
+    _tsw_cache( $info, %TSW_NO_VLAN_TABLE );
+    _prime_qbridge( $info,
+        'bp_index' => { 1 => 3 }, 'qb_i_vlan' => { 1 => 20 } );
+    is_deeply( $info->i_vlan(), { 3 => 20 },
+        'Without pVlanTable rows, dot1qPvid is used' );
+}
+
+sub i_vlan_membership : Tests(5) {
+    my $info = shift->{info};
+
+    _tsw_cache($info);
+    is_deeply(
+        $info->i_vlan_membership(),
+        {   ( map { $_ => [1400] } @TSW_ACCESS_IFINDEX ),
+            11 => [ 1, 1400 ],
+            12 => [ 1, 1400 ],
+        },
+        'Each port is a member of the VLANs it is tagged or untagged in'
+    );
+
+    _tsw_cache( $info,
+        'teltonika_vlan_untagged' => { 1 => 'port9:u port1', 2 => 'None' },
+        'teltonika_vlan_tagged'   => { 1 => 'sfp1:u', 2 => 'sfp2:t' } );
+    is_deeply( $info->i_vlan_membership(), { 12 => [1400] },
+        'A token naming no port, or lacking its column suffix, is left out' );
+
+    _tsw_cache( $info,
+        'teltonika_vlan_untagged' => { 1 => 'None', 2 => 'None' },
+        'teltonika_vlan_tagged'   => { 1 => 'None', 2 => 'None' } );
+    is_deeply( $info->i_vlan_membership(), {},
+        'VLANs with no ports give no memberships' );
+
+    _tsw_cache( $info, %RUTX_VLAN_STORE );
+    _prime_qbridge( $info,
+        'bp_index' => { 1 => 3 }, 'qb_cv_egress' => { '0.20' => "\x80" } );
+    is_deeply( $info->i_vlan_membership(), { 3 => [20] },
+        'A RUTX pVlanTable leaves memberships to Q-BRIDGE' );
+
+    _tsw_cache( $info, %TSW_NO_VLAN_TABLE );
+    _prime_qbridge( $info,
+        'bp_index' => { 1 => 3 }, 'qb_cv_egress' => { '0.20' => "\x80" } );
+    is_deeply( $info->i_vlan_membership(), { 3 => [20] },
+        'Without pVlanTable rows, Q-BRIDGE egress ports are used' );
+}
+
+sub i_vlan_membership_untagged : Tests(2) {
+    my $info = shift->{info};
+
+    _tsw_cache($info);
+    is_deeply(
+        $info->i_vlan_membership_untagged(),
+        {   ( map { $_ => [1400] } @TSW_ACCESS_IFINDEX ),
+            11 => [1],
+            12 => [1],
+        },
+        'Each port lists the VLANs it is untagged in'
+    );
+
+    _tsw_cache( $info, %TSW_NO_VLAN_TABLE );
+    _prime_qbridge( $info,
+        'bp_index' => { 1 => 3 }, 'qb_cv_untagged' => { '0.20' => "\x80" } );
+    is_deeply( $info->i_vlan_membership_untagged(), { 3 => [20] },
+        'Without pVlanTable rows, Q-BRIDGE untagged ports are used' );
 }
 
 1;

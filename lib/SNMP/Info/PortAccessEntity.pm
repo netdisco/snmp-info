@@ -40,7 +40,7 @@ use Regexp::Common qw /net/;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.985000';
+$VERSION = '3.985001';
 
 %MIBS = ( 'IEEE8021-PAE-MIB' => 'dot1xPaeSystemAuthControl' );
 

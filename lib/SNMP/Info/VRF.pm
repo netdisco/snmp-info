@@ -38,7 +38,7 @@ use SNMP::Info;
 
 our ( $VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE );
 
-$VERSION = '3.985000';
+$VERSION = '3.985001';
 
 %MIBS = (
     'MPLS-L3VPN-STD-MIB' => 'mplsL3VpnConfiguredVrfs',
@@ -187,7 +187,7 @@ sub _vrf_mpls_records {
 
     my %instances;
     foreach my $iid ( keys %iids ) {
-        my ($name) = $vrf->_vrf_decode_instance($iid);
+        my ($name) = $vrf->_vrf_decode_instance( $iid, 0, 0 );
         next if !defined $name or $vrf->_vrf_internal_instance($name);
 
         my $record = _vrf_record( $name, 'vrf', 'device' );
@@ -246,7 +246,8 @@ sub _vrf_decode_membership {
         : ();
     foreach my $iid ( keys %$rows ) {
         next unless $rows->{$iid} =~ /^(?:active|1)$/;
-        my ( $name, $ifindex, @extra ) = $vrf->_vrf_decode_instance($iid);
+        my ( $name, $ifindex, @extra )
+            = $vrf->_vrf_decode_instance( $iid, 1, 0 );
         next if !defined $ifindex  or @extra;
         next if $name eq 'default' or $vrf->_vrf_internal_instance($name);
         $ports{$ifindex} = $name;
@@ -287,7 +288,8 @@ sub _vrf_add_route_targets {
     my $targets = $vrf->vrf_l3vpn_rt() || {};
     my ( %import, %export );
     foreach my $iid ( keys %$targets ) {
-        my ( $name, undef, $type_arc ) = $vrf->_vrf_decode_instance($iid);
+        my ( $name, undef, $type_arc )
+            = $vrf->_vrf_decode_instance( $iid, 1, 1 );
         next unless defined $type_arc        and $instances->{$name};
         next unless defined $targets->{$iid} and length $targets->{$iid};
 
@@ -322,13 +324,77 @@ sub _vrf_decode_name {
     return ( join( q{}, map {chr} @octets ), @arcs );
 }
 
-# As _vrf_decode_name, with the empty name, the global table, as default
+# As _vrf_decode_name, with the empty name, the global table, as default.
+# FRR writes the name with no length (oid_copy_str in lib/snmp.c); a first
+# arc above 31 shows it, as MplsL3VpnName is at most 31 octets. $packed and
+# $tail give the shape after the name, used only for that form.
 sub _vrf_decode_instance {
-    my $vrf = shift;
-    my $iid = shift;
+    my ( $vrf, $iid, $packed, $tail ) = @_;
 
+    return $vrf->_vrf_decode_unprefixed( $iid, $packed, $tail )
+        if _vrf_is_unprefixed($iid);
     my ( $name, @arcs ) = $vrf->_vrf_decode_name($iid) or return;
     return ( ( length $name ? $name : 'default' ), @arcs );
+}
+
+sub _vrf_is_unprefixed {
+    my $iid = shift;
+
+    return 0 unless defined $iid and $iid =~ /^(\d+)(?:\.\d+)*$/;
+    return $1 > 31 ? 1 : 0;
+}
+
+# With no length to split by, the index is matched against the names the
+# VRF table serves. FRR writes each of the $packed integers after the name
+# as four arcs, one per byte, big-endian (oid_copy_int). $tail counts the
+# arcs after those, undef for any; it tells red2's rows from red's.
+sub _vrf_decode_unprefixed {
+    my ( $vrf, $iid, $packed, $tail ) = @_;
+
+    $packed //= 0;
+    foreach my $name ( @{ $vrf->_vrf_unprefixed_names() } ) {
+        my $rest = _vrf_arcs_after_name( $name, $iid ) or next;
+        next if @$rest < 4 * $packed;
+        next if defined $tail and @$rest != 4 * $packed + $tail;
+
+        my @integers
+            = map { _vrf_unpack_integer( splice @$rest, 0, 4 ) } 1 .. $packed;
+        return ( $name, @integers, @$rest );
+    }
+    return;
+}
+
+# Names of the VRF table rows indexed by the name alone, longest first
+sub _vrf_unprefixed_names {
+    my $vrf = shift;
+
+    my %iids = map { $_ => 1 }
+        map { keys %{ $vrf->$_() || {} } }
+        qw/vrf_l3vpn_descr vrf_l3vpn_rd vrf_l3vpn_oper/;
+    my @names;
+    foreach my $iid ( grep { _vrf_is_unprefixed($_) } keys %iids ) {
+        my @octets = split /\./, $iid;
+        next if grep { $_ > 255 } @octets;
+        push @names, join q{}, map {chr} @octets;
+    }
+    return [ sort { length $b <=> length $a or $a cmp $b } @names ];
+}
+
+sub _vrf_arcs_after_name {
+    my ( $name, $iid ) = @_;
+
+    my $prefix = join '.', map {ord} split //, $name;
+    return [] if $iid eq $prefix;
+    return    if index( $iid, "$prefix." ) != 0;
+    return [ split /\./, substr( $iid, length($prefix) + 1 ) ];
+}
+
+sub _vrf_unpack_integer {
+    my @bytes = @_;
+
+    my $value = 0;
+    $value = $value * 256 + $_ for @bytes;
+    return $value;
 }
 
 # Empty and 0:0 mean no distinguisher; printable text is kept as served and
@@ -2424,6 +2490,12 @@ C<vrf_instances()> lists, or C<\@ifindexes> is not an array reference.
 =back
 
 =head2 MPLS-L3VPN VRF Table (C<mplsL3VpnVrfTable>)
+
+The MPLS-L3VPN tables return their index as the device serves it. FRR's
+C<bgpd> writes the VRF name with no length sub-identifier, and each
+integer index after it as four sub-identifiers, one per byte. The instance
+readers decode the VRF, interface and route target tables in both forms;
+FRR's route table index is not decoded.
 
 =over
 

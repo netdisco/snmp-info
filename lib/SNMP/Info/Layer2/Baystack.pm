@@ -46,7 +46,7 @@ use SNMP::Info::Layer3;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.985000';
+$VERSION = '3.985001';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -226,7 +226,7 @@ sub index_factor {
     my $op_mode  = $baystack->ns_op_mode();
 
     $op_mode = 'pure' unless defined $op_mode;
-    if ( $os_ver =~ m/^(\d+)\./ ) {
+    if ( defined $os_ver and $os_ver =~ m/^(\d+)\./ ) {
         $os_ver = $1;
     } else {
         $os_ver = 1;
