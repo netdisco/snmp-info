@@ -147,6 +147,7 @@ lib/SNMP/Info/Layer3/RuckusController.pm
 lib/SNMP/Info/Layer3/Scalance.pm
 lib/SNMP/Info/Layer3/Siemens.pm
 lib/SNMP/Info/Layer3/SilverPeak.pm
+lib/SNMP/Info/Layer3/SONiC.pm
 lib/SNMP/Info/Layer3/SonicWALL.pm
 lib/SNMP/Info/Layer3/Sophos.pm
 lib/SNMP/Info/Layer3/Steelfusion.pm
@@ -331,6 +332,7 @@ xt/lib/Test/SNMP/Info/Layer3/RuckusController.pm
 xt/lib/Test/SNMP/Info/Layer3/Scalance.pm
 xt/lib/Test/SNMP/Info/Layer3/Siemens.pm
 xt/lib/Test/SNMP/Info/Layer3/SilverPeak.pm
+xt/lib/Test/SNMP/Info/Layer3/SONiC.pm
 xt/lib/Test/SNMP/Info/Layer3/SonicWALL.pm
 xt/lib/Test/SNMP/Info/Layer3/Sophos.pm
 xt/lib/Test/SNMP/Info/Layer3/Steelhead.pm
