@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.985001
+    SNMP::Info - Version 3.985002
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -1009,6 +1009,11 @@ SUBCLASSES
             Subclass for SilverPeak devices.
 
             See documentation in SNMP::Info::Layer3::SilverPeak for details.
+
+        SNMP::Info::Layer3::SONiC
+            SONiC switches, community and enterprise distributions.
+
+            See documentation in SNMP::Info::Layer3::SONiC for details.
 
         SNMP::Info::Layer3::SonicWALL
             Subclass for generic SonicWALL devices.

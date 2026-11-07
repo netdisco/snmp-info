@@ -329,6 +329,152 @@ sub bp_index : Tests(4) {
     q(No mapping returns empty hash));
 }
 
+# hwdbDynFdbTable as VRP 5 serves it: MAC.VLAN.VSI name, the name "0" with
+# its length prefix, and an ifIndex as the value. 00:00:5e:00:01:01 is
+# learned in two VLANs.
+my %VRP5_FDB = (
+  '2.0.0.0.0.1.208.1.48'  => 30,
+  '0.0.94.0.1.1.140.1.48' => 31,
+  '0.0.94.0.1.1.208.1.48' => 31,
+  '2.0.0.0.0.2.208.1.48'  => 99,
+);
+
+sub _prime_hw_fdb {
+  my ($test, $rows) = @_;
+  $test->{info}{_hw_dyn_fdb_port} = 1;
+  $test->{info}{store}{hw_dyn_fdb_port} = {%$rows};
+  return;
+}
+
+sub qb_fw_port : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'qb_fw_port');
+
+  $test->_prime_hw_fdb(\%VRP5_FDB);
+  cmp_deeply(
+    $test->{info}->qb_fw_port(),
+    {
+      '2.0.0.0.0.1.208.1.48'  => 26,
+      '0.0.94.0.1.1.140.1.48' => 27,
+      '0.0.94.0.1.1.208.1.48' => 27,
+    },
+    q(qb_fw_port__hw_dyn_fdb__ifindex_maps_to_bridge_port)
+  );
+
+  $test->_prime_hw_fdb({'0.0.12.7.172.0.727.0' => 30});
+  cmp_deeply(
+    $test->{info}->qb_fw_port(),
+    {'0.0.12.7.172.0.727.0' => 26},
+    q(qb_fw_port__vrp8_empty_vsi_name__read)
+  );
+
+  $test->_prime_hw_fdb({'2.0.0.0.0.1.208.2.48' => 30});
+  cmp_deeply($test->{info}->qb_fw_port(), {},
+    q(qb_fw_port__vsi_length_mismatch__skipped));
+}
+
+sub qb_fw_mac : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'qb_fw_mac');
+
+  $test->_prime_hw_fdb(\%VRP5_FDB);
+  cmp_deeply(
+    $test->{info}->qb_fw_mac(),
+    {
+      '2.0.0.0.0.1.208.1.48'  => '02:00:00:00:00:01',
+      '0.0.94.0.1.1.140.1.48' => '00:00:5e:00:01:01',
+      '0.0.94.0.1.1.208.1.48' => '00:00:5e:00:01:01',
+      '2.0.0.0.0.2.208.1.48'  => '02:00:00:00:00:02',
+    },
+    q(qb_fw_mac__hw_dyn_fdb__mac_from_index)
+  );
+}
+
+sub qb_fw_vlan : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'qb_fw_vlan');
+
+  $test->_prime_hw_fdb(\%VRP5_FDB);
+  cmp_deeply(
+    $test->{info}->qb_fw_vlan(),
+    {
+      '2.0.0.0.0.1.208.1.48'  => 208,
+      '0.0.94.0.1.1.140.1.48' => 140,
+      '0.0.94.0.1.1.208.1.48' => 208,
+      '2.0.0.0.0.2.208.1.48'  => 208,
+    },
+    q(qb_fw_vlan__hw_dyn_fdb__vlan_from_index)
+  );
+}
+
+sub fw_port__hw_dyn_fdb__joins_interfaces : Tests(1) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_prime_hw_fdb(\%VRP5_FDB);
+  my $fw_port  = $info->fw_port();
+  my $bp_index = $info->bp_index();
+  cmp_deeply(
+    {map { $_ => $bp_index->{$fw_port->{$_}} } keys %$fw_port},
+    {
+      '2.0.0.0.0.1.208.1.48'  => 30,
+      '0.0.94.0.1.1.140.1.48' => 31,
+      '0.0.94.0.1.1.208.1.48' => 31,
+    },
+    q(fw_port__hw_dyn_fdb__reaches_the_learned_ifindex)
+  );
+}
+
+# An authenticated client's configured entry is only in dot1dTpFdbTable,
+# with status mgmt(5); a learned address is in both tables.
+sub qb_fw__configured_address_only_in_bridge_mib__added_without_vlan
+  : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_prime_hw_fdb(\%VRP5_FDB);
+  $info->{_fw_mac}  = 1;
+  $info->{_fw_port} = 1;
+  $info->{store}{fw_mac} = {
+    '2.0.0.0.0.1'  => pack('H*', '020000000001'),
+    '2.0.0.0.0.17' => pack('H*', '020000000011'),
+  };
+  $info->{store}{fw_port} = {'2.0.0.0.0.1' => 26, '2.0.0.0.0.17' => 27};
+
+  cmp_deeply(
+    $info->qb_fw_mac(),
+    {
+      '2.0.0.0.0.1.208.1.48'  => '02:00:00:00:00:01',
+      '0.0.94.0.1.1.140.1.48' => '00:00:5e:00:01:01',
+      '0.0.94.0.1.1.208.1.48' => '00:00:5e:00:01:01',
+      '2.0.0.0.0.2.208.1.48'  => '02:00:00:00:00:02',
+      '2.0.0.0.0.17'          => '02:00:00:00:00:11',
+    },
+    q(qb_fw_mac__configured_address__added_once)
+  );
+  is($info->qb_fw_port()->{'2.0.0.0.0.17'}, 27,
+    q(qb_fw_port__configured_address__bridge_port_from_dot1d));
+  ok(!exists $info->qb_fw_vlan()->{'2.0.0.0.0.17'},
+    q(qb_fw_vlan__configured_address__no_vlan));
+}
+
+sub qb_fw__no_hw_dyn_fdb__falls_back_to_q_bridge : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $info->{_qb_fw_port} = 1;
+  $info->{store}{qb_fw_port} = {'208.2.0.0.0.0.1' => 26};
+  cmp_deeply($info->qb_fw_port(), {'208.2.0.0.0.0.1' => 26},
+    q(qb_fw_port__no_hw_dyn_fdb__inherited));
+  cmp_deeply($info->qb_fw_mac(), {'208.2.0.0.0.0.1' => '02:00:00:00:00:01'},
+    q(qb_fw_mac__no_hw_dyn_fdb__inherited));
+  cmp_deeply($info->qb_fw_vlan(), {'208.2.0.0.0.0.1' => 208},
+    q(qb_fw_vlan__no_hw_dyn_fdb__inherited));
+}
+
 sub i_duplex : Tests(4) {
   my $test = shift;
 

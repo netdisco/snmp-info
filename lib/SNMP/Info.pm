@@ -27,7 +27,7 @@ our
      $NOSUCH, $BIGINT, $REPEATERS,
      $BACKOFF_FLOOR, $MAX_FAILED_BULKWALKS, $SLOW_DEVICE_TABLES);
 
-$VERSION = '3.985001';
+$VERSION = '3.985002';
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 =head1 VERSION
 
-SNMP::Info - Version 3.985001
+SNMP::Info - Version 3.985002
 
 =head1 AUTHOR
 
@@ -1204,6 +1204,12 @@ See documentation in L<SNMP::Info::Layer3::Siemens> for details.
 Subclass for SilverPeak devices.
 
 See documentation in L<SNMP::Info::Layer3::SilverPeak> for details.
+
+=item SNMP::Info::Layer3::SONiC
+
+SONiC switches, community and enterprise distributions.
+
+See documentation in L<SNMP::Info::Layer3::SONiC> for details.
 
 =item SNMP::Info::Layer3::SonicWALL
 
@@ -2653,6 +2659,12 @@ sub device_type {
     # sysServices; the TNS switches under 57344.2 keep the generic classes.
     return 'SNMP::Info::Layer3::Tachyon'
         if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.57344\.1(?:\.|$)/;
+
+    # SONiC reports a fixed sysServices of 72 and, by distribution, Net-SNMP's,
+    # Dell's or Broadcom's sysObjectID, so only sysDescr identifies it. Some
+    # releases wrap sysDescr in double quotes.
+    return 'SNMP::Info::Layer3::SONiC'
+        if $desc =~ /^"?SONiC Software Version:/;
 
     # Teltonika devices commonly report Net-SNMP's generic sysObjectID, so
     # identify current RutOS devices by the product code in Teltonika's

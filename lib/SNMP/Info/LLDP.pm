@@ -39,7 +39,7 @@ use SNMP::Info;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.985001';
+$VERSION = '3.985002';
 
 %MIBS = (
     'LLDP-MIB'          => 'lldpLocSysCapEnabled',
@@ -400,11 +400,14 @@ sub lldp_port {
 sub _lldp_id_string {
     my $lldp    = shift;
     my $id    = shift;
-    my $type    = shift;
+    my $type    = shift // '';
 
     # May need to format other types in the future
     if ( $type =~ /mac/ ) {
-        $id = SNMP::Info::munge_mac($id)
+        # Some agents, such as SONiC and FortiSwitch, serve the MAC as text
+        my $text = lc( $id // '' );
+        $text = undef unless $text =~ /^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$/;
+        $id   = SNMP::Info::munge_mac($id) // $text;
     } elsif ( $type eq 'networkAddress' ) {
         if ( length( unpack( 'H*', $id ) ) == 10 ) {
 
@@ -732,8 +735,9 @@ capability and nothing else."
 
 =item $lldp->lldp_loc_id()
 
-The string value used to identify the chassis component associated with 
-the local system.
+The string value used to identify the chassis component associated with
+the local system. A MAC address is returned colon separated, whether the
+agent serves it as six octets or as text.
 
 (C<lldpLocChassisId>)
 
@@ -768,6 +772,8 @@ to a hash.
 
 Returns the string value used to identify the chassis component associated
 with the remote system. Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
+A MAC address is returned colon separated, whether the agent serves it as
+six octets or as text.
 
 (C<lldpRemChassisId>)
 

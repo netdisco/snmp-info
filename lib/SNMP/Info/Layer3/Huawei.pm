@@ -44,7 +44,7 @@ use SNMP::Info::IEEE802dot3ad;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.985001';
+$VERSION = '3.985002';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -53,6 +53,7 @@ $VERSION = '3.985001';
     'HUAWEI-PORT-MIB'          => 'hwEthernetDuplex',
     'HUAWEI-IF-EXT-MIB'        => 'hwTrunkIfIndex',
     'HUAWEI-L2IF-MIB'          => 'hwL2IfPortIfIndex',
+    'HUAWEI-L2MAM-MIB'         => 'hwDynFdbPort',
     'HUAWEI-POE-MIB'           => 'hwPoePower',
     'HUAWEI-SYS-MAN-MIB'       => 'hwPatchVersion',
     'HUAWEI-ENTITY-EXTENT-MIB' => 'hwEntityFanState',
@@ -85,6 +86,10 @@ $VERSION = '3.985001';
 
     # HUAWEI-L2IF-MIB::hwL2IfTable
     'hw_l2if_port_idx' => 'hwL2IfPortIfIndex',
+
+    # HUAWEI-L2MAM-MIB::hwdbDynFdbTable, indexed MAC.VLAN.VSI name; the
+    # value is an ifIndex
+    'hw_dyn_fdb_port' => 'hwDynFdbPort',
 
     # HUAWEI-POE-MIB::hwPoePortTable
     'hw_peth_port_admin'  => 'hwPoePortEnable',
@@ -266,6 +271,80 @@ sub bp_index {
         if ( ref {} eq ref $hw_index and scalar keys %$hw_index );
 
     return $huawei->SUPER::bp_index();
+}
+
+# Huawei switches serve no dot1qTpFdbTable; hwdbDynFdbTable gives each
+# learned address its VLAN.  Configured addresses, such as authenticated
+# clients, appear only in dot1dTpFdbTable, so those are kept from there
+# without a VLAN.
+sub _hw_fdb {
+    my ( $huawei, $partial ) = @_;
+
+    my $rows = $huawei->hw_dyn_fdb_port($partial) || {};
+    return unless scalar keys %$rows;
+    my %port_of_ifindex = reverse %{ $huawei->bp_index() || {} };
+
+    my ( %port, %mac, %vlan );
+    foreach my $idx ( keys %$rows ) {
+        my ( $addr, $vid ) = _hw_fdb_index($idx);
+        next unless defined $addr;
+        $mac{$idx}  = $addr;
+        $vlan{$idx} = $vid;
+        my $bp = $port_of_ifindex{ $rows->{$idx} };
+        $port{$idx} = $bp if defined $bp;
+    }
+    return { port => \%port, mac => \%mac, vlan => \%vlan }
+        if defined $partial;
+
+    my %learned = map { $_ => 1 } values %mac;
+    my $d1d_mac  = $huawei->orig_fw_mac()  || {};
+    my $d1d_port = $huawei->orig_fw_port() || {};
+    foreach my $idx ( keys %$d1d_mac ) {
+        my $addr = $d1d_mac->{$idx};
+        next if !defined $addr or $learned{$addr};
+        $mac{$idx}  = $addr;
+        $port{$idx} = $d1d_port->{$idx} if defined $d1d_port->{$idx};
+    }
+    return { port => \%port, mac => \%mac, vlan => \%vlan };
+}
+
+# MAC (six sub-identifiers), VLAN, then the VSI name with its length
+# prefix: "1.48" ("0") on VRP 5, "0" (empty) on VRP 8.
+sub _hw_fdb_index {
+    my $idx = shift;
+
+    my @oids = split /\./, $idx;
+    return unless @oids >= 8;
+    my @mac  = splice @oids, 0, 6;
+    my $vlan = shift @oids;
+    my $len  = shift @oids;
+    return unless $len == scalar @oids;
+
+    return ( join( ':', map { sprintf '%02x', $_ } @mac ), $vlan );
+}
+
+sub qb_fw_port {
+    my ( $huawei, $partial ) = @_;
+
+    my $fdb = $huawei->_hw_fdb($partial)
+        or return $huawei->SUPER::qb_fw_port($partial);
+    return $fdb->{port};
+}
+
+sub qb_fw_mac {
+    my ( $huawei, $partial ) = @_;
+
+    my $fdb = $huawei->_hw_fdb($partial)
+        or return $huawei->SUPER::qb_fw_mac($partial);
+    return $fdb->{mac};
+}
+
+sub qb_fw_vlan {
+    my ( $huawei, $partial ) = @_;
+
+    my $fdb = $huawei->_hw_fdb($partial)
+        or return $huawei->SUPER::qb_fw_vlan($partial);
+    return $fdb->{vlan};
 }
 
 sub i_duplex {
@@ -704,6 +783,8 @@ Subclass for Huawei switches
 
 =item F<HUAWEI-L2IF-MIB>
 
+=item F<HUAWEI-L2MAM-MIB>
+
 =item F<HUAWEI-POE-MIB>
 
 =item F<HUAWEI-ENTITY-EXTENT-MIB>
@@ -860,6 +941,47 @@ interface table has it.  The VRP version comes from the C<Version N.> in
 C<sysDescr>.  Without one, or on VRP 8 outside CloudEngine, the result is
 empty.  With no instance 0 rows,
 falls back to C<dot1dStpPortAdminEdgePort> through L<SNMP::Info::Bridge>.
+
+=back
+
+=head2 Dynamic Forwarding Table (C<hwdbDynFdbTable>)
+
+=over
+
+=item $huawei->hw_dyn_fdb_port()
+
+The C<ifIndex> each address was learned on, indexed by MAC address, VLAN
+and VSI name.
+
+(C<hwDynFdbPort>)
+
+=back
+
+=head2 Q-BRIDGE Forwarding Table
+
+These methods emulate the F<Q-BRIDGE-MIB> C<dot1qTpFdbTable> methods using
+the F<HUAWEI-L2MAM-MIB> C<hwdbDynFdbTable>, which Huawei switches serve in
+its place. Their keys are C<hwdbDynFdbTable> indexes. An address that only
+C<dot1dTpFdbTable> lists, such as an authenticated client's configured
+entry, is added under its C<dot1dTpFdbTable> index with no VLAN. Without
+C<hwdbDynFdbTable> rows, each returns the inherited method.
+
+=over
+
+=item $huawei->qb_fw_port()
+
+Returns reference to hash. The bridge port each address was learned on:
+the C<ifIndex> in C<hwDynFdbPort>, mapped through C<bp_index()>, or the
+C<dot1dTpFdbPort> of an address added from C<dot1dTpFdbTable>. An address
+on a port with no bridge port is left out.
+
+=item $huawei->qb_fw_mac()
+
+Returns reference to hash. The MAC address of each entry, from its index.
+
+=item $huawei->qb_fw_vlan()
+
+Returns reference to hash. The VLAN of each entry, from its index.
 
 =back
 

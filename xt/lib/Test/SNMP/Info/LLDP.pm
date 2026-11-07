@@ -607,7 +607,7 @@ sub lldp_port : Tests(11) {
   );
 }
 
-sub lldp_id : Tests(5) {
+sub lldp_id : Tests(6) {
   my $test = shift;
 
   can_ok($test->{info}, 'lldp_id');
@@ -627,6 +627,18 @@ sub lldp_id : Tests(5) {
   cmp_deeply($test->{info}->lldp_id(),
     $expected, q(Remote LLDP ID type 'networkAddress' has expected value));
 
+  # SONiC and FortiSwitch serve a MAC chassis ID as text
+  $test->{info}{store} = {
+    lldp_rem_id_type => {'1815564525.47.10' => 'macAddress'},
+    lldp_rem_id      => {'1815564525.47.10' => '02:00:5E:00:53:02'},
+  };
+
+  cmp_deeply(
+    $test->{info}->lldp_id(),
+    {'1815564525.47.10' => '02:00:5e:00:53:02'},
+    q(Remote LLDP ID type 'macAddress' served as text is read)
+  );
+
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->lldp_id(), {}, q(No data returns empty hash));
 
@@ -638,7 +650,7 @@ sub lldp_id : Tests(5) {
   );
 }
 
-sub lldp_loc_id : Tests(2) {
+sub lldp_loc_id : Tests(4) {
   my $test = shift;
   can_ok($test->{info}, 'lldp_loc_id');
 
@@ -647,6 +659,20 @@ sub lldp_loc_id : Tests(2) {
 
   cmp_deeply($test->{info}->lldp_loc_id(),
     $expected, q(Local LLDP ID type 'macAddress' has expected value));
+
+  $test->{info}{_lldp_loc_id_os} = '02:00:5E:00:53:01';
+  cmp_deeply(
+    $test->{info}->lldp_loc_id(),
+    '02:00:5e:00:53:01',
+    q(Local LLDP ID type 'macAddress' served as text is read)
+  );
+
+  $test->{info}{_lldp_loc_id_os} = 'switch-1';
+  cmp_deeply(
+    $test->{info}->lldp_loc_id(),
+    undef,
+    q(Local LLDP ID type 'macAddress' that is not a MAC returns undef)
+  );
 }
 
 

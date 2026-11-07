@@ -44,7 +44,7 @@ use SNMP::Info::Aggregate 'agg_ports_ifstack';
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.985001';
+$VERSION = '3.985002';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
@@ -174,8 +174,8 @@ sub lldp_ip {
     return $fortinet->SUPER::lldp_ip($partial)
         unless $fortinet->_is_fortiswitch();
 
-    my $id_types = $fortinet->lldp_rem_id_type($partial) || {};
-    my $ids      = $fortinet->lldp_id($partial)          || {};
+    my $id_types = $fortinet->_lldp_rem( 'lldp_rem_id_type', $partial );
+    my $ids      = $fortinet->lldp_id($partial) || {};
 
     my %lldp_ip;
     foreach my $key ( keys %$id_types ) {
@@ -187,6 +187,47 @@ sub lldp_ip {
             : '0.0.0.0';
     }
     return \%lldp_ip;
+}
+
+# FortiSwitches can serve one neighbor's lldpRemTable columns under
+# different time marks, so its rows share no key across columns. The local
+# port and remote index identify the neighbor; where two time marks give
+# the same neighbor, the later row is kept.
+sub _lldp_rem {
+    my ( $fortinet, $method, $partial ) = @_;
+
+    my $rows = $fortinet->SUPER::_lldp_rem( $method, $partial );
+    return $rows unless $fortinet->_is_fortiswitch();
+
+    my @keys
+        = sort { _lldp_time_mark($a) <=> _lldp_time_mark($b) } keys %$rows;
+    my %rows;
+    foreach my $key (@keys) {
+        next unless $key =~ /^\d+\.(\d+(?:\.\d+)*)$/;
+        $rows{"0.$1"} = $rows->{$key};
+    }
+    return \%rows;
+}
+
+sub _lldp_time_mark {
+    my $key = shift;
+
+    return $key =~ /^(\d+)\./ ? $1 : 0;
+}
+
+# A FortiSwitch's LLDP chassis ID, which its neighbors report, is one
+# below the address of its first interface
+sub mac {
+    my $fortinet = shift;
+
+    if ( $fortinet->_is_fortiswitch() ) {
+        my $type    = $fortinet->lldp_loc_id_type() // '';
+        my $chassis = $type =~ /mac/ ? $fortinet->lldp_loc_id() : undef;
+        return $chassis
+            if defined $chassis
+            and $chassis =~ /^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$/;
+    }
+    return $fortinet->SUPER::mac();
 }
 
 sub lldp_ipv6 {
@@ -306,6 +347,15 @@ that do not serve it such as FortiSwitches, the ENTITY-MIB chassis entry.
 
 (C<fsSysVersion>)
 
+=item $fortinet->mac()
+
+For a FortiSwitch, the LLDP chassis ID when it is a MAC address. This is
+the address its neighbors report, one below the address of its first
+interface. Other devices, and FortiSwitches without a MAC chassis ID,
+return the inherited C<mac()>.
+
+(C<lldpLocChassisId>)
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -337,6 +387,10 @@ used. A neighbor whose chassis ID is an IPv4 address returns that address;
 every other neighbor returns C<0.0.0.0>, and the calling application then
 identifies it by its chassis ID. Other devices return the inherited
 C<lldp_ip()>.
+
+On a FortiSwitch, the keys of every LLDP neighbor method begin with C<0>
+in place of the time mark, since the switch can serve one neighbor's
+columns under different time marks.
 
 =item $fortinet->lldp_ipv6()
 

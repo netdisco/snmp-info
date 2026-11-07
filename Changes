@@ -1,14 +1,28 @@
-Version 3.985002
+Version 3.985003
 
   [BUG FIXES]
 
   * #671 Aerohive: put SSIDs and clients on radio ports, so wireless client
     reports work, and report client transmit rate in Mbps (#325)
+
+Version 3.985002 (2026-11-07)
+
+  [ENHANCEMENTS]
+
+  * #687 SONiC: new class for community and Enterprise SONiC switches (#541)
+
+  [BUG FIXES]
+
   * #669 ArubaInstant: put SSIDs and clients on radio ports and report each
     client's SSID, so wireless client reports work; the per-WLAN ports are
     removed (#536)
   * #685 VRF: list FRR's VRFs, which MPLS-L3VPN-STD-MIB indexes without a
     name length
+  * #688 Fortinet: read FortiSwitch LLDP neighbors whose columns carry
+    different time marks, and report the chassis MAC; LLDP reads MAC chassis
+    IDs served as text (#569)
+  * #689 Huawei: report node VLANs from hwdbDynFdbTable, which Huawei
+    switches serve in place of dot1qTpFdbTable (#686)
 
 Version 3.985001 (2026-11-04)
 
