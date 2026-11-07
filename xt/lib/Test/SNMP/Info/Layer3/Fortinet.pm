@@ -199,6 +199,38 @@ sub lldp_rem__fortiswitch_one_neighbor_under_two_time_marks__later_wins
     q(lldp_rem__one_neighbor_under_two_time_marks__later_row_kept));
 }
 
+# FortiSwitch 7.4.6 serves the chassis IDs as text, every column under one
+# time mark
+sub lldp_id__fortiswitch_text_chassis_ids__read : Tests(2) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  $test->_prime_fortiswitch();
+  $test->_prime_fortilink_lldp();
+  $info->{store}{lldp_rem_id} = {
+    map {
+      my $hex = $FORTILINK_CHASSIS{$_};
+      ("$TIME_MARK.$_" => join(':', $hex =~ /(..)/g))
+    } keys %FORTILINK_CHASSIS
+  };
+  cmp_deeply(
+    $info->lldp_id(),
+    {
+      '0.79.13' => '02:00:00:a1:00:01',
+      '0.79.14' => '02:00:00:a1:00:01',
+      '0.80.11' => '02:00:00:b2:00:01',
+      '0.80.12' => '02:00:00:b2:01:01',
+    },
+    q(lldp_id__fortiswitch_text_chassis_ids__read)
+  );
+
+  $info->{_mac}              = pack('H*', '020000a10002');
+  $info->{_lldp_loc_id_type} = 'macAddress';
+  $info->{_lldp_loc_id_os}   = '02:00:00:a1:00:01';
+  is($info->mac(), '02:00:00:a1:00:01',
+    q(mac__fortiswitch_text_chassis_id__returns_it));
+}
+
 sub lldp_rem__fortigate__keeps_the_time_mark : Tests(1) {
   my $test = shift;
   my $info = $test->{info};

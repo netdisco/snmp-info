@@ -188,33 +188,6 @@ sub lldp_loc_id_os {
     return $sonic->orig_lldp_loc_id_os() // $sonic->sonic_loc_id_os();
 }
 
-# The agent serves a MAC chassis ID as text ("74:86:e2:0a:0c:04"), not as
-# six octets.
-sub lldp_loc_id {
-    my $sonic = shift;
-
-    my $type = $sonic->lldp_loc_id_type() // '';
-    my $id   = lc( $sonic->lldp_loc_id_os() // '' );
-    return $id if $type =~ /mac/ and $id =~ $MAC_RE;
-    return $sonic->SUPER::lldp_loc_id();
-}
-
-sub lldp_id {
-    my $sonic   = shift;
-    my $partial = shift;
-
-    my $lldp_id = $sonic->SUPER::lldp_id($partial) || {};
-    my $ch_type = $sonic->_lldp_rem( 'lldp_rem_id_type', $partial );
-    my $ch      = $sonic->_lldp_rem( 'lldp_rem_id',      $partial );
-
-    foreach my $key ( keys %$ch ) {
-        next unless ( $ch_type->{$key} // '' ) =~ /mac/;
-        my $id = lc( $ch->{$key} // '' );
-        $lldp_id->{$key} = $id if $id =~ $MAC_RE;
-    }
-    return $lldp_id;
-}
-
 # The agent can serve lldpRemManAddrTable under a later time mark than
 # lldpRemTable, so the two share no key. The local port and remote index
 # identify the neighbor; where two time marks give the same neighbor, the
@@ -379,13 +352,6 @@ serves no C<.0> instance.
 Returns C<lldpLocChassisId>, or C<sonic_loc_id_os()> when the agent serves
 no C<.0> instance.
 
-=item $sonic->lldp_loc_id()
-
-As the inherited method, but also reads a MAC chassis ID that the agent
-serves as text rather than as six octets.
-
-(C<lldpLocChassisId>)
-
 =back
 
 =head2 Global Methods imported from SNMP::Info::Layer3::NetSNMP
@@ -398,6 +364,10 @@ These are methods that return tables of information in the form of a reference
 to a hash.
 
 =head2 Overrides
+
+The keys of every LLDP neighbor method begin with C<0> in place of the time
+mark, since the agent can serve C<lldpRemManAddrTable> under a later time
+mark than C<lldpRemTable>.
 
 =over
 
@@ -422,15 +392,6 @@ C<bp_index()>. Entries whose interface has no bridge port are left out.
 
 Returns reference to hash. The IPv4 address of each C<at_paddr()> row, taken
 from its index. C<ipNetToMediaTable> serves only its C<PhysAddress> column.
-
-=item $sonic->lldp_id()
-
-Returns reference to hash. As the inherited method, but also reads a MAC
-chassis ID that the agent serves as text rather than as six octets.
-
-The keys of every LLDP neighbor method begin with C<0> in place of the time
-mark, since the agent can serve C<lldpRemManAddrTable> under a later time
-mark than C<lldpRemTable>.
 
 =item $sonic->i_vlan()
 
