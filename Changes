@@ -1,20 +1,34 @@
-Version 3.985001
-
-  [ENHANCEMENTS]
-
-  * #682 VRF: vrf_read_leaked and vrf_exclude_ports let a caller complete a
-    Juniper default instance read that includes virtual routers
+Version 3.985002
 
   [BUG FIXES]
 
   * #671 Aerohive: put SSIDs and clients on radio ports, so wireless client
     reports work, and report client transmit rate in Mbps (#325)
+  * #669 ArubaInstant: put SSIDs and clients on radio ports and report each
+    client's SSID, so wireless client reports work; the per-WLAN ports are
+    removed (#536)
+  * #685 VRF: list FRR's VRFs, which MPLS-L3VPN-STD-MIB indexes without a
+    name length
+
+Version 3.985001 (2026-11-04)
+
+  [ENHANCEMENTS]
+
+  * #682 VRF: vrf_read_leaked and vrf_exclude_ports let a caller complete a
+    Juniper default instance read that includes virtual routers
+  * #683 TeltonikaRutOS: report TSW switch port VLANs from the Teltonika
+    VLAN table (#634)
+
+  [BUG FIXES]
+
   * #681 Foundry: report ICX PoE status, class and power from the powered
     device; add configured speed and duplex and the standalone ICX model
     (#518)
   * #680 LLDP: return 0.0.0.0 for neighbors that advertise only a MAC
     chassis ID, so callers can identify them by c_id; Dell's own override
     moves into LLDP
+  * #684 Teltonika: detect TSW212 switches that report the PROFINET
+    sysObjectID
 
 Version 3.985000 (2026-11-02)
 

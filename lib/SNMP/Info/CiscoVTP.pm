@@ -41,7 +41,7 @@ use SNMP::Info;
 
 our ($VERSION, %MIBS, %FUNCS, %GLOBALS, %MUNGE);
 
-$VERSION = '3.985000';
+$VERSION = '3.985001';
 
 %MIBS = (
     'CISCO-VTP-MIB'                       => 'vtpVlanName',
