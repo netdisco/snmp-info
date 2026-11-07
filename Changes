@@ -2,6 +2,8 @@ Version 3.985002
 
   [BUG FIXES]
 
+  * #671 Aerohive: put SSIDs and clients on radio ports, so wireless client
+    reports work, and report client transmit rate in Mbps (#325)
   * #669 ArubaInstant: put SSIDs and clients on radio ports and report each
     client's SSID, so wireless client reports work; the per-WLAN ports are
     removed (#536)
