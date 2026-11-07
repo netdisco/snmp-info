@@ -2,6 +2,9 @@ Version 3.985002
 
   [BUG FIXES]
 
+  * #669 ArubaInstant: put SSIDs and clients on radio ports and report each
+    client's SSID, so wireless client reports work; the per-WLAN ports are
+    removed (#536)
   * #685 VRF: list FRR's VRFs, which MPLS-L3VPN-STD-MIB indexes without a
     name length
 
