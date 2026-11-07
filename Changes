@@ -11,6 +11,9 @@ Version 3.985002
     removed (#536)
   * #685 VRF: list FRR's VRFs, which MPLS-L3VPN-STD-MIB indexes without a
     name length
+  * #688 Fortinet: read FortiSwitch LLDP neighbors whose columns carry
+    different time marks, and report the chassis MAC; LLDP reads MAC chassis
+    IDs served as text (#569)
 
 Version 3.985001 (2026-11-04)
 
