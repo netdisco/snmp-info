@@ -356,6 +356,59 @@ sub lldp_if : Tests(10) {
     q(LLDP-V2-MIB takes the ifIndex from the index));
 }
 
+# Shapes from a vJunos-switch MLAG peer: both ICL members carry the same
+# ifAlias, which Junos serves as lldpLocPortDesc, and lldpRemLocalPortNum
+# is the ifIndex
+sub _prime_shared_alias {
+  my $test = shift;
+
+  $test->{info}{funcs}{i_description} = 'ifDescr';
+  $test->{info}{funcs}{i_alias}       = 'ifAlias';
+  $test->{info}{funcs}{ifName}        = 'ifName';
+  $test->{info}{store}{i_description}
+    = {'531' => 'ge-0/0/0', '532' => 'ge-0/0/1', '533' => 'ge-0/0/2'};
+  $test->{info}{store}{i_alias}
+    = {'531' => 'icl-vjunos2', '532' => 'icl-vjunos2', '533' => 'edge1'};
+  $test->{info}{store}{lldp_rem_pid}
+    = {'46.531.2' => '531', '46.532.3' => '532', '41.533.1' => 'Ethernet1'};
+  $test->{info}{sess}{Data} = {
+    'LLDP-MIB::lldpLocPortDesc' =>
+      {531 => 'icl-vjunos2', 532 => 'icl-vjunos2', 533 => 'edge1'},
+    'LLDP-MIB::lldpLocPortId' => {531 => '531', 532 => '532', 533 => '533'},
+    'IF-MIB::ifName' =>
+      {531 => 'ge-0/0/0', 532 => 'ge-0/0/1', 533 => 'ge-0/0/2'},
+  };
+  return;
+}
+
+sub lldp_if__description_shared_by_two_ports__keeps_each_local_port : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_shared_alias;
+
+  cmp_deeply(
+    $test->{info}->lldp_if(),
+    {'46.531.2' => '531', '46.532.3' => '532', '41.533.1' => '533'},
+    q(Each port sharing an ifAlias keeps its own ifIndex)
+  );
+}
+
+sub lldp_if__shared_description__falls_back_to_port_id : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_shared_alias;
+  $test->{info}{store}{lldp_rem_pid} = {'46.7.2' => '531'};
+  $test->{info}{sess}{Data}{'LLDP-MIB::lldpLocPortDesc'}
+    = {7 => 'icl-vjunos2'};
+  $test->{info}{sess}{Data}{'LLDP-MIB::lldpLocPortId'} = {7 => 'ge-0/0/2'};
+
+  cmp_deeply(
+    $test->{info}->lldp_if(),
+    {'46.7.2' => '533'},
+    q(A shared ifAlias falls through to lldpLocPortId)
+  );
+}
+
 sub lldp_ip : Tests(7) {
   my $test = shift;
 
