@@ -483,6 +483,43 @@ sub lldp_addr : Tests(4) {
     q(LLDP-V2-MIB addresses keep the four-part index));
 }
 
+# Dual-stack neighbors advertise an IPv4 and an IPv6 address each
+sub lldp_addrs : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'lldp_addrs');
+
+  $test->{info}{store}{lldp_rman_addr} = {
+    '0.2.3.2.16.32.1.13.184.0.16.0.0.0.0.0.0.0.0.0.2' => 'ifIndex',
+    '0.2.3.1.4.172.20.20.15'                         => 'ifIndex',
+    '0.4.5.1.4.10.0.2.1'                             => 'ifIndex',
+    '0.4.5.2.16.32.1.13.184.0.2.0.0.0.0.0.0.0.0.0.1' => 'ifIndex',
+    '0.10.1.6.6.01.35.69.103.137.171'                => 'ifIndex',
+  };
+
+  cmp_deeply(
+    $test->{info}->lldp_addrs(),
+    { '0.2.3' => ['172.20.20.15', '2001:0db8:0010:0000:0000:0000:0000:0002'],
+      '0.4.5' => ['10.0.2.1',     '2001:0db8:0002:0000:0000:0000:0000:0001'],
+      '0.10.1' => ['01:23:45:67:89:ab'],
+    },
+    q(Every address of each neighbor, IPv4 before IPv6)
+  );
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->lldp_addrs(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10',
+    '22612.2.1.1.2.16.32.1.13.184.0.0.0.0.0.0.0.0.0.0.0.10');
+  cmp_deeply(
+    $test->{info}->lldp_addrs(),
+    { '22612.2.1.1' =>
+        ['192.0.2.10', '2001:0db8:0000:0000:0000:0000:0000:000a']
+    },
+    q(LLDP-V2-MIB addresses keep the four-part index)
+  );
+}
+
 # Rows as served by a Fabric Interconnect: a one-number index with no
 # address type or address after the neighbor key
 sub lldp_addr__index_without_address__skipped_without_warning : Tests(3) {

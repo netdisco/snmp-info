@@ -372,6 +372,18 @@ sub lldp_ip : Tests(2) {
   );
 }
 
+sub lldp_addrs : Tests(2) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'lldp_addrs');
+
+  cmp_deeply(
+    $test->{info}->lldp_addrs(),
+    {1 => ['192.0.2.1'], 2 => ['192.0.2.2']},
+    q(Addresses come from the F5OS LLDP neighbor table)
+  );
+}
+
 
 sub lldp_platform : Tests(2) {
   my $test = shift;

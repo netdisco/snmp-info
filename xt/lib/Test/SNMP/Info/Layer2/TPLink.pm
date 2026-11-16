@@ -1028,6 +1028,36 @@ sub lldp_ipv6 : Tests(6) {
   is_deeply($info->lldp_ipv6(), {}, q(No data returns empty hash));
 }
 
+sub lldp_addrs : Tests(4) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'lldp_addrs');
+  $test->prime_tp_lldp;
+  $info->{store}{tp_lldp_rman}{'49170.1'} = 'fe80::1';
+  is_deeply(
+    $info->lldp_addrs(),
+    { '49167.1' => ['169.254.2.131'],
+      '49168.1' => ['169.254.2.104'],
+      '49170.1' => ['fe80::1'],
+    },
+    q(The TP-Link table address is returned when LLDP-MIB is empty)
+  );
+
+  $info->clear_cache();
+  $test->prime_std_lldp;
+  is_deeply(
+    $info->lldp_addrs(),
+    { '0.15.1' =>
+        ['169.254.2.131', 'fe80:0000:0000:0000:0000:0000:0000:0001']
+    },
+    q(LLDP-MIB management addresses are used when LLDP-MIB has rows)
+  );
+
+  $info->clear_cache();
+  is_deeply($info->lldp_addrs(), {}, q(No data returns empty hash));
+}
+
 sub lldp_port : Tests(8) {
   my $test = shift;
   my $info = $test->{info};

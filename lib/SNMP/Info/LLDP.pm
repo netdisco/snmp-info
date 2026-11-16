@@ -349,6 +349,49 @@ sub lldp_addr {
     return \%lldp_ip;
 }
 
+sub lldp_addrs {
+    my $lldp    = shift;
+    my $partial = shift;
+
+    my $rman_addr = $lldp->_lldp_rem( 'lldp_rman_addr', $partial );
+
+    my %rows;
+    foreach my $key ( keys %$rman_addr ) {
+        my ( $index, $proto, $addr ) = $lldp->_lldp_addr_index($key);
+        next unless defined $index;
+        push @{ $rows{$index} }, [ $proto, $addr ];
+    }
+
+    my %lldp_addrs;
+    foreach my $index ( keys %rows ) {
+        $lldp_addrs{$index} = [
+            map  { $_->[1] }
+            sort { $a->[0] <=> $b->[0] or $a->[1] cmp $b->[1] }
+                @{ $rows{$index} }
+        ];
+    }
+    return \%lldp_addrs;
+}
+
+# For a class whose lldp_ip and lldp_ipv6 read another table than
+# lldpRemManAddrTable: one address per family, from those methods.
+# 0.0.0.0 is lldp_ip's stand-in for a neighbor with no address.
+sub _lldp_addrs_from_families {
+    my ( $lldp, $partial ) = @_;
+
+    my %lldp_addrs;
+    foreach my $method (qw/lldp_ip lldp_ipv6/) {
+        my $addrs = $lldp->$method($partial) || {};
+        foreach my $key ( keys %$addrs ) {
+            my $addr = $addrs->{$key};
+            next unless defined $addr and length $addr;
+            next if $addr eq '0.0.0.0';
+            push @{ $lldp_addrs{$key} }, $addr;
+        }
+    }
+    return \%lldp_addrs;
+}
+
 sub lldp_port {
     my $lldp    = shift;
     my $partial = shift;
@@ -818,7 +861,17 @@ Currently only returns IPv4, IPv6 or MAC addresses. If the remote device
 returns more than one address type, this method will give only one. Which one
 is returned is decided by chance, phase of the moon and Perl hash ordering.
 
-Use lldp_mac, lldp_ip or lldp_ipv6 if you want a specific address type.
+Use lldp_mac, lldp_ip or lldp_ipv6 if you want a specific address type,
+or lldp_addrs for every address.
+
+Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
+
+=item $lldp->lldp_addrs()
+
+Returns reference to hash of array references: every remote management
+address of each neighbor (C<lldpRemManAddrTable>). Returns IPv4, IPv6 and
+MAC addresses, in that order, formatted as lldp_ip, lldp_ipv6 and
+lldp_mac format them. A neighbor that advertises no address is absent.
 
 Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 
