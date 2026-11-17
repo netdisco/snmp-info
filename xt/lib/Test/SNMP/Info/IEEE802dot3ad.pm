@@ -118,6 +118,7 @@ sub lag_groups : Tests(2) {
     partner_system => 'aa:bb:cc:00:00:01',
     partner_key    => 15,
     lacp           => 1,
+    esi            => undef,
     sources        => {
       members        => 'agg_ports',
       actor_system   => 'IEEE8023-LAG-MIB::dot3adAggActorSystemID',
@@ -220,6 +221,19 @@ sub lag_groups__static_lag_no_ieee_row__record_from_agg_ports : Tests(3) {
   is($record->{lacp}, 0, q(Static aggregate has lacp 0));
   is($record->{actor_system}, undef, q(No actor identity));
   cmp_deeply([keys %{$record->{members}}], [5], q(Member from agg_ports));
+}
+
+sub lag_groups__any_record__esi_present_and_undef : Tests(2) {
+  my $test = shift;
+
+  $test->{info}->cache(lag_cache());
+  my $groups = $test->with_agg_ports({1 => 1000001, 5 => 1000005},
+    sub { $test->{info}->lag_groups() });
+  my @missing = grep { !exists $groups->{$_}{esi} } sort keys %$groups;
+
+  cmp_deeply(\@missing, [], q(Every record carries the esi key));
+  cmp_deeply([grep { defined $groups->{$_}{esi} } sort keys %$groups],
+    [], q(esi is undef over SNMP));
 }
 
 sub lag_groups__role_alone__has_no_agg_ports : Tests(1) {
