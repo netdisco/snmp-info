@@ -289,6 +289,13 @@ sub lldp_ip {
     return $f5->f5_lldp_rem_ip($partial) || {};
 }
 
+sub lldp_addrs {
+    my $f5      = shift;
+    my $partial = shift;
+
+    return $f5->_lldp_addrs_from_families($partial);
+}
+
 
 sub lldp_platform {
     my $f5      = shift;
@@ -744,6 +751,11 @@ Returns the remote LLDP chassis identifiers.
 =item $f5os->lldp_ip()
 
 Returns the remote LLDP management addresses.
+
+=item $f5os->lldp_addrs()
+
+Returns reference to hash of array references: the address C<lldp_ip()>
+returns for each neighbor.
 
 =item $f5os->lldp_port()
 

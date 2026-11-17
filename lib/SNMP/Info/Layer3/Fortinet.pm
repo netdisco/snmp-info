@@ -239,6 +239,15 @@ sub lldp_ipv6 {
     return {};
 }
 
+sub lldp_addrs {
+    my $fortinet = shift;
+    my $partial  = shift;
+
+    return $fortinet->SUPER::lldp_addrs($partial)
+        unless $fortinet->_is_fortiswitch();
+    return $fortinet->_lldp_addrs_from_families($partial);
+}
+
 sub agg_ports { return agg_ports_ifstack(@_) }
 
 sub _agg_ports_walked { return qw/ifStackStatus ifType/ }
@@ -396,6 +405,12 @@ columns under different time marks.
 
 Returns reference to hash. Empty on a FortiSwitch, for the same reason;
 the inherited C<lldp_ipv6()> otherwise.
+
+=item $fortinet->lldp_addrs()
+
+Returns reference to hash of array references. On a FortiSwitch, the
+address C<lldp_ip()> returns for each neighbor, if any; the inherited
+C<lldp_addrs()> otherwise.
 
 =back
 

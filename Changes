@@ -1,5 +1,10 @@
 Version 3.985003
 
+  [ENHANCEMENTS]
+
+  * #691 LLDP: add lldp_addrs, every management address each neighbor
+    advertises
+
   [BUG FIXES]
 
   * #690 LLDP: map ports whose description several interfaces share by their
