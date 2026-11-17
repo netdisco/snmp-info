@@ -1,5 +1,10 @@
 Version 3.985003
 
+  [BUG FIXES]
+
+  * #690 LLDP: map ports whose description several interfaces share by their
+    port ID or number, not to one of those interfaces
+
 Version 3.985002 (2026-11-07)
 
   [ENHANCEMENTS]

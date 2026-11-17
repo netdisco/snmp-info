@@ -218,10 +218,8 @@ sub lldp_if {
     return { map { $_ => ( split /\./, $_ )[1] } keys %$addr }
         if ( $lldp->_lldp_source() || '' ) eq 'v2';
 
-    my $i_descr = $lldp->i_description()        || {};
-    my $i_alias = $lldp->i_alias()              || {};
-    my %r_i_descr = reverse %$i_descr;
-    my %r_i_alias = reverse %$i_alias;
+    my $r_i_descr = _lldp_reverse_all( $lldp->i_description() );
+    my $r_i_alias = _lldp_reverse_all( $lldp->i_alias() );
 
     my %lldp_if;
     my %port_id_lookup;
@@ -245,20 +243,32 @@ sub lldp_if {
 
         # If cross reference is successful use it, otherwise stick with
         # lldpRemLocalPortNum
-        if ( $desc && exists $r_i_descr{$desc} ) {
-            $port = $r_i_descr{$desc};
-        }
-        elsif ( $desc && exists $r_i_alias{$desc} ) {
-            $port = $r_i_alias{$desc};
-        }
-        else {
-            $port = $lldp->_lldp_lport_id_if( $port, \%r_i_descr,
-                \%port_id_lookup ) // $port;
-        }
-
-        $lldp_if{$key} = $port;
+        $lldp_if{$key} = _lldp_desc_if( $desc, $r_i_descr )
+            // _lldp_desc_if( $desc, $r_i_alias )
+            // $lldp->_lldp_lport_id_if( $port, $r_i_descr, \%port_id_lookup )
+            // $port;
     }
     return \%lldp_if;
+}
+
+# Value => [ every key holding it ], so a value two interfaces share is seen
+sub _lldp_reverse_all {
+    my $table = shift || {};
+
+    my %reverse;
+    push @{ $reverse{ $table->{$_} } }, $_ for keys %$table;
+    return \%reverse;
+}
+
+# A description several interfaces share (Junos gives both members of a
+# link the same ifAlias) names none of them
+sub _lldp_desc_if {
+    my ( $desc, $r_table ) = @_;
+
+    return unless defined $desc and length $desc;
+    my $ifindexes = $r_table->{$desc} or return;
+    return unless @$ifindexes == 1;
+    return $ifindexes->[0];
 }
 
 # Some agents (Dell OS10) serve no lldpLocPortDesc, only lldpLocPortId
@@ -274,7 +284,7 @@ sub _lldp_lport_id_if {
     return unless defined $id and length $id;
 
     $lookup->{if_name} //= { reverse %{ $lldp->ifName() || {} } };
-    return $lookup->{if_name}{$id} // $r_i_descr->{$id};
+    return $lookup->{if_name}{$id} // _lldp_desc_if( $id, $r_i_descr );
 }
 
 sub lldp_ip {
@@ -781,8 +791,9 @@ six octets or as text.
 
 Returns the mapping to the SNMP Interface Table. Tries to cross reference
 (C<lldpLocPortDesc>) with (C<ifDescr>) and (C<ifAlias>) to get (C<ifIndex>).
-When neither matches, cross references (C<lldpLocPortId>) with (C<ifName>),
-then (C<ifDescr>). If unable defaults to (C<lldpRemLocalPortNum>). Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
+A value that several interfaces share does not match. When neither matches,
+cross references (C<lldpLocPortId>) with (C<ifName>), then (C<ifDescr>).
+If unable defaults to (C<lldpRemLocalPortNum>). Falls back to F<LLDP-V2-MIB> when F<LLDP-MIB> reports no neighbors.
 F<LLDP-V2-MIB> rows carry the (C<ifIndex>) in their index.
 
 =item  $lldp->lldp_ip()
