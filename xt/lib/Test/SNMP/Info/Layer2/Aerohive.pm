@@ -57,13 +57,14 @@ sub setup : Tests(setup) {
     '_i_mac'         => 1,
     '_ah_i_ssidlist' => 1,
     '_ah_i_name'     => 1,
-    '_cd11_txrate'   => 1,
+    '_ah_c_txrate'   => 1,
     '_ah_c_vlan'     => 1,
     '_ah_c_ip'       => 1,
+    '_i_80211channel' => 1,
     'store'          => {
-      'i_index' => {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20},
+      'i_index' => {10 => 10, 6 => 6, 7 => 7, 33 => 33, 34 => 34, 15 => 15, 16 => 16, 20 => 20},
       'i_description' =>
-        {10 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 33 => 'mgt0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
+        {10 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 33 => 'mgt0', 34 => 'mgt0.1', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
       'i_mac' => {
 # mgt0 always has lowest mac, most of the time shared with eth0
 # wifi0 shares it's mac with wifi0.1 (same goes for wifi1/wifi1.1)
@@ -75,13 +76,16 @@ sub setup : Tests(setup) {
         9  => pack("H*", '4018B13A4C40'),
         15 => pack("H*", '4018B13A4C54'),
         16 => pack("H*", '4018B13A4C55'),
-        20 => pack("H*", '4018B13A4C64')
+        20 => pack("H*", '4018B13A4C64'),
+        34 => pack("H*", '4018B13A4C41')
       },
+      # AH-INTERFACE-MIB::ahRadioAttributeTable, keyed by radio ifIndex
+      'i_80211channel' => {6 => 1, 7 => 36},
       'ah_i_ssidlist' =>
-        {10 => 'N/A', 6 => 'N/A', 7 => 'N/A', 33 => 'N/A', 15 => 'MyGuest', 16 => 'MyPrivate', 20 => 'MyGuest'},
+        {10 => 'N/A', 6 => 'N/A', 7 => 'N/A', 33 => 'N/A', 34 => 'MyMgmt', 15 => 'MyGuest', 16 => 'MyPrivate', 20 => 'MyGuest'},
       'ah_i_name' =>
-        {10 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 33 => 'mgt0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
-      'cd11_txrate' => {
+        {10 => 'eth0', 6 => 'wifi0', 7 => 'wifi1', 33 => 'mgt0', 34 => 'mgt0.1', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1'},
+      'ah_c_txrate' => {
         '15.6.128.150.177.92.153.130' => 6000,
         '20.6.40.106.186.61.150.231'  => 58500,
         '20.6.96.190.181.42.99.151'   => 72200
@@ -203,27 +207,67 @@ sub interfaces : Tests(3) {
 
   can_ok($test->{info}, 'interfaces');
 
-  my $expected = {6 => 'wifi0', 7 => 'wifi1', 10 => 'eth0', 15 => 'wifi0.1', 16 => 'wifi0.2', 20 => 'wifi1.1', 33 => 'mgt0'};
+  my $expected = {6 => 'wifi0', 7 => 'wifi1', 10 => 'eth0', 33 => 'mgt0', 34 => 'mgt0.1'};
 
   cmp_deeply($test->{info}->interfaces(),
-    $expected, q(interfaces return expected values));
+    $expected, q(interfaces__wlan_on_radio__is_not_a_port));
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->interfaces(), {}, q(No data returns empty hash));
 }
 
-sub i_ssidlist : Tests(3) {
+sub i_ssidlist : Tests(4) {
   my $test = shift;
 
   can_ok($test->{info}, 'i_ssidlist');
 
-  my $expected = {15 => 'MyGuest', 16 => 'MyPrivate', 20 => 'MyGuest'};
+  my $expected = {
+    '6.15'  => 'MyGuest',
+    '6.16'  => 'MyPrivate',
+    '7.20'  => 'MyGuest',
+    '34.34' => 'MyMgmt'
+  };
 
   cmp_deeply($test->{info}->i_ssidlist(),
-    $expected, q(Interface SSIDs have expected values));
+    $expected, q(i_ssidlist__wlan_on_radio__keys_to_radio));
+
+  delete $test->{info}{'_i_80211channel'};
+  delete $test->{info}{store}{i_80211channel};
+  cmp_deeply(
+    [sort keys %{$test->{info}->i_ssidlist()}],
+    ['15.15', '16.16', '20.20', '34.34'],
+    q(i_ssidlist__no_radio_table__keys_to_wlan)
+  );
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->i_ssidlist(), {}, q(No data returns empty hash));
+}
+
+# A radio missing from ahRadioAttributeTable leaves its WLANs as their own
+# ports; no other radio takes them.
+sub wlan_radios__one_radio_missing__keeps_other_radio : Tests(3) {
+  my $test = shift;
+
+  $test->{info}{store}{i_80211channel} = {7 => 36};
+
+  cmp_deeply(
+    $test->{info}->interfaces(),
+    { 6 => 'wifi0', 7 => 'wifi1', 10 => 'eth0', 15 => 'wifi0.1',
+      16 => 'wifi0.2', 33 => 'mgt0', 34 => 'mgt0.1' },
+    q(WLANs of the missing radio stay ports; wifi1.1 joins wifi1)
+  );
+  cmp_deeply(
+    [sort keys %{$test->{info}->i_ssidlist()}],
+    ['15.15', '16.16', '34.34', '7.20'],
+    q(Only wifi1's SSID is keyed to a radio)
+  );
+  cmp_deeply(
+    $test->{info}->cd11_port(),
+    { '15.6.128.150.177.92.153.130' => 'wifi0.1',
+      '20.6.40.106.186.61.150.231'  => 'wifi1',
+      '20.6.96.190.181.42.99.151'   => 'wifi1' },
+    q(Clients of the missing radio stay on their WLAN port)
+  );
 }
 
 sub i_ssidmac : Tests(3) {
@@ -232,13 +276,14 @@ sub i_ssidmac : Tests(3) {
   can_ok($test->{info}, 'i_ssidmac');
 
   my $expected = {
-    15 => '40:18:b1:3a:4c:54',
-    16 => '40:18:b1:3a:4c:55',
-    20 => '40:18:b1:3a:4c:64'
+    '6.15'  => '40:18:b1:3a:4c:54',
+    '6.16'  => '40:18:b1:3a:4c:55',
+    '7.20'  => '40:18:b1:3a:4c:64',
+    '34.34' => '40:18:b1:3a:4c:41'
   };
 
   cmp_deeply($test->{info}->i_ssidmac(),
-    $expected, q(Wireless MACs have expected values));
+    $expected, q(i_ssidmac__wlan_on_radio__keys_to_radio));
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->i_ssidmac(), {}, q(No data returns empty hash));
@@ -250,16 +295,52 @@ sub cd11_port : Tests(3) {
   can_ok($test->{info}, 'cd11_port');
 
   my $expected = {
-    '15.6.128.150.177.92.153.130' => 'wifi0.1',
-    '20.6.40.106.186.61.150.231'  => 'wifi1.1',
-    '20.6.96.190.181.42.99.151'   => 'wifi1.1'
+    '15.6.128.150.177.92.153.130' => 'wifi0',
+    '20.6.40.106.186.61.150.231'  => 'wifi1',
+    '20.6.96.190.181.42.99.151'   => 'wifi1'
   };
 
   cmp_deeply($test->{info}->cd11_port(),
-    $expected, q(Wireless clients map to wireless interfaces));
+    $expected, q(cd11_port__client_on_wlan__reports_radio));
 
   $test->{info}->clear_cache();
   cmp_deeply($test->{info}->cd11_port(), {}, q(No data returns empty hash));
+}
+
+sub cd11_txrate : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'cd11_txrate');
+
+  # AH-INTERFACE-MIB::ahClientLastTxRate is in kbps
+  $test->{info}{'_ah_c_txrate'} = 1;
+  $test->{info}{store}{ah_c_txrate} = {
+    '15.6.128.150.177.92.153.130' => 6000,
+    '20.6.40.106.186.61.150.231'  => 58500,
+    '20.6.96.190.181.42.99.151'   => 72200,
+    '15.6.2.0.0.0.0.1'            => undef,
+    '15.6.2.0.0.0.0.2'            => -1,
+  };
+
+  my $expected = {
+    '15.6.128.150.177.92.153.130' => [6],
+    '20.6.40.106.186.61.150.231'  => [58.5],
+    '20.6.96.190.181.42.99.151'   => [72.2],
+    '15.6.2.0.0.0.0.1'            => [],
+    '15.6.2.0.0.0.0.2'            => []
+  };
+
+  cmp_deeply($test->{info}->cd11_txrate(),
+    $expected, q(cd11_txrate__kbps__returns_mbps_arrayref));
+
+  cmp_deeply(
+    $test->{info}->qb_fw_mac()->{'15.6.2.0.0.0.0.1'},
+    '02:00:00:00:00:01',
+    q(cd11_txrate__unusable_rate__keeps_client_in_forwarding_table)
+  );
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->cd11_txrate(), {}, q(No data returns empty hash));
 }
 
 sub cd11_mac : Tests(3) {
@@ -289,16 +370,16 @@ sub bp_index : Tests(3) {
   # mock up the needed snmp data.
   my $data
     = {'IF-MIB::ifIndex' =>
-        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20},
+        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 34 => 34, 15 => 15, 16 => 16, 20 => 20},
        'RFC1213-MIB::ifIndex' =>
-        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20},
+        {10 => 10, 6 => 6, 7 => 7, 33 => 33, 34 => 34, 15 => 15, 16 => 16, 20 => 20},
     };
   $test->{info}{sess}{Data} = $data;
 
-  my $expected = {10 => 10, 6 => 6, 7 => 7, 33 => 33, 15 => 15, 16 => 16, 20 => 20};
+  my $expected = {10 => 10, 6 => 6, 7 => 7, 33 => 33, 34 => 34, 15 => 6, 16 => 6, 20 => 7};
 
   cmp_deeply($test->{info}->bp_index(),
-    $expected, q(Bridge interface mapping has expected values));
+    $expected, q(bp_index__wlan_bridge_port__maps_to_radio));
 
   # and now delete the data so we can test for empty returns
   delete $test->{info}{_i_index};

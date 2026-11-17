@@ -1,5 +1,10 @@
 Version 3.985003
 
+  [BUG FIXES]
+
+  * #671 Aerohive: put SSIDs and clients on radio ports, so wireless client
+    reports work, and report client transmit rate in Mbps (#325)
+
 Version 3.985002 (2026-11-07)
 
   [ENHANCEMENTS]
