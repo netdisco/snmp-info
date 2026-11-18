@@ -128,11 +128,21 @@ sub i_index : Tests(3) {
     ok(!exists $info->i_index()->{'2.0.0.0.0.1.0'}, 'i_index__wlan__is_not_a_port');
 }
 
-sub i_name : Tests(2) {
+sub i_name : Tests(6) {
     my $info = shift->{info};
     is($info->i_name()->{1}, 'Ethernet1', 'physical name retained');
+    is($info->i_name()->{'2.0.0.0.0.1.0.0'}, 'Test AP radio0',
+        'i_name__radio__ap_name_and_radio_number');
+    is($info->i_name()->{'2.0.0.0.0.1.1.0'}, 'Test AP radio1',
+        'i_name__second_radio__own_radio_number');
     $info->{store}{instant_ap_name}{'2.0.0.0.0.1'} = 'Renamed AP';
-    is($info->i_name()->{'2.0.0.0.0.1.0.0'}, '02:00:00:00:00:01.radio0', 'AP rename preserves port identity');
+    is($info->i_name()->{'2.0.0.0.0.1.0.0'}, 'Renamed AP radio0',
+        'i_name__ap_renamed__follows_new_name');
+    is($info->interfaces()->{'2.0.0.0.0.1.0.0'}, '02:00:00:00:00:01.radio0',
+        'interfaces__ap_renamed__port_identity_unchanged');
+    $info->{store}{instant_ap_name}{'2.0.0.0.0.1'} = '';
+    is($info->i_name()->{'2.0.0.0.0.1.0.0'}, '02:00:00:00:00:01 radio0',
+        'i_name__ap_name_empty__falls_back_to_ap_mac');
 }
 
 sub i_description : Tests(2) {

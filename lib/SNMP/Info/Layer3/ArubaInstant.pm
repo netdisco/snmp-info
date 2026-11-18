@@ -174,10 +174,14 @@ sub _augment {
         my $radio = $radios->{$iid};
         my $ap_mac = join ':', map {sprintf '%02x', $_} split /\./, $radio->{ap};
         my $name = "$ap_mac.radio$radio->{number}";
+        my $ap_label = $names->{$radio->{ap}} || $ap_mac;
         if ($field eq 'index') { $result{$iid} = $name }
         elsif ($field eq 'name') { $result{$iid} = $name }
+        elsif ($field eq 'label') {
+            $result{$iid} = "$ap_label radio$radio->{number}";
+        }
         elsif ($field eq 'description') {
-            $result{$iid} = join ': ', $names->{$radio->{ap}} || $ap_mac,
+            $result{$iid} = join ': ', $ap_label,
                 "Radio $radio->{number} (channel "
                 . ($channels->{$radio->{source}} // '') . ')';
         }
@@ -207,7 +211,7 @@ sub interfaces {
 
 sub i_name {
     my ($self, $partial) = @_;
-    return $self->_augment($self->SUPER::i_name($partial), 'name', $partial);
+    return $self->_augment($self->SUPER::i_name($partial), 'label', $partial);
 }
 
 sub i_description {
@@ -589,7 +593,10 @@ Returns physical port names and stable radio names.
 
 =item i_name
 
-Returns the same stable radio names alongside physical interface names.
+Returns physical interface names, and for each radio the AP name and
+radio number (C<AP24 radio0>), from C<aiAPName>. The AP MAC address
+stands in for an AP with no name. Unlike C<interfaces>, the name
+follows an AP rename.
 
 =item i_description
 
