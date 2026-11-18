@@ -145,6 +145,28 @@ sub i_name : Tests(6) {
         'i_name__ap_name_empty__falls_back_to_ap_mac');
 }
 
+sub i_ignore : Tests(4) {
+    my $info = shift->{info};
+    my $store = $info->{store};
+    # The virtual controller's own ifTable lists one radioMAC interface
+    # per BSSID of the AP that holds the VC role (8.10 and 8.13 walks).
+    $store->{i_index}{50} = 50;
+    $store->{i_name}{50} = 'radio0_ssid_id0';
+    $store->{i_type}{50} = 'radioMAC';
+    $store->{i_index}{70} = 70;
+    $store->{i_name}{70} = 'radio1_ssid_id4';
+    $store->{i_type}{70} = 'radioMAC';
+    $store->{i_index}{80} = 80;
+    $store->{i_name}{80} = 'radio0_ssid_id1';
+    $store->{i_type}{80} = 'ethernetCsmacd';
+    my $ignored = $info->i_ignore();
+    ok(exists $ignored->{50}, 'i_ignore__radio0_bssid_interface__ignored');
+    ok(exists $ignored->{70}, 'i_ignore__radio1_bssid_interface__ignored');
+    ok(!exists $ignored->{80}, 'i_ignore__ssid_name_without_radiomac_type__kept');
+    ok(!grep({ exists $ignored->{$_} } 1, '2.0.0.0.0.1.0.0', '2.0.0.0.0.1.1.0'),
+        'i_ignore__wired_and_radio_ports__kept');
+}
+
 sub i_description : Tests(2) {
     my $info = shift->{info};
     is($info->i_description()->{1}, 'Ethernet uplink', 'physical description retained');

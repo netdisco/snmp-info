@@ -214,6 +214,21 @@ sub i_name {
     return $self->_augment($self->SUPER::i_name($partial), 'label', $partial);
 }
 
+# The virtual controller's ifTable lists one radioMAC interface per BSSID
+# of its own AP only; radios of every AP are the ports instead.
+sub i_ignore {
+    my ($self, $partial) = @_;
+    my $interfaces = $self->interfaces($partial) || {};
+    my $types = $self->i_type($partial) || {};
+    my %ignore;
+    foreach my $iid (keys %$interfaces) {
+        next unless ($types->{$iid} // '') eq 'radioMAC';
+        next unless $interfaces->{$iid} =~ /^radio\d+_ssid_id\d+$/;
+        $ignore{$iid} = 1;
+    }
+    return \%ignore;
+}
+
 sub i_description {
     my ($self, $partial) = @_;
     return $self->_augment($self->SUPER::i_description($partial), 'description', $partial);
@@ -597,6 +612,12 @@ Returns physical interface names, and for each radio the AP name and
 radio number (C<AP24 radio0>), from C<aiAPName>. The AP MAC address
 stands in for an AP with no name. Unlike C<interfaces>, the name
 follows an AP rename.
+
+=item i_ignore
+
+Returns the virtual controller's C<radioMAC> interfaces named
+C<radioN_ssid_idM>, one per BSSID of its own AP. Each AP radio is a port
+instead, carrying its SSIDs and clients.
 
 =item i_description
 
