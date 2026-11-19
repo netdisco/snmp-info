@@ -5,6 +5,9 @@ Version 3.985003
   * #691 LLDP: add lldp_addrs, every management address each neighbor
     advertises
 
+  * #693 ArubaInstant: name radio ports by AP and radio, ignore per-SSID
+    interfaces (#536)
+
   [BUG FIXES]
 
   * #690 LLDP: map ports whose description several interfaces share by their
