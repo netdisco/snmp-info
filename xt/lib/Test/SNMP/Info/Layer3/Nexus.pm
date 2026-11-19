@@ -930,4 +930,191 @@ sub agg_ports__nexus__unchanged : Tests(2) {
   );
 }
 
+# Shaped from an NX-OSv 10.6(2) VXLAN EVPN leaf: cnvoVNetTable is indexed
+# nve instance.VNI, and an L3 VNI's VLAN is its SVI VLAN
+sub _vxlan_cache {
+  my %arg = @_;
+  return {
+    '_layers'      => 70,
+    '_description' => 'Cisco NX-OS(tm) Nexus9000 C9300v, Software (NXOS'
+      . ' 64-bit), Version 10.6(2), RELEASE SOFTWARE',
+    '_id'            => '.1.3.6.1.4.1.9.12.3.1.3.1951',
+    '_nve_vnis'      => $arg{vnis},
+    '_vnet_vlan'     => 1,
+    '_vnet_vni_type' => 1,
+    'store'          => {
+      'vnet_vlan' => {
+        '1.10010' => 10, '1.10020' => 30, '1.12000' => 2000,
+        '1.50001' => 3001,
+      },
+      'vnet_vni_type' => {
+        '1.10010' => 'l2', '1.10020' => 'l2', '1.12000' => 'l2',
+        '1.50001' => 'l3',
+      },
+    },
+  };
+}
+
+sub l2_service_bindings__l2_vnis__one_vni_binding_each : Tests(1) {
+  my $test = shift;
+
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Nexus::_nve_vnet_row_exists = sub {1};
+
+  $test->{info}->cache(_vxlan_cache(vnis => '10010,10020,12000,50001'));
+  cmp_deeply(
+    $test->{info}->l2_service_bindings(),
+    {
+      'vni.10010.10.0.' =>
+        {vlan => 10, type => 'vni', id => 10010, ifindex => 0, instance => undef},
+      'vni.10020.30.0.' =>
+        {vlan => 30, type => 'vni', id => 10020, ifindex => 0, instance => undef},
+      'vni.12000.2000.0.' => {
+        vlan => 2000, type => 'vni', id => 12000, ifindex => 0,
+        instance => undef
+      },
+    },
+    'Each L2 VNI binds its VLAN, the L3 VNI is left out'
+  );
+}
+
+sub l2_service_bindings__no_vnis_configured__table_never_walked : Tests(2) {
+  my $test = shift;
+
+  $test->{info}->cache(_vxlan_cache(vnis => '--'));
+  my $walked = 0;
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Nexus::vnet_vlan     = sub { $walked++; {} };
+  local *SNMP::Info::Layer3::Nexus::vnet_vni_type = sub { $walked++; {} };
+  cmp_deeply($test->{info}->l2_service_bindings(), {}, 'No bindings');
+  is($walked, 0, 'cnvoVNetTable is not walked when nve1 lists no VNI ("--")');
+}
+
+sub l2_service_bindings__vnis_configured__walks_by_getnext : Tests(2) {
+  my $test = shift;
+
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Nexus::_nve_vnet_row_exists = sub {1};
+
+  $test->{info}->cache(_vxlan_cache(vnis => '10010-10020'));
+  $test->{info}{BulkWalk} = 1;
+  my @bulk;
+  my $info = $test->{info};
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Nexus::vnet_vlan =
+    sub { push @bulk, $info->{BulkWalk}; $info->{store}{vnet_vlan} };
+  local *SNMP::Info::Layer3::Nexus::vnet_vni_type =
+    sub { push @bulk, $info->{BulkWalk}; $info->{store}{vnet_vni_type} };
+  $info->l2_service_bindings();
+  cmp_deeply(\@bulk, [0, 0], 'Both columns are walked with bulkwalk off');
+  is($info->{BulkWalk}, 1, 'Bulkwalk is restored afterwards');
+}
+
+sub l2_service_bindings__first_vni_row_missing__table_never_walked : Tests(3) {
+  my $test = shift;
+
+  $test->{info}->cache(_vxlan_cache(vnis => '10010,10020'));
+  my ($walked, @probed) = (0);
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Nexus::_nve_vnet_row_exists
+    = sub { push @probed, $_[1]; return };
+  local *SNMP::Info::Layer3::Nexus::vnet_vlan     = sub { $walked++; {} };
+  local *SNMP::Info::Layer3::Nexus::vnet_vni_type = sub { $walked++; {} };
+  cmp_deeply($test->{info}->l2_service_bindings(), {}, 'No bindings');
+  cmp_deeply(\@probed, [10010], 'The first listed VNI is probed');
+  is($walked, 0, 'cnvoVNetTable is not walked when its row is missing');
+}
+
+{
+  package Test::SNMP::Info::Layer3::Nexus::FakeSession;
+  sub new { my ($class, %answer) = @_; return bless {%answer}, $class }
+  sub get {
+    my ($self, $oid) = @_;
+    $self->{_gets}++;
+    return $self->{$oid};
+  }
+}
+
+sub nve_vnet_row_exists__exact_get__true_only_for_a_value : Tests(3) {
+  my $test = shift;
+
+  my $sess = Test::SNMP::Info::Layer3::Nexus::FakeSession->new(
+    'cnvoVNetVlan.1.10010' => 10,
+    'cnvoVNetVlan.1.10020' => 'NOSUCHINSTANCE',
+  );
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Nexus::session = sub {$sess};
+  ok($test->{info}->_nve_vnet_row_exists(10010), 'A row with a VLAN exists');
+  ok(!$test->{info}->_nve_vnet_row_exists(10020), 'noSuchInstance is no row');
+  ok(!$test->{info}->_nve_vnet_row_exists(10030), 'No answer is no row');
+}
+
+sub nve_vnet_row_exists__asked_twice__one_get : Tests(2) {
+  my $test = shift;
+
+  my $sess = Test::SNMP::Info::Layer3::Nexus::FakeSession->new(
+    'cnvoVNetVlan.1.10010' => 10);
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Nexus::session = sub {$sess};
+  $test->{info}->_nve_vnet_row_exists(10010) for 1 .. 2;
+  is($sess->{_gets}, 1, 'The row is read once and remembered');
+  $test->{info}->clear_cache();
+  $test->{info}->_nve_vnet_row_exists(10010);
+  is($sess->{_gets}, 2, 'clear_cache forgets the answer');
+}
+
+sub nve_exact_get__offline__sends_nothing : Tests(4) {
+  my $test = shift;
+
+  my $sess = Test::SNMP::Info::Layer3::Nexus::FakeSession->new(
+    'cnvoVNetVlan.1.10010' => 10,
+    'cnvoNvoConfiguredVni.1' => 'NOSUCHINSTANCE');
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Nexus::session = sub {$sess};
+  local $test->{info}{Offline} = 1;
+  $test->{info}->cache(_vxlan_cache(vnis => undef));
+  ok($test->{info}->_nve_vnet_row_exists(10010),
+    'Offline with nothing saved trusts the cached columns');
+  ok(!$test->{info}->_l2sb_vendor_none(),
+    'Offline with nothing saved leaves an empty overlay unknown');
+  ok(!$sess->{_gets}, 'Offline sends no GET');
+  $test->{info}{_nve_vnet_row_10020} = 'NOSUCHINSTANCE';
+  ok(!$test->{info}->_nve_vnet_row_exists(10020),
+    'Offline uses a saved answer');
+}
+
+sub nve_exact_get__unblessed_session__no_get : Tests(1) {
+  my $test = shift;
+
+  no warnings 'redefine';
+  local *SNMP::Info::Layer3::Nexus::session = sub { {} };
+  ok(!$test->{info}->_nve_vnet_row_exists(10010),
+    'A session that cannot send gives no row and does not die');
+}
+
+sub l2_service_bindings_complete__nve1_lists_no_vni__returns_1 : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache(_vxlan_cache(vnis => '--'));
+  is($test->{info}->l2_service_bindings_complete(), 1,
+    'nve1 with no member VNI is a complete empty set');
+}
+
+sub l2_service_bindings_complete__overlay_answers__by_exception : Tests(3) {
+  my $test = shift;
+
+  my %expect = (NOSUCHINSTANCE => 1, NOSUCHOBJECT => undef, '' => undef);
+  foreach my $answer (sort keys %expect) {
+    $test->{info}->clear_cache();
+    $test->{info}->cache(_vxlan_cache(vnis => undef));
+    my $sess = Test::SNMP::Info::Layer3::Nexus::FakeSession->new(
+      $answer ? ('cnvoNvoConfiguredVni.1' => $answer) : ());
+    no warnings 'redefine';
+    local *SNMP::Info::Layer3::Nexus::session = sub {$sess};
+    is($test->{info}->l2_service_bindings_complete(), $expect{$answer},
+      'ConfiguredVni ' . ($answer || 'no answer') . ' gives '
+        . ($expect{$answer} // 'undef'));
+  }
+}
+
 1;

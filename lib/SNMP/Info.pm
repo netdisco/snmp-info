@@ -426,6 +426,13 @@ SNMP Interface to IEEE Aggregated Links.  F<IEEE8023-LAG-MIB>
 
 See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
 
+=item SNMP::Info::L2Service
+
+Bindings between local VLANs and layer 2 service IDs, such as SPB I-SIDs
+and VXLAN VNIs, from the device class's own sources.
+
+See documentation in L<SNMP::Info::L2Service> for details.
+
 =item SNMP::Info::IPv6
 
 SNMP Interface for obtaining configured IPv6 addresses and mapping IPv6

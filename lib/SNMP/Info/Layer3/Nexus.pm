@@ -32,6 +32,7 @@ package SNMP::Info::Layer3::Nexus;
 use strict;
 use warnings;
 use Exporter;
+use Scalar::Util ();
 use SNMP::Info::Layer3::CiscoSwitch;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
@@ -58,11 +59,14 @@ $VERSION = '3.985002';
     'CISCO-CONTEXT-MAPPING-MIB'         => 'cContextMappingMIBObjects',
     'SNMP-COMMUNITY-MIB'                => 'snmpCommunityName',
     'CISCO-VPC-MIB'                     => 'cVpcRoleStatus',
+    'CISCO-NETWORK-VIRTUALIZATION-OVERLAY-MIB' => 'cnvoVNetVlan',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::CiscoSwitch::GLOBALS,
     'mac' => 'dot1dBaseBridgeAddress',
+    # CISCO-NETWORK-VIRTUALIZATION-OVERLAY-MIB::cnvoNvoTable, instance nve1
+    'nve_vnis' => 'cnvoNvoConfiguredVni.1',
 );
 
 %FUNCS = (
@@ -83,6 +87,9 @@ $VERSION = '3.985002';
     # CISCO-VPC-MIB::cVpcStatusHostLinkTable
     'vpc_host_link_if'   => 'cVpcStatusHostLinkIfIndex',
     'vpc_host_link_stat' => 'cVpcStatusHostLinkStatus',
+    # CISCO-NETWORK-VIRTUALIZATION-OVERLAY-MIB::cnvoVNetTable
+    'vnet_vlan'     => 'cnvoVNetVlan',
+    'vnet_vni_type' => 'cnvoVNetVniType',
 );
 
 %MUNGE = (
@@ -184,6 +191,75 @@ sub _vpc_add_host_links {
 		$record->{sources}{mc} = 'CISCO-VPC-MIB::cVpcStatusHostLinkIfIndex';
 	}
 	return;
+}
+
+sub _l2sb_vendor_walked { return qw/vnet_vlan vnet_vni_type/ }
+
+# The nve process was seen to crash on an NX-OSv 10.6(2) virtual image
+# after a request whose answer was past the end of cnvoPeerTable; a GETBULK
+# on cnvoVNetTable can reach there when the tables have few rows. To be
+# safe, walk only when the first VNI nve1 lists has a row, read by an exact
+# GET, and by GETNEXT, so each walk ends in the next column.
+sub _l2sb_vendor_rows {
+	my $nexus = shift;
+
+	my $vnis = $nexus->nve_vnis();
+	return unless defined $vnis and $vnis =~ /(\d+)/;
+	return unless $nexus->_nve_vnet_row_exists($1);
+
+	my ( $vlans, $types );
+	{
+		local $nexus->{BulkWalk} = 0;
+		$vlans = $nexus->vnet_vlan()     || {};
+		$types = $nexus->vnet_vni_type() || {};
+	}
+
+	my @rows;
+	foreach my $iid ( keys %$vlans ) {
+		next unless $vlans->{$iid};
+		next unless ( $types->{$iid} // q{} ) eq q{l2};
+		my ( undef, $vni ) = split /\./, $iid;
+		push @rows, { vlan => $vlans->{$iid}, type => q{vni}, id => $vni };
+	}
+	return @rows;
+}
+
+# nve1 with no member VNI answers "--"; the feature on without nve1 answers
+# noSuchInstance. Feature off answers noSuchObject, as does an image without
+# the MIB, so that stays unknown.
+sub _l2sb_vendor_none {
+	my $nexus = shift;
+
+	my $vnis = $nexus->nve_vnis();
+	return $vnis !~ /\d/ if defined $vnis;
+	my $answer = $nexus->_nve_exact_get( '_nve_vni_exception',
+		'cnvoNvoConfiguredVni.1' );
+	return defined $answer && $answer eq 'NOSUCHINSTANCE';
+}
+
+# Offline without a saved answer, trust the cached columns.
+sub _nve_vnet_row_exists {
+	my ( $nexus, $vni ) = @_;
+
+	my $vlan = $nexus->_nve_exact_get( "_nve_vnet_row_$vni",
+		"cnvoVNetVlan.1.$vni" );
+	return 1 if !defined $vlan and $nexus->{Offline};
+	return defined $vlan && length $vlan && $vlan !~ /^NOSUCH/;
+}
+
+# A raw GET of one instance: a partial fetch falls through to GETNEXT on
+# noSuchInstance. Saved under an underscore key, which clear_cache resets;
+# never sent Offline. An exception is saved as its NOSUCH string, no answer
+# as the empty string.
+sub _nve_exact_get {
+	my ( $nexus, $key, $oid ) = @_;
+
+	return $nexus->{$key} if exists $nexus->{$key};
+	return if $nexus->{Offline};
+	my $sess = $nexus->session();
+	return unless Scalar::Util::blessed($sess) and $sess->can('get');
+	my $answer = $sess->get($oid);
+	return $nexus->{$key} = defined $answer ? $answer : q{};
 }
 
 sub _context_kinds {
@@ -524,6 +600,8 @@ after determining a more specific class using the method above.
 
 =item F<CISCO-VPC-MIB>
 
+=item F<CISCO-NETWORK-VIRTUALIZATION-OVERLAY-MIB>
+
 =back
 
 =over
@@ -540,6 +618,11 @@ requirements.
 These are methods that return a scalar value from SNMP
 
 =over
+
+=item $nexus->nve_vnis()
+
+The VNIs configured on interface nve1, as a list of numbers and ranges
+(C<cnvoNvoConfiguredVni.1>).
 
 =item $nexus->os()
 
@@ -783,6 +866,41 @@ C<peer_link>: C<cVpcStatusPeerLinkIfIndex>.
 C<status>: the peer keepalive status, C<cVpcPeerKeepAliveStatus>.
 
 =back
+
+=back
+
+=head2 Layer 2 Service Bindings
+
+=over
+
+=item $nexus->l2_service_bindings()
+
+As described in L<SNMP::Info::L2Service/"TABLE METHODS">, one binding of
+C<type> C<vni> per L2 VNI with a VLAN, C<ifindex> 0. An L3 VNI is left
+out. C<cnvoVNetTable> is read only when an exact GET finds the row of the
+first VNI C<nve_vnis()> lists, and by
+GETNEXT. The overlay process was seen to crash on the NX-OSv 10.6(2)
+virtual image after a request reaching past the following
+C<cnvoPeerTable>, which a bulk request on a small table can do, so the
+table is read this way to be safe.
+
+C<l2_service_bindings_complete()> is 1 with no bindings when nve1 lists no
+VNI or the overlay feature has no nve1 interface; it stays undef when the
+feature is off.
+
+=back
+
+=head2 Overlay Virtual Network Table (C<cnvoVNetTable>)
+
+=over
+
+=item $nexus->vnet_vlan()
+
+(C<cnvoVNetVlan>)
+
+=item $nexus->vnet_vni_type()
+
+(C<cnvoVNetVniType>)
 
 =back
 
