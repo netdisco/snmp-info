@@ -39,6 +39,7 @@ lib/SNMP/Info/IEEE802_Bridge.pm
 lib/SNMP/Info/IEEE802dot11.pm
 lib/SNMP/Info/IEEE802dot3ad.pm
 lib/SNMP/Info/IPv6.pm
+lib/SNMP/Info/L2Service.pm
 lib/SNMP/Info/Layer1.pm
 lib/SNMP/Info/Layer1/Allied.pm
 lib/SNMP/Info/Layer1/Asante.pm
@@ -229,6 +230,7 @@ xt/lib/Test/SNMP/Info/FDP.pm
 xt/lib/Test/SNMP/Info/IEEE802dot11.pm
 xt/lib/Test/SNMP/Info/IEEE802dot3ad.pm
 xt/lib/Test/SNMP/Info/IPv6.pm
+xt/lib/Test/SNMP/Info/L2Service.pm
 xt/lib/Test/SNMP/Info/Layer1.pm
 xt/lib/Test/SNMP/Info/Layer1/Allied.pm
 xt/lib/Test/SNMP/Info/Layer1/Asante.pm

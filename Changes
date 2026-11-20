@@ -8,6 +8,9 @@ Version 3.985003
   * #693 ArubaInstant: name radio ports by AP and radio, ignore per-SSID
     interfaces (#536)
 
+  * #694 L2Service: add l2_service_bindings from VOSS I-SIDs and NX-OS VNIs
+    (#692)
+
   [BUG FIXES]
 
   * #690 LLDP: map ports whose description several interfaces share by their
