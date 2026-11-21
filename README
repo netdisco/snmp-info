@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.985002
+    SNMP::Info - Version 3.985003
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -349,6 +349,12 @@ SUBCLASSES
         SNMP Interface to IEEE Aggregated Links. IEEE8023-LAG-MIB
 
         See documentation in SNMP::Info::IEEE802dot3ad for details.
+
+    SNMP::Info::L2Service
+        Bindings between local VLANs and layer 2 service IDs, such as SPB
+        I-SIDs and VXLAN VNIs, from the device class's own sources.
+
+        See documentation in SNMP::Info::L2Service for details.
 
     SNMP::Info::IPv6
         SNMP Interface for obtaining configured IPv6 addresses and mapping

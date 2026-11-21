@@ -49,7 +49,7 @@ use SNMP::Info::CDP;
 
 our ($VERSION, %FUNCS, %GLOBALS, %MIBS, %MUNGE);
 
-$VERSION = '3.985002';
+$VERSION = '3.985003';
 
 %GLOBALS = (
     %SNMP::Info::Layer2::GLOBALS,
