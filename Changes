@@ -16,6 +16,9 @@ Version 3.985003
   * #690 LLDP: map ports whose description several interfaces share by their
     port ID or number, not to one of those interfaces
 
+  * #695 RapidCity: key an MLT by its designated port only when that port is
+    a member, so MLTs whose members are all down stay separate
+
 Version 3.985002 (2026-11-07)
 
   [ENHANCEMENTS]
