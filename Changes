@@ -4,10 +4,8 @@ Version 3.985003
 
   * #691 LLDP: add lldp_addrs, every management address each neighbor
     advertises
-
   * #693 ArubaInstant: name radio ports by AP and radio, ignore per-SSID
     interfaces (#536)
-
   * #694 L2Service: add l2_service_bindings from VOSS I-SIDs and NX-OS VNIs
     (#692)
 
@@ -15,10 +13,8 @@ Version 3.985003
 
   * #671 Aerohive: put SSIDs and clients on radio ports, so wireless client
     reports work, and report client transmit rate in Mbps (#325)
-
   * #690 LLDP: map ports whose description several interfaces share by their
     port ID or number, not to one of those interfaces
-
   * #695 RapidCity: key an MLT by its designated port only when that port is
     a member, so MLTs whose members are all down stay separate
 
