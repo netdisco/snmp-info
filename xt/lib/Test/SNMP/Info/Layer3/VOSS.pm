@@ -335,4 +335,143 @@ sub rc_cpu_duplex__legacy_leaf__absent : Tests(2) {
   ok(!$test->{info}->can('rc_ist_peer'), 'No legacy IST method');
 }
 
+# Shaped from a VSP-8284XSQ 6.0.1.1 walk: rcVlanPlsbIsid indexed by VLAN,
+# 0 on a VLAN with no I-SID
+sub l2_service_bindings__isid_per_vlan__zero_left_out : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache({
+    '_rc_vlan_isid' => 1,
+    'store' => {'rc_vlan_isid' => {1 => 0, 10 => 103137, 11 => 103138}},
+  });
+  cmp_deeply(
+    $test->{info}->l2_service_bindings(),
+    {
+      'isid.103137.10.0.' => {
+        vlan => 10, type => 'isid', id => 103137, ifindex => 0,
+        instance => undef
+      },
+      'isid.103138.11.0.' => {
+        vlan => 11, type => 'isid', id => 103138, ifindex => 0,
+        instance => undef
+      },
+    },
+    'One I-SID binding per VLAN that has one'
+  );
+}
+
+sub l2_service_bindings_complete__column_served_all_zero__is_1 : Tests(2) {
+  my $test = shift;
+
+  # As an ERS-8810 7.2.11 serves it: the column, with no I-SID assigned
+  $test->{info}->cache({
+    '_rc_vlan_isid' => 1,
+    'store' => {'rc_vlan_isid' => {1 => 0, 21 => 0}},
+  });
+  $test->{info}{walk_status}{rc_vlan_isid} = {complete => 1, rows => 2};
+  cmp_deeply($test->{info}->l2_service_bindings(), {}, 'No bindings');
+  is($test->{info}->l2_service_bindings_complete(), 1,
+    'Served column with no I-SID is complete');
+}
+
+sub l2_service_bindings_complete__walk_short__is_0 : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache({
+    '_rc_vlan_isid' => 1,
+    'store' => {'rc_vlan_isid' => {10 => 103137}},
+  });
+  $test->{info}{walk_status}{rc_vlan_isid} = {complete => 0, rows => 1};
+  is($test->{info}->l2_service_bindings_complete(), 0,
+    'Short walk gives 0');
+}
+
+
+# Shaped from a Fabric Engine 9.4.0.0 walk with each I-SID service kind:
+# rcIsidInterfaceTable indexed ifIndex.isid, a VLAN-based service on port
+# 194, switched UNIs with a C-VID (198) and untagged (200), transparent UNIs
+# (197), and services on MLT ifIndexes 6148 and 6149, which ifTable lacks.
+# rcMltPortMembers is 26 octets there, bit N for ifIndex N.
+sub _mlt_members {
+  my %member = map { $_ => 1 } @_;
+  return pack('B*', join('', map { $member{$_} ? 1 : 0 } 0 .. 207));
+}
+
+sub _isid_uni_cache {
+  my %arg = @_;
+  return {
+    '_layers'         => 6,
+    '_description'    => '5520-24T-FabricEngine (9.4.0.0)',
+    '_id'             => '.1.3.6.1.4.1.1916.2.437',
+    '_rc_vlan_isid'   => 1,
+    '_rc_isid_if_vlan' => 1,
+    '_rc_isid_if_cvid' => 1,
+    '_rc_isid_if_type' => 1,
+    '_rc_mlt_index'   => 1,
+    '_rc_mlt_ports'   => 1,
+    '_i_name'         => 1,
+    '_i_description'  => 1,
+    'store'           => {
+      'rc_vlan_isid' => {1 => 0, 10 => 20010, 40 => 20020},
+      'rc_isid_if_vlan' => {
+        '194.20010' => 10, '197.20060' => 0, '198.20050' => 0,
+        '200.20050' => 0, '6148.20051' => 0, '6149.20060' => 0,
+      },
+      'rc_isid_if_cvid' => {
+        '194.20010' => 0, '197.20060' => 0, '198.20050' => 50,
+        '200.20050' => 4096, '6148.20051' => 51, '6149.20060' => 0,
+      },
+      'rc_isid_if_type' => {
+        '194.20010' => 'l2vsn',      '197.20060' => 'elanTransparent',
+        '198.20050' => 'elan',       '200.20050' => 'elan',
+        '6148.20051' => 'elan',      '6149.20060' => 'elanTransparent',
+      },
+      'rc_mlt_index' => {5 => 6148, 6 => 6149},
+      'rc_mlt_ports' => {
+        5 => _mlt_members(@{$arg{mlt5} || [202, 203]}),
+        6 => _mlt_members(204),
+      },
+      'i_name'        => {map { $_ => "Port 1/" . ($_ - 191) } 194, 196 .. 204},
+      'i_description' => {map { $_ => 'Port' } 194, 196 .. 204},
+    },
+  };
+}
+
+sub _isid_binding {
+  my ($vlan, $id, $ifindex) = @_;
+  return {vlan => $vlan, type => 'isid', id => $id, ifindex => $ifindex,
+    instance => undef};
+}
+
+sub l2_service_bindings__port_services__bound_on_their_ports : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache(_isid_uni_cache());
+  cmp_deeply(
+    $test->{info}->l2_service_bindings(),
+    {
+      'isid.20010.10.0.'     => _isid_binding(10,    20010, 0),
+      'isid.20020.40.0.'     => _isid_binding(40,    20020, 0),
+      'isid.20050.50.198.'   => _isid_binding(50,    20050, 198),
+      'isid.20050..200.'     => _isid_binding(undef, 20050, 200),
+      'isid.20060..197.'     => _isid_binding(undef, 20060, 197),
+      'isid.20051.51.202.'   => _isid_binding(51,    20051, 202),
+      'isid.20051.51.203.'   => _isid_binding(51,    20051, 203),
+      'isid.20060..204.'     => _isid_binding(undef, 20060, 204),
+    },
+    'VLAN-based port row left out, UNIs bound on their ports and MLT members'
+  );
+}
+
+sub l2_service_bindings__mlt_without_members__bound_to_mlt_ifindex
+  : Tests(1) {
+  my $test = shift;
+
+  $test->{info}->cache(_isid_uni_cache(mlt5 => []));
+  my $bindings = $test->{info}->l2_service_bindings();
+  cmp_deeply($bindings->{'isid.20051.51.6148.'},
+    _isid_binding(51, 20051, 6148),
+    'Service on an MLT with no member port keeps the MLT ifIndex');
+}
+
 1;

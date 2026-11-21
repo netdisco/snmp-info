@@ -314,6 +314,31 @@ sub lldp_ip : Tests(3) {
   );
 }
 
+sub lldp_addrs : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'lldp_addrs');
+
+  $test->_prime_fortiswitch();
+  $test->_prime_fortiswitch_lldp();
+  cmp_deeply(
+    $test->{info}->lldp_addrs(),
+    {'0.22.3' => ['10.10.20.38']},
+    q(lldp_addrs__fortiswitch__ignores_management_addresses)
+  );
+
+  $test->{info}{_id} = '.1.3.6.1.4.1.12356.101.1.5005';
+  cmp_deeply(
+    $test->{info}->lldp_addrs(),
+    {
+      '998707741.23.1' => ['172.22.92.147'],
+      '998707741.55.5' => ['172.24.92.1'],
+      '998707741.55.6' => ['172.24.92.21'],
+    },
+    q(lldp_addrs__fortigate__keeps_management_addresses)
+  );
+}
+
 sub lldp_ipv6 : Tests(2) {
   my $test = shift;
 

@@ -624,6 +624,12 @@ sub lldp_ipv6 {
     return $tp->_tp_lldp_addr( $partial, 1 );
 }
 
+sub lldp_addrs {
+    my ( $tp, $partial ) = @_;
+    return $tp->SUPER::lldp_addrs($partial) if $tp->_tp_lldp_standard;
+    return $tp->_lldp_addrs_from_families($partial);
+}
+
 sub lldp_port {
     my ( $tp, $partial ) = @_;
     return $tp->SUPER::lldp_port($partial) if $tp->_tp_lldp_standard;
@@ -1226,6 +1232,12 @@ IPv6 are omitted.
 
 Returns reference to hash. Remote IPv6 management address per neighbor
 from C<tp_lldp_rman>, as reported. C<::> and C<::a.b.c.d> are omitted.
+
+=item $tplink->lldp_addrs()
+
+Returns reference to hash of array references. Every remote management
+address when F<LLDP-MIB> has neighbors; otherwise the address
+C<lldp_ip()> or C<lldp_ipv6()> returns for each neighbor.
 
 =item $tplink->lldp_port()
 

@@ -227,4 +227,19 @@ sub lldp_ip : Tests(3) {
     q(IBM table management address is returned when LLDP-MIB is empty));
 }
 
+sub lldp_addrs : Tests(3) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'lldp_addrs');
+  $test->prime_std_lldp;
+  is_deeply($info->lldp_addrs(), {'0.51.2' => ['192.0.2.10']},
+    q(LLDP-MIB management addresses are returned when present));
+
+  $info->clear_cache();
+  $test->prime_ibm_lldp;
+  is_deeply($info->lldp_addrs(), {1 => ['192.0.2.20']},
+    q(IBM table management address is returned when LLDP-MIB is empty));
+}
+
 1;

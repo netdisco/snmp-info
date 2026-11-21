@@ -261,6 +261,7 @@ sub _lag_new_record {
     partner_system => undef,
     partner_key    => undef,
     lacp           => 0,
+    esi            => undef,
     sources        => {},
   };
 }
@@ -425,6 +426,10 @@ RapidCity also fill C<peer_link>. Members come from each class's
 C<agg_ports()>, for example in L<SNMP::Info::Layer3::Juniper> and
 L<SNMP::Info::Layer3::Extreme>.
 
+The C<mc-lag> kind and the C<esi> field are placeholders. No class fills
+them, because Junos serves MC-LAG and EVPN multihoming over no MIB. A
+class fills them if a device later reports them over SNMP.
+
 =head2 Terms
 
 =over
@@ -456,13 +461,14 @@ An aggregate that does not run LACP. It has no partner.
 =item multi-chassis group
 
 An aggregate whose members are split across two devices that present it
-to the far end as one aggregate: a Cisco vPC, an Extreme MLAG port, or an
-SMLT.
+to the far end as one aggregate: a Cisco vPC, an Extreme MLAG port, an
+SMLT, or a Junos MC-LAG C<mc-ae> interface.
 
 =item multi-chassis domain
 
 The pairing of two devices that serve multi-chassis groups together: a
-vPC domain, an MLAG peer, or an IST or virtual IST session.
+vPC domain, an MLAG peer, an IST or virtual IST session, or a Junos
+MC-LAG redundancy group.
 
 =item peer link
 
@@ -471,8 +477,9 @@ as a vPC peer link or an IST.
 
 =back
 
-ESI-LAG has no field of its own. It shows only as one actor system that
-several devices present, as the second SYNOPSIS example finds.
+ESI-LAG has the placeholder C<esi> field in C<lag_groups()>, always undef
+over SNMP. SNMP shows an ESI-LAG only as one actor system that several
+devices present. The second example under L</SYNOPSIS> finds such systems.
 
 =head2 Inherited Classes
 
@@ -633,13 +640,13 @@ Present only on a multi-chassis group. A HASH reference with these keys:
 
 =item C<kind>
 
-C<vpc> (Cisco NX-OS), C<mlag> (Extreme EXOS) or C<smlt> (Passport and
-Baystack).
+C<vpc> (Cisco NX-OS), C<mlag> (Extreme EXOS), C<smlt> (Passport and
+Baystack) or C<mc-lag> (Junos; no class fills it).
 
 =item C<group>
 
 The device's identifier for the group: the vPC id, the MLAG port id
-(C<extremeMlagPortId>) or the MLT id.
+(C<extremeMlagPortId>), the MLT id or the MC-LAG C<mc-ae-id>.
 
 =item C<domain>
 
@@ -649,8 +656,8 @@ when the device serves none for the group.
 =item C<state>
 
 The group's state, as the device serves it: the vPC host link status,
-the MLAG local link status or the MLT running type. Undef when the device
-serves none.
+the MLAG local link status, the MLT running type, or the MC-LAG local
+status (C<active> or C<standby>). Undef when the device serves none.
 
 =back
 
@@ -658,6 +665,34 @@ serves none.
 
 Present, with the value 1, only on the aggregate that is a multi-chassis
 domain's peer link.
+
+=item C<esi>
+
+A placeholder, present on every record and always undef. A class that
+later reads EVPN multihoming over SNMP fills it, on an aggregate that is
+an Ethernet segment, with a HASH reference with these keys:
+
+=over 4
+
+=item C<id>
+
+The 10-octet Ethernet segment identifier, as colon-separated hex such as
+C<00:11:22:33:44:55:66:77:88:99>.
+
+=item C<df>
+
+HASH reference keyed by EVPN instance name, as the device names it, such
+as C<default-switch> or a MAC-VRF name. The value is 1 when this device
+is the segment's designated forwarder in that instance, 0 when another
+device is. A device elects one designated forwarder per segment per
+instance, so one aggregate can be the designated forwarder in one
+instance and not in another.
+
+=item C<mode>
+
+The segment's redundancy mode: C<all-active> or C<single-active>.
+
+=back
 
 =item C<sources>
 
@@ -683,6 +718,7 @@ An example record, a vPC running LACP:
         partner_system => '02:00:00:00:00:20',
         partner_key    => 1,
         lacp           => 1,
+        esi            => undef,
         mc             => {
             kind   => 'vpc',
             group  => 10,
@@ -703,17 +739,19 @@ An example record, a vPC running LACP:
 
 Returns a HASH reference with one record per multi-chassis domain, keyed
 by the domain's identifier on the device: the vPC domain id, the MLAG
-peer name, or C<vist> or C<ist>. Empty when the device class reads no
-multi-chassis source or the device serves no domain. Each record has
-C<kind> and C<sources>. The other fields are filled only for some
-vendors; a field the device does not serve is undef or absent:
+peer name, C<vist> or C<ist>, or the MC-LAG redundancy group id. Empty
+when the device class reads no multi-chassis source or the device serves
+no domain. Each record has C<kind> and C<sources>. The other fields are
+filled only for some vendors; a field the device does not serve is undef
+or absent:
 
 =over 4
 
 =item C<kind>
 
-C<vpc> (Cisco NX-OS), C<mlag> (Extreme EXOS), or C<vist> or C<ist> (a
-virtual IST or an IST, on Passport and Baystack).
+C<vpc> (Cisco NX-OS), C<mlag> (Extreme EXOS), C<vist> or C<ist> (a
+virtual IST or an IST, on Passport and Baystack), or C<mc-lag> (Junos; no
+class fills it).
 
 =item C<system_mac>
 
@@ -725,7 +763,8 @@ The device's role in the domain. Cisco NX-OS only.
 
 =item C<peer>
 
-The address of the other device of the domain.
+The address of the other device of the domain; for MC-LAG, the ICCP
+peer address.
 
 =item C<peer_link>
 
@@ -734,7 +773,9 @@ NX-OS only.
 
 =item C<status>
 
-The state of the session with the other device, as the device serves it.
+The state of the session with the other device, as the device serves it;
+for MC-LAG, the redundancy group's state as ICCP reports it, such as
+C<Up>.
 
 =item C<vlan>
 

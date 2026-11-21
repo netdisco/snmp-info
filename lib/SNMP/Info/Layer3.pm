@@ -45,13 +45,15 @@ use SNMP::Info::LLDP;
 use SNMP::Info::DocsisHE;
 use SNMP::Info::VRF;
 use SNMP::Info::IEEE802dot3ad;
+use SNMP::Info::L2Service;
 
 @SNMP::Info::Layer3::ISA = qw/
     SNMP::Info::PowerEthernet SNMP::Info::IPv6
     SNMP::Info::Entity SNMP::Info::EtherLike
     SNMP::Info::Bridge SNMP::Info::AdslLine
     SNMP::Info::LLDP SNMP::Info::DocsisHE
-    SNMP::Info::VRF SNMP::Info SNMP::Info::IEEE802dot3ad Exporter/;
+    SNMP::Info::VRF SNMP::Info SNMP::Info::IEEE802dot3ad
+    SNMP::Info::L2Service Exporter/;
 @SNMP::Info::Layer3::EXPORT_OK = qw//;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
@@ -70,6 +72,7 @@ $VERSION = '3.985002';
     %SNMP::Info::IPv6::MIBS,
     %SNMP::Info::LLDP::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
+    %SNMP::Info::L2Service::MIBS,
     'IP-MIB'   => 'ipNetToMediaIfIndex',
     'OSPF-MIB' => 'ospfRouterId',
     'ISIS-MIB' => 'isisSysID',
@@ -90,6 +93,7 @@ $VERSION = '3.985002';
     %SNMP::Info::IPv6::GLOBALS,
     %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::IEEE802dot3ad::GLOBALS,
+    %SNMP::Info::L2Service::GLOBALS,
     'mac' => 'ifPhysAddress.1',
     'serial1' =>
         '.1.3.6.1.4.1.9.3.6.3.0',    # OLD-CISCO-CHASSIS-MIB::chassisId.0
@@ -110,6 +114,7 @@ $VERSION = '3.985002';
     %SNMP::Info::IPv6::FUNCS,
     %SNMP::Info::LLDP::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
+    %SNMP::Info::L2Service::FUNCS,
 
     # Obsolete Address Translation Table (ARP Cache)
     'old_at_index'   => 'atIfIndex',
@@ -186,6 +191,7 @@ $VERSION = '3.985002';
     %SNMP::Info::IPv6::MUNGE,
     %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
+    %SNMP::Info::L2Service::MUNGE,
     'old_at_paddr' => \&SNMP::Info::munge_mac,
     'at_paddr'     => \&SNMP::Info::munge_mac,
     'n2p_paddr'    => \&SNMP::Info::munge_mac,
@@ -572,6 +578,8 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::IEEE802dot3ad
 
+=item SNMP::Info::L2Service
+
 =back
 
 =head2 Required MIBs
@@ -611,6 +619,8 @@ See L<SNMP::Info::AdslLine/"Required MIBs"> for its MIB requirements.
 See L<SNMP::Info::VRF/"Required MIBs"> for its MIB requirements.
 
 See L<SNMP::Info::IEEE802dot3ad/"Required MIBs"> for its MIB requirements.
+
+See L<SNMP::Info::L2Service/"Required MIBs"> for its MIB requirements.
 
 =head1 GLOBALS
 
@@ -1095,5 +1105,9 @@ See L<SNMP::Info::VRF/"TABLE METHODS"> for details.
 
 See documentation in L<SNMP::Info::IEEE802dot3ad/"METHODS"> and
 L<SNMP::Info::IEEE802dot3ad/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::L2Service
+
+See documentation in L<SNMP::Info::L2Service/"TABLE METHODS"> for details.
 
 =cut

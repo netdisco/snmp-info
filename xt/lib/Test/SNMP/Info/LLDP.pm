@@ -356,6 +356,59 @@ sub lldp_if : Tests(10) {
     q(LLDP-V2-MIB takes the ifIndex from the index));
 }
 
+# Shapes from a vJunos-switch MLAG peer: both ICL members carry the same
+# ifAlias, which Junos serves as lldpLocPortDesc, and lldpRemLocalPortNum
+# is the ifIndex
+sub _prime_shared_alias {
+  my $test = shift;
+
+  $test->{info}{funcs}{i_description} = 'ifDescr';
+  $test->{info}{funcs}{i_alias}       = 'ifAlias';
+  $test->{info}{funcs}{ifName}        = 'ifName';
+  $test->{info}{store}{i_description}
+    = {'531' => 'ge-0/0/0', '532' => 'ge-0/0/1', '533' => 'ge-0/0/2'};
+  $test->{info}{store}{i_alias}
+    = {'531' => 'icl-vjunos2', '532' => 'icl-vjunos2', '533' => 'edge1'};
+  $test->{info}{store}{lldp_rem_pid}
+    = {'46.531.2' => '531', '46.532.3' => '532', '41.533.1' => 'Ethernet1'};
+  $test->{info}{sess}{Data} = {
+    'LLDP-MIB::lldpLocPortDesc' =>
+      {531 => 'icl-vjunos2', 532 => 'icl-vjunos2', 533 => 'edge1'},
+    'LLDP-MIB::lldpLocPortId' => {531 => '531', 532 => '532', 533 => '533'},
+    'IF-MIB::ifName' =>
+      {531 => 'ge-0/0/0', 532 => 'ge-0/0/1', 533 => 'ge-0/0/2'},
+  };
+  return;
+}
+
+sub lldp_if__description_shared_by_two_ports__keeps_each_local_port : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_shared_alias;
+
+  cmp_deeply(
+    $test->{info}->lldp_if(),
+    {'46.531.2' => '531', '46.532.3' => '532', '41.533.1' => '533'},
+    q(Each port sharing an ifAlias keeps its own ifIndex)
+  );
+}
+
+sub lldp_if__shared_description__falls_back_to_port_id : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_shared_alias;
+  $test->{info}{store}{lldp_rem_pid} = {'46.7.2' => '531'};
+  $test->{info}{sess}{Data}{'LLDP-MIB::lldpLocPortDesc'}
+    = {7 => 'icl-vjunos2'};
+  $test->{info}{sess}{Data}{'LLDP-MIB::lldpLocPortId'} = {7 => 'ge-0/0/2'};
+
+  cmp_deeply(
+    $test->{info}->lldp_if(),
+    {'46.7.2' => '533'},
+    q(A shared ifAlias falls through to lldpLocPortId)
+  );
+}
+
 sub lldp_ip : Tests(7) {
   my $test = shift;
 
@@ -481,6 +534,43 @@ sub lldp_addr : Tests(4) {
   $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10');
   cmp_deeply($test->{info}->lldp_addr(), {'22612.2.1.1' => '192.0.2.10'},
     q(LLDP-V2-MIB addresses keep the four-part index));
+}
+
+# Dual-stack neighbors advertise an IPv4 and an IPv6 address each
+sub lldp_addrs : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'lldp_addrs');
+
+  $test->{info}{store}{lldp_rman_addr} = {
+    '0.2.3.2.16.32.1.13.184.0.16.0.0.0.0.0.0.0.0.0.2' => 'ifIndex',
+    '0.2.3.1.4.172.20.20.15'                         => 'ifIndex',
+    '0.4.5.1.4.10.0.2.1'                             => 'ifIndex',
+    '0.4.5.2.16.32.1.13.184.0.2.0.0.0.0.0.0.0.0.0.1' => 'ifIndex',
+    '0.10.1.6.6.01.35.69.103.137.171'                => 'ifIndex',
+  };
+
+  cmp_deeply(
+    $test->{info}->lldp_addrs(),
+    { '0.2.3' => ['172.20.20.15', '2001:0db8:0010:0000:0000:0000:0000:0002'],
+      '0.4.5' => ['10.0.2.1',     '2001:0db8:0002:0000:0000:0000:0000:0001'],
+      '0.10.1' => ['01:23:45:67:89:ab'],
+    },
+    q(Every address of each neighbor, IPv4 before IPv6)
+  );
+
+  $test->{info}->clear_cache();
+  cmp_deeply($test->{info}->lldp_addrs(), {}, q(No data returns empty hash));
+
+  $test->_prime_v2_rman('22612.2.1.1.1.4.192.0.2.10',
+    '22612.2.1.1.2.16.32.1.13.184.0.0.0.0.0.0.0.0.0.0.0.10');
+  cmp_deeply(
+    $test->{info}->lldp_addrs(),
+    { '22612.2.1.1' =>
+        ['192.0.2.10', '2001:0db8:0000:0000:0000:0000:0000:000a']
+    },
+    q(LLDP-V2-MIB addresses keep the four-part index)
+  );
 }
 
 # Rows as served by a Fabric Interconnect: a one-number index with no

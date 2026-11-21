@@ -42,6 +42,7 @@ use SNMP::Info::PowerEthernet;
 use SNMP::Info::LLDP;
 use SNMP::Info::DocsisHE;
 use SNMP::Info::IEEE802dot3ad;
+use SNMP::Info::L2Service;
 
 @SNMP::Info::Layer2::ISA = qw/
         SNMP::Info SNMP::Info::Bridge
@@ -51,6 +52,7 @@ use SNMP::Info::IEEE802dot3ad;
         SNMP::Info::DocsisHE
         SNMP::Info::PortAccessEntity
         SNMP::Info::IEEE802dot3ad
+        SNMP::Info::L2Service
         Exporter
 /;
 
@@ -65,7 +67,8 @@ $VERSION = '3.985002';
     %SNMP::Info::Entity::MIBS, %SNMP::Info::PowerEthernet::MIBS,
     %SNMP::Info::LLDP::MIBS,   %SNMP::Info::DocsisHE::MIBS,
     %SNMP::Info::PortAccessEntity::MIBS,
-    %SNMP::Info::IEEE802dot3ad::MIBS
+    %SNMP::Info::IEEE802dot3ad::MIBS,
+    %SNMP::Info::L2Service::MIBS
 );
 
 %GLOBALS = (
@@ -77,6 +80,7 @@ $VERSION = '3.985002';
     %SNMP::Info::LLDP::GLOBALS,
     %SNMP::Info::PortAccessEntity::GLOBALS,
     %SNMP::Info::IEEE802dot3ad::GLOBALS,
+    %SNMP::Info::L2Service::GLOBALS,
     'serial1' =>
         '.1.3.6.1.4.1.9.3.6.3.0',    # OLD-CISCO-CHASSIS-MIB::chassisId.0
 );
@@ -86,7 +90,8 @@ $VERSION = '3.985002';
     %SNMP::Info::Entity::FUNCS, %SNMP::Info::PowerEthernet::FUNCS,
     %SNMP::Info::LLDP::FUNCS,   %SNMP::Info::DocsisHE::FUNCS,
     %SNMP::Info::PortAccessEntity::FUNCS,
-    %SNMP::Info::IEEE802dot3ad::FUNCS
+    %SNMP::Info::IEEE802dot3ad::FUNCS,
+    %SNMP::Info::L2Service::FUNCS
 );
 
 %MUNGE = (
@@ -100,6 +105,7 @@ $VERSION = '3.985002';
     %SNMP::Info::LLDP::MUNGE,
     %SNMP::Info::PortAccessEntity::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
+    %SNMP::Info::L2Service::MUNGE,
 );
 
 # Method OverRides
@@ -253,6 +259,8 @@ after determining a more specific class using the method above.
 
 =item SNMP::Info::IEEE802dot3ad
 
+=item SNMP::Info::L2Service
+
 =item SNMP::Info::LLDP
 
 =item SNMP::Info::PowerEthernet
@@ -378,5 +386,9 @@ See documentation in L<SNMP::Info::PortAccessEntity/"TABLE METHODS"> for details
 
 See documentation in L<SNMP::Info::IEEE802dot3ad/"METHODS"> and
 L<SNMP::Info::IEEE802dot3ad/"TABLE METHODS"> for details.
+
+=head2 Table Methods imported from SNMP::Info::L2Service
+
+See documentation in L<SNMP::Info::L2Service/"TABLE METHODS"> for details.
 
 =cut
