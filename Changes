@@ -13,6 +13,9 @@ Version 3.985003
 
   [BUG FIXES]
 
+  * #671 Aerohive: put SSIDs and clients on radio ports, so wireless client
+    reports work, and report client transmit rate in Mbps (#325)
+
   * #690 LLDP: map ports whose description several interfaces share by their
     port ID or number, not to one of those interfaces
 
