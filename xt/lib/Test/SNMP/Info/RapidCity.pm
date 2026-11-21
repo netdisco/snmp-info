@@ -136,6 +136,31 @@ sub agg_ports__port_in_two_mlts__lowest_mlt_wins : Tests(1) {
   cmp_deeply([keys %answers], [6144], 'MLT 1 on every read');
 }
 
+# rcMltDesignatedPort reads 536870912 once every member is down
+sub agg_ports__designated_port_not_a_member__keys_by_mlt_ifindex : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_mlt_members(1 => [192, 193]);
+  $test->{info}->cache({
+    _rc_mlt_dp => 1,
+    store => {%{$test->{info}->{store}}, rc_mlt_dp => {1 => 536870912}},
+  });
+  cmp_deeply($test->{info}->agg_ports(), {192 => 6144, 193 => 6144},
+    'Members map to rcMltIfIndex');
+}
+
+sub agg_ports__designated_port_a_member__keys_by_it : Tests(1) {
+  my $test = shift;
+
+  $test->_prime_mlt_members(1 => [192, 193]);
+  $test->{info}->cache({
+    _rc_mlt_dp => 1,
+    store => {%{$test->{info}->{store}}, rc_mlt_dp => {1 => 193}},
+  });
+  cmp_deeply($test->{info}->agg_ports(), {192 => 193, 193 => 193},
+    'Members map to the designated port');
+}
+
 sub _port_list {
   my %member = map { $_ => 1 } @_;
   return pack('B*', join('', map { $member{$_} ? 1 : 0 } 0 .. 199));
