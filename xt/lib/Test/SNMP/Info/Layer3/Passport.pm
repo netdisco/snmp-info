@@ -684,6 +684,30 @@ sub lag_groups__designated_port__mc_and_peer_link_on_agg_ports_key : Tests(5) {
     'An MLT without a designated port keeps rcMltIfIndex');
 }
 
+# rcMltDesignatedPort reads 536870912 once every member is down
+sub lag_groups__designated_port_not_a_member__keeps_mlt_ifindex : Tests(4) {
+  my $test = shift;
+
+  $test->_prime_mlt('vist');
+  my $info = $test->{info};
+  my $actor = pack('H*', '0200cb120350');
+  $info->cache({
+    store => {
+      %{$info->{store}},
+      rc_mlt_dp        => {10 => 536870912, 20 => 195},
+      lag_actor_system => {6153 => $actor},
+    },
+    _rc_mlt_dp => 1, _lag_actor_system => 1,
+  });
+  my $groups = $info->lag_groups();
+  ok(!exists $groups->{536870912}, 'No record on the unset designated port');
+  is($groups->{6153}{mc}{group}, 10, 'SMLT 10 keeps rcMltIfIndex');
+  is($groups->{6153}{actor_system}, '02:00:cb:12:03:50',
+    '... with the identity of its standard row');
+  cmp_deeply([keys %{$groups->{6153}{members}}], [194],
+    '... and its member');
+}
+
 # VOSS 8.8 in SPBM mode: the standard table has a row on each member port
 # and on each MLT's ifIndex; rcMltDesignatedPort names the member port.
 sub lag_groups__voss_designated_port__identity_meets_agg_ports_key

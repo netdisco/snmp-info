@@ -721,20 +721,16 @@ sub agg_ports {
 
     # TODO: implement partial
     my $ports  = $rapidcity->rc_mlt_ports;
-    my $trunks = $rapidcity->rc_mlt_index;
-    my $dps    = $rapidcity->rc_mlt_dp || {};
+    my $trunks = $rapidcity->_rc_mlt_keys();
 
     return {}
-        unless ref {} eq ref $trunks
-            and scalar keys %$trunks
+        unless scalar keys %$trunks
             and ref {} eq ref $ports
             and scalar keys %$ports;
 
     my $ret = {};
     foreach my $m ( sort { $a <=> $b } keys %$trunks ) {
-        my $idx = $trunks->{$m};
-        next unless $idx;
-        $idx = $dps->{$m} ? $dps->{$m} : $idx;
+        my $idx      = $trunks->{$m};
         my $portlist = $ports->{$m};
         next unless $portlist;
         for ( my $i = 0; $i <= scalar(@$portlist); $i++ ) {
@@ -744,6 +740,25 @@ sub agg_ports {
     }
 
     return $ret;
+}
+
+# MLT id => the key agg_ports gives it: rcMltDesignatedPort when that is a
+# configured member, else rcMltIfIndex. The designated port reads 536870912
+# once every member is down.
+sub _rc_mlt_keys {
+    my $rapidcity = shift;
+
+    my $mlts    = $rapidcity->rc_mlt_index() || {};
+    my $dps     = $rapidcity->rc_mlt_dp()    || {};
+    my $members = $rapidcity->rc_mlt_ports() || {};
+    my %keys;
+    foreach my $mlt_id ( keys %$mlts ) {
+        my $ifindex = $mlts->{$mlt_id} or next;
+        my $dp      = $dps->{$mlt_id};
+        my $bits    = $members->{$mlt_id} || [];
+        $keys{$mlt_id} = ( $dp and $bits->[$dp] ) ? $dp : $ifindex;
+    }
+    return \%keys;
 }
 
 sub _agg_ports_walked { return qw/rc_mlt_ports rc_mlt_index rc_mlt_dp/ }
@@ -759,10 +774,9 @@ sub _lag_aggregator_map {
 
     my $map = SNMP::Info::IEEE802dot3ad::_lag_aggregator_map($rapidcity);
     my $channels = $rapidcity->rc_mlt_index() || {};
-    my $dps      = $rapidcity->rc_mlt_dp()    || {};
-    foreach my $mlt_id ( keys %$channels ) {
-        my $ifindex = $channels->{$mlt_id} or next;
-        $map->{$ifindex} = $dps->{$mlt_id} if $dps->{$mlt_id};
+    my $keys     = $rapidcity->_rc_mlt_keys();
+    foreach my $mlt_id ( keys %$keys ) {
+        $map->{ $channels->{$mlt_id} } = $keys->{$mlt_id};
     }
     return $map;
 }
@@ -807,17 +821,13 @@ sub _lag_vendor_domains {
 sub _lag_vendor_groups {
     my ( $rapidcity, $groups ) = @_;
 
-    my $channels = $rapidcity->rc_mlt_index()    || {};
-    my $types    = $rapidcity->rc_mlt_type()     || {};
-    my $running  = $rapidcity->rc_mlt_run_type() || {};
-    my $dps      = $rapidcity->rc_mlt_dp()       || {};
-    my $domain   = $rapidcity->_smlt_domain_key();
-    foreach my $mlt_id ( keys %$channels ) {
-        my $ifindex = $channels->{$mlt_id} or next;
+    my $keys    = $rapidcity->_rc_mlt_keys();
+    my $types   = $rapidcity->rc_mlt_type()     || {};
+    my $running = $rapidcity->rc_mlt_run_type() || {};
+    my $domain  = $rapidcity->_smlt_domain_key();
+    foreach my $mlt_id ( keys %$keys ) {
+        my $ifindex = $keys->{$mlt_id};
         my $type = $types->{$mlt_id} or next;
-
-        # agg_ports keys the channel by its designated port when it has one
-        $ifindex = $dps->{$mlt_id} if $dps->{$mlt_id};
         if ( $type eq 'splitMLT' and defined $domain ) {
             my $record = _mlt_group_record( $groups, $ifindex );
             $record->{mc} = {
@@ -1637,8 +1647,10 @@ Returns VLAN IDs
 
 Returns a HASH reference mapping from slave to master port for each member of
 a port bundle (MLT) on the device. Keys are ifIndex of the slave ports,
-Values are ifIndex of the corresponding master ports.  A port listed in
-more than one MLT maps to the MLT with the lowest C<rcMltId>.
+Values are ifIndex of the corresponding master ports: the MLT's
+C<rcMltDesignatedPort> when that is a member, else its C<rcMltIfIndex>.  A
+port listed in more than one MLT maps to the MLT with the lowest
+C<rcMltId>.
 
 =item $rapidcity->rc_mlt_type()
 
@@ -1729,7 +1741,8 @@ As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with:
 =item *
 
 An MLT is keyed as C<agg_ports()> keys it: by C<rcMltDesignatedPort> when
-set, else by C<rcMltIfIndex>.
+that is a configured member (C<rcMltPortMembers>), else by
+C<rcMltIfIndex>.
 
 =item *
 
