@@ -52,9 +52,35 @@ sub setup : Tests(setup) {
 
     # SONICWALL-SMI::sonicwallFw
     '_id'   => '.1.3.6.1.4.1.8741.1',
-    'store' => {},
+
+    # SONICWALL-COMMON-MIB::snwlSysFirmwareVersion
+    '_sw_firmware' => 'SonicOS Enhanced 4.2.0.1-12e',
+    'store'        => {},
   };
   $test->{info}->cache($cache_data);
+}
+
+sub os_ver : Tests(7) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'os_ver');
+  is($test->{info}->os_ver(), '4.2.0.1-12e',
+    q(SonicOS Enhanced firmware returns the version after the edition));
+
+  my %firmware_forms = (
+    'SonicOS Enhanced 6.2.4.2-20n' => '6.2.4.2-20n',
+    'SonicOS 7.0.1-R1456'          => '7.0.1-R1456',
+    'SonicOS 7.3.4-7013-R10134'    => '7.3.4-7013-R10134',
+    '8.6.0.3-11sv'                 => '8.6.0.3-11sv',
+  );
+  foreach my $firmware (sort keys %firmware_forms) {
+    $test->{info}->cache({'_sw_firmware' => $firmware});
+    is($test->{info}->os_ver(), $firmware_forms{$firmware},
+      qq(os_ver from '$firmware' is $firmware_forms{$firmware}));
+  }
+
+  $test->{info}->clear_cache();
+  is($test->{info}->os_ver(), '', q(No firmware version returns empty os_ver));
 }
 
 1;

@@ -1,5 +1,10 @@
 Version 3.985004
 
+  [BUG FIXES]
+
+  * #697 SonicWALL: report os_ver for SonicOS 7 and SMA firmware, not only
+    SonicOS Enhanced (#696)
+
 Version 3.985003 (2026-11-21)
 
   [ENHANCEMENTS]

@@ -75,10 +75,11 @@ sub os {
 
 sub os_ver {
     my $sonicosver = shift;
-        my $osver = $sonicosver->sw_firmware();
-        if ( $osver =~ /\S+\s\S+\s(\S+)/) {
-            return $1
-        }
+    my $osver = $sonicosver->sw_firmware();
+
+    if ( defined $osver && $osver =~ /(\d+(?:\.\d+)+(?:-[A-Za-z0-9]+)*)/ ) {
+        return $1;
+    }
 }
 
 sub serial {
