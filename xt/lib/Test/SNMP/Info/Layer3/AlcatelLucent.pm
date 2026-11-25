@@ -73,11 +73,35 @@ sub vendor : Tests(2) {
   is($test->{info}->vendor(), 'alcatel-lucent', q(Vendor returns 'alcatel-lucent'));
 }
 
-sub model : Tests(2) {
+sub model : Tests(4) {
   my $test = shift;
+  my $info = $test->{info};
 
-  can_ok($test->{info}, 'model');
-  is($test->{info}->model(), 'OmniSwitch660248', q(Model is expected value));
+  can_ok($info, 'model');
+  is($info->model(), 'OmniSwitch660248', q(Model is expected value));
+
+  # AOS 8 sysObjectIDs sit in the .6486.801 tree, which netdisco-mibs does
+  # not define; a virtual chassis lists one chassis entity per member
+  my $aos8_id = '.1.3.6.1.4.1.6486.801.1.1.2.1.11.1.9';
+  $info->clear_cache();
+  $info->cache({
+    '_id'      => $aos8_id,
+    '_e_class' => 1,
+    '_e_model' => 1,
+    'store'    => {
+      'e_class' => {
+        210 => 'chassis', 209 => 'chassis', 275 => 'powerSupply'},
+      'e_model' => {
+        210 => 'OS6860E-P48', 209 => 'OS6860E-U28', 275 => 'YM-1151D'},
+    },
+  });
+  is($info->model(), 'OS6860E-U28',
+    q(AOS 8 model comes from the first chassis entity));
+
+  $info->clear_cache();
+  $info->cache({'_id' => $aos8_id});
+  is($info->model(), 'alcatel.801.1.1.2.1.11.1.9',
+    q(AOS 8 without a chassis entity returns the untranslated ID));
 }
 
 sub os_ver : Tests(3) {
@@ -269,7 +293,7 @@ sub i_vlan : Tests(6) {
   cmp_deeply($info->i_vlan(), {}, q(No data returns empty hash));
 }
 
-sub v_name : Tests(5) {
+sub v_name : Tests(6) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -287,6 +311,8 @@ sub v_name : Tests(5) {
   $info->{store}{alu8_vlan_descr} = $aos8_names;
   $info->{'_qb_v_name'}           = 1;
   $info->{store}{qb_v_name}       = {1 => 'VLAN 1', 10 => 'VLAN 10'};
+  $info->{'_alu_vlan_descr'}      = 1;
+  $info->{store}{alu_vlan_descr}  = {1 => 'vlan 1', 12 => 'vlan 12'};
   cmp_deeply($info->v_name(), $aos8_names,
     q(AOS 8 vlanDescription names are used when present));
 
@@ -298,8 +324,70 @@ sub v_name : Tests(5) {
   cmp_deeply($info->v_name(), {1 => 'VLAN 1', 10 => 'VLAN 10'},
     q(Q-BRIDGE-MIB names are used when AOS 8 vlanTable is empty));
 
+  $info->{store}{qb_v_name} = {};
+  cmp_deeply($info->v_name(), {1 => 'vlan 1', 12 => 'vlan 12'},
+    q(AOS 6 vlanDescription names are used when Q-BRIDGE-MIB is empty));
+
   $info->clear_cache();
   is($info->v_name(), undef, q(No data returns undef));
+}
+
+# Primes the power supply entities and both copies of chasEntPhysOperStatus
+sub _prime_ps {
+  my ($test, $aos6_rows, $aos8_rows) = @_;
+
+  my $info = $test->{info};
+  $info->clear_cache();
+  $info->{'_e_class'}                    = 1;
+  $info->{store}{e_class}                = {
+    209 => 'chassis', 275 => 'powerSupply', 282 => 'powerSupply'};
+  $info->{'_alu_chas_oper_status'}       = 1;
+  $info->{store}{alu_chas_oper_status}   = $aos6_rows;
+  $info->{'_alu8_chas_oper_status'}      = 1;
+  $info->{store}{alu8_chas_oper_status}  = $aos8_rows;
+  return $info;
+}
+
+sub ps1_status : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ps1_status');
+
+  my $info = $test->_prime_ps({275 => 'up', 282 => 'down'}, {275 => 2});
+  is($info->ps1_status(), 'up',
+    q(AOS 6 chasEntPhysOperStatus is used when present));
+
+  # AOS 8 values are numbers: no loaded MIB defines the column
+  $info = $test->_prime_ps({}, {275 => 1, 282 => 7});
+  is($info->ps1_status(), 'up', q(AOS 8 status is mapped to its label));
+
+  $info = $test->_prime_ps({}, {});
+  is($info->ps1_status(), undef, q(No status returns undef));
+}
+
+sub ps2_status : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ps2_status');
+
+  my $info = $test->_prime_ps({}, {275 => 1, 282 => 7});
+  is($info->ps2_status(), 'unpowered',
+    q(AOS 8 status of the second supply is mapped to its label));
+
+  $info = $test->_prime_ps({}, {275 => 1, 282 => 99});
+  is($info->ps2_status(), 99, q(An AOS 8 status with no label is kept));
+}
+
+sub munge_alu8_chas_oper_status : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_alu8_chas_oper_status');
+  is(SNMP::Info::Layer3::AlcatelLucent::munge_alu8_chas_oper_status(7),
+    'unpowered', q(Known AOS 8 status number returns its label));
+  is(SNMP::Info::Layer3::AlcatelLucent::munge_alu8_chas_oper_status('up'),
+    'up', q(A label is returned unchanged));
+  is(SNMP::Info::Layer3::AlcatelLucent::munge_alu8_chas_oper_status(undef),
+    undef, q(Undef returns undef));
 }
 
 1;
