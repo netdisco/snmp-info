@@ -73,7 +73,7 @@ sub vendor : Tests(2) {
   is($test->{info}->vendor(), 'alcatel-lucent', q(Vendor returns 'alcatel-lucent'));
 }
 
-sub model : Tests(4) {
+sub model : Tests(6) {
   my $test = shift;
   my $info = $test->{info};
 
@@ -82,10 +82,8 @@ sub model : Tests(4) {
 
   # AOS 8 sysObjectIDs sit in the .6486.801 tree, which netdisco-mibs does
   # not define; a virtual chassis lists one chassis entity per member
-  my $aos8_id = '.1.3.6.1.4.1.6486.801.1.1.2.1.11.1.9';
-  $info->clear_cache();
-  $info->cache({
-    '_id'      => $aos8_id,
+  my $aos8_id  = '.1.3.6.1.4.1.6486.801.1.1.2.1.11.1.9';
+  my $entities = {
     '_e_class' => 1,
     '_e_model' => 1,
     'store'    => {
@@ -94,14 +92,41 @@ sub model : Tests(4) {
       'e_model' => {
         210 => 'OS6860E-P48', 209 => 'OS6860E-U28', 275 => 'YM-1151D'},
     },
+  };
+
+  $info->clear_cache();
+  $info->cache({
+    %$entities,
+    '_id'          => $aos8_id,
+    '_description' => 'Alcatel-Lucent Enterprise OS6360-P48X 8.10.105.R02 GA,'
+      . ' December 03, 2024.',
+  });
+  is($info->model(), 'OS6360-P48X',
+    q(AOS 8 model comes from sysDescr when it names one));
+
+  # An AOS 6 device newer than the netdisco-mibs device list
+  $info->clear_cache();
+  $info->cache({
+    '_id'          => '.1.3.6.1.4.1.6486.800.1.1.2.1.12.1.8',
+    '_description' =>
+      'Alcatel-Lucent OS6450-48 6.6.4.177.R01 GA, May 24, 2013.',
+  });
+  is($info->model(), 'OS6450-48',
+    q(Untranslated AOS 6 model comes from sysDescr));
+
+  $info->clear_cache();
+  $info->cache({
+    %$entities,
+    '_id'          => $aos8_id,
+    '_description' => '8.5.255.R02 GA, August 29, 2018.',
   });
   is($info->model(), 'OS6860E-U28',
-    q(AOS 8 model comes from the first chassis entity));
+    q(Without a model in sysDescr, the first chassis entity is used));
 
   $info->clear_cache();
   $info->cache({'_id' => $aos8_id});
   is($info->model(), 'alcatel.801.1.1.2.1.11.1.9',
-    q(AOS 8 without a chassis entity returns the untranslated ID));
+    q(With neither source, the untranslated ID is returned));
 }
 
 sub os_ver : Tests(3) {

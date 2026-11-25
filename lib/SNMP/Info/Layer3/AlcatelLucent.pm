@@ -146,11 +146,27 @@ sub model {
     }
 
     # AOS 8 device IDs sit in the .6486.801 tree, which netdisco-mibs does
-    # not define, so they translate only partly
+    # not define, and newer AOS 6 IDs are missing from its device list, so
+    # they translate only partly.  No vendor object names the model.
+    my $descr_model = $alu->_descr_model();
+    return $descr_model if defined $descr_model;
+
     my $chassis_model = $alu->_chassis_model();
     return $chassis_model if defined $chassis_model;
 
     return defined $model ? $model : $id;
+}
+
+# The model sysDescr names just before the release os_ver reads, as in
+# "Alcatel-Lucent Enterprise OS6360-P48X 8.10.105.R02 GA, ..."
+sub _descr_model {
+    my $alu = shift;
+
+    my $descr = $alu->description();
+    return unless defined $descr;
+    return $1
+        if $descr =~ m/\b(OS\d[\w-]*) \d[\.\d]+R\d+ (?:GA|Service Release), /;
+    return;
 }
 
 # The model of the lowest-numbered chassis entity, the first member of a
@@ -542,8 +558,10 @@ Tries to reference $alu->id() to one of the product MIBs listed above
 Removes 'device' from the name for readability.
 
 AOS 8 device IDs do not translate, as F<ALCATEL-IND1-DEVICES> only defines
-the AOS 6 tree.  For those, returns C<entPhysicalModelName> of the
-lowest-numbered chassis entity, the first member of a virtual chassis.
+the AOS 6 tree, nor do AOS 6 IDs newer than that MIB.  For those, returns
+the model C<sysDescr> names before the release, such as C<OS6360-P48X>.
+Failing that, returns C<entPhysicalModelName> of the lowest-numbered
+chassis entity, the first member of a virtual chassis.
 
 =item $alu->os()
 
