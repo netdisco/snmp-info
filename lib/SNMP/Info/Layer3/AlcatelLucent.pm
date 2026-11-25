@@ -103,13 +103,32 @@ $VERSION = '3.985003';
     'alu_peth_power_threshold' =>
         'ALU_POWER_ETHERNET_MIB__pethMainPseUsageThreshold',
 
+    # ALCATEL-IND1-CHASSIS-MIB::chasEntPhysicalTable
+    'alu_chas_oper_status' => 'chasEntPhysOperStatus',
+
+    # ALCATEL-IND1-VLAN-MGR-MIB::vlanTable
+    'alu_vlan_descr' => 'vlanDescription',
+
     # ALCATEL-IND1-VLAN-MGR-MIB::vpaTable
     'alu_vpa_type' => 'vpaType',
+
+    # AOS 8 copies of the tables above, in the .6486.801 tree that
+    # netdisco-mibs does not define (it has only the AOS 6 tree, .6486.800).
+    # ALE ships the AOS 8 MIBs under the same module names, so both sets
+    # cannot load together (netdisco-mibs#165).
+    # ALCATEL-IND1-CHASSIS-MIB::chasEntPhysOperStatus
+    'alu8_chas_oper_status' => '.1.3.6.1.4.1.6486.801.1.1.1.1.1.1.1.2',
+    # ALCATEL-IND1-VLAN-MGR-MIB::vlanDescription
+    'alu8_vlan_descr' => '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.1.1.1.2',
+    # ALCATEL-IND1-VLAN-MGR-MIB::vpaType
+    'alu8_vpa_type' => '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3',
 );
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE, %SNMP::Info::MAU::MUNGE,
     %SNMP::Info::LLDP::MUNGE, %SNMP::Info::AMAP::MUNGE,
+    'alu8_chas_oper_status' =>
+        \&SNMP::Info::Layer3::AlcatelLucent::munge_alu8_chas_oper_status,
 );
 
 # use MAU-MIB for admin. duplex and admin. speed
@@ -123,11 +142,48 @@ sub model {
     my $id    = $alu->id();
     my $model = &SNMP::translateObj($id);
 
-    return $id unless defined $model;
+    if ( defined $model and $model !~ m/[.]/ ) {
+        $model =~ s/^device//;
+        return $model;
+    }
 
-    $model =~ s/^device//;
+    # AOS 8 device IDs sit in the .6486.801 tree, which netdisco-mibs does
+    # not define, and newer AOS 6 IDs are missing from its device list, so
+    # they translate only partly.  No vendor object names the model.
+    my $descr_model = $alu->_descr_model();
+    return $descr_model if defined $descr_model;
 
-    return $model;
+    my $chassis_model = $alu->_chassis_model();
+    return $chassis_model if defined $chassis_model;
+
+    return defined $model ? $model : $id;
+}
+
+# The model sysDescr names just before the release os_ver reads, as in
+# "Alcatel-Lucent Enterprise OS6360-P48X 8.10.105.R02 GA, ..."
+sub _descr_model {
+    my $alu = shift;
+
+    my $descr = $alu->description();
+    return unless defined $descr;
+    return $1
+        if $descr =~ m/\b(OS\d[\w-]*) \d[\.\d]+R\d+ (?:GA|Service Release), /;
+    return;
+}
+
+# The model of the lowest-numbered chassis entity, the first member of a
+# virtual chassis
+sub _chassis_model {
+    my $alu = shift;
+
+    my $e_class = $alu->e_class() || {};
+    my $e_model = $alu->e_model() || {};
+    foreach my $index ( sort { $a <=> $b } keys %$e_class ) {
+        next unless $e_class->{$index} eq 'chassis';
+        my $model = $e_model->{$index};
+        return $model if defined $model and length $model;
+    }
+    return;
 }
 
 sub os {
@@ -191,8 +247,39 @@ sub _ps_status {
         return "not present";
     }
     my $supply = $ps[$psnum];
-    my $status = $alu->chasEntPhysOperStatus($supply);
+    my $status = $alu->_chas_oper_status();
     return $status->{$supply};
+}
+
+# AOS 6 serves chasEntPhysOperStatus where netdisco-mibs defines it, AOS 8
+# only in its own tree
+sub _chas_oper_status {
+    my $alu = shift;
+
+    my $status = $alu->alu_chas_oper_status();
+    return $status if ref $status eq 'HASH' and scalar keys %$status;
+    return $alu->alu8_chas_oper_status() || {};
+}
+
+# Labels from the AOS 8 ALCATEL-IND1-CHASSIS-MIB, a superset of AOS 6's
+my %alu8_chas_oper_labels = (
+    1  => 'up',
+    2  => 'down',
+    3  => 'testing',
+    4  => 'unknown',
+    5  => 'secondary',
+    6  => 'notPresent',
+    7  => 'unpowered',
+    8  => 'master',
+    9  => 'idle',
+    10 => 'pwrsave',
+);
+
+sub munge_alu8_chas_oper_status {
+    my $status = shift;
+
+    return $status unless defined $status;
+    return $alu8_chas_oper_labels{$status} // $status;
 }
 
 sub ps1_type {
@@ -300,82 +387,19 @@ sub i_vlan {
     return $default_vlan;
 }
 
-# AOS 8 serves vpaType under .6486.801, but netdisco-mibs only defines the
-# AOS 6 tree under .6486.800.  With no MIB node there net-snmp returns the
-# whole instance OID as the tag and an empty iid, which AUTOLOAD's table
-# walk cannot follow, so walk the numeric column here.
-sub alu8_vpa_type {
-    my $alu = shift;
+# AOS 8 keeps VLAN names in its own vlanTable, and its Q-BRIDGE-MIB carries
+# none or placeholders on some releases, so the vendor table comes first.
+# Q-BRIDGE-MIB next, as some releases name VLANs correctly there, then the
+# AOS 6 vlanTable, as on releases whose Q-BRIDGE-MIB has no names.
+sub v_name {
+    my $alu     = shift;
+    my $partial = shift;
 
-    return $alu->{store}{alu8_vpa_type} if $alu->{'_alu8_vpa_type'};
-    return if $alu->{Offline};
-    my $sess = $alu->session() or return;
-
-    my $base = '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3';
-    my ( $vpa_type, $failure ) = _alu8_vpa_walk( $sess, $base );
-    my ( $reason, $errornum, $error ) = @{$failure};
-
-    my $rows = scalar keys %{$vpa_type};
-    $alu->_walk_outcome(
-        {   method    => 'alu8_vpa_type',
-            leaf      => $base,
-            partial   => undef,
-            complete  => ( SNMP::Info::_walk_incomplete($reason) ? 0 : 1 ),
-            reason    => $reason,
-            error     => $error,
-            errornum  => $errornum,
-            walk      => 'getnext',
-            repeaters => undef,
-            rows      => $rows,
-            recovery  => [],
-        }
-    );
-
-    if ( SNMP::Info::_walk_incomplete($reason) ) {
-        $alu->error_throw( "SNMP::Info::Layer3::AlcatelLucent: "
-                . "alu8_vpa_type incomplete: $reason after $rows rows. "
-                . ( $error || '' ) );
-        return if $alu->incomplete_walk() eq 'undef';
+    foreach my $source (qw/alu8_vlan_descr qb_v_name alu_vlan_descr/) {
+        my $names = $alu->$source($partial);
+        return $names if ref $names eq 'HASH' and scalar keys %$names;
     }
-    $alu->_cache( 'alu8_vpa_type', $vpa_type );
-    return $vpa_type;
-}
-
-# Walks the numeric column. Returns the rows and a [reason, errornum, error]
-# triple that is empty when the walk ended cleanly.
-sub _alu8_vpa_walk {
-    my ( $sess, $base ) = @_;
-
-    my $next_oid = $base;
-    my $vpa_type = {};
-    my %seen;
-    while (1) {
-
-        # The returned tag cannot be resent, so ask again by number.
-        my $var = SNMP::Varbind->new( [$next_oid] );
-        $sess->getnext($var);
-        if ( $sess->{ErrorNum} ) {
-            return ( $vpa_type, [] ) if SNMP::Info::_nosuch_end($sess);
-            return ( $vpa_type, [ SNMP::Info::_walk_failure($sess) ] );
-        }
-        last if !defined $var->[0];
-        my $name = $var->[0];
-        $name .= ".$var->[1]" if defined $var->[1] and length $var->[1];
-        my $oid = $name =~ m/^[.]\d/
-            ? $name
-            : SNMP::translateObj($name) // $name;
-
-        # endOfMibView repeats the last OID, so test it before the loop check
-        last if defined $var->[2] and $var->[2] eq 'ENDOFMIBVIEW';
-        if ( $seen{$oid}++ ) {
-            return ( $vpa_type,
-                [ 'loop', 0, "Looping on: alu8_vpa_type oid:$oid." ] );
-        }
-        last unless $oid =~ m/^\Q$base\E\.(\d+\.\d+)$/;
-        $vpa_type->{$1} = $var->[2];
-        $next_oid = $oid;
-    }
-    return ( $vpa_type, [] );
+    return;
 }
 
 # One PoE source per device: the standard MIB when its port table has
@@ -535,6 +559,12 @@ Tries to reference $alu->id() to one of the product MIBs listed above
 
 Removes 'device' from the name for readability.
 
+AOS 8 device IDs do not translate, as F<ALCATEL-IND1-DEVICES> only defines
+the AOS 6 tree, nor do AOS 6 IDs newer than that MIB.  For those, returns
+the model C<sysDescr> names before the release, such as C<OS6360-P48X>.
+Failing that, returns C<entPhysicalModelName> of the lowest-numbered
+chassis entity, the first member of a virtual chassis.
+
 =item $alu->os()
 
 Returns 'AOS'
@@ -558,6 +588,9 @@ Return the status of the first power supply from the F<ALCATEL-IND1-CHASSIS-MIB>
 =item $alu->ps2_status()
 
 Return the status of the second power supply from the F<ALCATEL-IND1-CHASSIS-MIB>
+
+Both read C<chasEntPhysOperStatus> from the AOS 6 location, or when that
+is empty, from the AOS 8 copy.
 
 =back
 
@@ -606,14 +639,41 @@ empty, as on AOS 8, returns the VLAN of C<vpaTable> rows whose C<vpaType>
 is C<cfgDefault>, keyed by C<vpaIfIndex>.  A port that is C<cfgDefault>
 in more than one VLAN is omitted.
 
+=item $alu->v_name()
+
+Returns the VLAN names from the first of these sources that has rows,
+keyed by VLAN number: C<vlanDescription> in the AOS 8 copy of
+C<vlanTable>, C<dot1qVlanStaticName> from F<Q-BRIDGE-MIB>, and
+C<vlanDescription> in the AOS 6 C<vlanTable>.
+
+=item $alu->alu_vlan_descr()
+
+(C<vlanDescription>)
+
+=item $alu->alu_chas_oper_status()
+
+(C<chasEntPhysOperStatus>)
+
+=item $alu->alu8_chas_oper_status()
+
+Returns C<chasEntPhysOperStatus> from the AOS 8 copy of
+C<chasEntPhysicalTable> (C<.1.3.6.1.4.1.6486.801.1.1.1.1.1.1.1.2>), keyed
+by C<entPhysicalIndex>.  It is read by number because
+F<ALCATEL-IND1-CHASSIS-MIB> only defines the AOS 6 location.
+
+=item $alu->alu8_vlan_descr()
+
+Returns C<vlanDescription> from the AOS 8 copy of C<vlanTable>
+(C<.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.1.1.1.2>), keyed by C<vlanNumber>.
+It is read by number because F<ALCATEL-IND1-VLAN-MGR-MIB> only defines
+the AOS 6 location.
+
 =item $alu->alu8_vpa_type()
 
 Returns C<vpaType> from the AOS 8 copy of C<vpaTable>
 (C<.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3>), keyed by
-C<vpaVlanNumber.vpaIfIndex>.  The table is walked by number because
-F<ALCATEL-IND1-VLAN-MGR-MIB> only defines the AOS 6 location.  The walk is
-recorded in C<walk_status>.  C<LoopDetect> is not consulted: this walk always
-stops on a repeated OID.
+C<vpaVlanNumber.vpaIfIndex>.  It is read by number because
+F<ALCATEL-IND1-VLAN-MGR-MIB> only defines the AOS 6 location.
 
 =item $alu->peth_port_ifindex()
 
@@ -652,5 +712,16 @@ See documentation in L<SNMP::Info::MAU/"TABLE METHODS"> for details.
 =head2 Table Methods imported from SNMP::Info::LLDP
 
 See documentation in L<SNMP::Info::LLDP/"TABLE METHODS"> for details.
+
+=head1 Data Munging Callback Subroutines
+
+=over
+
+=item $alu->munge_alu8_chas_oper_status()
+
+Maps the number an AOS 8 C<chasEntPhysOperStatus> returns to its label.
+No loaded MIB defines the AOS 8 column, so its values arrive unlabeled.
+
+=back
 
 =cut

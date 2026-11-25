@@ -73,11 +73,60 @@ sub vendor : Tests(2) {
   is($test->{info}->vendor(), 'alcatel-lucent', q(Vendor returns 'alcatel-lucent'));
 }
 
-sub model : Tests(2) {
+sub model : Tests(6) {
   my $test = shift;
+  my $info = $test->{info};
 
-  can_ok($test->{info}, 'model');
-  is($test->{info}->model(), 'OmniSwitch660248', q(Model is expected value));
+  can_ok($info, 'model');
+  is($info->model(), 'OmniSwitch660248', q(Model is expected value));
+
+  # AOS 8 sysObjectIDs sit in the .6486.801 tree, which netdisco-mibs does
+  # not define; a virtual chassis lists one chassis entity per member
+  my $aos8_id  = '.1.3.6.1.4.1.6486.801.1.1.2.1.11.1.9';
+  my $entities = {
+    '_e_class' => 1,
+    '_e_model' => 1,
+    'store'    => {
+      'e_class' => {
+        210 => 'chassis', 209 => 'chassis', 275 => 'powerSupply'},
+      'e_model' => {
+        210 => 'OS6860E-P48', 209 => 'OS6860E-U28', 275 => 'YM-1151D'},
+    },
+  };
+
+  $info->clear_cache();
+  $info->cache({
+    %$entities,
+    '_id'          => $aos8_id,
+    '_description' => 'Alcatel-Lucent Enterprise OS6360-P48X 8.10.105.R02 GA,'
+      . ' December 03, 2024.',
+  });
+  is($info->model(), 'OS6360-P48X',
+    q(AOS 8 model comes from sysDescr when it names one));
+
+  # An AOS 6 device newer than the netdisco-mibs device list
+  $info->clear_cache();
+  $info->cache({
+    '_id'          => '.1.3.6.1.4.1.6486.800.1.1.2.1.12.1.8',
+    '_description' =>
+      'Alcatel-Lucent OS6450-48 6.6.4.177.R01 GA, May 24, 2013.',
+  });
+  is($info->model(), 'OS6450-48',
+    q(Untranslated AOS 6 model comes from sysDescr));
+
+  $info->clear_cache();
+  $info->cache({
+    %$entities,
+    '_id'          => $aos8_id,
+    '_description' => '8.5.255.R02 GA, August 29, 2018.',
+  });
+  is($info->model(), 'OS6860E-U28',
+    q(Without a model in sysDescr, the first chassis entity is used));
+
+  $info->clear_cache();
+  $info->cache({'_id' => $aos8_id});
+  is($info->model(), 'alcatel.801.1.1.2.1.11.1.9',
+    q(With neither source, the untranslated ID is returned));
 }
 
 sub os_ver : Tests(3) {
@@ -190,10 +239,9 @@ sub peth_port_ifindex : Tests(3) {
     {'1.7' => 1007}, q(Vendor PoE ports map to OmniSwitch ifIndex values));
 }
 
-sub alu8_vpa_type : Tests(9) {
+sub alu8_vpa_type : Tests(4) {
   my $test = shift;
   my $info = $test->{info};
-  my $base = '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3';
 
   can_ok($info, 'alu8_vpa_type');
 
@@ -203,120 +251,17 @@ sub alu8_vpa_type : Tests(9) {
     q(Cached AOS 8 vpaType rows are returned));
 
   $info->clear_cache();
-  cmp_deeply($info->alu8_vpa_type(), {}, q(No data returns empty hash));
+  is($info->alu8_vpa_type(), undef, q(No data returns undef));
 
-  subtest 'alu8_vpa_type__complete_walk__records_complete_getnext' => sub {
-    plan tests => 2;
-    my $walked = $test->_fresh_vpa_info();
-    cmp_deeply(
-      $walked->alu8_vpa_type(),
-      {'5.1001' => 1, '12.1001' => 2},
-      'both rows returned'
-    );
-    cmp_deeply(
-      $walked->walk_status('alu8_vpa_type'),
-      superhashof({complete => 1, walk => 'getnext', rows => 2, leaf => $base}),
-      'outcome records a complete getnext walk'
-    );
-  };
-
-  subtest 'alu8_vpa_type__timeout_after_one_row__records_incomplete' => sub {
-    plan tests => 4;
-    my $walked = $test->_fresh_vpa_info(
-      {op => 'getnext', leaf => $base, after => 1, ErrorNum => -24,
-        ErrorStr => 'Timeout'});
-    is(scalar keys %{$walked->alu8_vpa_type()}, 1, 'partial row returned');
-    ok($walked->{'_alu8_vpa_type'}, 'partial rows cached');
-    cmp_deeply(
-      $walked->walk_status('alu8_vpa_type'),
-      superhashof({complete => 0, reason => 'timeout', rows => 1}),
-      'outcome records the timeout'
-    );
-    is(scalar @{$walked->walk_failures()}, 1, 'one failure recorded');
-  };
-
-  subtest 'alu8_vpa_type__timeout_in_undef_mode__returns_undef_uncached' =>
-    sub {
-    plan tests => 3;
-    my $walked = $test->_fresh_vpa_info(
-      {op => 'getnext', leaf => $base, after => 1, ErrorNum => -24,
-        ErrorStr => 'Timeout'});
-    $walked->incomplete_walk('undef');
-    is($walked->alu8_vpa_type(), undef, 'returns undef');
-    is($walked->walk_status('alu8_vpa_type')->{reason}, 'timeout',
-      'the walk did time out');
-    ok(!$walked->{'_alu8_vpa_type'}, 'nothing cached');
-    };
-
-  subtest 'alu8_vpa_type__loop__records_loop' => sub {
-    plan tests => 1;
-    my $walked = $test->_fresh_vpa_info(
-      {op => 'getnext', leaf => $base, after => 2, loop => 1});
-    $walked->alu8_vpa_type();
-    cmp_deeply(
-      $walked->walk_status('alu8_vpa_type'),
-      superhashof({complete => 0, reason => 'loop'}),
-      'outcome records the loop'
-    );
-  };
-
-  subtest 'alu8_vpa_type__symbolic_tags__reads_rows_through_translateObj' =>
-    sub {
-    plan tests => 2;
-    my $tag = 'ALCATEL-IND1-BASE::alcatel.801.1.2.1.3.1.1.2.1.1.3';
-    my $walked = $test->_fresh_vpa_info();
-    $test->_script_getnext(["$tag.5.1001", 1], ["$tag.12.1001", 2],
-      ['.1.3.6.1.4.1.6486.801.2.1.1.1', 0]);
-    cmp_deeply(
-      $walked->alu8_vpa_type(),
-      {'5.1001' => 1, '12.1001' => 2},
-      'rows read from whole-instance symbolic tags'
-    );
-    cmp_deeply(
-      $walked->walk_status('alu8_vpa_type'),
-      superhashof({complete => 1, rows => 2, reason => undef}),
-      'outcome is complete'
-    );
-    My::Test::Class::mock_getnext($test->mock_session);
-    };
-
-  subtest 'alu8_vpa_type__end_of_mib_view__ends_cleanly' => sub {
-    plan tests => 2;
-    my $walked = $test->_fresh_vpa_info();
-    $test->_script_getnext(
-      [$base . '.5.1001', 1],
-      [$base . '.12.1001', 2],
-      [$base . '.12.1001', 'ENDOFMIBVIEW']
-    );
-    is(scalar keys %{$walked->alu8_vpa_type()}, 2, 'both rows returned');
-    cmp_deeply(
-      $walked->walk_status('alu8_vpa_type'),
-      superhashof({complete => 1, rows => 2, reason => undef}),
-      'endOfMibView is a clean end, not a loop'
-    );
-    My::Test::Class::mock_getnext($test->mock_session);
-    };
-}
-
-# Serve the given [oid, value] rows in order with an empty iid, as Net-SNMP
-# does for a column with no MIB node
-sub _script_getnext {
-  my ($test, @rows) = @_;
-  $test->mock_session->mock(
-    'getnext',
-    sub {
-      my ($sess, $vars) = @_;
-      $sess->{ErrorNum} = 0;
-      my $row = shift @rows or return;
-      @{$vars} = ($row->[0], '', $row->[1]);
-      return wantarray ? $vars : $row->[1];
-    }
-  );
-  return;
+  # The column has no MIB node, so the walk relies on the generic handling
+  # of an untranslated tag (#639)
+  my $walked = $test->_fresh_vpa_info();
+  cmp_deeply($walked->alu8_vpa_type(), {'5.1001' => 1, '12.1001' => 2},
+    q(AOS 8 vpaType rows are walked by numeric OID));
 }
 
 sub _fresh_vpa_info {
-  my ($test, $fault) = @_;
+  my $test = shift;
   # teardown clears the shared session's ErrorStr, which new() rejects
   $test->teardown;
   $test->setup;
@@ -324,7 +269,6 @@ sub _fresh_vpa_info {
     '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3' =>
       {'5.1001' => 1, '12.1001' => 2},
   };
-  My::Test::Class::set_fault($test->mock_session, $fault);
   return $test->{info};
 }
 
@@ -372,6 +316,103 @@ sub i_vlan : Tests(6) {
 
   $info->clear_cache();
   cmp_deeply($info->i_vlan(), {}, q(No data returns empty hash));
+}
+
+sub v_name : Tests(6) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'v_name');
+
+  # Shaped from an AOS 8 walk: vlanTable is indexed by VLAN number, and a
+  # virtual chassis lists its internal VLAN 4094 there too
+  my $aos8_names = {
+    1    => 'VLAN 1',
+    10   => 'TOIP',
+    17   => 'AFFICHEUR',
+    4094 => 'VCM IPC',
+  };
+  $info->{'_alu8_vlan_descr'}     = 1;
+  $info->{store}{alu8_vlan_descr} = $aos8_names;
+  $info->{'_qb_v_name'}           = 1;
+  $info->{store}{qb_v_name}       = {1 => 'VLAN 1', 10 => 'VLAN 10'};
+  $info->{'_alu_vlan_descr'}      = 1;
+  $info->{store}{alu_vlan_descr}  = {1 => 'vlan 1', 12 => 'vlan 12'};
+  cmp_deeply($info->v_name(), $aos8_names,
+    q(AOS 8 vlanDescription names are used when present));
+
+  cmp_deeply($info->v_index(),
+    {1 => 1, 10 => 10, 17 => 17, 4094 => 4094},
+    q(v_index maps each AOS 8 VLAN number to itself));
+
+  $info->{store}{alu8_vlan_descr} = {};
+  cmp_deeply($info->v_name(), {1 => 'VLAN 1', 10 => 'VLAN 10'},
+    q(Q-BRIDGE-MIB names are used when AOS 8 vlanTable is empty));
+
+  $info->{store}{qb_v_name} = {};
+  cmp_deeply($info->v_name(), {1 => 'vlan 1', 12 => 'vlan 12'},
+    q(AOS 6 vlanDescription names are used when Q-BRIDGE-MIB is empty));
+
+  $info->clear_cache();
+  is($info->v_name(), undef, q(No data returns undef));
+}
+
+# Primes the power supply entities and both copies of chasEntPhysOperStatus
+sub _prime_ps {
+  my ($test, $aos6_rows, $aos8_rows) = @_;
+
+  my $info = $test->{info};
+  $info->clear_cache();
+  $info->{'_e_class'}                    = 1;
+  $info->{store}{e_class}                = {
+    209 => 'chassis', 275 => 'powerSupply', 282 => 'powerSupply'};
+  $info->{'_alu_chas_oper_status'}       = 1;
+  $info->{store}{alu_chas_oper_status}   = $aos6_rows;
+  $info->{'_alu8_chas_oper_status'}      = 1;
+  $info->{store}{alu8_chas_oper_status}  = $aos8_rows;
+  return $info;
+}
+
+sub ps1_status : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ps1_status');
+
+  my $info = $test->_prime_ps({275 => 'up', 282 => 'down'}, {275 => 2});
+  is($info->ps1_status(), 'up',
+    q(AOS 6 chasEntPhysOperStatus is used when present));
+
+  # AOS 8 values are numbers: no loaded MIB defines the column
+  $info = $test->_prime_ps({}, {275 => 1, 282 => 7});
+  is($info->ps1_status(), 'up', q(AOS 8 status is mapped to its label));
+
+  $info = $test->_prime_ps({}, {});
+  is($info->ps1_status(), undef, q(No status returns undef));
+}
+
+sub ps2_status : Tests(3) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'ps2_status');
+
+  my $info = $test->_prime_ps({}, {275 => 1, 282 => 7});
+  is($info->ps2_status(), 'unpowered',
+    q(AOS 8 status of the second supply is mapped to its label));
+
+  $info = $test->_prime_ps({}, {275 => 1, 282 => 99});
+  is($info->ps2_status(), 99, q(An AOS 8 status with no label is kept));
+}
+
+sub munge_alu8_chas_oper_status : Tests(4) {
+  my $test = shift;
+
+  can_ok($test->{info}, 'munge_alu8_chas_oper_status');
+  is(SNMP::Info::Layer3::AlcatelLucent::munge_alu8_chas_oper_status(7),
+    'unpowered', q(Known AOS 8 status number returns its label));
+  is(SNMP::Info::Layer3::AlcatelLucent::munge_alu8_chas_oper_status('up'),
+    'up', q(A label is returned unchanged));
+  is(SNMP::Info::Layer3::AlcatelLucent::munge_alu8_chas_oper_status(undef),
+    undef, q(Undef returns undef));
 }
 
 1;
