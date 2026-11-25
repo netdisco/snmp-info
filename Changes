@@ -6,6 +6,7 @@ Version 3.985004
     SonicOS Enhanced (#696)
   * #699 AlcatelLucent: report VLAN names, model and power supply status on
     AOS 8 (#540)
+  * #700 Agent skills: date numeric-OID column walks to 3.982000
 
 Version 3.985003 (2026-11-21)
 
