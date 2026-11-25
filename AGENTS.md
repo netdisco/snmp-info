@@ -29,7 +29,7 @@ The developer reference is the `EXTENDING SNMP::INFO` section of
   of the friendly method (`e_index` in `Entity.pm`). Comment which MIB
   the leaf comes from.
 - **Leaf names come from MIBs.** A `%FUNCS` or `%GLOBALS` value may also be
-  a numeric OID. Since 3.981002, table columns walk correctly whether or
+  a numeric OID. Since 3.982000, table columns walk correctly whether or
   not a loaded MIB defines them; earlier releases return undef for a
   column no loaded MIB defines. Prefix a leaf with its MIB to resolve name
   collisions (`ALTEON_TIGON_SWITCH_MIB__agSoftwareVersion`).

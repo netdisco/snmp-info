@@ -115,7 +115,7 @@ holds the build, test and pull request checklist.
   `%MIBS`. Use a numeric OID only when netdisco-mibs lacks or misnames the
   object, with a comment naming the netdisco-mibs issue or PR and the MIB
   object beside each OID.
-- Since 3.981002, numeric OIDs in `%FUNCS` walk as table columns, with
+- Since 3.982000, numeric OIDs in `%FUNCS` walk as table columns, with
   bulkwalk and caching. Do not write custom walkers or generate methods in
   a `no strict 'refs'` loop.
 - A vendor MIB in netdisco-mibs is expected before a new class merges. Open
