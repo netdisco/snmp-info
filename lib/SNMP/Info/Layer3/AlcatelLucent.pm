@@ -113,12 +113,14 @@ $VERSION = '3.985003';
     'alu_vpa_type' => 'vpaType',
 
     # AOS 8 copies of the tables above, in the .6486.801 tree that
-    # netdisco-mibs does not define (it has only the AOS 6 tree, .6486.800)
+    # netdisco-mibs does not define (it has only the AOS 6 tree, .6486.800).
+    # ALE ships the AOS 8 MIBs under the same module names, so both sets
+    # cannot load together (netdisco-mibs#165).
     # ALCATEL-IND1-CHASSIS-MIB::chasEntPhysOperStatus
     'alu8_chas_oper_status' => '.1.3.6.1.4.1.6486.801.1.1.1.1.1.1.1.2',
     # ALCATEL-IND1-VLAN-MGR-MIB::vlanDescription
     'alu8_vlan_descr' => '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.1.1.1.2',
-    # vpaType
+    # ALCATEL-IND1-VLAN-MGR-MIB::vpaType
     'alu8_vpa_type' => '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3',
 );
 
