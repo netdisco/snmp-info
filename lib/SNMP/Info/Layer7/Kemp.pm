@@ -38,7 +38,7 @@ our @ISA = qw/SNMP::Info::Layer7 Exporter/;
 our @EXPORT_OK = qw//;
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.985003';
+$VERSION = '3.985004';
 
 %MIBS = (
     %SNMP::Info::Layer7::MIBS,

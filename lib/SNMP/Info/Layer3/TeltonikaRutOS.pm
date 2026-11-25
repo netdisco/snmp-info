@@ -39,7 +39,7 @@ use SNMP::Info::Layer3::NetSNMP;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.985003';
+$VERSION = '3.985004';
 
 # Current RutOS devices share this OID layout across router and gateway lines.
 # The released 2013 TELTONIKA-MIB_RUT9XX was written for RUT9xx devices and
