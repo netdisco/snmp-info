@@ -374,4 +374,37 @@ sub i_vlan : Tests(6) {
   cmp_deeply($info->i_vlan(), {}, q(No data returns empty hash));
 }
 
+sub v_name : Tests(5) {
+  my $test = shift;
+  my $info = $test->{info};
+
+  can_ok($info, 'v_name');
+
+  # Shaped from an AOS 8 walk: vlanTable is indexed by VLAN number, and a
+  # virtual chassis lists its internal VLAN 4094 there too
+  my $aos8_names = {
+    1    => 'VLAN 1',
+    10   => 'TOIP',
+    17   => 'AFFICHEUR',
+    4094 => 'VCM IPC',
+  };
+  $info->{'_alu8_vlan_descr'}     = 1;
+  $info->{store}{alu8_vlan_descr} = $aos8_names;
+  $info->{'_qb_v_name'}           = 1;
+  $info->{store}{qb_v_name}       = {1 => 'VLAN 1', 10 => 'VLAN 10'};
+  cmp_deeply($info->v_name(), $aos8_names,
+    q(AOS 8 vlanDescription names are used when present));
+
+  cmp_deeply($info->v_index(),
+    {1 => 1, 10 => 10, 17 => 17, 4094 => 4094},
+    q(v_index maps each AOS 8 VLAN number to itself));
+
+  $info->{store}{alu8_vlan_descr} = {};
+  cmp_deeply($info->v_name(), {1 => 'VLAN 1', 10 => 'VLAN 10'},
+    q(Q-BRIDGE-MIB names are used when AOS 8 vlanTable is empty));
+
+  $info->clear_cache();
+  is($info->v_name(), undef, q(No data returns undef));
+}
+
 1;

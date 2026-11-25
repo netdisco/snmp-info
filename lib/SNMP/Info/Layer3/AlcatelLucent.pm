@@ -105,6 +105,10 @@ $VERSION = '3.985003';
 
     # ALCATEL-IND1-VLAN-MGR-MIB::vpaTable
     'alu_vpa_type' => 'vpaType',
+
+    # ALCATEL-IND1-VLAN-MGR-MIB::vlanDescription in the AOS 8 tree, which
+    # netdisco-mibs does not define (it has only the AOS 6 tree, .6486.800)
+    'alu8_vlan_descr' => '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.1.1.1.2',
 );
 
 %MUNGE = (
@@ -298,6 +302,18 @@ sub i_vlan {
         $default_vlan->{$ifindex} = $vlans[0] if scalar @vlans == 1;
     }
     return $default_vlan;
+}
+
+# AOS 8 keeps VLAN names in its own vlanTable, and its Q-BRIDGE-MIB may
+# carry none, which leaves the calling application with placeholders
+sub v_name {
+    my $alu     = shift;
+    my $partial = shift;
+
+    my $alu8_names = $alu->alu8_vlan_descr($partial);
+    return $alu8_names
+        if ref $alu8_names eq 'HASH' and scalar keys %$alu8_names;
+    return $alu->qb_v_name($partial);
 }
 
 # AOS 8 serves vpaType under .6486.801, but netdisco-mibs only defines the
@@ -605,6 +621,19 @@ Returns the default VLAN of each port from C<dot1qPvid>.  When that is
 empty, as on AOS 8, returns the VLAN of C<vpaTable> rows whose C<vpaType>
 is C<cfgDefault>, keyed by C<vpaIfIndex>.  A port that is C<cfgDefault>
 in more than one VLAN is omitted.
+
+=item $alu->v_name()
+
+Returns the VLAN names from C<vlanDescription> in the AOS 8 copy of
+C<vlanTable>, keyed by C<vlanNumber>.  When that is empty, returns
+C<dot1qVlanStaticName> from F<Q-BRIDGE-MIB>.
+
+=item $alu->alu8_vlan_descr()
+
+Returns C<vlanDescription> from the AOS 8 copy of C<vlanTable>
+(C<.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.1.1.1.2>), keyed by C<vlanNumber>.
+It is read by number because F<ALCATEL-IND1-VLAN-MGR-MIB> only defines
+the AOS 6 location.
 
 =item $alu->alu8_vpa_type()
 
