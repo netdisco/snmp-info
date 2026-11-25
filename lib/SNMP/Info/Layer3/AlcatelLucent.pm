@@ -106,9 +106,12 @@ $VERSION = '3.985003';
     # ALCATEL-IND1-VLAN-MGR-MIB::vpaTable
     'alu_vpa_type' => 'vpaType',
 
-    # ALCATEL-IND1-VLAN-MGR-MIB::vlanDescription in the AOS 8 tree, which
-    # netdisco-mibs does not define (it has only the AOS 6 tree, .6486.800)
+    # ALCATEL-IND1-VLAN-MGR-MIB in the AOS 8 tree, which netdisco-mibs does
+    # not define (it has only the AOS 6 tree, .6486.800)
+    # vlanDescription
     'alu8_vlan_descr' => '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.1.1.1.2',
+    # vpaType
+    'alu8_vpa_type' => '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3',
 );
 
 %MUNGE = (
@@ -314,84 +317,6 @@ sub v_name {
     return $alu8_names
         if ref $alu8_names eq 'HASH' and scalar keys %$alu8_names;
     return $alu->qb_v_name($partial);
-}
-
-# AOS 8 serves vpaType under .6486.801, but netdisco-mibs only defines the
-# AOS 6 tree under .6486.800.  With no MIB node there net-snmp returns the
-# whole instance OID as the tag and an empty iid, which AUTOLOAD's table
-# walk cannot follow, so walk the numeric column here.
-sub alu8_vpa_type {
-    my $alu = shift;
-
-    return $alu->{store}{alu8_vpa_type} if $alu->{'_alu8_vpa_type'};
-    return if $alu->{Offline};
-    my $sess = $alu->session() or return;
-
-    my $base = '.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3';
-    my ( $vpa_type, $failure ) = _alu8_vpa_walk( $sess, $base );
-    my ( $reason, $errornum, $error ) = @{$failure};
-
-    my $rows = scalar keys %{$vpa_type};
-    $alu->_walk_outcome(
-        {   method    => 'alu8_vpa_type',
-            leaf      => $base,
-            partial   => undef,
-            complete  => ( SNMP::Info::_walk_incomplete($reason) ? 0 : 1 ),
-            reason    => $reason,
-            error     => $error,
-            errornum  => $errornum,
-            walk      => 'getnext',
-            repeaters => undef,
-            rows      => $rows,
-            recovery  => [],
-        }
-    );
-
-    if ( SNMP::Info::_walk_incomplete($reason) ) {
-        $alu->error_throw( "SNMP::Info::Layer3::AlcatelLucent: "
-                . "alu8_vpa_type incomplete: $reason after $rows rows. "
-                . ( $error || '' ) );
-        return if $alu->incomplete_walk() eq 'undef';
-    }
-    $alu->_cache( 'alu8_vpa_type', $vpa_type );
-    return $vpa_type;
-}
-
-# Walks the numeric column. Returns the rows and a [reason, errornum, error]
-# triple that is empty when the walk ended cleanly.
-sub _alu8_vpa_walk {
-    my ( $sess, $base ) = @_;
-
-    my $next_oid = $base;
-    my $vpa_type = {};
-    my %seen;
-    while (1) {
-
-        # The returned tag cannot be resent, so ask again by number.
-        my $var = SNMP::Varbind->new( [$next_oid] );
-        $sess->getnext($var);
-        if ( $sess->{ErrorNum} ) {
-            return ( $vpa_type, [] ) if SNMP::Info::_nosuch_end($sess);
-            return ( $vpa_type, [ SNMP::Info::_walk_failure($sess) ] );
-        }
-        last if !defined $var->[0];
-        my $name = $var->[0];
-        $name .= ".$var->[1]" if defined $var->[1] and length $var->[1];
-        my $oid = $name =~ m/^[.]\d/
-            ? $name
-            : SNMP::translateObj($name) // $name;
-
-        # endOfMibView repeats the last OID, so test it before the loop check
-        last if defined $var->[2] and $var->[2] eq 'ENDOFMIBVIEW';
-        if ( $seen{$oid}++ ) {
-            return ( $vpa_type,
-                [ 'loop', 0, "Looping on: alu8_vpa_type oid:$oid." ] );
-        }
-        last unless $oid =~ m/^\Q$base\E\.(\d+\.\d+)$/;
-        $vpa_type->{$1} = $var->[2];
-        $next_oid = $oid;
-    }
-    return ( $vpa_type, [] );
 }
 
 # One PoE source per device: the standard MIB when its port table has
@@ -639,10 +564,8 @@ the AOS 6 location.
 
 Returns C<vpaType> from the AOS 8 copy of C<vpaTable>
 (C<.1.3.6.1.4.1.6486.801.1.2.1.3.1.1.2.1.1.3>), keyed by
-C<vpaVlanNumber.vpaIfIndex>.  The table is walked by number because
-F<ALCATEL-IND1-VLAN-MGR-MIB> only defines the AOS 6 location.  The walk is
-recorded in C<walk_status>.  C<LoopDetect> is not consulted: this walk always
-stops on a repeated OID.
+C<vpaVlanNumber.vpaIfIndex>.  It is read by number because
+F<ALCATEL-IND1-VLAN-MGR-MIB> only defines the AOS 6 location.
 
 =item $alu->peth_port_ifindex()
 
