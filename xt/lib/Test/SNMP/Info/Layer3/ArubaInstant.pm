@@ -530,4 +530,141 @@ sub device_type : Tests(9) {
     is($test->{info}->device_type(), 'SNMP::Info::Layer3::Aruba', 'controller retains existing class');
 }
 
+# Shapes from the 8.13.3.1 cluster walk in issue #536: the conductor is named
+# by aiConductorIPAddress, and every AP has a serial and model.
+sub _load_cluster {
+    my $info = shift;
+    my $store = $info->{store};
+    $store->{instant_ap_name} = {
+        '2.0.0.10.20.31' => 'AP-Conductor', '2.0.0.10.20.32' => 'AP-Member' };
+    $store->{instant_ap_serial} = {
+        '2.0.0.10.20.31' => 'SERIAL0001', '2.0.0.10.20.32' => 'SERIAL0002' };
+    $store->{instant_ap_model} = {
+        '2.0.0.10.20.31' => '615', '2.0.0.10.20.32' => '515' };
+    $store->{instant_ap_type} = {
+        '2.0.0.10.20.31' => '.1.3.6.1.4.1.14823.1.2.133',
+        '2.0.0.10.20.32' => '.1.3.6.1.4.1.14823.1.2.107' };
+    $store->{instant_ap_ip} = {
+        '2.0.0.10.20.31' => '192.0.2.41', '2.0.0.10.20.32' => '192.0.2.42' };
+    $info->{"_$_"} = 1
+        foreach qw/instant_ap_serial instant_ap_model instant_ap_type instant_ap_ip/;
+    $info->{_instant_conductor_ip} = '192.0.2.41';
+    $info->{_instant_master_ip}    = '0.0.0.0';
+    $info->{_instant_vc_name}      = 'Campus-VC';
+    $info->{_instant_vc_version}   = '8.13.3.1-8.13.3.1_97206LSR';
+    return $info;
+}
+
+sub serial : Tests(4) {
+    my $info = _load_cluster(shift->{info});
+    is($info->serial(), 'SERIAL0001', 'conductor named by aiConductorIPAddress');
+
+    # aiMasterIPAddress is the fallback when aiConductorIPAddress is unset
+    delete $info->{_instant_conductor_ip};
+    $info->{_instant_master_ip} = '192.0.2.42';
+    is($info->serial(), 'SERIAL0002', 'conductor named by aiMasterIPAddress');
+
+    # A cluster member walked directly lists only itself
+    $info->{_instant_master_ip} = '198.51.100.1';
+    delete $info->{store}{instant_ap_serial}{'2.0.0.10.20.31'};
+    is($info->serial(), 'SERIAL0002', 'the only AP listed');
+
+    $info->{store}{instant_ap_serial}{'2.0.0.10.20.31'} = 'SERIAL0001';
+    is($info->serial(), undef, 'no conductor among several APs');
+}
+
+sub e_index : Tests(5) {
+    my $info = _load_cluster(shift->{info});
+    is_deeply($info->e_index(),
+        { 0 => 1, '2.0.0.10.20.31' => 10020031, '2.0.0.10.20.32' => 10020032 },
+        'virtual controller chassis and one entry per AP');
+    is_deeply($info->e_class(),
+        { 0 => 'chassis', '2.0.0.10.20.31' => 'ap', '2.0.0.10.20.32' => 'ap' },
+        'APs classed as on Aruba controllers');
+    is_deeply($info->e_parent(),
+        { 0 => 0, '2.0.0.10.20.31' => 1, '2.0.0.10.20.32' => 1 },
+        'APs sit under the chassis');
+
+    $info->{store}{instant_ap_name} = {};
+    is_deeply($info->e_index(),
+        { 0 => 1, '2.0.0.10.20.31' => 10020031, '2.0.0.10.20.32' => 10020032 },
+        'APs found by serial when names are missing');
+
+    $info->{store}{instant_ap_serial} = {};
+    is_deeply($info->e_index(), { 0 => 1 }, 'chassis only without AP rows');
+}
+
+sub e_descr : Tests(2) {
+    my $info = _load_cluster(shift->{info});
+    is_deeply($info->e_descr(),
+        { 0 => 'Campus-VC', '2.0.0.10.20.31' => '615',
+          '2.0.0.10.20.32' => '515' },
+        'virtual controller name and AP model');
+
+    delete $info->{_instant_vc_name};
+    $info->{store}{instant_ap_model} = {};
+    is_deeply($info->e_descr(),
+        { 0 => $info->model(), '2.0.0.10.20.31' => 'AP',
+          '2.0.0.10.20.32' => 'AP' },
+        'device model and generic AP without the vendor values');
+}
+
+sub e_name : Tests(2) {
+    my $info = _load_cluster(shift->{info});
+    is_deeply($info->e_name(),
+        { 0 => 'WLAN Controller', '2.0.0.10.20.31' => 'AP-Conductor',
+          '2.0.0.10.20.32' => 'AP-Member' },
+        'AP names, as on the radio ports');
+
+    $info->{store}{instant_ap_name}{'2.0.0.10.20.32'} = '';
+    is($info->e_name()->{'2.0.0.10.20.32'}, 'AP', 'generic name for an unnamed AP');
+}
+
+sub e_model : Tests(1) {
+    my $info = _load_cluster(shift->{info});
+    is_deeply($info->e_model(),
+        { 0 => $info->model(), '2.0.0.10.20.31' => '615', '2.0.0.10.20.32' => '515' },
+        'AP model names');
+}
+
+sub e_type : Tests(1) {
+    my $info = _load_cluster(shift->{info});
+    is_deeply($info->e_type(),
+        { '2.0.0.10.20.31' => '.1.3.6.1.4.1.14823.1.2.133',
+          '2.0.0.10.20.32' => '.1.3.6.1.4.1.14823.1.2.107' },
+        'AP model object identifiers');
+}
+
+sub e_serial : Tests(2) {
+    my $info = _load_cluster(shift->{info});
+    is_deeply($info->e_serial(),
+        { 0 => 'SERIAL0001', '2.0.0.10.20.31' => 'SERIAL0001',
+          '2.0.0.10.20.32' => 'SERIAL0002' },
+        'conductor serial on the chassis, each AP its own');
+
+    delete $info->{_instant_conductor_ip};
+    is($info->e_serial()->{0}, '', 'empty chassis serial without a conductor');
+}
+
+sub e_hwver : Tests(1) {
+    my $info = _load_cluster(shift->{info});
+    is_deeply($info->e_hwver(), {}, 'no hardware versions in AI-AP-MIB');
+}
+
+sub e_swver : Tests(2) {
+    my $info = _load_cluster(shift->{info});
+    is_deeply($info->e_swver(), { 0 => '8.13.3.1-8.13.3.1_97206LSR' },
+        'virtual controller version on the chassis, none per AP');
+
+    delete $info->{_instant_vc_version};
+    is_deeply($info->e_swver(), {}, 'nothing without the version');
+}
+
+sub e_fru : Tests(1) {
+    my $info = _load_cluster(shift->{info});
+    is_deeply($info->e_fru(),
+        { 0 => 'false', '2.0.0.10.20.31' => 'true', '2.0.0.10.20.32' => 'true' },
+        'APs are replaceable, the virtual controller is not');
+}
+
 1;
