@@ -75,6 +75,7 @@ $VERSION = '3.985004';
     'ps1_status' => 'arubaWiredPSUState.1.1',
     'ps2_status' => 'arubaWiredPSUState.1.2',
     'vsf_topology' => 'arubaWiredVsfTopology',
+    'rpvst_ext_sysid' => 'arubaWiredRpvstExtendedSystemID',
 );
 
 %FUNCS = (
@@ -98,6 +99,16 @@ $VERSION = '3.985004';
     'pm_xcvr_product' => 'arubaWiredPmXcvrProductNum',
     'pm_xcvr_serial'  => 'arubaWiredPmXcvrSerialNum',
     'pm_xcvr_type'    => 'arubaWiredPmXcvrType',
+    # ARUBAWIRED-RPVST-MIB::arubaWiredRpvstVlanTable
+    'rpvst_v_admin'         => 'arubaWiredRpvstVlanRpvstAdminStatus',
+    'rpvst_v_priority'      => 'arubaWiredRpvstVlanPriority',
+    'rpvst_v_root_priority' => 'arubaWiredRpvstVlanRootPriority',
+    'rpvst_v_root_mac'      => 'arubaWiredRpvstVlanRootMacAddress',
+    # ARUBAWIRED-RPVST-MIB::arubaWiredRpvstPortVlanTable
+    'rpvst_pv_state'     => 'arubaWiredRpvstPortVlanState',
+    'rpvst_pv_role'      => 'arubaWiredRpvstPortVlanRole',
+    'rpvst_pv_bridge'    => 'arubaWiredRpvstPortVlanDesigBridge',
+    'rpvst_pv_edge_oper' => 'arubaWiredRpvstPortVlanOperEdge',
 );
 
 %MUNGE = (
@@ -105,6 +116,8 @@ $VERSION = '3.985004';
     %SNMP::Info::IEEE802_STP::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
     %SNMP::Info::IEEE802_Bridge::MUNGE,
+    'rpvst_v_root_mac' => \&SNMP::Info::munge_mac,
+    'rpvst_pv_bridge'  => \&SNMP::Info::munge_mac,
 );
 
 # Product codes reported by ENTITY-MIB or the product OID.
@@ -382,14 +395,18 @@ sub qb_cv_untagged {
 
 # AOS-CX 10.16 serves ieee8021SpanningTreeVersion 3 (mstp) in both of its
 # modes, and while running RPVST reports CIST port role 6, outside the
-# MIB's enum, on every port. Every row 6 is RPVST; every row a defined role
-# is MSTP; no rows or a mix is unknown.
+# MIB's enum, on every port. Every row of the lowest component 6 is RPVST;
+# every row a defined role is MSTP; no rows or a mix is unknown.
 sub _aoscx_stp_protocol {
     my $cx = shift;
 
     return $cx->{_aoscx_stp_protocol} if $cx->{_aoscx_stp_protocol};
 
-    my @roles = values %{ $cx->mstp_cist_p_role() || {} };
+    my $component = $cx->_ieee_stp_component();
+    return unless defined $component;
+    my $rows  = $cx->mstp_cist_p_role() || {};
+    my @roles = map { $rows->{$_} }
+        grep { ( split /\./ )[0] == $component } keys %$rows;
     return unless @roles;
 
     my $rpvst = grep { defined and $_ eq '6' } @roles;
@@ -469,17 +486,134 @@ sub i_stp_state {
     return $cx->SUPER::i_stp_state($partial);
 }
 
-# RPVST readers; each returns the unknown-mode answer until RPVST trees
-# are built from ARUBAWIRED-RPVST-MIB
-sub _aoscx_rpvst_protocols { return; }
+# MAC part of this switch's CIST bridge ID, which RPVST also uses as the
+# bridge MAC; on a VSX pair it is the VSX system MAC
+sub _aoscx_bridge_mac {
+    my $cx = shift;
 
-sub _aoscx_rpvst_trees { return {}; }
+    my $component = $cx->_ieee_stp_component();
+    return unless defined $component;
+    my $id    = ( $cx->mstp_cist_bridge() || {} )->{$component};
+    my $parts = SNMP::Info::Bridge::_stp_decode_bridge_id($id) or return;
+    return $parts->{mac};
+}
 
-sub _aoscx_rpvst_trees_complete { return 0; }
+sub _aoscx_rpvst_protocols { return ['rapid-pvst']; }
 
-sub _aoscx_rpvst_vlan_map { return; }
+# One tree per RPVST-enabled VLAN. No 8-octet bridge ID is served, so IDs
+# are built from parts; sys_id_ext is the VLAN only where the bridge is
+# this switch and ExtendedSystemID is on.
+sub _aoscx_rpvst_trees {
+    my $cx = shift;
 
-sub _aoscx_rpvst_tree_ports { return; }
+    return $cx->{_stp_trees} if $cx->{_stp_trees};
+
+    my $admin     = $cx->rpvst_v_admin()         || {};
+    my $priority  = $cx->rpvst_v_priority()      || {};
+    my $root_prio = $cx->rpvst_v_root_priority() || {};
+    my $root_mac  = $cx->rpvst_v_root_mac()      || {};
+    my $own_mac = $cx->_aoscx_bridge_mac();
+    my $ext_on  = SNMP::Info::Bridge::_stp_enabled( $cx->rpvst_ext_sysid() );
+
+    my %trees;
+    foreach my $vlan ( keys %$admin ) {
+        next unless SNMP::Info::Bridge::_stp_enabled( $admin->{$vlan} );
+        my $ext = $ext_on ? $vlan + 0 : undef;
+        my $root_is_own
+            = defined $own_mac
+            && defined $root_mac->{$vlan}
+            && $root_mac->{$vlan} eq $own_mac;
+        $trees{"vlan.$vlan"} = {
+            type           => 'vlan',
+            id             => $vlan + 0,
+            vlan           => $vlan + 0,
+            protocol       => 'rapid-pvst',
+            measured       => 1,
+            ports_complete => 1,
+            contexts       => [ { kind => 'none' } ],
+            bridge         => scalar SNMP::Info::Bridge::_stp_bridge_id_parts(
+                $priority->{$vlan}, $ext, $own_mac
+            ),
+            root => scalar SNMP::Info::Bridge::_stp_bridge_id_parts(
+                $root_prio->{$vlan}, $root_is_own ? $ext : undef,
+                $root_mac->{$vlan}
+            ),
+        };
+    }
+    $cx->{_stp_trees} = \%trees if keys %trees;
+    return \%trees;
+}
+
+sub _aoscx_rpvst_trees_complete {
+    my $cx = shift;
+
+    my $trees = $cx->stp_trees() || {};
+    return 0 unless keys %$trees;
+    return 0 if $cx->_stp_walk_incomplete('rpvst_v_admin');
+    return 1;
+}
+
+sub _aoscx_rpvst_vlan_map {
+    my $cx = shift;
+
+    my $trees = $cx->stp_trees() || {};
+    return unless keys %$trees;
+    my %map = map { $_->{vlan} => "vlan.$_->{vlan}" } values %$trees;
+    return \%map;
+}
+
+# Rows indexed <VLAN>.<ifIndex>; the designated bridge column serves only a
+# MAC, so its priority comes from the root or this switch when it matches
+sub _aoscx_rpvst_tree_ports {
+    my ( $cx, $tree_key ) = @_;
+
+    my $tree     = ( $cx->stp_trees() || {} )->{$tree_key} or return;
+    my $vlan     = $tree->{vlan};
+    my $states   = $cx->rpvst_pv_state()  || {};
+    my $roles    = $cx->rpvst_pv_role()   || {};
+    my $d_bridge = $cx->rpvst_pv_bridge() || {};
+
+    my %rows;
+    foreach my $index ( keys %{ +{ %$states, %$roles, %$d_bridge } } ) {
+        my ( $row_vlan, $iid ) = split /\./, $index, 2;
+        next unless $row_vlan == $vlan;
+        $rows{$iid} = {
+            tree_type => $tree->{type},
+            tree_id   => $tree->{id},
+            state     => $states->{$index},
+            role      => scalar _aoscx_rpvst_known_role( $roles->{$index} ),
+            role_raw  => $roles->{$index},
+            enabled   => undef,
+            designated_bridge =>
+                scalar _aoscx_rpvst_designated( $tree, $d_bridge->{$index} ),
+            designated_port => undef,
+        };
+    }
+    return \%rows;
+}
+
+sub _aoscx_rpvst_known_role {
+    my $role = shift;
+    return unless defined $role;
+    return $role
+        if $role =~ /^(?:root|alternate|designated|backup|master|disabled)$/;
+    return;
+}
+
+# Priority and sys_id_ext from the root or this switch when the MAC is
+# theirs, else undef
+sub _aoscx_rpvst_designated {
+    my ( $tree, $mac ) = @_;
+    return unless defined $mac;
+
+    foreach my $known ( $tree->{root}, $tree->{bridge} ) {
+        next unless $known and defined $known->{mac};
+        next unless $known->{mac} eq $mac;
+        return SNMP::Info::Bridge::_stp_bridge_id_parts( $known->{priority},
+            $known->{sys_id_ext}, $mac );
+    }
+    return SNMP::Info::Bridge::_stp_bridge_id_parts( undef, undef, $mac );
+}
 
 1;
 __END__
@@ -600,6 +734,25 @@ extracted from C<sysDescr>.
 Returns a string with status information for all fans listed in
 C<ARUBAWIRED-FAN-MIB>.
 
+=item $cx->rpvst_ext_sysid()
+
+Whether this switch puts the VLAN in the system ID extension of its RPVST
+bridge IDs.
+(C<arubaWiredRpvstExtendedSystemID>)
+
+=back
+
+=head2 Overrides
+
+=over
+
+=item $cx->hasRapidPVST()
+
+Returns 1 when every C<ieee8021MstpCistPortRole> row of the lowest
+component reads 6, which AOS-CX reports on every port while running
+RPVST; else 0.
+(C<ieee8021MstpCistPortRole>)
+
 =back
 
 =head2 Globals imported from SNMP::Info::Layer3
@@ -681,6 +834,64 @@ Columns of C<ARUBAWIRED-PM-MIB::arubaWiredPmXcvrTable>, indexed by ifIndex.
 
 =back
 
+=head2 Aruba RPVST VLAN Table (C<arubaWiredRpvstVlanTable>)
+
+Indexed by VLAN.
+
+=over
+
+=item $cx->rpvst_v_admin()
+
+Returns reference to hash. Whether RPVST is enabled on the VLAN.
+(C<arubaWiredRpvstVlanRpvstAdminStatus>)
+
+=item $cx->rpvst_v_priority()
+
+Returns reference to hash. This switch's bridge priority on the VLAN.
+(C<arubaWiredRpvstVlanPriority>)
+
+=item $cx->rpvst_v_root_priority()
+
+Returns reference to hash. The root bridge priority on the VLAN.
+(C<arubaWiredRpvstVlanRootPriority>)
+
+=item $cx->rpvst_v_root_mac()
+
+Returns reference to hash. The root bridge MAC address on the VLAN.
+(C<arubaWiredRpvstVlanRootMacAddress>)
+
+=back
+
+=head2 Aruba RPVST Port VLAN Table (C<arubaWiredRpvstPortVlanTable>)
+
+Indexed by VLAN and ifIndex.
+
+=over
+
+=item $cx->rpvst_pv_state()
+
+Returns reference to hash. The port's state on the VLAN.
+(C<arubaWiredRpvstPortVlanState>)
+
+=item $cx->rpvst_pv_role()
+
+Returns reference to hash. The port's role on the VLAN.
+(C<arubaWiredRpvstPortVlanRole>)
+
+=item $cx->rpvst_pv_bridge()
+
+Returns reference to hash. The MAC address of the designated bridge on
+the port's segment.
+(C<arubaWiredRpvstPortVlanDesigBridge>)
+
+=item $cx->rpvst_pv_edge_oper()
+
+Returns reference to hash. Whether the port is operating as an edge port
+on the VLAN.
+(C<arubaWiredRpvstPortVlanOperEdge>)
+
+=back
+
 =head2 Overrides
 
 =over
@@ -709,12 +920,6 @@ name matches C<arubaWiredPmXcvrPortDesc>, else the first chassis, else 0.
 A row whose index is already a real C<entPhysicalIndex> is skipped. Partial
 fetches and devices without transceiver data return the inherited result.
 
-=item $cx->hasRapidPVST()
-
-Returns 1 when every C<ieee8021MstpCistPortRole> row reads 6, which
-AOS-CX reports on every port while running RPVST; else 0.
-(C<ieee8021MstpCistPortRole>)
-
 =item $cx->stp_protocols()
 
 =item $cx->stp_trees()
@@ -727,9 +932,24 @@ AOS-CX reports on every port while running RPVST; else 0.
 
 AOS-CX serves C<ieee8021SpanningTreeVersion> 3 in both of its modes, so
 the mode comes from C<ieee8021MstpCistPortRole>: every row a defined
-role is MSTP, every row 6 is RPVST. Under MSTP these return the
-L<SNMP::Info::IEEE802_STP> results, with C<measured> 1. When the mode
-is unknown (no rows, or a mix) they report nothing: no protocols, an
+role is MSTP, every row 6 is RPVST; only the lowest component is read.
+Under MSTP these return the L<SNMP::Info::IEEE802_STP> results, with
+C<measured> 1.
+
+Under RPVST they return C<rapid-pvst> trees from F<ARUBAWIRED-RPVST-MIB>:
+one C<vlan.N> tree per VLAN with RPVST enabled, and C<stp_vlan_map()>
+maps each such VLAN to its tree. No 8-octet bridge ID is served, so
+bridge IDs are built from their parts with C<raw> undef. The bridge MAC
+is the MAC part of C<ieee8021MstpCistBridgeIdentifier>, the VSX system
+MAC on a VSX pair. C<sys_id_ext> is the VLAN where the bridge is this
+switch and C<rpvst_ext_sysid()> is true, else undef. Port rows come
+from C<arubaWiredRpvstPortVlanTable>, with the state as served, the
+role where it is one the API names, C<enabled> and C<designated_port>
+undef. That table serves the designated bridge as a MAC only, so its
+priority and C<sys_id_ext> are those of the root or this switch when
+the MAC is theirs, else undef.
+
+When the mode is unknown (no rows, or a mix) they report nothing: no protocols, an
 empty tree list, C<stp_trees_complete()> 0, no VLAN map, and an
 C<error()> from C<stp_tree_ports()>. C<hasMSTP()> is 1 only under MSTP,
 and C<hasSTP()> and C<hasRSTP()> are always 0, since AOS-CX offers only

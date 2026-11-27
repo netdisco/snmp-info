@@ -367,6 +367,10 @@ sub xcvr_partial : Tests(2) {
 }
 
 
+my %MSTP_ROLES  = ( '1.3' => 'designated', '1.769' => 'root' );
+my %RPVST_ROLES = ( '1.3' => '6',          '1.769' => '6' );
+my %MIXED_ROLES = ( '1.3' => '6',          '1.769' => 'designated' );
+
 my $bridge_id = sub { pack( 'H*', shift ) };
 
 # Shapes from an AOS-CX 10.16 walk in MSTP mode: component 1, MSTIs 1 and
@@ -393,7 +397,6 @@ sub _prime_stp {
         mstp_p_state     => {},
         ieee_stp_p_state => {},
         bp_index         => { 3 => 3, 769 => 769, 770 => 770 },
-        stp_root         => $bridge_id->('1000020000000001'),
         stp_p_id         => { 3 => 3,            769 => 769 },
         stp_p_state      => { 3 => 'forwarding', 769 => 'blocking' },
     );
@@ -401,20 +404,55 @@ sub _prime_stp {
         $info->{"_$column"} = 1;
         $info->{store}{$column} = $store{$column};
     }
+    $info->{_stp_root} = $bridge_id->('1000020000000001');
     delete $info->{$_} for qw/_aoscx_stp_protocol _stp_trees/;
     return;
 }
 
-my %MSTP_ROLES  = ( '1.3' => 'designated', '1.769' => 'root' );
-my %RPVST_ROLES = ( '1.3' => '6',          '1.769' => '6' );
-my %MIXED_ROLES = ( '1.3' => '6',          '1.769' => 'designated' );
+my $mac = sub { pack( 'H*', shift ) };
 
-sub hasMSTP : Tests(3) {
+# Shapes from an AOS-CX 10.16 walk in RPVST mode: rows indexed by VLAN, and
+# by VLAN and ifIndex. VLAN 10 has this switch as root; VLAN 20 has another
+# root; VLAN 30 is disabled. Port 769 has only a designated bridge row.
+sub _prime_rpvst {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_stp( {%RPVST_ROLES} );
+    my %store = (
+        rpvst_v_admin =>
+            { 10 => 'enabled', 20 => 'enabled', 30 => 'disabled' },
+        rpvst_v_priority      => { 10 => 4096, 20 => 32768 },
+        rpvst_v_root_priority => { 10 => 4096, 20 => 4096 },
+        rpvst_v_root_mac      => {
+            10 => $mac->('020000000001'),
+            20 => $mac->('020000000002'),
+        },
+        rpvst_pv_state => { '10.3' => 'forwarding', '20.770' => 'blocking' },
+        rpvst_pv_role  => { '10.3' => 'designated', '20.770' => 'alternate' },
+        rpvst_pv_bridge => {
+            '10.3'   => $mac->('020000000001'),
+            '20.770' => $mac->('020000000002'),
+            '20.769' => $mac->('020000000009'),
+        },
+    );
+    foreach my $column ( keys %store ) {
+        $info->{"_$column"} = 1;
+        $info->{store}{$column} = $store{$column};
+    }
+    $info->{_rpvst_ext_sysid} = 'true';
+    return;
+}
+
+sub hasMSTP : Tests(4) {
     my $test = shift;
     my $info = $test->{info};
 
     $test->_prime_stp( {%MSTP_ROLES} );
     is( $info->hasMSTP(), 1, 'hasMSTP__mstp_cist_roles__returns_1' );
+    $test->_prime_stp( { %MSTP_ROLES, '2.5' => '6' } );
+    is( $info->hasMSTP(), 1,
+        'hasMSTP__role_6_on_second_component__reads_lowest_only' );
     $test->_prime_stp( {%RPVST_ROLES} );
     is( $info->hasMSTP(), 0, 'hasMSTP__all_cist_roles_6__returns_0' );
     $test->_prime_stp( {%MIXED_ROLES} );
@@ -454,9 +492,14 @@ sub hasRSTP : Tests(1) {
     is( $info->hasRSTP(), 0, 'hasRSTP__rstp_version__returns_0' );
 }
 
-sub stp_protocols : Tests(2) {
+sub stp_protocols : Tests(3) {
     my $test = shift;
     my $info = $test->{info};
+
+    $test->_prime_rpvst();
+    cmp_deeply( scalar $info->stp_protocols(),
+        ['rapid-pvst'],
+        'stp_protocols__all_cist_roles_6__returns_rapid_pvst' );
 
     $test->_prime_stp( {%MSTP_ROLES} );
     cmp_deeply( scalar $info->stp_protocols(),
@@ -466,9 +509,55 @@ sub stp_protocols : Tests(2) {
         undef, 'stp_protocols__no_cist_roles__returns_nothing' );
 }
 
-sub stp_trees : Tests(2) {
+sub stp_trees : Tests(7) {
     my $test = shift;
     my $info = $test->{info};
+
+    $test->_prime_rpvst();
+    my $trees = $info->stp_trees() || {};
+    cmp_deeply( [ sort keys %$trees ],
+        [qw/vlan.10 vlan.20/], 'stp_trees__rpvst__lists_enabled_vlans_only' );
+    cmp_deeply(
+        $trees->{'vlan.10'}{root},
+        {   priority   => 4096,
+            sys_id_ext => 10,
+            mac        => '02:00:00:00:00:01',
+            raw        => undef,
+        },
+        'stp_trees__rpvst_own_root__fills_sys_id_ext'
+    );
+    cmp_deeply(
+        $trees->{'vlan.20'}{root},
+        {   priority   => 4096,
+            sys_id_ext => undef,
+            mac        => '02:00:00:00:00:02',
+            raw        => undef,
+        },
+        'stp_trees__rpvst_other_root__leaves_sys_id_ext_undef'
+    );
+    cmp_deeply(
+        $trees->{'vlan.20'}{bridge},
+        {   priority   => 32768,
+            sys_id_ext => 20,
+            mac        => '02:00:00:00:00:01',
+            raw        => undef,
+        },
+        'stp_trees__rpvst__builds_bridge_from_own_mac'
+    );
+    cmp_deeply(
+        $trees->{'vlan.20'},
+        superhashof(
+            {   type           => 'vlan',
+                id             => 20,
+                vlan           => 20,
+                protocol       => 'rapid-pvst',
+                measured       => 1,
+                ports_complete => 1,
+                contexts       => [ { kind => 'none' } ],
+            }
+        ),
+        'stp_trees__rpvst__labels_tree_rapid_pvst'
+    );
 
     $test->_prime_stp( {%MSTP_ROLES} );
     is( $info->stp_trees()->{'msti.1'}{measured},
@@ -478,18 +567,33 @@ sub stp_trees : Tests(2) {
         'stp_trees__no_cist_roles__returns_empty_hash' );
 }
 
-sub stp_trees_complete : Tests(1) {
+sub stp_trees_complete : Tests(3) {
     my $test = shift;
     my $info = $test->{info};
+
+    $test->_prime_rpvst();
+    is( $info->stp_trees_complete(),
+        1, 'stp_trees_complete__rpvst_trees__returns_1' );
+    $test->_prime_rpvst();
+    $info->{store}{rpvst_v_admin} = { 30 => 'disabled' };
+    is( $info->stp_trees_complete(),
+        0, 'stp_trees_complete__rpvst_no_enabled_vlan__returns_0' );
 
     $test->_prime_stp( {} );
     is( $info->stp_trees_complete(),
         0, 'stp_trees_complete__no_cist_roles__returns_0' );
 }
 
-sub stp_vlan_map : Tests(2) {
+sub stp_vlan_map : Tests(3) {
     my $test = shift;
     my $info = $test->{info};
+
+    $test->_prime_rpvst();
+    cmp_deeply(
+        scalar $info->stp_vlan_map(),
+        { 10 => 'vlan.10', 20 => 'vlan.20' },
+        'stp_vlan_map__rpvst__maps_each_vlan_to_its_tree'
+    );
 
     $test->_prime_stp( {%MSTP_ROLES} );
     is( $info->stp_vlan_map()->{20},
@@ -499,9 +603,45 @@ sub stp_vlan_map : Tests(2) {
         undef, 'stp_vlan_map__mixed_cist_roles__returns_nothing' );
 }
 
-sub stp_tree_ports : Tests(3) {
+sub stp_tree_ports : Tests(7) {
     my $test = shift;
     my $info = $test->{info};
+
+    $test->_prime_rpvst();
+    my $rows = $info->stp_tree_ports('vlan.20') || {};
+    cmp_deeply(
+        $rows->{770},
+        superhashof(
+            {   tree_type => 'vlan',
+                tree_id   => 20,
+                state     => 'blocking',
+                role      => 'alternate',
+                role_raw  => 'alternate',
+                enabled   => undef,
+            }
+        ),
+        'stp_tree_ports__rpvst__returns_port_vlan_row'
+    );
+    cmp_deeply(
+        $rows->{770}{designated_bridge},
+        {   priority   => 4096,
+            sys_id_ext => undef,
+            mac        => '02:00:00:00:00:02',
+            raw        => undef,
+        },
+        'stp_tree_ports__rpvst_root_mac__takes_root_priority'
+    );
+    cmp_deeply(
+        $rows->{769}{designated_bridge},
+        {   priority   => undef,
+            sys_id_ext => undef,
+            mac        => '02:00:00:00:00:09',
+            raw        => undef,
+        },
+        'stp_tree_ports__rpvst_other_mac__keeps_mac_only'
+    );
+    is( $rows->{770}{designated_port},
+        undef, 'stp_tree_ports__rpvst__leaves_designated_port_undef' );
 
     $test->_prime_stp( {%MSTP_ROLES} );
     is( $info->stp_tree_ports('cist.0')->{769}{role},
