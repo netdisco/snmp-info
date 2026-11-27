@@ -59,10 +59,31 @@ sub os_ver {
 
 sub model {
     my $maipu = shift;
-    my $descr = $maipu->description() // '';
 
+    my $chassis_model = $maipu->_chassis_model();
+    return $chassis_model if defined $chassis_model;
+
+    my $descr = $maipu->description() // '';
     return $1 if $descr =~ /\bMyPower\s+([A-Z][\w-]*\d[\w-]*)\s+version\b/i;
     return $maipu->SUPER::model();
+}
+
+# The S3230 names its model in the chassis entPhysicalDescr and leaves
+# entPhysicalModelName empty.  It serves entPhysicalClass as a Gauge32,
+# which the enumeration does not translate, so chassis arrives as 3.
+sub _chassis_model {
+    my $maipu = shift;
+
+    my $e_class = $maipu->e_class() || {};
+    my $e_model = $maipu->e_model() || {};
+    my $e_descr = $maipu->e_descr() || {};
+    foreach my $index ( sort { $a <=> $b } keys %$e_class ) {
+        next unless $e_class->{$index} =~ /^(?:chassis|3)$/;
+        foreach my $model ( $e_model->{$index}, $e_descr->{$index} ) {
+            return $model if defined $model and $model =~ /\S/;
+        }
+    }
+    return;
 }
 
 # The S3230 serves sysServices 4, so add layer 2 when it has bridge ports.
@@ -109,6 +130,29 @@ sub bp_index {
     return $bp_index;
 }
 
+# The agent serves no dot3adAggPortListPorts, so members come from the
+# aggregator each port is attached to.
+sub agg_ports {
+    my $maipu = shift;
+
+    my $attached   = $maipu->lag_port_attached() || {};
+    my $interfaces = $maipu->interfaces()        || {};
+    my %members;
+    foreach my $member ( keys %$attached ) {
+        my $aggregate = $attached->{$member};
+        next unless defined $aggregate and $aggregate =~ /^\d+$/;
+        next if $aggregate == 0 or $member eq $aggregate;
+        next unless exists $interfaces->{$aggregate};
+        $members{$member} = $aggregate;
+    }
+    return \%members if scalar keys %members;
+    return SNMP::Info::IEEE802dot3ad::agg_ports_lag( $maipu, @_ );
+}
+
+sub _agg_ports_walked {
+    return qw/lag_port_attached ad_lag_ports bp_index/;
+}
+
 1;
 __END__
 
@@ -138,10 +182,11 @@ SNMP::Info Developers
 =head1 DESCRIPTION
 
 Subclass for Maipu switches running MyPower, registered under the Maipu
-C<mpSwitch> branch (C<.1.3.6.1.4.1.5651.1.102>). Reads model and version
-from C<sysDescr>, reports layer 2 for a switch that serves layer 3 only in
-C<sysServices>, and reads forwarding table entries the agent indexes and
-maps in non-standard ways.
+C<mpSwitch> branch (C<.1.3.6.1.4.1.5651.1.102>). Reads the model from the
+chassis entity or C<sysDescr> and the version from C<sysDescr>, reports
+layer 2 for a switch that serves layer 3 only in C<sysServices>, maps link
+aggregation members, and reads forwarding table entries the agent indexes
+and maps in non-standard ways.
 
 =head2 Inherited Classes
 
@@ -186,7 +231,9 @@ the inherited value.
 
 =item $maipu->model()
 
-Returns the model that precedes the word C<version> in C<sysDescr>, such as
+Returns the chassis C<entPhysicalModelName>, else the chassis
+C<entPhysicalDescr>, such as C<S3230-54TXF(V1)>. Without either, returns
+the model that precedes the word C<version> in C<sysDescr>, such as
 C<S3230>, else the inherited value.
 
 =item $maipu->layers()
@@ -222,6 +269,14 @@ Returns reference to hash of bridge port to interface index
 (C<dot1dBasePortIfIndex>), with each interface the table leaves out mapped
 to itself. Forwarding entries learned on a link aggregation name its
 ifIndex as the bridge port.
+
+=item $maipu->agg_ports()
+
+Returns a HASH reference mapping each link aggregation member's ifIndex
+to the aggregation's ifIndex, from C<dot3adAggPortAttachedAggID>. The
+agent serves no C<dot3adAggPortListPorts>. Falls back to
+L<SNMP::Info::IEEE802dot3ad/agg_ports_lag()> when no port names an
+attached aggregation.
 
 =back
 

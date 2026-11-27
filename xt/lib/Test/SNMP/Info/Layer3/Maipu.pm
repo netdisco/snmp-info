@@ -91,14 +91,38 @@ sub os_ver : Tests(3) {
     is($info->os_ver(), undef, 'No version in sysDescr');
 }
 
-sub model : Tests(2) {
+sub model : Tests(5) {
     my $info = shift->{info};
 
-    is($info->model(), 'S3230', 'Model from sysDescr');
+    is($info->model(), 'S3230', 'Model from sysDescr without entities');
 
+    # Shapes from an S3230-54TXF walk: the chassis names its model in
+    # entPhysicalDescr and leaves entPhysicalModelName empty.
+    $info->cache({
+        '_e_class' => 1,
+        '_e_model' => 1,
+        '_e_descr' => 1,
+        'store'    => {
+            'e_class' => { 512 => 'chassis', 768 => 'container',
+                           1280 => 'module' },
+            'e_model' => { 512 => '', 768 => '', 1280 => '' },
+            'e_descr' => { 512 => 'S3230-54TXF(V1)', 768 => 'Board slot',
+                           1280 => '' },
+        },
+    });
+    is($info->model(), 'S3230-54TXF(V1)', 'Chassis description');
+
+    $info->{store}{e_model}{512} = 'S3230-54TXF';
+    is($info->model(), 'S3230-54TXF', 'Chassis model name first');
+
+    # The agent serves entPhysicalClass as a Gauge32, so it stays numeric
+    $info->{store}{e_class} = { 512 => 3, 768 => 5, 1280 => 9 };
+    is($info->model(), 'S3230-54TXF', 'Chassis class served as a number');
+
+    $info->clear_cache();
     $info->cache({ '_description' => 'MyPower (R) Operating System Software' });
     is($info->model(), SNMP::Info::Layer3::model($info),
-        'Inherited model without a sysDescr model');
+        'Inherited model without entities or a sysDescr model');
 }
 
 sub layers : Tests(2) {
@@ -130,6 +154,42 @@ sub qb_fw_mac : Tests(3) {
     });
     is_deeply($info->qb_fw_mac(), { '200.2.0.0.0.0.4' => '02:00:00:00:00:04' },
         'Standard FDB ID and MAC index');
+}
+
+sub agg_ports : Tests(4) {
+    my $info = shift->{info};
+
+    # Shapes from an S3230 walk: dot3adAggPortAttachedAggID names the
+    # aggregation ifIndex for members, 0 for other ports, and the agent
+    # serves no dot3adAggPortListPorts.
+    $info->clear_cache();
+    $info->cache({
+        '_i_index'           => 1,
+        '_lag_port_attached' => 1,
+        'store'              => {
+            'i_index' => { map { $_ => $_ } 1, 39, 40, 45, 109, 110 },
+            'lag_port_attached' => {
+                1 => 0, 39 => 110, 40 => 110, 45 => 109, 109 => 109,
+                110 => 110,
+            },
+        },
+    });
+    is_deeply($info->agg_ports(), { 39 => 110, 40 => 110, 45 => 109 },
+        'Members from the attached aggregator');
+
+    $info->{store}{lag_port_attached} = { 39 => 999, 40 => 'invalid' };
+    is_deeply($info->agg_ports(), {},
+        'Aggregator that is not an interface, or not an ifIndex');
+
+    $info->{store}{lag_port_attached} = {};
+    $info->{'_ad_lag_ports'} = 1;
+    $info->{store}{ad_lag_ports} = { 110 => pack('B*', '1100') };
+    is_deeply($info->agg_ports(), { 1 => 110, 2 => 110 },
+        'Port list when no port names an attached aggregator');
+
+    is_deeply([ $info->_agg_ports_walked() ],
+        [qw/lag_port_attached ad_lag_ports bp_index/],
+        'Tables agg_ports walks');
 }
 
 sub bp_index : Tests(4) {
