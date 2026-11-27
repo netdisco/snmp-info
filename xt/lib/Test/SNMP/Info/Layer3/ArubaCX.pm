@@ -366,4 +366,169 @@ sub xcvr_partial : Tests(2) {
     'Partial e_index returns the real row only');
 }
 
+
+my $bridge_id = sub { pack( 'H*', shift ) };
+
+# Shapes from an AOS-CX 10.16 walk in MSTP mode: component 1, MSTIs 1 and
+# 2, bridge ports equal to ifIndexes, LAGs from 769. BRIDGE-MIB columns are
+# primed too, so a fall through to Bridge.pm would build a tree.
+sub _prime_stp {
+    my ( $test, $roles ) = @_;
+    my $info = $test->{info};
+
+    my %store = (
+        ieee_stp_version => { 1 => 'mstp' },
+        mstp_cist_bridge => { 1 => $bridge_id->('1000020000000001') },
+        ieee_stp_root    => { 1 => $bridge_id->('1000020000000001') },
+        mstp_i_bridge    => {
+            '1.1' => $bridge_id->('1001020000000001'),
+            '1.2' => $bridge_id->('2002020000000002'),
+        },
+        mstp_i_root => {
+            '1.1' => $bridge_id->('1001020000000001'),
+            '1.2' => $bridge_id->('2002020000000002'),
+        },
+        mstp_vlan_msti   => { '1.1' => 0, '1.10' => 1, '1.20' => 2 },
+        mstp_cist_p_role => $roles,
+        mstp_p_state     => {},
+        ieee_stp_p_state => {},
+        bp_index         => { 3 => 3, 769 => 769, 770 => 770 },
+        stp_root         => $bridge_id->('1000020000000001'),
+        stp_p_id         => { 3 => 3,            769 => 769 },
+        stp_p_state      => { 3 => 'forwarding', 769 => 'blocking' },
+    );
+    foreach my $column ( keys %store ) {
+        $info->{"_$column"} = 1;
+        $info->{store}{$column} = $store{$column};
+    }
+    delete $info->{$_} for qw/_aoscx_stp_protocol _stp_trees/;
+    return;
+}
+
+my %MSTP_ROLES  = ( '1.3' => 'designated', '1.769' => 'root' );
+my %RPVST_ROLES = ( '1.3' => '6',          '1.769' => '6' );
+my %MIXED_ROLES = ( '1.3' => '6',          '1.769' => 'designated' );
+
+sub hasMSTP : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_stp( {%MSTP_ROLES} );
+    is( $info->hasMSTP(), 1, 'hasMSTP__mstp_cist_roles__returns_1' );
+    $test->_prime_stp( {%RPVST_ROLES} );
+    is( $info->hasMSTP(), 0, 'hasMSTP__all_cist_roles_6__returns_0' );
+    $test->_prime_stp( {%MIXED_ROLES} );
+    is( $info->hasMSTP(), 0, 'hasMSTP__mixed_cist_roles__returns_0' );
+}
+
+sub hasRapidPVST : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_stp( {%MSTP_ROLES} );
+    is( $info->hasRapidPVST(), 0,
+        'hasRapidPVST__mstp_cist_roles__returns_0' );
+    $test->_prime_stp( {%RPVST_ROLES} );
+    is( $info->hasRapidPVST(), 1,
+        'hasRapidPVST__all_cist_roles_6__returns_1' );
+    $test->_prime_stp( {%MIXED_ROLES} );
+    is( $info->hasRapidPVST(), 0,
+        'hasRapidPVST__mixed_cist_roles__returns_0' );
+}
+
+sub hasSTP : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_stp( {%MSTP_ROLES} );
+    $info->{store}{ieee_stp_version} = { 1 => 'rstp' };
+    is( $info->hasSTP(), 0, 'hasSTP__rstp_version__returns_0' );
+}
+
+sub hasRSTP : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_stp( {%MSTP_ROLES} );
+    $info->{store}{ieee_stp_version} = { 1 => 'rstp' };
+    is( $info->hasRSTP(), 0, 'hasRSTP__rstp_version__returns_0' );
+}
+
+sub stp_protocols : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_stp( {%MSTP_ROLES} );
+    cmp_deeply( scalar $info->stp_protocols(),
+        ['mstp'], 'stp_protocols__mstp_cist_roles__returns_mstp' );
+    $test->_prime_stp( {} );
+    is( scalar $info->stp_protocols(),
+        undef, 'stp_protocols__no_cist_roles__returns_nothing' );
+}
+
+sub stp_trees : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_stp( {%MSTP_ROLES} );
+    is( $info->stp_trees()->{'msti.1'}{measured},
+        1, 'stp_trees__mstp_cist_roles__marks_trees_measured' );
+    $test->_prime_stp( {} );
+    cmp_deeply( $info->stp_trees(), {},
+        'stp_trees__no_cist_roles__returns_empty_hash' );
+}
+
+sub stp_trees_complete : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_stp( {} );
+    is( $info->stp_trees_complete(),
+        0, 'stp_trees_complete__no_cist_roles__returns_0' );
+}
+
+sub stp_vlan_map : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_stp( {%MSTP_ROLES} );
+    is( $info->stp_vlan_map()->{20},
+        'msti.2', 'stp_vlan_map__mstp_cist_roles__maps_vlan_to_msti' );
+    $test->_prime_stp( {%MIXED_ROLES} );
+    is( scalar $info->stp_vlan_map(),
+        undef, 'stp_vlan_map__mixed_cist_roles__returns_nothing' );
+}
+
+sub stp_tree_ports : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_stp( {%MSTP_ROLES} );
+    is( $info->stp_tree_ports('cist.0')->{769}{role},
+        'root', 'stp_tree_ports__mstp_cist_roles__returns_cist_rows' );
+    $test->_prime_stp( {} );
+    is( scalar $info->stp_tree_ports('cist.0'),
+        undef, 'stp_tree_ports__no_cist_roles__returns_nothing' );
+    like(
+        $info->error(),
+        qr/has no tree 'cist\.0'/,
+        'stp_tree_ports__no_cist_roles__sets_error'
+    );
+}
+
+sub i_stp_state : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_stp( {%RPVST_ROLES} );
+    cmp_deeply( $info->i_stp_state(), {},
+        'i_stp_state__all_cist_roles_6__returns_empty_hash' );
+    $test->_prime_stp( {%MSTP_ROLES} );
+    cmp_deeply(
+        $info->i_stp_state(),
+        SNMP::Info::Bridge::i_stp_state($info),
+        'i_stp_state__mstp_cist_roles__returns_bridge_result'
+    );
+}
+
 1;

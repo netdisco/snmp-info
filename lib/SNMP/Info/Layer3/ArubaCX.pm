@@ -33,11 +33,13 @@ use strict;
 use warnings;
 use Exporter;
 use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
+use SNMP::Info::IEEE802_STP;
 use SNMP::Info::Layer3;
 use SNMP::Info::IEEE802_Bridge;
 
 @SNMP::Info::Layer3::ArubaCX::ISA = qw/
   SNMP::Info::IEEE802dot3ad
+  SNMP::Info::IEEE802_STP
   SNMP::Info::Layer3
   SNMP::Info::IEEE802_Bridge
   Exporter
@@ -52,6 +54,7 @@ $VERSION = '3.985004';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,
+    %SNMP::Info::IEEE802_STP::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     %SNMP::Info::IEEE802_Bridge::MIBS,
     'ARUBAWIRED-CIPT-MIB' => 'arubaWiredCiptClientIpAddress',
@@ -60,10 +63,12 @@ $VERSION = '3.985004';
     'ARUBAWIRED-POE-MIB' => 'arubaWiredPoePethPsePortAveragePower',
     'ARUBAWIRED-POWERSUPPLY-MIB' => 'arubaWiredPSUName',
     'ARUBAWIRED-PM-MIB' => 'arubaWiredPmXcvrDescription',
+    'ARUBAWIRED-RPVST-MIB' => 'arubaWiredRpvstExtendedSystemID',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
+    %SNMP::Info::IEEE802_STP::GLOBALS,
     %SNMP::Info::IEEE802_Bridge::GLOBALS,
     'ps1_type' => 'arubaWiredPSUProductName.1.1',
     'ps2_type' => 'arubaWiredPSUProductName.1.2',
@@ -74,6 +79,7 @@ $VERSION = '3.985004';
 
 %FUNCS = (
     %SNMP::Info::Layer3::FUNCS,
+    %SNMP::Info::IEEE802_STP::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
     %SNMP::Info::IEEE802_Bridge::FUNCS,
     'peth_port_power' => 'arubaWiredPoePethPsePortAveragePower',
@@ -96,6 +102,7 @@ $VERSION = '3.985004';
 
 %MUNGE = (
     %SNMP::Info::Layer3::MUNGE,
+    %SNMP::Info::IEEE802_STP::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
     %SNMP::Info::IEEE802_Bridge::MUNGE,
 );
@@ -373,6 +380,107 @@ sub qb_cv_untagged {
     return $cx->iqb_cv_untagged() || $cx->SUPER::qb_cv_untagged();
 }
 
+# AOS-CX 10.16 serves ieee8021SpanningTreeVersion 3 (mstp) in both of its
+# modes, and while running RPVST reports CIST port role 6, outside the
+# MIB's enum, on every port. Every row 6 is RPVST; every row a defined role
+# is MSTP; no rows or a mix is unknown.
+sub _aoscx_stp_protocol {
+    my $cx = shift;
+
+    return $cx->{_aoscx_stp_protocol} if $cx->{_aoscx_stp_protocol};
+
+    my @roles = values %{ $cx->mstp_cist_p_role() || {} };
+    return unless @roles;
+
+    my $rpvst = grep { defined and $_ eq '6' } @roles;
+    my $mstp  = grep { defined and /^(?:root|alternate|designated|backup)$/ }
+        @roles;
+    my $protocol
+        = $rpvst == @roles ? 'rapid-pvst'
+        : $mstp == @roles  ? 'mstp'
+        :                    undef;
+    return unless defined $protocol;
+    return $cx->{_aoscx_stp_protocol} = $protocol;
+}
+
+sub _ieee_stp_protocol {
+    my $cx = shift;
+    return ( $cx->_aoscx_stp_protocol() || '' ) eq 'mstp' ? 'mstp' : undef;
+}
+
+sub _ieee_stp_measured { return 1; }
+
+sub hasRapidPVST {
+    my $cx = shift;
+    return ( $cx->_aoscx_stp_protocol() || '' ) eq 'rapid-pvst' ? 1 : 0;
+}
+
+sub stp_protocols {
+    my $cx = shift;
+
+    my $protocol = $cx->_aoscx_stp_protocol();
+    return unless defined $protocol;
+    return $cx->SUPER::stp_protocols() if $protocol eq 'mstp';
+    return $cx->_aoscx_rpvst_protocols();
+}
+
+sub stp_trees {
+    my $cx = shift;
+
+    return unless $cx->_stp_default_context_ok();
+    my $protocol = $cx->_aoscx_stp_protocol();
+    return {} unless defined $protocol;
+    return $cx->SUPER::stp_trees() if $protocol eq 'mstp';
+    return $cx->_aoscx_rpvst_trees();
+}
+
+sub stp_trees_complete {
+    my $cx = shift;
+
+    my $protocol = $cx->_aoscx_stp_protocol();
+    return 0 unless defined $protocol;
+    return $cx->SUPER::stp_trees_complete() if $protocol eq 'mstp';
+    return $cx->_aoscx_rpvst_trees_complete();
+}
+
+sub stp_vlan_map {
+    my $cx = shift;
+
+    my $protocol = $cx->_aoscx_stp_protocol();
+    return unless defined $protocol;
+    return $cx->SUPER::stp_vlan_map() if $protocol eq 'mstp';
+    return $cx->_aoscx_rpvst_vlan_map();
+}
+
+sub stp_tree_ports {
+    my ( $cx, $tree_key ) = @_;
+
+    my $protocol = $cx->_aoscx_stp_protocol() // '';
+    return $cx->SUPER::stp_tree_ports($tree_key) if $protocol eq 'mstp';
+    $cx->_stp_tree_for_key($tree_key) or return;
+    return $cx->_aoscx_rpvst_tree_ports($tree_key);
+}
+
+# dot1dStpPortState keeps MSTP's last values while AOS-CX runs RPVST
+sub i_stp_state {
+    my ( $cx, $partial ) = @_;
+
+    return {} if ( $cx->_aoscx_stp_protocol() || '' ) eq 'rapid-pvst';
+    return $cx->SUPER::i_stp_state($partial);
+}
+
+# RPVST readers; each returns the unknown-mode answer until RPVST trees
+# are built from ARUBAWIRED-RPVST-MIB
+sub _aoscx_rpvst_protocols { return; }
+
+sub _aoscx_rpvst_trees { return {}; }
+
+sub _aoscx_rpvst_trees_complete { return 0; }
+
+sub _aoscx_rpvst_vlan_map { return; }
+
+sub _aoscx_rpvst_tree_ports { return; }
+
 1;
 __END__
 
@@ -407,6 +515,8 @@ Subclass for devices running ArubaOS-CX
 
 =over
 
+=item SNMP::Info::IEEE802_STP
+
 =item SNMP::Info::Layer3
 
 =item SNMP::Info::IEEE802_Bridge
@@ -431,7 +541,11 @@ Subclass for devices running ArubaOS-CX
 
 =item F<ARUBAWIRED-PM-MIB>
 
+=item F<ARUBAWIRED-RPVST-MIB>
+
 =item Inherited Classes' MIBs
+
+See L<SNMP::Info::IEEE802_STP> for its own MIB requirements.
 
 See L<SNMP::Info::Layer3> for its own MIB requirements.
 
@@ -595,6 +709,37 @@ name matches C<arubaWiredPmXcvrPortDesc>, else the first chassis, else 0.
 A row whose index is already a real C<entPhysicalIndex> is skipped. Partial
 fetches and devices without transceiver data return the inherited result.
 
+=item $cx->hasRapidPVST()
+
+Returns 1 when every C<ieee8021MstpCistPortRole> row reads 6, which
+AOS-CX reports on every port while running RPVST; else 0.
+(C<ieee8021MstpCistPortRole>)
+
+=item $cx->stp_protocols()
+
+=item $cx->stp_trees()
+
+=item $cx->stp_trees_complete()
+
+=item $cx->stp_vlan_map()
+
+=item $cx->stp_tree_ports($tree_key)
+
+AOS-CX serves C<ieee8021SpanningTreeVersion> 3 in both of its modes, so
+the mode comes from C<ieee8021MstpCistPortRole>: every row a defined
+role is MSTP, every row 6 is RPVST. Under MSTP these return the
+L<SNMP::Info::IEEE802_STP> results, with C<measured> 1. When the mode
+is unknown (no rows, or a mix) they report nothing: no protocols, an
+empty tree list, C<stp_trees_complete()> 0, no VLAN map, and an
+C<error()> from C<stp_tree_ports()>. C<hasMSTP()> is 1 only under MSTP,
+and C<hasSTP()> and C<hasRSTP()> are always 0, since AOS-CX offers only
+MSTP and RPVST.
+
+=item $cx->i_stp_state()
+
+Returns an empty hash under RPVST, where C<dot1dStpPortState> keeps
+MSTP's last values. Otherwise the inherited result.
+
 =item C<agg_ports>
 
 Returns a HASH reference mapping from slave to master port for each member of
@@ -613,6 +758,10 @@ device that implements C<Q-BRIDGE-MIB>, but with data from
 L<SNMP::Info::IEEE8021_Bridge> at PBB 1.
 
 =back
+
+=head2 Table Methods imported from SNMP::Info::IEEE802_STP
+
+See documentation in L<SNMP::Info::IEEE802_STP> for details.
 
 =head2 Table Methods imported from SNMP::Info::Layer3
 
