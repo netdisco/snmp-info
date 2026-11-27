@@ -1,5 +1,10 @@
 Version 3.985005
 
+  [ENHANCEMENTS]
+
+  * #702 Maipu: add a class for MyPower switches, with MAC tables on link
+    aggregations, serial, power supply and fan status (#563)
+
 Version 3.985004 (2026-11-25)
 
   [BUG FIXES]
