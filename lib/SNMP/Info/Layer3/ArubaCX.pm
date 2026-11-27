@@ -785,20 +785,20 @@ Whether this switch puts the VLAN in the system ID extension of its RPVST
 bridge IDs.
 (C<arubaWiredRpvstExtendedSystemID>)
 
-=back
-
-=head2 Overrides
-
-=over
-
 =item $cx->hasRapidPVST()
 
 Returns 1 when every C<ieee8021MstpCistPortRole> row of the lowest
 component reads 6, which AOS-CX reports on every port while running
-RPVST; else 0.
+RPVST, and at least one of those ports is up, directly or through a link
+aggregation member (C<i_up()>, C<agg_ports()>). Otherwise returns 0, so
+role 6 on a switch with every port down is not taken as RPVST.
 (C<ieee8021MstpCistPortRole>)
 
 =back
+
+=head2 Globals imported from SNMP::Info::IEEE802_STP
+
+See documentation in L<SNMP::Info::IEEE802_STP> for details.
 
 =head2 Globals imported from SNMP::Info::Layer3
 
@@ -997,12 +997,14 @@ from C<arubaWiredRpvstPortVlanTable>, with the state as served, the
 role where it is one the API names, C<enabled> and C<designated_port>
 undef. That table serves the designated bridge as a MAC only, so its
 priority and C<sys_id_ext> are those of the root or this switch when
-the MAC is theirs, else undef.
+the MAC is theirs, else undef. The C<ports_complete> of an RPVST tree is
+always 1, since its rows are keyed by C<ifIndex> and none is dropped.
 
-When the mode is unknown (no rows, or role 6 on every row with every
-port down) they report nothing: no
-protocols, an empty tree list, C<stp_trees_complete()> 0, no VLAN map, and an
-C<error()> from C<stp_tree_ports()>. C<hasMSTP()> is 1 only under MSTP,
+When the mode is unknown they report nothing: no protocols, an empty
+tree list, C<stp_trees_complete()> 0, no VLAN map, and an C<error()> from
+C<stp_tree_ports()>. The mode is unknown when there are no rows, when
+every row reads 6 and every port is down, and in any other case neither
+rule above covers, such as a mix of 6 and an undefined role. C<hasMSTP()> is 1 only under MSTP,
 and C<hasSTP()> and C<hasRSTP()> are always 0, since AOS-CX offers only
 MSTP and RPVST.
 
@@ -1016,6 +1018,9 @@ MSTP's last values. Otherwise the inherited result.
 Returns reference to hash of ifIndex to 1 or 0. Under MSTP, the inherited
 result. Under RPVST, C<arubaWiredRpvstPortVlanOperEdge> on the row for the
 port's native VLAN (C<i_vlan()>); a port with no such row is absent.
+AOS-CX 10.16 serves a native VLAN (PVID) of 0 on access ports and link
+aggregations, so under RPVST ports are usually absent from this method
+until C<i_vlan()> reads the native VLAN.
 Returns an empty hash when the mode is unknown. C<i_edgeport_admin()> is
 the inherited method in every mode. Whether this value reports an
 operational edge port as true has not been verified.

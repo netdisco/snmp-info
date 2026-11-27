@@ -1114,7 +1114,8 @@ C<SNMP::Info::Bridge::_stp_decode_bridge_id($id)> and
 C<_stp_decode_port_id($id)> turn a served bridge ID or port ID into the
 hashes C<stp_trees()> and C<stp_tree_ports()> return.
 C<_stp_bridge_id_from($priority, $mac)> builds a bridge ID from its two
-parts. C<_stp_enabled($value)> reads C<enabled(1)>, C<true(1)> and their
+parts, and C<_stp_bridge_id_parts($priority, $sys_id_ext, $mac)> from its
+three. C<_stp_enabled($value)> reads C<enabled(1)>, C<true(1)> and their
 labels as 1, C<disabled(2)> and C<false(2)> as 0, else undef. Call them
 by full name.
 
@@ -1496,7 +1497,8 @@ still says which tree it describes.
 This class reports the F<BRIDGE-MIB> tree as the one tree C<cist.0>,
 with its protocol unknown. These classes read the vendor's trees
 instead, and their documentation says what they fill and from where:
-L<SNMP::Info::CiscoStpExtensions>, L<SNMP::Info::Layer3::Extreme>,
+L<SNMP::Info::CiscoStpExtensions>, L<SNMP::Info::IEEE802_STP>,
+L<SNMP::Info::Layer3::ArubaCX>, L<SNMP::Info::Layer3::Extreme>,
 L<SNMP::Info::Layer3::H3C>, L<SNMP::Info::Layer3::Juniper> and
 L<SNMP::Info::RapidCity>. L<SNMP::Info::Layer3::Foundry> and
 L<SNMP::Info::Layer3::HP9300> report no tree.
@@ -1668,8 +1670,8 @@ not serve it.
 =item C<vlan>
 
 The VLAN the tree runs for. Present only where the class fills it:
-Cisco PVST+ and Rapid-PVST+, H3C PVST, Juniper VSTP, and an Extreme
-domain with a carrier VLAN.
+Cisco PVST+ and Rapid-PVST+, AOS-CX RPVST, H3C PVST, Juniper VSTP, and an
+Extreme domain with a carrier VLAN.
 
 =item C<name>
 
