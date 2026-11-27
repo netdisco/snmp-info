@@ -38,17 +38,17 @@ use SNMP::Info::Layer3;
 use SNMP::Info::IEEE802_Bridge;
 
 @SNMP::Info::Layer3::ArubaCX::ISA = qw/
-  SNMP::Info::IEEE802dot3ad
-  SNMP::Info::IEEE802_STP
-  SNMP::Info::Layer3
-  SNMP::Info::IEEE802_Bridge
-  Exporter
-/;
+    SNMP::Info::IEEE802dot3ad
+    SNMP::Info::IEEE802_STP
+    SNMP::Info::Layer3
+    SNMP::Info::IEEE802_Bridge
+    Exporter
+    /;
 @SNMP::Info::Layer3::ArubaCX::EXPORT_OK = qw/
-  agg_ports
-/;
+    agg_ports
+    /;
 
-our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MODEL_MAP, %MUNGE);
+our ( $VERSION, %GLOBALS, %MIBS, %FUNCS, %MODEL_MAP, %MUNGE );
 
 $VERSION = '3.985004';
 
@@ -57,24 +57,24 @@ $VERSION = '3.985004';
     %SNMP::Info::IEEE802_STP::MIBS,
     %SNMP::Info::IEEE802dot3ad::MIBS,
     %SNMP::Info::IEEE802_Bridge::MIBS,
-    'ARUBAWIRED-CIPT-MIB' => 'arubaWiredCiptClientIpAddress',
-    'ARUBAWIRED-FAN-MIB' => 'arubaWiredFanName',
-    'ARUBAWIRED-VSF-MIB' => 'arubaWiredVsfTrapEnable',
-    'ARUBAWIRED-POE-MIB' => 'arubaWiredPoePethPsePortAveragePower',
+    'ARUBAWIRED-CIPT-MIB'        => 'arubaWiredCiptClientIpAddress',
+    'ARUBAWIRED-FAN-MIB'         => 'arubaWiredFanName',
+    'ARUBAWIRED-VSF-MIB'         => 'arubaWiredVsfTrapEnable',
+    'ARUBAWIRED-POE-MIB'         => 'arubaWiredPoePethPsePortAveragePower',
     'ARUBAWIRED-POWERSUPPLY-MIB' => 'arubaWiredPSUName',
-    'ARUBAWIRED-PM-MIB' => 'arubaWiredPmXcvrDescription',
-    'ARUBAWIRED-RPVST-MIB' => 'arubaWiredRpvstExtendedSystemID',
+    'ARUBAWIRED-PM-MIB'          => 'arubaWiredPmXcvrDescription',
+    'ARUBAWIRED-RPVST-MIB'       => 'arubaWiredRpvstExtendedSystemID',
 );
 
 %GLOBALS = (
     %SNMP::Info::Layer3::GLOBALS,
     %SNMP::Info::IEEE802_STP::GLOBALS,
     %SNMP::Info::IEEE802_Bridge::GLOBALS,
-    'ps1_type' => 'arubaWiredPSUProductName.1.1',
-    'ps2_type' => 'arubaWiredPSUProductName.1.2',
-    'ps1_status' => 'arubaWiredPSUState.1.1',
-    'ps2_status' => 'arubaWiredPSUState.1.2',
-    'vsf_topology' => 'arubaWiredVsfTopology',
+    'ps1_type'        => 'arubaWiredPSUProductName.1.1',
+    'ps2_type'        => 'arubaWiredPSUProductName.1.2',
+    'ps1_status'      => 'arubaWiredPSUState.1.1',
+    'ps2_status'      => 'arubaWiredPSUState.1.2',
+    'vsf_topology'    => 'arubaWiredVsfTopology',
     'rpvst_ext_sysid' => 'arubaWiredRpvstExtendedSystemID',
 );
 
@@ -83,27 +83,29 @@ $VERSION = '3.985004';
     %SNMP::Info::IEEE802_STP::FUNCS,
     %SNMP::Info::IEEE802dot3ad::FUNCS,
     %SNMP::Info::IEEE802_Bridge::FUNCS,
-    'peth_port_power' => 'arubaWiredPoePethPsePortAveragePower',
-    'fan_names' => 'arubaWiredFanName',
-    'fan_states' => 'arubaWiredFanState',
-    'psu_names' => 'arubaWiredPSUName',
-    'psu_types' => 'arubaWiredPSUProductName',
-    'psu_states' => 'arubaWiredPSUState',
-    'vsf_prod_names' => 'arubaWiredVsfMemberProductName',
-    'cipt_addr_type' => 'arubaWiredCiptClientIpAddrType',
-    'cipt_addr' => 'arubaWiredCiptClientIpAddress',
-    'cipt_ifindex' => 'arubaWiredCiptClientPortIfIndex',
-    'raw_ad_lag_ports' => 'dot3adAggPortListPorts',  # unmunged raw data
-    'pm_xcvr_port'    => 'arubaWiredPmXcvrPortDesc',
-    'pm_xcvr_descr'   => 'arubaWiredPmXcvrDescription',
-    'pm_xcvr_product' => 'arubaWiredPmXcvrProductNum',
-    'pm_xcvr_serial'  => 'arubaWiredPmXcvrSerialNum',
-    'pm_xcvr_type'    => 'arubaWiredPmXcvrType',
+    'peth_port_power'  => 'arubaWiredPoePethPsePortAveragePower',
+    'fan_names'        => 'arubaWiredFanName',
+    'fan_states'       => 'arubaWiredFanState',
+    'psu_names'        => 'arubaWiredPSUName',
+    'psu_types'        => 'arubaWiredPSUProductName',
+    'psu_states'       => 'arubaWiredPSUState',
+    'vsf_prod_names'   => 'arubaWiredVsfMemberProductName',
+    'cipt_addr_type'   => 'arubaWiredCiptClientIpAddrType',
+    'cipt_addr'        => 'arubaWiredCiptClientIpAddress',
+    'cipt_ifindex'     => 'arubaWiredCiptClientPortIfIndex',
+    'raw_ad_lag_ports' => 'dot3adAggPortListPorts',        # unmunged raw data
+    'pm_xcvr_port'     => 'arubaWiredPmXcvrPortDesc',
+    'pm_xcvr_descr'    => 'arubaWiredPmXcvrDescription',
+    'pm_xcvr_product'  => 'arubaWiredPmXcvrProductNum',
+    'pm_xcvr_serial'   => 'arubaWiredPmXcvrSerialNum',
+    'pm_xcvr_type'     => 'arubaWiredPmXcvrType',
+
     # ARUBAWIRED-RPVST-MIB::arubaWiredRpvstVlanTable
     'rpvst_v_admin'         => 'arubaWiredRpvstVlanRpvstAdminStatus',
     'rpvst_v_priority'      => 'arubaWiredRpvstVlanPriority',
     'rpvst_v_root_priority' => 'arubaWiredRpvstVlanRootPriority',
     'rpvst_v_root_mac'      => 'arubaWiredRpvstVlanRootMacAddress',
+
     # ARUBAWIRED-RPVST-MIB::arubaWiredRpvstPortVlanTable
     'rpvst_pv_state'     => 'arubaWiredRpvstPortVlanState',
     'rpvst_pv_role'      => 'arubaWiredRpvstPortVlanRole',
@@ -121,15 +123,13 @@ $VERSION = '3.985004';
 );
 
 # Product codes reported by ENTITY-MIB or the product OID.
-%MODEL_MAP = (
-    'JL719C' => '8360-48Y6C v2',
-);
+%MODEL_MAP = ( 'JL719C' => '8360-48Y6C v2', );
 
 sub _at_pbb_one {
-    my $in = shift // {};
+    my $in  = shift // {};
     my $ret = {};
-    foreach my $key (keys %$in) {
-        if ($key =~ /^1\.(\d+)$/) {
+    foreach my $key ( keys %$in ) {
+        if ( $key =~ /^1\.(\d+)$/ ) {
             $ret->{$1} = $in->{$key};
         }
     }
@@ -137,86 +137,91 @@ sub _at_pbb_one {
 }
 
 sub fan {
-    my $cx = shift;
-    my $names = $cx->fan_names() || {};
+    my $cx     = shift;
+    my $names  = $cx->fan_names()  || {};
     my $states = $cx->fan_states() || {};
-    my @ary = ();
-    foreach my $idx (sort keys %$names) {
-        my $name = $names->{$idx} // 'n/a';
+    my @ary    = ();
+    foreach my $idx ( sort keys %$names ) {
+        my $name  = $names->{$idx}  // 'n/a';
         my $state = $states->{$idx} // 'n/a';
-        push @ary, sprintf("%s: %s", $name, $state);
+        push @ary, sprintf( "%s: %s", $name, $state );
     }
-    return join (', ', @ary);
+    return join( ', ', @ary );
 }
 
 sub vendor {
-    my $cx = shift;
-    my $mfg = $cx->entPhysicalMfgName(1) || {};
-    my $vendor = $mfg->{1} || "aruba";
+    my $cx     = shift;
+    my $mfg    = $cx->entPhysicalMfgName(1) || {};
+    my $vendor = $mfg->{1}                  || "aruba";
     return lc($vendor);
 }
 
 sub mac {
-    my $cx = shift;
+    my $cx    = shift;
     my $b_mac = $cx->b_mac();
     return $b_mac if defined $b_mac and $b_mac !~ /^[0:]+$/;
     return $cx->orig_mac();
 }
 
 sub stack_info {
-    my $cx = shift;
+    my $cx       = shift;
     my $vsf_topo = $cx->vsf_topology();
-    if (defined $vsf_topo and $vsf_topo ne 'standalone') {
+    if ( defined $vsf_topo and $vsf_topo ne 'standalone' ) {
         my $member_prod_names = $cx->vsf_prod_names() || {};
-        my $num_members = scalar keys %$member_prod_names;
-        my $fullname = (values %$member_prod_names)[0];
-        my $modelname = '';
-        if ($fullname =~ /^(\S+)/) {
+        my $num_members       = scalar keys %$member_prod_names;
+        my $fullname          = ( values %$member_prod_names )[0];
+        my $modelname         = '';
+        if ( $fullname =~ /^(\S+)/ ) {
             $modelname = $1;
         }
-        return sprintf("%s (stack of %d)", $modelname, $num_members);
-    } else {
+        return sprintf( "%s (stack of %d)", $modelname, $num_members );
+    }
+    else {
         return;
     }
 }
 
 sub model {
-    my $cx = shift;
-    my $model = $cx->entPhysicalModelName(1) || {};
-    my $id = $cx->id();
+    my $cx            = shift;
+    my $model         = $cx->entPhysicalModelName(1) || {};
+    my $id            = $cx->id();
     my $translated_id = &SNMP::translateObj($id) || $id;
     $translated_id =~ s/arubaWiredSwitch//i;
     my $name = $cx->stack_info() || $model->{1} || $translated_id;
     return defined $MODEL_MAP{$name} ? $MODEL_MAP{$name} : $name;
 }
 
-# Keep client tracking rows separate from the standard neighbour-table indexes.
+# Keep client tracking rows separate from the standard neighbour-table
+# indexes.
 # InetAddress is an OCTET STRING; check its length against the address type.
 sub _cipt_clients {
-    my ($cx, $family, $partial) = @_;
+    my ( $cx, $family, $partial ) = @_;
     my $types = $cx->cipt_addr_type() || {};
-    my $addrs = $cx->cipt_addr() || {};
-    my $ports = $cx->cipt_ifindex() || {};
+    my $addrs = $cx->cipt_addr()      || {};
+    my $ports = $cx->cipt_ifindex()   || {};
     my %clients;
-    foreach my $idx (keys %$types) {
+    foreach my $idx ( keys %$types ) {
         my $type = $types->{$idx};
         next unless defined $type;
-        next unless ($family == 1 && ($type eq '1' || $type eq 'ipv4'))
-            || ($family == 2 && ($type eq '2' || $type eq 'ipv6'));
+        next
+            unless ( $family == 1 && ( $type eq '1' || $type eq 'ipv4' ) )
+            || ( $family == 2 && ( $type eq '2' || $type eq 'ipv6' ) );
         next unless $idx =~ /^6\.((?:\d+\.){5}\d+)\.(\d+)\.(\d+)$/;
-        my ($mac_index, $vlan, $ip_index) = ($1, $2, $3);
+        my ( $mac_index, $vlan, $ip_index ) = ( $1, $2, $3 );
         my @mac = split /\./, $mac_index;
-        next if grep { $_ > 255 } @mac;
-        next if ($mac[0] & 1) || !grep { $_ } @mac;
+        next if grep                     { $_ > 255 } @mac;
+        next if ( $mac[0] & 1 ) || !grep {$_} @mac;
         next unless $vlan >= 1 && $vlan <= 4094 && $ip_index > 0;
         my $addr = $addrs->{$idx};
-        next unless defined $addr && length($addr) == ($family == 1 ? 4 : 16);
+        next
+            unless defined $addr
+            && length($addr) == ( $family == 1 ? 4 : 16 );
         my $port = $ports->{$idx};
         next unless defined $port && $port =~ /^\d+$/ && $port > 0;
         my $row = "cipt.$idx";
         next if defined $partial && $row !~ /^\Q$partial\E(?:\.|$)/;
         $clients{$row} = {
-            mac => join(':', map { sprintf '%02x', $_ } @mac),
+            mac  => join( ':', map { sprintf '%02x', $_ } @mac ),
             addr => SNMP::Info::munge_inetaddress($addr),
             port => $port,
         };
@@ -225,36 +230,39 @@ sub _cipt_clients {
 }
 
 sub _cipt_merge {
-    my ($cx, $base, $family, $field, $partial) = @_;
-    my %result = %{ $base || {} };
-    my $clients = $cx->_cipt_clients($family, $partial);
+    my ( $cx, $base, $family, $field, $partial ) = @_;
+    my %result  = %{ $base || {} };
+    my $clients = $cx->_cipt_clients( $family, $partial );
     $result{$_} = $clients->{$_}{$field} for keys %$clients;
     return \%result;
 }
 
 sub at_paddr {
-    my ($cx, $partial) = @_;
-    return $cx->_cipt_merge($cx->SUPER::at_paddr($partial), 1, 'mac', $partial);
+    my ( $cx, $partial ) = @_;
+    return $cx->_cipt_merge( $cx->SUPER::at_paddr($partial), 1, 'mac',
+        $partial );
 }
 
 sub at_netaddr {
-    my ($cx, $partial) = @_;
-    return $cx->_cipt_merge($cx->SUPER::at_netaddr($partial), 1, 'addr', $partial);
+    my ( $cx, $partial ) = @_;
+    return $cx->_cipt_merge( $cx->SUPER::at_netaddr($partial),
+        1, 'addr', $partial );
 }
 
 sub ipv6_n2p_mac {
-    my ($cx, $partial) = @_;
-    return $cx->_cipt_merge($cx->SUPER::ipv6_n2p_mac(), 2, 'mac', $partial);
+    my ( $cx, $partial ) = @_;
+    return $cx->_cipt_merge( $cx->SUPER::ipv6_n2p_mac(), 2, 'mac', $partial );
 }
 
 sub ipv6_n2p_addr {
-    my ($cx, $partial) = @_;
-    return $cx->_cipt_merge($cx->SUPER::ipv6_n2p_addr(), 2, 'addr', $partial);
+    my ( $cx, $partial ) = @_;
+    return $cx->_cipt_merge( $cx->SUPER::ipv6_n2p_addr(), 2, 'addr',
+        $partial );
 }
 
 sub ipv6_n2p_if {
-    my ($cx, $partial) = @_;
-    return $cx->_cipt_merge($cx->SUPER::ipv6_n2p_if(), 2, 'port', $partial);
+    my ( $cx, $partial ) = @_;
+    return $cx->_cipt_merge( $cx->SUPER::ipv6_n2p_if(), 2, 'port', $partial );
 }
 
 # Transceivers are absent from ENTITY-MIB; add one module row per
@@ -262,35 +270,36 @@ sub ipv6_n2p_if {
 my $XCVR_BASE = 1_000_000_000;
 
 sub _xcvr_entities {
-    my $cx = shift;
+    my $cx    = shift;
     my $descr = $cx->pm_xcvr_descr() || {};
     return {} unless %$descr;
-    my $real = $cx->SUPER::e_index() || {};
-    my $class = $cx->SUPER::e_class() || {};
-    my $name = $cx->SUPER::e_name() || {};
-    my $port = $cx->pm_xcvr_port() || {};
-    my $product = $cx->pm_xcvr_product() || {};
-    my $serial = $cx->pm_xcvr_serial() || {};
-    my $type = $cx->pm_xcvr_type() || {};
+    my $real      = $cx->SUPER::e_index()  || {};
+    my $class     = $cx->SUPER::e_class()  || {};
+    my $name      = $cx->SUPER::e_name()   || {};
+    my $port      = $cx->pm_xcvr_port()    || {};
+    my $product   = $cx->pm_xcvr_product() || {};
+    my $serial    = $cx->pm_xcvr_serial()  || {};
+    my $type      = $cx->pm_xcvr_type()    || {};
     my ($chassis) = sort { $a <=> $b }
-        grep { ($class->{$_} // '') eq 'chassis' } keys %$class;
+        grep { ( $class->{$_} // '' ) eq 'chassis' } keys %$class;
     my %port_entity = map { $name->{$_} => $_ }
-        grep { ($class->{$_} // '') eq 'port' && defined $name->{$_} }
+        grep { ( $class->{$_} // '' ) eq 'port' && defined $name->{$_} }
         keys %$class;
     my %rows;
-    foreach my $ifindex (grep { /^\d+$/ } keys %$descr) {
+
+    foreach my $ifindex ( grep {/^\d+$/} keys %$descr ) {
         my $idx = $XCVR_BASE + $ifindex;
         next if exists $real->{$idx};
         my $port_name = $port->{$ifindex} // $ifindex;
         $rows{$idx} = {
-            e_index => $idx,
-            e_class => 'module',
-            e_descr => $descr->{$ifindex},
-            e_name => "Transceiver $port_name",
-            e_model => $product->{$ifindex},
+            e_index  => $idx,
+            e_class  => 'module',
+            e_descr  => $descr->{$ifindex},
+            e_name   => "Transceiver $port_name",
+            e_model  => $product->{$ifindex},
             e_serial => $serial->{$ifindex},
-            e_type => $type->{$ifindex},
-            e_fru => 'true',
+            e_type   => $type->{$ifindex},
+            e_fru    => 'true',
             e_parent => $port_entity{$port_name} // $chassis // 0,
         };
     }
@@ -298,33 +307,41 @@ sub _xcvr_entities {
 }
 
 sub _xcvr_merge {
-    my ($cx, $method, $partial) = @_;
+    my ( $cx, $method, $partial ) = @_;
     my $super = "SUPER::$method";
     return $cx->$super($partial) if defined $partial;
     my $rows = $cx->_xcvr_entities();
     return $cx->$super() unless %$rows;
-    my $base = $cx->$super();
+    my $base   = $cx->$super();
     my %result = %{ $base || {} };
     $result{$_} = $rows->{$_}{$method} for keys %$rows;
     return \%result;
 }
 
-sub e_index  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_index', $p) }
-sub e_class  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_class', $p) }
-sub e_descr  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_descr', $p) }
-sub e_name   { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_name', $p) }
-sub e_model  { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_model', $p) }
-sub e_serial { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_serial', $p) }
-sub e_type   { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_type', $p) }
-sub e_fru    { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_fru', $p) }
-sub e_parent { my ($cx, $p) = @_; return $cx->_xcvr_merge('e_parent', $p) }
+sub e_index { my ( $cx, $p ) = @_; return $cx->_xcvr_merge( 'e_index', $p ) }
+sub e_class { my ( $cx, $p ) = @_; return $cx->_xcvr_merge( 'e_class', $p ) }
+sub e_descr { my ( $cx, $p ) = @_; return $cx->_xcvr_merge( 'e_descr', $p ) }
+sub e_name  { my ( $cx, $p ) = @_; return $cx->_xcvr_merge( 'e_name',  $p ) }
+sub e_model { my ( $cx, $p ) = @_; return $cx->_xcvr_merge( 'e_model', $p ) }
+
+sub e_serial {
+    my ( $cx, $p ) = @_;
+    return $cx->_xcvr_merge( 'e_serial', $p );
+}
+sub e_type { my ( $cx, $p ) = @_; return $cx->_xcvr_merge( 'e_type', $p ) }
+sub e_fru  { my ( $cx, $p ) = @_; return $cx->_xcvr_merge( 'e_fru',  $p ) }
+
+sub e_parent {
+    my ( $cx, $p ) = @_;
+    return $cx->_xcvr_merge( 'e_parent', $p );
+}
 
 sub os {
     return "arubaos-cx";
 }
 
 sub os_ver {
-    my $cx = shift;
+    my $cx          = shift;
     my $ver_release = $cx->entPhysicalSoftwareRev(1) || {};
     return $ver_release->{1};
 }
@@ -332,7 +349,7 @@ sub os_ver {
 # agg_ports should return a hash with
 # ifindex of member -> ifindex of aggregation
 #
-# arabuaos-cx has a broken implementation of 
+# arabuaos-cx has a broken implementation of
 # dot3adAggPortListPorts / 1.2.840.10006.300.43.1.1.2.1.1
 # it return a comma seperated String with interface names
 # (rfc states a PortList / bitmask of member ports)
@@ -341,24 +358,24 @@ sub os_ver {
 # for the interface index
 
 sub agg_ports {
-    my $cx = shift;
-    my $ret = {};
-    my $ports = $cx->raw_ad_lag_ports();
+    my $cx         = shift;
+    my $ret        = {};
+    my $ports      = $cx->raw_ad_lag_ports();
     my $interfaces = $cx->interfaces();
     foreach my $m ( keys %$ports ) {
-        my $idx = $m;
+        my $idx      = $m;
         my $portlist = $ports->{$m};
         next unless $portlist;
 
-        foreach my $ifname ( split(/,/, $portlist) ) {
-            foreach my $ifindex ( keys %$interfaces) {
-                if ($interfaces->{$ifindex} eq $ifname) {
+        foreach my $ifname ( split( /,/, $portlist ) ) {
+            foreach my $ifindex ( keys %$interfaces ) {
+                if ( $interfaces->{$ifindex} eq $ifname ) {
                     $ret->{$ifindex} = $idx;
                 }
             }
         }
     }
-    return $ret;    
+    return $ret;
 }
 
 sub _agg_ports_walked { return qw/raw_ad_lag_ports/ }
@@ -366,28 +383,35 @@ sub _agg_ports_walked { return qw/raw_ad_lag_ports/ }
 # Overrides for VLAN & forwarding table methods
 sub v_name {
     my $cx = shift;
-    return _at_pbb_one($cx->iqb_v_name()) || $cx->SUPER::v_name();
+    return _at_pbb_one( $cx->iqb_v_name() ) || $cx->SUPER::v_name();
 }
+
 sub qb_i_vlan {
     my $cx = shift;
-    return _at_pbb_one($cx->iqb_i_vlan()) || $cx->SUPER::qb_i_vlan();
+    return _at_pbb_one( $cx->iqb_i_vlan() ) || $cx->SUPER::qb_i_vlan();
 }
+
 sub i_vlan_type {
     my $cx = shift;
-    return _at_pbb_one($cx->iqb_i_vlan_type()) || $cx->SUPER::qb_i_vlan_type();
+    return _at_pbb_one( $cx->iqb_i_vlan_type() )
+        || $cx->SUPER::qb_i_vlan_type();
 }
+
 sub qb_v_egress {
     my $cx = shift;
     return $cx->iqb_v_egress() || $cx->SUPER::qb_v_egress();
 }
+
 sub qb_cv_egress {
     my $cx = shift;
     return $cx->iqb_cv_egress() || $cx->SUPER::qb_cv_egress();
 }
+
 sub qb_v_untagged {
     my $cx = shift;
     return $cx->iqb_v_untagged() || $cx->SUPER::qb_v_untagged();
 }
+
 sub qb_cv_untagged {
     my $cx = shift;
     return $cx->iqb_cv_untagged() || $cx->SUPER::qb_cv_untagged();
