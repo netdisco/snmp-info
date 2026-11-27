@@ -212,7 +212,7 @@ sub stp_vlan_map : Tests(2) {
         undef, 'stp_vlan_map__empty_column__returns_nothing' );
 }
 
-sub stp_trees_complete : Tests(2) {
+sub stp_trees_complete : Tests(3) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -223,6 +223,16 @@ sub stp_trees_complete : Tests(2) {
         = { complete => 0, reason => 'timeout' };
     is( $info->stp_trees_complete(),
         0, 'stp_trees_complete__msti_walk_timed_out__returns_0' );
+
+    delete $info->{walk_status}{mstp_i_bridge};
+    $test->_set_column(
+        'mstp_cist_bridge',
+        {   1 => $id->('1000020000000001'),
+            2 => $id->('1000020000000001'),
+        }
+    );
+    is( $info->stp_trees_complete(),
+        0, 'stp_trees_complete__other_component_served__returns_0' );
 }
 
 sub _port_rows {

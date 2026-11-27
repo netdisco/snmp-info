@@ -366,7 +366,6 @@ sub xcvr_partial : Tests(2) {
     'Partial e_index returns the real row only');
 }
 
-
 my %MSTP_ROLES  = ( '1.3' => 'designated', '1.769' => 'root' );
 my %RPVST_ROLES = ( '1.3' => '6',          '1.769' => '6' );
 my %MIXED_ROLES = ( '1.3' => '6',          '1.769' => 'designated' );
@@ -459,7 +458,7 @@ sub hasMSTP : Tests(6) {
         'hasMSTP__role_6_on_second_component__reads_lowest_only' );
     $test->_prime_stp( {%RPVST_ROLES} );
     is( $info->hasMSTP(), 0, 'hasMSTP__all_cist_roles_6__returns_0' );
-    $test->_prime_stp( {%MIXED_ROLES} );
+    $test->_prime_stp( {%MIXED_ROLES}, { 3 => 'down', 769 => 'up' } );
     is( $info->hasMSTP(), 1,
         'hasMSTP__role_6_on_down_port_beside_defined_role__returns_1' );
     $test->_prime_stp( {%MIXED_ROLES}, { 3 => 'down', 769 => 'up' } );
@@ -495,7 +494,18 @@ sub _prime_lag_members {
     return;
 }
 
-sub hasRapidPVST : Tests(8) {
+# Bridge port 3 is ifIndex 1003, so a swap of the two keys changes the answer
+sub _prime_bridge_port_remap {
+    my ( $test, $up ) = @_;
+    my $info = $test->{info};
+
+    $test->_prime_stp( { '1.3' => '6' }, $up );
+    $info->{_bp_index} = 1;
+    $info->{store}{bp_index} = { 3 => 1003 };
+    return;
+}
+
+sub hasRapidPVST : Tests(10) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -524,6 +534,12 @@ sub hasRapidPVST : Tests(8) {
     $test->_prime_lag_members('down');
     is( $info->hasRapidPVST(), 0,
         'hasRapidPVST__all_role_6_lag_and_members_down__returns_0' );
+    $test->_prime_bridge_port_remap( { 1003 => 'up', 3 => 'down' } );
+    is( $info->hasRapidPVST(), 1,
+        'hasRapidPVST__bridge_port_maps_to_up_ifindex__returns_1' );
+    $test->_prime_bridge_port_remap( { 1003 => 'down', 3 => 'up' } );
+    is( $info->hasRapidPVST(), 0,
+        'hasRapidPVST__bridge_port_number_up_but_ifindex_down__returns_0' );
 }
 
 sub hasSTP : Tests(1) {
@@ -659,7 +675,7 @@ sub stp_vlan_map : Tests(3) {
     $test->_prime_stp( {%MSTP_ROLES} );
     is( $info->stp_vlan_map()->{20},
         'msti.2', 'stp_vlan_map__mstp_cist_roles__maps_vlan_to_msti' );
-    $test->_prime_stp( {%MIXED_ROLES} );
+    $test->_prime_stp( {%MIXED_ROLES}, { 3 => 'down', 769 => 'up' } );
     is( $info->stp_vlan_map()->{20},
         'msti.2', 'stp_vlan_map__role_6_on_down_port__maps_vlan_to_msti' );
 }
@@ -727,8 +743,8 @@ sub i_stp_state : Tests(2) {
     $test->_prime_stp( {%MSTP_ROLES} );
     cmp_deeply(
         $info->i_stp_state(),
-        SNMP::Info::Bridge::i_stp_state($info),
-        'i_stp_state__mstp_cist_roles__returns_bridge_result'
+        { 3 => 'forwarding', 769 => 'blocking' },
+        'i_stp_state__mstp_cist_roles__returns_bridge_port_states'
     );
 }
 
@@ -785,18 +801,20 @@ sub i_edgeport_oper : Tests(4) {
     cmp_deeply( $info->i_edgeport_oper(),
         {}, 'i_edgeport_oper__unknown_mode__returns_empty_hash' );
     $test->_prime_stp( {%MSTP_ROLES} );
+    $info->{_ieee_rstp_p_edge_oper} = 1;
+    $info->{store}{ieee_rstp_p_edge_oper} = { '1.3' => 1, '1.769' => 2 };
     cmp_deeply(
         $info->i_edgeport_oper(),
-        SNMP::Info::IEEE802_STP::i_edgeport_oper($info),
-        'i_edgeport_oper__mstp__returns_role_result'
+        { 3 => 1, 769 => 0 },
+        'i_edgeport_oper__mstp__returns_rstp_edge_rows'
     );
     $test->_prime_rpvst();
     $info->{_ieee_rstp_p_edge_admin} = 1;
     $info->{store}{ieee_rstp_p_edge_admin} = { '1.3' => 1, '1.769' => 2 };
     cmp_deeply(
         $info->i_edgeport_admin(),
-        SNMP::Info::IEEE802_STP::i_edgeport_admin($info),
-        'i_edgeport_admin__rpvst__returns_role_result'
+        { 3 => 1, 769 => 0 },
+        'i_edgeport_admin__rpvst__returns_rstp_edge_rows'
     );
 }
 

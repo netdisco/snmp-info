@@ -398,6 +398,8 @@ sub stp_trees_complete {
     return 0 unless keys %$trees;
     return 0
         if $stp->_stp_walk_incomplete(qw/mstp_i_bridge mstp_cist_p_role/);
+    my $component = $stp->_ieee_stp_component();
+    return 0 if $stp->_ieee_stp_other_component($component);
     return 1;
 }
 
