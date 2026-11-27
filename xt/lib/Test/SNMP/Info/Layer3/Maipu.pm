@@ -125,6 +125,134 @@ sub model : Tests(5) {
         'Inherited model without entities or a sysDescr model');
 }
 
+sub e_class : Tests(2) {
+    my $info = shift->{info};
+
+    # The agent serves entPhysicalClass as a Gauge32, which Net-SNMP does
+    # not translate to the PhysicalClass labels
+    $info->cache({
+        '_e_class' => 1,
+        'store'    => { 'e_class' => {
+            512 => 3, 768 => 5, 1280 => 9, 3147008 => 6, 3671296 => 7,
+            1537 => 10, 99 => 'chassis', 98 => 42 } },
+    });
+    is_deeply($info->e_class(), {
+            512 => 'chassis', 768 => 'container', 1280 => 'module',
+            3147008 => 'powerSupply', 3671296 => 'fan', 1537 => 'port',
+            99 => 'chassis', 98 => 42 },
+        'Numeric classes translated, labels and unknown numbers kept');
+
+    $info->{store}{e_class} = {};
+    is_deeply($info->e_class(), {}, 'No entities');
+}
+
+sub serial : Tests(3) {
+    my $info = shift->{info};
+
+    # MAIPU-SYS-MIB::mpSysDeviceSerialNumber, one row per device
+    $info->cache({
+        '_mp_device_serial' => 1,
+        'store' => { 'mp_device_serial' => {
+            2 => '23004725009999', 1 => '23004725001263' } },
+    });
+    is($info->serial(), '23004725001263', 'Lowest device index');
+
+    $info->{store}{mp_device_serial} = { 1 => '', 2 => '23004725009999' };
+    is($info->serial(), '23004725009999', 'Skips an empty serial');
+
+    $info->{store}{mp_device_serial} = {};
+    is($info->serial(), SNMP::Info::Layer3::serial($info),
+        'Inherited serial without the vendor table');
+}
+
+sub _power_and_fans {
+    my ( $info, %over ) = @_;
+
+    # Shapes from an S3230-54TXF walk: one fixed AC supply at index 49 and
+    # one fan at index 57, all online and normal
+    $info->cache({
+        '_mp_power_type'   => 1,
+        '_mp_power_online' => 1,
+        '_mp_power_alarm'  => 1,
+        '_mp_fan_online'   => 1,
+        '_mp_fan_alarm'    => 1,
+        'store'            => {
+            'mp_power_type'   => { 49 => 1 },
+            'mp_power_online' => { 49 => 1 },
+            'mp_power_alarm'  => { 49 => 1 },
+            'mp_fan_online'   => { 57 => 1 },
+            'mp_fan_alarm'    => { 57 => 1 },
+            %over,
+        },
+    });
+    return;
+}
+
+sub ps1_type : Tests(2) {
+    my $info = shift->{info};
+
+    _power_and_fans($info);
+    is($info->ps1_type(), 'AC', 'Alternating current supply');
+
+    _power_and_fans($info, 'mp_power_type' => {});
+    is($info->ps1_type(), undef, 'No power table');
+}
+
+sub ps2_type : Tests(2) {
+    my $info = shift->{info};
+
+    _power_and_fans($info);
+    is($info->ps2_type(), undef, 'Single supply has no second');
+
+    _power_and_fans($info, 'mp_power_type' => { 49 => 1, 50 => 4 });
+    is($info->ps2_type(), 'DC', 'Second supply, direct current');
+}
+
+sub ps1_status : Tests(3) {
+    my $info = shift->{info};
+
+    _power_and_fans($info);
+    is($info->ps1_status(), 'normal', 'Online and normal');
+
+    _power_and_fans($info, 'mp_power_alarm' => { 49 => 2 });
+    is($info->ps1_status(), 'alarm', 'Alarm');
+
+    _power_and_fans($info, 'mp_power_online' => { 49 => 2 });
+    is($info->ps1_status(), 'offline', 'Offline before alarm state');
+}
+
+sub ps2_status : Tests(2) {
+    my $info = shift->{info};
+
+    _power_and_fans($info);
+    is($info->ps2_status(), undef, 'Single supply has no second');
+
+    _power_and_fans($info,
+        'mp_power_online' => { 49 => 1, 50 => 1 },
+        'mp_power_alarm'  => { 49 => 1, 50 => 2 });
+    is($info->ps2_status(), 'alarm', 'Second supply by index order');
+}
+
+sub fan : Tests(4) {
+    my $info = shift->{info};
+
+    _power_and_fans($info);
+    is($info->fan(), 'normal', 'All fans normal');
+
+    _power_and_fans($info,
+        'mp_fan_online' => { 57 => 1, 58 => 2 },
+        'mp_fan_alarm'  => { 57 => 1, 58 => 1 });
+    is($info->fan(), 'Fan 2: offline', 'Offline fan named by position');
+
+    _power_and_fans($info,
+        'mp_fan_online' => { 57 => 1, 58 => 1 },
+        'mp_fan_alarm'  => { 57 => 2, 58 => 2 });
+    is($info->fan(), 'Fan 1: alarm, Fan 2: alarm', 'Every failed fan');
+
+    _power_and_fans($info, 'mp_fan_online' => {}, 'mp_fan_alarm' => {});
+    is($info->fan(), undef, 'No fan table');
+}
+
 sub layers : Tests(2) {
     my $info = shift->{info};
 

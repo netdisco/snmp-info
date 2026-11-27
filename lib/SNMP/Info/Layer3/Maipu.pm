@@ -42,8 +42,29 @@ $VERSION = '3.985004';
 
 %MIBS    = (%SNMP::Info::Layer3::MIBS);
 %GLOBALS = (%SNMP::Info::Layer3::GLOBALS);
-%FUNCS   = (%SNMP::Info::Layer3::FUNCS);
-%MUNGE   = (%SNMP::Info::Layer3::MUNGE);
+%FUNCS   = (
+    %SNMP::Info::Layer3::FUNCS,
+
+    # netdisco-mibs has no Maipu MIB, so these are read by numeric OID.
+    # MAIPU-SYS-MIB::mpSysDeviceSerialNumber
+    'mp_device_serial' => '.1.3.6.1.4.1.5651.3.600.14.1.1.2',
+
+    # MAIPU-SYS-MIB::mpSysPowerType
+    'mp_power_type' => '.1.3.6.1.4.1.5651.3.600.7.1.1.2',
+
+    # MAIPU-SYS-MIB::mpSysPowerOnlineStatus
+    'mp_power_online' => '.1.3.6.1.4.1.5651.3.600.7.1.1.8',
+
+    # MAIPU-SYS-MIB::mpSysPowerAlarmStatus
+    'mp_power_alarm' => '.1.3.6.1.4.1.5651.3.600.7.1.1.10',
+
+    # MAIPU-SYS-MIB::mpSysFanCardOnlineStatus
+    'mp_fan_online' => '.1.3.6.1.4.1.5651.3.600.8.1.1.7',
+
+    # MAIPU-SYS-MIB::mpSysFanCardAlarmStatus
+    'mp_fan_alarm' => '.1.3.6.1.4.1.5651.3.600.8.1.1.9',
+);
+%MUNGE = (%SNMP::Info::Layer3::MUNGE);
 
 sub vendor { return 'maipu'; }
 
@@ -69,8 +90,7 @@ sub model {
 }
 
 # The S3230 names its model in the chassis entPhysicalDescr and leaves
-# entPhysicalModelName empty.  It serves entPhysicalClass as a Gauge32,
-# which the enumeration does not translate, so chassis arrives as 3.
+# entPhysicalModelName empty.
 sub _chassis_model {
     my $maipu = shift;
 
@@ -78,7 +98,7 @@ sub _chassis_model {
     my $e_model = $maipu->e_model() || {};
     my $e_descr = $maipu->e_descr() || {};
     foreach my $index ( sort { $a <=> $b } keys %$e_class ) {
-        next unless $e_class->{$index} =~ /^(?:chassis|3)$/;
+        next unless $e_class->{$index} eq 'chassis';
         foreach my $model ( $e_model->{$index}, $e_descr->{$index} ) {
             return $model if defined $model and $model =~ /\S/;
         }
@@ -128,6 +148,103 @@ sub bp_index {
         $bp_index->{$iid} = $iid;
     }
     return $bp_index;
+}
+
+# Net-SNMP translates enumerations only for values served as INTEGER, and
+# the agent serves entPhysicalClass as a Gauge32.
+sub e_class {
+    my $maipu   = shift;
+    my $partial = shift;
+
+    my $e_class = $maipu->SUPER::e_class($partial) || {};
+    my $oid     = SNMP::translateObj( 'ENTITY-MIB::entPhysicalClass', 0, 1 )
+        || '';
+    my $enums
+        = ref {} eq ref $SNMP::MIB{$oid}{'enums'}
+        ? $SNMP::MIB{$oid}{'enums'}
+        : {};
+    my %labels = reverse %$enums;
+
+    my %translated;
+    foreach my $index ( keys %$e_class ) {
+        my $class = $e_class->{$index};
+        $translated{$index}
+            = defined $class && exists $labels{$class}
+            ? $labels{$class}
+            : $class;
+    }
+    return \%translated;
+}
+
+sub serial {
+    my $maipu = shift;
+
+    my $serials = $maipu->mp_device_serial() || {};
+    foreach my $index ( sort { $a <=> $b } keys %$serials ) {
+        my $serial = $serials->{$index};
+        return $serial if defined $serial and $serial =~ /\S/;
+    }
+    return $maipu->SUPER::serial();
+}
+
+my %POWER_CURRENT = ( 1 => 'AC', 2 => 'DC', 3 => 'AC', 4 => 'DC' );
+
+# Status of the supply or fan at position $n, in index order.
+sub _mp_status {
+    my ( $online, $alarm, $index ) = @_;
+
+    return 'offline' if ( $online->{$index} // 0 ) == 2;
+    my $state = $alarm->{$index} // 0;
+    return $state == 1 ? 'normal' : $state == 2 ? 'alarm' : undef;
+}
+
+sub _mp_power_index {
+    my ( $maipu, $n ) = @_;
+
+    my %indexes = map { %{ $maipu->$_() || {} } }
+        qw/mp_power_type mp_power_online mp_power_alarm/;
+    my @indexes = sort { $a <=> $b } keys %indexes;
+    return $indexes[ $n - 1 ];
+}
+
+sub _mp_power_type {
+    my ( $maipu, $n ) = @_;
+
+    my $index = $maipu->_mp_power_index($n);
+    return unless defined $index;
+    my $types = $maipu->mp_power_type() || {};
+    return $POWER_CURRENT{ $types->{$index} // '' };
+}
+
+sub _mp_power_status {
+    my ( $maipu, $n ) = @_;
+
+    my $index = $maipu->_mp_power_index($n);
+    return unless defined $index;
+    return _mp_status( $maipu->mp_power_online() || {},
+        $maipu->mp_power_alarm() || {}, $index );
+}
+
+sub ps1_type   { return $_[0]->_mp_power_type(1); }
+sub ps2_type   { return $_[0]->_mp_power_type(2); }
+sub ps1_status { return $_[0]->_mp_power_status(1); }
+sub ps2_status { return $_[0]->_mp_power_status(2); }
+
+sub fan {
+    my $maipu = shift;
+
+    my $online  = $maipu->mp_fan_online() || {};
+    my $alarm   = $maipu->mp_fan_alarm()  || {};
+    my @indexes = sort { $a <=> $b } keys %{ { %$online, %$alarm } };
+    return unless @indexes;
+
+    my @faults;
+    foreach my $position ( 1 .. @indexes ) {
+        my $state = _mp_status( $online, $alarm, $indexes[ $position - 1 ] )
+            // 'unknown';
+        push @faults, "Fan $position: $state" unless $state eq 'normal';
+    }
+    return @faults ? join( ', ', @faults ) : 'normal';
 }
 
 # The agent serves no dot3adAggPortListPorts, so members come from the
@@ -198,7 +315,8 @@ and maps in non-standard ways.
 
 =head2 Required MIBs
 
-None.
+None. Objects from F<MAIPU-SYS-MIB>, which netdisco-mibs does not carry,
+are read by numeric OID.
 
 =head2 Inherited MIBs
 
@@ -242,6 +360,31 @@ Returns the served C<sysServices> layers, or layer 3 where none are
 served, with layer 2 added when the device has bridge ports
 (C<dot1dBaseNumPorts>).
 
+=item $maipu->serial()
+
+Returns the first non-empty C<mpSysDeviceSerialNumber> in device index
+order, else the inherited value.
+
+=item $maipu->ps1_type()
+
+=item $maipu->ps2_type()
+
+Returns C<AC> or C<DC> for the first or second power supply in index
+order, from C<mpSysPowerType>.
+
+=item $maipu->ps1_status()
+
+=item $maipu->ps2_status()
+
+Returns C<offline> when C<mpSysPowerOnlineStatus> says so, else
+C<normal> or C<alarm> from C<mpSysPowerAlarmStatus>, for the first or
+second power supply in index order.
+
+=item $maipu->fan()
+
+Returns C<normal> when every fan is online and normal. Otherwise lists
+each other fan by position with its state, such as C<Fan 2: offline>.
+
 =back
 
 =head2 Global Methods imported from SNMP::Info::Layer3
@@ -253,9 +396,47 @@ See documentation in L<SNMP::Info::Layer3/"GLOBALS"> for details.
 These are methods that return tables of information in the form of a
 reference to a hash.
 
+=head2 Maipu System Table (C<mpSysMIB>)
+
+Read by numeric OID; values are the raw integers the MIB defines.
+
+=over
+
+=item $maipu->mp_device_serial()
+
+C<mpSysDeviceSerialNumber>
+
+=item $maipu->mp_power_type()
+
+C<mpSysPowerType>
+
+=item $maipu->mp_power_online()
+
+C<mpSysPowerOnlineStatus>
+
+=item $maipu->mp_power_alarm()
+
+C<mpSysPowerAlarmStatus>
+
+=item $maipu->mp_fan_online()
+
+C<mpSysFanCardOnlineStatus>
+
+=item $maipu->mp_fan_alarm()
+
+C<mpSysFanCardAlarmStatus>
+
+=back
+
 =head2 Overrides
 
 =over
+
+=item $maipu->e_class()
+
+Returns C<entPhysicalClass> with numbers translated to their
+C<PhysicalClass> labels. The agent serves the column as a Gauge32, and
+Net-SNMP translates enumerations only for values served as an INTEGER.
 
 =item $maipu->qb_fw_mac()
 
