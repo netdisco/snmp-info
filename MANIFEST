@@ -36,6 +36,7 @@ lib/SNMP/Info/Entity.pm
 lib/SNMP/Info/EtherLike.pm
 lib/SNMP/Info/FDP.pm
 lib/SNMP/Info/IEEE802_Bridge.pm
+lib/SNMP/Info/IEEE802_STP.pm
 lib/SNMP/Info/IEEE802dot11.pm
 lib/SNMP/Info/IEEE802dot3ad.pm
 lib/SNMP/Info/IPv6.pm
@@ -227,6 +228,7 @@ xt/lib/Test/SNMP/Info/EDP.pm
 xt/lib/Test/SNMP/Info/Entity.pm
 xt/lib/Test/SNMP/Info/EtherLike.pm
 xt/lib/Test/SNMP/Info/FDP.pm
+xt/lib/Test/SNMP/Info/IEEE802_STP.pm
 xt/lib/Test/SNMP/Info/IEEE802dot11.pm
 xt/lib/Test/SNMP/Info/IEEE802dot3ad.pm
 xt/lib/Test/SNMP/Info/IPv6.pm
