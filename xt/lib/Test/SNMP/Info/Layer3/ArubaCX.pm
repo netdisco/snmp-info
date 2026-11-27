@@ -671,4 +671,72 @@ sub i_stp_state : Tests(2) {
     );
 }
 
+sub stp_tree_ports_own_mac : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_rpvst();
+    $info->{store}{rpvst_pv_bridge}{'20.5'} = $mac->('020000000001');
+    cmp_deeply(
+        $info->stp_tree_ports('vlan.20')->{5}{designated_bridge},
+        {   priority   => 32768,
+            sys_id_ext => 20,
+            mac        => '02:00:00:00:00:01',
+            raw        => undef,
+        },
+        'stp_tree_ports__rpvst_own_mac_other_root__takes_own_priority'
+    );
+}
+
+sub stp_trees_ext_sysid_off : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_rpvst();
+    $info->{_rpvst_ext_sysid} = 'false';
+    my $tree = $info->stp_trees()->{'vlan.10'};
+    is( $tree->{bridge}{sys_id_ext},
+        undef, 'stp_trees__rpvst_ext_sysid_off__bridge_has_no_sys_id_ext' );
+    is( $tree->{root}{sys_id_ext},
+        undef, 'stp_trees__rpvst_ext_sysid_off__own_root_has_no_sys_id_ext' );
+}
+
+sub i_edgeport_oper : Tests(4) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_rpvst();
+    my %store = (
+        iqb_i_vlan => { '1.3' => 10, '1.770' => 20, '1.4' => 30 },
+        bp_index   => { 3 => 3, 4 => 4, 770 => 770 },
+        rpvst_pv_edge_oper => { '10.3' => 1, '20.770' => 2, '20.3' => 2 },
+    );
+    foreach my $column ( keys %store ) {
+        $info->{"_$column"} = 1;
+        $info->{store}{$column} = $store{$column};
+    }
+    cmp_deeply(
+        $info->i_edgeport_oper(),
+        { 3 => 1, 770 => 0 },
+        'i_edgeport_oper__rpvst__reads_native_vlan_row_only'
+    );
+    $test->_prime_stp( {} );
+    cmp_deeply( $info->i_edgeport_oper(),
+        {}, 'i_edgeport_oper__unknown_mode__returns_empty_hash' );
+    $test->_prime_stp( {%MSTP_ROLES} );
+    cmp_deeply(
+        $info->i_edgeport_oper(),
+        SNMP::Info::IEEE802_STP::i_edgeport_oper($info),
+        'i_edgeport_oper__mstp__returns_role_result'
+    );
+    $test->_prime_rpvst();
+    $info->{_ieee_rstp_p_edge_admin} = 1;
+    $info->{store}{ieee_rstp_p_edge_admin} = { '1.3' => 1, '1.769' => 2 };
+    cmp_deeply(
+        $info->i_edgeport_admin(),
+        SNMP::Info::IEEE802_STP::i_edgeport_admin($info),
+        'i_edgeport_admin__rpvst__returns_role_result'
+    );
+}
+
 1;

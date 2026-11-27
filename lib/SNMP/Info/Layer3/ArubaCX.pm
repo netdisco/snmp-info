@@ -486,6 +486,26 @@ sub i_stp_state {
     return $cx->SUPER::i_stp_state($partial);
 }
 
+# RPVST keeps the operational edge flag per VLAN; the port's native VLAN is
+# the row that describes the port
+sub i_edgeport_oper {
+    my ( $cx, $partial ) = @_;
+
+    my $protocol = $cx->_aoscx_stp_protocol() or return {};
+    return $cx->SUPER::i_edgeport_oper($partial) if $protocol eq 'mstp';
+
+    my $native = $cx->i_vlan($partial)     || {};
+    my $edge   = $cx->rpvst_pv_edge_oper() || {};
+    my %i_edgeport;
+    foreach my $iid ( keys %$native ) {
+        next unless defined $native->{$iid};
+        my $enabled = SNMP::Info::Bridge::_stp_enabled(
+            $edge->{"$native->{$iid}.$iid"} );
+        $i_edgeport{$iid} = $enabled if defined $enabled;
+    }
+    return \%i_edgeport;
+}
+
 # MAC part of this switch's CIST bridge ID, which RPVST also uses as the
 # bridge MAC; on a VSX pair it is the VSX system MAC
 sub _aoscx_bridge_mac {
@@ -949,8 +969,8 @@ undef. That table serves the designated bridge as a MAC only, so its
 priority and C<sys_id_ext> are those of the root or this switch when
 the MAC is theirs, else undef.
 
-When the mode is unknown (no rows, or a mix) they report nothing: no protocols, an
-empty tree list, C<stp_trees_complete()> 0, no VLAN map, and an
+When the mode is unknown (no rows, or a mix) they report nothing: no
+protocols, an empty tree list, C<stp_trees_complete()> 0, no VLAN map, and an
 C<error()> from C<stp_tree_ports()>. C<hasMSTP()> is 1 only under MSTP,
 and C<hasSTP()> and C<hasRSTP()> are always 0, since AOS-CX offers only
 MSTP and RPVST.
@@ -959,6 +979,15 @@ MSTP and RPVST.
 
 Returns an empty hash under RPVST, where C<dot1dStpPortState> keeps
 MSTP's last values. Otherwise the inherited result.
+
+=item $cx->i_edgeport_oper()
+
+Returns reference to hash of ifIndex to 1 or 0. Under MSTP, the inherited
+result. Under RPVST, C<arubaWiredRpvstPortVlanOperEdge> on the row for the
+port's native VLAN (C<i_vlan()>); a port with no such row is absent.
+Returns an empty hash when the mode is unknown. C<i_edgeport_admin()> is
+the inherited method in every mode. Whether this value reports an
+operational edge port as true has not been verified.
 
 =item C<agg_ports>
 
