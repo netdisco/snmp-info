@@ -321,7 +321,7 @@ sub _ieee_mstp_msti_port_rows {
             tree_type => $tree->{type},
             tree_id   => $tree->{id},
             state     => $states->{$index},
-            role      => $roles->{$index},
+            role      => scalar _ieee_mstp_known_role( $roles->{$index}, 1 ),
             role_raw  => $roles->{$index},
             enabled   => scalar SNMP::Info::Bridge::_stp_enabled(
                 $enable->{"$component.$port"}
@@ -336,10 +336,16 @@ sub _ieee_mstp_msti_port_rows {
     return \%rows;
 }
 
+# The CIST column serves four roles; an MSTI row may serve any role the
+# Bridge contract names
 sub _ieee_mstp_known_role {
-    my $role = shift;
+    my ( $role, $any_role ) = @_;
     return unless defined $role;
-    return $role if $role =~ /^(?:root|alternate|designated|backup)$/;
+    my $known
+        = $any_role
+        ? qr/^(?:disabled|root|designated|alternate|backup|boundary|master)$/
+        : qr/^(?:root|alternate|designated|backup)$/;
+    return $role if $role =~ $known;
     return;
 }
 

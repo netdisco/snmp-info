@@ -254,7 +254,7 @@ sub _port_rows {
     return;
 }
 
-sub stp_tree_ports : Tests(7) {
+sub stp_tree_ports : Tests(11) {
     my $test = shift;
     my $info = $test->{info};
     $test->_port_rows();
@@ -302,8 +302,17 @@ sub stp_tree_ports : Tests(7) {
     is( $odd->{role},     undef, 'stp_tree_ports__role_6__role_undef' );
     is( $odd->{role_raw}, '6',   'stp_tree_ports__role_6__role_raw_kept' );
 
-    $info->clear_cache();
+    $test->_set_column( 'mstp_p_role',
+        { '1.1.769' => 6, '1.2.770' => 'master' } );
+    my $msti_odd = $info->stp_tree_ports('msti.1')->{769};
+    is( $msti_odd->{role}, undef, 'stp_tree_ports__msti_role_6__role_undef' );
+    is( $msti_odd->{role_raw}, '6',
+        'stp_tree_ports__msti_role_6__role_raw_kept' );
+    is( $info->stp_tree_ports('msti.2')->{770}{role},
+        'master', 'stp_tree_ports__msti_role_master__role_master' );
+
     $info->error(1);
+    ok( $info->stp_trees(), 'stp_tree_ports__mstp_primed__trees_held' );
     my $none = $info->stp_tree_ports('msti.9');
     is( $none, undef, 'stp_tree_ports__unknown_key__returns_nothing' );
     ok( $info->error(1), 'stp_tree_ports__unknown_key__sets_error' );
