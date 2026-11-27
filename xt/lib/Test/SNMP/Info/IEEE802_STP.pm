@@ -55,6 +55,7 @@ sub setup : Tests(setup) {
         mstp_vlan_msti   => { '1.1' => 0, '1.10' => 1, '1.20' => 2 },
         mstp_cist_p_role => {},
         mstp_p_state     => {},
+        ieee_stp_p_state => {},
         bp_index         => { 3 => 3, 769 => 769, 770 => 770 },
     );
     $test->{info}->cache(
@@ -222,6 +223,171 @@ sub stp_trees_complete : Tests(2) {
         = { complete => 0, reason => 'timeout' };
     is( $info->stp_trees_complete(),
         0, 'stp_trees_complete__msti_walk_timed_out__returns_0' );
+}
+
+sub _port_rows {
+    my $test = shift;
+
+    $test->_set_column( 'ieee_stp_p_state',
+        { '1.3' => 'forwarding', '1.769' => 'forwarding' } );
+    $test->_set_column( 'mstp_cist_p_role',
+        { '1.3' => 'designated', '1.769' => 'root' } );
+    $test->_set_column( 'ieee_stp_p_enable', { '1.3' => 1, '1.769' => 1 } );
+    $test->_set_column( 'mstp_p_state',
+        { '1.1.769' => 'forwarding', '1.2.770' => 'blocking' } );
+    $test->_set_column( 'mstp_p_role',
+        { '1.1.769' => 'root', '1.2.770' => 'alternate' } );
+    $test->_set_column(
+        'mstp_p_bridge',
+        {   '1.1.769' => $id->('1001020000000009'),
+            '1.2.770' => $id->('2002020000000009'),
+        }
+    );
+    $test->_set_column(
+        'ieee_stp_p_bridge',
+        {   '1.3'   => $id->('1000020000000001'),
+            '1.769' => $id->('1000020000000009'),
+        }
+    );
+    $test->_set_column( 'ieee_stp_p_port',
+        { '1.3' => $id->('8003'), '1.769' => $id->('8301') } );
+    return;
+}
+
+sub stp_tree_ports : Tests(7) {
+    my $test = shift;
+    my $info = $test->{info};
+    $test->_port_rows();
+
+    my $cist = $info->stp_tree_ports('cist.0');
+    cmp_deeply(
+        $cist->{769},
+        superhashof(
+            {   tree_type         => 'cist',
+                tree_id           => 0,
+                state             => 'forwarding',
+                role              => 'root',
+                role_raw          => 'root',
+                enabled           => 1,
+                designated_bridge => superhashof( { priority => 4096 } ),
+                designated_port   => superhashof( { port     => 769 } ),
+            }
+        ),
+        'stp_tree_ports__cist__row_has_state_role_and_designated'
+    );
+
+    my $msti = $info->stp_tree_ports('msti.2');
+    cmp_deeply(
+        $msti,
+        {   770 => superhashof(
+                {   tree_type         => 'msti',
+                    tree_id           => 2,
+                    state             => 'blocking',
+                    role              => 'alternate',
+                    role_raw          => 'alternate',
+                    enabled           => undef,
+                    designated_bridge => superhashof( { priority => 8192 } ),
+                    designated_port   => undef,
+                }
+            )
+        },
+        'stp_tree_ports__msti__row_has_msti_state_and_no_designated_port'
+    );
+    is( $msti->{770}{designated_port},
+        undef, 'stp_tree_ports__msti__designated_port_undef' );
+
+    $test->_set_column( 'mstp_cist_p_role',
+        { '1.3' => 'designated', '1.769' => 6 } );
+    my $odd = $info->stp_tree_ports('cist.0')->{769};
+    is( $odd->{role},     undef, 'stp_tree_ports__role_6__role_undef' );
+    is( $odd->{role_raw}, '6',   'stp_tree_ports__role_6__role_raw_kept' );
+
+    $info->clear_cache();
+    $info->error(1);
+    my $none = $info->stp_tree_ports('msti.9');
+    is( $none, undef, 'stp_tree_ports__unknown_key__returns_nothing' );
+    ok( $info->error(1), 'stp_tree_ports__unknown_key__sets_error' );
+}
+
+sub stp_tree_ports__cist_port_not_in_bp_index : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_set_column( 'ieee_stp_p_state',
+        { '1.3' => 'forwarding', '1.999' => 'forwarding' } );
+    my $trees = $info->stp_trees();
+    is( $trees->{'cist.0'}{ports_complete},
+        0, 'stp_trees__cist_state_row_not_in_bp_index__ports_incomplete' );
+    cmp_deeply( [ keys %{ $info->stp_tree_ports('cist.0') } ],
+        [3], 'stp_tree_ports__unmapped_port__row_skipped' );
+}
+
+sub stp_trees__no_version_column__hook_mstp : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_set_column( 'ieee_stp_version', {} );
+    no warnings 'redefine';
+    local *SNMP::Info::IEEE802_STP::_ieee_stp_protocol = sub {'mstp'};
+    cmp_deeply(
+        [ sort keys %{ $info->stp_trees() || {} } ],
+        [qw/cist.0 msti.1 msti.2/],
+        'stp_trees__no_version_hook_mstp__trees_built_from_cist_bridge'
+    );
+
+    $test->_set_column( 'mstp_cist_bridge', {} );
+    $test->_set_column( 'mstp_cist_p_role', { '1.3' => 'designated' } );
+    ok( $info->stp_trees()->{'msti.1'},
+        'stp_trees__no_version_no_cist_bridge__component_from_cist_role' );
+}
+
+sub i_edgeport_admin : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_set_column( 'ieee_rstp_p_edge_admin',
+        { '1.3' => 1, '1.769' => 2 } );
+    cmp_deeply(
+        scalar $info->i_edgeport_admin(),
+        { 3 => 1, 769 => 0 },
+        'i_edgeport_admin__rstp_column__by_ifindex'
+    );
+
+    $test->_set_column( 'ieee_rstp_p_edge_admin', {} );
+    $test->_set_column( 'mstp_cist_p_edge_admin', { '1.3' => 1 } );
+    cmp_deeply(
+        scalar $info->i_edgeport_admin(),
+        { 3 => 1 },
+        'i_edgeport_admin__rstp_empty__uses_cist_column'
+    );
+
+    $test->_set_column( 'mstp_cist_p_edge_admin', {} );
+    cmp_deeply(
+        scalar $info->i_edgeport_admin(),
+        scalar SNMP::Info::Bridge::i_edgeport_admin($info),
+        'i_edgeport_admin__both_empty__returns_bridge_result'
+    );
+}
+
+sub i_edgeport_oper : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_set_column( 'ieee_rstp_p_edge_oper',
+        { '1.3' => 2, '1.769' => 2 } );
+    cmp_deeply(
+        scalar $info->i_edgeport_oper(),
+        { 3 => 0, 769 => 0 },
+        'i_edgeport_oper__rstp_column__by_ifindex'
+    );
+
+    $test->_set_column( 'ieee_rstp_p_edge_oper', {} );
+    $test->_set_column( 'mstp_cist_p_edge_oper', { '1.3' => 1 } );
+    cmp_deeply(
+        scalar $info->i_edgeport_oper(),
+        { 3 => 1 },
+        'i_edgeport_oper__rstp_empty__uses_cist_column'
+    );
 }
 
 1;

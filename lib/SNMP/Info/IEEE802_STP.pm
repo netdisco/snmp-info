@@ -102,9 +102,17 @@ $VERSION = '3.985004';
 sub _ieee_stp_component {
     my $stp = shift;
 
-    my $versions = $stp->ieee_stp_version() || {};
-    my ($component) = sort { $a <=> $b } keys %$versions;
-    return $component;
+    foreach my $column (
+        qw/ieee_stp_version mstp_cist_bridge
+        mstp_cist_p_role/
+        )
+    {
+        my $rows = $stp->$column() || {};
+        my ($component)
+            = sort { $a <=> $b } map { ( split /\./ )[0] } keys %$rows;
+        return $component if defined $component;
+    }
+    return;
 }
 
 sub _ieee_stp_protocol {
@@ -213,9 +221,12 @@ sub _ieee_mstp_tree_key {
 sub _ieee_mstp_incomplete_trees {
     my ( $stp, $component ) = @_;
 
-    my $cist_ports = $stp->mstp_cist_p_role() || {};
-    my $msti_ports = $stp->mstp_p_state()     || {};
-    my $bp_index   = $stp->bp_index()         || {};
+    my $cist_ports = {
+        %{ $stp->mstp_cist_p_role() || {} },
+        %{ $stp->ieee_stp_p_state() || {} },
+    };
+    my $msti_ports = $stp->mstp_p_state() || {};
+    my $bp_index   = $stp->bp_index()     || {};
 
     my @rows = (
         ( map { [ split /\./ ] } keys %$cist_ports ),
@@ -238,6 +249,137 @@ sub _ieee_stp_other_component {
     my @rows = map { keys %{ $_ || {} } } $stp->ieee_stp_version(),
         $stp->mstp_cist_bridge(), $stp->mstp_i_bridge();
     return scalar grep { ( split /\./ )[0] != $component } @rows;
+}
+
+sub stp_tree_ports {
+    my ( $stp, $tree_key ) = @_;
+
+    return $stp->SUPER::stp_tree_ports($tree_key)
+        unless $stp->_ieee_stp_is_mstp();
+
+    my $tree = $stp->_stp_tree_for_key($tree_key) or return;
+    return $tree->{type} eq 'cist'
+        ? $stp->_ieee_mstp_cist_port_rows($tree)
+        : $stp->_ieee_mstp_msti_port_rows($tree);
+}
+
+# Rows keyed by ifIndex, from the lowest component only
+sub _ieee_mstp_cist_port_rows {
+    my ( $stp, $tree ) = @_;
+
+    my $component = $stp->_ieee_stp_component();
+    my $states    = $stp->ieee_stp_p_state()  || {};
+    my $roles     = $stp->mstp_cist_p_role()  || {};
+    my $enable    = $stp->ieee_stp_p_enable() || {};
+    my $d_bridge  = $stp->ieee_stp_p_bridge() || {};
+    my $d_port    = $stp->ieee_stp_p_port()   || {};
+    my $bp_index  = $stp->bp_index()          || {};
+
+    my %rows;
+    foreach my $index ( keys %{ +{ %$states, %$roles } } ) {
+        my ( $row_component, $port ) = split /\./, $index, 2;
+        next unless $row_component == $component;
+        my $iid = $bp_index->{$port};
+        next unless defined $iid;
+        $rows{$iid} = {
+            tree_type => $tree->{type},
+            tree_id   => $tree->{id},
+            state     => $states->{$index},
+            role      => scalar _ieee_mstp_known_role( $roles->{$index} ),
+            role_raw  => $roles->{$index},
+            enabled   =>
+                scalar SNMP::Info::Bridge::_stp_enabled( $enable->{$index} ),
+            designated_bridge =>
+                scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $d_bridge->{$index}
+                ),
+            designated_port =>
+                scalar SNMP::Info::Bridge::_stp_decode_port_id(
+                $d_port->{$index} ),
+        };
+    }
+    return \%rows;
+}
+
+sub _ieee_mstp_msti_port_rows {
+    my ( $stp, $tree ) = @_;
+
+    my $component = $stp->_ieee_stp_component();
+    my $states    = $stp->mstp_p_state()      || {};
+    my $roles     = $stp->mstp_p_role()       || {};
+    my $d_bridge  = $stp->mstp_p_bridge()     || {};
+    my $enable    = $stp->ieee_stp_p_enable() || {};
+    my $bp_index  = $stp->bp_index()          || {};
+
+    my %rows;
+    foreach my $index ( keys %$states ) {
+        my ( $row_component, $msti, $port ) = split /\./, $index, 3;
+        next unless $row_component == $component and $msti == $tree->{id};
+        my $iid = $bp_index->{$port};
+        next unless defined $iid;
+        $rows{$iid} = {
+            tree_type => $tree->{type},
+            tree_id   => $tree->{id},
+            state     => $states->{$index},
+            role      => $roles->{$index},
+            role_raw  => $roles->{$index},
+            enabled   => scalar SNMP::Info::Bridge::_stp_enabled(
+                $enable->{"$component.$port"}
+            ),
+            designated_bridge =>
+                scalar SNMP::Info::Bridge::_stp_decode_bridge_id(
+                $d_bridge->{$index}
+                ),
+            designated_port => undef,
+        };
+    }
+    return \%rows;
+}
+
+sub _ieee_mstp_known_role {
+    my $role = shift;
+    return unless defined $role;
+    return $role if $role =~ /^(?:root|alternate|designated|backup)$/;
+    return;
+}
+
+sub i_edgeport_admin {
+    my ( $stp, $partial ) = @_;
+
+    return $stp->_ieee_edge_ports( $partial, 'ieee_rstp_p_edge_admin',
+        'mstp_cist_p_edge_admin' )
+        || $stp->SUPER::i_edgeport_admin($partial);
+}
+
+sub i_edgeport_oper {
+    my ( $stp, $partial ) = @_;
+
+    return $stp->_ieee_edge_ports( $partial, 'ieee_rstp_p_edge_oper',
+        'mstp_cist_p_edge_oper' )
+        || $stp->SUPER::i_edgeport_oper($partial);
+}
+
+# First of the two columns with rows for the lowest component, as
+# { ifIndex => 1|0 }; nothing when both are empty. Not gated on protocol.
+sub _ieee_edge_ports {
+    my ( $stp, $partial, @columns ) = @_;
+
+    my $component = $stp->_ieee_stp_component();
+    return unless defined $component;
+
+    foreach my $column (@columns) {
+        my $rows = $stp->$column() || {};
+        my %by_port;
+        foreach my $index ( keys %$rows ) {
+            my ( $row_component, $port ) = split /\./, $index, 2;
+            next unless $row_component == $component;
+            $by_port{$port} = $rows->{$index};
+        }
+        next unless keys %by_port;
+        return SNMP::Info::Bridge::_stp_edge_by_ifindex( $stp, \%by_port,
+            $partial );
+    }
+    return;
 }
 
 sub stp_trees_complete {
@@ -357,15 +499,21 @@ These are methods that return scalar values from SNMP.
 
 =item $stp->hasSTP()
 
-Returns 1 when C<ieee8021SpanningTreeVersion> is C<stp>, else 0.
+Returns 1 when C<_ieee_stp_protocol()> reports C<stp>, else 0. That hook
+reads C<ieee8021SpanningTreeVersion> by default, and a class may override
+it.
 
 =item $stp->hasRSTP()
 
-Returns 1 when C<ieee8021SpanningTreeVersion> is C<rstp>, else 0.
+Returns 1 when C<_ieee_stp_protocol()> reports C<rstp>, else 0. That hook
+reads C<ieee8021SpanningTreeVersion> by default, and a class may override
+it.
 
 =item $stp->hasMSTP()
 
-Returns 1 when C<ieee8021SpanningTreeVersion> is C<mstp>, else 0.
+Returns 1 when C<_ieee_stp_protocol()> reports C<mstp>, else 0. That hook
+reads C<ieee8021SpanningTreeVersion> by default, and a class may override
+it.
 
 =back
 
@@ -409,6 +557,48 @@ C<root> from C<ieee8021MstpDesignatedRoot>.
 C<ports_complete> is 0 when a port row of the tree is on a bridge port
 missing from C<bp_index()>, or when a component other than the lowest
 serves rows. Otherwise returns what L<SNMP::Info::Bridge> returns.
+
+=item $stp->stp_tree_ports($tree_key)
+
+Under MSTP, returns reference to hash of port rows keyed by ifIndex, in
+the form L<SNMP::Info::Bridge> documents, for the tree C<$tree_key> names.
+Sets C<error()> and returns nothing for a key C<stp_trees()> does not hold.
+Otherwise returns what L<SNMP::Info::Bridge> returns.
+
+=over
+
+=item C<cist.0>
+
+C<state> from C<ieee8021SpanningTreePortState>. C<role_raw> is
+C<ieee8021MstpCistPortRole> as served, and C<role> is it when it is
+C<root>, C<alternate>, C<designated> or C<backup>, else undef. C<enabled>
+from C<ieee8021SpanningTreePortEnabled>, and the designated bridge and
+port from C<ieee8021SpanningTreePortDesignatedBridge> and
+C<ieee8021SpanningTreePortDesignatedPort>.
+
+=item C<msti.N>
+
+C<state> from C<ieee8021MstpPortState>, C<role> and C<role_raw> from
+C<ieee8021MstpPortRole>, C<enabled> from the same port's
+C<ieee8021SpanningTreePortEnabled>, and C<designated_bridge> from
+C<ieee8021MstpPortDesignatedBridge>. C<designated_port> is undef, because
+the MIB serves no usable value.
+
+=back
+
+=item $stp->i_edgeport_admin()
+
+Returns reference to hash of ifIndex to 1 or 0, the configured edge port
+setting, from C<ieee8021SpanningTreeRstpPortAdminEdgePort>, or from
+C<ieee8021MstpCistPortAdminEdgePort> when that is empty. Returns what
+L<SNMP::Info::Bridge> returns when both are empty. Does not depend on the
+protocol.
+
+=item $stp->i_edgeport_oper()
+
+As C<i_edgeport_admin()>, for the operational state, from
+C<ieee8021SpanningTreeRstpPortOperEdgePort> or
+C<ieee8021MstpCistPortOperEdgePort>.
 
 =item $stp->stp_trees_complete()
 

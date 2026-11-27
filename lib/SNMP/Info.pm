@@ -415,7 +415,8 @@ See documentation in L<SNMP::Info::IEEE802_Bridge> for details.
 
 =item SNMP::Info::IEEE802_STP
 
-Spanning trees from the F<IEEE8021-SPANNING-TREE-MIB> and F<IEEE8021-MSTP-MIB>.
+Spanning trees from the F<IEEE8021-SPANNING-TREE-MIB> and
+F<IEEE8021-MSTP-MIB>.
 
 See documentation in L<SNMP::Info::IEEE802_STP> for details.
 
