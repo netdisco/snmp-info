@@ -370,14 +370,17 @@ sub xcvr_partial : Tests(2) {
 my %MSTP_ROLES  = ( '1.3' => 'designated', '1.769' => 'root' );
 my %RPVST_ROLES = ( '1.3' => '6',          '1.769' => '6' );
 my %MIXED_ROLES = ( '1.3' => '6',          '1.769' => 'designated' );
+my %ALL_UP      = ( 3 => 'up',   769 => 'up',   770 => 'up' );
+my %ALL_DOWN    = ( 3 => 'down', 769 => 'down', 770 => 'down' );
 
 my $bridge_id = sub { pack( 'H*', shift ) };
 
 # Shapes from an AOS-CX 10.16 walk in MSTP mode: component 1, MSTIs 1 and
 # 2, bridge ports equal to ifIndexes, LAGs from 769. BRIDGE-MIB columns are
-# primed too, so a fall through to Bridge.pm would build a tree.
+# primed too, so a fall through to Bridge.pm would build a tree. Every
+# port is up unless the caller passes ifOperStatus rows.
 sub _prime_stp {
-    my ( $test, $roles ) = @_;
+    my ( $test, $roles, $up ) = @_;
     my $info = $test->{info};
 
     my %store = (
@@ -399,6 +402,7 @@ sub _prime_stp {
         bp_index         => { 3 => 3, 769 => 769, 770 => 770 },
         stp_p_id         => { 3 => 3,            769 => 769 },
         stp_p_state      => { 3 => 'forwarding', 769 => 'blocking' },
+        i_up             => $up // {%ALL_UP},
     );
     foreach my $column ( keys %store ) {
         $info->{"_$column"} = 1;
@@ -444,7 +448,7 @@ sub _prime_rpvst {
     return;
 }
 
-sub hasMSTP : Tests(4) {
+sub hasMSTP : Tests(6) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -456,10 +460,42 @@ sub hasMSTP : Tests(4) {
     $test->_prime_stp( {%RPVST_ROLES} );
     is( $info->hasMSTP(), 0, 'hasMSTP__all_cist_roles_6__returns_0' );
     $test->_prime_stp( {%MIXED_ROLES} );
-    is( $info->hasMSTP(), 0, 'hasMSTP__mixed_cist_roles__returns_0' );
+    is( $info->hasMSTP(), 1,
+        'hasMSTP__role_6_on_down_port_beside_defined_role__returns_1' );
+    $test->_prime_stp( {%MIXED_ROLES}, { 3 => 'down', 769 => 'up' } );
+    is( $info->hasMSTP(), 1,
+        'hasMSTP__defined_role_on_up_port_only__returns_1' );
+    $test->_prime_stp( {%RPVST_ROLES}, {%ALL_DOWN} );
+    is( $info->hasMSTP(), 0,
+        'hasMSTP__all_role_6_every_port_down__returns_0' );
 }
 
-sub hasRapidPVST : Tests(3) {
+# CIST rows only on two link aggregations, as AOS-CX 10.16 serves them:
+# each aggregation's own ifOperStatus down, its members' as given
+sub _prime_lag_members {
+    my ( $test, $member_up ) = @_;
+    my $info = $test->{info};
+
+    $test->_prime_stp( { '1.769' => '6', '1.770' => '6' },
+        { 1 => $member_up, 2 => 'down', 769 => 'down', 770 => 'down' } );
+    my %store = (
+        raw_ad_lag_ports => { 769 => '1/1/1', 770 => '1/1/2' },
+        i_index       => { 1 => 1, 2 => 2, 769 => 769, 770 => 770 },
+        i_description => {
+            1   => '1/1/1',
+            2   => '1/1/2',
+            769 => 'lag1',
+            770 => 'lag2'
+        },
+    );
+    foreach my $column ( keys %store ) {
+        $info->{"_$column"} = 1;
+        $info->{store}{$column} = $store{$column};
+    }
+    return;
+}
+
+sub hasRapidPVST : Tests(8) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -468,10 +504,26 @@ sub hasRapidPVST : Tests(3) {
         'hasRapidPVST__mstp_cist_roles__returns_0' );
     $test->_prime_stp( {%RPVST_ROLES} );
     is( $info->hasRapidPVST(), 1,
-        'hasRapidPVST__all_cist_roles_6__returns_1' );
+        'hasRapidPVST__all_cist_roles_6_with_up_port__returns_1' );
+    $test->_prime_stp( {%RPVST_ROLES}, { 3 => 'down', 769 => 'up' } );
+    is( $info->hasRapidPVST(), 1,
+        'hasRapidPVST__all_cist_roles_6_one_port_up__returns_1' );
     $test->_prime_stp( {%MIXED_ROLES} );
     is( $info->hasRapidPVST(), 0,
-        'hasRapidPVST__mixed_cist_roles__returns_0' );
+        'hasRapidPVST__defined_role_beside_role_6__returns_0' );
+    $test->_prime_stp( {%RPVST_ROLES}, {%ALL_DOWN} );
+    is( $info->hasRapidPVST(), 0,
+        'hasRapidPVST__all_cist_roles_6_every_port_down__returns_0' );
+    $test->_prime_stp( { %RPVST_ROLES, '2.5' => 'designated' } );
+    is( $info->hasRapidPVST(), 1,
+        'hasRapidPVST__defined_role_on_second_component__reads_lowest_only'
+    );
+    $test->_prime_lag_members('up');
+    is( $info->hasRapidPVST(), 1,
+        'hasRapidPVST__all_role_6_lag_down_member_up__returns_1' );
+    $test->_prime_lag_members('down');
+    is( $info->hasRapidPVST(), 0,
+        'hasRapidPVST__all_role_6_lag_and_members_down__returns_0' );
 }
 
 sub hasSTP : Tests(1) {
@@ -509,7 +561,7 @@ sub stp_protocols : Tests(3) {
         undef, 'stp_protocols__no_cist_roles__returns_nothing' );
 }
 
-sub stp_trees : Tests(7) {
+sub stp_trees : Tests(9) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -565,6 +617,15 @@ sub stp_trees : Tests(7) {
     $test->_prime_stp( {} );
     cmp_deeply( $info->stp_trees(), {},
         'stp_trees__no_cist_roles__returns_empty_hash' );
+    $test->_prime_stp( {%MIXED_ROLES}, { 3 => 'down', 769 => 'up' } );
+    cmp_deeply(
+        [ sort keys %{ $info->stp_trees() } ],
+        [qw/cist.0 msti.1 msti.2/],
+        'stp_trees__mstp_with_one_port_down__lists_cist_and_mstis'
+    );
+    $test->_prime_stp( {%RPVST_ROLES}, {%ALL_DOWN} );
+    cmp_deeply( $info->stp_trees(), {},
+        'stp_trees__all_role_6_every_port_down__returns_empty_hash' );
 }
 
 sub stp_trees_complete : Tests(3) {
@@ -599,8 +660,8 @@ sub stp_vlan_map : Tests(3) {
     is( $info->stp_vlan_map()->{20},
         'msti.2', 'stp_vlan_map__mstp_cist_roles__maps_vlan_to_msti' );
     $test->_prime_stp( {%MIXED_ROLES} );
-    is( scalar $info->stp_vlan_map(),
-        undef, 'stp_vlan_map__mixed_cist_roles__returns_nothing' );
+    is( $info->stp_vlan_map()->{20},
+        'msti.2', 'stp_vlan_map__role_6_on_down_port__maps_vlan_to_msti' );
 }
 
 sub stp_tree_ports : Tests(7) {

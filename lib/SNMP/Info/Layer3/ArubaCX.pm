@@ -394,9 +394,11 @@ sub qb_cv_untagged {
 }
 
 # AOS-CX 10.16 serves ieee8021SpanningTreeVersion 3 (mstp) in both of its
-# modes, and while running RPVST reports CIST port role 6, outside the
-# MIB's enum, on every port. Every row of the lowest component 6 is RPVST;
-# every row a defined role is MSTP; no rows or a mix is unknown.
+# modes. It reports CIST port role 6, outside the MIB's enum, on every port
+# while running RPVST, and on link-down ports while running MSTP; it never
+# reports a defined role under RPVST. So in the lowest component a defined
+# role is MSTP, and role 6 on every row is RPVST when one of those ports is
+# up; otherwise the mode is unknown.
 sub _aoscx_stp_protocol {
     my $cx = shift;
 
@@ -405,19 +407,42 @@ sub _aoscx_stp_protocol {
     my $component = $cx->_ieee_stp_component();
     return unless defined $component;
     my $rows  = $cx->mstp_cist_p_role() || {};
-    my @roles = map { $rows->{$_} }
+    my %roles = map { ( split /\./ )[1] => $rows->{$_} }
         grep { ( split /\./ )[0] == $component } keys %$rows;
-    return unless @roles;
+    return unless %roles;
 
-    my $rpvst = grep { defined and $_ eq '6' } @roles;
-    my $mstp  = grep { defined and /^(?:root|alternate|designated|backup)$/ }
-        @roles;
-    my $protocol
-        = $rpvst == @roles ? 'rapid-pvst'
-        : $mstp == @roles  ? 'mstp'
-        :                    undef;
+    my @roles = values %roles;
+    my $protocol;
+    if ( grep { defined and /^(?:root|alternate|designated|backup)$/ }
+        @roles )
+    {
+        $protocol = 'mstp';
+    }
+    elsif ( @roles == grep { defined and $_ eq '6' } @roles ) {
+        $protocol = 'rapid-pvst'
+            if $cx->_aoscx_any_port_up( [ keys %roles ] );
+    }
     return unless defined $protocol;
     return $cx->{_aoscx_stp_protocol} = $protocol;
+}
+
+# Whether any of these bridge ports maps to an ifIndex that is up, or to
+# a link aggregation with a member that is up. AOS-CX 10.16 reports a link
+# aggregation's ifOperStatus as down while its members are up.
+sub _aoscx_any_port_up {
+    my ( $cx, $ports ) = @_;
+
+    my $bp_index = $cx->bp_index()  || {};
+    my $up       = $cx->i_up()      || {};
+    my $lag_of   = $cx->agg_ports() || {};
+    my %iids     = map { $_ => 1 } grep {defined} @{$bp_index}{@$ports};
+
+    foreach my $iid ( keys %$up ) {
+        next unless ( $up->{$iid} // '' ) eq 'up';
+        my $lag = $lag_of->{$iid};
+        return 1 if $iids{$iid} or ( defined $lag and $iids{$lag} );
+    }
+    return 0;
 }
 
 sub _ieee_stp_protocol {
@@ -951,8 +976,13 @@ fetches and devices without transceiver data return the inherited result.
 =item $cx->stp_tree_ports($tree_key)
 
 AOS-CX serves C<ieee8021SpanningTreeVersion> 3 in both of its modes, so
-the mode comes from C<ieee8021MstpCistPortRole>: every row a defined
-role is MSTP, every row 6 is RPVST; only the lowest component is read.
+the mode comes from C<ieee8021MstpCistPortRole>, which reads 6 on every
+port under RPVST and on link-down ports under MSTP. Any row with a
+defined role is MSTP; every row 6 with at least one of those ports up
+is RPVST. A port is up when C<i_up()> says so for it or, for a link
+aggregation, for any of its members (C<agg_ports()>), since AOS-CX
+reports a link aggregation's C<ifOperStatus> as down while its members
+are up. Only the lowest component is read.
 Under MSTP these return the L<SNMP::Info::IEEE802_STP> results, with
 C<measured> 1.
 
@@ -969,7 +999,8 @@ undef. That table serves the designated bridge as a MAC only, so its
 priority and C<sys_id_ext> are those of the root or this switch when
 the MAC is theirs, else undef.
 
-When the mode is unknown (no rows, or a mix) they report nothing: no
+When the mode is unknown (no rows, or role 6 on every row with every
+port down) they report nothing: no
 protocols, an empty tree list, C<stp_trees_complete()> 0, no VLAN map, and an
 C<error()> from C<stp_tree_ports()>. C<hasMSTP()> is 1 only under MSTP,
 and C<hasSTP()> and C<hasRSTP()> are always 0, since AOS-CX offers only
