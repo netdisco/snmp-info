@@ -1495,6 +1495,11 @@ the test reads that object; elsewhere the class infers it, as its
 documentation says. As with C<has_topo()> in L<SNMP::Info>, test
 C<can()> before calling one.
 
+Each test names one protocol. C<hasSTP()> means 802.1D STP, not that the
+device runs spanning tree: a device running only RSTP, MSTP or a per-VLAN
+protocol returns 0 from it. To learn whether a device runs any spanning
+tree, read C<stp_protocols()> or C<stp_trees()>.
+
 =over
 
 =item $bridge->stp_protocols()
