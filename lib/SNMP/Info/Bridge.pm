@@ -572,6 +572,19 @@ sub _stp_bridge_id_from {
     return _stp_decode_bridge_id( join( ':', $prio_octets, $mac ) );
 }
 
+# For devices that serve the parts of a bridge ID in separate objects
+sub _stp_bridge_id_parts {
+    my ( $priority, $sys_id_ext, $mac ) = @_;
+    return unless defined $mac;
+
+    return {
+        priority   => $priority,
+        sys_id_ext => $sys_id_ext,
+        mac        => $mac,
+        raw        => undef,
+    };
+}
+
 # 802.1t fixed format: top 4 bits priority, low 12 bits system ID extension
 sub _stp_decode_bridge_id {
     my $id = shift;
@@ -1691,6 +1704,9 @@ The bridge ID as served, eight octets in hex, colon separated.
 
 =back
 
+A field is undef where the device does not serve that part of the ID; C<raw>
+is undef where no whole ID is served.
+
 An example record, the Rapid-PVST+ tree of VLAN 10 on a Cisco IOS
 switch:
 
@@ -1799,6 +1815,9 @@ Undef when not served.
 The port ID of the designated port, a reference to a hash: C<priority>,
 the port priority; C<port>, the port number on the designated bridge;
 and C<raw>, the port ID as served. Undef when not served.
+
+A field is undef where the device does not serve that part of the port ID;
+C<raw> is undef where no whole ID is served.
 
 =back
 

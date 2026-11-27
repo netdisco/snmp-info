@@ -568,6 +568,35 @@ sub i_edgeport_oper__admin_only__ignored : Tests(1) {
         {}, q(Administrative edge state is not reported) );
 }
 
+sub stp_bridge_id_parts : Tests(3) {
+    is_deeply(
+        SNMP::Info::Bridge::_stp_bridge_id_parts(
+            4096, 10, '02:00:00:00:00:01'
+        ),
+        {
+            priority   => 4096,
+            sys_id_ext => 10,
+            mac        => '02:00:00:00:00:01',
+            raw        => undef
+        },
+        q(stp_bridge_id_parts__all_parts__returns_hash_without_raw)
+    );
+    is_deeply(
+        SNMP::Info::Bridge::_stp_bridge_id_parts(
+            undef, undef, '02:00:00:00:00:02'
+        ),
+        {
+            priority   => undef,
+            sys_id_ext => undef,
+            mac        => '02:00:00:00:00:02',
+            raw        => undef
+        },
+        q(stp_bridge_id_parts__mac_only__returns_partial_hash)
+    );
+    is( SNMP::Info::Bridge::_stp_bridge_id_parts( 4096, 10, undef ),
+        undef, q(stp_bridge_id_parts__no_mac__returns_undef) );
+}
+
 sub i_edgeport_oper__port_absent_from_bp_index__skipped : Tests(1) {
     my $test = shift;
 
