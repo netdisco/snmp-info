@@ -424,18 +424,19 @@ sub qb_cv_untagged {
 # while running RPVST, and on link-down ports while running MSTP; it never
 # reports a defined role under RPVST. So in the lowest component a defined
 # role is MSTP, and role 6 on every row is RPVST when one of those ports is
-# up; otherwise the mode is unknown.
+# up. A switch that serves no CIST port role is read as BRIDGE-MIB alone
+# (dot1d); any other case is unknown.
 sub _aoscx_stp_protocol {
     my $cx = shift;
 
     return $cx->{_aoscx_stp_protocol} if $cx->{_aoscx_stp_protocol};
 
     my $component = $cx->_ieee_stp_component();
-    return unless defined $component;
+    return $cx->{_aoscx_stp_protocol} = 'dot1d' unless defined $component;
     my $rows  = $cx->mstp_cist_p_role() || {};
     my %roles = map { ( split /\./ )[1] => $rows->{$_} }
         grep { ( split /\./ )[0] == $component } keys %$rows;
-    return unless %roles;
+    return $cx->{_aoscx_stp_protocol} = 'dot1d' unless %roles;
 
     my @roles = values %roles;
     my $protocol;
@@ -471,6 +472,14 @@ sub _aoscx_any_port_up {
     return 0;
 }
 
+# MSTP is read from the IEEE MIBs, and dot1d from BRIDGE-MIB, both by the
+# inherited methods
+sub _aoscx_inherits_stp {
+    my $cx       = shift;
+    my $protocol = $cx->_aoscx_stp_protocol() // '';
+    return $protocol eq 'mstp' || $protocol eq 'dot1d';
+}
+
 sub _ieee_stp_protocol {
     my $cx = shift;
     return ( $cx->_aoscx_stp_protocol() || '' ) eq 'mstp' ? 'mstp' : undef;
@@ -486,9 +495,9 @@ sub hasRapidPVST {
 sub stp_protocols {
     my $cx = shift;
 
+    return $cx->SUPER::stp_protocols() if $cx->_aoscx_inherits_stp();
     my $protocol = $cx->_aoscx_stp_protocol();
     return unless defined $protocol;
-    return $cx->SUPER::stp_protocols() if $protocol eq 'mstp';
     return $cx->_aoscx_rpvst_protocols();
 }
 
@@ -496,35 +505,35 @@ sub stp_trees {
     my $cx = shift;
 
     return unless $cx->_stp_default_context_ok();
+    return $cx->SUPER::stp_trees() if $cx->_aoscx_inherits_stp();
     my $protocol = $cx->_aoscx_stp_protocol();
     return {} unless defined $protocol;
-    return $cx->SUPER::stp_trees() if $protocol eq 'mstp';
     return $cx->_aoscx_rpvst_trees();
 }
 
 sub stp_trees_complete {
     my $cx = shift;
 
+    return $cx->SUPER::stp_trees_complete() if $cx->_aoscx_inherits_stp();
     my $protocol = $cx->_aoscx_stp_protocol();
     return 0 unless defined $protocol;
-    return $cx->SUPER::stp_trees_complete() if $protocol eq 'mstp';
     return $cx->_aoscx_rpvst_trees_complete();
 }
 
 sub stp_vlan_map {
     my $cx = shift;
 
+    return $cx->SUPER::stp_vlan_map() if $cx->_aoscx_inherits_stp();
     my $protocol = $cx->_aoscx_stp_protocol();
     return unless defined $protocol;
-    return $cx->SUPER::stp_vlan_map() if $protocol eq 'mstp';
     return $cx->_aoscx_rpvst_vlan_map();
 }
 
 sub stp_tree_ports {
     my ( $cx, $tree_key ) = @_;
 
-    my $protocol = $cx->_aoscx_stp_protocol() // '';
-    return $cx->SUPER::stp_tree_ports($tree_key) if $protocol eq 'mstp';
+    return $cx->SUPER::stp_tree_ports($tree_key)
+        if $cx->_aoscx_inherits_stp();
     $cx->_stp_tree_for_key($tree_key) or return;
     return $cx->_aoscx_rpvst_tree_ports($tree_key);
 }
@@ -542,8 +551,9 @@ sub i_stp_state {
 sub i_edgeport_oper {
     my ( $cx, $partial ) = @_;
 
-    my $protocol = $cx->_aoscx_stp_protocol() or return {};
-    return $cx->SUPER::i_edgeport_oper($partial) if $protocol eq 'mstp';
+    return $cx->SUPER::i_edgeport_oper($partial)
+        if $cx->_aoscx_inherits_stp();
+    $cx->_aoscx_stp_protocol() or return {};
 
     my $native = $cx->i_vlan($partial)     || {};
     my $edge   = $cx->rpvst_pv_edge_oper() || {};
@@ -732,16 +742,20 @@ up. A link aggregation counts as up when any member is up
 (C<i_up()>, C<agg_ports()>), since AOS-CX reports its C<ifOperStatus> as
 down while its members are up.
 
-=item * B<Unknown>: any other case, such as no rows, every row 6 with
-every port down, or 6 mixed with an undefined role.
+=item * B<BRIDGE-MIB only>: no row at all, as on a switch that does not
+serve the IEEE MIBs.
+
+=item * B<Unknown>: any other case, such as every row 6 with every port
+down, or 6 mixed with an undefined role.
 
 =back
 
 Under MSTP the tree methods return the L<SNMP::Info::IEEE802_STP> results,
-with C<measured> 1. Under RPVST they read F<ARUBAWIRED-RPVST-MIB>. When
-the mode is unknown they report nothing. AOS-CX offers no plain STP or
-RSTP mode, so C<hasSTP()> and C<hasRSTP()> always return 0, and
-C<hasMSTP()> returns 1 only under MSTP.
+with C<measured> 1. Under RPVST they read F<ARUBAWIRED-RPVST-MIB>. With
+BRIDGE-MIB only they return the L<SNMP::Info::Bridge> tree, C<dot1d> with
+C<measured> 0. When the mode is unknown they report nothing. AOS-CX
+offers no plain STP or RSTP mode, so C<hasSTP()> and C<hasRSTP()> always
+return 0, and C<hasMSTP()> returns 1 only under MSTP.
 
 =head2 VLANs
 
@@ -1192,8 +1206,9 @@ the first chassis, else 0.
 
 =item $cx->stp_protocols()
 
-Returns C<['mstp']> under MSTP, C<['rapid-pvst']> under RPVST, and
-nothing when the mode is unknown.
+Returns C<['mstp']> under MSTP, C<['rapid-pvst']> under RPVST, the
+inherited result with BRIDGE-MIB only, and nothing when the mode is
+unknown.
 
 =item $cx->stp_trees()
 
@@ -1246,9 +1261,10 @@ MSTP's last values. Otherwise the inherited result.
 
 =item $cx->i_edgeport_oper()
 
-Returns reference to hash of ifIndex to 1 or 0. Under MSTP, the inherited
-result. Under RPVST, C<arubaWiredRpvstPortVlanOperEdge> on the row for the
-port's native VLAN (C<i_vlan()>); a port with no such row is absent.
+Returns reference to hash of ifIndex to 1 or 0. Under MSTP and with
+BRIDGE-MIB only, the inherited result. Under RPVST,
+C<arubaWiredRpvstPortVlanOperEdge> on the row for the port's native VLAN
+(C<i_vlan()>); a port with no such row is absent.
 A port with no native VLAN in effect, which AOS-CX reports as 0, is
 absent (L</"VLANs">).
 Returns an empty hash when the mode is unknown. C<i_edgeport_admin()> is

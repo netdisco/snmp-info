@@ -648,7 +648,7 @@ sub hasRSTP : Tests(1) {
     is( $info->hasRSTP(), 0, 'hasRSTP__rstp_version__returns_0' );
 }
 
-sub stp_protocols : Tests(3) {
+sub stp_protocols : Tests(4) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -661,11 +661,15 @@ sub stp_protocols : Tests(3) {
     cmp_deeply( scalar $info->stp_protocols(),
         ['mstp'], 'stp_protocols__mstp_cist_roles__returns_mstp' );
     $test->_prime_stp( {} );
+    cmp_deeply( scalar $info->stp_protocols(),
+        ['dot1d'], 'stp_protocols__no_cist_roles__returns_bridge_mib_dot1d' );
+    $test->_prime_stp( {%RPVST_ROLES}, {%ALL_DOWN} );
     is( scalar $info->stp_protocols(),
-        undef, 'stp_protocols__no_cist_roles__returns_nothing' );
+        undef,
+        'stp_protocols__every_role_6_every_port_down__returns_nothing' );
 }
 
-sub stp_trees : Tests(9) {
+sub stp_trees : Tests(10) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -719,8 +723,10 @@ sub stp_trees : Tests(9) {
     is( $info->stp_trees()->{'msti.1'}{measured},
         1, 'stp_trees__mstp_cist_roles__marks_trees_measured' );
     $test->_prime_stp( {} );
-    cmp_deeply( $info->stp_trees(), {},
-        'stp_trees__no_cist_roles__returns_empty_hash' );
+    cmp_deeply( [ keys %{ $info->stp_trees() } ],
+        ['cist.0'], 'stp_trees__no_cist_roles__returns_bridge_mib_tree' );
+    is( $info->stp_trees()->{'cist.0'}{measured},
+        0, 'stp_trees__no_cist_roles__marks_bridge_mib_tree_not_measured' );
     $test->_prime_stp( {%MIXED_ROLES}, { 3 => 'down', 769 => 'up' } );
     cmp_deeply(
         [ sort keys %{ $info->stp_trees() } ],
@@ -732,7 +738,7 @@ sub stp_trees : Tests(9) {
         'stp_trees__all_role_6_every_port_down__returns_empty_hash' );
 }
 
-sub stp_trees_complete : Tests(3) {
+sub stp_trees_complete : Tests(4) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -746,7 +752,10 @@ sub stp_trees_complete : Tests(3) {
 
     $test->_prime_stp( {} );
     is( $info->stp_trees_complete(),
-        0, 'stp_trees_complete__no_cist_roles__returns_0' );
+        0, 'stp_trees_complete__no_cist_roles__returns_0_as_bridge_mib' );
+    $test->_prime_stp( {%RPVST_ROLES}, {%ALL_DOWN} );
+    is( $info->stp_trees_complete(),
+        0, 'stp_trees_complete__every_role_6_every_port_down__returns_0' );
 }
 
 sub stp_vlan_map : Tests(3) {
@@ -768,7 +777,7 @@ sub stp_vlan_map : Tests(3) {
         'msti.2', 'stp_vlan_map__role_6_on_down_port__maps_vlan_to_msti' );
 }
 
-sub stp_tree_ports : Tests(7) {
+sub stp_tree_ports : Tests(8) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -812,12 +821,17 @@ sub stp_tree_ports : Tests(7) {
     is( $info->stp_tree_ports('cist.0')->{769}{role},
         'root', 'stp_tree_ports__mstp_cist_roles__returns_cist_rows' );
     $test->_prime_stp( {} );
+    is( $info->stp_tree_ports('cist.0')->{769}{state},
+        'blocking',
+        'stp_tree_ports__no_cist_roles__returns_bridge_mib_rows' );
+    $test->_prime_stp( {%RPVST_ROLES}, {%ALL_DOWN} );
     is( scalar $info->stp_tree_ports('cist.0'),
-        undef, 'stp_tree_ports__no_cist_roles__returns_nothing' );
+        undef,
+        'stp_tree_ports__every_role_6_every_port_down__returns_nothing' );
     like(
         $info->error(),
         qr/has no tree 'cist\.0'/,
-        'stp_tree_ports__no_cist_roles__sets_error'
+        'stp_tree_ports__every_role_6_every_port_down__sets_error'
     );
 }
 
@@ -866,7 +880,7 @@ sub stp_trees_ext_sysid_off : Tests(2) {
         undef, 'stp_trees__rpvst_ext_sysid_off__own_root_has_no_sys_id_ext' );
 }
 
-sub i_edgeport_oper : Tests(4) {
+sub i_edgeport_oper : Tests(5) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -885,9 +899,17 @@ sub i_edgeport_oper : Tests(4) {
         { 3 => 1, 770 => 0 },
         'i_edgeport_oper__rpvst__reads_native_vlan_row_only'
     );
-    $test->_prime_stp( {} );
+    $test->_prime_stp( {%RPVST_ROLES}, {%ALL_DOWN} );
     cmp_deeply( $info->i_edgeport_oper(),
         {}, 'i_edgeport_oper__unknown_mode__returns_empty_hash' );
+    $test->_prime_stp( {} );
+    $info->{_is_edgeport_oper} = 1;
+    $info->{store}{is_edgeport_oper} = { 3 => 1, 769 => 2 };
+    cmp_deeply(
+        $info->i_edgeport_oper(),
+        { 3 => 1, 769 => 0 },
+        'i_edgeport_oper__no_cist_roles__returns_bridge_mib_edge_rows'
+    );
     $test->_prime_stp( {%MSTP_ROLES} );
     $info->{_ieee_rstp_p_edge_oper} = 1;
     $info->{store}{ieee_rstp_p_edge_oper} = { '1.3' => 1, '1.769' => 2 };
