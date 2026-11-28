@@ -1228,7 +1228,8 @@ sub vsx_keepalive_peer : Tests(5) {
     is( $info->vsx_keepalive_peer(),
         '10.127.255.1', 'vsx_keepalive_peer__octets__returns_address' );
     $info->{_vsx_keepalive_peer} = '2001:db8:0:0::12';
-    is( $info->vsx_keepalive_peer(), '2001:db8:0:0::12',
+    is( $info->vsx_keepalive_peer(),
+        '2001:db8:0:0::12',
         'vsx_keepalive_peer__ipv6_text_of_octet_length__returns_address' );
     $info->{_vsx_keepalive_peer} = '0.0.0.0';
     is( $info->vsx_keepalive_peer(),
@@ -1275,6 +1276,94 @@ sub vsx_agg_type : Tests(1) {
         { 778 => 'multiChassis', 788 => 'point2Point' },
         'vsx_agg_type__served__returns_type_by_ifindex'
     );
+}
+
+# A VSX primary with multi-chassis LAGs lag10 and lag20 and ISL lag256
+sub _prime_vsx {
+    my ( $test, %globals ) = @_;
+    my $info = $test->{info};
+
+    my %scalars = (
+        vsx_role            => 'primary',
+        vsx_system_mac      => '02:00:cb:12:06:00',
+        vsx_isl_port        => 'lag256',
+        vsx_isl_state       => 'inSync',
+        vsx_keepalive_peer  => '10.127.255.1',
+        vsx_keepalive_state => 'inSyncEstablished',
+        %globals,
+    );
+    $info->{"_$_"} = $scalars{$_} for keys %scalars;
+    delete $info->{"_$_"} for grep { !defined $scalars{$_} } keys %scalars;
+    $test->_prime_columns(
+        vsx_agg_type  => { 778 => 'multiChassis', 788 => 'multiChassis' },
+        i_index       => { 778 => 778,     788 => 788,     1024 => 1024 },
+        i_description => { 778 => 'lag10', 788 => 'lag20', 1024 => 'lag256' },
+    );
+    return;
+}
+
+sub mlag_domains : Tests(1) {
+    my $test = shift;
+    $test->_prime_vsx();
+    cmp_deeply(
+        $test->{info}->mlag_domains(),
+        {   vsx => {
+                kind       => 'vsx',
+                system_mac => '02:00:cb:12:06:00',
+                role       => 'primary',
+                peer       => '10.127.255.1',
+                peer_link  => 1024,
+                status     => 'inSync',
+                sources    => {
+                    system_mac =>
+                        'ARUBAWIRED-VSX-MIB::arubaWiredVsxDeviceOperSystemID',
+                    role => 'ARUBAWIRED-VSX-MIB::arubaWiredVsxDeviceRole',
+                    peer =>
+                        'ARUBAWIRED-VSX-MIB::arubaWiredVsxKeepAlivePeerIPAddr',
+                    peer_link => 'ARUBAWIRED-VSX-MIB::arubaWiredVsxIslPort',
+                    status => 'ARUBAWIRED-VSX-MIB::arubaWiredVsxIslOperState',
+                },
+            }
+        },
+        'mlag_domains__vsx_pair__returns_vsx_domain'
+    );
+}
+
+sub mlag_domains__standalone__returns_empty_hash : Tests(1) {
+    my $test = shift;
+    cmp_deeply( $test->{info}->mlag_domains(),
+        {}, 'mlag_domains__standalone__returns_empty_hash' );
+}
+
+sub mlag_domains__role_not_configured_isl_zero__returns_empty_hash : Tests(1)
+{
+    my $test = shift;
+    $test->_prime_vsx( vsx_role => 'notConfigured', vsx_isl_port => '0' );
+    cmp_deeply( $test->{info}->mlag_domains(),
+        {},
+        'mlag_domains__role_not_configured_isl_zero__returns_empty_hash' );
+}
+
+sub mlag_domains__isl_name_unknown__peer_link_absent : Tests(3) {
+    my $test = shift;
+    $test->_prime_vsx( vsx_isl_port => 'lag99' );
+    my $domain = $test->{info}->mlag_domains()->{vsx};
+    ok( $domain, 'mlag_domains__isl_name_unknown__domain_still_reported' );
+    ok( !exists $domain->{peer_link},
+        'mlag_domains__isl_name_unknown__peer_link_absent' );
+    ok( !exists $domain->{sources}{peer_link},
+        'mlag_domains__isl_name_unknown__peer_link_source_absent' );
+}
+
+sub mlag_domains__peer_not_parseable__peer_absent : Tests(3) {
+    my $test = shift;
+    $test->_prime_vsx( vsx_keepalive_peer => '' );
+    my $domain = $test->{info}->mlag_domains()->{vsx};
+    ok( $domain, 'mlag_domains__peer_not_parseable__domain_still_reported' );
+    ok( !exists $domain->{peer},
+        'mlag_domains__peer_not_parseable__peer_absent' );
+    ok( !exists $domain->{sources}{peer},
+        'mlag_domains__peer_not_parseable__peer_source_absent' );
 }
 
 1;

@@ -750,6 +750,50 @@ sub _aoscx_rpvst_designated {
     return SNMP::Info::Bridge::_stp_bridge_id_parts( undef, undef, $mac );
 }
 
+# The ISL is served by interface name; "0" or empty means none is configured
+sub _vsx_isl_ifindex {
+    my $cx   = shift;
+    my $name = $cx->vsx_isl_port();
+    return unless defined $name and length $name and $name ne '0';
+    my $interfaces = $cx->interfaces() || {};
+    my ($ifindex) = grep { ( $interfaces->{$_} // '' ) eq $name }
+        sort { $a <=> $b } keys %$interfaces;
+    return $ifindex;
+}
+
+# One VSX domain per switch, from scalars, as VOSS reports its virtual IST
+sub _lag_vendor_domains {
+    my $cx = shift;
+
+    my $role      = $cx->vsx_role() // '';
+    my $peer_link = $cx->_vsx_isl_ifindex();
+    return {}
+        unless $role eq 'primary'
+        or $role eq 'secondary'
+        or defined $peer_link;
+
+    my %value_of = (
+        system_mac => scalar $cx->vsx_system_mac(),
+        role       => scalar $cx->vsx_role(),
+        peer       => scalar $cx->vsx_keepalive_peer(),
+        status     => scalar $cx->vsx_isl_state(),
+        peer_link  => $peer_link,
+    );
+    my %leaf_of = (
+        system_mac => 'arubaWiredVsxDeviceOperSystemID',
+        role       => 'arubaWiredVsxDeviceRole',
+        peer       => 'arubaWiredVsxKeepAlivePeerIPAddr',
+        status     => 'arubaWiredVsxIslOperState',
+        peer_link  => 'arubaWiredVsxIslPort',
+    );
+    my $domain = { kind => 'vsx', sources => {} };
+    foreach my $field ( grep { defined $value_of{$_} } keys %value_of ) {
+        $domain->{$field} = $value_of{$field};
+        $domain->{sources}{$field} = "ARUBAWIRED-VSX-MIB::$leaf_of{$field}";
+    }
+    return { vsx => $domain };
+}
+
 1;
 __END__
 
@@ -1258,6 +1302,29 @@ across the VSX pair, else C<point2Point>.
 =head2 Overrides
 
 =over
+
+=item $cx->mlag_domains()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with one domain,
+keyed C<vsx>, when the switch runs VSX: C<vsx_role()> is C<primary> or
+C<secondary>, or C<vsx_isl_port()> names an interface. Its fields:
+
+=over
+
+=item * C<kind>: C<vsx>.
+
+=item * C<system_mac>: C<vsx_system_mac()>.
+
+=item * C<role>: C<vsx_role()>.
+
+=item * C<peer>: C<vsx_keepalive_peer()>.
+
+=item * C<status>: the ISL state, C<vsx_isl_state()>.
+
+=item * C<peer_link>: the ifIndex of the interface C<vsx_isl_port()>
+names. Absent when no interface has that name.
+
+=back
 
 =item $cx->e_index()
 
