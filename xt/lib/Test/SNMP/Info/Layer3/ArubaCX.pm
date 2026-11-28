@@ -1198,4 +1198,263 @@ sub i_untagged : Tests(1) {
     );
 }
 
+sub vsx_system_mac : Tests(4) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->{_vsx_system_mac} = '02:00:cb:12:06:00';
+    is( $info->vsx_system_mac(),
+        '02:00:cb:12:06:00', 'vsx_system_mac__text_form__returns_mac' );
+    $info->{_vsx_system_mac} = '02-00-CB-12-06-00';
+    is( $info->vsx_system_mac(),
+        '02:00:cb:12:06:00',
+        'vsx_system_mac__dashed_upper_case__returns_normalized_mac' );
+    $info->{_vsx_system_mac} = pack( 'H*', '0200cb120600' );
+    is( $info->vsx_system_mac(),
+        '02:00:cb:12:06:00', 'vsx_system_mac__octets__returns_mac' );
+    $info->{_vsx_system_mac} = 'garbage';
+    is( $info->vsx_system_mac(),
+        undef, 'vsx_system_mac__not_a_mac__returns_undef' );
+}
+
+sub vsx_keepalive_peer : Tests(9) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->{_vsx_keepalive_peer} = '10.127.255.1';
+    is( $info->vsx_keepalive_peer(),
+        '10.127.255.1', 'vsx_keepalive_peer__text_form__returns_address' );
+    $info->{_vsx_keepalive_peer} = pack( 'C4', 10, 127, 255, 1 );
+    is( $info->vsx_keepalive_peer(),
+        '10.127.255.1', 'vsx_keepalive_peer__octets__returns_address' );
+    $info->{_vsx_keepalive_peer} = '2001:db8:0:0::12';
+    is( $info->vsx_keepalive_peer(),
+        '2001:db8:0:0:0:0:0:12',
+        'vsx_keepalive_peer__ipv6_text_of_octet_length__returns_address' );
+    $info->{_vsx_keepalive_peer} = '0.0.0.0';
+    is( $info->vsx_keepalive_peer(),
+        undef, 'vsx_keepalive_peer__unset_address__returns_undef' );
+    $info->{_vsx_keepalive_peer} = ':::';
+    is( $info->vsx_keepalive_peer(),
+        undef, 'vsx_keepalive_peer__colons_only__returns_undef' );
+    $info->{_vsx_keepalive_peer} = '1.2.3.400';
+    is( $info->vsx_keepalive_peer(),
+        undef, 'vsx_keepalive_peer__octet_out_of_range__returns_undef' );
+    $info->{_vsx_keepalive_peer} = '2001:DB8::12';
+    my $from_text = $info->vsx_keepalive_peer();
+    $info->{_vsx_keepalive_peer}
+        = pack( 'H*', '20010db8000000000000000000000012' );
+    is( $from_text,
+        $info->vsx_keepalive_peer(),
+        'vsx_keepalive_peer__ipv6_text_and_octets__return_same_form'
+    );
+    ok( defined $from_text,
+        'vsx_keepalive_peer__ipv6_text__returns_address' );
+    $info->{_vsx_keepalive_peer} = '';
+    is( $info->vsx_keepalive_peer(),
+        undef, 'vsx_keepalive_peer__empty__returns_undef' );
+}
+
+sub vsx_role : Tests(1) {
+    my $test = shift;
+    $test->{info}{_vsx_role} = 'primary';
+    is( $test->{info}->vsx_role(),
+        'primary', 'vsx_role__served__returns_role' );
+}
+
+sub vsx_isl_port : Tests(1) {
+    my $test = shift;
+    $test->{info}{_vsx_isl_port} = 'lag256';
+    is( $test->{info}->vsx_isl_port(),
+        'lag256', 'vsx_isl_port__served__returns_interface_name' );
+}
+
+sub vsx_isl_state : Tests(1) {
+    my $test = shift;
+    $test->{info}{_vsx_isl_state} = 'inSync';
+    is( $test->{info}->vsx_isl_state(),
+        'inSync', 'vsx_isl_state__served__returns_state' );
+}
+
+sub vsx_keepalive_state : Tests(1) {
+    my $test = shift;
+    $test->{info}{_vsx_keepalive_state} = 'inSyncEstablished';
+    is( $test->{info}->vsx_keepalive_state(),
+        'inSyncEstablished', 'vsx_keepalive_state__served__returns_state' );
+}
+
+sub vsx_agg_type : Tests(1) {
+    my $test = shift;
+    $test->_prime_columns(
+        vsx_agg_type => { 778 => 'multiChassis', 788 => 'point2Point' } );
+    cmp_deeply(
+        $test->{info}->vsx_agg_type(),
+        { 778 => 'multiChassis', 788 => 'point2Point' },
+        'vsx_agg_type__served__returns_type_by_ifindex'
+    );
+}
+
+# A VSX primary with multi-chassis LAGs lag10 and lag20 and ISL lag256
+sub _prime_vsx {
+    my ( $test, %globals ) = @_;
+    my $info = $test->{info};
+
+    my %scalars = (
+        vsx_role            => 'primary',
+        vsx_system_mac      => '02:00:cb:12:06:00',
+        vsx_isl_port        => 'lag256',
+        vsx_isl_state       => 'inSync',
+        vsx_keepalive_peer  => '10.127.255.1',
+        vsx_keepalive_state => 'inSyncEstablished',
+        %globals,
+    );
+    $info->{"_$_"} = $scalars{$_} for keys %scalars;
+    delete $info->{"_$_"} for grep { !defined $scalars{$_} } keys %scalars;
+    $test->_prime_columns(
+        vsx_agg_type  => { 778 => 'multiChassis', 788 => 'multiChassis' },
+        i_index       => { 778 => 778,     788 => 788,     1024 => 1024 },
+        i_description => { 778 => 'lag10', 788 => 'lag20', 1024 => 'lag256' },
+    );
+    return;
+}
+
+sub mlag_domains : Tests(1) {
+    my $test = shift;
+    $test->_prime_vsx();
+    cmp_deeply(
+        $test->{info}->mlag_domains(),
+        {   vsx => {
+                kind       => 'vsx',
+                system_mac => '02:00:cb:12:06:00',
+                role       => 'primary',
+                peer       => '10.127.255.1',
+                peer_link  => 1024,
+                status     => 'inSync',
+                sources    => {
+                    system_mac =>
+                        'ARUBAWIRED-VSX-MIB::arubaWiredVsxDeviceOperSystemID',
+                    role => 'ARUBAWIRED-VSX-MIB::arubaWiredVsxDeviceRole',
+                    peer =>
+                        'ARUBAWIRED-VSX-MIB::arubaWiredVsxKeepAlivePeerIPAddr',
+                    peer_link => 'ARUBAWIRED-VSX-MIB::arubaWiredVsxIslPort',
+                    status => 'ARUBAWIRED-VSX-MIB::arubaWiredVsxIslOperState',
+                },
+            }
+        },
+        'mlag_domains__vsx_pair__returns_vsx_domain'
+    );
+}
+
+sub mlag_domains__standalone__returns_empty_hash : Tests(1) {
+    my $test = shift;
+    cmp_deeply( $test->{info}->mlag_domains(),
+        {}, 'mlag_domains__standalone__returns_empty_hash' );
+}
+
+sub mlag_domains__role_not_configured_isl_zero__returns_empty_hash : Tests(1)
+{
+    my $test = shift;
+    $test->_prime_vsx( vsx_role => 'notConfigured', vsx_isl_port => '0' );
+    cmp_deeply( $test->{info}->mlag_domains(),
+        {},
+        'mlag_domains__role_not_configured_isl_zero__returns_empty_hash' );
+}
+
+sub mlag_domains__isl_name_unknown__peer_link_absent : Tests(3) {
+    my $test = shift;
+    $test->_prime_vsx( vsx_isl_port => 'lag99' );
+    my $domain = $test->{info}->mlag_domains()->{vsx};
+    ok( $domain, 'mlag_domains__isl_name_unknown__domain_still_reported' );
+    ok( !exists $domain->{peer_link},
+        'mlag_domains__isl_name_unknown__peer_link_absent' );
+    ok( !exists $domain->{sources}{peer_link},
+        'mlag_domains__isl_name_unknown__peer_link_source_absent' );
+}
+
+sub mlag_domains__peer_not_parseable__peer_absent : Tests(3) {
+    my $test = shift;
+    $test->_prime_vsx( vsx_keepalive_peer => '' );
+    my $domain = $test->{info}->mlag_domains()->{vsx};
+    ok( $domain, 'mlag_domains__peer_not_parseable__domain_still_reported' );
+    ok( !exists $domain->{peer},
+        'mlag_domains__peer_not_parseable__peer_absent' );
+    ok( !exists $domain->{sources}{peer},
+        'mlag_domains__peer_not_parseable__peer_source_absent' );
+}
+
+sub lag_groups__vsx_multichassis__adds_mc : Tests(2) {
+    my $test = shift;
+    $test->_prime_vsx();
+    my $record = $test->{info}->lag_groups()->{778};
+    cmp_deeply(
+        $record->{mc},
+        { kind => 'vsx', group => 10, domain => 'vsx', state => undef },
+        'lag_groups__vsx_multichassis__adds_mc'
+    );
+    is( $record->{sources}{mc},
+        'ARUBAWIRED-VSX-MIB::arubaWiredVsxAggregatorType',
+        'lag_groups__vsx_multichassis__names_mc_source'
+    );
+}
+
+sub lag_groups__vsx_isl__marked_peer_link : Tests(3) {
+    my $test = shift;
+    $test->_prime_vsx();
+    my $groups = $test->{info}->lag_groups();
+    is( $groups->{1024}{peer_link},
+        1, 'lag_groups__vsx_isl__marked_peer_link' );
+    is( $groups->{1024}{sources}{peer_link},
+        'ARUBAWIRED-VSX-MIB::arubaWiredVsxIslPort',
+        'lag_groups__vsx_isl__names_peer_link_source'
+    );
+    ok( !exists $groups->{778}{peer_link},
+        'lag_groups__vsx_multichassis__not_marked_peer_link' );
+}
+
+sub lag_groups__vsx_not_in_lag_mib__gets_record : Tests(1) {
+    my $test = shift;
+    $test->_prime_vsx();
+    is( $test->{info}->lag_groups()->{788}{mc}{group},
+        20, 'lag_groups__vsx_not_in_lag_mib__gets_record' );
+}
+
+sub lag_groups__lag_name_not_lagN__group_is_name : Tests(1) {
+    my $test = shift;
+    $test->_prime_vsx();
+    $test->_prime_columns( i_description =>
+            { 778 => 'uplink', 788 => 'lag20', 1024 => 'lag256' } );
+    is( $test->{info}->lag_groups()->{778}{mc}{group},
+        'uplink', 'lag_groups__lag_name_not_lagN__group_is_name' );
+}
+
+sub lag_groups__no_domain__no_mc : Tests(2) {
+    my $test = shift;
+    $test->_prime_vsx( vsx_role => undef, vsx_isl_port => undef );
+    my $groups = $test->{info}->lag_groups();
+    cmp_deeply( $test->{info}->mlag_domains(),
+        {}, 'lag_groups__no_domain__domain_absent' );
+    ok( !( $groups->{778} && $groups->{778}{mc} ),
+        'lag_groups__no_domain__no_mc' );
+}
+
+sub lag_groups__point2point__no_mc : Tests(2) {
+    my $test = shift;
+    $test->_prime_vsx();
+    $test->_prime_columns(
+        vsx_agg_type => { 778 => 'point2Point', 788 => 'multiChassis' } );
+    my $groups = $test->{info}->lag_groups();
+    ok( $groups->{788}{mc}, 'lag_groups__multichassis__still_gets_mc' );
+    ok( !( $groups->{778} && $groups->{778}{mc} ),
+        'lag_groups__point2point__no_mc'
+    );
+}
+
+sub lag_groups_complete__vsx_walk_incomplete__returns_0 : Tests(1) {
+    my $test = shift;
+    $test->_prime_vsx();
+    $test->{info}{walk_status}{vsx_agg_type} = { complete => 0 };
+    is( $test->{info}->lag_groups_complete(),
+        0, 'lag_groups_complete__vsx_walk_incomplete__returns_0' );
+}
+
 1;

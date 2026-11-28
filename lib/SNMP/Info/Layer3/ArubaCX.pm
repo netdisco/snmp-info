@@ -37,6 +37,7 @@ use SNMP::Info::IEEE802dot3ad;
 use SNMP::Info::IEEE802_STP;
 use SNMP::Info::Layer3;
 use SNMP::Info::IEEE802_Bridge;
+use Socket ();
 
 @SNMP::Info::Layer3::ArubaCX::ISA = qw/
     SNMP::Info::IEEE802dot3ad
@@ -65,6 +66,7 @@ $VERSION = '3.985004';
     'ARUBAWIRED-POWERSUPPLY-MIB' => 'arubaWiredPSUName',
     'ARUBAWIRED-PM-MIB'          => 'arubaWiredPmXcvrDescription',
     'ARUBAWIRED-RPVST-MIB'       => 'arubaWiredRpvstExtendedSystemID',
+    'ARUBAWIRED-VSX-MIB'         => 'arubaWiredVsxDeviceRole',
 );
 
 %GLOBALS = (
@@ -77,6 +79,14 @@ $VERSION = '3.985004';
     'ps2_status'      => 'arubaWiredPSUState.1.2',
     'vsf_topology'    => 'arubaWiredVsfTopology',
     'rpvst_ext_sysid' => 'arubaWiredRpvstExtendedSystemID',
+
+    # ARUBAWIRED-VSX-MIB
+    'vsx_role'            => 'arubaWiredVsxDeviceRole',
+    'vsx_system_mac'      => 'arubaWiredVsxDeviceOperSystemID',
+    'vsx_isl_port'        => 'arubaWiredVsxIslPort',
+    'vsx_isl_state'       => 'arubaWiredVsxIslOperState',
+    'vsx_keepalive_peer'  => 'arubaWiredVsxKeepAlivePeerIPAddr',
+    'vsx_keepalive_state' => 'arubaWiredVsxKeepAliveOperState',
 );
 
 %FUNCS = (
@@ -112,6 +122,9 @@ $VERSION = '3.985004';
     'rpvst_pv_role'      => 'arubaWiredRpvstPortVlanRole',
     'rpvst_pv_bridge'    => 'arubaWiredRpvstPortVlanDesigBridge',
     'rpvst_pv_edge_oper' => 'arubaWiredRpvstPortVlanOperEdge',
+
+    # ARUBAWIRED-VSX-MIB::arubaWiredVsxAggregatorTable
+    'vsx_agg_type' => 'arubaWiredVsxAggregatorType',
 );
 
 %MUNGE = (
@@ -119,9 +132,40 @@ $VERSION = '3.985004';
     %SNMP::Info::IEEE802_STP::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
     %SNMP::Info::IEEE802_Bridge::MUNGE,
-    'rpvst_v_root_mac' => \&SNMP::Info::munge_mac,
-    'rpvst_pv_bridge'  => \&SNMP::Info::munge_mac,
+    'rpvst_v_root_mac'   => \&SNMP::Info::munge_mac,
+    'rpvst_pv_bridge'    => \&SNMP::Info::munge_mac,
+    'vsx_system_mac'     => \&_munge_vsx_mac,
+    'vsx_keepalive_peer' => \&_munge_vsx_addr,
 );
+
+# The VSX system ID is a MAC in text; the keepalive peer is an InetAddress
+# that AOS-CX can serve as text. Accept text or raw octets for both, and
+# format a text address as its octets would be, so both forms compare equal
+sub _munge_vsx_mac {
+    my $value = shift;
+    return unless defined $value;
+    if ( $value =~ /^[[:xdigit:]]{2}(?:[:-][[:xdigit:]]{2}){5}$/ ) {
+        ( my $mac = lc $value ) =~ tr/-/:/;
+        return $mac;
+    }
+    return SNMP::Info::munge_mac($value) if length $value == 6;
+    return;
+}
+
+sub _munge_vsx_addr {
+    my $value = shift;
+    return unless defined $value and length $value;
+    my $octets = Socket::inet_pton( Socket::AF_INET(), $value )
+        // Socket::inet_pton( Socket::AF_INET6(), $value );
+    unless ( defined $octets ) {
+        return unless length $value == 4 or length $value == 16;
+        $octets = $value;
+    }
+    my $addr = SNMP::Info::munge_inetaddress($octets);
+    return unless defined $addr;
+    return if $addr =~ /^[0:.]+$/;
+    return $addr;
+}
 
 # Product codes reported by ENTITY-MIB or the product OID.
 %MODEL_MAP = ( 'JL719C' => '8360-48Y6C v2', );
@@ -708,6 +752,84 @@ sub _aoscx_rpvst_designated {
     return SNMP::Info::Bridge::_stp_bridge_id_parts( undef, undef, $mac );
 }
 
+# The ISL is served by interface name; "0" or empty means none is configured
+sub _vsx_isl_ifindex {
+    my $cx   = shift;
+    my $name = $cx->vsx_isl_port();
+    return unless defined $name and length $name and $name ne '0';
+    my $interfaces = $cx->interfaces() || {};
+    my ($ifindex) = grep { ( $interfaces->{$_} // '' ) eq $name }
+        sort { $a <=> $b } keys %$interfaces;
+    return $ifindex;
+}
+
+# One VSX domain per switch, from scalars, as VOSS reports its virtual IST
+sub _lag_vendor_domains {
+    my $cx = shift;
+
+    my $role      = $cx->vsx_role() // '';
+    my $peer_link = $cx->_vsx_isl_ifindex();
+    return {}
+        unless $role eq 'primary'
+        or $role eq 'secondary'
+        or defined $peer_link;
+
+    my %value_of = (
+        system_mac => scalar $cx->vsx_system_mac(),
+        role       => scalar $cx->vsx_role(),
+        peer       => scalar $cx->vsx_keepalive_peer(),
+        status     => scalar $cx->vsx_isl_state(),
+        peer_link  => $peer_link,
+    );
+    my %leaf_of = (
+        system_mac => 'arubaWiredVsxDeviceOperSystemID',
+        role       => 'arubaWiredVsxDeviceRole',
+        peer       => 'arubaWiredVsxKeepAlivePeerIPAddr',
+        status     => 'arubaWiredVsxIslOperState',
+        peer_link  => 'arubaWiredVsxIslPort',
+    );
+    my $domain = { kind => 'vsx', sources => {} };
+    foreach my $field ( grep { defined $value_of{$_} } keys %value_of ) {
+        $domain->{$field} = $value_of{$field};
+        $domain->{sources}{$field} = "ARUBAWIRED-VSX-MIB::$leaf_of{$field}";
+    }
+    return { vsx => $domain };
+}
+
+sub _lag_vendor_walked { return qw/vsx_agg_type/ }
+
+# Multi-chassis LAGs get mc only while the VSX domain is served, as VOSS
+# does for split MLTs; a LAG the standard table does not list gets a record
+sub _lag_vendor_groups {
+    my ( $cx, $groups ) = @_;
+
+    return unless %{ $cx->_lag_vendor_domains() };
+    my $types      = $cx->vsx_agg_type() || {};
+    my $interfaces = $cx->interfaces()   || {};
+    foreach my $ifindex ( keys %$types ) {
+        next unless ( $types->{$ifindex} // '' ) eq 'multiChassis';
+        my $name   = $interfaces->{$ifindex} // $ifindex;
+        my $record = $groups->{$ifindex}
+            ||= SNMP::Info::IEEE802dot3ad::_lag_new_record();
+        $record->{mc} = {
+            kind   => 'vsx',
+            group  => $name =~ /^lag(\d+)$/ ? $1 + 0 : $name,
+            domain => 'vsx',
+            state  => undef,
+        };
+        $record->{sources}{mc}
+            = 'ARUBAWIRED-VSX-MIB::arubaWiredVsxAggregatorType';
+    }
+    my $isl = $cx->_vsx_isl_ifindex();
+    return unless defined $isl;
+    my $record = $groups->{$isl}
+        ||= SNMP::Info::IEEE802dot3ad::_lag_new_record();
+    $record->{peer_link} = 1;
+    $record->{sources}{peer_link}
+        = 'ARUBAWIRED-VSX-MIB::arubaWiredVsxIslPort';
+    return;
+}
+
 1;
 __END__
 
@@ -907,6 +1029,43 @@ C<ring>. Used by C<stack_info()>.
 Returns C<true> or C<false>: whether this switch puts the VLAN in the
 system ID extension of its RPVST bridge IDs.
 (C<arubaWiredRpvstExtendedSystemID>)
+
+=item $cx->vsx_role()
+
+The switch's VSX role: C<primary>, C<secondary> or C<notConfigured>.
+(C<arubaWiredVsxDeviceRole>)
+
+=item $cx->vsx_system_mac()
+
+The system ID the VSX pair presents to LACP partners, colon separated
+hex. Read from text or raw octets; undef when neither parses.
+(C<arubaWiredVsxDeviceOperSystemID>)
+
+=item $cx->vsx_isl_port()
+
+The name of the inter-switch link (ISL) interface, such as C<lag256>.
+C<0> or empty when no ISL is configured.
+(C<arubaWiredVsxIslPort>)
+
+=item $cx->vsx_isl_state()
+
+The state of the ISL session with the VSX peer: C<init>, C<outSync> or
+C<inSync>.
+(C<arubaWiredVsxIslOperState>)
+
+=item $cx->vsx_keepalive_peer()
+
+The VSX keepalive peer's address. AOS-CX can serve it as text rather than
+an InetAddress; either form is read and returned in the same form. Undef
+when unset or not an address.
+(C<arubaWiredVsxKeepAlivePeerIPAddr>)
+
+=item $cx->vsx_keepalive_state()
+
+The state of the keepalive session: C<init>, C<configured>,
+C<inSyncEstablished>, C<outofSyncEstablished>, C<initEstablished>,
+C<failed> or C<stopped>.
+(C<arubaWiredVsxKeepAliveOperState>)
 
 =item $cx->hasRapidPVST()
 
@@ -1163,9 +1322,65 @@ operating as an edge port on the VLAN.
 
 =back
 
+=head2 Aruba VSX Aggregator Table (C<arubaWiredVsxAggregatorTable>)
+
+Indexed by the aggregation's ifIndex.
+
+=over
+
+=item $cx->vsx_agg_type()
+
+Returns reference to hash. C<multiChassis> for a link aggregation split
+across the VSX pair, else C<point2Point>.
+(C<arubaWiredVsxAggregatorType>)
+
+=back
+
 =head2 Overrides
 
 =over
+
+=item $cx->lag_groups()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with, while the
+C<vsx> domain of C<mlag_domains()> is served:
+
+=over
+
+=item * A link aggregation that C<vsx_agg_type()> lists as C<multiChassis>
+gets C<mc>: C<kind> C<vsx>, C<group> the LAG number from its interface
+name (10 for C<lag10>, or the name when it is not C<lagN>), C<domain>
+C<vsx>, and C<state> undef, since no per-LAG state is served. A LAG
+that F<IEEE8023-LAG-MIB> does not list still gets a record.
+
+=item * The ISL that C<vsx_isl_port()> names gets C<peer_link>.
+
+=back
+
+C<lag_groups_complete()> also checks the C<vsx_agg_type()> walk.
+
+=item $cx->mlag_domains()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with one domain,
+keyed C<vsx>, when the switch runs VSX: C<vsx_role()> is C<primary> or
+C<secondary>, or C<vsx_isl_port()> names an interface. Its fields:
+
+=over
+
+=item * C<kind>: C<vsx>.
+
+=item * C<system_mac>: C<vsx_system_mac()>.
+
+=item * C<role>: C<vsx_role()>.
+
+=item * C<peer>: C<vsx_keepalive_peer()>.
+
+=item * C<status>: the ISL state, C<vsx_isl_state()>.
+
+=item * C<peer_link>: the ifIndex of the interface C<vsx_isl_port()>
+names. Absent when no interface has that name.
+
+=back
 
 =item $cx->e_index()
 
