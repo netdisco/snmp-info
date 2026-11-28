@@ -1,5 +1,6 @@
 # SNMP::Info::Layer3::ArubaCX
 #
+# Copyright (c) 2026 SNMP::Info Developers
 # Copyright (c) 2021 Jeroen van Ingen
 # All rights reserved.
 #
@@ -693,7 +694,7 @@ SNMP::Info::Layer3::ArubaCX - SNMP Interface to L3 Devices running ArubaOS-CX
 
 =head1 AUTHORS
 
-Jeroen van Ingen
+Jeroen van Ingen, SNMP::Info Developers
 
 =head1 SYNOPSIS
 
@@ -830,6 +831,32 @@ extracted from C<sysDescr>.
 Returns a string with status information for all fans listed in
 C<ARUBAWIRED-FAN-MIB>.
 
+=item $cx->ps1_type()
+
+Product name of the power supply in group 1, slot 1.
+(C<arubaWiredPSUProductName.1.1>)
+
+=item $cx->ps2_type()
+
+Product name of the power supply in group 1, slot 2.
+(C<arubaWiredPSUProductName.1.2>)
+
+=item $cx->ps1_status()
+
+Status of the power supply in group 1, slot 1, as served.
+(C<arubaWiredPSUState.1.1>)
+
+=item $cx->ps2_status()
+
+Status of the power supply in group 1, slot 2, as served.
+(C<arubaWiredPSUState.1.2>)
+
+=item $cx->vsf_topology()
+
+The physical topology of the VSF stack: C<standalone>, C<chain> or
+C<ring>. Used by C<stack_info()>.
+(C<arubaWiredVsfTopology>)
+
 =item $cx->rpvst_ext_sysid()
 
 Returns C<true> or C<false>: whether this switch puts the VLAN in the
@@ -875,12 +902,13 @@ Add IPv4 client tracking MAC/IP pairs to the inherited ARP tables.
 
 =item $cx->ipv6_n2p_if()
 
-Add IPv6 client tracking MAC/IP/interface rows to the inherited neighbour tables.
-Client tracking must already be enabled on the switch. These methods only read
-its data; they do not enable tracking. Unsupported or empty tracking tables
-leave the inherited results intact. Tracking row keys use a C<cipt.> prefix
-followed by the MAC/VLAN/IP index, preserving multiple addresses for a client.
-Malformed rows and unsupported address types are omitted.
+Add IPv6 client tracking MAC/IP/interface rows to the inherited
+neighbour tables. Client tracking must already be enabled on the
+switch. These methods only read its data; they do not enable tracking.
+Unsupported or empty tracking tables leave the inherited results intact.
+Tracking row keys use a C<cipt.> prefix followed by the MAC/VLAN/IP
+index, preserving multiple addresses for a client. Malformed rows and
+unsupported address types are omitted.
 
 =back
 
@@ -906,23 +934,108 @@ Columns of C<ARUBAWIRED-PM-MIB::arubaWiredPmXcvrTable>, indexed by ifIndex.
 
 =item $cx->pm_xcvr_port()
 
+Returns reference to hash. The name of the port the transceiver is in.
 (C<arubaWiredPmXcvrPortDesc>)
 
 =item $cx->pm_xcvr_descr()
 
+Returns reference to hash. The transceiver description.
 (C<arubaWiredPmXcvrDescription>)
 
 =item $cx->pm_xcvr_product()
 
+Returns reference to hash. The transceiver product number.
 (C<arubaWiredPmXcvrProductNum>)
 
 =item $cx->pm_xcvr_serial()
 
+Returns reference to hash. The transceiver serial number.
 (C<arubaWiredPmXcvrSerialNum>)
 
 =item $cx->pm_xcvr_type()
 
+Returns reference to hash. The transceiver type.
 (C<arubaWiredPmXcvrType>)
+
+=back
+
+=head2 Aruba Fan Table (C<arubaWiredFanTable>)
+
+Indexed by group, tray and slot. Read by C<fan()>.
+
+=over
+
+=item $cx->fan_names()
+
+Returns reference to hash. The fan name.
+(C<arubaWiredFanName>)
+
+=item $cx->fan_states()
+
+Returns reference to hash. The fan status, as served.
+(C<arubaWiredFanState>)
+
+=back
+
+=head2 Aruba Power Supply Table (C<arubaWiredPowerSupplyTable>)
+
+Indexed by group and slot.
+
+=over
+
+=item $cx->psu_names()
+
+Returns reference to hash. The power supply name.
+(C<arubaWiredPSUName>)
+
+=item $cx->psu_types()
+
+Returns reference to hash. The power supply product name.
+(C<arubaWiredPSUProductName>)
+
+=item $cx->psu_states()
+
+Returns reference to hash. The power supply status, as served.
+(C<arubaWiredPSUState>)
+
+=back
+
+=head2 Aruba VSF Member Table (C<arubaWiredVsfMemberTable>)
+
+Indexed by VSF member.
+
+=over
+
+=item $cx->vsf_prod_names()
+
+Returns reference to hash. The product name of each VSF stack member.
+Used by C<stack_info()>.
+(C<arubaWiredVsfMemberProductName>)
+
+=back
+
+=head2 Aruba Client IP Tracking Table (C<arubaWiredCiptClientTable>)
+
+Indexed by client MAC, VLAN and IP index. Read by the client IP tracking
+methods.
+
+=over
+
+=item $cx->cipt_addr_type()
+
+Returns reference to hash. The address type of C<cipt_addr()>.
+(C<arubaWiredCiptClientIpAddrType>)
+
+=item $cx->cipt_addr()
+
+Returns reference to hash. The tracked client IP address, as served.
+(C<arubaWiredCiptClientIpAddress>)
+
+=item $cx->cipt_ifindex()
+
+Returns reference to hash. The C<ifIndex> of the port where the client
+is tracked.
+(C<arubaWiredCiptClientPortIfIndex>)
 
 =back
 
@@ -1085,22 +1198,38 @@ Returns an empty hash when the mode is unknown. C<i_edgeport_admin()> is
 the inherited method in every mode. Whether this value reports an
 operational edge port as true has not been verified.
 
-=item C<agg_ports>
+=item $cx->agg_ports()
 
-Returns a HASH reference mapping from slave to master port for each member of
-a port bundle on the device. Keys are ifIndex of the slave ports, Values are
-ifIndex of the corresponding master ports.
+Returns reference to hash of member C<ifIndex> to aggregation
+C<ifIndex>. AOS-CX serves C<dot3adAggPortListPorts> as a comma
+separated list of interface names, not a PortList, so each name is
+matched against C<interfaces()>.
 
-=item C<v_name>
-=item C<qb_i_vlan>
-=item C<i_vlan_type>
-=item C<qb_v_egress>
-=item C<qb_cv_egress>
-=item C<qb_v_untagged>
-=item C<qb_cv_untagged>
-All overridden to return the VLAN data structures that we'd expect for a
-device that implements C<Q-BRIDGE-MIB>, but with data from
-L<SNMP::Info::IEEE8021_Bridge> at PBB 1.
+=item $cx->raw_ad_lag_ports()
+
+Returns reference to hash. The member interface names of each
+aggregation, as served.
+(C<dot3adAggPortListPorts>)
+
+=item $cx->v_name()
+
+=item $cx->qb_i_vlan()
+
+=item $cx->i_vlan_type()
+
+Return the C<IEEE8021-Q-BRIDGE-MIB> rows of component 1, with the
+component number removed from each key.
+
+=item $cx->qb_v_egress()
+
+=item $cx->qb_cv_egress()
+
+=item $cx->qb_v_untagged()
+
+=item $cx->qb_cv_untagged()
+
+Return the matching L<SNMP::Info::IEEE802_Bridge> method, or the
+inherited result when that returns nothing.
 
 =back
 
