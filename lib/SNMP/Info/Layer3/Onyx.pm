@@ -44,7 +44,7 @@ use SNMP::Info::PortAccessEntity;
 
 use vars qw/$VERSION %GLOBALS %MIBS %FUNCS %MUNGE/;
 
-$VERSION = '3.985004';
+$VERSION = '3.985005';
 
 %MIBS = (
     %SNMP::Info::PortAccessEntity::MIBS,

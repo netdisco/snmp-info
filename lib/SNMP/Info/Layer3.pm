@@ -58,7 +58,7 @@ use SNMP::Info::L2Service;
 
 our ($VERSION, %GLOBALS, %FUNCS, %MIBS, %MUNGE);
 
-$VERSION = '3.985004';
+$VERSION = '3.985005';
 
 %MIBS = (
     %SNMP::Info::MIBS,

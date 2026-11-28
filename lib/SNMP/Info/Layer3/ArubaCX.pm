@@ -52,7 +52,7 @@ use Socket ();
 
 our ( $VERSION, %GLOBALS, %MIBS, %FUNCS, %MODEL_MAP, %MUNGE );
 
-$VERSION = '3.985004';
+$VERSION = '3.985005';
 
 %MIBS = (
     %SNMP::Info::Layer3::MIBS,

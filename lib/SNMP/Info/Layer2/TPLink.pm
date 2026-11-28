@@ -41,7 +41,7 @@ use SNMP::Info::EtherLike;
 
 our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
-$VERSION = '3.985004';
+$VERSION = '3.985005';
 
 %MIBS = (
     %SNMP::Info::Layer2::MIBS,

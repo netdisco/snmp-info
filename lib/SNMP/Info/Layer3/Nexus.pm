@@ -45,7 +45,7 @@ our ($VERSION, %GLOBALS, %MIBS, %FUNCS, %MUNGE);
 
 @SNMP::Info::Layer3::Nexus::EXPORT_OK = qw//;
 
-$VERSION = '3.985004';
+$VERSION = '3.985005';
 
 # NOTE: Order creates precedence
 #       Example: v_name exists in Bridge.pm and CiscoVTP.pm

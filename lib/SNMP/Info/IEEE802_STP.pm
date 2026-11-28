@@ -39,7 +39,7 @@ use SNMP::Info::Bridge;
 
 our ( $VERSION, $DEBUG, %MIBS, %FUNCS, %GLOBALS, %MUNGE, $INIT );
 
-$VERSION = '3.985004';
+$VERSION = '3.985005';
 
 %MIBS = (
     %SNMP::Info::Bridge::MIBS,

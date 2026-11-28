@@ -36,7 +36,7 @@ use SNMP::Info::Layer3::Aruba;
 
 our @ISA = qw/SNMP::Info::Layer3::Aruba/;
 our ($VERSION, %MIBS, %GLOBALS, %FUNCS, %MUNGE);
-$VERSION = '3.985004';
+$VERSION = '3.985005';
 
 %MIBS = (%SNMP::Info::Layer3::Aruba::MIBS,
     'AI-AP-MIB' => 'aiWlanESSID');

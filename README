@@ -2,7 +2,7 @@ NAME
     SNMP::Info - OO Interface to Network devices and MIBs through SNMP
 
 VERSION
-    SNMP::Info - Version 3.985004
+    SNMP::Info - Version 3.985005
 
 AUTHOR
     SNMP::Info is maintained by team of Open Source authors headed by Eric
@@ -338,6 +338,12 @@ SUBCLASSES
         SNMP Interface to data available through the IEEE8021-Q-BRIDGE-MIB
 
         See documentation in SNMP::Info::IEEE802_Bridge for details.
+
+    SNMP::Info::IEEE802_STP
+        Spanning trees from the IEEE8021-SPANNING-TREE-MIB and
+        IEEE8021-MSTP-MIB.
+
+        See documentation in SNMP::Info::IEEE802_STP for details.
 
     SNMP::Info::IEEE802dot11
         IEEE802dot11-MIB. A collection of OIDs providing information about
@@ -912,6 +918,11 @@ SUBCLASSES
             Subclass for Lenovo switches running CNOS.
 
             See documentation in SNMP::Info::Layer3::Lenovo for details.
+
+        SNMP::Info::Layer3::Maipu
+            Subclass for Maipu switches running MyPower.
+
+            See documentation in SNMP::Info::Layer3::Maipu for details.
 
         SNMP::Info::Layer3::Meraki
             See documentation in SNMP::Info::Layer3::Meraki for details.
