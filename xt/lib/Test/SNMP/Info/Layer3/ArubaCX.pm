@@ -1071,17 +1071,17 @@ sub fan : Tests(3) {
     my $info = $test->{info};
 
     $test->_prime_columns(
-        fan_names  => { '1.1.1' => '1/1/1', '1.1.2' => '1/1/2' },
-        fan_states => { '1.1.1' => 'ok',    '1.1.2' => 'fault' },
+        fan_names  => { '1.1.1' => 'Tray-1/1/1', '1.1.2' => 'Tray-1/1/2' },
+        fan_states => { '1.1.1' => 'ok',         '1.1.2' => 'fault' },
     );
     is( $info->fan(),
-        '1/1/1: ok, 1/1/2: fault',
+        'Tray-1/1/1: ok, Tray-1/1/2: fault',
         'fan__names_and_states_served__lists_each_fan'
     );
 
     $test->_prime_columns( fan_states => { '1.1.1' => 'ok' } );
     is( $info->fan(),
-        '1/1/1: ok, 1/1/2: n/a',
+        'Tray-1/1/1: ok, Tray-1/1/2: n/a',
         'fan__state_missing__reports_n_a'
     );
 
