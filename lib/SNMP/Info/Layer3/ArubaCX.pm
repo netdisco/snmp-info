@@ -743,6 +743,23 @@ the mode is unknown they report nothing. AOS-CX offers no plain STP or
 RSTP mode, so C<hasSTP()> and C<hasRSTP()> always return 0, and
 C<hasMSTP()> returns 1 only under MSTP.
 
+=head2 VLANs
+
+AOS-CX serves VLAN data in two standard MIBs, F<IEEE8021-Q-BRIDGE-MIB>
+and F<Q-BRIDGE-MIB>. The IEEE MIB can describe several bridges in one
+device, so each of its indexes starts with a bridge number. A switch has
+one bridge, numbered 1. C<v_name()>, C<qb_i_vlan()> and C<i_vlan_type()>
+read the IEEE MIB rows of bridge 1 and drop that number, so their keys
+match F<Q-BRIDGE-MIB>. The port list methods keep the IEEE keys. Each
+VLAN method falls back to F<Q-BRIDGE-MIB> on its own when the IEEE MIB has no
+rows for it, since a switch can serve a column in one MIB and not the
+other.
+
+AOS-CX serves a native VLAN (PVID) of 0, which both MIBs forbid, on
+ports with no native VLAN in effect, such as routed ports and trunks
+that do not carry their configured native VLAN. A 0 does not mean
+VLAN 1.
+
 =head2 Inherited Classes
 
 =over
@@ -1232,9 +1249,8 @@ MSTP's last values. Otherwise the inherited result.
 Returns reference to hash of ifIndex to 1 or 0. Under MSTP, the inherited
 result. Under RPVST, C<arubaWiredRpvstPortVlanOperEdge> on the row for the
 port's native VLAN (C<i_vlan()>); a port with no such row is absent.
-AOS-CX 10.16 serves a native VLAN (PVID) of 0 on access ports and link
-aggregations, so under RPVST ports are usually absent from this method
-until C<i_vlan()> reads the native VLAN.
+A port with no native VLAN in effect, which AOS-CX reports as 0, is
+absent (L</"VLANs">).
 Returns an empty hash when the mode is unknown. C<i_edgeport_admin()> is
 the inherited method in every mode. Whether this value reports an
 operational edge port as true has not been verified.
@@ -1254,51 +1270,51 @@ aggregation, as served.
 
 =item $cx->v_name()
 
-Returns reference to hash of VLAN to VLAN name, from the component 1 rows
-of C<ieee8021QBridgeVlanStaticName>. Returns the inherited
-C<dot1qVlanStaticName> result when component 1 has no rows.
+Returns reference to hash of VLAN to VLAN name.
+(C<ieee8021QBridgeVlanStaticName>, else C<dot1qVlanStaticName>)
 
 =item $cx->qb_i_vlan()
 
-Returns reference to hash of bridge port to native VLAN (PVID), from the
-component 1 rows of C<ieee8021QBridgePvid>. Returns the inherited
-C<dot1qPvid> result when component 1 has no rows. AOS-CX 10.16 serves 0
-on access ports and link aggregations.
+Returns reference to hash of bridge port to native VLAN (PVID). See
+L</"VLANs"> for the value 0.
+(C<ieee8021QBridgePvid>, else C<dot1qPvid>)
 
 =item $cx->i_vlan_type()
 
-Returns reference to hash of bridge port to the acceptable frame types,
-from the component 1 rows of C<ieee8021QBridgePortAcceptableFrameTypes>.
-Returns the inherited C<dot1qPortAcceptableFrameTypes> result when
-component 1 has no rows.
+Returns reference to hash of bridge port to the frame types the port
+accepts.
+(C<ieee8021QBridgePortAcceptableFrameTypes>, else
+C<dot1qPortAcceptableFrameTypes>)
 
 =item $cx->qb_v_egress()
 
-Returns reference to hash of VLAN to the static egress port list, an
-array of bits, from C<ieee8021QBridgeVlanStaticEgressPorts>. Keys keep
-the component number. Returns the inherited
-C<dot1qVlanStaticEgressPorts> result when that column is not served.
+Returns reference to hash of VLAN to its configured member ports, an
+array of bits. Keys are C<1.VLAN> from the IEEE MIB, or C<VLAN> from
+F<Q-BRIDGE-MIB>.
+(C<ieee8021QBridgeVlanStaticEgressPorts>, else
+C<dot1qVlanStaticEgressPorts>)
 
 =item $cx->qb_cv_egress()
 
-Returns reference to hash of VLAN to the current egress port list, an
-array of bits, from C<ieee8021QBridgeVlanCurrentEgressPorts>. Keys keep
-the time filter and component number. Returns the inherited
-C<dot1qVlanCurrentEgressPorts> result when that column is not served.
+Returns reference to hash of VLAN to its current member ports, an array
+of bits. Keys are C<0.1.VLAN> from the IEEE MIB, or C<0.VLAN> from
+F<Q-BRIDGE-MIB>; the leading 0 is the time filter.
+(C<ieee8021QBridgeVlanCurrentEgressPorts>, else
+C<dot1qVlanCurrentEgressPorts>)
 
 =item $cx->qb_v_untagged()
 
-Returns reference to hash of VLAN to the static untagged port list, an
-array of bits, from C<ieee8021QBridgeVlanStaticUntaggedPorts>. Keys keep
-the component number. Returns the inherited
-C<dot1qVlanStaticUntaggedPorts> result when that column is not served.
+Returns reference to hash of VLAN to its configured untagged ports, an
+array of bits. Keys as C<qb_v_egress()>.
+(C<ieee8021QBridgeVlanStaticUntaggedPorts>, else
+C<dot1qVlanStaticUntaggedPorts>)
 
 =item $cx->qb_cv_untagged()
 
-Returns reference to hash of VLAN to the current untagged port list, an
-array of bits, from C<ieee8021QBridgeVlanCurrentUntaggedPorts>. Keys
-keep the time filter and component number. Returns the inherited
-C<dot1qVlanCurrentUntaggedPorts> result when that column is not served.
+Returns reference to hash of VLAN to its current untagged ports, an
+array of bits. Keys as C<qb_cv_egress()>.
+(C<ieee8021QBridgeVlanCurrentUntaggedPorts>, else
+C<dot1qVlanCurrentUntaggedPorts>)
 
 =back
 
