@@ -129,6 +129,7 @@ lib/SNMP/Info/Layer3/Juniper.pm
 lib/SNMP/Info/Layer3/Lancom.pm
 lib/SNMP/Info/Layer3/Lantronix.pm
 lib/SNMP/Info/Layer3/Lenovo.pm
+lib/SNMP/Info/Layer3/Maipu.pm
 lib/SNMP/Info/Layer3/Meraki.pm
 lib/SNMP/Info/Layer3/Microsoft.pm
 lib/SNMP/Info/Layer3/Mikrotik.pm
@@ -317,6 +318,7 @@ xt/lib/Test/SNMP/Info/Layer3/Juniper.pm
 xt/lib/Test/SNMP/Info/Layer3/Lancom.pm
 xt/lib/Test/SNMP/Info/Layer3/Lantronix.pm
 xt/lib/Test/SNMP/Info/Layer3/Lenovo.pm
+xt/lib/Test/SNMP/Info/Layer3/Maipu.pm
 xt/lib/Test/SNMP/Info/Layer3/Meraki.pm
 xt/lib/Test/SNMP/Info/Layer3/Microsoft.pm
 xt/lib/Test/SNMP/Info/Layer3/Mikrotik.pm

@@ -40,7 +40,12 @@ $VERSION = '3.985004';
 
 %MIBS = (%SNMP::Info::Layer3::Aruba::MIBS,
     'AI-AP-MIB' => 'aiWlanESSID');
-%GLOBALS = (%SNMP::Info::Layer3::Aruba::GLOBALS);
+%GLOBALS = (%SNMP::Info::Layer3::Aruba::GLOBALS,
+    'instant_vc_name'      => 'aiVirtualControllerName',
+    'instant_vc_version'   => 'aiVirtualControllerVersion',
+    'instant_conductor_ip' => 'aiConductorIPAddress',
+    'instant_master_ip'    => 'aiMasterIPAddress',
+);
 %FUNCS = (%SNMP::Info::Layer3::Aruba::FUNCS,
     'instant_radio_channel' => 'aiRadioChannel',
     'instant_radio_power'   => 'aiRadioTransmitPower',
@@ -50,6 +55,10 @@ $VERSION = '3.985004';
     'instant_wlan_mac'    => 'aiWlanMACAddress',
     'instant_ap_name'     => 'aiAPName',
     'instant_ap_status'   => 'aiAPStatus',
+    'instant_ap_ip'       => 'aiAPIPAddress',
+    'instant_ap_serial'   => 'aiAPSerialNum',
+    'instant_ap_model'    => 'aiAPModelName',
+    'instant_ap_type'     => 'aiAPModel',
     'instant_ssid'        => 'aiSSID',
     'instant_ssid_hide'   => 'aiSSIDHide',
     'instant_client_mac'  => 'aiClientMACAddress',
@@ -415,6 +424,127 @@ sub cd11_rxbyte { return shift->_client_column('instant_client_rxbytes') }
 sub cd11_txpkt  { return shift->_client_column('instant_client_txframes') }
 sub cd11_rxpkt  { return shift->_client_column('instant_client_rxframes') }
 
+# The cluster's serial is its conductor's, the AP at aiConductorIPAddress.
+# aiMasterIPAddress, the MIB's older name for that AP, is only a fallback. A
+# member AP walked directly lists only itself.
+sub serial {
+    my $instant = shift;
+
+    my $serials = $instant->instant_ap_serial() || {};
+    my $ap_ips  = $instant->instant_ap_ip()     || {};
+    foreach my $conductor ( $instant->instant_conductor_ip(),
+        $instant->instant_master_ip() )
+    {
+        next unless defined $conductor and $conductor ne '0.0.0.0';
+        foreach my $iid ( keys %$ap_ips ) {
+            next unless ( $ap_ips->{$iid} // '' ) eq $conductor;
+            return $serials->{$iid} if defined $serials->{$iid};
+        }
+    }
+    my @aps = keys %$serials;
+    return $serials->{ $aps[0] } if @aps == 1;
+    return $instant->SUPER::serial();
+}
+
+# APs are entities under the virtual controller, indexed as Layer3::Aruba
+# indexes controller APs: the last three octets of the AP MAC.
+sub e_index {
+    my $instant = shift;
+
+    my $names   = $instant->instant_ap_name()   || {};
+    my $serials = $instant->instant_ap_serial() || {};
+
+    my %e_index = ( 0 => 1 );
+    foreach my $iid ( keys %$names, keys %$serials ) {
+        next unless $iid =~ /(\d+\.\d+\.\d+)$/;
+        $e_index{$iid} = int( join '', map { sprintf '%03d', $_ } split /\./, $1 );
+    }
+    return \%e_index;
+}
+
+# The AP name goes in e_name, as on the radio ports; the controller classes
+# put a generic "AP" there and the name in the description.
+sub e_name {
+    my $instant = shift;
+
+    my $e_index = $instant->e_index()         || {};
+    my $names   = $instant->instant_ap_name() || {};
+
+    my %e_name;
+    foreach my $iid ( keys %$e_index ) {
+        if ( $iid eq '0' ) {
+            $e_name{$iid} = 'WLAN Controller';
+            next;
+        }
+        my $name = $names->{$iid};
+        $e_name{$iid} = ( defined $name and length $name ) ? $name : 'AP';
+    }
+    return \%e_name;
+}
+
+sub e_descr {
+    my $instant = shift;
+
+    my $e_index = $instant->e_index()          || {};
+    my $models  = $instant->instant_ap_model() || {};
+
+    my %e_descr;
+    foreach my $iid ( keys %$e_index ) {
+        $e_descr{$iid}
+            = $iid eq '0'
+            ? ( $instant->instant_vc_name() || $instant->model() )
+            : ( $models->{$iid} || 'AP' );
+    }
+    return \%e_descr;
+}
+
+sub e_model {
+    my $instant = shift;
+
+    my $models = $instant->instant_ap_model() || {};
+    my %e_model = ( 0 => $instant->model() );
+    foreach my $iid ( keys %$models ) {
+        $e_model{$iid} = $models->{$iid} if defined $models->{$iid};
+    }
+    return \%e_model;
+}
+
+sub e_type {
+    my $instant = shift;
+    return $instant->instant_ap_type() || {};
+}
+
+sub e_serial {
+    my $instant = shift;
+
+    my $serials = $instant->instant_ap_serial() || {};
+    my %e_serial = ( 0 => $instant->serial() // '' );
+    foreach my $iid ( keys %$serials ) {
+        $e_serial{$iid} = $serials->{$iid} if defined $serials->{$iid};
+    }
+    return \%e_serial;
+}
+
+# AI-AP-MIB has no hardware or per-AP software version; the inherited
+# methods would walk controller tables an Instant cluster does not serve.
+sub e_hwver { return {} }
+
+sub e_swver {
+    my $instant = shift;
+
+    my $version = $instant->instant_vc_version();
+    return {} unless defined $version and length $version;
+    return { 0 => $version };
+}
+
+sub e_fru {
+    my $instant = shift;
+
+    my $e_index = $instant->e_index() || {};
+    my %e_fru = map { $_ => ( $_ eq '0' ? 'false' : 'true' ) } keys %$e_index;
+    return \%e_fru;
+}
+
 1;
 __END__
 
@@ -472,6 +602,50 @@ port that serves their BSSID, preserving wired forwarding entries. Clients
 whose BSSID belongs to no radio are omitted. Q-BRIDGE ports, which this
 agent numbers by ifIndex without a C<dot1dBasePortTable>, are not mapped.
 
+=head2 Inventory
+
+Each AP of the cluster is an entity of class C<ap> under a chassis for the
+virtual controller, as L<SNMP::Info::Layer3::Aruba> reports controller APs.
+Unlike the controller classes, each AP's name is its entity name. The
+chassis carries the conductor AP's serial number and the virtual controller
+software version.
+
+=head2 Aruba Instant Globals (F<AI-AP-MIB>)
+
+=over
+
+=item instant_vc_name
+
+Returns the virtual controller name.
+
+(C<aiVirtualControllerName>)
+
+=item instant_vc_version
+
+Returns the virtual controller software version.
+
+(C<aiVirtualControllerVersion>)
+
+=item instant_conductor_ip
+
+Returns the address of the AP running the virtual controller.
+
+(C<aiConductorIPAddress>)
+
+=item instant_master_ip
+
+Returns the address of the master AP. The MIB marks it obsolete, replaced by
+C<aiConductorIPAddress>; it is read only as a fallback.
+
+(C<aiMasterIPAddress>)
+
+=item serial
+
+Returns the serial number of the conductor AP: the AP whose address is
+C<instant_conductor_ip>, else C<instant_master_ip>, else the only AP listed.
+
+=back
+
 =head2 Aruba Instant Tables (F<AI-AP-MIB>)
 
 These methods return the C<AI-AP-MIB> columns the class reads.
@@ -525,6 +699,30 @@ Returns reference to hash. Key: AP MAC, Value: AP name.
 Returns reference to hash. Key: AP MAC, Value: AP status.
 
 (C<aiAPStatus>)
+
+=item instant_ap_ip
+
+Returns reference to hash. Key: AP MAC, Value: AP address.
+
+(C<aiAPIPAddress>)
+
+=item instant_ap_serial
+
+Returns reference to hash. Key: AP MAC, Value: AP serial number.
+
+(C<aiAPSerialNum>)
+
+=item instant_ap_model
+
+Returns reference to hash. Key: AP MAC, Value: AP model name.
+
+(C<aiAPModelName>)
+
+=item instant_ap_type
+
+Returns reference to hash. Key: AP MAC, Value: AP model object identifier.
+
+(C<aiAPModel>)
 
 =item instant_ssid
 
@@ -739,6 +937,68 @@ Returns frames transmitted by the client.
 Returns frames received by the client.
 
 (C<aiClientRxDataFrames>)
+
+=back
+
+=head2 Entity Table Emulation
+
+These methods emulate the F<ENTITY-MIB> C<entPhysicalTable> methods using
+the F<AI-AP-MIB> C<aiAccessPointTable>. The other entity methods are
+inherited from L<SNMP::Info::Layer3::Aruba> and follow C<e_index>.
+
+=over
+
+=item e_index
+
+Returns C<1> for the virtual controller chassis, key C<0>, and an integer
+made from the last three octets of each AP's MAC, keyed by AP MAC.
+
+=item e_name
+
+Returns C<WLAN Controller> for the chassis, and each AP's name, as on its
+radio ports, or C<AP> where it has none.
+
+(C<aiAPName>)
+
+=item e_descr
+
+Returns the virtual controller name for the chassis, and the model name of
+each AP, or C<AP> where it has none.
+
+=item e_model
+
+Returns the device model for the chassis, and the model name of each AP.
+
+(C<aiAPModelName>)
+
+=item e_type
+
+Returns the model object identifier of each AP.
+
+(C<aiAPModel>)
+
+=item e_serial
+
+Returns the conductor AP's serial number for the chassis, and each AP's
+serial number.
+
+(C<aiAPSerialNum>)
+
+=item e_hwver
+
+Returns an empty hash: F<AI-AP-MIB> reports no hardware version.
+
+=item e_swver
+
+Returns the virtual controller software version for the chassis.
+F<AI-AP-MIB> reports no software version per AP.
+
+(C<aiVirtualControllerVersion>)
+
+=item e_fru
+
+Returns C<true> for each AP and C<false> for the virtual controller
+chassis.
 
 =back
 

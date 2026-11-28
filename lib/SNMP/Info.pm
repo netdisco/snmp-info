@@ -1100,6 +1100,12 @@ Subclass for Lenovo switches running CNOS.
 
 See documentation in L<SNMP::Info::Layer3::Lenovo> for details.
 
+=item SNMP::Info::Layer3::Maipu
+
+Subclass for Maipu switches running MyPower.
+
+See documentation in L<SNMP::Info::Layer3::Maipu> for details.
+
 =item SNMP::Info::Layer3::Meraki
 
 See documentation in L<SNMP::Info::Layer3::Meraki> for details.
@@ -2673,6 +2679,11 @@ sub device_type {
     # sysServices; the TNS switches under 57344.2 keep the generic classes.
     return 'SNMP::Info::Layer3::Tachyon'
         if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.57344\.1(?:\.|$)/;
+
+    # Maipu switches register under mpSwitch (5651.1.102) and may serve
+    # sysServices without layer 2; routers under 5651.1.101 keep Layer3.
+    return 'SNMP::Info::Layer3::Maipu'
+        if $soid =~ /^\.?1\.3\.6\.1\.4\.1\.5651\.1\.102(?:\.|$)/;
 
     # SONiC reports a fixed sysServices of 72 and, by distribution, Net-SNMP's,
     # Dell's or Broadcom's sysObjectID, so only sysDescr identifies it. Some
