@@ -81,7 +81,15 @@ The developer reference is the `EXTENDING SNMP::INFO` section of
   class PR as a draft, or read the objects by numeric OID with a comment
   naming the pending netdisco-mibs PR. Adding a MIB follows that
   repository's own `AGENTS.md`.
-- Style: `.perltidyrc` (78 columns, 4-space indent, no tabs).
+- Style: `.perltidyrc` (78 columns, 4-space indent, no tabs). Most existing
+  files do not follow it yet, and CI does not check it, so:
+  - Run `perltidy --profile=.perltidyrc` on new files. In an existing file,
+    tidy it and keep only the hunks covering lines you changed.
+  - When a pull request reworks a device class, tidy that class's module and
+    its test class whole, in a commit of their own, so review can skip it.
+  - Leave shared modules (`Info.pm`, `Layer*.pm`, roles such as `Bridge.pm`)
+    to a pull request that only tidies them: tidying one whole conflicts
+    with every open branch that touches it.
 
 ## Tests
 
