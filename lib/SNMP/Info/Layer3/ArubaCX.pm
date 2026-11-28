@@ -134,6 +134,7 @@ sub _at_pbb_one {
             $ret->{$1} = $in->{$key};
         }
     }
+    return unless %$ret;
     return $ret;
 }
 
@@ -1218,7 +1219,8 @@ aggregation, as served.
 =item $cx->i_vlan_type()
 
 Return the C<IEEE8021-Q-BRIDGE-MIB> rows of component 1, with the
-component number removed from each key.
+component number removed from each key, or the inherited C<Q-BRIDGE-MIB>
+result when component 1 has no rows.
 
 =item $cx->qb_v_egress()
 

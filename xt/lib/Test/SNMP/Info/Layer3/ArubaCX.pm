@@ -302,8 +302,10 @@ sub _prime_xcvr {
 sub _xcvr_rows {
     my ( $test, $method ) = @_;
     my $data = $test->{info}->$method() || {};
-    return { map { $_ => $data->{$_} }
-        grep { $_ >= 1_000_000_000 } keys %$data };
+    return {
+        map  { $_ => $data->{$_} }
+        grep { $_ >= 1_000_000_000 } keys %$data
+    };
 }
 
 sub e_index : Tests(3) {
@@ -903,6 +905,131 @@ sub i_edgeport_oper : Tests(4) {
         { 3 => 1, 769 => 0 },
         'i_edgeport_admin__rpvst__returns_rstp_edge_rows'
     );
+}
+
+sub _prime_columns {
+    my ( $test, %store ) = @_;
+    my $info = $test->{info};
+    foreach my $column ( keys %store ) {
+        $info->{"_$column"} = 1;
+        $info->{store}{$column} = $store{$column};
+    }
+    return;
+}
+
+sub v_name : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_columns(
+        iqb_v_name => { '1.1' => 'DEFAULT_VLAN_1', '1.10' => 'VLAN10' },
+        v_name     => { 1     => 'Q-BRIDGE 1' },
+    );
+    cmp_deeply(
+        $info->v_name(),
+        { 1 => 'DEFAULT_VLAN_1', 10 => 'VLAN10' },
+        'v_name__ieee_rows_served__returns_component_one_by_vlan'
+    );
+
+    delete $info->{_iqb_v_name};
+    delete $info->{store}{iqb_v_name};
+    cmp_deeply(
+        $info->v_name(),
+        { 1 => 'Q-BRIDGE 1' },
+        'v_name__ieee_column_not_served__returns_q_bridge_rows'
+    );
+
+    $test->_prime_columns( iqb_v_name => { '2.10' => 'VLAN10' } );
+    cmp_deeply(
+        $info->v_name(),
+        { 1 => 'Q-BRIDGE 1' },
+        'v_name__no_component_one_rows__returns_q_bridge_rows'
+    );
+}
+
+sub qb_i_vlan : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_columns(
+        iqb_i_vlan => { '1.3' => 10, '1.770' => 20 },
+        qb_i_vlan  => { 3     => 1 },
+    );
+    cmp_deeply(
+        $info->qb_i_vlan(),
+        { 3 => 10, 770 => 20 },
+        'qb_i_vlan__ieee_rows_served__returns_component_one_by_port'
+    );
+
+    delete $info->{_iqb_i_vlan};
+    delete $info->{store}{iqb_i_vlan};
+    cmp_deeply(
+        $info->qb_i_vlan(),
+        { 3 => 1 },
+        'qb_i_vlan__ieee_column_not_served__returns_q_bridge_rows'
+    );
+}
+
+sub i_vlan_type : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_columns(
+        iqb_i_vlan_type => { '1.3' => 'admitAll' },
+        qb_i_vlan_type  => { 3     => 'admitOnlyVlanTagged' },
+    );
+    cmp_deeply(
+        $info->i_vlan_type(),
+        { 3 => 'admitAll' },
+        'i_vlan_type__ieee_rows_served__returns_component_one_by_port'
+    );
+
+    delete $info->{_iqb_i_vlan_type};
+    delete $info->{store}{iqb_i_vlan_type};
+    cmp_deeply(
+        $info->i_vlan_type(),
+        { 3 => 'admitOnlyVlanTagged' },
+        'i_vlan_type__ieee_column_not_served__returns_q_bridge_rows'
+    );
+}
+
+# One port list per method pair: IEEE8021-Q-BRIDGE-MIB first, Q-BRIDGE-MIB
+# second. Port lists are munged into arrays of bits. A column no row serves
+# reads undef over SNMP, so it is removed rather than primed empty.
+sub _port_list_fallback {
+    my ( $test, $method ) = @_;
+    my $info = $test->{info};
+
+    $test->_prime_columns(
+        "i$method" => { '1.10' => pack( 'H*', '80' ) },
+        $method    => { 10     => pack( 'H*', '40' ) },
+    );
+    cmp_deeply(
+        $info->$method(),
+        { '1.10' => [ 1, 0, 0, 0, 0, 0, 0, 0 ] },
+        "${method}__ieee_rows_served__returns_ieee_rows"
+    );
+
+    delete $info->{"_i$method"};
+    delete $info->{store}{"i$method"};
+    cmp_deeply(
+        $info->$method(),
+        { 10 => [ 0, 1, 0, 0, 0, 0, 0, 0 ] },
+        "${method}__ieee_column_not_served__returns_q_bridge_rows"
+    );
+    return;
+}
+
+sub qb_v_egress : Tests(2) { shift->_port_list_fallback('qb_v_egress') }
+
+sub qb_cv_egress : Tests(2) { shift->_port_list_fallback('qb_cv_egress') }
+
+sub qb_v_untagged : Tests(2) {
+    shift->_port_list_fallback('qb_v_untagged');
+}
+
+sub qb_cv_untagged : Tests(2) {
+    shift->_port_list_fallback('qb_cv_untagged');
 }
 
 1;
