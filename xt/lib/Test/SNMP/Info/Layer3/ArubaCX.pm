@@ -1217,7 +1217,7 @@ sub vsx_system_mac : Tests(4) {
         undef, 'vsx_system_mac__not_a_mac__returns_undef' );
 }
 
-sub vsx_keepalive_peer : Tests(5) {
+sub vsx_keepalive_peer : Tests(9) {
     my $test = shift;
     my $info = $test->{info};
 
@@ -1229,11 +1229,27 @@ sub vsx_keepalive_peer : Tests(5) {
         '10.127.255.1', 'vsx_keepalive_peer__octets__returns_address' );
     $info->{_vsx_keepalive_peer} = '2001:db8:0:0::12';
     is( $info->vsx_keepalive_peer(),
-        '2001:db8:0:0::12',
+        '2001:db8:0:0:0:0:0:12',
         'vsx_keepalive_peer__ipv6_text_of_octet_length__returns_address' );
     $info->{_vsx_keepalive_peer} = '0.0.0.0';
     is( $info->vsx_keepalive_peer(),
         undef, 'vsx_keepalive_peer__unset_address__returns_undef' );
+    $info->{_vsx_keepalive_peer} = ':::';
+    is( $info->vsx_keepalive_peer(),
+        undef, 'vsx_keepalive_peer__colons_only__returns_undef' );
+    $info->{_vsx_keepalive_peer} = '1.2.3.400';
+    is( $info->vsx_keepalive_peer(),
+        undef, 'vsx_keepalive_peer__octet_out_of_range__returns_undef' );
+    $info->{_vsx_keepalive_peer} = '2001:DB8::12';
+    my $from_text = $info->vsx_keepalive_peer();
+    $info->{_vsx_keepalive_peer}
+        = pack( 'H*', '20010db8000000000000000000000012' );
+    is( $from_text,
+        $info->vsx_keepalive_peer(),
+        'vsx_keepalive_peer__ipv6_text_and_octets__return_same_form'
+    );
+    ok( defined $from_text,
+        'vsx_keepalive_peer__ipv6_text__returns_address' );
     $info->{_vsx_keepalive_peer} = '';
     is( $info->vsx_keepalive_peer(),
         undef, 'vsx_keepalive_peer__empty__returns_undef' );

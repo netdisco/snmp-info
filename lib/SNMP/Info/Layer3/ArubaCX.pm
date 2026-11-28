@@ -37,6 +37,7 @@ use SNMP::Info::IEEE802dot3ad;
 use SNMP::Info::IEEE802_STP;
 use SNMP::Info::Layer3;
 use SNMP::Info::IEEE802_Bridge;
+use Socket ();
 
 @SNMP::Info::Layer3::ArubaCX::ISA = qw/
     SNMP::Info::IEEE802dot3ad
@@ -138,7 +139,8 @@ $VERSION = '3.985004';
 );
 
 # The VSX system ID is a MAC in text; the keepalive peer is an InetAddress
-# that AOS-CX can serve as text. Accept text or raw octets for both
+# that AOS-CX can serve as text. Accept text or raw octets for both, and
+# format a text address as its octets would be, so both forms compare equal
 sub _munge_vsx_mac {
     my $value = shift;
     return unless defined $value;
@@ -153,15 +155,15 @@ sub _munge_vsx_mac {
 sub _munge_vsx_addr {
     my $value = shift;
     return unless defined $value and length $value;
-    my $is_text = $value =~ /^\d{1,3}(?:\.\d{1,3}){3}$/
-        || ( $value =~ /:/ and $value =~ /^[[:xdigit:]:.]+$/ );
-    my $addr = $value;
-    unless ($is_text) {
+    my $octets = Socket::inet_pton( Socket::AF_INET(), $value )
+        // Socket::inet_pton( Socket::AF_INET6(), $value );
+    unless ( defined $octets ) {
         return unless length $value == 4 or length $value == 16;
-        $addr = SNMP::Info::munge_inetaddress($value);
+        $octets = $value;
     }
+    my $addr = SNMP::Info::munge_inetaddress($octets);
     return unless defined $addr;
-    return if $addr eq '0.0.0.0' or $addr eq '::';
+    return if $addr =~ /^[0:.]+$/;
     return $addr;
 }
 
@@ -1054,7 +1056,8 @@ C<inSync>.
 =item $cx->vsx_keepalive_peer()
 
 The VSX keepalive peer's address. AOS-CX can serve it as text rather than
-an InetAddress; either form is read. Undef when unset or not an address.
+an InetAddress; either form is read and returned in the same form. Undef
+when unset or not an address.
 (C<arubaWiredVsxKeepAlivePeerIPAddr>)
 
 =item $cx->vsx_keepalive_state()
