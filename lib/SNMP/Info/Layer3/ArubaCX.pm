@@ -65,6 +65,7 @@ $VERSION = '3.985004';
     'ARUBAWIRED-POWERSUPPLY-MIB' => 'arubaWiredPSUName',
     'ARUBAWIRED-PM-MIB'          => 'arubaWiredPmXcvrDescription',
     'ARUBAWIRED-RPVST-MIB'       => 'arubaWiredRpvstExtendedSystemID',
+    'ARUBAWIRED-VSX-MIB'         => 'arubaWiredVsxDeviceRole',
 );
 
 %GLOBALS = (
@@ -77,6 +78,14 @@ $VERSION = '3.985004';
     'ps2_status'      => 'arubaWiredPSUState.1.2',
     'vsf_topology'    => 'arubaWiredVsfTopology',
     'rpvst_ext_sysid' => 'arubaWiredRpvstExtendedSystemID',
+
+    # ARUBAWIRED-VSX-MIB
+    'vsx_role'            => 'arubaWiredVsxDeviceRole',
+    'vsx_system_mac'      => 'arubaWiredVsxDeviceOperSystemID',
+    'vsx_isl_port'        => 'arubaWiredVsxIslPort',
+    'vsx_isl_state'       => 'arubaWiredVsxIslOperState',
+    'vsx_keepalive_peer'  => 'arubaWiredVsxKeepAlivePeerIPAddr',
+    'vsx_keepalive_state' => 'arubaWiredVsxKeepAliveOperState',
 );
 
 %FUNCS = (
@@ -112,6 +121,9 @@ $VERSION = '3.985004';
     'rpvst_pv_role'      => 'arubaWiredRpvstPortVlanRole',
     'rpvst_pv_bridge'    => 'arubaWiredRpvstPortVlanDesigBridge',
     'rpvst_pv_edge_oper' => 'arubaWiredRpvstPortVlanOperEdge',
+
+    # ARUBAWIRED-VSX-MIB::arubaWiredVsxAggregatorTable
+    'vsx_agg_type' => 'arubaWiredVsxAggregatorType',
 );
 
 %MUNGE = (
@@ -119,9 +131,39 @@ $VERSION = '3.985004';
     %SNMP::Info::IEEE802_STP::MUNGE,
     %SNMP::Info::IEEE802dot3ad::MUNGE,
     %SNMP::Info::IEEE802_Bridge::MUNGE,
-    'rpvst_v_root_mac' => \&SNMP::Info::munge_mac,
-    'rpvst_pv_bridge'  => \&SNMP::Info::munge_mac,
+    'rpvst_v_root_mac'   => \&SNMP::Info::munge_mac,
+    'rpvst_pv_bridge'    => \&SNMP::Info::munge_mac,
+    'vsx_system_mac'     => \&_munge_vsx_mac,
+    'vsx_keepalive_peer' => \&_munge_vsx_addr,
 );
+
+# The VSX system ID is a MAC in text; the keepalive peer is an InetAddress
+# that AOS-CX can serve as text. Accept text or raw octets for both
+sub _munge_vsx_mac {
+    my $value = shift;
+    return unless defined $value;
+    if ( $value =~ /^[[:xdigit:]]{2}(?:[:-][[:xdigit:]]{2}){5}$/ ) {
+        ( my $mac = lc $value ) =~ tr/-/:/;
+        return $mac;
+    }
+    return SNMP::Info::munge_mac($value) if length $value == 6;
+    return;
+}
+
+sub _munge_vsx_addr {
+    my $value = shift;
+    return unless defined $value and length $value;
+    my $is_text = $value =~ /^\d{1,3}(?:\.\d{1,3}){3}$/
+        || ( $value =~ /:/ and $value =~ /^[[:xdigit:]:.]+$/ );
+    my $addr = $value;
+    unless ($is_text) {
+        return unless length $value == 4 or length $value == 16;
+        $addr = SNMP::Info::munge_inetaddress($value);
+    }
+    return unless defined $addr;
+    return if $addr eq '0.0.0.0' or $addr eq '::';
+    return $addr;
+}
 
 # Product codes reported by ENTITY-MIB or the product OID.
 %MODEL_MAP = ( 'JL719C' => '8360-48Y6C v2', );
@@ -908,6 +950,42 @@ Returns C<true> or C<false>: whether this switch puts the VLAN in the
 system ID extension of its RPVST bridge IDs.
 (C<arubaWiredRpvstExtendedSystemID>)
 
+=item $cx->vsx_role()
+
+The switch's VSX role: C<primary>, C<secondary> or C<notConfigured>.
+(C<arubaWiredVsxDeviceRole>)
+
+=item $cx->vsx_system_mac()
+
+The system ID the VSX pair presents to LACP partners, colon separated
+hex. Read from text or raw octets; undef when neither parses.
+(C<arubaWiredVsxDeviceOperSystemID>)
+
+=item $cx->vsx_isl_port()
+
+The name of the inter-switch link (ISL) interface, such as C<lag256>.
+C<0> or empty when no ISL is configured.
+(C<arubaWiredVsxIslPort>)
+
+=item $cx->vsx_isl_state()
+
+The state of the ISL session with the VSX peer: C<init>, C<outSync> or
+C<inSync>.
+(C<arubaWiredVsxIslOperState>)
+
+=item $cx->vsx_keepalive_peer()
+
+The VSX keepalive peer's address. AOS-CX can serve it as text rather than
+an InetAddress; either form is read. Undef when unset or not an address.
+(C<arubaWiredVsxKeepAlivePeerIPAddr>)
+
+=item $cx->vsx_keepalive_state()
+
+The state of the keepalive session: C<init>, C<configured>,
+C<inSyncEstablished>, C<outofSyncEstablished>, C<initEstablished>,
+C<failed> or C<stopped>.
+(C<arubaWiredVsxKeepAliveOperState>)
+
 =item $cx->hasRapidPVST()
 
 Returns 1 when the mode is RPVST, as L</"Spanning Tree"> describes, else 0.
@@ -1160,6 +1238,20 @@ the port's segment, colon separated hex.
 Returns reference to hash. C<true> or C<false>: whether the port is
 operating as an edge port on the VLAN.
 (C<arubaWiredRpvstPortVlanOperEdge>)
+
+=back
+
+=head2 Aruba VSX Aggregator Table (C<arubaWiredVsxAggregatorTable>)
+
+Indexed by the aggregation's ifIndex.
+
+=over
+
+=item $cx->vsx_agg_type()
+
+Returns reference to hash. C<multiChassis> for a link aggregation split
+across the VSX pair, else C<point2Point>.
+(C<arubaWiredVsxAggregatorType>)
 
 =back
 

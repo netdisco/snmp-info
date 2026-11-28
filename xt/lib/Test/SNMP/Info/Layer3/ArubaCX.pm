@@ -1198,4 +1198,83 @@ sub i_untagged : Tests(1) {
     );
 }
 
+sub vsx_system_mac : Tests(4) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->{_vsx_system_mac} = '02:00:cb:12:06:00';
+    is( $info->vsx_system_mac(),
+        '02:00:cb:12:06:00', 'vsx_system_mac__text_form__returns_mac' );
+    $info->{_vsx_system_mac} = '02-00-CB-12-06-00';
+    is( $info->vsx_system_mac(),
+        '02:00:cb:12:06:00',
+        'vsx_system_mac__dashed_upper_case__returns_normalized_mac' );
+    $info->{_vsx_system_mac} = pack( 'H*', '0200cb120600' );
+    is( $info->vsx_system_mac(),
+        '02:00:cb:12:06:00', 'vsx_system_mac__octets__returns_mac' );
+    $info->{_vsx_system_mac} = 'garbage';
+    is( $info->vsx_system_mac(),
+        undef, 'vsx_system_mac__not_a_mac__returns_undef' );
+}
+
+sub vsx_keepalive_peer : Tests(5) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $info->{_vsx_keepalive_peer} = '10.127.255.1';
+    is( $info->vsx_keepalive_peer(),
+        '10.127.255.1', 'vsx_keepalive_peer__text_form__returns_address' );
+    $info->{_vsx_keepalive_peer} = pack( 'C4', 10, 127, 255, 1 );
+    is( $info->vsx_keepalive_peer(),
+        '10.127.255.1', 'vsx_keepalive_peer__octets__returns_address' );
+    $info->{_vsx_keepalive_peer} = '2001:db8:0:0::12';
+    is( $info->vsx_keepalive_peer(), '2001:db8:0:0::12',
+        'vsx_keepalive_peer__ipv6_text_of_octet_length__returns_address' );
+    $info->{_vsx_keepalive_peer} = '0.0.0.0';
+    is( $info->vsx_keepalive_peer(),
+        undef, 'vsx_keepalive_peer__unset_address__returns_undef' );
+    $info->{_vsx_keepalive_peer} = '';
+    is( $info->vsx_keepalive_peer(),
+        undef, 'vsx_keepalive_peer__empty__returns_undef' );
+}
+
+sub vsx_role : Tests(1) {
+    my $test = shift;
+    $test->{info}{_vsx_role} = 'primary';
+    is( $test->{info}->vsx_role(),
+        'primary', 'vsx_role__served__returns_role' );
+}
+
+sub vsx_isl_port : Tests(1) {
+    my $test = shift;
+    $test->{info}{_vsx_isl_port} = 'lag256';
+    is( $test->{info}->vsx_isl_port(),
+        'lag256', 'vsx_isl_port__served__returns_interface_name' );
+}
+
+sub vsx_isl_state : Tests(1) {
+    my $test = shift;
+    $test->{info}{_vsx_isl_state} = 'inSync';
+    is( $test->{info}->vsx_isl_state(),
+        'inSync', 'vsx_isl_state__served__returns_state' );
+}
+
+sub vsx_keepalive_state : Tests(1) {
+    my $test = shift;
+    $test->{info}{_vsx_keepalive_state} = 'inSyncEstablished';
+    is( $test->{info}->vsx_keepalive_state(),
+        'inSyncEstablished', 'vsx_keepalive_state__served__returns_state' );
+}
+
+sub vsx_agg_type : Tests(1) {
+    my $test = shift;
+    $test->_prime_columns(
+        vsx_agg_type => { 778 => 'multiChassis', 788 => 'point2Point' } );
+    cmp_deeply(
+        $test->{info}->vsx_agg_type(),
+        { 778 => 'multiChassis', 788 => 'point2Point' },
+        'vsx_agg_type__served__returns_type_by_ifindex'
+    );
+}
+
 1;
