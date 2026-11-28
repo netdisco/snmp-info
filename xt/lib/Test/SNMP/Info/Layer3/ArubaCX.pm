@@ -1366,4 +1366,79 @@ sub mlag_domains__peer_not_parseable__peer_absent : Tests(3) {
         'mlag_domains__peer_not_parseable__peer_source_absent' );
 }
 
+sub lag_groups__vsx_multichassis__adds_mc : Tests(2) {
+    my $test = shift;
+    $test->_prime_vsx();
+    my $record = $test->{info}->lag_groups()->{778};
+    cmp_deeply(
+        $record->{mc},
+        { kind => 'vsx', group => 10, domain => 'vsx', state => undef },
+        'lag_groups__vsx_multichassis__adds_mc'
+    );
+    is( $record->{sources}{mc},
+        'ARUBAWIRED-VSX-MIB::arubaWiredVsxAggregatorType',
+        'lag_groups__vsx_multichassis__names_mc_source'
+    );
+}
+
+sub lag_groups__vsx_isl__marked_peer_link : Tests(3) {
+    my $test = shift;
+    $test->_prime_vsx();
+    my $groups = $test->{info}->lag_groups();
+    is( $groups->{1024}{peer_link},
+        1, 'lag_groups__vsx_isl__marked_peer_link' );
+    is( $groups->{1024}{sources}{peer_link},
+        'ARUBAWIRED-VSX-MIB::arubaWiredVsxIslPort',
+        'lag_groups__vsx_isl__names_peer_link_source'
+    );
+    ok( !exists $groups->{778}{peer_link},
+        'lag_groups__vsx_multichassis__not_marked_peer_link' );
+}
+
+sub lag_groups__vsx_not_in_lag_mib__gets_record : Tests(1) {
+    my $test = shift;
+    $test->_prime_vsx();
+    is( $test->{info}->lag_groups()->{788}{mc}{group},
+        20, 'lag_groups__vsx_not_in_lag_mib__gets_record' );
+}
+
+sub lag_groups__lag_name_not_lagN__group_is_name : Tests(1) {
+    my $test = shift;
+    $test->_prime_vsx();
+    $test->_prime_columns( i_description =>
+            { 778 => 'uplink', 788 => 'lag20', 1024 => 'lag256' } );
+    is( $test->{info}->lag_groups()->{778}{mc}{group},
+        'uplink', 'lag_groups__lag_name_not_lagN__group_is_name' );
+}
+
+sub lag_groups__no_domain__no_mc : Tests(2) {
+    my $test = shift;
+    $test->_prime_vsx( vsx_role => undef, vsx_isl_port => undef );
+    my $groups = $test->{info}->lag_groups();
+    cmp_deeply( $test->{info}->mlag_domains(),
+        {}, 'lag_groups__no_domain__domain_absent' );
+    ok( !( $groups->{778} && $groups->{778}{mc} ),
+        'lag_groups__no_domain__no_mc' );
+}
+
+sub lag_groups__point2point__no_mc : Tests(2) {
+    my $test = shift;
+    $test->_prime_vsx();
+    $test->_prime_columns(
+        vsx_agg_type => { 778 => 'point2Point', 788 => 'multiChassis' } );
+    my $groups = $test->{info}->lag_groups();
+    ok( $groups->{788}{mc}, 'lag_groups__multichassis__still_gets_mc' );
+    ok( !( $groups->{778} && $groups->{778}{mc} ),
+        'lag_groups__point2point__no_mc'
+    );
+}
+
+sub lag_groups_complete__vsx_walk_incomplete__returns_0 : Tests(1) {
+    my $test = shift;
+    $test->_prime_vsx();
+    $test->{info}{walk_status}{vsx_agg_type} = { complete => 0 };
+    is( $test->{info}->lag_groups_complete(),
+        0, 'lag_groups_complete__vsx_walk_incomplete__returns_0' );
+}
+
 1;

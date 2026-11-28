@@ -794,6 +794,40 @@ sub _lag_vendor_domains {
     return { vsx => $domain };
 }
 
+sub _lag_vendor_walked { return qw/vsx_agg_type/ }
+
+# Multi-chassis LAGs get mc only while the VSX domain is served, as VOSS
+# does for split MLTs; a LAG the standard table does not list gets a record
+sub _lag_vendor_groups {
+    my ( $cx, $groups ) = @_;
+
+    return unless %{ $cx->_lag_vendor_domains() };
+    my $types      = $cx->vsx_agg_type() || {};
+    my $interfaces = $cx->interfaces()   || {};
+    foreach my $ifindex ( keys %$types ) {
+        next unless ( $types->{$ifindex} // '' ) eq 'multiChassis';
+        my $name   = $interfaces->{$ifindex} // $ifindex;
+        my $record = $groups->{$ifindex}
+            ||= SNMP::Info::IEEE802dot3ad::_lag_new_record();
+        $record->{mc} = {
+            kind   => 'vsx',
+            group  => $name =~ /^lag(\d+)$/ ? $1 + 0 : $name,
+            domain => 'vsx',
+            state  => undef,
+        };
+        $record->{sources}{mc}
+            = 'ARUBAWIRED-VSX-MIB::arubaWiredVsxAggregatorType';
+    }
+    my $isl = $cx->_vsx_isl_ifindex();
+    return unless defined $isl;
+    my $record = $groups->{$isl}
+        ||= SNMP::Info::IEEE802dot3ad::_lag_new_record();
+    $record->{peer_link} = 1;
+    $record->{sources}{peer_link}
+        = 'ARUBAWIRED-VSX-MIB::arubaWiredVsxIslPort';
+    return;
+}
+
 1;
 __END__
 
@@ -1302,6 +1336,25 @@ across the VSX pair, else C<point2Point>.
 =head2 Overrides
 
 =over
+
+=item $cx->lag_groups()
+
+As described in L<SNMP::Info::IEEE802dot3ad/"METHODS">, with, while the
+C<vsx> domain of C<mlag_domains()> is served:
+
+=over
+
+=item * A link aggregation that C<vsx_agg_type()> lists as C<multiChassis>
+gets C<mc>: C<kind> C<vsx>, C<group> the LAG number from its interface
+name (10 for C<lag10>, or the name when it is not C<lagN>), C<domain>
+C<vsx>, and C<state> undef, since no per-LAG state is served. A LAG
+that F<IEEE8023-LAG-MIB> does not list still gets a record.
+
+=item * The ISL that C<vsx_isl_port()> names gets C<peer_link>.
+
+=back
+
+C<lag_groups_complete()> also checks the C<vsx_agg_type()> walk.
 
 =item $cx->mlag_domains()
 

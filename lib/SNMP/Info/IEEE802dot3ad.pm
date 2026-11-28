@@ -420,11 +420,11 @@ These methods report only what the device returns. They never infer an
 aggregate, a partner or a domain from another device. A field the device
 does not serve is undef or absent.
 
-L<SNMP::Info::Layer3::Nexus>, L<SNMP::Info::Layer3::Extreme> and
-L<SNMP::Info::RapidCity> fill C<mc> and C<mlag_domains()>; Nexus and
-RapidCity also fill C<peer_link>. Members come from each class's
-C<agg_ports()>, for example in L<SNMP::Info::Layer3::Juniper> and
-L<SNMP::Info::Layer3::Extreme>.
+L<SNMP::Info::Layer3::Nexus>, L<SNMP::Info::Layer3::Extreme>,
+L<SNMP::Info::RapidCity> and L<SNMP::Info::Layer3::ArubaCX> fill C<mc> and
+C<mlag_domains()>; Nexus, RapidCity and ArubaCX also fill C<peer_link>.
+Members come from each class's C<agg_ports()>, for example in
+L<SNMP::Info::Layer3::Juniper> and L<SNMP::Info::Layer3::Extreme>.
 
 The C<mc-lag> kind and the C<esi> field are placeholders. No class fills
 them, because Junos serves MC-LAG and EVPN multihoming over no MIB. A
@@ -462,18 +462,19 @@ An aggregate that does not run LACP. It has no partner.
 
 An aggregate whose members are split across two devices that present it
 to the far end as one aggregate: a Cisco vPC, an Extreme MLAG port, an
-SMLT, or a Junos MC-LAG C<mc-ae> interface.
+SMLT, an AOS-CX VSX multi-chassis LAG, or a Junos MC-LAG C<mc-ae>
+interface.
 
 =item multi-chassis domain
 
 The pairing of two devices that serve multi-chassis groups together: a
-vPC domain, an MLAG peer, an IST or virtual IST session, or a Junos
-MC-LAG redundancy group.
+vPC domain, an MLAG peer, an IST or virtual IST session, a VSX pair, or a
+Junos MC-LAG redundancy group.
 
 =item peer link
 
 The aggregate that joins the two devices of a multi-chassis domain, such
-as a vPC peer link or an IST.
+as a vPC peer link, an IST or a VSX ISL.
 
 =back
 
@@ -641,12 +642,14 @@ Present only on a multi-chassis group. A HASH reference with these keys:
 =item C<kind>
 
 C<vpc> (Cisco NX-OS), C<mlag> (Extreme EXOS), C<smlt> (Passport and
-Baystack) or C<mc-lag> (Junos; no class fills it).
+Baystack), C<vsx> (HPE Aruba AOS-CX) or C<mc-lag> (Junos; no class fills
+it).
 
 =item C<group>
 
 The device's identifier for the group: the vPC id, the MLAG port id
-(C<extremeMlagPortId>), the MLT id or the MC-LAG C<mc-ae-id>.
+(C<extremeMlagPortId>), the MLT id, the AOS-CX LAG number or the MC-LAG
+C<mc-ae-id>.
 
 =item C<domain>
 
@@ -739,7 +742,7 @@ An example record, a vPC running LACP:
 
 Returns a HASH reference with one record per multi-chassis domain, keyed
 by the domain's identifier on the device: the vPC domain id, the MLAG
-peer name, C<vist> or C<ist>, or the MC-LAG redundancy group id. Empty
+peer name, C<vist> or C<ist>, C<vsx>, or the MC-LAG redundancy group id. Empty
 when the device class reads no multi-chassis source or the device serves
 no domain. Each record has C<kind> and C<sources>. The other fields are
 filled only for some vendors; a field the device does not serve is undef
@@ -750,8 +753,8 @@ or absent:
 =item C<kind>
 
 C<vpc> (Cisco NX-OS), C<mlag> (Extreme EXOS), C<vist> or C<ist> (a
-virtual IST or an IST, on Passport and Baystack), or C<mc-lag> (Junos; no
-class fills it).
+virtual IST or an IST, on Passport and Baystack), C<vsx> (HPE Aruba
+AOS-CX), or C<mc-lag> (Junos; no class fills it).
 
 =item C<system_mac>
 
@@ -759,7 +762,7 @@ The LACP system ID the domain presents for its multi-chassis groups.
 
 =item C<role>
 
-The device's role in the domain. Cisco NX-OS only.
+The device's role in the domain. Cisco NX-OS and HPE Aruba AOS-CX only.
 
 =item C<peer>
 
@@ -769,7 +772,7 @@ peer address.
 =item C<peer_link>
 
 The ifIndex of the peer link aggregate, a key of C<lag_groups()>. Cisco
-NX-OS only.
+NX-OS and HPE Aruba AOS-CX only.
 
 =item C<status>
 
