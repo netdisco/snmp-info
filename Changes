@@ -9,6 +9,7 @@ Version 3.985005
   * #703 ArubaCX: report MSTP and RPVST spanning trees and edge ports, from a
     new IEEE802_STP role
   * #705 Agent skills: say when to run perltidy
+  * #706 ArubaCX: report VSX pairs as multi-chassis domains
 
   [BUG FIXES]
 
