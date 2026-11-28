@@ -2,6 +2,8 @@ Version 3.985005
 
   [ENHANCEMENTS]
 
+  * #701 ArubaInstant: report each AP as a module with its serial number,
+    model and name, and the cluster serial from its conductor AP (#536)
   * #702 Maipu: add a class for MyPower switches, with MAC tables on link
     aggregations, serial, power supply and fan status (#563)
 
