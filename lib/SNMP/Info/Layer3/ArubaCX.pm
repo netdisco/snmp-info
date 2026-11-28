@@ -889,27 +889,41 @@ See documentation in L<SNMP::Info::IEEE802dot3ad> for details.
 
 =head2 Client IP tracking
 
+These methods add rows from C<arubaWiredCiptClientTable> to the inherited
+ARP and IPv6 neighbor tables. Client tracking must already be enabled on
+the switch; these methods only read its data. Each added row is keyed
+C<cipt.> followed by the table's MAC, VLAN and IP index, so a client with
+several addresses keeps one row for each. Rows with a malformed index, a
+multicast or zero MAC, a VLAN outside 1 to 4094, an address of the wrong
+length or no port are omitted. With no usable tracking rows, each method
+returns the inherited result.
+
 =over
 
 =item $cx->at_paddr()
 
+Returns reference to hash. The inherited C<at_paddr()> rows, plus the
+client MAC address of each IPv4 tracking row, colon separated hex.
+
 =item $cx->at_netaddr()
 
-Add IPv4 client tracking MAC/IP pairs to the inherited ARP tables.
+Returns reference to hash. The inherited C<at_netaddr()> rows, plus the
+client IPv4 address of each IPv4 tracking row.
 
 =item $cx->ipv6_n2p_mac()
 
+Returns reference to hash. The inherited C<ipv6_n2p_mac()> rows, plus the
+client MAC address of each IPv6 tracking row, colon separated hex.
+
 =item $cx->ipv6_n2p_addr()
+
+Returns reference to hash. The inherited C<ipv6_n2p_addr()> rows, plus
+the client IPv6 address of each IPv6 tracking row.
 
 =item $cx->ipv6_n2p_if()
 
-Add IPv6 client tracking MAC/IP/interface rows to the inherited
-neighbour tables. Client tracking must already be enabled on the
-switch. These methods only read its data; they do not enable tracking.
-Unsupported or empty tracking tables leave the inherited results intact.
-Tracking row keys use a C<cipt.> prefix followed by the MAC/VLAN/IP
-index, preserving multiple addresses for a client. Malformed rows and
-unsupported address types are omitted.
+Returns reference to hash. The inherited C<ipv6_n2p_if()> rows, plus the
+C<ifIndex> of the port where each IPv6 tracking row's client was seen.
 
 =back
 
@@ -1111,27 +1125,53 @@ operating as an edge port on the VLAN.
 
 =item $cx->e_index()
 
+Returns reference to hash. The inherited C<entPhysicalIndex> rows, plus
+one row per transceiver in C<arubaWiredPmXcvrTable>, indexed 1000000000
+plus the port C<ifIndex>. A transceiver whose index is already a real
+C<entPhysicalIndex> is skipped. The other C<e_*> overrides return the
+same added rows. A partial fetch, or a device without transceiver rows,
+returns the inherited result.
+
 =item $cx->e_class()
+
+Returns reference to hash. The inherited rows, plus C<module> for each
+transceiver row.
 
 =item $cx->e_descr()
 
+Returns reference to hash. The inherited rows, plus the transceiver
+description from C<pm_xcvr_descr()>.
+
 =item $cx->e_name()
+
+Returns reference to hash. The inherited rows, plus C<Transceiver>
+followed by the port name from C<pm_xcvr_port()>.
 
 =item $cx->e_model()
 
+Returns reference to hash. The inherited rows, plus the transceiver
+product number from C<pm_xcvr_product()>.
+
 =item $cx->e_serial()
+
+Returns reference to hash. The inherited rows, plus the transceiver
+serial number from C<pm_xcvr_serial()>.
 
 =item $cx->e_type()
 
+Returns reference to hash. The inherited rows, plus the transceiver type
+from C<pm_xcvr_type()>.
+
 =item $cx->e_fru()
+
+Returns reference to hash. The inherited rows, plus C<true> for each
+transceiver row.
 
 =item $cx->e_parent()
 
-Add one C<module> row per transceiver to the C<ENTITY-MIB> data, indexed
-1000000000 plus the port ifIndex. The parent is the C<port> entity whose
-name matches C<arubaWiredPmXcvrPortDesc>, else the first chassis, else 0.
-A row whose index is already a real C<entPhysicalIndex> is skipped. Partial
-fetches and devices without transceiver data return the inherited result.
+Returns reference to hash. The inherited rows, plus each transceiver's
+parent: the C<port> entity whose name matches C<pm_xcvr_port()>, else
+the first chassis, else 0.
 
 =item $cx->stp_protocols()
 
@@ -1214,24 +1254,51 @@ aggregation, as served.
 
 =item $cx->v_name()
 
+Returns reference to hash of VLAN to VLAN name, from the component 1 rows
+of C<ieee8021QBridgeVlanStaticName>. Returns the inherited
+C<dot1qVlanStaticName> result when component 1 has no rows.
+
 =item $cx->qb_i_vlan()
+
+Returns reference to hash of bridge port to native VLAN (PVID), from the
+component 1 rows of C<ieee8021QBridgePvid>. Returns the inherited
+C<dot1qPvid> result when component 1 has no rows. AOS-CX 10.16 serves 0
+on access ports and link aggregations.
 
 =item $cx->i_vlan_type()
 
-Return the C<IEEE8021-Q-BRIDGE-MIB> rows of component 1, with the
-component number removed from each key, or the inherited C<Q-BRIDGE-MIB>
-result when component 1 has no rows.
+Returns reference to hash of bridge port to the acceptable frame types,
+from the component 1 rows of C<ieee8021QBridgePortAcceptableFrameTypes>.
+Returns the inherited C<dot1qPortAcceptableFrameTypes> result when
+component 1 has no rows.
 
 =item $cx->qb_v_egress()
 
+Returns reference to hash of VLAN to the static egress port list, an
+array of bits, from C<ieee8021QBridgeVlanStaticEgressPorts>. Keys keep
+the component number. Returns the inherited
+C<dot1qVlanStaticEgressPorts> result when that column is not served.
+
 =item $cx->qb_cv_egress()
+
+Returns reference to hash of VLAN to the current egress port list, an
+array of bits, from C<ieee8021QBridgeVlanCurrentEgressPorts>. Keys keep
+the time filter and component number. Returns the inherited
+C<dot1qVlanCurrentEgressPorts> result when that column is not served.
 
 =item $cx->qb_v_untagged()
 
+Returns reference to hash of VLAN to the static untagged port list, an
+array of bits, from C<ieee8021QBridgeVlanStaticUntaggedPorts>. Keys keep
+the component number. Returns the inherited
+C<dot1qVlanStaticUntaggedPorts> result when that column is not served.
+
 =item $cx->qb_cv_untagged()
 
-Return the matching L<SNMP::Info::IEEE802_Bridge> method, or the
-inherited result when that returns nothing.
+Returns reference to hash of VLAN to the current untagged port list, an
+array of bits, from C<ieee8021QBridgeVlanCurrentUntaggedPorts>. Keys
+keep the time filter and component number. Returns the inherited
+C<dot1qVlanCurrentUntaggedPorts> result when that column is not served.
 
 =back
 
