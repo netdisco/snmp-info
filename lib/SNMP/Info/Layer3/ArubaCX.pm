@@ -393,6 +393,18 @@ sub qb_i_vlan {
     return _at_pbb_one( $cx->iqb_i_vlan() ) || $cx->SUPER::qb_i_vlan();
 }
 
+# AOS-CX serves PVID 0, which Q-BRIDGE-MIB forbids, on ports with no native
+# VLAN in effect; leave those ports out, as for a port with no PVID row
+sub i_vlan {
+    my ( $cx, $partial ) = @_;
+    my $i_vlan = $cx->SUPER::i_vlan($partial) or return;
+    my %native = map { $_ => $i_vlan->{$_} }
+        grep { ( $i_vlan->{$_} // '0' ) ne '0' } keys %$i_vlan;
+    return \%native;
+}
+
+sub i_untagged { goto &i_vlan }
+
 sub i_vlan_type {
     my $cx = shift;
     return _at_pbb_one( $cx->iqb_i_vlan_type() )
@@ -772,7 +784,8 @@ other.
 AOS-CX serves a native VLAN (PVID) of 0, which both MIBs forbid, on
 ports with no native VLAN in effect, such as routed ports and trunks
 that do not carry their configured native VLAN. A 0 does not mean
-VLAN 1.
+VLAN 1. C<qb_i_vlan()> returns it as served; C<i_vlan()> leaves those
+ports out.
 
 =head2 Inherited Classes
 
@@ -1294,6 +1307,16 @@ Returns reference to hash of VLAN to VLAN name.
 Returns reference to hash of bridge port to native VLAN (PVID). See
 L</"VLANs"> for the value 0.
 (C<ieee8021QBridgePvid>, else C<dot1qPvid>)
+
+=item $cx->i_vlan()
+
+Returns reference to hash of ifIndex to native VLAN (PVID): the
+inherited result without the ports AOS-CX reports as 0, which have no
+native VLAN in effect (L</"VLANs">).
+
+=item $cx->i_untagged()
+
+An alias for C<i_vlan()>.
 
 =item $cx->i_vlan_type()
 
