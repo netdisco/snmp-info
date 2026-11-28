@@ -36,7 +36,6 @@ use JSON::PP;
 sub startup : Tests(startup => 1) {
     my $test = shift;
     $test->SUPER::startup;
-    $test->todo_methods(1);
 }
 
 sub setup : Tests(setup) {
@@ -1030,6 +1029,113 @@ sub qb_v_untagged : Tests(2) {
 
 sub qb_cv_untagged : Tests(2) {
     shift->_port_list_fallback('qb_cv_untagged');
+}
+
+sub os : Tests(1) {
+    my $test = shift;
+    is( $test->{info}->os(),
+        'arubaos-cx', 'os__any_device__returns_arubaos_cx' );
+}
+
+sub os_ver : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+    my $revs = { 1 => 'FL.10.16.1006' };
+    no warnings 'redefine';
+    local *SNMP::Info::Layer3::ArubaCX::entPhysicalSoftwareRev
+        = sub { return $revs };
+    is( $info->os_ver(), 'FL.10.16.1006',
+        'os_ver__chassis_revision_served__returns_it' );
+    $revs = undef;
+    is( $info->os_ver(), undef, 'os_ver__not_served__returns_undef' );
+}
+
+sub vendor : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+    my $mfg  = { 1 => 'Aruba' };
+    no warnings 'redefine';
+    local *SNMP::Info::Layer3::ArubaCX::entPhysicalMfgName
+        = sub { return $mfg };
+    is( $info->vendor(), 'aruba',
+        'vendor__manufacturer_served__returns_it_lowercased' );
+    $mfg = { 1 => '' };
+    is( $info->vendor(), 'aruba',
+        'vendor__empty_manufacturer__returns_aruba' );
+    $mfg = undef;
+    is( $info->vendor(), 'aruba', 'vendor__not_served__returns_aruba' );
+}
+
+sub fan : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_columns(
+        fan_names  => { '1.1.1' => '1/1/1', '1.1.2' => '1/1/2' },
+        fan_states => { '1.1.1' => 'ok',    '1.1.2' => 'fault' },
+    );
+    is( $info->fan(),
+        '1/1/1: ok, 1/1/2: fault',
+        'fan__names_and_states_served__lists_each_fan'
+    );
+
+    $test->_prime_columns( fan_states => { '1.1.1' => 'ok' } );
+    is( $info->fan(),
+        '1/1/1: ok, 1/1/2: n/a',
+        'fan__state_missing__reports_n_a'
+    );
+
+    $test->_prime_columns( fan_names => {}, fan_states => {} );
+    is( $info->fan(), '', 'fan__no_fans__returns_empty_string' );
+}
+
+sub stack_info : Tests(3) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_columns(
+        vsf_prod_names => {
+            1 => '6300M 48G CL4 PoE 4SFP56 Swch',
+            2 => '6300M 48G CL4 PoE 4SFP56 Swch',
+        },
+    );
+    $info->{_vsf_topology} = 'chain';
+    is( $info->stack_info(),
+        '6300M (stack of 2)',
+        'stack_info__vsf_chain__returns_family_and_member_count'
+    );
+
+    $info->{_vsf_topology} = 'standalone';
+    is( $info->stack_info(), undef, 'stack_info__standalone__returns_undef' );
+
+    delete $info->{_vsf_topology};
+    is( $info->stack_info(), undef, 'stack_info__no_vsf__returns_undef' );
+}
+
+sub agg_ports : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_columns(
+        raw_ad_lag_ports => { 769 => '1/1/1,1/1/2', 770 => '1/1/3' },
+        i_index       => { 1 => 1, 2 => 2, 3 => 3, 769 => 769, 770 => 770 },
+        i_description => {
+            1   => '1/1/1',
+            2   => '1/1/2',
+            3   => '1/1/3',
+            769 => 'lag1',
+            770 => 'lag2'
+        },
+    );
+    cmp_deeply(
+        $info->agg_ports(),
+        { 1 => 769, 2 => 769, 3 => 770 },
+        'agg_ports__comma_separated_member_names__maps_members_to_lag'
+    );
+
+    $test->_prime_columns( raw_ad_lag_ports => {} );
+    cmp_deeply( $info->agg_ports(), {},
+        'agg_ports__no_lags__returns_empty_hash' );
 }
 
 1;

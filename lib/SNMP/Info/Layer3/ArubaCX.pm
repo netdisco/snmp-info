@@ -33,7 +33,7 @@ package SNMP::Info::Layer3::ArubaCX;
 use strict;
 use warnings;
 use Exporter;
-use SNMP::Info::IEEE802dot3ad 'agg_ports_lag';
+use SNMP::Info::IEEE802dot3ad;
 use SNMP::Info::IEEE802_STP;
 use SNMP::Info::Layer3;
 use SNMP::Info::IEEE802_Bridge;
