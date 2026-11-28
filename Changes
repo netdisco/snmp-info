@@ -1,5 +1,10 @@
 Version 3.985005
 
+  [ENHANCEMENTS]
+
+  * #701 ArubaInstant: report each AP as a module with its serial number,
+    model and name, and the cluster serial from its conductor AP (#536)
+
 Version 3.985004 (2026-11-25)
 
   [BUG FIXES]
