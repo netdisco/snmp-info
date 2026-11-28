@@ -1,5 +1,10 @@
 Version 3.985005
 
+  [ENHANCEMENTS]
+
+  * #703 ArubaCX: report MSTP and RPVST spanning trees and edge ports, from a
+    new IEEE802_STP role
+
 Version 3.985004 (2026-11-25)
 
   [BUG FIXES]
