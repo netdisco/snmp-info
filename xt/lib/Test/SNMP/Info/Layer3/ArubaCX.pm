@@ -1160,4 +1160,42 @@ sub agg_ports : Tests(2) {
         'agg_ports__no_lags__returns_empty_hash' );
 }
 
+sub _prime_pvids {
+    my $test = shift;
+    $test->_prime_columns(
+        iqb_i_vlan => { '1.3' => 10, '1.4' => 0, '1.769' => 0, '1.770' => 1 },
+        bp_index   => { 3     => 3,  4     => 4, 769     => 769, 770 => 770 },
+    );
+    return;
+}
+
+sub i_vlan : Tests(2) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_pvids();
+    cmp_deeply(
+        $info->i_vlan(),
+        { 3 => 10, 770 => 1 },
+        'i_vlan__pvid_0_served__omits_ports_with_no_native_vlan'
+    );
+    cmp_deeply(
+        $info->qb_i_vlan(),
+        { 3 => 10, 4 => 0, 769 => 0, 770 => 1 },
+        'qb_i_vlan__pvid_0_served__returns_it_as_served'
+    );
+}
+
+sub i_untagged : Tests(1) {
+    my $test = shift;
+    my $info = $test->{info};
+
+    $test->_prime_pvids();
+    cmp_deeply(
+        $info->i_untagged(),
+        { 3 => 10, 770 => 1 },
+        'i_untagged__pvid_0_served__omits_ports_with_no_native_vlan'
+    );
+}
+
 1;
