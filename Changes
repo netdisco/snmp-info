@@ -8,6 +8,9 @@ Version 3.985005
     aggregations, serial, power supply and fan status (#563)
   * #703 ArubaCX: report MSTP and RPVST spanning trees and edge ports, from a
     new IEEE802_STP role
+
+  [BUG FIXES]
+
   * #704 ArubaCX: leave ports with no native VLAN out of the port VLAN, where
     AOS-CX serves PVID 0
 
