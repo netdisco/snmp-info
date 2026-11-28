@@ -413,6 +413,13 @@ SNMP Interface to data available through the F<IEEE8021-Q-BRIDGE-MIB>
 
 See documentation in L<SNMP::Info::IEEE802_Bridge> for details.
 
+=item SNMP::Info::IEEE802_STP
+
+Spanning trees from the F<IEEE8021-SPANNING-TREE-MIB> and
+F<IEEE8021-MSTP-MIB>.
+
+See documentation in L<SNMP::Info::IEEE802_STP> for details.
+
 =item SNMP::Info::IEEE802dot11
 
 F<IEEE802dot11-MIB>.  A collection of OIDs providing information about

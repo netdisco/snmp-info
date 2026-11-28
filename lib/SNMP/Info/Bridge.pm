@@ -572,6 +572,19 @@ sub _stp_bridge_id_from {
     return _stp_decode_bridge_id( join( ':', $prio_octets, $mac ) );
 }
 
+# For devices that serve the parts of a bridge ID in separate objects
+sub _stp_bridge_id_parts {
+    my ( $priority, $sys_id_ext, $mac ) = @_;
+    return unless defined $mac;
+
+    return {
+        priority   => $priority,
+        sys_id_ext => $sys_id_ext,
+        mac        => $mac,
+        raw        => undef,
+    };
+}
+
 # 802.1t fixed format: top 4 bits priority, low 12 bits system ID extension
 sub _stp_decode_bridge_id {
     my $id = shift;
@@ -1101,7 +1114,8 @@ C<SNMP::Info::Bridge::_stp_decode_bridge_id($id)> and
 C<_stp_decode_port_id($id)> turn a served bridge ID or port ID into the
 hashes C<stp_trees()> and C<stp_tree_ports()> return.
 C<_stp_bridge_id_from($priority, $mac)> builds a bridge ID from its two
-parts. C<_stp_enabled($value)> reads C<enabled(1)>, C<true(1)> and their
+parts, and C<_stp_bridge_id_parts($priority, $sys_id_ext, $mac)> from its
+three. C<_stp_enabled($value)> reads C<enabled(1)>, C<true(1)> and their
 labels as 1, C<disabled(2)> and C<false(2)> as 0, else undef. Call them
 by full name.
 
@@ -1483,7 +1497,8 @@ still says which tree it describes.
 This class reports the F<BRIDGE-MIB> tree as the one tree C<cist.0>,
 with its protocol unknown. These classes read the vendor's trees
 instead, and their documentation says what they fill and from where:
-L<SNMP::Info::CiscoStpExtensions>, L<SNMP::Info::Layer3::Extreme>,
+L<SNMP::Info::CiscoStpExtensions>, L<SNMP::Info::IEEE802_STP>,
+L<SNMP::Info::Layer3::ArubaCX>, L<SNMP::Info::Layer3::Extreme>,
 L<SNMP::Info::Layer3::H3C>, L<SNMP::Info::Layer3::Juniper> and
 L<SNMP::Info::RapidCity>. L<SNMP::Info::Layer3::Foundry> and
 L<SNMP::Info::Layer3::HP9300> report no tree.
@@ -1494,6 +1509,11 @@ runs that protocol and 0 otherwise. Where the device names its protocol
 the test reads that object; elsewhere the class infers it, as its
 documentation says. As with C<has_topo()> in L<SNMP::Info>, test
 C<can()> before calling one.
+
+Each test names one protocol. C<hasSTP()> means 802.1D STP, not that the
+device runs spanning tree: a device running only RSTP, MSTP or a per-VLAN
+protocol returns 0 from it. To learn whether a device runs any spanning
+tree, read C<stp_protocols()> or C<stp_trees()>.
 
 =over
 
@@ -1650,8 +1670,8 @@ not serve it.
 =item C<vlan>
 
 The VLAN the tree runs for. Present only where the class fills it:
-Cisco PVST+ and Rapid-PVST+, H3C PVST, Juniper VSTP, and an Extreme
-domain with a carrier VLAN.
+Cisco PVST+ and Rapid-PVST+, AOS-CX RPVST, H3C PVST, Juniper VSTP, and an
+Extreme domain with a carrier VLAN.
 
 =item C<name>
 
@@ -1685,6 +1705,9 @@ The bridge MAC address.
 The bridge ID as served, eight octets in hex, colon separated.
 
 =back
+
+A field is undef where the device does not serve that part of the ID; C<raw>
+is undef where no whole ID is served.
 
 An example record, the Rapid-PVST+ tree of VLAN 10 on a Cisco IOS
 switch:
@@ -1794,6 +1817,9 @@ Undef when not served.
 The port ID of the designated port, a reference to a hash: C<priority>,
 the port priority; C<port>, the port number on the designated bridge;
 and C<raw>, the port ID as served. Undef when not served.
+
+A field is undef where the device does not serve that part of the port ID;
+C<raw> is undef where no whole ID is served.
 
 =back
 
